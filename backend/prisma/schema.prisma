@@ -1,0 +1,461 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id           Int            @id @default(autoincrement())
+  username     String         @unique
+  passwordHash String
+  realName     String?
+  email        String?
+  phone        String?
+  roleId       Int
+  status       String         @default("active")
+  lastLoginAt  DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now()) @updatedAt
+  role         AdminRole      @relation(fields: [roleId], references: [id])
+  logs         OperationLog[]
+}
+
+model AdminRole {
+  id          Int                   @id @default(autoincrement())
+  name        String
+  code        String                @unique
+  description String?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @default(now()) @updatedAt
+  users       AdminUser[]
+  permissions AdminRolePermission[]
+}
+
+model AdminPermission {
+  id        Int                   @id @default(autoincrement())
+  name      String
+  code      String                @unique
+  module    String
+  action    String
+  createdAt DateTime              @default(now())
+  roles     AdminRolePermission[]
+}
+
+model AdminRolePermission {
+  id           Int             @id @default(autoincrement())
+  roleId       Int
+  permissionId Int
+  createdAt    DateTime        @default(now())
+  role         AdminRole       @relation(fields: [roleId], references: [id])
+  permission   AdminPermission @relation(fields: [permissionId], references: [id])
+
+  @@unique([roleId, permissionId])
+}
+
+model Technician {
+  id             Int                     @id @default(autoincrement())
+  name           String
+  phone          String                  @unique
+  avatarUrl      String?
+  city           String?
+  serviceArea    String?
+  status         String                  @default("inactive")
+  invitationCode String?
+  invitedAt      DateTime?
+  lastLoginAt    DateTime?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @default(now()) @updatedAt
+  // Service type settings
+  homeService    Boolean                 @default(false)
+  shopService    Boolean                 @default(false)
+  shopAddresses  String?                 // JSON array of shop addresses
+  serviceItems   String?                 // JSON array of technician service items
+  // Social media accounts
+  socialMedia    String?                 // JSON object of social media accounts
+  customers      Customer[]
+  quotes         Quote[]
+  bookings       Booking[]
+  revenues       Revenue[]
+  subscription   TechnicianSubscription?
+  clientBindings ClientTechBinding[]
+  nailWorks      NailWork[]
+  designRequests ClientDesignRequest[]
+  conversations  Conversation[]
+}
+
+model Customer {
+  id           Int        @id @default(autoincrement())
+  technicianId Int
+  clientUserId Int?
+  name         String
+  phone        String?
+  avatarUrl    String?
+  gender       String?
+  birthday     DateTime?
+  address      String?
+  tags         String?
+  notes        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @default(now()) @updatedAt
+  technician   Technician @relation(fields: [technicianId], references: [id])
+  clientUser   ClientUser? @relation(fields: [clientUserId], references: [id])
+  quotes       Quote[]
+  bookings     Booking[]
+  revenues     Revenue[]
+
+  @@index([technicianId])
+  @@index([clientUserId])
+  @@unique([technicianId, clientUserId])
+  @@index([phone])
+}
+
+model Quote {
+  id            Int        @id @default(autoincrement())
+  quoteNo       String     @unique
+  technicianId  Int
+  customerId    Int
+  title         String?
+  description   String?
+  price         Float
+  depositAmount Float?     @default(0)
+  status        String     @default("pending")
+  expiredAt     DateTime?
+  acceptedAt    DateTime?
+  cancelledAt   DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @default(now()) @updatedAt
+  technician    Technician @relation(fields: [technicianId], references: [id])
+  customer      Customer   @relation(fields: [customerId], references: [id])
+  booking       Booking?
+
+  @@index([technicianId])
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Booking {
+  id                 Int                  @id @default(autoincrement())
+  bookingNo          String               @unique
+  quoteId            Int                  @unique
+  technicianId       Int
+  customerId         Int
+  clientUserId       Int?
+  addressId          Int?
+  designRequestId    Int?
+  startTime          DateTime
+  endTime            DateTime
+  address            String?
+  serviceType        String?
+  remark             String?
+  quotePrice         Float?
+  status             String               @default("pending_confirm")
+  isDepositPaid      Boolean              @default(false)
+  depositAmount      Float?               @default(0)
+  depositStatus      String?              @default("pending")
+  depositConfirmedAt DateTime?
+  confirmedAt        DateTime?
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  cancelReason       String?
+  source             String?              @default("technician")
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @default(now()) @updatedAt
+  quote              Quote                @relation(fields: [quoteId], references: [id])
+  technician         Technician           @relation(fields: [technicianId], references: [id])
+  customer           Customer             @relation(fields: [customerId], references: [id])
+  clientUser         ClientUser?          @relation(fields: [clientUserId], references: [id])
+  clientAddress      ClientAddress?       @relation(fields: [addressId], references: [id])
+  designRequest      ClientDesignRequest? @relation(fields: [designRequestId], references: [id])
+  revenue            Revenue?
+
+  @@index([quoteId])
+  @@index([technicianId])
+  @@index([customerId])
+  @@index([clientUserId])
+  @@index([addressId])
+  @@index([designRequestId])
+  @@index([status])
+  @@index([startTime])
+}
+
+model ClientUser {
+  id             Int                   @id @default(autoincrement())
+  nickname       String?
+  phone          String                @unique
+  avatarUrl      String?
+  status         String                @default("active")
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @default(now()) @updatedAt
+  bindings       ClientTechBinding[]
+  addresses      ClientAddress[]
+  bookings       Booking[]
+  customers      Customer[]
+  designRequests ClientDesignRequest[]
+  conversations  Conversation[]
+}
+
+model ClientTechBinding {
+  id         Int        @id @default(autoincrement())
+  clientId   Int
+  techId     Int
+  inviteCode String?
+  bindSource String
+  isDefault  Boolean    @default(false)
+  status     String     @default("active")
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @default(now()) @updatedAt
+  client     ClientUser @relation(fields: [clientId], references: [id])
+  technician Technician @relation(fields: [techId], references: [id])
+
+  @@unique([clientId, techId])
+  @@index([techId])
+  @@index([clientId, status])
+}
+
+model ClientAddress {
+  id            Int        @id @default(autoincrement())
+  clientId      Int
+  contactName   String?
+  contactPhone  String?
+  province      String?
+  city          String?
+  district      String?
+  detailAddress String?
+  doorInfo      String?
+  latitude      Float?
+  longitude     Float?
+  isDefault     Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @default(now()) @updatedAt
+  client        ClientUser @relation(fields: [clientId], references: [id])
+  bookings      Booking[]
+
+  @@index([clientId])
+}
+
+model NailWork {
+  id          Int        @id @default(autoincrement())
+  techId      Int
+  title       String?
+  coverUrl    String?
+  images      String?
+  description String?
+  tags        String?
+  isVisible   Boolean    @default(true)
+  isPinned    Boolean    @default(false)
+  isFeatured  Boolean    @default(false)
+  sortOrder   Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now()) @updatedAt
+  technician  Technician @relation(fields: [techId], references: [id])
+  likes       NailWorkLike[]
+  favorites   NailWorkFavorite[]
+  comments    NailWorkComment[]
+
+  @@index([techId])
+  @@index([isVisible])
+}
+
+model NailWorkLike {
+  id          Int        @id @default(autoincrement())
+  workId      Int
+  clientId    Int?
+  technicianId Int?
+  createdAt   DateTime   @default(now())
+  work        NailWork   @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  @@unique([workId, clientId, technicianId])
+  @@index([workId])
+}
+
+model NailWorkFavorite {
+  id          Int        @id @default(autoincrement())
+  workId      Int
+  clientId    Int?
+  technicianId Int?
+  createdAt   DateTime   @default(now())
+  work        NailWork   @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  @@unique([workId, clientId, technicianId])
+  @@index([workId])
+}
+
+model NailWorkComment {
+  id          Int        @id @default(autoincrement())
+  workId      Int
+  clientId    Int?
+  technicianId Int?
+  content     String
+  isRead      Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now()) @updatedAt
+  work        NailWork   @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  @@index([workId])
+}
+
+model ClientDesignRequest {
+  id          Int        @id @default(autoincrement())
+  clientId    Int
+  techId      Int
+  title       String?
+  images      String?
+  description String?
+  quotePrice  Float?
+  quoteRemark String?
+  status      String     @default("pending_quote")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now()) @updatedAt
+  client      ClientUser @relation(fields: [clientId], references: [id])
+  technician  Technician @relation(fields: [techId], references: [id])
+  bookings    Booking[]
+
+  @@index([clientId])
+  @@index([techId])
+  @@index([status])
+}
+
+model Conversation {
+  id            Int        @id @default(autoincrement())
+  clientId      Int
+  techId        Int
+  lastMessage   String?
+  lastMessageAt DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @default(now()) @updatedAt
+  client        ClientUser @relation(fields: [clientId], references: [id])
+  technician    Technician @relation(fields: [techId], references: [id])
+  messages      Message[]
+
+  @@unique([clientId, techId])
+  @@index([techId])
+}
+
+model Message {
+  id             Int          @id @default(autoincrement())
+  conversationId Int
+  senderType     String?
+  senderId       Int?
+  receiverType   String?
+  receiverId     Int?
+  messageType    String?
+  content        String?
+  imageUrl       String?
+  relatedType    String?
+  relatedId      Int?
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+
+  @@index([conversationId])
+  @@index([createdAt])
+}
+
+model Revenue {
+  id           Int        @id @default(autoincrement())
+  revenueNo    String     @unique
+  bookingId    Int        @unique
+  quoteId      Int
+  technicianId Int
+  customerId   Int
+  amount       Float
+  status       String     @default("confirmed")
+  recognizedAt DateTime
+  voidedAt     DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @default(now()) @updatedAt
+  booking      Booking    @relation(fields: [bookingId], references: [id])
+  technician   Technician @relation(fields: [technicianId], references: [id])
+  customer     Customer   @relation(fields: [customerId], references: [id])
+
+  @@index([technicianId])
+  @@index([customerId])
+  @@index([recognizedAt])
+}
+
+model SubscriptionPlan {
+  id                 Int                      @id @default(autoincrement())
+  name               String
+  code               String                   @unique
+  price              Float
+  billingCycle       String
+  maxCustomers       Int?
+  maxMonthlyBookings Int?
+  features           String?
+  status             String                   @default("active")
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @default(now()) @updatedAt
+  subscriptions      TechnicianSubscription[]
+}
+
+model TechnicianSubscription {
+  id           Int              @id @default(autoincrement())
+  technicianId Int              @unique
+  planId       Int
+  status       String           @default("active")
+  startedAt    DateTime
+  expiredAt    DateTime?
+  cancelledAt  DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @default(now()) @updatedAt
+  technician   Technician       @relation(fields: [technicianId], references: [id])
+  plan         SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  @@index([status])
+  @@index([expiredAt])
+}
+
+model FeatureFlag {
+  id           Int      @id @default(autoincrement())
+  featureCode  String   @unique
+  featureName  String
+  enabled      Boolean  @default(true)
+  enabledPlans String?
+  description  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+}
+
+model OperationLog {
+  id          Int       @id @default(autoincrement())
+  adminUserId Int
+  module      String
+  action      String
+  targetType  String?
+  targetId    Int?
+  beforeData  String?
+  afterData   String?
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id])
+
+  @@index([adminUserId])
+  @@index([module])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+model ArtistApplication {
+  id          Int       @id @default(autoincrement())
+  name        String
+  phone       String
+  city        String
+  serviceMode String?   // home, shop, both
+  experience  String?   // years of experience
+  specialty   String?   // specialties
+  note        String?
+  status      String    @default("pending") // pending, approved, rejected
+  reviewedBy  Int?
+  reviewedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
+  @@index([phone])
+}

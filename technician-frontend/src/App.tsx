@@ -1,0 +1,94 @@
+import { Suspense, lazy } from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { MainLayout } from './layouts/MainLayout';
+import { ToastProvider } from './components/feedback/ToastProvider';
+
+const Login = lazy(async () => {
+  const module = await import('./pages/Login');
+  return { default: module.Login };
+});
+const HomePage = lazy(async () => {
+  const module = await import('./pages/HomePage');
+  return { default: module.HomePage };
+});
+const SchedulePage = lazy(async () => {
+  const module = await import('./pages/SchedulePage');
+  return { default: module.SchedulePage };
+});
+const CustomersPage = lazy(async () => {
+  const module = await import('./pages/CustomersPage');
+  return { default: module.CustomersPage };
+});
+const OrdersPage = lazy(async () => {
+  const module = await import('./pages/OrdersPage');
+  return { default: module.OrdersPage };
+});
+// OrdersPage retained for deep-link compatibility; /orders redirects to /schedule
+const MessagesPage = lazy(async () => {
+  const module = await import('./pages/MessagesPage');
+  return { default: module.MessagesPage };
+});
+const ChatPage = lazy(() => import('./pages/ChatPage'));
+const MePage = lazy(async () => {
+  const module = await import('./pages/MePage');
+  return { default: module.MePage };
+});
+const WorksPage = lazy(() => import('./pages/WorksPage'));
+const ShopManagement = lazy(() => import('./pages/ShopManagement'));
+const ShopEdit = lazy(() => import('./pages/ShopEdit'));
+const ServicesPage = lazy(() => import('./pages/ServicesPage'));
+const HomeServiceSettingsPage = lazy(() => import('./pages/HomeServiceSettingsPage'));
+const ProfileSettingsPage = lazy(() => import('./pages/ProfileSettingsPage'));
+const BookingDetailPage = lazy(() => import('./pages/BookingDetailPage'));
+
+function RouteFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#fff9f8] px-5">
+      <div className="rounded-full bg-white px-4 py-2 text-sm text-gray-500 shadow-[0_8px_24px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.04]">
+        页面加载中...
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <ToastProvider>
+        <Router>
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route
+                element={
+                  <ProtectedRoute>
+                    <MainLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="/" element={<HomePage />} />
+                <Route path="/schedule" element={<SchedulePage />} />
+                <Route path="/customers" element={<CustomersPage />} />
+                <Route path="/orders" element={<OrdersPage />} />
+                <Route path="/messages" element={<MessagesPage />} />
+                <Route path="/chat" element={<ChatPage />} />
+                <Route path="/me" element={<MePage />} />
+                <Route path="/works" element={<WorksPage />} />
+                <Route path="/shops" element={<ShopManagement />} />
+                <Route path="/shops/edit" element={<ShopEdit />} />
+                <Route path="/services" element={<ServicesPage />} />
+                <Route path="/home-service-settings" element={<HomeServiceSettingsPage />} />
+                <Route path="/profile-settings" element={<ProfileSettingsPage />} />
+                <Route path="/bookings/:id" element={<BookingDetailPage />} />
+              </Route>
+            </Routes>
+          </Suspense>
+        </Router>
+      </ToastProvider>
+    </AuthProvider>
+  );
+}
+
+export default App;
