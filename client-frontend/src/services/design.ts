@@ -54,6 +54,7 @@ export interface CreateDesignDto {
 export interface UpdateDesignDto {
   title?: string;
   description?: string;
+  imageUrls?: string[];
 }
 
 const getApiOrigin = () => {

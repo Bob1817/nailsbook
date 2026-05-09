@@ -20,7 +20,7 @@ export class ClientHomeService {
           likes: true,
           comments: true,
           technician: {
-            select: { name: true }
+            select: { name: true, id: true }
           }
         },
       }),
@@ -42,7 +42,10 @@ export class ClientHomeService {
         city: binding.technician.city,
         serviceArea: binding.technician.serviceArea,
       },
-      works: works.map((work) => this.mapWork(work)),
+      works: works.map((work) => ({
+        ...this.mapWork(work),
+        technicianId: work.techId,
+      })),
       latestBooking: latestBooking
         ? {
             id: latestBooking.id,
@@ -68,12 +71,15 @@ export class ClientHomeService {
         likes: true,
         comments: true,
         technician: {
-          select: { name: true }
+          select: { name: true, id: true }
         }
       },
     });
 
-    return works.map((work) => this.mapWork(work));
+    return works.map((work) => ({
+      ...this.mapWork(work),
+      technicianId: work.techId,
+    }));
   }
 
   async getWork(clientUserId: number, id: number) {
@@ -91,7 +97,7 @@ export class ClientHomeService {
           orderBy: { createdAt: 'desc' }
         },
         technician: {
-          select: { name: true, avatarUrl: true }
+          select: { name: true, avatarUrl: true, id: true }
         }
       },
     });
@@ -166,7 +172,8 @@ export class ClientHomeService {
     updatedAt: Date;
     likes?: { id: number }[];
     comments?: { id: number }[];
-    technician?: { name: string | null };
+    technician?: { name: string | null; id?: number };
+    techId?: number;
   }) {
     const imageUrls = this.parseImageUrls(work.images, work.coverUrl);
     const UPLOAD_BASE_URL = process.env.UPLOAD_BASE_URL || 'http://localhost:3000';
@@ -176,6 +183,9 @@ export class ClientHomeService {
       if (url.startsWith('http')) return url;
       return `${UPLOAD_BASE_URL}${url}`;
     };
+
+    // Get technicianId from either work.techId or work.technician.id
+    const technicianId = work.techId ?? work.technician?.id;
 
     return {
       id: work.id,
@@ -187,6 +197,7 @@ export class ClientHomeService {
       likeCount: work.likes?.length ?? 0,
       commentCount: work.comments?.length ?? 0,
       technicianName: work.technician?.name ?? '美甲师',
+      technicianId: technicianId,
       createdAt: work.createdAt,
       updatedAt: work.updatedAt,
     };

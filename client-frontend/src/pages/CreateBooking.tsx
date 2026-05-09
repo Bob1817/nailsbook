@@ -1,9 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { useAuth } from '../contexts/AuthContext';
 import { bookingService } from '../services/booking';
 import { addressService, type ClientAddress } from '../services/address';
+import { uploadService } from '../services/upload';
+import { worksService, type NailWork } from '../services/works';
+import { customServiceRequestService } from '../services/customServiceRequest';
+import { designService, type DesignRequest } from '../services/design';
 import type { ShopAddress, Technician, TechnicianServiceItem } from '../services/auth';
 
 const timeSlots = [
@@ -62,20 +66,38 @@ const getAvailableServiceTypes = (tech: Technician | null) => {
 
 const CreateBooking: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { technicians, refreshProfile } = useAuth();
   const bookableTechnicians = useMemo(() => getBookableTechnicians(technicians), [technicians]);
   const [addresses, setAddresses] = useState<ClientAddress[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  
+  // Get design info from URL params
+  const designId = searchParams.get('design_id');
+  const designTechId = searchParams.get('tech_id');
+  const [designFromUrl, setDesignFromUrl] = useState<DesignRequest | null>(null);
+  
   const [formData, setFormData] = useState({
     serviceDate: dayjs().add(1, 'day').format('YYYY-MM-DD'),
     startTime: '14:00',
     addressId: 0,
-    techId: bookableTechnicians.length === 1 ? bookableTechnicians[0].id : 0,
+    techId: designTechId ? parseInt(designTechId) : (bookableTechnicians.length === 1 ? bookableTechnicians[0].id : 0),
     serviceType: '',
     shopAddressName: '',
     remark: '',
     selectedServiceIds: [] as string[],
   });
+
+  // Custom service state
+  const [isCustomService, setIsCustomService] = useState(false);
+  const [customServiceTitle, setCustomServiceTitle] = useState('');
+  const [customServiceDescription, setCustomServiceDescription] = useState('');
+  const [customServiceImages, setCustomServiceImages] = useState<string[]>([]);
+  const [selectedWorks, setSelectedWorks] = useState<NailWork[]>([]);
+  const [technicianWorks, setTechnicianWorks] = useState<NailWork[]>([]);
+  const [showWorkSelector, setShowWorkSelector] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedTechnician = useMemo(
     () => bookableTechnicians.find((item) => item.id === formData.techId) || null,
@@ -136,6 +158,22 @@ const CreateBooking: React.FC = () => {
   useEffect(() => {
     loadAddresses();
   }, []);
+
+  // Load design from URL if design_id is provided
+  useEffect(() => {
+    if (designId) {
+      designService.getDesign(parseInt(designId)).then((design) => {
+        setDesignFromUrl(design);
+        // Pre-fill custom service with design info
+        setIsCustomService(true);
+        setCustomServiceTitle(design.title || '设计作品');
+        setCustomServiceDescription(design.description || '');
+        setCustomServiceImages(design.imageUrls || []);
+      }).catch((error) => {
+        console.error('Failed to load design:', error);
+      });
+    }
+  }, [designId]);
 
   useEffect(() => {
     if (bookableTechnicians.length === 1 && formData.techId === 0) {
@@ -212,6 +250,67 @@ const CreateBooking: React.FC = () => {
     }
   };
 
+  const loadTechnicianWorks = async (techId: number) => {
+    try {
+      console.log('[Debug] Loading works for techId:', techId);
+      const works = await worksService.getWorks();
+      console.log('[Debug] Raw works from API:', works);
+      console.log('[Debug] First work technicianId:', works[0]?.technicianId);
+      const techWorks = works.filter((work) => work.technicianId === techId);
+      console.log('[Debug] Filtered techWorks:', techWorks);
+      console.log('[Debug] techWorks length:', techWorks.length);
+      setTechnicianWorks(techWorks);
+    } catch (error) {
+      console.error('Failed to load technician works:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedTechnician) {
+      loadTechnicianWorks(selectedTechnician.id);
+    }
+  }, [selectedTechnician]);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const result = await uploadService.uploadImage(file);
+      setCustomServiceImages((prev) => [...prev, result.url]);
+    } catch (error) {
+      alert('图片上传失败，请重试');
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setCustomServiceImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const toggleWorkSelection = (work: NailWork) => {
+    setSelectedWorks((prev) => {
+      const exists = prev.find((w) => w.id === work.id);
+      if (exists) {
+        return prev.filter((w) => w.id !== work.id);
+      }
+      if (prev.length >= 3) {
+        alert('最多可选择3个参考作品');
+        return prev;
+      }
+      return [...prev, work];
+    });
+  };
+
+  const removeSelectedWork = (workId: number) => {
+    setSelectedWorks((prev) => prev.filter((w) => w.id !== workId));
+  };
+
   const canSubmit = (() => {
     if (!selectedTechnician) {
       return false;
@@ -229,6 +328,12 @@ const CreateBooking: React.FC = () => {
       return false;
     }
 
+    // For custom service, check custom service fields
+    if (isCustomService) {
+      return customServiceTitle.trim().length > 0;
+    }
+
+    // For regular service, check selected services
     if (activeServiceItems.length === 0 || formData.selectedServiceIds.length === 0) {
       return false;
     }
@@ -281,29 +386,57 @@ const CreateBooking: React.FC = () => {
       return;
     }
 
-    if (activeServiceItems.length === 0) {
-      alert('该美甲师暂未设置可预约的服务内容');
-      return;
-    }
-
-    if (formData.selectedServiceIds.length === 0) {
-      alert('请选择至少一项服务内容');
-      return;
-    }
-
     setSubmitting(true);
     try {
-      await bookingService.createBooking({
-        serviceDate: formData.serviceDate,
-        startTime: formData.startTime,
-        techId: formData.techId,
-        serviceType: formData.serviceType,
-        selectedServiceIds: formData.selectedServiceIds,
-        addressId: isHomeService ? formData.addressId : undefined,
-        shopAddress: isShopService ? selectedShopAddress || undefined : undefined,
-        remark: formData.remark,
-      });
-      navigate('/bookings');
+      if (isCustomService) {
+        // Create custom service request
+        if (!customServiceTitle.trim()) {
+          alert('请输入自定义服务名称');
+          setSubmitting(false);
+          return;
+        }
+
+        await customServiceRequestService.create({
+          techId: formData.techId,
+          title: customServiceTitle.trim(),
+          description: customServiceDescription.trim() || undefined,
+          images: customServiceImages.length > 0 ? customServiceImages : undefined,
+          referenceWorkIds: selectedWorks.length > 0 ? selectedWorks.map((w) => w.id) : undefined,
+          serviceDate: formData.serviceDate,
+          startTime: formData.startTime,
+          serviceType: formData.serviceType,
+          addressId: isHomeService ? formData.addressId : undefined,
+          shopAddress: isShopService && selectedShopAddress ? selectedShopAddress : undefined,
+        });
+        
+        alert('自定义服务需求已提交，请等待美甲师报价');
+        navigate('/messages');
+      } else {
+        // Regular booking flow
+        if (activeServiceItems.length === 0) {
+          alert('该美甲师暂未设置可预约的服务内容');
+          setSubmitting(false);
+          return;
+        }
+
+        if (formData.selectedServiceIds.length === 0) {
+          alert('请选择至少一项服务内容');
+          setSubmitting(false);
+          return;
+        }
+
+        await bookingService.createBooking({
+          serviceDate: formData.serviceDate,
+          startTime: formData.startTime,
+          techId: formData.techId,
+          serviceType: formData.serviceType,
+          selectedServiceIds: formData.selectedServiceIds,
+          addressId: isHomeService ? formData.addressId : undefined,
+          shopAddress: isShopService ? selectedShopAddress || undefined : undefined,
+          remark: formData.remark,
+        });
+        navigate('/bookings');
+      }
     } catch (error: any) {
       alert(error.response?.data?.message || '创建预约失败');
     } finally {
@@ -468,49 +601,240 @@ const CreateBooking: React.FC = () => {
           </div>
           {!selectedTechnician ? (
             <div className="rounded-[24px] bg-slate-50 px-5 py-6 text-sm text-slate-400">选择美甲师后，这里会显示她在服务管理里设置的服务内容</div>
-          ) : activeServiceItems.length > 0 ? (
-            <div className="space-y-3">
-              {activeServiceItems.map((service: TechnicianServiceItem) => {
-                const isSelected = formData.selectedServiceIds.includes(service.id);
-                return (
-                  <button
-                    key={service.id}
-                    type="button"
-                    onClick={() =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        selectedServiceIds: isSelected
-                          ? prev.selectedServiceIds.filter((item) => item !== service.id)
-                          : [...prev.selectedServiceIds, service.id],
-                      }))
-                    }
-                    className={`flex w-full items-start gap-3 rounded-[24px] p-4 text-left ring-1 transition ${
-                      isSelected
-                        ? 'bg-[linear-gradient(135deg,#FFF0F5_0%,#FAFBFF_100%)] ring-[#FF6B8A]/25'
-                        : 'bg-slate-50/80 ring-black/5'
-                    }`}
-                  >
-                    <div className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-md border-2 ${
-                      isSelected ? 'border-[#FF6B8A] bg-[#FF6B8A]' : 'border-slate-300'
-                    }`}>
-                      {isSelected && (
-                        <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <span className="text-sm font-medium text-gray-900">{service.name}</span>
-                      {service.description && (
-                        <p className="mt-1 text-sm leading-6 text-gray-500">{service.description}</p>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
           ) : (
-            <div className="rounded-[24px] bg-slate-50 px-5 py-6 text-sm text-slate-400">该美甲师暂未设置可预约的服务内容</div>
+            <div className="space-y-3">
+              {/* Custom Service Option */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCustomService(!isCustomService);
+                  if (!isCustomService) {
+                    setFormData((prev) => ({ ...prev, selectedServiceIds: [] }));
+                  }
+                }}
+                className={`flex w-full items-start gap-3 rounded-[24px] p-4 text-left ring-1 transition ${
+                  isCustomService
+                    ? 'bg-[linear-gradient(135deg,#FFF0F5_0%,#FAFBFF_100%)] ring-[#FF6B8A]/25'
+                    : 'bg-slate-50/80 ring-black/5'
+                }`}
+              >
+                <div className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-md border-2 ${
+                  isCustomService ? 'border-[#FF6B8A] bg-[#FF6B8A]' : 'border-slate-300'
+                }`}>
+                  {isCustomService && (
+                    <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-sm font-medium text-gray-900">自定义服务</span>
+                  <p className="mt-1 text-sm leading-6 text-gray-500">描述你的需求，上传参考图片或选择美甲师作品，等待报价</p>
+                </div>
+              </button>
+
+              {/* Custom Service Form */}
+              {isCustomService && (
+                <div className="rounded-[24px] bg-slate-50/80 p-4 space-y-4">
+                  {/* Title Input */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">服务名称</label>
+                    <input
+                      type="text"
+                      value={customServiceTitle}
+                      onChange={(e) => setCustomServiceTitle(e.target.value)}
+                      placeholder="例如：法式渐变美甲"
+                      className="w-full rounded-2xl bg-white px-4 py-3 text-gray-900 outline-none ring-1 ring-slate-200 focus:ring-[#FF6B8A]/20"
+                    />
+                  </div>
+
+                  {/* Description Input */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">详细描述</label>
+                    <textarea
+                      value={customServiceDescription}
+                      onChange={(e) => setCustomServiceDescription(e.target.value)}
+                      placeholder="描述你的具体需求，如颜色、款式、特殊要求等..."
+                      rows={3}
+                      className="w-full resize-none rounded-2xl bg-white px-4 py-3 text-gray-900 outline-none ring-1 ring-slate-200 focus:ring-[#FF6B8A]/20"
+                    />
+                  </div>
+
+                  {/* Image Upload */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">参考图片（可选）</label>
+                    <div className="flex flex-wrap gap-2">
+                      {customServiceImages.map((image, index) => (
+                        <div key={index} className="relative">
+                          <img
+                            src={image}
+                            alt={`参考图片 ${index + 1}`}
+                            className="w-20 h-20 rounded-xl object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                      {customServiceImages.length < 3 && (
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploadingImage}
+                          className="w-20 h-20 rounded-xl bg-white border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:border-[#FF6B8A] hover:text-[#FF6B8A] transition"
+                        >
+                          {uploadingImage ? (
+                            <span className="text-xs">上传中...</span>
+                          ) : (
+                            <>
+                              <svg className="w-6 h-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              </svg>
+                              <span className="text-xs">添加图片</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-slate-400">最多可上传3张图片</p>
+                  </div>
+
+                  {/* Reference Works Selection */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-900">参考作品（可选）</label>
+                      <button
+                        type="button"
+                        onClick={() => setShowWorkSelector(!showWorkSelector)}
+                        className="text-xs text-[#FF6B8A] font-medium"
+                      >
+                        {showWorkSelector ? '收起' : '选择作品'}
+                      </button>
+                    </div>
+                    
+                    {/* Selected Works Preview */}
+                    {selectedWorks.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {selectedWorks.map((work) => (
+                          <div key={work.id} className="relative">
+                            <img
+                              src={work.coverUrl || '/placeholder.jpg'}
+                              alt={work.title || '作品'}
+                              className="w-16 h-16 rounded-lg object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeSelectedWork(work.id)}
+                              className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Work Selector */}
+                    {showWorkSelector && (
+                      <div className="rounded-xl bg-white p-3 max-h-48 overflow-y-auto">
+                        {technicianWorks.length > 0 ? (
+                          <div className="grid grid-cols-3 gap-2">
+                            {technicianWorks.map((work) => {
+                              const isSelected = selectedWorks.some((w) => w.id === work.id);
+                              return (
+                                <button
+                                  key={work.id}
+                                  type="button"
+                                  onClick={() => toggleWorkSelection(work)}
+                                  className={`relative rounded-lg overflow-hidden ${
+                                    isSelected ? 'ring-2 ring-[#FF6B8A]' : ''
+                                  }`}
+                                >
+                                  <img
+                                    src={work.coverUrl || '/placeholder.jpg'}
+                                    alt={work.title || '作品'}
+                                    className="w-full h-20 object-cover"
+                                  />
+                                  {isSelected && (
+                                    <div className="absolute inset-0 bg-[#FF6B8A]/20 flex items-center justify-center">
+                                      <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    </div>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-slate-400 text-center py-4">该美甲师暂无作品</p>
+                        )}
+                      </div>
+                    )}
+                    <p className="mt-1 text-xs text-slate-400">最多可选择3个参考作品</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Regular Service Items */}
+              {!isCustomService && (
+                activeServiceItems.length > 0 ? (
+                  <div className="space-y-3">
+                    {activeServiceItems.map((service: TechnicianServiceItem) => {
+                      const isSelected = formData.selectedServiceIds.includes(service.id);
+                      return (
+                        <button
+                          key={service.id}
+                          type="button"
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              selectedServiceIds: isSelected
+                                ? prev.selectedServiceIds.filter((item) => item !== service.id)
+                                : [...prev.selectedServiceIds, service.id],
+                            }))
+                          }
+                          className={`flex w-full items-start gap-3 rounded-[24px] p-4 text-left ring-1 transition ${
+                            isSelected
+                              ? 'bg-[linear-gradient(135deg,#FFF0F5_0%,#FAFBFF_100%)] ring-[#FF6B8A]/25'
+                              : 'bg-slate-50/80 ring-black/5'
+                          }`}
+                        >
+                          <div className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-md border-2 ${
+                            isSelected ? 'border-[#FF6B8A] bg-[#FF6B8A]' : 'border-slate-300'
+                          }`}>
+                            {isSelected && (
+                              <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <span className="text-sm font-medium text-gray-900">{service.name}</span>
+                            {service.description && (
+                              <p className="mt-1 text-sm leading-6 text-gray-500">{service.description}</p>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="rounded-[24px] bg-slate-50 px-5 py-6 text-sm text-slate-400">该美甲师暂未设置可预约的服务内容</div>
+                )
+              )}
+            </div>
           )}
         </section>
 
@@ -703,7 +1027,7 @@ const CreateBooking: React.FC = () => {
             disabled={submitting || !canSubmit}
             className="w-full rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-4 font-medium text-white shadow-lg shadow-pink-200 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {submitting ? '提交中...' : '提交预约'}
+            {submitting ? '提交中...' : isCustomService ? '提交需求等待报价' : '提交预约'}
           </button>
         </div>
       </div>

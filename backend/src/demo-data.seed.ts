@@ -645,19 +645,27 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
   const customerLookup = new Map<string, any>();
   const addressLookup = new Map<string, any>();
 
+  const AVATAR_URLS = [
+    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=512&q=80',
+    'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=512&q=80',
+    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=512&q=80',
+    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=512&q=80',
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=512&q=80',
+  ];
+
   for (const [index, seed] of DEMO_CLIENTS.entries()) {
     const client = await prisma.clientUser.upsert({
       where: { phone: seed.phone },
       update: {
         nickname: seed.nickname,
         status: 'active',
-        avatarUrl: `https://images.unsplash.com/photo-15${index + 1}3475167${index}793?auto=format&fit=crop&w=512&q=80`,
+        avatarUrl: AVATAR_URLS[index % AVATAR_URLS.length],
       },
       create: {
         phone: seed.phone,
         nickname: seed.nickname,
         status: 'active',
-        avatarUrl: `https://images.unsplash.com/photo-15${index + 1}3475167${index}793?auto=format&fit=crop&w=512&q=80`,
+        avatarUrl: AVATAR_URLS[index % AVATAR_URLS.length],
       },
     });
 

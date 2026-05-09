@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { designService, type DesignRequest, type UpdateDesignDto, type ShopAddress } from '../services/design';
 import { addressService, type ClientAddress } from '../services/address';
 import { bookingService } from '../services/booking';
+import { uploadService } from '../services/upload';
 import { useAuth } from '../contexts/AuthContext';
 import dayjs from 'dayjs';
 
@@ -31,20 +32,22 @@ const DesignDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [requestingQuote, setRequestingQuote] = useState(false);
+  const [selectedTechsForQuote, setSelectedTechsForQuote] = useState<number[]>([]);
 
   // Edit modal state
   const [showEditModal, setShowEditModal] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editImages, setEditImages] = useState<string[]>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
 
   // Delete modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // Technician switch modal state
-  const [showTechModal, setShowTechModal] = useState(false);
-  const [switchingTech, setSwitchingTech] = useState(false);
+
 
   // Booking modal state
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -72,11 +75,34 @@ const DesignDetail: React.FC = () => {
       // Initialize edit form values
       setEditTitle(data.title || '');
       setEditDescription(data.description || '');
+      setEditImages(data.imageUrls || []);
     } catch (error) {
       console.error('Failed to load design:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const result = await uploadService.uploadImage(file);
+      setEditImages((prev) => [...prev, result.url]);
+    } catch (error) {
+      alert('图片上传失败，请重试');
+    } finally {
+      setUploadingImage(false);
+      if (editFileInputRef.current) {
+        editFileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveEditImage = (index: number) => {
+    setEditImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleEdit = async () => {
@@ -86,10 +112,11 @@ const DesignDetail: React.FC = () => {
       const updateData: UpdateDesignDto = {
         title: editTitle.trim() || undefined,
         description: editDescription.trim() || undefined,
+        imageUrls: editImages.length > 0 ? editImages : undefined,
       };
       await designService.updateDesign(parseInt(id), updateData);
+      await loadDesign(parseInt(id));
       setShowEditModal(false);
-      navigate('/designs');
     } catch (error: any) {
       alert(error.response?.data?.message || '更新设计失败');
     } finally {
@@ -169,11 +196,46 @@ const DesignDetail: React.FC = () => {
     if (!id) return;
     setRequestingQuote(true);
     try {
-      await designService.requestQuote(parseInt(id));
+      // If only one technician, use that one
+      // If multiple technicians selected, create quote requests for each
+      const techsToQuote = technicians && technicians.length === 1 
+        ? [technicians[0].id]
+        : selectedTechsForQuote;
+      
+      if (techsToQuote.length === 0) {
+        alert('请至少选择一个美甲师');
+        setRequestingQuote(false);
+        return;
+      }
+
+      // Send quote request to current design's technician
+      // For multiple technicians, we need to create separate design requests
+      if (techsToQuote.length === 1 && techsToQuote[0] === design?.technician?.id) {
+        // Quote current design
+        await designService.requestQuote(parseInt(id));
+      } else {
+        // For other technicians, create new design requests
+        for (const techId of techsToQuote) {
+          if (techId !== design?.technician?.id) {
+            await designService.createDesign({
+              title: design?.title || undefined,
+              imageUrls: design?.imageUrls || [],
+              description: design?.description || undefined,
+              techId: techId,
+            });
+          }
+        }
+        // Also quote current design if its technician is selected
+        if (techsToQuote.includes(design?.technician?.id || 0)) {
+          await designService.requestQuote(parseInt(id));
+        }
+      }
+      
       // 刷新设计详情
       await loadDesign(parseInt(id));
       setShowQuoteModal(false);
-      alert('报价请求已发送给美甲师');
+      setSelectedTechsForQuote([]);
+      alert(`报价请求已发送给${techsToQuote.length}位美甲师`);
     } catch (error: any) {
       alert(error.response?.data?.message || '发送报价请求失败');
     } finally {
@@ -194,34 +256,13 @@ const DesignDetail: React.FC = () => {
     }
   };
 
-  const handleRejectQuote = async () => {
-    if (!id) return;
-    try {
-      await designService.rejectQuote(parseInt(id));
-      await loadDesign(parseInt(id));
-      alert('报价已拒绝');
-    } catch (error: any) {
-      alert(error.response?.data?.message || '拒绝报价失败');
-    }
-  };
+
 
   // Booking handlers
   const handleOpenBooking = async () => {
-    setShowBookingModal(true);
-    setBookingStep('type');
-    setSelectedServiceType(null);
-    setSelectedDate('');
-    setSelectedTime('');
-    setSelectedShopAddress(null);
-    setSelectedClientAddress(null);
-    setBookingError('');
-
-    // Load client addresses for home service
-    try {
-      const addresses = await addressService.getAddresses();
-      setClientAddresses(addresses);
-    } catch (error) {
-      console.error('Failed to load addresses:', error);
+    // Navigate to CreateBooking page with design info
+    if (design?.technician) {
+      navigate(`/bookings/create?design_id=${design.id}&tech_id=${design.technician.id}`);
     }
   };
 
@@ -299,7 +340,7 @@ const DesignDetail: React.FC = () => {
     return types;
   };
 
-  const canCreateBooking = design?.status === 'accepted' && getAvailableServiceTypes().length > 0;
+
 
   if (loading) {
     return (
@@ -326,7 +367,7 @@ const DesignDetail: React.FC = () => {
   }
 
   return (
-    <div className="min-h-full bg-[linear-gradient(180deg,#fff8fa_0%,#f8f9fc_24%,#f5f6f8_100%)] pb-32">
+    <div className="min-h-full bg-[linear-gradient(180deg,#fff8fa_0%,#f8f9fc_24%,#f5f6f8_100%)] pb-28">
       {/* Header */}
       <div className="sticky top-0 z-10 border-b border-white/60 bg-white/82 px-5 app-header-safe pb-4 backdrop-blur-md">
         <div className="flex items-center justify-between gap-4">
@@ -369,11 +410,49 @@ const DesignDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* Content */}
+      {/* Content - Main Design View */}
       <div className="p-5 space-y-4">
-        {/* Status Card */}
+        {/* Main Design Card - Title, Images, Description */}
         <div className="bg-white rounded-[28px] p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
-          <div className="flex items-center gap-4">
+          {/* Title */}
+          <div className="mb-4">
+            <h2 className="text-heading-2 text-[var(--color-text)] font-semibold">
+              {design.title || '未命名设计'}
+            </h2>
+            <p className="text-caption text-[var(--color-text-muted)] mt-1">
+              {dayjs(design.createdAt).format('YYYY-MM-DD HH:mm')}
+            </p>
+          </div>
+
+          {/* Images Gallery */}
+          {design.imageUrls.length > 0 && (
+            <div className="mb-4">
+              <div className="grid grid-cols-3 gap-2">
+                {design.imageUrls.map((url, index) => (
+                  <div key={index} className="aspect-square rounded-xl overflow-hidden bg-slate-100">
+                    <img
+                      src={url}
+                      alt={`设计图片${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Description */}
+          {design.description && (
+            <div className="p-4 bg-slate-50 rounded-xl">
+              <p className="text-body-sm text-[var(--color-text)]">{design.description}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Quote Status & Info */}
+        <div className="bg-white rounded-[28px] p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
+          {/* Status Header */}
+          <div className="flex items-center gap-4 mb-4">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${getStatusColor(design.status)}`}>
               {getStatusIcon(design.status)}
             </div>
@@ -383,167 +462,105 @@ const DesignDetail: React.FC = () => {
                 {getStatusText(design.status)}
               </p>
             </div>
-            <span className="text-caption text-[var(--color-text-muted)]">
-              {dayjs(design.createdAt).format('MM-DD HH:mm')}
-            </span>
           </div>
-        </div>
 
-        {/* Images Gallery */}
-        {design.imageUrls.length > 0 && (
-          <div className="bg-white rounded-[28px] p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
-            <h3 className="text-body font-medium text-[var(--color-text)] mb-4">设计图片</h3>
-            <div className="grid grid-cols-3 gap-2">
-              {design.imageUrls.map((url, index) => (
-                <div key={index} className="aspect-square rounded-xl overflow-hidden bg-slate-100">
-                  <img
-                    src={url}
-                    alt={`设计图片${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
+          {/* Quote Info - When quoted or accepted */}
+          {(design.quotePrice || design.status === 'quoted' || design.status === 'accepted' || design.status === 'converted') && design.technician && (
+            <div className="border-t border-slate-100 pt-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden">
+                  {design.technician.avatarUrl ? (
+                    <img src={design.technician.avatarUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  )}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Technician Info */}
-        {design.technician && (
-          <div className="bg-white rounded-[28px] p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-body font-medium text-[var(--color-text)]">服务美甲师</h3>
-              {technicians && technicians.length > 1 && design.status === 'pending_quote' && (
-                <button
-                  onClick={() => setShowTechModal(true)}
-                  className="text-caption text-[var(--color-primary)] flex items-center gap-1"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                  </svg>
-                  切换美甲师
-                </button>
+                <div>
+                  <p className="text-body font-medium text-[var(--color-text)]">{design.technician.name}</p>
+                  <p className="text-caption text-[var(--color-text-muted)]">报价美甲师</p>
+                </div>
+              </div>
+              
+              {design.quotePrice && (
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-[#FF6B8A]/10 to-[#FF8FA3]/10 rounded-xl mb-3">
+                  <span className="text-body text-[var(--color-text)]">报价金额</span>
+                  <span className="text-heading-1 text-[var(--color-primary)]">¥{design.quotePrice}</span>
+                </div>
               )}
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden">
-                {design.technician.avatarUrl ? (
-                  <img src={design.technician.avatarUrl} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <svg className="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                )}
-              </div>
-              <div>
-                <p className="text-body font-medium text-[var(--color-text)]">{design.technician.name}</p>
-                <p className="text-caption text-[var(--color-text-muted)]">专属美甲师</p>
-              </div>
-              <button
-                onClick={() => navigate(`/chat?tech_id=${design.technician?.id}`)}
-                className="ml-auto px-4 py-2 bg-[var(--color-primary-soft)] text-[var(--color-primary)] text-body-sm font-medium rounded-full"
-              >
-                联系
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Quote Section */}
-        {design.status === 'pending_quote' && (
-          <div className="bg-white rounded-[28px] p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-body font-medium text-[var(--color-text)]">等待报价</p>
-                <p className="text-caption text-[var(--color-text-muted)]">向美甲师发起报价请求</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowQuoteModal(true)}
-              className="w-full py-3.5 bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-pink-200"
-            >
-              发起报价
-            </button>
-          </div>
-        )}
-
-        {/* Quote Info - When quoted */}
-        {design.quotePrice && (
-          <div className="bg-white rounded-[28px] p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
-            <h3 className="text-body font-medium text-[var(--color-text)] mb-4">报价信息</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-[#FF6B8A]/10 to-[#FF8FA3]/10 rounded-xl">
-                <span className="text-body text-[var(--color-text)]">报价金额</span>
-                <span className="text-heading-1 text-[var(--color-primary)]">¥{design.quotePrice}</span>
-              </div>
+              
               {design.quoteRemark && (
-                <div className="p-4 bg-slate-50 rounded-xl">
-                  <p className="text-caption text-[var(--color-text-muted)] mb-2">报价说明</p>
+                <div className="p-3 bg-slate-50 rounded-xl">
+                  <p className="text-caption text-[var(--color-text-muted)] mb-1">报价说明</p>
                   <p className="text-body-sm text-[var(--color-text)]">{design.quoteRemark}</p>
                 </div>
               )}
             </div>
+          )}
+        </div>
 
-            {/* Action Buttons based on status */}
-            {design.status === 'quoted' && (
-              <div className="flex gap-3 mt-4">
-                <button
-                  onClick={handleRejectQuote}
-                  className="flex-1 py-3 bg-slate-100 text-[var(--color-text)] text-body font-medium rounded-full active:scale-95 transition-transform"
-                >
-                  拒绝报价
-                </button>
-                <button
-                  onClick={handleAcceptQuote}
-                  className="flex-1 py-3 bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-pink-200"
-                >
-                  接受报价
-                </button>
-              </div>
-            )}
+      </div>
 
-            {canCreateBooking && (
+      {/* Bottom Action Buttons - Fixed at bottom with safe area */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-100 px-5 py-4 pb-safe">
+        <div className="max-w-md mx-auto space-y-3">
+          {/* Pending Quote - Request Quote & Create Booking side by side */}
+          {design.status === 'pending_quote' && (
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowQuoteModal(true)}
+                className="flex-1 py-4 bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-pink-200"
+              >
+                发起报价
+              </button>
               <button
                 onClick={handleOpenBooking}
-                className="w-full mt-4 py-3.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-emerald-200"
+                className="flex-1 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-emerald-200"
               >
-                立即预约
-              </button>
-            )}
-            {design.status === 'accepted' && !canCreateBooking && (
-              <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-500">
-                当前美甲师未开启可预约服务，暂时无法从该设计发起预约。
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Converted Status */}
-        {design.status === 'converted' && (
-          <div className="bg-white rounded-[28px] p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <p className="text-body font-medium text-[var(--color-text)]">已转为预约</p>
-                <p className="text-caption text-[var(--color-text-muted)]">此设计已生成预约订单</p>
-              </div>
-              <button
-                onClick={() => navigate('/bookings')}
-                className="px-4 py-2 bg-purple-50 text-purple-600 text-body-sm font-medium rounded-full"
-              >
-                查看预约
+                发起预约
               </button>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Quoted - Accept/Reject & Create Booking side by side */}
+          {design.status === 'quoted' && (
+            <div className="flex gap-3">
+              <button
+                onClick={handleOpenBooking}
+                className="flex-1 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-emerald-200"
+              >
+                发起预约
+              </button>
+              <button
+                onClick={handleAcceptQuote}
+                className="flex-1 py-4 bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-pink-200"
+              >
+                接受报价
+              </button>
+            </div>
+          )}
+
+          {/* Accepted - Create Booking */}
+          {design.status === 'accepted' && (
+            <button
+              onClick={handleOpenBooking}
+              className="w-full py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-emerald-200"
+            >
+              发起预约
+            </button>
+          )}
+
+          {/* Converted - View Booking */}
+          {design.status === 'converted' && (
+            <button
+              onClick={() => navigate('/bookings')}
+              className="w-full py-4 bg-purple-500 text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-purple-200"
+            >
+              查看预约
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Quote Request Modal */}
@@ -553,7 +570,7 @@ const DesignDetail: React.FC = () => {
           onClick={() => setShowQuoteModal(false)}
         >
           <div
-            className="w-full max-w-sm bg-white rounded-2xl p-6"
+            className="w-full max-w-sm bg-white rounded-2xl p-6 max-h-[80vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-center mb-6">
@@ -564,9 +581,77 @@ const DesignDetail: React.FC = () => {
               </div>
               <h3 className="text-body font-medium text-[var(--color-text)] mb-2">发起报价请求</h3>
               <p className="text-caption text-[var(--color-text-muted)]">
-                将向美甲师发送报价请求，美甲师会根据您的设计需求给出报价
+                选择美甲师发送报价请求
               </p>
             </div>
+
+            {/* Technician Selection */}
+            {technicians && technicians.length > 1 ? (
+              <div className="space-y-3 mb-6">
+                <p className="text-caption text-[var(--color-text-muted)]">选择要发送报价请求的美甲师：</p>
+                {technicians.map((tech) => (
+                  <button
+                    key={tech.id}
+                    onClick={() => {
+                      if (selectedTechsForQuote.includes(tech.id)) {
+                        setSelectedTechsForQuote(prev => prev.filter(id => id !== tech.id));
+                      } else {
+                        setSelectedTechsForQuote(prev => [...prev, tech.id]);
+                      }
+                    }}
+                    className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+                      selectedTechsForQuote.includes(tech.id)
+                        ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]'
+                        : 'border-slate-100 bg-white hover:border-slate-200'
+                    }`}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden">
+                      {tech.avatarUrl ? (
+                        <img src={tech.avatarUrl} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-body font-medium text-[var(--color-text)]">{tech.name}</p>
+                      <p className="text-caption text-[var(--color-text-muted)]">{tech.city || '暂无城市信息'}</p>
+                    </div>
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                      selectedTechsForQuote.includes(tech.id)
+                        ? 'border-[var(--color-primary)] bg-[var(--color-primary)]'
+                        : 'border-slate-300'
+                    }`}>
+                      {selectedTechsForQuote.includes(tech.id) && (
+                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : technicians && technicians.length === 1 ? (
+              <div className="mb-6 p-4 bg-slate-50 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden">
+                    {technicians[0].avatarUrl ? (
+                      <img src={technicians[0].avatarUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-body font-medium text-[var(--color-text)]">{technicians[0].name}</p>
+                    <p className="text-caption text-[var(--color-text-muted)]">默认美甲师</p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
             <div className="flex gap-3">
               <button
                 onClick={() => setShowQuoteModal(false)}
@@ -576,10 +661,10 @@ const DesignDetail: React.FC = () => {
               </button>
               <button
                 onClick={handleRequestQuote}
-                disabled={requestingQuote}
+                disabled={requestingQuote || (technicians && technicians.length > 1 && selectedTechsForQuote.length === 0)}
                 className="flex-1 py-3 bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] text-white text-body font-medium rounded-full active:scale-95 transition-transform disabled:opacity-50"
               >
-                {requestingQuote ? '发送中...' : '确认发送'}
+                {requestingQuote ? '发送中...' : `确认发送${selectedTechsForQuote.length > 0 ? `(${selectedTechsForQuote.length})` : ''}`}
               </button>
             </div>
           </div>
@@ -628,6 +713,54 @@ const DesignDetail: React.FC = () => {
                   rows={4}
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[var(--color-primary)] focus:outline-none text-sm resize-none"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-text)] mb-2">图片</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {editImages.map((image, index) => (
+                    <div key={index} className="relative">
+                      <img
+                        src={image}
+                        alt={`图片 ${index + 1}`}
+                        className="w-20 h-20 rounded-xl object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveEditImage(index)}
+                        className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  {editImages.length < 5 && (
+                    <button
+                      type="button"
+                      onClick={() => editFileInputRef.current?.click()}
+                      disabled={uploadingImage}
+                      className="w-20 h-20 rounded-xl bg-slate-50 border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:border-[#FF6B8A] hover:text-[#FF6B8A] transition"
+                    >
+                      {uploadingImage ? (
+                        <span className="text-xs">上传中...</span>
+                      ) : (
+                        <>
+                          <svg className="w-6 h-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          <span className="text-xs">添加</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                  <input
+                    ref={editFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleEditImageUpload}
+                    className="hidden"
+                  />
+                </div>
+                <p className="text-xs text-slate-400">最多可上传5张图片</p>
               </div>
             </div>
 
@@ -691,83 +824,7 @@ const DesignDetail: React.FC = () => {
         </div>
       )}
 
-      {/* Technician Switch Modal */}
-      {showTechModal && technicians && technicians.length > 1 && (
-        <div
-          className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-5"
-          onClick={() => setShowTechModal(false)}
-        >
-          <div
-            className="w-full max-w-sm bg-white rounded-2xl p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[var(--color-primary-soft)] flex items-center justify-center">
-                <svg className="w-8 h-8 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <h3 className="text-body font-medium text-[var(--color-text)] mb-2">切换美甲师</h3>
-              <p className="text-caption text-[var(--color-text-muted)]">
-                选择其他已绑定的美甲师为您服务
-              </p>
-            </div>
 
-            <div className="space-y-3 mb-6">
-              {technicians.map((tech) => (
-                <button
-                  key={tech.id}
-                  onClick={async () => {
-                    if (!id || tech.id === design?.technician?.id) return;
-                    setSwitchingTech(true);
-                    try {
-                      await designService.switchTechnician(parseInt(id), tech.id);
-                      setShowTechModal(false);
-                      navigate('/designs');
-                    } catch (error: any) {
-                      alert(error.response?.data?.message || '切换美甲师失败');
-                    } finally {
-                      setSwitchingTech(false);
-                    }
-                  }}
-                  disabled={tech.id === design?.technician?.id || switchingTech}
-                  className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
-                    tech.id === design?.technician?.id
-                      ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]'
-                      : 'border-slate-100 bg-white hover:border-slate-200'
-                  } ${switchingTech ? 'opacity-50' : ''}`}
-                >
-                  <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden">
-                    {tech.avatarUrl ? (
-                      <img src={tech.avatarUrl} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <svg className="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    )}
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="text-body font-medium text-[var(--color-text)]">{tech.name}</p>
-                    <p className="text-caption text-[var(--color-text-muted)]">
-                      {tech.isDefault ? '默认美甲师' : tech.bindSource === 'invite' ? '邀请绑定' : '手动绑定'}
-                    </p>
-                  </div>
-                  {tech.id === design?.technician?.id && (
-                    <span className="text-caption text-[var(--color-primary)]">当前</span>
-                  )}
-                </button>
-              ))}
-            </div>
-
-            <button
-              onClick={() => setShowTechModal(false)}
-              className="w-full py-3 bg-slate-100 text-[var(--color-text)] text-body font-medium rounded-full active:scale-95 transition-transform"
-            >
-              取消
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Booking Modal */}
       {showBookingModal && design?.technician && (
@@ -1035,28 +1092,6 @@ const DesignDetail: React.FC = () => {
         </div>
       )}
 
-      {/* Bottom Actions */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[var(--color-border-light)] px-5 py-4 safe-area-bottom">
-        <div className="flex gap-3">
-          <button
-            onClick={() => navigate('/chat')}
-            className="flex-1 py-3.5 bg-slate-100 text-[var(--color-text)] text-body font-medium rounded-full active:scale-95 transition-transform flex items-center justify-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            联系美甲师
-          </button>
-          {design.status === 'pending_quote' && (
-            <button
-              onClick={() => setShowQuoteModal(true)}
-              className="flex-1 py-3.5 bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-pink-200"
-            >
-              发起报价
-            </button>
-          )}
-        </div>
-      </div>
     </div>
   );
 };

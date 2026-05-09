@@ -25,6 +25,7 @@ import { TechnicianMessagesModule } from './technician-messages/technician-messa
 import { TechnicianWorksModule } from './technician-works/technician-works.module';
 import { TechnicianServicesModule } from './technician-services/technician-services.module';
 import { ArtistApplicationsModule } from './artist-applications/artist-applications.module';
+import { CustomServiceRequestsModule } from './custom-service-requests/custom-service-requests.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { DevelopmentAuthSeedService } from './development-auth-seed.service';
 import { DevelopmentDemoSeedService } from './development-demo-seed.service';
@@ -59,6 +60,7 @@ import { DevelopmentDemoSeedService } from './development-demo-seed.service';
     TechnicianServicesModule,
     TechnicianUploadModule,
     ArtistApplicationsModule,
+    CustomServiceRequestsModule,
   ],
   controllers: [AppController],
   providers: [AppService, DevelopmentAuthSeedService, DevelopmentDemoSeedService],

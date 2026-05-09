@@ -10,6 +10,7 @@ export interface NailWork {
   likeCount: number;
   commentCount: number;
   technicianName: string;
+  technicianId?: number;
   createdAt: string;
   updatedAt: string;
 }

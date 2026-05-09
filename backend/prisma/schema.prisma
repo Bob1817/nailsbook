@@ -85,6 +85,7 @@ model Technician {
   nailWorks      NailWork[]
   designRequests ClientDesignRequest[]
   conversations  Conversation[]
+  customServiceRequests CustomServiceRequest[]
 }
 
 model Customer {
@@ -197,6 +198,7 @@ model ClientUser {
   customers      Customer[]
   designRequests ClientDesignRequest[]
   conversations  Conversation[]
+  customServiceRequests CustomServiceRequest[]
 }
 
 model ClientTechBinding {
@@ -234,6 +236,7 @@ model ClientAddress {
   updatedAt     DateTime   @default(now()) @updatedAt
   client        ClientUser @relation(fields: [clientId], references: [id])
   bookings      Booking[]
+  customServiceRequests CustomServiceRequest[]
 
   @@index([clientId])
 }
@@ -318,6 +321,39 @@ model ClientDesignRequest {
   @@index([clientId])
   @@index([techId])
   @@index([status])
+}
+
+model CustomServiceRequest {
+  id            Int        @id @default(autoincrement())
+  requestNo     String     @unique
+  clientId      Int
+  techId        Int
+  title         String?
+  description   String?
+  images        String?    // JSON array of image URLs
+  referenceWorkIds String? // JSON array of referenced work IDs
+  serviceDate   String?
+  startTime     String?
+  serviceType   String?    // 上门美甲 / 到店美甲
+  addressId     Int?
+  shopAddress   String?    // JSON of shop address
+  status        String     @default("pending_quote") // pending_quote, quoted, accepted, rejected, cancelled
+  quotePrice    Float?
+  quoteRemark   String?
+  quotedAt      DateTime?
+  acceptedAt    DateTime?
+  rejectedAt    DateTime?
+  cancelledAt   DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @default(now()) @updatedAt
+  client        ClientUser @relation(fields: [clientId], references: [id])
+  technician    Technician @relation(fields: [techId], references: [id])
+  clientAddress ClientAddress? @relation(fields: [addressId], references: [id])
+
+  @@index([clientId])
+  @@index([techId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Conversation {
