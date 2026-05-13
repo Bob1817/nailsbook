@@ -24,7 +24,7 @@ export class ClientHomeService {
           }
         },
       }),
-      this.prisma.booking.findFirst({
+      this.prisma.order.findFirst({
         where: {
           clientUserId,
           technicianId: binding.techId,
@@ -46,10 +46,10 @@ export class ClientHomeService {
         ...this.mapWork(work),
         technicianId: work.techId,
       })),
-      latestBooking: latestBooking
+      latestOrder: latestBooking
         ? {
             id: latestBooking.id,
-            bookingNo: latestBooking.bookingNo,
+            orderNo: latestBooking.orderNo,
             status: latestBooking.status,
             startTime: latestBooking.startTime,
             endTime: latestBooking.endTime,

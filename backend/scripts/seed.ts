@@ -247,85 +247,35 @@ async function main() {
     seededCustomers.push(customer);
   }
 
-  const quotes = [
+  const orders = [
     {
-      quoteNo: 'QT20260428001',
-      customerId: seededCustomers[0].id,
-      title: '法式渐变',
-      description: '上门法式渐变服务',
-      price: 299,
-      status: 'pending',
-    },
-    {
-      quoteNo: 'QT20260428002',
-      customerId: seededCustomers[1].id,
-      title: '纯色跳色',
-      description: '上门纯色跳色服务',
-      price: 399,
-      status: 'pending',
-    },
-    {
-      quoteNo: 'QT20260428003',
-      customerId: seededCustomers[2].id,
-      title: '水晶延长款',
-      description: '上门水晶延长服务',
-      price: 499,
-      status: 'pending',
-    },
-  ];
-
-  const quoteRecords: Array<{ id: number }> = [];
-  for (const input of quotes) {
-    const quote = await prisma.quote.upsert({
-      where: { quoteNo: input.quoteNo },
-      update: {
-        title: input.title,
-        description: input.description,
-        price: input.price,
-        status: input.status,
-      },
-      create: {
-        quoteNo: input.quoteNo,
-        technicianId: technician.id,
-        customerId: input.customerId,
-        title: input.title,
-        description: input.description,
-        price: input.price,
-        status: input.status,
-      },
-    });
-    quoteRecords.push(quote);
-  }
-
-  const bookings = [
-    {
-      bookingNo: 'BK20260428001',
-      quoteId: quoteRecords[0].id,
+      orderNo: 'OD20260428001',
       customerId: seededCustomers[0].id,
       address: '朝阳区建国路88号',
       startTime: new Date('2026-04-28T10:00:00.000Z'),
       endTime: new Date('2026-04-28T12:00:00.000Z'),
-      status: 'pending_confirm',
+      quotePrice: 299,
+      status: 'pending_quote',
       isDepositPaid: false,
     },
     {
-      bookingNo: 'BK20260428002',
-      quoteId: quoteRecords[1].id,
+      orderNo: 'OD20260428002',
       customerId: seededCustomers[1].id,
       address: '海淀区中关村大街1号',
       startTime: new Date('2026-04-28T14:00:00.000Z'),
       endTime: new Date('2026-04-28T16:00:00.000Z'),
+      quotePrice: 399,
       status: 'confirmed',
       isDepositPaid: true,
       confirmedAt: new Date('2026-04-27T10:00:00.000Z'),
     },
     {
-      bookingNo: 'BK20260428003',
-      quoteId: quoteRecords[2].id,
+      orderNo: 'OD20260428003',
       customerId: seededCustomers[2].id,
       address: '西城区金融街19号',
       startTime: new Date('2026-04-28T18:00:00.000Z'),
       endTime: new Date('2026-04-28T20:00:00.000Z'),
+      quotePrice: 499,
       status: 'completed',
       isDepositPaid: true,
       confirmedAt: new Date('2026-04-27T12:00:00.000Z'),
@@ -333,26 +283,27 @@ async function main() {
     },
   ];
 
-  for (const input of bookings) {
-    await prisma.booking.upsert({
-      where: { bookingNo: input.bookingNo },
+  for (const input of orders) {
+    await prisma.order.upsert({
+      where: { orderNo: input.orderNo },
       update: {
         address: input.address,
         startTime: input.startTime,
         endTime: input.endTime,
+        quotePrice: input.quotePrice,
         status: input.status,
         isDepositPaid: input.isDepositPaid,
         confirmedAt: input.confirmedAt,
         completedAt: input.completedAt,
       },
       create: {
-        bookingNo: input.bookingNo,
-        quoteId: input.quoteId,
+        orderNo: input.orderNo,
         technicianId: technician.id,
         customerId: input.customerId,
         address: input.address,
         startTime: input.startTime,
         endTime: input.endTime,
+        quotePrice: input.quotePrice,
         status: input.status,
         isDepositPaid: input.isDepositPaid,
         confirmedAt: input.confirmedAt,

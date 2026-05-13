@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../common/prisma/prisma.service';
 
 @Injectable()
@@ -33,31 +33,6 @@ export class SchedulesService {
     this.logger.log(`Processed ${expiredSubscriptions.length} expired subscriptions`);
   }
 
-  @Cron(CronExpression.EVERY_HOUR)
-  async handleQuoteExpiration() {
-    this.logger.log('Running quote expiration check...');
-
-    const now = new Date();
-
-    const expiredQuotes = await this.prisma.quote.findMany({
-      where: {
-        status: 'pending',
-        expiredAt: { lt: now },
-      },
-    });
-
-    for (const quote of expiredQuotes) {
-      await this.prisma.quote.update({
-        where: { id: quote.id },
-        data: { status: 'expired' },
-      });
-
-      this.logger.log(`Quote ${quote.id} expired`);
-    }
-
-    this.logger.log(`Processed ${expiredQuotes.length} expired quotes`);
-  }
-
   @Cron('0 0 1 * * *')
   async generateMonthlyReport() {
     this.logger.log('Generating monthly report...');
@@ -69,8 +44,8 @@ export class SchedulesService {
     const [
       newTechnicians,
       newCustomers,
-      totalBookings,
-      completedBookings,
+      totalOrders,
+      completedOrders,
       totalRevenue,
     ] = await Promise.all([
       this.prisma.technician.count({
@@ -89,7 +64,7 @@ export class SchedulesService {
           },
         },
       }),
-      this.prisma.booking.count({
+      this.prisma.order.count({
         where: {
           createdAt: {
             gte: firstDayOfMonth,
@@ -97,7 +72,7 @@ export class SchedulesService {
           },
         },
       }),
-      this.prisma.booking.count({
+      this.prisma.order.count({
         where: {
           status: 'completed',
           completedAt: {
@@ -120,8 +95,8 @@ export class SchedulesService {
     this.logger.log(`Monthly Report for ${firstDayOfMonth.toISOString().split('T')[0]}:`);
     this.logger.log(`- New Technicians: ${newTechnicians}`);
     this.logger.log(`- New Customers: ${newCustomers}`);
-    this.logger.log(`- Total Bookings: ${totalBookings}`);
-    this.logger.log(`- Completed Bookings: ${completedBookings}`);
+    this.logger.log(`- Total Orders: ${totalOrders}`);
+    this.logger.log(`- Completed Orders: ${completedOrders}`);
     this.logger.log(`- Total Revenue: ${totalRevenue._sum.amount || 0}`);
   }
 }

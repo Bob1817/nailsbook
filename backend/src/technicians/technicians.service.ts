@@ -73,8 +73,7 @@ export class TechniciansService {
       where: { id },
       include: {
         customers: true,
-        quotes: true,
-        bookings: true,
+        orders: true,
         revenues: true,
         subscription: true,
       },

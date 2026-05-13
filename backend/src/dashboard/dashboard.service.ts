@@ -10,25 +10,29 @@ export class DashboardService {
       totalTechnicians,
       activeTechnicians,
       totalCustomers,
-      totalBookings,
-      pendingBookings,
-      completedBookings,
+      totalOrders,
+      pendingOrders,
+      pendingHome,
+      pendingShop,
+      completedOrders,
       totalRevenue,
       totalSubscriptions,
       activeSubscriptions,
-      recentBookings,
+      recentOrders,
       recentRevenues,
     ] = await Promise.all([
       this.prisma.technician.count(),
       this.prisma.technician.count({ where: { status: 'active' } }),
       this.prisma.customer.count(),
-      this.prisma.booking.count(),
-      this.prisma.booking.count({ where: { status: 'pending_confirm' } }),
-      this.prisma.booking.count({ where: { status: 'completed' } }),
+      this.prisma.order.count(),
+      this.prisma.order.count({ where: { status: 'pending_confirm' } }),
+      this.prisma.order.count({ where: { status: 'pending_home' } }),
+      this.prisma.order.count({ where: { status: 'pending_shop' } }),
+      this.prisma.order.count({ where: { status: 'completed' } }),
       this.prisma.revenue.aggregate({ _sum: { amount: true } }),
       this.prisma.technicianSubscription.count(),
       this.prisma.technicianSubscription.count({ where: { status: 'active' } }),
-      this.prisma.booking.findMany({
+      this.prisma.order.findMany({
         take: 5,
         orderBy: { createdAt: 'desc' },
         include: {
@@ -89,10 +93,12 @@ export class DashboardService {
         total: totalCustomers,
         newLast30Days: newCustomersLast30Days,
       },
-      bookingStats: {
-        total: totalBookings,
-        pending: pendingBookings,
-        completed: completedBookings,
+      orderStats: {
+        total: totalOrders,
+        pending: pendingOrders,
+        pendingHome,
+        pendingShop,
+        completed: completedOrders,
       },
       revenueStats: {
         total: totalRevenue._sum.amount || 0,
@@ -103,7 +109,7 @@ export class DashboardService {
         active: activeSubscriptions,
         byPlan: subscriptionStats,
       },
-      recentBookings,
+      recentOrders,
       recentRevenues,
     };
   }
@@ -154,7 +160,7 @@ export class DashboardService {
         technicianId: t.technicianId,
         technicianName: tech?.name || 'Unknown',
         totalRevenue: t._sum.amount || 0,
-        bookingCount: t._count.id,
+        orderCount: t._count.id,
       };
     });
 

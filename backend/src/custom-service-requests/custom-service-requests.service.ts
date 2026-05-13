@@ -353,28 +353,14 @@ export class CustomServiceRequestsService {
         },
       });
 
-      const quote = await tx.quote.create({
-        data: {
-          quoteNo: this.generateQuoteNo(),
-          technicianId: request.techId,
-          customerId: customer.id,
-          title: request.title || '自定义服务',
-          description: request.description,
-          price: request.quotePrice ?? 0,
-          depositAmount: 0,
-          status: 'accepted',
-        },
-      });
-
       const startTime = request.serviceDate && request.startTime
         ? new Date(`${request.serviceDate}T${request.startTime}:00`)
         : new Date();
       const endTime = new Date(startTime);
 
-      const booking = await tx.booking.create({
+      const order = await tx.order.create({
         data: {
-          bookingNo: this.generateBookingNo(),
-          quoteId: quote.id,
+          orderNo: this.generateOrderNo(),
           technicianId: request.techId,
           customerId: customer.id,
           clientUserId,
@@ -387,7 +373,7 @@ export class CustomServiceRequestsService {
           serviceType: request.serviceType,
           remark: request.description,
           quotePrice: request.quotePrice ?? 0,
-          status: 'pending_confirm',
+          status: 'pending_quote',
           depositAmount: 0,
           depositStatus: 'pending',
           source: 'client_webapp',
@@ -405,7 +391,7 @@ export class CustomServiceRequestsService {
       });
 
       if (conversation) {
-        const preview = `已接受报价，预约已创建：${request.title || '自定义服务'}`;
+        const preview = `已接受报价，订单已创建：${request.title || '自定义服务'}`;
         await tx.message.create({
           data: {
             conversationId: conversation.id,
@@ -414,8 +400,8 @@ export class CustomServiceRequestsService {
             receiverId: request.techId,
             messageType: 'system',
             content: preview,
-            relatedType: 'booking',
-            relatedId: booking.id,
+            relatedType: 'order',
+            relatedId: order.id,
           },
         });
 
@@ -545,11 +531,7 @@ export class CustomServiceRequestsService {
     return `CS${Date.now()}${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
   }
 
-  private generateQuoteNo() {
-    return `QT${Date.now()}${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
-  }
-
-  private generateBookingNo() {
-    return `BK${Date.now()}${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+  private generateOrderNo() {
+    return `OD${Date.now()}${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
   }
 }

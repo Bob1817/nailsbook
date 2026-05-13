@@ -66,30 +66,14 @@ export class CustomersService {
             phone: true,
           },
         },
-        quotes: {
+        orders: {
           select: {
             id: true,
-            quoteNo: true,
-            price: true,
-            status: true,
-            createdAt: true,
-          },
-          orderBy: { createdAt: 'desc' },
-        },
-        bookings: {
-          select: {
-            id: true,
-            bookingNo: true,
+            orderNo: true,
             startTime: true,
             status: true,
             createdAt: true,
             isDepositPaid: true,
-            quote: {
-              select: {
-                title: true,
-                price: true,
-              },
-            },
           },
           orderBy: { startTime: 'desc' },
         },

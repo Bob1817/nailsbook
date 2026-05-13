@@ -34,7 +34,7 @@ export class RevenuesService {
         include: {
           technician: { select: { id: true, name: true, phone: true } },
           customer: { select: { id: true, name: true, phone: true } },
-          booking: { select: { id: true, bookingNo: true } },
+          order: { select: { id: true, orderNo: true } },
         },
         orderBy: { recognizedAt: 'desc' },
       }),
@@ -53,7 +53,7 @@ export class RevenuesService {
       include: {
         technician: { select: { id: true, name: true, phone: true } },
         customer: { select: { id: true, name: true, phone: true } },
-        booking: true,
+        order: true,
       },
     });
 
@@ -80,7 +80,7 @@ export class RevenuesService {
       include: {
         technician: { select: { name: true, phone: true } },
         customer: { select: { name: true, phone: true } },
-        booking: { select: { bookingNo: true } },
+        order: { select: { orderNo: true } },
       },
       orderBy: { recognizedAt: 'desc' },
     });
@@ -89,7 +89,7 @@ export class RevenuesService {
     const rows = revenues.map((r) =>
       [
         r.revenueNo,
-        r.booking?.bookingNo || '',
+        r.order?.orderNo || '',
         r.technician?.name || '',
         r.customer?.name || '',
         r.amount,

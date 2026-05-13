@@ -5,8 +5,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { TechniciansModule } from './technicians/technicians.module';
 import { CustomersModule } from './customers/customers.module';
-import { QuotesModule } from './quotes/quotes.module';
-import { BookingsModule } from './bookings/bookings.module';
+import { OrdersModule } from './orders/orders.module';
 import { RevenuesModule } from './revenues/revenues.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { DashboardModule } from './dashboard/dashboard.module';
@@ -19,7 +18,6 @@ import { ClientAddressesModule } from './client-addresses/client-addresses.modul
 import { ClientUploadModule } from './client-upload/client-upload.module';
 import { ClientDesignsModule } from './client-designs/client-designs.module';
 import { TechnicianUploadModule } from './technician-upload/technician-upload.module';
-import { ClientBookingsModule } from './client-bookings/client-bookings.module';
 import { ClientMessagesModule } from './client-messages/client-messages.module';
 import { TechnicianMessagesModule } from './technician-messages/technician-messages.module';
 import { TechnicianWorksModule } from './technician-works/technician-works.module';
@@ -40,8 +38,7 @@ import { DevelopmentDemoSeedService } from './development-demo-seed.service';
     AuthModule,
     TechniciansModule,
     CustomersModule,
-    QuotesModule,
-    BookingsModule,
+    OrdersModule,
     RevenuesModule,
     SubscriptionsModule,
     DashboardModule,
@@ -53,7 +50,6 @@ import { DevelopmentDemoSeedService } from './development-demo-seed.service';
     ClientAddressesModule,
     ClientUploadModule,
     ClientDesignsModule,
-    ClientBookingsModule,
     ClientMessagesModule,
     TechnicianMessagesModule,
     TechnicianWorksModule,
