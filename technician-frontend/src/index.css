@@ -52,6 +52,7 @@
 
 html {
   font-size: 16px;
+  overflow-x: hidden;
 }
 
 body {
@@ -60,6 +61,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--color-background);
   color: var(--color-text-primary);
+  overflow-x: hidden;
+  width: 100%;
 }
 
 #root {
