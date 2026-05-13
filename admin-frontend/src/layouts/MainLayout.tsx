@@ -50,10 +50,10 @@ const MainLayout: React.FC = () => {
       permission: 'quote:view',
     },
     {
-      key: '/bookings',
+      key: '/orders',
       icon: <CalendarOutlined />,
-      label: '预约管理',
-      permission: 'booking:view',
+      label: '订单管理',
+      permission: 'order:view',
     },
     {
       key: '/revenues',

@@ -80,7 +80,7 @@ const OperationLogs: React.FC = () => {
     technician: '美甲师',
     customer: '客户',
     quote: '报价',
-    booking: '预约',
+    order: '订单',
     revenue: '收入',
     subscription: '订阅',
     system: '系统',

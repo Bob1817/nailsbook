@@ -14,6 +14,17 @@ import type { DashboardOverview } from '../services/dashboard';
 
 const { Title } = Typography;
 
+const ORDER_STATUS_LABELS: Record<string, string> = {
+  pending_quote: '待报价',
+  pending_agree: '待同意',
+  pending_confirm: '待确认',
+  pending_home: '待上门',
+  pending_shop: '待到店',
+  in_progress: '服务中',
+  completed: '已完成',
+  cancelled: '已取消',
+};
+
 const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardOverview | null>(null);
@@ -40,29 +51,21 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  const bookingColumns = [
-    { title: '预约编号', dataIndex: 'bookingNo', key: 'bookingNo' },
+  const orderColumns = [
+    { title: '订单编号', dataIndex: 'orderNo', key: 'orderNo' },
     { title: '美甲师', dataIndex: ['technician', 'name'], key: 'technician' },
     { title: '客户', dataIndex: ['customer', 'name'], key: 'customer' },
-    { 
-      title: '预约时间', 
-      dataIndex: 'startTime', 
+    {
+      title: '预约时间',
+      dataIndex: 'startTime',
       key: 'startTime',
       render: (text: string) => new Date(text).toLocaleString('zh-CN'),
     },
-    { 
-      title: '状态', 
-      dataIndex: 'status', 
+    {
+      title: '状态',
+      dataIndex: 'status',
       key: 'status',
-      render: (status: string) => {
-        const statusMap: Record<string, string> = {
-          pending_confirm: '待确认',
-          confirmed: '已确认',
-          completed: '已完成',
-          cancelled: '已取消',
-        };
-        return statusMap[status] || status;
-      },
+      render: (status: string) => ORDER_STATUS_LABELS[status] || status,
     },
   ];
 
@@ -70,15 +73,15 @@ const Dashboard: React.FC = () => {
     { title: '收入编号', dataIndex: 'revenueNo', key: 'revenueNo' },
     { title: '美甲师', dataIndex: ['technician', 'name'], key: 'technician' },
     { title: '客户', dataIndex: ['customer', 'name'], key: 'customer' },
-    { 
-      title: '金额', 
-      dataIndex: 'amount', 
+    {
+      title: '金额',
+      dataIndex: 'amount',
       key: 'amount',
       render: (amount: number) => `¥${amount.toFixed(2)}`,
     },
-    { 
-      title: '确认时间', 
-      dataIndex: 'recognizedAt', 
+    {
+      title: '确认时间',
+      dataIndex: 'recognizedAt',
       key: 'recognizedAt',
       render: (text: string) => new Date(text).toLocaleString('zh-CN'),
     },
@@ -105,7 +108,7 @@ const Dashboard: React.FC = () => {
   return (
     <div>
       <Title level={4} style={{ marginBottom: 24 }}>数据概览</Title>
-      
+
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} lg={6}>
           <Card>
@@ -130,10 +133,10 @@ const Dashboard: React.FC = () => {
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title="预约总数"
-              value={data.bookingStats.total}
+              title="订单总数"
+              value={data.orderStats.total}
               prefix={<CalendarOutlined />}
-              suffix={<span style={{ fontSize: 14, color: '#999' }}>待确认: {data.bookingStats.pending}</span>}
+              suffix={<span style={{ fontSize: 14, color: '#999' }}>待上门: {data.orderStats.pendingHome}</span>}
             />
           </Card>
         </Col>
@@ -174,8 +177,8 @@ const Dashboard: React.FC = () => {
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title="已完成预约"
-              value={data.bookingStats.completed}
+              title="已完成订单"
+              value={data.orderStats.completed}
               prefix={<CalendarOutlined />}
             />
           </Card>
@@ -200,10 +203,10 @@ const Dashboard: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} lg={12}>
-          <Card title="最近预约">
+          <Card title="最近订单">
             <Table
-              columns={bookingColumns}
-              dataSource={data.recentBookings}
+              columns={orderColumns}
+              dataSource={data.recentOrders}
               rowKey="id"
               pagination={false}
               size="small"

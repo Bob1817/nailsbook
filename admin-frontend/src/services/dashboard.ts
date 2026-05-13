@@ -10,9 +10,11 @@ export interface DashboardOverview {
     total: number;
     newLast30Days: number;
   };
-  bookingStats: {
+  orderStats: {
     total: number;
     pending: number;
+    pendingHome: number;
+    pendingShop: number;
     completed: number;
   };
   revenueStats: {
@@ -29,9 +31,9 @@ export interface DashboardOverview {
       count: number;
     }>;
   };
-  recentBookings: Array<{
+  recentOrders: Array<{
     id: number;
-    bookingNo: string;
+    orderNo: string;
     startTime: string;
     status: string;
     technician?: { id: number; name: string };
@@ -57,7 +59,7 @@ export interface BusinessStats {
     technicianId: number;
     technicianName: string;
     totalRevenue: number;
-    bookingCount: number;
+    orderCount: number;
   }>;
 }
 

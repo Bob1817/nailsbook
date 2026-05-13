@@ -77,7 +77,7 @@ const Revenues: React.FC = () => {
     },
     { title: '美甲师', dataIndex: ['technician', 'name'], key: 'technician' },
     { title: '客户', dataIndex: ['customer', 'name'], key: 'customer' },
-    { title: '预约编号', dataIndex: ['booking', 'bookingNo'], key: 'booking' },
+    { title: '订单编号', dataIndex: ['order', 'orderNo'], key: 'order' },
     {
       title: '状态',
       dataIndex: 'status',
@@ -186,7 +186,7 @@ const Revenues: React.FC = () => {
             <Descriptions.Item label="金额">¥{selectedRevenue.amount.toFixed(2)}</Descriptions.Item>
             <Descriptions.Item label="美甲师">{selectedRevenue.technician?.name || '-'}</Descriptions.Item>
             <Descriptions.Item label="客户">{selectedRevenue.customer?.name || '-'}</Descriptions.Item>
-            <Descriptions.Item label="预约编号">{selectedRevenue.booking?.bookingNo || '-'}</Descriptions.Item>
+            <Descriptions.Item label="订单编号">{selectedRevenue.order?.orderNo || '-'}</Descriptions.Item>
             <Descriptions.Item label="状态">{selectedRevenue.status === 'confirmed' ? '已确认' : '已作废'}</Descriptions.Item>
             <Descriptions.Item label="确认时间">{new Date(selectedRevenue.recognizedAt).toLocaleString('zh-CN')}</Descriptions.Item>
             <Descriptions.Item label="创建时间">{new Date(selectedRevenue.createdAt).toLocaleString('zh-CN')}</Descriptions.Item>

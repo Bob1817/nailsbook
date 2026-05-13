@@ -4,7 +4,7 @@ import type { PaginatedResponse } from './technician';
 export interface Revenue {
   id: number;
   revenueNo: string;
-  bookingId: number;
+  orderId: number;
   quoteId: number;
   technicianId: number;
   customerId: number;
@@ -16,7 +16,7 @@ export interface Revenue {
   updatedAt: string;
   technician?: { id: number; name: string; phone: string };
   customer?: { id: number; name: string; phone: string };
-  booking?: { id: number; bookingNo: string };
+  order?: { id: number; orderNo: string };
 }
 
 export interface RevenueStatistics {

@@ -10,7 +10,7 @@ import Dashboard from './pages/Dashboard';
 import Technicians from './pages/Technicians';
 import Customers from './pages/Customers';
 import Quotes from './pages/Quotes';
-import Bookings from './pages/Bookings';
+import Orders from './pages/Orders';
 import Revenues from './pages/Revenues';
 import Subscriptions from './pages/Subscriptions';
 import OperationLogs from './pages/OperationLogs';
@@ -36,7 +36,7 @@ const App: React.FC = () => {
               <Route path="technicians" element={<ProtectedRoute permission="technician:view"><Technicians /></ProtectedRoute>} />
               <Route path="customers" element={<ProtectedRoute permission="customer:view"><Customers /></ProtectedRoute>} />
               <Route path="quotes" element={<ProtectedRoute permission="quote:view"><Quotes /></ProtectedRoute>} />
-              <Route path="bookings" element={<ProtectedRoute permission="booking:view"><Bookings /></ProtectedRoute>} />
+              <Route path="orders" element={<ProtectedRoute permission="order:view"><Orders /></ProtectedRoute>} />
               <Route path="revenues" element={<ProtectedRoute permission="revenue:view"><Revenues /></ProtectedRoute>} />
               <Route path="subscriptions" element={<ProtectedRoute permission="subscription:view"><Subscriptions /></ProtectedRoute>} />
               <Route path="logs" element={<ProtectedRoute permission="log:view"><OperationLogs /></ProtectedRoute>} />

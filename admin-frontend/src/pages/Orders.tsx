@@ -1,23 +1,45 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Button, Space, Select, Tag, message, Card, Modal, Descriptions, Popconfirm } from 'antd';
-import { bookingService } from '../services/booking';
-import type { Booking } from '../services/booking';
+import { orderService } from '../services/order';
+import type { Order } from '../services/order';
 import type { PaginatedResponse } from '../services/technician';
 import { technicianService } from '../services/technician';
 import type { Technician } from '../services/technician';
 
-const Bookings: React.FC = () => {
+const STATUS_LABELS: Record<string, string> = {
+  pending_quote: '待报价',
+  pending_agree: '待同意',
+  pending_confirm: '待确认',
+  pending_home: '待上门',
+  pending_shop: '待到店',
+  in_progress: '服务中',
+  completed: '已完成',
+  cancelled: '已取消',
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  pending_quote: 'orange',
+  pending_agree: 'orange',
+  pending_confirm: 'orange',
+  pending_home: 'blue',
+  pending_shop: 'blue',
+  in_progress: 'processing',
+  completed: 'green',
+  cancelled: 'red',
+};
+
+const Orders: React.FC = () => {
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<PaginatedResponse<Booking> | null>(null);
+  const [data, setData] = useState<PaginatedResponse<Order> | null>(null);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [detailVisible, setDetailVisible] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [filters, setFilters] = useState({ page: 1, limit: 10, technicianId: undefined as number | undefined, status: '' });
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const result = await bookingService.getAll({
+      const result = await orderService.getAll({
         page: filters.page,
         limit: filters.limit,
         technicianId: filters.technicianId,
@@ -50,7 +72,7 @@ const Bookings: React.FC = () => {
 
   const handleConfirm = async (id: number) => {
     try {
-      await bookingService.confirm(id);
+      await orderService.confirm(id);
       message.success('确认成功');
       fetchData();
     } catch (error: unknown) {
@@ -61,7 +83,7 @@ const Bookings: React.FC = () => {
 
   const handleComplete = async (id: number) => {
     try {
-      await bookingService.complete(id);
+      await orderService.complete(id);
       message.success('完成成功，已自动生成收入记录');
       fetchData();
     } catch (error: unknown) {
@@ -72,7 +94,7 @@ const Bookings: React.FC = () => {
 
   const handleCancel = async (id: number) => {
     try {
-      await bookingService.cancel(id);
+      await orderService.cancel(id);
       message.success('取消成功');
       fetchData();
     } catch (error: unknown) {
@@ -81,21 +103,14 @@ const Bookings: React.FC = () => {
     }
   };
 
-  const statusMap: Record<string, { color: string; text: string }> = {
-    pending_confirm: { color: 'orange', text: '待确认' },
-    confirmed: { color: 'blue', text: '已确认' },
-    completed: { color: 'green', text: '已完成' },
-    cancelled: { color: 'red', text: '已取消' },
-  };
-
   const columns = [
     { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },
-    { title: '预约编号', dataIndex: 'bookingNo', key: 'bookingNo' },
+    { title: '订单编号', dataIndex: 'orderNo', key: 'orderNo' },
     { title: '美甲师', dataIndex: ['technician', 'name'], key: 'technician' },
     { title: '客户', dataIndex: ['customer', 'name'], key: 'customer' },
-    { 
-      title: '预约时间', 
-      dataIndex: 'startTime', 
+    {
+      title: '预约时间',
+      dataIndex: 'startTime',
       key: 'startTime',
       render: (text: string) => new Date(text).toLocaleString('zh-CN'),
     },
@@ -105,30 +120,31 @@ const Bookings: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       render: (status: string) => {
-        const { color, text } = statusMap[status] || { color: 'default', text: status };
+        const color = STATUS_COLORS[status] || 'default';
+        const text = STATUS_LABELS[status] || status;
         return <Tag color={color}>{text}</Tag>;
       },
     },
     {
       title: '操作',
       key: 'action',
-      render: (_: unknown, record: Booking) => (
+      render: (_: unknown, record: Order) => (
         <Space>
-          <Button type="link" size="small" onClick={() => { setSelectedBooking(record); setDetailVisible(true); }}>
+          <Button type="link" size="small" onClick={() => { setSelectedOrder(record); setDetailVisible(true); }}>
             详情
           </Button>
           {record.status === 'pending_confirm' && (
-            <Popconfirm title="确定要确认该预约吗？" onConfirm={() => handleConfirm(record.id)}>
+            <Popconfirm title="确定要确认该订单吗？" onConfirm={() => handleConfirm(record.id)}>
               <Button type="link" size="small">确认</Button>
             </Popconfirm>
           )}
-          {record.status === 'confirmed' && (
-            <Popconfirm title="确定要完成该预约吗？将自动生成收入记录" onConfirm={() => handleComplete(record.id)}>
+          {(record.status === 'pending_home' || record.status === 'pending_shop') && (
+            <Popconfirm title="确定要完成该订单吗？将自动生成收入记录" onConfirm={() => handleComplete(record.id)}>
               <Button type="link" size="small">完成</Button>
             </Popconfirm>
           )}
           {record.status !== 'completed' && record.status !== 'cancelled' && (
-            <Popconfirm title="确定要取消该预约吗？" onConfirm={() => handleCancel(record.id)}>
+            <Popconfirm title="确定要取消该订单吗？" onConfirm={() => handleCancel(record.id)}>
               <Button type="link" size="small" danger>取消</Button>
             </Popconfirm>
           )}
@@ -156,7 +172,7 @@ const Bookings: React.FC = () => {
               value={filters.status || undefined}
               onChange={(value) => setFilters({ ...filters, page: 1, status: value || '' })}
               style={{ width: 120 }}
-              options={Object.entries(statusMap).map(([key, val]) => ({ value: key, label: val.text }))}
+              options={Object.entries(STATUS_LABELS).map(([key, val]) => ({ value: key, label: val }))}
             />
           </Space>
         </div>
@@ -178,24 +194,25 @@ const Bookings: React.FC = () => {
       </Card>
 
       <Modal
-        title="预约详情"
+        title="订单详情"
         open={detailVisible}
-        onCancel={() => { setDetailVisible(false); setSelectedBooking(null); }}
+        onCancel={() => { setDetailVisible(false); setSelectedOrder(null); }}
         footer={null}
         width={700}
       >
-        {selectedBooking && (
+        {selectedOrder && (
           <Descriptions column={2} bordered size="small">
-            <Descriptions.Item label="预约编号">{selectedBooking.bookingNo}</Descriptions.Item>
-            <Descriptions.Item label="状态">{statusMap[selectedBooking.status]?.text || selectedBooking.status}</Descriptions.Item>
-            <Descriptions.Item label="美甲师">{selectedBooking.technician?.name || '-'}</Descriptions.Item>
-            <Descriptions.Item label="客户">{selectedBooking.customer?.name || '-'}</Descriptions.Item>
-            <Descriptions.Item label="开始时间">{new Date(selectedBooking.startTime).toLocaleString('zh-CN')}</Descriptions.Item>
-            <Descriptions.Item label="结束时间">{new Date(selectedBooking.endTime).toLocaleString('zh-CN')}</Descriptions.Item>
-            <Descriptions.Item label="地址" span={2}>{selectedBooking.address || '-'}</Descriptions.Item>
-            <Descriptions.Item label="是否已付定金">{selectedBooking.isDepositPaid ? '是' : '否'}</Descriptions.Item>
-            <Descriptions.Item label="报价金额">¥{selectedBooking.quote?.price.toFixed(2) || '-'}</Descriptions.Item>
-            <Descriptions.Item label="创建时间">{new Date(selectedBooking.createdAt).toLocaleString('zh-CN')}</Descriptions.Item>
+            <Descriptions.Item label="订单编号">{selectedOrder.orderNo}</Descriptions.Item>
+            <Descriptions.Item label="状态">{STATUS_LABELS[selectedOrder.status] || selectedOrder.status}</Descriptions.Item>
+            <Descriptions.Item label="美甲师">{selectedOrder.technician?.name || '-'}</Descriptions.Item>
+            <Descriptions.Item label="客户">{selectedOrder.customer?.name || '-'}</Descriptions.Item>
+            <Descriptions.Item label="开始时间">{new Date(selectedOrder.startTime).toLocaleString('zh-CN')}</Descriptions.Item>
+            <Descriptions.Item label="结束时间">{new Date(selectedOrder.endTime).toLocaleString('zh-CN')}</Descriptions.Item>
+            <Descriptions.Item label="地址" span={2}>{selectedOrder.address || '-'}</Descriptions.Item>
+            <Descriptions.Item label="是否已付定金">{selectedOrder.isDepositPaid ? '是' : '否'}</Descriptions.Item>
+            <Descriptions.Item label="报价金额">¥{selectedOrder.quote?.price.toFixed(2) || '-'}</Descriptions.Item>
+            <Descriptions.Item label="报价备注" span={2}>{selectedOrder.quoteRemark || '-'}</Descriptions.Item>
+            <Descriptions.Item label="创建时间">{new Date(selectedOrder.createdAt).toLocaleString('zh-CN')}</Descriptions.Item>
           </Descriptions>
         )}
       </Modal>
@@ -203,4 +220,4 @@ const Bookings: React.FC = () => {
   );
 };
 
-export default Bookings;
+export default Orders;
