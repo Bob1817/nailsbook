@@ -146,11 +146,11 @@ export const SchedulePage: React.FC = () => {
     return () => { cancelled = true; };
   }, [technician?.id]);
 
-  // Generate 14 days from today
-  const dateOptions = useMemo(
+  // Generate dates starting from tomorrow for the scrollable strip
+  const scrollDateOptions = useMemo(
     () =>
-      Array.from({ length: 14 }, (_, i) => {
-        const date = addDays(new Date(), i);
+      Array.from({ length: 20 }, (_, i) => {
+        const date = addDays(new Date(), i + 1);
         return { date, key: toDateKey(date) };
       }),
     [],
@@ -160,6 +160,11 @@ export const SchedulePage: React.FC = () => {
     () => new Set(orders.map((o) => toDateKey(new Date(o.startTime)))),
     [orders],
   );
+
+  const todayDate = new Date();
+  const todayKey = toDateKey(todayDate);
+  const isTodayActive = sameCalendarDay(activeDate, todayDate);
+  const todayHasOrders = orderDateKeys.has(todayKey);
 
   const dayOrders = useMemo(
     () =>
@@ -210,14 +215,43 @@ export const SchedulePage: React.FC = () => {
       subtitle="高效规划路线，准时上门服务"
     >
       {/* ===== 日期选择器 ===== */}
-      <div className="mb-4">
+      <div className="flex gap-2 mb-4">
+        {/* 今天 — 固定在左侧，不随滚动消失 */}
+        <button
+          type="button"
+          onClick={resetToToday}
+          className={`shrink-0 w-[56px] text-center rounded-[14px] cursor-pointer transition-colors ${
+            isTodayActive
+              ? 'bg-primary text-white py-2.5'
+              : 'bg-[#f8f8f8] text-text-primary py-2.5'
+          }`}
+        >
+          <div className={`text-[11px] ${isTodayActive ? 'text-white/80' : 'text-text-tertiary'}`}>
+            今天
+          </div>
+          <div className={`text-[20px] font-bold leading-tight mt-0.5 ${isTodayActive ? 'text-white' : 'text-text-primary'}`}>
+            {todayDate.getDate()}
+          </div>
+          <div className={`text-[11px] ${isTodayActive ? 'text-white/80' : 'text-text-tertiary'}`}>
+            {todayDate.getMonth() + 1}月
+          </div>
+          <div
+            className={`w-1 h-1 rounded-full mx-auto mt-1 ${
+              isTodayActive
+                ? 'bg-white'
+                : todayHasOrders
+                  ? 'bg-[#22c55e]'
+                  : 'bg-transparent'
+            }`}
+          />
+        </button>
+        {/* 其余日期 — 可横向滚动 */}
         <div
           ref={dateStripRef}
-          className="flex gap-2 overflow-x-auto scrollbar-hide"
+          className="flex gap-2 overflow-x-auto flex-1 scrollbar-hide"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
-          {dateOptions.map(({ date, key }) => {
-            const isToday = sameCalendarDay(date, new Date());
+          {scrollDateOptions.map(({ date, key }) => {
             const isActive = sameCalendarDay(activeDate, date);
             const relativeLabel = getRelativeDayLabel(date);
             const weekday = getWeekdayShort(date);
@@ -227,7 +261,7 @@ export const SchedulePage: React.FC = () => {
               <button
                 key={key}
                 type="button"
-                onClick={isToday ? resetToToday : () => setActiveDate(date)}
+                onClick={() => setActiveDate(date)}
                 className={`shrink-0 w-[56px] text-center rounded-[14px] cursor-pointer transition-colors ${
                   isActive
                     ? 'bg-primary text-white py-2.5'
