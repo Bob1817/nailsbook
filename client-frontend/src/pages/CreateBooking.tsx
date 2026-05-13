@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { useAuth } from '../contexts/AuthContext';
-import { bookingService } from '../services/booking';
+import { orderService } from '../services/order';
 import { addressService, type ClientAddress } from '../services/address';
 import { uploadService } from '../services/upload';
 import { worksService, type NailWork } from '../services/works';
@@ -425,7 +425,7 @@ const CreateBooking: React.FC = () => {
           return;
         }
 
-        await bookingService.createBooking({
+        await orderService.createOrder({
           serviceDate: formData.serviceDate,
           startTime: formData.startTime,
           techId: formData.techId,

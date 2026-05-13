@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { designService, type DesignRequest, type UpdateDesignDto, type ShopAddress } from '../services/design';
 import { addressService, type ClientAddress } from '../services/address';
-import { bookingService } from '../services/booking';
+import { orderService } from '../services/order';
 import { uploadService } from '../services/upload';
 import { useAuth } from '../contexts/AuthContext';
 import dayjs from 'dayjs';
@@ -310,7 +310,7 @@ const DesignDetail: React.FC = () => {
 
     try {
       const addressId = selectedServiceType === 'home' ? selectedClientAddress!.id : 0;
-      await bookingService.createBookingFromDesign({
+      await orderService.createOrderFromDesign({
         designId: parseInt(id),
         techId: design.technician.id,
         serviceDate: selectedDate,

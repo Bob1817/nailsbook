@@ -1,11 +1,35 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { homeService, type HomeData } from '../services/home';
+import { orderService, type Order } from '../services/order';
 import dayjs from 'dayjs';
+
+const STATUS_LABELS: Record<string, string> = {
+  pending_quote: '待报价',
+  pending_agree: '待同意',
+  pending_confirm: '待确认',
+  pending_home: '待上门',
+  pending_shop: '待到店',
+  in_progress: '服务中',
+  completed: '已完成',
+  cancelled: '已取消',
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  pending_quote: 'bg-amber-100 text-amber-700',
+  pending_agree: 'bg-blue-100 text-blue-700',
+  pending_confirm: 'bg-purple-100 text-purple-700',
+  pending_home: 'bg-green-100 text-green-700',
+  pending_shop: 'bg-green-100 text-green-700',
+  in_progress: 'bg-orange-100 text-orange-700',
+  completed: 'bg-gray-100 text-gray-600',
+  cancelled: 'bg-red-100 text-red-600',
+};
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
   const [homeData, setHomeData] = useState<HomeData | null>(null);
+  const [trips, setTrips] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -15,8 +39,12 @@ const Home: React.FC = () => {
 
   const loadHomeData = async () => {
     try {
-      const data = await homeService.getHome();
+      const [data, tripsData] = await Promise.all([
+        homeService.getHome(),
+        orderService.getTrips(),
+      ]);
       setHomeData(data);
+      setTrips(tripsData);
     } catch (error) {
       console.error('Failed to load home data:', error);
     } finally {
@@ -28,33 +56,9 @@ const Home: React.FC = () => {
     setCurrentSlide(index);
   }, []);
 
-  const getStatusText = (status: string) => {
-    const statusMap: Record<string, string> = {
-      'pending_quote': '待报价',
-      'quoted': '已报价',
-      'pending_deposit': '待付定金',
-      'deposit_paid': '已付定金',
-      'confirmed': '已预约',
-      'in_service': '服务中',
-      'completed': '已完成',
-      'cancelled': '已取消',
-    };
-    return statusMap[status] || status;
-  };
+  const getStatusText = (status: string) => STATUS_LABELS[status] || status;
 
-  const getStatusColor = (status: string) => {
-    const colorMap: Record<string, string> = {
-      'pending_quote': 'text-amber-600 bg-amber-50',
-      'quoted': 'text-blue-600 bg-blue-50',
-      'pending_deposit': 'text-purple-600 bg-purple-50',
-      'deposit_paid': 'text-emerald-600 bg-emerald-50',
-      'confirmed': 'text-emerald-600 bg-emerald-50',
-      'in_service': 'text-blue-600 bg-blue-50',
-      'completed': 'text-slate-600 bg-slate-100',
-      'cancelled': 'text-slate-400 bg-slate-100',
-    };
-    return colorMap[status] || 'text-slate-600 bg-slate-100';
-  };
+  const getStatusColor = (status: string) => STATUS_COLORS[status] || 'bg-gray-100 text-gray-600';
 
   const formatDate = (value: string | null | undefined, pattern: string, fallback = '--') => {
     if (!value) {
@@ -399,12 +403,12 @@ const Home: React.FC = () => {
         </div>
       </div>
 
-      {/* My Bookings Section */}
+      {/* My Trips Section */}
       <div className="px-5 mt-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-heading-3 text-[var(--color-text)]">最近预约</h2>
-            <p className="mt-1 text-caption text-[var(--color-text-muted)]">继续处理你当前的预约事项</p>
+            <h2 className="text-heading-3 text-[var(--color-text)]">当前行程</h2>
+            <p className="mt-1 text-caption text-[var(--color-text-muted)]">继续处理你当前的行程安排</p>
           </div>
           <button
             onClick={() => navigate('/bookings')}
@@ -417,44 +421,44 @@ const Home: React.FC = () => {
           </button>
         </div>
 
-        {homeData?.latestBooking ? (
+        {trips.length > 0 ? (
           <div
-            onClick={() => navigate(`/bookings/${homeData.latestBooking?.id}`)}
+            onClick={() => navigate(`/bookings/${trips[0].id}`)}
             className="bg-white rounded-[28px] p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5 cursor-pointer active:scale-[0.99] transition-transform"
           >
             <div className="flex items-start gap-4">
               {/* Date Badge */}
               <div className="flex flex-col items-center justify-center w-16 h-16 rounded-xl bg-[var(--color-primary-soft)] flex-shrink-0">
                 <span className="text-caption text-[var(--color-primary)] font-medium">
-                  {formatDate(homeData.latestBooking.startTime, 'MM月')}
+                  {formatDate(trips[0].startTime, 'MM月')}
                 </span>
                 <span className="text-heading-1 text-[var(--color-primary)]">
-                  {formatDate(homeData.latestBooking.startTime, 'D')}
+                  {formatDate(trips[0].startTime, 'D')}
                 </span>
               </div>
 
-              {/* Booking Info */}
+              {/* Trip Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="text-body font-medium text-[var(--color-text)]">
-                    {homeData.latestBooking.serviceType || '美甲服务'}
+                    {trips[0].serviceType || '美甲服务'}
                   </span>
-                  <span className={`text-caption px-2 py-0.5 rounded-full ${getStatusColor(homeData.latestBooking.status)}`}>
-                    {getStatusText(homeData.latestBooking.status)}
+                  <span className={`text-caption px-2 py-0.5 rounded-full ${getStatusColor(trips[0].status)}`}>
+                    {getStatusText(trips[0].status)}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-body-sm text-[var(--color-text-secondary)] mb-1">
                   <svg className="w-4 h-4 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  {formatDate(homeData.latestBooking.startTime, 'HH:mm')} - {formatDate(homeData.latestBooking.endTime, 'HH:mm')}
+                  {formatDate(trips[0].startTime, 'HH:mm')} - {formatDate(trips[0].endTime, 'HH:mm')}
                 </div>
                 <div className="flex items-center gap-2 text-body-sm text-[var(--color-text-secondary)]">
                   <svg className="w-4 h-4 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  <span className="truncate">{homeData.latestBooking.address || '地址待确认'}</span>
+                  <span className="truncate">{trips[0].address || '地址待确认'}</span>
                 </div>
               </div>
             </div>
@@ -470,17 +474,15 @@ const Home: React.FC = () => {
               >
                 联系美甲师
               </button>
-              {homeData.latestBooking.status === 'quoted' && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/bookings/${homeData.latestBooking?.id}`);
-                  }}
-                  className="px-4 py-2 text-body-sm text-white bg-[var(--color-primary)] rounded-full active:scale-95 transition-transform"
-                >
-                  确认预约
-                </button>
-              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/bookings/${trips[0].id}`);
+                }}
+                className="px-4 py-2 text-body-sm text-white bg-[var(--color-primary)] rounded-full active:scale-95 transition-transform"
+              >
+                查看详情
+              </button>
             </div>
           </div>
         ) : (
@@ -490,7 +492,7 @@ const Home: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
-            <p className="text-body text-[var(--color-text-muted)] mb-2">暂无预约</p>
+            <p className="text-body text-[var(--color-text-muted)] mb-2">暂无行程</p>
             <button
               onClick={() => navigate('/bookings/create')}
               className="mt-2 px-6 py-2.5 bg-[var(--color-primary)] text-white text-body-sm font-medium rounded-full active:scale-95 transition-transform"
