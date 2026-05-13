@@ -4,14 +4,14 @@ import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/feedback/ToastProvider';
 import { ServiceTypeSetupModal } from '../components/ServiceTypeSetupModal';
 import type { ServiceTypeSettings, ShopAddress } from '../contexts/authTypes';
-import { bookingsService } from '../services/bookings';
+import { ordersService } from '../services/orders';
 import { messageService, type Conversation } from '../services/message';
 import { worksService, type Work } from '../services/works';
 import {
   buildDashboardSummary,
   formatClock,
   formatMoney,
-  type TechnicianBooking,
+  type TechnicianOrder,
 } from '../services/technicianData';
 
 function parseDate(value?: string | Date | null) {
@@ -40,63 +40,63 @@ function compactAddress(address: string) {
   return address.length > 18 ? `${address.slice(0, 18)}…` : address;
 }
 
-function resolveBookingPresentation(booking: TechnicianBooking, shops: ShopAddress[] = []) {
+function resolveOrderPresentation(order: TechnicianOrder, shops: ShopAddress[] = []) {
   const matchedShop = shops.find((shop) => {
-    if (booking.shopName && shop.name === booking.shopName) return true;
-    return formatShopAddress(shop) === booking.address;
+    if (order.shopName && shop.name === order.shopName) return true;
+    return formatShopAddress(shop) === order.address;
   });
 
-  if (booking.serviceType === 'shop') {
-    const shopName = booking.shopName || matchedShop?.name;
+  if (order.serviceType === 'shop') {
+    const shopName = order.shopName || matchedShop?.name;
     return {
       serviceTypeLabel: '到店美甲',
       fullAddressLabel: shopName
-        ? `到店 · ${shopName} · ${booking.address}`
-        : `到店 · ${booking.address}`,
+        ? `到店 · ${shopName} · ${order.address}`
+        : `到店 · ${order.address}`,
       compactAddressLabel: shopName
-        ? `${shopName} · ${compactAddress(booking.address)}`
-        : compactAddress(booking.address),
+        ? `${shopName} · ${compactAddress(order.address)}`
+        : compactAddress(order.address),
       accentClasses: 'bg-[#ffe9f0] text-pink-500',
     };
   }
 
   return {
     serviceTypeLabel: '上门美甲',
-    fullAddressLabel: `上门 · ${booking.address}`,
-    compactAddressLabel: `上门 · ${compactAddress(booking.address)}`,
+    fullAddressLabel: `上门 · ${order.address}`,
+    compactAddressLabel: `上门 · ${compactAddress(order.address)}`,
     accentClasses: 'bg-[#fff1e5] text-[#c9792a]',
   };
 }
 
-function estimateSingleTravelMinutes(booking: TechnicianBooking) {
-  return booking.serviceType === 'home' ? 24 : 16;
+function estimateSingleTravelMinutes(order: TechnicianOrder) {
+  return order.serviceType === 'home' ? 24 : 16;
 }
 
-function estimateRouteDistance(bookings: TechnicianBooking[]) {
-  if (!bookings.length) return 0;
-  if (bookings.length === 1) {
-    return Number((bookings[0].serviceType === 'home' ? 7.8 : 3.6).toFixed(1));
+function estimateRouteDistance(orders: TechnicianOrder[]) {
+  if (!orders.length) return 0;
+  if (orders.length === 1) {
+    return Number((orders[0].serviceType === 'home' ? 7.8 : 3.6).toFixed(1));
   }
 
   return Number(
-    bookings
-      .reduce((total, booking, index) => {
-        const segment = booking.serviceType === 'home' ? 4.6 : 2.9;
+    orders
+      .reduce((total, order, index) => {
+        const segment = order.serviceType === 'home' ? 4.6 : 2.9;
         return total + segment + (index === 0 ? 2.4 : 1.4);
       }, 0)
       .toFixed(1)
   );
 }
 
-function estimateRouteMinutes(bookings: TechnicianBooking[]) {
-  return bookings.reduce((total, booking, index) => {
-    return total + estimateSingleTravelMinutes(booking) + (index === 0 ? 0 : 10);
+function estimateRouteMinutes(orders: TechnicianOrder[]) {
+  return orders.reduce((total, order, index) => {
+    return total + estimateSingleTravelMinutes(order) + (index === 0 ? 0 : 10);
   }, 0);
 }
 
-function estimateSavedMinutes(bookings: TechnicianBooking[]) {
-  if (bookings.length <= 1) return 0;
-  return Math.min(24, 8 + bookings.length * 4);
+function estimateSavedMinutes(orders: TechnicianOrder[]) {
+  if (orders.length <= 1) return 0;
+  return Math.min(24, 8 + orders.length * 4);
 }
 
 function formatTravelDuration(minutes: number) {
@@ -115,7 +115,7 @@ function formatDepartureCountdown(minutes: number) {
   return `${hours} 小时${rest ? ` ${rest} 分钟` : ''}`;
 }
 
-function isActiveBookingStatus(status: TechnicianBooking['status']) {
+function isActiveOrderStatus(status: TechnicianOrder['status']) {
   return status !== 'completed' && status !== 'cancelled';
 }
 
@@ -130,13 +130,13 @@ function isSameCalendarWeek(target: Date, baseDate: Date) {
   return targetTime >= weekStart && targetTime < weekEnd;
 }
 
-function hasAddressIssue(booking: TechnicianBooking) {
-  const address = booking.address?.trim();
+function hasAddressIssue(order: TechnicianOrder) {
+  const address = order.address?.trim();
   if (!address) return true;
   return /待确认|待补充|稍后提供|待补全|未知/.test(address);
 }
 
-function getBookingStateMeta(status: TechnicianBooking['status']) {
+function getOrderStateMeta(status: TechnicianOrder['status']) {
   if (status === 'in_progress') {
     return {
       tone: 'bg-[#ebf4ff] text-[#3b82f6]',
@@ -166,14 +166,14 @@ export const HomePage: React.FC = () => {
   const { technician, updateTechnicianStatus, updateServiceType } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
-  const [bookings, setBookings] = useState<TechnicianBooking[]>([]);
+  const [orders, setOrders] = useState<TechnicianOrder[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [works, setWorks] = useState<Work[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [showServiceTypeModal, setShowServiceTypeModal] = useState(false);
-  const [expandedAddressBookingId, setExpandedAddressBookingId] = useState<number | null>(null);
+  const [expandedAddressOrderId, setExpandedAddressOrderId] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -181,18 +181,18 @@ export const HomePage: React.FC = () => {
     async function loadDashboardData() {
       setIsLoading(true);
 
-      const [bookingsResult, conversationsResult, worksResult] = await Promise.allSettled([
-        bookingsService.list({ technicianId: technician?.id }),
+      const [ordersResult, conversationsResult, worksResult] = await Promise.allSettled([
+        ordersService.getTrips(),
         messageService.getConversations(),
         worksService.list(),
       ]);
 
       if (cancelled) return;
 
-      if (bookingsResult.status === 'fulfilled') {
-        setBookings(bookingsResult.value);
+      if (ordersResult.status === 'fulfilled') {
+        setOrders(ordersResult.value);
       } else {
-        setBookings([]);
+        setOrders([]);
         toast.error('首页行程加载失败，请稍后重试。');
       }
 
@@ -223,37 +223,37 @@ export const HomePage: React.FC = () => {
     : shareBaseUrl;
   const isAcceptingOrders = technician?.status === 'active';
   const availableShops = technician?.shopAddresses?.filter((shop) => shop.enabled !== false) ?? [];
-  const summary = useMemo(() => buildDashboardSummary(bookings, new Date()), [bookings]);
-  const todayBookings = useMemo(
+  const summary = useMemo(() => buildDashboardSummary(orders, new Date()), [orders]);
+  const todayOrders = useMemo(
     () =>
-      [...summary.todayBookings].sort((left, right) => {
+      [...summary.todayOrders].sort((left, right) => {
         const leftTime = parseDate(left.startTime)?.getTime() ?? 0;
         const rightTime = parseDate(right.startTime)?.getTime() ?? 0;
         return leftTime - rightTime;
       }),
-    [summary.todayBookings]
+    [summary.todayOrders]
   );
   const weeklyIncome = useMemo(() => {
-    return bookings.reduce((total, booking) => {
-      const start = parseDate(booking.startTime);
+    return orders.reduce((total, order) => {
+      const start = parseDate(order.startTime);
       if (!start || !isSameCalendarWeek(start, new Date())) return total;
-      return total + booking.price;
+      return total + order.price;
     }, 0);
-  }, [bookings]);
-  const nextBooking = useMemo(() => {
+  }, [orders]);
+  const nextOrder = useMemo(() => {
     const now = Date.now();
-    const candidates = todayBookings.filter((booking) => isActiveBookingStatus(booking.status));
+    const candidates = todayOrders.filter((order) => isActiveOrderStatus(order.status));
     if (!candidates.length) return null;
     return (
-      candidates.find((booking) => {
-        const endTime = parseDate(booking.endTime)?.getTime();
+      candidates.find((order) => {
+        const endTime = parseDate(order.endTime)?.getTime();
         return !endTime || endTime >= now;
       }) || candidates[0]
     );
-  }, [todayBookings]);
-  const nextPresentation = nextBooking ? resolveBookingPresentation(nextBooking, availableShops) : null;
-  const nextTravelMinutes = nextBooking ? estimateSingleTravelMinutes(nextBooking) : 0;
-  const nextStartDate = nextBooking ? parseDate(nextBooking.startTime) : null;
+  }, [todayOrders]);
+  const nextPresentation = nextOrder ? resolveOrderPresentation(nextOrder, availableShops) : null;
+  const nextTravelMinutes = nextOrder ? estimateSingleTravelMinutes(nextOrder) : 0;
+  const nextStartDate = nextOrder ? parseDate(nextOrder.startTime) : null;
   const suggestedDepartureDate =
     nextStartDate && nextTravelMinutes
       ? new Date(nextStartDate.getTime() - nextTravelMinutes * 60 * 1000)
@@ -262,19 +262,19 @@ export const HomePage: React.FC = () => {
     suggestedDepartureDate
       ? Math.floor((suggestedDepartureDate.getTime() - Date.now()) / (60 * 1000))
       : 0;
-  const routeDistance = estimateRouteDistance(todayBookings);
-  const routeMinutes = estimateRouteMinutes(todayBookings);
-  const routeSavedMinutes = estimateSavedMinutes(todayBookings);
+  const routeDistance = estimateRouteDistance(todayOrders);
+  const routeMinutes = estimateRouteMinutes(todayOrders);
+  const routeSavedMinutes = estimateSavedMinutes(todayOrders);
   const unreadMessageCount = conversations.reduce((total, conversation) => total + conversation.unreadCount, 0);
   const customerCount = useMemo(
-    () => new Set(bookings.map((booking) => booking.customerId || booking.customerName).filter(Boolean)).size,
-    [bookings]
+    () => new Set(orders.map((order) => order.customerId || order.customerName).filter(Boolean)).size,
+    [orders]
   );
-  const unpaidDepositCount = bookings.filter(
-    (booking) => isActiveBookingStatus(booking.status) && !booking.depositPaid
+  const unpaidDepositCount = orders.filter(
+    (order) => isActiveOrderStatus(order.status) && !order.depositPaid
   ).length;
-  const addressPendingCount = bookings.filter(
-    (booking) => isActiveBookingStatus(booking.status) && hasAddressIssue(booking)
+  const addressPendingCount = orders.filter(
+    (order) => isActiveOrderStatus(order.status) && hasAddressIssue(order)
   ).length;
   const pendingItems = [
     {
@@ -457,7 +457,7 @@ export const HomePage: React.FC = () => {
                 </span>
               </div>
               <p className="mt-1 max-w-[14rem] text-[14px] font-medium leading-6 text-white [text-shadow:0_1px_2px_rgba(112,35,71,0.16)]">
-                今日 {todayBookings.length} 单 · 预估 {formatMoney(summary.expectedIncome)}
+                今日 {todayOrders.length} 单 · 预估 {formatMoney(summary.expectedIncome)}
               </p>
             </div>
           </div>
@@ -535,16 +535,16 @@ export const HomePage: React.FC = () => {
           <div className="grid gap-3 grid-cols-[minmax(0,1fr)_8.2rem]">
             <div className="min-w-0">
               <p className="text-[15px] font-semibold text-[#FF5E93]">下一单</p>
-              {nextBooking ? (
+              {nextOrder ? (
                 <>
                   <div className="mt-2.5 flex items-start gap-3">
                     <p className="shrink-0 text-[1.95rem] font-semibold tracking-[-0.04em] text-[#1f2230]">
-                      {formatClock(nextBooking.startTime)}
+                      {formatClock(nextOrder.startTime)}
                     </p>
                     <div className="min-w-0 pt-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="truncate text-[1.25rem] font-semibold text-[#1f2230]">
-                          {nextBooking.customerName}
+                          {nextOrder.customerName}
                         </p>
                         {nextPresentation ? (
                           <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${nextPresentation.accentClasses}`}>
@@ -553,22 +553,22 @@ export const HomePage: React.FC = () => {
                         ) : null}
                       </div>
                       <p className="mt-1 line-clamp-1 text-[14px] font-medium text-[#4d4652]">
-                        {nextBooking.serviceName || '预约服务'}
+                        {nextOrder.serviceName || '预约服务'}
                       </p>
                     </div>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setExpandedAddressBookingId(expandedAddressBookingId === nextBooking.id ? null : nextBooking.id)}
+                    onClick={() => setExpandedAddressOrderId(expandedAddressOrderId === nextOrder.id ? null : nextOrder.id)}
                     className="mt-2.5 flex items-start gap-2 text-left"
                   >
                     <svg className="mt-[2px] h-4 w-4 shrink-0 text-[#c1b5bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 21s-6-4.35-6-10a6 6 0 1112 0c0 5.65-6 10-6 10zm0-8.25a1.75 1.75 0 100-3.5 1.75 1.75 0 000 3.5z" />
                     </svg>
                     <span className="text-[13px] leading-6 text-[#716776]">
-                      {expandedAddressBookingId === nextBooking.id && nextPresentation
+                      {expandedAddressOrderId === nextOrder.id && nextPresentation
                         ? nextPresentation.fullAddressLabel
-                        : nextPresentation?.compactAddressLabel || nextBooking.address}
+                        : nextPresentation?.compactAddressLabel || nextOrder.address}
                     </span>
                   </button>
                   <div className="mt-3 grid grid-cols-2 gap-2">
@@ -584,7 +584,7 @@ export const HomePage: React.FC = () => {
                         {formatClock(
                           suggestedDepartureDate
                             ? suggestedDepartureDate.toISOString()
-                            : nextBooking.startTime
+                            : nextOrder.startTime
                         )}
                       </p>
                     </div>
@@ -602,10 +602,10 @@ export const HomePage: React.FC = () => {
               <div className="rounded-[22px] border border-[#F6E8EE] bg-[linear-gradient(180deg,#FFF7FA_0%,#FFFDFC_100%)] px-3 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.92)]">
                 <p className="text-[10px] font-medium tracking-[0.06em] text-[#C69AAF]">距出发还有</p>
                 <p className="mt-1 text-[1.85rem] font-semibold tracking-[-0.04em] text-[#1f2230]">
-                  {nextBooking ? (departureCountdownMinutes <= 0 ? '0' : Math.max(departureCountdownMinutes, 0)) : '--'}
+                  {nextOrder ? (departureCountdownMinutes <= 0 ? '0' : Math.max(departureCountdownMinutes, 0)) : '--'}
                 </p>
                 <p className="mt-0.5 text-[10px] font-medium text-[#8c8590]">
-                  {nextBooking ? (departureCountdownMinutes <= 0 ? '建议现在出发' : '分钟') : '暂无排单'}
+                  {nextOrder ? (departureCountdownMinutes <= 0 ? '建议现在出发' : '分钟') : '暂无排单'}
                 </p>
               </div>
               <div className="relative h-[7rem] overflow-hidden rounded-[22px] border border-[#F4E7EC] bg-[radial-gradient(circle_at_top_left,#FFF8FA_0%,#FFFDFE_55%,#FFF8F6_100%)]">
@@ -631,7 +631,7 @@ export const HomePage: React.FC = () => {
           <div className="mt-3 flex gap-2.5">
             <button
               type="button"
-              onClick={() => handleNavigateToAddress(nextBooking?.address)}
+              onClick={() => handleNavigateToAddress(nextOrder?.address)}
               className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-[linear-gradient(135deg,#FF4D84_0%,#FF6E8D_100%)] px-4 py-3 text-[14px] font-semibold text-white shadow-[0_12px_20px_rgba(255,95,134,0.22)]"
             >
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/18 ring-1 ring-white/20">
@@ -643,7 +643,7 @@ export const HomePage: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => handleContactCustomer(nextBooking?.customerPhone)}
+              onClick={() => handleContactCustomer(nextOrder?.customerPhone)}
               className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-[16px] border border-[#F2D5DE] bg-white px-4 py-3 text-[14px] font-semibold text-[#FF5E93] shadow-[0_8px_16px_rgba(255,110,141,0.08)]"
             >
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FFF1F6] ring-1 ring-[#FFD9E6]">
@@ -686,7 +686,7 @@ export const HomePage: React.FC = () => {
             <div className="mt-4 rounded-[24px] bg-[radial-gradient(circle_at_top_right,#FFF2F7_0%,#FFFDFC_55%,#FFF7FA_100%)] px-4 py-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="text-[13px] leading-6 text-[#7f7681]">
-                  {nextBooking ? (
+                  {nextOrder ? (
                     <>
                       <p>{departureCountdownMinutes <= 0 ? '距离出发已到，建议优先前往下一单。' : `距离出发还有 ${formatDepartureCountdown(departureCountdownMinutes)}`}</p>
                       <p className="text-[#FF5E93]">
@@ -792,33 +792,33 @@ export const HomePage: React.FC = () => {
 
           {isLoading ? (
             <p className="py-8 text-center text-sm text-[#b7aeb7]">行程加载中...</p>
-          ) : todayBookings.length ? (
+          ) : todayOrders.length ? (
             <div className="relative pl-6">
               <div className="absolute left-[0.45rem] top-5 bottom-6 w-px bg-[#f0dbe3]" />
               <div className="space-y-4">
-                {todayBookings.map((booking) => {
-                  const presentation = resolveBookingPresentation(booking, availableShops);
-                  const stateMeta = getBookingStateMeta(booking.status);
-                  const isExpanded = expandedAddressBookingId === booking.id;
+                {todayOrders.map((order) => {
+                  const presentation = resolveOrderPresentation(order, availableShops);
+                  const stateMeta = getOrderStateMeta(order.status);
+                  const isExpanded = expandedAddressOrderId === order.id;
 
                   return (
-                    <div key={booking.id} className="relative">
+                    <div key={order.id} className="relative">
                       <span className={`absolute -left-6 top-5 h-4 w-4 rounded-full border-4 border-[#fff9f8] ${stateMeta.dot}`} />
                       <div className="rounded-[26px] bg-white p-4 shadow-[0_14px_28px_rgba(36,27,41,0.05)]">
                         <div className="flex items-start gap-4">
                           <div className="w-14 shrink-0 text-left">
                             <p
                               className={`text-[1.75rem] font-semibold tracking-[-0.03em] ${
-                                booking.status === 'completed'
+                                order.status === 'completed'
                                   ? 'text-[#8d8590]'
-                                  : booking.status === 'in_progress'
+                                  : order.status === 'in_progress'
                                     ? 'text-[#4f7ddb]'
                                     : 'text-pink-500'
                               }`}
                             >
-                              {formatClock(booking.startTime)}
+                              {formatClock(order.startTime)}
                             </p>
-                            <p className="mt-1 text-[12px] text-[#b8afb7]">{formatClock(booking.endTime)}</p>
+                            <p className="mt-1 text-[12px] text-[#b8afb7]">{formatClock(order.endTime)}</p>
                           </div>
 
                           <div className="min-w-0 flex-1">
@@ -826,17 +826,17 @@ export const HomePage: React.FC = () => {
                               <div className="min-w-0">
                                 <div className="flex items-center gap-3">
                                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f8dce7] text-[1.35rem] font-semibold text-[#ea5e93]">
-                                    {getTechnicianInitial(booking.customerName)}
+                                    {getTechnicianInitial(order.customerName)}
                                   </div>
                                   <div className="min-w-0">
                                     <div className="flex flex-wrap items-center gap-2">
-                                      <p className="truncate text-[18px] font-semibold text-[#1f2230]">{booking.customerName}</p>
+                                      <p className="truncate text-[18px] font-semibold text-[#1f2230]">{order.customerName}</p>
                                       <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${presentation.accentClasses}`}>
                                         {presentation.serviceTypeLabel}
                                       </span>
                                     </div>
                                     <p className="mt-1 truncate text-[15px] font-medium text-[#574d58]">
-                                      {booking.serviceName || '预约服务'}
+                                      {order.serviceName || '预约服务'}
                                     </p>
                                   </div>
                                 </div>
@@ -844,7 +844,7 @@ export const HomePage: React.FC = () => {
 
                               <div className="shrink-0 text-right">
                                 <p className="text-[1.4rem] font-semibold tracking-[-0.02em] text-pink-500">
-                                  {formatMoney(booking.price)}
+                                  {formatMoney(order.price)}
                                 </p>
                                 <span className={`mt-2 inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ${stateMeta.tone}`}>
                                   {stateMeta.actionLabel}
@@ -855,7 +855,7 @@ export const HomePage: React.FC = () => {
                             <button
                               type="button"
                               onClick={() =>
-                                setExpandedAddressBookingId((current) => (current === booking.id ? null : booking.id))
+                                setExpandedAddressOrderId((current) => (current === order.id ? null : order.id))
                               }
                               className="mt-3 flex items-start gap-2 text-left"
                             >
@@ -869,17 +869,17 @@ export const HomePage: React.FC = () => {
 
                             <div className="mt-3 flex flex-wrap items-center gap-2">
                               <span className="inline-flex rounded-full bg-[#f7f2f5] px-3 py-1.5 text-[12px] font-medium text-[#7f7681]">
-                                定金 {booking.depositPaid ? '已收' : '未收'}
+                                定金 {order.depositPaid ? '已收' : '未收'}
                               </span>
                               <span className="inline-flex rounded-full bg-[#f7f2f5] px-3 py-1.5 text-[12px] font-medium text-[#7f7681]">
-                                预计 {estimateSingleTravelMinutes(booking)} 分钟通勤
+                                预计 {estimateSingleTravelMinutes(order)} 分钟通勤
                               </span>
                             </div>
 
                             <div className="mt-4 flex gap-3 border-t border-[#f2e6ec] pt-4">
                               <button
                                 type="button"
-                                onClick={() => handleNavigateToAddress(booking.address)}
+                                onClick={() => handleNavigateToAddress(order.address)}
                                 className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-full bg-[#ffe9f0] px-4 text-[14px] font-semibold text-pink-500"
                               >
                                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
@@ -889,7 +889,7 @@ export const HomePage: React.FC = () => {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleContactCustomer(booking.customerPhone)}
+                                onClick={() => handleContactCustomer(order.customerPhone)}
                                 className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-full border border-[#f2e6ec] bg-white px-4 text-[14px] font-semibold text-[#574d58]"
                               >
                                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

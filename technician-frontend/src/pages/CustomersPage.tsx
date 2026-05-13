@@ -7,8 +7,8 @@ import { useAuth } from '../hooks/useAuth';
 import { customersService } from '../services/customers';
 import { messageService, type Conversation } from '../services/message';
 import {
-  bookingStatusClasses,
-  bookingStatusLabels,
+  orderStatusClasses,
+  orderStatusLabels,
   formatDateLabel,
   formatMoney,
   type TechnicianCustomerDetail,
@@ -81,7 +81,7 @@ export const CustomersPage: React.FC = () => {
     navigate(`/orders?customerId=${customerId}`);
   }
 
-  function handleCreateBooking(customerId: number) {
+  function handleCreateOrder(customerId: number) {
     toast.success('正在为该客户打开新建预约。');
     navigate(`/orders?customerId=${customerId}`);
   }
@@ -146,7 +146,7 @@ export const CustomersPage: React.FC = () => {
                 </div>
                 <div className="min-w-0">
                   <p className="text-[11px] text-gray-400">服务次数</p>
-                  <p className="mt-1 text-sm font-semibold text-gray-900">{selectedCustomer.totalBookings} 次</p>
+                  <p className="mt-1 text-sm font-semibold text-gray-900">{selectedCustomer.totalOrders} 次</p>
                 </div>
                 <div className="col-span-2 min-w-0 min-[391px]:col-span-1">
                   <p className="text-[11px] text-gray-400">最近到店</p>
@@ -238,8 +238,8 @@ export const CustomersPage: React.FC = () => {
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm text-gray-900">{item.label}</p>
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] ${bookingStatusClasses[item.status as keyof typeof bookingStatusClasses] ?? 'bg-gray-100 text-gray-600'}`}>
-                          {bookingStatusLabels[item.status as keyof typeof bookingStatusLabels] ?? item.status}
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] ${orderStatusClasses[item.status as keyof typeof orderStatusClasses] ?? 'bg-gray-100 text-gray-600'}`}>
+                          {orderStatusLabels[item.status as keyof typeof orderStatusLabels] ?? item.status}
                         </span>
                       </div>
                       <p className="mt-1 text-xs text-gray-400">{formatDateLabel(item.date)}</p>
@@ -261,7 +261,7 @@ export const CustomersPage: React.FC = () => {
 
         <div className="grid grid-cols-1 gap-3 pb-2">
           <button
-            onClick={() => handleCreateBooking(selectedCustomer.id)}
+            onClick={() => handleCreateOrder(selectedCustomer.id)}
             className="min-h-[48px] w-full rounded-[18px] bg-pink-500 px-4 py-3 text-sm font-medium text-white shadow-[0_8px_18px_rgba(236,72,153,0.16)] transition-colors active:bg-pink-600"
           >
             为该客户新建预约
@@ -361,13 +361,13 @@ export const CustomersPage: React.FC = () => {
                       </div>
                       <div className="col-span-2 min-w-0 min-[391px]:col-span-1">
                         <p className="text-[11px] text-gray-400">服务次数</p>
-                        <p className="mt-1 text-xs font-medium text-gray-700">{customer.totalBookings} 次</p>
+                        <p className="mt-1 text-xs font-medium text-gray-700">{customer.totalOrders} 次</p>
                       </div>
                     </div>
 
                     <div className="mt-3 flex flex-col gap-1 text-xs text-gray-400 min-[391px]:flex-row min-[391px]:items-center min-[391px]:justify-between min-[391px]:gap-3">
                       <span className="break-words">{customer.address}</span>
-                      <span className="shrink-0">{customer.totalBookings} 次服务</span>
+                      <span className="shrink-0">{customer.totalOrders} 次服务</span>
                     </div>
                   </div>
                 </div>

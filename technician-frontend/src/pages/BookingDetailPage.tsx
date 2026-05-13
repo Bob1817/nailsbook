@@ -3,18 +3,18 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/feedback/ToastProvider';
 import { Button } from '../components/base/Button';
-import { bookingsService } from '../services/bookings';
+import { ordersService } from '../services/orders';
 import { customersService } from '../services/customers';
 import { messageService } from '../services/message';
 import {
-  bookingStatusLabels,
-  bookingStatusClasses,
+  orderStatusLabels,
+  orderStatusClasses,
   formatDateLabel,
   formatMoney,
   formatTimeRange,
   getDurationMinutes,
-  type BookingStatus,
-  type TechnicianBooking,
+  type OrderStatus,
+  type TechnicianOrder,
 } from '../services/technicianData';
 import type { TechnicianCustomerSummary } from '../services/technicianData';
 
@@ -23,13 +23,13 @@ const serviceTypeLabels: Record<string, string> = {
   shop: '到店美甲',
 };
 
-const BookingDetailPage: React.FC = () => {
+const OrderDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { technician } = useAuth();
   const toast = useToast();
 
-  const [booking, setBooking] = useState<TechnicianBooking | null>(null);
+  const [order, setOrder] = useState<TechnicianOrder | null>(null);
   const [customer, setCustomer] = useState<TechnicianCustomerSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -49,81 +49,100 @@ const BookingDetailPage: React.FC = () => {
     note: '',
   });
 
-  // 加载预约详情
+  // 加载订单详情
   useEffect(() => {
     if (!id) return;
 
-    const loadBooking = async () => {
+    const loadOrder = async () => {
       setIsLoading(true);
       try {
-        const bookingData = await bookingsService.getById(Number(id));
-        if (bookingData) {
-          setBooking(bookingData);
+        const orderData = await ordersService.getById(Number(id));
+        if (orderData) {
+          setOrder(orderData);
           // 加载客户信息
           const customers = await customersService.list({ technicianId: technician?.id });
-          const matchedCustomer = customers.find(c => c.id === bookingData.customerId);
+          const matchedCustomer = customers.find(c => c.id === orderData.customerId);
           if (matchedCustomer) {
             setCustomer(matchedCustomer);
           }
           // 初始化编辑表单
           setEditForm({
-            serviceType: bookingData.serviceType || 'home',
-            shopId: bookingData.shopId?.toString() || '',
-            startTime: bookingData.startTime,
-            endTime: bookingData.endTime,
-            basePrice: bookingData.priceBreakdown?.basePrice || bookingData.price,
-            homeServiceFee: bookingData.priceBreakdown?.homeServiceFee || 0,
-            nightFee: bookingData.priceBreakdown?.nightFee || 0,
-            holidayFee: bookingData.priceBreakdown?.holidayFee || 0,
-            otherFees: bookingData.priceBreakdown?.otherFees || 0,
-            note: bookingData.note || '',
+            serviceType: orderData.serviceType || 'home',
+            shopId: orderData.shopId?.toString() || '',
+            startTime: orderData.startTime,
+            endTime: orderData.endTime,
+            basePrice: orderData.priceBreakdown?.basePrice || orderData.price,
+            homeServiceFee: orderData.priceBreakdown?.homeServiceFee || 0,
+            nightFee: orderData.priceBreakdown?.nightFee || 0,
+            holidayFee: orderData.priceBreakdown?.holidayFee || 0,
+            otherFees: orderData.priceBreakdown?.otherFees || 0,
+            note: orderData.note || '',
           });
         } else {
-          toast.error('预约不存在');
+          toast.error('订单不存在');
           navigate(-1);
         }
       } catch {
-        toast.error('加载预约详情失败');
+        toast.error('加载订单详情失败');
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadBooking();
+    loadOrder();
   }, [id, technician?.id, navigate, toast]);
 
   // 计算总价
   const totalPrice = editForm.basePrice + editForm.homeServiceFee + editForm.nightFee + editForm.holidayFee + editForm.otherFees;
 
   // 处理状态变更
-  const handleStatusChange = async (newStatus: BookingStatus) => {
-    if (!booking) return;
+  const handleStatusChange = async (newStatus: OrderStatus) => {
+    if (!order) return;
 
     setIsSubmitting(true);
     try {
-      await bookingsService.transition(booking.id, newStatus);
+      if (newStatus === 'cancelled') {
+        await ordersService.cancel(order.id);
+      } else if (newStatus === 'pending_agree') {
+        const dateStr = new Date(order.startTime).toISOString().slice(0, 10);
+        const timeStr = new Date(order.startTime).toTimeString().slice(0, 5);
+        const duration = getDurationMinutes(order.startTime, order.endTime);
+        await ordersService.submitQuote(order.id, {
+          serviceDate: dateStr,
+          startTime: timeStr,
+          durationMinutes: duration || 90,
+          price: totalPrice,
+        });
+      } else if (newStatus === 'pending_confirm') {
+        await ordersService.agree(order.id);
+      } else if (newStatus === 'pending_home' || newStatus === 'pending_shop') {
+        await ordersService.confirm(order.id);
+      } else if (newStatus === 'completed') {
+        await ordersService.complete(order.id);
+      }
 
       // 发送消息通知客户
-      const statusMessages: Record<BookingStatus, string> = {
-        pending_confirm: '预约待确认',
-        confirmed: '预约已确认',
-        in_progress: '服务进行中',
-        completed: '服务已完成',
-        cancelled: '预约已取消',
+      const statusMessages: Record<string, string> = {
+        pending_agree: '待同意',
+        pending_confirm: '待确认',
+        pending_home: '待上门',
+        pending_shop: '待到店',
+        completed: '已完成',
+        cancelled: '已取消',
       };
 
       await messageService.sendMessage({
-        clientId: booking.customerId,
+        clientId: order.customerId,
         messageType: 'system',
-        content: `【预约状态更新】您的预约(${booking.bookingNo})状态已更新为：${statusMessages[newStatus]}`,
+        content: `【订单状态更新】您的订单(${order.orderNo})状态已更新为：${statusMessages[newStatus] || newStatus}`,
       });
 
       toast.success('状态更新成功，已通知客户');
 
       // 刷新数据
-      const updatedBooking = await bookingsService.getById(booking.id);
-      if (updatedBooking) {
-        setBooking(updatedBooking);
+      const updatedOrder = await ordersService.getById(order.id);
+      if (updatedOrder) {
+        setOrder(updatedOrder);
       }
     } catch {
       toast.error('状态更新失败');
@@ -134,7 +153,7 @@ const BookingDetailPage: React.FC = () => {
 
   // 保存编辑
   const handleSaveEdit = async () => {
-    if (!booking) return;
+    if (!order) return;
 
     setIsSubmitting(true);
     try {
@@ -156,22 +175,22 @@ const BookingDetailPage: React.FC = () => {
       };
 
       // 调用更新API
-      await bookingsService.update(booking.id, updateData);
+      await ordersService.update(order.id, updateData);
 
       // 发送消息通知客户
       await messageService.sendMessage({
-        clientId: booking.customerId,
+        clientId: order.customerId,
         messageType: 'system',
-        content: `【预约信息更新】您的预约(${booking.bookingNo})信息已更新，请查看最新详情。`,
+        content: `【订单信息更新】您的预约(${order.orderNo})信息已更新，请查看最新详情。`,
       });
 
-      toast.success('预约信息已更新，已通知客户');
+      toast.success('订单信息已更新，已通知客户');
       setIsEditing(false);
 
       // 刷新数据
-      const updatedBooking = await bookingsService.getById(booking.id);
-      if (updatedBooking) {
-        setBooking(updatedBooking);
+      const updatedOrder = await ordersService.getById(order.id);
+      if (updatedOrder) {
+        setOrder(updatedOrder);
       }
     } catch {
       toast.error('保存失败');
@@ -181,15 +200,8 @@ const BookingDetailPage: React.FC = () => {
   };
 
   // 获取可操作的状态列表
-  const getAllowedActions = (status: BookingStatus): BookingStatus[] => {
-    const actions: Record<BookingStatus, BookingStatus[]> = {
-      pending_confirm: ['confirmed', 'cancelled'],
-      confirmed: ['in_progress', 'cancelled'],
-      in_progress: ['completed'],
-      completed: [],
-      cancelled: [],
-    };
-    return actions[status] || [];
+  const getAllowedActions = (status: OrderStatus): OrderStatus[] => {
+    return ordersService.getAllowedActions(status);
   };
 
   if (isLoading) {
@@ -200,15 +212,15 @@ const BookingDetailPage: React.FC = () => {
     );
   }
 
-  if (!booking) {
+  if (!order) {
     return (
       <div className="min-h-full bg-[#fff9f8] flex items-center justify-center">
-        <p className="text-gray-500">预约不存在</p>
+        <p className="text-gray-500">订单不存在</p>
       </div>
     );
   }
 
-  const allowedActions = getAllowedActions(booking.status);
+  const allowedActions = getAllowedActions(order.status);
 
   return (
     <div className="min-h-full bg-[#fff9f8] pb-24">
@@ -224,8 +236,8 @@ const BookingDetailPage: React.FC = () => {
             </svg>
           </button>
           <div className="flex-1">
-            <h1 className="text-[1.75rem] font-semibold tracking-[-0.02em] text-gray-900">预约详情</h1>
-            <p className="mt-1 text-[13px] text-gray-400">{booking.bookingNo}</p>
+            <h1 className="text-[1.75rem] font-semibold tracking-[-0.02em] text-gray-900">订单详情</h1>
+            <p className="mt-1 text-[13px] text-gray-400">{order.orderNo}</p>
           </div>
           {!isEditing && (
             <Button
@@ -245,17 +257,17 @@ const BookingDetailPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="mb-2 text-[12px] text-gray-400">当前状态</p>
-              <span className={`inline-flex items-center rounded-full px-3 py-1.5 text-[13px] font-medium ${bookingStatusClasses[booking.status]}`}>
-                {bookingStatusLabels[booking.status]}
+              <span className={`inline-flex items-center rounded-full px-3 py-1.5 text-[13px] font-medium ${orderStatusClasses[order.status]}`}>
+                {orderStatusLabels[order.status]}
               </span>
             </div>
-            {booking.serviceType && (
+            {order.serviceType && (
               <div className="text-right">
                 <p className="mb-2 text-[12px] text-gray-400">服务类型</p>
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                  booking.serviceType === 'home' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'
+                  order.serviceType === 'home' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'
                 }`}>
-                  {serviceTypeLabels[booking.serviceType]}
+                  {serviceTypeLabels[order.serviceType]}
                 </span>
               </div>
             )}
@@ -264,24 +276,37 @@ const BookingDetailPage: React.FC = () => {
           {/* 状态操作按钮 */}
           {!isEditing && allowedActions.length > 0 && (
             <div className="mt-5 grid grid-cols-2 gap-3 border-t border-[#f4ebee] pt-4">
-              {allowedActions.includes('confirmed') && (
+              {allowedActions.includes('pending_agree') && (
                 <Button
                   variant="primary"
-                  onClick={() => handleStatusChange('confirmed')}
+                  onClick={() => handleStatusChange('pending_agree')}
                   disabled={isSubmitting}
                   className="h-12 rounded-[18px] bg-emerald-500 text-[15px] shadow-none disabled:opacity-50"
                 >
-                  {isSubmitting ? '处理中...' : '确认预约'}
+                  {isSubmitting ? '处理中...' : '提交报价'}
                 </Button>
               )}
-              {allowedActions.includes('in_progress') && (
+              {allowedActions.includes('pending_confirm') && (
                 <Button
                   variant="primary"
-                  onClick={() => handleStatusChange('in_progress')}
+                  onClick={() => handleStatusChange('pending_confirm')}
                   disabled={isSubmitting}
-                  className="h-12 rounded-[18px] bg-sky-500 text-[15px] shadow-none disabled:opacity-50"
+                  className="h-12 rounded-[18px] bg-emerald-500 text-[15px] shadow-none disabled:opacity-50"
                 >
-                  {isSubmitting ? '处理中...' : '开始服务'}
+                  {isSubmitting ? '处理中...' : '确认订单'}
+                </Button>
+              )}
+              {(allowedActions.includes('pending_home') || allowedActions.includes('pending_shop')) && (
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    const nextStatus: OrderStatus = order.serviceType === 'home' ? 'pending_home' : 'pending_shop';
+                    handleStatusChange(nextStatus);
+                  }}
+                  disabled={isSubmitting}
+                  className="h-12 rounded-[18px] bg-emerald-500 text-[15px] shadow-none disabled:opacity-50"
+                >
+                  {isSubmitting ? '处理中...' : '确认订单'}
                 </Button>
               )}
               {allowedActions.includes('completed') && (
@@ -291,7 +316,7 @@ const BookingDetailPage: React.FC = () => {
                   disabled={isSubmitting}
                   className="h-12 rounded-[18px] text-[15px] shadow-none disabled:opacity-50"
                 >
-                  {isSubmitting ? '处理中...' : '完成服务'}
+                  {isSubmitting ? '处理中...' : '确认完成'}
                 </Button>
               )}
               {allowedActions.includes('cancelled') && (
@@ -303,7 +328,7 @@ const BookingDetailPage: React.FC = () => {
                     allowedActions.length === 1 ? 'col-span-2' : ''
                   }`}
                 >
-                  {isSubmitting ? '处理中...' : '取消预约'}
+                  {isSubmitting ? '处理中...' : '取消订单'}
                 </Button>
               )}
             </div>
@@ -316,10 +341,10 @@ const BookingDetailPage: React.FC = () => {
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#ffe7ef] text-[22px] font-semibold text-pink-500">
-                {booking.customerName.charAt(0)}
+                {order.customerName.charAt(0)}
               </div>
               <div>
-                <p className="text-[16px] font-semibold text-gray-900">{booking.customerName}</p>
+                <p className="text-[16px] font-semibold text-gray-900">{order.customerName}</p>
                 {customer && (
                   <p className="mt-1 text-[14px] text-gray-500">{customer.phone}</p>
                 )}
@@ -410,7 +435,7 @@ const BookingDetailPage: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">服务地址/店铺</label>
                 <p className="px-4 py-3 rounded-xl bg-gray-50 text-gray-600">
-                  {editForm.serviceType === 'home' ? booking.address : (editForm.shopId || '请选择店铺')}
+                  {editForm.serviceType === 'home' ? order.address : (editForm.shopId || '请选择店铺')}
                 </p>
               </div>
 
@@ -428,30 +453,30 @@ const BookingDetailPage: React.FC = () => {
             <div className="space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <span className="text-[14px] text-gray-400">服务内容</span>
-                <span className="max-w-[62%] text-right text-[15px] font-medium text-gray-900">{booking.serviceName}</span>
+                <span className="max-w-[62%] text-right text-[15px] font-medium text-gray-900">{order.serviceName}</span>
               </div>
               <div className="flex items-start justify-between gap-4">
                 <span className="text-[14px] text-gray-400">预约时间</span>
                 <span className="max-w-[62%] text-right text-[15px] font-medium text-gray-900">
-                  {formatDateLabel(booking.startTime)} {formatTimeRange(booking.startTime, booking.endTime)}
+                  {formatDateLabel(order.startTime)} {formatTimeRange(order.startTime, order.endTime)}
                 </span>
               </div>
               <div className="flex items-start justify-between gap-4">
                 <span className="text-[14px] text-gray-400">服务时长</span>
                 <span className="text-[15px] font-medium text-gray-900">
-                  {getDurationMinutes(booking.startTime, booking.endTime)} 分钟
+                  {getDurationMinutes(order.startTime, order.endTime)} 分钟
                 </span>
               </div>
               <div className="flex items-start justify-between gap-4">
-                <span className="text-[14px] text-gray-400">{booking.serviceType === 'shop' ? '服务店铺' : '服务地址'}</span>
+                <span className="text-[14px] text-gray-400">{order.serviceType === 'shop' ? '服务店铺' : '服务地址'}</span>
                 <span className="max-w-[62%] text-right text-[15px] font-medium leading-6 text-gray-900">
-                  {booking.serviceType === 'shop' ? (booking.shopName || '到店服务') : booking.address}
+                  {order.serviceType === 'shop' ? (order.shopName || '到店服务') : order.address}
                 </span>
               </div>
-              {booking.note && (
+              {order.note && (
                 <div className="border-t border-[#f4ebee] pt-3">
                   <span className="text-[14px] text-gray-400">备注</span>
-                  <p className="mt-2 text-[14px] leading-6 text-gray-700">{booking.note}</p>
+                  <p className="mt-2 text-[14px] leading-6 text-gray-700">{order.note}</p>
                 </div>
               )}
             </div>
@@ -522,41 +547,41 @@ const BookingDetailPage: React.FC = () => {
               <div className="flex items-start justify-between gap-4">
                 <span className="text-[14px] text-gray-400">基础报价</span>
                 <span className="text-[15px] font-medium text-gray-900">
-                  {formatMoney(booking.priceBreakdown?.basePrice || booking.price)}
+                  {formatMoney(order.priceBreakdown?.basePrice || order.price)}
                 </span>
               </div>
-              {booking.priceBreakdown?.homeServiceFee ? (
+              {order.priceBreakdown?.homeServiceFee ? (
                 <div className="flex items-start justify-between gap-4">
                   <span className="text-[14px] text-gray-400">上门费用</span>
-                  <span className="text-[15px] font-medium text-gray-900">{formatMoney(booking.priceBreakdown.homeServiceFee)}</span>
+                  <span className="text-[15px] font-medium text-gray-900">{formatMoney(order.priceBreakdown.homeServiceFee)}</span>
                 </div>
               ) : null}
-              {booking.priceBreakdown?.nightFee ? (
+              {order.priceBreakdown?.nightFee ? (
                 <div className="flex items-start justify-between gap-4">
                   <span className="text-[14px] text-gray-400">夜间服务费</span>
-                  <span className="text-[15px] font-medium text-gray-900">{formatMoney(booking.priceBreakdown.nightFee)}</span>
+                  <span className="text-[15px] font-medium text-gray-900">{formatMoney(order.priceBreakdown.nightFee)}</span>
                 </div>
               ) : null}
-              {booking.priceBreakdown?.holidayFee ? (
+              {order.priceBreakdown?.holidayFee ? (
                 <div className="flex items-start justify-between gap-4">
                   <span className="text-[14px] text-gray-400">节假日服务费</span>
-                  <span className="text-[15px] font-medium text-gray-900">{formatMoney(booking.priceBreakdown.holidayFee)}</span>
+                  <span className="text-[15px] font-medium text-gray-900">{formatMoney(order.priceBreakdown.holidayFee)}</span>
                 </div>
               ) : null}
-              {booking.priceBreakdown?.otherFees ? (
+              {order.priceBreakdown?.otherFees ? (
                 <div className="flex items-start justify-between gap-4">
                   <span className="text-[14px] text-gray-400">其他费用</span>
-                  <span className="text-[15px] font-medium text-gray-900">{formatMoney(booking.priceBreakdown.otherFees)}</span>
+                  <span className="text-[15px] font-medium text-gray-900">{formatMoney(order.priceBreakdown.otherFees)}</span>
                 </div>
               ) : null}
               <div className="flex items-center justify-between border-t border-[#f4ebee] pt-4">
                 <span className="text-[18px] font-semibold text-gray-900">总价</span>
-                <span className="text-[32px] font-semibold tracking-[-0.03em] text-pink-500">{formatMoney(booking.price)}</span>
+                <span className="text-[32px] font-semibold tracking-[-0.03em] text-pink-500">{formatMoney(order.price)}</span>
               </div>
               <div className="flex items-start justify-between gap-4">
                 <span className="text-[14px] text-gray-400">定金状态</span>
-                <span className={`text-[15px] font-medium ${booking.depositPaid ? 'text-emerald-500' : 'text-amber-500'}`}>
-                  {booking.depositPaid ? '已支付' : '未支付'}
+                <span className={`text-[15px] font-medium ${order.depositPaid ? 'text-emerald-500' : 'text-amber-500'}`}>
+                  {order.depositPaid ? '已支付' : '未支付'}
                 </span>
               </div>
             </div>
@@ -564,11 +589,11 @@ const BookingDetailPage: React.FC = () => {
         </div>
 
         {/* 服务作品 */}
-        {booking.serviceItems && booking.serviceItems.length > 0 && (
+        {order.serviceItems && order.serviceItems.length > 0 && (
           <div className="rounded-[24px] border border-[#f5e7ea] bg-white p-5 shadow-[0_8px_24px_rgba(29,35,53,0.04)]">
             <h2 className="mb-4 text-[18px] font-semibold text-gray-900">服务作品</h2>
             <div className="grid grid-cols-3 gap-3">
-              {booking.serviceItems.map((item) => (
+              {order.serviceItems.map((item) => (
                 <div key={item.id} className="aspect-square rounded-xl bg-gray-100 overflow-hidden">
                   {item.images && item.images[0] ? (
                     <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover" />
@@ -610,4 +635,4 @@ const BookingDetailPage: React.FC = () => {
   );
 };
 
-export default BookingDetailPage;
+export default OrderDetailPage;

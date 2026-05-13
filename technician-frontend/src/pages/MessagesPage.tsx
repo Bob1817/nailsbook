@@ -4,14 +4,14 @@ import { Card } from '../components/base/Card';
 import { AppPage } from '../components/layout/AppPage';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/feedback/ToastProvider';
-import { bookingsService } from '../services/bookings';
+import { ordersService } from '../services/orders';
 import { customersService } from '../services/customers';
 import { messageService, type Conversation } from '../services/message';
 import {
   formatDateLabel,
   formatDateTimeLabel,
   isSameDay,
-  type TechnicianBooking,
+  type TechnicianOrder,
   type TechnicianCustomerSummary,
 } from '../services/technicianData';
 
@@ -94,7 +94,7 @@ export const MessagesPage: React.FC = () => {
   const { technician } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
-  const [bookings, setBookings] = useState<TechnicianBooking[]>([]);
+  const [orders, setOrders] = useState<TechnicianOrder[]>([]);
   const [customers, setCustomers] = useState<TechnicianCustomerSummary[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -109,21 +109,21 @@ export const MessagesPage: React.FC = () => {
     async function loadData() {
       setIsLoading(true);
       try {
-        const [nextBookings, nextCustomers, chatConversations] = await Promise.all([
-          bookingsService.list({ technicianId: technician?.id }),
+        const [nextOrders, nextCustomers, chatConversations] = await Promise.all([
+          ordersService.list({ technicianId: technician?.id }),
           customersService.list({ technicianId: technician?.id }),
           messageService.getConversations().catch(() => []),
         ]);
 
         if (!cancelled) {
-          setBookings(nextBookings);
+          setOrders(nextOrders);
           setCustomers(nextCustomers);
           setConversations(chatConversations);
           setIsLoading(false);
         }
       } catch {
         if (!cancelled) {
-          setBookings([]);
+          setOrders([]);
           setCustomers([]);
           setConversations([]);
           setIsLoading(false);
@@ -172,51 +172,51 @@ export const MessagesPage: React.FC = () => {
       clientId: conv.client.id,
     }));
 
-    const pending = bookings
-      .filter((booking) => booking.status === 'pending_confirm')
-      .map((booking) => ({
-        id: `pending-${booking.id}`,
-        name: booking.customerName,
+    const pending = orders
+      .filter((order) => order.status === 'pending_confirm')
+      .map((order) => ({
+        id: `pending-${order.id}`,
+        name: order.customerName,
         badge: '待确认',
-        time: formatDateTimeLabel(booking.startTime),
-        lastMessage: `预约待确认：${booking.serviceName}，服务地址 ${booking.address}`,
+        time: formatDateTimeLabel(order.startTime),
+        lastMessage: `预约待确认：${order.serviceName}，服务地址 ${order.address}`,
         unread: 1,
         type: 'pending' as const,
         actionLabel: '去确认',
-        actionTo: `/orders?bookingId=${booking.id}`,
+        actionTo: `/orders?orderId=${order.id}`,
       }));
 
-    const service = bookings
-      .filter((booking) => booking.status === 'confirmed' || booking.status === 'completed')
+    const service = orders
+      .filter((order) => order.status === 'pending_home' || order.status === 'pending_shop' || order.status === 'completed')
       .slice(0, 6)
-      .map((booking) => ({
-        id: `service-${booking.id}`,
-        name: booking.customerName,
-        badge: booking.status === 'confirmed' ? '已确认' : '已完成',
-        time: formatDateTimeLabel(booking.startTime),
+      .map((order) => ({
+        id: `service-${order.id}`,
+        name: order.customerName,
+        badge: order.status === 'completed' ? '已完成' : '待服务',
+        time: formatDateTimeLabel(order.startTime),
         lastMessage:
-          booking.status === 'confirmed'
-            ? `服务提醒：${booking.serviceName} 即将开始`
-            : `服务完成：${booking.serviceName}，记得跟进复购与评价`,
-        unread: booking.status === 'confirmed' ? 1 : 0,
+          order.status === 'pending_home' || order.status === 'pending_shop'
+            ? `服务提醒：${order.serviceName} 即将开始`
+            : `服务完成：${order.serviceName}，记得跟进复购与评价`,
+        unread: order.status === 'pending_home' || order.status === 'pending_shop' ? 1 : 0,
         type: 'service' as const,
-        actionLabel: booking.status === 'confirmed' ? '查看行程' : '查看订单',
-        actionTo: booking.status === 'confirmed' ? `/schedule` : `/orders?bookingId=${booking.id}`,
+        actionLabel: order.status === 'pending_home' || order.status === 'pending_shop' ? '查看行程' : '查看订单',
+        actionTo: order.status === 'pending_home' || order.status === 'pending_shop' ? `/schedule` : `/orders?orderId=${order.id}`,
       }));
 
-    const depositReminders = bookings
-      .filter((booking) => !booking.depositPaid && booking.status !== 'cancelled')
+    const depositReminders = orders
+      .filter((order) => !order.depositPaid && order.status !== 'cancelled')
       .slice(0, 4)
-      .map((booking) => ({
-        id: `deposit-${booking.id}`,
-        name: booking.customerName,
+      .map((order) => ({
+        id: `deposit-${order.id}`,
+        name: order.customerName,
         badge: '定金待收',
-        time: formatDateTimeLabel(booking.startTime),
-        lastMessage: `请跟进 ${booking.serviceName} 的定金确认，避免影响后续上门安排。`,
+        time: formatDateTimeLabel(order.startTime),
+        lastMessage: `请跟进 ${order.serviceName} 的定金确认，避免影响后续上门安排。`,
         unread: 1,
         type: 'pending' as const,
         actionLabel: '去处理',
-        actionTo: `/orders?bookingId=${booking.id}`,
+        actionTo: `/orders?orderId=${order.id}`,
       }));
 
     const system: MessageItem[] = [
@@ -224,7 +224,7 @@ export const MessagesPage: React.FC = () => {
         id: 'system-today',
         name: '系统通知',
         time: formatDateLabel(today.toISOString()),
-        lastMessage: `今日共有 ${bookings.filter((booking) => isSameDay(booking.startTime, today)).length} 个预约安排，请注意准时上门。`,
+        lastMessage: `今日共有 ${orders.filter((order) => isSameDay(order.startTime, today)).length} 个预约安排，请注意准时上门。`,
         unread: 1,
         type: 'system',
         isSystem: true,
@@ -245,7 +245,7 @@ export const MessagesPage: React.FC = () => {
     ];
 
     return [...chatMessages, ...pending, ...depositReminders, ...service, ...system];
-  }, [bookings, customers, conversations]);
+  }, [orders, customers, conversations]);
 
   const filteredMessages = messages.filter((message) => {
     if (activeTab !== 'all' && message.type !== activeTab) {

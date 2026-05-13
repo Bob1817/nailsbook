@@ -4,9 +4,9 @@ import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/feedback/ToastProvider';
 import { ServiceTypeSetupModal } from '../components/ServiceTypeSetupModal';
 import { Card } from '../components/base/Card';
-import { bookingsService } from '../services/bookings';
+import { ordersService } from '../services/orders';
 import { customersService } from '../services/customers';
-import { buildDashboardSummary, formatMoney, isSameDay, type TechnicianBooking, type TechnicianCustomerSummary } from '../services/technicianData';
+import { buildDashboardSummary, formatMoney, isSameDay, type TechnicianOrder, type TechnicianCustomerSummary } from '../services/technicianData';
 import type { ServiceTypeSettings } from '../contexts/authTypes';
 
 const tools = [
@@ -33,7 +33,7 @@ export const MePage: React.FC = () => {
   const navigate = useNavigate();
   const { technician, logout, updateServiceType } = useAuth();
   const toast = useToast();
-  const [bookings, setBookings] = useState<TechnicianBooking[]>([]);
+  const [orders, setOrders] = useState<TechnicianOrder[]>([]);
   const [customers, setCustomers] = useState<TechnicianCustomerSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showServiceTypeModal, setShowServiceTypeModal] = useState(false);
@@ -49,19 +49,19 @@ export const MePage: React.FC = () => {
     async function loadData() {
       setIsLoading(true);
       try {
-        const [nextBookings, nextCustomers] = await Promise.all([
-          bookingsService.list({ technicianId: technician?.id }),
+        const [nextOrders, nextCustomers] = await Promise.all([
+          ordersService.list({ technicianId: technician?.id }),
           customersService.list({ technicianId: technician?.id }),
         ]);
 
         if (!cancelled) {
-          setBookings(nextBookings);
+          setOrders(nextOrders);
           setCustomers(nextCustomers);
           setIsLoading(false);
         }
       } catch {
         if (!cancelled) {
-          setBookings([]);
+          setOrders([]);
           setCustomers([]);
           setIsLoading(false);
           toast.error('个人中心数据加载失败，请稍后重试。');
@@ -75,27 +75,27 @@ export const MePage: React.FC = () => {
     };
   }, [technician?.id, toast]);
 
-  const summary = useMemo(() => buildDashboardSummary(bookings, new Date()), [bookings]);
-  const weekBookings = useMemo(() => {
+  const summary = useMemo(() => buildDashboardSummary(orders, new Date()), [orders]);
+  const weekOrders = useMemo(() => {
     const today = new Date();
-    return bookings.filter((booking) => {
-      const bookingDate = new Date(booking.startTime);
-      const diff = bookingDate.getTime() - new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    return orders.filter((order) => {
+      const orderDate = new Date(order.startTime);
+      const diff = orderDate.getTime() - new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
       return diff >= 0 && diff < 7 * 24 * 60 * 60 * 1000;
     });
-  }, [bookings]);
+  }, [orders]);
   const monthRevenue = useMemo(() => {
     const now = new Date();
-    return bookings
-      .filter((booking) => {
-        const date = new Date(booking.startTime);
+    return orders
+      .filter((order) => {
+        const date = new Date(order.startTime);
         return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
       })
-      .reduce((sum, booking) => sum + booking.price, 0);
-  }, [bookings]);
-  const completedCount = bookings.filter((booking) => booking.status === 'completed').length;
-  const pendingCount = bookings.filter((booking) => booking.status === 'pending_confirm').length;
-  const confirmedCount = bookings.filter((booking) => booking.status === 'confirmed').length;
+      .reduce((sum, order) => sum + order.price, 0);
+  }, [orders]);
+  const completedCount = orders.filter((order) => order.status === 'completed').length;
+  const pendingCount = orders.filter((order) => order.status === 'pending_confirm').length;
+  const confirmedCount = orders.filter((order) => order.status === 'confirmed').length;
   const customerWithRecentService = customers.filter(
     (customer) => customer.recentServiceAt && isSameDay(customer.recentServiceAt, new Date())
   ).length;
@@ -151,11 +151,11 @@ export const MePage: React.FC = () => {
         <Card className="relative z-10 -mt-10 mb-4 p-4 shadow-[0_14px_32px_rgba(29,35,53,0.08)]">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-2xl font-bold text-gray-900">{summary.todayBookings.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{summary.todayOrders.length}</p>
               <p className="mt-1 text-xs text-gray-500">今日预约</p>
             </div>
             <div className="border-x border-gray-100">
-              <p className="text-2xl font-bold text-gray-900">{weekBookings.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{weekOrders.length}</p>
               <p className="mt-1 text-xs text-gray-500">本周预约</p>
             </div>
             <div>

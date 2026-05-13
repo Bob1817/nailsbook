@@ -1,16 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { bookingsService } from '../services/bookings';
+import { ordersService } from '../services/orders';
 import {
   addDays,
-  bookingStatusLabels,
+  orderStatusLabels,
   formatClock,
   formatMoney,
   getDurationMinutes,
   isSameDay,
-  type BookingStatus,
-  type TechnicianBooking,
+  type OrderStatus,
+  type TechnicianOrder,
 } from '../services/technicianData';
 import { AppPage } from '../components/layout/AppPage';
 import { Card } from '../components/base/Card';
@@ -18,33 +18,33 @@ import { Button } from '../components/base/Button';
 import { Tag } from '../components/base/Tag';
 import { AMapContainer } from '../components/map/AMapContainer';
 
-// Convert bookings to map markers with mock coordinates
-// In production, these should come from the booking's actual lat/lng
-function useMapMarkers(bookings: TechnicianBooking[]) {
+// Convert orders to map markers with mock coordinates
+// In production, these should come from the order's actual lat/lng
+function useMapMarkers(orders: TechnicianOrder[]) {
   return useMemo(() => {
     // Generate mock coordinates around Beijing for demo
-    // In production, use actual booking coordinates from booking.lat / booking.lng
+    // In production, use actual order coordinates from order.lat / order.lng
     const baseLng = 116.397428;
     const baseLat = 39.90923;
 
-    return bookings.map((booking, index) => {
-      // Generate slightly different coordinates for each booking
+    return orders.map((order, index) => {
+      // Generate slightly different coordinates for each order
       const offsetLng = Math.sin(index * 1.5) * 0.05;
       const offsetLat = Math.cos(index * 1.2) * 0.04;
 
       return {
-        id: booking.id,
+        id: order.id,
         position: [baseLng + offsetLng, baseLat + offsetLat] as [number, number],
-        title: booking.customerName,
-        label: `${index + 1}. ${booking.customerName}`,
+        title: order.customerName,
+        label: `${index + 1}. ${order.customerName}`,
       };
     });
-  }, [bookings]);
+  }, [orders]);
 }
 
 const timelineDotColors = ['#FF5A66', '#FF9F43', '#8B78FF', '#B3B3B3'];
 
-const appointmentStatusVariant: Record<BookingStatus, 'neutral' | 'primary' | 'warning' | 'success'> = {
+const appointmentStatusVariant: Record<OrderStatus, 'neutral' | 'primary' | 'warning' | 'success'> = {
   pending_confirm: 'neutral',
   confirmed: 'warning',
   in_progress: 'primary',
@@ -64,7 +64,7 @@ const serviceTypeColors: Record<string, string> = {
   shop: 'bg-blue-50 text-blue-600',
 };
 
-const scheduleStatusPillClass: Record<BookingStatus, string> = {
+const scheduleStatusPillClass: Record<OrderStatus, string> = {
   pending_confirm: 'bg-[#fff6eb] text-[#b87425]',
   confirmed: 'bg-[#fff4df] text-[#c8892f]',
   in_progress: 'bg-[#ffe9f0] text-pink-500',
@@ -79,19 +79,19 @@ const mapCardAnchors = [
   { bottom: '19%', right: '7%' },
 ];
 
-function estimateDistance(bookings: TechnicianBooking[]) {
-  if (bookings.length === 0) return 0;
-  if (bookings.length === 1) return 2.8;
-  return Number((bookings.length * 3.15).toFixed(1));
+function estimateDistance(orders: TechnicianOrder[]) {
+  if (orders.length === 0) return 0;
+  if (orders.length === 1) return 2.8;
+  return Number((orders.length * 3.15).toFixed(1));
 }
 
-function estimateTravelMinutes(bookings: TechnicianBooking[]) {
-  if (bookings.length === 0) return 0;
-  return bookings.length * 24 + Math.max(0, bookings.length - 1) * 11;
+function estimateTravelMinutes(orders: TechnicianOrder[]) {
+  if (orders.length === 0) return 0;
+  return orders.length * 24 + Math.max(0, orders.length - 1) * 11;
 }
 
-function estimateSavedMinutes(bookings: TechnicianBooking[]) {
-  if (bookings.length <= 1) return 0;
+function estimateSavedMinutes(orders: TechnicianOrder[]) {
+  if (orders.length <= 1) return 0;
   return 18;
 }
 
@@ -181,7 +181,7 @@ export const SchedulePage: React.FC = () => {
   const { technician } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [bookings, setBookings] = useState<TechnicianBooking[]>([]);
+  const [orders, setOrders] = useState<TechnicianOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeDate, setActiveDate] = useState(new Date());
   const [mapMode, setMapMode] = useState<'map' | 'list'>('map');
@@ -210,16 +210,16 @@ export const SchedulePage: React.FC = () => {
   useEffect(() => {
     let cancelled = false;
 
-    async function loadBookings() {
+    async function loadOrders() {
       setIsLoading(true);
-      const nextBookings = await bookingsService.list({ technicianId: technician?.id });
+      const nextOrders = await ordersService.list({ technicianId: technician?.id });
       if (!cancelled) {
-        setBookings(nextBookings);
+        setOrders(nextOrders);
         setIsLoading(false);
       }
     }
 
-    void loadBookings();
+    void loadOrders();
     return () => {
       cancelled = true;
     };
@@ -238,46 +238,46 @@ export const SchedulePage: React.FC = () => {
     [activeDate]
   );
 
-  const dayBookings = useMemo(
+  const dayOrders = useMemo(
     () =>
-      bookings
-        .filter((booking) => isSameDay(booking.startTime, activeDate))
-        .filter((booking) => {
+      orders
+        .filter((order) => isSameDay(order.startTime, activeDate))
+        .filter((order) => {
           // 根据 filter 参数过滤
           if (!filterParam) return true;
           if (filterParam === 'today') return true; // 今日行程显示全部
-          if (filterParam === 'confirmed') return booking.status === 'confirmed';
-          if (filterParam === 'pending') return booking.status === 'pending_confirm';
+          if (filterParam === 'confirmed') return order.status === 'confirmed';
+          if (filterParam === 'pending') return order.status === 'pending_confirm';
           return true;
         })
         .sort((left, right) => left.startTime.localeCompare(right.startTime)),
-    [activeDate, bookings, filterParam]
+    [activeDate, orders, filterParam]
   );
 
-  // Generate map markers from day bookings
-  const mapMarkers = useMapMarkers(dayBookings);
+  // Generate map markers from day orders
+  const mapMarkers = useMapMarkers(dayOrders);
 
   const summary = useMemo(() => {
-    const totalServiceMinutes = dayBookings.reduce(
-      (sum, booking) => sum + getDurationMinutes(booking.startTime, booking.endTime),
+    const totalServiceMinutes = dayOrders.reduce(
+      (sum, order) => sum + getDurationMinutes(order.startTime, order.endTime),
       0
     );
-    const travelMinutes = estimateTravelMinutes(dayBookings);
-    const totalAmount = dayBookings.reduce((sum, booking) => sum + booking.price, 0);
+    const travelMinutes = estimateTravelMinutes(dayOrders);
+    const totalAmount = dayOrders.reduce((sum, order) => sum + order.price, 0);
     return {
-      customers: dayBookings.length,
-      distance: estimateDistance(dayBookings),
+      customers: dayOrders.length,
+      distance: estimateDistance(dayOrders),
       duration: totalServiceMinutes + travelMinutes,
       amount: totalAmount,
-      saved: estimateSavedMinutes(dayBookings),
-      depositPending: dayBookings.filter((booking) => !booking.depositPaid).length,
+      saved: estimateSavedMinutes(dayOrders),
+      depositPending: dayOrders.filter((order) => !order.depositPaid).length,
     };
-  }, [dayBookings]);
+  }, [dayOrders]);
   const durationParts = getRouteDurationParts(summary.duration);
-  const hasTimelineBookings = !isLoading && dayBookings.length > 0;
+  const hasTimelineOrders = !isLoading && dayOrders.length > 0;
   const scheduleHeading = buildScheduleHeading(activeDate, sameCalendarDay(activeDate, new Date()));
   const hasActiveFilter = Boolean(filterParam);
-  const bookingDateKeys = useMemo(() => new Set(bookings.map((booking) => toDateKey(new Date(booking.startTime)))), [bookings]);
+  const orderDateKeys = useMemo(() => new Set(orders.map((order) => toDateKey(new Date(order.startTime)))), [orders]);
   const monthGrid = useMemo(() => getMonthGrid(currentMonth), [currentMonth]);
   const headerActions = (
     <>
@@ -438,18 +438,18 @@ export const SchedulePage: React.FC = () => {
             <>
               <AMapContainer
                 markers={mapMarkers}
-                showRoute={dayBookings.length > 1}
+                showRoute={dayOrders.length > 1}
                 className="absolute inset-0"
-                onMarkerClick={(marker) => navigate(`/bookings/${marker.id}`)}
+                onMarkerClick={(marker) => navigate(`/orders/${marker.id}`)}
               />
 
-              {dayBookings.length > 0
-                ? dayBookings.map((booking, index) => {
+              {dayOrders.length > 0
+                ? dayOrders.map((order, index) => {
                     const anchor = getMapCardAnchor(index);
                     return (
                       <button
-                        key={booking.id}
-                        onClick={() => navigate(`/bookings/${booking.id}`)}
+                        key={order.id}
+                        onClick={() => navigate(`/orders/${order.id}`)}
                         className="absolute z-10 w-[136px] rounded-[18px] border border-white/90 bg-white/96 px-[12px] py-[12px] text-left shadow-[0_16px_32px_rgba(29,35,53,0.14)] backdrop-blur-sm"
                         style={anchor}
                       >
@@ -458,20 +458,20 @@ export const SchedulePage: React.FC = () => {
                             {index + 1}
                           </span>
                           <p className="text-[13px] font-semibold leading-[16px] text-text-primary">
-                            {formatClock(booking.startTime)}
+                            {formatClock(order.startTime)}
                           </p>
                         </div>
                         <p className="mt-[8px] truncate text-[13px] font-semibold leading-[16px] text-text-primary">
-                          {booking.customerName}
+                          {order.customerName}
                         </p>
                         <div className="mt-[6px] flex flex-wrap items-center gap-[6px]">
-                          {booking.serviceType && (
-                            <span className={`rounded-full px-[6px] py-[1px] text-[9px] font-medium ${serviceTypeColors[booking.serviceType] || 'bg-gray-50 text-gray-600'}`}>
-                              {serviceTypeLabels[booking.serviceType] || booking.serviceType}
+                          {order.serviceType && (
+                            <span className={`rounded-full px-[6px] py-[1px] text-[9px] font-medium ${serviceTypeColors[order.serviceType] || 'bg-gray-50 text-gray-600'}`}>
+                              {serviceTypeLabels[order.serviceType] || order.serviceType}
                             </span>
                           )}
-                          <Tag variant={appointmentStatusVariant[booking.status]} className={mapCardTagClass}>
-                            {bookingStatusLabels[booking.status]}
+                          <Tag variant={appointmentStatusVariant[order.status]} className={mapCardTagClass}>
+                            {orderStatusLabels[order.status]}
                           </Tag>
                         </div>
                       </button>
@@ -481,10 +481,10 @@ export const SchedulePage: React.FC = () => {
             </>
           ) : (
             <div className="absolute left-md right-md top-[84px] bottom-0 overflow-y-auto px-[1px] pb-[120px]">
-              {dayBookings.map((booking, index) => (
+              {dayOrders.map((order, index) => (
                 <button
-                  key={booking.id}
-                  onClick={() => navigate(`/bookings/${booking.id}`)}
+                  key={order.id}
+                  onClick={() => navigate(`/orders/${order.id}`)}
                   className="mb-sm w-full overflow-hidden rounded-card border border-black/[0.05] bg-white/96 px-md py-md text-left shadow-card last:mb-0"
                 >
                   <div className="flex items-start justify-between gap-sm">
@@ -494,20 +494,20 @@ export const SchedulePage: React.FC = () => {
                       </span>
                       <div className="min-w-0">
                         <div className="flex items-center gap-x-[8px]">
-                          <p className="truncate text-title-sm font-semibold text-text-primary">{booking.customerName}</p>
-                          {booking.serviceType && (
-                            <span className={`shrink-0 rounded-full px-[6px] py-[1px] text-[9px] font-medium ${serviceTypeColors[booking.serviceType] || 'bg-gray-50 text-gray-600'}`}>
-                              {serviceTypeLabels[booking.serviceType] || booking.serviceType}
+                          <p className="truncate text-title-sm font-semibold text-text-primary">{order.customerName}</p>
+                          {order.serviceType && (
+                            <span className={`shrink-0 rounded-full px-[6px] py-[1px] text-[9px] font-medium ${serviceTypeColors[order.serviceType] || 'bg-gray-50 text-gray-600'}`}>
+                              {serviceTypeLabels[order.serviceType] || order.serviceType}
                             </span>
                           )}
                         </div>
                         <p className="truncate text-caption text-text-secondary">
-                          {formatClock(booking.startTime)} · {booking.address}
+                          {formatClock(order.startTime)} · {order.address}
                         </p>
                       </div>
                     </div>
-                    <Tag variant={appointmentStatusVariant[booking.status]} className={`shrink-0 ${compactTagClass}`}>
-                      {bookingStatusLabels[booking.status]}
+                    <Tag variant={appointmentStatusVariant[order.status]} className={`shrink-0 ${compactTagClass}`}>
+                      {orderStatusLabels[order.status]}
                     </Tag>
                   </div>
                 </button>
@@ -560,7 +560,7 @@ export const SchedulePage: React.FC = () => {
       </div>
 
       <div className="relative pl-[18px]">
-        {hasTimelineBookings ? (
+        {hasTimelineOrders ? (
           <div
             className="absolute bottom-[24px] top-[18px] w-px"
             style={{
@@ -571,68 +571,68 @@ export const SchedulePage: React.FC = () => {
         ) : null}
         {isLoading ? (
           <Card className="py-xl text-center text-body text-text-tertiary">行程加载中...</Card>
-        ) : dayBookings.length === 0 ? (
+        ) : dayOrders.length === 0 ? (
           <Card className="py-xl text-center text-body text-text-tertiary">当前日期还没有预约安排</Card>
         ) : (
-          dayBookings.map((booking, index) => (
-            <div key={booking.id} className="relative pb-md">
+          dayOrders.map((order, index) => (
+            <div key={order.id} className="relative pb-md">
               <div
                 className="absolute left-[-2px] top-[22px] h-3 w-3 rounded-full ring-4 ring-[#fff9f8]"
                 style={{ backgroundColor: timelineDotColors[index % timelineDotColors.length] }}
               />
               <Card
                 className="px-md py-md cursor-pointer transition-shadow hover:shadow-md"
-                onClick={() => navigate(`/bookings/${booking.id}`)}
+                onClick={() => navigate(`/orders/${order.id}`)}
               >
                 <div className="flex flex-col gap-[12px]">
                   <div className="flex items-start justify-between gap-md">
                     <div className="min-w-0">
-                      <p className="text-[18px] font-semibold leading-[22px] text-primary">{formatClock(booking.startTime)}</p>
+                      <p className="text-[18px] font-semibold leading-[22px] text-primary">{formatClock(order.startTime)}</p>
                       <p className="mt-[3px] text-[12px] leading-[18px] text-text-tertiary">
-                        预计 {getDurationMinutes(booking.startTime, booking.endTime)} 分钟
+                        预计 {getDurationMinutes(order.startTime, order.endTime)} 分钟
                       </p>
                     </div>
                     <div className="shrink-0 text-right">
-                      <p className="text-[15px] font-semibold leading-[18px] text-primary">{formatMoney(booking.price)}</p>
+                      <p className="text-[15px] font-semibold leading-[18px] text-primary">{formatMoney(order.price)}</p>
                       <span
-                        className={`mt-[8px] inline-flex rounded-full px-[12px] py-[6px] text-[11px] font-medium leading-[16px] ${scheduleStatusPillClass[booking.status]}`}
+                        className={`mt-[8px] inline-flex rounded-full px-[12px] py-[6px] text-[11px] font-medium leading-[16px] ${scheduleStatusPillClass[order.status]}`}
                       >
-                        {bookingStatusLabels[booking.status]}
+                        {orderStatusLabels[order.status]}
                       </span>
                     </div>
                   </div>
                   <div className="flex min-w-0 items-start gap-[12px]">
                     <div
                       className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[15px] font-semibold text-[#ea5e93]"
-                      style={{ backgroundImage: buildAvatarBackground(booking.customerName) }}
+                      style={{ backgroundImage: buildAvatarBackground(order.customerName) }}
                     >
-                      {booking.customerName.slice(0, 1)}
+                      {order.customerName.slice(0, 1)}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex min-w-0 flex-wrap items-center gap-x-[8px] gap-y-[6px]">
-                        <p className="truncate text-title-sm font-semibold text-text-primary">{booking.customerName}</p>
-                        {booking.serviceType && (
-                          <span className={`rounded-full px-[8px] py-[3px] text-[10px] font-medium leading-[14px] ${serviceTypeColors[booking.serviceType] || 'bg-gray-50 text-gray-600'}`}>
-                            {serviceTypeLabels[booking.serviceType] || booking.serviceType}
+                        <p className="truncate text-title-sm font-semibold text-text-primary">{order.customerName}</p>
+                        {order.serviceType && (
+                          <span className={`rounded-full px-[8px] py-[3px] text-[10px] font-medium leading-[14px] ${serviceTypeColors[order.serviceType] || 'bg-gray-50 text-gray-600'}`}>
+                            {serviceTypeLabels[order.serviceType] || order.serviceType}
                           </span>
                         )}
                         <Tag
                           variant="primary"
                           className="max-w-full truncate px-[8px] py-[3px] text-[10px] font-medium leading-[14px]"
                         >
-                          {buildTagLabel(booking.serviceName)}
+                          {buildTagLabel(order.serviceName)}
                         </Tag>
                       </div>
-                      <p className="mt-[8px] text-body-sm leading-[20px] text-text-secondary">{booking.address}</p>
+                      <p className="mt-[8px] text-body-sm leading-[20px] text-text-secondary">{order.address}</p>
                       <div className="mt-[8px] flex flex-wrap gap-[8px] text-[12px] leading-[18px] text-text-secondary">
                         <span className="rounded-pill bg-[#f8f8f8] px-[10px] py-[5px]">
                           定金{' '}
-                          <span className={booking.depositPaid ? 'font-medium text-success' : 'font-medium text-danger'}>
-                            {booking.depositPaid ? '已收' : '未收'}
+                          <span className={order.depositPaid ? 'font-medium text-success' : 'font-medium text-danger'}>
+                            {order.depositPaid ? '已收' : '未收'}
                           </span>
                         </span>
                         <span className="rounded-pill bg-[#f8f8f8] px-[10px] py-[5px]">
-                          时长 <span className="font-medium text-text-primary">{getDurationMinutes(booking.startTime, booking.endTime)} 分钟</span>
+                          时长 <span className="font-medium text-text-primary">{getDurationMinutes(order.startTime, order.endTime)} 分钟</span>
                         </span>
                       </div>
                     </div>
@@ -672,7 +672,7 @@ export const SchedulePage: React.FC = () => {
             </div>
           ))
         )}
-        {dayBookings.length > 0 ? <p className="py-sm text-center text-caption text-text-tertiary">已到达最后一站</p> : null}
+        {dayOrders.length > 0 ? <p className="py-sm text-center text-caption text-text-tertiary">已到达最后一站</p> : null}
       </div>
 
       {showFilterSheet ? (
@@ -796,7 +796,7 @@ export const SchedulePage: React.FC = () => {
                         : 'text-text-primary'
                     }`}
                   >
-                    {bookingDateKeys.has(cell.key) ? (
+                    {orderDateKeys.has(cell.key) ? (
                       <span className="absolute right-[7px] top-[7px] h-[5px] w-[5px] rounded-full bg-primary" />
                     ) : null}
                     {cell.date.getDate()}

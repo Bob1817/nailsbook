@@ -2,25 +2,26 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/feedback/ToastProvider';
-import { bookingsService } from '../services/bookings';
+import { ordersService } from '../services/orders';
 import { customersService } from '../services/customers';
 import {
-  bookingStatusClasses,
-  bookingStatusLabels,
-  detectBookingConflict,
+  orderStatusClasses,
+  orderStatusLabels,
+  detectOrderConflict,
   formatClock,
   formatDateLabel,
   formatMoney,
   formatTimeRange,
-  type BookingStatus,
-  type TechnicianBooking,
+  type OrderStatus,
+  type TechnicianOrder,
   type TechnicianCustomerSummary,
 } from '../services/technicianData';
 
-const orderTabs: Array<{ label: string; value: 'all' | BookingStatus }> = [
+const orderTabs: Array<{ label: string; value: 'all' | OrderStatus }> = [
   { label: '全部', value: 'all' },
+  { label: '待报价', value: 'pending_quote' },
+  { label: '待同意', value: 'pending_agree' },
   { label: '待确认', value: 'pending_confirm' },
-  { label: '已确认', value: 'confirmed' },
   { label: '已完成', value: 'completed' },
   { label: '已取消', value: 'cancelled' },
 ];
@@ -40,15 +41,15 @@ export const OrdersPage: React.FC = () => {
   const navigate = useNavigate();
   const { technician } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [orders, setOrders] = useState<TechnicianBooking[]>([]);
+  const [orders, setOrders] = useState<TechnicianOrder[]>([]);
   const [customers, setCustomers] = useState<TechnicianCustomerSummary[]>([]);
-  const [activeTab, setActiveTab] = useState<'all' | BookingStatus>('all');
-  const [selectedOrder, setSelectedOrder] = useState<TechnicianBooking | null>(null);
+  const [activeTab, setActiveTab] = useState<'all' | OrderStatus>('all');
+  const [selectedOrder, setSelectedOrder] = useState<TechnicianOrder | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateSheet, setShowCreateSheet] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [serviceName, setServiceName] = useState('');
-  const [bookingDate, setBookingDate] = useState('');
+  const [orderDate, setOrderDate] = useState('');
   const [startClock, setStartClock] = useState('14:00');
   const [durationMinutes, setDurationMinutes] = useState('90');
   const [address, setAddress] = useState('');
@@ -68,7 +69,7 @@ export const OrdersPage: React.FC = () => {
 
   async function reloadPageData(preferredOrderId?: number) {
     const [nextOrders, nextCustomers] = await Promise.all([
-      bookingsService.list({ technicianId: technician?.id }),
+      ordersService.list({ technicianId: technician?.id }),
       customersService.list({ technicianId: technician?.id }),
     ]);
 
@@ -87,7 +88,7 @@ export const OrdersPage: React.FC = () => {
     async function loadPageData() {
       setIsLoading(true);
       const [nextOrders, nextCustomers] = await Promise.all([
-        bookingsService.list({ technicianId: technician?.id }),
+        ordersService.list({ technicianId: technician?.id }),
         customersService.list({ technicianId: technician?.id }),
       ]);
 
@@ -108,14 +109,14 @@ export const OrdersPage: React.FC = () => {
   }, [technician?.id]);
 
   useEffect(() => {
-    const bookingId = searchParams.get('bookingId');
+    const orderId = searchParams.get('orderId');
     const customerId = searchParams.get('customerId');
     if (customerId) {
       setSelectedCustomerId(customerId);
       setShowCreateSheet(true);
     }
-    if (bookingId) {
-      const matchedOrder = orders.find((order) => String(order.id) === bookingId);
+    if (orderId) {
+      const matchedOrder = orders.find((order) => String(order.id) === orderId);
       if (matchedOrder) {
         setSelectedOrder(matchedOrder);
       }
@@ -140,29 +141,29 @@ export const OrdersPage: React.FC = () => {
   async function handleCreateDraft() {
     setFormError('');
 
-    if (!selectedCustomer || !serviceName || !bookingDate || !startClock || !address || !price) {
+    if (!selectedCustomer || !serviceName || !orderDate || !startClock || !address || !price) {
       setFormError('请填写客户、服务内容、时间、地址和价格');
       return;
     }
 
     const nextDurationMinutes = Number(durationMinutes);
     const nextPrice = Number(price);
-    const startTime = new Date(`${bookingDate}T${startClock}:00`).toISOString();
-    const endTime = buildEndTime(bookingDate, startClock, nextDurationMinutes);
+    const startTime = new Date(`${orderDate}T${startClock}:00`).toISOString();
+    const endTime = buildEndTime(orderDate, startClock, nextDurationMinutes);
 
     if (!endTime || Number.isNaN(nextDurationMinutes) || nextDurationMinutes <= 0 || Number.isNaN(nextPrice)) {
       setFormError('请检查服务时长和价格');
       return;
     }
 
-    if (detectBookingConflict(startTime, endTime, orders)) {
+    if (detectOrderConflict(startTime, endTime, orders)) {
       setFormError('该时间段已有预约，请调整开始时间或服务时长');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const createdOrder = await bookingsService.createDraft({
+      const createdOrder = await ordersService.createDraft({
         customerId: selectedCustomer.id,
         customerName: selectedCustomer.name,
         customerPhone: selectedCustomer.phone,
@@ -177,7 +178,7 @@ export const OrdersPage: React.FC = () => {
       setShowCreateSheet(false);
       setSelectedCustomerId('');
       setServiceName('');
-      setBookingDate('');
+      setOrderDate('');
       setStartClock('14:00');
       setDurationMinutes('90');
       setAddress('');
@@ -198,21 +199,31 @@ export const OrdersPage: React.FC = () => {
     }
   }
 
-  async function handleStatusChange(nextStatus: BookingStatus) {
+  async function handleStatusChange(nextStatus: OrderStatus) {
     if (!selectedOrder) {
       return;
     }
 
     setIsUpdatingStatus(true);
     try {
-      await bookingsService.transition(selectedOrder.id, nextStatus);
+      if (nextStatus === 'cancelled') {
+        await ordersService.cancel(selectedOrder.id);
+      } else if (nextStatus === 'pending_confirm') {
+        await ordersService.agree(selectedOrder.id);
+      } else if (nextStatus === 'pending_home' || nextStatus === 'pending_shop') {
+        await ordersService.confirm(selectedOrder.id);
+      } else if (nextStatus === 'completed') {
+        await ordersService.complete(selectedOrder.id);
+      }
       await reloadPageData(selectedOrder.id);
       toast.success(
-        nextStatus === 'confirmed'
-          ? '预约已确认，行程和消息提醒已更新。'
-          : nextStatus === 'completed'
-            ? '服务已完成，订单状态已更新。'
-            : '预约已取消，相关提醒已同步更新。'
+        nextStatus === 'pending_confirm'
+          ? '已同意报价，等待客户确认。'
+          : nextStatus === 'pending_home' || nextStatus === 'pending_shop'
+            ? '订单已确认，行程和消息提醒已更新。'
+            : nextStatus === 'completed'
+              ? '服务已完成，订单状态已更新。'
+              : '订单已取消，相关提醒已同步更新。'
       );
     } catch {
       toast.error('状态更新失败，请稍后重试。');
@@ -236,7 +247,7 @@ export const OrdersPage: React.FC = () => {
     setShowReviewSheet(true);
   }
 
-  async function handleReviewBooking() {
+  async function handleReviewOrder() {
     if (!selectedOrder) {
       return;
     }
@@ -252,7 +263,7 @@ export const OrdersPage: React.FC = () => {
     setIsReviewing(true);
     setReviewError('');
     try {
-      const reviewed = await bookingsService.review(selectedOrder.id, {
+      const reviewed = await ordersService.review(selectedOrder.id, {
         serviceDate: reviewDate,
         startTime: reviewStartClock,
         durationMinutes: duration,
@@ -268,7 +279,7 @@ export const OrdersPage: React.FC = () => {
     }
   }
 
-  const allowedActions = selectedOrder ? bookingsService.getAllowedActions(selectedOrder.status) : [];
+  const allowedActions = selectedOrder ? ordersService.getAllowedActions(selectedOrder.status) : [];
 
   return (
     <div className="min-h-full bg-gray-50 pb-28">
@@ -333,10 +344,10 @@ export const OrdersPage: React.FC = () => {
                       <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] text-orange-500">本地草稿</span>
                     ) : null}
                   </div>
-                  <p className="mt-1 text-xs text-gray-400">{order.bookingNo}</p>
+                  <p className="mt-1 text-xs text-gray-400">{order.orderNo}</p>
                 </div>
-                <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${bookingStatusClasses[order.status]}`}>
-                  {bookingStatusLabels[order.status]}
+                <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${orderStatusClasses[order.status]}`}>
+                  {orderStatusLabels[order.status]}
                 </span>
               </div>
               <div className="space-y-1.5 text-sm text-gray-600">
@@ -367,8 +378,8 @@ export const OrdersPage: React.FC = () => {
               </div>
               <p className="mt-1 text-sm text-gray-500">{selectedOrder.customerPhone || '未填写联系电话'}</p>
             </div>
-            <span className={`rounded-full px-3 py-1 text-xs font-medium ${bookingStatusClasses[selectedOrder.status]}`}>
-              {bookingStatusLabels[selectedOrder.status]}
+            <span className={`rounded-full px-3 py-1 text-xs font-medium ${orderStatusClasses[selectedOrder.status]}`}>
+              {orderStatusLabels[selectedOrder.status]}
             </span>
           </div>
 
@@ -392,13 +403,34 @@ export const OrdersPage: React.FC = () => {
 
           {!selectedOrder.isLocalDraft && allowedActions.length > 0 ? (
             <div className="mt-4 grid grid-cols-2 gap-3">
-              {allowedActions.includes('confirmed') ? (
+              {allowedActions.includes('pending_agree') ? (
                 <button
                   onClick={openReviewSheet}
                   disabled={isUpdatingStatus || isReviewing}
                   className="min-h-[44px] rounded-2xl bg-[#FF5A66] px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
                 >
-                  核实预约
+                  提交报价
+                </button>
+              ) : null}
+              {allowedActions.includes('pending_confirm') ? (
+                <button
+                  onClick={() => void handleStatusChange('pending_confirm')}
+                  disabled={isUpdatingStatus}
+                  className="min-h-[44px] rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
+                >
+                  {isUpdatingStatus ? '处理中...' : '确认订单'}
+                </button>
+              ) : null}
+              {(allowedActions.includes('pending_home') || allowedActions.includes('pending_shop')) ? (
+                <button
+                  onClick={() => {
+                    const nextStatus: OrderStatus = selectedOrder.serviceType === 'home' ? 'pending_home' : 'pending_shop';
+                    void handleStatusChange(nextStatus);
+                  }}
+                  disabled={isUpdatingStatus}
+                  className="min-h-[44px] rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
+                >
+                  {isUpdatingStatus ? '处理中...' : '确认订单'}
                 </button>
               ) : null}
               {allowedActions.includes('completed') ? (
@@ -407,7 +439,7 @@ export const OrdersPage: React.FC = () => {
                   disabled={isUpdatingStatus}
                   className="min-h-[44px] rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
                 >
-                  {isUpdatingStatus ? '处理中...' : '完成服务'}
+                  {isUpdatingStatus ? '处理中...' : '确认完成'}
                 </button>
               ) : null}
               {allowedActions.includes('cancelled') ? (
@@ -418,7 +450,7 @@ export const OrdersPage: React.FC = () => {
                     allowedActions.length === 1 ? 'col-span-2' : ''
                   }`}
                 >
-                  {isUpdatingStatus ? '处理中...' : '取消预约'}
+                  {isUpdatingStatus ? '处理中...' : '取消订单'}
                 </button>
               ) : null}
             </div>
@@ -473,7 +505,7 @@ export const OrdersPage: React.FC = () => {
               </div>
               {reviewError ? <p className="text-sm text-red-500">{reviewError}</p> : null}
               <button
-                onClick={() => void handleReviewBooking()}
+                onClick={() => void handleReviewOrder()}
                 disabled={isReviewing}
                 className="w-full rounded-xl bg-[#FF5A66] py-3 text-sm font-medium text-white min-h-[48px] disabled:opacity-60"
               >
@@ -528,8 +560,8 @@ export const OrdersPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <input
                   type="date"
-                  value={bookingDate}
-                  onChange={(event) => setBookingDate(event.target.value)}
+                  value={orderDate}
+                  onChange={(event) => setOrderDate(event.target.value)}
                   className="h-12 w-full rounded-xl bg-gray-100 px-4 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
                 />
                 <input
