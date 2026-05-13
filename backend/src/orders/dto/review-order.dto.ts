@@ -17,9 +17,5 @@ export class ReviewOrderDto {
 
   @IsOptional()
   @IsString()
-  shopName?: string;
-
-  @IsOptional()
-  @IsString()
   remark?: string;
 }

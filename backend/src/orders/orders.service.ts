@@ -60,7 +60,7 @@ export class OrdersService {
         address: dto.address,
         serviceType: dto.serviceType || null,
         status: 'pending_quote',
-        remark: dto.note || null,
+        remark: dto.note || dto.serviceName || null,
       },
       include: {
         technician: { select: { id: true, name: true, phone: true } },
