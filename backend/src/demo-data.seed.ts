@@ -1,7 +1,7 @@
 type DemoSeedResult = {
   technicianPhone: string;
   clientPhones: string[];
-  bookingNos: string[];
+  orderNos: string[];
   revenueNos: string[];
   artistApplicationPhones: string[];
 };
@@ -25,15 +25,13 @@ type DemoClientSeed = {
 };
 
 type DemoBookingSeed = {
-  quoteNo: string;
-  bookingNo: string;
+  orderNo: string;
   revenueNo?: string;
   clientPhone: string;
   title: string;
   description: string;
   serviceType: string;
   status: string;
-  quoteStatus: string;
   price: number;
   depositAmount: number;
   startTime: Date;
@@ -881,15 +879,13 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
 
   const bookingSeeds: DemoBookingSeed[] = [
     {
-      quoteNo: 'DEMO-QT-1001',
-      bookingNo: 'DEMO-BKG-1001',
+      orderNo: 'DEMO-OD-1001',
       revenueNo: 'DEMO-REV-1001',
       clientPhone: '13800138001',
       title: '奶油裸粉通勤款',
       description: '老客户返场保养 + 裸粉跳色',
       serviceType: '到店美甲',
       status: 'completed',
-      quoteStatus: 'accepted',
       price: 198,
       depositAmount: 50,
       startTime: daysAgo(18, 19, 30),
@@ -899,15 +895,13 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
       recognizedAt: daysAgo(18, 22, 0),
     },
     {
-      quoteNo: 'DEMO-QT-1002',
-      bookingNo: 'DEMO-BKG-1002',
+      orderNo: 'DEMO-OD-1002',
       revenueNo: 'DEMO-REV-1002',
       clientPhone: '13800138002',
       title: '法式猫眼婚礼款',
       description: '婚礼前试妆款',
       serviceType: '上门美甲',
       status: 'completed',
-      quoteStatus: 'accepted',
       price: 328,
       depositAmount: 100,
       startTime: daysAgo(12, 13, 0),
@@ -917,14 +911,12 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
       recognizedAt: daysAgo(12, 16, 30),
     },
     {
-      quoteNo: 'DEMO-QT-1003',
-      bookingNo: 'DEMO-BKG-1003',
+      orderNo: 'DEMO-OD-1003',
       clientPhone: '13800138003',
       title: '奶灰法式婚礼参考',
       description: '婚礼前正式款',
       serviceType: '到店美甲',
-      status: 'confirmed',
-      quoteStatus: 'accepted',
+      status: 'pending_shop',
       price: 328,
       depositAmount: 100,
       startTime: daysFromNow(0, 14, 0),
@@ -933,14 +925,12 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
       remark: '到店前确认婚礼礼服颜色。',
     },
     {
-      quoteNo: 'DEMO-QT-1004',
-      bookingNo: 'DEMO-BKG-1004',
+      orderNo: 'DEMO-OD-1004',
       clientPhone: '13800138004',
       title: '黑金派对延长款',
       description: '周末活动造型款',
       serviceType: '上门美甲',
-      status: 'pending_confirm',
-      quoteStatus: 'pending',
+      status: 'pending_agree',
       price: 368,
       depositAmount: 100,
       startTime: daysFromNow(0, 18, 30),
@@ -949,15 +939,13 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
       remark: '先保留晚间档期，待客户确认订金。',
     },
     {
-      quoteNo: 'DEMO-QT-1005',
-      bookingNo: 'DEMO-BKG-1005',
+      orderNo: 'DEMO-OD-1005',
       revenueNo: 'DEMO-REV-1005',
       clientPhone: '13800138005',
       title: '海盐蓝旅行款',
       description: '清透蓝旅行主题',
       serviceType: '到店美甲',
       status: 'completed',
-      quoteStatus: 'accepted',
       price: 268,
       depositAmount: 80,
       startTime: daysFromNow(0, 10, 30),
@@ -968,14 +956,12 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
       designRequestTitle: '海盐蓝旅行款',
     },
     {
-      quoteNo: 'DEMO-QT-1006',
-      bookingNo: 'DEMO-BKG-1006',
+      orderNo: 'DEMO-OD-1006',
       clientPhone: '13800138001',
       title: '樱桃酒红秋冬款',
       description: '节日前加班后的临时保养',
       serviceType: '到店美甲',
       status: 'cancelled',
-      quoteStatus: 'cancelled',
       price: 238,
       depositAmount: 0,
       startTime: daysAgo(2, 20, 0),
@@ -986,15 +972,13 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
       cancelReason: '客户临时出差',
     },
     {
-      quoteNo: 'DEMO-QT-1007',
-      bookingNo: 'DEMO-BKG-1007',
+      orderNo: 'DEMO-OD-1007',
       revenueNo: 'DEMO-REV-1007',
       clientPhone: '13800138002',
       title: '抹茶绿色周末款',
       description: '春夏跳色返场款',
       serviceType: '上门美甲',
       status: 'completed',
-      quoteStatus: 'accepted',
       price: 228,
       depositAmount: 60,
       startTime: daysAgo(28, 11, 0),
@@ -1004,14 +988,12 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
       recognizedAt: daysAgo(28, 13, 10),
     },
     {
-      quoteNo: 'DEMO-QT-1008',
-      bookingNo: 'DEMO-BKG-1008',
+      orderNo: 'DEMO-OD-1008',
       clientPhone: '13800138003',
       title: '婚礼前试色沟通',
       description: '试色和甲型沟通',
       serviceType: '到店美甲',
-      status: 'pending_confirm',
-      quoteStatus: 'pending',
+      status: 'pending_agree',
       price: 99,
       depositAmount: 0,
       startTime: daysFromNow(1, 19, 0),
@@ -1021,7 +1003,7 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
     },
   ];
 
-  const bookingNos: string[] = [];
+  const orderNos: string[] = [];
   const revenueNos: string[] = [];
 
   for (const seed of bookingSeeds) {
@@ -1030,39 +1012,9 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
     const address = addressLookup.get(seed.clientPhone);
     const designRequest = seed.designRequestTitle ? designRequestLookup.get(seed.designRequestTitle) : null;
 
-    const quote = await prisma.quote.upsert({
-      where: { quoteNo: seed.quoteNo },
+    const order = await prisma.order.upsert({
+      where: { orderNo: seed.orderNo },
       update: {
-        technicianId: primaryTechnician.id,
-        customerId: customer.id,
-        title: seed.title,
-        description: seed.description,
-        price: seed.price,
-        depositAmount: seed.depositAmount,
-        status: seed.quoteStatus,
-        acceptedAt: seed.quoteStatus === 'accepted' ? seed.startTime : null,
-        cancelledAt: seed.quoteStatus === 'cancelled' ? seed.cancelledAt ?? seed.startTime : null,
-        expiredAt: null,
-      },
-      create: {
-        quoteNo: seed.quoteNo,
-        technicianId: primaryTechnician.id,
-        customerId: customer.id,
-        title: seed.title,
-        description: seed.description,
-        price: seed.price,
-        depositAmount: seed.depositAmount,
-        status: seed.quoteStatus,
-        acceptedAt: seed.quoteStatus === 'accepted' ? seed.startTime : null,
-        cancelledAt: seed.quoteStatus === 'cancelled' ? seed.cancelledAt ?? seed.startTime : null,
-        expiredAt: null,
-      },
-    });
-
-    const booking = await prisma.booking.upsert({
-      where: { bookingNo: seed.bookingNo },
-      update: {
-        quoteId: quote.id,
         technicianId: primaryTechnician.id,
         customerId: customer.id,
         clientUserId: client.id,
@@ -1079,15 +1031,14 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
         depositAmount: seed.depositAmount,
         depositStatus: seed.depositAmount > 0 ? 'paid' : 'pending',
         depositConfirmedAt: seed.depositAmount > 0 ? seed.startTime : null,
-        confirmedAt: ['confirmed', 'completed'].includes(seed.status) ? seed.startTime : null,
+        confirmedAt: ['pending_home', 'pending_shop', 'in_progress', 'completed'].includes(seed.status) ? seed.startTime : null,
         completedAt: seed.status === 'completed' ? seed.endTime : null,
         cancelledAt: seed.status === 'cancelled' ? seed.cancelledAt ?? seed.startTime : null,
         cancelReason: seed.cancelReason ?? null,
         source: 'demo_seed',
       },
       create: {
-        bookingNo: seed.bookingNo,
-        quoteId: quote.id,
+        orderNo: seed.orderNo,
         technicianId: primaryTechnician.id,
         customerId: customer.id,
         clientUserId: client.id,
@@ -1104,7 +1055,7 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
         depositAmount: seed.depositAmount,
         depositStatus: seed.depositAmount > 0 ? 'paid' : 'pending',
         depositConfirmedAt: seed.depositAmount > 0 ? seed.startTime : null,
-        confirmedAt: ['confirmed', 'completed'].includes(seed.status) ? seed.startTime : null,
+        confirmedAt: ['pending_home', 'pending_shop', 'in_progress', 'completed'].includes(seed.status) ? seed.startTime : null,
         completedAt: seed.status === 'completed' ? seed.endTime : null,
         cancelledAt: seed.status === 'cancelled' ? seed.cancelledAt ?? seed.startTime : null,
         cancelReason: seed.cancelReason ?? null,
@@ -1112,14 +1063,13 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
       },
     });
 
-    bookingNos.push(seed.bookingNo);
+    orderNos.push(seed.orderNo);
 
     if (seed.revenueNo && seed.recognizedAt) {
       await prisma.revenue.upsert({
         where: { revenueNo: seed.revenueNo },
         update: {
-          bookingId: booking.id,
-          quoteId: quote.id,
+          orderId: order.id,
           technicianId: primaryTechnician.id,
           customerId: customer.id,
           amount: seed.price,
@@ -1129,8 +1079,7 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
         },
         create: {
           revenueNo: seed.revenueNo,
-          bookingId: booking.id,
-          quoteId: quote.id,
+          orderId: order.id,
           technicianId: primaryTechnician.id,
           customerId: customer.id,
           amount: seed.price,
@@ -1235,7 +1184,7 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
   return {
     technicianPhone: PRIMARY_TECHNICIAN_PHONE,
     clientPhones: DEMO_CLIENTS.map((item) => item.phone),
-    bookingNos,
+    orderNos,
     revenueNos,
     artistApplicationPhones,
   };

@@ -8,7 +8,7 @@ async function main() {
     const result = await ensureDemoData(prisma);
     console.log(`Demo seed verified for technician ${result.technicianPhone}`);
     console.log(`Clients: ${result.clientPhones.join(', ')}`);
-    console.log(`Bookings: ${result.bookingNos.join(', ')}`);
+    console.log(`Orders: ${result.orderNos.join(', ')}`);
     console.log(`Revenues: ${result.revenueNos.join(', ')}`);
     console.log(`Artist applications: ${result.artistApplicationPhones.join(', ')}`);
   } finally {
