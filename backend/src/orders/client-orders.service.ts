@@ -3,7 +3,7 @@ import { PrismaService } from '../common/prisma/prisma.service';
 import { CreateClientOrderDto } from './dto/create-client-order.dto';
 import { UpdateClientOrderDto } from './dto/update-client-order.dto';
 import { CreateOrderFromDesignDto } from './dto/create-order-from-design.dto';
-import { ReviewOrderDto } from './dto/review-order.dto';
+
 import * as crypto from 'crypto';
 
 type ShopBusinessHour = {
@@ -476,7 +476,7 @@ export class ClientOrdersService {
         where: { id },
         data: {
           status: 'pending_quote',
-          quotePrice: null,
+          quotePrice: 0,
           quoteRemark: null,
           quotedAt: null,
         },
@@ -507,83 +507,6 @@ export class ClientOrdersService {
           senderId: clientUserId,
           receiverType: 'technician',
           receiverId: order.technicianId,
-          messageType: 'system',
-          content: preview,
-          relatedType: 'order',
-          relatedId: order.id,
-        },
-      });
-
-      return updated;
-    });
-
-    return this.mapOrder(updatedOrder);
-  }
-
-  async quote(clientUserId: number, id: number, dto: ReviewOrderDto) {
-    const order = await this.prisma.order.findFirst({
-      where: {
-        id,
-        clientUserId,
-      },
-      include: this.orderInclude(),
-    });
-
-    if (!order) {
-      throw new NotFoundException('订单不存在');
-    }
-
-    if (order.status !== 'pending_agree') {
-      throw new BadRequestException('当前订单状态不支持报价');
-    }
-
-    const startTime = this.buildStartTime(dto.serviceDate, dto.startTime);
-    const endTime = new Date(startTime.getTime() + Number(dto.durationMinutes) * 60000);
-
-    if (Number.isNaN(startTime.getTime()) || Number.isNaN(endTime.getTime()) || Number(dto.durationMinutes) <= 0) {
-      throw new BadRequestException('预约时间或预估时长无效');
-    }
-
-    await this.assertOrderConflict(order.technicianId, startTime, endTime, order.id);
-
-    const updatedOrder = await this.prisma.$transaction(async (tx) => {
-      const updated = await tx.order.update({
-        where: { id },
-        data: {
-          startTime,
-          endTime,
-          quotePrice: dto.price,
-          quoteRemark: dto.remark || null,
-          quotedAt: new Date(),
-          status: 'pending_agree',
-        },
-        include: this.orderInclude(),
-      });
-
-      const preview = '美甲师已提交报价，请查看并确认～';
-      const conversation = await tx.conversation.upsert({
-        where: {
-          clientId_techId: {
-            clientId: clientUserId,
-            techId: order.technicianId,
-          },
-        },
-        update: { lastMessage: preview, lastMessageAt: new Date() },
-        create: {
-          clientId: clientUserId,
-          techId: order.technicianId,
-          lastMessage: preview,
-          lastMessageAt: new Date(),
-        },
-      });
-
-      await tx.message.create({
-        data: {
-          conversationId: conversation.id,
-          senderType: 'system',
-          senderId: 0,
-          receiverType: 'client',
-          receiverId: clientUserId,
           messageType: 'system',
           content: preview,
           relatedType: 'order',
