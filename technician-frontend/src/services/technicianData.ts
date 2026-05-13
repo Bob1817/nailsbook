@@ -1,13 +1,16 @@
-export type BookingStatus =
+export type OrderStatus =
+  | 'pending_quote'
+  | 'pending_agree'
   | 'pending_confirm'
-  | 'confirmed'
+  | 'pending_home'
+  | 'pending_shop'
   | 'in_progress'
   | 'completed'
   | 'cancelled';
 
-export interface TechnicianBooking {
+export interface TechnicianOrder {
   id: number;
-  bookingNo: string;
+  orderNo: string;
   customerId: number;
   customerName: string;
   customerPhone?: string;
@@ -15,21 +18,22 @@ export interface TechnicianBooking {
   address: string;
   startTime: string;
   endTime: string;
-  status: BookingStatus;
+  status: OrderStatus;
   price: number;
+  quoteRemark: string | null;
+  quotedAt: string | null;
   depositPaid: boolean;
   note?: string;
   isLocalDraft?: boolean;
-  // 新增字段
-  serviceType?: 'home' | 'shop'; // 服务类型：上门/到店
-  shopId?: number; // 店铺ID（到店服务时）
-  shopName?: string; // 店铺名称
+  serviceType?: 'home' | 'shop';
+  shopId?: number;
+  shopName?: string;
   priceBreakdown?: {
-    basePrice: number; // 基础报价
-    homeServiceFee?: number; // 上门费用
-    nightFee?: number; // 夜间服务费
-    holidayFee?: number; // 节假日服务费
-    otherFees?: number; // 其他费用
+    basePrice: number;
+    homeServiceFee?: number;
+    nightFee?: number;
+    holidayFee?: number;
+    otherFees?: number;
   };
   serviceItems?: Array<{
     id: string;
@@ -47,7 +51,7 @@ export interface TechnicianCustomerSummary {
   tags: string[];
   note: string;
   recentServiceAt?: string;
-  totalBookings: number;
+  totalOrders: number;
   totalSpent: number;
 }
 
@@ -65,34 +69,43 @@ export interface TechnicianCustomerDetail extends TechnicianCustomerSummary {
   }>;
 }
 
-export const bookingStatusLabels: Record<BookingStatus, string> = {
+export const orderStatusLabels: Record<OrderStatus, string> = {
+  pending_quote: '待报价',
+  pending_agree: '待同意',
   pending_confirm: '待确认',
-  confirmed: '已确认',
+  pending_home: '待上门',
+  pending_shop: '待到店',
   in_progress: '服务中',
   completed: '已完成',
   cancelled: '已取消',
 };
 
-export const bookingStatusClasses: Record<BookingStatus, string> = {
+export const orderStatusClasses: Record<OrderStatus, string> = {
+  pending_quote: 'bg-orange-100 text-orange-700',
+  pending_agree: 'bg-purple-100 text-purple-700',
   pending_confirm: 'bg-yellow-100 text-yellow-700',
-  confirmed: 'bg-emerald-100 text-emerald-700',
+  pending_home: 'bg-emerald-100 text-emerald-700',
+  pending_shop: 'bg-teal-100 text-teal-700',
   in_progress: 'bg-sky-100 text-sky-700',
   completed: 'bg-gray-100 text-gray-600',
   cancelled: 'bg-red-100 text-red-600',
 };
 
-export const bookingStatusActions: Record<BookingStatus, BookingStatus[]> = {
-  pending_confirm: ['confirmed', 'cancelled'],
-  confirmed: ['completed', 'cancelled'],
+export const orderStatusActions: Record<OrderStatus, OrderStatus[]> = {
+  pending_quote: ['pending_agree', 'cancelled'],
+  pending_agree: ['cancelled'],
+  pending_confirm: ['pending_home', 'pending_shop', 'cancelled'],
+  pending_home: [],
+  pending_shop: [],
   in_progress: ['completed'],
   completed: [],
   cancelled: [],
 };
 
-export const fallbackBookings: TechnicianBooking[] = [
+export const fallbackOrders: TechnicianOrder[] = [
   {
     id: 1,
-    bookingNo: 'BK20260428001',
+    orderNo: 'ORD20260428001',
     customerId: 1,
     customerName: '王小美',
     customerPhone: '13800138001',
@@ -102,11 +115,13 @@ export const fallbackBookings: TechnicianBooking[] = [
     endTime: '2026-04-28T12:00:00+08:00',
     status: 'pending_confirm',
     price: 299,
+    quoteRemark: null,
+    quotedAt: null,
     depositPaid: false,
   },
   {
     id: 2,
-    bookingNo: 'BK20260428002',
+    orderNo: 'ORD20260428002',
     customerId: 2,
     customerName: '李小红',
     customerPhone: '13800138002',
@@ -114,13 +129,15 @@ export const fallbackBookings: TechnicianBooking[] = [
     address: '海淀区中关村大街1号',
     startTime: '2026-04-28T14:00:00+08:00',
     endTime: '2026-04-28T16:00:00+08:00',
-    status: 'confirmed',
+    status: 'pending_home',
     price: 399,
+    quoteRemark: null,
+    quotedAt: null,
     depositPaid: true,
   },
   {
     id: 3,
-    bookingNo: 'BK20260428003',
+    orderNo: 'ORD20260428003',
     customerId: 3,
     customerName: '张小丽',
     customerPhone: '13800138003',
@@ -130,11 +147,13 @@ export const fallbackBookings: TechnicianBooking[] = [
     endTime: '2026-04-28T20:00:00+08:00',
     status: 'completed',
     price: 499,
+    quoteRemark: null,
+    quotedAt: null,
     depositPaid: true,
   },
   {
     id: 4,
-    bookingNo: 'BK20260429001',
+    orderNo: 'ORD20260429001',
     customerId: 4,
     customerName: 'Lily',
     customerPhone: '13800138004',
@@ -142,8 +161,10 @@ export const fallbackBookings: TechnicianBooking[] = [
     address: '浦东新区张杨路188号',
     startTime: '2026-04-29T11:00:00+08:00',
     endTime: '2026-04-29T12:30:00+08:00',
-    status: 'confirmed',
+    status: 'pending_home',
     price: 328,
+    quoteRemark: null,
+    quotedAt: null,
     depositPaid: true,
   },
 ];
@@ -157,7 +178,7 @@ export const fallbackCustomers: TechnicianCustomerDetail[] = [
     tags: ['常客', '高频'],
     note: '喜欢精致简约风格',
     recentServiceAt: '2026-04-28T10:00:00+08:00',
-    totalBookings: 6,
+    totalOrders: 6,
     totalSpent: 1888,
     preferenceStyle: '简约',
     preferenceColor: '粉色系',
@@ -175,13 +196,13 @@ export const fallbackCustomers: TechnicianCustomerDetail[] = [
     tags: ['新客'],
     note: '偏爱低饱和颜色',
     recentServiceAt: '2026-04-28T14:00:00+08:00',
-    totalBookings: 2,
+    totalOrders: 2,
     totalSpent: 598,
     preferenceStyle: '纯色',
     preferenceColor: '裸色系',
     allergyNote: '无',
     history: [
-      { id: 21, label: '纯色跳色', date: '2026-04-28T14:00:00+08:00', price: 399, status: 'confirmed' },
+      { id: 21, label: '纯色跳色', date: '2026-04-28T14:00:00+08:00', price: 399, status: 'pending_home' },
     ],
   },
   {
@@ -192,7 +213,7 @@ export const fallbackCustomers: TechnicianCustomerDetail[] = [
     tags: ['常客'],
     note: '愿意尝试复杂款式',
     recentServiceAt: '2026-04-28T18:00:00+08:00',
-    totalBookings: 8,
+    totalOrders: 8,
     totalSpent: 3560,
     preferenceStyle: '延长款',
     preferenceColor: '红色系',
@@ -307,39 +328,41 @@ export function getDurationMinutes(startTime: string, endTime: string): number {
   return Math.max(0, Math.round((end - start) / 60000));
 }
 
-export function detectBookingConflict(
+export function detectOrderConflict(
   startTime: string,
   endTime: string,
-  bookings: TechnicianBooking[],
+  orders: TechnicianOrder[],
   ignoreId?: number
 ): boolean {
   const nextStart = new Date(startTime).getTime();
   const nextEnd = new Date(endTime).getTime();
 
-  return bookings.some((booking) => {
-    if (ignoreId && booking.id === ignoreId) {
+  return orders.some((order) => {
+    if (ignoreId && order.id === ignoreId) {
       return false;
     }
 
-    const currentStart = new Date(booking.startTime).getTime();
-    const currentEnd = new Date(booking.endTime).getTime();
+    const currentStart = new Date(order.startTime).getTime();
+    const currentEnd = new Date(order.endTime).getTime();
     return nextStart < currentEnd && nextEnd > currentStart;
   });
 }
 
-export function buildDashboardSummary(bookings: TechnicianBooking[], baseDate: Date) {
-  const todayBookings = bookings.filter((booking) => isSameDay(booking.startTime, baseDate));
-  const confirmedBookings = todayBookings.filter((booking) => booking.status === 'confirmed');
-  const pendingBookings = todayBookings.filter((booking) => booking.status === 'pending_confirm');
-  const completedBookings = todayBookings.filter((booking) => booking.status === 'completed');
-  const todayIncome = completedBookings.reduce((sum, booking) => sum + booking.price, 0);
-  const expectedIncome = todayBookings.reduce((sum, booking) => sum + booking.price, 0);
+export function buildDashboardSummary(orders: TechnicianOrder[], baseDate: Date) {
+  const todayOrders = orders.filter((order) => isSameDay(order.startTime, baseDate));
+  const confirmedOrders = todayOrders.filter(
+    (order) => order.status === 'pending_home' || order.status === 'pending_shop',
+  );
+  const pendingOrders = todayOrders.filter((order) => order.status === 'pending_confirm');
+  const completedOrders = todayOrders.filter((order) => order.status === 'completed');
+  const todayIncome = completedOrders.reduce((sum, order) => sum + order.price, 0);
+  const expectedIncome = todayOrders.reduce((sum, order) => sum + order.price, 0);
 
   return {
-    todayBookings,
-    confirmedCount: confirmedBookings.length,
-    pendingCount: pendingBookings.length,
-    completedCount: completedBookings.length,
+    todayOrders,
+    confirmedCount: confirmedOrders.length,
+    pendingCount: pendingOrders.length,
+    completedCount: completedOrders.length,
     todayIncome,
     expectedIncome,
   };
