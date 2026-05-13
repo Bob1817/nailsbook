@@ -201,26 +201,29 @@ export const MePage: React.FC = () => {
               全部订单
             </button>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-5 gap-2">
             {[
-              { label: '待报价', value: pendingQuoteCount, status: 'pending_quote' },
-              { label: '待确认', value: pendingConfirmCount, status: 'pending_confirm' },
-              { label: '待上门', value: pendingHomeCount, status: 'pending_home' },
-              { label: '待到店', value: pendingShopCount, status: 'pending_shop' },
-              { label: '服务中', value: inProgressCount, status: 'in_progress' },
+              { icon: '💬', label: '待报价', value: pendingQuoteCount, status: 'pending_quote' },
+              { icon: '⏳', label: '待确认', value: pendingConfirmCount, status: 'pending_confirm' },
+              { icon: '🚗', label: '待上门', value: pendingHomeCount, status: 'pending_home' },
+              { icon: '🏪', label: '待到店', value: pendingShopCount, status: 'pending_shop' },
+              { icon: '💅', label: '服务中', value: inProgressCount, status: 'in_progress' },
             ].map((item) => (
               <button
                 key={item.label}
                 type="button"
                 onClick={() => navigate(`/orders?status=${item.status}`)}
-                className="flex items-center gap-1.5 rounded-full bg-[#fff9f8] px-3 py-2 ring-1 ring-[#f2e6ec] min-h-[44px] transition-colors active:bg-[#ffe9f0]"
+                className="relative flex flex-col items-center gap-1.5 rounded-[18px] bg-[#fff9f8] px-1 py-3 ring-1 ring-[#f2e6ec] transition-colors active:bg-gray-50 min-h-[44px]"
               >
-                <span className="text-sm font-medium text-gray-700">{item.label}</span>
-                {item.value > 0 && (
-                  <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] text-white font-semibold">
-                    {item.value}
-                  </span>
-                )}
+                <div className="relative flex h-10 w-10 items-center justify-center rounded-[14px] bg-white text-lg shadow-[0_6px_14px_rgba(29,35,53,0.04)] ring-1 ring-black/[0.03]">
+                  <span>{item.icon}</span>
+                  {item.value > 0 && (
+                    <span className="absolute -right-2 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
+                      {item.value}
+                    </span>
+                  )}
+                </div>
+                <span className="text-center text-[11px] text-gray-600">{item.label}</span>
               </button>
             ))}
           </div>
