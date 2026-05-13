@@ -24,6 +24,7 @@ interface OrderApiItem {
     name: string;
     phone?: string | null;
     tags?: string | null;
+    avatarUrl?: string | null;
   };
   quotePrice?: number | null;
   quoteRemark?: string | null;
@@ -97,6 +98,7 @@ function normalizeOrder(item: OrderApiItem): TechnicianOrder {
     customerId: item.customer?.id ?? item.customerId,
     customerName: item.customer?.name ?? '未命名客户',
     customerPhone: item.customer?.phone ?? undefined,
+    customerAvatar: item.customer?.avatarUrl ?? undefined,
     serviceName,
     address: item.address || '待补充服务地址',
     startTime: item.startTime,

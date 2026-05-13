@@ -14,6 +14,7 @@ export interface TechnicianOrder {
   customerId: number;
   customerName: string;
   customerPhone?: string;
+  customerAvatar?: string;
   serviceName: string;
   address: string;
   startTime: string;

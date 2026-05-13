@@ -64,7 +64,7 @@ export class OrdersService {
       },
       include: {
         technician: { select: { id: true, name: true, phone: true } },
-        customer: { select: { id: true, name: true, phone: true } },
+        customer: { select: { id: true, name: true, phone: true, avatarUrl: true } },
       },
     });
   }
@@ -83,7 +83,7 @@ export class OrdersService {
         take: limit,
         include: {
           technician: { select: { id: true, name: true, phone: true } },
-          customer: { select: { id: true, name: true, phone: true } },
+          customer: { select: { id: true, name: true, phone: true, avatarUrl: true } },
         },
         orderBy: { startTime: 'desc' },
       }),
@@ -104,7 +104,7 @@ export class OrdersService {
       },
       include: {
         technician: { select: { id: true, name: true, phone: true } },
-        customer: { select: { id: true, name: true, phone: true } },
+        customer: { select: { id: true, name: true, phone: true, avatarUrl: true } },
       },
       orderBy: { startTime: 'asc' },
     });
@@ -115,7 +115,7 @@ export class OrdersService {
       where: { id },
       include: {
         technician: { select: { id: true, name: true, phone: true } },
-        customer: { select: { id: true, name: true, phone: true } },
+        customer: { select: { id: true, name: true, phone: true, avatarUrl: true } },
         revenue: true,
         designRequest: {
           select: { id: true, title: true, images: true, description: true },
@@ -172,7 +172,7 @@ export class OrdersService {
         },
         include: {
           technician: { select: { id: true, name: true, phone: true } },
-          customer: { select: { id: true, name: true, phone: true } },
+          customer: { select: { id: true, name: true, phone: true, avatarUrl: true } },
         },
       });
 
