@@ -161,9 +161,6 @@ export const SchedulePage: React.FC = () => {
     [orders],
   );
 
-  const isTodayInView = dateOptions.some((opt) => sameCalendarDay(opt.date, new Date()));
-  const isActiveToday = sameCalendarDay(activeDate, new Date());
-
   const dayOrders = useMemo(
     () =>
       orders
@@ -199,8 +196,11 @@ export const SchedulePage: React.FC = () => {
     };
   }, [dayOrders]);
 
-  const scrollToToday = () => {
+  const resetToToday = () => {
     setActiveDate(new Date());
+    if (dateStripRef.current) {
+      dateStripRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+    }
   };
 
   return (
@@ -210,25 +210,14 @@ export const SchedulePage: React.FC = () => {
       subtitle="高效规划路线，准时上门服务"
     >
       {/* ===== 日期选择器 ===== */}
-      <div className="flex items-center gap-3 mb-4">
-        {!isActiveToday && (
-          <button
-            type="button"
-            onClick={scrollToToday}
-            className="flex shrink-0 items-center gap-1 rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-white min-h-[32px]"
-          >
-            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-            </svg>
-            今天
-          </button>
-        )}
+      <div className="mb-4">
         <div
           ref={dateStripRef}
-          className="flex gap-2 overflow-x-auto flex-1 scrollbar-hide"
+          className="flex gap-2 overflow-x-auto scrollbar-hide"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
           {dateOptions.map(({ date, key }) => {
+            const isToday = sameCalendarDay(date, new Date());
             const isActive = sameCalendarDay(activeDate, date);
             const relativeLabel = getRelativeDayLabel(date);
             const weekday = getWeekdayShort(date);
@@ -238,7 +227,7 @@ export const SchedulePage: React.FC = () => {
               <button
                 key={key}
                 type="button"
-                onClick={() => setActiveDate(date)}
+                onClick={isToday ? resetToToday : () => setActiveDate(date)}
                 className={`shrink-0 w-[56px] text-center rounded-[14px] cursor-pointer transition-colors ${
                   isActive
                     ? 'bg-primary text-white py-2.5'
