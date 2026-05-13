@@ -77,8 +77,7 @@ model Technician {
   // Social media accounts
   socialMedia    String?                 // JSON object of social media accounts
   customers      Customer[]
-  quotes         Quote[]
-  bookings       Booking[]
+  orders         Order[]
   revenues       Revenue[]
   subscription   TechnicianSubscription?
   clientBindings ClientTechBinding[]
@@ -104,8 +103,7 @@ model Customer {
   updatedAt    DateTime   @default(now()) @updatedAt
   technician   Technician @relation(fields: [technicianId], references: [id])
   clientUser   ClientUser? @relation(fields: [clientUserId], references: [id])
-  quotes       Quote[]
-  bookings     Booking[]
+  orders       Order[]
   revenues     Revenue[]
 
   @@index([technicianId])
@@ -114,72 +112,49 @@ model Customer {
   @@index([phone])
 }
 
-model Quote {
-  id            Int        @id @default(autoincrement())
-  quoteNo       String     @unique
-  technicianId  Int
-  customerId    Int
-  title         String?
-  description   String?
-  price         Float
-  depositAmount Float?     @default(0)
-  status        String     @default("pending")
-  expiredAt     DateTime?
-  acceptedAt    DateTime?
-  cancelledAt   DateTime?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @default(now()) @updatedAt
-  technician    Technician @relation(fields: [technicianId], references: [id])
-  customer      Customer   @relation(fields: [customerId], references: [id])
-  booking       Booking?
+model Order {
+  id                      Int                  @id @default(autoincrement())
+  orderNo                 String               @unique
+  technicianId            Int
+  customerId              Int
+  clientUserId            Int?
+  addressId               Int?
+  designRequestId         Int?
+  customServiceRequestId  Int?
+  startTime               DateTime
+  endTime                 DateTime
+  address                 String?
+  serviceType             String?
+  remark                  String?
+  quotePrice              Float?
+  quoteRemark             String?
+  quotedAt                DateTime?
+  status                  String               @default("pending_quote")
+  isDepositPaid           Boolean              @default(false)
+  depositAmount           Float?               @default(0)
+  depositStatus           String?              @default("pending")
+  depositConfirmedAt      DateTime?
+  confirmedAt             DateTime?
+  completedAt             DateTime?
+  cancelledAt             DateTime?
+  cancelReason            String?
+  source                  String?              @default("technician")
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @default(now()) @updatedAt
+  technician              Technician           @relation(fields: [technicianId], references: [id])
+  customer                Customer             @relation(fields: [customerId], references: [id])
+  clientUser              ClientUser?          @relation(fields: [clientUserId], references: [id])
+  clientAddress           ClientAddress?       @relation(fields: [addressId], references: [id])
+  designRequest           ClientDesignRequest?    @relation(fields: [designRequestId], references: [id])
+  customServiceRequest    CustomServiceRequest? @relation(fields: [customServiceRequestId], references: [id])
+  revenue                 Revenue?
 
-  @@index([technicianId])
-  @@index([customerId])
-  @@index([status])
-  @@index([createdAt])
-}
-
-model Booking {
-  id                 Int                  @id @default(autoincrement())
-  bookingNo          String               @unique
-  quoteId            Int                  @unique
-  technicianId       Int
-  customerId         Int
-  clientUserId       Int?
-  addressId          Int?
-  designRequestId    Int?
-  startTime          DateTime
-  endTime            DateTime
-  address            String?
-  serviceType        String?
-  remark             String?
-  quotePrice         Float?
-  status             String               @default("pending_confirm")
-  isDepositPaid      Boolean              @default(false)
-  depositAmount      Float?               @default(0)
-  depositStatus      String?              @default("pending")
-  depositConfirmedAt DateTime?
-  confirmedAt        DateTime?
-  completedAt        DateTime?
-  cancelledAt        DateTime?
-  cancelReason       String?
-  source             String?              @default("technician")
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @default(now()) @updatedAt
-  quote              Quote                @relation(fields: [quoteId], references: [id])
-  technician         Technician           @relation(fields: [technicianId], references: [id])
-  customer           Customer             @relation(fields: [customerId], references: [id])
-  clientUser         ClientUser?          @relation(fields: [clientUserId], references: [id])
-  clientAddress      ClientAddress?       @relation(fields: [addressId], references: [id])
-  designRequest      ClientDesignRequest? @relation(fields: [designRequestId], references: [id])
-  revenue            Revenue?
-
-  @@index([quoteId])
   @@index([technicianId])
   @@index([customerId])
   @@index([clientUserId])
   @@index([addressId])
   @@index([designRequestId])
+  @@index([customServiceRequestId])
   @@index([status])
   @@index([startTime])
 }
@@ -194,7 +169,7 @@ model ClientUser {
   updatedAt      DateTime              @default(now()) @updatedAt
   bindings       ClientTechBinding[]
   addresses      ClientAddress[]
-  bookings       Booking[]
+  orders         Order[]
   customers      Customer[]
   designRequests ClientDesignRequest[]
   conversations  Conversation[]
@@ -235,7 +210,7 @@ model ClientAddress {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @default(now()) @updatedAt
   client        ClientUser @relation(fields: [clientId], references: [id])
-  bookings      Booking[]
+  orders        Order[]
   customServiceRequests CustomServiceRequest[]
 
   @@index([clientId])
@@ -316,7 +291,7 @@ model ClientDesignRequest {
   updatedAt   DateTime   @default(now()) @updatedAt
   client      ClientUser @relation(fields: [clientId], references: [id])
   technician  Technician @relation(fields: [techId], references: [id])
-  bookings    Booking[]
+  orders      Order[]
 
   @@index([clientId])
   @@index([techId])
@@ -349,6 +324,7 @@ model CustomServiceRequest {
   client        ClientUser @relation(fields: [clientId], references: [id])
   technician    Technician @relation(fields: [techId], references: [id])
   clientAddress ClientAddress? @relation(fields: [addressId], references: [id])
+  orders        Order[]
 
   @@index([clientId])
   @@index([techId])
@@ -395,8 +371,7 @@ model Message {
 model Revenue {
   id           Int        @id @default(autoincrement())
   revenueNo    String     @unique
-  bookingId    Int        @unique
-  quoteId      Int
+  orderId      Int        @unique
   technicianId Int
   customerId   Int
   amount       Float
@@ -405,7 +380,7 @@ model Revenue {
   voidedAt     DateTime?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @default(now()) @updatedAt
-  booking      Booking    @relation(fields: [bookingId], references: [id])
+  order        Order      @relation(fields: [orderId], references: [id])
   technician   Technician @relation(fields: [technicianId], references: [id])
   customer     Customer   @relation(fields: [customerId], references: [id])
 
