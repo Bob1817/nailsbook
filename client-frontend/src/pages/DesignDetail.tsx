@@ -260,13 +260,13 @@ const DesignDetail: React.FC = () => {
 
   // Booking handlers
   const handleOpenBooking = async () => {
-    // Navigate to CreateBooking page with design info
+    // Navigate to CreateOrder page with design info
     if (design?.technician) {
-      navigate(`/bookings/create?design_id=${design.id}&tech_id=${design.technician.id}`);
+      navigate(`/orders/create?design_id=${design.id}&tech_id=${design.technician.id}`);
     }
   };
 
-  const handleCreateBooking = async () => {
+  const handleCreateOrder = async () => {
     if (!id || !design?.technician) return;
 
     if (!selectedServiceType) {
@@ -321,7 +321,7 @@ const DesignDetail: React.FC = () => {
       });
 
       setShowBookingModal(false);
-      navigate('/bookings');
+      navigate('/orders');
     } catch (error: any) {
       setBookingError(error.response?.data?.message || '创建预约失败');
     } finally {
@@ -554,7 +554,7 @@ const DesignDetail: React.FC = () => {
           {/* Converted - View Booking */}
           {design.status === 'converted' && (
             <button
-              onClick={() => navigate('/bookings')}
+              onClick={() => navigate('/orders')}
               className="w-full py-4 bg-purple-500 text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-purple-200"
             >
               查看预约
@@ -1053,7 +1053,7 @@ const DesignDetail: React.FC = () => {
                   )}
 
                   <button
-                    onClick={handleCreateBooking}
+                    onClick={handleCreateOrder}
                     disabled={
                       creatingBooking ||
                       (selectedServiceType === 'shop' && !selectedShopAddress) ||

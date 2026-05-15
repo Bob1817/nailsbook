@@ -64,7 +64,7 @@ const getAvailableServiceTypes = (tech: Technician | null) => {
   });
 };
 
-const CreateBooking: React.FC = () => {
+const CreateOrder: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { technicians, refreshProfile } = useAuth();
@@ -435,7 +435,7 @@ const CreateBooking: React.FC = () => {
           shopAddress: isShopService ? selectedShopAddress || undefined : undefined,
           remark: formData.remark,
         });
-        navigate('/bookings');
+        navigate('/orders');
       }
     } catch (error: any) {
       alert(error.response?.data?.message || '创建预约失败');
@@ -1035,4 +1035,4 @@ const CreateBooking: React.FC = () => {
   );
 };
 
-export default CreateBooking;
+export default CreateOrder;

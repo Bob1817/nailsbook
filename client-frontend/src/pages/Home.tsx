@@ -356,7 +356,7 @@ const Home: React.FC = () => {
           </div>
         <div className="grid grid-cols-4 gap-3">
           <button
-            onClick={() => navigate('/bookings/create')}
+            onClick={() => navigate('/orders/create')}
             className="flex flex-col items-center gap-2 active:scale-95 transition-transform"
           >
             <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-[#FF6B8A] to-[#FF8FA3] flex items-center justify-center shadow-lg shadow-pink-200">
@@ -378,7 +378,7 @@ const Home: React.FC = () => {
             <span className="text-caption font-medium text-[var(--color-text)]">发起设计</span>
           </button>
           <button
-            onClick={() => navigate('/bookings')}
+            onClick={() => navigate('/orders')}
             className="flex flex-col items-center gap-2 active:scale-95 transition-transform"
           >
             <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-[#FF6B8A] to-[#FF8FA3] flex items-center justify-center shadow-lg shadow-pink-200">
@@ -411,7 +411,7 @@ const Home: React.FC = () => {
             <p className="mt-1 text-caption text-[var(--color-text-muted)]">继续处理你当前的行程安排</p>
           </div>
           <button
-            onClick={() => navigate('/bookings')}
+            onClick={() => navigate('/orders')}
             className="text-body-sm text-[var(--color-primary)] font-medium flex items-center gap-0.5"
           >
             查看全部
@@ -423,7 +423,7 @@ const Home: React.FC = () => {
 
         {trips.length > 0 ? (
           <div
-            onClick={() => navigate(`/bookings/${trips[0].id}`)}
+            onClick={() => navigate(`/orders/${trips[0].id}`)}
             className="bg-white rounded-[28px] p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5 cursor-pointer active:scale-[0.99] transition-transform"
           >
             <div className="flex items-start gap-4">
@@ -477,7 +477,7 @@ const Home: React.FC = () => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/bookings/${trips[0].id}`);
+                  navigate(`/orders/${trips[0].id}`);
                 }}
                 className="px-4 py-2 text-body-sm text-white bg-[var(--color-primary)] rounded-full active:scale-95 transition-transform"
               >
@@ -494,7 +494,7 @@ const Home: React.FC = () => {
             </div>
             <p className="text-body text-[var(--color-text-muted)] mb-2">暂无行程</p>
             <button
-              onClick={() => navigate('/bookings/create')}
+              onClick={() => navigate('/orders/create')}
               className="mt-2 px-6 py-2.5 bg-[var(--color-primary)] text-white text-body-sm font-medium rounded-full active:scale-95 transition-transform"
             >
               立即预约

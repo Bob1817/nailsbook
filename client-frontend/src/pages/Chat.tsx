@@ -332,10 +332,10 @@ const getNotificationTitle = (type: InboxNotification['type']) => {
 
 const getNotificationTarget = (type: InboxNotification['type'], relatedId?: number) => {
   if (type === 'booking' && relatedId) {
-    return `/bookings/${relatedId}`;
+    return `/orders/${relatedId}`;
   }
   if (type === 'booking') {
-    return '/bookings';
+    return '/orders';
   }
   if (type === 'comment' && relatedId) {
     return `/works/${relatedId}`;

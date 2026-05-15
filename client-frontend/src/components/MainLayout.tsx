@@ -30,7 +30,7 @@ const MainLayout: React.FC = () => {
       ),
     },
     {
-      key: '/bookings',
+      key: '/orders',
       label: '预约',
       icon: (active: boolean) => (
         <svg className={`w-6 h-6 ${active ? 'text-[#FF6B8A]' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -74,7 +74,7 @@ const MainLayout: React.FC = () => {
     return location.pathname.startsWith(path);
   };
 
-  const primaryTabPaths = new Set(['/home', '/bookings', '/designs', '/chat', '/profile']);
+  const primaryTabPaths = new Set(['/home', '/orders', '/designs', '/chat', '/profile']);
   const showTabBar = primaryTabPaths.has(location.pathname);
 
   return (

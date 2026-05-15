@@ -6,9 +6,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './components/MainLayout';
 import Login from './pages/Login';
 import Home from './pages/Home';
-import BookingList from './pages/BookingList';
-import CreateBooking from './pages/CreateBooking';
-import BookingDetail from './pages/BookingDetail';
+import OrderList from './pages/OrderList';
+import CreateOrder from './pages/CreateOrder';
+import OrderDetail from './pages/OrderDetail';
 import DesignList from './pages/DesignList';
 import CreateDesign from './pages/CreateDesign';
 import DesignDetail from './pages/DesignDetail';
@@ -58,9 +58,9 @@ function AppRoutes() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<Home />} />
-          <Route path="/bookings" element={<BookingList />} />
-          <Route path="/bookings/create" element={<CreateBooking />} />
-          <Route path="/bookings/:id" element={<BookingDetail />} />
+          <Route path="/orders" element={<OrderList />} />
+          <Route path="/orders/create" element={<CreateOrder />} />
+          <Route path="/orders/:id" element={<OrderDetail />} />
           <Route path="/designs" element={<DesignList />} />
           <Route path="/designs/create" element={<CreateDesign />} />
           <Route path="/designs/customize" element={<CustomizeDesign />} />

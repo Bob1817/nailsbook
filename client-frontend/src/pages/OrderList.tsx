@@ -25,7 +25,7 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: 'bg-red-100 text-red-600',
 };
 
-const BookingList: React.FC = () => {
+const OrderList: React.FC = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [trips, setTrips] = useState<Order[]>([]);
@@ -77,7 +77,7 @@ const BookingList: React.FC = () => {
       {/* Create Booking Card */}
       <div className="px-5 mt-4">
         <div
-          onClick={() => navigate('/bookings/create')}
+          onClick={() => navigate('/orders/create')}
           className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#FF6B8A] via-[#FF7C98] to-[#FF8FA3] p-6 shadow-[0_18px_48px_rgba(255,107,138,0.28)] cursor-pointer active:scale-[0.99] transition-transform"
         >
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.14),transparent_28%)]" />
@@ -144,7 +144,7 @@ const BookingList: React.FC = () => {
               trips.map((order) => (
                 <div
                   key={order.id}
-                  onClick={() => navigate(`/bookings/${order.id}`)}
+                  onClick={() => navigate(`/orders/${order.id}`)}
                   className="rounded-[28px] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5 cursor-pointer active:scale-[0.99] transition-transform"
                 >
                   <div className="mb-4 flex items-center justify-between gap-3">
@@ -206,7 +206,7 @@ const BookingList: React.FC = () => {
                 </div>
                 <p className="text-body text-[var(--color-text-muted)] mb-2">暂无行程</p>
                 <button
-                  onClick={() => navigate('/bookings/create')}
+                  onClick={() => navigate('/orders/create')}
                   className="mt-4 px-6 py-2.5 bg-[var(--color-primary)] text-white text-body-sm font-medium rounded-full active:scale-95 transition-transform"
                 >
                   立即预约
@@ -223,7 +223,7 @@ const BookingList: React.FC = () => {
               orders.map((order) => (
                 <div
                   key={order.id}
-                  onClick={() => navigate(`/bookings/${order.id}`)}
+                  onClick={() => navigate(`/orders/${order.id}`)}
                   className="rounded-[28px] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5 cursor-pointer active:scale-[0.99] transition-transform"
                 >
                   <div className="mb-4 flex items-center justify-between gap-3">
@@ -295,7 +295,7 @@ const BookingList: React.FC = () => {
                 </div>
                 <p className="text-body text-[var(--color-text-muted)] mb-2">暂无订单</p>
                 <button
-                  onClick={() => navigate('/bookings/create')}
+                  onClick={() => navigate('/orders/create')}
                   className="mt-4 px-6 py-2.5 bg-[var(--color-primary)] text-white text-body-sm font-medium rounded-full active:scale-95 transition-transform"
                 >
                   立即预约
@@ -309,4 +309,4 @@ const BookingList: React.FC = () => {
   );
 };
 
-export default BookingList;
+export default OrderList;

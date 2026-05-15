@@ -26,7 +26,7 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: 'bg-red-100 text-red-600',
 };
 
-const BookingDetail: React.FC = () => {
+const OrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [order, setOrder] = useState<Order | null>(null);
@@ -172,7 +172,7 @@ const BookingDetail: React.FC = () => {
         <div className="text-center">
           <p className="text-gray-500">订单不存在</p>
           <button
-            onClick={() => navigate('/bookings')}
+            onClick={() => navigate('/orders')}
             className="mt-4 px-4 py-2 bg-[#FF6B8A] text-white rounded-full"
           >
             返回列表
@@ -596,4 +596,4 @@ const BookingDetail: React.FC = () => {
   );
 };
 
-export default BookingDetail;
+export default OrderDetail;

@@ -87,7 +87,7 @@ const Profile: React.FC = () => {
         </svg>
       ),
       label: '我的预约',
-      onClick: () => navigate('/bookings'),
+      onClick: () => navigate('/orders'),
     },
     {
       icon: (
