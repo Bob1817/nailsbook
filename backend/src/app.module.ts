@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { VerificationCodeModule } from './common/verification-code/verification-code.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -20,6 +23,7 @@ import { ClientDesignsModule } from './client-designs/client-designs.module';
 import { TechnicianUploadModule } from './technician-upload/technician-upload.module';
 import { ClientMessagesModule } from './client-messages/client-messages.module';
 import { TechnicianMessagesModule } from './technician-messages/technician-messages.module';
+import { ChatModule } from './chat/chat.module';
 import { TechnicianWorksModule } from './technician-works/technician-works.module';
 import { TechnicianServicesModule } from './technician-services/technician-services.module';
 import { ArtistApplicationsModule } from './artist-applications/artist-applications.module';
@@ -34,6 +38,11 @@ import { DevelopmentDemoSeedService } from './development-demo-seed.service';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 120,
+    }]),
+    VerificationCodeModule,
     PrismaModule,
     AuthModule,
     TechniciansModule,
@@ -52,6 +61,7 @@ import { DevelopmentDemoSeedService } from './development-demo-seed.service';
     ClientDesignsModule,
     ClientMessagesModule,
     TechnicianMessagesModule,
+    ChatModule,
     TechnicianWorksModule,
     TechnicianServicesModule,
     TechnicianUploadModule,
@@ -59,6 +69,11 @@ import { DevelopmentDemoSeedService } from './development-demo-seed.service';
     CustomServiceRequestsModule,
   ],
   controllers: [AppController],
-  providers: [AppService, DevelopmentAuthSeedService, DevelopmentDemoSeedService],
+  providers: [
+    AppService,
+    DevelopmentAuthSeedService,
+    DevelopmentDemoSeedService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}
