@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { homeService, type HomeData } from '../services/home';
 import { orderService, type Order } from '../services/order';
+import { TripCardSkeleton, CardSkeleton, Skeleton } from '../components/Skeleton';
 import dayjs from 'dayjs';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -129,8 +130,42 @@ const Home: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-full flex items-center justify-center bg-[var(--color-bg)]">
-        <div className="w-8 h-8 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-full bg-[var(--color-bg)] pb-24">
+        <div className="sticky top-0 z-20 border-b border-white/60 bg-white/82 px-5 app-header-safe pb-3 backdrop-blur-md">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]">NailArt</p>
+              <h1 className="mt-0.5 text-[1.75rem] font-bold tracking-[-0.03em] text-[var(--color-text)]">首页</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-black/5">
+                <Skeleton variant="circular" width="20px" height="20px" />
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-black/5">
+                <Skeleton variant="circular" width="20px" height="20px" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="px-5 pt-4 space-y-4">
+          <Skeleton variant="rectangular" className="h-[25rem] rounded-[32px]" />
+          <div className="grid grid-cols-2 gap-3">
+            <Skeleton variant="rectangular" className="aspect-[3/4] rounded-[24px]" />
+            <Skeleton variant="rectangular" className="aspect-[4/5] rounded-[24px]" />
+          </div>
+          <div className="rounded-[28px] bg-white px-4 py-5 shadow-sm ring-1 ring-black/5">
+            <Skeleton className="h-5 w-24 mb-4" />
+            <div className="grid grid-cols-4 gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex flex-col items-center gap-2">
+                  <Skeleton variant="rectangular" width="52px" height="52px" className="rounded-2xl" />
+                  <Skeleton className="h-3 w-10" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <TripCardSkeleton />
+        </div>
       </div>
     );
   }

@@ -13,6 +13,7 @@ import {
   formatMoney,
   type TechnicianOrder,
 } from '../services/technicianData';
+import { TripCardSkeleton, CardSkeleton, Skeleton } from '../components/Skeleton';
 
 function parseDate(value?: string | Date | null) {
   if (!value) return null;
@@ -119,17 +120,6 @@ function isActiveOrderStatus(status: TechnicianOrder['status']) {
   return status !== 'completed' && status !== 'cancelled';
 }
 
-function isSameCalendarWeek(target: Date, baseDate: Date) {
-  const current = new Date(baseDate);
-  const day = current.getDay() || 7;
-  current.setHours(0, 0, 0, 0);
-  current.setDate(current.getDate() - day + 1);
-  const weekStart = current.getTime();
-  const weekEnd = weekStart + 7 * 24 * 60 * 60 * 1000;
-  const targetTime = target.getTime();
-  return targetTime >= weekStart && targetTime < weekEnd;
-}
-
 function hasAddressIssue(order: TechnicianOrder) {
   const address = order.address?.trim();
   if (!address) return true;
@@ -173,7 +163,6 @@ export const HomePage: React.FC = () => {
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [showServiceTypeModal, setShowServiceTypeModal] = useState(false);
-  const [expandedAddressOrderId, setExpandedAddressOrderId] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -233,24 +222,36 @@ export const HomePage: React.FC = () => {
       }),
     [summary.todayOrders]
   );
-  const weeklyIncome = useMemo(() => {
-    return orders.reduce((total, order) => {
-      const start = parseDate(order.startTime);
-      if (!start || !isSameCalendarWeek(start, new Date())) return total;
-      return total + order.price;
-    }, 0);
-  }, [orders]);
+  const allTripOrders = useMemo(
+    () =>
+      orders
+        .filter(
+          (order) =>
+            order.status === 'pending_home' ||
+            order.status === 'pending_shop' ||
+            order.status === 'in_progress'
+        )
+        .sort((left, right) => {
+          const leftTime = parseDate(left.startTime)?.getTime() ?? 0;
+          const rightTime = parseDate(right.startTime)?.getTime() ?? 0;
+          return leftTime - rightTime;
+        }),
+    [orders]
+  );
+  const hasTodayOrders = useMemo(
+    () => todayOrders.some((order) => isActiveOrderStatus(order.status)),
+    [todayOrders]
+  );
   const nextOrder = useMemo(() => {
     const now = Date.now();
-    const candidates = todayOrders.filter((order) => isActiveOrderStatus(order.status));
-    if (!candidates.length) return null;
+    if (!allTripOrders.length) return null;
     return (
-      candidates.find((order) => {
+      allTripOrders.find((order) => {
         const endTime = parseDate(order.endTime)?.getTime();
         return !endTime || endTime >= now;
-      }) || candidates[0]
+      }) || allTripOrders[0]
     );
-  }, [todayOrders]);
+  }, [allTripOrders]);
   const nextPresentation = nextOrder ? resolveOrderPresentation(nextOrder, availableShops) : null;
   const nextTravelMinutes = nextOrder ? estimateSingleTravelMinutes(nextOrder) : 0;
   const nextStartDate = nextOrder ? parseDate(nextOrder.startTime) : null;
@@ -432,7 +433,7 @@ export const HomePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-full bg-[#FFF9F8] pb-28">
+    <div className="min-h-full overflow-x-hidden bg-[#FFF9F8] pb-28">
       <div className="relative overflow-hidden bg-[linear-gradient(145deg,#FF6FA2_0%,#FF6B9B_34%,#FF81A4_68%,#FFB387_100%)] px-5 pb-10 pt-11">
         <div className="absolute -left-10 top-2 h-32 w-32 rounded-full bg-white/14 blur-3xl" />
         <div className="absolute right-[-10%] top-[-6%] h-48 w-48 rounded-full bg-white/18 blur-3xl" />
@@ -557,20 +558,14 @@ export const HomePage: React.FC = () => {
                       </p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setExpandedAddressOrderId(expandedAddressOrderId === nextOrder.id ? null : nextOrder.id)}
-                    className="mt-2.5 flex items-start gap-2 text-left"
-                  >
+                  <div className="mt-2.5 flex items-start gap-2">
                     <svg className="mt-[2px] h-4 w-4 shrink-0 text-[#c1b5bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 21s-6-4.35-6-10a6 6 0 1112 0c0 5.65-6 10-6 10zm0-8.25a1.75 1.75 0 100-3.5 1.75 1.75 0 000 3.5z" />
                     </svg>
                     <span className="text-[13px] leading-6 text-[#716776]">
-                      {expandedAddressOrderId === nextOrder.id && nextPresentation
-                        ? nextPresentation.fullAddressLabel
-                        : nextPresentation?.compactAddressLabel || nextOrder.address}
+                      {nextPresentation?.fullAddressLabel || nextOrder.address}
                     </span>
-                  </button>
+                  </div>
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     <div className="rounded-[16px] border border-[#f2e6ec] bg-[#FFFFFF] px-3 py-2.5">
                       <p className="text-[11px] text-[#a08e98]">预计路程</p>
@@ -592,142 +587,145 @@ export const HomePage: React.FC = () => {
                 </>
               ) : (
                 <div className="mt-3">
-                  <p className="text-[1.2rem] font-semibold text-[#1f2230]">今天暂时没有排单</p>
-                  <p className="mt-2 text-[14px] leading-6 text-[#7b7480]">现在可以安排新预约，或者整理今日作品与客户跟进。</p>
+                  <p className="text-[1.2rem] font-semibold text-[#1f2230]">暂无行程安排</p>
+                  <p className="mt-2 text-[14px] leading-6 text-[#7b7480]">当前没有待上门、待到店或服务中的订单，可以安排新预约。</p>
                 </div>
               )}
             </div>
 
-            <div className="flex shrink-0 flex-col gap-2.5">
-              <div className="rounded-[22px] border border-[#F6E8EE] bg-[linear-gradient(180deg,#FFF7FA_0%,#FFFDFC_100%)] px-3 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.92)]">
-                <p className="text-[10px] font-medium tracking-[0.06em] text-[#C69AAF]">距出发还有</p>
-                <p className="mt-1 text-[1.85rem] font-semibold tracking-[-0.04em] text-[#1f2230]">
-                  {nextOrder ? (departureCountdownMinutes <= 0 ? '0' : Math.max(departureCountdownMinutes, 0)) : '--'}
-                </p>
-                <p className="mt-0.5 text-[10px] font-medium text-[#8c8590]">
-                  {nextOrder ? (departureCountdownMinutes <= 0 ? '建议现在出发' : '分钟') : '暂无排单'}
-                </p>
-              </div>
-              <div className="relative h-[7rem] overflow-hidden rounded-[22px] border border-[#F4E7EC] bg-[radial-gradient(circle_at_top_left,#FFF8FA_0%,#FFFDFE_55%,#FFF8F6_100%)]">
-                <div className="absolute inset-0 opacity-45">
-                  <div className="absolute left-[18%] top-[24%] h-px w-[50%] bg-[#F6E8EE]" />
-                  <div className="absolute left-[14%] top-[50%] h-px w-[60%] bg-[#F7EDF1]" />
-                  <div className="absolute left-[30%] top-[20%] h-[48%] w-px bg-[#F7EDF1]" />
-                  <div className="absolute left-[58%] top-[24%] h-[42%] w-px bg-[#F6E8EE]" />
+            {nextOrder ? (
+              <div className="flex shrink-0 flex-col gap-2.5">
+                <div className="rounded-[22px] border border-[#F6E8EE] bg-[linear-gradient(180deg,#FFF7FA_0%,#FFFDFC_100%)] px-3 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.92)]">
+                  <p className="text-[10px] font-medium tracking-[0.06em] text-[#C69AAF]">距出发还有</p>
+                  <p className="mt-1 text-[1.85rem] font-semibold tracking-[-0.04em] text-[#1f2230]">
+                    {departureCountdownMinutes <= 0 ? '0' : Math.max(departureCountdownMinutes, 0)}
+                  </p>
+                  <p className="mt-0.5 text-[10px] font-medium text-[#8c8590]">
+                    {departureCountdownMinutes <= 0 ? '建议现在出发' : '分钟'}
+                  </p>
                 </div>
-                <svg className="absolute inset-0 h-full w-full" viewBox="0 0 144 148" fill="none" aria-hidden="true">
-                  <path d="M94 30C82 44 72 53 66 68C60 80 72 85 73 97C74 107 66 113 56 120" stroke="#FF7A9A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5 7" />
-                </svg>
-                <span className="absolute right-4 top-4 flex h-5 w-5 items-center justify-center rounded-full bg-[#FF5A66] shadow-[0_6px_14px_rgba(255,90,102,0.18)]">
-                  <span className="h-2 w-2 rounded-full bg-white" />
-                </span>
-                <span className="absolute bottom-4 left-[40%] flex h-5 w-5 items-center justify-center rounded-full bg-[#FF5A66] shadow-[0_6px_14px_rgba(255,95,134,0.18)]">
-                  <span className="h-2 w-2 rounded-full bg-white" />
-                </span>
+                <div className="relative h-[7rem] overflow-hidden rounded-[22px] border border-[#F4E7EC] bg-[radial-gradient(circle_at_top_left,#FFF8FA_0%,#FFFDFE_55%,#FFF8F6_100%)]">
+                  <div className="absolute inset-0 opacity-45">
+                    <div className="absolute left-[18%] top-[24%] h-px w-[50%] bg-[#F6E8EE]" />
+                    <div className="absolute left-[14%] top-[50%] h-px w-[60%] bg-[#F7EDF1]" />
+                    <div className="absolute left-[30%] top-[20%] h-[48%] w-px bg-[#F7EDF1]" />
+                    <div className="absolute left-[58%] top-[24%] h-[42%] w-px bg-[#F6E8EE]" />
+                  </div>
+                  <svg className="absolute inset-0 h-full w-full" viewBox="0 0 144 148" fill="none" aria-hidden="true">
+                    <path d="M94 30C82 44 72 53 66 68C60 80 72 85 73 97C74 107 66 113 56 120" stroke="#FF7A9A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5 7" />
+                  </svg>
+                  <span className="absolute right-4 top-4 flex h-5 w-5 items-center justify-center rounded-full bg-[#FF5A66] shadow-[0_6px_14px_rgba(255,90,102,0.18)]">
+                    <span className="h-2 w-2 rounded-full bg-white" />
+                  </span>
+                  <span className="absolute bottom-4 left-[40%] flex h-5 w-5 items-center justify-center rounded-full bg-[#FF5A66] shadow-[0_6px_14px_rgba(255,95,134,0.18)]">
+                    <span className="h-2 w-2 rounded-full bg-white" />
+                  </span>
+                </div>
               </div>
-            </div>
+            ) : null}
           </div>
 
-          <div className="mt-3 flex gap-2.5">
-            <button
-              type="button"
-              onClick={() => handleNavigateToAddress(nextOrder?.address)}
-              className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-[linear-gradient(135deg,#FF4D84_0%,#FF6E8D_100%)] px-4 py-3 text-[14px] font-semibold text-white shadow-[0_12px_20px_rgba(255,95,134,0.22)]"
-            >
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/18 ring-1 ring-white/20">
-                <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M2.93 2.93a.75.75 0 01.82-.17l12.5 5a.75.75 0 01-.04 1.41l-4.88 1.63-1.63 4.88a.75.75 0 01-1.4.04l-5-12.5a.75.75 0 01.17-.82z" />
-                </svg>
-              </span>
-              <span>开始导航</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleContactCustomer(nextOrder?.customerPhone)}
-              className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-[16px] border border-[#F2D5DE] bg-white px-4 py-3 text-[14px] font-semibold text-[#FF5E93] shadow-[0_8px_16px_rgba(255,110,141,0.08)]"
-            >
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FFF1F6] ring-1 ring-[#FFD9E6]">
-                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 5.5C3 4.67 3.67 4 4.5 4h2.62a1 1 0 01.95.68l1.18 3.54a1 1 0 01-.5 1.2l-1.7.85a13.05 13.05 0 006.47 6.47l.85-1.7a1 1 0 011.2-.5l3.54 1.18a1 1 0 01.68.95v2.62c0 .83-.67 1.5-1.5 1.5h-.75C9.86 21 3 14.14 3 5.5z" />
-                </svg>
-              </span>
-              <span>联系客户</span>
-            </button>
-          </div>
+          {nextOrder ? (
+            <div className="mt-3 flex gap-2.5">
+              <button
+                type="button"
+                onClick={() => handleNavigateToAddress(nextOrder.address)}
+                className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-[linear-gradient(135deg,#FF4D84_0%,#FF6E8D_100%)] px-4 py-3 text-[14px] font-semibold text-white shadow-[0_12px_20px_rgba(255,95,134,0.22)]"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/18 ring-1 ring-white/20">
+                  <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2.93 2.93a.75.75 0 01.82-.17l12.5 5a.75.75 0 01-.04 1.41l-4.88 1.63-1.63 4.88a.75.75 0 01-1.4.04l-5-12.5a.75.75 0 01.17-.82z" />
+                  </svg>
+                </span>
+                <span>开始导航</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleContactCustomer(nextOrder.customerPhone)}
+                className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-[16px] border border-[#F2D5DE] bg-white px-4 py-3 text-[14px] font-semibold text-[#FF5E93] shadow-[0_8px_16px_rgba(255,110,141,0.08)]"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FFF1F6] ring-1 ring-[#FFD9E6]">
+                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 5.5C3 4.67 3.67 4 4.5 4h2.62a1 1 0 01.95.68l1.18 3.54a1 1 0 01-.5 1.2l-1.7.85a13.05 13.05 0 006.47 6.47l.85-1.7a1 1 0 011.2-.5l3.54 1.18a1 1 0 01.68.95v2.62c0 .83-.67 1.5-1.5 1.5h-.75C9.86 21 3 14.14 3 5.5z" />
+                  </svg>
+                </span>
+                <span>联系客户</span>
+              </button>
+            </div>
+          ) : null}
         </section>
       </div>
 
       <div className="space-y-3 px-5 pt-3">
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.15fr_0.85fr_1.05fr]">
-          <section className="rounded-[30px] bg-[#FFFDFD] p-5 shadow-[0_18px_36px_rgba(36,27,41,0.06)]">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-[16px] font-semibold text-[#1f2230]">今日路线</p>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#EEF9F1] px-2.5 py-1 text-[11px] font-semibold text-[#31B46C]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#31B46C]" />
-                    {routeSavedMinutes > 0 ? `路线已优化` : '路线正常'}
-                  </span>
+        <div className={`grid grid-cols-1 gap-3 ${hasTodayOrders ? 'lg:grid-cols-[1.15fr_1.05fr]' : ''}`}>
+          {hasTodayOrders ? (
+            <section className="rounded-[30px] bg-[#FFFDFD] p-5 shadow-[0_18px_36px_rgba(36,27,41,0.06)] flex flex-col gap-4">
+              <div className="flex items-stretch gap-4">
+                <div className="shrink-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-[16px] font-semibold text-[#1f2230]">今日路线</p>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#EEF9F1] px-2.5 py-1 text-[11px] font-semibold text-[#31B46C]">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#31B46C]" />
+                      {routeSavedMinutes > 0 ? `路线已优化` : '路线正常'}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex items-end gap-2">
+                    <span className="text-[2.35rem] font-semibold tracking-[-0.05em] text-[#1f2230]">{routeDistance}</span>
+                    <span className="pb-1 text-[16px] font-medium text-[#6d6570]">km</span>
+                  </div>
+                  <p className="mt-1 text-[13px] text-[#7f7681]">预计通勤 {formatTravelDuration(routeMinutes)}</p>
                 </div>
-                <div className="mt-4 flex items-end gap-2">
-                  <span className="text-[2.35rem] font-semibold tracking-[-0.05em] text-[#1f2230]">{routeDistance}</span>
-                  <span className="pb-1 text-[16px] font-medium text-[#6d6570]">km</span>
+                <div className="flex-1 min-h-[96px] rounded-[22px] border border-[#f2e6ec] bg-[radial-gradient(circle_at_top_right,#FFF8FA_0%,#FFFDFC_55%,#FFF8F6_100%)] px-4 py-3 flex items-center">
+                  <div className="flex items-start gap-3 w-full">
+                    {todayOrders.filter((o) => isActiveOrderStatus(o.status)).map((order, index, arr) => (
+                      <React.Fragment key={order.id}>
+                        <div className="flex flex-col items-center gap-1 min-w-0">
+                          <span
+                            className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white shadow-[0_4px_10px_rgba(0,0,0,0.1)] ${
+                              order.status === 'in_progress' ? 'bg-[#3b82f6]' : 'bg-[#FF5A66]'
+                            }`}
+                          >
+                            {index + 1}
+                          </span>
+                          <span className="text-[11px] text-[#5a5260] font-medium text-center truncate max-w-[5rem]">{order.customerName}</span>
+                          <span className="text-[9px] text-[#a09aa2]">{formatClock(order.startTime)}</span>
+                          <span className="text-[9px] text-[#b0aab4] text-center leading-tight line-clamp-2 max-w-[5rem]">
+                            {compactAddress(order.address || '')}
+                          </span>
+                        </div>
+                        {index < arr.length - 1 && (
+                          <div className="flex-1 min-w-[1rem] flex items-start pt-3.5">
+                            <div className="w-full border-t-2 border-dashed border-[#e8d8e0]" />
+                          </div>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </div>
                 </div>
-                <p className="mt-1 text-[13px] text-[#7f7681]">预计通勤 {formatTravelDuration(routeMinutes)}</p>
               </div>
-              <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-[radial-gradient(circle_at_30%_30%,#FFF1F6_0%,#FFE5EE_100%)]">
-                <svg className="h-8 w-8 text-[#FF6E97]" fill="none" viewBox="0 0 32 32" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M7 23c2-3 4-4 6-4s3 1 5 1 4-2 7-6" />
-                  <circle cx="9" cy="22" r="2.5" fill="currentColor" stroke="none" />
-                  <circle cx="25" cy="14" r="2.5" fill="currentColor" stroke="none" />
-                </svg>
-              </div>
-            </div>
-            <div className="mt-4 rounded-[24px] bg-[radial-gradient(circle_at_top_right,#FFF2F7_0%,#FFFDFC_55%,#FFF7FA_100%)] px-4 py-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-[13px] leading-6 text-[#7f7681]">
-                  {nextOrder ? (
-                    <>
-                      <p>{departureCountdownMinutes <= 0 ? '距离出发已到，建议优先前往下一单。' : `距离出发还有 ${formatDepartureCountdown(departureCountdownMinutes)}`}</p>
-                      <p className="text-[#FF5E93]">
-                        {departureCountdownMinutes <= 0
-                          ? '建议立即开启导航，避免后续行程受影响。'
-                          : routeSavedMinutes > 0
-                            ? `路线已优化，预计可节省 ${routeSavedMinutes} 分钟。`
-                            : '建议按路线顺序跑单，避免迟到。'}
-                      </p>
-                    </>
-                  ) : (
-                    <p>当前没有需要赶路的行程，路线压力较低。</p>
-                  )}
+              <div className="rounded-[20px] bg-[#FFF8FA] px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-[13px] leading-6 text-[#7f7681]">
+                    <p>{departureCountdownMinutes <= 0 ? '距离出发已到，建议优先前往下一单。' : `距离出发还有 ${formatDepartureCountdown(departureCountdownMinutes)}`}</p>
+                    <p className="text-[#FF5E93]">
+                      {departureCountdownMinutes <= 0
+                        ? '建议立即开启导航，避免后续行程受影响。'
+                        : routeSavedMinutes > 0
+                          ? `路线已优化，预计可节省 ${routeSavedMinutes} 分钟。`
+                          : '建议按路线顺序跑单，避免迟到。'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/schedule')}
+                    className="inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-full border border-[#F2D5DE] bg-white px-4 text-[13px] font-semibold text-[#6D6570] shadow-[0_8px_18px_rgba(255,110,141,0.06)]"
+                  >
+                    地图入口
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => navigate('/schedule')}
-                  className="inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-full border border-[#F2D5DE] bg-white px-4 text-[13px] font-semibold text-[#6D6570] shadow-[0_8px_18px_rgba(255,110,141,0.06)]"
-                >
-                  地图入口
-                </button>
               </div>
-            </div>
-          </section>
-
-          <section className="rounded-[30px] bg-[#FFFDFD] p-5 shadow-[0_18px_36px_rgba(36,27,41,0.05)]">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[16px] font-semibold text-[#1f2230]">今日收入（预估）</p>
-                <p className="mt-4 text-[2rem] font-semibold tracking-[-0.04em] text-[#1f2230]">
-                  {formatMoney(summary.expectedIncome)}
-                </p>
-                <p className="mt-3 text-[13px] text-[#8b7f89]">本周 {formatMoney(weeklyIncome)}</p>
-              </div>
-              <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-[radial-gradient(circle_at_35%_35%,#FFF6F0_0%,#FFF0E4_100%)]">
-                <svg className="h-7 w-7 text-[#F3A36A]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M14 6h2.5A2.5 2.5 0 0119 8.5v7A2.5 2.5 0 0116.5 18H14m0-12H8.5A2.5 2.5 0 006 8.5v7A2.5 2.5 0 008.5 18H14m0-12v12" />
-                </svg>
-              </div>
-            </div>
-          </section>
+            </section>
+          ) : null}
 
           <section className="rounded-[30px] bg-[#FFFDFD] p-5 shadow-[0_18px_36px_rgba(36,27,41,0.05)]">
             <div className="mb-4 flex items-center justify-between">
@@ -773,7 +771,7 @@ export const HomePage: React.FC = () => {
         <section className="rounded-[30px] bg-white p-5 shadow-[0_16px_34px_rgba(36,27,41,0.06)]">
           <div className="mb-4 flex items-end justify-between">
             <div>
-              <h2 className="text-[1.9rem] font-semibold tracking-[-0.04em] text-[#1f2230]">今日行程</h2>
+              <h2 className="text-[16px] font-semibold text-[#1f2230]">今日行程</h2>
               <p className="mt-1 text-[13px] text-[#8d8590]">
                 {new Intl.DateTimeFormat('zh-CN', {
                   month: 'numeric',
@@ -791,120 +789,100 @@ export const HomePage: React.FC = () => {
           </div>
 
           {isLoading ? (
-            <p className="py-8 text-center text-sm text-[#b7aeb7]">行程加载中...</p>
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="rounded-[18px] bg-white p-4 shadow-[0_8px_20px_rgba(36,27,41,0.05)]">
+                  <div className="flex items-center gap-3">
+                    <div className="w-[52px] shrink-0">
+                      <Skeleton className="h-5 w-12 mb-1.5" />
+                      <Skeleton className="h-4 w-10 rounded-md" />
+                    </div>
+                    <Skeleton variant="circular" width="36px" height="36px" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-24 mb-1.5" />
+                      <Skeleton className="h-3 w-32" />
+                    </div>
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                  <div className="mt-2 ml-[76px]">
+                    <Skeleton className="h-3 w-48" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : todayOrders.length ? (
-            <div className="relative pl-6">
-              <div className="absolute left-[0.45rem] top-5 bottom-6 w-px bg-[#f0dbe3]" />
-              <div className="space-y-4">
-                {todayOrders.map((order) => {
-                  const presentation = resolveOrderPresentation(order, availableShops);
-                  const stateMeta = getOrderStateMeta(order.status);
-                  const isExpanded = expandedAddressOrderId === order.id;
+            <div className="space-y-3">
+              {todayOrders.map((order) => {
+                const presentation = resolveOrderPresentation(order, availableShops);
+                const stateMeta = getOrderStateMeta(order.status);
 
-                  return (
-                    <div key={order.id} className="relative">
-                      <span className={`absolute -left-6 top-5 h-4 w-4 rounded-full border-4 border-[#fff9f8] ${stateMeta.dot}`} />
-                      <div className="rounded-[26px] bg-white p-4 shadow-[0_14px_28px_rgba(36,27,41,0.05)]">
-                        <div className="flex items-start gap-4">
-                          <div className="w-14 shrink-0 text-left">
-                            <p
-                              className={`text-[1.75rem] font-semibold tracking-[-0.03em] ${
-                                order.status === 'completed'
-                                  ? 'text-[#8d8590]'
-                                  : order.status === 'in_progress'
-                                    ? 'text-[#4f7ddb]'
-                                    : 'text-pink-500'
-                              }`}
-                            >
-                              {formatClock(order.startTime)}
-                            </p>
-                            <p className="mt-1 text-[12px] text-[#b8afb7]">{formatClock(order.endTime)}</p>
+                return (
+                  <div
+                    key={order.id}
+                    className="rounded-[18px] bg-white p-4 shadow-[0_8px_20px_rgba(36,27,41,0.05)] cursor-pointer"
+                    onClick={() => navigate(`/orders/${order.id}`)}
+                  >
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="flex min-w-0 items-start gap-3">
+                        <div className="w-[52px] shrink-0">
+                          <div className="text-[18px] font-bold text-[#1f2230]">
+                            {formatClock(order.startTime)}
                           </div>
-
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-3">
-                                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f8dce7] text-[1.35rem] font-semibold text-[#ea5e93]">
-                                    {getTechnicianInitial(order.customerName)}
-                                  </div>
-                                  <div className="min-w-0">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      <p className="truncate text-[18px] font-semibold text-[#1f2230]">{order.customerName}</p>
-                                      <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${presentation.accentClasses}`}>
-                                        {presentation.serviceTypeLabel}
-                                      </span>
-                                    </div>
-                                    <p className="mt-1 truncate text-[15px] font-medium text-[#574d58]">
-                                      {order.serviceName || '预约服务'}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="shrink-0 text-right">
-                                <p className="text-[1.4rem] font-semibold tracking-[-0.02em] text-pink-500">
-                                  {formatMoney(order.price)}
-                                </p>
-                                <span className={`mt-2 inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ${stateMeta.tone}`}>
-                                  {stateMeta.actionLabel}
-                                </span>
-                              </div>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setExpandedAddressOrderId((current) => (current === order.id ? null : order.id))
-                              }
-                              className="mt-3 flex items-start gap-2 text-left"
-                            >
-                              <svg className="mt-[2px] h-4 w-4 shrink-0 text-[#c4bac2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 21s-6-4.35-6-10a6 6 0 1112 0c0 5.65-6 10-6 10zm0-8.25a1.75 1.75 0 100-3.5 1.75 1.75 0 000 3.5z" />
-                              </svg>
-                              <span className={`text-[13px] leading-6 text-[#726a74] ${isExpanded ? '' : 'line-clamp-1'}`}>
-                                {isExpanded ? presentation.fullAddressLabel : presentation.compactAddressLabel}
-                              </span>
-                            </button>
-
-                            <div className="mt-3 flex flex-wrap items-center gap-2">
-                              <span className="inline-flex rounded-full bg-[#f7f2f5] px-3 py-1.5 text-[12px] font-medium text-[#7f7681]">
-                                定金 {order.depositPaid ? '已收' : '未收'}
-                              </span>
-                              <span className="inline-flex rounded-full bg-[#f7f2f5] px-3 py-1.5 text-[12px] font-medium text-[#7f7681]">
-                                预计 {estimateSingleTravelMinutes(order)} 分钟通勤
-                              </span>
-                            </div>
-
-                            <div className="mt-4 flex gap-3 border-t border-[#f2e6ec] pt-4">
-                              <button
-                                type="button"
-                                onClick={() => handleNavigateToAddress(order.address)}
-                                className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-full bg-[#ffe9f0] px-4 text-[14px] font-semibold text-pink-500"
-                              >
-                                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                                  <path d="M2.93 2.93a.75.75 0 01.82-.17l12.5 5a.75.75 0 01-.04 1.41l-4.88 1.63-1.63 4.88a.75.75 0 01-1.4.04l-5-12.5a.75.75 0 01.17-.82z" />
-                                </svg>
-                                去导航
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleContactCustomer(order.customerPhone)}
-                                className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-full border border-[#f2e6ec] bg-white px-4 text-[14px] font-semibold text-[#574d58]"
-                              >
-                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 5.5C3 4.67 3.67 4 4.5 4h2.62a1 1 0 01.95.68l1.18 3.54a1 1 0 01-.5 1.2l-1.7.85a13.05 13.05 0 006.47 6.47l.85-1.7a1 1 0 011.2-.5l3.54 1.18a1 1 0 01.68.95v2.62c0 .83-.67 1.5-1.5 1.5h-.75C9.86 21 3 14.14 3 5.5z" />
-                                </svg>
-                                联系客户
-                              </button>
-                            </div>
+                          <span className={`mt-1 inline-flex rounded-md px-2 py-0.5 text-[10px] font-semibold ${stateMeta.tone}`}>
+                            {stateMeta.actionLabel}
+                          </span>
+                        </div>
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#f8dce7] text-[1rem] font-semibold text-[#ea5e93]">
+                          {order.customerAvatar ? (
+                            <img src={order.customerAvatar} alt={order.customerName} className="h-full w-full object-cover" />
+                          ) : (
+                            getTechnicianInitial(order.customerName)
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="truncate text-[15px] font-semibold text-[#1f2230]">{order.customerName}</span>
+                            <span className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${presentation.accentClasses}`}>
+                              {presentation.serviceTypeLabel}
+                            </span>
+                          </div>
+                          <div className="text-xs text-[#8d8590] mt-0.5">
+                            {order.serviceName || '预约服务'}
                           </div>
                         </div>
                       </div>
+                      <span className="shrink-0 text-[15px] font-semibold text-[#1f2230]">
+                        {formatMoney(order.price)}
+                      </span>
                     </div>
-                  );
-                })}
-              </div>
+                    <div className="mt-2 ml-[76px] text-xs leading-5 text-[#8d8590]">
+                      {presentation.fullAddressLabel}
+                    </div>
+                    <div className="flex gap-2 mt-3 ml-[76px]">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleNavigateToAddress(order.address); }}
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-[#ffe9f0] text-pink-500 rounded-lg py-2 text-[13px] font-semibold min-h-[40px]"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M2.93 2.93a.75.75 0 01.82-.17l12.5 5a.75.75 0 01-.04 1.41l-4.88 1.63-1.63 4.88a.75.75 0 01-1.4.04l-5-12.5a.75.75 0 01.17-.82z" />
+                        </svg>
+                        去导航
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleContactCustomer(order.customerPhone); }}
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-[#f5f5f5] text-[#1f2230] rounded-lg py-2 text-[13px] font-semibold min-h-[40px]"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 5.5C3 4.67 3.67 4 4.5 4h2.62a1 1 0 01.95.68l1.18 3.54a1 1 0 01-.5 1.2l-1.7.85a13.05 13.05 0 006.47 6.47l.85-1.7a1 1 0 011.2-.5l3.54 1.18a1 1 0 01.68.95v2.62c0 .83-.67 1.5-1.5 1.5h-.75C9.86 21 3 14.14 3 5.5z" />
+                        </svg>
+                        联系客户
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <p className="rounded-[22px] bg-[#fff9f8] px-4 py-8 text-center text-sm text-[#b7aeb7]">今天还没有新的预约安排</p>
@@ -973,15 +951,6 @@ export const HomePage: React.FC = () => {
         </div>
       </div>
 
-      <Link
-        to="/orders"
-        className="fixed bottom-[calc(env(safe-area-inset-bottom)+4.75rem)] left-1/2 z-[60] inline-flex h-[4.6rem] w-[4.6rem] -translate-x-1/2 items-center justify-center rounded-full bg-[linear-gradient(135deg,#FF4D84_0%,#FF6C93_100%)] text-[14px] font-semibold text-white shadow-[0_22px_42px_rgba(255,90,134,0.34)]"
-      >
-        <span className="flex flex-col items-center leading-none">
-          <span className="text-[1.5rem]">＋</span>
-          <span className="mt-0.5 text-[11px]">新建预约</span>
-        </span>
-      </Link>
 
       {showShareSheet ? (
         <div className="fixed inset-0 z-[100] bg-black/40 px-4 pb-4 pt-16">
@@ -1038,7 +1007,7 @@ export const HomePage: React.FC = () => {
                   )}
                 </div>
 
-                {technician?.socialMedia && Object.entries(technician.socialMedia).some(([_, value]) => value) && (
+                {technician?.socialMedia && Object.values(technician.socialMedia).some((value) => value) && (
                   <div className="mt-4 border-t border-white/20 pt-4">
                     <p className="mb-2 text-xs text-white/70">社交媒体</p>
                     <div className="flex flex-wrap gap-2">

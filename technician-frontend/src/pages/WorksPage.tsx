@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/feedback/ToastProvider';
 import { worksService, type Work } from '../services/works';
 import { uploadService } from '../services/upload';
+import { GridSkeleton } from '../components/Skeleton';
 
 const WorksPage: React.FC = () => {
   const navigate = useNavigate();
@@ -306,37 +307,35 @@ const WorksPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-full bg-[#fff9f8] pb-8">
-      {/* Header - 二级页面顶部，带返回图标 */}
-      <div className="bg-white/80 px-4 pt-12 pb-4 backdrop-blur sticky top-0 z-10">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 active:bg-gray-200"
-          >
-            <svg className="h-5 w-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <h1 className="text-xl font-bold text-gray-900">作品管理</h1>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="ml-auto flex h-10 w-10 items-center justify-center rounded-full bg-pink-500 text-white active:bg-pink-600"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-        </div>
-        <p className="mt-3 text-sm text-gray-500 pl-1">管理您的美甲作品，展示给客户</p>
+    <div className="flex h-[100dvh] flex-col bg-[#fff9f8]">
+      {/* Header */}
+      <div className="shrink-0 flex items-center gap-3 bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[#f2e6ec]">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f7f3f5] transition-colors active:bg-[#eee5e9]"
+        >
+          <svg className="h-5 w-5 text-[#3c3440]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <h1 className="text-[17px] font-semibold text-[#1f2230]">作品管理</h1>
+        <button
+          type="button"
+          onClick={() => setShowCreateModal(true)}
+          className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-[#FF5E93] text-white active:bg-[#e54e82]"
+        >
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
       </div>
 
       {/* Masonry Photo Wall */}
+      <div className="flex-1 overflow-y-auto pb-8">
       <div className="px-3 py-4">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-pink-500 border-t-transparent" />
-          </div>
+          <div className="p-1"><GridSkeleton /></div>
         ) : works.length === 0 ? (
           <div className="rounded-[24px] bg-white p-8 text-center shadow-[0_8px_24px_rgba(29,35,53,0.04)]">
             <div className="mb-4 text-4xl">🎨</div>
@@ -797,6 +796,7 @@ const WorksPage: React.FC = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

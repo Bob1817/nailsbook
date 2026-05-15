@@ -16,12 +16,16 @@ import {
   type TechnicianOrder,
   type TechnicianCustomerSummary,
 } from '../services/technicianData';
+import { ListItemSkeleton } from '../components/Skeleton';
 
 const orderTabs: Array<{ label: string; value: 'all' | OrderStatus }> = [
   { label: '全部', value: 'all' },
   { label: '待报价', value: 'pending_quote' },
   { label: '待同意', value: 'pending_agree' },
   { label: '待确认', value: 'pending_confirm' },
+  { label: '待上门', value: 'pending_home' },
+  { label: '待到店', value: 'pending_shop' },
+  { label: '服务中', value: 'in_progress' },
   { label: '已完成', value: 'completed' },
   { label: '已取消', value: 'cancelled' },
 ];
@@ -55,6 +59,7 @@ export const OrdersPage: React.FC = () => {
   const [address, setAddress] = useState('');
   const [price, setPrice] = useState('');
   const [note, setNote] = useState('');
+  const [showDetailSheet, setShowDetailSheet] = useState(false);
   const [showReviewSheet, setShowReviewSheet] = useState(false);
   const [reviewDate, setReviewDate] = useState('');
   const [reviewStartClock, setReviewStartClock] = useState('14:00');
@@ -75,11 +80,11 @@ export const OrdersPage: React.FC = () => {
 
     setOrders(nextOrders);
     setCustomers(nextCustomers);
-    setSelectedOrder(
-      preferredOrderId
-        ? nextOrders.find((order) => order.id === preferredOrderId) ?? nextOrders[0] ?? null
-        : nextOrders[0] ?? null
-    );
+    if (preferredOrderId) {
+      const matched = nextOrders.find((order) => order.id === preferredOrderId) ?? null;
+      setSelectedOrder(matched);
+      if (matched) setShowDetailSheet(true);
+    }
   }
 
   useEffect(() => {
@@ -96,7 +101,7 @@ export const OrdersPage: React.FC = () => {
         setOrders(nextOrders);
         setCustomers(nextCustomers);
         setSelectedOrder((current) =>
-          current ? nextOrders.find((order) => order.id === current.id) ?? current : nextOrders[0] ?? null
+          current ? nextOrders.find((order) => order.id === current.id) ?? current : null
         );
         setIsLoading(false);
       }
@@ -111,6 +116,7 @@ export const OrdersPage: React.FC = () => {
   useEffect(() => {
     const orderId = searchParams.get('orderId');
     const customerId = searchParams.get('customerId');
+    const status = searchParams.get('status');
     if (customerId) {
       setSelectedCustomerId(customerId);
       setShowCreateSheet(true);
@@ -119,7 +125,11 @@ export const OrdersPage: React.FC = () => {
       const matchedOrder = orders.find((order) => String(order.id) === orderId);
       if (matchedOrder) {
         setSelectedOrder(matchedOrder);
+        setShowDetailSheet(true);
       }
+    }
+    if (status && orderTabs.some((t) => t.value === status)) {
+      setActiveTab(status as 'all' | OrderStatus);
     }
   }, [orders, searchParams]);
 
@@ -216,6 +226,9 @@ export const OrdersPage: React.FC = () => {
         await ordersService.complete(selectedOrder.id);
       }
       await reloadPageData(selectedOrder.id);
+      if (nextStatus === 'completed' || nextStatus === 'cancelled') {
+        setShowDetailSheet(false);
+      }
       toast.success(
         nextStatus === 'pending_confirm'
           ? '已同意报价，等待客户确认。'
@@ -282,59 +295,62 @@ export const OrdersPage: React.FC = () => {
   const allowedActions = selectedOrder ? ordersService.getAllowedActions(selectedOrder.status) : [];
 
   return (
-    <div className="min-h-full bg-gray-50 pb-28">
-      <div className="bg-white px-5 pt-12 pb-4">
-        <div className="flex items-center justify-between">
+    <div className="flex h-[100dvh] flex-col bg-gray-50">
+      {/* Fixed header + tabs */}
+      <div className="shrink-0">
+        <div className="flex items-center justify-between bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[#f2e6ec]">
           <div className="flex items-center gap-3">
             <button
+              type="button"
               onClick={() => navigate(-1)}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 active:bg-gray-200"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f7f3f5] transition-colors active:bg-[#eee5e9]"
             >
-              <svg className="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 text-[#3c3440]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 mb-1">订单</h1>
-              <p className="text-sm text-gray-500">查看预约进度、客户信息和服务安排</p>
-            </div>
+            <h1 className="text-[17px] font-semibold text-[#1f2230]">订单</h1>
           </div>
           <button
+            type="button"
             onClick={() => setShowCreateSheet(true)}
-            className="rounded-full bg-[#FF5A66] px-4 py-2 text-sm font-medium text-white min-h-[44px]"
+            className="shrink-0 whitespace-nowrap rounded-full bg-[#FF5A66] px-4 py-2 text-[13px] font-semibold text-white min-h-[36px] active:scale-[0.97]"
           >
             新建订单
           </button>
         </div>
-      </div>
 
-      <div className="bg-white px-5 py-3 border-b border-gray-100">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-          {orderTabs.map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => setActiveTab(tab.value)}
-              className={`flex-shrink-0 rounded-full px-4 py-2 text-sm font-medium min-h-[44px] ${
-                activeTab === tab.value ? 'bg-[#FF5A66] text-white' : 'bg-gray-100 text-gray-600'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="bg-white px-5 py-3 border-b border-gray-100">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+            {orderTabs.map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setActiveTab(tab.value)}
+                className={`flex-shrink-0 rounded-full px-4 py-2 text-sm font-medium min-h-[44px] ${
+                  activeTab === tab.value ? 'bg-[#FF5A66] text-white' : 'bg-gray-100 text-gray-600'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="px-5 py-4 space-y-3">
+      {/* Scrollable order list */}
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 pb-28">
         {isLoading ? (
-          <div className="rounded-2xl bg-white p-6 text-center text-sm text-gray-400 shadow-sm">订单加载中...</div>
+          <div className="space-y-1">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <ListItemSkeleton key={i} />
+            ))}
+          </div>
         ) : visibleOrders.length > 0 ? (
           visibleOrders.map((order) => (
             <button
               key={order.id}
-              onClick={() => setSelectedOrder(order)}
-              className={`w-full rounded-2xl bg-white p-4 text-left shadow-sm transition min-h-[44px] ${
-                selectedOrder?.id === order.id ? 'ring-2 ring-pink-200' : ''
-              }`}
+              onClick={() => { setSelectedOrder(order); setShowDetailSheet(true); }}
+              className="w-full rounded-2xl bg-white p-4 text-left shadow-sm transition min-h-[44px]"
             >
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
@@ -366,95 +382,116 @@ export const OrdersPage: React.FC = () => {
         )}
       </div>
 
-      {selectedOrder ? (
-        <div className="mx-5 mb-4 rounded-3xl bg-white p-5 shadow-sm">
-          <div className="mb-4 flex items-start justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="text-lg font-bold text-gray-900">{selectedOrder.customerName}</p>
-                {selectedOrder.isLocalDraft ? (
-                  <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] text-orange-500">待同步</span>
+      {showDetailSheet && selectedOrder ? (
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setShowDetailSheet(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-t-[28px] bg-white px-5 pb-8 pt-5 shadow-[0_-12px_40px_rgba(0,0,0,0.12)] max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-[17px] font-semibold text-[#1f2230]">订单详情</h3>
+              <button
+                type="button"
+                onClick={() => setShowDetailSheet(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f2f0f3] active:bg-[#e5e2e6]"
+              >
+                <svg className="h-4 w-4 text-[#6d6570]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-[16px] font-bold text-gray-900">{selectedOrder.customerName}</p>
+                  {selectedOrder.isLocalDraft ? (
+                    <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] text-orange-500">待同步</span>
+                  ) : null}
+                </div>
+                <p className="mt-1 text-[13px] text-gray-500">{selectedOrder.customerPhone || '未填写联系电话'}</p>
+              </div>
+              <span className={`rounded-full px-3 py-1 text-[12px] font-medium ${orderStatusClasses[selectedOrder.status]}`}>
+                {orderStatusLabels[selectedOrder.status]}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-sm mb-4">
+              <div className="rounded-2xl bg-[#ffe9f0] p-3">
+                <p className="text-[12px] text-gray-500">预约时间</p>
+                <p className="mt-1 text-[14px] font-medium text-gray-900">{formatTimeRange(selectedOrder.startTime, selectedOrder.endTime)}</p>
+              </div>
+              <div className="rounded-2xl bg-gray-50 p-3">
+                <p className="text-[12px] text-gray-500">订单金额</p>
+                <p className="mt-1 text-[14px] font-medium text-pink-500">{formatMoney(selectedOrder.price)}</p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-gray-50 p-4 text-sm text-gray-700 mb-4">
+              <p className="font-medium text-gray-900">服务信息</p>
+              <p className="mt-2">{selectedOrder.serviceName}</p>
+              <p className="mt-2">{selectedOrder.address}</p>
+              {selectedOrder.note ? <p className="mt-2 text-gray-500">备注：{selectedOrder.note}</p> : null}
+            </div>
+
+            {!selectedOrder.isLocalDraft && allowedActions.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3">
+                {allowedActions.includes('pending_agree') ? (
+                  <button
+                    onClick={openReviewSheet}
+                    disabled={isUpdatingStatus || isReviewing}
+                    className="min-h-[44px] rounded-2xl bg-[#FF5A66] px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
+                  >
+                    提交报价
+                  </button>
+                ) : null}
+                {allowedActions.includes('pending_confirm') ? (
+                  <button
+                    onClick={() => void handleStatusChange('pending_confirm')}
+                    disabled={isUpdatingStatus}
+                    className="min-h-[44px] rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
+                  >
+                    {isUpdatingStatus ? '处理中...' : '确认订单'}
+                  </button>
+                ) : null}
+                {(allowedActions.includes('pending_home') || allowedActions.includes('pending_shop')) ? (
+                  <button
+                    onClick={() => {
+                      const nextStatus: OrderStatus = selectedOrder.serviceType === 'home' ? 'pending_home' : 'pending_shop';
+                      void handleStatusChange(nextStatus);
+                    }}
+                    disabled={isUpdatingStatus}
+                    className="min-h-[44px] rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
+                  >
+                    {isUpdatingStatus ? '处理中...' : '确认订单'}
+                  </button>
+                ) : null}
+                {allowedActions.includes('completed') ? (
+                  <button
+                    onClick={() => void handleStatusChange('completed')}
+                    disabled={isUpdatingStatus}
+                    className="min-h-[44px] rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
+                  >
+                    {isUpdatingStatus ? '处理中...' : '确认完成'}
+                  </button>
+                ) : null}
+                {allowedActions.includes('cancelled') ? (
+                  <button
+                    onClick={() => void handleStatusChange('cancelled')}
+                    disabled={isUpdatingStatus}
+                    className={`min-h-[44px] rounded-2xl border border-red-100 px-4 py-3 text-sm font-medium text-red-500 disabled:opacity-60 ${
+                      allowedActions.length === 1 ? 'col-span-2' : ''
+                    }`}
+                  >
+                    {isUpdatingStatus ? '处理中...' : '取消订单'}
+                  </button>
                 ) : null}
               </div>
-              <p className="mt-1 text-sm text-gray-500">{selectedOrder.customerPhone || '未填写联系电话'}</p>
-            </div>
-            <span className={`rounded-full px-3 py-1 text-xs font-medium ${orderStatusClasses[selectedOrder.status]}`}>
-              {orderStatusLabels[selectedOrder.status]}
-            </span>
+            ) : null}
           </div>
-
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="rounded-2xl bg-[#ffe9f0] p-3">
-              <p className="text-gray-500">预约时间</p>
-              <p className="mt-1 font-medium text-gray-900">{formatTimeRange(selectedOrder.startTime, selectedOrder.endTime)}</p>
-            </div>
-            <div className="rounded-2xl bg-gray-50 p-3">
-              <p className="text-gray-500">订单金额</p>
-              <p className="mt-1 font-medium text-pink-500">{formatMoney(selectedOrder.price)}</p>
-            </div>
-          </div>
-
-          <div className="mt-4 rounded-2xl bg-gray-50 p-4 text-sm text-gray-700">
-            <p className="font-medium text-gray-900">服务信息</p>
-            <p className="mt-2">{selectedOrder.serviceName}</p>
-            <p className="mt-2">{selectedOrder.address}</p>
-            {selectedOrder.note ? <p className="mt-2 text-gray-500">备注：{selectedOrder.note}</p> : null}
-          </div>
-
-          {!selectedOrder.isLocalDraft && allowedActions.length > 0 ? (
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              {allowedActions.includes('pending_agree') ? (
-                <button
-                  onClick={openReviewSheet}
-                  disabled={isUpdatingStatus || isReviewing}
-                  className="min-h-[44px] rounded-2xl bg-[#FF5A66] px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
-                >
-                  提交报价
-                </button>
-              ) : null}
-              {allowedActions.includes('pending_confirm') ? (
-                <button
-                  onClick={() => void handleStatusChange('pending_confirm')}
-                  disabled={isUpdatingStatus}
-                  className="min-h-[44px] rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
-                >
-                  {isUpdatingStatus ? '处理中...' : '确认订单'}
-                </button>
-              ) : null}
-              {(allowedActions.includes('pending_home') || allowedActions.includes('pending_shop')) ? (
-                <button
-                  onClick={() => {
-                    const nextStatus: OrderStatus = selectedOrder.serviceType === 'home' ? 'pending_home' : 'pending_shop';
-                    void handleStatusChange(nextStatus);
-                  }}
-                  disabled={isUpdatingStatus}
-                  className="min-h-[44px] rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
-                >
-                  {isUpdatingStatus ? '处理中...' : '确认订单'}
-                </button>
-              ) : null}
-              {allowedActions.includes('completed') ? (
-                <button
-                  onClick={() => void handleStatusChange('completed')}
-                  disabled={isUpdatingStatus}
-                  className="min-h-[44px] rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
-                >
-                  {isUpdatingStatus ? '处理中...' : '确认完成'}
-                </button>
-              ) : null}
-              {allowedActions.includes('cancelled') ? (
-                <button
-                  onClick={() => void handleStatusChange('cancelled')}
-                  disabled={isUpdatingStatus}
-                  className={`min-h-[44px] rounded-2xl border border-red-100 px-4 py-3 text-sm font-medium text-red-500 disabled:opacity-60 ${
-                    allowedActions.length === 1 ? 'col-span-2' : ''
-                  }`}
-                >
-                  {isUpdatingStatus ? '处理中...' : '取消订单'}
-                </button>
-              ) : null}
-            </div>
-          ) : null}
         </div>
       ) : null}
 
