@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { useAuth } from '../contexts/AuthContext';
 import { messageService, type Conversation, type Message } from '../services/message';
+import { usePresence } from '../hooks/usePresence';
+import { useSocket } from '../hooks/useSocket';
 
 interface InboxNotification {
   id: string;
@@ -22,6 +24,8 @@ const Chat: React.FC = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [notifications, setNotifications] = useState<InboxNotification[]>([]);
   const [loading, setLoading] = useState(true);
+  const { isOnline } = usePresence();
+  const { socket } = useSocket();
 
   const techIdFromUrl = searchParams.get('tech_id');
 
@@ -47,6 +51,43 @@ const Chat: React.FC = () => {
       navigate(`/chat/direct?tech_id=${matchedTechnician.id}`, { replace: true });
     }
   }, [techIdFromUrl, conversations, technicians, defaultTechnician, navigate]);
+
+  // Real-time new message listener
+  useEffect(() => {
+    if (!socket) return;
+
+    const onNewMessage = (data: { message: any; conversation: any }) => {
+      setConversations((prev: any[]) =>
+        prev.map((c: any) =>
+          c.id === data.conversation.id
+            ? {
+                ...c,
+                lastMessage: data.message.content,
+                lastMessageAt: data.message.createdAt,
+                unreadCount: (c.unreadCount || 0) + 1,
+              }
+            : c,
+        ),
+      );
+
+      // Browser notification if page not visible
+      if (document.visibilityState !== 'visible' && Notification.permission === 'granted') {
+        new Notification('新消息', {
+          body: data.message.messageType === 'image' ? '[图片]' : data.message.content,
+        });
+      }
+    };
+
+    socket.on('message:new', onNewMessage);
+    return () => { socket.off('message:new', onNewMessage); };
+  }, [socket]);
+
+  // Request notification permission on mount
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
 
   const totalUnread = useMemo(
     () => conversations.reduce((count, conversation) => count + (conversation.unreadCount || 0), 0),
@@ -194,6 +235,9 @@ const Chat: React.FC = () => {
                       <span className="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-primary)] px-1 text-[10px] font-semibold text-white">
                         {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
                       </span>
+                    )}
+                    {isOnline(conversation.technicianId || conversation.technician?.id, 'technician') && (
+                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white" />
                     )}
                   </div>
                   <div className="min-w-0 flex-1">

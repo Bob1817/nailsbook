@@ -4,6 +4,8 @@ import dayjs from 'dayjs';
 import { useAuth } from '../contexts/AuthContext';
 import { messageService, type Message, type TechnicianInfo } from '../services/message';
 import { uploadService } from '../services/upload';
+import { useSocket } from '../hooks/useSocket';
+import { useTyping } from '../hooks/useTyping';
 
 const ChatDetail: React.FC = () => {
   const navigate = useNavigate();
@@ -22,6 +24,8 @@ const ChatDetail: React.FC = () => {
   const [showTechSelector, setShowTechSelector] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { socket, isConnected } = useSocket();
+  const { isOtherTyping, emitTyping } = useTyping(socket, currentConversationId);
 
   const techIdFromUrl = searchParams.get('tech_id');
 
@@ -60,23 +64,50 @@ const ChatDetail: React.FC = () => {
     setLoading(false);
   }, [currentConversationId, techIdFromUrl, technicians, defaultTechnician]);
 
+  // WebSocket message listeners
   useEffect(() => {
-    if (currentConversationId) {
-      const interval = setInterval(() => {
-        loadMessagesByConversationId(currentConversationId, false);
-      }, 3000);
-      return () => clearInterval(interval);
-    }
+    if (!socket || !currentConversationId) return;
 
-    if (!currentTechnician) {
-      return;
-    }
+    const onNewMessage = (data: { message: any; conversation: any }) => {
+      if (data.message.conversationId === currentConversationId) {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === data.message.id)) return prev;
+          return [...prev, data.message];
+        });
+      }
+    };
+
+    const onRead = (data: { conversationId: number }) => {
+      if (data.conversationId === currentConversationId) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.senderType === 'client' ? m : { ...m, isRead: true }
+          ),
+        );
+      }
+    };
+
+    socket.on('message:new', onNewMessage);
+    socket.on('message:read', onRead);
+
+    // Mark conversation as read when opening
+    socket.emit('message:read', { conversationId: currentConversationId });
+
+    return () => {
+      socket.off('message:new', onNewMessage);
+      socket.off('message:read', onRead);
+    };
+  }, [socket, currentConversationId]);
+
+  // Fallback polling when WebSocket is disconnected
+  useEffect(() => {
+    if (isConnected || !currentConversationId) return;
 
     const interval = setInterval(() => {
-      loadMessagesForTechnician(currentTechnician.id, false);
+      loadMessagesByConversationId(currentConversationId, false);
     }, 3000);
     return () => clearInterval(interval);
-  }, [currentConversationId, currentTechnician, conversations]);
+  }, [isConnected, currentConversationId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -154,25 +185,45 @@ const ChatDetail: React.FC = () => {
       return;
     }
 
-    setSending(true);
-    try {
-      const data = await messageService.sendMessage({
-        conversationId: currentConversationId || undefined,
-        techId: currentConversationId ? undefined : currentTechnician.id,
+    if (socket && isConnected) {
+      socket.emit('message:send', {
+        conversationId: currentConversationId,
+        techId: !currentConversationId ? currentTechnician?.id : undefined,
         messageType: 'text',
-        content: inputText.trim(),
+        content: inputText,
       });
-
+      const optimisticMsg = {
+        id: Date.now(),
+        conversationId: currentConversationId,
+        senderType: 'client' as const,
+        messageType: 'text' as const,
+        content: inputText,
+        createdAt: new Date().toISOString(),
+        isRead: false,
+      };
+      setMessages((prev) => [...prev, optimisticMsg]);
       setInputText('');
-      if (data.message) {
-        setMessages((prev) => [...prev, data.message]);
+    } else {
+      setSending(true);
+      try {
+        const data = await messageService.sendMessage({
+          conversationId: currentConversationId || undefined,
+          techId: currentConversationId ? undefined : currentTechnician.id,
+          messageType: 'text',
+          content: inputText.trim(),
+        });
+
+        setInputText('');
+        if (data.message) {
+          setMessages((prev) => [...prev, data.message]);
+        }
+        await syncConversationAndRoute(currentTechnician.id);
+      } catch (error) {
+        console.error('Failed to send message:', error);
+        alert('发送失败，请重试');
+      } finally {
+        setSending(false);
       }
-      await syncConversationAndRoute(currentTechnician.id);
-    } catch (error) {
-      console.error('Failed to send message:', error);
-      alert('发送失败，请重试');
-    } finally {
-      setSending(false);
     }
   };
 
@@ -352,6 +403,12 @@ const ChatDetail: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
+      {isOtherTyping && (
+        <div className="px-4 py-1 text-xs text-gray-400 animate-pulse">
+          对方正在输入...
+        </div>
+      )}
+
       <div className="border-t border-white/60 bg-white/88 px-4 py-3 safe-area-bottom backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <button
@@ -376,7 +433,7 @@ const ChatDetail: React.FC = () => {
             <input
               type="text"
               value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
+              onChange={(e) => { setInputText(e.target.value); emitTyping(); }}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
               placeholder={currentTechnician ? `给${currentTechnician.name}发消息...` : '选择一位美甲师后开始沟通'}
               className="h-11 w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
