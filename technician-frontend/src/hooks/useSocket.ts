@@ -1,0 +1,31 @@
+import { useEffect, useRef, useState } from 'react';
+import { Socket } from 'socket.io-client';
+import { getSocket } from '../services/socket';
+
+export function useSocket() {
+  const token = localStorage.getItem('technician_token') || '';
+  const socketRef = useRef<Socket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+
+  useEffect(() => {
+    if (!token) return;
+
+    const socket = getSocket(token);
+    socketRef.current = socket;
+
+    const onConnect = () => setIsConnected(true);
+    const onDisconnect = () => setIsConnected(false);
+
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+
+    if (socket.connected) setIsConnected(true);
+
+    return () => {
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
+    };
+  }, [token]);
+
+  return { socket: socketRef.current, isConnected };
+}
