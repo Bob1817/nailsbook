@@ -1,13 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { ChatGateway } from '../chat/chat.gateway';
 import * as crypto from 'crypto';
 
 @Injectable()
 export class OrdersScheduler {
   private readonly logger = new Logger(OrdersScheduler.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private chatGateway: ChatGateway,
+  ) {}
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async handleOrderStatusTransitions() {
@@ -36,6 +40,9 @@ export class OrdersScheduler {
 
     for (const order of orders) {
       try {
+        let systemMessages: any[] = [];
+        let conversationId: number | null = null;
+
         await this.prisma.$transaction(async (tx) => {
           await tx.order.update({
             where: { id: order.id },
@@ -60,7 +67,9 @@ export class OrdersScheduler {
               },
             });
 
-            await tx.message.create({
+            conversationId = conversation.id;
+
+            const msg1 = await tx.message.create({
               data: {
                 conversationId: conversation.id,
                 senderType: 'system',
@@ -74,7 +83,7 @@ export class OrdersScheduler {
               },
             });
 
-            await tx.message.create({
+            const msg2 = await tx.message.create({
               data: {
                 conversationId: conversation.id,
                 senderType: 'system',
@@ -87,8 +96,26 @@ export class OrdersScheduler {
                 relatedId: order.id,
               },
             });
+
+            systemMessages = [msg1, msg2];
           }
         });
+
+        if (systemMessages.length > 0 && conversationId) {
+          try {
+            const updatedConversation = await this.prisma.conversation.findUnique({
+              where: { id: conversationId },
+            });
+            for (const msg of systemMessages) {
+              this.chatGateway.server.to(`conversation:${conversationId}`).emit('message:new', {
+                message: msg,
+                conversation: updatedConversation,
+              });
+            }
+          } catch (e) {
+            this.logger.error(`[OrdersScheduler] Failed to push notification via WebSocket for order #${order.id}:`, e);
+          }
+        }
 
         this.logger.log(`订单 #${order.id} 自动从 ${order.status} 转换为 in_progress`);
       } catch (error) {
@@ -116,6 +143,9 @@ export class OrdersScheduler {
         const revenueExists = await this.prisma.revenue.findUnique({
           where: { orderId: order.id },
         });
+
+        let systemMessage: any = null;
+        let conversationId: number | null = null;
 
         await this.prisma.$transaction(async (tx) => {
           await tx.order.update({
@@ -155,7 +185,9 @@ export class OrdersScheduler {
               },
             });
 
-            await tx.message.create({
+            conversationId = conversation.id;
+
+            systemMessage = await tx.message.create({
               data: {
                 conversationId: conversation.id,
                 senderType: 'system',
@@ -170,6 +202,20 @@ export class OrdersScheduler {
             });
           }
         });
+
+        if (systemMessage && conversationId) {
+          try {
+            const updatedConversation = await this.prisma.conversation.findUnique({
+              where: { id: conversationId },
+            });
+            this.chatGateway.server.to(`conversation:${conversationId}`).emit('message:new', {
+              message: systemMessage,
+              conversation: updatedConversation,
+            });
+          } catch (e) {
+            this.logger.error(`[OrdersScheduler] Failed to push notification via WebSocket for order #${order.id}:`, e);
+          }
+        }
 
         this.logger.log(`订单 #${order.id} 自动从 in_progress 转换为 completed`);
       } catch (error) {

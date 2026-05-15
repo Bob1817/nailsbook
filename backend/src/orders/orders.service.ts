@@ -1,5 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { ChatGateway } from '../chat/chat.gateway';
 import * as crypto from 'crypto';
 import { CreateTechnicianOrderDto } from './dto/create-technician-order.dto';
 import { ReviewOrderDto } from './dto/review-order.dto';
@@ -34,7 +35,10 @@ function canTransition(from: OrderStatus, to: OrderStatus): boolean {
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private chatGateway: ChatGateway,
+  ) {}
 
   async createForTechnician(technicianId: number, dto: CreateTechnicianOrderDto) {
     const customer = await this.prisma.customer.findUnique({
@@ -159,7 +163,10 @@ export class OrdersService {
 
     await this.assertOrderConflict(technicianId, startTime, endTime, order.id);
 
-    return this.prisma.$transaction(async (tx) => {
+    let systemMessage: any = null;
+    let conversationId: number | null = null;
+
+    const updated = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.order.update({
         where: { id },
         data: {
@@ -194,7 +201,9 @@ export class OrdersService {
           },
         });
 
-        await tx.message.create({
+        conversationId = conversation.id;
+
+        systemMessage = await tx.message.create({
           data: {
             conversationId: conversation.id,
             senderType: 'system',
@@ -211,6 +220,22 @@ export class OrdersService {
 
       return updated;
     });
+
+    if (systemMessage && conversationId) {
+      try {
+        const updatedConversation = await this.prisma.conversation.findUnique({
+          where: { id: conversationId },
+        });
+        this.chatGateway.server.to(`conversation:${conversationId}`).emit('message:new', {
+          message: systemMessage,
+          conversation: updatedConversation,
+        });
+      } catch (e) {
+        console.error('[OrdersService] Failed to push notification via WebSocket:', e);
+      }
+    }
+
+    return updated;
   }
 
   async confirm(id: number, depositConfirmed?: boolean) {
@@ -227,7 +252,10 @@ export class OrdersService {
 
     const targetStatus: OrderStatus = order.serviceType === '上门美甲' ? 'pending_home' : 'pending_shop';
 
-    return this.prisma.$transaction(async (tx) => {
+    let systemMessage: any = null;
+    let conversationId: number | null = null;
+
+    const updated = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.order.update({
         where: { id },
         data: {
@@ -259,7 +287,9 @@ export class OrdersService {
           },
         });
 
-        await tx.message.create({
+        conversationId = conversation.id;
+
+        systemMessage = await tx.message.create({
           data: {
             conversationId: conversation.id,
             senderType: 'system',
@@ -276,6 +306,22 @@ export class OrdersService {
 
       return updated;
     });
+
+    if (systemMessage && conversationId) {
+      try {
+        const updatedConversation = await this.prisma.conversation.findUnique({
+          where: { id: conversationId },
+        });
+        this.chatGateway.server.to(`conversation:${conversationId}`).emit('message:new', {
+          message: systemMessage,
+          conversation: updatedConversation,
+        });
+      } catch (e) {
+        console.error('[OrdersService] Failed to push notification via WebSocket:', e);
+      }
+    }
+
+    return updated;
   }
 
   async complete(id: number) {
@@ -293,7 +339,10 @@ export class OrdersService {
       throw new BadRequestException('该订单已生成收入记录');
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    let systemMessage: any = null;
+    let conversationId: number | null = null;
+
+    const revenue = await this.prisma.$transaction(async (tx) => {
       await tx.order.update({
         where: { id },
         data: {
@@ -332,7 +381,9 @@ export class OrdersService {
           },
         });
 
-        await tx.message.create({
+        conversationId = conversation.id;
+
+        systemMessage = await tx.message.create({
           data: {
             conversationId: conversation.id,
             senderType: 'system',
@@ -349,6 +400,22 @@ export class OrdersService {
 
       return revenue;
     });
+
+    if (systemMessage && conversationId) {
+      try {
+        const updatedConversation = await this.prisma.conversation.findUnique({
+          where: { id: conversationId },
+        });
+        this.chatGateway.server.to(`conversation:${conversationId}`).emit('message:new', {
+          message: systemMessage,
+          conversation: updatedConversation,
+        });
+      } catch (e) {
+        console.error('[OrdersService] Failed to push notification via WebSocket:', e);
+      }
+    }
+
+    return revenue;
   }
 
   async cancel(id: number, cancelReason?: string) {
@@ -359,7 +426,10 @@ export class OrdersService {
       throw new BadRequestException('当前订单状态不支持取消');
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    let systemMessages: any[] = [];
+    let conversationId: number | null = null;
+
+    const updated = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.order.update({
         where: { id },
         data: {
@@ -387,7 +457,9 @@ export class OrdersService {
           },
         });
 
-        await tx.message.create({
+        conversationId = conversation.id;
+
+        const msg1 = await tx.message.create({
           data: {
             conversationId: conversation.id,
             senderType: 'system',
@@ -401,7 +473,7 @@ export class OrdersService {
           },
         });
 
-        await tx.message.create({
+        const msg2 = await tx.message.create({
           data: {
             conversationId: conversation.id,
             senderType: 'system',
@@ -414,10 +486,30 @@ export class OrdersService {
             relatedId: order.id,
           },
         });
+
+        systemMessages = [msg1, msg2];
       }
 
       return updated;
     });
+
+    if (systemMessages.length > 0 && conversationId) {
+      try {
+        const updatedConversation = await this.prisma.conversation.findUnique({
+          where: { id: conversationId },
+        });
+        for (const msg of systemMessages) {
+          this.chatGateway.server.to(`conversation:${conversationId}`).emit('message:new', {
+            message: msg,
+            conversation: updatedConversation,
+          });
+        }
+      } catch (e) {
+        console.error('[OrdersService] Failed to push notification via WebSocket:', e);
+      }
+    }
+
+    return updated;
   }
 
   private generateOrderNo(): string {

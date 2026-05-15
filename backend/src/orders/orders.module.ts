@@ -5,9 +5,10 @@ import { TechnicianOrdersController } from './technician-orders.controller';
 import { ClientOrdersController } from './client-orders.controller';
 import { OrdersScheduler } from './orders.scheduler';
 import { PrismaModule } from '../common/prisma/prisma.module';
+import { ChatModule } from '../chat/chat.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, ChatModule],
   controllers: [TechnicianOrdersController, ClientOrdersController],
   providers: [OrdersService, ClientOrdersService, OrdersScheduler],
   exports: [OrdersService, ClientOrdersService],

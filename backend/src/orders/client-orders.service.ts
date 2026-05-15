@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { ChatGateway } from '../chat/chat.gateway';
 import { CreateClientOrderDto } from './dto/create-client-order.dto';
 import { UpdateClientOrderDto } from './dto/update-client-order.dto';
 import { CreateOrderFromDesignDto } from './dto/create-order-from-design.dto';
@@ -38,7 +39,10 @@ const CLIENT_STATUS_TRANSITIONS: Record<string, string[]> = {
 
 @Injectable()
 export class ClientOrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly chatGateway: ChatGateway,
+  ) {}
 
   async create(clientUserId: number, dto: CreateClientOrderDto) {
     const binding = await this.prisma.clientTechBinding.findFirst({
@@ -407,6 +411,9 @@ export class ClientOrdersService {
       throw new BadRequestException('当前订单状态不支持确认报价');
     }
 
+    let systemMessage: any = null;
+    let conversationId: number | null = null;
+
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.order.update({
         where: { id },
@@ -434,7 +441,9 @@ export class ClientOrdersService {
         },
       });
 
-      await tx.message.create({
+      conversationId = conversation.id;
+
+      systemMessage = await tx.message.create({
         data: {
           conversationId: conversation.id,
           senderType: 'client',
@@ -450,6 +459,20 @@ export class ClientOrdersService {
 
       return updated;
     });
+
+    if (systemMessage && conversationId) {
+      try {
+        const updatedConversation = await this.prisma.conversation.findUnique({
+          where: { id: conversationId },
+        });
+        this.chatGateway.server.to(`conversation:${conversationId}`).emit('message:new', {
+          message: systemMessage,
+          conversation: updatedConversation,
+        });
+      } catch (e) {
+        console.error('[ClientOrdersService] Failed to push notification via WebSocket:', e);
+      }
+    }
 
     return this.mapOrder(updatedOrder);
   }
@@ -470,6 +493,9 @@ export class ClientOrdersService {
     if (order.status !== 'pending_agree') {
       throw new BadRequestException('当前订单状态不支持拒绝报价');
     }
+
+    let systemMessage: any = null;
+    let conversationId: number | null = null;
 
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.order.update({
@@ -500,7 +526,9 @@ export class ClientOrdersService {
         },
       });
 
-      await tx.message.create({
+      conversationId = conversation.id;
+
+      systemMessage = await tx.message.create({
         data: {
           conversationId: conversation.id,
           senderType: 'client',
@@ -516,6 +544,20 @@ export class ClientOrdersService {
 
       return updated;
     });
+
+    if (systemMessage && conversationId) {
+      try {
+        const updatedConversation = await this.prisma.conversation.findUnique({
+          where: { id: conversationId },
+        });
+        this.chatGateway.server.to(`conversation:${conversationId}`).emit('message:new', {
+          message: systemMessage,
+          conversation: updatedConversation,
+        });
+      } catch (e) {
+        console.error('[ClientOrdersService] Failed to push notification via WebSocket:', e);
+      }
+    }
 
     return this.mapOrder(updatedOrder);
   }
