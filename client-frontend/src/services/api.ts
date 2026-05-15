@@ -25,6 +25,10 @@ api.interceptors.response.use(
       localStorage.removeItem('client_technician');
       window.location.href = '/login';
     }
+    // Network error
+    if (!error.response) {
+      console.error('网络错误，请检查网络连接');
+    }
     return Promise.reject(error);
   }
 );

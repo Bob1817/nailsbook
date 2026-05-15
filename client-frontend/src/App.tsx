@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from
 import { useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { PresenceProvider } from './hooks/usePresence';
+import { ToastProvider } from './components/ToastProvider';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './components/MainLayout';
 import Login from './pages/Login';
@@ -86,11 +88,15 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <PresenceProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </PresenceProvider>
+      <ToastProvider>
+        <PresenceProvider>
+          <ErrorBoundary>
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </ErrorBoundary>
+        </PresenceProvider>
+      </ToastProvider>
     </AuthProvider>
   );
 }

@@ -5,6 +5,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { MainLayout } from './layouts/MainLayout';
 import { ToastProvider } from './components/feedback/ToastProvider';
 import { PresenceProvider } from './hooks/usePresence';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const Login = lazy(async () => {
   const module = await import('./pages/Login');
@@ -71,7 +72,8 @@ function App() {
     <AuthProvider>
       <ToastProvider>
         <PresenceProvider>
-          <Router>
+          <ErrorBoundary>
+            <Router>
             <Suspense fallback={<RouteFallback />}>
               <Routes>
                 <Route path="/login" element={<Login />} />
@@ -102,7 +104,8 @@ function App() {
                 </Route>
               </Routes>
             </Suspense>
-          </Router>
+            </Router>
+          </ErrorBoundary>
         </PresenceProvider>
       </ToastProvider>
     </AuthProvider>
