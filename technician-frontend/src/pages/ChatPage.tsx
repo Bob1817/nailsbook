@@ -5,6 +5,8 @@ import { useToast } from '../components/feedback/ToastProvider';
 import { messageService, type Message, type ClientInfo } from '../services/message';
 import { customersService } from '../services/customers';
 import { formatClock, formatRelativeDateLabel } from '../services/technicianData';
+import { useSocket } from '../hooks/useSocket';
+import { useTyping } from '../hooks/useTyping';
 
 const ChatPage: React.FC = () => {
   const navigate = useNavigate();
@@ -25,6 +27,10 @@ const ChatPage: React.FC = () => {
 
   const conversationIdFromUrl = searchParams.get('conversation_id');
   const clientIdFromUrl = searchParams.get('client_id');
+
+  const { socket, isConnected } = useSocket();
+  const convId = conversationIdFromUrl ? Number(conversationIdFromUrl) : null;
+  const { isOtherTyping, emitTyping } = useTyping(socket, convId);
 
   // Load conversations list
   useEffect(() => {
@@ -52,17 +58,50 @@ const ChatPage: React.FC = () => {
     }
   }, [conversationIdFromUrl, clientIdFromUrl]);
 
-  // Polling for new messages every 3 seconds
+  // WebSocket listeners for real-time messages
   useEffect(() => {
-    if (!conversationIdFromUrl) return;
+    if (!socket || !convId) return;
+
+    const onNewMessage = (data: { message: any; conversation: any }) => {
+      if (data.message.conversationId === convId) {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === data.message.id)) return prev;
+          return [...prev, data.message];
+        });
+      }
+    };
+
+    const onRead = (data: { conversationId: number }) => {
+      if (data.conversationId === convId) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.senderType === 'technician' ? m : { ...m, isRead: true }
+          ),
+        );
+      }
+    };
+
+    socket.on('message:new', onNewMessage);
+    socket.on('message:read', onRead);
+
+    socket.emit('message:read', { conversationId: convId });
+
+    return () => {
+      socket.off('message:new', onNewMessage);
+      socket.off('message:read', onRead);
+    };
+  }, [socket, convId]);
+
+  // Fallback polling when disconnected
+  useEffect(() => {
+    if (isConnected || !convId) return;
 
     const interval = setInterval(() => {
-      const convId = parseInt(conversationIdFromUrl);
       refreshMessages(convId);
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [conversationIdFromUrl]);
+  }, [isConnected, convId]);
 
   useEffect(() => {
     scrollToBottom();
@@ -122,24 +161,44 @@ const ChatPage: React.FC = () => {
   const handleSendMessage = async () => {
     if (!inputText.trim() || sending || !currentClient) return;
 
-    setSending(true);
-    try {
-      const data = await messageService.sendMessage({
-        clientId: currentClient.id,
+    if (socket && isConnected) {
+      socket.emit('message:send', {
+        conversationId: convId,
+        clientId: !convId ? currentClient.id : undefined,
         messageType: 'text',
         content: inputText.trim(),
       });
+      const optimisticMsg: Message = {
+        id: Date.now(),
+        conversationId: convId ?? 0,
+        senderType: 'technician',
+        messageType: 'text',
+        content: inputText.trim(),
+        createdAt: new Date().toISOString(),
+        isRead: false,
+      };
+      setMessages((prev) => [...prev, optimisticMsg]);
       setInputText('');
-      if (data.message) {
-        setMessages((prev) => [...prev, data.message]);
-      }
-      // Refresh conversations list
       loadConversations();
-    } catch (error) {
-      console.error('Failed to send message:', error);
-      toast.error('发送失败，请重试');
-    } finally {
-      setSending(false);
+    } else {
+      setSending(true);
+      try {
+        const data = await messageService.sendMessage({
+          clientId: currentClient.id,
+          messageType: 'text',
+          content: inputText.trim(),
+        });
+        setInputText('');
+        if (data.message) {
+          setMessages((prev) => [...prev, data.message]);
+        }
+        loadConversations();
+      } catch (error) {
+        console.error('Failed to send message:', error);
+        toast.error('发送失败，请重试');
+      } finally {
+        setSending(false);
+      }
     }
   };
 
@@ -255,42 +314,41 @@ const ChatPage: React.FC = () => {
   return (
     <div className="flex min-h-[100dvh] flex-col bg-[#fff9f8]">
       {/* Header */}
-      <div className="bg-white/80 px-5 pt-12 pb-4 sticky top-0 z-10 border-b border-gray-100 backdrop-blur">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center active:bg-gray-200"
-          >
-            <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <div className="flex items-center gap-3 flex-1">
-            <div className="w-10 h-10 rounded-full bg-pink-50 flex items-center justify-center overflow-hidden">
-              {currentClient?.avatarUrl ? (
-                <img src={currentClient.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-pink-500 font-semibold">
-                  {(currentClient?.nickname || currentClient?.phone || '?').charAt(0)}
-                </span>
+      <div className="sticky top-0 z-10 flex items-center gap-3 bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[#f2e6ec]">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f7f3f5] transition-colors active:bg-[#eee5e9]"
+        >
+          <svg className="h-5 w-5 text-[#3c3440]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="w-9 h-9 shrink-0 rounded-full bg-pink-50 flex items-center justify-center overflow-hidden">
+            {currentClient?.avatarUrl ? (
+              <img src={currentClient.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-pink-500 font-semibold text-[14px]">
+                {(currentClient?.nickname || currentClient?.phone || '?').charAt(0)}
+              </span>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h1 className="text-[15px] font-semibold text-[#1f2230] truncate">
+                {currentClient?.nickname || currentClient?.phone || '客户'}
+              </h1>
+              {conversations.length > 0 && (
+                <button
+                  onClick={() => setShowClientSelector(true)}
+                  className="shrink-0 text-[12px] text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full"
+                >
+                  切换
+                </button>
               )}
             </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <h1 className="text-base font-semibold text-gray-900">
-                  {currentClient?.nickname || currentClient?.phone || '客户'}
-                </h1>
-                {conversations.length > 0 && (
-                  <button
-                    onClick={() => setShowClientSelector(true)}
-                    className="text-xs text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full"
-                  >
-                    切换
-                  </button>
-                )}
-              </div>
-              <p className="text-xs text-gray-500">在线</p>
-            </div>
+            <p className="text-[12px] text-gray-400">在线</p>
           </div>
         </div>
       </div>
@@ -385,6 +443,13 @@ const ChatPage: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Typing indicator */}
+      {isOtherTyping && (
+        <div className="px-4 py-1 text-xs text-gray-400 animate-pulse">
+          对方正在输入...
+        </div>
+      )}
+
       {/* Input Area */}
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-gray-100 bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] shadow-[0_-6px_18px_rgba(29,35,53,0.06)]">
         <div className="mx-auto flex max-w-[32rem] items-center gap-3">
@@ -422,7 +487,7 @@ const ChatPage: React.FC = () => {
             <input
               type="text"
               value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
+              onChange={(e) => { setInputText(e.target.value); emitTyping(); }}
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
               placeholder={currentClient ? `给${currentClient.nickname || '客户'}发消息...` : '输入消息...'}
               className="w-full px-4 py-2.5 bg-gray-100 rounded-full text-sm text-gray-900 outline-none focus:ring-2 focus:ring-pink-500/20"

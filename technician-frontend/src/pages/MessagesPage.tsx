@@ -7,6 +7,8 @@ import { useToast } from '../components/feedback/ToastProvider';
 import { ordersService } from '../services/orders';
 import { customersService } from '../services/customers';
 import { messageService, type Conversation } from '../services/message';
+import { usePresence } from '../hooks/usePresence';
+import { useSocket } from '../hooks/useSocket';
 import {
   formatDateLabel,
   formatDateTimeLabel,
@@ -103,6 +105,9 @@ export const MessagesPage: React.FC = () => {
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
 
+  const { isOnline } = usePresence();
+  const { socket } = useSocket();
+
   useEffect(() => {
     let cancelled = false;
 
@@ -137,6 +142,42 @@ export const MessagesPage: React.FC = () => {
       cancelled = true;
     };
   }, [technician?.id, toast]);
+
+  // Real-time message listener
+  useEffect(() => {
+    if (!socket) return;
+
+    const onNewMessage = (data: { message: any; conversation: any }) => {
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === data.conversation.id
+            ? {
+                ...c,
+                lastMessage: data.message.content,
+                lastMessageAt: data.message.createdAt,
+                unreadCount: (c.unreadCount || 0) + 1,
+              }
+            : c,
+        ),
+      );
+
+      if (document.visibilityState !== 'visible' && Notification.permission === 'granted') {
+        new Notification('新消息', {
+          body: data.message.messageType === 'image' ? '[图片]' : data.message.content,
+        });
+      }
+    };
+
+    socket.on('message:new', onNewMessage);
+    return () => { socket.off('message:new', onNewMessage); };
+  }, [socket]);
+
+  // Request notification permission
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
 
   function handleMessageAction(message: MessageItem) {
     if (message.type === 'chat' && (message.conversationId || message.clientId)) {
@@ -354,8 +395,13 @@ export const MessagesPage: React.FC = () => {
                   onClick={() => handleMessageAction(message)}
                   className="flex min-h-[96px] w-full items-start gap-3 px-lg py-lg text-left"
                 >
-                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-base font-semibold ${accent.avatar}`}>
-                    {getMessageAvatarLabel(message)}
+                  <div className="relative shrink-0">
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-full text-base font-semibold ${accent.avatar}`}>
+                      {getMessageAvatarLabel(message)}
+                    </div>
+                    {message.type === 'chat' && message.clientId && isOnline(message.clientId, 'client') && (
+                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white" />
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2 pr-1">

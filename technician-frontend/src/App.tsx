@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { MainLayout } from './layouts/MainLayout';
 import { ToastProvider } from './components/feedback/ToastProvider';
+import { PresenceProvider } from './hooks/usePresence';
 
 const Login = lazy(async () => {
   const module = await import('./pages/Login');
@@ -42,6 +43,18 @@ const ServicesPage = lazy(() => import('./pages/ServicesPage'));
 const HomeServiceSettingsPage = lazy(() => import('./pages/HomeServiceSettingsPage'));
 const ProfileSettingsPage = lazy(() => import('./pages/ProfileSettingsPage'));
 const BookingDetailPage = lazy(() => import('./pages/BookingDetailPage'));
+const SubscriptionPage = lazy(async () => {
+  const module = await import('./pages/SubscriptionPage');
+  return { default: module.SubscriptionPage };
+});
+const ServiceTimePage = lazy(async () => {
+  const module = await import('./pages/ServiceTimePage');
+  return { default: module.ServiceTimePage };
+});
+const TagManagementPage = lazy(async () => {
+  const module = await import('./pages/TagManagementPage');
+  return { default: module.TagManagementPage };
+});
 
 function RouteFallback() {
   return (
@@ -57,35 +70,40 @@ function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-        <Router>
-          <Suspense fallback={<RouteFallback />}>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route
-                element={
-                  <ProtectedRoute>
-                    <MainLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route path="/" element={<HomePage />} />
-                <Route path="/schedule" element={<SchedulePage />} />
-                <Route path="/customers" element={<CustomersPage />} />
-                <Route path="/orders" element={<OrdersPage />} />
-                <Route path="/messages" element={<MessagesPage />} />
-                <Route path="/chat" element={<ChatPage />} />
-                <Route path="/me" element={<MePage />} />
-                <Route path="/works" element={<WorksPage />} />
-                <Route path="/shops" element={<ShopManagement />} />
-                <Route path="/shops/edit" element={<ShopEdit />} />
-                <Route path="/services" element={<ServicesPage />} />
-                <Route path="/home-service-settings" element={<HomeServiceSettingsPage />} />
-                <Route path="/profile-settings" element={<ProfileSettingsPage />} />
-                <Route path="/bookings/:id" element={<BookingDetailPage />} />
-              </Route>
-            </Routes>
-          </Suspense>
-        </Router>
+        <PresenceProvider>
+          <Router>
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route
+                  element={
+                    <ProtectedRoute>
+                      <MainLayout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/schedule" element={<SchedulePage />} />
+                  <Route path="/customers" element={<CustomersPage />} />
+                  <Route path="/orders" element={<OrdersPage />} />
+                  <Route path="/messages" element={<MessagesPage />} />
+                  <Route path="/chat" element={<ChatPage />} />
+                  <Route path="/me" element={<MePage />} />
+                  <Route path="/works" element={<WorksPage />} />
+                  <Route path="/shops" element={<ShopManagement />} />
+                  <Route path="/shops/edit" element={<ShopEdit />} />
+                  <Route path="/services" element={<ServicesPage />} />
+                  <Route path="/home-service-settings" element={<HomeServiceSettingsPage />} />
+                  <Route path="/profile-settings" element={<ProfileSettingsPage />} />
+                  <Route path="/subscription" element={<SubscriptionPage />} />
+                  <Route path="/service-time" element={<ServiceTimePage />} />
+                  <Route path="/tag-management" element={<TagManagementPage />} />
+                  <Route path="/bookings/:id" element={<BookingDetailPage />} />
+                </Route>
+              </Routes>
+            </Suspense>
+          </Router>
+        </PresenceProvider>
       </ToastProvider>
     </AuthProvider>
   );
