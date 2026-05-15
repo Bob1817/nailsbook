@@ -225,20 +225,23 @@ const OrderDetailPage: React.FC = () => {
   return (
     <div className="min-h-full bg-[#fff9f8] pb-24">
       {/* Header */}
-      <div className="sticky top-0 z-10 border-b border-[#f4e9ec] bg-[#fff9f8]/90 px-5 pb-4 pt-12 backdrop-blur-xl">
-        <div className="flex items-center gap-4">
+      <div className="sticky top-0 z-10 flex items-center justify-between bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[#f2e6ec]">
+        <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={() => navigate(-1)}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-white/80 bg-white text-gray-700 shadow-[0_6px_18px_rgba(29,35,53,0.06)]"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f7f3f5] transition-colors active:bg-[#eee5e9]"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-5 w-5 text-[#3c3440]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <div className="flex-1">
-            <h1 className="text-[1.75rem] font-semibold tracking-[-0.02em] text-gray-900">订单详情</h1>
-            <p className="mt-1 text-[13px] text-gray-400">{order.orderNo}</p>
+          <div>
+            <h1 className="text-[17px] font-semibold text-[#1f2230]">订单详情</h1>
+            <p className="text-[12px] text-gray-400">{order.orderNo}</p>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
           {!isEditing && (
             <Button
               variant="primary"
