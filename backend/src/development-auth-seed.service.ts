@@ -49,6 +49,8 @@ export class DevelopmentAuthSeedService implements OnModuleInit {
       { name: '订阅更新', code: 'subscription:update', module: 'subscription', action: 'update' },
       { name: '系统配置', code: 'system:config', module: 'system', action: 'config' },
       { name: '日志查看', code: 'log:view', module: 'log', action: 'view' },
+      { name: '功能开关查看', code: 'feature_flag:view', module: 'feature_flag', action: 'view' },
+      { name: '功能开关更新', code: 'feature_flag:update', module: 'feature_flag', action: 'update' },
     ];
 
     for (const permission of permissions) {

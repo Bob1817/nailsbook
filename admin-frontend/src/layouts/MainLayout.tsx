@@ -12,6 +12,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   LogoutOutlined,
+  FlagOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -72,6 +73,12 @@ const MainLayout: React.FC = () => {
       icon: <HistoryOutlined />,
       label: '操作日志',
       permission: 'log:view',
+    },
+    {
+      key: '/feature-flags',
+      icon: <FlagOutlined />,
+      label: '功能开关',
+      permission: 'feature_flag:view',
     },
   ];
 

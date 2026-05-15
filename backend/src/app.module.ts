@@ -28,6 +28,9 @@ import { TechnicianWorksModule } from './technician-works/technician-works.modul
 import { TechnicianServicesModule } from './technician-services/technician-services.module';
 import { ArtistApplicationsModule } from './artist-applications/artist-applications.module';
 import { CustomServiceRequestsModule } from './custom-service-requests/custom-service-requests.module';
+import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
+import { AdminRolesModule } from './admin-roles/admin-roles.module';
+import { AdminPermissionsModule } from './admin-permissions/admin-permissions.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { DevelopmentAuthSeedService } from './development-auth-seed.service';
 import { DevelopmentDemoSeedService } from './development-demo-seed.service';
@@ -67,6 +70,9 @@ import { DevelopmentDemoSeedService } from './development-demo-seed.service';
     TechnicianUploadModule,
     ArtistApplicationsModule,
     CustomServiceRequestsModule,
+    FeatureFlagsModule,
+    AdminRolesModule,
+    AdminPermissionsModule,
   ],
   controllers: [AppController],
   providers: [
