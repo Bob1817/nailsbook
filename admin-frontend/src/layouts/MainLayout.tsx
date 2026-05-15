@@ -13,6 +13,7 @@ import {
   MenuUnfoldOutlined,
   LogoutOutlined,
   FlagOutlined,
+  SafetyOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -79,6 +80,12 @@ const MainLayout: React.FC = () => {
       icon: <FlagOutlined />,
       label: '功能开关',
       permission: 'feature_flag:view',
+    },
+    {
+      key: '/roles',
+      icon: <SafetyOutlined />,
+      label: '角色管理',
+      permission: 'role:view',
     },
   ];
 

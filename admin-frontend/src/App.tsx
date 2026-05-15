@@ -16,6 +16,7 @@ import Subscriptions from './pages/Subscriptions';
 import OperationLogs from './pages/OperationLogs';
 import Forbidden from './pages/Forbidden';
 import FeatureFlags from './pages/FeatureFlags';
+import Roles from './pages/Roles';
 
 const App: React.FC = () => {
   return (
@@ -42,6 +43,7 @@ const App: React.FC = () => {
               <Route path="subscriptions" element={<ProtectedRoute permission="subscription:view"><Subscriptions /></ProtectedRoute>} />
               <Route path="logs" element={<ProtectedRoute permission="log:view"><OperationLogs /></ProtectedRoute>} />
               <Route path="feature-flags" element={<ProtectedRoute permission="feature_flag:view"><FeatureFlags /></ProtectedRoute>} />
+              <Route path="roles" element={<ProtectedRoute permission="role:view"><Roles /></ProtectedRoute>} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

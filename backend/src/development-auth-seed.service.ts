@@ -51,6 +51,11 @@ export class DevelopmentAuthSeedService implements OnModuleInit {
       { name: '日志查看', code: 'log:view', module: 'log', action: 'view' },
       { name: '功能开关查看', code: 'feature_flag:view', module: 'feature_flag', action: 'view' },
       { name: '功能开关更新', code: 'feature_flag:update', module: 'feature_flag', action: 'update' },
+      { name: '角色查看', code: 'role:view', module: 'role', action: 'view' },
+      { name: '角色创建', code: 'role:create', module: 'role', action: 'create' },
+      { name: '角色更新', code: 'role:update', module: 'role', action: 'update' },
+      { name: '角色删除', code: 'role:delete', module: 'role', action: 'delete' },
+      { name: '权限查看', code: 'permission:view', module: 'permission', action: 'view' },
     ];
 
     for (const permission of permissions) {
@@ -73,6 +78,24 @@ export class DevelopmentAuthSeedService implements OnModuleInit {
           permissionId: createdPermission.id,
         },
       });
+    }
+
+    // Seed editor role for demonstration
+    const editorRole = await this.prisma.adminRole.upsert({
+      where: { code: 'editor' },
+      update: {},
+      create: { name: '编辑员', code: 'editor', description: '可管理技师和客户，不可管理系统配置' },
+    });
+    const editorPermCodes = ['technician:view', 'technician:create', 'customer:view', 'revenue:view', 'order:view'];
+    for (const code of editorPermCodes) {
+      const perm = await this.prisma.adminPermission.findUnique({ where: { code } });
+      if (perm) {
+        await this.prisma.adminRolePermission.upsert({
+          where: { roleId_permissionId: { roleId: editorRole.id, permissionId: perm.id } },
+          update: {},
+          create: { roleId: editorRole.id, permissionId: perm.id },
+        });
+      }
     }
 
     const adminUser = await this.prisma.adminUser.findUnique({
