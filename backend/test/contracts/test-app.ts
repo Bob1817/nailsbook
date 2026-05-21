@@ -4,6 +4,7 @@ import { dirname, isAbsolute, resolve } from 'path';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import * as jwt from 'jsonwebtoken';
 import { AvatarUrlInterceptor } from '../../src/common/avatar-url.interceptor';
 import { PrismaService } from '../../src/common/prisma/prisma.service';
 
@@ -11,6 +12,8 @@ export interface ContractTestApp {
   app: INestApplication;
   prisma: PrismaService;
   databaseUrl: string;
+  signClientToken: (clientUserId: number, phone: string) => string;
+  signTechnicianToken: (technicianId: number, phone: string) => string;
   cleanup: () => Promise<void>;
 }
 
@@ -119,6 +122,14 @@ export async function createContractTestApp(
       app: initializedApp,
       prisma: initializedApp.get(PrismaService),
       databaseUrl,
+      signClientToken: (clientUserId: number, phone: string) => {
+        const secret = process.env.CLIENT_JWT_SECRET ?? process.env.JWT_SECRET ?? 'test-secret';
+        return jwt.sign({ sub: clientUserId, phone, userType: 'client' }, secret);
+      },
+      signTechnicianToken: (technicianId: number, phone: string) => {
+        const secret = process.env.TECHNICIAN_JWT_SECRET ?? process.env.JWT_SECRET ?? 'test-secret';
+        return jwt.sign({ sub: technicianId, phone, userType: 'technician' }, secret);
+      },
       cleanup: async () => {
         try {
           await initializedApp.close();
