@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 class AppTheme {
   static const _primaryColor = Color(0xFFE91E63);
-  static const _primaryLight = Color(0xFFF48FB1);
-  static const _primaryDark = Color(0xFFC2185B);
   static const _backgroundColor = Color(0xFFF5F5F5);
   static const _surfaceColor = Colors.white;
   static const _textPrimary = Color(0xFF212121);
@@ -51,7 +49,7 @@ class AppTheme {
           ),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: _surfaceColor,
           selectedItemColor: _primaryColor,
           unselectedItemColor: _textSecondary,
