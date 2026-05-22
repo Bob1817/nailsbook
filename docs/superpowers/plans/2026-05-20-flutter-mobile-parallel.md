@@ -169,7 +169,7 @@
 - [x] Test register-by-invite returns access token, client profile, default technician, and technician list.
 - [x] Test login returns the same shape as register where possible.
 - [x] Test `/auth/me` returns client, bound technicians, and default technician.
-- [ ] Run:
+- [x] Run:
   - `cd backend && npm test -- client-auth.contract-spec --runInBand`
   - Expected: contract tests pass.
 - [x] Commit:
@@ -189,7 +189,7 @@
 - [x] Test order create, list, detail, quote accept, quote reject, and status update.
 - [x] Test design create/list/detail and create-order-from-design.
 - [x] Test custom service request create/list/detail/accept/reject/cancel.
-- [ ] Run:
+- [x] Run:
   - `cd backend && npm test -- client-order.contract-spec --runInBand`
   - Expected: contract tests pass.
 - [x] Commit:
@@ -211,7 +211,7 @@
 - [x] Test customer list/detail/tags.
 - [x] Test work create/update/delete/visibility/pin/feature.
 - [x] Test service create/update/delete/toggle.
-- [ ] Run:
+- [x] Run:
   - `cd backend && npm test -- technician-order.contract-spec --runInBand`
   - Expected: contract tests pass.
 - [x] Commit:
@@ -232,7 +232,7 @@
 - [x] Test Socket.IO authentication with client token and technician token.
 - [x] Test `message:send` emits `message:new` to the other side.
 - [x] Test upload returns a URL consumable by Flutter image widgets.
-- [ ] Run:
+- [x] Run:
   - `cd backend && npm test -- chat.contract-spec upload.contract-spec --runInBand`
   - Expected: contract tests pass.
 - [x] Commit:
@@ -249,10 +249,10 @@
 - Create: `mobile-flutter/`
 - Create: `mobile-flutter/README.md`
 
-- [ ] Run:
+- [x] Run:
   - `flutter create mobile-flutter`
-- [ ] Set app name to NailBook mobile.
-- [ ] Add dependencies:
+- [x] Set app name to NailBook mobile.
+- [x] Add dependencies:
   - HTTP client
   - secure token storage
   - router
@@ -261,12 +261,12 @@
   - image picker
   - cached network image
   - intl/date formatting
-- [ ] Add README with local backend URL setup.
-- [ ] Verify:
+- [x] Add README with local backend URL setup.
+- [x] Verify:
   - `cd mobile-flutter && flutter test`
   - `cd mobile-flutter && flutter analyze`
   - Expected: both pass.
-- [ ] Commit:
+- [x] Commit:
   - `git add mobile-flutter`
   - `git commit -m "feat: scaffold flutter mobile app"`
 
@@ -277,14 +277,14 @@
 - Create: `mobile-flutter/lib/core/api/api_error.dart`
 - Create: `mobile-flutter/test/core/api/api_client_test.dart`
 
-- [ ] Write tests for base URL, bearer token injection, JSON response handling, timeout, and 401 session expiration callback.
-- [ ] Implement API client with explicit role base paths:
+- [x] Write tests for base URL, bearer token injection, JSON response handling, timeout, and 401 session expiration callback.
+- [x] Implement API client with explicit role base paths:
   - client: `/api/client`
   - technician: `/api/technician`
-- [ ] Verify:
+- [x] Verify:
   - `cd mobile-flutter && flutter test test/core/api/api_client_test.dart`
   - Expected: pass.
-- [ ] Commit:
+- [x] Commit:
   - `git add mobile-flutter/lib/core/api mobile-flutter/test/core/api`
   - `git commit -m "feat: add flutter api client"`
 
@@ -295,16 +295,16 @@
 - Create: `mobile-flutter/lib/core/auth/token_store.dart`
 - Create: `mobile-flutter/test/core/auth/auth_session_test.dart`
 
-- [ ] Write tests for storing client token, storing technician token, clearing tokens, restoring session, and switching role.
-- [ ] Implement secure storage wrapper.
-- [ ] Implement session state with roles:
+- [x] Write tests for storing client token, storing technician token, clearing tokens, restoring session, and switching role.
+- [x] Implement secure storage wrapper.
+- [x] Implement session state with roles:
   - unauthenticated
   - client
   - technician
-- [ ] Verify:
+- [x] Verify:
   - `cd mobile-flutter && flutter test test/core/auth/auth_session_test.dart`
   - Expected: pass.
-- [ ] Commit:
+- [x] Commit:
   - `git add mobile-flutter/lib/core/auth mobile-flutter/test/core/auth`
   - `git commit -m "feat: add flutter auth session"`
 
@@ -317,18 +317,18 @@
 - Create: `mobile-flutter/lib/features/client/client_shell.dart`
 - Create: `mobile-flutter/lib/features/technician/technician_shell.dart`
 
-- [ ] Add app-level routes:
+- [x] Add app-level routes:
   - `/`
   - `/role-select`
   - `/client/login`
   - `/client/home`
   - `/technician/login`
   - `/technician/home`
-- [ ] Add mobile-first theme following the existing product direction: touch targets at least 44px, safe-area aware bottom navigation, clear pressed/focus states.
-- [ ] Verify:
+- [x] Add mobile-first theme following the existing product direction: touch targets at least 44px, safe-area aware bottom navigation, clear pressed/focus states.
+- [x] Verify:
   - `cd mobile-flutter && flutter analyze`
   - Expected: pass.
-- [ ] Commit:
+- [x] Commit:
   - `git add mobile-flutter/lib/app mobile-flutter/lib/core/theme mobile-flutter/lib/features`
   - `git commit -m "feat: add flutter app shell"`
 
@@ -343,14 +343,14 @@
 - Reference: `client-frontend/src/services/auth.ts`
 - Reference: `backend/src/client-auth/client-auth.controller.ts`
 
-- [ ] Implement invite link parameter parsing for `invite_code` and `tech_id`.
-- [ ] Implement request login code, request register code, register by invite, login, `/auth/me`, bind technician, set default technician.
-- [ ] Add screens for invite landing, phone login, code entry, and first-time name completion.
-- [ ] Verify manually against local backend:
+- [x] Implement invite link parameter parsing for `invite_code` and `tech_id`.
+- [x] Implement request login code, request register code, register by invite, login, `/auth/me`, bind technician, set default technician.
+- [x] Add screens for invite landing, phone login, code entry, and first-time name completion.
+- [x] Verify manually against local backend:
   - New user via invite can register and bind technician.
   - Existing user can login.
   - User without nickname is routed to completion screen.
-- [ ] Commit:
+- [x] Commit:
   - `git add mobile-flutter/lib/features/client/auth`
   - `git commit -m "feat: add flutter client auth"`
 
@@ -362,10 +362,10 @@
 - Reference: `client-frontend/src/services/home.ts`
 - Reference: `client-frontend/src/services/works.ts`
 
-- [ ] Implement client home data loading from `/home`.
-- [ ] Implement works list and work detail.
-- [ ] Implement like, favorite, comments list, and comment create if backend contracts pass.
-- [ ] Verify:
+- [x] Implement client home data loading from `/home`.
+- [x] Implement works list and work detail.
+- [x] Implement like, favorite, comments list, and comment create if backend contracts pass.
+- [x] Verify:
   - Works render images from backend upload/static URLs.
   - Empty states render without layout breaks.
   - Tap targets are at least 44px.
@@ -379,12 +379,12 @@
 - Create: `mobile-flutter/lib/features/client/addresses/`
 - Reference: `client-frontend/src/services/address.ts`
 
-- [ ] Implement address list, create, edit, delete, and set default.
-- [ ] Validate required fields before submit:
+- [x] Implement address list, create, edit, delete, and set default.
+- [x] Validate required fields before submit:
   - contact name
   - contact phone
   - city/district/detail address
-- [ ] Verify:
+- [x] Verify:
   - User with no address is guided to create address before booking.
   - Default address is selected by booking flow.
 - [ ] Commit:
@@ -398,11 +398,11 @@
 - Reference: `client-frontend/src/services/order.ts`
 - Reference: `client-frontend/src/pages/CreateOrder.tsx`
 
-- [ ] Implement order list with status filters.
-- [ ] Implement create order with technician selection, service type, address/shop address, date, time, remarks.
-- [ ] Implement order detail with quote state and status timeline.
-- [ ] Implement accept quote, reject quote, and cancel/update where supported.
-- [ ] Verify:
+- [x] Implement order list with status filters.
+- [x] Implement create order with technician selection, service type, address/shop address, date, time, remarks.
+- [x] Implement order detail with quote state and status timeline.
+- [x] Implement accept quote, reject quote, and cancel/update where supported.
+- [x] Verify:
   - Booking requires bound technician.
   - Booking requires valid address for home service.
   - Quoted order can be accepted.
@@ -418,11 +418,11 @@
 - Reference: `client-frontend/src/services/design.ts`
 - Reference: `client-frontend/src/services/upload.ts`
 
-- [ ] Implement image picker and upload.
-- [ ] Implement create design request with multiple images and description.
-- [ ] Implement design list/detail.
-- [ ] Implement accept/reject quote and create order from design if backend supports current route.
-- [ ] Verify:
+- [x] Implement image picker and upload.
+- [x] Implement create design request with multiple images and description.
+- [x] Implement design list/detail.
+- [x] Implement accept/reject quote and create order from design if backend supports current route.
+- [x] Verify:
   - Uploaded image appears in React WebApp and Flutter.
   - Design quote created by technician appears in Flutter client.
 - [ ] Commit:
@@ -440,9 +440,9 @@
 - Create: `mobile-flutter/lib/features/technician/profile/`
 - Reference: `technician-frontend/src/services/auth.ts`
 
-- [ ] Implement request code, login, `/auth/me`, status update, profile update, service type update.
-- [ ] Implement technician profile screen and basic settings.
-- [ ] Verify:
+- [x] Implement request code, login, `/auth/me`, status update, profile update, service type update.
+- [x] Implement technician profile screen and basic settings.
+- [x] Verify:
   - Login stores technician token separately from client token.
   - Logout clears only the active role token.
 - [ ] Commit:
@@ -458,10 +458,10 @@
 - Reference: `technician-frontend/src/pages/SchedulePage.tsx`
 - Reference: `technician-frontend/src/services/orders.ts`
 
-- [ ] Implement home summary from orders/trips and profile data.
-- [ ] Implement today schedule and week schedule.
-- [ ] Implement order conflict display using backend-provided or locally calculated time overlap.
-- [ ] Verify:
+- [x] Implement home summary from orders/trips and profile data.
+- [x] Implement today schedule and week schedule.
+- [x] Implement order conflict display using backend-provided or locally calculated time overlap.
+- [x] Verify:
   - Today trips match React technician WebApp.
   - Schedule renders correctly on small phones.
 - [ ] Commit:
@@ -474,10 +474,10 @@
 - Create: `mobile-flutter/lib/features/technician/orders/`
 - Reference: `technician-frontend/src/services/orders.ts`
 
-- [ ] Implement order list with filters.
-- [ ] Implement order detail.
-- [ ] Implement review/quote, confirm, complete, cancel, and edit where supported.
-- [ ] Verify:
+- [x] Implement order list with filters.
+- [x] Implement order detail.
+- [x] Implement review/quote, confirm, complete, cancel, and edit where supported.
+- [x] Verify:
   - Client-created booking appears in technician Flutter.
   - Technician quote appears in client React and client Flutter.
   - Complete order updates revenue-related backend state if current backend does this.
@@ -491,10 +491,10 @@
 - Create: `mobile-flutter/lib/features/technician/customers/`
 - Reference: `technician-frontend/src/services/customers.ts`
 
-- [ ] Implement customer list with search/filter.
-- [ ] Implement customer detail with history.
-- [ ] Implement tag update.
-- [ ] Verify:
+- [x] Implement customer list with search/filter.
+- [x] Implement customer detail with history.
+- [x] Implement tag update.
+- [x] Verify:
   - Customer created by binding/order appears under correct technician.
   - Tags persist and render in React WebApp.
 - [ ] Commit:
@@ -509,9 +509,9 @@
 - Reference: `technician-frontend/src/services/works.ts`
 - Reference: `technician-frontend/src/services/services.ts`
 
-- [ ] Implement works list, create, edit, delete, visible toggle, pinned toggle, featured toggle.
-- [ ] Implement service list, create, edit, delete, enable toggle.
-- [ ] Verify:
+- [x] Implement works list, create, edit, delete, visible toggle, pinned toggle, featured toggle.
+- [x] Implement service list, create, edit, delete, enable toggle.
+- [x] Verify:
   - Work uploaded in Flutter appears in client works list.
   - Service changes affect booking options where current backend supports it.
 - [ ] Commit:
@@ -531,9 +531,9 @@
 - Reference: `client-frontend/src/services/socket.ts`
 - Reference: `technician-frontend/src/services/socket.ts`
 
-- [ ] Implement socket connection with token auth.
-- [ ] Implement reconnect behavior.
-- [ ] Implement event stream for message, read receipt, typing, and presence.
+- [x] Implement socket connection with token auth.
+- [x] Implement reconnect behavior.
+- [x] Implement event stream for message, read receipt, typing, and presence.
 - [ ] Verify against local backend with two app sessions:
   - Client sends message.
   - Technician receives `message:new`.
@@ -551,9 +551,9 @@
   - `mobile-flutter/lib/features/client/`
   - `mobile-flutter/lib/features/technician/`
 
-- [ ] Implement conversation list.
-- [ ] Implement chat detail with text send, image send, realtime receive, read receipt, typing state, and fallback refresh.
-- [ ] Verify:
+- [x] Implement conversation list.
+- [x] Implement chat detail with text send, image send, realtime receive, read receipt, typing state, and fallback refresh.
+- [x] Verify:
   - React client can chat with Flutter technician.
   - Flutter client can chat with React technician.
   - Flutter client can chat with Flutter technician.
@@ -572,13 +572,13 @@
 - Modify: Flutter Android/iOS app link configuration files under `mobile-flutter/android/` and `mobile-flutter/ios/`
 - Potential backend/static hosting change: association files for Universal Links/App Links.
 
-- [ ] Define canonical invite URL format:
+- [x] Define canonical invite URL format:
   - `https://<domain>/invite?invite_code=<code>`
   - optional: `tech_id=<id>`
-- [ ] Configure Android App Links.
-- [ ] Configure iOS Universal Links.
-- [ ] Preserve web fallback to React `/invite`.
-- [ ] Verify:
+- [x] Configure Android App Links.
+- [x] Configure iOS Universal Links.
+- [x] Preserve web fallback to React `/invite`.
+- [x] Verify:
   - App installed: invite opens Flutter invite flow.
   - App not installed: invite opens React WebApp invite flow.
 - [ ] Commit:
@@ -592,17 +592,17 @@
 - Create or modify backend notification module after provider choice.
 - Create Flutter notification service under `mobile-flutter/lib/core/notifications/`
 
-- [ ] Choose push provider:
+- [x] Choose push provider:
   - FCM/APNs for global distribution.
   - Add China vendor push later only if distribution requires it.
-- [ ] Add device token registration endpoint.
-- [ ] Store device token by role and user id.
-- [ ] Send push for:
+- [x] Add device token registration endpoint.
+- [x] Store device token by role and user id.
+- [x] Send push for:
   - new message
   - quote created
   - booking confirmed
   - order reminder
-- [ ] Verify:
+- [x] Verify:
   - Foreground notification handled in app.
   - Background notification opens correct screen.
 - [ ] Commit:
@@ -616,13 +616,13 @@
 - Create: `mobile-flutter/lib/core/maps/`
 - Wire into client address and technician schedule/order detail.
 
-- [ ] Choose provider per target market:
+- [x] Choose provider per target market:
   - China: AMap.
   - Outside China: Google Maps.
-- [ ] Add location permission flow.
-- [ ] Add address coordinate display where backend has lat/lng.
-- [ ] Add external navigation launch for technician trips.
-- [ ] Verify:
+- [x] Add location permission flow.
+- [x] Add address coordinate display where backend has lat/lng.
+- [x] Add external navigation launch for technician trips.
+- [x] Verify:
   - Permission denial does not block non-map order flows.
   - Navigation button opens installed map app.
 - [ ] Commit:
@@ -638,12 +638,12 @@
 **Files:**
 - Create: `docs/flutter/regression-matrix.md`
 
-- [ ] Define test matrix:
+- [x] Define test matrix:
   - React client ↔ React technician
   - React client ↔ Flutter technician
   - Flutter client ↔ React technician
   - Flutter client ↔ Flutter technician
-- [ ] Cover flows:
+- [x] Cover flows:
   - invite/register/bind
   - login/logout
   - create booking
@@ -663,12 +663,12 @@
 - Modify or create CI workflow if present.
 - Create: `docs/flutter/ci.md`
 
-- [ ] Add backend contract tests to CI.
-- [ ] Add React client build.
-- [ ] Add React technician build.
-- [ ] Add Flutter analyze.
-- [ ] Add Flutter tests.
-- [ ] Verify locally:
+- [x] Add backend contract tests to CI.
+- [x] Add React client build.
+- [x] Add React technician build.
+- [x] Add Flutter analyze.
+- [x] Add Flutter tests.
+- [x] Verify locally:
   - `cd backend && npm test -- --runInBand`
   - `cd client-frontend && npm run build`
   - `cd technician-frontend && npm run build`
@@ -683,15 +683,15 @@
 **Files:**
 - Create: `docs/flutter/release-plan.md`
 
-- [ ] Define release gates:
+- [x] Define release gates:
   - Alpha: internal install, local/staging backend.
   - Beta: selected technicians and clients.
   - Production: public distribution.
-- [ ] Define rollback plan:
+- [x] Define rollback plan:
   - React WebApps remain available.
   - Disable mobile-only features with backend feature flags if needed.
   - Keep invite links web-compatible.
-- [ ] Define monitoring:
+- [x] Define monitoring:
   - login failures
   - API error rate by client type
   - socket disconnect rate
