@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>nailbook_mobile</string>
+	<string>NailBook</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -28,6 +28,12 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>NailBook needs your location to show nearby services and navigate to appointments.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>NailBook needs your location to show nearby services and navigate to appointments.</string>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import 'technician_customer_service.dart';
+import 'technician_customer_detail_screen.dart';
 
 class TechnicianCustomersScreen extends StatefulWidget {
   const TechnicianCustomersScreen({super.key});
@@ -67,6 +68,7 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
                       itemCount: _customers.length,
                       itemBuilder: (context, index) {
                         final c = _customers[index];
+                        final customerId = c['id'] as int;
                         return Card(
                           child: ListTile(
                             leading: CircleAvatar(
@@ -76,6 +78,7 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
                             title: Text(c['name']?.toString() ?? ''),
                             subtitle: Text(c['phone']?.toString() ?? ''),
                             trailing: c['tags'] != null ? Text(c['tags'].toString(), style: const TextStyle(fontSize: 12)) : null,
+                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TechnicianCustomerDetailScreen(customerId: customerId))),
                           ),
                         );
                       },

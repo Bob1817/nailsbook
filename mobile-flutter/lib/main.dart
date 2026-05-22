@@ -4,8 +4,11 @@ import 'app/app.dart';
 import 'core/auth/auth_session.dart';
 import 'core/auth/token_store.dart';
 import 'core/api/api_client.dart';
+import 'core/deeplink/deep_link_service.dart';
+import 'core/notifications/push_notification_service.dart';
+import 'core/socket/chat_socket.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   const apiBaseUrl = String.fromEnvironment(
@@ -22,8 +25,33 @@ void main() {
     tokenStore: tokenStore,
     apiClient: apiClient,
   );
+  final chatSocket = ChatSocket();
+  final deepLinkService = DeepLinkService();
+  final pushNotificationService = PushNotificationService();
 
   apiClient.onUnauthorized = authSession.handleUnauthorized;
+
+  await authSession.restoreSession();
+
+  if (authSession.isAuthenticated) {
+    final role = authSession.isClient ? 'client' : 'technician';
+    try {
+      await PushNotificationService.initFirebase();
+      await pushNotificationService.init(role: role);
+      final activeToken = await tokenStore.getActiveAccessToken();
+      if (activeToken != null) {
+        await pushNotificationService.registerTokenOnServer(
+          apiBaseUrl: apiBaseUrl,
+          accessToken: activeToken,
+        );
+      }
+    } catch (_) {}
+
+    chatSocket.configure(baseUrl: apiBaseUrl, token: await tokenStore.getActiveAccessToken() ?? '');
+    chatSocket.connect();
+  }
+
+  await deepLinkService.init();
 
   runApp(
     MultiProvider(
@@ -31,8 +59,14 @@ void main() {
         Provider<TokenStore>.value(value: tokenStore),
         Provider<ApiClient>.value(value: apiClient),
         ChangeNotifierProvider<AuthSession>.value(value: authSession),
+        Provider<ChatSocket>.value(value: chatSocket),
+        Provider<DeepLinkService>.value(value: deepLinkService),
+        Provider<PushNotificationService>.value(value: pushNotificationService),
       ],
-      child: const NailBookApp(apiBaseUrl: apiBaseUrl),
+      child: NailBookApp(
+        apiBaseUrl: apiBaseUrl,
+        deepLinkService: deepLinkService,
+      ),
     ),
   );
 }

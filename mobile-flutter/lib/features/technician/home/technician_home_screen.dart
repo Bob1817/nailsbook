@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
-import '../../../core/auth/auth_session.dart';
 import '../auth/technician_auth_service.dart';
+import '../schedule/technician_schedule_screen.dart';
+import '../orders/technician_orders_screen.dart';
+import '../../shared/chat/conversations_screen.dart';
+import '../profile/technician_profile_screen.dart';
 
 class TechnicianHomeScreen extends StatefulWidget {
   const TechnicianHomeScreen({super.key});
@@ -34,26 +37,22 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final pages = <Widget>[
+      _TechnicianHomeTabPage(profile: _profile, loading: _loading, onRefresh: _loadProfile),
+      const TechnicianScheduleScreen(),
+      const TechnicianOrdersScreen(),
+      const ConversationsScreen(),
+      const TechnicianProfileScreen(),
+    ];
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('NailBook'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => context.read<AuthSession>().logout(),
-            tooltip: '退出登录',
-          ),
-        ],
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadProfile,
-              child: _buildBody(),
-            ),
+      body: IndexedStack(index: _currentIndex, children: pages),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (i) => setState(() => _currentIndex = i),
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: const Color(0xFFE91E63),
+        unselectedItemColor: const Color(0xFF757575),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: '首页'),
           BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: '日程'),
@@ -64,9 +63,27 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
       ),
     );
   }
+}
 
-  Widget _buildBody() {
-    if (_profile == null) {
+class _TechnicianHomeTabPage extends StatelessWidget {
+  final Map<String, dynamic>? profile;
+  final bool loading;
+  final Future<void> Function() onRefresh;
+
+  const _TechnicianHomeTabPage({this.profile, this.loading = true, required this.onRefresh});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('NailBook')),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(onRefresh: onRefresh, child: _buildBody(context)),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
+    if (profile == null) {
       return ListView(children: [
         const SizedBox(height: 100),
         Center(child: Text('加载失败', style: Theme.of(context).textTheme.bodyLarge)),
@@ -84,28 +101,28 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                 backgroundColor: const Color(0xFFE91E63),
                 radius: 28,
                 child: Text(
-                  (_profile!['name'] as String?)?.substring(0, 1) ?? '?',
+                  (profile!['name'] as String?)?.substring(0, 1) ?? '?',
                   style: const TextStyle(color: Colors.white, fontSize: 24),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(_profile!['name']?.toString() ?? '', style: Theme.of(context).textTheme.titleLarge),
-                  if (_profile!['city'] != null)
-                    Text('${_profile!['city']} · ${_profile!['serviceArea'] ?? ''}', style: Theme.of(context).textTheme.bodySmall),
+                  Text(profile!['name']?.toString() ?? '', style: Theme.of(context).textTheme.titleLarge),
+                  if (profile!['city'] != null)
+                    Text('${profile!['city']} · ${profile!['serviceArea'] ?? ''}', style: Theme.of(context).textTheme.bodySmall),
                   const SizedBox(height: 4),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: _profile!['status'] == 'active' ? Colors.green.shade50 : Colors.grey.shade100,
+                      color: profile!['status'] == 'active' ? Colors.green.shade50 : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      _profile!['status'] == 'active' ? '接单中' : '休息中',
+                      profile!['status'] == 'active' ? '接单中' : '休息中',
                       style: TextStyle(
                         fontSize: 12,
-                        color: _profile!['status'] == 'active' ? Colors.green : Colors.grey,
+                        color: profile!['status'] == 'active' ? Colors.green : Colors.grey,
                       ),
                     ),
                   ),
@@ -128,7 +145,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
         Row(children: [
           _quickAction(context, Icons.miscellaneous_services, '服务管理', Colors.teal),
           const SizedBox(width: 8),
-          _quickAction(context, Icons.toggle_on, '状态切换', _profile!['status'] == 'active' ? Colors.red : Colors.green),
+          _quickAction(context, Icons.toggle_on, '状态切换', profile!['status'] == 'active' ? Colors.red : Colors.green),
           const SizedBox(width: 8),
           _quickAction(context, Icons.settings, '资料设置', Colors.grey),
         ]),
@@ -143,7 +160,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () => _handleQuickAction(label),
+          onTap: () => _handleQuickAction(context, label),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Column(children: [
@@ -157,13 +174,13 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
     );
   }
 
-  Future<void> _handleQuickAction(String label) async {
+  Future<void> _handleQuickAction(BuildContext context, String label) async {
     if (label == '状态切换') {
-      final newStatus = _profile?['status'] == 'active' ? 'inactive' : 'active';
+      final newStatus = profile?['status'] == 'active' ? 'inactive' : 'active';
       try {
         final apiClient = context.read<ApiClient>();
         await TechnicianAuthService(apiClient).updateStatus(newStatus);
-        _loadProfile();
+        await onRefresh();
       } catch (_) {}
     }
   }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/auth/auth_session.dart';
+import '../../../core/notifications/push_notification_service.dart';
+import '../../../core/socket/chat_socket.dart';
 import 'client_auth_models.dart';
 import 'client_auth_service.dart';
 
@@ -86,16 +88,34 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
           inviteCode: _inviteCodeController.text.trim(),
         );
         await authSession.loginAsClient(res.accessToken, refreshToken: res.refreshToken);
+        _onLoginSuccess(res.accessToken);
       } else {
         final res = await service.login(
           phone: _phoneController.text.trim(),
           code: _codeController.text.trim(),
         );
         await authSession.loginAsClient(res.accessToken, refreshToken: res.refreshToken);
+        _onLoginSuccess(res.accessToken);
       }
     } catch (e) {
       setState(() { _error = '登录失败，请重试'; _loading = false; });
     }
+  }
+
+  void _onLoginSuccess(String accessToken) {
+    try {
+      final pushService = context.read<PushNotificationService>();
+      pushService.init(role: 'client');
+      const apiBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://10.0.2.2:3000');
+      pushService.registerTokenOnServer(apiBaseUrl: apiBaseUrl, accessToken: accessToken);
+    } catch (_) {}
+
+    try {
+      final chatSocket = context.read<ChatSocket>();
+      const apiBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://10.0.2.2:3000');
+      chatSocket.configure(baseUrl: apiBaseUrl, token: accessToken);
+      chatSocket.connect();
+    } catch (_) {}
   }
 
   @override
