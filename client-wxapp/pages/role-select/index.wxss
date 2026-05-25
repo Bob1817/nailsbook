@@ -1,7 +1,8 @@
 .container {
   min-height: 100vh;
-  background: linear-gradient(180deg, #fff0f5 0%, #ffffff 50%);
+  background-color: #fff0f5;
   padding: 120rpx 48rpx 60rpx;
+  box-sizing: border-box;
 }
 
 .logo-section {
@@ -11,8 +12,17 @@
   margin-bottom: 100rpx;
 }
 
-.logo {
-  font-size: 120rpx;
+.logo-circle {
+  width: 120rpx;
+  height: 120rpx;
+  background: #ff6b9d;
+  border-radius: 60rpx;
+  color: #fff;
+  font-size: 56rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: 32rpx;
 }
 
@@ -51,9 +61,20 @@
 }
 
 .role-icon {
-  font-size: 80rpx;
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 44rpx;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-right: 32rpx;
+  flex-shrink: 0;
 }
+.client-icon { background: #ff6b9d; }
+.tech-icon { background: #667eea; }
 
 .role-info {
   flex: 1;
@@ -80,15 +101,9 @@
 
 .footer {
   text-align: center;
-  font-size: 24rpx;
-  color: #999999;
 }
-
 .footer-text {
-  display: inline;
-}
-
-.link {
-  display: inline;
-  color: #ff6b9d;
+  font-size: 24rpx;
+  color: #999;
+  display: block;
 }
