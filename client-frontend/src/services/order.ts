@@ -26,7 +26,7 @@ export interface Order {
     name: string;
     phone: string;
   } | null;
-  clientAddress: any;
+  clientAddress: unknown;
   createdAt: string;
   updatedAt: string;
 }

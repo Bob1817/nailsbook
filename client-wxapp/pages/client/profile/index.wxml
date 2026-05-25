@@ -1,0 +1,13 @@
+<view class="container">
+  <view class="header">
+    <image class="avatar" src="{{avatar}}" mode="aspectFill"></image>
+    <text class="nickname">{{nickname}}</text>
+    <text class="phone">{{phone}}</text>
+  </view>
+  <view class="actions">
+    <view bindtap="navigateToAddresses">收货地址</view>
+    <view bindtap="navigateToOrders">我的订单</view>
+    <view bindtap="navigateToFavorites">我的收藏</view>
+    <view bindtap="switchRole">切换身份</view>
+  </view>
+</view>

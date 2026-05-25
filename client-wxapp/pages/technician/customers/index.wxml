@@ -1,0 +1,19 @@
+<view class="container">
+  <view class="header">
+    <image class="avatar" src="{{avatar}}" mode="aspectFill"></image>
+    <text class="name">{{name}}</text>
+    <text class="phone">{{phone}}</text>
+  </view>
+  <view class="stats">
+    <text>订单数: {{orderCount}}</text>
+    <text>累计消费: ¥{{totalAmount}}</text>
+  </view>
+  <view class="orders">
+    <view wx:for="{{recentOrders}}" bindtap="viewOrder" data-id="{{item.id}}">
+      <text>{{item.orderNo}}</text>
+      <text>{{item.serviceType}}</text>
+      <text>{{item.startTime}}</text>
+      <text>¥{{item.quotePrice}}</text>
+    </view>
+  </view>
+</view>

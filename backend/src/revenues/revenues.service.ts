@@ -5,7 +5,14 @@ import { PrismaService } from '../common/prisma/prisma.service';
 export class RevenuesService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(page: number = 1, limit: number = 20, technicianId?: number, customerId?: number, startDate?: string, endDate?: string) {
+  async findAll(
+    page: number = 1,
+    limit: number = 20,
+    technicianId?: number,
+    customerId?: number,
+    startDate?: string,
+    endDate?: string,
+  ) {
     const where: any = {};
 
     if (technicianId) {
@@ -64,7 +71,12 @@ export class RevenuesService {
     return revenue;
   }
 
-  async exportCsv(technicianId?: number, customerId?: number, startDate?: string, endDate?: string) {
+  async exportCsv(
+    technicianId?: number,
+    customerId?: number,
+    startDate?: string,
+    endDate?: string,
+  ) {
     const where: any = {};
 
     if (technicianId) where.technicianId = technicianId;
@@ -86,22 +98,30 @@ export class RevenuesService {
     });
 
     const header = '收入编号,预约编号,技师,客户,金额(元),确认时间,状态\n';
-    const rows = revenues.map((r) =>
-      [
-        r.revenueNo,
-        r.order?.orderNo || '',
-        r.technician?.name || '',
-        r.customer?.name || '',
-        r.amount,
-        r.recognizedAt ? new Date(r.recognizedAt).toISOString().slice(0, 10) : '',
-        r.status,
-      ].join(',')
-    ).join('\n');
+    const rows = revenues
+      .map((r) =>
+        [
+          r.revenueNo,
+          r.order?.orderNo || '',
+          r.technician?.name || '',
+          r.customer?.name || '',
+          r.amount,
+          r.recognizedAt
+            ? new Date(r.recognizedAt).toISOString().slice(0, 10)
+            : '',
+          r.status,
+        ].join(','),
+      )
+      .join('\n');
 
     return header + rows;
   }
 
-  async getStatistics(technicianId?: number, startDate?: string, endDate?: string) {
+  async getStatistics(
+    technicianId?: number,
+    startDate?: string,
+    endDate?: string,
+  ) {
     const where: any = {};
 
     if (technicianId) {

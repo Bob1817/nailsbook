@@ -6,7 +6,9 @@ export class AdminPermissionsService {
   constructor(private prisma: PrismaService) {}
 
   async findAll() {
-    return this.prisma.adminPermission.findMany({ orderBy: [{ module: 'asc' }, { action: 'asc' }] });
+    return this.prisma.adminPermission.findMany({
+      orderBy: [{ module: 'asc' }, { action: 'asc' }],
+    });
   }
 
   async findAllGrouped() {

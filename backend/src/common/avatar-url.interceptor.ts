@@ -49,8 +49,8 @@ export class AvatarUrlInterceptor implements NestInterceptor {
     const host = request.get('host');
     const origin = host ? `${request.protocol}://${host}` : '';
 
-    return next.handle().pipe(
-      map((data) => (origin ? normalizeAvatarUrls(data, origin) : data)),
-    );
+    return next
+      .handle()
+      .pipe(map((data) => (origin ? normalizeAvatarUrls(data, origin) : data)));
   }
 }

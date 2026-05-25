@@ -1,4 +1,9 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import {
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Reflector } from '@nestjs/core';
@@ -12,10 +17,11 @@ export class OperationLogInterceptor implements NestInterceptor {
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const options = this.reflector.get<{ module: string; action: string; targetType?: string }>(
-      'operationLog',
-      context.getHandler(),
-    );
+    const options = this.reflector.get<{
+      module: string;
+      action: string;
+      targetType?: string;
+    }>('operationLog', context.getHandler());
 
     if (!options) {
       return next.handle();
@@ -23,11 +29,10 @@ export class OperationLogInterceptor implements NestInterceptor {
 
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    const body = request.body;
     const params = request.params;
 
     return next.handle().pipe(
-      tap(async (response) => {
+      tap((response) => {
         if (user && user.userId) {
           let targetId: number | undefined;
           if (params.id) {
@@ -36,19 +41,21 @@ export class OperationLogInterceptor implements NestInterceptor {
             targetId = response.id;
           }
 
-          await this.prisma.operationLog.create({
-            data: {
-              adminUserId: user.userId,
-              module: options.module,
-              action: options.action,
-              targetType: options.targetType,
-              targetId,
-              beforeData: undefined,
-              afterData: response ? JSON.stringify(response) : undefined,
-              ip: request.ip,
-              userAgent: request.headers['user-agent'],
-            },
-          });
+          this.prisma.operationLog
+            .create({
+              data: {
+                adminUserId: user.userId,
+                module: options.module,
+                action: options.action,
+                targetType: options.targetType,
+                targetId,
+                beforeData: undefined,
+                afterData: response ? JSON.stringify(response) : undefined,
+                ip: request.ip,
+                userAgent: request.headers['user-agent'],
+              },
+            })
+            .catch(() => {});
         }
       }),
     );

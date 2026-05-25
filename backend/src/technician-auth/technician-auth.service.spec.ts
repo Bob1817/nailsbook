@@ -1,6 +1,7 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { TechnicianAuthService } from './technician-auth.service';
+import { VerificationCodeService } from '../common/verification-code/verification-code.service';
 
 describe('TechnicianAuthService', () => {
   let service: TechnicianAuthService;
@@ -13,6 +14,10 @@ describe('TechnicianAuthService', () => {
   let jwtService: {
     sign: jest.Mock;
   };
+  let verificationCodeService: {
+    generate: jest.Mock;
+    validate: jest.Mock;
+  };
 
   beforeEach(() => {
     prisma = {
@@ -24,7 +29,15 @@ describe('TechnicianAuthService', () => {
     jwtService = {
       sign: jest.fn(),
     };
-    service = new TechnicianAuthService(prisma as never, jwtService as JwtService);
+    verificationCodeService = {
+      generate: jest.fn(),
+      validate: jest.fn(),
+    };
+    service = new TechnicianAuthService(
+      prisma as never,
+      jwtService as JwtService,
+      verificationCodeService as unknown as VerificationCodeService,
+    );
   });
 
   it('returns the dev code when the technician is active and already invited', async () => {
@@ -37,11 +50,10 @@ describe('TechnicianAuthService', () => {
 
     await expect(service.requestCode('13800000000')).resolves.toEqual({
       codeSent: true,
-      devCode: '123456',
     });
-    expect(prisma.technician.findUnique).toHaveBeenCalledWith({
-      where: { phone: '13800000000' },
-    });
+    expect(verificationCodeService.generate).toHaveBeenCalledWith(
+      '13800000000',
+    );
   });
 
   it('rejects request-code when the phone has not been invited', async () => {
@@ -77,7 +89,6 @@ describe('TechnicianAuthService', () => {
 
     await expect(service.requestCode('13800000000')).resolves.toEqual({
       codeSent: true,
-      devCode: '123456',
     });
     expect(prisma.technician.findUnique).toHaveBeenNthCalledWith(1, {
       where: { phone: '13800000000' },
@@ -102,15 +113,19 @@ describe('TechnicianAuthService', () => {
         subscription: null,
       });
     prisma.technician.update.mockResolvedValueOnce(undefined);
-    jwtService.sign.mockReturnValueOnce('technician-jwt');
+    jwtService.sign
+      .mockReturnValueOnce('technician-jwt')
+      .mockReturnValueOnce('technician-refresh');
 
-    await expect(service.login('13800000000', '123456')).resolves.toMatchObject({
-      accessToken: 'technician-jwt',
-      technician: {
-        id: 7,
-        phone: '+8613800000000',
+    await expect(service.login('13800000000', '123456')).resolves.toMatchObject(
+      {
+        accessToken: 'technician-jwt',
+        technician: {
+          id: 7,
+          phone: '+8613800000000',
+        },
       },
-    });
+    );
     expect(prisma.technician.findUnique).toHaveBeenNthCalledWith(1, {
       where: { phone: '13800000000' },
       include: {
@@ -133,7 +148,7 @@ describe('TechnicianAuthService', () => {
     });
   });
 
-  it('rejects login when the technician is inactive', async () => {
+  it('rejects login when the technician is suspended', async () => {
     prisma.technician.findUnique.mockResolvedValueOnce({
       id: 7,
       name: 'Anna',
@@ -141,7 +156,7 @@ describe('TechnicianAuthService', () => {
       avatarUrl: null,
       city: 'Shanghai',
       serviceArea: 'Pudong',
-      status: 'inactive',
+      status: 'suspended',
       invitationCode: '123456',
       subscription: null,
     });

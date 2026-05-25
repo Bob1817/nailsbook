@@ -87,7 +87,11 @@ describe('Technician operation HTTP contract', () => {
       const res = await request(testApp.app.getHttpServer())
         .patch('/api/technician/auth/profile')
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ name: 'Updated Name', city: 'Beijing', serviceArea: 'Chaoyang' })
+        .send({
+          name: 'Updated Name',
+          city: 'Beijing',
+          serviceArea: 'Chaoyang',
+        })
         .expect(200);
 
       expect(res.body).toMatchObject({
@@ -128,7 +132,11 @@ describe('Technician operation HTTP contract', () => {
 
   describe('Technician Orders', () => {
     it('creates an order for a customer and lists it', async () => {
-      const { accessToken, technician, customer } = await setupTechnicianWithCustomer('order-create');
+      const {
+        accessToken,
+        technician: _technician,
+        customer,
+      } = await setupTechnicianWithCustomer('order-create');
 
       const createRes = await request(testApp.app.getHttpServer())
         .post('/api/technician/orders')
@@ -155,14 +163,21 @@ describe('Technician operation HTTP contract', () => {
         .get('/api/technician/orders')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200);
-      const ordersList = Array.isArray(listRes.body) ? listRes.body : listRes.body.data;
+      const ordersList = Array.isArray(listRes.body)
+        ? listRes.body
+        : listRes.body.data;
       expect(Array.isArray(ordersList)).toBe(true);
     });
 
     it('reviews/quotes, confirms, completes, and cancels orders', async () => {
-      const { accessToken, technician, customer } = await setupTechnicianWithCustomer('order-flow');
+      const { accessToken, technician, customer } =
+        await setupTechnicianWithCustomer('order-flow');
 
-      const order = await seedOrder(technician.id, customer.id, 'pending_quote');
+      const order = await seedOrder(
+        technician.id,
+        customer.id,
+        'pending_quote',
+      );
 
       const reviewRes = await request(testApp.app.getHttpServer())
         .patch(`/api/technician/orders/${order.id}/review`)
@@ -177,7 +192,11 @@ describe('Technician operation HTTP contract', () => {
         .expect(200);
       expect(reviewRes.body).toMatchObject({ id: order.id });
 
-      const order2 = await seedOrder(technician.id, customer.id, 'pending_confirm');
+      const order2 = await seedOrder(
+        technician.id,
+        customer.id,
+        'pending_confirm',
+      );
 
       const confirmRes = await request(testApp.app.getHttpServer())
         .patch(`/api/technician/orders/${order2.id}/confirm`)
@@ -197,7 +216,11 @@ describe('Technician operation HTTP contract', () => {
         status: 'confirmed',
       });
 
-      const order4 = await seedOrder(technician.id, customer.id, 'pending_quote');
+      const order4 = await seedOrder(
+        technician.id,
+        customer.id,
+        'pending_quote',
+      );
 
       const cancelRes = await request(testApp.app.getHttpServer())
         .patch(`/api/technician/orders/${order4.id}/cancel`)
@@ -207,9 +230,14 @@ describe('Technician operation HTTP contract', () => {
     });
 
     it('returns trips and order detail', async () => {
-      const { accessToken, technician, customer } = await setupTechnicianWithCustomer('order-detail');
+      const { accessToken, technician, customer } =
+        await setupTechnicianWithCustomer('order-detail');
 
-      const order = await seedOrder(technician.id, customer.id, 'pending_agree');
+      const order = await seedOrder(
+        technician.id,
+        customer.id,
+        'pending_agree',
+      );
 
       const detailRes = await request(testApp.app.getHttpServer())
         .get(`/api/technician/orders/${order.id}`)
@@ -227,18 +255,22 @@ describe('Technician operation HTTP contract', () => {
 
   describe('Technician Customers', () => {
     it('lists customers, returns detail, and updates tags', async () => {
-      const { accessToken, technician, customer } = await setupTechnicianWithCustomer('cust-crud');
+      const {
+        accessToken,
+        technician: _technician,
+        customer,
+      } = await setupTechnicianWithCustomer('cust-crud');
 
       const listRes = await request(testApp.app.getHttpServer())
         .get('/api/technician/customers')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200);
-      const customersList = Array.isArray(listRes.body) ? listRes.body : listRes.body.data;
+      const customersList = Array.isArray(listRes.body)
+        ? listRes.body
+        : listRes.body.data;
       expect(Array.isArray(customersList)).toBe(true);
       expect(customersList).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ id: customer.id }),
-        ]),
+        expect.arrayContaining([expect.objectContaining({ id: customer.id })]),
       );
 
       const detailRes = await request(testApp.app.getHttpServer())
@@ -258,7 +290,8 @@ describe('Technician operation HTTP contract', () => {
 
   describe('Technician Works', () => {
     it('creates, lists, updates, and deletes works', async () => {
-      const { accessToken, technician } = await setupTechnician('works-crud');
+      const { accessToken, technician: _technician } =
+        await setupTechnician('works-crud');
 
       const createRes = await request(testApp.app.getHttpServer())
         .post('/api/technician/works')
@@ -340,7 +373,8 @@ describe('Technician operation HTTP contract', () => {
 
   describe('Technician Services', () => {
     it('creates, lists, updates, toggles, and deletes services', async () => {
-      const { accessToken, technician } = await setupTechnician('svc-crud');
+      const { accessToken, technician: _technician } =
+        await setupTechnician('svc-crud');
 
       const createRes = await request(testApp.app.getHttpServer())
         .post('/api/technician/services')
@@ -404,23 +438,48 @@ describe('Technician operation HTTP contract', () => {
         homeService: true,
         shopService: true,
         shopAddresses: JSON.stringify([
-          { name: 'Contract Studio', city: 'Shanghai', detailAddress: '88 Test Road', enabled: true },
+          {
+            name: 'Contract Studio',
+            city: 'Shanghai',
+            detailAddress: '88 Test Road',
+            enabled: true,
+          },
         ]),
         serviceItems: JSON.stringify([
-          { id: 'contract-basic', name: 'Basic Care', category: 'basic_care', isActive: true, sortOrder: 1 },
+          {
+            id: 'contract-basic',
+            name: 'Basic Care',
+            category: 'basic_care',
+            isActive: true,
+            sortOrder: 1,
+          },
         ]),
       },
     });
     ownedTechnicianIds.push(technician.id);
 
-    const accessToken = testApp.signTechnicianToken(technician.id, technician.phone);
-    return { accessToken, technician: { id: technician.id, name: technician.name, phone: technician.phone } };
+    const accessToken = testApp.signTechnicianToken(
+      technician.id,
+      technician.phone,
+    );
+    return {
+      accessToken,
+      technician: {
+        id: technician.id,
+        name: technician.name,
+        phone: technician.phone,
+      },
+    };
   }
 
   async function setupTechnicianWithCustomer(label: string) {
     const result = await setupTechnician(label);
     const client = await testApp.prisma.clientUser.create({
-      data: { phone: uniquePhone(), nickname: `Client ${label}`, status: 'active' },
+      data: {
+        phone: uniquePhone(),
+        nickname: `Client ${label}`,
+        status: 'active',
+      },
     });
     ownedClientIds.push(client.id);
 
@@ -434,10 +493,18 @@ describe('Technician operation HTTP contract', () => {
     });
     ownedCustomerIds.push(customer.id);
 
-    return { ...result, client: { id: client.id }, customer: { id: customer.id, name: customer.name } };
+    return {
+      ...result,
+      client: { id: client.id },
+      customer: { id: customer.id, name: customer.name },
+    };
   }
 
-  async function seedOrder(technicianId: number, customerId: number, status: string) {
+  async function seedOrder(
+    technicianId: number,
+    customerId: number,
+    status: string,
+  ) {
     const orderNo = uniqueOrderNo();
     ownedOrderNos.push(orderNo);
     const order = await testApp.prisma.order.create({
@@ -459,39 +526,58 @@ describe('Technician operation HTTP contract', () => {
   async function cleanupOwnedRecords() {
     if (!testApp) return;
 
-    await testApp.prisma.revenue.deleteMany({
-      where: { order: { orderNo: { in: ownedOrderNos } } },
-    }).catch(() => {});
-    await testApp.prisma.order.deleteMany({
-      where: { orderNo: { in: ownedOrderNos } },
-    }).catch(() => {});
-    await testApp.prisma.customer.deleteMany({
-      where: { id: { in: ownedCustomerIds } },
-    }).catch(() => {});
-    await testApp.prisma.nailWork.deleteMany({
-      where: { techId: { in: ownedTechnicianIds } },
-    }).catch(() => {});
-    await testApp.prisma.clientUser.deleteMany({
-      where: { id: { in: ownedClientIds } },
-    }).catch(() => {});
-    await testApp.prisma.technician.deleteMany({
-      where: { id: { in: ownedTechnicianIds } },
-    }).catch(() => {});
+    await testApp.prisma.revenue
+      .deleteMany({
+        where: { order: { orderNo: { in: ownedOrderNos } } },
+      })
+      .catch(() => {});
+    await testApp.prisma.order
+      .deleteMany({
+        where: { orderNo: { in: ownedOrderNos } },
+      })
+      .catch(() => {});
+    await testApp.prisma.customer
+      .deleteMany({
+        where: { id: { in: ownedCustomerIds } },
+      })
+      .catch(() => {});
+    await testApp.prisma.nailWork
+      .deleteMany({
+        where: { techId: { in: ownedTechnicianIds } },
+      })
+      .catch(() => {});
+    await testApp.prisma.clientUser
+      .deleteMany({
+        where: { id: { in: ownedClientIds } },
+      })
+      .catch(() => {});
+    await testApp.prisma.technician
+      .deleteMany({
+        where: { id: { in: ownedTechnicianIds } },
+      })
+      .catch(() => {});
   }
 
   function uniquePhone() {
-    const digits = `${Date.now()}${Math.floor(Math.random() * 100000)}`.slice(-9).padStart(9, '0');
+    const digits = `${Date.now()}${Math.floor(Math.random() * 100000)}`
+      .slice(-9)
+      .padStart(9, '0');
     return `18${digits}`;
   }
 
   function uniqueInviteCode(label: string) {
-    const suffix = `${Date.now()}${Math.floor(Math.random() * 100000)}`.slice(-8).toUpperCase();
+    const suffix = `${Date.now()}${Math.floor(Math.random() * 100000)}`
+      .slice(-8)
+      .toUpperCase();
     return `${label.replace(/[^a-z0-9]/gi, '').slice(0, 8)}${suffix}`.toUpperCase();
   }
 
   function uniqueOrderNo() {
     const ts = Date.now().toString(36).toUpperCase();
-    const rand = Math.floor(Math.random() * 10000).toString(36).toUpperCase().padStart(4, '0');
+    const rand = Math.floor(Math.random() * 10000)
+      .toString(36)
+      .toUpperCase()
+      .padStart(4, '0');
     return `CO${ts}${rand}`;
   }
 });

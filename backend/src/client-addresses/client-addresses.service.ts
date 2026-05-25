@@ -67,8 +67,12 @@ export class ClientAddressesService {
       return tx.clientAddress.update({
         where: { id },
         data: {
-          ...(dto.contactName !== undefined ? { contactName: dto.contactName } : {}),
-          ...(dto.contactPhone !== undefined ? { contactPhone: dto.contactPhone } : {}),
+          ...(dto.contactName !== undefined
+            ? { contactName: dto.contactName }
+            : {}),
+          ...(dto.contactPhone !== undefined
+            ? { contactPhone: dto.contactPhone }
+            : {}),
           ...(dto.province !== undefined ? { province: dto.province } : {}),
           ...(dto.city !== undefined ? { city: dto.city } : {}),
           ...(dto.district !== undefined ? { district: dto.district } : {}),

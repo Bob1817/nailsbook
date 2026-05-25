@@ -6,7 +6,6 @@ import {
   addDays,
   orderStatusLabels,
   formatClock,
-  formatMoney,
   getDurationMinutes,
   isSameDay,
   startOfDay,

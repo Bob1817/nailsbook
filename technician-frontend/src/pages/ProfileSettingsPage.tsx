@@ -107,25 +107,22 @@ const ProfileSettingsPage: React.FC = () => {
     'w-full rounded-[16px] border border-[#f1e7e8] bg-[#fffdfd] px-4 py-3 text-[15px] text-gray-900 outline-none transition focus:border-pink-300 focus:bg-white focus:ring-4 focus:ring-pink-50';
 
   return (
-    <div className="min-h-full bg-[#fff9f8] pb-24">
+    <div className="flex h-[100dvh] flex-col bg-[#fff9f8]">
       {/* Header */}
-      <div className="sticky top-0 z-10 border-b border-[#f5ecec] bg-[#fff9f8]/92 px-5 pb-4 pt-12 backdrop-blur-xl">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-gray-700 shadow-[0_8px_20px_rgba(15,23,42,0.05)] ring-1 ring-black/[0.04]"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <div>
-            <h1 className="text-[1.45rem] font-semibold tracking-[-0.03em] text-gray-900">个人设置</h1>
-            <p className="mt-1 text-[13px] text-gray-500">编辑您的个人信息与社交主页</p>
-          </div>
-        </div>
+      <div className="shrink-0 flex items-center gap-3 bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[#f2e6ec]">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f7f3f5] transition-colors active:bg-[#eee5e9]"
+        >
+          <svg className="h-5 w-5 text-[#3c3440]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <h1 className="text-[17px] font-semibold text-[#1f2230]">个人设置</h1>
       </div>
 
+      <div className="flex-1 overflow-y-auto pb-24">
       <div className="space-y-4 px-5 py-5">
         {/* Basic Info */}
         <Card className="p-5">
@@ -255,6 +252,7 @@ const ProfileSettingsPage: React.FC = () => {
             {loading ? '保存中...' : '保存设置'}
           </Button>
         </div>
+      </div>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Row, Col, Card, Statistic, Table, Spin, Typography } from 'antd';
 import {
   TeamOutlined,
@@ -8,11 +8,16 @@ import {
   CrownOutlined,
   RiseOutlined,
 } from '@ant-design/icons';
-import ReactECharts from 'echarts-for-react';
+import * as echarts from 'echarts/core';
+import { PieChart } from 'echarts/charts';
+import { LegendComponent, TooltipComponent } from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
 import { dashboardService } from '../services/dashboard';
 import type { DashboardOverview } from '../services/dashboard';
 
 const { Title } = Typography;
+
+echarts.use([PieChart, LegendComponent, TooltipComponent, CanvasRenderer]);
 
 const ORDER_STATUS_LABELS: Record<string, string> = {
   pending_quote: '待报价',
@@ -26,22 +31,60 @@ const ORDER_STATUS_LABELS: Record<string, string> = {
 };
 
 const Dashboard: React.FC = () => {
+  const chartRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardOverview | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchDashboardData = async () => {
       try {
         const result = await dashboardService.getOverview();
         setData(result);
-      } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
+      } catch {
+        console.error('Failed to fetch dashboard data');
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
+    fetchDashboardData();
   }, []);
+
+  const subscriptionOption = useMemo(() => {
+    if (!data) return null;
+    return {
+      tooltip: { trigger: 'item' },
+      legend: { bottom: 0 },
+      series: [{
+        type: 'pie',
+        radius: ['40%', '70%'],
+        avoidLabelOverlap: false,
+        itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
+        label: { show: false },
+        emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
+        labelLine: { show: false },
+        data: data.subscriptionStats.byPlan.map(item => ({
+          value: item.count,
+          name: item.planName,
+        })),
+      }],
+    };
+  }, [data]);
+
+  useEffect(() => {
+    if (!chartRef.current || !data || !subscriptionOption) {
+      return;
+    }
+
+    const chart = echarts.init(chartRef.current);
+    chart.setOption(subscriptionOption);
+    const handleResize = () => chart.resize();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      chart.dispose();
+    };
+  }, [data, subscriptionOption]);
 
   if (loading || !data) {
     return (
@@ -86,24 +129,6 @@ const Dashboard: React.FC = () => {
       render: (text: string) => new Date(text).toLocaleString('zh-CN'),
     },
   ];
-
-  const subscriptionOption = {
-    tooltip: { trigger: 'item' },
-    legend: { bottom: 0 },
-    series: [{
-      type: 'pie',
-      radius: ['40%', '70%'],
-      avoidLabelOverlap: false,
-      itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
-      label: { show: false },
-      emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
-      labelLine: { show: false },
-      data: data.subscriptionStats.byPlan.map(item => ({
-        value: item.count,
-        name: item.planName,
-      })),
-    }],
-  };
 
   return (
     <div>
@@ -199,7 +224,7 @@ const Dashboard: React.FC = () => {
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} lg={12}>
           <Card title="订阅分布" extra={<CrownOutlined />}>
-            <ReactECharts option={subscriptionOption} style={{ height: 300 }} />
+            <div ref={chartRef} style={{ height: 300 }} />
           </Card>
         </Col>
         <Col xs={24} lg={12}>

@@ -6,7 +6,10 @@ import { PrismaModule } from '../common/prisma/prisma.module';
 
 @Module({
   imports: [PrismaModule],
-  controllers: [ClientCustomServiceRequestsController, TechnicianCustomServiceRequestsController],
+  controllers: [
+    ClientCustomServiceRequestsController,
+    TechnicianCustomServiceRequestsController,
+  ],
   providers: [CustomServiceRequestsService],
   exports: [CustomServiceRequestsService],
 })

@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CreateWorkDto, UpdateWorkDto } from './dto/create-work.dto';
 
@@ -15,15 +19,15 @@ export class TechnicianWorksService {
       orderBy: [
         { isPinned: 'desc' },
         { isFeatured: 'desc' },
-        { createdAt: 'desc' }
+        { createdAt: 'desc' },
       ],
       include: {
         likes: true,
         favorites: true,
         comments: true,
         technician: {
-          select: { name: true }
-        }
+          select: { name: true },
+        },
       },
     });
 
@@ -142,7 +146,9 @@ export class TechnicianWorksService {
   // Like functionality
   async likeWork(workId: number, technicianId?: number, clientId?: number) {
     if (!technicianId && !clientId) {
-      throw new BadRequestException('Must provide either technicianId or clientId');
+      throw new BadRequestException(
+        'Must provide either technicianId or clientId',
+      );
     }
 
     const existing = await this.prisma.nailWorkLike.findFirst({
@@ -174,7 +180,9 @@ export class TechnicianWorksService {
   // Favorite functionality
   async favoriteWork(workId: number, technicianId?: number, clientId?: number) {
     if (!technicianId && !clientId) {
-      throw new BadRequestException('Must provide either technicianId or clientId');
+      throw new BadRequestException(
+        'Must provide either technicianId or clientId',
+      );
     }
 
     const existing = await this.prisma.nailWorkFavorite.findFirst({
@@ -219,7 +227,7 @@ export class TechnicianWorksService {
         likes: true,
         favorites: true,
         comments: true,
-        technician: { select: { name: true } }
+        technician: { select: { name: true } },
       },
     });
 
@@ -242,7 +250,7 @@ export class TechnicianWorksService {
         likes: true,
         favorites: true,
         comments: true,
-        technician: { select: { name: true } }
+        technician: { select: { name: true } },
       },
     });
 
@@ -256,9 +264,16 @@ export class TechnicianWorksService {
     });
   }
 
-  async addComment(workId: number, content: string, technicianId?: number, clientId?: number) {
+  async addComment(
+    workId: number,
+    content: string,
+    technicianId?: number,
+    clientId?: number,
+  ) {
     if (!technicianId && !clientId) {
-      throw new BadRequestException('Must provide either technicianId or clientId');
+      throw new BadRequestException(
+        'Must provide either technicianId or clientId',
+      );
     }
 
     const comment = await this.prisma.nailWorkComment.create({
@@ -283,7 +298,10 @@ export class TechnicianWorksService {
       throw new NotFoundException('评论不存在');
     }
 
-    if (comment.work.techId !== technicianId && comment.technicianId !== technicianId) {
+    if (
+      comment.work.techId !== technicianId &&
+      comment.technicianId !== technicianId
+    ) {
       throw new BadRequestException('无权删除此评论');
     }
 
@@ -319,38 +337,55 @@ export class TechnicianWorksService {
     return `${UPLOAD_BASE_URL}${url}`;
   }
 
-  private mapWork(work: {
-    id: number;
-    title: string | null;
-    coverUrl: string | null;
-    images: string | null;
-    description: string | null;
-    tags: string | null;
-    isVisible: boolean;
-    isPinned?: boolean;
-    isFeatured?: boolean;
-    sortOrder: number;
-    createdAt: Date;
-    updatedAt: Date;
-    likes?: { id: number; technicianId?: number | null; clientId?: number | null }[];
-    favorites?: { id: number; technicianId?: number | null; clientId?: number | null }[];
-    comments?: { id: number; isRead?: boolean }[];
-    technician?: { name: string | null };
-  }, currentTechnicianId?: number) {
+  private mapWork(
+    work: {
+      id: number;
+      title: string | null;
+      coverUrl: string | null;
+      images: string | null;
+      description: string | null;
+      tags: string | null;
+      isVisible: boolean;
+      isPinned?: boolean;
+      isFeatured?: boolean;
+      sortOrder: number;
+      createdAt: Date;
+      updatedAt: Date;
+      likes?: {
+        id: number;
+        technicianId?: number | null;
+        clientId?: number | null;
+      }[];
+      favorites?: {
+        id: number;
+        technicianId?: number | null;
+        clientId?: number | null;
+      }[];
+      comments?: { id: number; isRead?: boolean }[];
+      technician?: { name: string | null };
+    },
+    currentTechnicianId?: number,
+  ) {
     const rawImageUrls = this.parseImageUrls(work.images, work.coverUrl);
-    const imageUrls = rawImageUrls.map(url => this.toAbsoluteUrl(url)).filter(Boolean) as string[];
+    const imageUrls = rawImageUrls
+      .map((url) => this.toAbsoluteUrl(url))
+      .filter(Boolean) as string[];
     const coverUrl = this.toAbsoluteUrl(work.coverUrl) ?? imageUrls[0] ?? null;
 
     // Check if current technician has liked/favorited this work
     const isLiked = currentTechnicianId
-      ? work.likes?.some(like => like.technicianId === currentTechnicianId) ?? false
+      ? (work.likes?.some(
+          (like) => like.technicianId === currentTechnicianId,
+        ) ?? false)
       : false;
     const isFavorited = currentTechnicianId
-      ? work.favorites?.some(fav => fav.technicianId === currentTechnicianId) ?? false
+      ? (work.favorites?.some(
+          (fav) => fav.technicianId === currentTechnicianId,
+        ) ?? false)
       : false;
 
     // Count unread comments
-    const unreadComments = work.comments?.filter(c => !c.isRead).length ?? 0;
+    const unreadComments = work.comments?.filter((c) => !c.isRead).length ?? 0;
 
     return {
       id: work.id,
@@ -383,7 +418,9 @@ export class TechnicianWorksService {
     try {
       const parsed = JSON.parse(images);
       if (Array.isArray(parsed)) {
-        return parsed.filter((item): item is string => typeof item === 'string');
+        return parsed.filter(
+          (item): item is string => typeof item === 'string',
+        );
       }
     } catch {
       return images

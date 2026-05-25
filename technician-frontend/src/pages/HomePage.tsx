@@ -13,7 +13,7 @@ import {
   formatMoney,
   type TechnicianOrder,
 } from '../services/technicianData';
-import { TripCardSkeleton, CardSkeleton, Skeleton } from '../components/Skeleton';
+import { Skeleton } from '../components/Skeleton';
 
 function parseDate(value?: string | Date | null) {
   if (!value) return null;

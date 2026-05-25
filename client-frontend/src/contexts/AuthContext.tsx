@@ -67,16 +67,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const storedTechnicians = localStorage.getItem('client_technicians');
 
     if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-      if (storedTechnician) {
-        setTechnician(JSON.parse(storedTechnician));
-      }
-      if (storedTechnicians) {
-        setTechnicians(JSON.parse(storedTechnicians));
-      }
+      requestAnimationFrame(() => {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+        if (storedTechnician) {
+          setTechnician(JSON.parse(storedTechnician));
+        }
+        if (storedTechnicians) {
+          setTechnicians(JSON.parse(storedTechnicians));
+        }
+      });
 
-      void authService.getProfile()
+      authService.getProfile()
         .then((profile) => {
           applyProfile(profile);
         })

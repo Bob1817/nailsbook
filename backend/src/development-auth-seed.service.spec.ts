@@ -5,14 +5,18 @@ describe('DevelopmentAuthSeedService', () => {
   let service: DevelopmentAuthSeedService;
   let prisma: {
     adminRole: { upsert: jest.Mock };
-    adminPermission: { upsert: jest.Mock };
+    adminPermission: { upsert: jest.Mock; findUnique: jest.Mock };
     adminRolePermission: { upsert: jest.Mock };
     adminUser: { findUnique: jest.Mock; create: jest.Mock };
     subscriptionPlan: { findUnique: jest.Mock; create: jest.Mock };
     technician: { findUnique: jest.Mock; create: jest.Mock };
     technicianSubscription: { findUnique: jest.Mock; create: jest.Mock };
     clientUser: { findUnique: jest.Mock; create: jest.Mock };
-    clientTechBinding: { findUnique: jest.Mock; create: jest.Mock; count: jest.Mock };
+    clientTechBinding: {
+      findUnique: jest.Mock;
+      create: jest.Mock;
+      count: jest.Mock;
+    };
     customer: { findFirst: jest.Mock; create: jest.Mock };
   };
   let configService: { get: jest.Mock };
@@ -20,7 +24,7 @@ describe('DevelopmentAuthSeedService', () => {
   beforeEach(() => {
     prisma = {
       adminRole: { upsert: jest.fn() },
-      adminPermission: { upsert: jest.fn() },
+      adminPermission: { upsert: jest.fn(), findUnique: jest.fn() },
       adminRolePermission: { upsert: jest.fn() },
       adminUser: { findUnique: jest.fn(), create: jest.fn() },
       subscriptionPlan: { findUnique: jest.fn(), create: jest.fn() },
@@ -44,10 +48,18 @@ describe('DevelopmentAuthSeedService', () => {
     };
 
     prisma.adminRole.upsert.mockResolvedValue({ id: 1 });
-    prisma.adminPermission.upsert.mockImplementation(async ({ create }: { create: { id?: number; code: string } }) => ({
-      id: create.id ?? 1,
-      code: create.code,
-    }));
+    prisma.adminPermission.upsert.mockImplementation(
+      ({ create }: { create: { id?: number; code: string } }) => ({
+        id: create.id ?? 1,
+        code: create.code,
+      }),
+    );
+    prisma.adminPermission.findUnique.mockImplementation(
+      ({ where }: { where: { code: string } }) => ({
+        id: where.code.length,
+        code: where.code,
+      }),
+    );
     prisma.adminUser.findUnique.mockResolvedValue(null);
     prisma.adminUser.create.mockResolvedValue({ id: 1 });
     prisma.subscriptionPlan.findUnique.mockResolvedValue(null);

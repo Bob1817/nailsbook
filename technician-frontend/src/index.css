@@ -53,6 +53,10 @@
 html {
   font-size: 16px;
   overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: manipulation;
 }
 
 body {
@@ -63,11 +67,15 @@ body {
   color: var(--color-text-primary);
   overflow-x: hidden;
   width: 100%;
+  max-width: 100vw;
+  overscroll-behavior-x: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 #root {
   min-height: 100vh;
   min-height: 100dvh;
+  overflow-x: hidden;
 }
 
 .pb-safe {
@@ -84,6 +92,14 @@ body {
 }
 
 input, button, textarea, select {
+  font-size: 16px;
+  font-family: inherit;
+  touch-action: manipulation;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
   font-size: 16px;
 }
 

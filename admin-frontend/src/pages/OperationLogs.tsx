@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Table, Select, message, Card, Modal, Descriptions, DatePicker, Space } from 'antd';
 import { operationLogService } from '../services/operationLog';
 import type { OperationLog } from '../services/operationLog';
@@ -22,7 +22,7 @@ const OperationLogs: React.FC = () => {
     endDate: undefined as string | undefined,
   });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const result = await operationLogService.getAll({
@@ -34,18 +34,18 @@ const OperationLogs: React.FC = () => {
         endDate: filters.endDate,
       });
       setData(result);
-    } catch (error) {
+    } catch {
       message.error('获取数据失败');
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
   const fetchModules = async () => {
     try {
       const result = await operationLogService.getModules();
       setModules(result);
-    } catch (error) {
+    } catch {
       console.error('Failed to fetch modules');
     }
   };
@@ -54,7 +54,7 @@ const OperationLogs: React.FC = () => {
     try {
       const result = await operationLogService.getActions(module);
       setActions(result);
-    } catch (error) {
+    } catch {
       console.error('Failed to fetch actions');
     }
   };
@@ -66,7 +66,7 @@ const OperationLogs: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [filters]);
+  }, [fetchData]);
 
   useEffect(() => {
     if (filters.module) {

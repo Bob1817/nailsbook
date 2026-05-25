@@ -1,0 +1,44 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    env_file: ./backend/.env.production
+    volumes:
+      - backend_db:/app/prisma
+      - backend_uploads:/app/uploads
+    expose:
+      - "3000"
+    networks:
+      - internal
+
+  nginx:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
+      - certbot_www:/var/www/certbot:ro
+      - certbot_certs:/etc/letsencrypt:ro
+    depends_on:
+      - backend
+    networks:
+      - internal
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certbot_www:/var/www/certbot
+      - certbot_certs:/etc/letsencrypt
+
+volumes:
+  backend_db:
+  backend_uploads:
+  certbot_www:
+  certbot_certs:
+
+networks:
+  internal:

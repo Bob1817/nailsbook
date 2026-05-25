@@ -369,7 +369,7 @@
   - Works render images from backend upload/static URLs.
   - Empty states render without layout breaks.
   - Tap targets are at least 44px.
-- [ ] Commit:
+- [x] Commit:
   - `git add mobile-flutter/lib/features/client/home mobile-flutter/lib/features/client/works`
   - `git commit -m "feat: add flutter client home and works"`
 
@@ -387,7 +387,7 @@
 - [x] Verify:
   - User with no address is guided to create address before booking.
   - Default address is selected by booking flow.
-- [ ] Commit:
+- [x] Commit:
   - `git add mobile-flutter/lib/features/client/addresses`
   - `git commit -m "feat: add flutter client addresses"`
 
@@ -407,7 +407,7 @@
   - Booking requires valid address for home service.
   - Quoted order can be accepted.
   - React WebApp still shows Flutter-created order.
-- [ ] Commit:
+- [x] Commit:
   - `git add mobile-flutter/lib/features/client/orders`
   - `git commit -m "feat: add flutter client orders"`
 
@@ -425,7 +425,7 @@
 - [x] Verify:
   - Uploaded image appears in React WebApp and Flutter.
   - Design quote created by technician appears in Flutter client.
-- [ ] Commit:
+- [x] Commit:
   - `git add mobile-flutter/lib/features/client/designs`
   - `git commit -m "feat: add flutter client designs"`
 
@@ -445,7 +445,7 @@
 - [x] Verify:
   - Login stores technician token separately from client token.
   - Logout clears only the active role token.
-- [ ] Commit:
+- [x] Commit:
   - `git add mobile-flutter/lib/features/technician/auth mobile-flutter/lib/features/technician/profile`
   - `git commit -m "feat: add flutter technician auth"`
 
@@ -464,7 +464,7 @@
 - [x] Verify:
   - Today trips match React technician WebApp.
   - Schedule renders correctly on small phones.
-- [ ] Commit:
+- [x] Commit:
   - `git add mobile-flutter/lib/features/technician/home mobile-flutter/lib/features/technician/schedule`
   - `git commit -m "feat: add flutter technician dashboard"`
 
@@ -481,7 +481,7 @@
   - Client-created booking appears in technician Flutter.
   - Technician quote appears in client React and client Flutter.
   - Complete order updates revenue-related backend state if current backend does this.
-- [ ] Commit:
+- [x] Commit:
   - `git add mobile-flutter/lib/features/technician/orders`
   - `git commit -m "feat: add flutter technician orders"`
 
@@ -497,7 +497,7 @@
 - [x] Verify:
   - Customer created by binding/order appears under correct technician.
   - Tags persist and render in React WebApp.
-- [ ] Commit:
+- [x] Commit:
   - `git add mobile-flutter/lib/features/technician/customers`
   - `git commit -m "feat: add flutter technician customers"`
 
@@ -514,7 +514,7 @@
 - [x] Verify:
   - Work uploaded in Flutter appears in client works list.
   - Service changes affect booking options where current backend supports it.
-- [ ] Commit:
+- [x] Commit:
   - `git add mobile-flutter/lib/features/technician/works mobile-flutter/lib/features/technician/services`
   - `git commit -m "feat: add flutter technician works and services"`
 
@@ -534,12 +534,12 @@
 - [x] Implement socket connection with token auth.
 - [x] Implement reconnect behavior.
 - [x] Implement event stream for message, read receipt, typing, and presence.
-- [ ] Verify against local backend with two app sessions:
+- [x] Verify against local backend with two app sessions:
   - Client sends message.
   - Technician receives `message:new`.
   - Technician sends read receipt.
   - Client receives `message:read`.
-- [ ] Commit:
+- [x] Commit:
   - `git add mobile-flutter/lib/core/socket mobile-flutter/test/core/socket`
   - `git commit -m "feat: add flutter chat socket"`
 
@@ -557,7 +557,7 @@
   - React client can chat with Flutter technician.
   - Flutter client can chat with React technician.
   - Flutter client can chat with Flutter technician.
-- [ ] Commit:
+- [x] Commit:
   - `git add mobile-flutter/lib/features/shared/chat`
   - `git commit -m "feat: add flutter shared chat"`
 
@@ -581,7 +581,7 @@
 - [x] Verify:
   - App installed: invite opens Flutter invite flow.
   - App not installed: invite opens React WebApp invite flow.
-- [ ] Commit:
+- [x] Commit:
   - `git add docs/flutter/deep-linking.md mobile-flutter/android mobile-flutter/ios`
   - `git commit -m "feat: add mobile invite deep links"`
 
@@ -605,7 +605,7 @@
 - [x] Verify:
   - Foreground notification handled in app.
   - Background notification opens correct screen.
-- [ ] Commit:
+- [x] Commit:
   - `git add docs/flutter/push-notifications.md backend/src mobile-flutter/lib/core/notifications`
   - `git commit -m "feat: add mobile push notification foundation"`
 
@@ -625,7 +625,7 @@
 - [x] Verify:
   - Permission denial does not block non-map order flows.
   - Navigation button opens installed map app.
-- [ ] Commit:
+- [x] Commit:
   - `git add docs/flutter/maps.md mobile-flutter/lib/core/maps`
   - `git commit -m "feat: add mobile map navigation"`
 
@@ -652,8 +652,8 @@
   - chat text/image/read/typing
   - works upload/browse/comment
   - address create/default
-- [ ] Execute matrix on local/staging backend.
-- [ ] Commit:
+- [x] Execute matrix on local/staging backend.
+- [x] Commit:
   - `git add docs/flutter/regression-matrix.md`
   - `git commit -m "docs: add flutter coexistence regression matrix"`
 
@@ -674,7 +674,7 @@
   - `cd technician-frontend && npm run build`
   - `cd mobile-flutter && flutter analyze`
   - `cd mobile-flutter && flutter test`
-- [ ] Commit:
+- [x] Commit:
   - `git add docs/flutter/ci.md`
   - `git commit -m "ci: add flutter and compatibility checks"`
 
@@ -697,7 +697,7 @@
   - socket disconnect rate
   - upload failures
   - push delivery failures
-- [ ] Commit:
+- [x] Commit:
   - `git add docs/flutter/release-plan.md`
   - `git commit -m "docs: add flutter staged release plan"`
 

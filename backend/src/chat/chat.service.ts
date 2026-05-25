@@ -19,7 +19,15 @@ export class ChatService {
   constructor(private prisma: PrismaService) {}
 
   async sendMessage(input: SendMessageInput) {
-    const { senderType, senderId, messageType, content, imageUrl, relatedType, relatedId } = input;
+    const {
+      senderType,
+      senderId,
+      messageType,
+      content,
+      imageUrl,
+      relatedType,
+      relatedId,
+    } = input;
 
     let conversation: any;
 
@@ -35,7 +43,9 @@ export class ChatService {
       const techId = senderType === 'technician' ? senderId : input.techId;
 
       if (!clientId || !techId) {
-        throw new BadRequestException('Must provide conversationId or recipient id');
+        throw new BadRequestException(
+          'Must provide conversationId or recipient id',
+        );
       }
 
       conversation = await this.prisma.conversation.findUnique({
@@ -51,7 +61,8 @@ export class ChatService {
 
     const conversationId = conversation.id;
     const receiverType = senderType === 'client' ? 'technician' : 'client';
-    const receiverId = senderType === 'client' ? conversation.techId : conversation.clientId;
+    const receiverId =
+      senderType === 'client' ? conversation.techId : conversation.clientId;
 
     const message = await this.prisma.message.create({
       data: {
@@ -71,7 +82,8 @@ export class ChatService {
     await this.prisma.conversation.update({
       where: { id: conversationId },
       data: {
-        lastMessage: messageType === 'image' ? '[图片]' : content?.slice(0, 100) || '',
+        lastMessage:
+          messageType === 'image' ? '[图片]' : content?.slice(0, 100) || '',
         lastMessageAt: new Date(),
       },
     });
@@ -79,7 +91,11 @@ export class ChatService {
     return { message, conversation };
   }
 
-  async markAsRead(conversationId: number, receiverType: string, receiverId: number) {
+  async markAsRead(
+    conversationId: number,
+    receiverType: string,
+    receiverId: number,
+  ) {
     await this.prisma.message.updateMany({
       where: { conversationId, receiverType, receiverId, isRead: false },
       data: { isRead: true },
@@ -92,8 +108,12 @@ export class ChatService {
     });
   }
 
-  async getUserConversationIds(userId: number, userType: 'client' | 'technician') {
-    const where = userType === 'client' ? { clientId: userId } : { techId: userId };
+  async getUserConversationIds(
+    userId: number,
+    userType: 'client' | 'technician',
+  ) {
+    const where =
+      userType === 'client' ? { clientId: userId } : { techId: userId };
     const conversations = await this.prisma.conversation.findMany({
       where,
       select: { id: true },

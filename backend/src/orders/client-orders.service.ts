@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { ChatGateway } from '../chat/chat.gateway';
 import { CreateClientOrderDto } from './dto/create-client-order.dto';
@@ -24,17 +28,6 @@ type ShopAddressConfig = {
   doorInfo?: string;
   enabled?: boolean;
   businessHours?: ShopBusinessHour[];
-};
-
-const CLIENT_STATUS_TRANSITIONS: Record<string, string[]> = {
-  pending_quote: ['cancelled'],
-  pending_agree: ['pending_confirm', 'pending_quote', 'cancelled'],
-  pending_confirm: ['cancelled'],
-  pending_home: [],
-  pending_shop: [],
-  in_progress: ['completed'],
-  completed: [],
-  cancelled: [],
 };
 
 @Injectable()
@@ -72,7 +65,10 @@ export class ClientOrdersService {
       throw new BadRequestException('该美甲师暂未开启到店美甲服务');
     }
 
-    const selectedServiceNames = this.resolveSelectedServiceNames(binding.technician.serviceItems, dto.selectedServiceIds);
+    const selectedServiceNames = this.resolveSelectedServiceNames(
+      binding.technician.serviceItems,
+      dto.selectedServiceIds,
+    );
 
     const client = await this.prisma.clientUser.findUnique({
       where: { id: clientUserId },
@@ -82,12 +78,13 @@ export class ClientOrdersService {
       throw new NotFoundException('客户不存在');
     }
 
-    const { addressId, orderAddress, customerName } = await this.resolveOrderAddressAndCustomerName(
-      clientUserId,
-      client,
-      binding.technician,
-      dto,
-    );
+    const { addressId, orderAddress, customerName } =
+      await this.resolveOrderAddressAndCustomerName(
+        clientUserId,
+        client,
+        binding.technician,
+        dto,
+      );
     const startTime = this.buildStartTime(dto.serviceDate, dto.startTime);
     const endTime = new Date(startTime);
 
@@ -223,14 +220,22 @@ export class ClientOrdersService {
     let orderAddress: string;
 
     if (dto.serviceType === '到店美甲' && dto.shopAddress) {
-      const technicianShopAddresses = this.normalizeShopAddresses(design.technician.shopAddresses);
-      const matchedShopAddress = technicianShopAddresses.find((item) => item.name === dto.shopAddress?.name);
+      const technicianShopAddresses = this.normalizeShopAddresses(
+        design.technician.shopAddresses,
+      );
+      const matchedShopAddress = technicianShopAddresses.find(
+        (item) => item.name === dto.shopAddress?.name,
+      );
 
       if (!matchedShopAddress) {
         throw new BadRequestException('请选择有效的店铺地址');
       }
 
-      this.assertShopOrderAvailability(matchedShopAddress, dto.serviceDate, dto.startTime);
+      this.assertShopOrderAvailability(
+        matchedShopAddress,
+        dto.serviceDate,
+        dto.startTime,
+      );
 
       orderAddress = [
         matchedShopAddress.province,
@@ -465,12 +470,17 @@ export class ClientOrdersService {
         const updatedConversation = await this.prisma.conversation.findUnique({
           where: { id: conversationId },
         });
-        this.chatGateway.server.to(`conversation:${conversationId}`).emit('message:new', {
-          message: systemMessage,
-          conversation: updatedConversation,
-        });
+        this.chatGateway.server
+          .to(`conversation:${String(conversationId)}`)
+          .emit('message:new', {
+            message: systemMessage,
+            conversation: updatedConversation,
+          });
       } catch (e) {
-        console.error('[ClientOrdersService] Failed to push notification via WebSocket:', e);
+        console.error(
+          '[ClientOrdersService] Failed to push notification via WebSocket:',
+          e,
+        );
       }
     }
 
@@ -550,19 +560,28 @@ export class ClientOrdersService {
         const updatedConversation = await this.prisma.conversation.findUnique({
           where: { id: conversationId },
         });
-        this.chatGateway.server.to(`conversation:${conversationId}`).emit('message:new', {
-          message: systemMessage,
-          conversation: updatedConversation,
-        });
+        this.chatGateway.server
+          .to(`conversation:${String(conversationId)}`)
+          .emit('message:new', {
+            message: systemMessage,
+            conversation: updatedConversation,
+          });
       } catch (e) {
-        console.error('[ClientOrdersService] Failed to push notification via WebSocket:', e);
+        console.error(
+          '[ClientOrdersService] Failed to push notification via WebSocket:',
+          e,
+        );
       }
     }
 
     return this.mapOrder(updatedOrder);
   }
 
-  async updateStatus(clientUserId: number, id: number, status: 'completed' | 'cancelled') {
+  async updateStatus(
+    clientUserId: number,
+    id: number,
+    status: 'completed' | 'cancelled',
+  ) {
     const order = await this.prisma.order.findFirst({
       where: {
         id,
@@ -618,7 +637,11 @@ export class ClientOrdersService {
       return this.mapOrder(updatedOrder);
     }
 
-    const cancellableStatuses = ['pending_quote', 'pending_agree', 'pending_confirm'];
+    const cancellableStatuses = [
+      'pending_quote',
+      'pending_agree',
+      'pending_confirm',
+    ];
     if (!cancellableStatuses.includes(order.status)) {
       throw new BadRequestException('当前订单状态不支持取消');
     }
@@ -678,7 +701,9 @@ export class ClientOrdersService {
   }
 
   private canUpdateOrder(order: any) {
-    return ['pending_quote', 'pending_agree', 'pending_confirm'].includes(order.status);
+    return ['pending_quote', 'pending_agree', 'pending_confirm'].includes(
+      order.status,
+    );
   }
 
   private buildStartTime(serviceDate: string, startTime: string) {
@@ -694,7 +719,9 @@ export class ClientOrdersService {
     }));
   }
 
-  private normalizeShopAddresses(shopAddressesRaw: string | null): ShopAddressConfig[] {
+  private normalizeShopAddresses(
+    shopAddressesRaw: string | null,
+  ): ShopAddressConfig[] {
     if (!shopAddressesRaw) {
       return [];
     }
@@ -707,9 +734,13 @@ export class ClientOrdersService {
 
       return parsed.map((item: any) => {
         const defaultBusinessHours = this.buildDefaultBusinessHours();
-        const configuredBusinessHours = Array.isArray(item?.businessHours) ? item.businessHours : [];
+        const configuredBusinessHours = Array.isArray(item?.businessHours)
+          ? item.businessHours
+          : [];
         const businessHours = defaultBusinessHours.map((defaultItem) => {
-          const matchedItem = configuredBusinessHours.find((candidate: any) => candidate?.weekday === defaultItem.weekday);
+          const matchedItem = configuredBusinessHours.find(
+            (candidate: any) => candidate?.weekday === defaultItem.weekday,
+          );
           return matchedItem
             ? {
                 ...defaultItem,
@@ -746,14 +777,20 @@ export class ClientOrdersService {
     return hours * 60 + minutes;
   }
 
-  private assertShopOrderAvailability(shopAddress: ShopAddressConfig, serviceDate: string, startTime: string) {
+  private assertShopOrderAvailability(
+    shopAddress: ShopAddressConfig,
+    serviceDate: string,
+    startTime: string,
+  ) {
     if (shopAddress.enabled === false) {
       throw new BadRequestException('该店铺当前已关闭，暂不可预约');
     }
 
-    const businessHours = Array.isArray(shopAddress.businessHours) && shopAddress.businessHours.length > 0
-      ? shopAddress.businessHours
-      : this.buildDefaultBusinessHours();
+    const businessHours =
+      Array.isArray(shopAddress.businessHours) &&
+      shopAddress.businessHours.length > 0
+        ? shopAddress.businessHours
+        : this.buildDefaultBusinessHours();
     const weekday = this.getWeekday(serviceDate);
     const matchedHours = businessHours.find((item) => item.weekday === weekday);
 
@@ -774,14 +811,19 @@ export class ClientOrdersService {
     }
   }
 
-  private resolveSelectedServiceNames(serviceItemsRaw: string | null, selectedServiceIds?: string[]) {
+  private resolveSelectedServiceNames(
+    serviceItemsRaw: string | null,
+    selectedServiceIds?: string[],
+  ) {
     const serviceItems = serviceItemsRaw ? JSON.parse(serviceItemsRaw) : [];
 
     if (!selectedServiceIds || selectedServiceIds.length === 0) {
       throw new BadRequestException('请选择至少一项服务内容');
     }
 
-    const selectedServices = serviceItems.filter((item: any) => selectedServiceIds.includes(item.id) && item.isActive);
+    const selectedServices = serviceItems.filter(
+      (item: any) => selectedServiceIds.includes(item.id) && item.isActive,
+    );
 
     if (selectedServices.length !== selectedServiceIds.length) {
       throw new BadRequestException('所选服务内容已失效，请重新选择');
@@ -792,7 +834,12 @@ export class ClientOrdersService {
       .map((item: any) => item.name);
   }
 
-  private async assertOrderConflict(technicianId: number, startTime: Date, endTime: Date, ignoreId?: number) {
+  private async assertOrderConflict(
+    technicianId: number,
+    startTime: Date,
+    endTime: Date,
+    ignoreId?: number,
+  ) {
     const conflict = await this.prisma.order.findFirst({
       where: {
         technicianId,
@@ -847,14 +894,22 @@ export class ClientOrdersService {
         throw new BadRequestException('请选择到店服务地址');
       }
 
-      const technicianShopAddresses = this.normalizeShopAddresses(technician.shopAddresses);
-      const matchedShopAddress = technicianShopAddresses.find((item: any) => item.name === dto.shopAddress?.name);
+      const technicianShopAddresses = this.normalizeShopAddresses(
+        technician.shopAddresses,
+      );
+      const matchedShopAddress = technicianShopAddresses.find(
+        (item: any) => item.name === dto.shopAddress?.name,
+      );
 
       if (!matchedShopAddress) {
         throw new BadRequestException('请选择有效的店铺地址');
       }
 
-      this.assertShopOrderAvailability(matchedShopAddress, dto.serviceDate, dto.startTime);
+      this.assertShopOrderAvailability(
+        matchedShopAddress,
+        dto.serviceDate,
+        dto.startTime,
+      );
 
       const orderAddress = [
         matchedShopAddress.province,

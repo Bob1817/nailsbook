@@ -9,7 +9,10 @@ export interface UserPresence {
 export class PresenceService {
   private onlineUsers = new Map<number, UserPresence>();
 
-  userConnected(userId: number, userType: 'client' | 'technician'): 'joined' | 'already_online' {
+  userConnected(
+    userId: number,
+    userType: 'client' | 'technician',
+  ): 'joined' | 'already_online' {
     const existing = this.onlineUsers.get(userId);
     if (existing) {
       existing.connectionCount++;

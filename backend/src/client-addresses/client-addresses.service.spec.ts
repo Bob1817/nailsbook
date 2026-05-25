@@ -28,7 +28,8 @@ describe('ClientAddressesService', () => {
       },
     };
     prisma.$transaction.mockImplementation(
-      async (callback: (tx: typeof prisma) => Promise<unknown>) => callback(prisma),
+      async (callback: (tx: typeof prisma) => Promise<unknown>) =>
+        callback(prisma),
     );
     service = new ClientAddressesService(prisma as never);
   });

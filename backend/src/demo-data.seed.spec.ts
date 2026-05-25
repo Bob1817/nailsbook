@@ -12,26 +12,24 @@ describe('ensureDemoData', () => {
     const customerIds = new Map<string, number>();
     const addressIds = new Map<string, number>();
     const conversationIds = new Map<string, number>();
-    const quoteIds = new Map<string, number>();
-    const bookingIds = new Map<string, number>();
+    const orderIds = new Map<string, number>();
 
     let nextTechnicianId = 10;
     let nextClientId = 100;
     let nextCustomerId = 200;
     let nextAddressId = 300;
     let nextConversationId = 400;
-    let nextQuoteId = 500;
-    let nextBookingId = 600;
+    let nextOrderId = 600;
 
     const prisma = {
       subscriptionPlan: {
-        upsert: jest.fn(async ({ where, create }: any) => ({
+        upsert: jest.fn(({ where, create }: any) => ({
           id: planIds.get(where.code) ?? planIds.get(create.code) ?? 999,
           code: create.code,
         })),
       },
       technician: {
-        upsert: jest.fn(async ({ where, create, update }: any) => {
+        upsert: jest.fn(({ where, create, update }: any) => {
           const phone = where.phone;
           if (!technicianIds.has(phone)) {
             technicianIds.set(phone, nextTechnicianId++);
@@ -44,14 +42,14 @@ describe('ensureDemoData', () => {
         }),
       },
       technicianSubscription: {
-        upsert: jest.fn(async ({ where, create, update }: any) => ({
+        upsert: jest.fn(({ where, create, update }: any) => ({
           id: where.technicianId,
           technicianId: where.technicianId,
           ...(create ?? update),
         })),
       },
       clientUser: {
-        upsert: jest.fn(async ({ where, create, update }: any) => {
+        upsert: jest.fn(({ where, create, update }: any) => {
           const phone = where.phone;
           if (!clientIds.has(phone)) {
             clientIds.set(phone, nextClientId++);
@@ -64,15 +62,17 @@ describe('ensureDemoData', () => {
         }),
       },
       clientTechBinding: {
-        upsert: jest.fn(async ({ where, create, update }: any) => ({
-          id: where.clientId_techId.clientId * 1000 + where.clientId_techId.techId,
+        upsert: jest.fn(({ where, create, update }: any) => ({
+          id:
+            where.clientId_techId.clientId * 1000 +
+            where.clientId_techId.techId,
           clientId: where.clientId_techId.clientId,
           techId: where.clientId_techId.techId,
           ...(create ?? update),
         })),
       },
       customer: {
-        upsert: jest.fn(async ({ where, create, update }: any) => {
+        upsert: jest.fn(({ where, create, update }: any) => {
           const key = `${where.technicianId_clientUserId.technicianId}:${where.technicianId_clientUserId.clientUserId}`;
           if (!customerIds.has(key)) {
             customerIds.set(key, nextCustomerId++);
@@ -86,15 +86,19 @@ describe('ensureDemoData', () => {
         }),
       },
       clientAddress: {
-        findFirst: jest.fn(async ({ where }: any) => {
+        findFirst: jest.fn(({ where }: any) => {
           const key = `${where.clientId}:${where.detailAddress}`;
           if (!addressIds.has(key)) {
             return null;
           }
-          return { id: addressIds.get(key), clientId: where.clientId, detailAddress: where.detailAddress };
+          return {
+            id: addressIds.get(key),
+            clientId: where.clientId,
+            detailAddress: where.detailAddress,
+          };
         }),
-        updateMany: jest.fn(async () => ({ count: 1 })),
-        create: jest.fn(async ({ data }: any) => {
+        updateMany: jest.fn(() => ({ count: 1 })),
+        create: jest.fn(({ data }: any) => {
           const key = `${data.clientId}:${data.detailAddress}`;
           if (!addressIds.has(key)) {
             addressIds.set(key, nextAddressId++);
@@ -103,29 +107,32 @@ describe('ensureDemoData', () => {
         }),
       },
       nailWork: {
-        findFirst: jest.fn(async () => null),
-        create: jest.fn(async ({ data }: any) => ({ id: data.sortOrder + 700, ...data })),
-        update: jest.fn(async ({ data }: any) => ({ id: 701, ...data })),
+        findFirst: jest.fn(() => null),
+        create: jest.fn(({ data }: any) => ({
+          id: data.sortOrder + 700,
+          ...data,
+        })),
+        update: jest.fn(({ data }: any) => ({ id: 701, ...data })),
       },
       nailWorkLike: {
-        findFirst: jest.fn(async () => null),
-        create: jest.fn(async ({ data }: any) => ({ id: 1, ...data })),
+        findFirst: jest.fn(() => null),
+        create: jest.fn(({ data }: any) => ({ id: 1, ...data })),
       },
       nailWorkFavorite: {
-        findFirst: jest.fn(async () => null),
-        create: jest.fn(async ({ data }: any) => ({ id: 1, ...data })),
+        findFirst: jest.fn(() => null),
+        create: jest.fn(({ data }: any) => ({ id: 1, ...data })),
       },
       nailWorkComment: {
-        findFirst: jest.fn(async () => null),
-        create: jest.fn(async ({ data }: any) => ({ id: 1, ...data })),
+        findFirst: jest.fn(() => null),
+        create: jest.fn(({ data }: any) => ({ id: 1, ...data })),
       },
       clientDesignRequest: {
-        findFirst: jest.fn(async () => null),
-        create: jest.fn(async ({ data }: any) => ({ id: 801, ...data })),
-        update: jest.fn(async ({ data }: any) => ({ id: 801, ...data })),
+        findFirst: jest.fn(() => null),
+        create: jest.fn(({ data }: any) => ({ id: 801, ...data })),
+        update: jest.fn(({ data }: any) => ({ id: 801, ...data })),
       },
       conversation: {
-        upsert: jest.fn(async ({ where, create, update }: any) => {
+        upsert: jest.fn(({ where, create, update }: any) => {
           const key = `${where.clientId_techId.clientId}:${where.clientId_techId.techId}`;
           if (!conversationIds.has(key)) {
             conversationIds.set(key, nextConversationId++);
@@ -139,59 +146,88 @@ describe('ensureDemoData', () => {
         }),
       },
       message: {
-        findFirst: jest.fn(async () => null),
-        create: jest.fn(async ({ data }: any) => ({ id: 1, ...data })),
-        update: jest.fn(async ({ where, data }: any) => ({ id: where.id, ...data })),
+        findFirst: jest.fn(() => null),
+        create: jest.fn(({ data }: any) => ({ id: 1, ...data })),
+        update: jest.fn(({ where, data }: any) => ({
+          id: where.id,
+          ...data,
+        })),
       },
-      quote: {
-        upsert: jest.fn(async ({ where, create, update }: any) => {
-          const quoteNo = where.quoteNo;
-          if (!quoteIds.has(quoteNo)) {
-            quoteIds.set(quoteNo, nextQuoteId++);
+      order: {
+        upsert: jest.fn(({ where, create, update }: any) => {
+          const orderNo = where.orderNo;
+          if (!orderIds.has(orderNo)) {
+            orderIds.set(orderNo, nextOrderId++);
           }
           return {
-            id: quoteIds.get(quoteNo),
-            quoteNo,
+            id: orderIds.get(orderNo),
+            orderNo,
             ...(create ?? update),
           };
         }),
-      },
-      booking: {
-        upsert: jest.fn(async ({ where, create, update }: any) => {
-          const bookingNo = where.bookingNo;
-          if (!bookingIds.has(bookingNo)) {
-            bookingIds.set(bookingNo, nextBookingId++);
-          }
-          return {
-            id: bookingIds.get(bookingNo),
-            bookingNo,
-            ...(create ?? update),
-          };
+        findFirst: jest.fn(({ where }: any) => {
+          const orderNo = where.orderNo;
+          return orderIds.has(orderNo)
+            ? { id: orderIds.get(orderNo), orderNo }
+            : null;
         }),
       },
       revenue: {
-        upsert: jest.fn(async ({ where, create, update }: any) => ({
+        upsert: jest.fn(({ where, create, update }: any) => ({
           id: 900,
           revenueNo: where.revenueNo,
           ...(create ?? update),
         })),
       },
+      customServiceRequest: {
+        findFirst: jest.fn(() => null),
+        create: jest.fn(({ data }: any) => ({ id: 950, ...data })),
+        update: jest.fn(({ data }: any) => ({ id: 950, ...data })),
+      },
+      featureFlag: {
+        upsert: jest.fn(({ where, create, update }: any) => ({
+          id: 960,
+          featureCode: where.featureCode,
+          ...(create ?? update),
+        })),
+      },
+      adminRole: {
+        upsert: jest.fn(({ where, create, update }: any) => ({
+          id: 970,
+          code: where.code,
+          ...(create ?? update),
+        })),
+      },
+      adminUser: {
+        upsert: jest.fn(({ where, create, update }: any) => ({
+          id: 971,
+          username: where.username,
+          ...(create ?? update),
+        })),
+      },
+      operationLog: {
+        findFirst: jest.fn(() => null),
+        create: jest.fn(({ data }: any) => ({ id: 972, ...data })),
+      },
       artistApplication: {
-        findMany: jest.fn(async ({ where }: any) => {
+        findMany: jest.fn(({ where }: any) => {
           if (where.phone === '13800138121') {
             return [{ id: 1001, phone: where.phone }];
           }
           return [];
         }),
-        findFirst: jest.fn(async ({ where }: any) => {
+        findFirst: jest.fn(({ where }: any) => {
           if (where.phone === '13800138121') {
             return { id: 1001, phone: where.phone };
           }
           return null;
         }),
-        update: jest.fn(async ({ where, data }: any) => ({ id: where.id, ...data })),
-        create: jest.fn(async ({ data }: any) => ({ id: 1002, ...data })),
-        deleteMany: jest.fn(async () => ({ count: 0 })),
+        update: jest.fn(({ where, data }: any) => ({
+          id: where.id,
+          ...data,
+        })),
+        create: jest.fn(({ data }: any) => ({ id: 1002, ...data })),
+        deleteMany: jest.fn(() => ({ count: 0 })),
       },
     };
 
@@ -208,8 +244,9 @@ describe('ensureDemoData', () => {
       }),
     );
     expect(prisma.clientUser.upsert).toHaveBeenCalledTimes(5);
-    expect(prisma.booking.upsert).toHaveBeenCalledTimes(8);
-    expect(prisma.revenue.upsert).toHaveBeenCalledTimes(4);
+    expect(prisma.order.upsert).toHaveBeenCalledTimes(10);
+    expect(prisma.revenue.upsert).toHaveBeenCalledTimes(5);
+    expect(prisma.customServiceRequest.create).toHaveBeenCalled();
     expect(prisma.artistApplication.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 1001 },
@@ -223,7 +260,7 @@ describe('ensureDemoData', () => {
       '13800138004',
       '13800138005',
     ]);
-    expect(result.bookingNos).toContain('DEMO-BKG-1008');
+    expect(result.orderNos).toContain('DEMO-OD-1008');
     expect(result.artistApplicationPhones).toEqual([
       '13800138120',
       '13800138121',

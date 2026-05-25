@@ -9,7 +9,8 @@ describe('AvatarUrlInterceptor', () => {
       switchToHttp: () => ({
         getRequest: () => ({
           protocol: 'http',
-          get: (name: string) => (name === 'host' ? 'localhost:3000' : undefined),
+          get: (name: string) =>
+            name === 'host' ? 'localhost:3000' : undefined,
         }),
       }),
     } as any;
@@ -24,7 +25,9 @@ describe('AvatarUrlInterceptor', () => {
         }),
     };
 
-    const result = await lastValueFrom(interceptor.intercept(context, next as any));
+    const result = await lastValueFrom(
+      interceptor.intercept(context, next as any),
+    );
 
     expect(result).toEqual({
       avatarUrl: 'http://localhost:3000/uploads/avatar.png',

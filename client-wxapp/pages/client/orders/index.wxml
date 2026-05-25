@@ -1,0 +1,16 @@
+<view class="container">
+  <view bindtap="switchStatus" data-status="">全部</view>
+  <view bindtap="switchStatus" data-status="pending_quote">待报价</view>
+  <view bindtap="switchStatus" data-status="quoted">已报价</view>
+  <view bindtap="switchStatus" data-status="confirmed">已确认</view>
+  <view bindtap="switchStatus" data-status="completed">已完成</view>
+  <view wx:for="{{orders}}" bindtap="viewOrder" data-id="{{item.id}}">
+    <text>{{item.orderNo}}</text>
+    <text>{{item.statusText}}</text>
+    <image src="{{item.techAvatar}}" mode="aspectFill"></image>
+    <text>{{item.techName}}</text>
+    <text>{{item.serviceType}}</text>
+    <text>{{item.startTime}}</text>
+    <text>¥{{item.quotePrice}}</text>
+  </view>
+</view>

@@ -1,0 +1,66 @@
+.container {
+  min-height: 100vh;
+  background-color: #ffffff;
+  padding: 40rpx;
+}
+
+.customer-info {
+  text-align: center;
+  padding: 40rpx 0;
+}
+
+.avatar {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 80rpx;
+  margin: 0 auto 20rpx;
+}
+
+.name {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333333;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.phone {
+  font-size: 28rpx;
+  color: #666666;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-around;
+  padding: 40rpx 0;
+  border-top: 1rpx solid #f0f0f0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #ff6b9d;
+  display: block;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  color: #999999;
+  margin-top: 8rpx;
+}
+
+.order-history {
+  margin-top: 40rpx;
+}
+
+.order-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333333;
+  margin-bottom: 20rpx;
+}

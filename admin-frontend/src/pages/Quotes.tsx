@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Table, Button, Space, Select, Tag, message, Card, Modal, Descriptions, Popconfirm } from 'antd';
 import { quoteService } from '../services/quote';
 import type { Quote } from '../services/quote';
@@ -14,7 +14,7 @@ const Quotes: React.FC = () => {
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
   const [filters, setFilters] = useState({ page: 1, limit: 10, technicianId: undefined as number | undefined, status: '' });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const result = await quoteService.getAll({
@@ -24,18 +24,18 @@ const Quotes: React.FC = () => {
         status: filters.status || undefined,
       });
       setData(result);
-    } catch (error) {
+    } catch {
       message.error('获取数据失败');
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
   const fetchTechnicians = async () => {
     try {
       const result = await technicianService.getAll({ limit: 1000 });
       setTechnicians(result.data);
-    } catch (error) {
+    } catch {
       console.error('Failed to fetch technicians');
     }
   };
@@ -46,7 +46,7 @@ const Quotes: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [filters]);
+  }, [fetchData]);
 
   const handleCancel = async (id: number) => {
     try {

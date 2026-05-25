@@ -1,0 +1,22 @@
+.container {
+  min-height: 100vh;
+  background-color: #ffffff;
+  padding: 40rpx;
+}
+
+.schedule-item {
+  padding: 32rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.time {
+  font-size: 28rpx;
+  color: #333333;
+  font-weight: 500;
+}
+
+.service {
+  font-size: 24rpx;
+  color: #666666;
+  margin-top: 8rpx;
+}

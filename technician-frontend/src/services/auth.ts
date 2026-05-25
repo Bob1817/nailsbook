@@ -5,6 +5,9 @@ import type {
   ShopBusinessHour,
   SocialMediaAccounts,
   Technician,
+  TechnicianSubscription,
+  ServiceSchedule,
+  CustomTag,
 } from '../contexts/authTypes';
 
 export interface LoginCredentials {
@@ -32,6 +35,7 @@ interface AuthApiResponse {
     shopService?: boolean;
     shopAddresses?: ShopAddress[];
     socialMedia?: SocialMediaAccounts;
+    subscription?: TechnicianSubscription | null;
     serviceItems?: Technician['serviceItems'];
   };
 }
@@ -49,6 +53,9 @@ interface MeApiResponse {
   shopService?: boolean;
   shopAddresses?: ShopAddress[];
   socialMedia?: SocialMediaAccounts;
+  subscription?: TechnicianSubscription | null;
+  serviceSchedule?: ServiceSchedule | null;
+  customTags?: CustomTag[];
   serviceItems?: Technician['serviceItems'];
 }
 
@@ -107,6 +114,7 @@ export const authService = {
         shopService: response.data.technician.shopService,
         shopAddresses: normalizeShopAddresses(response.data.technician.shopAddresses),
         socialMedia: response.data.technician.socialMedia,
+        subscription: response.data.technician.subscription ?? null,
         serviceItems: response.data.technician.serviceItems,
       },
     };
@@ -139,6 +147,9 @@ export const authService = {
         shopService: response.data.shopService,
         shopAddresses: normalizeShopAddresses(response.data.shopAddresses),
         socialMedia: response.data.socialMedia,
+        subscription: response.data.subscription ?? null,
+        serviceSchedule: response.data.serviceSchedule ?? null,
+        customTags: response.data.customTags ?? [],
         serviceItems: response.data.serviceItems,
       };
     } catch (error) {
@@ -174,6 +185,7 @@ export const authService = {
       invitationCode: currentTechnician?.invitationCode,
       city: response.data.city,
       serviceArea: response.data.serviceArea,
+      subscription: currentTechnician?.subscription,
     };
 
     localStorage.setItem('technician_info', JSON.stringify(technician));
@@ -201,6 +213,9 @@ export const authService = {
       homeService: data.homeService,
       shopService: data.shopService,
       shopAddresses: normalizeShopAddresses(data.shopAddresses),
+      subscription: data.subscription ?? null,
+      serviceSchedule: data.serviceSchedule ?? null,
+      customTags: data.customTags ?? [],
       serviceItems: data.serviceItems,
     };
   },
@@ -212,6 +227,8 @@ export const authService = {
       serviceArea: profile.serviceArea,
       avatarUrl: profile.avatar?.trim() ? profile.avatar.trim() : undefined,
       socialMedia: profile.socialMedia,
+      serviceSchedule: profile.serviceSchedule,
+      customTags: profile.customTags,
     };
     const response = await api.patch('/auth/profile', payload);
     const data = response.data;
@@ -229,6 +246,9 @@ export const authService = {
       shopService: data.shopService,
       shopAddresses: normalizeShopAddresses(data.shopAddresses),
       socialMedia: data.socialMedia,
+      subscription: data.subscription ?? null,
+      serviceSchedule: data.serviceSchedule ?? null,
+      customTags: data.customTags ?? [],
       serviceItems: data.serviceItems,
     };
   },

@@ -76,6 +76,10 @@ model Technician {
   serviceItems   String?                 // JSON array of technician service items
   // Social media accounts
   socialMedia    String?                 // JSON object of social media accounts
+  // Service schedule (JSON: weekly availability + time ranges)
+  serviceSchedule String?
+  // Custom tags (JSON array of {id, name, color})
+  customTags     String?
   customers      Customer[]
   orders         Order[]
   revenues       Revenue[]

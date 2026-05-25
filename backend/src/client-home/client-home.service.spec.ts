@@ -4,21 +4,21 @@ import { ClientHomeService } from './client-home.service';
 describe('ClientHomeService', () => {
   let service: ClientHomeService;
   let prisma: {
-    clientTechBinding: { findUnique: jest.Mock };
+    clientTechBinding: { findFirst: jest.Mock };
     nailWork: { findMany: jest.Mock; findFirst: jest.Mock };
-    booking: { findFirst: jest.Mock };
+    order: { findFirst: jest.Mock };
   };
 
   beforeEach(() => {
     prisma = {
       clientTechBinding: {
-        findUnique: jest.fn(),
+        findFirst: jest.fn(),
       },
       nailWork: {
         findMany: jest.fn(),
         findFirst: jest.fn(),
       },
-      booking: {
+      order: {
         findFirst: jest.fn(),
       },
     };
@@ -26,7 +26,7 @@ describe('ClientHomeService', () => {
   });
 
   it('returns the bound technician, visible works, and latest booking summary for home', async () => {
-    prisma.clientTechBinding.findUnique.mockResolvedValueOnce({
+    prisma.clientTechBinding.findFirst.mockResolvedValueOnce({
       clientId: 11,
       techId: 7,
       technician: {
@@ -50,9 +50,9 @@ describe('ClientHomeService', () => {
         updatedAt: new Date('2026-04-01T00:00:00.000Z'),
       },
     ]);
-    prisma.booking.findFirst.mockResolvedValueOnce({
+    prisma.order.findFirst.mockResolvedValueOnce({
       id: 19,
-      bookingNo: 'BK001',
+      orderNo: 'BK001',
       status: 'confirmed',
       startTime: new Date('2026-05-01T10:00:00.000Z'),
       endTime: new Date('2026-05-01T11:00:00.000Z'),
@@ -66,9 +66,17 @@ describe('ClientHomeService', () => {
       where: {
         techId: 7,
         isVisible: true,
+        isFeatured: true,
       },
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
       take: 6,
+      include: {
+        likes: true,
+        comments: true,
+        technician: {
+          select: { name: true, id: true },
+        },
+      },
     });
     expect(result).toMatchObject({
       technician: {
@@ -79,27 +87,29 @@ describe('ClientHomeService', () => {
         {
           id: 3,
           title: 'Visible work',
-          imageUrls: ['/cover.jpg'],
+          imageUrls: ['http://localhost:3000/cover.jpg'],
         },
       ],
-      latestBooking: {
+      latestOrder: {
         id: 19,
-        bookingNo: 'BK001',
+        orderNo: 'BK001',
         status: 'confirmed',
       },
     });
   });
 
   it('rejects reading home data when the client has no technician binding', async () => {
-    prisma.clientTechBinding.findUnique.mockResolvedValueOnce(null);
+    prisma.clientTechBinding.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
 
     await expect(service.getHome(11)).rejects.toThrow(
-      new NotFoundException('客户绑定不存在'),
+      new NotFoundException('客户未绑定美甲师'),
     );
   });
 
   it('returns visible works for the bound technician with mapped fallback fields', async () => {
-    prisma.clientTechBinding.findUnique.mockResolvedValueOnce({
+    prisma.clientTechBinding.findFirst.mockResolvedValueOnce({
       clientId: 11,
       techId: 7,
       technician: { id: 7 },
@@ -125,16 +135,34 @@ describe('ClientHomeService', () => {
         techId: 7,
         isVisible: true,
       },
-      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+      orderBy: [
+        { isPinned: 'desc' },
+        { sortOrder: 'asc' },
+        { createdAt: 'desc' },
+      ],
+      include: {
+        likes: true,
+        comments: true,
+        technician: {
+          select: { name: true, id: true },
+        },
+      },
     });
     expect(result).toEqual([
       {
         id: 4,
         title: 'Comma images',
-        coverUrl: '/a.jpg',
-        imageUrls: ['/a.jpg', '/b.jpg'],
+        coverUrl: 'http://localhost:3000/a.jpg',
+        imageUrls: [
+          'http://localhost:3000/a.jpg',
+          'http://localhost:3000/b.jpg',
+        ],
         description: null,
         tags: ['short', 'glitter'],
+        likeCount: 0,
+        commentCount: 0,
+        technicianName: '美甲师',
+        technicianId: 7,
         createdAt: new Date('2026-04-02T00:00:00.000Z'),
         updatedAt: new Date('2026-04-03T00:00:00.000Z'),
       },
@@ -142,7 +170,7 @@ describe('ClientHomeService', () => {
   });
 
   it('rejects reading a work when it is missing, invisible, or not owned by the bound technician', async () => {
-    prisma.clientTechBinding.findUnique.mockResolvedValueOnce({
+    prisma.clientTechBinding.findFirst.mockResolvedValueOnce({
       clientId: 11,
       techId: 7,
       technician: { id: 7 },
@@ -157,6 +185,16 @@ describe('ClientHomeService', () => {
         id: 99,
         techId: 7,
         isVisible: true,
+      },
+      include: {
+        likes: true,
+        favorites: true,
+        comments: {
+          orderBy: { createdAt: 'desc' },
+        },
+        technician: {
+          select: { name: true, avatarUrl: true, id: true },
+        },
       },
     });
   });

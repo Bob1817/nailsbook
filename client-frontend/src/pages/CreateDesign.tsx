@@ -53,8 +53,8 @@ const CreateDesign: React.FC = () => {
         description,
       });
       navigate('/designs');
-    } catch (error: any) {
-      alert(error.response?.data?.message || '提交失败，请重试');
+    } catch {
+      alert('提交失败，请重试');
     } finally {
       setSubmitting(false);
     }

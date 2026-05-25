@@ -11,11 +11,11 @@ describe('client-upload config', () => {
     const callback = jest.fn();
 
     clientUploadFileFilter(
-      {} as never,
+      {},
       {
         mimetype: 'image/png',
         originalname: 'design.png',
-      } as never,
+      },
       callback,
     );
 
@@ -26,11 +26,11 @@ describe('client-upload config', () => {
     const callback = jest.fn();
 
     clientUploadFileFilter(
-      {} as never,
+      {},
       {
         mimetype: 'image/png',
         originalname: 'design.svg',
-      } as never,
+      },
       callback,
     );
 
@@ -47,7 +47,7 @@ describe('client-upload config', () => {
       {
         originalname: 'My Design.JPEG',
         mimetype: 'image/jpeg',
-      } as never,
+      },
       callback,
     );
 

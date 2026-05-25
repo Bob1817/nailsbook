@@ -1,0 +1,19 @@
+<view class="container">
+  <view class="search-bar">
+    <input placeholder="搜索作品" bindconfirm="onSearch" />
+  </view>
+  <view class="filter-tabs">
+    <view bindtap="switchTab" data-tab="all">全部</view>
+    <view bindtap="switchTab" data-tab="featured">精选</view>
+    <view bindtap="switchTab" data-tab="new">最新</view>
+  </view>
+  <view class="works-grid">
+    <view wx:for="{{works}}" bindtap="viewWork" data-id="{{item.id}}">
+      <image src="{{item.coverUrl}}" mode="aspectFill"></image>
+      <text>{{item.title}}</text>
+      <image src="{{item.technicianAvatar}}" mode="aspectFill"></image>
+      <text>{{item.technicianName}}</text>
+      <text>{{item.likes}}</text>
+    </view>
+  </view>
+</view>

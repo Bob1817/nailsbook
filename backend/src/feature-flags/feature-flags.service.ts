@@ -6,7 +6,9 @@ export class FeatureFlagsService {
   constructor(private prisma: PrismaService) {}
 
   async findAll() {
-    return this.prisma.featureFlag.findMany({ orderBy: { featureCode: 'asc' } });
+    return this.prisma.featureFlag.findMany({
+      orderBy: { featureCode: 'asc' },
+    });
   }
 
   async findOne(id: number) {
@@ -15,7 +17,10 @@ export class FeatureFlagsService {
     return flag;
   }
 
-  async update(id: number, data: { enabled?: boolean; enabledPlans?: string; description?: string }) {
+  async update(
+    id: number,
+    data: { enabled?: boolean; enabledPlans?: string; description?: string },
+  ) {
     await this.findOne(id);
     return this.prisma.featureFlag.update({ where: { id }, data });
   }
@@ -29,7 +34,9 @@ export class FeatureFlagsService {
   }
 
   async isEnabled(featureCode: string, planCode?: string): Promise<boolean> {
-    const flag = await this.prisma.featureFlag.findUnique({ where: { featureCode } });
+    const flag = await this.prisma.featureFlag.findUnique({
+      where: { featureCode },
+    });
     if (!flag || !flag.enabled) return false;
     if (!planCode || !flag.enabledPlans) return flag.enabled;
     try {

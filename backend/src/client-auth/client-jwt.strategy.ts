@@ -5,7 +5,10 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { getClientJwtSecret } from './client-auth.config';
 
 @Injectable()
-export class ClientJwtStrategy extends PassportStrategy(Strategy, 'client-jwt') {
+export class ClientJwtStrategy extends PassportStrategy(
+  Strategy,
+  'client-jwt',
+) {
   constructor(configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -14,7 +17,7 @@ export class ClientJwtStrategy extends PassportStrategy(Strategy, 'client-jwt') 
     });
   }
 
-  async validate(payload: any) {
+  validate(payload: any) {
     if (payload.userType !== 'client') {
       throw new UnauthorizedException('无效的客户端令牌');
     }

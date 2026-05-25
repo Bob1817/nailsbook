@@ -1,0 +1,94 @@
+.container {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #fff0f5 0%, #ffffff 50%);
+  padding: 120rpx 48rpx 60rpx;
+}
+
+.logo-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 100rpx;
+}
+
+.logo {
+  font-size: 120rpx;
+  margin-bottom: 32rpx;
+}
+
+.app-name {
+  font-size: 48rpx;
+  font-weight: 600;
+  color: #ff6b9d;
+  margin-bottom: 16rpx;
+}
+
+.app-desc {
+  font-size: 28rpx;
+  color: #999999;
+}
+
+.role-section {
+  margin-bottom: 80rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333333;
+  margin-bottom: 32rpx;
+  display: block;
+}
+
+.role-card {
+  display: flex;
+  align-items: center;
+  background-color: #ffffff;
+  border-radius: 24rpx;
+  padding: 40rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 24rpx rgba(255, 107, 157, 0.1);
+}
+
+.role-icon {
+  font-size: 80rpx;
+  margin-right: 32rpx;
+}
+
+.role-info {
+  flex: 1;
+}
+
+.role-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333333;
+  margin-bottom: 8rpx;
+  display: block;
+}
+
+.role-desc {
+  font-size: 26rpx;
+  color: #999999;
+  display: block;
+}
+
+.arrow {
+  font-size: 48rpx;
+  color: #cccccc;
+}
+
+.footer {
+  text-align: center;
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.footer-text {
+  display: inline;
+}
+
+.link {
+  display: inline;
+  color: #ff6b9d;
+}

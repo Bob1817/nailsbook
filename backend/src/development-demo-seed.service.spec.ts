@@ -28,13 +28,22 @@ describe('DevelopmentDemoSeedService', () => {
 
     (ensureDemoData as jest.Mock).mockResolvedValue({
       technicianPhone: '13800138000',
-      clientPhones: ['13800138001', '13800138002', '13800138003', '13800138004', '13800138005'],
+      clientPhones: [
+        '13800138001',
+        '13800138002',
+        '13800138003',
+        '13800138004',
+        '13800138005',
+      ],
       bookingNos: ['DEMO-BKG-1001'],
       revenueNos: ['DEMO-REV-1001'],
       artistApplicationPhones: ['13800138120'],
     });
 
-    service = new DevelopmentDemoSeedService(prisma as any, configService as ConfigService);
+    service = new DevelopmentDemoSeedService(
+      prisma as any,
+      configService as ConfigService,
+    );
   });
 
   it('runs the demo seed in development when auto seed is enabled', async () => {

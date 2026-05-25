@@ -1,0 +1,36 @@
+<view class="container">
+  <view class="logo-section">
+    <text class="logo">💅</text>
+    <text class="app-name">NailBook</text>
+    <text class="app-desc">美甲预约，让美丽更简单</text>
+  </view>
+
+  <view class="role-section">
+    <text class="section-title">选择您的身份</text>
+
+    <view class="role-card" bindtap="selectRole" data-role="client">
+      <text class="role-icon">👩</text>
+      <view class="role-info">
+        <text class="role-title">我是客户</text>
+        <text class="role-desc">浏览作品、预约美甲服务</text>
+      </view>
+      <text class="arrow">›</text>
+    </view>
+
+    <view class="role-card" bindtap="selectRole" data-role="technician">
+      <text class="role-icon">💇</text>
+      <view class="role-info">
+        <text class="role-title">我是美甲师</text>
+        <text class="role-desc">管理预约、服务客户、展示作品</text>
+      </view>
+      <text class="arrow">›</text>
+    </view>
+  </view>
+
+  <view class="footer">
+    <text class="footer-text">登录即表示同意</text>
+    <text class="link">《用户协议》</text>
+    <text class="footer-text">和</text>
+    <text class="link">《隐私政策》</text>
+  </view>
+</view>

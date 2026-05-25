@@ -10,7 +10,7 @@ interface AppPageProps extends React.HTMLAttributes<HTMLElement> {
 export function AppPage({ title, subtitle, actions, children, className = '', ...props }: AppPageProps) {
   return (
     <main
-      className={`min-h-full bg-page px-lg pb-24 pt-xl font-sans text-text-primary ${className}`.trim()}
+      className={`min-h-full overflow-x-hidden bg-page px-lg pb-24 pt-xl font-sans text-text-primary ${className}`.trim()}
       {...props}
     >
       <header className="mb-lg flex items-start justify-between gap-3">

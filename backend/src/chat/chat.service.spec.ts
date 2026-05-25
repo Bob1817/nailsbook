@@ -34,19 +34,32 @@ describe('ChatService', () => {
     it('should create a new conversation when conversationId is not provided (client sending to tech)', async () => {
       mockPrisma.conversation.findUnique.mockResolvedValue(null);
       mockPrisma.conversation.create.mockResolvedValue({
-        id: 1, clientId: 10, techId: 20,
-        lastMessage: 'hello', lastMessageAt: new Date(),
+        id: 1,
+        clientId: 10,
+        techId: 20,
+        lastMessage: 'hello',
+        lastMessageAt: new Date(),
       });
       mockPrisma.message.create.mockResolvedValue({
-        id: 1, conversationId: 1, senderType: 'client', senderId: 10,
-        receiverType: 'technician', receiverId: 20,
-        messageType: 'text', content: 'hello', isRead: false, createdAt: new Date(),
+        id: 1,
+        conversationId: 1,
+        senderType: 'client',
+        senderId: 10,
+        receiverType: 'technician',
+        receiverId: 20,
+        messageType: 'text',
+        content: 'hello',
+        isRead: false,
+        createdAt: new Date(),
       });
       mockPrisma.conversation.update.mockResolvedValue({});
 
       const result = await service.sendMessage({
-        senderType: 'client', senderId: 10,
-        techId: 20, messageType: 'text', content: 'hello',
+        senderType: 'client',
+        senderId: 10,
+        techId: 20,
+        messageType: 'text',
+        content: 'hello',
       });
 
       expect(mockPrisma.conversation.create).toHaveBeenCalled();
@@ -57,18 +70,30 @@ describe('ChatService', () => {
 
     it('should use existing conversation when conversationId is provided', async () => {
       mockPrisma.conversation.findUnique.mockResolvedValue({
-        id: 5, clientId: 10, techId: 20,
+        id: 5,
+        clientId: 10,
+        techId: 20,
       });
       mockPrisma.message.create.mockResolvedValue({
-        id: 2, conversationId: 5, senderType: 'technician', senderId: 20,
-        receiverType: 'client', receiverId: 10,
-        messageType: 'text', content: 'hi', isRead: false, createdAt: new Date(),
+        id: 2,
+        conversationId: 5,
+        senderType: 'technician',
+        senderId: 20,
+        receiverType: 'client',
+        receiverId: 10,
+        messageType: 'text',
+        content: 'hi',
+        isRead: false,
+        createdAt: new Date(),
       });
       mockPrisma.conversation.update.mockResolvedValue({});
 
       const result = await service.sendMessage({
-        senderType: 'technician', senderId: 20,
-        conversationId: 5, messageType: 'text', content: 'hi',
+        senderType: 'technician',
+        senderId: 20,
+        conversationId: 5,
+        messageType: 'text',
+        content: 'hi',
       });
 
       expect(mockPrisma.conversation.create).not.toHaveBeenCalled();
@@ -80,26 +105,41 @@ describe('ChatService', () => {
 
       await expect(
         service.sendMessage({
-          senderType: 'client', senderId: 10,
-          conversationId: 999, messageType: 'text', content: 'hello',
+          senderType: 'client',
+          senderId: 10,
+          conversationId: 999,
+          messageType: 'text',
+          content: 'hello',
         }),
       ).rejects.toThrow('Conversation not found');
     });
 
     it('should find existing conversation by clientId_techId unique constraint', async () => {
       mockPrisma.conversation.findUnique.mockResolvedValue({
-        id: 3, clientId: 10, techId: 20,
+        id: 3,
+        clientId: 10,
+        techId: 20,
       });
       mockPrisma.message.create.mockResolvedValue({
-        id: 3, conversationId: 3, senderType: 'client', senderId: 10,
-        receiverType: 'technician', receiverId: 20,
-        messageType: 'text', content: 'test', isRead: false, createdAt: new Date(),
+        id: 3,
+        conversationId: 3,
+        senderType: 'client',
+        senderId: 10,
+        receiverType: 'technician',
+        receiverId: 20,
+        messageType: 'text',
+        content: 'test',
+        isRead: false,
+        createdAt: new Date(),
       });
       mockPrisma.conversation.update.mockResolvedValue({});
 
       const result = await service.sendMessage({
-        senderType: 'client', senderId: 10,
-        techId: 20, messageType: 'text', content: 'test',
+        senderType: 'client',
+        senderId: 10,
+        techId: 20,
+        messageType: 'text',
+        content: 'test',
       });
 
       expect(mockPrisma.conversation.findUnique).toHaveBeenCalledWith({
@@ -117,7 +157,12 @@ describe('ChatService', () => {
       await service.markAsRead(1, 'client', 10);
 
       expect(mockPrisma.message.updateMany).toHaveBeenCalledWith({
-        where: { conversationId: 1, receiverType: 'client', receiverId: 10, isRead: false },
+        where: {
+          conversationId: 1,
+          receiverType: 'client',
+          receiverId: 10,
+          isRead: false,
+        },
         data: { isRead: true },
       });
     });
@@ -126,7 +171,9 @@ describe('ChatService', () => {
   describe('getUserConversationIds', () => {
     it('should return conversation IDs for a client', async () => {
       mockPrisma.conversation.findMany.mockResolvedValue([
-        { id: 1 }, { id: 2 }, { id: 3 },
+        { id: 1 },
+        { id: 2 },
+        { id: 3 },
       ]);
 
       const ids = await service.getUserConversationIds(10, 'client');

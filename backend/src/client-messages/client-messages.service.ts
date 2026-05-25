@@ -1,15 +1,28 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CreateClientMessageDto } from './dto/create-client-message.dto';
 
-const ALLOWED_MESSAGE_TYPES = new Set(['text', 'image', 'system', 'quote', 'booking']);
+const ALLOWED_MESSAGE_TYPES = new Set([
+  'text',
+  'image',
+  'system',
+  'quote',
+  'booking',
+]);
 
 @Injectable()
 export class ClientMessagesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(clientUserId: number, conversationId: number) {
-    const conversation = await this.findOwnedConversation(clientUserId, conversationId);
+    const conversation = await this.findOwnedConversation(
+      clientUserId,
+      conversationId,
+    );
 
     const messages = await this.prisma.message.findMany({
       where: { conversationId },
@@ -59,7 +72,9 @@ export class ClientMessagesService {
       },
       _count: { id: true },
     });
-    const unreadMap = new Map(unreadCounts.map((u) => [u.conversationId, u._count.id]));
+    const unreadMap = new Map(
+      unreadCounts.map((u) => [u.conversationId, u._count.id]),
+    );
 
     return conversations.map((conv) => ({
       id: conv.id,
@@ -92,7 +107,10 @@ export class ClientMessagesService {
     let conversation;
 
     if (dto.conversationId) {
-      conversation = await this.findOwnedConversation(clientUserId, dto.conversationId);
+      conversation = await this.findOwnedConversation(
+        clientUserId,
+        dto.conversationId,
+      );
     } else if (dto.techId) {
       // Create or find conversation with specific technician
       const binding = await this.prisma.clientTechBinding.findFirst({
@@ -161,7 +179,10 @@ export class ClientMessagesService {
     };
   }
 
-  private async findOwnedConversation(clientUserId: number, conversationId: number) {
+  private async findOwnedConversation(
+    clientUserId: number,
+    conversationId: number,
+  ) {
     const conversation = await this.prisma.conversation.findFirst({
       where: {
         id: conversationId,

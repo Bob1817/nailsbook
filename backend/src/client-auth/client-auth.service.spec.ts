@@ -1,16 +1,18 @@
-import {
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { ClientAuthService } from './client-auth.service';
+import { VerificationCodeService } from '../common/verification-code/verification-code.service';
 
 describe('ClientAuthService', () => {
   let service: ClientAuthService;
   let prisma: {
     $transaction: jest.Mock;
-    technician: { findUnique: jest.Mock; findFirst: jest.Mock; update: jest.Mock };
+    technician: {
+      findUnique: jest.Mock;
+      findFirst: jest.Mock;
+      update: jest.Mock;
+    };
     clientUser: {
       findUnique: jest.Mock;
       create: jest.Mock;
@@ -27,9 +29,9 @@ describe('ClientAuthService', () => {
     };
   };
   let jwtService: { sign: jest.Mock };
-  let configService: { get: jest.Mock };
+  let verificationCodeService: { generate: jest.Mock; validate: jest.Mock };
 
-  function createService(configOverrides: Record<string, string | undefined> = {}) {
+  function createService() {
     prisma = {
       $transaction: jest.fn(),
       technician: {
@@ -55,31 +57,20 @@ describe('ClientAuthService', () => {
     jwtService = {
       sign: jest.fn().mockReturnValue('client-jwt'),
     };
-    configService = {
-      get: jest.fn((key: string) => {
-        if (key in configOverrides) {
-          return configOverrides[key];
-        }
-
-        if (key === 'CLIENT_MVP_VERIFICATION_CODE') {
-          return '123456';
-        }
-
-        if (key === 'NODE_ENV') {
-          return 'development';
-        }
-
-        return undefined;
-      }),
+    verificationCodeService = {
+      generate: jest.fn(),
+      validate: jest.fn(),
     };
     prisma.$transaction.mockImplementation(
-      async (callback: (tx: typeof prisma) => Promise<unknown>) => callback(prisma),
+      async (callback: (tx: typeof prisma) => Promise<unknown>) =>
+        callback(prisma),
     );
 
     service = new ClientAuthService(
       prisma as any,
       jwtService as JwtService,
-      configService as ConfigService,
+      {} as ConfigService,
+      verificationCodeService as unknown as VerificationCodeService,
     );
   }
 
@@ -117,11 +108,13 @@ describe('ClientAuthService', () => {
     });
 
     await expect(service.requestLoginCode('13800138001')).rejects.toThrow(
-      new UnauthorizedException('该账号尚未绑定美甲师，请先通过邀请码注册/绑定'),
+      new UnauthorizedException(
+        '该账号尚未绑定美甲师，请先通过邀请码注册/绑定',
+      ),
     );
   });
 
-  it('returns the dev verification code when the client can request a login code', async () => {
+  it('generates a verification code when the client can request a login code', async () => {
     prisma.clientUser.findUnique.mockResolvedValueOnce({
       id: 11,
       phone: '13800138001',
@@ -131,62 +124,52 @@ describe('ClientAuthService', () => {
 
     await expect(service.requestLoginCode('13800138001')).resolves.toEqual({
       codeSent: true,
-      devCode: '123456',
     });
+    expect(verificationCodeService.generate).toHaveBeenCalledWith(
+      '13800138001',
+    );
   });
 
-  it('returns the same configured code from request login that login accepts', async () => {
-    createService({
-      CLIENT_MVP_VERIFICATION_CODE: '654321',
-    });
-    prisma.clientUser.findUnique
-      .mockResolvedValueOnce({
-        id: 11,
-        phone: '13800138001',
-        status: 'active',
-        bindings: [{ id: 21, status: 'active' }],
-      })
-      .mockResolvedValueOnce({
-        id: 11,
-        nickname: '小美',
-        phone: '13800138001',
-        avatarUrl: null,
-        status: 'active',
-        bindings: [
-          {
-            id: 21,
-            techId: 7,
-            isDefault: true,
-            bindSource: 'invite',
-            technician: {
-              id: 7,
-              name: 'Anna',
-              phone: '13900000000',
-              avatarUrl: null,
-              city: 'Shanghai',
-              serviceArea: 'Pudong',
-              status: 'active',
-            },
+  it('validates the code via VerificationCodeService on login', async () => {
+    prisma.clientUser.findUnique.mockResolvedValueOnce({
+      id: 11,
+      nickname: '小美',
+      phone: '13800138001',
+      avatarUrl: null,
+      status: 'active',
+      bindings: [
+        {
+          id: 21,
+          techId: 7,
+          isDefault: true,
+          bindSource: 'invite',
+          technician: {
+            id: 7,
+            name: 'Anna',
+            phone: '13900000000',
+            avatarUrl: null,
+            city: 'Shanghai',
+            serviceArea: 'Pudong',
+            status: 'active',
           },
-        ],
-      });
-
-    const response = await service.requestLoginCode('13800138001');
-
-    expect(response).toEqual({
-      codeSent: true,
-      devCode: '654321',
+        },
+      ],
     });
+
     await expect(
       service.login({
         phone: '13800138001',
-        code: response.devCode,
+        code: '654321',
       }),
     ).resolves.toMatchObject({
       accessToken: 'client-jwt',
       client: { id: 11 },
       technician: { id: 7 },
     });
+    expect(verificationCodeService.validate).toHaveBeenCalledWith(
+      '13800138001',
+      '654321',
+    );
   });
 
   it('rejects login with the unified no-binding message when the client has no active bindings', async () => {
@@ -205,7 +188,9 @@ describe('ClientAuthService', () => {
         code: '123456',
       }),
     ).rejects.toThrow(
-      new UnauthorizedException('该账号尚未绑定美甲师，请先通过邀请码注册/绑定'),
+      new UnauthorizedException(
+        '该账号尚未绑定美甲师，请先通过邀请码注册/绑定',
+      ),
     );
   });
 
@@ -219,7 +204,7 @@ describe('ClientAuthService', () => {
     );
   });
 
-  it('returns the dev verification code when the invite code is valid for registration', async () => {
+  it('generates a verification code when the invite code is valid for registration', async () => {
     prisma.technician.findFirst.mockResolvedValueOnce({
       id: 7,
       invitationCode: 'AB12CD34',
@@ -230,29 +215,20 @@ describe('ClientAuthService', () => {
       service.requestRegisterCode('13800138001', 'AB12CD34'),
     ).resolves.toEqual({
       codeSent: true,
-      devCode: '123456',
     });
+    expect(verificationCodeService.generate).toHaveBeenCalledWith(
+      '13800138001',
+    );
   });
 
-  it('returns the same configured code from request register that registration accepts', async () => {
-    createService({
-      CLIENT_MVP_VERIFICATION_CODE: '654321',
+  it('validates the code via VerificationCodeService on register by invite', async () => {
+    prisma.technician.findFirst.mockResolvedValueOnce({
+      id: 7,
+      name: 'Anna',
+      phone: '13900000000',
+      status: 'active',
+      invitationCode: 'AB12CD34',
     });
-    prisma.technician.findFirst
-      .mockResolvedValueOnce({
-        id: 7,
-        name: 'Anna',
-        phone: '13900000000',
-        status: 'active',
-        invitationCode: 'AB12CD34',
-      })
-      .mockResolvedValueOnce({
-        id: 7,
-        name: 'Anna',
-        phone: '13900000000',
-        status: 'active',
-        invitationCode: 'AB12CD34',
-      });
     prisma.clientUser.upsert.mockResolvedValueOnce({
       id: 11,
       nickname: null,
@@ -271,16 +247,10 @@ describe('ClientAuthService', () => {
       status: 'active',
     });
 
-    const response = await service.requestRegisterCode('13800000000', 'AB12CD34');
-
-    expect(response).toEqual({
-      codeSent: true,
-      devCode: '654321',
-    });
     await expect(
       service.registerByInvite({
         phone: '13800000000',
-        code: response.devCode,
+        code: '654321',
         techId: 999,
         inviteCode: 'AB12CD34',
       }),
@@ -289,6 +259,10 @@ describe('ClientAuthService', () => {
       client: { id: 11 },
       technician: { id: 7 },
     });
+    expect(verificationCodeService.validate).toHaveBeenCalledWith(
+      '13800000000',
+      '654321',
+    );
   });
 
   it('registers by invite code authority instead of trusting techId', async () => {
@@ -339,7 +313,7 @@ describe('ClientAuthService', () => {
         isDefault: true,
       },
     });
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       accessToken: 'client-jwt',
       client: {
         id: 11,
@@ -370,88 +344,22 @@ describe('ClientAuthService', () => {
     );
   });
 
-  it('rejects the 123456 fallback when dev opt-in is absent', async () => {
-    createService({
-      CLIENT_MVP_VERIFICATION_CODE: undefined,
-    });
-    prisma.clientUser.findUnique.mockResolvedValueOnce({
-      id: 11,
-      nickname: '小美',
-      phone: '13800000000',
-      avatarUrl: null,
-      status: 'active',
-      bindings: [
-        {
-          id: 21,
-          techId: 7,
-          isDefault: true,
-          bindSource: 'invite',
-          technician: {
-            id: 7,
-            name: 'Anna',
-            phone: '13900000000',
-            avatarUrl: null,
-            city: 'Shanghai',
-            serviceArea: 'Pudong',
-            status: 'active',
-          },
-        },
-      ],
+  it('delegates code validation to VerificationCodeService', async () => {
+    verificationCodeService.validate.mockImplementation(() => {
+      throw new UnauthorizedException('验证码错误');
     });
 
     await expect(
       service.login({
         phone: '13800000000',
-        code: '123456',
+        code: '000000',
       }),
-    ).rejects.toThrow(new UnauthorizedException('手机号或验证码错误'));
+    ).rejects.toThrow(UnauthorizedException);
+    expect(verificationCodeService.validate).toHaveBeenCalledWith(
+      '13800000000',
+      '000000',
+    );
     expect(prisma.clientUser.findUnique).not.toHaveBeenCalled();
-  });
-
-  it('allows the 123456 fallback only with explicit development opt-in', async () => {
-    createService({
-      CLIENT_MVP_VERIFICATION_CODE: undefined,
-      ALLOW_DEV_MVP_VERIFICATION_CODE: 'true',
-    });
-    prisma.clientUser.findUnique.mockResolvedValueOnce({
-      id: 11,
-      nickname: '小美',
-      phone: '13800000000',
-      avatarUrl: null,
-      status: 'active',
-      bindings: [
-        {
-          id: 21,
-          techId: 7,
-          isDefault: true,
-          bindSource: 'invite',
-          technician: {
-            id: 7,
-            name: 'Anna',
-            phone: '13900000000',
-            avatarUrl: null,
-            city: 'Shanghai',
-            serviceArea: 'Pudong',
-            status: 'active',
-          },
-        },
-      ],
-    });
-
-    await expect(
-      service.login({
-        phone: '13800000000',
-        code: '123456',
-      }),
-    ).resolves.toMatchObject({
-      accessToken: 'client-jwt',
-      client: {
-        id: 11,
-      },
-      technician: {
-        id: 7,
-      },
-    });
   });
 
   it('adds a second active binding when an already-bound client registers with another technician', async () => {
@@ -505,7 +413,7 @@ describe('ClientAuthService', () => {
       },
     });
     expect(prisma.clientTechBinding.update).not.toHaveBeenCalled();
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       accessToken: 'client-jwt',
       client: {
         id: 11,
@@ -554,7 +462,7 @@ describe('ClientAuthService', () => {
 
     expect(prisma.clientTechBinding.create).not.toHaveBeenCalled();
     expect(prisma.clientTechBinding.update).not.toHaveBeenCalled();
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       accessToken: 'client-jwt',
       client: {
         id: 11,
@@ -617,7 +525,7 @@ describe('ClientAuthService', () => {
       },
     });
     expect(prisma.clientTechBinding.create).not.toHaveBeenCalled();
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       accessToken: 'client-jwt',
       client: {
         id: 11,

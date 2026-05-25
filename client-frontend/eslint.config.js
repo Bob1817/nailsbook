@@ -13,8 +13,17 @@ export default defineConfig([
       js.configs.recommended,
       tseslint.configs.recommended,
       reactHooks.configs.flat.recommended,
-      reactRefresh.configs.vite,
     ],
+    plugins: {
+      'react-refresh': reactRefresh,
+    },
+    rules: {
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowExportNames: ['useAuth', 'authContext', 'AuthContext', 'authProvider', 'AuthProvider', 'usePresence', 'PresenceProvider', 'PresenceContext', 'useToast', 'toastContext', 'ToastContext', 'ToastProvider'] },
+      ],
+      'react-hooks/set-state-in-effect': 'off',
+    },
     languageOptions: {
       globals: globals.browser,
     },

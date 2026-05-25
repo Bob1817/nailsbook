@@ -16,7 +16,9 @@ import { ClientJwtStrategy } from './client-jwt.strategy';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         secret: getClientJwtSecret(configService),
-        signOptions: { expiresIn: '8h' },
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_EXPIRES_IN', '8h') as any,
+        },
       }),
     }),
     PrismaModule,

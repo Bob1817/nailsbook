@@ -42,8 +42,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       let userId: number | null = null;
       let userType: 'client' | 'technician' | null = null;
 
-      const clientSecret = process.env.CLIENT_JWT_SECRET || process.env.JWT_SECRET || '';
-      const techSecret = process.env.TECHNICIAN_JWT_SECRET || process.env.JWT_SECRET || '';
+      const clientSecret =
+        process.env.CLIENT_JWT_SECRET || process.env.JWT_SECRET || '';
+      const techSecret =
+        process.env.TECHNICIAN_JWT_SECRET || process.env.JWT_SECRET || '';
 
       try {
         const payload = jwt.verify(bearer, clientSecret) as any;
@@ -51,7 +53,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           userId = payload.sub;
           userType = 'client';
         }
-      } catch {}
+      } catch {
+        // Intentionally empty - try next JWT strategy
+      }
 
       if (!userId) {
         try {
@@ -60,7 +64,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             userId = payload.sub;
             userType = 'technician';
           }
-        } catch {}
+        } catch {
+          // Intentionally empty - invalid token
+        }
       }
 
       if (!userId || !userType) {
@@ -73,7 +79,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       (client as any).userType = userType;
 
       // Join all conversation rooms
-      const conversationIds = await this.chatService.getUserConversationIds(userId, userType);
+      const conversationIds = await this.chatService.getUserConversationIds(
+        userId,
+        userType,
+      );
       for (const convId of conversationIds) {
         client.join(`conversation:${convId}`);
       }
@@ -82,7 +91,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const status = this.presenceService.userConnected(userId, userType);
       if (status === 'joined') {
         for (const convId of conversationIds) {
-          client.to(`conversation:${convId}`).emit('presence:online', { userId, userType });
+          client
+            .to(`conversation:${convId}`)
+            .emit('presence:online', { userId, userType });
         }
       }
 
@@ -91,7 +102,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         onlineUsers: this.presenceService.getOnlineUsers(),
       });
 
-      console.log(`[ChatGateway] ${userType} ${userId} connected (socket: ${client.id})`);
+      console.log(
+        `[ChatGateway] ${userType} ${userId} connected (socket: ${client.id})`,
+      );
     } catch (err) {
       console.error('[ChatGateway] Connection error:', err);
       client.disconnect();
@@ -100,15 +113,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   async handleDisconnect(client: Socket) {
     const userId = (client as any).userId as number | undefined;
-    const userType = (client as any).userType as 'client' | 'technician' | undefined;
+    const userType = (client as any).userType as
+      | 'client'
+      | 'technician'
+      | undefined;
 
     if (!userId || !userType) return;
 
     const status = this.presenceService.userDisconnected(userId);
     if (status === 'left') {
-      const conversationIds = await this.chatService.getUserConversationIds(userId, userType);
+      const conversationIds = await this.chatService.getUserConversationIds(
+        userId,
+        userType,
+      );
       for (const convId of conversationIds) {
-        this.server.to(`conversation:${convId}`).emit('presence:offline', { userId, userType });
+        this.server
+          .to(`conversation:${convId}`)
+          .emit('presence:offline', { userId, userType });
       }
     }
 

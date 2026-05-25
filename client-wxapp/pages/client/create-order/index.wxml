@@ -1,0 +1,6 @@
+<view class="container">
+  <view class="empty-page">
+    <text>功能开发中</text>
+    <text class="sub-text">该页面正在紧张开发中</text>
+  </view>
+</view>

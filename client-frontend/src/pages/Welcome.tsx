@@ -28,8 +28,8 @@ const Welcome: React.FC = () => {
     try {
       await updateProfile({ nickname: nickname.trim() });
       navigate('/home', { replace: true });
-    } catch (err: any) {
-      setError(err.response?.data?.message || '保存失败，请重试');
+    } catch {
+      setError('保存失败，请重试');
     } finally {
       setLoading(false);
     }

@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { homeService, type HomeData } from '../services/home';
 import { orderService, type Order } from '../services/order';
-import { TripCardSkeleton, CardSkeleton, Skeleton } from '../components/Skeleton';
+import { TripCardSkeleton, Skeleton } from '../components/Skeleton';
 import dayjs from 'dayjs';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -34,11 +34,7 @@ const Home: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  useEffect(() => {
-    loadHomeData();
-  }, []);
-
-  const loadHomeData = async () => {
+  const loadHomeData = useCallback(async () => {
     try {
       const [data, tripsData] = await Promise.all([
         homeService.getHome(),
@@ -46,12 +42,16 @@ const Home: React.FC = () => {
       ]);
       setHomeData(data);
       setTrips(tripsData);
-    } catch (error) {
-      console.error('Failed to load home data:', error);
+    } catch {
+      console.error('Failed to load home data');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadHomeData();
+  }, [loadHomeData]);
 
   const handleSlideChange = useCallback((index: number) => {
     setCurrentSlide(index);

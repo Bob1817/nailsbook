@@ -45,8 +45,8 @@ const Profile: React.FC = () => {
       setShowBindModal(false);
       setInviteCode('');
       setFoundTechnician(null);
-    } catch (error: any) {
-      alert(error.response?.data?.message || '绑定失败');
+    } catch {
+      alert('绑定失败');
     } finally {
       setBindingLoading(false);
     }
@@ -56,16 +56,16 @@ const Profile: React.FC = () => {
     if (!confirm(`确定要解除与"${techName}"的绑定吗？`)) return;
     try {
       await unbindTechnician(techId);
-    } catch (error: any) {
-      alert(error.response?.data?.message || '解除绑定失败');
+    } catch {
+      alert('解除绑定失败');
     }
   };
 
   const handleSetDefault = async (techId: number) => {
     try {
       await setDefaultTechnician(techId);
-    } catch (error: any) {
-      alert(error.response?.data?.message || '设置失败');
+    } catch {
+      alert('设置失败');
     }
   };
 

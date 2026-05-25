@@ -1,11 +1,21 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 
 @Injectable()
 export class CustomersService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(page: number = 1, limit: number = 20, technicianId?: number, search?: string, tags?: string) {
+  async findAll(
+    page: number = 1,
+    limit: number = 20,
+    technicianId?: number,
+    search?: string,
+    tags?: string,
+  ) {
     const where: any = {};
 
     if (technicianId) {
@@ -104,5 +114,38 @@ export class CustomersService {
     }
 
     return customer;
+  }
+
+  async updateTags(id: number, technicianId: number, tags: string) {
+    const customer = await this.findOne(id);
+
+    if (customer.technicianId !== technicianId) {
+      throw new ForbiddenException('无权修改该客户标签');
+    }
+
+    return this.prisma.customer.update({
+      where: { id },
+      data: { tags: tags || null },
+      select: { id: true, name: true, tags: true },
+    });
+  }
+
+  async getDistinctTags(technicianId: number) {
+    const customers = await this.prisma.customer.findMany({
+      where: { technicianId, tags: { not: null } },
+      select: { tags: true },
+    });
+
+    const tagSet = new Set<string>();
+    for (const c of customers) {
+      if (c.tags) {
+        c.tags
+          .split(/[,，]/)
+          .map((t) => t.trim())
+          .filter(Boolean)
+          .forEach((t) => tagSet.add(t));
+      }
+    }
+    return [...tagSet].sort();
   }
 }

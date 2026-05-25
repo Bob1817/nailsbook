@@ -1,0 +1,25 @@
+<view class="container">
+  <image src="{{work.coverUrl}}" mode="aspectFill"></image>
+  <view class="info">
+    <text>{{work.title}}</text>
+    <text>{{work.description}}</text>
+    <text>{{work.serviceType}}</text>
+    <text>{{work.createdAt}}</text>
+    <view>
+      <text>♥ {{work.likes}}</text>
+      <text>★ {{work.favorites}}</text>
+    </view>
+  </view>
+  <view class="technician">
+    <image src="{{work.technicianAvatar}}" mode="aspectFill"></image>
+    <text>{{work.technicianName}}</text>
+  </view>
+  <view class="comments">
+    <view wx:for="{{comments}}" bindtap="viewComment" data-id="{{item.id}}">
+      <image src="{{item.userAvatar}}" mode="aspectFill"></image>
+      <text>{{item.userName}}</text>
+      <text>{{item.content}}</text>
+      <text>{{item.createdAt}}</text>
+    </view>
+  </view>
+</view>

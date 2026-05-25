@@ -53,7 +53,11 @@ export class DashboardService {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const [newTechniciansLast30Days, newCustomersLast30Days, revenueLast30Days] = await Promise.all([
+    const [
+      newTechniciansLast30Days,
+      newCustomersLast30Days,
+      revenueLast30Days,
+    ] = await Promise.all([
       this.prisma.technician.count({
         where: { createdAt: { gte: thirtyDaysAgo } },
       }),
@@ -66,15 +70,17 @@ export class DashboardService {
       }),
     ]);
 
-    const subscriptionByPlan = await this.prisma.technicianSubscription.groupBy({
-      by: ['planId'],
-      _count: { id: true },
-      where: { status: 'active' },
-    });
+    const subscriptionByPlan = await this.prisma.technicianSubscription.groupBy(
+      {
+        by: ['planId'],
+        _count: { id: true },
+        where: { status: 'active' },
+      },
+    );
 
     const plans = await this.prisma.subscriptionPlan.findMany();
-    const subscriptionStats = subscriptionByPlan.map(item => {
-      const plan = plans.find(p => p.id === item.planId);
+    const subscriptionStats = subscriptionByPlan.map((item) => {
+      const plan = plans.find((p) => p.id === item.planId);
       return {
         planId: item.planId,
         planName: plan?.name || 'Unknown',
@@ -116,7 +122,7 @@ export class DashboardService {
 
   async getBusinessStats(startDate?: string, endDate?: string) {
     const where: any = {};
-    
+
     if (startDate || endDate) {
       where.recognizedAt = {};
       if (startDate) {
@@ -148,14 +154,14 @@ export class DashboardService {
       take: 10,
     });
 
-    const technicianIds = topTechnicians.map(t => t.technicianId);
+    const technicianIds = topTechnicians.map((t) => t.technicianId);
     const technicians = await this.prisma.technician.findMany({
       where: { id: { in: technicianIds } },
       select: { id: true, name: true, phone: true },
     });
 
-    const topTechniciansWithInfo = topTechnicians.map(t => {
-      const tech = technicians.find(tr => tr.id === t.technicianId);
+    const topTechniciansWithInfo = topTechnicians.map((t) => {
+      const tech = technicians.find((tr) => tr.id === t.technicianId);
       return {
         technicianId: t.technicianId,
         technicianName: tech?.name || 'Unknown',

@@ -103,23 +103,34 @@ export class OrdersScheduler {
 
         if (systemMessages.length > 0 && conversationId) {
           try {
-            const updatedConversation = await this.prisma.conversation.findUnique({
-              where: { id: conversationId },
-            });
-            for (const msg of systemMessages) {
-              this.chatGateway.server.to(`conversation:${conversationId}`).emit('message:new', {
-                message: msg,
-                conversation: updatedConversation,
+            const updatedConversation =
+              await this.prisma.conversation.findUnique({
+                where: { id: conversationId },
               });
+            for (const msg of systemMessages) {
+              this.chatGateway.server
+                .to(`conversation:${String(conversationId)}`)
+                .emit('message:new', {
+                  message: msg,
+                  conversation: updatedConversation,
+                });
             }
           } catch (e) {
-            this.logger.error(`[OrdersScheduler] Failed to push notification via WebSocket for order #${order.id}:`, e);
+            this.logger.error(
+              `[OrdersScheduler] Failed to push notification via WebSocket for order #${order.id}:`,
+              e,
+            );
           }
         }
 
-        this.logger.log(`订单 #${order.id} 自动从 ${order.status} 转换为 in_progress`);
+        this.logger.log(
+          `订单 #${order.id} 自动从 ${order.status} 转换为 in_progress`,
+        );
       } catch (error) {
-        this.logger.error(`订单 #${order.id} 自动转换为 in_progress 失败: ${error.message}`, error.stack);
+        this.logger.error(
+          `订单 #${order.id} 自动转换为 in_progress 失败: ${error.message}`,
+          error.stack,
+        );
       }
     }
   }
@@ -205,21 +216,32 @@ export class OrdersScheduler {
 
         if (systemMessage && conversationId) {
           try {
-            const updatedConversation = await this.prisma.conversation.findUnique({
-              where: { id: conversationId },
-            });
-            this.chatGateway.server.to(`conversation:${conversationId}`).emit('message:new', {
-              message: systemMessage,
-              conversation: updatedConversation,
-            });
+            const updatedConversation =
+              await this.prisma.conversation.findUnique({
+                where: { id: conversationId },
+              });
+            this.chatGateway.server
+              .to(`conversation:${String(conversationId)}`)
+              .emit('message:new', {
+                message: systemMessage,
+                conversation: updatedConversation,
+              });
           } catch (e) {
-            this.logger.error(`[OrdersScheduler] Failed to push notification via WebSocket for order #${order.id}:`, e);
+            this.logger.error(
+              `[OrdersScheduler] Failed to push notification via WebSocket for order #${order.id}:`,
+              e,
+            );
           }
         }
 
-        this.logger.log(`订单 #${order.id} 自动从 in_progress 转换为 completed`);
+        this.logger.log(
+          `订单 #${order.id} 自动从 in_progress 转换为 completed`,
+        );
       } catch (error) {
-        this.logger.error(`订单 #${order.id} 自动转换为 completed 失败: ${error.message}`, error.stack);
+        this.logger.error(
+          `订单 #${order.id} 自动转换为 completed 失败: ${error.message}`,
+          error.stack,
+        );
       }
     }
   }

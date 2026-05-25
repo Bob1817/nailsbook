@@ -55,7 +55,7 @@ function normalizeCustomerSummary(item: CustomerApiSummary): TechnicianCustomerS
     tags: parseTagString(item.tags),
     note: item.notes || '暂无备注',
     recentServiceAt: item.createdAt,
-    totalBookings: 0,
+    totalOrders: 0,
     totalSpent: 0,
   };
 }
@@ -73,7 +73,7 @@ function normalizeCustomerDetail(item: CustomerApiDetail): TechnicianCustomerDet
     tags,
     note: item.notes || '暂无备注',
     recentServiceAt: bookings[0]?.startTime || item.createdAt,
-    totalBookings: bookings.length,
+    totalOrders: bookings.length,
     totalSpent: revenues.reduce((sum, entry) => sum + Number(entry.amount || 0), 0),
     preferenceStyle: tags[0] || '简约',
     preferenceColor: tags[1] || '裸色系',
@@ -106,7 +106,7 @@ export const customersService = {
           tags: customer.tags,
           note: customer.note,
           recentServiceAt: customer.recentServiceAt,
-          totalBookings: customer.totalBookings,
+          totalOrders: customer.totalOrders,
           totalSpent: customer.totalSpent,
         }));
     }
@@ -118,6 +118,19 @@ export const customersService = {
       return normalizeCustomerDetail(response.data);
     } catch {
       return fallbackCustomers.find((customer) => customer.id === id) ?? null;
+    }
+  },
+
+  async updateTags(id: number, tags: string): Promise<void> {
+    await api.patch(`/customers/${id}/tags`, { tags });
+  },
+
+  async getDistinctTags(): Promise<string[]> {
+    try {
+      const response = await api.get<string[]>('/customers/tags');
+      return response.data;
+    } catch {
+      return [];
     }
   },
 };

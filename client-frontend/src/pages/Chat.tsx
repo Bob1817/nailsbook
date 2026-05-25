@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { useAuth } from '../contexts/AuthContext';
@@ -30,9 +30,39 @@ const Chat: React.FC = () => {
 
   const techIdFromUrl = searchParams.get('tech_id');
 
+  const loadInbox = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await messageService.getConversations();
+      setConversations(data);
+
+      const messageBatches = await Promise.all(
+        data.map(async (conversation) => ({
+          conversation,
+          detail: await messageService.getMessages(conversation.id),
+        })),
+      );
+
+      const nextNotifications = messageBatches
+        .flatMap(({ conversation, detail }) =>
+          detail.messages
+            .filter(isSystemNotification)
+            .map((message) => mapNotification(message, conversation)),
+        )
+        .sort((a, b) => dayjs(b.time).valueOf() - dayjs(a.time).valueOf())
+        .slice(0, 8);
+
+      setNotifications(nextNotifications);
+    } catch {
+      console.error('Failed to load inbox');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadInbox();
-  }, []);
+  }, [loadInbox]);
 
   useEffect(() => {
     if (!techIdFromUrl || conversations.length === 0) {
@@ -57,9 +87,9 @@ const Chat: React.FC = () => {
   useEffect(() => {
     if (!socket) return;
 
-    const onNewMessage = (data: { message: any; conversation: any }) => {
-      setConversations((prev: any[]) =>
-        prev.map((c: any) =>
+    const onNewMessage = (data: { message: { content: string; createdAt: string }; conversation: { id: number } }) => {
+      setConversations((prev) =>
+        prev.map((c) =>
           c.id === data.conversation.id
             ? {
                 ...c,
@@ -92,38 +122,8 @@ const Chat: React.FC = () => {
 
   const totalUnread = useMemo(
     () => conversations.reduce((count, conversation) => count + (conversation.unreadCount || 0), 0),
-    [conversations]
+    [conversations],
   );
-
-  const loadInbox = async () => {
-    setLoading(true);
-    try {
-      const data = await messageService.getConversations();
-      setConversations(data);
-
-      const messageBatches = await Promise.all(
-        data.map(async (conversation) => ({
-          conversation,
-          detail: await messageService.getMessages(conversation.id),
-        }))
-      );
-
-      const nextNotifications = messageBatches
-        .flatMap(({ conversation, detail }) =>
-          detail.messages
-            .filter(isSystemNotification)
-            .map((message) => mapNotification(message, conversation))
-        )
-        .sort((a, b) => dayjs(b.time).valueOf() - dayjs(a.time).valueOf())
-        .slice(0, 8);
-
-      setNotifications(nextNotifications);
-    } catch (error) {
-      console.error('Failed to load inbox:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const isEmpty = conversations.length === 0 && notifications.length === 0;
 
@@ -247,7 +247,7 @@ const Chat: React.FC = () => {
                         {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
                       </span>
                     )}
-                    {isOnline(conversation.technicianId || conversation.technician?.id, 'technician') && (
+                    {isOnline(conversation.technician.id, 'technician') && (
                       <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white" />
                     )}
                   </div>

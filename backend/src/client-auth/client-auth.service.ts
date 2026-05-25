@@ -10,20 +10,50 @@ import { PrismaService } from '../common/prisma/prisma.service';
 import { ClientLoginDto } from './dto/client-login.dto';
 import { RegisterByInviteDto } from './dto/register-by-invite.dto';
 import { BindTechnicianDto } from './dto/bind-technician.dto';
+import { VerificationCodeService } from '../common/verification-code/verification-code.service';
 
 @Injectable()
 export class ClientAuthService {
   private static readonly DEFAULT_SERVICE_ITEMS = [
-    { id: 'svc_basic_care_1', name: '基础护理与修形', description: '指甲修剪、修形、去死皮、护理等基础服务', category: 'basic_care', isActive: true, sortOrder: 1 },
-    { id: 'svc_color_style_1', name: '色彩与款式制作', description: '纯色美甲、彩绘、渐变、贴纸等款式设计服务', category: 'color_style', isActive: true, sortOrder: 2 },
-    { id: 'svc_extension_1', name: '指甲延长与加固', description: '甲片延长、光疗延长、指甲加固等服务', category: 'extension_reinforcement', isActive: true, sortOrder: 3 },
-    { id: 'svc_removal_1', name: '卸甲服务', description: '卸除甲油胶、卸甲片等服务', category: 'removal', isActive: true, sortOrder: 4 },
+    {
+      id: 'svc_basic_care_1',
+      name: '基础护理与修形',
+      description: '指甲修剪、修形、去死皮、护理等基础服务',
+      category: 'basic_care',
+      isActive: true,
+      sortOrder: 1,
+    },
+    {
+      id: 'svc_color_style_1',
+      name: '色彩与款式制作',
+      description: '纯色美甲、彩绘、渐变、贴纸等款式设计服务',
+      category: 'color_style',
+      isActive: true,
+      sortOrder: 2,
+    },
+    {
+      id: 'svc_extension_1',
+      name: '指甲延长与加固',
+      description: '甲片延长、光疗延长、指甲加固等服务',
+      category: 'extension_reinforcement',
+      isActive: true,
+      sortOrder: 3,
+    },
+    {
+      id: 'svc_removal_1',
+      name: '卸甲服务',
+      description: '卸除甲油胶、卸甲片等服务',
+      category: 'removal',
+      isActive: true,
+      sortOrder: 4,
+    },
   ];
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly verificationCodeService: VerificationCodeService,
   ) {}
 
   async requestLoginCode(phone: string) {
@@ -45,25 +75,27 @@ export class ClientAuthService {
     }
 
     if (client.bindings.length === 0) {
-      throw new UnauthorizedException('该账号尚未绑定美甲师，请先通过邀请码注册/绑定');
+      throw new UnauthorizedException(
+        '该账号尚未绑定美甲师，请先通过邀请码注册/绑定',
+      );
     }
 
-    return this.buildCodeSentResponse();
+    this.verificationCodeService.generate(phone);
+    return { codeSent: true };
   }
 
   async requestRegisterCode(phone: string, inviteCode: string) {
-    void phone;
-
     await this.findActiveTechnicianByInviteCode(
       inviteCode,
       '该邀请码无效，请跟您的美甲师确认后再注册',
     );
 
-    return this.buildCodeSentResponse();
+    this.verificationCodeService.generate(phone);
+    return { codeSent: true };
   }
 
   async registerByInvite(dto: RegisterByInviteDto) {
-    this.validateCode(dto.code);
+    this.verificationCodeService.validate(dto.phone, dto.code);
 
     const technician = await this.findActiveTechnicianByInviteCode(
       dto.inviteCode,
@@ -123,6 +155,7 @@ export class ClientAuthService {
 
     return {
       accessToken: this.signToken(client.id, client.phone),
+      refreshToken: this.signRefreshToken(client.id, client.phone),
       client: {
         id: client.id,
         nickname: client.nickname,
@@ -138,7 +171,7 @@ export class ClientAuthService {
   }
 
   async login(dto: ClientLoginDto) {
-    this.validateCode(dto.code);
+    this.verificationCodeService.validate(dto.phone, dto.code);
 
     const client = await this.prisma.clientUser.findUnique({
       where: { phone: dto.phone },
@@ -164,13 +197,17 @@ export class ClientAuthService {
     }
 
     if (client.bindings.length === 0) {
-      throw new UnauthorizedException('该账号尚未绑定美甲师，请先通过邀请码注册/绑定');
+      throw new UnauthorizedException(
+        '该账号尚未绑定美甲师，请先通过邀请码注册/绑定',
+      );
     }
 
-    const defaultBinding = client.bindings.find((b) => b.isDefault) || client.bindings[0];
+    const defaultBinding =
+      client.bindings.find((b) => b.isDefault) || client.bindings[0];
 
     return {
       accessToken: this.signToken(client.id, client.phone),
+      refreshToken: this.signRefreshToken(client.id, client.phone),
       client: {
         id: client.id,
         nickname: client.nickname,
@@ -188,7 +225,9 @@ export class ClientAuthService {
         shopAddresses: defaultBinding.technician.shopAddresses
           ? JSON.parse(defaultBinding.technician.shopAddresses)
           : [],
-        serviceItems: this.parseServiceItems(defaultBinding.technician.serviceItems),
+        serviceItems: this.parseServiceItems(
+          defaultBinding.technician.serviceItems,
+        ),
       },
       technicians: client.bindings.map((b) => ({
         id: b.technician.id,
@@ -200,7 +239,9 @@ export class ClientAuthService {
         status: b.technician.status,
         homeService: b.technician.homeService,
         shopService: b.technician.shopService,
-        shopAddresses: b.technician.shopAddresses ? JSON.parse(b.technician.shopAddresses) : [],
+        shopAddresses: b.technician.shopAddresses
+          ? JSON.parse(b.technician.shopAddresses)
+          : [],
         serviceItems: this.parseServiceItems(b.technician.serviceItems),
         isDefault: b.isDefault,
         bindSource: b.bindSource,
@@ -217,10 +258,7 @@ export class ClientAuthService {
           include: {
             technician: true,
           },
-          orderBy: [
-            { isDefault: 'desc' },
-            { createdAt: 'desc' },
-          ],
+          orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
         },
       },
     });
@@ -252,7 +290,9 @@ export class ClientAuthService {
               shopAddresses: defaultBinding.technician.shopAddresses
                 ? JSON.parse(defaultBinding.technician.shopAddresses)
                 : [],
-              serviceItems: this.parseServiceItems(defaultBinding.technician.serviceItems),
+              serviceItems: this.parseServiceItems(
+                defaultBinding.technician.serviceItems,
+              ),
             },
           }
         : null,
@@ -266,7 +306,9 @@ export class ClientAuthService {
         status: b.technician.status,
         homeService: b.technician.homeService,
         shopService: b.technician.shopService,
-        shopAddresses: b.technician.shopAddresses ? JSON.parse(b.technician.shopAddresses) : [],
+        shopAddresses: b.technician.shopAddresses
+          ? JSON.parse(b.technician.shopAddresses)
+          : [],
         serviceItems: this.parseServiceItems(b.technician.serviceItems),
         isDefault: b.isDefault,
         bindSource: b.bindSource,
@@ -417,7 +459,10 @@ export class ClientAuthService {
     return { success: true };
   }
 
-  async updateProfile(clientUserId: number, data: { nickname?: string; avatarUrl?: string }) {
+  async updateProfile(
+    clientUserId: number,
+    data: { nickname?: string; avatarUrl?: string },
+  ) {
     const client = await this.prisma.clientUser.update({
       where: { id: clientUserId },
       data,
@@ -430,40 +475,6 @@ export class ClientAuthService {
       avatarUrl: client.avatarUrl,
       status: client.status,
     };
-  }
-
-  private validateCode(code: string) {
-    const expectedCode = this.getVerificationCode();
-
-    if (!expectedCode || code !== expectedCode) {
-      throw new UnauthorizedException('手机号或验证码错误');
-    }
-  }
-
-  private buildCodeSentResponse() {
-    return {
-      codeSent: true,
-      devCode: this.getVerificationCode(),
-    };
-  }
-
-  private getVerificationCode() {
-    const configuredCode = this.configService.get<string>(
-      'CLIENT_MVP_VERIFICATION_CODE',
-    );
-
-    if (configuredCode) {
-      return configuredCode;
-    }
-
-    const nodeEnv = this.configService.get<string>('NODE_ENV');
-    const allowDevFallback =
-      this.configService.get<string>('ALLOW_DEV_MVP_VERIFICATION_CODE') ===
-      'true';
-
-    return nodeEnv === 'development' && allowDevFallback
-      ? '123456'
-      : undefined;
   }
 
   private async findActiveTechnicianByInviteCode(
@@ -497,6 +508,13 @@ export class ClientAuthService {
       avatarUrl: technician.avatarUrl,
       city: technician.city,
       serviceArea: technician.serviceArea,
+      status: technician.status,
+      homeService: technician.homeService,
+      shopService: technician.shopService,
+      shopAddresses: technician.shopAddresses
+        ? JSON.parse(technician.shopAddresses)
+        : [],
+      serviceItems: this.parseServiceItems(technician.serviceItems),
     };
   }
 
@@ -508,7 +526,42 @@ export class ClientAuthService {
     });
   }
 
+  private signRefreshToken(clientUserId: number, phone: string) {
+    return this.jwtService.sign(
+      { sub: clientUserId, phone, userType: 'client', tokenType: 'refresh' },
+      { expiresIn: '30d' },
+    );
+  }
+
+  async refreshAccessToken(refreshToken: string) {
+    let payload: any;
+    try {
+      payload = this.jwtService.verify(refreshToken);
+    } catch {
+      throw new UnauthorizedException('刷新令牌无效或已过期');
+    }
+
+    if (payload.tokenType !== 'refresh') {
+      throw new UnauthorizedException('无效的令牌类型');
+    }
+
+    const client = await this.prisma.clientUser.findUnique({
+      where: { id: payload.sub },
+    });
+
+    if (!client || client.status !== 'active') {
+      throw new UnauthorizedException('用户不存在或已被禁用');
+    }
+
+    return {
+      accessToken: this.signToken(client.id, client.phone),
+      refreshToken: this.signRefreshToken(client.id, client.phone),
+    };
+  }
+
   private parseServiceItems(serviceItems: string | null) {
-    return serviceItems ? JSON.parse(serviceItems) : ClientAuthService.DEFAULT_SERVICE_ITEMS;
+    return serviceItems
+      ? JSON.parse(serviceItems)
+      : ClientAuthService.DEFAULT_SERVICE_ITEMS;
   }
 }

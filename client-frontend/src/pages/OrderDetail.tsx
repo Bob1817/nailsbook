@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { orderService, type Order } from '../services/order';
 import { addressService, type ClientAddress } from '../services/address';
@@ -46,47 +46,35 @@ const OrderDetail: React.FC = () => {
     addressId: 0,
   });
 
+  const loadOrder = useCallback(async (orderId: number) => {
+    try {
+      const data = await orderService.getOrder(orderId);
+      setOrder(data);
+    } catch {
+      console.error('Failed to load order');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const loadAddresses = useCallback(async () => {
+    try {
+      const data = await addressService.getAddresses();
+      setAddresses(data);
+    } catch {
+      console.error('Failed to load addresses');
+    }
+  }, []);
+
   useEffect(() => {
     if (id) {
       loadOrder(parseInt(id));
     }
-  }, [id]);
+  }, [id, loadOrder]);
 
   useEffect(() => {
     loadAddresses();
-  }, []);
-
-  const loadOrder = async (orderId: number) => {
-    try {
-      const data = await orderService.getOrder(orderId);
-      setOrder(data);
-    } catch (error) {
-      console.error('Failed to load order:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadAddresses = async () => {
-    try {
-      const data = await addressService.getAddresses();
-      setAddresses(data);
-    } catch (error) {
-      console.error('Failed to load addresses:', error);
-    }
-  };
-
-  const openEditModal = () => {
-    if (!order) {
-      return;
-    }
-    setEditForm({
-      serviceDate: dayjs(order.startTime).format('YYYY-MM-DD'),
-      startTime: dayjs(order.startTime).format('HH:mm'),
-      addressId: order.clientAddress?.id || 0,
-    });
-    setShowEditModal(true);
-  };
+  }, [loadAddresses]);
 
   const handleSaveEdit = async () => {
     if (!order) {
@@ -102,8 +90,8 @@ const OrderDetail: React.FC = () => {
       const updated = await orderService.updateOrder(order.id, editForm);
       setOrder(updated);
       setShowEditModal(false);
-    } catch (error: any) {
-      alert(error.response?.data?.message || '修改订单失败');
+    } catch {
+      alert('修改订单失败');
     } finally {
       setSavingEdit(false);
     }
@@ -115,8 +103,8 @@ const OrderDetail: React.FC = () => {
     try {
       const updated = await orderService.agreeQuote(order.id);
       setOrder(updated);
-    } catch (error: any) {
-      alert(error.response?.data?.message || '同意报价失败');
+    } catch {
+      alert('同意报价失败');
     } finally {
       setAgreeing(false);
     }
@@ -130,8 +118,8 @@ const OrderDetail: React.FC = () => {
       setOrder(updated);
       setShowRejectModal(false);
       setRejectReason('');
-    } catch (error: any) {
-      alert(error.response?.data?.message || '拒绝报价失败');
+    } catch {
+      alert('拒绝报价失败');
     } finally {
       setRejecting(false);
     }
@@ -144,8 +132,8 @@ const OrderDetail: React.FC = () => {
       const updated = await orderService.updateOrderStatus(order.id, { status: 'cancelled' });
       setOrder(updated);
       setShowCancelModal(false);
-    } catch (error: any) {
-      alert(error.response?.data?.message || '取消订单失败');
+    } catch {
+      alert('取消订单失败');
     } finally {
       setCancelling(false);
     }

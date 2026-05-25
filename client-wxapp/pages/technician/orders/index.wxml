@@ -1,0 +1,15 @@
+<view class="container">
+  <view class="filter-tabs">
+    <view bindtap="switchStatus" data-status="">全部</view>
+    <view bindtap="switchStatus" data-status="pending_quote">待报价</view>
+    <view bindtap="switchStatus" data-status="quoted">待确认</view>
+    <view bindtap="switchStatus" data-status="confirmed">已确认</view>
+    <view bindtap="switchStatus" data-status="completed">已完成</view>
+  </view>
+  <view class="order-list">
+    <view wx:for="{{orders}}" bindtap="viewOrder" data-id="{{item.id}}">
+      <text>{{item.orderNo}}</text>
+      <text>{{item.statusText}}</text>
+    </view>
+  </view>
+</view>

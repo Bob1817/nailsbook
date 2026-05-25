@@ -131,13 +131,17 @@ describe('Client booking and design HTTP contract', () => {
 
   describe('Orders', () => {
     it('creates an order, lists it, and returns detail with quote fields', async () => {
-      const { accessToken, client, technician } = await setupClientAndBinding('order-create');
-      const address = await createAddress(accessToken, 'Order Addr');
+      const {
+        accessToken,
+        client: _client,
+        technician,
+      } = await setupClientAndBinding('order-create');
+      const _address = await createAddress(accessToken, 'Order Addr');
 
       const createRes = await request(testApp.app.getHttpServer())
         .post('/api/client/orders')
         .set('Authorization', `Bearer ${accessToken}`)
-.send({
+        .send({
           techId: technician.id,
           serviceDate: '2026-06-15',
           startTime: '14:00',
@@ -182,7 +186,8 @@ describe('Client booking and design HTTP contract', () => {
     });
 
     it('updates an order with new address, date, and time', async () => {
-      const { accessToken, technician } = await setupClientAndBinding('order-update');
+      const { accessToken, technician } =
+        await setupClientAndBinding('order-update');
       const address = await createAddress(accessToken, 'Update Addr');
       const secondAddress = await createAddress(accessToken, 'Second Addr');
 
@@ -216,8 +221,9 @@ describe('Client booking and design HTTP contract', () => {
     });
 
     it('agrees to a quoted order and rejects a quote with reason', async () => {
-      const { accessToken, technician } = await setupClientAndBinding('order-quote');
-      const address = await createAddress(accessToken, 'Quote Addr');
+      const { accessToken, technician } =
+        await setupClientAndBinding('order-quote');
+      const _address = await createAddress(accessToken, 'Quote Addr');
 
       const order = await request(testApp.app.getHttpServer())
         .post('/api/client/orders')
@@ -270,8 +276,9 @@ describe('Client booking and design HTTP contract', () => {
     });
 
     it('updates order status to cancelled', async () => {
-      const { accessToken, technician } = await setupClientAndBinding('order-cancel');
-      const address = await createAddress(accessToken, 'Cancel Addr');
+      const { accessToken, technician } =
+        await setupClientAndBinding('order-cancel');
+      const _address = await createAddress(accessToken, 'Cancel Addr');
 
       const order = await request(testApp.app.getHttpServer())
         .post('/api/client/orders')
@@ -298,7 +305,8 @@ describe('Client booking and design HTTP contract', () => {
     });
 
     it('returns trips for home-service orders', async () => {
-      const { accessToken, technician } = await setupClientAndBinding('order-trips');
+      const { accessToken, technician } =
+        await setupClientAndBinding('order-trips');
       const address = await createAddress(accessToken, 'Trip Addr');
 
       await request(testApp.app.getHttpServer())
@@ -324,7 +332,8 @@ describe('Client booking and design HTTP contract', () => {
 
   describe('Designs', () => {
     it('creates a design, lists it, returns detail, and updates it', async () => {
-      const { accessToken, technician } = await setupClientAndBinding('design-crud');
+      const { accessToken, technician } =
+        await setupClientAndBinding('design-crud');
 
       const createRes = await request(testApp.app.getHttpServer())
         .post('/api/client/designs')
@@ -372,7 +381,8 @@ describe('Client booking and design HTTP contract', () => {
     });
 
     it('switches technician on a design and deletes it', async () => {
-      const { accessToken, client, technician } = await setupClientAndBinding('design-switch');
+      const { accessToken, client, technician } =
+        await setupClientAndBinding('design-switch');
       const secondTech = await createTechnician('design-switch-alt');
       await createBinding(client.id, secondTech.id, secondTech.inviteCode);
 
@@ -404,7 +414,8 @@ describe('Client booking and design HTTP contract', () => {
 
   describe('Custom Service Requests', () => {
     it('creates, lists, and returns detail for a custom service request', async () => {
-      const { accessToken, technician } = await setupClientAndBinding('csr-crud');
+      const { accessToken, technician } =
+        await setupClientAndBinding('csr-crud');
 
       const createRes = await request(testApp.app.getHttpServer())
         .post('/api/client/custom-service-requests')
@@ -448,7 +459,8 @@ describe('Client booking and design HTTP contract', () => {
     });
 
     it('accepts, rejects, and cancels custom service requests', async () => {
-      const { accessToken, technician } = await setupClientAndBinding('csr-actions');
+      const { accessToken, technician } =
+        await setupClientAndBinding('csr-actions');
 
       const csr = await request(testApp.app.getHttpServer())
         .post('/api/client/custom-service-requests')
@@ -585,7 +597,11 @@ describe('Client booking and design HTTP contract', () => {
     };
   }
 
-  async function createBinding(clientId: number, techId: number, inviteCode: string) {
+  async function createBinding(
+    clientId: number,
+    techId: number,
+    inviteCode: string,
+  ) {
     await testApp.prisma.clientTechBinding.create({
       data: {
         clientId,
@@ -614,7 +630,11 @@ describe('Client booking and design HTTP contract', () => {
     return { id: res.body.id };
   }
 
-  async function seedQuoteOnOrder(orderId: number, price: number, remark: string) {
+  async function seedQuoteOnOrder(
+    orderId: number,
+    price: number,
+    remark: string,
+  ) {
     await testApp.prisma.order.update({
       where: { id: orderId },
       data: {
@@ -626,7 +646,11 @@ describe('Client booking and design HTTP contract', () => {
     });
   }
 
-  async function seedQuoteOnCustomServiceRequest(requestId: number, price: number, remark: string) {
+  async function seedQuoteOnCustomServiceRequest(
+    requestId: number,
+    price: number,
+    remark: string,
+  ) {
     await testApp.prisma.customServiceRequest.update({
       where: { id: requestId },
       data: {
@@ -641,70 +665,84 @@ describe('Client booking and design HTTP contract', () => {
   async function cleanupOwnedRecords() {
     if (!testApp) return;
 
-    const allIds = [...ownedClientIds, ...ownedTechnicianIds];
+    const _allIds = [...ownedClientIds, ...ownedTechnicianIds];
     const allCodes = [...ownedInviteCodes];
 
-    await testApp.prisma.revenue.deleteMany({
-      where: {
-        OR: [
-          { order: { orderNo: { in: ownedOrderNos } } },
-          { technicianId: { in: ownedTechnicianIds } },
-        ],
-      },
-    }).catch(() => {});
+    await testApp.prisma.revenue
+      .deleteMany({
+        where: {
+          OR: [
+            { order: { orderNo: { in: ownedOrderNos } } },
+            { technicianId: { in: ownedTechnicianIds } },
+          ],
+        },
+      })
+      .catch(() => {});
 
-    await testApp.prisma.order.deleteMany({
-      where: {
-        OR: [
-          { orderNo: { in: ownedOrderNos } },
-          { clientUserId: { in: ownedClientIds } },
-          { technicianId: { in: ownedTechnicianIds } },
-        ],
-      },
-    }).catch(() => {});
+    await testApp.prisma.order
+      .deleteMany({
+        where: {
+          OR: [
+            { orderNo: { in: ownedOrderNos } },
+            { clientUserId: { in: ownedClientIds } },
+            { technicianId: { in: ownedTechnicianIds } },
+          ],
+        },
+      })
+      .catch(() => {});
 
-    await testApp.prisma.customServiceRequest.deleteMany({
-      where: {
-        OR: [
-          { requestNo: { in: ownedRequestNos } },
-          { clientId: { in: ownedClientIds } },
-          { techId: { in: ownedTechnicianIds } },
-        ],
-      },
-    }).catch(() => {});
+    await testApp.prisma.customServiceRequest
+      .deleteMany({
+        where: {
+          OR: [
+            { requestNo: { in: ownedRequestNos } },
+            { clientId: { in: ownedClientIds } },
+            { techId: { in: ownedTechnicianIds } },
+          ],
+        },
+      })
+      .catch(() => {});
 
-    await testApp.prisma.clientDesignRequest.deleteMany({
-      where: {
-        OR: [
-          { clientId: { in: ownedClientIds } },
-          { techId: { in: ownedTechnicianIds } },
-        ],
-      },
-    }).catch(() => {});
-
-    await testApp.prisma.clientAddress.deleteMany({
-      where: { clientId: { in: ownedClientIds } },
-    }).catch(() => {});
-
-    await testApp.prisma.message.deleteMany({
-      where: {
-        conversation: {
+    await testApp.prisma.clientDesignRequest
+      .deleteMany({
+        where: {
           OR: [
             { clientId: { in: ownedClientIds } },
             { techId: { in: ownedTechnicianIds } },
           ],
         },
-      },
-    }).catch(() => {});
+      })
+      .catch(() => {});
 
-    await testApp.prisma.conversation.deleteMany({
-      where: {
-        OR: [
-          { clientId: { in: ownedClientIds } },
-          { techId: { in: ownedTechnicianIds } },
-        ],
-      },
-    }).catch(() => {});
+    await testApp.prisma.clientAddress
+      .deleteMany({
+        where: { clientId: { in: ownedClientIds } },
+      })
+      .catch(() => {});
+
+    await testApp.prisma.message
+      .deleteMany({
+        where: {
+          conversation: {
+            OR: [
+              { clientId: { in: ownedClientIds } },
+              { techId: { in: ownedTechnicianIds } },
+            ],
+          },
+        },
+      })
+      .catch(() => {});
+
+    await testApp.prisma.conversation
+      .deleteMany({
+        where: {
+          OR: [
+            { clientId: { in: ownedClientIds } },
+            { techId: { in: ownedTechnicianIds } },
+          ],
+        },
+      })
+      .catch(() => {});
 
     await testApp.prisma.clientTechBinding.deleteMany({
       where: {

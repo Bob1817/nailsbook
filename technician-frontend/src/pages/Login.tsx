@@ -292,7 +292,7 @@ export const Login: React.FC = () => {
                 <span className="text-[0.8rem] text-[#8f96a5]">我是美甲客户？</span>
                 <button
                   type="button"
-                  onClick={() => window.location.href = 'http://localhost:5173/login'}
+                  onClick={() => window.location.href = (import.meta.env.VITE_CLIENT_LOGIN_URL || '/login')}
                   className="flex h-11 items-center rounded-full px-3 text-[0.8rem] font-medium text-[#ff617b] transition-colors active:bg-[#fff1f4] focus:outline-none focus:ring-2 focus:ring-[#ff7ea9]/30"
                 >
                   切换到客户登录

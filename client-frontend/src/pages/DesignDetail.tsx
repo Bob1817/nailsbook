@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { designService, type DesignRequest, type UpdateDesignDto, type ShopAddress } from '../services/design';
-import { addressService, type ClientAddress } from '../services/address';
+import type { ClientAddress } from '../services/address';
 import { orderService } from '../services/order';
 import { uploadService } from '../services/upload';
 import { useAuth } from '../contexts/AuthContext';
@@ -57,31 +57,30 @@ const DesignDetail: React.FC = () => {
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedShopAddress, setSelectedShopAddress] = useState<ShopAddress | null>(null);
   const [selectedClientAddress, setSelectedClientAddress] = useState<ClientAddress | null>(null);
-  const [clientAddresses, setClientAddresses] = useState<ClientAddress[]>([]);
+  const [clientAddresses] = useState<ClientAddress[]>([]);
   const [creatingBooking, setCreatingBooking] = useState(false);
   const [bookingError, setBookingError] = useState('');
   const selectedShopHours = getShopHoursForDate(selectedShopAddress, selectedDate);
+
+  const loadDesign = useCallback(async (designId: number) => {
+    try {
+      const data = await designService.getDesign(designId);
+      setDesign(data);
+      setEditTitle(data.title || '');
+      setEditDescription(data.description || '');
+      setEditImages(data.imageUrls || []);
+    } catch {
+      console.error('Failed to load design');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (id) {
       loadDesign(parseInt(id));
     }
-  }, [id]);
-
-  const loadDesign = async (designId: number) => {
-    try {
-      const data = await designService.getDesign(designId);
-      setDesign(data);
-      // Initialize edit form values
-      setEditTitle(data.title || '');
-      setEditDescription(data.description || '');
-      setEditImages(data.imageUrls || []);
-    } catch (error) {
-      console.error('Failed to load design:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [id, loadDesign]);
 
   const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -91,7 +90,7 @@ const DesignDetail: React.FC = () => {
     try {
       const result = await uploadService.uploadImage(file);
       setEditImages((prev) => [...prev, result.url]);
-    } catch (error) {
+    } catch {
       alert('图片上传失败，请重试');
     } finally {
       setUploadingImage(false);
@@ -117,8 +116,8 @@ const DesignDetail: React.FC = () => {
       await designService.updateDesign(parseInt(id), updateData);
       await loadDesign(parseInt(id));
       setShowEditModal(false);
-    } catch (error: any) {
-      alert(error.response?.data?.message || '更新设计失败');
+    } catch {
+      alert('更新设计失败');
     } finally {
       setSavingEdit(false);
     }
@@ -131,8 +130,8 @@ const DesignDetail: React.FC = () => {
       await designService.deleteDesign(parseInt(id));
       setShowDeleteModal(false);
       navigate('/designs');
-    } catch (error: any) {
-      alert(error.response?.data?.message || '删除设计失败');
+    } catch {
+      alert('删除设计失败');
       setDeleting(false);
     }
   };
@@ -236,8 +235,8 @@ const DesignDetail: React.FC = () => {
       setShowQuoteModal(false);
       setSelectedTechsForQuote([]);
       alert(`报价请求已发送给${techsToQuote.length}位美甲师`);
-    } catch (error: any) {
-      alert(error.response?.data?.message || '发送报价请求失败');
+    } catch {
+      alert('发送报价请求失败');
     } finally {
       setRequestingQuote(false);
     }
@@ -251,8 +250,8 @@ const DesignDetail: React.FC = () => {
       // Show booking modal after accepting quote
       setShowBookingModal(true);
       setBookingStep('type');
-    } catch (error: any) {
-      alert(error.response?.data?.message || '接受报价失败');
+    } catch {
+      alert('接受报价失败');
     }
   };
 
@@ -322,8 +321,8 @@ const DesignDetail: React.FC = () => {
 
       setShowBookingModal(false);
       navigate('/orders');
-    } catch (error: any) {
-      setBookingError(error.response?.data?.message || '创建预约失败');
+    } catch {
+      setBookingError('创建预约失败');
     } finally {
       setCreatingBooking(false);
     }

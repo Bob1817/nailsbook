@@ -32,30 +32,135 @@ export class DevelopmentAuthSeedService implements OnModuleInit {
     });
 
     const permissions = [
-      { name: '数据看板查看', code: 'dashboard:view', module: 'dashboard', action: 'view' },
-      { name: '美甲师查看', code: 'technician:view', module: 'technician', action: 'view' },
-      { name: '美甲师创建', code: 'technician:create', module: 'technician', action: 'create' },
-      { name: '美甲师更新', code: 'technician:update', module: 'technician', action: 'update' },
-      { name: '美甲师禁用', code: 'technician:disable', module: 'technician', action: 'disable' },
-      { name: '客户查看', code: 'customer:view', module: 'customer', action: 'view' },
+      {
+        name: '数据看板查看',
+        code: 'dashboard:view',
+        module: 'dashboard',
+        action: 'view',
+      },
+      {
+        name: '美甲师查看',
+        code: 'technician:view',
+        module: 'technician',
+        action: 'view',
+      },
+      {
+        name: '美甲师创建',
+        code: 'technician:create',
+        module: 'technician',
+        action: 'create',
+      },
+      {
+        name: '美甲师更新',
+        code: 'technician:update',
+        module: 'technician',
+        action: 'update',
+      },
+      {
+        name: '美甲师禁用',
+        code: 'technician:disable',
+        module: 'technician',
+        action: 'disable',
+      },
+      {
+        name: '客户查看',
+        code: 'customer:view',
+        module: 'customer',
+        action: 'view',
+      },
       { name: '报价查看', code: 'quote:view', module: 'quote', action: 'view' },
-      { name: '报价取消', code: 'quote:cancel', module: 'quote', action: 'cancel' },
-      { name: '预约查看', code: 'booking:view', module: 'booking', action: 'view' },
-      { name: '预约确认', code: 'booking:confirm', module: 'booking', action: 'confirm' },
-      { name: '预约完成', code: 'booking:complete', module: 'booking', action: 'complete' },
-      { name: '预约取消', code: 'booking:cancel', module: 'booking', action: 'cancel' },
-      { name: '收入查看', code: 'revenue:view', module: 'revenue', action: 'view' },
-      { name: '订阅查看', code: 'subscription:view', module: 'subscription', action: 'view' },
-      { name: '订阅更新', code: 'subscription:update', module: 'subscription', action: 'update' },
-      { name: '系统配置', code: 'system:config', module: 'system', action: 'config' },
+      {
+        name: '报价取消',
+        code: 'quote:cancel',
+        module: 'quote',
+        action: 'cancel',
+      },
+      {
+        name: '预约查看',
+        code: 'booking:view',
+        module: 'booking',
+        action: 'view',
+      },
+      {
+        name: '预约确认',
+        code: 'booking:confirm',
+        module: 'booking',
+        action: 'confirm',
+      },
+      {
+        name: '预约完成',
+        code: 'booking:complete',
+        module: 'booking',
+        action: 'complete',
+      },
+      {
+        name: '预约取消',
+        code: 'booking:cancel',
+        module: 'booking',
+        action: 'cancel',
+      },
+      {
+        name: '收入查看',
+        code: 'revenue:view',
+        module: 'revenue',
+        action: 'view',
+      },
+      {
+        name: '订阅查看',
+        code: 'subscription:view',
+        module: 'subscription',
+        action: 'view',
+      },
+      {
+        name: '订阅更新',
+        code: 'subscription:update',
+        module: 'subscription',
+        action: 'update',
+      },
+      {
+        name: '系统配置',
+        code: 'system:config',
+        module: 'system',
+        action: 'config',
+      },
       { name: '日志查看', code: 'log:view', module: 'log', action: 'view' },
-      { name: '功能开关查看', code: 'feature_flag:view', module: 'feature_flag', action: 'view' },
-      { name: '功能开关更新', code: 'feature_flag:update', module: 'feature_flag', action: 'update' },
+      {
+        name: '功能开关查看',
+        code: 'feature_flag:view',
+        module: 'feature_flag',
+        action: 'view',
+      },
+      {
+        name: '功能开关更新',
+        code: 'feature_flag:update',
+        module: 'feature_flag',
+        action: 'update',
+      },
       { name: '角色查看', code: 'role:view', module: 'role', action: 'view' },
-      { name: '角色创建', code: 'role:create', module: 'role', action: 'create' },
-      { name: '角色更新', code: 'role:update', module: 'role', action: 'update' },
-      { name: '角色删除', code: 'role:delete', module: 'role', action: 'delete' },
-      { name: '权限查看', code: 'permission:view', module: 'permission', action: 'view' },
+      {
+        name: '角色创建',
+        code: 'role:create',
+        module: 'role',
+        action: 'create',
+      },
+      {
+        name: '角色更新',
+        code: 'role:update',
+        module: 'role',
+        action: 'update',
+      },
+      {
+        name: '角色删除',
+        code: 'role:delete',
+        module: 'role',
+        action: 'delete',
+      },
+      {
+        name: '权限查看',
+        code: 'permission:view',
+        module: 'permission',
+        action: 'view',
+      },
     ];
 
     for (const permission of permissions) {
@@ -84,14 +189,31 @@ export class DevelopmentAuthSeedService implements OnModuleInit {
     const editorRole = await this.prisma.adminRole.upsert({
       where: { code: 'editor' },
       update: {},
-      create: { name: '编辑员', code: 'editor', description: '可管理技师和客户，不可管理系统配置' },
+      create: {
+        name: '编辑员',
+        code: 'editor',
+        description: '可管理技师和客户，不可管理系统配置',
+      },
     });
-    const editorPermCodes = ['technician:view', 'technician:create', 'customer:view', 'revenue:view', 'order:view'];
+    const editorPermCodes = [
+      'technician:view',
+      'technician:create',
+      'customer:view',
+      'revenue:view',
+      'order:view',
+    ];
     for (const code of editorPermCodes) {
-      const perm = await this.prisma.adminPermission.findUnique({ where: { code } });
+      const perm = await this.prisma.adminPermission.findUnique({
+        where: { code },
+      });
       if (perm) {
         await this.prisma.adminRolePermission.upsert({
-          where: { roleId_permissionId: { roleId: editorRole.id, permissionId: perm.id } },
+          where: {
+            roleId_permissionId: {
+              roleId: editorRole.id,
+              permissionId: perm.id,
+            },
+          },
           update: {},
           create: { roleId: editorRole.id, permissionId: perm.id },
         });
@@ -125,7 +247,11 @@ export class DevelopmentAuthSeedService implements OnModuleInit {
           billingCycle: 'monthly',
           maxCustomers: null,
           maxMonthlyBookings: null,
-          features: JSON.stringify(['customer_tags', 'analytics', 'unlimited_bookings']),
+          features: JSON.stringify([
+            'customer_tags',
+            'analytics',
+            'unlimited_bookings',
+          ]),
           status: 'active',
         },
       });

@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Permissions } from '../auth/permission.decorator';
 import { OperationLog } from '../auth/operation-log.decorator';
@@ -24,7 +34,15 @@ export class AdminRolesController {
   @Post()
   @Permissions('role:create')
   @OperationLog({ module: 'role', action: 'create' })
-  create(@Body() body: { name: string; code: string; description?: string; permissionIds?: number[] }) {
+  create(
+    @Body()
+    body: {
+      name: string;
+      code: string;
+      description?: string;
+      permissionIds?: number[];
+    },
+  ) {
     return this.service.create(body);
   }
 
@@ -33,7 +51,8 @@ export class AdminRolesController {
   @OperationLog({ module: 'role', action: 'update' })
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { name?: string; description?: string; permissionIds?: number[] },
+    @Body()
+    body: { name?: string; description?: string; permissionIds?: number[] },
   ) {
     return this.service.update(id, body);
   }

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,7 +7,7 @@ import { addressService, type ClientAddress } from '../services/address';
 import { uploadService } from '../services/upload';
 import { worksService, type NailWork } from '../services/works';
 import { customServiceRequestService } from '../services/customServiceRequest';
-import { designService, type DesignRequest } from '../services/design';
+import { designService } from '../services/design';
 import type { ShopAddress, Technician, TechnicianServiceItem } from '../services/auth';
 
 const timeSlots = [
@@ -75,7 +75,6 @@ const CreateOrder: React.FC = () => {
   // Get design info from URL params
   const designId = searchParams.get('design_id');
   const designTechId = searchParams.get('tech_id');
-  const [designFromUrl, setDesignFromUrl] = useState<DesignRequest | null>(null);
   
   const [formData, setFormData] = useState({
     serviceDate: dayjs().add(1, 'day').format('YYYY-MM-DD'),
@@ -149,28 +148,47 @@ const CreateOrder: React.FC = () => {
     [selectedTechnician],
   );
 
-  useEffect(() => {
-    void refreshProfile();
-    // 这里只需要进入页面时拉一次最新技师资料，避免旧缓存导致服务内容/到店能力显示不全。
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  const loadAddresses = useCallback(async () => {
+    try {
+      const data = await addressService.getAddresses();
+      setAddresses(data);
+      if (data.length > 0) {
+        const defaultAddress = data.find((item) => item.isDefault) || data[0];
+        setFormData((prev) => ({ ...prev, addressId: prev.addressId || defaultAddress.id }));
+      }
+    } catch {
+      console.error('Failed to load addresses');
+    }
+  }, []);
+
+  const loadTechnicianWorks = useCallback(async (techId: number) => {
+    try {
+      const works = await worksService.getWorks();
+      const techWorks = works.filter((work) => work.technicianId === techId);
+      setTechnicianWorks(techWorks);
+    } catch {
+      console.error('Failed to load technician works');
+    }
   }, []);
 
   useEffect(() => {
+    void refreshProfile();
+  }, [refreshProfile]);
+
+  useEffect(() => {
     loadAddresses();
-  }, []);
+  }, [loadAddresses]);
 
   // Load design from URL if design_id is provided
   useEffect(() => {
     if (designId) {
       designService.getDesign(parseInt(designId)).then((design) => {
-        setDesignFromUrl(design);
-        // Pre-fill custom service with design info
         setIsCustomService(true);
         setCustomServiceTitle(design.title || '设计作品');
         setCustomServiceDescription(design.description || '');
         setCustomServiceImages(design.imageUrls || []);
-      }).catch((error) => {
-        console.error('Failed to load design:', error);
+      }).catch(() => {
+        console.error('Failed to load design');
       });
     }
   }, [designId]);
@@ -228,48 +246,24 @@ const CreateOrder: React.FC = () => {
     }
 
     if (shopAvailableTimeSlots.length === 0) {
-      setFormData((prev) => ({ ...prev, startTime: '' }));
+      requestAnimationFrame(() => {
+        setFormData((prev) => ({ ...prev, startTime: '' }));
+      });
       return;
     }
 
     if (!shopAvailableTimeSlots.includes(formData.startTime)) {
-      setFormData((prev) => ({ ...prev, startTime: shopAvailableTimeSlots[0] }));
+      requestAnimationFrame(() => {
+        setFormData((prev) => ({ ...prev, startTime: shopAvailableTimeSlots[0] }));
+      });
     }
   }, [formData.startTime, isShopService, selectedShopAddress, shopAvailableTimeSlots]);
-
-  const loadAddresses = async () => {
-    try {
-      const data = await addressService.getAddresses();
-      setAddresses(data);
-      if (data.length > 0) {
-        const defaultAddress = data.find((item) => item.isDefault) || data[0];
-        setFormData((prev) => ({ ...prev, addressId: prev.addressId || defaultAddress.id }));
-      }
-    } catch (error) {
-      console.error('Failed to load addresses:', error);
-    }
-  };
-
-  const loadTechnicianWorks = async (techId: number) => {
-    try {
-      console.log('[Debug] Loading works for techId:', techId);
-      const works = await worksService.getWorks();
-      console.log('[Debug] Raw works from API:', works);
-      console.log('[Debug] First work technicianId:', works[0]?.technicianId);
-      const techWorks = works.filter((work) => work.technicianId === techId);
-      console.log('[Debug] Filtered techWorks:', techWorks);
-      console.log('[Debug] techWorks length:', techWorks.length);
-      setTechnicianWorks(techWorks);
-    } catch (error) {
-      console.error('Failed to load technician works:', error);
-    }
-  };
 
   useEffect(() => {
     if (selectedTechnician) {
       loadTechnicianWorks(selectedTechnician.id);
     }
-  }, [selectedTechnician]);
+  }, [selectedTechnician, loadTechnicianWorks]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -279,7 +273,7 @@ const CreateOrder: React.FC = () => {
     try {
       const result = await uploadService.uploadImage(file);
       setCustomServiceImages((prev) => [...prev, result.url]);
-    } catch (error) {
+    } catch {
       alert('图片上传失败，请重试');
     } finally {
       setUploadingImage(false);
@@ -437,8 +431,8 @@ const CreateOrder: React.FC = () => {
         });
         navigate('/orders');
       }
-    } catch (error: any) {
-      alert(error.response?.data?.message || '创建预约失败');
+    } catch {
+      alert('创建预约失败');
     } finally {
       setSubmitting(false);
     }

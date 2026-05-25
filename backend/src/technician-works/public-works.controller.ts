@@ -1,11 +1,15 @@
 import { Controller, Get } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PrismaService } from '../common/prisma/prisma.service';
 
+@ApiTags('公开-作品')
 @Controller('public/works')
 export class PublicWorksController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Get('featured')
+  @ApiOperation({ summary: '获取精选作品列表' })
+  @ApiResponse({ status: 200, description: '返回精选作品列表' })
   async getFeatured() {
     const works = await this.prisma.nailWork.findMany({
       where: {

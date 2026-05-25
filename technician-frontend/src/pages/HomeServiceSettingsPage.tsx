@@ -132,26 +132,23 @@ const HomeServiceSettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-full bg-[#fff9f8] pb-32">
+    <div className="flex h-[100dvh] flex-col bg-[#fff9f8]">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/80 px-5 pt-12 pb-4 backdrop-blur-xl border-b border-gray-100">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-gray-700 shadow-sm"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">上门设置</h1>
-            <p className="text-sm text-gray-500">配置上门美甲服务</p>
-          </div>
-        </div>
+      <div className="shrink-0 flex items-center gap-3 bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[#f2e6ec]">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f7f3f5] transition-colors active:bg-[#eee5e9]"
+        >
+          <svg className="h-5 w-5 text-[#3c3440]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <h1 className="text-[17px] font-semibold text-[#1f2230]">上门设置</h1>
       </div>
 
       {/* Enable Toggle */}
+      <div className="flex-1 overflow-y-auto pb-32">
       <div className="px-5 py-4">
         <div className="rounded-2xl bg-white p-4 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between">
@@ -527,6 +524,7 @@ const HomeServiceSettingsPage: React.FC = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

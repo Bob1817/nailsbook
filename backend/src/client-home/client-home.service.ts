@@ -20,8 +20,8 @@ export class ClientHomeService {
           likes: true,
           comments: true,
           technician: {
-            select: { name: true, id: true }
-          }
+            select: { name: true, id: true },
+          },
         },
       }),
       this.prisma.order.findFirst({
@@ -66,13 +66,17 @@ export class ClientHomeService {
         techId: binding.techId,
         isVisible: true,
       },
-      orderBy: [{ isPinned: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'desc' }],
+      orderBy: [
+        { isPinned: 'desc' },
+        { sortOrder: 'asc' },
+        { createdAt: 'desc' },
+      ],
       include: {
         likes: true,
         comments: true,
         technician: {
-          select: { name: true, id: true }
-        }
+          select: { name: true, id: true },
+        },
       },
     });
 
@@ -94,11 +98,11 @@ export class ClientHomeService {
         likes: true,
         favorites: true,
         comments: {
-          orderBy: { createdAt: 'desc' }
+          orderBy: { createdAt: 'desc' },
         },
         technician: {
-          select: { name: true, avatarUrl: true, id: true }
-        }
+          select: { name: true, avatarUrl: true, id: true },
+        },
       },
     });
 
@@ -107,14 +111,16 @@ export class ClientHomeService {
     }
 
     // Check if current user has liked/favorited this work
-    const isLiked = work.likes.some(like => like.clientId === clientUserId);
-    const isFavorited = work.favorites.some(fav => fav.clientId === clientUserId);
+    const isLiked = work.likes.some((like) => like.clientId === clientUserId);
+    const isFavorited = work.favorites.some(
+      (fav) => fav.clientId === clientUserId,
+    );
 
     return {
       ...this.mapWork(work),
       isLiked,
       isFavorited,
-      comments: work.comments.map(c => ({
+      comments: work.comments.map((c) => ({
         id: c.id,
         content: c.content,
         technicianId: c.technicianId,
@@ -176,7 +182,8 @@ export class ClientHomeService {
     techId?: number;
   }) {
     const imageUrls = this.parseImageUrls(work.images, work.coverUrl);
-    const UPLOAD_BASE_URL = process.env.UPLOAD_BASE_URL || 'http://localhost:3000';
+    const UPLOAD_BASE_URL =
+      process.env.UPLOAD_BASE_URL || 'http://localhost:3000';
 
     const toAbsoluteUrl = (url: string | null): string | null => {
       if (!url) return null;
@@ -190,8 +197,11 @@ export class ClientHomeService {
     return {
       id: work.id,
       title: work.title,
-      coverUrl: toAbsoluteUrl(work.coverUrl) ?? toAbsoluteUrl(imageUrls[0]) ?? null,
-      imageUrls: imageUrls.map(url => toAbsoluteUrl(url)).filter(Boolean) as string[],
+      coverUrl:
+        toAbsoluteUrl(work.coverUrl) ?? toAbsoluteUrl(imageUrls[0]) ?? null,
+      imageUrls: imageUrls
+        .map((url) => toAbsoluteUrl(url))
+        .filter(Boolean) as string[],
       description: work.description ?? null,
       tags: this.parseTags(work.tags ?? null),
       likeCount: work.likes?.length ?? 0,
@@ -211,7 +221,9 @@ export class ClientHomeService {
     try {
       const parsed = JSON.parse(images);
       if (Array.isArray(parsed)) {
-        return parsed.filter((item): item is string => typeof item === 'string');
+        return parsed.filter(
+          (item): item is string => typeof item === 'string',
+        );
       }
     } catch {
       return images

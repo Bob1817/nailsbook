@@ -1,0 +1,37 @@
+{
+  "pages": [
+    "pages/role-select/index",
+    "pages/client/login/index",
+    "pages/client/home/index",
+    "pages/client/works/index",
+    "pages/client/work-detail/index",
+    "pages/client/create-order/index",
+    "pages/client/orders/index",
+    "pages/client/order-detail/index",
+    "pages/client/addresses/index",
+    "pages/client/address-edit/index",
+    "pages/client/chat/index",
+    "pages/client/profile/index",
+    "pages/technician/login/index",
+    "pages/technician/home/index",
+    "pages/technician/orders/index",
+    "pages/technician/order-detail/index",
+    "pages/technician/customers/index",
+    "pages/technician/customer-detail/index",
+    "pages/technician/works/index",
+    "pages/technician/work-edit/index",
+    "pages/technician/services/index",
+    "pages/technician/chat/index",
+    "pages/technician/profile/index"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTitleText": "NailBook",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f5f5f5"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

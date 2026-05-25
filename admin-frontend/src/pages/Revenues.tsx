@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Table, Space, Select, Tag, message, Card, Modal, Descriptions, DatePicker, Row, Col, Statistic, Button } from 'antd';
 import { revenueService } from '../services/revenue';
 import type { Revenue, RevenueStatistics } from '../services/revenue';
@@ -23,7 +23,7 @@ const Revenues: React.FC = () => {
     endDate: undefined as string | undefined,
   });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [result, stats] = await Promise.all([
@@ -42,18 +42,18 @@ const Revenues: React.FC = () => {
       ]);
       setData(result);
       setStatistics(stats);
-    } catch (error) {
+    } catch {
       message.error('获取数据失败');
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
   const fetchTechnicians = async () => {
     try {
       const result = await technicianService.getAll({ limit: 1000 });
       setTechnicians(result.data);
-    } catch (error) {
+    } catch {
       console.error('Failed to fetch technicians');
     }
   };
@@ -64,7 +64,7 @@ const Revenues: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [filters]);
+  }, [fetchData]);
 
   const columns = [
     { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { useAuth } from '../contexts/AuthContext';
@@ -17,7 +17,7 @@ const ChatDetail: React.FC = () => {
   const [currentConversationId, setCurrentConversationId] = useState<number | null>(
     conversationId ? parseInt(conversationId, 10) : null
   );
-  const [conversations, setConversations] = useState<Array<{ id: number; techId: number }>>([]);
+  const [, setConversations] = useState<Array<{ id: number; techId: number }>>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -29,9 +29,38 @@ const ChatDetail: React.FC = () => {
 
   const techIdFromUrl = searchParams.get('tech_id');
 
+  const loadConversations = useCallback(async () => {
+    try {
+      const convs = await messageService.getConversations();
+      setConversations(convs.map((item) => ({ id: item.id, techId: item.technician.id })));
+    } catch (error) {
+      console.error('Failed to load conversations:', error);
+    }
+  }, []);
+
+  const loadMessagesByConversationId = useCallback(async (id: number, showLoading = true) => {
+    if (showLoading) {
+      setLoading(true);
+    }
+
+    try {
+      const data = await messageService.getMessages(id);
+      setCurrentConversationId(id);
+      setCurrentTechnician(data.technician);
+      setMessages((prev) => (JSON.stringify(prev) !== JSON.stringify(data.messages) ? data.messages : prev));
+      void messageService.markAsRead(id);
+    } catch (error) {
+      console.error('Failed to load messages:', error);
+    } finally {
+      if (showLoading) {
+        setLoading(false);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     loadConversations();
-  }, []);
+  }, [loadConversations]);
 
   useEffect(() => {
     const nextConversationId = conversationId ? parseInt(conversationId, 10) : null;
@@ -62,17 +91,17 @@ const ChatDetail: React.FC = () => {
     }
 
     setLoading(false);
-  }, [currentConversationId, techIdFromUrl, technicians, defaultTechnician]);
+  }, [currentConversationId, techIdFromUrl, technicians, defaultTechnician, loadMessagesByConversationId]);
 
   // WebSocket message listeners
   useEffect(() => {
     if (!socket || !currentConversationId) return;
 
-    const onNewMessage = (data: { message: any; conversation: any }) => {
+    const onNewMessage = (data: { message: { id: number; conversationId: number }; conversation: unknown }) => {
       if (data.message.conversationId === currentConversationId) {
         setMessages((prev) => {
           if (prev.some((m) => m.id === data.message.id)) return prev;
-          return [...prev, data.message];
+          return [...prev, data.message as Message];
         });
       }
     };
@@ -107,68 +136,11 @@ const ChatDetail: React.FC = () => {
       loadMessagesByConversationId(currentConversationId, false);
     }, 3000);
     return () => clearInterval(interval);
-  }, [isConnected, currentConversationId]);
+  }, [isConnected, currentConversationId, loadMessagesByConversationId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  const loadConversations = async () => {
-    try {
-      const convs = await messageService.getConversations();
-      setConversations(convs.map((item) => ({ id: item.id, techId: item.technician.id })));
-    } catch (error) {
-      console.error('Failed to load conversations:', error);
-    }
-  };
-
-  const loadMessagesByConversationId = async (id: number, showLoading = true) => {
-    if (showLoading) {
-      setLoading(true);
-    }
-
-    try {
-      const data = await messageService.getMessages(id);
-      setCurrentConversationId(id);
-      setCurrentTechnician(data.technician);
-      setMessages((prev) => (JSON.stringify(prev) !== JSON.stringify(data.messages) ? data.messages : prev));
-      messageService.markAsRead(id).catch(() => {});
-    } catch (error) {
-      console.error('Failed to load messages:', error);
-    } finally {
-      if (showLoading) {
-        setLoading(false);
-      }
-    }
-  };
-
-  const loadMessagesForTechnician = async (techId: number, showLoading = true) => {
-    if (showLoading) {
-      setLoading(true);
-    }
-
-    try {
-      let convs = conversations;
-      if (convs.length === 0) {
-        const data = await messageService.getConversations();
-        convs = data.map((item) => ({ id: item.id, techId: item.technician.id }));
-        setConversations(convs);
-      }
-
-      const conv = convs.find((item) => item.techId === techId);
-      if (conv) {
-        await loadMessagesByConversationId(conv.id, false);
-      } else {
-        setMessages([]);
-      }
-    } catch (error) {
-      console.error('Failed to load messages:', error);
-    } finally {
-      if (showLoading) {
-        setLoading(false);
-      }
-    }
-  };
 
   const syncConversationAndRoute = async (techId: number) => {
     const convs = await messageService.getConversations();
@@ -194,10 +166,16 @@ const ChatDetail: React.FC = () => {
       });
       const optimisticMsg = {
         id: Date.now(),
-        conversationId: currentConversationId,
+        conversationId: currentConversationId ?? 0,
         senderType: 'client' as const,
+        senderId: null,
+        receiverType: 'technician',
+        receiverId: currentTechnician.id,
         messageType: 'text' as const,
         content: inputText,
+        imageUrl: null,
+        relatedType: null,
+        relatedId: null,
         createdAt: new Date().toISOString(),
         isRead: false,
       };

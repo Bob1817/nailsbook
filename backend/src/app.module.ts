@@ -41,10 +41,12 @@ import { DevelopmentDemoSeedService } from './development-demo-seed.service';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 120,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 120,
+      },
+    ]),
     VerificationCodeModule,
     PrismaModule,
     AuthModule,

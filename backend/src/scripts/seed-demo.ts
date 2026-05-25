@@ -10,7 +10,12 @@ async function main() {
     console.log(`Clients: ${result.clientPhones.join(', ')}`);
     console.log(`Orders: ${result.orderNos.join(', ')}`);
     console.log(`Revenues: ${result.revenueNos.join(', ')}`);
-    console.log(`Artist applications: ${result.artistApplicationPhones.join(', ')}`);
+    console.log(
+      `Custom service requests: ${result.customServiceRequestNos.join(', ')}`,
+    );
+    console.log(
+      `Artist applications: ${result.artistApplicationPhones.join(', ')}`,
+    );
   } finally {
     await prisma.$disconnect();
   }

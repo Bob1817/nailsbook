@@ -14,12 +14,13 @@ export class SchedulesService {
 
     const now = new Date();
 
-    const expiredSubscriptions = await this.prisma.technicianSubscription.findMany({
-      where: {
-        status: 'active',
-        expiredAt: { lt: now },
-      },
-    });
+    const expiredSubscriptions =
+      await this.prisma.technicianSubscription.findMany({
+        where: {
+          status: 'active',
+          expiredAt: { lt: now },
+        },
+      });
 
     for (const sub of expiredSubscriptions) {
       await this.prisma.technicianSubscription.update({
@@ -27,10 +28,14 @@ export class SchedulesService {
         data: { status: 'expired' },
       });
 
-      this.logger.log(`Subscription ${sub.id} expired for technician ${sub.technicianId}`);
+      this.logger.log(
+        `Subscription ${sub.id} expired for technician ${sub.technicianId}`,
+      );
     }
 
-    this.logger.log(`Processed ${expiredSubscriptions.length} expired subscriptions`);
+    this.logger.log(
+      `Processed ${expiredSubscriptions.length} expired subscriptions`,
+    );
   }
 
   @Cron('0 0 1 * * *')
@@ -92,7 +97,9 @@ export class SchedulesService {
       }),
     ]);
 
-    this.logger.log(`Monthly Report for ${firstDayOfMonth.toISOString().split('T')[0]}:`);
+    this.logger.log(
+      `Monthly Report for ${firstDayOfMonth.toISOString().split('T')[0]}:`,
+    );
     this.logger.log(`- New Technicians: ${newTechnicians}`);
     this.logger.log(`- New Customers: ${newCustomers}`);
     this.logger.log(`- Total Orders: ${totalOrders}`);

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Table, Card, Switch, Tag, Button, Modal, Form, Input, message, Typography } from 'antd';
-import { featureFlagService, FeatureFlag } from '../services/featureFlag';
+import { featureFlagService } from '../services/featureFlag';
+import type { FeatureFlag } from '../services/featureFlag';
 
 const { Title } = Typography;
 

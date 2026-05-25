@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { worksService, type NailWork } from '../services/works';
 
@@ -8,11 +8,7 @@ const WorksPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTechnician, setSelectedTechnician] = useState('全部');
 
-  useEffect(() => {
-    loadWorks();
-  }, []);
-
-  const loadWorks = async () => {
+  const loadWorks = useCallback(async () => {
     setLoading(true);
     try {
       const data = await worksService.getWorks();
@@ -22,7 +18,11 @@ const WorksPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadWorks();
+  }, [loadWorks]);
 
   const getMasonryLayout = () => {
     const columns: NailWork[][] = [[], []];

@@ -45,7 +45,7 @@ const RoleSelectPage = () => {
 
             <section className="mx-auto mt-8 grid max-w-5xl gap-4 lg:grid-cols-2">
               <a
-                href="http://localhost:5175/login"
+                href={import.meta.env.VITE_TECHNICIAN_LOGIN_URL || '/login'}
                 className={`relative block overflow-hidden rounded-[2rem] border border-white/85 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,244,246,0.9))] p-6 text-left shadow-[0_28px_58px_rgba(192,136,148,0.12)] transition active:scale-[0.99] active:border-[rgba(255,107,138,0.26)] active:bg-[linear-gradient(180deg,rgba(255,248,249,0.98),rgba(255,236,240,0.96))] active:shadow-[0_16px_34px_rgba(192,136,148,0.18)] sm:p-8 ${focusVisibleClass}`}
               >
                 <div className="absolute right-0 top-0 h-36 w-36 rounded-full bg-[radial-gradient(circle,rgba(255,143,163,0.28),transparent_68%)]" />
@@ -78,7 +78,7 @@ const RoleSelectPage = () => {
               </a>
 
               <a
-                href="http://localhost:5173/login"
+                href={import.meta.env.VITE_CLIENT_LOGIN_URL || '/client-login'}
                 className={`relative block overflow-hidden rounded-[2rem] border border-white/85 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,249,0.9))] p-6 text-left shadow-[0_28px_58px_rgba(192,136,148,0.1)] transition active:scale-[0.99] active:border-[rgba(255,107,138,0.22)] active:bg-[linear-gradient(180deg,rgba(255,250,251,0.98),rgba(255,240,244,0.96))] active:shadow-[0_16px_34px_rgba(192,136,148,0.16)] sm:p-8 ${focusVisibleClass}`}
               >
                 <div className="absolute bottom-0 right-0 h-36 w-36 rounded-full bg-[radial-gradient(circle,rgba(255,107,138,0.18),transparent_68%)]" />

@@ -84,6 +84,7 @@ export async function createContractTestApp(
 
   try {
     const appModulePath = '../../src/app.module';
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { AppModule } = require(appModulePath);
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -123,12 +124,24 @@ export async function createContractTestApp(
       prisma: initializedApp.get(PrismaService),
       databaseUrl,
       signClientToken: (clientUserId: number, phone: string) => {
-        const secret = process.env.CLIENT_JWT_SECRET ?? process.env.JWT_SECRET ?? 'test-secret';
-        return jwt.sign({ sub: clientUserId, phone, userType: 'client' }, secret);
+        const secret =
+          process.env.CLIENT_JWT_SECRET ??
+          process.env.JWT_SECRET ??
+          'test-secret';
+        return jwt.sign(
+          { sub: clientUserId, phone, userType: 'client' },
+          secret,
+        );
       },
       signTechnicianToken: (technicianId: number, phone: string) => {
-        const secret = process.env.TECHNICIAN_JWT_SECRET ?? process.env.JWT_SECRET ?? 'test-secret';
-        return jwt.sign({ sub: technicianId, phone, userType: 'technician' }, secret);
+        const secret =
+          process.env.TECHNICIAN_JWT_SECRET ??
+          process.env.JWT_SECRET ??
+          'test-secret';
+        return jwt.sign(
+          { sub: technicianId, phone, userType: 'technician' },
+          secret,
+        );
       },
       cleanup: async () => {
         try {
@@ -164,7 +177,10 @@ function resolveContractDatabaseUrl(explicitDatabaseUrl?: string) {
     return explicitDatabaseUrl;
   }
 
-  if (!process.env.DATABASE_URL || isObviousDevDatabaseUrl(process.env.DATABASE_URL)) {
+  if (
+    !process.env.DATABASE_URL ||
+    isObviousDevDatabaseUrl(process.env.DATABASE_URL)
+  ) {
     return getDefaultContractDatabaseUrl();
   }
 

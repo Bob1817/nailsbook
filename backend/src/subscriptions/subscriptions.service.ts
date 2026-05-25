@@ -1,18 +1,43 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
 export class CreateSubscriptionPlanDto {
+  @ApiProperty({ description: '套餐名称', example: '基础版' })
   name: string;
+
+  @ApiProperty({ description: '套餐代码', example: 'basic' })
   code: string;
+
+  @ApiProperty({ description: '价格', example: 99 })
   price: number;
+
+  @ApiProperty({ description: '计费周期', example: 'monthly' })
   billingCycle: string;
+
+  @ApiPropertyOptional({ description: '最大客户数', example: 50 })
   maxCustomers?: number;
+
+  @ApiPropertyOptional({ description: '每月最大预约数', example: 100 })
   maxMonthlyBookings?: number;
+
+  @ApiPropertyOptional({
+    description: '功能列表',
+    example: ['基础预约', '客户管理'],
+  })
   features?: string[];
+
+  @ApiPropertyOptional({ description: '状态', example: 'active' })
   status?: string;
 }
 
 export class UpdateTechnicianSubscriptionDto {
+  @ApiProperty({ description: '套餐ID', example: 1 })
   planId: number;
 }
 
@@ -94,7 +119,10 @@ export class SubscriptionsService {
     });
   }
 
-  async updateTechnicianSubscription(technicianId: number, dto: UpdateTechnicianSubscriptionDto) {
+  async updateTechnicianSubscription(
+    technicianId: number,
+    dto: UpdateTechnicianSubscriptionDto,
+  ) {
     const technician = await this.prisma.technician.findUnique({
       where: { id: technicianId },
     });
@@ -111,18 +139,20 @@ export class SubscriptionsService {
         planId: dto.planId,
         status: 'active',
         startedAt: new Date(),
-        expiredAt: plan.billingCycle !== 'free' 
-          ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) 
-          : null,
+        expiredAt:
+          plan.billingCycle !== 'free'
+            ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+            : null,
       },
       create: {
         technicianId,
         planId: dto.planId,
         status: 'active',
         startedAt: new Date(),
-        expiredAt: plan.billingCycle !== 'free'
-          ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-          : null,
+        expiredAt:
+          plan.billingCycle !== 'free'
+            ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+            : null,
       },
     });
   }

@@ -3,6 +3,7 @@ type DemoSeedResult = {
   clientPhones: string[];
   orderNos: string[];
   revenueNos: string[];
+  customServiceRequestNos: string[];
   artistApplicationPhones: string[];
 };
 
@@ -21,6 +22,8 @@ type DemoClientSeed = {
     district: string;
     detailAddress: string;
     doorInfo: string;
+    latitude?: number;
+    longitude?: number;
   };
 };
 
@@ -48,10 +51,38 @@ const PRIMARY_TECHNICIAN_PHONE = '13800138000';
 const PRIMARY_TECHNICIAN_INVITE_CODE = '123456';
 
 const DEFAULT_SERVICE_ITEMS = [
-  { id: 'svc_basic_care_1', name: '基础护理与修形', description: '修剪、修形、去死皮与基础护理', category: 'basic_care', isActive: true, sortOrder: 1 },
-  { id: 'svc_gel_color_1', name: '纯色与跳色美甲', description: '纯色、跳色、渐变与常规胶款', category: 'gel_color', isActive: true, sortOrder: 2 },
-  { id: 'svc_hand_paint_1', name: '手绘与细节点缀', description: '法式、猫眼、贴钻与局部手绘', category: 'design', isActive: true, sortOrder: 3 },
-  { id: 'svc_extension_1', name: '延长与加固', description: '甲片延长、结构加固与卸甲修复', category: 'extension', isActive: true, sortOrder: 4 },
+  {
+    id: 'svc_basic_care_1',
+    name: '基础护理与修形',
+    description: '修剪、修形、去死皮与基础护理',
+    category: 'basic_care',
+    isActive: true,
+    sortOrder: 1,
+  },
+  {
+    id: 'svc_gel_color_1',
+    name: '纯色与跳色美甲',
+    description: '纯色、跳色、渐变与常规胶款',
+    category: 'gel_color',
+    isActive: true,
+    sortOrder: 2,
+  },
+  {
+    id: 'svc_hand_paint_1',
+    name: '手绘与细节点缀',
+    description: '法式、猫眼、贴钻与局部手绘',
+    category: 'design',
+    isActive: true,
+    sortOrder: 3,
+  },
+  {
+    id: 'svc_extension_1',
+    name: '延长与加固',
+    description: '甲片延长、结构加固与卸甲修复',
+    category: 'extension',
+    isActive: true,
+    sortOrder: 4,
+  },
 ];
 
 const DEFAULT_BUSINESS_HOURS = [1, 2, 3, 4, 5, 6, 0].map((weekday) => ({
@@ -89,6 +120,8 @@ const DEMO_CLIENTS: DemoClientSeed[] = [
       district: '静安区',
       detailAddress: '铜仁路 88 号 1202',
       doorInfo: '门禁 1202#',
+      latitude: 31.2245,
+      longitude: 121.4442,
     },
   },
   {
@@ -104,6 +137,8 @@ const DEMO_CLIENTS: DemoClientSeed[] = [
       district: '徐汇区',
       detailAddress: '天钥桥路 188 弄 6 号楼 901',
       doorInfo: '到店前电话',
+      latitude: 31.1888,
+      longitude: 121.4385,
     },
   },
   {
@@ -119,6 +154,8 @@ const DEMO_CLIENTS: DemoClientSeed[] = [
       district: '长宁区',
       detailAddress: '延安西路 728 号 1701',
       doorInfo: '前台登记',
+      latitude: 31.2135,
+      longitude: 121.4065,
     },
   },
   {
@@ -134,6 +171,8 @@ const DEMO_CLIENTS: DemoClientSeed[] = [
       district: '浦东新区',
       detailAddress: '浦电路 56 弄 3 号楼 502',
       doorInfo: '放物业前台',
+      latitude: 31.2215,
+      longitude: 121.5205,
     },
   },
   {
@@ -149,6 +188,8 @@ const DEMO_CLIENTS: DemoClientSeed[] = [
       district: '虹口区',
       detailAddress: '四川北路 2018 号 1103',
       doorInfo: '电梯右转',
+      latitude: 31.2585,
+      longitude: 121.4755,
     },
   },
 ];
@@ -156,7 +197,8 @@ const DEMO_CLIENTS: DemoClientSeed[] = [
 const DEMO_WORKS = [
   {
     title: '奶油裸粉通勤款',
-    coverUrl: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=900&q=80',
+    coverUrl:
+      'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=900&q=80',
     images: [
       'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=900&q=80',
       'https://images.unsplash.com/photo-1519014816548-bf5fe059798b?auto=format&fit=crop&w=900&q=80',
@@ -169,7 +211,8 @@ const DEMO_WORKS = [
   },
   {
     title: '法式猫眼婚礼款',
-    coverUrl: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=900&q=80',
+    coverUrl:
+      'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=900&q=80',
     images: [
       'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=900&q=80',
       'https://images.unsplash.com/photo-1607779097040-26e80aa78e66?auto=format&fit=crop&w=900&q=80',
@@ -182,7 +225,8 @@ const DEMO_WORKS = [
   },
   {
     title: '抹茶绿色周末款',
-    coverUrl: 'https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=900&q=80',
+    coverUrl:
+      'https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=900&q=80',
     images: [
       'https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=900&q=80',
     ],
@@ -194,7 +238,8 @@ const DEMO_WORKS = [
   },
   {
     title: '黑金派对延长款',
-    coverUrl: 'https://images.unsplash.com/photo-1610992015732-2449b76344bc?auto=format&fit=crop&w=900&q=80',
+    coverUrl:
+      'https://images.unsplash.com/photo-1610992015732-2449b76344bc?auto=format&fit=crop&w=900&q=80',
     images: [
       'https://images.unsplash.com/photo-1610992015732-2449b76344bc?auto=format&fit=crop&w=900&q=80',
     ],
@@ -206,7 +251,8 @@ const DEMO_WORKS = [
   },
   {
     title: '樱桃酒红秋冬款',
-    coverUrl: 'https://images.unsplash.com/photo-1515688594390-b649af70d282?auto=format&fit=crop&w=900&q=80',
+    coverUrl:
+      'https://images.unsplash.com/photo-1515688594390-b649af70d282?auto=format&fit=crop&w=900&q=80',
     images: [
       'https://images.unsplash.com/photo-1515688594390-b649af70d282?auto=format&fit=crop&w=900&q=80',
     ],
@@ -218,7 +264,8 @@ const DEMO_WORKS = [
   },
   {
     title: '海盐蓝度假款',
-    coverUrl: 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=900&q=80',
+    coverUrl:
+      'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=900&q=80',
     images: [
       'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=900&q=80',
     ],
@@ -252,7 +299,11 @@ function json(value: unknown) {
   return JSON.stringify(value);
 }
 
-async function ensureAddress(prisma: DemoPrisma, clientId: number, address: DemoClientSeed['address']) {
+async function ensureAddress(
+  prisma: DemoPrisma,
+  clientId: number,
+  address: DemoClientSeed['address'],
+) {
   const existing = await prisma.clientAddress.findFirst({
     where: {
       clientId,
@@ -265,7 +316,13 @@ async function ensureAddress(prisma: DemoPrisma, clientId: number, address: Demo
       where: { clientId },
       data: { isDefault: false },
     });
-    return existing;
+    return prisma.clientAddress.update({
+      where: { id: existing.id },
+      data: {
+        latitude: address.latitude ?? null,
+        longitude: address.longitude ?? null,
+      },
+    });
   }
 
   await prisma.clientAddress.updateMany({
@@ -283,12 +340,18 @@ async function ensureAddress(prisma: DemoPrisma, clientId: number, address: Demo
       district: address.district,
       detailAddress: address.detailAddress,
       doorInfo: address.doorInfo,
+      latitude: address.latitude,
+      longitude: address.longitude,
       isDefault: true,
     },
   });
 }
 
-async function ensureWork(prisma: DemoPrisma, techId: number, work: (typeof DEMO_WORKS)[number]) {
+async function ensureWork(
+  prisma: DemoPrisma,
+  techId: number,
+  work: (typeof DEMO_WORKS)[number],
+) {
   const existing = await prisma.nailWork.findFirst({
     where: {
       techId,
@@ -319,7 +382,11 @@ async function ensureWork(prisma: DemoPrisma, techId: number, work: (typeof DEMO
   return prisma.nailWork.create({ data });
 }
 
-async function ensureInteraction(prisma: DemoPrisma, type: 'like' | 'favorite' | 'comment', payload: any) {
+async function ensureInteraction(
+  prisma: DemoPrisma,
+  type: 'like' | 'favorite' | 'comment',
+  payload: any,
+) {
   if (type === 'like') {
     const existing = await prisma.nailWorkLike.findFirst({
       where: {
@@ -358,7 +425,12 @@ async function ensureInteraction(prisma: DemoPrisma, type: 'like' | 'favorite' |
   }
 }
 
-async function ensureDesignRequest(prisma: DemoPrisma, clientId: number, techId: number, seed: any) {
+async function ensureDesignRequest(
+  prisma: DemoPrisma,
+  clientId: number,
+  techId: number,
+  seed: any,
+) {
   const existing = await prisma.clientDesignRequest.findFirst({
     where: {
       clientId,
@@ -388,7 +460,11 @@ async function ensureDesignRequest(prisma: DemoPrisma, clientId: number, techId:
   return prisma.clientDesignRequest.create({ data });
 }
 
-async function ensureMessage(prisma: DemoPrisma, conversationId: number, seed: any) {
+async function ensureMessage(
+  prisma: DemoPrisma,
+  conversationId: number,
+  seed: any,
+) {
   const existing = await prisma.message.findFirst({
     where: {
       conversationId,
@@ -429,7 +505,69 @@ async function ensureMessage(prisma: DemoPrisma, conversationId: number, seed: a
   return prisma.message.create({ data });
 }
 
-export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult> {
+async function ensureCSR(
+  prisma: DemoPrisma,
+  clientId: number,
+  techId: number,
+  seed: any,
+) {
+  const existing = await prisma.customServiceRequest.findFirst({
+    where: { requestNo: seed.requestNo },
+  });
+
+  const data = {
+    clientId,
+    techId,
+    title: seed.title,
+    description: seed.description,
+    images: seed.images,
+    referenceWorkIds: seed.referenceWorkIds,
+    serviceDate: seed.serviceDate,
+    startTime: seed.startTime,
+    serviceType: seed.serviceType,
+    addressId: seed.addressId ?? null,
+    status: seed.status,
+    quotePrice: seed.quotePrice ?? null,
+    quoteRemark: seed.quoteRemark ?? null,
+    quotedAt: seed.quotedAt ?? null,
+    acceptedAt: seed.acceptedAt ?? null,
+    rejectedAt: seed.rejectedAt ?? null,
+  };
+
+  if (existing) {
+    return prisma.customServiceRequest.update({
+      where: { id: existing.id },
+      data,
+    });
+  }
+
+  return prisma.customServiceRequest.create({
+    data: { requestNo: seed.requestNo, ...data },
+  });
+}
+
+function ensureFeatureFlag(prisma: DemoPrisma, seed: any) {
+  return prisma.featureFlag.upsert({
+    where: { featureCode: seed.featureCode },
+    update: {
+      featureName: seed.featureName,
+      enabled: seed.enabled,
+      enabledPlans: seed.enabledPlans ?? null,
+      description: seed.description ?? null,
+    },
+    create: {
+      featureCode: seed.featureCode,
+      featureName: seed.featureName,
+      enabled: seed.enabled,
+      enabledPlans: seed.enabledPlans ?? null,
+      description: seed.description ?? null,
+    },
+  });
+}
+
+export async function ensureDemoData(
+  prisma: DemoPrisma,
+): Promise<DemoSeedResult> {
   const freePlan = await prisma.subscriptionPlan.upsert({
     where: { code: 'free' },
     update: {
@@ -484,7 +622,11 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
       billingCycle: 'monthly',
       maxCustomers: null,
       maxMonthlyBookings: null,
-      features: json(['team_dashboard', 'priority_support', 'advanced_analytics']),
+      features: json([
+        'team_dashboard',
+        'priority_support',
+        'advanced_analytics',
+      ]),
       status: 'active',
     },
     create: {
@@ -494,7 +636,11 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
       billingCycle: 'monthly',
       maxCustomers: null,
       maxMonthlyBookings: null,
-      features: json(['team_dashboard', 'priority_support', 'advanced_analytics']),
+      features: json([
+        'team_dashboard',
+        'priority_support',
+        'advanced_analytics',
+      ]),
       status: 'active',
     },
   });
@@ -516,7 +662,26 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
         xiaohongshu: '小美美甲工作室',
         douyin: '小美做甲啦',
       }),
-      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=512&q=80',
+      serviceSchedule: json({
+        days: {
+          mon: { enabled: true, startTime: '10:00', endTime: '21:00' },
+          tue: { enabled: true, startTime: '10:00', endTime: '21:00' },
+          wed: { enabled: true, startTime: '10:00', endTime: '21:00' },
+          thu: { enabled: true, startTime: '10:00', endTime: '21:00' },
+          fri: { enabled: true, startTime: '10:00', endTime: '21:00' },
+          sat: { enabled: true, startTime: '09:00', endTime: '22:00' },
+          sun: { enabled: true, startTime: '09:00', endTime: '22:00' },
+        },
+      }),
+      customTags: json([
+        { id: 'tag1', name: '常客', color: '#FF5E93' },
+        { id: 'tag2', name: '新客', color: '#3B82F6' },
+        { id: 'tag3', name: '高频', color: '#C9792A' },
+        { id: 'tag4', name: '简约风', color: '#31B46C' },
+        { id: 'tag5', name: '节日款', color: '#7C3AED' },
+      ]),
+      avatarUrl:
+        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=512&q=80',
     },
     create: {
       name: '小美',
@@ -534,7 +699,26 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
         xiaohongshu: '小美美甲工作室',
         douyin: '小美做甲啦',
       }),
-      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=512&q=80',
+      serviceSchedule: json({
+        days: {
+          mon: { enabled: true, startTime: '10:00', endTime: '21:00' },
+          tue: { enabled: true, startTime: '10:00', endTime: '21:00' },
+          wed: { enabled: true, startTime: '10:00', endTime: '21:00' },
+          thu: { enabled: true, startTime: '10:00', endTime: '21:00' },
+          fri: { enabled: true, startTime: '10:00', endTime: '21:00' },
+          sat: { enabled: true, startTime: '09:00', endTime: '22:00' },
+          sun: { enabled: true, startTime: '09:00', endTime: '22:00' },
+        },
+      }),
+      customTags: json([
+        { id: 'tag1', name: '常客', color: '#FF5E93' },
+        { id: 'tag2', name: '新客', color: '#3B82F6' },
+        { id: 'tag3', name: '高频', color: '#C9792A' },
+        { id: 'tag4', name: '简约风', color: '#31B46C' },
+        { id: 'tag5', name: '节日款', color: '#7C3AED' },
+      ]),
+      avatarUrl:
+        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=512&q=80',
     },
   });
 
@@ -638,7 +822,13 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
     },
   });
 
-  const seededClients: Array<{ client: any; binding: any; customer: any; address: any; seed: DemoClientSeed }> = [];
+  const seededClients: Array<{
+    client: any;
+    binding: any;
+    customer: any;
+    address: any;
+    seed: DemoClientSeed;
+  }> = [];
   const clientLookup = new Map<string, any>();
   const customerLookup = new Map<string, any>();
   const addressLookup = new Map<string, any>();
@@ -702,8 +892,30 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
         phone: seed.phone,
         gender: seed.gender,
         address: seed.address.detailAddress,
-        tags: ['高复购', '审美稳定', '支持拍照素材', '沟通顺畅', '可预约工作日晚上'][index],
-        notes: ['每月固定保养', '偏爱干净法式', '喜欢低饱和色系', '接受延长和造型', '常带参考图来沟通'][index],
+        tags: [
+          '高复购',
+          '审美稳定',
+          '支持拍照素材',
+          '沟通顺畅',
+          '可预约工作日晚上',
+        ][index],
+        notes: [
+          '每月固定保养',
+          '偏爱干净法式',
+          '喜欢低饱和色系',
+          '接受延长和造型',
+          '常带参考图来沟通',
+        ][index],
+        birthday: new Date(
+          [
+            '1995-01-15',
+            '1997-06-20',
+            '1993-11-03',
+            '1998-08-12',
+            '1996-04-25',
+          ][index],
+        ),
+        avatarUrl: AVATAR_URLS[index],
       },
       create: {
         technicianId: primaryTechnician.id,
@@ -712,8 +924,30 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
         phone: seed.phone,
         gender: seed.gender,
         address: seed.address.detailAddress,
-        tags: ['高复购', '审美稳定', '支持拍照素材', '沟通顺畅', '可预约工作日晚上'][index],
-        notes: ['每月固定保养', '偏爱干净法式', '喜欢低饱和色系', '接受延长和造型', '常带参考图来沟通'][index],
+        tags: [
+          '高复购',
+          '审美稳定',
+          '支持拍照素材',
+          '沟通顺畅',
+          '可预约工作日晚上',
+        ][index],
+        notes: [
+          '每月固定保养',
+          '偏爱干净法式',
+          '喜欢低饱和色系',
+          '接受延长和造型',
+          '常带参考图来沟通',
+        ][index],
+        birthday: new Date(
+          [
+            '1995-01-15',
+            '1997-06-20',
+            '1993-11-03',
+            '1998-08-12',
+            '1996-04-25',
+          ][index],
+        ),
+        avatarUrl: AVATAR_URLS[index],
       },
     });
 
@@ -732,8 +966,14 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
   }
 
   if (seededWorks[0]) {
-    await ensureInteraction(prisma, 'like', { workId: seededWorks[0].id, clientId: clientLookup.get('13800138001').id });
-    await ensureInteraction(prisma, 'favorite', { workId: seededWorks[0].id, clientId: clientLookup.get('13800138001').id });
+    await ensureInteraction(prisma, 'like', {
+      workId: seededWorks[0].id,
+      clientId: clientLookup.get('13800138001').id,
+    });
+    await ensureInteraction(prisma, 'favorite', {
+      workId: seededWorks[0].id,
+      clientId: clientLookup.get('13800138001').id,
+    });
     await ensureInteraction(prisma, 'comment', {
       workId: seededWorks[0].id,
       clientId: clientLookup.get('13800138001').id,
@@ -743,7 +983,10 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
   }
 
   if (seededWorks[1]) {
-    await ensureInteraction(prisma, 'like', { workId: seededWorks[1].id, clientId: clientLookup.get('13800138003').id });
+    await ensureInteraction(prisma, 'like', {
+      workId: seededWorks[1].id,
+      clientId: clientLookup.get('13800138003').id,
+    });
     await ensureInteraction(prisma, 'comment', {
       workId: seededWorks[1].id,
       clientId: clientLookup.get('13800138003').id,
@@ -756,7 +999,9 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
     {
       clientPhone: '13800138003',
       title: '奶灰法式婚礼参考',
-      images: ['https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=900&q=80'],
+      images: [
+        'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=900&q=80',
+      ],
       description: '婚礼前想做奶灰法式，长度不要太夸张，拍照要显手白。',
       quotePrice: 328,
       quoteRemark: '建议轻延长 + 猫眼法式，时长约 2.5 小时。',
@@ -765,7 +1010,9 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
     {
       clientPhone: '13800138005',
       title: '海盐蓝旅行款',
-      images: ['https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=900&q=80'],
+      images: [
+        'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=900&q=80',
+      ],
       description: '月底去海边，想要偏清透的蓝色和贝壳元素。',
       quotePrice: 268,
       quoteRemark: '适合做清透底加少量贝壳金箔。',
@@ -776,7 +1023,12 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
   const designRequestLookup = new Map<string, any>();
   for (const seed of designRequests) {
     const client = clientLookup.get(seed.clientPhone);
-    const designRequest = await ensureDesignRequest(prisma, client.id, primaryTechnician.id, seed);
+    const designRequest = await ensureDesignRequest(
+      prisma,
+      client.id,
+      primaryTechnician.id,
+      seed,
+    );
     designRequestLookup.set(seed.title, designRequest);
   }
 
@@ -875,6 +1127,218 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
     for (const message of seed.messages) {
       await ensureMessage(prisma, conversation.id, message);
     }
+  }
+
+  // ── Custom Service Requests ──────────────────────────────────────────────
+  const csrSeeds = [
+    {
+      requestNo: 'DEMO-CSR-001',
+      clientPhone: '13800138001',
+      title: '节日主题定制美甲',
+      description: '想做一组圣诞节主题的美甲，要有雪花和麋鹿元素，底色用酒红。',
+      images: json([
+        'https://images.unsplash.com/photo-1515688594390-b649af70d282?auto=format&fit=crop&w=900&q=80',
+      ]),
+      serviceDate: '周六',
+      startTime: '14:00',
+      serviceType: '到店美甲',
+      status: 'quoted',
+      quotePrice: 288,
+      quoteRemark: '手绘雪花+麋鹿约2小时，建议搭配酒红底色。',
+      quotedAt: daysAgo(3, 16, 0),
+    },
+    {
+      requestNo: 'DEMO-CSR-002',
+      clientPhone: '13800138002',
+      title: '参考作品定制渐变款',
+      description: '很喜欢作品集里那款抹茶绿，想要同色系但换成渐变效果。',
+      images: json([
+        'https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=900&q=80',
+        'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=900&q=80',
+      ]),
+      referenceWorkIds: seededWorks[2] ? json([seededWorks[2].id]) : null,
+      serviceDate: '下周三',
+      startTime: '19:30',
+      serviceType: '上门美甲',
+      addressId: addressLookup.get('13800138002')?.id ?? null,
+      status: 'pending_quote',
+    },
+    {
+      requestNo: 'DEMO-CSR-003',
+      clientPhone: '13800138004',
+      title: '派对延长甲定制',
+      description: '周末派对想做夸张一点的延长甲，黑色底金色线条，可以贴钻。',
+      images: json([
+        'https://images.unsplash.com/photo-1610992015732-2449b76344bc?auto=format&fit=crop&w=900&q=80',
+      ]),
+      serviceDate: '周五',
+      startTime: '18:00',
+      serviceType: '上门美甲',
+      addressId: addressLookup.get('13800138004')?.id ?? null,
+      status: 'rejected',
+      rejectedAt: daysAgo(1, 10, 30),
+    },
+  ];
+
+  const customServiceRequestNos: string[] = [];
+  for (const seed of csrSeeds) {
+    const client = clientLookup.get(seed.clientPhone);
+    await ensureCSR(prisma, client.id, primaryTechnician.id, seed);
+    customServiceRequestNos.push(seed.requestNo);
+  }
+
+  // ── Feature Flags ────────────────────────────────────────────────────────
+  const featureFlagSeeds = [
+    {
+      featureCode: 'home_service',
+      featureName: '上门服务',
+      enabled: true,
+      enabledPlans: json(['pro', 'studio_plus']),
+      description: '美甲师上门服务功能开关',
+    },
+    {
+      featureCode: 'design_request',
+      featureName: '定制设计请求',
+      enabled: true,
+      enabledPlans: json(['free', 'pro', 'studio_plus']),
+      description: '客户提交定制设计需求功能',
+    },
+    {
+      featureCode: 'advanced_analytics',
+      featureName: '高级数据分析',
+      enabled: true,
+      enabledPlans: json(['studio_plus']),
+      description: '高级数据统计与分析面板',
+    },
+    {
+      featureCode: 'priority_support',
+      featureName: '优先客服',
+      enabled: false,
+      enabledPlans: json(['studio_plus']),
+      description: '优先客服通道（暂未开放）',
+    },
+  ];
+  for (const seed of featureFlagSeeds) {
+    await ensureFeatureFlag(prisma, seed);
+  }
+
+  // ── Admin User & Operation Logs ──────────────────────────────────────────
+  const adminRole = await prisma.adminRole.upsert({
+    where: { code: 'demo_admin' },
+    update: { name: '演示管理员', description: '演示种子数据管理员角色' },
+    create: {
+      name: '演示管理员',
+      code: 'demo_admin',
+      description: '演示种子数据管理员角色',
+    },
+  });
+
+  const adminUser = await prisma.adminUser.upsert({
+    where: { username: 'demo_admin' },
+    update: { realName: '演示管理员', roleId: adminRole.id, status: 'active' },
+    create: {
+      username: 'demo_admin',
+      passwordHash: '$2b$10$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+      realName: '演示管理员',
+      roleId: adminRole.id,
+      status: 'active',
+    },
+  });
+
+  const operationLogSeeds = [
+    {
+      module: 'artist_application',
+      action: 'approve',
+      targetType: 'artist_application',
+      targetId: null,
+      ip: '192.168.1.100',
+      createdAt: daysAgo(5, 10, 0),
+    },
+    {
+      module: 'order',
+      action: 'review',
+      targetType: 'order',
+      targetId: null,
+      ip: '192.168.1.100',
+      createdAt: daysAgo(3, 14, 20),
+    },
+    {
+      module: 'technician',
+      action: 'update_status',
+      targetType: 'technician',
+      targetId: primaryTechnician.id,
+      ip: '192.168.1.101',
+      createdAt: daysAgo(1, 9, 0),
+    },
+  ];
+  for (const seed of operationLogSeeds) {
+    const existing = await prisma.operationLog.findFirst({
+      where: {
+        adminUserId: adminUser.id,
+        module: seed.module,
+        action: seed.action,
+        createdAt: seed.createdAt,
+      },
+    });
+    if (!existing) {
+      await prisma.operationLog.create({
+        data: {
+          adminUserId: adminUser.id,
+          module: seed.module,
+          action: seed.action,
+          targetType: seed.targetType,
+          targetId: seed.targetId,
+          ip: seed.ip,
+          createdAt: seed.createdAt,
+        },
+      });
+    }
+  }
+
+  // ── Additional NailWork Interactions ─────────────────────────────────────
+  if (seededWorks[2]) {
+    await ensureInteraction(prisma, 'like', {
+      workId: seededWorks[2].id,
+      clientId: clientLookup.get('13800138002').id,
+    });
+    await ensureInteraction(prisma, 'favorite', {
+      workId: seededWorks[2].id,
+      clientId: clientLookup.get('13800138002').id,
+    });
+  }
+  if (seededWorks[3]) {
+    await ensureInteraction(prisma, 'like', {
+      workId: seededWorks[3].id,
+      clientId: clientLookup.get('13800138004').id,
+    });
+    await ensureInteraction(prisma, 'comment', {
+      workId: seededWorks[3].id,
+      clientId: clientLookup.get('13800138004').id,
+      content: '这款黑金延长好酷，适合年底活动！',
+      isRead: false,
+    });
+  }
+  if (seededWorks[4]) {
+    await ensureInteraction(prisma, 'like', {
+      workId: seededWorks[4].id,
+      clientId: clientLookup.get('13800138001').id,
+    });
+    await ensureInteraction(prisma, 'favorite', {
+      workId: seededWorks[4].id,
+      clientId: clientLookup.get('13800138003').id,
+    });
+  }
+  if (seededWorks[5]) {
+    await ensureInteraction(prisma, 'like', {
+      workId: seededWorks[5].id,
+      clientId: clientLookup.get('13800138005').id,
+    });
+    await ensureInteraction(prisma, 'comment', {
+      workId: seededWorks[5].id,
+      clientId: clientLookup.get('13800138005').id,
+      content: '海盐蓝好清爽，旅行回来约做这款！',
+      isRead: true,
+    });
   }
 
   const bookingSeeds: DemoBookingSeed[] = [
@@ -1001,6 +1465,34 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
       address: '静安工作室 · 南京西路 818 号 3 楼',
       remark: '先做试色和婚礼成片确认。',
     },
+    {
+      orderNo: 'DEMO-OD-1009',
+      clientPhone: '13800138002',
+      title: '裸粉跳色保养',
+      description: '春季到店保养',
+      serviceType: '到店美甲',
+      status: 'in_progress',
+      price: 198,
+      depositAmount: 50,
+      startTime: daysFromNow(0, 16, 0),
+      endTime: addMinutes(daysFromNow(0, 16, 0), 120),
+      address: '静安工作室 · 南京西路 818 号 3 楼',
+      remark: '今天下午到店，做裸粉跳色保养。',
+    },
+    {
+      orderNo: 'DEMO-OD-1010',
+      clientPhone: '13800138004',
+      title: '纯色快做上门',
+      description: '工作日上门纯色',
+      serviceType: '上门美甲',
+      status: 'pending_quote',
+      price: 0,
+      depositAmount: 0,
+      startTime: daysFromNow(1, 15, 0),
+      endTime: addMinutes(daysFromNow(1, 15, 0), 90),
+      address: '浦东新区浦电路 56 弄 3 号楼 502',
+      remark: '客户希望报价，偏好纯色快做。',
+    },
   ];
 
   const orderNos: string[] = [];
@@ -1010,7 +1502,9 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
     const client = clientLookup.get(seed.clientPhone);
     const customer = customerLookup.get(seed.clientPhone);
     const address = addressLookup.get(seed.clientPhone);
-    const designRequest = seed.designRequestTitle ? designRequestLookup.get(seed.designRequestTitle) : null;
+    const designRequest = seed.designRequestTitle
+      ? designRequestLookup.get(seed.designRequestTitle)
+      : null;
 
     const order = await prisma.order.upsert({
       where: { orderNo: seed.orderNo },
@@ -1031,9 +1525,19 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
         depositAmount: seed.depositAmount,
         depositStatus: seed.depositAmount > 0 ? 'paid' : 'pending',
         depositConfirmedAt: seed.depositAmount > 0 ? seed.startTime : null,
-        confirmedAt: ['pending_home', 'pending_shop', 'in_progress', 'completed'].includes(seed.status) ? seed.startTime : null,
+        confirmedAt: [
+          'pending_home',
+          'pending_shop',
+          'in_progress',
+          'completed',
+        ].includes(seed.status)
+          ? seed.startTime
+          : null,
         completedAt: seed.status === 'completed' ? seed.endTime : null,
-        cancelledAt: seed.status === 'cancelled' ? seed.cancelledAt ?? seed.startTime : null,
+        cancelledAt:
+          seed.status === 'cancelled'
+            ? (seed.cancelledAt ?? seed.startTime)
+            : null,
         cancelReason: seed.cancelReason ?? null,
         source: 'demo_seed',
       },
@@ -1055,9 +1559,19 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
         depositAmount: seed.depositAmount,
         depositStatus: seed.depositAmount > 0 ? 'paid' : 'pending',
         depositConfirmedAt: seed.depositAmount > 0 ? seed.startTime : null,
-        confirmedAt: ['pending_home', 'pending_shop', 'in_progress', 'completed'].includes(seed.status) ? seed.startTime : null,
+        confirmedAt: [
+          'pending_home',
+          'pending_shop',
+          'in_progress',
+          'completed',
+        ].includes(seed.status)
+          ? seed.startTime
+          : null,
         completedAt: seed.status === 'completed' ? seed.endTime : null,
-        cancelledAt: seed.status === 'cancelled' ? seed.cancelledAt ?? seed.startTime : null,
+        cancelledAt:
+          seed.status === 'cancelled'
+            ? (seed.cancelledAt ?? seed.startTime)
+            : null,
         cancelReason: seed.cancelReason ?? null,
         source: 'demo_seed',
       },
@@ -1090,6 +1604,36 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
       });
       revenueNos.push(seed.revenueNo);
     }
+  }
+
+  // ── Voided Revenue (refund scenario on oldest completed order) ──────────
+  const voidedOrder = await prisma.order.findFirst({
+    where: { orderNo: 'DEMO-OD-1007' },
+  });
+  const voidedCustomer = customerLookup.get('13800138002');
+  if (voidedOrder && voidedCustomer) {
+    await prisma.revenue.upsert({
+      where: { revenueNo: 'DEMO-REV-1007' },
+      update: {
+        orderId: voidedOrder.id,
+        technicianId: primaryTechnician.id,
+        customerId: voidedCustomer.id,
+        amount: 228,
+        status: 'voided',
+        recognizedAt: daysAgo(28, 13, 10),
+        voidedAt: daysAgo(25, 10, 0),
+      },
+      create: {
+        revenueNo: 'DEMO-REV-1007',
+        orderId: voidedOrder.id,
+        technicianId: primaryTechnician.id,
+        customerId: voidedCustomer.id,
+        amount: 228,
+        status: 'voided',
+        recognizedAt: daysAgo(28, 13, 10),
+        voidedAt: daysAgo(25, 10, 0),
+      },
+    });
   }
 
   const artistApplications = [
@@ -1143,9 +1687,11 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
           orderBy: { id: 'asc' },
         })
       : [];
-    const existing = existingRecords[0] ?? await prisma.artistApplication.findFirst({
-      where: { phone: seed.phone },
-    });
+    const existing =
+      existingRecords[0] ??
+      (await prisma.artistApplication.findFirst({
+        where: { phone: seed.phone },
+      }));
 
     const data = {
       name: seed.name,
@@ -1169,7 +1715,9 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
         await prisma.artistApplication.deleteMany({
           where: {
             id: {
-              in: existingRecords.slice(1).map((record: { id: number }) => record.id),
+              in: existingRecords
+                .slice(1)
+                .map((record: { id: number }) => record.id),
             },
           },
         });
@@ -1186,6 +1734,7 @@ export async function ensureDemoData(prisma: DemoPrisma): Promise<DemoSeedResult
     clientPhones: DEMO_CLIENTS.map((item) => item.phone),
     orderNos,
     revenueNos,
+    customServiceRequestNos,
     artistApplicationPhones,
   };
 }

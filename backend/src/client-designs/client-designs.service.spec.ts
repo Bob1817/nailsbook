@@ -4,14 +4,18 @@ import { ClientDesignsService } from './client-designs.service';
 describe('ClientDesignsService', () => {
   let service: ClientDesignsService;
   let prisma: {
-    clientTechBinding: { findUnique: jest.Mock };
-    clientDesignRequest: { create: jest.Mock; findMany: jest.Mock; findFirst: jest.Mock };
+    clientTechBinding: { findFirst: jest.Mock };
+    clientDesignRequest: {
+      create: jest.Mock;
+      findMany: jest.Mock;
+      findFirst: jest.Mock;
+    };
   };
 
   beforeEach(() => {
     prisma = {
       clientTechBinding: {
-        findUnique: jest.fn(),
+        findFirst: jest.fn(),
       },
       clientDesignRequest: {
         create: jest.fn(),
@@ -23,10 +27,15 @@ describe('ClientDesignsService', () => {
   });
 
   it('creates a pending quote design request for the client binding technician', async () => {
-    prisma.clientTechBinding.findUnique.mockResolvedValueOnce({
-      clientId: 11,
-      techId: 7,
-    });
+    prisma.clientTechBinding.findFirst
+      .mockResolvedValueOnce({
+        clientId: 11,
+        techId: 7,
+      })
+      .mockResolvedValueOnce({
+        clientId: 11,
+        techId: 7,
+      });
     prisma.clientDesignRequest.create.mockResolvedValueOnce({
       id: 5,
       clientId: 11,
@@ -62,14 +71,16 @@ describe('ClientDesignsService', () => {
   });
 
   it('rejects creating a design request when the client has no technician binding', async () => {
-    prisma.clientTechBinding.findUnique.mockResolvedValueOnce(null);
+    prisma.clientTechBinding.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
 
     await expect(
       service.create(11, {
         title: 'Spring set',
         imageUrls: [],
       }),
-    ).rejects.toThrow(new NotFoundException('客户绑定不存在'));
+    ).rejects.toThrow(new NotFoundException('客户未绑定美甲师'));
   });
 
   it('returns design requests ordered by newest first and maps stored images', async () => {
@@ -133,6 +144,18 @@ describe('ClientDesignsService', () => {
       where: {
         id: 44,
         clientId: 11,
+      },
+      include: {
+        technician: {
+          select: {
+            id: true,
+            name: true,
+            avatarUrl: true,
+            homeService: true,
+            shopService: true,
+            shopAddresses: true,
+          },
+        },
       },
     });
   });

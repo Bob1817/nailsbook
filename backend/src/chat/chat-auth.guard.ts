@@ -30,7 +30,9 @@ export class ChatAuthGuard implements CanActivate {
         (client as any).userType = 'client';
         return true;
       }
-    } catch {}
+    } catch {
+      // Intentionally empty - try next JWT strategy
+    }
 
     // Try technician JWT
     const techSecret = this.configService.get<string>(
@@ -44,7 +46,9 @@ export class ChatAuthGuard implements CanActivate {
         (client as any).userType = 'technician';
         return true;
       }
-    } catch {}
+    } catch {
+      // Intentionally empty - invalid token
+    }
 
     throw new WsException('Invalid auth token');
   }

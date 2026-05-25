@@ -4,15 +4,16 @@ import { ClientMessagesService } from './client-messages.service';
 describe('ClientMessagesService', () => {
   let service: ClientMessagesService;
   let prisma: {
-    clientTechBinding: { findUnique: jest.Mock };
+    clientTechBinding: { findFirst: jest.Mock };
     conversation: { findFirst: jest.Mock; upsert: jest.Mock };
     message: { findMany: jest.Mock; create: jest.Mock };
+    technician: { findUnique: jest.Mock };
   };
 
   beforeEach(() => {
     prisma = {
       clientTechBinding: {
-        findUnique: jest.fn(),
+        findFirst: jest.fn(),
       },
       conversation: {
         findFirst: jest.fn(),
@@ -21,6 +22,9 @@ describe('ClientMessagesService', () => {
       message: {
         findMany: jest.fn(),
         create: jest.fn(),
+      },
+      technician: {
+        findUnique: jest.fn(),
       },
     };
     service = new ClientMessagesService(prisma as never);
@@ -49,6 +53,11 @@ describe('ClientMessagesService', () => {
         createdAt: new Date('2026-04-29T10:00:00.000Z'),
       },
     ]);
+    prisma.technician.findUnique.mockResolvedValueOnce({
+      id: 7,
+      name: 'Anna',
+      avatarUrl: null,
+    });
 
     const result = await service.findAll(11, 1);
 
@@ -56,20 +65,19 @@ describe('ClientMessagesService', () => {
       where: { conversationId: 1 },
       orderBy: { createdAt: 'asc' },
     });
-    expect(result).toEqual([
-      expect.objectContaining({
-        id: 5,
-        conversationId: 1,
-        messageType: 'text',
-      }),
-    ]);
+    expect(result).toMatchObject({
+      technician: { id: 7, name: 'Anna' },
+      messages: [
+        expect.objectContaining({
+          id: 5,
+          conversationId: 1,
+          messageType: 'text',
+        }),
+      ],
+    });
   });
 
   it('creates or reuses the single client-technician conversation and sends a client message', async () => {
-    prisma.clientTechBinding.findUnique.mockResolvedValueOnce({
-      clientId: 11,
-      techId: 7,
-    });
     prisma.conversation.findFirst.mockResolvedValueOnce({
       id: 1,
       clientId: 11,
@@ -96,6 +104,11 @@ describe('ClientMessagesService', () => {
       isRead: false,
       createdAt: new Date('2026-04-29T10:05:00.000Z'),
     });
+    prisma.technician.findUnique.mockResolvedValueOnce({
+      id: 7,
+      name: 'Anna',
+      avatarUrl: null,
+    });
 
     const result = await service.create(11, {
       conversationId: 1,
@@ -103,22 +116,7 @@ describe('ClientMessagesService', () => {
       content: '这个款式大概多少钱？',
     });
 
-    expect(prisma.conversation.upsert).toHaveBeenCalledWith({
-      where: {
-        clientId_techId: {
-          clientId: 11,
-          techId: 7,
-        },
-      },
-      update: expect.objectContaining({
-        lastMessage: '这个款式大概多少钱？',
-      }),
-      create: expect.objectContaining({
-        clientId: 11,
-        techId: 7,
-        lastMessage: '这个款式大概多少钱？',
-      }),
-    });
+    expect(prisma.conversation.upsert).not.toHaveBeenCalled();
     expect(prisma.message.create).toHaveBeenCalledWith({
       data: {
         conversationId: 1,
@@ -134,17 +132,16 @@ describe('ClientMessagesService', () => {
       },
     });
     expect(result).toMatchObject({
-      id: 6,
-      conversationId: 1,
-      messageType: 'text',
+      technician: { id: 7, name: 'Anna' },
+      message: {
+        id: 6,
+        conversationId: 1,
+        messageType: 'text',
+      },
     });
   });
 
   it('rejects a stale conversation id before mutating conversation state', async () => {
-    prisma.clientTechBinding.findUnique.mockResolvedValueOnce({
-      clientId: 11,
-      techId: 7,
-    });
     prisma.conversation.findFirst.mockResolvedValueOnce(null);
 
     await expect(
@@ -173,7 +170,7 @@ describe('ClientMessagesService', () => {
         conversationId: 1,
         messageType: 'audio',
         content: 'bad',
-      } as never),
+      }),
     ).rejects.toThrow(new BadRequestException('消息类型不支持'));
   });
 });

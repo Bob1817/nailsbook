@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CreateCustomServiceRequestDto } from './dto/create-custom-service-request.dto';
 import { QuoteCustomServiceRequestDto } from './dto/quote-custom-service-request.dto';
@@ -55,8 +59,10 @@ export class CustomServiceRequestsService {
       const shopAddresses = binding.technician.shopAddresses
         ? JSON.parse(binding.technician.shopAddresses)
         : [];
-      const matchedShop = shopAddresses.find((item: any) => item.name === dto.shopAddress?.name);
-      
+      const matchedShop = shopAddresses.find(
+        (item: any) => item.name === dto.shopAddress?.name,
+      );
+
       if (!matchedShop || matchedShop.enabled === false) {
         throw new BadRequestException('请选择有效的店铺地址');
       }
@@ -71,7 +77,9 @@ export class CustomServiceRequestsService {
           title: dto.title ?? null,
           description: dto.description ?? null,
           images: dto.images ? JSON.stringify(dto.images) : null,
-          referenceWorkIds: dto.referenceWorkIds ? JSON.stringify(dto.referenceWorkIds) : null,
+          referenceWorkIds: dto.referenceWorkIds
+            ? JSON.stringify(dto.referenceWorkIds)
+            : null,
           serviceDate: dto.serviceDate ?? null,
           startTime: dto.startTime ?? null,
           serviceType: dto.serviceType ?? null,
@@ -238,7 +246,11 @@ export class CustomServiceRequestsService {
     return this.mapCustomServiceRequest(request);
   }
 
-  async quote(technicianId: number, id: number, dto: QuoteCustomServiceRequestDto) {
+  async quote(
+    technicianId: number,
+    id: number,
+    dto: QuoteCustomServiceRequestDto,
+  ) {
     const request = await this.prisma.customServiceRequest.findFirst({
       where: {
         id,
@@ -353,9 +365,10 @@ export class CustomServiceRequestsService {
         },
       });
 
-      const startTime = request.serviceDate && request.startTime
-        ? new Date(`${request.serviceDate}T${request.startTime}:00`)
-        : new Date();
+      const startTime =
+        request.serviceDate && request.startTime
+          ? new Date(`${request.serviceDate}T${request.startTime}:00`)
+          : new Date();
       const endTime = new Date(startTime);
 
       const order = await tx.order.create({
@@ -483,7 +496,9 @@ export class CustomServiceRequestsService {
       title: request.title,
       description: request.description,
       images: request.images ? JSON.parse(request.images) : [],
-      referenceWorkIds: request.referenceWorkIds ? JSON.parse(request.referenceWorkIds) : [],
+      referenceWorkIds: request.referenceWorkIds
+        ? JSON.parse(request.referenceWorkIds)
+        : [],
       serviceDate: request.serviceDate,
       startTime: request.startTime,
       serviceType: request.serviceType,

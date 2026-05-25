@@ -1,0 +1,35 @@
+<view class="container">
+  <view class="header">
+    <image class="avatar" src="{{avatar}}" mode="aspectFill"></image>
+    <text class="name">{{name}}</text>
+    <text class="phone">{{phone}}</text>
+  </view>
+  <view class="stats">
+    <view>
+      <text>{{todayOrders}}</text>
+      <text>今日订单</text>
+    </view>
+    <view>
+      <text>{{totalAmount}}</text>
+      <text>本月收入</text>
+    </view>
+    <view>
+      <text>{{rating}}</text>
+      <text>客户评分</text>
+    </view>
+  </view>
+  <view class="quick-actions">
+    <view bindtap="navigateToOrders">订单管理</view>
+    <view bindtap="navigateToCustomers">客户管理</view>
+    <view bindtap="navigateToWorks">作品管理</view>
+    <view bindtap="navigateToSchedule">日程安排</view>
+  </view>
+  <view class="recent-orders">
+    <view wx:for="{{recentOrders}}" bindtap="viewOrder" data-id="{{item.id}}">
+      <text>{{item.orderNo}}</text>
+      <text>{{item.serviceType}}</text>
+      <text>{{item.startTime}}</text>
+      <text>{{item.address}}</text>
+    </view>
+  </view>
+</view>

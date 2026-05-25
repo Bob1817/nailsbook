@@ -77,7 +77,7 @@ export class OperationLogsService {
       orderBy: { module: 'asc' },
     });
 
-    return modules.map(m => ({
+    return modules.map((m) => ({
       module: m.module,
       count: m._count.module,
     }));
@@ -96,7 +96,7 @@ export class OperationLogsService {
       orderBy: { action: 'asc' },
     });
 
-    return actions.map(a => ({
+    return actions.map((a) => ({
       action: a.action,
       count: a._count.action,
     }));

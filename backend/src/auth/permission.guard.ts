@@ -1,4 +1,9 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
 @Injectable()
@@ -6,10 +11,10 @@ export class PermissionGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredPermissions = this.reflector.getAllAndOverride<string[]>('permissions', [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiredPermissions = this.reflector.getAllAndOverride<string[]>(
+      'permissions',
+      [context.getHandler(), context.getClass()],
+    );
 
     if (!requiredPermissions) {
       return true;
@@ -22,7 +27,7 @@ export class PermissionGuard implements CanActivate {
       throw new ForbiddenException('没有权限访问此资源');
     }
 
-    const hasPermission = requiredPermissions.some(permission =>
+    const hasPermission = requiredPermissions.some((permission) =>
       user.permissions.includes(permission),
     );
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  Table, Button, Space, Modal, Form, Input, Tag, message, Popconfirm, Card, Tree, Checkbox,
+  Table, Button, Space, Modal, Form, Input, Tag, message, Popconfirm, Card, Tree,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { DataNode } from 'antd/es/tree';

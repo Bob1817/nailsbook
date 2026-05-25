@@ -13,6 +13,8 @@ out/
 .env
 .env.local
 .env.*.local
+.env.production
+.env.development
 
 # IDE
 .idea/
@@ -31,3 +33,22 @@ yarn-error.log*
 .superpowers/
 .claude/settings.local.json
 .trae/
+
+# Database files
+*.db
+*.db-journal
+
+# Uploads
+uploads/
+
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+
+# Client-WxApp (微信小程序编译产物)
+client-wxapp/.DS_Store

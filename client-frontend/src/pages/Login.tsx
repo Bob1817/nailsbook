@@ -62,9 +62,8 @@ const Login: React.FC = () => {
       }
 
       setCountdown(60);
-    } catch (err: any) {
-      const message = err.response?.data?.message || '获取验证码失败，请稍后重试';
-      setError(message);
+    } catch {
+      setError('获取验证码失败，请稍后重试');
     }
   };
 
@@ -135,8 +134,8 @@ const Login: React.FC = () => {
         await login(phone, code);
       }
       navigate('/home', { replace: true });
-    } catch (err: any) {
-      const message = err.response?.data?.message || '登录失败，请重试';
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || '登录失败，请重试';
       setError(message);
       // If user not found, switch to registration mode
       if (message.includes('尚未绑定') || message.includes('不存在') || message.includes('未注册')) {
@@ -325,7 +324,7 @@ const Login: React.FC = () => {
               <span className="text-body-sm text-[var(--color-text-muted)]">我是美甲师？</span>
               <button
                 type="button"
-                onClick={() => window.location.href = 'http://localhost:5175/login'}
+                onClick={() => window.location.href = (import.meta.env.VITE_TECHNICIAN_LOGIN_URL || '/login')}
                 className="flex h-11 items-center rounded-full px-3 text-body-sm font-medium text-[var(--color-primary)] transition-colors active:bg-[var(--color-primary-soft)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
               >
                 切换到美甲师登录

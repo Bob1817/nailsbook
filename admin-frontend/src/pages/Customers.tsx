@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Table, Button, Space, Input, Select, Tag, message, Card, Modal, Descriptions } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { customerService } from '../services/customer';
@@ -15,7 +15,7 @@ const Customers: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [filters, setFilters] = useState({ page: 1, limit: 10, technicianId: undefined as number | undefined, search: '' });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const result = await customerService.getAll({
@@ -25,18 +25,18 @@ const Customers: React.FC = () => {
         search: filters.search || undefined,
       });
       setData(result);
-    } catch (error) {
+    } catch {
       message.error('获取数据失败');
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
   const fetchTechnicians = async () => {
     try {
       const result = await technicianService.getAll({ limit: 1000 });
       setTechnicians(result.data);
-    } catch (error) {
+    } catch {
       console.error('Failed to fetch technicians');
     }
   };
@@ -47,7 +47,7 @@ const Customers: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [filters]);
+  }, [fetchData]);
 
   const columns = [
     { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },

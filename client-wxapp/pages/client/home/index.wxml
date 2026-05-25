@@ -1,0 +1,17 @@
+<view class="container">
+  <view class="header">
+    <image class="avatar" src="{{avatar}}" mode="aspectFill"></image>
+    <text class="nickname">{{nickname}}</text>
+    <text class="phone">{{phone}}</text>
+  </view>
+  <view class="technician-card">
+    <image class="tech-avatar" src="{{techAvatar}}" mode="aspectFill"></image>
+    <text class="tech-name">{{techName}}</text>
+  </view>
+  <view class="quick-actions">
+    <view bindtap="navigateToWorks">作品浏览</view>
+    <view bindtap="navigateToBooking">立即预约</view>
+    <view bindtap="navigateToAddresses">地址管理</view>
+    <view bindtap="switchRole">切换身份</view>
+  </view>
+</view>

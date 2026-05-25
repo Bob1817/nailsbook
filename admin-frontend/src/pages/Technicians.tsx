@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Table, Button, Space, Modal, Form, Input, Select, Tag, message, Popconfirm, Card } from 'antd';
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { technicianService } from '../services/technician';
@@ -13,7 +13,7 @@ const Technicians: React.FC = () => {
   const [form] = Form.useForm();
   const [filters, setFilters] = useState({ page: 1, limit: 10, status: '', search: '' });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const result = await technicianService.getAll({
@@ -23,16 +23,16 @@ const Technicians: React.FC = () => {
         search: filters.search || undefined,
       });
       setData(result);
-    } catch (error) {
+    } catch {
       message.error('获取数据失败');
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
   useEffect(() => {
     fetchData();
-  }, [filters]);
+  }, [fetchData]);
 
   const handleCreate = async (values: { name: string; phone: string; city?: string; serviceArea?: string }) => {
     try {

@@ -47,7 +47,11 @@ describe('Chat and upload HTTP contract', () => {
 
   describe('Client Conversations and Messages', () => {
     it('lists conversations and sends a message to create a new conversation', async () => {
-      const { accessToken, client, technician } = await setupClientWithBinding('chat-client');
+      const {
+        accessToken,
+        client: _client,
+        technician,
+      } = await setupClientWithBinding('chat-client');
 
       const convListRes = await request(testApp.app.getHttpServer())
         .get('/api/client/messages/conversations')
@@ -73,7 +77,10 @@ describe('Chat and upload HTTP contract', () => {
         }),
       });
 
-      const conversationId = sendRes.body.message?.conversationId ?? sendRes.body.conversationId ?? sendRes.body.conversation?.id;
+      const conversationId =
+        sendRes.body.message?.conversationId ??
+        sendRes.body.conversationId ??
+        sendRes.body.conversation?.id;
       if (conversationId) {
         ownedConversationIds.push(conversationId);
       }
@@ -83,12 +90,17 @@ describe('Chat and upload HTTP contract', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .query({ conversation_id: conversationId })
         .expect(200);
-      const msgList = msgListRes.body.messages ?? (Array.isArray(msgListRes.body) ? msgListRes.body : msgListRes.body.data);
+      const msgList =
+        msgListRes.body.messages ??
+        (Array.isArray(msgListRes.body)
+          ? msgListRes.body
+          : msgListRes.body.data);
       expect(Array.isArray(msgList)).toBe(true);
     });
 
     it('marks messages as read', async () => {
-      const { accessToken, client, technician } = await setupClientWithBinding('chat-read');
+      const { accessToken, client, technician } =
+        await setupClientWithBinding('chat-read');
 
       const conversation = await testApp.prisma.conversation.create({
         data: {
@@ -124,13 +136,19 @@ describe('Chat and upload HTTP contract', () => {
 
   describe('Technician Conversations and Messages', () => {
     it('lists conversations and sends a message to a client', async () => {
-      const { accessToken, technician, client } = await setupTechnicianWithClient('chat-tech');
+      const {
+        accessToken,
+        technician: _technician,
+        client,
+      } = await setupTechnicianWithClient('chat-tech');
 
       const convListRes = await request(testApp.app.getHttpServer())
         .get('/api/technician/messages/conversations')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200);
-      const convList = Array.isArray(convListRes.body) ? convListRes.body : convListRes.body.data;
+      const convList = Array.isArray(convListRes.body)
+        ? convListRes.body
+        : convListRes.body.data;
       expect(Array.isArray(convList)).toBe(true);
 
       const sendRes = await request(testApp.app.getHttpServer())
@@ -151,7 +169,10 @@ describe('Chat and upload HTTP contract', () => {
         }),
       });
 
-      const conversationId = sendRes.body.message?.conversationId ?? sendRes.body.conversationId ?? sendRes.body.conversation?.id;
+      const conversationId =
+        sendRes.body.message?.conversationId ??
+        sendRes.body.conversationId ??
+        sendRes.body.conversation?.id;
       if (conversationId) {
         ownedConversationIds.push(conversationId);
       }
@@ -163,7 +184,12 @@ describe('Chat and upload HTTP contract', () => {
       const { accessToken } = await setupClientWithBinding('upload-client');
 
       const testImagePath = resolve(tempDir, 'test-upload.jpg');
-      writeFileSync(testImagePath, Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46]));
+      writeFileSync(
+        testImagePath,
+        Buffer.from([
+          0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46,
+        ]),
+      );
 
       const uploadRes = await request(testApp.app.getHttpServer())
         .post('/api/client/uploads/image')
@@ -180,7 +206,12 @@ describe('Chat and upload HTTP contract', () => {
       const { accessToken } = await setupTechnician('upload-tech');
 
       const testImagePath = resolve(tempDir, 'test-tech-upload.jpg');
-      writeFileSync(testImagePath, Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46]));
+      writeFileSync(
+        testImagePath,
+        Buffer.from([
+          0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46,
+        ]),
+      );
 
       const uploadRes = await request(testApp.app.getHttpServer())
         .post('/api/technician/uploads/image')
@@ -210,8 +241,23 @@ describe('Chat and upload HTTP contract', () => {
         invitationCode: inviteCode,
         homeService: true,
         shopService: true,
-        shopAddresses: JSON.stringify([{ name: 'Contract Studio', city: 'Shanghai', detailAddress: '88 Test Road', enabled: true }]),
-        serviceItems: JSON.stringify([{ id: 'contract-basic', name: 'Basic Care', category: 'basic_care', isActive: true, sortOrder: 1 }]),
+        shopAddresses: JSON.stringify([
+          {
+            name: 'Contract Studio',
+            city: 'Shanghai',
+            detailAddress: '88 Test Road',
+            enabled: true,
+          },
+        ]),
+        serviceItems: JSON.stringify([
+          {
+            id: 'contract-basic',
+            name: 'Basic Care',
+            category: 'basic_care',
+            isActive: true,
+            sortOrder: 1,
+          },
+        ]),
       },
     });
     ownedTechnicianIds.push(technician.id);
@@ -222,11 +268,22 @@ describe('Chat and upload HTTP contract', () => {
     ownedClientIds.push(client.id);
 
     await testApp.prisma.clientTechBinding.create({
-      data: { clientId: client.id, techId: technician.id, inviteCode, bindSource: 'invite', isDefault: true, status: 'active' },
+      data: {
+        clientId: client.id,
+        techId: technician.id,
+        inviteCode,
+        bindSource: 'invite',
+        isDefault: true,
+        status: 'active',
+      },
     });
 
     const accessToken = testApp.signClientToken(client.id, client.phone);
-    return { accessToken, client: { id: client.id, phone: client.phone }, technician: { id: technician.id, name: technician.name } };
+    return {
+      accessToken,
+      client: { id: client.id, phone: client.phone },
+      technician: { id: technician.id, name: technician.name },
+    };
   }
 
   async function setupTechnicianWithClient(label: string) {
@@ -245,8 +302,23 @@ describe('Chat and upload HTTP contract', () => {
         invitationCode: inviteCode,
         homeService: true,
         shopService: true,
-        shopAddresses: JSON.stringify([{ name: 'Contract Studio', city: 'Shanghai', detailAddress: '88 Test Road', enabled: true }]),
-        serviceItems: JSON.stringify([{ id: 'contract-basic', name: 'Basic Care', category: 'basic_care', isActive: true, sortOrder: 1 }]),
+        shopAddresses: JSON.stringify([
+          {
+            name: 'Contract Studio',
+            city: 'Shanghai',
+            detailAddress: '88 Test Road',
+            enabled: true,
+          },
+        ]),
+        serviceItems: JSON.stringify([
+          {
+            id: 'contract-basic',
+            name: 'Basic Care',
+            category: 'basic_care',
+            isActive: true,
+            sortOrder: 1,
+          },
+        ]),
       },
     });
     ownedTechnicianIds.push(technician.id);
@@ -257,11 +329,25 @@ describe('Chat and upload HTTP contract', () => {
     ownedClientIds.push(client.id);
 
     await testApp.prisma.clientTechBinding.create({
-      data: { clientId: client.id, techId: technician.id, inviteCode, bindSource: 'invite', isDefault: true, status: 'active' },
+      data: {
+        clientId: client.id,
+        techId: technician.id,
+        inviteCode,
+        bindSource: 'invite',
+        isDefault: true,
+        status: 'active',
+      },
     });
 
-    const accessToken = testApp.signTechnicianToken(technician.id, technician.phone);
-    return { accessToken, technician: { id: technician.id, name: technician.name }, client: { id: client.id, phone: client.phone } };
+    const accessToken = testApp.signTechnicianToken(
+      technician.id,
+      technician.phone,
+    );
+    return {
+      accessToken,
+      technician: { id: technician.id, name: technician.name },
+      client: { id: client.id, phone: client.phone },
+    };
   }
 
   async function setupTechnician(label: string) {
@@ -280,49 +366,84 @@ describe('Chat and upload HTTP contract', () => {
         invitationCode: inviteCode,
         homeService: true,
         shopService: true,
-        shopAddresses: JSON.stringify([{ name: 'Contract Studio', city: 'Shanghai', detailAddress: '88 Test Road', enabled: true }]),
-        serviceItems: JSON.stringify([{ id: 'contract-basic', name: 'Basic Care', category: 'basic_care', isActive: true, sortOrder: 1 }]),
+        shopAddresses: JSON.stringify([
+          {
+            name: 'Contract Studio',
+            city: 'Shanghai',
+            detailAddress: '88 Test Road',
+            enabled: true,
+          },
+        ]),
+        serviceItems: JSON.stringify([
+          {
+            id: 'contract-basic',
+            name: 'Basic Care',
+            category: 'basic_care',
+            isActive: true,
+            sortOrder: 1,
+          },
+        ]),
       },
     });
     ownedTechnicianIds.push(technician.id);
 
-    const accessToken = testApp.signTechnicianToken(technician.id, technician.phone);
-    return { accessToken, technician: { id: technician.id, name: technician.name } };
+    const accessToken = testApp.signTechnicianToken(
+      technician.id,
+      technician.phone,
+    );
+    return {
+      accessToken,
+      technician: { id: technician.id, name: technician.name },
+    };
   }
 
   async function cleanupOwnedRecords() {
     if (!testApp) return;
 
-    await testApp.prisma.message.deleteMany({
-      where: { conversationId: { in: ownedConversationIds } },
-    }).catch(() => {});
-    await testApp.prisma.conversation.deleteMany({
-      where: { id: { in: ownedConversationIds } },
-    }).catch(() => {});
-    await testApp.prisma.clientTechBinding.deleteMany({
-      where: {
-        OR: [
-          { clientId: { in: ownedClientIds } },
-          { techId: { in: ownedTechnicianIds } },
-          { inviteCode: { in: ownedInviteCodes } },
-        ],
-      },
-    }).catch(() => {});
-    await testApp.prisma.clientUser.deleteMany({
-      where: { id: { in: ownedClientIds } },
-    }).catch(() => {});
-    await testApp.prisma.technician.deleteMany({
-      where: { id: { in: ownedTechnicianIds } },
-    }).catch(() => {});
+    await testApp.prisma.message
+      .deleteMany({
+        where: { conversationId: { in: ownedConversationIds } },
+      })
+      .catch(() => {});
+    await testApp.prisma.conversation
+      .deleteMany({
+        where: { id: { in: ownedConversationIds } },
+      })
+      .catch(() => {});
+    await testApp.prisma.clientTechBinding
+      .deleteMany({
+        where: {
+          OR: [
+            { clientId: { in: ownedClientIds } },
+            { techId: { in: ownedTechnicianIds } },
+            { inviteCode: { in: ownedInviteCodes } },
+          ],
+        },
+      })
+      .catch(() => {});
+    await testApp.prisma.clientUser
+      .deleteMany({
+        where: { id: { in: ownedClientIds } },
+      })
+      .catch(() => {});
+    await testApp.prisma.technician
+      .deleteMany({
+        where: { id: { in: ownedTechnicianIds } },
+      })
+      .catch(() => {});
   }
 
   function uniquePhone() {
-    const digits = `${Date.now()}${Math.floor(Math.random() * 100000)}`.slice(-9).padStart(9, '0');
+    const digits = `${Date.now()}${Math.floor(Math.random() * 100000)}`
+      .slice(-9)
+      .padStart(9, '0');
     return `19${digits}`;
   }
 
   function uniqueInviteCode(label: string) {
-    const suffix = `${Date.now()}${Math.floor(Math.random() * 100000)}`.slice(-8).toUpperCase();
+    const suffix = `${Date.now()}${Math.floor(Math.random() * 100000)}`
+      .slice(-8)
+      .toUpperCase();
     return `${label.replace(/[^a-z0-9]/gi, '').slice(0, 8)}${suffix}`.toUpperCase();
   }
 });

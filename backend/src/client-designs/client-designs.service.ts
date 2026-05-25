@@ -249,7 +249,9 @@ export class ClientDesignsService {
     try {
       const parsed = JSON.parse(images);
       if (Array.isArray(parsed)) {
-        return parsed.filter((item): item is string => typeof item === 'string');
+        return parsed.filter(
+          (item): item is string => typeof item === 'string',
+        );
       }
     } catch {
       return images

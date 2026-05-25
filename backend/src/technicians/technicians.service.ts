@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CreateTechnicianDto } from './dto/create-technician.dto';
 import { UpdateTechnicianStatusDto } from './dto/update-technician-status.dto';
@@ -21,14 +25,21 @@ export class TechniciansService {
     }
   }
 
-  private mapTechnician<T extends { socialMedia?: string | null }>(technician: T) {
+  private mapTechnician<T extends { socialMedia?: string | null }>(
+    technician: T,
+  ) {
     return {
       ...technician,
       socialMedia: this.parseSocialMedia(technician.socialMedia),
     };
   }
 
-  async findAll(page: number = 1, limit: number = 20, status?: string, search?: string) {
+  async findAll(
+    page: number = 1,
+    limit: number = 20,
+    status?: string,
+    search?: string,
+  ) {
     const where: any = {};
 
     if (status) {
@@ -92,7 +103,9 @@ export class TechniciansService {
     });
 
     if (existing) {
-      throw new ConflictException('Technician with this phone number already exists');
+      throw new ConflictException(
+        'Technician with this phone number already exists',
+      );
     }
 
     const invitationCode = this.generateInvitationCode();
@@ -109,8 +122,6 @@ export class TechniciansService {
   }
 
   async updateStatus(id: number, dto: UpdateTechnicianStatusDto) {
-    const technician = await this.findOne(id);
-
     return this.prisma.technician.update({
       where: { id },
       data: {

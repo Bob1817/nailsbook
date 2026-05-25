@@ -92,13 +92,17 @@ export class TechnicianServicesService {
       throw new NotFoundException('美甲师不存在');
     }
 
-    const services = technician.serviceItems ? JSON.parse(technician.serviceItems) : buildDefaultServices();
+    const services = technician.serviceItems
+      ? JSON.parse(technician.serviceItems)
+      : buildDefaultServices();
 
     if (!technician.serviceItems) {
       await this.saveServices(technicianId, services);
     }
 
-    return [...services].sort((left, right) => left.sortOrder - right.sortOrder);
+    return [...services].sort(
+      (left, right) => left.sortOrder - right.sortOrder,
+    );
   }
 
   async create(technicianId: number, dto: CreateServiceDto) {
@@ -138,10 +142,12 @@ export class TechnicianServicesService {
 
   async delete(technicianId: number, id: string) {
     const services = await this.list(technicianId);
-    const filtered = services.filter((item) => item.id !== id).map((item, index) => ({
-      ...item,
-      sortOrder: index + 1,
-    }));
+    const filtered = services
+      .filter((item) => item.id !== id)
+      .map((item, index) => ({
+        ...item,
+        sortOrder: index + 1,
+      }));
     await this.saveServices(technicianId, filtered);
   }
 

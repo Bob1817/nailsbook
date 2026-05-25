@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { addressService, type ClientAddress } from '../services/address';
 
@@ -7,11 +7,8 @@ const AddressList: React.FC = () => {
   const [addresses, setAddresses] = useState<ClientAddress[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadAddresses();
-  }, []);
-
-  const loadAddresses = async () => {
+  const loadAddresses = useCallback(async () => {
+    setLoading(true);
     try {
       const data = await addressService.getAddresses();
       setAddresses(data);
@@ -20,7 +17,11 @@ const AddressList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadAddresses();
+  }, [loadAddresses]);
 
   const handleDelete = async (id: number) => {
     if (!confirm('确定要删除这个地址吗？')) return;

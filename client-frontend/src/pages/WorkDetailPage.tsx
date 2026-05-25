@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { worksService, type WorkDetail, type Comment } from '../services/works';
 
@@ -12,24 +12,24 @@ const WorkDetailPage: React.FC = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const imageSliderRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (id) {
-      loadWork(parseInt(id));
-    }
-  }, [id]);
-
-  const loadWork = async (workId: number) => {
+  const loadWork = useCallback(async (workId: number) => {
     setLoading(true);
     try {
       const data = await worksService.getWork(workId);
       setWork(data);
       setComments(data.comments || []);
-    } catch (error) {
-      console.error('Failed to load work:', error);
+    } catch {
+      console.error('Failed to load work');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (id) {
+      loadWork(parseInt(id));
+    }
+  }, [id, loadWork]);
 
   const handleLike = async () => {
     if (!work) return;

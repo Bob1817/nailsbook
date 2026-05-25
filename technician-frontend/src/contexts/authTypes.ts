@@ -74,6 +74,30 @@ export interface SocialMediaAccounts {
   wechat?: string;     // 微信
 }
 
+export interface TechnicianSubscription {
+  status: string;
+  startedAt: string;
+  expiredAt?: string | null;
+  planName: string;
+  planCode: string;
+}
+
+export interface DaySchedule {
+  enabled: boolean;
+  startTime: string;
+  endTime: string;
+}
+
+export interface ServiceSchedule {
+  days: Record<string, DaySchedule>;
+}
+
+export interface CustomTag {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export interface Technician {
   id: number;
   name: string;
@@ -89,6 +113,9 @@ export interface Technician {
   shopAddresses?: ShopAddress[];
   homeServiceSettings?: HomeServiceSettings;
   socialMedia?: SocialMediaAccounts;
+  subscription?: TechnicianSubscription | null;
+  serviceSchedule?: ServiceSchedule | null;
+  customTags?: CustomTag[];
   serviceItems?: Array<{
     id: string;
     name: string;

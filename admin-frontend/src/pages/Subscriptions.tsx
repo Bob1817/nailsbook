@@ -18,7 +18,7 @@ const Subscriptions: React.FC = () => {
     try {
       const result = await subscriptionService.getPlans();
       setPlans(result);
-    } catch (error) {
+    } catch {
       message.error('获取套餐数据失败');
     }
   };
@@ -28,7 +28,7 @@ const Subscriptions: React.FC = () => {
     try {
       const result = await subscriptionService.getTechnicianSubscriptions();
       setTechnicianSubscriptions(result);
-    } catch (error) {
+    } catch {
       message.error('获取订阅数据失败');
     } finally {
       setLoading(false);
@@ -39,7 +39,7 @@ const Subscriptions: React.FC = () => {
     try {
       const result = await technicianService.getAll({ limit: 1000 });
       setTechnicians(result.data);
-    } catch (error) {
+    } catch {
       console.error('Failed to fetch technicians');
     }
   };

@@ -22,7 +22,7 @@ describe('TechniciansService', () => {
 
   it('creates technicians with a generated invitation code', async () => {
     prisma.technician.findUnique.mockResolvedValueOnce(null);
-    prisma.technician.create.mockImplementationOnce(async ({ data }) => ({
+    prisma.technician.create.mockImplementationOnce(({ data }) => ({
       id: 7,
       ...data,
     }));
@@ -41,7 +41,7 @@ describe('TechniciansService', () => {
         city: 'Shanghai',
         serviceArea: 'Pudong',
         invitationCode: expect.stringMatching(/^[A-F0-9]{8}$/),
-        status: 'active',
+        status: 'inactive',
       },
     });
     expect(result.invitationCode).toMatch(/^[A-F0-9]{8}$/);

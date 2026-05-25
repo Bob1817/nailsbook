@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { addressService } from '../services/address';
 
@@ -22,13 +22,7 @@ const EditAddress: React.FC = () => {
     isDefault: false,
   });
 
-  useEffect(() => {
-    if (isEdit) {
-      loadAddress(parseInt(addressId!));
-    }
-  }, [addressId]);
-
-  const loadAddress = async (id: number) => {
+  const loadAddress = useCallback(async (id: number) => {
     try {
       setLoading(true);
       const addresses = await addressService.getAddresses();
@@ -45,12 +39,18 @@ const EditAddress: React.FC = () => {
           isDefault: address.isDefault,
         });
       }
-    } catch (error) {
-      console.error('Failed to load address:', error);
+    } catch {
+      console.error('Failed to load address');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (isEdit) {
+      loadAddress(parseInt(addressId!));
+    }
+  }, [addressId, isEdit, loadAddress]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,8 +68,8 @@ const EditAddress: React.FC = () => {
         await addressService.createAddress(formData);
       }
       navigate('/profile/addresses');
-    } catch (error: any) {
-      alert(error.response?.data?.message || '保存失败，请重试');
+    } catch {
+      alert('保存失败，请重试');
     } finally {
       setSaving(false);
     }

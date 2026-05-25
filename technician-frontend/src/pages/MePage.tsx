@@ -6,17 +6,18 @@ import { ServiceTypeSetupModal } from '../components/ServiceTypeSetupModal';
 import { Card } from '../components/base/Card';
 import { ordersService } from '../services/orders';
 import { customersService } from '../services/customers';
-import { buildDashboardSummary, formatMoney, isSameDay, type TechnicianOrder, type TechnicianCustomerSummary } from '../services/technicianData';
+import { buildDashboardSummary, formatMoney, type TechnicianOrder, type TechnicianCustomerSummary } from '../services/technicianData';
+import { getCurrentPlan, isTrialActive, getTrialDaysRemaining } from '../services/subscription';
 import type { ServiceTypeSettings } from '../contexts/authTypes';
 
 const tools = [
   { icon: '💅', label: '服务管理', path: '/services' },
   { icon: '💰', label: '价格设置' },
   { icon: '🚗', label: '上门设置', path: '/home-service-settings' },
-  { icon: '⏰', label: '服务时间设置' },
+  { icon: '⏰', label: '服务时间', path: '/service-time' },
   { icon: '🏪', label: '店铺管理', path: '/shops' },
   { icon: '🖼️', label: '作品管理', path: '/works' },
-  { icon: '🏷️', label: '客户标签管理' },
+  { icon: '🏷️', label: '标签管理', path: '/tag-management' },
   { icon: '⭐', label: '评价管理' },
 ];
 
@@ -100,8 +101,13 @@ export const MePage: React.FC = () => {
   const pendingShopCount = orders.filter((order) => order.status === 'pending_shop').length;
   const inProgressCount = orders.filter((order) => order.status === 'in_progress').length;
   const isAcceptingOrders = technician?.status === 'active';
+  const subscription = technician?.subscription;
+  const currentPlan = getCurrentPlan(subscription);
+  const trialActive = isTrialActive(subscription);
+  const trialDaysLeft = getTrialDaysRemaining(subscription);
+
   return (
-    <div className="min-h-full bg-[#fff9f8] pb-24">
+    <div className="min-h-full overflow-x-hidden bg-[#fff9f8] pb-24">
       <div className="relative overflow-hidden bg-[linear-gradient(135deg,#ff8aa0_0%,#ff9ab0_52%,#ffc8b2_100%)] px-5 pb-20 pt-12">
         <div className="absolute inset-y-0 right-[-14%] w-48 rounded-full bg-white/[0.08] blur-3xl" />
         <div className="absolute left-[-18%] top-10 h-24 w-40 rounded-full bg-white/[0.08] blur-3xl" />
@@ -120,6 +126,22 @@ export const MePage: React.FC = () => {
                 <span className="rounded-full bg-white/[0.16] px-2.5 py-1 text-[11px] leading-none text-white/90">
                   {technician?.status === 'active' ? '接单中' : '暂停中'}
                 </span>
+                <button
+                  type="button"
+                  onClick={() => navigate('/subscription')}
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] leading-none font-medium transition-colors ${
+                    trialActive
+                      ? 'bg-[#FFE066]/30 text-[#FFE066] ring-1 ring-[#FFE066]/40'
+                      : currentPlan.code !== 'free'
+                        ? 'bg-white/[0.18] text-white/90 ring-1 ring-white/20'
+                        : 'bg-white/[0.10] text-white/70'
+                  }`}
+                >
+                  <span className="text-[10px]">
+                    {currentPlan.code === 'studio_plus' ? '👑' : currentPlan.code === 'pro' ? '💎' : '✨'}
+                  </span>
+                  {trialActive ? `试用 ${trialDaysLeft}天` : currentPlan.name}
+                </button>
               </div>
               <p className="mt-2 text-[0.95rem] leading-none text-white/82">{technician?.phone || '未绑定手机号'}</p>
             </div>
@@ -148,7 +170,56 @@ export const MePage: React.FC = () => {
       </div>
 
       <div className="px-5 pt-0">
-        <Card className="relative z-10 -mt-10 mb-4 p-4 shadow-[0_14px_32px_rgba(29,35,53,0.08)]">
+        {/* Subscription entry card */}
+        <button
+          type="button"
+          onClick={() => navigate('/subscription')}
+          className="relative z-10 -mt-6 mb-4 flex w-full items-center gap-3 rounded-[20px] bg-white px-4 py-3.5 text-left shadow-[0_12px_28px_rgba(29,35,53,0.08)] ring-1 ring-[#f2e6ec] transition-colors active:bg-[#fff9f8]"
+        >
+          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] ${
+            trialActive
+              ? 'bg-gradient-to-br from-[#FFD700] to-[#FFA500]'
+              : currentPlan.code !== 'free'
+                ? 'bg-gradient-to-br from-[#FF5E93] to-[#FF8AA0]'
+                : 'bg-[#f2f0f3]'
+          }`}>
+            <span className="text-[18px]">
+              {currentPlan.code === 'studio_plus' ? '👑' : currentPlan.code === 'pro' ? '💎' : '✨'}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-[14px] font-semibold text-[#1f2230]">{currentPlan.name}</span>
+              {trialActive && (
+                <span className="rounded-full bg-[#FFF1E0] px-2 py-0.5 text-[10px] font-semibold text-[#C9860A]">
+                  试用 {trialDaysLeft}天后到期
+                </span>
+              )}
+              {currentPlan.code !== 'free' && !trialActive && subscription?.expiredAt && (
+                <span className="rounded-full bg-[#EEF9F1] px-2 py-0.5 text-[10px] font-semibold text-[#31B46C]">
+                  有效
+                </span>
+              )}
+              {currentPlan.code === 'free' && !trialActive && (
+                <span className="rounded-full bg-[#f2f0f3] px-2 py-0.5 text-[10px] font-semibold text-[#8d8590]">
+                  基础版
+                </span>
+              )}
+            </div>
+            <p className="mt-0.5 text-[12px] text-[#7f7681]">
+              {trialActive
+                ? '试用期享受 Studio Plus 全部功能，到期自动降级'
+                : currentPlan.code !== 'free'
+                  ? `有效期至 ${subscription?.expiredAt ? new Date(subscription.expiredAt).toLocaleDateString('zh-CN') : '—'}`
+                  : '升级套餐解锁更多功能'}
+            </p>
+          </div>
+          <svg className="h-5 w-5 shrink-0 text-[#c9bec6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 6l6 6-6 6" />
+          </svg>
+        </button>
+
+        <Card className="relative z-10 mb-4 p-4 shadow-[0_14px_32px_rgba(29,35,53,0.08)]">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <p className="text-2xl font-bold text-gray-900">{summary.todayOrders.length}</p>
@@ -254,30 +325,58 @@ export const MePage: React.FC = () => {
               <h2 className="text-[18px] font-semibold text-gray-900">邀请码分享</h2>
               <p className="mt-1 text-xs text-gray-500">把邀请码或链接发给客户，客户可直接进入绑定流程。</p>
             </div>
-            <span className="rounded-full bg-[#ffe9f0] px-3 py-1 text-[11px] font-medium leading-none text-pink-500">
+            <button
+              type="button"
+              onClick={() => invitationCode && navigator.clipboard.writeText(invitationCode).then(() => toast.success('邀请码已复制'))}
+              className="shrink-0 whitespace-nowrap rounded-full bg-[#ffe9f0] px-3.5 py-1.5 text-[12px] font-semibold text-pink-500 min-h-[32px] active:bg-[#ffd6e4]"
+            >
               邀请客户
-            </span>
+            </button>
           </div>
           <div className="rounded-[20px] bg-[#fff7fa] p-3.5">
             <div className="flex items-center justify-between gap-3 rounded-[16px] bg-white px-3.5 py-3">
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-xs text-gray-400">邀请码</p>
                 <p className="mt-1 text-[1.1rem] font-bold tracking-[0.18em] text-gray-900">
                   {invitationCode || '暂未生成'}
                 </p>
               </div>
-            </div>
-            <div className="mt-3 rounded-[16px] bg-white px-3.5 py-3">
-              <p className="text-xs text-gray-400">分享链接</p>
-              {inviteLink ? (
-                <a
-                  href={inviteLink}
-                  className="mt-1 block break-all text-sm leading-6 text-pink-500"
+              {invitationCode && (
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText(invitationCode).then(() => toast.success('邀请码已复制'))}
+                  className="shrink-0 flex h-9 w-9 items-center justify-center rounded-full bg-[#fff1f6] active:bg-[#ffe4ee]"
                 >
-                  {inviteLink}
-                </a>
-              ) : (
-                <p className="mt-1 text-sm leading-6 text-gray-500">暂无可用分享链接</p>
+                  <svg className="h-4 w-4 text-[#FF5E93]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+              )}
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-3 rounded-[16px] bg-white px-3.5 py-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-gray-400">分享链接</p>
+                {inviteLink ? (
+                  <a
+                    href={inviteLink}
+                    className="mt-1 block truncate text-sm leading-6 text-pink-500"
+                  >
+                    {inviteLink}
+                  </a>
+                ) : (
+                  <p className="mt-1 text-sm leading-6 text-gray-500">暂无可用分享链接</p>
+                )}
+              </div>
+              {inviteLink && (
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText(inviteLink).then(() => toast.success('分享链接已复制'))}
+                  className="shrink-0 flex h-9 w-9 items-center justify-center rounded-full bg-[#fff1f6] active:bg-[#ffe4ee]"
+                >
+                  <svg className="h-4 w-4 text-[#FF5E93]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
               )}
             </div>
           </div>

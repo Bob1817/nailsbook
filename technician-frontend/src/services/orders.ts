@@ -134,7 +134,7 @@ export const ordersService = {
     customerId?: number;
   }): Promise<TechnicianOrder[]> {
     try {
-      const response = await api.get<OrderListResponse>('/technician/orders', { params });
+      const response = await api.get<OrderListResponse>('/orders', { params });
       return mergeOrders(response.data.data.map(normalizeOrder), loadLocalDraftOrders()).filter((order) => {
         if (params?.status && order.status !== params.status) {
           return false;
@@ -151,7 +151,7 @@ export const ordersService = {
 
   async getById(id: number): Promise<TechnicianOrder | null> {
     try {
-      const response = await api.get<OrderApiItem>(`/technician/orders/${id}`);
+      const response = await api.get<OrderApiItem>(`/orders/${id}`);
       return normalizeOrder(response.data);
     } catch {
       return mergeOrders(orderFallbackState, loadLocalDraftOrders()).find((order) => order.id === id) ?? null;
@@ -160,7 +160,7 @@ export const ordersService = {
 
   async getTrips(): Promise<TechnicianOrder[]> {
     try {
-      const response = await api.get<OrderApiItem[]>('/technician/orders/trips');
+      const response = await api.get<OrderApiItem[]>('/orders/trips');
       return response.data.map(normalizeOrder);
     } catch {
       return filterFallbackOrders().filter(
@@ -182,7 +182,7 @@ export const ordersService = {
       remark?: string;
     },
   ): Promise<TechnicianOrder> {
-    const response = await api.patch<OrderApiItem>(`/technician/orders/${id}/review`, data);
+    const response = await api.patch<OrderApiItem>(`/orders/${id}/review`, data);
     return normalizeOrder(response.data);
   },
 
@@ -222,7 +222,7 @@ export const ordersService = {
     }
 
     const response = await api.patch<OrderApiItem>(
-      `/technician/orders/${id}/confirm`,
+      `/orders/${id}/confirm`,
       data ?? {},
     );
     return normalizeOrder(response.data);
@@ -259,7 +259,7 @@ export const ordersService = {
       return { ...localOrder, status: 'completed' };
     }
 
-    const response = await api.patch<OrderApiItem>(`/technician/orders/${id}/complete`);
+    const response = await api.patch<OrderApiItem>(`/orders/${id}/complete`);
     return normalizeOrder(response.data);
   },
 
@@ -275,7 +275,7 @@ export const ordersService = {
       return;
     }
 
-    await api.patch(`/technician/orders/${id}/cancel`);
+    await api.patch(`/orders/${id}/cancel`);
   },
 
   async review(
@@ -302,7 +302,7 @@ export const ordersService = {
       note?: string;
     },
   ): Promise<TechnicianOrder> {
-    const response = await api.patch<OrderApiItem>(`/technician/orders/${id}`, data);
+    const response = await api.patch<OrderApiItem>(`/orders/${id}`, data);
     return normalizeOrder(response.data);
   },
 
@@ -318,7 +318,7 @@ export const ordersService = {
     note?: string;
   }): Promise<TechnicianOrder> {
     try {
-      const response = await api.post<OrderApiItem>('/technician/orders', {
+      const response = await api.post<OrderApiItem>('/orders', {
         customerId: input.customerId,
         serviceName: input.serviceName,
         address: input.address,

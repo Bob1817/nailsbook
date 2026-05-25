@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { designService, type DesignRequest } from '../services/design';
 import dayjs from 'dayjs';
@@ -8,20 +8,20 @@ const DesignList: React.FC = () => {
   const [designs, setDesigns] = useState<DesignRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadDesigns();
-  }, []);
-
-  const loadDesigns = async () => {
+  const loadDesigns = useCallback(async () => {
     try {
       const data = await designService.getDesigns();
       setDesigns(data);
-    } catch (error) {
-      console.error('Failed to load designs:', error);
+    } catch {
+      console.error('Failed to load designs');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadDesigns();
+  }, [loadDesigns]);
 
   const getStatusText = (status: string) => {
     const statusMap: Record<string, string> = {

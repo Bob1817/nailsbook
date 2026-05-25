@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 
 @Injectable()
@@ -24,8 +28,15 @@ export class AdminRolesService {
     return role;
   }
 
-  async create(data: { name: string; code: string; description?: string; permissionIds?: number[] }) {
-    const existing = await this.prisma.adminRole.findUnique({ where: { code: data.code } });
+  async create(data: {
+    name: string;
+    code: string;
+    description?: string;
+    permissionIds?: number[];
+  }) {
+    const existing = await this.prisma.adminRole.findUnique({
+      where: { code: data.code },
+    });
     if (existing) throw new BadRequestException('角色编码已存在');
 
     return this.prisma.adminRole.create({
@@ -41,7 +52,10 @@ export class AdminRolesService {
     });
   }
 
-  async update(id: number, data: { name?: string; description?: string; permissionIds?: number[] }) {
+  async update(
+    id: number,
+    data: { name?: string; description?: string; permissionIds?: number[] },
+  ) {
     await this.findOne(id);
 
     return this.prisma.$transaction(async (tx) => {
@@ -49,7 +63,10 @@ export class AdminRolesService {
         await tx.adminRolePermission.deleteMany({ where: { roleId: id } });
         if (data.permissionIds.length > 0) {
           await tx.adminRolePermission.createMany({
-            data: data.permissionIds.map((pid) => ({ roleId: id, permissionId: pid })),
+            data: data.permissionIds.map((pid) => ({
+              roleId: id,
+              permissionId: pid,
+            })),
           });
         }
       }
@@ -58,7 +75,9 @@ export class AdminRolesService {
         where: { id },
         data: {
           ...(data.name !== undefined && { name: data.name }),
-          ...(data.description !== undefined && { description: data.description }),
+          ...(data.description !== undefined && {
+            description: data.description,
+          }),
         },
         include: { permissions: { include: { permission: true } } },
       });
@@ -67,8 +86,10 @@ export class AdminRolesService {
 
   async remove(id: number) {
     const role = await this.findOne(id);
-    if (role.code === 'super_admin') throw new BadRequestException('不能删除超级管理员角色');
-    if ((role as any)._count.users > 0) throw new BadRequestException('该角色下还有用户，不能删除');
+    if (role.code === 'super_admin')
+      throw new BadRequestException('不能删除超级管理员角色');
+    if ((role as any)._count.users > 0)
+      throw new BadRequestException('该角色下还有用户，不能删除');
 
     await this.prisma.$transaction(async (tx) => {
       await tx.adminRolePermission.deleteMany({ where: { roleId: id } });

@@ -1,22 +1,24 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { ChatGateway } from '../chat/chat.gateway';
 import * as crypto from 'crypto';
 import { CreateTechnicianOrderDto } from './dto/create-technician-order.dto';
 import { ReviewOrderDto } from './dto/review-order.dto';
 
-const VALID_ORDER_STATUSES = [
-  'pending_quote',
-  'pending_agree',
-  'pending_confirm',
-  'pending_home',
-  'pending_shop',
-  'in_progress',
-  'completed',
-  'cancelled',
-] as const;
-
-type OrderStatus = (typeof VALID_ORDER_STATUSES)[number];
+type OrderStatus =
+  | 'pending_quote'
+  | 'pending_agree'
+  | 'pending_confirm'
+  | 'pending_home'
+  | 'pending_shop'
+  | 'in_progress'
+  | 'completed'
+  | 'cancelled';
 
 const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   pending_quote: ['pending_agree', 'cancelled'],
@@ -40,7 +42,10 @@ export class OrdersService {
     private chatGateway: ChatGateway,
   ) {}
 
-  async createForTechnician(technicianId: number, dto: CreateTechnicianOrderDto) {
+  async createForTechnician(
+    technicianId: number,
+    dto: CreateTechnicianOrderDto,
+  ) {
     const customer = await this.prisma.customer.findUnique({
       where: { id: dto.customerId },
     });
@@ -68,12 +73,20 @@ export class OrdersService {
       },
       include: {
         technician: { select: { id: true, name: true, phone: true } },
-        customer: { select: { id: true, name: true, phone: true, avatarUrl: true } },
+        customer: {
+          select: { id: true, name: true, phone: true, avatarUrl: true },
+        },
       },
     });
   }
 
-  async findAll(page: number = 1, limit: number = 20, technicianId?: number, customerId?: number, status?: string) {
+  async findAll(
+    page: number = 1,
+    limit: number = 20,
+    technicianId?: number,
+    customerId?: number,
+    status?: string,
+  ) {
     const where: any = {};
 
     if (technicianId) where.technicianId = technicianId;
@@ -87,7 +100,9 @@ export class OrdersService {
         take: limit,
         include: {
           technician: { select: { id: true, name: true, phone: true } },
-          customer: { select: { id: true, name: true, phone: true, avatarUrl: true } },
+          customer: {
+            select: { id: true, name: true, phone: true, avatarUrl: true },
+          },
         },
         orderBy: { startTime: 'desc' },
       }),
@@ -108,7 +123,9 @@ export class OrdersService {
       },
       include: {
         technician: { select: { id: true, name: true, phone: true } },
-        customer: { select: { id: true, name: true, phone: true, avatarUrl: true } },
+        customer: {
+          select: { id: true, name: true, phone: true, avatarUrl: true },
+        },
       },
       orderBy: { startTime: 'asc' },
     });
@@ -119,13 +136,21 @@ export class OrdersService {
       where: { id },
       include: {
         technician: { select: { id: true, name: true, phone: true } },
-        customer: { select: { id: true, name: true, phone: true, avatarUrl: true } },
+        customer: {
+          select: { id: true, name: true, phone: true, avatarUrl: true },
+        },
         revenue: true,
         designRequest: {
           select: { id: true, title: true, images: true, description: true },
         },
         customServiceRequest: {
-          select: { id: true, title: true, images: true, description: true, referenceWorkIds: true },
+          select: {
+            id: true,
+            title: true,
+            images: true,
+            description: true,
+            referenceWorkIds: true,
+          },
         },
       },
     });
@@ -155,9 +180,15 @@ export class OrdersService {
     }
 
     const startTime = new Date(`${dto.serviceDate}T${dto.startTime}:00`);
-    const endTime = new Date(startTime.getTime() + Number(dto.durationMinutes) * 60000);
+    const endTime = new Date(
+      startTime.getTime() + Number(dto.durationMinutes) * 60000,
+    );
 
-    if (Number.isNaN(startTime.getTime()) || Number.isNaN(endTime.getTime()) || Number(dto.durationMinutes) <= 0) {
+    if (
+      Number.isNaN(startTime.getTime()) ||
+      Number.isNaN(endTime.getTime()) ||
+      Number(dto.durationMinutes) <= 0
+    ) {
       throw new BadRequestException('预约时间或预估时长无效');
     }
 
@@ -179,7 +210,9 @@ export class OrdersService {
         },
         include: {
           technician: { select: { id: true, name: true, phone: true } },
-          customer: { select: { id: true, name: true, phone: true, avatarUrl: true } },
+          customer: {
+            select: { id: true, name: true, phone: true, avatarUrl: true },
+          },
         },
       });
 
@@ -226,12 +259,17 @@ export class OrdersService {
         const updatedConversation = await this.prisma.conversation.findUnique({
           where: { id: conversationId },
         });
-        this.chatGateway.server.to(`conversation:${conversationId}`).emit('message:new', {
-          message: systemMessage,
-          conversation: updatedConversation,
-        });
+        this.chatGateway.server
+          .to(`conversation:${String(conversationId)}`)
+          .emit('message:new', {
+            message: systemMessage,
+            conversation: updatedConversation,
+          });
       } catch (e) {
-        console.error('[OrdersService] Failed to push notification via WebSocket:', e);
+        console.error(
+          '[OrdersService] Failed to push notification via WebSocket:',
+          e,
+        );
       }
     }
 
@@ -241,8 +279,10 @@ export class OrdersService {
   async confirm(id: number, depositConfirmed?: boolean) {
     const order = await this.findOne(id);
 
-    if (!canTransition(order.status as OrderStatus, 'pending_home') &&
-        !canTransition(order.status as OrderStatus, 'pending_shop')) {
+    if (
+      !canTransition(order.status as OrderStatus, 'pending_home') &&
+      !canTransition(order.status as OrderStatus, 'pending_shop')
+    ) {
       throw new BadRequestException('当前订单状态不支持确认');
     }
 
@@ -250,7 +290,8 @@ export class OrdersService {
       throw new BadRequestException('请先确认用户已缴纳定金');
     }
 
-    const targetStatus: OrderStatus = order.serviceType === '上门美甲' ? 'pending_home' : 'pending_shop';
+    const targetStatus: OrderStatus =
+      order.serviceType === '上门美甲' ? 'pending_home' : 'pending_shop';
 
     let systemMessage: any = null;
     let conversationId: number | null = null;
@@ -263,14 +304,17 @@ export class OrdersService {
           confirmedAt: new Date(),
           isDepositPaid: depositConfirmed ? true : order.isDepositPaid,
           depositStatus: depositConfirmed ? 'paid' : order.depositStatus,
-          depositConfirmedAt: depositConfirmed ? new Date() : order.depositConfirmedAt,
+          depositConfirmedAt: depositConfirmed
+            ? new Date()
+            : order.depositConfirmedAt,
         },
       });
 
       if (order.clientUserId) {
-        const preview = targetStatus === 'pending_home'
-          ? '美甲师已确认订单，届时将上门服务～'
-          : '美甲师已确认订单，请准时到店～';
+        const preview =
+          targetStatus === 'pending_home'
+            ? '美甲师已确认订单，届时将上门服务～'
+            : '美甲师已确认订单，请准时到店～';
         const conversation = await tx.conversation.upsert({
           where: {
             clientId_techId: {
@@ -312,12 +356,17 @@ export class OrdersService {
         const updatedConversation = await this.prisma.conversation.findUnique({
           where: { id: conversationId },
         });
-        this.chatGateway.server.to(`conversation:${conversationId}`).emit('message:new', {
-          message: systemMessage,
-          conversation: updatedConversation,
-        });
+        this.chatGateway.server
+          .to(`conversation:${String(conversationId)}`)
+          .emit('message:new', {
+            message: systemMessage,
+            conversation: updatedConversation,
+          });
       } catch (e) {
-        console.error('[OrdersService] Failed to push notification via WebSocket:', e);
+        console.error(
+          '[OrdersService] Failed to push notification via WebSocket:',
+          e,
+        );
       }
     }
 
@@ -406,12 +455,17 @@ export class OrdersService {
         const updatedConversation = await this.prisma.conversation.findUnique({
           where: { id: conversationId },
         });
-        this.chatGateway.server.to(`conversation:${conversationId}`).emit('message:new', {
-          message: systemMessage,
-          conversation: updatedConversation,
-        });
+        this.chatGateway.server
+          .to(`conversation:${String(conversationId)}`)
+          .emit('message:new', {
+            message: systemMessage,
+            conversation: updatedConversation,
+          });
       } catch (e) {
-        console.error('[OrdersService] Failed to push notification via WebSocket:', e);
+        console.error(
+          '[OrdersService] Failed to push notification via WebSocket:',
+          e,
+        );
       }
     }
 
@@ -421,7 +475,11 @@ export class OrdersService {
   async cancel(id: number, cancelReason?: string) {
     const order = await this.findOne(id);
 
-    const cancellableStatuses: OrderStatus[] = ['pending_quote', 'pending_agree', 'pending_confirm'];
+    const cancellableStatuses: OrderStatus[] = [
+      'pending_quote',
+      'pending_agree',
+      'pending_confirm',
+    ];
     if (!cancellableStatuses.includes(order.status as OrderStatus)) {
       throw new BadRequestException('当前订单状态不支持取消');
     }
@@ -499,13 +557,18 @@ export class OrdersService {
           where: { id: conversationId },
         });
         for (const msg of systemMessages) {
-          this.chatGateway.server.to(`conversation:${conversationId}`).emit('message:new', {
-            message: msg,
-            conversation: updatedConversation,
-          });
+          this.chatGateway.server
+            .to(`conversation:${String(conversationId)}`)
+            .emit('message:new', {
+              message: msg,
+              conversation: updatedConversation,
+            });
         }
       } catch (e) {
-        console.error('[OrdersService] Failed to push notification via WebSocket:', e);
+        console.error(
+          '[OrdersService] Failed to push notification via WebSocket:',
+          e,
+        );
       }
     }
 
@@ -520,7 +583,12 @@ export class OrdersService {
     return `RV${Date.now()}${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
   }
 
-  private async assertOrderConflict(technicianId: number, startTime: Date, endTime: Date, ignoreId?: number) {
+  private async assertOrderConflict(
+    technicianId: number,
+    startTime: Date,
+    endTime: Date,
+    ignoreId?: number,
+  ) {
     const conflict = await this.prisma.order.findFirst({
       where: {
         technicianId,

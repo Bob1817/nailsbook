@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Permissions } from '../auth/permission.decorator';
 import { OperationLog } from '../auth/operation-log.decorator';
@@ -26,7 +34,8 @@ export class FeatureFlagsController {
   @OperationLog({ module: 'feature_flag', action: 'update' })
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { enabled?: boolean; enabledPlans?: string; description?: string },
+    @Body()
+    body: { enabled?: boolean; enabledPlans?: string; description?: string },
   ) {
     return this.service.update(id, body);
   }

@@ -1,15 +1,28 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CreateTechnicianMessageDto } from './dto/create-technician-message.dto';
 
-const ALLOWED_MESSAGE_TYPES = new Set(['text', 'image', 'system', 'quote', 'booking']);
+const ALLOWED_MESSAGE_TYPES = new Set([
+  'text',
+  'image',
+  'system',
+  'quote',
+  'booking',
+]);
 
 @Injectable()
 export class TechnicianMessagesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(technicianId: number, conversationId: number) {
-    const conversation = await this.findOwnedConversation(technicianId, conversationId);
+    const conversation = await this.findOwnedConversation(
+      technicianId,
+      conversationId,
+    );
 
     const messages = await this.prisma.message.findMany({
       where: { conversationId },
@@ -59,7 +72,9 @@ export class TechnicianMessagesService {
       },
       _count: { id: true },
     });
-    const unreadMap = new Map(unreadCounts.map((u) => [u.conversationId, u._count.id]));
+    const unreadMap = new Map(
+      unreadCounts.map((u) => [u.conversationId, u._count.id]),
+    );
 
     return conversations.map((conv) => ({
       id: conv.id,
@@ -92,7 +107,10 @@ export class TechnicianMessagesService {
     let conversation;
 
     if (dto.conversationId) {
-      conversation = await this.findOwnedConversation(technicianId, dto.conversationId);
+      conversation = await this.findOwnedConversation(
+        technicianId,
+        dto.conversationId,
+      );
     } else if (dto.clientId) {
       // Verify this client is bound to this technician
       const binding = await this.prisma.clientTechBinding.findFirst({
@@ -161,7 +179,10 @@ export class TechnicianMessagesService {
     };
   }
 
-  private async findOwnedConversation(technicianId: number, conversationId: number) {
+  private async findOwnedConversation(
+    technicianId: number,
+    conversationId: number,
+  ) {
     const conversation = await this.prisma.conversation.findFirst({
       where: {
         id: conversationId,

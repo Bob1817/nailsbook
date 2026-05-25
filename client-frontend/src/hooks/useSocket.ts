@@ -1,31 +1,34 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Socket } from 'socket.io-client';
 import { getSocket } from '../services/socket';
 
 export function useSocket() {
   const token = localStorage.getItem('client_token') || '';
-  const socketRef = useRef<Socket | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+
+  const onConnect = useCallback(() => setIsConnected(true), []);
+  const onDisconnect = useCallback(() => setIsConnected(false), []);
 
   useEffect(() => {
     if (!token) return;
 
-    const socket = getSocket(token);
-    socketRef.current = socket;
+    const nextSocket = getSocket(token);
+    setSocket(nextSocket);
 
-    const onConnect = () => setIsConnected(true);
-    const onDisconnect = () => setIsConnected(false);
+    nextSocket.on('connect', onConnect);
+    nextSocket.on('disconnect', onDisconnect);
 
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
-
-    if (socket.connected) setIsConnected(true);
+    requestAnimationFrame(() => {
+      if (nextSocket.connected) setIsConnected(true);
+    });
 
     return () => {
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
+      nextSocket.off('connect', onConnect);
+      nextSocket.off('disconnect', onDisconnect);
+      setSocket(null);
     };
-  }, [token]);
+  }, [token, onConnect, onDisconnect]);
 
-  return { socket: socketRef.current, isConnected };
+  return { socket, isConnected };
 }

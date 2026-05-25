@@ -10,7 +10,7 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = (location.state as any)?.from?.pathname || '/';
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
 
   const handleSubmit = async (values: { username: string; password: string }) => {
     setLoading(true);
@@ -18,8 +18,9 @@ const Login: React.FC = () => {
       await login(values.username, values.password);
       message.success('登录成功');
       navigate(from, { replace: true });
-    } catch (error: any) {
-      message.error(error.response?.data?.message || '登录失败，请检查用户名和密码');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || '登录失败，请检查用户名和密码');
     } finally {
       setLoading(false);
     }

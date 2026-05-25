@@ -1,0 +1,25 @@
+<view class="container">
+  <view class="header">
+    <image class="avatar" src="{{avatar}}" mode="aspectFill"></image>
+    <text class="nickname">{{nickname}}</text>
+    <text class="phone">{{phone}}</text>
+  </view>
+  <view class="stats">
+    <view>
+      <text>{{totalOrders}}</text>
+      <text>总订单</text>
+    </view>
+    <view>
+      <text>{{totalAmount}}</text>
+      <text>总收入</text>
+    </view>
+    <view>
+      <text>{{rating}}</text>
+      <text>评分</text>
+    </view>
+  </view>
+  <view class="actions">
+    <view bindtap="navigateToSettings">设置</view>
+    <view bindtap="switchRole">切换身份</view>
+  </view>
+</view>

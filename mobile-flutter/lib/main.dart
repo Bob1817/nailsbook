@@ -34,19 +34,6 @@ void main() async {
   await authSession.restoreSession();
 
   if (authSession.isAuthenticated) {
-    final role = authSession.isClient ? 'client' : 'technician';
-    try {
-      await PushNotificationService.initFirebase();
-      await pushNotificationService.init(role: role);
-      final activeToken = await tokenStore.getActiveAccessToken();
-      if (activeToken != null) {
-        await pushNotificationService.registerTokenOnServer(
-          apiBaseUrl: apiBaseUrl,
-          accessToken: activeToken,
-        );
-      }
-    } catch (_) {}
-
     chatSocket.configure(baseUrl: apiBaseUrl, token: await tokenStore.getActiveAccessToken() ?? '');
     chatSocket.connect();
   }

@@ -1,4 +1,23 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+  ApiBody,
+} from '@nestjs/swagger';
 import { TechniciansService } from './technicians.service';
 import { CreateTechnicianDto } from './dto/create-technician.dto';
 import { UpdateTechnicianStatusDto } from './dto/update-technician-status.dto';
@@ -7,6 +26,8 @@ import { Permissions } from '../auth/permission.decorator';
 import { OperationLog } from '../auth/operation-log.decorator';
 import { OperationLogInterceptor } from '../auth/operation-log.interceptor';
 
+@ApiTags('管理员-美甲师')
+@ApiBearerAuth()
 @Controller('admin/technicians')
 @UseGuards(JwtAuthGuard)
 export class TechniciansController {
@@ -14,6 +35,32 @@ export class TechniciansController {
 
   @Get()
   @Permissions('technician.view')
+  @ApiOperation({ summary: '获取美甲师列表' })
+  @ApiQuery({
+    name: 'page',
+    type: String,
+    description: '页码',
+    required: false,
+  })
+  @ApiQuery({
+    name: 'limit',
+    type: String,
+    description: '每页数量',
+    required: false,
+  })
+  @ApiQuery({
+    name: 'status',
+    type: String,
+    description: '状态筛选',
+    required: false,
+  })
+  @ApiQuery({
+    name: 'search',
+    type: String,
+    description: '搜索关键词',
+    required: false,
+  })
+  @ApiResponse({ status: 200, description: '返回美甲师列表' })
   findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -30,6 +77,10 @@ export class TechniciansController {
 
   @Get(':id')
   @Permissions('technician.view')
+  @ApiOperation({ summary: '获取美甲师详情' })
+  @ApiParam({ name: 'id', type: String, description: '美甲师ID' })
+  @ApiResponse({ status: 200, description: '返回美甲师详情' })
+  @ApiResponse({ status: 404, description: '美甲师不存在' })
   findOne(@Param('id') id: string) {
     return this.techniciansService.findOne(parseInt(id, 10));
   }
@@ -37,7 +88,15 @@ export class TechniciansController {
   @Post()
   @Permissions('technician.create')
   @UseInterceptors(OperationLogInterceptor)
-  @OperationLog({ module: 'technician', action: 'create', targetType: 'technician' })
+  @OperationLog({
+    module: 'technician',
+    action: 'create',
+    targetType: 'technician',
+  })
+  @ApiOperation({ summary: '创建美甲师' })
+  @ApiBody({ type: CreateTechnicianDto })
+  @ApiResponse({ status: 201, description: '创建成功' })
+  @ApiResponse({ status: 400, description: '参数校验失败' })
   create(@Body() dto: CreateTechnicianDto) {
     return this.techniciansService.create(dto);
   }
@@ -45,8 +104,20 @@ export class TechniciansController {
   @Patch(':id/status')
   @Permissions('technician.disable')
   @UseInterceptors(OperationLogInterceptor)
-  @OperationLog({ module: 'technician', action: 'update_status', targetType: 'technician' })
-  updateStatus(@Param('id') id: string, @Body() dto: UpdateTechnicianStatusDto) {
+  @OperationLog({
+    module: 'technician',
+    action: 'update_status',
+    targetType: 'technician',
+  })
+  @ApiOperation({ summary: '更新美甲师状态' })
+  @ApiParam({ name: 'id', type: String, description: '美甲师ID' })
+  @ApiBody({ type: UpdateTechnicianStatusDto })
+  @ApiResponse({ status: 200, description: '状态更新成功' })
+  @ApiResponse({ status: 404, description: '美甲师不存在' })
+  updateStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateTechnicianStatusDto,
+  ) {
     return this.techniciansService.updateStatus(parseInt(id, 10), dto);
   }
 }

@@ -1,0 +1,22 @@
+<view class="container">
+  <view class="header">
+    <text>{{order.orderNo}}</text>
+    <text>{{order.statusText}}</text>
+  </view>
+  <view class="service-info">
+    <text>{{order.serviceType}}</text>
+    <text>{{order.startTime}}</text>
+    <text>{{order.address}}</text>
+  </view>
+  <view class="technician">
+    <image src="{{order.techAvatar}}" mode="aspectFill"></image>
+    <text>{{order.techName}}</text>
+  </view>
+  <view class="customer">
+    <text>{{order.customerName}}</text>
+    <text>{{order.customerPhone}}</text>
+  </view>
+  <view class="price">
+    <text>¥{{order.quotePrice}}</text>
+  </view>
+</view>
