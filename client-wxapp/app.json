@@ -44,7 +44,6 @@
     }
   },
   "requiredPrivateInfos": [
-    "chooseLocation",
-    "chooseMedia"
+    "chooseLocation"
   ]
 }
