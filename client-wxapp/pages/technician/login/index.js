@@ -1,46 +1,48 @@
-const { validatePhone, validateCode } = require('../../../utils/util');
+const api = require('../../../services/api');
+const { validatePhone } = require('../../../utils/util');
 
 Page({
   data: {
     phone: '',
-    code: '',
-    countText: '获取验证码',
-    counting: false,
-    count: 60
+    password: '',
+    loading: false
   },
 
-  onPhoneInput(e) {
-    this.setData({ phone: e.detail.value });
-  },
+  onPhoneInput(e) { this.setData({ phone: e.detail.value }); },
+  onPasswordInput(e) { this.setData({ password: e.detail.value }); },
 
-  onCodeInput(e) {
-    this.setData({ code: e.detail.value });
-  },
-
-  sendCode() {
-    const { phone, counting } = this.data;
-    if (counting) return;
+  async handleSubmit() {
+    const { phone, password, loading } = this.data;
+    if (loading) return;
 
     if (!validatePhone(phone)) {
       wx.showToast({ title: '请输入正确的手机号', icon: 'none' });
       return;
     }
-
-    wx.showToast({ title: '验证码功能开发中', icon: 'none' });
-  },
-
-  handleSubmit() {
-    const { phone, code } = this.data;
-
-    if (!validatePhone(phone)) {
-      wx.showToast({ title: '请输入正确的手机号', icon: 'none' });
-      return;
-    }
-    if (!validateCode(code)) {
-      wx.showToast({ title: '请输入验证码', icon: 'none' });
+    if (!password) {
+      wx.showToast({ title: '请输入密码', icon: 'none' });
       return;
     }
 
-    wx.showToast({ title: '登录功能开发中', icon: 'none' });
+    this.setData({ loading: true });
+    wx.showLoading({ title: '登录中...' });
+
+    try {
+      const res = await api.auth.login(phone, password, 'technician');
+
+      const app = getApp();
+      app.setLogin('technician', res.accessToken, res.technician);
+
+      if (res.refreshToken) {
+        wx.setStorageSync('technician_refreshToken', res.refreshToken);
+      }
+
+      wx.hideLoading();
+      wx.reLaunch({ url: '/pages/technician/home/index' });
+    } catch (err) {
+      wx.hideLoading();
+      this.setData({ loading: false });
+      wx.showToast({ title: err.message || '登录失败，请检查手机号和密码', icon: 'none' });
+    }
   }
 });

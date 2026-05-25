@@ -1,5 +1,43 @@
 <view class="container">
-  <view class="empty-page">
-    <text>功能开发中</text>
+
+  <view wx:if="{{!loading && works.length === 0}}" class="empty">
+    <text class="empty-text">还没有作品</text>
+    <text class="empty-sub">上传你的美甲作品，吸引更多客户</text>
+    <button class="btn-add-first" bindtap="goCreate">上传第一个作品</button>
   </view>
+
+  <view wx:else class="grid">
+    <view
+      class="work-card"
+      wx:for="{{works}}"
+      wx:key="id"
+    >
+      <image
+        class="work-cover"
+        src="{{item.coverUrl}}"
+        mode="aspectFill"
+        bindtap="goEdit"
+        data-id="{{item.id}}"
+      />
+      <view wx:if="{{!item.isVisible}}" class="hidden-mask">
+        <text class="hidden-label">已隐藏</text>
+      </view>
+      <view class="work-info">
+        <text class="work-title">{{item.title || '未命名'}}</text>
+        <view class="work-actions">
+          <text class="action-btn" bindtap="toggleVisible" data-id="{{item.id}}">
+            {{item.isVisible ? '隐藏' : '显示'}}
+          </text>
+          <text class="action-btn" bindtap="goEdit" data-id="{{item.id}}">编辑</text>
+          <text class="action-btn danger" bindtap="confirmDelete" data-id="{{item.id}}">删除</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="work-card add-card" bindtap="goCreate">
+      <text class="add-icon">+</text>
+      <text class="add-text">上传作品</text>
+    </view>
+  </view>
+
 </view>

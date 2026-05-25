@@ -1,103 +1,161 @@
 .container {
   min-height: 100vh;
-  background-color: #f5f5f5;
-  padding: 24rpx 32rpx;
+  background: #f5f5f5;
+  padding-bottom: 60rpx;
 }
 
-.card {
-  background-color: #ffffff;
-  border-radius: 16rpx;
+/* 状态头 */
+.status-bar {
+  padding: 40rpx 32rpx;
+  background: #ff6b9d;
+}
+.status-bar.status-completed { background: #52c41a; }
+.status-bar.status-cancelled,
+.status-bar.status-rejected  { background: #999; }
+.status-bar.status-confirmed  { background: #1890ff; }
+.status-bar.status-quoted     { background: #fa8c16; }
+
+.status-text {
+  font-size: 40rpx;
+  font-weight: 600;
+  color: #fff;
+  display: block;
+  margin-bottom: 8rpx;
+}
+.order-no {
+  font-size: 24rpx;
+  color: rgba(255,255,255,0.8);
+  display: block;
+}
+
+/* 报价卡片 */
+.quote-card {
+  background: #fff;
+  margin: 16rpx;
+  border-radius: 20rpx;
   padding: 32rpx;
+  border: 2rpx solid #fa8c16;
+}
+.quote-label {
+  font-size: 26rpx;
+  color: #999;
+  display: block;
+  margin-bottom: 12rpx;
+}
+.quote-price {
+  font-size: 56rpx;
+  font-weight: 700;
+  color: #ff6b9d;
+  display: block;
+  margin-bottom: 12rpx;
+}
+.quote-meta {
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 12rpx;
+}
+.quote-remark {
+  font-size: 26rpx;
+  color: #999;
+  display: block;
   margin-bottom: 24rpx;
 }
-
-.card-header {
+.quote-actions {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 32rpx;
-  padding-bottom: 24rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  gap: 20rpx;
+  margin-top: 24rpx;
 }
 
-.title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #333333;
+/* 区块 */
+.section {
+  background: #fff;
+  margin: 16rpx 0;
+  padding: 32rpx;
 }
-
-.status {
-  font-size: 24rpx;
-  padding: 8rpx 20rpx;
-  border-radius: 20rpx;
-}
-
-.status-quoted {
-  background-color: #e6f7ff;
-  color: #1890ff;
-}
-
-.info-section {
-  margin-bottom: 32rpx;
-}
-
-.info-section:last-child {
-  margin-bottom: 0;
-}
-
 .section-title {
   font-size: 28rpx;
   font-weight: 600;
-  color: #333333;
+  color: #333;
   display: block;
-  margin-bottom: 20rpx;
+  margin-bottom: 24rpx;
 }
-
 .info-row {
   display: flex;
-  justify-content: space-between;
-  padding: 12rpx 0;
+  padding: 14rpx 0;
+  border-bottom: 1rpx solid #f5f5f5;
 }
-
+.info-row:last-child { border-bottom: none; }
 .label {
+  width: 140rpx;
   font-size: 28rpx;
-  color: #999999;
+  color: #999;
+  flex-shrink: 0;
 }
-
 .value {
+  flex: 1;
   font-size: 28rpx;
-  color: #333333;
+  color: #333;
 }
-
 .value.price {
   color: #ff6b9d;
+  font-size: 36rpx;
   font-weight: 600;
 }
 
-.actions {
+/* 美甲师 */
+.tech-row {
   display: flex;
-  gap: 24rpx;
+  align-items: center;
+}
+.tech-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 40rpx;
+  background: #f0f0f0;
+  margin-right: 20rpx;
+}
+.tech-name {
+  font-size: 32rpx;
+  color: #333;
+  font-weight: 500;
 }
 
-.btn-reject,
-.btn-accept {
+/* 按钮 */
+.btn {
   flex: 1;
   height: 88rpx;
   border-radius: 44rpx;
   font-size: 30rpx;
+  font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0;
+  border: none;
+}
+.btn-primary { background: #ff6b9d; color: #fff; }
+.btn-outline  { background: #fff; color: #666; border: 2rpx solid #ddd; }
+
+.cancel-wrap {
+  padding: 32rpx;
+}
+.btn-cancel {
+  width: 100%;
+  height: 88rpx;
+  border-radius: 44rpx;
+  font-size: 28rpx;
+  color: #999;
+  background: #fff;
+  border: 2rpx solid #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.btn-reject {
-  background-color: #ffffff;
-  color: #666666;
-  border: 2rpx solid #d9d9d9;
-}
-
-.btn-accept {
-  background-color: #ff6b9d;
-  color: #ffffff;
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300rpx;
+  font-size: 28rpx;
+  color: #999;
 }

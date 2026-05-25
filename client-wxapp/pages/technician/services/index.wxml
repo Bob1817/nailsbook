@@ -1,5 +1,71 @@
 <view class="container">
-  <view class="empty-page">
-    <text>功能开发中</text>
+
+  <view wx:if="{{services.length === 0 && !loading}}" class="empty">
+    <text class="empty-text">还没有服务项目</text>
+    <text class="empty-sub">添加你提供的美甲服务，方便客户下单</text>
+    <button class="btn-add-first" bindtap="openCreate">添加第一个服务</button>
   </view>
+
+  <view wx:else class="list">
+    <view
+      class="svc-item"
+      wx:for="{{services}}"
+      wx:key="id"
+    >
+      <view class="svc-header">
+        <view class="svc-left">
+          <text class="svc-name">{{item.name}}</text>
+          <text class="svc-category">{{item.categoryLabel}}</text>
+        </view>
+        <view class="svc-badge {{item.isActive ? 'active' : 'inactive'}}">
+          {{item.isActive ? '上架中' : '已下架'}}
+        </view>
+      </view>
+      <text wx:if="{{item.description}}" class="svc-desc">{{item.description}}</text>
+      <view class="svc-actions">
+        <text class="action-btn" bindtap="toggleService" data-id="{{item.id}}">
+          {{item.isActive ? '下架' : '上架'}}
+        </text>
+        <text class="action-btn" bindtap="openEdit" data-id="{{item.id}}">编辑</text>
+        <text class="action-btn danger" bindtap="confirmDelete" data-id="{{item.id}}">删除</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- FAB add button -->
+  <view wx:if="{{services.length > 0}}" class="fab" bindtap="openCreate">+</view>
+
+  <!-- Bottom sheet form -->
+  <view wx:if="{{showForm}}" class="mask" bindtap="closeForm"/>
+  <view class="form-sheet {{showForm ? 'show' : ''}}">
+    <view class="sheet-header">
+      <text class="sheet-title">{{editingId ? '编辑服务' : '添加服务'}}</text>
+      <text class="sheet-close" bindtap="closeForm">×</text>
+    </view>
+
+    <view class="form-item">
+      <text class="label">服务名称 *</text>
+      <input class="input" placeholder="例：法式美甲" value="{{form.name}}" data-field="name" bindinput="onFormInput"/>
+    </view>
+
+    <view class="form-item">
+      <text class="label">分类</text>
+      <picker mode="selector" range="{{categories}}" range-key="label" value="{{categoryIndex}}" bindchange="onCategoryChange">
+        <view class="picker-view">
+          <text>{{categories[categoryIndex].label}}</text>
+          <text class="picker-arrow">›</text>
+        </view>
+      </picker>
+    </view>
+
+    <view class="form-item">
+      <text class="label">描述（选填）</text>
+      <textarea class="textarea" placeholder="服务详细说明" value="{{form.description}}" data-field="description" bindinput="onFormInput"/>
+    </view>
+
+    <button class="btn-save" bindtap="handleSubmit" disabled="{{submitting}}">
+      {{submitting ? '保存中...' : '保存'}}
+    </button>
+  </view>
+
 </view>

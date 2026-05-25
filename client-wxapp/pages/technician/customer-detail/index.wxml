@@ -1,5 +1,76 @@
-<view class="container">
-  <view class="empty-page">
-    <text>功能开发中</text>
+<view class="container" wx:if="{{customer}}">
+
+  <!-- Profile card -->
+  <view class="profile-card">
+    <image
+      class="avatar"
+      src="{{customer.avatarUrl || '/assets/images/default-avatar.png'}}"
+      mode="aspectFill"
+    />
+    <view class="profile-info">
+      <text class="name">{{customer.name || customer.phone}}</text>
+      <text class="phone">{{customer.phone}}</text>
+    </view>
+    <view class="stats">
+      <view class="stat-item">
+        <text class="stat-num">{{customer.orders.length}}</text>
+        <text class="stat-label">订单</text>
+      </view>
+    </view>
   </view>
+
+  <!-- Tags -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">客户标签</text>
+      <text wx:if="{{!editingTags}}" class="section-action" bindtap="startEditTags">编辑</text>
+    </view>
+    <view wx:if="{{!editingTags}}" class="tag-list">
+      <text
+        class="tag"
+        wx:for="{{customer.tagList}}"
+        wx:key="index"
+      >{{item}}</text>
+      <text wx:if="{{customer.tagList.length === 0}}" class="no-tags">暂无标签</text>
+    </view>
+    <view wx:else class="tag-edit">
+      <input
+        class="tag-input"
+        value="{{tagInput}}"
+        placeholder="用逗号分隔，例：回头客, VIP, 喜欢渐变"
+        bindinput="onTagInput"
+      />
+      <view class="tag-edit-actions">
+        <button class="btn-cancel" bindtap="cancelEditTags">取消</button>
+        <button class="btn-save" bindtap="saveTags">保存</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- Order history -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">订单记录</text>
+    </view>
+    <view wx:if="{{customer.orders.length === 0}}" class="no-orders">
+      <text class="no-orders-text">暂无订单</text>
+    </view>
+    <view
+      class="order-item"
+      wx:for="{{customer.orders}}"
+      wx:key="id"
+      bindtap="goOrderDetail"
+      data-id="{{item.id}}"
+    >
+      <view class="order-left">
+        <text class="order-date">{{item.dateStr}}</text>
+        <text class="order-type">{{item.serviceType === 'home' ? '上门' : '到店'}}</text>
+      </view>
+      <view class="order-right">
+        <text class="order-status {{item.status}}">{{item.statusLabel}}</text>
+        <text class="order-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
 </view>

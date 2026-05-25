@@ -6,23 +6,29 @@ function getBaseUrl(role = 'client') {
 
 const auth = {
   requestCode: (phone, role = 'client') => {
-    return api.post(`${getBaseUrl(role)}/auth/request-code`, { phone });
+    const endpoint = role === 'client'
+      ? `${getBaseUrl('client')}/auth/request-login-code`
+      : `${getBaseUrl('technician')}/auth/request-code`;
+    return api.post(endpoint, { phone });
   },
 
-  verifyCode: (phone, code, role = 'client') => {
-    return api.post(`${getBaseUrl(role)}/auth/verify-code`, { phone, code });
+  requestRegisterCode: (phone, inviteCode) => {
+    return api.post(`${getBaseUrl('client')}/auth/request-register-code`, { phone, inviteCode });
   },
 
-  register: (data, role = 'client') => {
-    return api.post(`${getBaseUrl(role)}/auth/register`, data);
+  registerByInvite: (phone, code, inviteCode) => {
+    return api.post(`${getBaseUrl('client')}/auth/register-by-invite`, { phone, code, inviteCode });
   },
 
   login: (phone, code, role = 'client') => {
-    return api.post(`${getBaseUrl(role)}/auth/login`, { phone, code });
+    if (role === 'technician') {
+      return api.post(`${getBaseUrl('technician')}/auth/login`, { phone, password: code });
+    }
+    return api.post(`${getBaseUrl('client')}/auth/login`, { phone, code });
   },
 
   getUserInfo: (role = 'client') => {
-    return api.get(`${getBaseUrl(role)}/auth/me`, {}, { baseUrl: '' });
+    return api.get(`${getBaseUrl(role)}/auth/me`);
   }
 };
 
@@ -45,8 +51,9 @@ const client = {
     detail: (id) => api.get(`/orders/${id}`),
     create: (data) => api.post('/orders', data),
     cancel: (id, reason) => api.post(`/orders/${id}/cancel`, { reason }),
-    acceptQuote: (id) => api.post(`/orders/${id}/accept-quote`),
+    acceptQuote: (id) => api.post(`/orders/${id}/agree`),
     rejectQuote: (id, reason) => api.post(`/orders/${id}/reject-quote`, { reason }),
+    cancel: (id) => api.patch(`/orders/${id}/status`, { status: 'cancelled' }),
     review: (id, data) => api.post(`/orders/${id}/review`, data)
   },
 
@@ -55,8 +62,8 @@ const client = {
     detail: (id) => api.get(`/addresses/${id}`),
     create: (data) => api.post('/addresses', data),
     update: (id, data) => api.patch(`/addresses/${id}`, data),
-    delete: (id) => api.delete(`/addresses/${id}`),
-    setDefault: (id) => api.post(`/addresses/${id}/set-default`)
+    delete: (id) => api.del(`/addresses/${id}`),
+    setDefault: (id) => api.patch(`/addresses/${id}/set-default`, {})
   },
 
   designs: {
@@ -91,10 +98,10 @@ const technician = {
   orders: {
     list: (params) => api.get('/orders', params),
     detail: (id) => api.get(`/orders/${id}`),
-    quote: (id, data) => api.post(`/orders/${id}/quote`, data),
-    confirm: (id) => api.post(`/orders/${id}/confirm`),
-    complete: (id) => api.post(`/orders/${id}/complete`),
-    cancel: (id, reason) => api.post(`/orders/${id}/cancel`, { reason })
+    review: (id, data) => api.patch(`/orders/${id}/review`, data),
+    confirm: (id) => api.patch(`/orders/${id}/confirm`, {}),
+    complete: (id) => api.patch(`/orders/${id}/complete`, {}),
+    cancel: (id) => api.patch(`/orders/${id}/cancel`, {})
   },
 
   customers: {
@@ -108,7 +115,7 @@ const technician = {
     detail: (id) => api.get(`/works/${id}`),
     create: (data) => api.post('/works', data),
     update: (id, data) => api.patch(`/works/${id}`, data),
-    delete: (id) => api.delete(`/works/${id}`),
+    delete: (id) => api.del(`/works/${id}`),
     toggleVisible: (id) => api.post(`/works/${id}/toggle-visible`),
     togglePinned: (id) => api.post(`/works/${id}/toggle-pinned`),
     toggleFeatured: (id) => api.post(`/works/${id}/toggle-featured`)

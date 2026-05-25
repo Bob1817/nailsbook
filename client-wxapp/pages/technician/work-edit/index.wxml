@@ -1,5 +1,61 @@
 <view class="container">
-  <view class="empty-page">
-    <text>功能开发中</text>
+
+  <view class="section">
+    <view class="form-item">
+      <text class="label">封面图片 *</text>
+      <view class="cover-picker" bindtap="chooseCover">
+        <image wx:if="{{coverUrl}}" class="cover-preview" src="{{coverUrl}}" mode="aspectFill"/>
+        <view wx:else class="cover-placeholder">
+          <text class="cover-icon">+</text>
+          <text class="cover-hint">点击上传封面</text>
+        </view>
+      </view>
+    </view>
   </view>
+
+  <view class="section">
+    <view class="form-item">
+      <text class="label">作品标题 *</text>
+      <input class="input" placeholder="给作品起个名字" value="{{title}}" data-field="title" bindinput="onInput"/>
+    </view>
+    <view class="form-item">
+      <text class="label">价格（元）</text>
+      <input class="input" type="digit" placeholder="例：128（选填）" value="{{price}}" data-field="price" bindinput="onInput"/>
+    </view>
+    <view class="form-item">
+      <text class="label">标签</text>
+      <input class="input" placeholder="例：法式,渐变,春季（逗号分隔）" value="{{tags}}" data-field="tags" bindinput="onInput"/>
+    </view>
+    <view class="form-item">
+      <text class="label">描述</text>
+      <textarea class="textarea" placeholder="作品介绍（选填）" value="{{description}}" data-field="description" bindinput="onInput"/>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="form-item">
+      <text class="label">更多图片（最多9张）</text>
+      <view class="image-grid">
+        <view class="img-wrap" wx:for="{{images}}" wx:key="index">
+          <image class="img-thumb" src="{{item}}" mode="aspectFill"/>
+          <view class="img-remove" bindtap="removeImage" data-index="{{index}}">×</view>
+        </view>
+        <view wx:if="{{images.length < 9}}" class="img-add" bindtap="addImage">
+          <text class="img-add-icon">+</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section visible-row">
+    <text class="label">公开展示</text>
+    <switch checked="{{isVisible}}" bindchange="onVisibleChange" color="#ff6b9d"/>
+  </view>
+
+  <view class="footer">
+    <button class="btn-save" bindtap="handleSubmit" disabled="{{submitting || uploading}}">
+      {{submitting ? '保存中...' : (isEdit ? '保存修改' : '发布作品')}}
+    </button>
+  </view>
+
 </view>

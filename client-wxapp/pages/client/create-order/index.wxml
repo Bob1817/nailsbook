@@ -1,6 +1,110 @@
 <view class="container">
-  <view class="empty-page">
-    <text>功能开发中</text>
-    <text class="sub-text">该页面正在紧张开发中</text>
+
+  <!-- 美甲师 -->
+  <view class="section">
+    <text class="section-title">美甲师</text>
+    <view class="tech-card" wx:if="{{technician}}">
+      <image class="tech-avatar" src="{{technician.avatarUrl || '/static/logo.svg'}}" mode="aspectFill"/>
+      <view class="tech-info">
+        <text class="tech-name">{{technician.name}}</text>
+        <text class="tech-phone">{{technician.phone}}</text>
+      </view>
+    </view>
+    <text wx:else class="hint">未绑定美甲师</text>
   </view>
+
+  <!-- 服务方式 -->
+  <view class="section">
+    <text class="section-title">服务方式</text>
+    <view class="type-tabs">
+      <view
+        class="type-tab {{serviceType === '上门' ? 'active' : ''}}"
+        bindtap="onServiceTypeChange"
+        data-type="上门"
+      >上门服务</view>
+      <view
+        class="type-tab {{serviceType === '到店' ? 'active' : ''}}"
+        bindtap="onServiceTypeChange"
+        data-type="到店"
+      >到店服务</view>
+    </view>
+  </view>
+
+  <!-- 上门地址 -->
+  <view class="section" wx:if="{{serviceType === '上门'}}">
+    <text class="section-title">上门地址</text>
+    <view wx:if="{{addresses.length > 0}}">
+      <view
+        wx:for="{{addresses}}"
+        wx:key="id"
+        class="address-item {{selectedAddressId === item.id ? 'selected' : ''}}"
+        bindtap="onAddressTap"
+        data-id="{{item.id}}"
+      >
+        <view class="address-main">
+          <text class="address-name">{{item.contactName}} {{item.contactPhone}}</text>
+          <text class="address-detail">{{item.province}}{{item.city}}{{item.district}}{{item.detail}}</text>
+        </view>
+        <view class="check-icon" wx:if="{{selectedAddressId === item.id}}">✓</view>
+      </view>
+    </view>
+    <view class="add-address" bindtap="goToAddAddress">
+      <text>+ 添加新地址</text>
+    </view>
+  </view>
+
+  <!-- 预约时间 -->
+  <view class="section">
+    <text class="section-title">预约时间</text>
+    <view class="time-row">
+      <view class="time-item">
+        <text class="time-label">日期</text>
+        <picker mode="date" value="{{serviceDate}}" start="{{minDate}}" bindchange="onDateChange">
+          <view class="picker-value">{{serviceDate || '请选择'}}</view>
+        </picker>
+      </view>
+      <view class="time-item">
+        <text class="time-label">时间</text>
+        <picker mode="time" value="{{startTime}}" bindchange="onTimeChange">
+          <view class="picker-value">{{startTime || '请选择'}}</view>
+        </picker>
+      </view>
+    </view>
+  </view>
+
+  <!-- 服务项目 -->
+  <view class="section" wx:if="{{serviceItems.length > 0}}">
+    <text class="section-title">服务项目（可多选）</text>
+    <view class="service-list">
+      <view
+        wx:for="{{serviceItems}}"
+        wx:key="id"
+        class="service-item {{selectedServiceIds.indexOf(item.id) >= 0 ? 'selected' : ''}}"
+        bindtap="toggleService"
+        data-id="{{item.id}}"
+      >
+        <text class="service-name">{{item.name}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 备注 -->
+  <view class="section">
+    <text class="section-title">备注（选填）</text>
+    <textarea
+      class="remark-input"
+      placeholder="如有特殊需求请备注，例如：想要渐变粉色系"
+      value="{{remark}}"
+      bindinput="onRemarkInput"
+      maxlength="200"
+    />
+  </view>
+
+  <!-- 提交 -->
+  <view class="footer">
+    <button class="btn-submit" bindtap="handleSubmit" disabled="{{submitting}}">
+      {{submitting ? '提交中...' : '确认预约'}}
+    </button>
+  </view>
+
 </view>

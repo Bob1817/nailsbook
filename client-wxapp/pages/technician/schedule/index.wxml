@@ -1,5 +1,46 @@
 <view class="container">
-  <view class="empty-page">
-    <text>功能开发中</text>
+
+  <!-- Week strip -->
+  <view class="week-strip">
+    <view
+      class="day-cell {{item.date === selectedDate ? 'selected' : ''}}"
+      wx:for="{{days}}"
+      wx:key="date"
+      bindtap="selectDay"
+      data-date="{{item.date}}"
+    >
+      <text class="day-dow">{{item.dow}}</text>
+      <text class="day-num">{{item.dayNum}}</text>
+    </view>
   </view>
+
+  <!-- Orders for selected day -->
+  <view class="date-header">
+    <text class="date-text">{{selectedDate}}</text>
+    <text class="count-text">{{dayOrders.length}} 个预约</text>
+  </view>
+
+  <view wx:if="{{dayOrders.length === 0 && !loading}}" class="empty">
+    <text class="empty-text">今天暂无预约</text>
+  </view>
+
+  <view class="order-list">
+    <view
+      class="order-card"
+      wx:for="{{dayOrders}}"
+      wx:key="id"
+      bindtap="goOrderDetail"
+      data-id="{{item.id}}"
+    >
+      <view class="order-time-col">
+        <text class="order-time">{{item.timeStr}}</text>
+      </view>
+      <view class="order-body">
+        <text class="order-client">{{item.client.name || item.client.phone}}</text>
+        <text class="order-services">{{item.serviceType === 'home' ? '上门服务' : '到店服务'}}</text>
+        <text class="order-status {{item.status}}">{{item.statusLabel}}</text>
+      </view>
+    </view>
+  </view>
+
 </view>

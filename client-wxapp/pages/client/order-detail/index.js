@@ -1,81 +1,111 @@
 const api = require('../../../services/api');
-const { formatTime } = require('../../../utils/util');
+
+const STATUS_TEXT = {
+  pending_quote: '待报价',
+  quoted: '已报价',
+  confirmed: '已确认',
+  in_progress: '服务中',
+  completed: '已完成',
+  cancelled: '已取消',
+  rejected: '已拒绝'
+};
 
 Page({
   data: {
-    order: {}
+    order: null,
+    loading: true
   },
 
   onLoad(options) {
-    this.loadOrder(options.id);
+    this.orderId = options.id;
+    this.loadOrder();
   },
 
-  async loadOrder(id) {
+  onShow() {
+    if (this.orderId) this.loadOrder();
+  },
+
+  async loadOrder() {
     try {
-      wx.showLoading({ title: '加载中...' });
-      const res = await api.client.orders.detail(id);
-      res.startTime = formatTime(res.startTime);
-      res.statusText = this.getStatusText(res.status);
-      this.setData({ order: res });
-      wx.hideLoading();
+      const order = await api.client.orders.detail(this.orderId);
+      this.setData({
+        order: {
+          ...order,
+          statusText: STATUS_TEXT[order.status] || order.status,
+          techName: order.technician?.name || '',
+          techAvatar: order.technician?.avatarUrl || '',
+          addressText: order.address
+            ? `${order.address.province || ''}${order.address.city || ''}${order.address.district || ''}${order.address.detail || ''}`
+            : ''
+        },
+        loading: false
+      });
     } catch (err) {
-      wx.hideLoading();
+      this.setData({ loading: false });
       wx.showToast({ title: '加载失败', icon: 'none' });
     }
   },
 
-  getStatusText(status) {
-    const map = {
-      pending_quote: '待报价',
-      quoted: '已报价',
-      confirmed: '已确认',
-      completed: '已完成',
-      cancelled: '已取消'
-    };
-    return map[status] || status;
-  },
-
-  async acceptQuote() {
-    const { order } = this.data;
-
+  acceptQuote() {
     wx.showModal({
       title: '确认接受报价',
-      content: '确认接受当前报价？',
+      content: `报价金额 ¥${this.data.order.price}，确认接受？`,
+      confirmText: '接受',
       success: async (res) => {
-        if (res.confirm) {
-          try {
-            wx.showLoading({ title: '处理中...' });
-            await api.client.orders.acceptQuote(order.id);
-            wx.hideLoading();
-            wx.showToast({ title: '已接受报价', icon: 'success' });
-            this.loadOrder(order.id);
-          } catch (err) {
-            wx.hideLoading();
-            wx.showToast({ title: err.message || '操作失败', icon: 'none' });
-          }
+        if (!res.confirm) return;
+        wx.showLoading({ title: '处理中...' });
+        try {
+          await api.client.orders.acceptQuote(this.orderId);
+          wx.hideLoading();
+          wx.showToast({ title: '已接受报价', icon: 'success' });
+          this.loadOrder();
+        } catch (err) {
+          wx.hideLoading();
+          wx.showToast({ title: err.message || '操作失败', icon: 'none' });
         }
       }
     });
   },
 
-  async rejectQuote() {
-    const { order } = this.data;
-
+  rejectQuote() {
     wx.showModal({
       title: '拒绝报价',
-      content: '确定要拒绝当前报价吗？',
+      content: '确定拒绝当前报价吗？',
+      confirmText: '拒绝',
+      confirmColor: '#ff4d4f',
       success: async (res) => {
-        if (res.confirm) {
-          try {
-            wx.showLoading({ title: '处理中...' });
-            await api.client.orders.rejectQuote(order.id, '用户拒绝');
-            wx.hideLoading();
-            wx.showToast({ title: '已拒绝报价', icon: 'success' });
-            this.loadOrder(order.id);
-          } catch (err) {
-            wx.hideLoading();
-            wx.showToast({ title: err.message || '操作失败', icon: 'none' });
-          }
+        if (!res.confirm) return;
+        wx.showLoading({ title: '处理中...' });
+        try {
+          await api.client.orders.rejectQuote(this.orderId, '用户拒绝');
+          wx.hideLoading();
+          wx.showToast({ title: '已拒绝报价', icon: 'success' });
+          this.loadOrder();
+        } catch (err) {
+          wx.hideLoading();
+          wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+        }
+      }
+    });
+  },
+
+  cancelOrder() {
+    wx.showModal({
+      title: '取消预约',
+      content: '确定要取消这个预约吗？',
+      confirmText: '取消预约',
+      confirmColor: '#ff4d4f',
+      success: async (res) => {
+        if (!res.confirm) return;
+        wx.showLoading({ title: '处理中...' });
+        try {
+          await api.client.orders.cancel(this.orderId);
+          wx.hideLoading();
+          wx.showToast({ title: '预约已取消', icon: 'success' });
+          this.loadOrder();
+        } catch (err) {
+          wx.hideLoading();
+          wx.showToast({ title: err.message || '操作失败', icon: 'none' });
         }
       }
     });

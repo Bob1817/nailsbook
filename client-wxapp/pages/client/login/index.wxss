@@ -110,3 +110,13 @@
   display: inline;
   color: #ff6b9d;
 }
+
+.switch-mode {
+  text-align: center;
+  margin-top: 32rpx;
+}
+
+.switch-text {
+  font-size: 28rpx;
+  color: #999999;
+}

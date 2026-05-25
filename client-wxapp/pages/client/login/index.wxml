@@ -1,7 +1,7 @@
 <view class="container">
   <view class="header">
     <text class="title">欢迎来到 NailBook</text>
-    <text class="subtitle">登录后享受美甲预约服务</text>
+    <text class="subtitle">{{mode === 'login' ? '登录后享受美甲预约服务' : '通过邀请码注册账号'}}</text>
   </view>
 
   <view class="form">
@@ -17,6 +17,17 @@
       />
     </view>
 
+    <view class="form-item" wx:if="{{mode === 'register'}}">
+      <text class="label">邀请码</text>
+      <input
+        class="input"
+        type="text"
+        placeholder="请输入美甲师邀请码"
+        value="{{inviteCode}}"
+        bindinput="onInviteCodeInput"
+      />
+    </view>
+
     <view class="form-item">
       <text class="label">验证码</text>
       <view class="code-input">
@@ -29,17 +40,27 @@
           bindinput="onCodeInput"
         />
         <button
-          class="btn-code"
+          class="btn-code {{counting ? 'disabled' : ''}}"
           bindtap="sendCode"
+          disabled="{{counting}}"
         >
           {{countText}}
         </button>
       </view>
     </view>
 
-    <button class="btn-primary" bindtap="handleSubmit">
-      登录
+    <button class="btn-primary" bindtap="handleSubmit" disabled="{{loading}}">
+      {{mode === 'login' ? '登录' : '注册并登录'}}
     </button>
+  </view>
+
+  <view class="switch-mode">
+    <text wx:if="{{mode === 'login'}}" class="switch-text">
+      还没有账号？<text class="link" bindtap="switchToRegister">邀请码注册</text>
+    </text>
+    <text wx:if="{{mode === 'register'}}" class="switch-text">
+      已有账号？<text class="link" bindtap="switchToLogin">直接登录</text>
+    </text>
   </view>
 
   <view class="tips">

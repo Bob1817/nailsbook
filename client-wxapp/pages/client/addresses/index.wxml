@@ -1,5 +1,36 @@
 <view class="container">
-  <view class="empty-page">
-    <text>功能开发中</text>
+
+  <view wx:if="{{!loading && addresses.length === 0}}" class="empty">
+    <text class="empty-text">还没有地址</text>
+    <text class="empty-sub">添加常用上门地址，方便快速预约</text>
   </view>
+
+  <view class="list" wx:else>
+    <view class="addr-item" wx:for="{{addresses}}" wx:key="id">
+      <view class="addr-body" bindtap="editAddress" data-id="{{item.id}}">
+        <view class="addr-top">
+          <text class="addr-name">{{item.contactName}}</text>
+          <text class="addr-phone">{{item.contactPhone}}</text>
+          <view class="tag-default" wx:if="{{item.isDefault}}">默认</view>
+        </view>
+        <text class="addr-detail">
+          {{item.province}}{{item.city}}{{item.district}}{{item.detailAddress || item.detail}}{{item.doorInfo ? ' ' + item.doorInfo : ''}}
+        </text>
+      </view>
+      <view class="addr-actions">
+        <text
+          class="action-btn"
+          wx:if="{{!item.isDefault}}"
+          bindtap="setDefault"
+          data-id="{{item.id}}"
+        >设为默认</text>
+        <text class="action-btn danger" bindtap="deleteAddress" data-id="{{item.id}}">删除</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="footer">
+    <button class="btn-add" bindtap="addAddress">+ 新增地址</button>
+  </view>
+
 </view>

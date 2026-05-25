@@ -1,5 +1,122 @@
-<view class="container">
-  <view class="empty-page">
-    <text>功能开发中</text>
+<view class="container" wx:if="{{!loading && order}}">
+
+  <!-- 状态栏 -->
+  <view class="status-bar status-{{order.status}}">
+    <text class="status-text">{{order.statusText}}</text>
+    <text class="order-no">订单号：{{order.orderNo}}</text>
   </view>
+
+  <!-- 客户信息 -->
+  <view class="section">
+    <text class="section-title">客户信息</text>
+    <view class="info-row">
+      <text class="info-label">姓名</text>
+      <text class="info-value">{{order.client.nickname || order.client.phone}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">手机</text>
+      <text class="info-value">{{order.client.phone}}</text>
+    </view>
+  </view>
+
+  <!-- 服务信息 -->
+  <view class="section">
+    <text class="section-title">服务信息</text>
+    <view class="info-row">
+      <text class="info-label">方式</text>
+      <text class="info-value">{{order.serviceType}}</text>
+    </view>
+    <view class="info-row" wx:if="{{order.serviceDate}}">
+      <text class="info-label">日期</text>
+      <text class="info-value">{{order.serviceDate}} {{order.startTime}}</text>
+    </view>
+    <view class="info-row" wx:if="{{order.address}}">
+      <text class="info-label">地址</text>
+      <text class="info-value">{{order.address.province}}{{order.address.city}}{{order.address.district}}{{order.address.detail}}</text>
+    </view>
+    <view class="info-row" wx:if="{{order.remark}}">
+      <text class="info-label">备注</text>
+      <text class="info-value">{{order.remark}}</text>
+    </view>
+  </view>
+
+  <!-- 报价信息（已报价后显示） -->
+  <view class="section" wx:if="{{order.price}}">
+    <text class="section-title">报价信息</text>
+    <view class="info-row">
+      <text class="info-label">金额</text>
+      <text class="info-value price">¥{{order.price}}</text>
+    </view>
+    <view class="info-row" wx:if="{{order.durationMinutes}}">
+      <text class="info-label">时长</text>
+      <text class="info-value">{{order.durationMinutes}}分钟</text>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="actions">
+    <button
+      wx:if="{{order.status === 'pending_quote'}}"
+      class="btn btn-primary"
+      bindtap="openQuoteForm"
+    >发送报价</button>
+
+    <button
+      wx:if="{{order.status === 'confirmed'}}"
+      class="btn btn-success"
+      bindtap="completeOrder"
+    >完成服务</button>
+
+    <button
+      wx:if="{{order.status === 'pending_quote' || order.status === 'quoted' || order.status === 'confirmed'}}"
+      class="btn btn-danger"
+      bindtap="cancelOrder"
+    >取消订单</button>
+  </view>
+
+</view>
+
+<!-- 加载中 -->
+<view class="loading" wx:if="{{loading}}">
+  <text>加载中...</text>
+</view>
+
+<!-- 报价弹窗 -->
+<view class="quote-mask" wx:if="{{showQuoteForm}}" bindtap="closeQuoteForm"></view>
+<view class="quote-panel" wx:if="{{showQuoteForm}}">
+  <view class="quote-header">
+    <text class="quote-title">发送报价</text>
+    <text class="quote-close" bindtap="closeQuoteForm">✕</text>
+  </view>
+
+  <view class="quote-form">
+    <view class="form-item">
+      <text class="form-label">报价金额（元）</text>
+      <input class="form-input" type="digit" placeholder="例：199" value="{{quotePrice}}" bindinput="onQuotePriceInput"/>
+    </view>
+    <view class="form-item">
+      <text class="form-label">服务日期</text>
+      <picker mode="date" value="{{quoteDate}}" bindchange="onQuoteDateChange">
+        <view class="form-input picker">{{quoteDate || '请选择'}}</view>
+      </picker>
+    </view>
+    <view class="form-item">
+      <text class="form-label">开始时间</text>
+      <picker mode="time" value="{{quoteTime}}" bindchange="onQuoteTimeChange">
+        <view class="form-input picker">{{quoteTime || '请选择'}}</view>
+      </picker>
+    </view>
+    <view class="form-item">
+      <text class="form-label">服务时长（分钟）</text>
+      <input class="form-input" type="number" placeholder="例：120" value="{{quoteDuration}}" bindinput="onQuoteDurationInput"/>
+    </view>
+    <view class="form-item">
+      <text class="form-label">备注（选填）</text>
+      <input class="form-input" placeholder="给客户的备注" value="{{quoteRemark}}" bindinput="onQuoteRemarkInput"/>
+    </view>
+  </view>
+
+  <button class="btn btn-primary btn-full" bindtap="submitQuote" disabled="{{submitting}}">
+    {{submitting ? '提交中...' : '确认报价'}}
+  </button>
 </view>
