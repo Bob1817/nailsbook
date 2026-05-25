@@ -21,6 +21,7 @@
     "pages/technician/works/index",
     "pages/technician/work-edit/index",
     "pages/technician/services/index",
+    "pages/technician/schedule/index",
     "pages/technician/chat/index",
     "pages/technician/profile/index"
   ],
@@ -33,5 +34,17 @@
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json",
-  "lazyCodeLoading": "requiredComponents"
+  "lazyCodeLoading": "requiredComponents",
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于选择上门服务地址"
+    },
+    "scope.writePhotosAlbum": {
+      "desc": "用于保存作品图片"
+    }
+  },
+  "requiredPrivateInfos": [
+    "chooseLocation",
+    "chooseMedia"
+  ]
 }
