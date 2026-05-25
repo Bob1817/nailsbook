@@ -26,7 +26,13 @@ export interface Order {
     name: string;
     phone: string;
   } | null;
-  clientAddress: unknown;
+  clientAddress: {
+    doorInfo?: string;
+    detailAddress?: string;
+    province?: string;
+    city?: string;
+    district?: string;
+  } | null;
   createdAt: string;
   updatedAt: string;
 }

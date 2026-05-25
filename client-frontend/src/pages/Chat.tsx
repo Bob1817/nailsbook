@@ -87,7 +87,7 @@ const Chat: React.FC = () => {
   useEffect(() => {
     if (!socket) return;
 
-    const onNewMessage = (data: { message: { content: string; createdAt: string }; conversation: { id: number } }) => {
+    const onNewMessage = (data: { message: { content: string; createdAt: string; messageType?: string }; conversation: { id: number } }) => {
       setConversations((prev) =>
         prev.map((c) =>
           c.id === data.conversation.id
