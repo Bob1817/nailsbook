@@ -23,6 +23,12 @@ jobs:
 
       - run: npm ci
       - run: npm test -- --runInBand
+        env:
+          DATABASE_URL: file:./test.db
+          ADMIN_JWT_SECRET: ci-test-admin-secret-not-for-production
+          TECHNICIAN_JWT_SECRET: ci-test-technician-secret-not-for-production
+          CLIENT_JWT_SECRET: ci-test-client-secret-not-for-production
+          JWT_EXPIRES_IN: 1h
       - run: npm run build
 
   frontend:
