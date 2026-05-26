@@ -1,7 +1,12 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../common/prisma/prisma.service';
-import { VerificationCodeService } from '../common/verification-code/verification-code.service';
 import type { Prisma } from '@prisma/client';
 
 @Injectable()
@@ -45,8 +50,79 @@ export class TechnicianAuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
-    private readonly verificationCodeService: VerificationCodeService,
   ) {}
+
+  private generateInvitationCode(): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) {
+      code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return code;
+  }
+
+  async checkPhone(phone: string) {
+    const technician = await this.findTechnicianByPhone(phone);
+    return { exists: !!technician };
+  }
+
+  async register(dto: {
+    inviteKey: string;
+    name: string;
+    phone: string;
+    password: string;
+  }) {
+    const keyRecord = await this.prisma.technicianInviteKey.findUnique({
+      where: { key: dto.inviteKey },
+    });
+
+    if (!keyRecord) {
+      throw new BadRequestException('邀请密钥无效');
+    }
+
+    if (keyRecord.usedByTechnicianId) {
+      throw new BadRequestException('邀请密钥已被使用');
+    }
+
+    const existing = await this.findTechnicianByPhone(dto.phone);
+    if (existing) {
+      throw new ConflictException('该手机号已被注册');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+
+    // 为新美甲师生成唯一邀请码（供客户注册使用）
+    let invitationCode = this.generateInvitationCode();
+    while (
+      await this.prisma.technician.findUnique({ where: { invitationCode } })
+    ) {
+      invitationCode = this.generateInvitationCode();
+    }
+
+    const technician = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.technician.create({
+        data: {
+          name: dto.name.trim(),
+          phone: dto.phone,
+          passwordHash,
+          invitationCode,
+          status: 'active',
+        },
+      });
+
+      await tx.technicianInviteKey.update({
+        where: { id: keyRecord.id },
+        data: {
+          usedByTechnicianId: created.id,
+          usedAt: new Date(),
+        },
+      });
+
+      return created;
+    });
+
+    return this.issueTokens(technician.id, technician.phone);
+  }
 
   private buildDefaultBusinessHours() {
     return [1, 2, 3, 4, 5, 6, 0].map((weekday) => ({
@@ -94,93 +170,86 @@ export class TechnicianAuthService {
     }
   }
 
-  async requestCode(phone: string) {
-    const technician = await this.findTechnicianByPhone(phone);
-
-    if (!technician || !technician.invitationCode) {
-      throw new UnauthorizedException('该账号未被邀请，无法登录');
-    }
-
-    if (technician.status === 'suspended') {
-      throw new UnauthorizedException('账号已被禁用');
-    }
-
-    this.verificationCodeService.generate(phone);
-    return { codeSent: true };
-  }
-
-  async login(phone: string, password: string) {
-    type TechnicianWithSubscription = Prisma.TechnicianGetPayload<{
-      include: {
-        subscription: {
-          include: {
-            plan: true;
-          };
-        };
-      };
-    }>;
-
-    const technician = (await this.findTechnicianByPhone(phone, {
-      include: {
-        subscription: {
-          include: {
-            plan: true,
-          },
-        },
-      },
-    })) as TechnicianWithSubscription | null;
+  private async issueTokens(technicianId: number, phone: string) {
+    const technician = await this.prisma.technician.findUnique({
+      where: { id: technicianId },
+      include: { subscription: { include: { plan: true } } },
+    });
 
     if (!technician) {
-      throw new UnauthorizedException('手机号或验证码错误');
-    }
-
-    if (technician.status === 'suspended') {
-      throw new UnauthorizedException('账号已被禁用');
-    }
-
-    if (!technician.invitationCode || technician.invitationCode !== password) {
-      throw new UnauthorizedException('手机号或验证码错误');
+      throw new UnauthorizedException('美甲师不存在');
     }
 
     await this.prisma.technician.update({
-      where: { id: technician.id },
+      where: { id: technicianId },
       data: { lastLoginAt: new Date() },
     });
 
     const payload = {
       sub: technician.id,
-      phone: technician.phone,
+      phone,
       userType: 'technician',
     };
 
     return {
       accessToken: this.jwtService.sign(payload),
-      refreshToken: this.signRefreshToken(technician.id, technician.phone),
-      technician: {
-        id: technician.id,
-        name: technician.name,
-        phone: technician.phone,
-        avatarUrl: technician.avatarUrl,
-        city: technician.city,
-        serviceArea: technician.serviceArea,
-        status: technician.status,
-        invitationCode: technician.invitationCode,
-        homeService: technician.homeService,
-        shopService: technician.shopService,
-        shopAddresses: this.parseShopAddresses(technician.shopAddresses),
-        socialMedia: this.parseSocialMedia(technician.socialMedia),
-        serviceItems: this.parseServiceItems(technician.serviceItems),
-        subscription: technician.subscription
-          ? {
-              status: technician.subscription.status,
-              startedAt: technician.subscription.startedAt,
-              expiredAt: technician.subscription.expiredAt,
-              planName: technician.subscription.plan.name,
-              planCode: technician.subscription.plan.code,
-            }
-          : null,
-      },
+      refreshToken: this.signRefreshToken(technician.id, phone),
+      technician: this.serializeTechnician(technician),
     };
+  }
+
+  private serializeTechnician(
+    technician: Prisma.TechnicianGetPayload<{
+      include: { subscription: { include: { plan: true } } };
+    }>,
+  ) {
+    return {
+      id: technician.id,
+      name: technician.name,
+      phone: technician.phone,
+      avatarUrl: technician.avatarUrl,
+      city: technician.city,
+      serviceArea: technician.serviceArea,
+      status: technician.status,
+      invitationCode: technician.invitationCode,
+      homeService: technician.homeService,
+      shopService: technician.shopService,
+      shopAddresses: this.parseShopAddresses(technician.shopAddresses),
+      socialMedia: this.parseSocialMedia(technician.socialMedia),
+      serviceItems: this.parseServiceItems(technician.serviceItems),
+      subscription: technician.subscription
+        ? {
+            status: technician.subscription.status,
+            startedAt: technician.subscription.startedAt,
+            expiredAt: technician.subscription.expiredAt,
+            planName: technician.subscription.plan.name,
+            planCode: technician.subscription.plan.code,
+          }
+        : null,
+    };
+  }
+
+  async login(phone: string, password: string) {
+    const technician = await this.findTechnicianByPhone(phone);
+
+    if (!technician) {
+      throw new UnauthorizedException('手机号或密码错误');
+    }
+
+    if (technician.status === 'suspended') {
+      throw new UnauthorizedException('账号已被禁用');
+    }
+
+    if (!technician.passwordHash) {
+      throw new UnauthorizedException('账号未设置密码，请联系管理员');
+    }
+
+    const valid = await bcrypt.compare(password, technician.passwordHash);
+    if (!valid) {
+      throw new UnauthorizedException('手机号或密码错误');
+    }
+
+    return this.issueTokens(technician.id, technician.phone);
   }
 
   async getProfile(technicianId: number) {

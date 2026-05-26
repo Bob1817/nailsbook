@@ -25,10 +25,7 @@ import { ClientJwtAuthGuard } from './client-jwt-auth.guard';
 import { ClientLoginDto } from './dto/client-login.dto';
 import { RegisterByInviteDto } from './dto/register-by-invite.dto';
 import { BindTechnicianDto } from './dto/bind-technician.dto';
-import {
-  RequestClientLoginCodeDto,
-  RequestClientRegisterCodeDto,
-} from './dto/request-client-code.dto';
+import { CheckPhoneDto } from '../technician-auth/dto/check-phone.dto';
 import { RefreshTokenDto } from '../common/dto/refresh-token.dto';
 
 @Controller('client/auth')
@@ -46,27 +43,13 @@ export class ClientAuthController {
     return this.clientAuthService.findTechnicianByInviteCode(code);
   }
 
-  @Post('request-login-code')
-  @Throttle({ default: { ttl: 60000, limit: 3 } })
-  @ApiOperation({ summary: '请求登录验证码' })
-  @ApiResponse({ status: 200, description: '验证码已发送' })
-  @ApiResponse({ status: 429, description: '请求过于频繁' })
-  @ApiBody({ type: RequestClientLoginCodeDto })
-  async requestLoginCode(@Body() body: RequestClientLoginCodeDto) {
-    return this.clientAuthService.requestLoginCode(body.phone);
-  }
-
-  @Post('request-register-code')
-  @Throttle({ default: { ttl: 60000, limit: 3 } })
-  @ApiOperation({ summary: '请求注册验证码' })
-  @ApiResponse({ status: 200, description: '验证码已发送' })
-  @ApiResponse({ status: 429, description: '请求过于频繁' })
-  @ApiBody({ type: RequestClientRegisterCodeDto })
-  async requestRegisterCode(@Body() body: RequestClientRegisterCodeDto) {
-    return this.clientAuthService.requestRegisterCode(
-      body.phone,
-      body.inviteCode,
-    );
+  @Post('check-phone')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @ApiOperation({ summary: '检查手机号是否已注册' })
+  @ApiResponse({ status: 200, description: '返回 { exists: boolean }' })
+  @ApiBody({ type: CheckPhoneDto })
+  async checkPhone(@Body() body: CheckPhoneDto) {
+    return this.clientAuthService.checkPhone(body.phone);
   }
 
   @Post('register-by-invite')

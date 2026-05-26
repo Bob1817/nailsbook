@@ -69,9 +69,11 @@ interface UpdateStatusApiResponse {
   status: string;
 }
 
-interface RequestCodeResponse {
-  codeSent: boolean;
-  devCode: string;
+export interface RegisterCredentials {
+  inviteKey: string;
+  name: string;
+  phone: string;
+  password: string;
 }
 
 function buildDefaultBusinessHours(): ShopBusinessHour[] {
@@ -192,9 +194,38 @@ export const authService = {
     return technician;
   },
 
-  requestCode: async (phone: string): Promise<RequestCodeResponse> => {
-    const response = await api.post<RequestCodeResponse>('/auth/request-code', { phone });
+  checkPhone: async (phone: string): Promise<{ exists: boolean }> => {
+    const response = await api.post<{ exists: boolean }>('/auth/check-phone', { phone });
     return response.data;
+  },
+
+  register: async (credentials: RegisterCredentials): Promise<AuthResponse> => {
+    const response = await api.post<AuthApiResponse>('/auth/register', credentials);
+    const mappedResponse: AuthResponse = {
+      access_token: response.data.accessToken,
+      technician: {
+        id: response.data.technician.id,
+        name: response.data.technician.name,
+        email: `${response.data.technician.phone}@nailbook.local`,
+        phone: response.data.technician.phone,
+        avatar: response.data.technician.avatarUrl,
+        status: response.data.technician.status,
+        invitationCode: response.data.technician.invitationCode,
+        city: response.data.technician.city,
+        serviceArea: response.data.technician.serviceArea,
+        homeService: response.data.technician.homeService,
+        shopService: response.data.technician.shopService,
+        shopAddresses: normalizeShopAddresses(response.data.technician.shopAddresses),
+        socialMedia: response.data.technician.socialMedia,
+        subscription: response.data.technician.subscription ?? null,
+        serviceItems: response.data.technician.serviceItems,
+      },
+    };
+
+    if (mappedResponse.access_token) {
+      localStorage.setItem('technician_token', mappedResponse.access_token);
+    }
+    return mappedResponse;
   },
 
   updateServiceType: async (settings: ServiceTypeSettings): Promise<Technician> => {

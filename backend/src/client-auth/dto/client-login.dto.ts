@@ -1,14 +1,14 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ClientLoginDto {
   @ApiProperty({ description: '手机号', example: '13800138000' })
   @IsString()
-  @IsNotEmpty({ message: '手机号不能为空' })
+  @Matches(/^1\d{10}$/, { message: '手机号格式不正确' })
   phone: string;
 
-  @ApiProperty({ description: '验证码', example: '123456' })
+  @ApiProperty({ description: '密码' })
   @IsString()
-  @IsNotEmpty({ message: '验证码不能为空' })
-  code: string;
+  @IsNotEmpty({ message: '密码不能为空' })
+  password: string;
 }

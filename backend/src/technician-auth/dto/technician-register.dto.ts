@@ -2,7 +2,18 @@ import { IsNotEmpty, IsString, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsStrongPassword } from '../../common/validators/password.validator';
 
-export class RegisterByInviteDto {
+export class TechnicianRegisterDto {
+  @ApiProperty({ description: '邀请密钥', example: 'A3F9K2M7N5P4Q8R1' })
+  @IsString()
+  @IsNotEmpty({ message: '邀请密钥不能为空' })
+  @Matches(/^[A-Z0-9]{16}$/, { message: '邀请密钥格式不正确' })
+  inviteKey: string;
+
+  @ApiProperty({ description: '姓名', example: '小美' })
+  @IsString()
+  @IsNotEmpty({ message: '姓名不能为空' })
+  name: string;
+
   @ApiProperty({ description: '手机号', example: '13800138000' })
   @IsString()
   @Matches(/^1\d{10}$/, { message: '手机号格式不正确' })
@@ -12,9 +23,4 @@ export class RegisterByInviteDto {
   @IsString()
   @IsStrongPassword()
   password: string;
-
-  @ApiProperty({ description: '美甲师邀请码', example: 'A3F9K2M7' })
-  @IsString()
-  @IsNotEmpty({ message: '邀请码不能为空' })
-  inviteCode: string;
 }

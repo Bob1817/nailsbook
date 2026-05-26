@@ -62,8 +62,9 @@ export const Login: React.FC = () => {
     setSendingCode(true);
 
     try {
-      await authService.requestCode(phone);
-      setCountdown(60);
+      // OTP 已停用，改为密码登录
+      await authService.checkPhone(phone);
+      setError('验证码登录已停用，请使用密码登录');
     } catch (unknownError) {
       setError(getErrorMessage(unknownError, '验证码发送失败，请稍后重试'));
     } finally {

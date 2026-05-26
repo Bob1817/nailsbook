@@ -5,26 +5,24 @@ function getBaseUrl(role = 'client') {
 }
 
 const auth = {
-  requestCode: (phone, role = 'client') => {
-    const endpoint = role === 'client'
-      ? `${getBaseUrl('client')}/auth/request-login-code`
-      : `${getBaseUrl('technician')}/auth/request-code`;
-    return api.post(endpoint, { phone });
+  checkPhone: (phone, role = 'client') => {
+    return api.post(`${getBaseUrl(role)}/auth/check-phone`, { phone });
   },
 
-  requestRegisterCode: (phone, inviteCode) => {
-    return api.post(`${getBaseUrl('client')}/auth/request-register-code`, { phone, inviteCode });
+  registerClient: (phone, password, inviteCode) => {
+    return api.post(`${getBaseUrl('client')}/auth/register-by-invite`, {
+      phone, password, inviteCode
+    });
   },
 
-  registerByInvite: (phone, code, inviteCode) => {
-    return api.post(`${getBaseUrl('client')}/auth/register-by-invite`, { phone, code, inviteCode });
+  registerTechnician: (inviteKey, name, phone, password) => {
+    return api.post(`${getBaseUrl('technician')}/auth/register`, {
+      inviteKey, name, phone, password
+    });
   },
 
-  login: (phone, code, role = 'client') => {
-    if (role === 'technician') {
-      return api.post(`${getBaseUrl('technician')}/auth/login`, { phone, password: code });
-    }
-    return api.post(`${getBaseUrl('client')}/auth/login`, { phone, code });
+  login: (phone, password, role = 'client') => {
+    return api.post(`${getBaseUrl(role)}/auth/login`, { phone, password });
   },
 
   getUserInfo: (role = 'client') => {

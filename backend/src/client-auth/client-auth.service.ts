@@ -6,11 +6,11 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { ClientLoginDto } from './dto/client-login.dto';
 import { RegisterByInviteDto } from './dto/register-by-invite.dto';
 import { BindTechnicianDto } from './dto/bind-technician.dto';
-import { VerificationCodeService } from '../common/verification-code/verification-code.service';
 
 @Injectable()
 export class ClientAuthService {
@@ -53,104 +53,49 @@ export class ClientAuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly verificationCodeService: VerificationCodeService,
   ) {}
 
-  async requestLoginCode(phone: string) {
+  async checkPhone(phone: string) {
     const client = await this.prisma.clientUser.findUnique({
       where: { phone },
-      include: {
-        bindings: {
-          where: { status: 'active' },
-        },
-      },
     });
-
-    if (!client) {
-      throw new UnauthorizedException('该手机号码还未注册，请先注册后再登录');
-    }
-
-    if (client.status !== 'active') {
-      throw new UnauthorizedException('账号已被禁用');
-    }
-
-    if (client.bindings.length === 0) {
-      throw new UnauthorizedException(
-        '该账号尚未绑定美甲师，请先通过邀请码注册/绑定',
-      );
-    }
-
-    this.verificationCodeService.generate(phone);
-    return { codeSent: true };
-  }
-
-  async requestRegisterCode(phone: string, inviteCode: string) {
-    await this.findActiveTechnicianByInviteCode(
-      inviteCode,
-      '该邀请码无效，请跟您的美甲师确认后再注册',
-    );
-
-    this.verificationCodeService.generate(phone);
-    return { codeSent: true };
+    return { exists: !!client };
   }
 
   async registerByInvite(dto: RegisterByInviteDto) {
-    this.verificationCodeService.validate(dto.phone, dto.code);
-
     const technician = await this.findActiveTechnicianByInviteCode(
       dto.inviteCode,
       '该邀请码无效，请跟您的美甲师确认后再注册',
     );
 
+    const existing = await this.prisma.clientUser.findUnique({
+      where: { phone: dto.phone },
+    });
+    if (existing) {
+      throw new ConflictException('该手机号已被注册');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+
     const client = await this.prisma.$transaction(async (tx) => {
-      const currentClient = await tx.clientUser.upsert({
-        where: { phone: dto.phone },
-        update: {},
-        create: {
+      const created = await tx.clientUser.create({
+        data: {
           phone: dto.phone,
+          passwordHash,
         },
       });
 
-      if (currentClient.status !== 'active') {
-        throw new UnauthorizedException('账号已被禁用');
-      }
-
-      // Check if already bound to this technician
-      const existingBinding = await tx.clientTechBinding.findUnique({
-        where: {
-          clientId_techId: {
-            clientId: currentClient.id,
-            techId: technician.id,
-          },
+      await tx.clientTechBinding.create({
+        data: {
+          clientId: created.id,
+          techId: technician.id,
+          inviteCode: dto.inviteCode,
+          bindSource: 'invite',
+          isDefault: true,
         },
       });
 
-      if (existingBinding) {
-        if (existingBinding.status !== 'active') {
-          // Reactivate binding
-          await tx.clientTechBinding.update({
-            where: { id: existingBinding.id },
-            data: { status: 'active' },
-          });
-        }
-      } else {
-        // Check if this is the first binding
-        const bindingCount = await tx.clientTechBinding.count({
-          where: { clientId: currentClient.id, status: 'active' },
-        });
-
-        await tx.clientTechBinding.create({
-          data: {
-            clientId: currentClient.id,
-            techId: technician.id,
-            inviteCode: dto.inviteCode,
-            bindSource: 'invite',
-            isDefault: bindingCount === 0, // First binding is default
-          },
-        });
-      }
-
-      return currentClient;
+      return created;
     });
 
     return {
@@ -171,8 +116,6 @@ export class ClientAuthService {
   }
 
   async login(dto: ClientLoginDto) {
-    this.verificationCodeService.validate(dto.phone, dto.code);
-
     const client = await this.prisma.clientUser.findUnique({
       where: { phone: dto.phone },
       include: {
@@ -189,11 +132,20 @@ export class ClientAuthService {
     });
 
     if (!client) {
-      throw new UnauthorizedException('手机号或验证码错误');
+      throw new UnauthorizedException('手机号或密码错误');
     }
 
     if (client.status !== 'active') {
       throw new UnauthorizedException('账号已被禁用');
+    }
+
+    if (!client.passwordHash) {
+      throw new UnauthorizedException('账号未设置密码，请重新注册');
+    }
+
+    const valid = await bcrypt.compare(dto.password, client.passwordHash);
+    if (!valid) {
+      throw new UnauthorizedException('手机号或密码错误');
     }
 
     if (client.bindings.length === 0) {
