@@ -195,22 +195,27 @@ const EditAddress: React.FC = () => {
 
         {/* Default Address */}
         <div className="rounded-[28px] bg-white/88 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0 flex-1">
               <span className="text-sm font-medium text-gray-700">设为默认地址</span>
               <p className="mt-1 text-xs text-gray-400">后续预约时会优先使用这个地址</p>
             </div>
             <button
               type="button"
               onClick={() => setFormData({ ...formData, isDefault: !formData.isDefault })}
-              className={`w-12 h-6 rounded-full transition-colors relative ${
+              style={{ width: '44px', height: '24px' }}
+              className={`relative shrink-0 rounded-full transition-colors ${
                 formData.isDefault ? 'bg-[#FF6B8A]' : 'bg-gray-300'
               }`}
             >
               <span
-                className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
-                  formData.isDefault ? 'translate-x-6' : 'translate-x-0.5'
-                }`}
+                style={{
+                  width: '20px',
+                  height: '20px',
+                  top: '2px',
+                  left: formData.isDefault ? '22px' : '2px',
+                }}
+                className="absolute rounded-full bg-white shadow-sm transition-all duration-150"
               />
             </button>
           </div>
