@@ -81,6 +81,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setTechnician(response.technician as unknown as Technician);
   };
 
+  const register = async (params: {
+    inviteKey: string;
+    name: string;
+    phone: string;
+    password: string;
+  }) => {
+    const response = await authService.register(params);
+    localStorage.setItem('technician_token', response.access_token);
+    localStorage.setItem('technician_info', JSON.stringify(response.technician));
+    setToken(response.access_token);
+    setTechnician(response.technician as unknown as Technician);
+  };
+
   const updateTechnicianStatus = async (status: string) => {
     const nextTechnician = await authService.updateStatus(status as 'active' | 'inactive', technician);
     const mergedTechnician = technician
@@ -125,7 +138,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ technician, token, loading, login, updateTechnicianStatus, updateServiceType, updateTechnicianProfile, logout }}>
+    <AuthContext.Provider value={{ technician, token, loading, login, register, updateTechnicianStatus, updateServiceType, updateTechnicianProfile, logout }}>
       {children}
     </AuthContext.Provider>
   );
