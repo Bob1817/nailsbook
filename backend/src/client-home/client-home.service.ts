@@ -86,6 +86,54 @@ export class ClientHomeService {
     }));
   }
 
+  async getFavorites(clientUserId: number) {
+    const favorites = await this.prisma.nailWorkFavorite.findMany({
+      where: { clientId: clientUserId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        work: {
+          include: {
+            likes: true,
+            comments: true,
+            technician: { select: { name: true, id: true } },
+          },
+        },
+      },
+    });
+
+    return favorites
+      .filter((f) => f.work && f.work.isVisible)
+      .map((f) => ({
+        ...this.mapWork(f.work),
+        technicianId: f.work.techId,
+        favoritedAt: f.createdAt,
+      }));
+  }
+
+  async getLikes(clientUserId: number) {
+    const likes = await this.prisma.nailWorkLike.findMany({
+      where: { clientId: clientUserId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        work: {
+          include: {
+            likes: true,
+            comments: true,
+            technician: { select: { name: true, id: true } },
+          },
+        },
+      },
+    });
+
+    return likes
+      .filter((l) => l.work && l.work.isVisible)
+      .map((l) => ({
+        ...this.mapWork(l.work),
+        technicianId: l.work.techId,
+        likedAt: l.createdAt,
+      }));
+  }
+
   async getWork(clientUserId: number, id: number) {
     const binding = await this.getDefaultBinding(clientUserId);
     const work = await this.prisma.nailWork.findFirst({

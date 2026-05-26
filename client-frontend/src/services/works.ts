@@ -35,6 +35,16 @@ export const worksService = {
     return response.data;
   },
 
+  async getFavorites(): Promise<NailWork[]> {
+    const response = await api.get('/favorites');
+    return response.data;
+  },
+
+  async getLikes(): Promise<NailWork[]> {
+    const response = await api.get('/likes');
+    return response.data;
+  },
+
   async getWork(id: number): Promise<WorkDetail> {
     const response = await api.get(`/works/${id}`);
     return response.data;

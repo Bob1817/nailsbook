@@ -62,6 +62,20 @@ export class ClientHomeController {
     return this.clientHomeService.likeWork(request.user.clientUserId, id);
   }
 
+  @Get('favorites')
+  @ApiOperation({ summary: '获取我收藏的作品列表' })
+  @ApiResponse({ status: 200, description: '返回收藏作品列表' })
+  getFavorites(@Req() request: { user: { clientUserId: number } }) {
+    return this.clientHomeService.getFavorites(request.user.clientUserId);
+  }
+
+  @Get('likes')
+  @ApiOperation({ summary: '获取我点赞的作品列表' })
+  @ApiResponse({ status: 200, description: '返回点赞作品列表' })
+  getLikes(@Req() request: { user: { clientUserId: number } }) {
+    return this.clientHomeService.getLikes(request.user.clientUserId);
+  }
+
   @Post('works/:id/favorite')
   @ApiOperation({ summary: '收藏作品' })
   @ApiResponse({ status: 200, description: '收藏成功' })

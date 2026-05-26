@@ -10,11 +10,10 @@ const MyFavorites: React.FC = () => {
   const loadFavoritedWorks = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await worksService.getWorks();
-      const favorited = data.filter((work) => work.likeCount > 0);
-      setWorks(favorited);
-    } catch {
-      console.error('Failed to load favorited works');
+      const data = await worksService.getFavorites();
+      setWorks(data);
+    } catch (err) {
+      console.error('Failed to load favorited works', err);
     } finally {
       setLoading(false);
     }

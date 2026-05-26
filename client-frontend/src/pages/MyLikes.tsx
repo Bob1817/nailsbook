@@ -10,11 +10,10 @@ const MyLikes: React.FC = () => {
   const loadLikedWorks = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await worksService.getWorks();
-      const liked = data.filter((work) => work.likeCount > 0);
-      setWorks(liked);
-    } catch {
-      console.error('Failed to load liked works');
+      const data = await worksService.getLikes();
+      setWorks(data);
+    } catch (err) {
+      console.error('Failed to load liked works', err);
     } finally {
       setLoading(false);
     }

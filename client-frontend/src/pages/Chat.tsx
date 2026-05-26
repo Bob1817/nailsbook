@@ -6,6 +6,7 @@ import { messageService, type Conversation, type Message } from '../services/mes
 import { usePresence } from '../hooks/usePresence';
 import { useSocket } from '../hooks/useSocket';
 import { ChatListSkeleton } from '../components/Skeleton';
+import OrderDetail from './OrderDetail';
 
 interface InboxNotification {
   id: string;
@@ -16,6 +17,8 @@ interface InboxNotification {
   unread: boolean;
   targetRoute: string;
   technicianName?: string;
+  relatedType?: string | null;
+  relatedId?: number | null;
 }
 
 const Chat: React.FC = () => {
@@ -25,6 +28,8 @@ const Chat: React.FC = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [notifications, setNotifications] = useState<InboxNotification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedNotification, setSelectedNotification] = useState<InboxNotification | null>(null);
+  const [detailOrderId, setDetailOrderId] = useState<number | null>(null);
   const { isOnline } = usePresence();
   const { socket } = useSocket();
 
@@ -192,7 +197,7 @@ const Chat: React.FC = () => {
               {notifications.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => navigate(item.targetRoute)}
+                  onClick={() => setSelectedNotification(item)}
                   className="flex w-full items-start gap-3 rounded-[24px] bg-slate-50/90 px-4 py-4 text-left transition-transform active:scale-[0.99]"
                 >
                   <div className={`mt-0.5 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl ${getNotificationTone(item.type)}`}>
@@ -288,7 +293,7 @@ const Chat: React.FC = () => {
           <div className="rounded-[32px] bg-white/86 px-6 py-12 text-center shadow-[0_20px_60px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[linear-gradient(135deg,#FFE2EA_0%,#F4F6FB_100%)]">
               <svg className="h-7 w-7 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5l-1 4 4-1h8a4 4 0 004-4V7a4 4 0 00-4-4H8a4 4 0 00-4 4v4a4 4 0 004 4h1z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5l-1 4 4-1h8a4 4 0 004-4V7a4 4 0 00-4-4H8a4 4 0 00-4 4v4a4 4 0 00-4 4h1z" />
               </svg>
             </div>
             <h3 className="mt-4 text-lg font-semibold text-slate-900">消息会在这里聚合</h3>
@@ -296,6 +301,102 @@ const Chat: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* 系统消息详情弹窗 */}
+      {selectedNotification && (
+        <div
+          className="fixed inset-0 z-[150] flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center"
+          onClick={() => setSelectedNotification(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-3xl bg-white p-6 sm:rounded-3xl"
+            onClick={(e) => e.stopPropagation()}
+            style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <span className="inline-flex items-center rounded-full bg-pink-50 px-3 py-1 text-xs font-medium text-pink-600">
+                {selectedNotification.title}
+              </span>
+              <button
+                onClick={() => setSelectedNotification(null)}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <p className="whitespace-pre-wrap text-sm leading-6 text-slate-800">
+              {selectedNotification.summary}
+            </p>
+
+            <div className="mt-4 flex items-center gap-2 text-xs text-slate-400">
+              {selectedNotification.technicianName && (
+                <>
+                  <span>{selectedNotification.technicianName}</span>
+                  <span>·</span>
+                </>
+              )}
+              <span>{formatListTime(selectedNotification.time)}</span>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => setSelectedNotification(null)}
+                className="flex-1 rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-700"
+              >
+                关闭
+              </button>
+              {selectedNotification.relatedType === 'order' && selectedNotification.relatedId && (
+                <button
+                  onClick={() => {
+                    setDetailOrderId(selectedNotification.relatedId!);
+                    setSelectedNotification(null);
+                  }}
+                  className="flex-1 rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] px-4 py-3 text-sm font-semibold text-white shadow-md"
+                >
+                  查看预约详情
+                </button>
+              )}
+              {(selectedNotification.relatedType === 'comment' || selectedNotification.relatedType === 'work_comment') && selectedNotification.relatedId && (
+                <button
+                  onClick={() => {
+                    navigate(`/works/${selectedNotification.relatedId}`);
+                    setSelectedNotification(null);
+                  }}
+                  className="flex-1 rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] px-4 py-3 text-sm font-semibold text-white shadow-md"
+                >
+                  查看作品
+                </button>
+              )}
+              {selectedNotification.relatedType === 'design' && selectedNotification.relatedId && (
+                <button
+                  onClick={() => {
+                    navigate(`/designs/${selectedNotification.relatedId}`);
+                    setSelectedNotification(null);
+                  }}
+                  className="flex-1 rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] px-4 py-3 text-sm font-semibold text-white shadow-md"
+                >
+                  查看设计
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 预约详情弹窗 */}
+      {detailOrderId !== null && (
+        <OrderDetail
+          isModal
+          orderIdProp={detailOrderId}
+          onClose={() => {
+            setDetailOrderId(null);
+            loadInbox();
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -325,6 +426,8 @@ const mapNotification = (message: Message, conversation: Conversation): InboxNot
     unread: !message.isRead,
     targetRoute: getNotificationTarget(type, relatedId),
     technicianName: conversation.technician.name,
+    relatedType: message.relatedType,
+    relatedId: message.relatedId,
   };
 };
 
