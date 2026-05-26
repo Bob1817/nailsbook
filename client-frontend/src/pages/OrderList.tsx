@@ -28,20 +28,15 @@ const STATUS_COLORS: Record<string, string> = {
 const OrderList: React.FC = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [trips, setTrips] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'trips' | 'orders'>('trips');
 
   const loadData = useCallback(async () => {
+    setLoading(true);
     try {
-      const [ordersData, tripsData] = await Promise.all([
-        orderService.getOrders(),
-        orderService.getTrips(),
-      ]);
+      const ordersData = await orderService.getOrders();
       setOrders(ordersData);
-      setTrips(tripsData);
-    } catch {
-      console.error('Failed to load orders');
+    } catch (err) {
+      console.error('Failed to load orders', err);
     } finally {
       setLoading(false);
     }
@@ -66,7 +61,7 @@ const OrderList: React.FC = () => {
         <div className="flex items-end justify-between">
           <div>
             <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]">Orders</p>
-            <h1 className="mt-0.5 text-[1.75rem] font-bold tracking-[-0.03em] text-[var(--color-text)]">订单</h1>
+            <h1 className="mt-0.5 text-[1.75rem] font-bold tracking-[-0.03em] text-[var(--color-text)]">我的预约</h1>
           </div>
           <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm ring-1 ring-black/5">
             {orders.length} 条记录
@@ -103,207 +98,100 @@ const OrderList: React.FC = () => {
         </div>
       </div>
 
-      {/* Order Records Section */}
+      {/* Orders Section */}
       <div className="px-5 mt-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-heading-3 text-[var(--color-text)]">{activeTab === 'trips' ? '我的行程' : '订单记录'}</h2>
-            <p className="mt-1 text-caption text-[var(--color-text-muted)]">
-              {activeTab === 'trips' ? '查看你当前的行程安排' : '查看你所有订单的进度'}
-            </p>
+            <h2 className="text-heading-3 text-[var(--color-text)]">预约记录</h2>
+            <p className="mt-1 text-caption text-[var(--color-text-muted)]">查看你所有预约的进度</p>
           </div>
-          <span className="rounded-full bg-white/80 px-3 py-1 text-xs text-[var(--color-text-secondary)] ring-1 ring-black/5 backdrop-blur">
-            共 {(activeTab === 'trips' ? trips : orders).length} 条
-          </span>
         </div>
 
-        {/* Tabs */}
-        <div className="mb-4 flex gap-2 overflow-x-auto scrollbar-hide">
-          {[
-            { key: 'trips', label: '行程' },
-            { key: 'orders', label: '订单' },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key as 'trips' | 'orders')}
-              className={`shrink-0 rounded-full px-4 py-2 text-body-sm font-medium transition-colors ${
-                activeTab === tab.key
-                  ? 'bg-[var(--color-primary)] text-white shadow-sm'
-                  : 'bg-white text-[var(--color-text-secondary)] ring-1 ring-black/5'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Trips List */}
-        {activeTab === 'trips' && (
-          <div className="space-y-3 pb-6">
-            {trips.length > 0 ? (
-              trips.map((order) => (
-                <div
-                  key={order.id}
-                  onClick={() => navigate(`/orders/${order.id}`)}
-                  className="rounded-[28px] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5 cursor-pointer active:scale-[0.99] transition-transform"
-                >
-                  <div className="mb-4 flex items-center justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-2 rounded-full bg-[var(--color-primary-soft)] px-2.5 py-2">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[11px] font-semibold text-[var(--color-primary)]">
-                        行
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-[11px] font-medium text-[var(--color-primary)]">行程动态</p>
-                        <p className="text-[10px] text-[var(--color-text-muted)]">最近状态更新</p>
-                      </div>
+        <div className="space-y-3 pb-6">
+          {orders.length > 0 ? (
+            orders.map((order) => (
+              <div
+                key={order.id}
+                onClick={() => navigate(`/orders/${order.id}`)}
+                className="rounded-[28px] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5 cursor-pointer active:scale-[0.99] transition-transform"
+              >
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2 rounded-full bg-[var(--color-primary-soft)] px-2.5 py-2">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[11px] font-semibold text-[var(--color-primary)]">
+                      预
                     </div>
-                    <span className={`rounded-full px-3 py-1 text-caption font-medium ${STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-600'}`}>
-                      {STATUS_LABELS[order.status] || order.status}
+                    <div className="min-w-0">
+                      <p className="truncate text-[11px] font-medium text-[var(--color-primary)]">预约动态</p>
+                      <p className="text-[10px] text-[var(--color-text-muted)]">最近状态更新</p>
+                    </div>
+                  </div>
+                  <span className={`rounded-full px-3 py-1 text-caption font-medium ${STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-600'}`}>
+                    {STATUS_LABELS[order.status] || order.status}
+                  </span>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="flex h-16 w-16 flex-shrink-0 flex-col items-center justify-center rounded-2xl bg-[linear-gradient(180deg,#fff5f7_0%,#ffe8ee_100%)]">
+                    <span className="text-caption text-[var(--color-primary)] font-medium">
+                      {dayjs(order.startTime).format('MM月')}
+                    </span>
+                    <span className="text-heading-1 text-[var(--color-primary)]">
+                      {dayjs(order.startTime).format('D')}
                     </span>
                   </div>
 
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-16 w-16 flex-shrink-0 flex-col items-center justify-center rounded-2xl bg-[linear-gradient(180deg,#fff5f7_0%,#ffe8ee_100%)]">
-                      <span className="text-caption text-[var(--color-primary)] font-medium">
-                        {dayjs(order.startTime).format('MM月')}
-                      </span>
-                      <span className="text-heading-1 text-[var(--color-primary)]">
-                        {dayjs(order.startTime).format('D')}
+                  <div className="flex-1 min-w-0">
+                    <div className="mb-1 flex items-center justify-between gap-3">
+                      <span className="text-[1.125rem] font-semibold tracking-[-0.02em] text-[var(--color-text)]">
+                        {order.serviceType || '美甲服务'}
                       </span>
                     </div>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="mb-1 flex items-center justify-between gap-3">
-                        <span className="text-[1.125rem] font-semibold tracking-[-0.02em] text-[var(--color-text)]">
-                          {order.serviceType || '美甲服务'}
-                        </span>
-                      </div>
-
-                      <div className="mb-1.5 flex items-center gap-2 text-body-sm text-[var(--color-text-secondary)]">
-                        <svg className="w-4 h-4 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        {dayjs(order.startTime).format('HH:mm')} - {dayjs(order.endTime).format('HH:mm')}
-                      </div>
-
-                      <div className="flex items-center gap-2 text-body-sm text-[var(--color-text-secondary)]">
-                        <svg className="w-4 h-4 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <span className="truncate">{order.address || '地址待确认'}</span>
-                      </div>
+                    <div className="mb-1.5 flex items-center gap-2 text-body-sm text-[var(--color-text-secondary)]">
+                      <svg className="w-4 h-4 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {dayjs(order.startTime).format('HH:mm')} - {dayjs(order.endTime).format('HH:mm')}
                     </div>
+
+                    <div className="flex items-center gap-2 text-body-sm text-[var(--color-text-secondary)]">
+                      <svg className="w-4 h-4 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span className="truncate">{order.address || '地址待确认'}</span>
+                    </div>
+
+                    {order.quotePrice ? (
+                      <div className="mt-3 inline-flex rounded-full bg-[#fff2f6] px-3 py-1.5 text-body-sm font-medium text-[var(--color-primary)]">
+                        报价 ¥{order.quotePrice}
+                      </div>
+                    ) : (
+                      <div className="mt-3 text-[11px] text-[var(--color-text-muted)]">
+                        等待美甲师确认服务细节
+                      </div>
+                    )}
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="rounded-[28px] bg-white px-6 py-12 text-center shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
-                <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-100">
-                  <svg className="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <p className="text-body text-[var(--color-text-muted)] mb-2">暂无行程</p>
-                <button
-                  onClick={() => navigate('/orders/create')}
-                  className="mt-4 px-6 py-2.5 bg-[var(--color-primary)] text-white text-body-sm font-medium rounded-full active:scale-95 transition-transform"
-                >
-                  立即预约
-                </button>
               </div>
-            )}
-          </div>
-        )}
-
-        {/* Orders List */}
-        {activeTab === 'orders' && (
-          <div className="space-y-3 pb-6">
-            {orders.length > 0 ? (
-              orders.map((order) => (
-                <div
-                  key={order.id}
-                  onClick={() => navigate(`/orders/${order.id}`)}
-                  className="rounded-[28px] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5 cursor-pointer active:scale-[0.99] transition-transform"
-                >
-                  <div className="mb-4 flex items-center justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-2 rounded-full bg-[var(--color-primary-soft)] px-2.5 py-2">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[11px] font-semibold text-[var(--color-primary)]">
-                        订
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-[11px] font-medium text-[var(--color-primary)]">订单动态</p>
-                        <p className="text-[10px] text-[var(--color-text-muted)]">最近状态更新</p>
-                      </div>
-                    </div>
-                    <span className={`rounded-full px-3 py-1 text-caption font-medium ${STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-600'}`}>
-                      {STATUS_LABELS[order.status] || order.status}
-                    </span>
-                  </div>
-
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-16 w-16 flex-shrink-0 flex-col items-center justify-center rounded-2xl bg-[linear-gradient(180deg,#fff5f7_0%,#ffe8ee_100%)]">
-                      <span className="text-caption text-[var(--color-primary)] font-medium">
-                        {dayjs(order.startTime).format('MM月')}
-                      </span>
-                      <span className="text-heading-1 text-[var(--color-primary)]">
-                        {dayjs(order.startTime).format('D')}
-                      </span>
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="mb-1 flex items-center justify-between gap-3">
-                        <span className="text-[1.125rem] font-semibold tracking-[-0.02em] text-[var(--color-text)]">
-                          {order.serviceType || '美甲服务'}
-                        </span>
-                      </div>
-
-                      <div className="mb-1.5 flex items-center gap-2 text-body-sm text-[var(--color-text-secondary)]">
-                        <svg className="w-4 h-4 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        {dayjs(order.startTime).format('HH:mm')} - {dayjs(order.endTime).format('HH:mm')}
-                      </div>
-
-                      <div className="flex items-center gap-2 text-body-sm text-[var(--color-text-secondary)]">
-                        <svg className="w-4 h-4 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <span className="truncate">{order.address || '地址待确认'}</span>
-                      </div>
-
-                      {order.quotePrice ? (
-                        <div className="mt-3 inline-flex rounded-full bg-[#fff2f6] px-3 py-1.5 text-body-sm font-medium text-[var(--color-primary)]">
-                          报价 ¥{order.quotePrice}
-                        </div>
-                      ) : (
-                        <div className="mt-3 text-[11px] text-[var(--color-text-muted)]">
-                          等待美甲师确认服务细节
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="rounded-[28px] bg-white px-6 py-12 text-center shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
-                <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-100">
-                  <svg className="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <p className="text-body text-[var(--color-text-muted)] mb-2">暂无订单</p>
-                <button
-                  onClick={() => navigate('/orders/create')}
-                  className="mt-4 px-6 py-2.5 bg-[var(--color-primary)] text-white text-body-sm font-medium rounded-full active:scale-95 transition-transform"
-                >
-                  立即预约
-                </button>
+            ))
+          ) : (
+            <div className="rounded-[28px] bg-white px-6 py-12 text-center shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
+              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-100">
+                <svg className="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
               </div>
-            )}
-          </div>
-        )}
+              <p className="text-body text-[var(--color-text-muted)] mb-2">暂无预约</p>
+              <button
+                onClick={() => navigate('/orders/create')}
+                className="mt-4 px-6 py-2.5 bg-[var(--color-primary)] text-white text-body-sm font-medium rounded-full active:scale-95 transition-transform"
+              >
+                立即预约
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
