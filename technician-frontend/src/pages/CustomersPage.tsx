@@ -510,10 +510,18 @@ export const CustomersPage: React.FC = () => {
       ) : visibleCustomers.length > 0 ? (
         <div className="space-y-3">
           {visibleCustomers.map((customer) => (
-            <button
+            <div
               key={customer.id}
+              role="button"
+              tabIndex={0}
               onClick={() => void handleSelectCustomer(customer.id)}
-              className="w-full text-left"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  void handleSelectCustomer(customer.id);
+                }
+              }}
+              className="w-full text-left cursor-pointer"
             >
               <Card className="px-lg py-lg transition-colors active:bg-rose-50">
                 <div className="flex items-start gap-4">
@@ -594,7 +602,7 @@ export const CustomersPage: React.FC = () => {
                   </div>
                 </div>
               </Card>
-            </button>
+            </div>
           ))}
         </div>
       ) : (
