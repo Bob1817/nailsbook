@@ -22,9 +22,9 @@ COPY --from=builder /app/dist ./dist
 COPY prisma ./prisma
 RUN npx prisma generate
 
-RUN mkdir -p uploads
+RUN mkdir -p uploads data
 
 EXPOSE 3000
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main"]
+CMD ["sh", "-c", "DATABASE_URL=${DATABASE_URL:-file:/app/data/prod.db} npx prisma migrate deploy && node dist/src/main"]

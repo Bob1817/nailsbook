@@ -6,7 +6,7 @@ services:
     restart: always
     env_file: ./backend/.env.production
     volumes:
-      - backend_db:/app/prisma
+      - backend_db:/app/data
       - backend_uploads:/app/uploads
     expose:
       - "3000"
