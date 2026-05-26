@@ -206,21 +206,22 @@ export const SchedulePage: React.FC = () => {
   const nextOrder = tripOrders[0] ?? null;
 
   const summary = useMemo(() => {
-    const totalServiceMinutes = dayOrders.reduce(
+    // 统计也只针对行程订单（已确认/进行中）
+    const totalServiceMinutes = tripOrders.reduce(
       (sum, o) => sum + getDurationMinutes(o.startTime, o.endTime),
       0,
     );
-    const travelMinutes = estimateTravelMinutes(dayOrders);
-    const totalAmount = dayOrders.reduce((sum, o) => sum + o.price, 0);
-    const completedCount = dayOrders.filter((o) => o.status === 'completed').length;
+    const travelMinutes = estimateTravelMinutes(tripOrders);
+    const totalAmount = tripOrders.reduce((sum, o) => sum + o.price, 0);
+    const completedCount = tripOrders.filter((o) => o.status === 'in_progress').length;
     return {
-      count: dayOrders.length,
-      distance: estimateDistance(dayOrders),
+      count: tripOrders.length,
+      distance: estimateDistance(tripOrders),
       duration: totalServiceMinutes + travelMinutes,
       amount: totalAmount,
       completed: completedCount,
     };
-  }, [dayOrders]);
+  }, [tripOrders]);
 
   const resetToToday = () => {
     setActiveDate(new Date());
@@ -420,12 +421,12 @@ export const SchedulePage: React.FC = () => {
         </div>
       </Card>
 
-      {/* 路线时间轴 */}
-      {dayOrders.length > 0 && (
+      {/* 路线时间轴 - 仅展示确认后/进行中的行程 */}
+      {tripOrders.length > 0 && (
         <Card className="mb-4 p-4">
           <div className="text-sm font-semibold text-text-primary mb-3">当日路线</div>
           <div className="space-y-0">
-            {dayOrders.map((order) => (
+            {tripOrders.map((order) => (
               <div
                 key={order.id}
                 className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0 cursor-pointer"

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { orderService, type Order } from '../services/order';
 import { addressService, type ClientAddress } from '../services/address';
+import { ActionConfirmDialog } from '../components/ActionConfirmDialog';
 import dayjs from 'dayjs';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -38,6 +39,7 @@ const OrderDetail: React.FC = () => {
   const [rejectReason, setRejectReason] = useState('');
   const [rejecting, setRejecting] = useState(false);
   const [agreeing, setAgreeing] = useState(false);
+  const [showAgreeConfirm, setShowAgreeConfirm] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -103,6 +105,7 @@ const OrderDetail: React.FC = () => {
     try {
       const updated = await orderService.agreeQuote(order.id);
       setOrder(updated);
+      setShowAgreeConfirm(false);
     } catch {
       alert('同意报价失败');
     } finally {
@@ -366,7 +369,7 @@ const OrderDetail: React.FC = () => {
               拒绝报价
             </button>
             <button
-              onClick={handleAgreeQuote}
+              onClick={() => setShowAgreeConfirm(true)}
               disabled={agreeing}
               className="rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-3.5 font-medium text-white shadow-lg shadow-pink-200 disabled:opacity-50"
             >
@@ -610,6 +613,24 @@ const OrderDetail: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* 同意报价确认弹窗（突出价格）*/}
+      <ActionConfirmDialog
+        open={showAgreeConfirm}
+        title="确认同意美甲师报价？"
+        description="同意后将进入到美甲师确认环节。请确保你已知悉报价金额。"
+        price={order?.quotePrice ?? null}
+        details={order ? [
+          { label: '服务', value: order.serviceType || '美甲服务' },
+          { label: '日期', value: dayjs(order.startTime).format('YYYY-MM-DD') },
+          { label: '时间', value: dayjs(order.startTime).format('HH:mm') },
+          { label: '地址', value: order.address || '—' },
+        ] : []}
+        confirmText="确认同意"
+        loading={agreeing}
+        onConfirm={handleAgreeQuote}
+        onCancel={() => setShowAgreeConfirm(false)}
+      />
     </div>
   );
 };

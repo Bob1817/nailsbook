@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/feedback/ToastProvider';
 import { ordersService } from '../services/orders';
 import { customersService } from '../services/customers';
+import { ActionConfirmDialog } from '../components/ActionConfirmDialog';
 import {
   orderStatusClasses,
   orderStatusLabels,
@@ -213,6 +214,13 @@ export const OrdersPage: React.FC = () => {
     }
   }
 
+  // 待确认的状态变更（弹窗后再执行）
+  const [pendingStatusChange, setPendingStatusChange] = useState<OrderStatus | null>(null);
+
+  function requestStatusChange(nextStatus: OrderStatus) {
+    setPendingStatusChange(nextStatus);
+  }
+
   async function handleStatusChange(nextStatus: OrderStatus) {
     if (!selectedOrder) {
       return;
@@ -274,6 +282,21 @@ export const OrdersPage: React.FC = () => {
     setShowReviewSheet(true);
   }
 
+  // 是否在显示报价二次确认弹窗
+  const [showReviewConfirm, setShowReviewConfirm] = useState(false);
+
+  function requestReviewSubmit() {
+    if (!selectedOrder) return;
+    const duration = Number(reviewDurationMinutes);
+    const nextPrice = Number(reviewPrice);
+    if (!reviewDate || !reviewStartClock || Number.isNaN(duration) || duration <= 0 || Number.isNaN(nextPrice) || nextPrice < 0) {
+      setReviewError('请填写有效的预约日期、时间、预估时长和费用');
+      return;
+    }
+    setReviewError('');
+    setShowReviewConfirm(true);
+  }
+
   async function handleReviewOrder() {
     if (!selectedOrder) {
       return;
@@ -281,11 +304,6 @@ export const OrdersPage: React.FC = () => {
 
     const duration = Number(reviewDurationMinutes);
     const nextPrice = Number(reviewPrice);
-
-    if (!reviewDate || !reviewStartClock || Number.isNaN(duration) || duration <= 0 || Number.isNaN(nextPrice) || nextPrice < 0) {
-      setReviewError('请填写有效的预约日期、时间、预估时长和费用');
-      return;
-    }
 
     setIsReviewing(true);
     setReviewError('');
@@ -297,8 +315,9 @@ export const OrdersPage: React.FC = () => {
         price: nextPrice,
       });
       await reloadPageData(reviewed.id);
+      setShowReviewConfirm(false);
       setShowReviewSheet(false);
-      toast.success('预约信息已核实，已通知客户确认时间与费用。');
+      toast.success('报价已发送，等待客户确认。');
     } catch (error: any) {
       setReviewError(error?.response?.data?.message || '核实预约失败，请稍后重试');
     } finally {
@@ -464,7 +483,7 @@ export const OrdersPage: React.FC = () => {
                 ) : null}
                 {allowedActions.includes('pending_confirm') ? (
                   <button
-                    onClick={() => void handleStatusChange('pending_confirm')}
+                    onClick={() => requestStatusChange('pending_confirm')}
                     disabled={isUpdatingStatus}
                     className="min-h-[44px] rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
                   >
@@ -475,7 +494,7 @@ export const OrdersPage: React.FC = () => {
                   <button
                     onClick={() => {
                       const nextStatus: OrderStatus = selectedOrder.serviceType === 'home' ? 'pending_home' : 'pending_shop';
-                      void handleStatusChange(nextStatus);
+                      requestStatusChange(nextStatus);
                     }}
                     disabled={isUpdatingStatus}
                     className="min-h-[44px] rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
@@ -485,7 +504,7 @@ export const OrdersPage: React.FC = () => {
                 ) : null}
                 {allowedActions.includes('completed') ? (
                   <button
-                    onClick={() => void handleStatusChange('completed')}
+                    onClick={() => requestStatusChange('completed')}
                     disabled={isUpdatingStatus}
                     className="min-h-[44px] rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
                   >
@@ -494,7 +513,7 @@ export const OrdersPage: React.FC = () => {
                 ) : null}
                 {allowedActions.includes('cancelled') ? (
                   <button
-                    onClick={() => void handleStatusChange('cancelled')}
+                    onClick={() => requestStatusChange('cancelled')}
                     disabled={isUpdatingStatus}
                     className={`min-h-[44px] rounded-2xl border border-red-100 px-4 py-3 text-sm font-medium text-red-500 disabled:opacity-60 ${
                       allowedActions.length === 1 ? 'col-span-2' : ''
@@ -556,7 +575,7 @@ export const OrdersPage: React.FC = () => {
               </div>
               {reviewError ? <p className="text-sm text-red-500">{reviewError}</p> : null}
               <button
-                onClick={() => void handleReviewOrder()}
+                onClick={requestReviewSubmit}
                 disabled={isReviewing}
                 className="w-full rounded-xl bg-[#FF5A66] py-3 text-sm font-medium text-white min-h-[48px] disabled:opacity-60"
               >
@@ -665,6 +684,85 @@ export const OrdersPage: React.FC = () => {
           </div>
         </div>
       ) : null}
+
+      {/* 操作确认弹窗 */}
+      <ActionConfirmDialog
+        open={!!pendingStatusChange && !!selectedOrder}
+        title={
+          pendingStatusChange === 'pending_confirm'
+            ? '同意客户报价？'
+            : pendingStatusChange === 'pending_home' || pendingStatusChange === 'pending_shop'
+              ? '确认该预约？'
+              : pendingStatusChange === 'completed'
+                ? '确认服务已完成？'
+                : pendingStatusChange === 'cancelled'
+                  ? '取消该预约？'
+                  : '确认操作？'
+        }
+        description={
+          pendingStatusChange === 'pending_confirm'
+            ? '同意后客户将收到通知，请在客户确认前不要修改报价。'
+            : pendingStatusChange === 'pending_home' || pendingStatusChange === 'pending_shop'
+              ? '确认后预约将进入行程列表，开始时间前 1 小时与前一天 20:00 会自动提醒。'
+              : pendingStatusChange === 'completed'
+                ? '完成后将自动生成收入流水，无法撤销。'
+                : pendingStatusChange === 'cancelled'
+                  ? '取消后将通知客户，订单状态变更为已取消且无法恢复。'
+                  : undefined
+        }
+        price={
+          (pendingStatusChange === 'pending_home' ||
+            pendingStatusChange === 'pending_shop' ||
+            pendingStatusChange === 'pending_confirm') &&
+          selectedOrder?.price
+            ? selectedOrder.price
+            : null
+        }
+        details={
+          selectedOrder
+            ? [
+                { label: '客户', value: selectedOrder.customerName },
+                {
+                  label: '时间',
+                  value: `${formatDateLabel(selectedOrder.startTime)} ${formatTimeRange(selectedOrder.startTime, selectedOrder.endTime)}`,
+                },
+                {
+                  label: '类型',
+                  value: selectedOrder.serviceType === 'home' ? '上门美甲' : '到店美甲',
+                },
+              ]
+            : []
+        }
+        variant={pendingStatusChange === 'cancelled' ? 'danger' : 'primary'}
+        confirmText={
+          pendingStatusChange === 'cancelled' ? '取消预约' : '确认'
+        }
+        loading={isUpdatingStatus}
+        onConfirm={async () => {
+          if (!pendingStatusChange) return;
+          await handleStatusChange(pendingStatusChange);
+          setPendingStatusChange(null);
+        }}
+        onCancel={() => setPendingStatusChange(null)}
+      />
+
+      {/* 报价提交二次确认（核心：突出价格）*/}
+      <ActionConfirmDialog
+        open={showReviewConfirm}
+        title="确认提交报价？"
+        description="客户将收到该报价金额并自行决定是否同意。提交后无法直接修改，如需调整请取消订单后重建。"
+        price={reviewPrice ? Number(reviewPrice) : null}
+        details={selectedOrder ? [
+          { label: '客户', value: selectedOrder.customerName },
+          { label: '日期', value: reviewDate },
+          { label: '开始时间', value: reviewStartClock },
+          { label: '时长', value: `${reviewDurationMinutes} 分钟` },
+        ] : []}
+        confirmText="确认报价并发送"
+        loading={isReviewing}
+        onConfirm={() => void handleReviewOrder()}
+        onCancel={() => setShowReviewConfirm(false)}
+      />
     </div>
   );
 };
