@@ -156,7 +156,7 @@ const WorkDetailPage: React.FC = () => {
       </div>
 
       {/* Image Slider */}
-      <div className="relative h-[58vh] flex-shrink-0 bg-black">
+      <div className="relative h-[55vh] flex-shrink-0 bg-black">
         <div
           ref={imageSliderRef}
           className="flex h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide"
@@ -214,99 +214,129 @@ const WorkDetailPage: React.FC = () => {
       </div>
 
       {/* Work Info */}
-      <div className="relative z-10 -mt-6 flex min-h-0 flex-1 flex-col rounded-t-3xl bg-white">
-        <div className="flex-1 overflow-y-auto px-5 pt-5">
-        {/* Actions */}
-        <div className="mb-4 flex items-center gap-6">
-          <button
-            onClick={handleLike}
-            className={`flex items-center gap-2 ${work.isLiked ? 'text-red-500' : 'text-gray-700'}`}
-          >
-            {work.isLiked ? (
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+      <div className="relative z-10 -mt-6 flex min-h-0 flex-1 flex-col rounded-t-[28px] bg-white shadow-[0_-12px_40px_rgba(15,23,42,0.06)]">
+        {/* Title block */}
+        <div className="shrink-0 px-5 pt-5 pb-4">
+          <h2 className="text-[1.35rem] font-bold leading-tight tracking-[-0.02em] text-gray-900">
+            {work.title || '未命名作品'}
+          </h2>
+          {work.description && (
+            <p className="mt-2 text-sm leading-6 text-gray-500">{work.description}</p>
+          )}
+          {work.tags.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {work.tags.map((tag) => (
+                <span key={tag} className="rounded-full bg-pink-50 px-2.5 py-0.5 text-[11px] font-medium text-[var(--color-primary)]">
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Stats / action bar */}
+          <div className="mt-4 flex items-center gap-3 border-t border-gray-100 pt-4">
+            <button
+              onClick={handleLike}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-medium transition-colors ${
+                work.isLiked ? 'bg-red-50 text-red-500' : 'bg-gray-50 text-gray-600'
+              }`}
+            >
+              {work.isLiked ? (
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              )}
+              <span>{work.isLiked ? '已喜欢' : '喜欢'}</span>
+              {(work.likeCount || 0) > 0 && (
+                <span className="text-xs text-gray-400">{work.likeCount}</span>
+              )}
+            </button>
+            <button
+              onClick={handleFavorite}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-medium transition-colors ${
+                work.isFavorited ? 'bg-amber-50 text-amber-600' : 'bg-gray-50 text-gray-600'
+              }`}
+            >
+              {work.isFavorited ? (
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+              )}
+              <span>{work.isFavorited ? '已收藏' : '收藏'}</span>
+            </button>
+            <button
+              onClick={handleShare}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gray-50 text-gray-600"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
               </svg>
-            ) : (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-            )}
-            <span className="text-sm">{work.likeCount || 0}</span>
-          </button>
-          <button
-            onClick={handleFavorite}
-            className={`flex items-center gap-2 ${work.isFavorited ? 'text-amber-500' : 'text-gray-700'}`}
-          >
-            {work.isFavorited ? (
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-              </svg>
-            ) : (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-              </svg>
-            )}
-            <span className="text-sm">收藏</span>
-          </button>
+            </button>
+          </div>
         </div>
 
-        {/* Title & Description */}
-        <h2 className="mb-2 text-xl font-bold text-gray-900">{work.title || '未命名作品'}</h2>
-        <p className="mb-4 text-sm leading-6 text-gray-600">{work.description}</p>
-
-        {/* Tags */}
-        {work.tags.length > 0 && (
-          <div className="mb-5 flex flex-wrap gap-2">
-            {work.tags.map((tag) => (
-              <span key={tag} className="rounded-full bg-pink-50 px-3 py-1 text-xs text-[var(--color-primary)]">
-                #{tag}
-              </span>
-            ))}
+        {/* Comments — scrollable */}
+        <div className="flex-1 overflow-y-auto border-t border-gray-100 px-5 py-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-900">评论</h3>
+            <span className="text-xs text-gray-400">{comments.length} 条</span>
           </div>
-        )}
 
-        {/* Comments Section */}
-        <div className="border-t border-gray-100 pt-4 pb-6">
-          <h3 className="mb-4 text-sm font-medium text-gray-900">评论 ({comments.length})</h3>
-
-          {/* Comments list */}
           {comments.length > 0 ? (
             <div className="space-y-3">
               {comments.map((comment) => (
                 <div key={comment.id} className="flex gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-xs">
-                    {comment.technicianId ? '技师' : '我'}
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-medium text-white ${comment.technicianId ? 'bg-[#FF6B8A]' : 'bg-gray-400'}`}>
+                    {comment.technicianId ? '师' : '我'}
                   </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-500">
-                      {comment.technicianId ? '美甲师' : '我'} · {new Date(comment.createdAt).toLocaleDateString()}
-                    </p>
-                    <p className="text-sm text-gray-800">{comment.content}</p>
+                  <div className="flex-1 min-w-0 rounded-2xl bg-gray-50 px-3 py-2">
+                    <div className="flex items-center gap-2 text-[11px] text-gray-400">
+                      <span className="font-medium text-gray-600">
+                        {comment.technicianId ? '美甲师' : '我'}
+                      </span>
+                      <span>·</span>
+                      <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <p className="mt-1 text-sm leading-5 text-gray-800">{comment.content}</p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="rounded-[16px] bg-rose-50 px-4 py-5 text-center text-sm text-gray-400">
+            <div className="rounded-2xl bg-gray-50 px-4 py-6 text-center text-sm text-gray-400">
               暂无评论，欢迎添加第一条评论
             </div>
           )}
         </div>
-        </div>
 
-        <div className="border-t border-gray-100 bg-white px-5 pt-3 pb-[max(1rem,env(safe-area-inset-bottom)+0.5rem)]">
-          <div className="flex gap-2">
+        {/* Comment input bar */}
+        <div className="shrink-0 border-t border-gray-100 bg-white px-5 pt-3 pb-[max(0.875rem,env(safe-area-inset-bottom)+0.5rem)]">
+          <div className="flex items-center gap-2">
             <input
               type="text"
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               placeholder="添加评论..."
-              className="flex-1 rounded-full border border-gray-200 bg-white px-4 py-3 text-sm focus:border-[var(--color-primary)] focus:outline-none"
+              className="h-11 flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 text-sm focus:border-[var(--color-primary)] focus:bg-white focus:outline-none"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  void handleAddComment();
+                }
+              }}
             />
             <button
               onClick={handleAddComment}
               disabled={!commentText.trim()}
-              className="rounded-full bg-[var(--color-primary)] px-5 py-3 text-sm text-white disabled:opacity-50"
+              className="h-11 rounded-full bg-[var(--color-primary)] px-5 text-sm font-medium text-white disabled:opacity-40"
             >
               发送
             </button>
