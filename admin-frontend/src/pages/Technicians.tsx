@@ -1,17 +1,23 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Table, Button, Space, Modal, Form, Input, Select, Tag, message, Popconfirm, Card } from 'antd';
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Modal, Form, Input, Select, Tag, message, Popconfirm, Card, Typography } from 'antd';
+import { PlusOutlined, SearchOutlined, EditOutlined, KeyOutlined, CopyOutlined } from '@ant-design/icons';
 import { technicianService } from '../services/technician';
 import type { Technician, PaginatedResponse } from '../services/technician';
+
+const { Text } = Typography;
 
 const Technicians: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<PaginatedResponse<Technician> | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
+  const [editVisible, setEditVisible] = useState(false);
   const [selectedTechnician, setSelectedTechnician] = useState<Technician | null>(null);
   const [form] = Form.useForm();
+  const [editForm] = Form.useForm();
   const [filters, setFilters] = useState({ page: 1, limit: 10, status: '', search: '' });
+  const [generatedKey, setGeneratedKey] = useState<string | null>(null);
+  const [keyGenerating, setKeyGenerating] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -44,6 +50,48 @@ const Technicians: React.FC = () => {
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       message.error(err.response?.data?.message || '创建失败');
+    }
+  };
+
+  const openEdit = (technician: Technician) => {
+    setSelectedTechnician(technician);
+    setGeneratedKey(null);
+    editForm.setFieldsValue({
+      name: technician.name,
+      phone: technician.phone,
+      city: technician.city || '',
+      serviceArea: technician.serviceArea || '',
+      status: technician.status,
+    });
+    setEditVisible(true);
+  };
+
+  const handleUpdate = async (values: { name: string; phone: string; city?: string; serviceArea?: string; status?: string }) => {
+    if (!selectedTechnician) return;
+    try {
+      await technicianService.update(selectedTechnician.id, values);
+      message.success('保存成功');
+      setEditVisible(false);
+      setSelectedTechnician(null);
+      fetchData();
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || '保存失败');
+    }
+  };
+
+  const handleGenerateKey = async () => {
+    if (!selectedTechnician) return;
+    setKeyGenerating(true);
+    try {
+      const result = await technicianService.generateInviteKey(selectedTechnician.id);
+      setGeneratedKey(result.key);
+      message.success('密钥生成成功');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || '生成失败');
+    } finally {
+      setKeyGenerating(false);
     }
   };
 
@@ -129,6 +177,9 @@ const Technicians: React.FC = () => {
       key: 'action',
       render: (_: unknown, record: Technician) => (
         <Space>
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>
+            编辑
+          </Button>
           <Button type="link" size="small" onClick={() => { setSelectedTechnician(record); setDetailVisible(true); }}>
             详情
           </Button>
@@ -254,6 +305,77 @@ const Technicians: React.FC = () => {
             <p><strong>状态:</strong> {selectedTechnician.status}</p>
             <p><strong>邀请码:</strong> {selectedTechnician.invitationCode || '-'}</p>
             <p><strong>创建时间:</strong> {new Date(selectedTechnician.createdAt).toLocaleString('zh-CN')}</p>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        title="编辑美甲师"
+        open={editVisible}
+        onCancel={() => { setEditVisible(false); setSelectedTechnician(null); setGeneratedKey(null); }}
+        onOk={() => editForm.submit()}
+        okText="保存"
+        cancelText="取消"
+        width={560}
+      >
+        <Form form={editForm} layout="vertical" onFinish={handleUpdate}>
+          <Form.Item name="name" label="姓名" rules={[{ required: true, message: '请输入姓名' }]}>
+            <Input placeholder="请输入姓名" />
+          </Form.Item>
+          <Form.Item name="phone" label="手机号" rules={[{ required: true, message: '请输入手机号' }]}>
+            <Input placeholder="请输入手机号" />
+          </Form.Item>
+          <Form.Item name="city" label="城市">
+            <Input placeholder="请输入城市" />
+          </Form.Item>
+          <Form.Item name="serviceArea" label="服务区域">
+            <Input placeholder="请输入服务区域" />
+          </Form.Item>
+          <Form.Item name="status" label="状态">
+            <Select
+              options={[
+                { value: 'active', label: '活跃' },
+                { value: 'inactive', label: '未激活' },
+                { value: 'suspended', label: '已禁用' },
+              ]}
+            />
+          </Form.Item>
+        </Form>
+
+        {selectedTechnician && selectedTechnician.status === 'inactive' && (
+          <div style={{ marginTop: 16, padding: 16, background: '#fff7e6', borderRadius: 8 }}>
+            <div style={{ marginBottom: 8, color: '#fa8c16', fontSize: 13 }}>
+              该账号未激活，可生成专属邀请密钥，美甲师在 App 上使用此密钥+手机号即可激活
+            </div>
+            {generatedKey ? (
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Space>
+                  <Text code style={{ fontSize: 14, letterSpacing: 1 }}>{generatedKey}</Text>
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<CopyOutlined />}
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedKey);
+                      message.success('已复制');
+                    }}
+                  >
+                    复制
+                  </Button>
+                </Space>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  请把这个密钥和手机号 ({selectedTechnician.phone}) 一并发送给美甲师
+                </Text>
+              </Space>
+            ) : (
+              <Button
+                icon={<KeyOutlined />}
+                loading={keyGenerating}
+                onClick={handleGenerateKey}
+              >
+                生成专属激活密钥
+              </Button>
+            )}
           </div>
         )}
       </Modal>

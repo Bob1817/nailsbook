@@ -20,6 +20,7 @@ import {
 } from '@nestjs/swagger';
 import { TechniciansService } from './technicians.service';
 import { CreateTechnicianDto } from './dto/create-technician.dto';
+import { UpdateTechnicianDto } from './dto/update-technician.dto';
 import { UpdateTechnicianStatusDto } from './dto/update-technician-status.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Permissions } from '../auth/permission.decorator';
@@ -99,6 +100,40 @@ export class TechniciansController {
   @ApiResponse({ status: 400, description: '参数校验失败' })
   create(@Body() dto: CreateTechnicianDto) {
     return this.techniciansService.create(dto);
+  }
+
+  @Patch(':id')
+  @Permissions('technician.edit')
+  @UseInterceptors(OperationLogInterceptor)
+  @OperationLog({
+    module: 'technician',
+    action: 'update',
+    targetType: 'technician',
+  })
+  @ApiOperation({ summary: '编辑美甲师' })
+  @ApiParam({ name: 'id', type: String, description: '美甲师ID' })
+  @ApiBody({ type: UpdateTechnicianDto })
+  @ApiResponse({ status: 200, description: '更新成功' })
+  update(@Param('id') id: string, @Body() dto: UpdateTechnicianDto) {
+    return this.techniciansService.update(parseInt(id, 10), dto);
+  }
+
+  @Post(':id/invite-key')
+  @Permissions('technician.edit')
+  @UseInterceptors(OperationLogInterceptor)
+  @OperationLog({
+    module: 'technician',
+    action: 'generate_invite_key',
+    targetType: 'technician',
+  })
+  @ApiOperation({ summary: '为美甲师生成专属邀请密钥' })
+  @ApiParam({ name: 'id', type: String, description: '美甲师ID' })
+  @ApiResponse({ status: 201, description: '生成成功' })
+  generateInviteKey(
+    @Param('id') id: string,
+    @Body() body: { note?: string } = {},
+  ) {
+    return this.techniciansService.generateInviteKey(parseInt(id, 10), body.note);
   }
 
   @Patch(':id/status')

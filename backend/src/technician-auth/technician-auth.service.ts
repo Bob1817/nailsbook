@@ -63,7 +63,10 @@ export class TechnicianAuthService {
 
   async checkPhone(phone: string) {
     const technician = await this.findTechnicianByPhone(phone);
-    return { exists: !!technician };
+    return {
+      exists: !!technician,
+      activated: !!(technician && technician.passwordHash),
+    };
   }
 
   async register(dto: {
@@ -74,32 +77,62 @@ export class TechnicianAuthService {
   }) {
     const keyRecord = await this.prisma.technicianInviteKey.findUnique({
       where: { key: dto.inviteKey },
+      include: { technician: true },
     });
 
     if (!keyRecord) {
       throw new BadRequestException('邀请密钥无效');
     }
 
-    if (keyRecord.usedByTechnicianId) {
+    if (keyRecord.usedAt) {
       throw new BadRequestException('邀请密钥已被使用');
     }
 
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+
+    // 情况 A：密钥已预绑定到某个美甲师账号 → 激活该账号
+    if (keyRecord.usedByTechnicianId && keyRecord.technician) {
+      const target = keyRecord.technician;
+
+      if (target.passwordHash) {
+        throw new BadRequestException('该账号已激活，请直接登录');
+      }
+
+      if (target.phone !== dto.phone) {
+        throw new BadRequestException(
+          `该密钥已绑定到手机号 ${target.phone}，请使用该手机号注册`,
+        );
+      }
+
+      const activated = await this.prisma.$transaction(async (tx) => {
+        const t = await tx.technician.update({
+          where: { id: target.id },
+          data: {
+            passwordHash,
+            name: dto.name.trim() || target.name,
+            status: 'active',
+            invitationCode:
+              target.invitationCode || (await this.allocateInvitationCode(tx)),
+          },
+        });
+        await tx.technicianInviteKey.update({
+          where: { id: keyRecord.id },
+          data: { usedAt: new Date() },
+        });
+        return t;
+      });
+
+      return this.issueTokens(activated.id, activated.phone);
+    }
+
+    // 情况 B：未预绑定 → 创建新美甲师
     const existing = await this.findTechnicianByPhone(dto.phone);
     if (existing) {
       throw new ConflictException('该手机号已被注册');
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, 10);
-
-    // 为新美甲师生成唯一邀请码（供客户注册使用）
-    let invitationCode = this.generateInvitationCode();
-    while (
-      await this.prisma.technician.findUnique({ where: { invitationCode } })
-    ) {
-      invitationCode = this.generateInvitationCode();
-    }
-
     const technician = await this.prisma.$transaction(async (tx) => {
+      const invitationCode = await this.allocateInvitationCode(tx);
       const created = await tx.technician.create({
         data: {
           name: dto.name.trim(),
@@ -122,6 +155,16 @@ export class TechnicianAuthService {
     });
 
     return this.issueTokens(technician.id, technician.phone);
+  }
+
+  private async allocateInvitationCode(
+    tx: Prisma.TransactionClient,
+  ): Promise<string> {
+    let code = this.generateInvitationCode();
+    while (await tx.technician.findUnique({ where: { invitationCode: code } })) {
+      code = this.generateInvitationCode();
+    }
+    return code;
   }
 
   private buildDefaultBusinessHours() {

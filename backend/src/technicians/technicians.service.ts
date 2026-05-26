@@ -1,10 +1,12 @@
 import {
-  Injectable,
+  BadRequestException,
   ConflictException,
+  Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CreateTechnicianDto } from './dto/create-technician.dto';
+import { UpdateTechnicianDto } from './dto/update-technician.dto';
 import { UpdateTechnicianStatusDto } from './dto/update-technician-status.dto';
 import * as crypto from 'crypto';
 
@@ -126,6 +128,75 @@ export class TechniciansService {
       where: { id },
       data: {
         status: dto.status,
+      },
+    });
+  }
+
+  async update(id: number, dto: UpdateTechnicianDto) {
+    const existing = await this.prisma.technician.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Technician not found');
+
+    if (dto.phone && dto.phone !== existing.phone) {
+      const phoneInUse = await this.prisma.technician.findUnique({
+        where: { phone: dto.phone },
+      });
+      if (phoneInUse) {
+        throw new ConflictException('该手机号已被其他美甲师使用');
+      }
+    }
+
+    const data: any = {};
+    if (dto.name !== undefined) data.name = dto.name.trim();
+    if (dto.phone !== undefined) data.phone = dto.phone;
+    if (dto.avatarUrl !== undefined) data.avatarUrl = dto.avatarUrl || null;
+    if (dto.city !== undefined) data.city = dto.city || null;
+    if (dto.serviceArea !== undefined) data.serviceArea = dto.serviceArea || null;
+    if (dto.status !== undefined) data.status = dto.status;
+
+    const updated = await this.prisma.technician.update({
+      where: { id },
+      data,
+      include: { subscription: true, inviteKey: true },
+    });
+
+    return this.mapTechnician(updated);
+  }
+
+  async generateInviteKey(technicianId: number, note?: string) {
+    const technician = await this.prisma.technician.findUnique({
+      where: { id: technicianId },
+      include: { inviteKey: true },
+    });
+    if (!technician) throw new NotFoundException('美甲师不存在');
+
+    if (technician.passwordHash) {
+      throw new BadRequestException('该账号已激活，无需邀请密钥');
+    }
+
+    // 若已有未使用的密钥，直接返回
+    if (technician.inviteKey && !technician.inviteKey.usedAt) {
+      return technician.inviteKey;
+    }
+
+    // 生成新密钥并预绑定到该美甲师
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let key = '';
+    let attempt = 0;
+    do {
+      key = '';
+      for (let i = 0; i < 16; i++) key += chars[Math.floor(Math.random() * chars.length)];
+      attempt++;
+    } while (
+      (await this.prisma.technicianInviteKey.findUnique({ where: { key } })) &&
+      attempt < 10
+    );
+
+    return this.prisma.technicianInviteKey.create({
+      data: {
+        key,
+        note: note?.trim() || `美甲师 ${technician.name} (${technician.phone}) 激活密钥`,
+        usedByTechnicianId: technicianId,
+        // usedAt 不设，留作"已分配未使用"状态
       },
     });
   }

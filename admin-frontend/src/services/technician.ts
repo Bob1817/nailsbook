@@ -64,4 +64,27 @@ export const technicianService = {
     const response = await api.patch(`/technicians/${id}/status`, { status });
     return response.data;
   },
+
+  update: async (
+    id: number,
+    data: Partial<{
+      name: string;
+      phone: string;
+      avatarUrl: string;
+      city: string;
+      serviceArea: string;
+      status: string;
+    }>,
+  ): Promise<Technician> => {
+    const response = await api.patch(`/technicians/${id}`, data);
+    return response.data;
+  },
+
+  generateInviteKey: async (
+    id: number,
+    note?: string,
+  ): Promise<{ id: number; key: string; note: string | null; usedAt: string | null }> => {
+    const response = await api.post(`/technicians/${id}/invite-key`, { note });
+    return response.data;
+  },
 };
