@@ -187,6 +187,10 @@ export const OrdersPage: React.FC = () => {
       await reloadPageData(createdOrder.id);
       setShowCreateSheet(false);
       setSelectedCustomerId('');
+      // 清掉 URL 里的 customerId 参数，避免再次进入页面时自动弹出新建订单
+      if (searchParams.has('customerId')) {
+        setSearchParams({}, { replace: true });
+      }
       setServiceName('');
       setOrderDate('');
       setStartClock('14:00');
@@ -302,7 +306,7 @@ export const OrdersPage: React.FC = () => {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/', { replace: true })}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f7f3f5] transition-colors active:bg-[#eee5e9]"
             >
               <svg className="h-5 w-5 text-[#3c3440]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
