@@ -71,8 +71,7 @@ const OrderList: React.FC = () => {
     if (item.kind === 'order') {
       navigate(`/orders/${item.data.id}`);
     } else {
-      // 自定义需求暂时没有专属详情页，跳转到与该美甲师的聊天
-      navigate('/chat');
+      navigate(`/custom-requests/${item.data.id}`);
     }
   };
 
@@ -130,7 +129,7 @@ const OrderList: React.FC = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-heading-3 text-[var(--color-text)]">预约记录</h2>
-            <p className="mt-1 text-caption text-[var(--color-text-muted)]">含常规预约和自定义服务需求</p>
+            <p className="mt-1 text-caption text-[var(--color-text-muted)]">查看你所有预约的进度</p>
           </div>
         </div>
 
@@ -166,12 +165,10 @@ const OrderList: React.FC = () => {
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-2 rounded-full bg-[var(--color-primary-soft)] px-2.5 py-2">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[11px] font-semibold text-[var(--color-primary)]">
-                        {isCustom ? '需' : '预'}
+                        预
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-[11px] font-medium text-[var(--color-primary)]">
-                          {isCustom ? '自定义需求' : '预约动态'}
-                        </p>
+                        <p className="truncate text-[11px] font-medium text-[var(--color-primary)]">预约动态</p>
                         <p className="text-[10px] text-[var(--color-text-muted)]">最近状态更新</p>
                       </div>
                     </div>
@@ -220,7 +217,7 @@ const OrderList: React.FC = () => {
                         </div>
                       ) : (
                         <div className="mt-3 text-[11px] text-[var(--color-text-muted)]">
-                          等待美甲师{isCustom ? '报价' : '确认服务细节'}
+                          等待美甲师确认服务细节
                         </div>
                       )}
                     </div>
