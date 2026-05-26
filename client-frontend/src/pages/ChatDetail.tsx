@@ -328,9 +328,19 @@ const ChatDetail: React.FC = () => {
 
                 <div className="space-y-3">
                   {dateMessages.map((message) => {
-                    if (message.messageType === 'system' || message.messageType === 'quote' || message.messageType === 'booking') {
+                    if (message.messageType === 'system' || message.messageType === 'quote' || message.messageType === 'booking' || message.messageType === 'order') {
+                      const isOrderRelated = message.relatedType === 'order' && message.relatedId;
                       return (
-                        <div key={message.id} className="flex justify-center">
+                        <div
+                          key={message.id}
+                          className="flex justify-center"
+                          onClick={() => {
+                            if (isOrderRelated) {
+                              navigate(`/orders/${message.relatedId}`);
+                            }
+                          }}
+                          style={{ cursor: isOrderRelated ? 'pointer' : 'default' }}
+                        >
                           {renderSystemCard(message)}
                         </div>
                       );
@@ -514,10 +524,12 @@ const formatDate = (time: string) => {
 const renderSystemCard = (message: Message) => {
   const map: Record<string, { title: string; accent: string }> = {
     booking: { title: '预约提醒', accent: 'from-[#FF9E6D]/20 to-[#FFD8C4]/30 text-[#9A4B16]' },
-    quote: { title: '设计进度', accent: 'from-[#A38CFF]/20 to-[#E0D7FF]/35 text-[#5A46C8]' },
+    quote: { title: '美甲师报价', accent: 'from-[#A38CFF]/20 to-[#E0D7FF]/35 text-[#5A46C8]' },
+    order: { title: '预约动态', accent: 'from-[#FF6B8A]/20 to-[#FFD8E1]/35 text-[#C84669]' },
     system: { title: '系统通知', accent: 'from-[#7ED7B9]/20 to-[#D7F6EC]/35 text-[#17785A]' },
   };
   const current = map[message.messageType] || map.system;
+  const isOrderRelated = message.relatedType === 'order' && message.relatedId;
 
   return (
     <div className="max-w-[82%] rounded-[24px] bg-white/80 px-4 py-3 shadow-[0_12px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
@@ -525,7 +537,12 @@ const renderSystemCard = (message: Message) => {
         {current.title}
       </div>
       <p className="mt-3 text-sm leading-6 text-slate-700">{message.content || '你有一条新的通知'}</p>
-      <span className="mt-2 block text-xs text-slate-400">{formatTime(message.createdAt)}</span>
+      <div className="mt-2 flex items-center justify-between">
+        <span className="text-xs text-slate-400">{formatTime(message.createdAt)}</span>
+        {isOrderRelated && (
+          <span className="text-xs font-medium text-[#FF6B8A]">查看预约 →</span>
+        )}
+      </div>
     </div>
   );
 };

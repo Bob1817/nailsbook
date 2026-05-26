@@ -136,6 +136,8 @@ model Order {
   customTitle            String?
   customDescription      String?
   customImages           String? // JSON array of image URLs
+  reminderDaySent        Boolean              @default(false)
+  reminderHourSent       Boolean              @default(false)
   quotePrice             Float?
   quoteRemark            String?
   quotedAt               DateTime?

@@ -374,6 +374,38 @@ const ChatPage: React.FC = () => {
             <div className="space-y-3">
               {dateMessages.map((message) => {
                 const isTechnician = message.senderType === 'technician';
+                const isSystem = message.senderType === 'system' ||
+                  ['system', 'booking', 'quote', 'order'].includes(message.messageType);
+                const isOrderRelated = message.relatedType === 'order' && message.relatedId;
+
+                if (isSystem) {
+                  const titleMap: Record<string, string> = {
+                    booking: '预约提醒',
+                    quote: '美甲师报价',
+                    order: '预约动态',
+                    system: '系统通知',
+                  };
+                  return (
+                    <div
+                      key={message.id}
+                      className="flex justify-center"
+                      onClick={() => {
+                        if (isOrderRelated) navigate(`/orders/${message.relatedId}`);
+                      }}
+                      style={{ cursor: isOrderRelated ? 'pointer' : 'default' }}
+                    >
+                      <div className="max-w-[82%] rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-black/5">
+                        <div className="inline-flex items-center rounded-full bg-pink-50 px-3 py-1 text-[11px] font-medium text-pink-600">
+                          {titleMap[message.messageType] || '系统通知'}
+                        </div>
+                        <p className="mt-2 text-sm leading-6 text-gray-700">{message.content}</p>
+                        {isOrderRelated && (
+                          <p className="mt-2 text-xs font-medium text-pink-500">查看预约 →</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
 
                 return (
                   <div
