@@ -116,7 +116,7 @@ const OrderDetailPage: React.FC = () => {
       } else if (newStatus === 'pending_confirm') {
         await ordersService.agree(order.id);
       } else if (newStatus === 'pending_home' || newStatus === 'pending_shop') {
-        await ordersService.confirm(order.id);
+        await ordersService.confirm(order.id, { depositConfirmed: true });
       } else if (newStatus === 'completed') {
         await ordersService.complete(order.id);
       }

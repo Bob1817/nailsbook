@@ -225,7 +225,7 @@ export const OrdersPage: React.FC = () => {
       } else if (nextStatus === 'pending_confirm') {
         await ordersService.agree(selectedOrder.id);
       } else if (nextStatus === 'pending_home' || nextStatus === 'pending_shop') {
-        await ordersService.confirm(selectedOrder.id);
+        await ordersService.confirm(selectedOrder.id, { depositConfirmed: true });
       } else if (nextStatus === 'completed') {
         await ordersService.complete(selectedOrder.id);
       }
