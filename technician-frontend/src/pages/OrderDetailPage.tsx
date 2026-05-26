@@ -485,6 +485,30 @@ const OrderDetailPage: React.FC = () => {
                   {order.serviceType === 'shop' ? (order.shopName || '到店服务') : order.address}
                 </span>
               </div>
+              {order.customDescription && (
+                <div className="border-t border-[#f4ebee] pt-3">
+                  <span className="text-[14px] text-gray-400">需求描述</span>
+                  <p className="mt-2 whitespace-pre-wrap text-[14px] leading-6 text-gray-700">
+                    {order.customDescription}
+                  </p>
+                </div>
+              )}
+              {order.customImages && order.customImages.length > 0 && (
+                <div className="border-t border-[#f4ebee] pt-3">
+                  <span className="text-[14px] text-gray-400">参考图</span>
+                  <div className="mt-2 grid grid-cols-3 gap-2">
+                    {order.customImages.map((url, i) => (
+                      <img
+                        key={i}
+                        src={url}
+                        alt={`参考图${i + 1}`}
+                        className="aspect-square w-full cursor-pointer rounded-xl object-cover"
+                        onClick={() => window.open(url, '_blank')}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
               {order.note && (
                 <div className="border-t border-[#f4ebee] pt-3">
                   <span className="text-[14px] text-gray-400">备注</span>

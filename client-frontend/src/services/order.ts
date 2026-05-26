@@ -16,6 +16,9 @@ export interface Order {
   quotedAt: string | null;
   depositAmount: number;
   isDepositPaid: boolean;
+  customTitle: string | null;
+  customDescription: string | null;
+  customImages: string[];
   technician: {
     id: number;
     name: string;
@@ -44,6 +47,9 @@ export interface CreateOrderDto {
   techId: number;
   serviceType: string;
   selectedServiceIds?: string[];
+  customTitle?: string;
+  customDescription?: string;
+  customImages?: string[];
   remark?: string;
   shopAddress?: ShopAddress;
 }

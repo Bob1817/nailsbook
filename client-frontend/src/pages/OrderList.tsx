@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { orderService, type Order } from '../services/order';
-import { customServiceRequestService, type CustomServiceRequest } from '../services/customServiceRequest';
 import dayjs from 'dayjs';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -13,10 +12,6 @@ const STATUS_LABELS: Record<string, string> = {
   in_progress: '服务中',
   completed: '已完成',
   cancelled: '已取消',
-  // custom service request statuses
-  quoted: '已报价',
-  accepted: '已接受',
-  rejected: '已拒绝',
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -28,36 +23,20 @@ const STATUS_COLORS: Record<string, string> = {
   in_progress: 'bg-orange-100 text-orange-700',
   completed: 'bg-gray-100 text-gray-600',
   cancelled: 'bg-red-100 text-red-600',
-  quoted: 'bg-blue-100 text-blue-700',
-  accepted: 'bg-green-100 text-green-700',
-  rejected: 'bg-red-100 text-red-600',
 };
-
-type UnifiedItem =
-  | { kind: 'order'; data: Order; createdAt: string }
-  | { kind: 'custom'; data: CustomServiceRequest; createdAt: string };
 
 const OrderList: React.FC = () => {
   const navigate = useNavigate();
-  const [items, setItems] = useState<UnifiedItem[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [orders, customs] = await Promise.all([
-        orderService.getOrders().catch(() => [] as Order[]),
-        customServiceRequestService.getRequests().catch(() => [] as CustomServiceRequest[]),
-      ]);
-
-      const merged: UnifiedItem[] = [
-        ...orders.map((o) => ({ kind: 'order' as const, data: o, createdAt: o.startTime || dayjs().toISOString() })),
-        ...customs.map((c) => ({ kind: 'custom' as const, data: c, createdAt: c.createdAt })),
-      ].sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
-
-      setItems(merged);
+      const ordersData = await orderService.getOrders();
+      setOrders(ordersData);
     } catch (err) {
-      console.error('Failed to load bookings', err);
+      console.error('Failed to load orders', err);
     } finally {
       setLoading(false);
     }
@@ -66,14 +45,6 @@ const OrderList: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [loadData]);
-
-  const handleClick = (item: UnifiedItem) => {
-    if (item.kind === 'order') {
-      navigate(`/orders/${item.data.id}`);
-    } else {
-      navigate(`/custom-requests/${item.data.id}`);
-    }
-  };
 
   if (loading) {
     return (
@@ -92,7 +63,7 @@ const OrderList: React.FC = () => {
             <h1 className="mt-0.5 text-[1.75rem] font-bold tracking-[-0.03em] text-[var(--color-text)]">我的预约</h1>
           </div>
           <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm ring-1 ring-black/5">
-            {items.length} 条记录
+            {orders.length} 条记录
           </span>
         </div>
       </div>
@@ -134,32 +105,14 @@ const OrderList: React.FC = () => {
         </div>
 
         <div className="space-y-3 pb-6">
-          {items.length > 0 ? (
-            items.map((item) => {
-              const isCustom = item.kind === 'custom';
-              const data = item.data;
-              const status = data.status;
-              const title = isCustom
-                ? ((data as CustomServiceRequest).title || '自定义服务需求')
-                : ((data as Order).serviceType || '美甲服务');
-              const time = isCustom
-                ? `${(data as CustomServiceRequest).serviceDate || '日期待定'} ${(data as CustomServiceRequest).startTime || ''}`
-                : `${dayjs((data as Order).startTime).format('HH:mm')} - ${dayjs((data as Order).endTime).format('HH:mm')}`;
-              const dateForBadge = isCustom
-                ? (data as CustomServiceRequest).serviceDate || (data as CustomServiceRequest).createdAt
-                : (data as Order).startTime;
-              const quotePrice = isCustom
-                ? (data as CustomServiceRequest).quotePrice
-                : (data as Order).quotePrice;
-              const address = isCustom
-                ? ((data as CustomServiceRequest).clientAddress?.detailAddress ||
-                   (data as CustomServiceRequest).shopAddress?.name || '')
-                : (data as Order).address;
-
+          {orders.length > 0 ? (
+            orders.map((order) => {
+              const isCustom = !!order.customTitle;
+              const title = isCustom ? order.customTitle : (order.serviceType || '美甲服务');
               return (
                 <div
-                  key={`${item.kind}-${data.id}`}
-                  onClick={() => handleClick(item)}
+                  key={order.id}
+                  onClick={() => navigate(`/orders/${order.id}`)}
                   className="rounded-[28px] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5 cursor-pointer active:scale-[0.99] transition-transform"
                 >
                   <div className="mb-4 flex items-center justify-between gap-3">
@@ -172,18 +125,18 @@ const OrderList: React.FC = () => {
                         <p className="text-[10px] text-[var(--color-text-muted)]">最近状态更新</p>
                       </div>
                     </div>
-                    <span className={`rounded-full px-3 py-1 text-caption font-medium ${STATUS_COLORS[status] || 'bg-gray-100 text-gray-600'}`}>
-                      {STATUS_LABELS[status] || status}
+                    <span className={`rounded-full px-3 py-1 text-caption font-medium ${STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-600'}`}>
+                      {STATUS_LABELS[order.status] || order.status}
                     </span>
                   </div>
 
                   <div className="flex items-start gap-4">
                     <div className="flex h-16 w-16 flex-shrink-0 flex-col items-center justify-center rounded-2xl bg-[linear-gradient(180deg,#fff5f7_0%,#ffe8ee_100%)]">
                       <span className="text-caption text-[var(--color-primary)] font-medium">
-                        {dateForBadge ? dayjs(dateForBadge).format('MM月') : '--'}
+                        {dayjs(order.startTime).format('MM月')}
                       </span>
                       <span className="text-heading-1 text-[var(--color-primary)]">
-                        {dateForBadge ? dayjs(dateForBadge).format('D') : '--'}
+                        {dayjs(order.startTime).format('D')}
                       </span>
                     </div>
 
@@ -198,22 +151,20 @@ const OrderList: React.FC = () => {
                         <svg className="w-4 h-4 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span className="truncate">{time}</span>
+                        {dayjs(order.startTime).format('HH:mm')} - {dayjs(order.endTime).format('HH:mm')}
                       </div>
 
-                      {address && (
-                        <div className="flex items-center gap-2 text-body-sm text-[var(--color-text-secondary)]">
-                          <svg className="w-4 h-4 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                          <span className="truncate">{address}</span>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 text-body-sm text-[var(--color-text-secondary)]">
+                        <svg className="w-4 h-4 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span className="truncate">{order.address || '地址待确认'}</span>
+                      </div>
 
-                      {quotePrice ? (
+                      {order.quotePrice ? (
                         <div className="mt-3 inline-flex rounded-full bg-[#fff2f6] px-3 py-1.5 text-body-sm font-medium text-[var(--color-primary)]">
-                          报价 ¥{quotePrice}
+                          报价 ¥{order.quotePrice}
                         </div>
                       ) : (
                         <div className="mt-3 text-[11px] text-[var(--color-text-muted)]">

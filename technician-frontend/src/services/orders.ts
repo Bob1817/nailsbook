@@ -30,6 +30,9 @@ interface OrderApiItem {
   quoteRemark?: string | null;
   quotedAt?: string | null;
   remark?: string | null;
+  customTitle?: string | null;
+  customDescription?: string | null;
+  customImages?: string[] | null;
 }
 
 interface OrderListResponse {
@@ -92,6 +95,18 @@ function normalizeOrder(item: OrderApiItem): TechnicianOrder {
     parseTagString(item.customer?.tags)[0] ||
     '预约服务';
 
+  let customImages: string[] | undefined;
+  if (Array.isArray(item.customImages)) {
+    customImages = item.customImages;
+  } else if (typeof item.customImages === 'string') {
+    try {
+      const parsed = JSON.parse(item.customImages as unknown as string);
+      customImages = Array.isArray(parsed) ? parsed : undefined;
+    } catch {
+      customImages = undefined;
+    }
+  }
+
   return {
     id: item.id,
     orderNo: item.orderNo,
@@ -99,7 +114,7 @@ function normalizeOrder(item: OrderApiItem): TechnicianOrder {
     customerName: item.customer?.name ?? '未命名客户',
     customerPhone: item.customer?.phone ?? undefined,
     customerAvatar: item.customer?.avatarUrl ?? undefined,
-    serviceName,
+    serviceName: item.customTitle || serviceName,
     address: item.address || '待补充服务地址',
     startTime: item.startTime,
     endTime: item.endTime,
@@ -109,6 +124,10 @@ function normalizeOrder(item: OrderApiItem): TechnicianOrder {
     quoteRemark: item.quoteRemark ?? null,
     quotedAt: item.quotedAt ?? null,
     depositPaid: Boolean(item.isDepositPaid),
+    customTitle: item.customTitle ?? null,
+    customDescription: item.customDescription ?? null,
+    customImages,
+    note: item.remark ?? undefined,
   };
 }
 

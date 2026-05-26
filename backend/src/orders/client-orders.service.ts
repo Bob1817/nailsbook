@@ -65,10 +65,20 @@ export class ClientOrdersService {
       throw new BadRequestException('该美甲师暂未开启到店美甲服务');
     }
 
-    const selectedServiceNames = this.resolveSelectedServiceNames(
-      binding.technician.serviceItems,
-      dto.selectedServiceIds,
-    );
+    const isCustom =
+      (!dto.selectedServiceIds || dto.selectedServiceIds.length === 0) &&
+      (dto.customTitle || dto.customDescription || (dto.customImages && dto.customImages.length > 0));
+
+    if (!isCustom && (!dto.selectedServiceIds || dto.selectedServiceIds.length === 0)) {
+      throw new BadRequestException('请选择至少一项服务内容或填写自定义需求');
+    }
+
+    const selectedServiceNames = isCustom
+      ? []
+      : this.resolveSelectedServiceNames(
+          binding.technician.serviceItems,
+          dto.selectedServiceIds,
+        );
 
     const client = await this.prisma.clientUser.findUnique({
       where: { id: clientUserId },
@@ -118,6 +128,12 @@ export class ClientOrdersService {
           address: orderAddress,
           serviceType: dto.serviceType,
           remark: dto.remark ?? null,
+          customTitle: dto.customTitle ?? null,
+          customDescription: dto.customDescription ?? null,
+          customImages:
+            dto.customImages && dto.customImages.length > 0
+              ? JSON.stringify(dto.customImages)
+              : null,
           quotePrice: 0,
           status: 'pending_quote',
           source: 'client_webapp',
@@ -125,7 +141,10 @@ export class ClientOrdersService {
         include: this.orderInclude(),
       });
 
-      const preview = `新的预约申请：${selectedServiceNames.join('、')} · ${dto.serviceType}`;
+      const previewContent = isCustom
+        ? (dto.customTitle || '自定义美甲需求')
+        : selectedServiceNames.join('、');
+      const preview = `新的预约申请：${previewContent} · ${dto.serviceType}`;
       const conversation = await tx.conversation.upsert({
         where: {
           clientId_techId: {
@@ -692,6 +711,13 @@ export class ClientOrdersService {
       quoteRemark: order.quoteRemark ?? null,
       quotedAt: order.quotedAt ?? null,
       isDepositPaid: order.isDepositPaid,
+      customTitle: order.customTitle ?? null,
+      customDescription: order.customDescription ?? null,
+      customImages: order.customImages
+        ? (() => {
+            try { return JSON.parse(order.customImages); } catch { return []; }
+          })()
+        : [],
       technician: order.technician ?? null,
       customer: order.customer ?? null,
       clientAddress: order.clientAddress ?? null,

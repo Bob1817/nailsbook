@@ -6,7 +6,6 @@ import { orderService } from '../services/order';
 import { addressService, type ClientAddress } from '../services/address';
 import { uploadService } from '../services/upload';
 import { worksService, type NailWork } from '../services/works';
-import { customServiceRequestService } from '../services/customServiceRequest';
 import { designService } from '../services/design';
 import type { ShopAddress, Technician, TechnicianServiceItem } from '../services/auth';
 
@@ -383,54 +382,44 @@ const CreateOrder: React.FC = () => {
     setSubmitting(true);
     try {
       if (isCustomService) {
-        // Create custom service request
         if (!customServiceTitle.trim()) {
           alert('请输入自定义服务名称');
           setSubmitting(false);
           return;
         }
-
-        await customServiceRequestService.create({
-          techId: formData.techId,
-          title: customServiceTitle.trim(),
-          description: customServiceDescription.trim() || undefined,
-          images: customServiceImages.length > 0 ? customServiceImages : undefined,
-          referenceWorkIds: selectedWorks.length > 0 ? selectedWorks.map((w) => w.id) : undefined,
-          serviceDate: formData.serviceDate,
-          startTime: formData.startTime,
-          serviceType: formData.serviceType,
-          addressId: isHomeService ? formData.addressId : undefined,
-          shopAddress: isShopService && selectedShopAddress ? selectedShopAddress : undefined,
-        });
-        
-        alert('自定义服务需求已提交，请等待美甲师报价');
-        navigate('/messages');
       } else {
-        // Regular booking flow
         if (activeServiceItems.length === 0) {
           alert('该美甲师暂未设置可预约的服务内容');
           setSubmitting(false);
           return;
         }
-
         if (formData.selectedServiceIds.length === 0) {
           alert('请选择至少一项服务内容');
           setSubmitting(false);
           return;
         }
-
-        await orderService.createOrder({
-          serviceDate: formData.serviceDate,
-          startTime: formData.startTime,
-          techId: formData.techId,
-          serviceType: formData.serviceType,
-          selectedServiceIds: formData.selectedServiceIds,
-          addressId: isHomeService ? formData.addressId : undefined,
-          shopAddress: isShopService ? selectedShopAddress || undefined : undefined,
-          remark: formData.remark,
-        });
-        navigate('/orders');
       }
+
+      // 统一走 createOrder 接口
+      await orderService.createOrder({
+        serviceDate: formData.serviceDate,
+        startTime: formData.startTime,
+        techId: formData.techId,
+        serviceType: formData.serviceType,
+        addressId: isHomeService ? formData.addressId : undefined,
+        shopAddress: isShopService ? selectedShopAddress || undefined : undefined,
+        remark: formData.remark,
+        ...(isCustomService
+          ? {
+              customTitle: customServiceTitle.trim(),
+              customDescription: customServiceDescription.trim() || undefined,
+              customImages: customServiceImages.length > 0 ? customServiceImages : undefined,
+            }
+          : {
+              selectedServiceIds: formData.selectedServiceIds,
+            }),
+      });
+      navigate('/orders');
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string | string[] } } };
       const msg = e.response?.data?.message;

@@ -25,6 +25,9 @@ export interface TechnicianOrder {
   quotedAt: string | null;
   depositPaid: boolean;
   note?: string;
+  customTitle?: string | null;
+  customDescription?: string | null;
+  customImages?: string[];
   isLocalDraft?: boolean;
   serviceType?: 'home' | 'shop';
   shopId?: number;

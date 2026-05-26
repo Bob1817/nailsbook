@@ -237,6 +237,36 @@ const OrderDetail: React.FC = () => {
                 {dayjs(order.startTime).format('YYYY-MM-DD HH:mm')}
               </span>
             </div>
+            {order.customTitle && (
+              <div className="rounded-2xl bg-slate-50/80 px-4 py-3">
+                <span className="text-sm text-gray-500">需求名称</span>
+                <p className="mt-1 text-sm font-medium leading-6 text-gray-900">{order.customTitle}</p>
+              </div>
+            )}
+            {order.customDescription && (
+              <div className="rounded-2xl bg-slate-50/80 px-4 py-3">
+                <span className="text-sm text-gray-500">需求描述</span>
+                <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-gray-900">
+                  {order.customDescription}
+                </p>
+              </div>
+            )}
+            {order.customImages && order.customImages.length > 0 && (
+              <div className="rounded-2xl bg-slate-50/80 px-4 py-3">
+                <span className="text-sm text-gray-500">参考图</span>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {order.customImages.map((url, i) => (
+                    <img
+                      key={i}
+                      src={url}
+                      alt={`参考图${i + 1}`}
+                      className="aspect-square w-full cursor-pointer rounded-xl object-cover"
+                      onClick={() => window.open(url, '_blank')}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
             {order.remark && (
               <div className="rounded-2xl bg-slate-50/80 px-4 py-3">
                 <span className="text-sm text-gray-500">备注</span>

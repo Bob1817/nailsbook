@@ -132,6 +132,10 @@ model Order {
   address                String?
   serviceType            String?
   remark                 String?
+  // 自定义需求模式下的内容（替代 selectedServiceIds 的可选输入）
+  customTitle            String?
+  customDescription      String?
+  customImages           String? // JSON array of image URLs
   quotePrice             Float?
   quoteRemark            String?
   quotedAt               DateTime?

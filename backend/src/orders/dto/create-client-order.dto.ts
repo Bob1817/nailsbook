@@ -42,13 +42,29 @@ export class CreateClientOrderDto {
   remark?: string;
 
   @ApiPropertyOptional({
-    description: '选择的服务项目ID列表',
+    description: '选择的服务项目ID列表（系统选择模式）',
     example: ['svc_1', 'svc_2'],
   })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   selectedServiceIds?: string[];
+
+  @ApiPropertyOptional({ description: '自定义需求标题（自定义模式）' })
+  @IsOptional()
+  @IsString()
+  customTitle?: string;
+
+  @ApiPropertyOptional({ description: '自定义需求描述（自定义模式）' })
+  @IsOptional()
+  @IsString()
+  customDescription?: string;
+
+  @ApiPropertyOptional({ description: '自定义需求参考图（自定义模式）' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  customImages?: string[];
 
   @ApiPropertyOptional({ description: '店铺地址（到店服务时使用）' })
   @IsOptional()
