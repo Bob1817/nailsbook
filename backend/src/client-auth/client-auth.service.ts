@@ -98,6 +98,24 @@ export class ClientAuthService {
       return created;
     });
 
+    const technicianPayload = {
+      id: technician.id,
+      name: technician.name,
+      phone: technician.phone,
+      avatarUrl: technician.avatarUrl,
+      city: technician.city,
+      serviceArea: technician.serviceArea,
+      status: technician.status,
+      homeService: technician.homeService,
+      shopService: technician.shopService,
+      shopAddresses: technician.shopAddresses
+        ? JSON.parse(technician.shopAddresses)
+        : [],
+      serviceItems: this.parseServiceItems(technician.serviceItems),
+      isDefault: true,
+      bindSource: 'invite',
+    };
+
     return {
       accessToken: this.signToken(client.id, client.phone),
       refreshToken: this.signRefreshToken(client.id, client.phone),
@@ -105,13 +123,11 @@ export class ClientAuthService {
         id: client.id,
         nickname: client.nickname,
         phone: client.phone,
+        avatarUrl: client.avatarUrl,
         status: client.status,
       },
-      technician: {
-        id: technician.id,
-        name: technician.name,
-        phone: technician.phone,
-      },
+      technician: technicianPayload,
+      technicians: [technicianPayload],
     };
   }
 
