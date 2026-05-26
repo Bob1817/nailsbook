@@ -166,10 +166,362 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderIdProp, onClose, isModal
     );
   }
 
-  // 弹窗模式：全屏覆盖层；内部独立滚动
-  const containerClass = isModal
-    ? 'fixed inset-0 z-[150] flex h-[100dvh] flex-col overflow-hidden bg-[linear-gradient(180deg,#FFFDFD_0%,#F7F3F6_48%,#F2F6FB_100%)]'
-    : 'min-h-full bg-[linear-gradient(180deg,#FFFDFD_0%,#F7F3F6_48%,#F2F6FB_100%)]';
+  // 公共子弹窗（编辑/拒绝/取消/同意确认）—— 两种模式都用
+  const commonModals = (
+    <>
+      {showEditModal && (
+        <div
+          className="fixed inset-0 z-[200] flex items-end justify-center bg-black/35 backdrop-blur-sm sm:items-center"
+          onClick={() => setShowEditModal(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-[32px] bg-white/95 px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom)+1rem)] shadow-2xl ring-1 ring-black/5 backdrop-blur sm:rounded-[32px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">修改预约</h3>
+                <p className="mt-1 text-sm text-[var(--color-text-muted)]">仅支持调整预约时间和服务地址</p>
+              </div>
+              <button onClick={() => setShowEditModal(false)} className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100">
+                <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div className="rounded-[24px] bg-slate-50/80 p-4">
+                <label className="mb-3 block text-sm font-medium text-gray-700">预约日期</label>
+                <input
+                  type="date"
+                  value={editForm.serviceDate}
+                  min={dayjs().format('YYYY-MM-DD')}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, serviceDate: e.target.value }))}
+                  className="w-full rounded-2xl bg-white px-4 py-3 text-gray-900 outline-none ring-1 ring-transparent focus:ring-[#FF6B8A]/20"
+                />
+              </div>
+              <div className="rounded-[24px] bg-slate-50/80 p-4">
+                <label className="mb-3 block text-sm font-medium text-gray-700">预约时间</label>
+                <div className="grid max-h-44 grid-cols-4 gap-2 overflow-y-auto scrollbar-hide">
+                  {timeSlots.map((time) => (
+                    <button
+                      key={time}
+                      type="button"
+                      onClick={() => setEditForm((prev) => ({ ...prev, startTime: time }))}
+                      className={`rounded-2xl py-2.5 text-sm font-medium transition ${
+                        editForm.startTime === time
+                          ? 'bg-[linear-gradient(135deg,#FF6B8A_0%,#FF8FA3_100%)] text-white shadow-lg shadow-pink-200/80'
+                          : 'bg-white text-slate-600'
+                      }`}
+                    >
+                      {time}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-[24px] bg-slate-50/80 p-4">
+                <label className="mb-3 block text-sm font-medium text-gray-700">服务地址</label>
+                <div className="space-y-3">
+                  {addresses.map((address) => (
+                    <button
+                      key={address.id}
+                      type="button"
+                      onClick={() => setEditForm((prev) => ({ ...prev, addressId: address.id }))}
+                      className={`w-full rounded-[20px] p-4 text-left ring-1 transition ${
+                        editForm.addressId === address.id
+                          ? 'bg-[linear-gradient(135deg,#FFF0F5_0%,#FAFBFF_100%)] ring-[#FF6B8A]/25'
+                          : 'bg-white ring-black/5'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 ${
+                          editForm.addressId === address.id ? 'border-[#FF6B8A] bg-[#FF6B8A]' : 'border-slate-300'
+                        }`}>
+                          {editForm.addressId === address.id && (
+                            <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm font-medium text-gray-900">{address.contactName || '未命名'}</span>
+                            <span className="text-sm text-gray-500">{address.contactPhone}</span>
+                          </div>
+                          <p className="mt-2 text-sm leading-6 text-gray-600">
+                            {[address.province, address.city, address.district, address.detailAddress].filter(Boolean).join(' ')}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <button
+                onClick={handleSaveEdit}
+                disabled={savingEdit}
+                className="w-full rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-4 font-medium text-white shadow-lg shadow-pink-200 disabled:opacity-50"
+              >
+                {savingEdit ? '保存中...' : '保存修改'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRejectModal && (
+        <div
+          className="fixed inset-0 z-[200] flex items-end justify-center bg-black/35 backdrop-blur-sm sm:items-center"
+          onClick={() => !rejecting && setShowRejectModal(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-[32px] bg-white/95 px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom)+1rem)] shadow-2xl ring-1 ring-black/5 backdrop-blur sm:rounded-[32px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">拒绝报价</h3>
+                <p className="mt-1 text-sm text-[var(--color-text-muted)]">告诉美甲师你为什么拒绝该报价</p>
+              </div>
+              <button onClick={() => setShowRejectModal(false)} disabled={rejecting} className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 disabled:opacity-50">
+                <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="请输入拒绝原因（选填）"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-sm focus:border-[#FF6B8A] focus:outline-none"
+              rows={4}
+            />
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button onClick={() => setShowRejectModal(false)} disabled={rejecting} className="rounded-full bg-slate-100 py-3.5 font-medium text-gray-700 disabled:opacity-50">
+                暂不拒绝
+              </button>
+              <button onClick={handleRejectQuote} disabled={rejecting} className="rounded-full bg-red-500 py-3.5 font-medium text-white disabled:opacity-50">
+                {rejecting ? '处理中...' : '确认拒绝'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCancelModal && (
+        <div
+          className="fixed inset-0 z-[200] flex items-end justify-center bg-black/35 backdrop-blur-sm sm:items-center"
+          onClick={() => !cancelling && setShowCancelModal(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-[32px] bg-white/95 px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom)+1rem)] shadow-2xl ring-1 ring-black/5 backdrop-blur sm:rounded-[32px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">取消预约</h3>
+                <p className="mt-1 text-sm text-[var(--color-text-muted)]">取消后预约将无法恢复，是否确认取消？</p>
+              </div>
+              <button onClick={() => setShowCancelModal(false)} disabled={cancelling} className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 disabled:opacity-50">
+                <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={() => setShowCancelModal(false)} disabled={cancelling} className="rounded-full bg-slate-100 py-3.5 font-medium text-gray-700 disabled:opacity-50">
+                暂不取消
+              </button>
+              <button onClick={handleCancelOrder} disabled={cancelling} className="rounded-full bg-red-500 py-3.5 font-medium text-white disabled:opacity-50">
+                {cancelling ? '处理中...' : '确认取消'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ActionConfirmDialog
+        open={showAgreeConfirm}
+        title="确认同意美甲师报价？"
+        description="同意后将进入到美甲师确认环节。请确保你已知悉报价金额。"
+        price={order?.quotePrice ?? null}
+        details={[
+          { label: '服务', value: order.serviceType || '美甲服务' },
+          { label: '日期', value: dayjs(order.startTime).format('YYYY-MM-DD') },
+          { label: '时间', value: dayjs(order.startTime).format('HH:mm') },
+          { label: '地址', value: order.address || '—' },
+        ]}
+        confirmText="确认同意"
+        loading={agreeing}
+        onConfirm={handleAgreeQuote}
+        onCancel={() => setShowAgreeConfirm(false)}
+      />
+    </>
+  );
+
+  // 弹窗模式：底部 sheet 风格（与美甲师端一致）
+  if (isModal) {
+    const cancellable = ['pending_quote', 'pending_agree', 'pending_confirm', 'pending_home', 'pending_shop'].includes(order.status);
+    const isClientTurn = order.status === 'pending_agree';
+    const waiting = clientWaitingLabel(order.status);
+
+    return (
+      <>
+        <div
+          className="fixed inset-0 z-[150] flex items-end justify-center bg-black/40 backdrop-blur-sm"
+          onClick={handleBack}
+        >
+          <div
+            className="w-full max-w-lg rounded-t-[28px] bg-white px-5 pt-5 shadow-[0_-12px_40px_rgba(0,0,0,0.12)] flex max-h-[88vh] flex-col"
+            onClick={(e) => e.stopPropagation()}
+            style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+          >
+            {/* Title row */}
+            <div className="mb-4 flex items-center justify-between shrink-0">
+              <h3 className="text-[17px] font-semibold text-[#1f2230]">预约详情</h3>
+              <button
+                type="button"
+                onClick={handleBack}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f2f0f3] active:bg-[#e5e2e6]"
+              >
+                <svg className="h-4 w-4 text-[#6d6570]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Scrollable content */}
+            <div className="flex-1 overflow-y-auto pb-2">
+              {/* Technician + status */}
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[16px] font-bold text-gray-900">
+                    {order.technician?.name || '美甲师'}
+                  </p>
+                  <p className="mt-1 text-[13px] text-gray-500">
+                    {order.technician?.phone || '—'}
+                  </p>
+                </div>
+                <span className={`shrink-0 rounded-full px-3 py-1 text-[12px] font-medium ${STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-600'}`}>
+                  {STATUS_LABELS[order.status] || order.status}
+                </span>
+              </div>
+
+              {/* Time + Amount grid */}
+              <div className="mb-4 grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-2xl bg-[#ffe9f0] p-3">
+                  <p className="text-[12px] text-gray-500">预约时间</p>
+                  <p className="mt-1 text-[14px] font-medium text-gray-900">
+                    {dayjs(order.startTime).format('HH:mm')} - {dayjs(order.endTime).format('HH:mm')}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-gray-400">
+                    {dayjs(order.startTime).format('YYYY-MM-DD')}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-gray-50 p-3">
+                  <p className="text-[12px] text-gray-500">预约金额</p>
+                  <p className="mt-1 text-[14px] font-medium text-pink-500">
+                    {order.quotePrice ? `¥${order.quotePrice}` : '待报价'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Service info */}
+              <div className="mb-4 rounded-2xl bg-gray-50 p-4 text-sm text-gray-700">
+                <p className="font-medium text-gray-900">服务信息</p>
+                <p className="mt-2">
+                  {order.customTitle || order.serviceType || '美甲服务'}
+                </p>
+                {order.serviceType && order.customTitle && (
+                  <p className="mt-1 text-[12px] text-gray-500">{order.serviceType}</p>
+                )}
+                <p className="mt-2">{order.address || '地址待确认'}</p>
+                {order.customDescription && (
+                  <p className="mt-2 whitespace-pre-wrap text-gray-600">
+                    需求描述：{order.customDescription}
+                  </p>
+                )}
+                {order.customImages && order.customImages.length > 0 && (
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {order.customImages.map((url, i) => (
+                      <img
+                        key={i}
+                        src={url}
+                        alt={`参考图${i + 1}`}
+                        className="aspect-square w-full cursor-pointer rounded-xl object-cover"
+                        onClick={() => window.open(url, '_blank')}
+                      />
+                    ))}
+                  </div>
+                )}
+                {order.remark && (
+                  <p className="mt-2 text-gray-500">备注：{order.remark}</p>
+                )}
+                <p className="mt-3 text-[11px] text-gray-400">预约编号：{order.orderNo}</p>
+              </div>
+            </div>
+
+            {/* Bottom actions */}
+            {(order.status !== 'completed' && order.status !== 'cancelled') && (
+              <div className="shrink-0 pt-3">
+                {isClientTurn ? (
+                  <div className="grid grid-cols-4 gap-2">
+                    <button
+                      onClick={() => setShowEditModal(true)}
+                      className="rounded-full bg-slate-100 py-3 text-sm font-medium text-gray-700"
+                    >
+                      修改预约
+                    </button>
+                    <button
+                      onClick={() => setShowCancelModal(true)}
+                      className="rounded-full bg-white py-3 text-sm font-medium text-red-500 ring-1 ring-red-200"
+                    >
+                      取消预约
+                    </button>
+                    <button
+                      onClick={() => setShowRejectModal(true)}
+                      className="rounded-full bg-white py-3 text-sm font-medium text-orange-500 ring-1 ring-orange-200"
+                    >
+                      拒绝报价
+                    </button>
+                    <button
+                      onClick={() => setShowAgreeConfirm(true)}
+                      disabled={agreeing}
+                      className="rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-3 text-sm font-semibold text-white shadow-md disabled:opacity-50"
+                    >
+                      {agreeing ? '处理中' : '同意'}
+                    </button>
+                  </div>
+                ) : (
+                  <div className={`grid gap-3 ${cancellable ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    <button
+                      disabled
+                      className="rounded-full bg-slate-100 py-3.5 font-medium text-slate-400 cursor-not-allowed"
+                    >
+                      {waiting || '处理中'}
+                    </button>
+                    {cancellable && (
+                      <button
+                        onClick={() => setShowCancelModal(true)}
+                        className="rounded-full bg-white py-3.5 font-medium text-red-500 ring-1 ring-red-200"
+                      >
+                        取消预约
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {commonModals}
+      </>
+    );
+  }
+
+  // 页面模式
+  const containerClass = 'min-h-full bg-[linear-gradient(180deg,#FFFDFD_0%,#F7F3F6_48%,#F2F6FB_100%)]';
 
   return (
     <div className={containerClass}>
@@ -397,240 +749,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderIdProp, onClose, isModal
           </div>
         );
       })()}
-
-      {showEditModal && (
-        <div
-          className="fixed inset-0 z-[90] flex items-end justify-center bg-black/35 backdrop-blur-sm sm:items-center"
-          onClick={() => setShowEditModal(false)}
-        >
-          <div
-            className="w-full max-w-md rounded-t-[32px] bg-white/95 px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom)+1rem)] shadow-2xl ring-1 ring-black/5 backdrop-blur sm:rounded-[32px]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">修改预约</h3>
-                <p className="mt-1 text-sm text-[var(--color-text-muted)]">仅支持调整预约时间和服务地址</p>
-              </div>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100"
-              >
-                <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="rounded-[24px] bg-slate-50/80 p-4">
-                <label className="mb-3 block text-sm font-medium text-gray-700">预约日期</label>
-                <input
-                  type="date"
-                  value={editForm.serviceDate}
-                  min={dayjs().format('YYYY-MM-DD')}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, serviceDate: e.target.value }))}
-                  className="w-full rounded-2xl bg-white px-4 py-3 text-gray-900 outline-none ring-1 ring-transparent focus:ring-[#FF6B8A]/20"
-                />
-              </div>
-
-              <div className="rounded-[24px] bg-slate-50/80 p-4">
-                <label className="mb-3 block text-sm font-medium text-gray-700">预约时间</label>
-                <div className="grid max-h-44 grid-cols-4 gap-2 overflow-y-auto scrollbar-hide">
-                  {timeSlots.map((time) => (
-                    <button
-                      key={time}
-                      type="button"
-                      onClick={() => setEditForm((prev) => ({ ...prev, startTime: time }))}
-                      className={`rounded-2xl py-2.5 text-sm font-medium transition ${
-                        editForm.startTime === time
-                          ? 'bg-[linear-gradient(135deg,#FF6B8A_0%,#FF8FA3_100%)] text-white shadow-lg shadow-pink-200/80'
-                          : 'bg-white text-slate-600'
-                      }`}
-                    >
-                      {time}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-[24px] bg-slate-50/80 p-4">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <label className="block text-sm font-medium text-gray-700">服务地址</label>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/profile/addresses')}
-                    className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-primary)]"
-                  >
-                    管理地址
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  {addresses.map((address) => (
-                    <button
-                      key={address.id}
-                      type="button"
-                      onClick={() => setEditForm((prev) => ({ ...prev, addressId: address.id }))}
-                      className={`w-full rounded-[20px] p-4 text-left ring-1 transition ${
-                        editForm.addressId === address.id
-                          ? 'bg-[linear-gradient(135deg,#FFF0F5_0%,#FAFBFF_100%)] ring-[#FF6B8A]/25'
-                          : 'bg-white ring-black/5'
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 ${
-                          editForm.addressId === address.id ? 'border-[#FF6B8A] bg-[#FF6B8A]' : 'border-slate-300'
-                        }`}>
-                          {editForm.addressId === address.id && (
-                            <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm font-medium text-gray-900">{address.contactName || '未命名'}</span>
-                            <span className="text-sm text-gray-500">{address.contactPhone}</span>
-                          </div>
-                          <p className="mt-2 text-sm leading-6 text-gray-600">
-                            {[address.province, address.city, address.district, address.detailAddress].filter(Boolean).join(' ')}
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <button
-                onClick={handleSaveEdit}
-                disabled={savingEdit}
-                className="w-full rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-4 font-medium text-white shadow-lg shadow-pink-200 disabled:opacity-50"
-              >
-                {savingEdit ? '保存中...' : '保存修改'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showRejectModal && (
-        <div
-          className="fixed inset-0 z-[90] flex items-end justify-center bg-black/35 backdrop-blur-sm sm:items-center"
-          onClick={() => !rejecting && setShowRejectModal(false)}
-        >
-          <div
-            className="w-full max-w-md rounded-t-[32px] bg-white/95 px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom)+1rem)] shadow-2xl ring-1 ring-black/5 backdrop-blur sm:rounded-[32px]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">拒绝报价</h3>
-                <p className="mt-1 text-sm text-[var(--color-text-muted)]">请输入拒绝原因，方便美甲师了解你的想法</p>
-              </div>
-              <button
-                onClick={() => setShowRejectModal(false)}
-                disabled={rejecting}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 disabled:opacity-50"
-              >
-                <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="rounded-[24px] bg-slate-50/80 p-4 mb-5">
-              <textarea
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="请输入拒绝原因（可选）"
-                rows={3}
-                className="w-full resize-none rounded-2xl bg-white px-4 py-3 text-gray-900 outline-none ring-1 ring-transparent focus:ring-[#FF6B8A]/20"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setShowRejectModal(false)}
-                disabled={rejecting}
-                className="rounded-full bg-slate-100 py-3.5 font-medium text-gray-700 disabled:opacity-50"
-              >
-                取消
-              </button>
-              <button
-                onClick={handleRejectQuote}
-                disabled={rejecting}
-                className="rounded-full bg-red-500 py-3.5 font-medium text-white disabled:opacity-50"
-              >
-                {rejecting ? '处理中...' : '确认拒绝'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showCancelModal && (
-        <div
-          className="fixed inset-0 z-[90] flex items-end justify-center bg-black/35 backdrop-blur-sm sm:items-center"
-          onClick={() => !cancelling && setShowCancelModal(false)}
-        >
-          <div
-            className="w-full max-w-md rounded-t-[32px] bg-white/95 px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom)+1rem)] shadow-2xl ring-1 ring-black/5 backdrop-blur sm:rounded-[32px]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">取消预约</h3>
-                <p className="mt-1 text-sm text-[var(--color-text-muted)]">取消后预约将无法恢复，是否确认取消？</p>
-              </div>
-              <button
-                onClick={() => setShowCancelModal(false)}
-                disabled={cancelling}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 disabled:opacity-50"
-              >
-                <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setShowCancelModal(false)}
-                disabled={cancelling}
-                className="rounded-full bg-slate-100 py-3.5 font-medium text-gray-700 disabled:opacity-50"
-              >
-                暂不取消
-              </button>
-              <button
-                onClick={handleCancelOrder}
-                disabled={cancelling}
-                className="rounded-full bg-red-500 py-3.5 font-medium text-white disabled:opacity-50"
-              >
-                {cancelling ? '处理中...' : '确认取消'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 同意报价确认弹窗（突出价格）*/}
-      <ActionConfirmDialog
-        open={showAgreeConfirm}
-        title="确认同意美甲师报价？"
-        description="同意后将进入到美甲师确认环节。请确保你已知悉报价金额。"
-        price={order?.quotePrice ?? null}
-        details={order ? [
-          { label: '服务', value: order.serviceType || '美甲服务' },
-          { label: '日期', value: dayjs(order.startTime).format('YYYY-MM-DD') },
-          { label: '时间', value: dayjs(order.startTime).format('HH:mm') },
-          { label: '地址', value: order.address || '—' },
-        ] : []}
-        confirmText="确认同意"
-        loading={agreeing}
-        onConfirm={handleAgreeQuote}
-        onCancel={() => setShowAgreeConfirm(false)}
-      />
+      {commonModals}
     </div>
   );
 };
