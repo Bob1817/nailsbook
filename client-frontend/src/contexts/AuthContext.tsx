@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { authService, type ClientUser, type Technician } from '../services/auth';
 
 interface AuthContextType {
@@ -132,12 +132,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setTechnicians([]);
   };
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     const profile = await authService.getProfile();
     if (profile) {
       applyProfile(profile);
     }
-  };
+  }, []);
 
   const bindTechnician = async (techId: number, inviteCode: string, isDefault?: boolean) => {
     await authService.bindTechnician({ techId, inviteCode, isDefault });
