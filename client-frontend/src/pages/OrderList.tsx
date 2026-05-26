@@ -2,12 +2,14 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { orderService, type Order } from '../services/order';
 import { ORDER_STATUS_LABEL as STATUS_LABELS, ORDER_STATUS_COLOR as STATUS_COLORS } from '../utils/orderStatus';
+import OrderDetail from './OrderDetail';
 import dayjs from 'dayjs';
 
 const OrderList: React.FC = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [detailOrderId, setDetailOrderId] = useState<number | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -24,6 +26,11 @@ const OrderList: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const handleDetailClose = () => {
+    setDetailOrderId(null);
+    loadData();
+  };
 
   if (loading) {
     return (
@@ -91,7 +98,7 @@ const OrderList: React.FC = () => {
               return (
                 <div
                   key={order.id}
-                  onClick={() => navigate(`/orders/${order.id}`)}
+                  onClick={() => setDetailOrderId(order.id)}
                   className="rounded-[28px] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5 cursor-pointer active:scale-[0.99] transition-transform"
                 >
                   <div className="mb-4 flex items-center justify-between gap-3">
@@ -177,6 +184,13 @@ const OrderList: React.FC = () => {
           )}
         </div>
       </div>
+      {detailOrderId !== null && (
+        <OrderDetail
+          isModal
+          orderIdProp={detailOrderId}
+          onClose={handleDetailClose}
+        />
+      )}
     </div>
   );
 };

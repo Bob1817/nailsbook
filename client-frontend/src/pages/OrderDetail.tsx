@@ -6,9 +6,23 @@ import { ActionConfirmDialog } from '../components/ActionConfirmDialog';
 import { ORDER_STATUS_LABEL as STATUS_LABELS, ORDER_STATUS_COLOR as STATUS_COLORS, clientWaitingLabel } from '../utils/orderStatus';
 import dayjs from 'dayjs';
 
-const OrderDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+interface OrderDetailProps {
+  /** 弹窗模式时通过 prop 传入订单 id；否则从 URL 取 */
+  orderIdProp?: number;
+  /** 弹窗模式时关闭回调；否则使用 navigate(-1) */
+  onClose?: () => void;
+  /** 是否处于弹窗模式（影响容器样式） */
+  isModal?: boolean;
+}
+
+const OrderDetail: React.FC<OrderDetailProps> = ({ orderIdProp, onClose, isModal }) => {
+  const { id: idFromUrl } = useParams<{ id: string }>();
+  const id = orderIdProp != null ? String(orderIdProp) : idFromUrl;
   const navigate = useNavigate();
+  const handleBack = () => {
+    if (onClose) onClose();
+    else navigate(-1);
+  };
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [addresses, setAddresses] = useState<ClientAddress[]>([]);
@@ -152,13 +166,18 @@ const OrderDetail: React.FC = () => {
     );
   }
 
+  // 弹窗模式：全屏覆盖层；内部独立滚动
+  const containerClass = isModal
+    ? 'fixed inset-0 z-[150] flex h-[100dvh] flex-col overflow-hidden bg-[linear-gradient(180deg,#FFFDFD_0%,#F7F3F6_48%,#F2F6FB_100%)]'
+    : 'min-h-full bg-[linear-gradient(180deg,#FFFDFD_0%,#F7F3F6_48%,#F2F6FB_100%)]';
+
   return (
-    <div className="min-h-full bg-[linear-gradient(180deg,#FFFDFD_0%,#F7F3F6_48%,#F2F6FB_100%)]">
-      {/* Header */}
-      <div className="sticky top-0 z-10 border-b border-white/60 bg-white/78 px-5 app-header-safe pb-5 backdrop-blur-xl">
+    <div className={containerClass}>
+      {/* Header - 始终固定在顶部 */}
+      <div className={`${isModal ? 'shrink-0' : 'sticky top-0'} z-10 border-b border-white/60 bg-white/78 px-5 ${isModal ? 'pt-5' : 'app-header-safe'} pb-5 backdrop-blur-xl`}>
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             className="flex h-11 w-11 items-center justify-center rounded-full bg-white/80 text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.08)] ring-1 ring-black/5"
           >
             <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -172,8 +191,8 @@ const OrderDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="space-y-4 px-5 pb-28 pt-6">
+      {/* Content - 弹窗模式下独立滚动 */}
+      <div className={`space-y-4 px-5 pb-28 pt-6 ${isModal ? 'flex-1 overflow-y-auto' : ''}`}>
         {/* Status Card */}
         <div className="overflow-hidden rounded-[32px] bg-white/88 p-5 shadow-[0_24px_64px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
           <div className="mb-5 flex items-start justify-between gap-4">

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { homeService, type HomeData } from '../services/home';
 import { orderService, type Order } from '../services/order';
 import { TripCardSkeleton, Skeleton } from '../components/Skeleton';
+import OrderDetail from './OrderDetail';
 import dayjs from 'dayjs';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -38,6 +39,7 @@ const Home: React.FC = () => {
   const navigate = useNavigate();
   const [homeData, setHomeData] = useState<HomeData | null>(null);
   const [upcomingOrder, setUpcomingOrder] = useState<Order | null>(null);
+  const [detailOrderId, setDetailOrderId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [, setNow] = useState(Date.now());
@@ -320,7 +322,7 @@ const Home: React.FC = () => {
 
         {upcomingOrder ? (
           <div
-            onClick={() => navigate(`/orders/${upcomingOrder.id}`)}
+            onClick={() => setDetailOrderId(upcomingOrder.id)}
             className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#FF6B8A] via-[#FF7C98] to-[#FF8FA3] p-5 shadow-[0_18px_48px_rgba(255,107,138,0.28)] cursor-pointer active:scale-[0.99] transition-transform"
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.14),transparent_28%)]" />
@@ -411,7 +413,7 @@ const Home: React.FC = () => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/orders/${upcomingOrder.id}`);
+                  setDetailOrderId(upcomingOrder.id);
                 }}
                 className="flex-1 rounded-full bg-white px-4 py-2.5 text-[13px] font-semibold text-[var(--color-primary)] active:scale-[0.97]"
               >
@@ -605,6 +607,16 @@ const Home: React.FC = () => {
         </div>
       </div>
 
+      {detailOrderId !== null && (
+        <OrderDetail
+          isModal
+          orderIdProp={detailOrderId}
+          onClose={() => {
+            setDetailOrderId(null);
+            loadHomeData();
+          }}
+        />
+      )}
     </div>
   );
 };
