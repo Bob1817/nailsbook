@@ -144,6 +144,15 @@ const OrderDetailPage: React.FC = () => {
       if (updatedOrder) {
         setOrder(updatedOrder);
       }
+
+      // 确认订单后跳转到行程页并定位到订单当天
+      if (newStatus === 'pending_home' || newStatus === 'pending_shop') {
+        const orderDate = new Date(order.startTime);
+        const y = orderDate.getFullYear();
+        const m = String(orderDate.getMonth() + 1).padStart(2, '0');
+        const d = String(orderDate.getDate()).padStart(2, '0');
+        navigate(`/schedule?date=${y}-${m}-${d}`);
+      }
     } catch {
       toast.error('状态更新失败');
     } finally {

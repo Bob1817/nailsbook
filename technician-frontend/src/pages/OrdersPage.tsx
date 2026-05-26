@@ -242,6 +242,16 @@ export const OrdersPage: React.FC = () => {
               ? '服务已完成，订单状态已更新。'
               : '订单已取消，相关提醒已同步更新。'
       );
+
+      // 确认订单后跳转到行程页，并定位到该订单当天
+      if (nextStatus === 'pending_home' || nextStatus === 'pending_shop') {
+        setShowDetailSheet(false);
+        const orderDate = new Date(selectedOrder.startTime);
+        const y = orderDate.getFullYear();
+        const m = String(orderDate.getMonth() + 1).padStart(2, '0');
+        const d = String(orderDate.getDate()).padStart(2, '0');
+        navigate(`/schedule?date=${y}-${m}-${d}`);
+      }
     } catch {
       toast.error('状态更新失败，请稍后重试。');
     } finally {

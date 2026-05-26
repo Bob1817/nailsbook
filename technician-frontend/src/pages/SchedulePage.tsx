@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { ordersService } from '../services/orders';
 import {
@@ -126,9 +126,31 @@ function CustomerAvatar({ name, avatarUrl, size = 36 }: { name: string; avatarUr
 export const SchedulePage: React.FC = () => {
   const { technician } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [orders, setOrders] = useState<TechnicianOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeDate, setActiveDate] = useState(new Date());
+  const [activeDate, setActiveDate] = useState<Date>(() => {
+    const dateParam = searchParams.get('date');
+    if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+      const d = new Date(`${dateParam}T00:00:00`);
+      if (!isNaN(d.getTime())) return d;
+    }
+    return new Date();
+  });
+
+  // 处理后续路由更新时携带的 ?date= 参数
+  useEffect(() => {
+    const dateParam = searchParams.get('date');
+    if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+      const d = new Date(`${dateParam}T00:00:00`);
+      if (!isNaN(d.getTime())) {
+        setActiveDate(d);
+        // 用完即清掉，避免 URL 一直挂着
+        setSearchParams({}, { replace: true });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
   const dateStripRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
