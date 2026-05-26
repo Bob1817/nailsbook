@@ -49,7 +49,7 @@ const OrderDetailPage: React.FC = () => {
     note: '',
   });
 
-  // 加载订单详情
+  // 加载预约详情
   useEffect(() => {
     if (!id) return;
 
@@ -79,11 +79,11 @@ const OrderDetailPage: React.FC = () => {
             note: orderData.note || '',
           });
         } else {
-          toast.error('订单不存在');
+          toast.error('预约不存在');
           navigate(-1);
         }
       } catch {
-        toast.error('加载订单详情失败');
+        toast.error('加载预约详情失败');
       } finally {
         setIsLoading(false);
       }
@@ -134,7 +134,7 @@ const OrderDetailPage: React.FC = () => {
       await messageService.sendMessage({
         clientId: order.customerId,
         messageType: 'system',
-        content: `【订单状态更新】您的订单(${order.orderNo})状态已更新为：${statusMessages[newStatus] || newStatus}`,
+        content: `【预约状态更新】您的预约(${order.orderNo})状态已更新为：${statusMessages[newStatus] || newStatus}`,
       });
 
       toast.success('状态更新成功，已通知客户');
@@ -145,7 +145,7 @@ const OrderDetailPage: React.FC = () => {
         setOrder(updatedOrder);
       }
 
-      // 确认订单后跳转到行程页并定位到订单当天
+      // 确认预约后跳转到行程页并定位到预约当天
       if (newStatus === 'pending_home' || newStatus === 'pending_shop') {
         const orderDate = new Date(order.startTime);
         const y = orderDate.getFullYear();
@@ -190,10 +190,10 @@ const OrderDetailPage: React.FC = () => {
       await messageService.sendMessage({
         clientId: order.customerId,
         messageType: 'system',
-        content: `【订单信息更新】您的预约(${order.orderNo})信息已更新，请查看最新详情。`,
+        content: `【预约信息更新】您的预约(${order.orderNo})信息已更新，请查看最新详情。`,
       });
 
-      toast.success('订单信息已更新，已通知客户');
+      toast.success('预约信息已更新，已通知客户');
       setIsEditing(false);
 
       // 刷新数据
@@ -224,7 +224,7 @@ const OrderDetailPage: React.FC = () => {
   if (!order) {
     return (
       <div className="min-h-full bg-[#fff9f8] flex items-center justify-center">
-        <p className="text-gray-500">订单不存在</p>
+        <p className="text-gray-500">预约不存在</p>
       </div>
     );
   }
@@ -246,7 +246,7 @@ const OrderDetailPage: React.FC = () => {
             </svg>
           </button>
           <div>
-            <h1 className="text-[17px] font-semibold text-[#1f2230]">订单详情</h1>
+            <h1 className="text-[17px] font-semibold text-[#1f2230]">预约详情</h1>
             <p className="text-[12px] text-gray-400">{order.orderNo}</p>
           </div>
         </div>
@@ -305,7 +305,7 @@ const OrderDetailPage: React.FC = () => {
                   disabled={isSubmitting}
                   className="h-12 rounded-[18px] bg-emerald-500 text-[15px] shadow-none disabled:opacity-50"
                 >
-                  {isSubmitting ? '处理中...' : '确认订单'}
+                  {isSubmitting ? '处理中...' : '确认预约'}
                 </Button>
               )}
               {(allowedActions.includes('pending_home') || allowedActions.includes('pending_shop')) && (
@@ -318,7 +318,7 @@ const OrderDetailPage: React.FC = () => {
                   disabled={isSubmitting}
                   className="h-12 rounded-[18px] bg-emerald-500 text-[15px] shadow-none disabled:opacity-50"
                 >
-                  {isSubmitting ? '处理中...' : '确认订单'}
+                  {isSubmitting ? '处理中...' : '确认预约'}
                 </Button>
               )}
               {allowedActions.includes('completed') && (
@@ -340,7 +340,7 @@ const OrderDetailPage: React.FC = () => {
                     allowedActions.length === 1 ? 'col-span-2' : ''
                   }`}
                 >
-                  {isSubmitting ? '处理中...' : '取消订单'}
+                  {isSubmitting ? '处理中...' : '取消预约'}
                 </Button>
               )}
             </div>

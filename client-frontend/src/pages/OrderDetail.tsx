@@ -3,29 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { orderService, type Order } from '../services/order';
 import { addressService, type ClientAddress } from '../services/address';
 import { ActionConfirmDialog } from '../components/ActionConfirmDialog';
+import { ORDER_STATUS_LABEL as STATUS_LABELS, ORDER_STATUS_COLOR as STATUS_COLORS, clientWaitingLabel } from '../utils/orderStatus';
 import dayjs from 'dayjs';
-
-const STATUS_LABELS: Record<string, string> = {
-  pending_quote: '待报价',
-  pending_agree: '待同意',
-  pending_confirm: '待确认',
-  pending_home: '待上门',
-  pending_shop: '待到店',
-  in_progress: '服务中',
-  completed: '已完成',
-  cancelled: '已取消',
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  pending_quote: 'bg-amber-100 text-amber-700',
-  pending_agree: 'bg-blue-100 text-blue-700',
-  pending_confirm: 'bg-purple-100 text-purple-700',
-  pending_home: 'bg-green-100 text-green-700',
-  pending_shop: 'bg-green-100 text-green-700',
-  in_progress: 'bg-orange-100 text-orange-700',
-  completed: 'bg-gray-100 text-gray-600',
-  cancelled: 'bg-red-100 text-red-600',
-};
 
 const OrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -93,7 +72,7 @@ const OrderDetail: React.FC = () => {
       setOrder(updated);
       setShowEditModal(false);
     } catch {
-      alert('修改订单失败');
+      alert('修改预约失败');
     } finally {
       setSavingEdit(false);
     }
@@ -136,7 +115,7 @@ const OrderDetail: React.FC = () => {
       setOrder(updated);
       setShowCancelModal(false);
     } catch {
-      alert('取消订单失败');
+      alert('取消预约失败');
     } finally {
       setCancelling(false);
     }
@@ -161,7 +140,7 @@ const OrderDetail: React.FC = () => {
     return (
       <div className="min-h-full flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <p className="text-gray-500">订单不存在</p>
+          <p className="text-gray-500">预约不存在</p>
           <button
             onClick={() => navigate('/orders')}
             className="mt-4 px-4 py-2 bg-[#FF6B8A] text-white rounded-full"
@@ -188,7 +167,7 @@ const OrderDetail: React.FC = () => {
           </button>
           <div className="min-w-0">
             <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--color-text-muted)]">Order Detail</p>
-            <h1 className="mt-0.5 text-lg font-semibold text-gray-900">订单详情</h1>
+            <h1 className="mt-0.5 text-lg font-semibold text-gray-900">预约详情</h1>
           </div>
         </div>
       </div>
@@ -200,7 +179,7 @@ const OrderDetail: React.FC = () => {
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
               <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--color-text-muted)]">Order Status</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-gray-900">当前订单状态</h2>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-gray-900">当前预约状态</h2>
             </div>
             <span className={`rounded-full px-3 py-1 text-xs font-medium ${STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-600'}`}>
               {STATUS_LABELS[order.status] || order.status}
@@ -217,7 +196,7 @@ const OrderDetail: React.FC = () => {
               <p className="mt-1 text-sm text-[var(--color-text-muted)]">{order.quoteRemark}</p>
             )}
             <div className="mt-4 flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
-              <span className="rounded-full bg-white/90 px-3 py-1 ring-1 ring-black/5">订单编号</span>
+              <span className="rounded-full bg-white/90 px-3 py-1 ring-1 ring-black/5">预约编号</span>
               <span>{order.orderNo}</span>
             </div>
           </div>
@@ -227,7 +206,7 @@ const OrderDetail: React.FC = () => {
         <div className="rounded-[28px] bg-white/88 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-gray-900">服务信息</h3>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">查看订单服务类型、时间和备注说明</p>
+            <p className="mt-1 text-sm text-[var(--color-text-muted)]">查看预约服务类型、时间和备注说明</p>
           </div>
           <div className="space-y-3">
             <div className="flex items-start justify-between gap-3 rounded-2xl bg-slate-50/80 px-4 py-3">
@@ -334,69 +313,71 @@ const OrderDetail: React.FC = () => {
       </div>
 
       {/* Actions */}
-      {order.status === 'pending_quote' && (
-        <div className="fixed bottom-0 left-0 right-0 border-t border-white/60 bg-white/88 px-5 py-4 safe-area-bottom backdrop-blur-xl">
-          <div className="mx-auto grid max-w-md grid-cols-2 gap-3">
-            <button
-              onClick={() => navigate('/chat')}
-              className="rounded-full bg-slate-100 py-3.5 font-medium text-gray-700"
-            >
-              联系美甲师
-            </button>
-            <button
-              onClick={() => setShowCancelModal(true)}
-              className="rounded-full bg-white py-3.5 font-medium text-red-500 ring-1 ring-red-200"
-            >
-              取消订单
-            </button>
-          </div>
-        </div>
-      )}
+      {(() => {
+        // 已完成/已取消：不展示操作栏
+        if (order.status === 'completed' || order.status === 'cancelled') {
+          return null;
+        }
 
-      {order.status === 'pending_agree' && (
-        <div className="fixed bottom-0 left-0 right-0 border-t border-white/60 bg-white/88 px-5 py-4 safe-area-bottom backdrop-blur-xl">
-          <div className="mx-auto grid max-w-md grid-cols-3 gap-3">
-            <button
-              onClick={() => navigate('/chat')}
-              className="rounded-full bg-slate-100 py-3.5 font-medium text-gray-700"
-            >
-              联系美甲师
-            </button>
-            <button
-              onClick={() => setShowRejectModal(true)}
-              className="rounded-full bg-white py-3.5 font-medium text-red-500 ring-1 ring-red-200"
-            >
-              拒绝报价
-            </button>
-            <button
-              onClick={() => setShowAgreeConfirm(true)}
-              disabled={agreeing}
-              className="rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-3.5 font-medium text-white shadow-lg shadow-pink-200 disabled:opacity-50"
-            >
-              {agreeing ? '处理中...' : '同意报价'}
-            </button>
-          </div>
-        </div>
-      )}
+        const isClientTurn = order.status === 'pending_agree';
+        const cancellable = ['pending_quote', 'pending_agree', 'pending_confirm', 'pending_home', 'pending_shop'].includes(order.status);
+        const waitingLabel = clientWaitingLabel(order.status);
 
-      {order.status === 'pending_confirm' && (
-        <div className="fixed bottom-0 left-0 right-0 border-t border-white/60 bg-white/88 px-5 py-4 safe-area-bottom backdrop-blur-xl">
-          <div className="mx-auto grid max-w-md grid-cols-2 gap-3">
-            <button
-              onClick={() => navigate('/chat')}
-              className="rounded-full bg-slate-100 py-3.5 font-medium text-gray-700"
-            >
-              联系美甲师
-            </button>
-            <button
-              onClick={() => setShowCancelModal(true)}
-              className="rounded-full bg-white py-3.5 font-medium text-red-500 ring-1 ring-red-200"
-            >
-              取消订单
-            </button>
+        return (
+          <div className="fixed bottom-0 left-0 right-0 border-t border-white/60 bg-white/88 px-5 py-4 safe-area-bottom backdrop-blur-xl">
+            <div className="mx-auto max-w-md">
+              {isClientTurn ? (
+                // 用户该操作：同意 / 拒绝 / 修改 / 取消
+                <div className="grid grid-cols-4 gap-2">
+                  <button
+                    onClick={() => setShowEditModal(true)}
+                    className="rounded-full bg-slate-100 py-3 text-sm font-medium text-gray-700"
+                  >
+                    修改预约
+                  </button>
+                  <button
+                    onClick={() => setShowCancelModal(true)}
+                    className="rounded-full bg-white py-3 text-sm font-medium text-red-500 ring-1 ring-red-200"
+                  >
+                    取消预约
+                  </button>
+                  <button
+                    onClick={() => setShowRejectModal(true)}
+                    className="rounded-full bg-white py-3 text-sm font-medium text-orange-500 ring-1 ring-orange-200"
+                  >
+                    拒绝报价
+                  </button>
+                  <button
+                    onClick={() => setShowAgreeConfirm(true)}
+                    disabled={agreeing}
+                    className="rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-3 text-sm font-semibold text-white shadow-md disabled:opacity-50"
+                  >
+                    {agreeing ? '处理中' : '同意'}
+                  </button>
+                </div>
+              ) : (
+                // 等待对方：禁用主按钮 + 取消预约
+                <div className={`grid gap-3 ${cancellable ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  <button
+                    disabled
+                    className="rounded-full bg-slate-100 py-3.5 font-medium text-slate-400 cursor-not-allowed"
+                  >
+                    {waitingLabel || '处理中'}
+                  </button>
+                  {cancellable && (
+                    <button
+                      onClick={() => setShowCancelModal(true)}
+                      className="rounded-full bg-white py-3.5 font-medium text-red-500 ring-1 ring-red-200"
+                    >
+                      取消预约
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {showEditModal && (
         <div
@@ -409,7 +390,7 @@ const OrderDetail: React.FC = () => {
           >
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">修改订单</h3>
+                <h3 className="text-lg font-semibold text-gray-900">修改预约</h3>
                 <p className="mt-1 text-sm text-[var(--color-text-muted)]">仅支持调整预约时间和服务地址</p>
               </div>
               <button
@@ -580,8 +561,8 @@ const OrderDetail: React.FC = () => {
           >
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">取消订单</h3>
-                <p className="mt-1 text-sm text-[var(--color-text-muted)]">取消后订单将无法恢复，是否确认取消？</p>
+                <h3 className="text-lg font-semibold text-gray-900">取消预约</h3>
+                <p className="mt-1 text-sm text-[var(--color-text-muted)]">取消后预约将无法恢复，是否确认取消？</p>
               </div>
               <button
                 onClick={() => setShowCancelModal(false)}

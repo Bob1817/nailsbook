@@ -1,29 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { orderService, type Order } from '../services/order';
+import { ORDER_STATUS_LABEL as STATUS_LABELS, ORDER_STATUS_COLOR as STATUS_COLORS } from '../utils/orderStatus';
 import dayjs from 'dayjs';
-
-const STATUS_LABELS: Record<string, string> = {
-  pending_quote: '待报价',
-  pending_agree: '待同意',
-  pending_confirm: '待确认',
-  pending_home: '待上门',
-  pending_shop: '待到店',
-  in_progress: '服务中',
-  completed: '已完成',
-  cancelled: '已取消',
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  pending_quote: 'bg-amber-100 text-amber-700',
-  pending_agree: 'bg-blue-100 text-blue-700',
-  pending_confirm: 'bg-purple-100 text-purple-700',
-  pending_home: 'bg-green-100 text-green-700',
-  pending_shop: 'bg-green-100 text-green-700',
-  in_progress: 'bg-orange-100 text-orange-700',
-  completed: 'bg-gray-100 text-gray-600',
-  cancelled: 'bg-red-100 text-red-600',
-};
 
 const OrderList: React.FC = () => {
   const navigate = useNavigate();
@@ -121,7 +100,7 @@ const OrderList: React.FC = () => {
                         预
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-[11px] font-medium text-[var(--color-primary)]">预约动态</p>
+                        <p className="truncate text-[11px] font-medium text-[var(--color-primary)]">预约</p>
                         <p className="text-[10px] text-[var(--color-text-muted)]">最近状态更新</p>
                       </div>
                     </div>
@@ -168,7 +147,11 @@ const OrderList: React.FC = () => {
                         </div>
                       ) : (
                         <div className="mt-3 text-[11px] text-[var(--color-text-muted)]">
-                          等待美甲师确认服务细节
+                          {order.status === 'pending_quote'
+                            ? '等待美甲师报价'
+                            : order.status === 'pending_confirm'
+                              ? '等待美甲师确认'
+                              : '查看预约详情'}
                         </div>
                       )}
                     </div>

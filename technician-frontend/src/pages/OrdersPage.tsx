@@ -22,11 +22,11 @@ import { ListItemSkeleton } from '../components/Skeleton';
 const orderTabs: Array<{ label: string; value: 'all' | OrderStatus }> = [
   { label: '全部', value: 'all' },
   { label: '待报价', value: 'pending_quote' },
-  { label: '待同意', value: 'pending_agree' },
-  { label: '待确认', value: 'pending_confirm' },
+  { label: '待用户确认', value: 'pending_agree' },
+  { label: '待我确认', value: 'pending_confirm' },
   { label: '待上门', value: 'pending_home' },
   { label: '待到店', value: 'pending_shop' },
-  { label: '服务中', value: 'in_progress' },
+  { label: '进行中', value: 'in_progress' },
   { label: '已完成', value: 'completed' },
   { label: '已取消', value: 'cancelled' },
 ];
@@ -188,7 +188,7 @@ export const OrdersPage: React.FC = () => {
       await reloadPageData(createdOrder.id);
       setShowCreateSheet(false);
       setSelectedCustomerId('');
-      // 清掉 URL 里的 customerId 参数，避免再次进入页面时自动弹出新建订单
+      // 清掉 URL 里的 customerId 参数，避免再次进入页面时自动弹出新建预约
       if (searchParams.has('customerId')) {
         setSearchParams({}, { replace: true });
       }
@@ -202,7 +202,7 @@ export const OrdersPage: React.FC = () => {
       if (createdOrder.isLocalDraft) {
         toast.warning('后端暂不可用，已先保存为本地草稿，稍后可继续同步。');
       } else {
-        toast.success('预约创建成功，已同步到订单、行程和客户记录。');
+        toast.success('预约创建成功，已同步到预约、行程和客户记录。');
       }
       searchParams.delete('customerId');
       setSearchParams(searchParams);
@@ -245,13 +245,13 @@ export const OrdersPage: React.FC = () => {
         nextStatus === 'pending_confirm'
           ? '已同意报价，等待客户确认。'
           : nextStatus === 'pending_home' || nextStatus === 'pending_shop'
-            ? '订单已确认，行程和消息提醒已更新。'
+            ? '预约已确认，行程和消息提醒已更新。'
             : nextStatus === 'completed'
-              ? '服务已完成，订单状态已更新。'
-              : '订单已取消，相关提醒已同步更新。'
+              ? '服务已完成，预约状态已更新。'
+              : '预约已取消，相关提醒已同步更新。'
       );
 
-      // 确认订单后跳转到行程页，并定位到该订单当天
+      // 确认预约后跳转到行程页，并定位到该预约当天
       if (nextStatus === 'pending_home' || nextStatus === 'pending_shop') {
         setShowDetailSheet(false);
         const orderDate = new Date(selectedOrder.startTime);
@@ -342,14 +342,14 @@ export const OrdersPage: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <h1 className="text-[17px] font-semibold text-[#1f2230]">订单</h1>
+            <h1 className="text-[17px] font-semibold text-[#1f2230]">预约</h1>
           </div>
           <button
             type="button"
             onClick={() => setShowCreateSheet(true)}
             className="shrink-0 whitespace-nowrap rounded-full bg-[#FF5A66] px-4 py-2 text-[13px] font-semibold text-white min-h-[36px] active:scale-[0.97]"
           >
-            新建订单
+            新建预约
           </button>
         </div>
 
@@ -411,7 +411,7 @@ export const OrdersPage: React.FC = () => {
             </button>
           ))
         ) : (
-          <div className="rounded-2xl bg-white p-6 text-center text-sm text-gray-400 shadow-sm">当前筛选下暂无订单</div>
+          <div className="rounded-2xl bg-white p-6 text-center text-sm text-gray-400 shadow-sm">当前筛选下暂无预约</div>
         )}
       </div>
 
@@ -425,7 +425,7 @@ export const OrdersPage: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-[17px] font-semibold text-[#1f2230]">订单详情</h3>
+              <h3 className="text-[17px] font-semibold text-[#1f2230]">预约详情</h3>
               <button
                 type="button"
                 onClick={() => setShowDetailSheet(false)}
@@ -458,7 +458,7 @@ export const OrdersPage: React.FC = () => {
                 <p className="mt-1 text-[14px] font-medium text-gray-900">{formatTimeRange(selectedOrder.startTime, selectedOrder.endTime)}</p>
               </div>
               <div className="rounded-2xl bg-gray-50 p-3">
-                <p className="text-[12px] text-gray-500">订单金额</p>
+                <p className="text-[12px] text-gray-500">预约金额</p>
                 <p className="mt-1 text-[14px] font-medium text-pink-500">{formatMoney(selectedOrder.price)}</p>
               </div>
             </div>
@@ -470,7 +470,7 @@ export const OrdersPage: React.FC = () => {
               {selectedOrder.note ? <p className="mt-2 text-gray-500">备注：{selectedOrder.note}</p> : null}
             </div>
 
-            {!selectedOrder.isLocalDraft && allowedActions.length > 0 ? (
+            {!selectedOrder.isLocalDraft && (allowedActions.length > 0 || ['pending_agree', 'pending_home', 'pending_shop'].includes(selectedOrder.status)) ? (
               <div className="grid grid-cols-2 gap-3">
                 {allowedActions.includes('pending_agree') ? (
                   <button
@@ -481,13 +481,29 @@ export const OrdersPage: React.FC = () => {
                     提交报价
                   </button>
                 ) : null}
+                {selectedOrder.status === 'pending_agree' ? (
+                  <button
+                    disabled
+                    className="min-h-[44px] rounded-2xl bg-gray-100 px-4 py-3 text-sm font-medium text-gray-400 cursor-not-allowed"
+                  >
+                    待用户确认
+                  </button>
+                ) : null}
+                {selectedOrder.status === 'pending_home' || selectedOrder.status === 'pending_shop' ? (
+                  <button
+                    disabled
+                    className="min-h-[44px] rounded-2xl bg-gray-100 px-4 py-3 text-sm font-medium text-gray-400 cursor-not-allowed"
+                  >
+                    {selectedOrder.status === 'pending_home' ? '待上门' : '待到店'}
+                  </button>
+                ) : null}
                 {allowedActions.includes('pending_confirm') ? (
                   <button
                     onClick={() => requestStatusChange('pending_confirm')}
                     disabled={isUpdatingStatus}
                     className="min-h-[44px] rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
                   >
-                    {isUpdatingStatus ? '处理中...' : '确认订单'}
+                    {isUpdatingStatus ? '处理中...' : '确认预约'}
                   </button>
                 ) : null}
                 {(allowedActions.includes('pending_home') || allowedActions.includes('pending_shop')) ? (
@@ -499,7 +515,7 @@ export const OrdersPage: React.FC = () => {
                     disabled={isUpdatingStatus}
                     className="min-h-[44px] rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
                   >
-                    {isUpdatingStatus ? '处理中...' : '确认订单'}
+                    {isUpdatingStatus ? '处理中...' : '确认预约'}
                   </button>
                 ) : null}
                 {allowedActions.includes('completed') ? (
@@ -519,7 +535,7 @@ export const OrdersPage: React.FC = () => {
                       allowedActions.length === 1 ? 'col-span-2' : ''
                     }`}
                   >
-                    {isUpdatingStatus ? '处理中...' : '取消订单'}
+                    {isUpdatingStatus ? '处理中...' : '取消预约'}
                   </button>
                 ) : null}
               </div>
@@ -591,7 +607,7 @@ export const OrdersPage: React.FC = () => {
           <div className="absolute bottom-0 left-0 right-0 rounded-t-3xl bg-white px-5 pb-8 pt-5">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">新建订单</h2>
+                <h2 className="text-lg font-bold text-gray-900">新建预约</h2>
                 <p className="text-xs text-gray-400">创建后会直接写入系统并同步到行程、首页和客户记录</p>
               </div>
               <button
@@ -707,7 +723,7 @@ export const OrdersPage: React.FC = () => {
               : pendingStatusChange === 'completed'
                 ? '完成后将自动生成收入流水，无法撤销。'
                 : pendingStatusChange === 'cancelled'
-                  ? '取消后将通知客户，订单状态变更为已取消且无法恢复。'
+                  ? '取消后将通知客户，预约状态变更为已取消且无法恢复。'
                   : undefined
         }
         price={
@@ -750,7 +766,7 @@ export const OrdersPage: React.FC = () => {
       <ActionConfirmDialog
         open={showReviewConfirm}
         title="确认提交报价？"
-        description="客户将收到该报价金额并自行决定是否同意。提交后无法直接修改，如需调整请取消订单后重建。"
+        description="客户将收到该报价金额并自行决定是否同意。提交后无法直接修改，如需调整请取消预约后重建。"
         price={reviewPrice ? Number(reviewPrice) : null}
         details={selectedOrder ? [
           { label: '客户', value: selectedOrder.customerName },

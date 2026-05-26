@@ -75,11 +75,11 @@ export interface TechnicianCustomerDetail extends TechnicianCustomerSummary {
 
 export const orderStatusLabels: Record<OrderStatus, string> = {
   pending_quote: '待报价',
-  pending_agree: '待同意',
+  pending_agree: '待确认',
   pending_confirm: '待确认',
   pending_home: '待上门',
   pending_shop: '待到店',
-  in_progress: '服务中',
+  in_progress: '进行中',
   completed: '已完成',
   cancelled: '已取消',
 };
