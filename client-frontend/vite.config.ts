@@ -27,12 +27,14 @@ export default defineConfig({
     port: 5174,
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'https://api.lunails.cn',
         changeOrigin: true,
+        secure: false,
       },
       '/uploads': {
-        target: 'http://localhost:3000',
+        target: 'https://api.lunails.cn',
         changeOrigin: true,
+        secure: false,
       },
     },
   },

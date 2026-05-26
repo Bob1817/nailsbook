@@ -8,8 +8,8 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   isAuthenticated: boolean;
-  login: (phone: string, code: string) => Promise<void>;
-  registerByInvite: (phone: string, code: string, techId: number, inviteCode: string) => Promise<void>;
+  login: (phone: string, password: string) => Promise<void>;
+  registerByInvite: (phone: string, password: string, inviteCode: string) => Promise<void>;
   logout: () => void;
   refreshProfile: () => Promise<void>;
   bindTechnician: (techId: number, inviteCode: string, isDefault?: boolean) => Promise<void>;
@@ -111,13 +111,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setTechnicians(response.technicians || []);
   };
 
-  const login = async (phone: string, code: string) => {
-    const response = await authService.login(phone, code);
+  const login = async (phone: string, password: string) => {
+    const response = await authService.login(phone, password);
     saveAuthData(response);
   };
 
-  const registerByInvite = async (phone: string, code: string, techId: number, inviteCode: string) => {
-    const response = await authService.registerByInvite(phone, code, techId, inviteCode);
+  const registerByInvite = async (phone: string, password: string, inviteCode: string) => {
+    const response = await authService.registerByInvite(phone, password, inviteCode);
     saveAuthData(response);
   };
 

@@ -431,8 +431,12 @@ const CreateOrder: React.FC = () => {
         });
         navigate('/orders');
       }
-    } catch {
-      alert('创建预约失败');
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string | string[] } } };
+      const msg = e.response?.data?.message;
+      const text = Array.isArray(msg) ? msg[0] : msg;
+      alert('创建预约失败：' + (text || (err as Error).message || '请稍后重试'));
+      console.error('Create order failed', err);
     } finally {
       setSubmitting(false);
     }

@@ -70,32 +70,32 @@ export interface CreateCustomServiceRequestDto {
 
 export const customServiceRequestService = {
   async create(data: CreateCustomServiceRequestDto): Promise<CustomServiceRequest> {
-    const response = await api.post('/client/custom-service-requests', data);
+    const response = await api.post('/custom-service-requests', data);
     return response.data;
   },
 
   async getRequests(): Promise<CustomServiceRequest[]> {
-    const response = await api.get('/client/custom-service-requests');
+    const response = await api.get('/custom-service-requests');
     return response.data;
   },
 
   async getRequest(id: number): Promise<CustomServiceRequest> {
-    const response = await api.get(`/client/custom-service-requests/${id}`);
+    const response = await api.get(`/custom-service-requests/${id}`);
     return response.data;
   },
 
   async acceptQuote(id: number): Promise<CustomServiceRequest> {
-    const response = await api.patch(`/client/custom-service-requests/${id}/accept`);
+    const response = await api.patch(`/custom-service-requests/${id}/accept`);
     return response.data;
   },
 
   async rejectQuote(id: number): Promise<CustomServiceRequest> {
-    const response = await api.patch(`/client/custom-service-requests/${id}/reject`);
+    const response = await api.patch(`/custom-service-requests/${id}/reject`);
     return response.data;
   },
 
   async cancel(id: number): Promise<CustomServiceRequest> {
-    const response = await api.patch(`/client/custom-service-requests/${id}/cancel`);
+    const response = await api.patch(`/custom-service-requests/${id}/cancel`);
     return response.data;
   },
 };

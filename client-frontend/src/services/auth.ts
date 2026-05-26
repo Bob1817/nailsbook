@@ -79,33 +79,24 @@ export const authService = {
     return response.data;
   },
 
-  async requestLoginCode(phone: string): Promise<RequestCodeResponse> {
-    const response = await api.post('/auth/request-login-code', { phone });
+  async checkPhone(phone: string): Promise<{ exists: boolean; activated?: boolean }> {
+    const response = await api.post('/auth/check-phone', { phone });
     return response.data;
   },
 
-  async requestRegisterCode(phone: string, inviteCode: string): Promise<RequestCodeResponse> {
-    const response = await api.post('/auth/request-register-code', {
-      phone,
-      inviteCode,
-    });
-    return response.data;
-  },
-
-  async registerByInvite(phone: string, code: string, techId: number, inviteCode: string): Promise<AuthResponse> {
+  async registerByInvite(phone: string, password: string, inviteCode: string): Promise<AuthResponse> {
     const response = await api.post('/auth/register-by-invite', {
       phone,
-      code,
-      techId,
+      password,
       inviteCode,
     });
     return response.data;
   },
 
-  async login(phone: string, code: string): Promise<AuthResponse> {
+  async login(phone: string, password: string): Promise<AuthResponse> {
     const response = await api.post('/auth/login', {
       phone,
-      code,
+      password,
     });
     return response.data;
   },
