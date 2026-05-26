@@ -95,6 +95,16 @@ export class ClientAuthService {
         },
       });
 
+      // 同时在该美甲师的客户列表里创建一条记录
+      await tx.customer.create({
+        data: {
+          technicianId: technician.id,
+          clientUserId: created.id,
+          name: created.nickname || dto.phone,
+          phone: dto.phone,
+        },
+      });
+
       return created;
     });
 
@@ -327,9 +337,9 @@ export class ClientAuthService {
         });
       }
 
+      let result;
       if (existingBinding) {
-        // Reactivate
-        return await tx.clientTechBinding.update({
+        result = await tx.clientTechBinding.update({
           where: { id: existingBinding.id },
           data: {
             status: 'active',
@@ -339,7 +349,7 @@ export class ClientAuthService {
           include: { technician: true },
         });
       } else {
-        return await tx.clientTechBinding.create({
+        result = await tx.clientTechBinding.create({
           data: {
             clientId: clientUserId,
             techId: dto.techId,
@@ -350,6 +360,28 @@ export class ClientAuthService {
           include: { technician: true },
         });
       }
+
+      // 确保该美甲师的客户列表里有这个客户
+      const clientUser = await tx.clientUser.findUnique({
+        where: { id: clientUserId },
+      });
+      await tx.customer.upsert({
+        where: {
+          technicianId_clientUserId: {
+            technicianId: dto.techId,
+            clientUserId,
+          },
+        },
+        update: {},
+        create: {
+          technicianId: dto.techId,
+          clientUserId,
+          name: clientUser?.nickname || clientUser?.phone || '客户',
+          phone: clientUser?.phone || null,
+        },
+      });
+
+      return result;
     });
   }
 
