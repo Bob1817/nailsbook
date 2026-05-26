@@ -18,7 +18,13 @@ const ChatPage: React.FC = () => {
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [conversations, setConversations] = useState<Array<{ id: number; client: ClientInfo }>>([]);
+  const [conversations, setConversations] = useState<Array<{
+    id: number;
+    client: ClientInfo;
+    lastMessage?: string | null;
+    lastMessageAt?: string | null;
+    unreadCount?: number;
+  }>>([]);
   const [showClientSelector, setShowClientSelector] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -114,7 +120,20 @@ const ChatPage: React.FC = () => {
   const loadConversations = async () => {
     try {
       const data = await messageService.getConversations();
-      setConversations(data.map((conv) => ({ id: conv.id, client: conv.client })));
+      const list = data.map((conv) => ({
+        id: conv.id,
+        client: conv.client,
+        lastMessage: (conv as unknown as { lastMessage?: string }).lastMessage ?? null,
+        lastMessageAt: (conv as unknown as { lastMessageAt?: string }).lastMessageAt ?? null,
+        unreadCount: (conv as unknown as { unreadCount?: number }).unreadCount ?? 0,
+      }));
+      // 按 lastMessageAt desc 排序
+      list.sort((a, b) => {
+        const at = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+        const bt = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+        return bt - at;
+      });
+      setConversations(list);
     } catch (error) {
       console.error('Failed to load conversations:', error);
     }
@@ -700,9 +719,18 @@ const ChatPage: React.FC = () => {
                       </span>
                     )}
                   </div>
-                  <div className="flex-1 text-left">
-                    <p className="font-medium text-gray-900">{conv.client.nickname || conv.client.phone || '未知客户'}</p>
-                    <p className="text-sm text-gray-500">{conv.client.phone || ''}</p>
+                  <div className="flex-1 min-w-0 text-left">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="truncate font-medium text-gray-900">{conv.client.nickname || conv.client.phone || '未知客户'}</p>
+                      {!!conv.unreadCount && conv.unreadCount > 0 && (
+                        <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-pink-500 px-1.5 text-[10px] font-semibold text-white">
+                          {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
+                        </span>
+                      )}
+                    </div>
+                    <p className="truncate text-sm text-gray-500">
+                      {conv.lastMessage || conv.client.phone || ''}
+                    </p>
                   </div>
                   {currentClient?.id === conv.client.id && (
                     <svg className="w-5 h-5 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">

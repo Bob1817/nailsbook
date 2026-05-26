@@ -34,7 +34,13 @@ const Chat: React.FC = () => {
     setLoading(true);
     try {
       const data = await messageService.getConversations();
-      setConversations(data);
+      // 按 lastMessageAt 倒序排序，最新对话在顶部
+      const sorted = [...data].sort((a, b) => {
+        const at = a.lastMessageAt ? dayjs(a.lastMessageAt).valueOf() : 0;
+        const bt = b.lastMessageAt ? dayjs(b.lastMessageAt).valueOf() : 0;
+        return bt - at;
+      });
+      setConversations(sorted);
 
       const messageBatches = await Promise.all(
         data.map(async (conversation) => ({
@@ -88,18 +94,22 @@ const Chat: React.FC = () => {
     if (!socket) return;
 
     const onNewMessage = (data: { message: { content: string; createdAt: string; messageType?: string }; conversation: { id: number } }) => {
-      setConversations((prev) =>
-        prev.map((c) =>
-          c.id === data.conversation.id
-            ? {
-                ...c,
-                lastMessage: data.message.content,
-                lastMessageAt: data.message.createdAt,
-                unreadCount: (c.unreadCount || 0) + 1,
-              }
-            : c,
-        ),
-      );
+      setConversations((prev) => {
+        const idx = prev.findIndex((c) => c.id === data.conversation.id);
+        if (idx === -1) {
+          // 新会话，重新拉取列表
+          loadInbox();
+          return prev;
+        }
+        const updated = {
+          ...prev[idx],
+          lastMessage: data.message.content,
+          lastMessageAt: data.message.createdAt,
+          unreadCount: (prev[idx].unreadCount || 0) + 1,
+        };
+        // 移动到列表顶部
+        return [updated, ...prev.slice(0, idx), ...prev.slice(idx + 1)];
+      });
 
       // Browser notification if page not visible
       if (document.visibilityState !== 'visible' && Notification.permission === 'granted') {
@@ -111,7 +121,7 @@ const Chat: React.FC = () => {
 
     socket.on('message:new', onNewMessage);
     return () => { socket.off('message:new', onNewMessage); };
-  }, [socket]);
+  }, [socket, loadInbox]);
 
   // Request notification permission on mount
   useEffect(() => {
