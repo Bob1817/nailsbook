@@ -14,6 +14,7 @@ import {
   LogoutOutlined,
   FlagOutlined,
   SafetyOutlined,
+  KeyOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -86,6 +87,11 @@ const MainLayout: React.FC = () => {
       icon: <SafetyOutlined />,
       label: '角色管理',
       permission: 'role:view',
+    },
+    {
+      key: '/invite-keys',
+      icon: <KeyOutlined />,
+      label: '邀请密钥',
     },
   ];
 
