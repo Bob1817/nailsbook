@@ -95,7 +95,9 @@ const WorkDetailPage: React.FC = () => {
         await navigator.clipboard.writeText(window.location.href);
         alert('链接已复制到剪贴板');
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      // 用户主动取消分享不算错误
+      if ((error as { name?: string })?.name === 'AbortError') return;
       console.error('Failed to share:', error);
     }
   };
