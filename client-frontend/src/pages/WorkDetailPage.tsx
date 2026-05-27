@@ -125,7 +125,7 @@ const WorkDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="fixed inset-0 z-[100] bg-[var(--color-bg)]">
+    <div className="fixed inset-0 z-[100] flex h-[100dvh] flex-col bg-black">
       {/* Header buttons */}
       <div className="absolute top-0 left-0 right-0 z-20 px-4 pt-[max(0.875rem,env(safe-area-inset-top)+0.5rem)] pb-2">
         <div className="flex items-center justify-between gap-3">
