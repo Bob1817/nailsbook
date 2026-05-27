@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { rewriteUrlsInData } from '../utils/imageUrl';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api/client',
@@ -17,7 +18,12 @@ api.interceptors.request.use(
 );
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.data) {
+      response.data = rewriteUrlsInData(response.data);
+    }
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('client_token');

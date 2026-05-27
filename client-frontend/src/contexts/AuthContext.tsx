@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { authService, type ClientUser, type Technician } from '../services/auth';
+import { rewriteUrlsInData } from '../utils/imageUrl';
 
 interface AuthContextType {
   user: ClientUser | null;
@@ -69,12 +70,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (storedToken && storedUser) {
       requestAnimationFrame(() => {
         setToken(storedToken);
-        setUser(JSON.parse(storedUser));
+        setUser(rewriteUrlsInData(JSON.parse(storedUser)));
         if (storedTechnician) {
-          setTechnician(JSON.parse(storedTechnician));
+          setTechnician(rewriteUrlsInData(JSON.parse(storedTechnician)));
         }
         if (storedTechnicians) {
-          setTechnicians(JSON.parse(storedTechnicians));
+          setTechnicians(rewriteUrlsInData(JSON.parse(storedTechnicians)));
         }
       });
 
