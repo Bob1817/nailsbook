@@ -1,13 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
-const UPLOAD_BASE_URL = process.env.UPLOAD_BASE_URL || '';
-
 @Injectable()
 export class ClientUploadService {
   buildImageResponse(filename: string) {
-    const path = `/uploads/${filename}`;
-    return {
-      url: UPLOAD_BASE_URL ? `${UPLOAD_BASE_URL}${path}` : path,
-    };
+    // 返回相对路径，由前端通过同源/vite proxy 解析
+    return { url: `/uploads/${filename}` };
   }
 }

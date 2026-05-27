@@ -1,5 +1,6 @@
+import { normalizeImageUrl } from '../utils/imageUrl';
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/technician';
-const BASE_URL = API_URL.replace('/api/technician', '');
 
 export const uploadService = {
   async uploadImage(file: File): Promise<{ url: string }> {
@@ -21,10 +22,6 @@ export const uploadService = {
     }
 
     const result = await response.json();
-    // Convert relative URL to absolute URL
-    if (result.url && result.url.startsWith('/')) {
-      result.url = `${BASE_URL}${result.url}`;
-    }
-    return result;
+    return { ...result, url: normalizeImageUrl(result.url) };
   },
 };

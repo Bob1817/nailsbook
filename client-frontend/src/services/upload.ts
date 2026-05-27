@@ -1,4 +1,5 @@
 import api from './api';
+import { normalizeImageUrl } from '../utils/imageUrl';
 
 export const uploadService = {
   async uploadImage(file: File): Promise<{ url: string }> {
@@ -10,6 +11,9 @@ export const uploadService = {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data;
+    return {
+      ...response.data,
+      url: normalizeImageUrl(response.data.url),
+    };
   },
 };
