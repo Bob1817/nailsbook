@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { authService } from '../services/auth';
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
-  const { user, technicians, logout, unbindTechnician, setDefaultTechnician, bindTechnician } = useAuth();
+  const { user, technicians, logout, unbindTechnician, setDefaultTechnician, bindTechnician, refreshProfile } = useAuth();
+
+  // 每次进入 Profile 拉一次最新数据（避免 localStorage 缓存导致字段缺失）
+  useEffect(() => {
+    void refreshProfile();
+  }, [refreshProfile]);
 
   const [showBindModal, setShowBindModal] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
@@ -207,55 +212,89 @@ const Profile: React.FC = () => {
 
           {technicians.length > 0 ? (
             <div className="space-y-3">
-              {technicians.map((tech) => (
-                <div
-                  key={tech.id}
-                  className={`rounded-[24px] p-4 shadow-[0_14px_36px_rgba(15,23,42,0.06)] ring-1 ${
-                    tech.isDefault
-                      ? 'bg-[linear-gradient(135deg,#FFF0F5_0%,#FAFBFF_100%)] ring-[#FF6B8A]/10'
-                      : 'bg-white/78 ring-black/5'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-[20px] bg-[linear-gradient(135deg,#FFE0EA_0%,#F4F7FB_100%)]">
-                        {tech.avatarUrl ? (
-                          <img src={tech.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
-                        ) : (
-                          <svg className="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="truncate text-base font-semibold text-[var(--color-text)]">{tech.name}</p>
-                          {tech.isDefault && (
-                            <span className="rounded-full bg-[var(--color-primary)] px-2.5 py-1 text-[11px] font-medium text-white">默认</span>
+              {technicians.map((tech) => {
+                const shopAddr = (tech.shopAddresses || [])[0];
+                const shopLine = shopAddr
+                  ? [shopAddr.city, shopAddr.district, shopAddr.detailAddress].filter(Boolean).join(' ')
+                  : '';
+                const serviceTypes: string[] = [];
+                if (tech.homeService) serviceTypes.push('上门美甲');
+                if (tech.shopService) serviceTypes.push('到店美甲');
+                return (
+                  <div
+                    key={tech.id}
+                    className={`rounded-[24px] p-4 shadow-[0_14px_36px_rgba(15,23,42,0.06)] ring-1 ${
+                      tech.isDefault
+                        ? 'bg-[linear-gradient(135deg,#FFF0F5_0%,#FAFBFF_100%)] ring-[#FF6B8A]/10'
+                        : 'bg-white/78 ring-black/5'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-start gap-3">
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[20px] bg-[linear-gradient(135deg,#FFE0EA_0%,#F4F7FB_100%)]">
+                          {tech.avatarUrl ? (
+                            <img src={tech.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-lg font-semibold text-[#FF6B8A]">
+                              {tech.name.slice(0, 1)}
+                            </span>
                           )}
                         </div>
-                        <p className="mt-1 text-sm text-[var(--color-text-muted)]">{tech.city || '未知城市'}</p>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="truncate text-base font-semibold text-[var(--color-text)]">{tech.name}</p>
+                            {tech.isDefault && (
+                              <span className="rounded-full bg-[var(--color-primary)] px-2.5 py-1 text-[11px] font-medium text-white">默认</span>
+                            )}
+                          </div>
+                          {(tech.city || tech.serviceArea) && (
+                            <div className="mt-1 flex flex-wrap items-center gap-1 text-xs text-[var(--color-text-muted)]">
+                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              <span>{[tech.city, tech.serviceArea].filter(Boolean).join(' · ') || '未填写'}</span>
+                            </div>
+                          )}
+                          {serviceTypes.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {serviceTypes.map((t) => (
+                                <span
+                                  key={t}
+                                  className="rounded-full bg-pink-50 px-2 py-0.5 text-[11px] font-medium text-[#FF6B8A]"
+                                >
+                                  {t}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {tech.shopService && shopLine && (
+                            <p className="mt-2 line-clamp-2 text-xs text-[var(--color-text-muted)]">
+                              门店：{shopLine}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-2">
+                        {!tech.isDefault && (
+                          <button
+                            onClick={() => handleSetDefault(tech.id)}
+                            className="rounded-full border border-[var(--color-primary)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-primary)]"
+                          >
+                            设为默认
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleUnbind(tech.id, tech.name)}
+                          className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)]"
+                        >
+                          解除
+                        </button>
                       </div>
                     </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      {!tech.isDefault && (
-                        <button
-                          onClick={() => handleSetDefault(tech.id)}
-                          className="rounded-full border border-[var(--color-primary)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-primary)]"
-                        >
-                          设为默认
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleUnbind(tech.id, tech.name)}
-                        className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)]"
-                      >
-                        解除
-                      </button>
-                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="rounded-[24px] bg-slate-50 px-5 py-8 text-center">
