@@ -10,6 +10,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/uploads': {
+        target: 'https://api.lunails.cn',
+        changeOrigin: true,
+        secure: false,
+      },
       '/socket.io': {
         target: 'https://api.lunails.cn',
         changeOrigin: true,
