@@ -25,6 +25,7 @@ import WorksPage from './pages/WorksPage';
 import WorkDetailPage from './pages/WorkDetailPage';
 import MyFavorites from './pages/MyFavorites';
 import MyLikes from './pages/MyLikes';
+import EditProfile from './pages/EditProfile';
 
 function AppRoutes() {
   const { isAuthenticated, user, loading } = useAuth();
@@ -77,6 +78,7 @@ function AppRoutes() {
           <Route path="/profile/addresses/edit" element={<EditAddress />} />
           <Route path="/favorites" element={<MyFavorites />} />
           <Route path="/likes" element={<MyLikes />} />
+          <Route path="/profile/edit" element={<EditProfile />} />
           {/* Works routes - no bottom tab bar */}
           <Route path="/works" element={<WorksPage />} />
           <Route path="/works/:id" element={<WorkDetailPage />} />

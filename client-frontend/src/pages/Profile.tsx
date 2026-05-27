@@ -159,7 +159,10 @@ const Profile: React.FC = () => {
         <div className="absolute -bottom-20 left-[-3rem] h-56 w-56 rounded-full bg-white/10 blur-3xl"></div>
 
         <div className="relative px-5 app-hero-safe pb-10 text-white">
-          <div className="rounded-[32px] border border-white/18 bg-white/10 px-5 py-5 shadow-[0_24px_70px_rgba(255,107,138,0.26)] backdrop-blur-xl">
+          <div
+            onClick={() => navigate('/profile/edit')}
+            className="rounded-[32px] border border-white/18 bg-white/10 px-5 py-5 shadow-[0_24px_70px_rgba(255,107,138,0.26)] backdrop-blur-xl cursor-pointer active:scale-[0.99] transition-transform"
+          >
             <div className="flex items-center gap-4">
               <div className="flex h-[76px] w-[76px] items-center justify-center overflow-hidden rounded-full bg-white/20 ring-2 ring-white/30">
               {user?.avatarUrl ? (
@@ -176,8 +179,11 @@ const Profile: React.FC = () => {
                   {user?.nickname || user?.phone || '用户'}
                 </h1>
                 <p className="mt-1 text-sm text-white/80">{user?.phone}</p>
-                <p className="mt-1 text-sm text-white/70">管理你的专属美甲师、预约与服务信息</p>
+                <p className="mt-1 text-xs text-white/70">点击编辑个人资料</p>
               </div>
+              <svg className="h-5 w-5 text-white/70 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </div>
           </div>
         </div>
