@@ -6,7 +6,7 @@ export interface ActionConfirmDialogProps {
   description?: string;
   /** 突出显示价格（如报价、客户接受报价时） */
   price?: number | null;
-  /** 二级信息条目（如订单时间、客户、地址） */
+  /** 二级信息条目（如预约时间、客户、地址） */
   details?: Array<{ label: string; value: React.ReactNode }>;
   confirmText?: string;
   cancelText?: string;
@@ -54,7 +54,7 @@ export const ActionConfirmDialog: React.FC<ActionConfirmDialogProps> = ({
         {price != null && (
           <div className="mt-4 rounded-2xl bg-gradient-to-br from-[#FF6B8A] to-[#FF8FA3] px-5 py-5 text-white shadow-md">
             <p className="text-[11px] uppercase tracking-[0.18em] text-white/72">
-              {variant === 'danger' ? '订单金额' : '报价金额'}
+              {variant === 'danger' ? '预约金额' : '报价金额'}
             </p>
             <p className="mt-1 text-[2rem] font-bold leading-none">¥{price}</p>
           </div>

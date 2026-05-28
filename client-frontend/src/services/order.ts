@@ -16,6 +16,7 @@ export interface Order {
   quotedAt: string | null;
   depositAmount: number;
   isDepositPaid: boolean;
+  depositStatus?: string | null;
   customTitle: string | null;
   customDescription: string | null;
   customImages: string[];
@@ -125,6 +126,11 @@ export const orderService = {
 
   async updateOrderStatus(id: number, data: UpdateOrderStatusDto): Promise<Order> {
     const response = await api.patch(`/orders/${id}/status`, data);
+    return response.data;
+  },
+
+  async markDepositPaid(id: number): Promise<Order> {
+    const response = await api.post(`/orders/${id}/mark-deposit-paid`);
     return response.data;
   },
 };

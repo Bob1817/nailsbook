@@ -677,6 +677,102 @@ export class ClientOrdersService {
     return this.mapOrder(updatedOrder);
   }
 
+  async markDepositPaid(clientUserId: number, id: number) {
+    const order = await this.prisma.order.findFirst({
+      where: {
+        id,
+        clientUserId,
+      },
+      include: this.orderInclude(),
+    });
+
+    if (!order) {
+      throw new NotFoundException('订单不存在');
+    }
+
+    if (order.status !== 'pending_confirm') {
+      throw new BadRequestException('当前订单状态不支持确认定金');
+    }
+
+    if (order.isDepositPaid) {
+      throw new BadRequestException('定金已确认，无需重复操作');
+    }
+
+    const updatedOrder = await this.prisma.order.update({
+      where: { id },
+      data: {
+        isDepositPaid: true,
+        depositStatus: 'paid',
+        depositConfirmedAt: new Date(),
+      },
+      include: this.orderInclude(),
+    });
+
+    // 通知美甲师
+    let systemMessage: any = null;
+    let conversationId: number | null = null;
+
+    try {
+      const conversation = await this.prisma.conversation.upsert({
+        where: {
+          clientId_techId: {
+            clientId: clientUserId,
+            techId: order.technicianId,
+          },
+        },
+        update: { lastMessage: '客户已确认支付定金', lastMessageAt: new Date() },
+        create: {
+          clientId: clientUserId,
+          techId: order.technicianId,
+          lastMessage: '客户已确认支付定金',
+          lastMessageAt: new Date(),
+        },
+      });
+
+      conversationId = conversation.id;
+
+      systemMessage = await this.prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          senderType: 'client',
+          senderId: clientUserId,
+          receiverType: 'technician',
+          receiverId: order.technicianId,
+          messageType: 'system',
+          content: `客户已确认支付定金（¥${order.depositAmount ?? 0}），请确认后接单～`,
+          relatedType: 'order',
+          relatedId: order.id,
+        },
+      });
+    } catch (e) {
+      console.error(
+        '[ClientOrdersService] Failed to push deposit notification:',
+        e,
+      );
+    }
+
+    if (systemMessage && conversationId) {
+      try {
+        const updatedConversation = await this.prisma.conversation.findUnique({
+          where: { id: conversationId },
+        });
+        this.chatGateway.server
+          .to(`conversation:${String(conversationId)}`)
+          .emit('message:new', {
+            message: systemMessage,
+            conversation: updatedConversation,
+          });
+      } catch (e) {
+        console.error(
+          '[ClientOrdersService] Failed to emit deposit notification:',
+          e,
+        );
+      }
+    }
+
+    return this.mapOrder(updatedOrder);
+  }
+
   private orderInclude() {
     return {
       technician: { select: { id: true, name: true, phone: true } },
@@ -711,6 +807,7 @@ export class ClientOrdersService {
       quoteRemark: order.quoteRemark ?? null,
       quotedAt: order.quotedAt ?? null,
       isDepositPaid: order.isDepositPaid,
+      depositAmount: order.depositAmount ?? 0,
       customTitle: order.customTitle ?? null,
       customDescription: order.customDescription ?? null,
       customImages: order.customImages

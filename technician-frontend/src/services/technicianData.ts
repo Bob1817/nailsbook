@@ -24,6 +24,7 @@ export interface TechnicianOrder {
   quoteRemark: string | null;
   quotedAt: string | null;
   depositPaid: boolean;
+  depositAmount: number;
   note?: string;
   customTitle?: string | null;
   customDescription?: string | null;
@@ -122,6 +123,7 @@ export const fallbackOrders: TechnicianOrder[] = [
     quoteRemark: null,
     quotedAt: null,
     depositPaid: false,
+    depositAmount: 60,
   },
   {
     id: 2,
@@ -138,6 +140,7 @@ export const fallbackOrders: TechnicianOrder[] = [
     quoteRemark: null,
     quotedAt: null,
     depositPaid: true,
+    depositAmount: 80,
   },
   {
     id: 3,
@@ -154,6 +157,7 @@ export const fallbackOrders: TechnicianOrder[] = [
     quoteRemark: null,
     quotedAt: null,
     depositPaid: true,
+    depositAmount: 100,
   },
   {
     id: 4,
@@ -170,6 +174,7 @@ export const fallbackOrders: TechnicianOrder[] = [
     quoteRemark: null,
     quotedAt: null,
     depositPaid: true,
+    depositAmount: 66,
   },
 ];
 

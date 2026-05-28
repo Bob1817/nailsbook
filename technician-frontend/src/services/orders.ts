@@ -19,6 +19,7 @@ interface OrderApiItem {
   status: OrderStatus;
   serviceType?: string | null;
   isDepositPaid?: boolean;
+  depositAmount?: number | null;
   customer?: {
     id: number;
     name: string;
@@ -124,6 +125,7 @@ function normalizeOrder(item: OrderApiItem): TechnicianOrder {
     quoteRemark: item.quoteRemark ?? null,
     quotedAt: item.quotedAt ?? null,
     depositPaid: Boolean(item.isDepositPaid),
+    depositAmount: Number(item.depositAmount ?? 0),
     customTitle: item.customTitle ?? null,
     customDescription: item.customDescription ?? null,
     customImages,
@@ -199,6 +201,7 @@ export const ordersService = {
       durationMinutes: number;
       price: number;
       remark?: string;
+      depositAmount?: number;
     },
   ): Promise<TechnicianOrder> {
     const response = await api.patch<OrderApiItem>(`/orders/${id}/review`, data);
@@ -221,7 +224,7 @@ export const ordersService = {
     if (current) {
       return { ...current, status: 'pending_confirm' };
     }
-    throw new Error('订单不存在');
+    throw new Error('预约不存在');
   },
 
   async confirm(
@@ -263,7 +266,7 @@ export const ordersService = {
     if (current) {
       return { ...current, status: 'in_progress' };
     }
-    throw new Error('订单不存在');
+    throw new Error('预约不存在');
   },
 
   async complete(id: number): Promise<TechnicianOrder> {
@@ -305,6 +308,7 @@ export const ordersService = {
       durationMinutes: number;
       price: number;
       remark?: string;
+      depositAmount?: number;
     },
   ): Promise<TechnicianOrder> {
     return this.submitQuote(id, data);
@@ -319,6 +323,7 @@ export const ordersService = {
       endTime?: string;
       price?: number;
       note?: string;
+      depositAmount?: number;
     },
   ): Promise<TechnicianOrder> {
     const response = await api.patch<OrderApiItem>(`/orders/${id}`, data);

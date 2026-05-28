@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { orderService, type Order } from '../services/order';
 import { addressService, type ClientAddress } from '../services/address';
+import { messageService } from '../services/message';
 import { ActionConfirmDialog } from '../components/ActionConfirmDialog';
 import { ORDER_STATUS_LABEL as STATUS_LABELS, ORDER_STATUS_COLOR as STATUS_COLORS, clientWaitingLabel } from '../utils/orderStatus';
 import dayjs from 'dayjs';
@@ -35,6 +36,9 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderIdProp, onClose, isModal
   const [showAgreeConfirm, setShowAgreeConfirm] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [markingDeposit, setMarkingDeposit] = useState(false);
+  const [showDepositConfirm, setShowDepositConfirm] = useState(false);
+  const [sendingOrderCard, setSendingOrderCard] = useState(false);
   const [editForm, setEditForm] = useState({
     serviceDate: '',
     startTime: '',
@@ -135,6 +139,36 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderIdProp, onClose, isModal
     }
   };
 
+  const handleMarkDepositPaid = async () => {
+    if (!order) return;
+    setMarkingDeposit(true);
+    try {
+      const updated = await orderService.markDepositPaid(order.id);
+      setOrder(updated);
+      setShowDepositConfirm(false);
+    } catch {
+      alert('确认定金失败');
+    } finally {
+      setMarkingDeposit(false);
+    }
+  };
+
+  const handleSendOrderCard = async () => {
+    if (!order || sendingOrderCard) return;
+    setSendingOrderCard(true);
+    try {
+      const result = await messageService.sendOrderCard(order.id);
+      if (onClose) onClose();
+      if (result.conversationId) {
+        navigate(`/chat/${result.conversationId}`);
+      }
+    } catch {
+      alert('发送失败，请重试');
+    } finally {
+      setSendingOrderCard(false);
+    }
+  };
+
   const timeSlots = [
     '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
     '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
@@ -175,10 +209,10 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderIdProp, onClose, isModal
           onClick={() => setShowEditModal(false)}
         >
           <div
-            className="w-full max-w-md rounded-t-[32px] bg-white/95 px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom)+1rem)] shadow-2xl ring-1 ring-black/5 backdrop-blur sm:rounded-[32px]"
+            className="w-full max-w-md max-h-[90vh] rounded-t-[32px] bg-white/95 shadow-2xl ring-1 ring-black/5 backdrop-blur sm:rounded-[32px] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mb-5 flex items-center justify-between">
+            <div className="shrink-0 px-6 pt-6 pb-4 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">修改预约</h3>
                 <p className="mt-1 text-sm text-[var(--color-text-muted)]">仅支持调整预约时间和服务地址</p>
@@ -189,7 +223,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderIdProp, onClose, isModal
                 </svg>
               </button>
             </div>
-            <div className="space-y-4">
+            <div className="flex-1 overflow-y-auto px-6 space-y-4 pb-4">
               <div className="rounded-[24px] bg-slate-50/80 p-4">
                 <label className="mb-3 block text-sm font-medium text-gray-700">预约日期</label>
                 <input
@@ -257,6 +291,8 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderIdProp, onClose, isModal
                   ))}
                 </div>
               </div>
+            </div>
+            <div className="shrink-0 px-6 pb-[max(1.5rem,env(safe-area-inset-bottom)+1rem)] pt-2">
               <button
                 onClick={handleSaveEdit}
                 disabled={savingEdit}
@@ -356,6 +392,46 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderIdProp, onClose, isModal
         onConfirm={handleAgreeQuote}
         onCancel={() => setShowAgreeConfirm(false)}
       />
+
+      {/* Deposit confirm dialog */}
+      {showDepositConfirm && (
+        <div
+          className="fixed inset-0 z-[200] flex items-end justify-center bg-black/35 backdrop-blur-sm sm:items-center"
+          onClick={() => setShowDepositConfirm(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-[32px] bg-white/95 px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom)+1rem)] shadow-2xl ring-1 ring-black/5 backdrop-blur sm:rounded-[32px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-5">
+              <h3 className="text-lg font-semibold text-gray-900">确认已支付定金</h3>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                请确认你已通过线下方式向美甲师支付了定金
+              </p>
+            </div>
+            <div className="rounded-[24px] bg-amber-50 p-4 mb-5">
+              <p className="text-sm text-amber-600">定金金额</p>
+              <p className="mt-1 text-2xl font-semibold text-amber-700">¥{order?.depositAmount || 0}</p>
+              <p className="mt-2 text-xs text-amber-500">确认后将通知美甲师，美甲师确认收到后将接单</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setShowDepositConfirm(false)}
+                className="rounded-full bg-slate-100 py-3.5 font-medium text-gray-600"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleMarkDepositPaid}
+                disabled={markingDeposit}
+                className="rounded-full bg-gradient-to-r from-amber-400 to-orange-400 py-3.5 font-semibold text-white shadow-md disabled:opacity-50"
+              >
+                {markingDeposit ? '处理中...' : '确认已付'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 
@@ -364,6 +440,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderIdProp, onClose, isModal
     const cancellable = ['pending_quote', 'pending_agree', 'pending_confirm', 'pending_home', 'pending_shop'].includes(order.status);
     const isClientTurn = order.status === 'pending_agree';
     const waiting = clientWaitingLabel(order.status);
+    const canMarkDeposit = order.status === 'pending_confirm' && order.depositAmount > 0 && !order.isDepositPaid;
 
     return (
       <>
@@ -426,6 +503,24 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderIdProp, onClose, isModal
                 </div>
               </div>
 
+              {/* Deposit info */}
+              {order.depositAmount > 0 && (
+                <div className="mb-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 p-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[12px] text-amber-600">定金（线下支付）</p>
+                    <span className={`text-[12px] font-medium px-2 py-0.5 rounded-full ${order.isDepositPaid ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                      {order.isDepositPaid ? '已确认' : '待支付'}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[16px] font-semibold text-amber-700">¥{order.depositAmount}</p>
+                  <p className="mt-1 text-[11px] text-amber-500">
+                    {order.isDepositPaid
+                      ? '美甲师已确认收到定金'
+                      : '请线下支付定金后，点击下方按钮确认'}
+                  </p>
+                </div>
+              )}
+
               {/* Service info */}
               <div className="mb-4 rounded-2xl bg-gray-50 p-4 text-sm text-gray-700">
                 <p className="font-medium text-gray-900">服务信息</p>
@@ -461,6 +556,19 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderIdProp, onClose, isModal
               </div>
             </div>
 
+            {/* Send order card button */}
+            {order.technician && (
+              <div className="shrink-0 pt-3">
+                <button
+                  onClick={handleSendOrderCard}
+                  disabled={sendingOrderCard}
+                  className="w-full rounded-full bg-slate-800 py-3 text-sm font-semibold text-white shadow-md disabled:opacity-50"
+                >
+                  {sendingOrderCard ? '发送中...' : `发给 ${order.technician.name}`}
+                </button>
+              </div>
+            )}
+
             {/* Bottom actions */}
             {(order.status !== 'completed' && order.status !== 'cancelled') && (
               <div className="shrink-0 pt-3">
@@ -491,6 +599,24 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderIdProp, onClose, isModal
                     >
                       {agreeing ? '处理中' : '同意'}
                     </button>
+                  </div>
+                ) : canMarkDeposit ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setShowDepositConfirm(true)}
+                      disabled={markingDeposit}
+                      className="rounded-full bg-gradient-to-r from-amber-400 to-orange-400 py-3.5 font-semibold text-white shadow-md disabled:opacity-50"
+                    >
+                      {markingDeposit ? '处理中...' : '已付定金'}
+                    </button>
+                    {cancellable && (
+                      <button
+                        onClick={() => setShowCancelModal(true)}
+                        className="rounded-full bg-white py-3.5 font-medium text-red-500 ring-1 ring-red-200"
+                      >
+                        取消预约
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div className={`grid gap-3 ${cancellable ? 'grid-cols-2' : 'grid-cols-1'}`}>
@@ -565,6 +691,17 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderIdProp, onClose, isModal
             </p>
             {order.quoteRemark && (
               <p className="mt-1 text-sm text-[var(--color-text-muted)]">{order.quoteRemark}</p>
+            )}
+            {order.depositAmount > 0 && (
+              <div className="mt-3 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-amber-600">定金（线下支付）</span>
+                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${order.isDepositPaid ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                    {order.isDepositPaid ? '已确认' : '待支付'}
+                  </span>
+                </div>
+                <p className="mt-1 text-[15px] font-semibold text-amber-700">¥{order.depositAmount}</p>
+              </div>
             )}
             <div className="mt-4 flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
               <span className="rounded-full bg-white/90 px-3 py-1 ring-1 ring-black/5">预约编号</span>
@@ -686,17 +823,27 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderIdProp, onClose, isModal
       {/* Actions */}
       {(() => {
         // 已完成/已取消：不展示操作栏
-        if (order.status === 'completed' || order.status === 'cancelled') {
+        if (order.status === 'completed' || order.status === 'cancelled' || showEditModal) {
           return null;
         }
 
         const isClientTurn = order.status === 'pending_agree';
         const cancellable = ['pending_quote', 'pending_agree', 'pending_confirm', 'pending_home', 'pending_shop'].includes(order.status);
         const waitingLabel = clientWaitingLabel(order.status);
+        const canMarkDeposit = order.status === 'pending_confirm' && order.depositAmount > 0 && !order.isDepositPaid;
 
         return (
           <div className="fixed bottom-0 left-0 right-0 border-t border-white/60 bg-white/88 px-5 py-4 safe-area-bottom backdrop-blur-xl">
             <div className="mx-auto max-w-md">
+              {order.technician && (
+                <button
+                  onClick={handleSendOrderCard}
+                  disabled={sendingOrderCard}
+                  className="mb-3 w-full rounded-full bg-slate-800 py-3 text-sm font-semibold text-white shadow-md disabled:opacity-50"
+                >
+                  {sendingOrderCard ? '发送中...' : `发给 ${order.technician.name}`}
+                </button>
+              )}
               {isClientTurn ? (
                 // 用户该操作：同意 / 拒绝 / 修改 / 取消
                 <div className="grid grid-cols-4 gap-2">
@@ -725,6 +872,25 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderIdProp, onClose, isModal
                   >
                     {agreeing ? '处理中' : '同意'}
                   </button>
+                </div>
+              ) : canMarkDeposit ? (
+                // 需要确认定金
+                <div className={`grid gap-3 ${cancellable ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  <button
+                    onClick={() => setShowDepositConfirm(true)}
+                    disabled={markingDeposit}
+                    className="rounded-full bg-gradient-to-r from-amber-400 to-orange-400 py-3.5 font-semibold text-white shadow-md disabled:opacity-50"
+                  >
+                    {markingDeposit ? '处理中...' : '已付定金'}
+                  </button>
+                  {cancellable && (
+                    <button
+                      onClick={() => setShowCancelModal(true)}
+                      className="rounded-full bg-white py-3.5 font-medium text-red-500 ring-1 ring-red-200"
+                    >
+                      取消预约
+                    </button>
+                  )}
                 </div>
               ) : (
                 // 等待对方：禁用主按钮 + 取消预约

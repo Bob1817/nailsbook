@@ -56,6 +56,7 @@ const TagManagementPage = lazy(async () => {
   const module = await import('./pages/TagManagementPage');
   return { default: module.TagManagementPage };
 });
+const CustomerDetailPage = lazy(() => import('./pages/CustomerDetailPage'));
 
 function RouteFallback() {
   return (
@@ -87,6 +88,7 @@ function App() {
                   <Route path="/" element={<HomePage />} />
                   <Route path="/schedule" element={<SchedulePage />} />
                   <Route path="/customers" element={<CustomersPage />} />
+                  <Route path="/customers/:id" element={<CustomerDetailPage />} />
                   <Route path="/orders" element={<OrdersPage />} />
                   <Route path="/messages" element={<MessagesPage />} />
                   <Route path="/chat" element={<ChatPage />} />

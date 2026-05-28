@@ -22,6 +22,7 @@ import { OrdersService } from './orders.service';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
 import { CreateTechnicianOrderDto } from './dto/create-technician-order.dto';
 import { ReviewOrderDto } from './dto/review-order.dto';
+import { UpdateTechnicianOrderDto } from './dto/update-technician-order.dto';
 
 @ApiTags('美甲师-订单')
 @ApiBearerAuth()
@@ -97,6 +98,25 @@ export class TechnicianOrdersController {
     return this.ordersService.findOneForTechnician(
       parseInt(id, 10),
       request.user.technicianId,
+    );
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: '更新订单信息' })
+  @ApiParam({ name: 'id', type: String, description: '订单ID' })
+  @ApiBody({ type: UpdateTechnicianOrderDto })
+  @ApiResponse({ status: 200, description: '更新成功' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiResponse({ status: 404, description: '订单不存在' })
+  async update(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id') id: string,
+    @Body() body: UpdateTechnicianOrderDto,
+  ) {
+    return this.ordersService.updateForTechnician(
+      parseInt(id, 10),
+      request.user.technicianId,
+      body,
     );
   }
 

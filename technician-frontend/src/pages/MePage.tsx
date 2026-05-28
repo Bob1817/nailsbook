@@ -123,9 +123,6 @@ export const MePage: React.FC = () => {
             <div className="min-w-0 pt-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="truncate text-[1.42rem] font-semibold tracking-[-0.03em] text-white">美甲师·{technician?.name || '小美'}</h1>
-                <span className="rounded-full bg-white/[0.16] px-2.5 py-1 text-[11px] leading-none text-white/90">
-                  {technician?.status === 'active' ? '接单中' : '暂停中'}
-                </span>
                 <button
                   type="button"
                   onClick={() => navigate('/subscription')}
@@ -239,7 +236,7 @@ export const MePage: React.FC = () => {
         <Card className={moduleClassName}>
           <div className={moduleHeaderClassName}>
             <h2 className="text-[18px] font-semibold text-gray-900">收入统计</h2>
-            <span className="text-xs text-gray-400">按当前订单数据汇总</span>
+            <span className="text-xs text-gray-400">按当前预约数据汇总</span>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-[18px] bg-[#ffe9f0] p-3.5 ring-1 ring-[#ffe6ec]">
@@ -263,13 +260,13 @@ export const MePage: React.FC = () => {
 
         <Card className={moduleClassName}>
           <div className={moduleHeaderClassName}>
-            <h2 className="text-[18px] font-semibold text-gray-900">我的订单</h2>
+            <h2 className="text-[18px] font-semibold text-gray-900">我的预约</h2>
             <button
               type="button"
               onClick={() => navigate('/orders')}
               className="text-xs text-pink-500 font-medium"
             >
-              全部订单
+              全部预约
             </button>
           </div>
           <div className="grid grid-cols-5 gap-2">

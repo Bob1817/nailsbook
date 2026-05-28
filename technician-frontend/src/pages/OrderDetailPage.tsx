@@ -23,9 +23,17 @@ const serviceTypeLabels: Record<string, string> = {
   shop: '到店美甲',
 };
 
-const OrderDetailPage: React.FC = () => {
+interface OrderDetailPageProps {
+  orderIdProp?: number;
+  onClose?: () => void;
+  isModal?: boolean;
+}
+
+const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ orderIdProp, onClose, isModal }) => {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
+  const { id: idFromUrl } = useParams<{ id: string }>();
+  const id = orderIdProp != null ? String(orderIdProp) : idFromUrl;
+  const handleBack = () => { if (onClose) onClose(); else navigate(-1); };
   const { technician } = useAuth();
   const toast = useToast();
 
@@ -34,6 +42,7 @@ const OrderDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showMoreActions, setShowMoreActions] = useState(false);
 
   // 编辑表单状态
   const [editForm, setEditForm] = useState({
@@ -47,6 +56,7 @@ const OrderDetailPage: React.FC = () => {
     holidayFee: 0,
     otherFees: 0,
     note: '',
+    depositAmount: 0,
   });
 
   // 加载预约详情
@@ -77,6 +87,7 @@ const OrderDetailPage: React.FC = () => {
             holidayFee: orderData.priceBreakdown?.holidayFee || 0,
             otherFees: orderData.priceBreakdown?.otherFees || 0,
             note: orderData.note || '',
+            depositAmount: orderData.depositAmount || 0,
           });
         } else {
           toast.error('预约不存在');
@@ -112,11 +123,14 @@ const OrderDetailPage: React.FC = () => {
           startTime: timeStr,
           durationMinutes: duration || 90,
           price: totalPrice,
+          depositAmount: editForm.depositAmount || undefined,
         });
       } else if (newStatus === 'pending_confirm') {
         await ordersService.agree(order.id);
       } else if (newStatus === 'pending_home' || newStatus === 'pending_shop') {
-        await ordersService.confirm(order.id, { depositConfirmed: true });
+        await ordersService.confirm(order.id, {
+          depositConfirmed: order.depositAmount > 0 ? order.depositPaid : true,
+        });
       } else if (newStatus === 'completed') {
         await ordersService.complete(order.id);
       }
@@ -181,6 +195,7 @@ const OrderDetailPage: React.FC = () => {
           otherFees: editForm.otherFees,
         },
         note: editForm.note,
+        depositAmount: editForm.depositAmount || 0,
       };
 
       // 调用更新API
@@ -231,14 +246,17 @@ const OrderDetailPage: React.FC = () => {
 
   const allowedActions = getAllowedActions(order.status);
 
-  return (
-    <div className="min-h-full bg-[#fff9f8] pb-24">
+  const content = (
+    <div className={isModal ? 'flex flex-col h-full bg-[#fff9f8]' : 'min-h-full bg-[#fff9f8] pb-28'}>
       {/* Header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[#f2e6ec]">
+      <div className={isModal
+        ? 'shrink-0 z-10 flex items-center justify-between bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[#f2e6ec]'
+        : 'sticky top-0 z-10 flex items-center justify-between bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[#f2e6ec]'
+      }>
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f7f3f5] transition-colors active:bg-[#eee5e9]"
           >
             <svg className="h-5 w-5 text-[#3c3440]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -263,7 +281,7 @@ const OrderDetailPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="space-y-5 px-5 py-5">
+      <div className={isModal ? 'flex-1 min-h-0 overflow-y-auto space-y-5 px-5 py-5' : 'space-y-5 px-5 py-5'}>
         {/* 状态卡片 */}
         <div className="rounded-[24px] border border-[#f5e7ea] bg-white p-5 shadow-[0_8px_24px_rgba(29,35,53,0.04)]">
           <div className="flex items-center justify-between">
@@ -285,66 +303,6 @@ const OrderDetailPage: React.FC = () => {
             )}
           </div>
 
-          {/* 状态操作按钮 */}
-          {!isEditing && allowedActions.length > 0 && (
-            <div className="mt-5 grid grid-cols-2 gap-3 border-t border-[#f4ebee] pt-4">
-              {allowedActions.includes('pending_agree') && (
-                <Button
-                  variant="primary"
-                  onClick={() => handleStatusChange('pending_agree')}
-                  disabled={isSubmitting}
-                  className="h-12 rounded-[18px] bg-emerald-500 text-[15px] shadow-none disabled:opacity-50"
-                >
-                  {isSubmitting ? '处理中...' : '提交报价'}
-                </Button>
-              )}
-              {allowedActions.includes('pending_confirm') && (
-                <Button
-                  variant="primary"
-                  onClick={() => handleStatusChange('pending_confirm')}
-                  disabled={isSubmitting}
-                  className="h-12 rounded-[18px] bg-emerald-500 text-[15px] shadow-none disabled:opacity-50"
-                >
-                  {isSubmitting ? '处理中...' : '确认预约'}
-                </Button>
-              )}
-              {(allowedActions.includes('pending_home') || allowedActions.includes('pending_shop')) && (
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    const nextStatus: OrderStatus = order.serviceType === 'home' ? 'pending_home' : 'pending_shop';
-                    handleStatusChange(nextStatus);
-                  }}
-                  disabled={isSubmitting}
-                  className="h-12 rounded-[18px] bg-emerald-500 text-[15px] shadow-none disabled:opacity-50"
-                >
-                  {isSubmitting ? '处理中...' : '确认预约'}
-                </Button>
-              )}
-              {allowedActions.includes('completed') && (
-                <Button
-                  variant="primary"
-                  onClick={() => handleStatusChange('completed')}
-                  disabled={isSubmitting}
-                  className="h-12 rounded-[18px] text-[15px] shadow-none disabled:opacity-50"
-                >
-                  {isSubmitting ? '处理中...' : '确认完成'}
-                </Button>
-              )}
-              {allowedActions.includes('cancelled') && (
-                <Button
-                  variant="outline"
-                  onClick={() => handleStatusChange('cancelled')}
-                  disabled={isSubmitting}
-                  className={`h-12 rounded-[18px] border-[#f5ced4] text-[15px] text-[#ef5a71] disabled:opacity-50 ${
-                    allowedActions.length === 1 ? 'col-span-2' : ''
-                  }`}
-                >
-                  {isSubmitting ? '处理中...' : '取消预约'}
-                </Button>
-              )}
-            </div>
-          )}
         </div>
 
         {/* 客户信息 */}
@@ -572,9 +530,19 @@ const OrderDetailPage: React.FC = () => {
                 />
               </div>
               <div className="pt-4 border-t border-gray-100">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center mb-3">
                   <span className="font-semibold text-gray-900">总价</span>
                   <span className="text-xl font-bold text-pink-500">{formatMoney(totalPrice)}</span>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">定金金额（线下收取）</label>
+                  <input
+                    type="number"
+                    value={editForm.depositAmount || ''}
+                    onChange={(e) => setEditForm({ ...editForm, depositAmount: Number(e.target.value) })}
+                    placeholder="0 表示不收定金"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-pink-500 focus:outline-none"
+                  />
                 </div>
               </div>
             </div>
@@ -615,9 +583,11 @@ const OrderDetailPage: React.FC = () => {
                 <span className="text-[32px] font-semibold tracking-[-0.03em] text-pink-500">{formatMoney(order.price)}</span>
               </div>
               <div className="flex items-start justify-between gap-4">
-                <span className="text-[14px] text-gray-400">定金状态</span>
+                <span className="text-[14px] text-gray-400">定金</span>
                 <span className={`text-[15px] font-medium ${order.depositPaid ? 'text-emerald-500' : 'text-amber-500'}`}>
-                  {order.depositPaid ? '已支付' : '未支付'}
+                  {order.depositAmount > 0
+                    ? `${formatMoney(order.depositAmount)} · ${order.depositPaid ? '已支付' : '未支付'}`
+                    : '未设置'}
                 </span>
               </div>
             </div>
@@ -646,27 +616,137 @@ const OrderDetailPage: React.FC = () => {
       </div>
 
       {/* 底部操作栏 */}
-      {isEditing && (
-        <div className="fixed bottom-0 left-0 right-0 border-t border-[#f4ebee] bg-white/95 px-5 py-4 backdrop-blur-xl safe-area-bottom">
+      <div className={isModal
+        ? 'shrink-0 border-t border-[#f4ebee] bg-white/95 px-5 py-4 backdrop-blur-xl'
+        : 'fixed bottom-0 left-0 right-0 border-t border-[#f4ebee] bg-white/95 px-5 py-4 backdrop-blur-xl'
+      } style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
+        {isEditing ? (
           <div className="flex gap-3">
-            <Button
-              variant="outline"
+            <button
+              type="button"
               onClick={() => setIsEditing(false)}
-              className="flex-1 rounded-[18px] text-[15px]"
+              className="flex-1 h-12 rounded-[18px] border border-gray-200 bg-white text-[15px] font-medium text-gray-700 active:opacity-80"
             >
               取消
-            </Button>
-            <Button
-              variant="primary"
+            </button>
+            <button
+              type="button"
               onClick={handleSaveEdit}
               disabled={isSubmitting}
-              className="flex-1 rounded-[18px] text-[15px] disabled:opacity-50"
+              className="flex-1 h-12 rounded-[18px] bg-[#FF5A66] text-[15px] font-medium text-white shadow-none disabled:opacity-50 active:opacity-80"
             >
               {isSubmitting ? '保存中...' : '保存修改'}
-            </Button>
+            </button>
           </div>
-        </div>
-      )}
+        ) : (
+          (() => {
+            const statusBtns: React.ReactNode[] = [];
+            if (allowedActions.includes('pending_agree')) {
+              statusBtns.push(
+                <button key="pa" type="button" onClick={() => handleStatusChange('pending_agree')} disabled={isSubmitting}
+                  className="flex-1 min-w-0 h-12 rounded-[18px] bg-emerald-500 text-[15px] font-medium text-white shadow-none disabled:opacity-50 active:opacity-80">
+                  {isSubmitting ? '处理中...' : '提交报价'}
+                </button>
+              );
+            }
+            if (order.status === 'pending_agree') {
+              statusBtns.push(
+                <button key="wait" type="button" disabled
+                  className="flex-1 min-w-0 h-12 rounded-[18px] bg-gray-100 text-[15px] font-medium text-gray-400 cursor-not-allowed">
+                  待用户确认
+                </button>
+              );
+            }
+            if (order.status === 'pending_home' || order.status === 'pending_shop') {
+              statusBtns.push(
+                <button key="wait" type="button" disabled
+                  className="flex-1 min-w-0 h-12 rounded-[18px] bg-gray-100 text-[15px] font-medium text-gray-400 cursor-not-allowed">
+                  {order.status === 'pending_home' ? '待上门' : '待到店'}
+                </button>
+              );
+            }
+            if (allowedActions.includes('pending_confirm')) {
+              statusBtns.push(
+                <button key="pc" type="button" onClick={() => handleStatusChange('pending_confirm')} disabled={isSubmitting}
+                  className="flex-1 min-w-0 h-12 rounded-[18px] bg-emerald-500 text-[15px] font-medium text-white shadow-none disabled:opacity-50 active:opacity-80">
+                  {isSubmitting ? '处理中...' : '确认预约'}
+                </button>
+              );
+            }
+            if (allowedActions.includes('pending_home') || allowedActions.includes('pending_shop')) {
+              const needsDeposit = order.depositAmount > 0 && !order.depositPaid;
+              statusBtns.push(
+                <button key="conf" type="button"
+                  onClick={() => { const ns: OrderStatus = order.serviceType === 'home' ? 'pending_home' : 'pending_shop'; handleStatusChange(ns); }}
+                  disabled={isSubmitting || needsDeposit}
+                  title={needsDeposit ? '客户尚未确认支付定金' : undefined}
+                  className="flex-1 min-w-0 h-12 rounded-[18px] bg-emerald-500 text-[15px] font-medium text-white shadow-none disabled:opacity-50 active:opacity-80">
+                  {isSubmitting ? '处理中...' : needsDeposit ? '等待客户付定金' : '确认预约'}
+                </button>
+              );
+            }
+            if (allowedActions.includes('completed')) {
+              statusBtns.push(
+                <button key="comp" type="button" onClick={() => handleStatusChange('completed')} disabled={isSubmitting}
+                  className="flex-1 min-w-0 h-12 rounded-[18px] bg-emerald-500 text-[15px] font-medium text-white shadow-none disabled:opacity-50 active:opacity-80">
+                  {isSubmitting ? '处理中...' : '确认完成'}
+                </button>
+              );
+            }
+            if (allowedActions.includes('cancelled')) {
+              statusBtns.push(
+                <button key="cancel" type="button" onClick={() => handleStatusChange('cancelled')} disabled={isSubmitting}
+                  className="flex-1 min-w-0 h-12 rounded-[18px] border border-red-100 bg-white text-[15px] font-medium text-red-500 disabled:opacity-50 active:opacity-80">
+                  {isSubmitting ? '处理中...' : '取消预约'}
+                </button>
+              );
+            }
+            const sendBtn = (
+              <button key="send" type="button"
+                onClick={async () => {
+                  try {
+                    const result = await messageService.sendOrderCard(order.id);
+                    toast.success('已发送给客户');
+                    if (result.conversationId) { if (onClose) onClose(); navigate(`/chat?conversation_id=${result.conversationId}`); }
+                  } catch (err: any) { toast.error(err?.response?.data?.message || '发送失败，请重试'); }
+                }}
+                className="flex-1 min-w-0 h-12 rounded-[18px] bg-slate-800 text-[15px] font-semibold text-white shadow-none active:opacity-80">
+                发给 {order.customerName}
+              </button>
+            );
+            const allBtns = [...statusBtns, sendBtn];
+            if (allBtns.length <= 3) {
+              return <div className="flex gap-2">{allBtns}</div>;
+            }
+            return (
+              <div>
+                <div className="flex gap-2">
+                  {allBtns[0]}{allBtns[1]}
+                  <button type="button" onClick={() => setShowMoreActions(!showMoreActions)}
+                    className="flex-1 min-w-0 h-12 rounded-[18px] border border-gray-200 bg-white text-[15px] font-medium text-gray-600 active:opacity-80">
+                    {showMoreActions ? '收起操作 ↑' : '更多操作 ↓'}
+                  </button>
+                </div>
+                {showMoreActions && <div className="flex gap-2 mt-2">{allBtns.slice(2)}</div>}
+              </div>
+            );
+          })()
+        )}
+      </div>
+    </div>
+  );
+
+  if (!isModal) return content;
+
+  return (
+    <div className="fixed inset-0 z-[150] flex items-end justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="w-full max-w-md h-[92vh] rounded-t-3xl bg-white overflow-hidden shadow-[0_-20px_50px_rgba(15,23,42,0.18)]"
+        onClick={(e) => e.stopPropagation()}
+        style={{ paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}
+      >
+        {content}
+      </div>
     </div>
   );
 };

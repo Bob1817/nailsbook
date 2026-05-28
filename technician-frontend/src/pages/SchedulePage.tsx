@@ -12,8 +12,8 @@ import {
   type OrderStatus,
   type TechnicianOrder,
 } from '../services/technicianData';
-import { AppPage } from '../components/layout/AppPage';
 import { Card } from '../components/base/Card';
+import OrderDetailPage from './OrderDetailPage';
 
 const serviceTypeLabels: Record<string, string> = {
   home: '上门美甲',
@@ -129,6 +129,7 @@ export const SchedulePage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [orders, setOrders] = useState<TechnicianOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [detailOrderId, setDetailOrderId] = useState<number | null>(null);
   const [activeDate, setActiveDate] = useState<Date>(() => {
     const dateParam = searchParams.get('date');
     if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
@@ -206,7 +207,7 @@ export const SchedulePage: React.FC = () => {
   const nextOrder = tripOrders[0] ?? null;
 
   const summary = useMemo(() => {
-    // 统计也只针对行程订单（已确认/进行中）
+    // 统计也只针对行程预约（已确认/进行中）
     const totalServiceMinutes = tripOrders.reduce(
       (sum, o) => sum + getDurationMinutes(o.startTime, o.endTime),
       0,
@@ -231,11 +232,14 @@ export const SchedulePage: React.FC = () => {
   };
 
   return (
-    <AppPage
-      className="schedule-page overflow-x-hidden"
-      title="行程"
-      subtitle="高效规划路线，准时上门服务"
-    >
+    <div className="flex h-full flex-col bg-page overflow-x-hidden">
+      {/* ===== 固定头部：标题 + 日期选择 + 汇总 ===== */}
+      <div className="shrink-0 px-lg pt-xl pb-2">
+        <header className="mb-lg">
+          <h1 className="text-title-lg font-semibold leading-title text-text-primary">行程</h1>
+          <p className="mt-xs text-body text-text-secondary">高效规划路线，准时上门服务</p>
+        </header>
+
       {/* ===== 日期选择器 ===== */}
       <div className="flex gap-2 mb-4">
         {/* 今天 — 固定在左侧，不随滚动消失 */}
@@ -316,7 +320,7 @@ export const SchedulePage: React.FC = () => {
 
       {/* ===== Section 1: 下一单卡片 ===== */}
       {!isLoading && nextOrder && (
-        <Card className="mb-4 overflow-hidden p-0">
+        <Card className="mb-4 overflow-hidden p-0 cursor-pointer" onClick={() => setDetailOrderId(nextOrder.id)}>
           <div
             className="p-4"
             style={{ background: 'linear-gradient(135deg, #fff5f5, #fff)' }}
@@ -430,7 +434,7 @@ export const SchedulePage: React.FC = () => {
               <div
                 key={order.id}
                 className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0 cursor-pointer"
-                onClick={() => navigate(`/orders/${order.id}`)}
+                onClick={() => setDetailOrderId(order.id)}
               >
                 <div
                   className="w-2 h-2 rounded-full shrink-0"
@@ -455,7 +459,10 @@ export const SchedulePage: React.FC = () => {
           </div>
         </Card>
       )}
+      </div>
 
+      {/* ===== 可滚动区域：行程列表 ===== */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-lg pb-24">
       {/* ===== Section 3: 行程列表 ===== */}
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-semibold text-text-primary">
@@ -466,7 +473,7 @@ export const SchedulePage: React.FC = () => {
           onClick={() => navigate('/orders')}
           className="text-sm text-primary font-medium"
         >
-          全部订单
+          全部预约
         </button>
       </div>
 
@@ -480,7 +487,7 @@ export const SchedulePage: React.FC = () => {
             <Card
               key={order.id}
               className="p-4 cursor-pointer"
-              onClick={() => navigate(`/orders/${order.id}`)}
+              onClick={() => setDetailOrderId(order.id)}
             >
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
@@ -530,6 +537,15 @@ export const SchedulePage: React.FC = () => {
           ))}
         </div>
       )}
-    </AppPage>
+      </div>
+
+      {detailOrderId !== null && (
+        <OrderDetailPage
+          isModal
+          orderIdProp={detailOrderId}
+          onClose={() => setDetailOrderId(null)}
+        />
+      )}
+    </div>
   );
 };

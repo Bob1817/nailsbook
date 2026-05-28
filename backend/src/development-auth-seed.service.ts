@@ -265,6 +265,7 @@ export class DevelopmentAuthSeedService implements OnModuleInit {
         data: {
           name: '小美',
           phone: '13800138000',
+          passwordHash: await bcrypt.hash('demo1234', 10),
           city: '上海',
           serviceArea: '上海市区（半径15km）',
           status: 'active',
@@ -295,6 +296,7 @@ export class DevelopmentAuthSeedService implements OnModuleInit {
       clientUser = await this.prisma.clientUser.create({
         data: {
           phone: '13800138001',
+          passwordHash: await bcrypt.hash('demo1234', 10),
           nickname: '王小美',
           status: 'active',
         },

@@ -12,6 +12,7 @@ const ALLOWED_MESSAGE_TYPES = new Set([
   'system',
   'quote',
   'booking',
+  'order_card',
 ]);
 
 @Injectable()
@@ -99,6 +100,44 @@ export class ClientMessagesService {
     });
 
     return { updated: result.count };
+  }
+
+  async forward(clientUserId: number, orderId: number) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      select: { id: true, technicianId: true, orderNo: true, serviceType: true, startTime: true, status: true },
+    });
+    if (!order) {
+      throw new NotFoundException('预约不存在');
+    }
+
+    const preview = `[预约卡片] ${order.orderNo}`;
+    const conversation = await this.prisma.conversation.upsert({
+      where: {
+        clientId_techId: {
+          clientId: clientUserId,
+          techId: order.technicianId,
+        },
+      },
+      update: { lastMessage: preview, lastMessageAt: new Date() },
+      create: { clientId: clientUserId, techId: order.technicianId, lastMessage: preview, lastMessageAt: new Date() },
+    });
+
+    const message = await this.prisma.message.create({
+      data: {
+        conversationId: conversation.id,
+        senderType: 'client',
+        senderId: clientUserId,
+        receiverType: 'technician',
+        receiverId: order.technicianId,
+        messageType: 'order_card',
+        content: preview,
+        relatedType: 'order',
+        relatedId: orderId,
+      },
+    });
+
+    return { message: this.mapMessage(message), conversationId: conversation.id };
   }
 
   async create(clientUserId: number, dto: CreateClientMessageDto) {

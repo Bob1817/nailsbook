@@ -172,6 +172,31 @@ export class OrdersService {
     return order;
   }
 
+  async updateForTechnician(id: number, technicianId: number, dto: {
+    serviceType?: string;
+    startTime?: string;
+    endTime?: string;
+    price?: number;
+    note?: string;
+    depositAmount?: number;
+  }) {
+    const order = await this.findOneForTechnician(id, technicianId);
+
+    const updateData: any = {};
+
+    if (dto.serviceType !== undefined) updateData.serviceType = dto.serviceType;
+    if (dto.startTime !== undefined) updateData.startTime = new Date(dto.startTime);
+    if (dto.endTime !== undefined) updateData.endTime = new Date(dto.endTime);
+    if (dto.price !== undefined) updateData.quotePrice = dto.price;
+    if (dto.note !== undefined) updateData.remark = dto.note;
+    if (dto.depositAmount !== undefined) updateData.depositAmount = dto.depositAmount;
+
+    return this.prisma.order.update({
+      where: { id },
+      data: updateData,
+    });
+  }
+
   async review(id: number, technicianId: number, dto: ReviewOrderDto) {
     const order = await this.findOneForTechnician(id, technicianId);
 
@@ -207,6 +232,7 @@ export class OrdersService {
           quoteRemark: dto.remark || null,
           quotedAt: new Date(),
           status: 'pending_agree',
+          depositAmount: dto.depositAmount ?? 0,
         },
         include: {
           technician: { select: { id: true, name: true, phone: true } },
@@ -286,7 +312,7 @@ export class OrdersService {
       throw new BadRequestException('当前订单状态不支持确认');
     }
 
-    if (!order.isDepositPaid && !depositConfirmed) {
+    if ((order.depositAmount ?? 0) > 0 && !order.isDepositPaid && !depositConfirmed) {
       throw new BadRequestException('请先确认用户已缴纳定金');
     }
 

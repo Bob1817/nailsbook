@@ -20,6 +20,7 @@ import {
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
 import { TechnicianMessagesService } from './technician-messages.service';
 import { CreateTechnicianMessageDto } from './dto/create-technician-message.dto';
+import { ForwardMessageDto } from './dto/forward-message.dto';
 
 @ApiTags('美甲师-消息')
 @ApiBearerAuth()
@@ -52,6 +53,22 @@ export class TechnicianMessagesController {
     return this.technicianMessagesService.findAll(
       request.user.technicianId,
       conversationId,
+    );
+  }
+
+  @Post('forward')
+  @ApiOperation({ summary: '转发系统消息' })
+  @ApiBody({ type: ForwardMessageDto })
+  @ApiResponse({ status: 200, description: '转发成功' })
+  @ApiResponse({ status: 400, description: '参数校验失败' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  forward(
+    @Req() request: { user: { technicianId: number } },
+    @Body() dto: ForwardMessageDto,
+  ) {
+    return this.technicianMessagesService.forward(
+      request.user.technicianId,
+      dto.orderId,
     );
   }
 

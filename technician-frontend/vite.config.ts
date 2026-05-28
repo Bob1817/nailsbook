@@ -6,19 +6,16 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://api.lunails.cn',
+        target: 'http://localhost:3000',
         changeOrigin: true,
-        secure: false,
       },
       '/uploads': {
-        target: 'https://api.lunails.cn',
+        target: 'http://localhost:3000',
         changeOrigin: true,
-        secure: false,
       },
       '/socket.io': {
-        target: 'https://api.lunails.cn',
+        target: 'http://localhost:3000',
         changeOrigin: true,
-        secure: false,
         ws: true,
       },
     },

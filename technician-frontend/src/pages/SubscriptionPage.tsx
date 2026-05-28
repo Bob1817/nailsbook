@@ -270,7 +270,7 @@ export const SubscriptionPage: React.FC = () => {
                 </svg>
               </summary>
               <p className="pb-2 text-[12px] text-[#7f7681] leading-relaxed">
-                不会。降级后您的客户数据、订单记录等均会保留，只是部分高级功能将受限。升级套餐后即可恢复全部功能。
+                不会。降级后您的客户数据、预约记录等均会保留，只是部分高级功能将受限。升级套餐后即可恢复全部功能。
               </p>
             </details>
           </div>

@@ -20,6 +20,7 @@ import {
 import { ClientJwtAuthGuard } from '../client-auth/client-jwt-auth.guard';
 import { ClientMessagesService } from './client-messages.service';
 import { CreateClientMessageDto } from './dto/create-client-message.dto';
+import { ForwardMessageDto } from './dto/forward-message.dto';
 
 @Controller('client/messages')
 @UseGuards(ClientJwtAuthGuard)
@@ -48,6 +49,21 @@ export class ClientMessagesController {
     return this.clientMessagesService.findAll(
       request.user.clientUserId,
       conversationId,
+    );
+  }
+
+  @Post('forward')
+  @ApiOperation({ summary: '转发系统消息' })
+  @ApiResponse({ status: 200, description: '转发成功' })
+  @ApiResponse({ status: 400, description: '参数校验失败' })
+  @ApiBody({ type: ForwardMessageDto })
+  forward(
+    @Req() request: { user: { clientUserId: number } },
+    @Body() dto: ForwardMessageDto,
+  ) {
+    return this.clientMessagesService.forward(
+      request.user.clientUserId,
+      dto.orderId,
     );
   }
 

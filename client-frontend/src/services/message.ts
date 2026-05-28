@@ -98,4 +98,9 @@ export const messageService = {
   async markAsRead(conversationId: number): Promise<void> {
     await api.patch('/messages/read', { conversation_id: conversationId });
   },
+
+  async sendOrderCard(orderId: number): Promise<{ message: Message; conversationId: number }> {
+    const response = await api.post('/messages/forward', { orderId });
+    return response.data;
+  },
 };

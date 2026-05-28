@@ -24,4 +24,10 @@ export class ReviewOrderDto {
   @IsOptional()
   @IsString()
   remark?: string;
+
+  @ApiPropertyOptional({ description: '定金金额', example: 60 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  depositAmount?: number;
 }

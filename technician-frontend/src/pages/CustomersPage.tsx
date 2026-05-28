@@ -1,17 +1,13 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/base/Card';
-import { AppPage } from '../components/layout/AppPage';
 import { useToast } from '../components/feedback/ToastProvider';
 import { useAuth } from '../hooks/useAuth';
 import { customersService } from '../services/customers';
 import { messageService, type Conversation } from '../services/message';
 import {
-  orderStatusClasses,
-  orderStatusLabels,
   formatDateLabel,
   formatMoney,
-  type TechnicianCustomerDetail,
   type TechnicianCustomerSummary,
 } from '../services/technicianData';
 import { ListItemSkeleton } from '../components/Skeleton';
@@ -50,22 +46,12 @@ export const CustomersPage: React.FC = () => {
   const toast = useToast();
   const [customers, setCustomers] = useState<TechnicianCustomerSummary[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<TechnicianCustomerDetail | null>(null);
   const [activeTab, setActiveTab] = useState('全部');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [showTagEditor, setShowTagEditor] = useState(false);
-  const [editingTags, setEditingTags] = useState<string[]>([]);
-  const [savingTags, setSavingTags] = useState(false);
   const [avatarTagCustomerId, setAvatarTagCustomerId] = useState<number | null>(null);
 
   const customTags = useMemo(() => technician?.customTags ?? [], [technician?.customTags]);
-  const allTagNames = useMemo(() => {
-    const names = new Set<string>();
-    customTags.forEach((t) => names.add(t.name));
-    customers.forEach((c) => c.tags.forEach((t) => names.add(t)));
-    return [...names];
-  }, [customTags, customers]);
 
   useEffect(() => {
     let cancelled = false;
@@ -102,59 +88,6 @@ export const CustomersPage: React.FC = () => {
     };
   }, [searchQuery, technician?.id, toast]);
 
-  async function handleSelectCustomer(customerId: number) {
-    try {
-      const detail = await customersService.getById(customerId);
-      setSelectedCustomer(detail);
-    } catch {
-      toast.error('客户详情加载失败，请稍后重试。');
-    }
-  }
-
-  function handleOpenOrders(customerId: number) {
-    toast.success('正在打开该客户的订单记录。');
-    navigate(`/orders?customerId=${customerId}`);
-  }
-
-  function handleCreateOrder(customerId: number) {
-    toast.success('正在为该客户打开新建预约。');
-    navigate(`/orders?customerId=${customerId}`);
-  }
-
-  function handleStartChat(customerId: number) {
-    const existingConversation = conversations.find((conversation) => conversation.client.id === customerId);
-    if (existingConversation) {
-      navigate(`/chat?conversation_id=${existingConversation.id}`);
-      return;
-    }
-
-    navigate(`/chat?client_id=${customerId}`);
-  }
-
-  function handleOpenTagEditor(customer: TechnicianCustomerDetail) {
-    setEditingTags([...customer.tags]);
-    setShowTagEditor(true);
-  }
-
-  async function handleSaveTags() {
-    if (!selectedCustomer) return;
-    setSavingTags(true);
-    try {
-      const tagString = editingTags.join(',');
-      await customersService.updateTags(selectedCustomer.id, tagString);
-      setSelectedCustomer({ ...selectedCustomer, tags: [...editingTags] });
-      setCustomers((prev) =>
-        prev.map((c) => c.id === selectedCustomer.id ? { ...c, tags: [...editingTags] } : c),
-      );
-      setShowTagEditor(false);
-      toast.success('标签已更新');
-    } catch {
-      toast.error('保存标签失败');
-    } finally {
-      setSavingTags(false);
-    }
-  }
-
   const visibleCustomers = customers.filter((customer) => {
     if (activeTab === '全部') {
       return true;
@@ -162,313 +95,12 @@ export const CustomersPage: React.FC = () => {
     return customer.tags.includes(activeTab);
   });
 
-  if (selectedCustomer) {
-    return (
-      <AppPage
-        title="客户详情"
-        subtitle="查看客户资料、偏好与历史服务记录"
-        actions={(
-          <button
-            onClick={() => setSelectedCustomer(null)}
-            className="flex min-h-[44px] items-center gap-2 rounded-full border border-[#efe4e8] bg-white px-4 py-2 text-sm font-medium text-gray-600 transition-colors active:bg-[#f8edf1]"
-          >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            返回列表
-          </button>
-        )}
-      >
-        <Card className="px-lg py-lg">
-          <div className="flex items-start gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#fdecef] text-lg font-semibold text-[#e86b8f]">
-              {getCustomerAvatar(selectedCustomer.name)}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-col gap-3 min-[391px]:flex-row min-[391px]:items-start min-[391px]:justify-between">
-                <div className="min-w-0">
-                  <p className="text-lg font-semibold text-gray-900">{selectedCustomer.name}</p>
-                  <p className="mt-1 break-all text-sm text-gray-500">{selectedCustomer.phone}</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {selectedCustomer.tags.map((tag) => {
-                    const tc = getTagColor(tag, customTags);
-                    return (
-                      <span key={tag} className="rounded-full px-2.5 py-1 text-xs font-medium" style={{ backgroundColor: tc.bg, color: tc.text }}>
-                        {tag}
-                      </span>
-                    );
-                  })}
-                  <button
-                    type="button"
-                    onClick={() => handleOpenTagEditor(selectedCustomer)}
-                    className="rounded-full border border-dashed border-[#e5e2e6] px-2.5 py-1 text-xs font-medium text-[#8d8590] active:bg-[#f7f3f5]"
-                  >
-                    {selectedCustomer.tags.length > 0 ? '编辑' : '+ 添加标签'}
-                  </button>
-                </div>
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-2 rounded-[18px] bg-[#fcf7f8] p-3 min-[391px]:grid-cols-3">
-                <div className="min-w-0">
-                  <p className="text-[11px] text-gray-400">累计消费</p>
-                  <p className="mt-1 text-sm font-semibold text-pink-500">{formatMoney(selectedCustomer.totalSpent)}</p>
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[11px] text-gray-400">服务次数</p>
-                  <p className="mt-1 text-sm font-semibold text-gray-900">{selectedCustomer.totalOrders} 次</p>
-                </div>
-                <div className="col-span-2 min-w-0 min-[391px]:col-span-1">
-                  <p className="text-[11px] text-gray-400">最近到店</p>
-                  <p className="mt-1 text-sm font-semibold text-gray-900">
-                    {selectedCustomer.recentServiceAt ? formatDateLabel(selectedCustomer.recentServiceAt) : '暂无记录'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="px-lg py-lg">
-          <div className="mb-4">
-            <h2 className="text-base font-semibold text-gray-900">基础信息</h2>
-            <p className="mt-1 text-xs text-gray-400">客户资料与最近沟通备注</p>
-          </div>
-          <div className="space-y-3 text-sm">
-            <div className="flex flex-col gap-2 min-[391px]:flex-row min-[391px]:items-start min-[391px]:justify-between">
-              <span className="shrink-0 text-gray-500">地址</span>
-              <div className="flex min-w-0 flex-col items-start gap-2 min-[391px]:items-end">
-                <span className="w-full break-words text-left text-gray-900 min-[391px]:text-right">{selectedCustomer.address}</span>
-                <button
-                  onClick={() => toast.success('请打开本机安装的导航软件进行导航')}
-                  className="flex min-h-[44px] items-center gap-1 rounded-full bg-[#f5f7ff] px-3 py-2 text-xs font-medium text-[#5870c6] transition-colors active:bg-[#e9edff]"
-                >
-                  <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  导航
-                </button>
-              </div>
-            </div>
-            <div className="flex flex-col gap-2 min-[391px]:flex-row min-[391px]:items-start min-[391px]:justify-between">
-              <span className="shrink-0 text-gray-500">备注</span>
-              <span className="min-w-0 break-words text-left text-gray-900 min-[391px]:max-w-[70%] min-[391px]:text-right">
-                {selectedCustomer.note}
-              </span>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="px-lg py-lg">
-          <div className="mb-4">
-            <h2 className="text-base font-semibold text-gray-900">偏好信息</h2>
-            <p className="mt-1 text-xs text-gray-400">风格、颜色与风险提醒</p>
-          </div>
-          <div className="space-y-3 text-sm">
-            <div className="flex flex-col gap-2 min-[391px]:flex-row min-[391px]:items-start min-[391px]:justify-between">
-              <span className="shrink-0 text-gray-500">喜好款式</span>
-              <span className="min-w-0 break-words text-left text-gray-900 min-[391px]:max-w-[70%] min-[391px]:text-right">
-                {selectedCustomer.preferenceStyle}
-              </span>
-            </div>
-            <div className="flex flex-col gap-2 min-[391px]:flex-row min-[391px]:items-start min-[391px]:justify-between">
-              <span className="shrink-0 text-gray-500">颜色偏好</span>
-              <span className="min-w-0 break-words text-left text-gray-900 min-[391px]:max-w-[70%] min-[391px]:text-right">
-                {selectedCustomer.preferenceColor}
-              </span>
-            </div>
-            <div className="flex flex-col gap-2 min-[391px]:flex-row min-[391px]:items-start min-[391px]:justify-between">
-              <span className="shrink-0 text-gray-500">过敏信息</span>
-              <span className="min-w-0 break-words text-left text-red-500 min-[391px]:max-w-[70%] min-[391px]:text-right">
-                {selectedCustomer.allergyNote}
-              </span>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="px-lg py-lg">
-          <div className="mb-3 flex flex-col gap-3 min-[391px]:flex-row min-[391px]:items-center min-[391px]:justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-gray-900">历史记录</h2>
-              <p className="mt-1 text-xs text-gray-400">按时间查看服务、状态与金额</p>
-            </div>
-            <button
-              onClick={() => handleOpenOrders(selectedCustomer.id)}
-              className="min-h-[44px] rounded-full border border-[#ebe3e6] bg-white px-4 py-2 text-xs font-medium text-gray-600 transition-colors active:bg-[#f7f2f4]"
-            >
-              查看订单
-            </button>
-          </div>
-          <div className="space-y-3">
-            {selectedCustomer.history.length > 0 ? (
-              selectedCustomer.history.map((item) => (
-                <div key={item.id} className="rounded-[18px] bg-[#fcf7f8] px-4 py-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-sm text-gray-900">{item.label}</p>
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] ${orderStatusClasses[item.status as keyof typeof orderStatusClasses] ?? 'bg-gray-100 text-gray-600'}`}>
-                          {orderStatusLabels[item.status as keyof typeof orderStatusLabels] ?? item.status}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-xs text-gray-400">{formatDateLabel(item.date)}</p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <span className="text-sm font-semibold text-pink-500">{formatMoney(item.price)}</span>
-                      <p className={`mt-1 text-[11px] ${item.depositPaid ? 'text-emerald-500' : 'text-orange-500'}`}>
-                        {item.depositPaid ? '定金已收' : '定金待收'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-gray-400">暂无历史服务记录</p>
-            )}
-          </div>
-        </Card>
-
-        <div className="grid grid-cols-1 gap-3 pb-2">
-          <button
-            onClick={() => handleCreateOrder(selectedCustomer.id)}
-            className="min-h-[48px] w-full rounded-[18px] bg-pink-500 px-4 py-3 text-sm font-medium text-white shadow-[0_8px_18px_rgba(236,72,153,0.16)] transition-colors active:bg-pink-600"
-          >
-            为该客户新建预约
-          </button>
-
-          <button
-            onClick={() => handleStartChat(selectedCustomer.id)}
-            className="min-h-[48px] w-full rounded-[18px] border border-pink-200 bg-white px-4 py-3 text-sm font-medium text-pink-500 transition-colors active:bg-pink-50"
-          >
-            发起对话
-          </button>
-        </div>
-
-        {/* Tag editor modal */}
-        {showTagEditor && (
-          <div
-            className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm"
-            onClick={() => setShowTagEditor(false)}
-          >
-            <div
-              className="w-full max-w-lg rounded-t-[28px] bg-white px-6 pb-8 pt-5 shadow-[0_-12px_40px_rgba(0,0,0,0.12)]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-[17px] font-semibold text-[#1f2230]">编辑标签</h3>
-                <button
-                  type="button"
-                  onClick={() => setShowTagEditor(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f2f0f3]"
-                >
-                  <svg className="h-4 w-4 text-[#6d6570]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Current tags */}
-              <div className="mb-4">
-                <p className="text-[12px] text-[#7f7681] mb-2">当前标签（点击移除）</p>
-                <div className="flex flex-wrap gap-2">
-                  {editingTags.length > 0 ? editingTags.map((tag) => {
-                    const tc = getTagColor(tag, customTags);
-                    return (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => setEditingTags(editingTags.filter((t) => t !== tag))}
-                        className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[12px] font-medium active:opacity-70"
-                        style={{ backgroundColor: tc.bg, color: tc.text }}
-                      >
-                        {tag}
-                        <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    );
-                  }) : (
-                    <span className="text-[12px] text-[#b0aab4]">暂无标签</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Available tags to add */}
-              <div className="mb-5">
-                <p className="text-[12px] text-[#7f7681] mb-2">可选标签（点击添加）</p>
-                <div className="flex flex-wrap gap-2">
-                  {allTagNames.filter((t) => !editingTags.includes(t)).map((tag) => {
-                    const tc = getTagColor(tag, customTags);
-                    return (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => setEditingTags([...editingTags, tag])}
-                        className="rounded-full px-3 py-1.5 text-[12px] font-medium ring-1 ring-[#e5e2e6] active:opacity-70"
-                        style={{ backgroundColor: tc.bg, color: tc.text }}
-                      >
-                        + {tag}
-                      </button>
-                    );
-                  })}
-                  {allTagNames.filter((t) => !editingTags.includes(t)).length === 0 && (
-                    <span className="text-[12px] text-[#b0aab4]">所有标签已添加</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Custom tag input */}
-              <div className="flex gap-2 mb-5">
-                <input
-                  type="text"
-                  placeholder="输入新标签名称"
-                  maxLength={10}
-                  className="flex-1 rounded-[12px] border border-[#e5e2e6] bg-white px-3.5 py-2 text-[13px] text-[#1f2230] placeholder:text-[#b0aab4] min-h-[40px]"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      const input = e.currentTarget;
-                      const val = input.value.trim();
-                      if (val && !editingTags.includes(val)) {
-                        setEditingTags([...editingTags, val]);
-                        input.value = '';
-                      }
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    const input = (e.currentTarget.previousElementSibling as HTMLInputElement);
-                    const val = input?.value?.trim();
-                    if (val && !editingTags.includes(val)) {
-                      setEditingTags([...editingTags, val]);
-                      input.value = '';
-                    }
-                  }}
-                  className="shrink-0 min-h-[40px] rounded-[12px] bg-[#FF5E93] px-4 text-[13px] font-semibold text-white active:bg-[#e54e82]"
-                >
-                  添加
-                </button>
-              </div>
-
-              <button
-                type="button"
-                disabled={savingTags}
-                onClick={handleSaveTags}
-                className="w-full min-h-[48px] rounded-[16px] bg-[#FF5E93] text-[14px] font-semibold text-white shadow-[0_8px_20px_rgba(255,94,147,0.25)] active:bg-[#e54e82] disabled:opacity-60"
-              >
-                {savingTags ? '保存中...' : '保存标签'}
-              </button>
-            </div>
-          </div>
-        )}
-      </AppPage>
-    );
-  }
-
   return (
-    <AppPage title="客户" subtitle="查看客户资料、偏好与近期服务状态">
-      <Card className="px-lg py-lg">
+    <div className="flex h-full flex-col bg-[#fff9f8]">
+      {/* 固定头部：标题 + 搜索框 + 分类标签 */}
+      <div className="shrink-0 px-5 pt-5 pb-3 space-y-4">
+        <h1 className="text-xl font-semibold text-gray-900">客户</h1>
+
         <div className="relative">
           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -484,7 +116,7 @@ export const CustomersPage: React.FC = () => {
           />
         </div>
 
-        <div className="mt-4 flex gap-2 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
           {customerTabs.map((tab) => (
             <button
               key={tab}
@@ -499,115 +131,118 @@ export const CustomersPage: React.FC = () => {
             </button>
           ))}
         </div>
-      </Card>
+      </div>
 
-      {isLoading ? (
-        <div className="space-y-1">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <ListItemSkeleton key={i} />
-          ))}
-        </div>
-      ) : visibleCustomers.length > 0 ? (
-        <div className="space-y-3">
-          {visibleCustomers.map((customer) => (
-            <div
-              key={customer.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => void handleSelectCustomer(customer.id)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  void handleSelectCustomer(customer.id);
-                }
-              }}
-              className="w-full text-left cursor-pointer"
-            >
-              <Card className="px-lg py-lg transition-colors active:bg-rose-50">
-                <div className="flex items-start gap-4">
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setAvatarTagCustomerId(avatarTagCustomerId === customer.id ? null : customer.id);
-                      }}
-                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#fdecef] text-sm font-semibold text-[#e86b8f] active:opacity-80"
-                    >
-                      {getCustomerAvatar(customer.name)}
-                    </button>
-                    {avatarTagCustomerId === customer.id && customer.tags.length > 0 && (
-                      <div
-                        className="absolute left-1/2 top-full z-20 mt-1.5 -translate-x-1/2 rounded-[14px] bg-white px-3 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.12)] ring-1 ring-black/[0.04]"
-                        style={{ minWidth: 100 }}
+      {/* 可滚动内容：客户卡片列表 */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-6">
+        {isLoading ? (
+          <div className="space-y-1">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <ListItemSkeleton key={i} />
+            ))}
+          </div>
+        ) : visibleCustomers.length > 0 ? (
+          <div className="space-y-3">
+            {visibleCustomers.map((customer) => (
+              <div
+                key={customer.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/customers/${customer.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    navigate(`/customers/${customer.id}`);
+                  }
+                }}
+                className="w-full text-left cursor-pointer"
+              >
+                <Card className="px-lg py-lg transition-colors active:bg-rose-50">
+                  <div className="flex items-start gap-4">
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setAvatarTagCustomerId(avatarTagCustomerId === customer.id ? null : customer.id);
+                        }}
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#fdecef] text-sm font-semibold text-[#e86b8f] active:opacity-80"
                       >
-                        <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 h-3 w-3 rotate-45 bg-white ring-1 ring-black/[0.04]" />
-                        <div className="flex flex-wrap gap-1.5">
+                        {getCustomerAvatar(customer.name)}
+                      </button>
+                      {avatarTagCustomerId === customer.id && customer.tags.length > 0 && (
+                        <div
+                          className="absolute left-1/2 top-full z-20 mt-1.5 -translate-x-1/2 rounded-[14px] bg-white px-3 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.12)] ring-1 ring-black/[0.04]"
+                          style={{ minWidth: 100 }}
+                        >
+                          <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 h-3 w-3 rotate-45 bg-white ring-1 ring-black/[0.04]" />
+                          <div className="flex flex-wrap gap-1.5">
+                            {customer.tags.map((tag) => {
+                              const tc = getTagColor(tag, customTags);
+                              return (
+                                <span key={tag} className="rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: tc.bg, color: tc.text }}>
+                                  {tag}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-col gap-3 min-[391px]:flex-row min-[391px]:items-start min-[391px]:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="truncate text-sm font-semibold text-gray-900">{customer.name}</p>
+                            <svg className="h-4 w-4 shrink-0 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </div>
+                          <p className="mt-1 break-all text-xs text-gray-500">{customer.phone}</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
                           {customer.tags.map((tag) => {
                             const tc = getTagColor(tag, customTags);
                             return (
-                              <span key={tag} className="rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: tc.bg, color: tc.text }}>
+                              <span key={tag} className="rounded-full px-2.5 py-1 text-[11px] font-medium" style={{ backgroundColor: tc.bg, color: tc.text }}>
                                 {tag}
                               </span>
                             );
                           })}
                         </div>
                       </div>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-col gap-3 min-[391px]:flex-row min-[391px]:items-start min-[391px]:justify-between">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="truncate text-sm font-semibold text-gray-900">{customer.name}</p>
-                          <svg className="h-4 w-4 shrink-0 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
+
+                      <div className="mt-3 grid grid-cols-2 gap-2 rounded-[18px] bg-[#fcf7f8] p-3 min-[391px]:grid-cols-3">
+                        <div className="min-w-0">
+                          <p className="text-[11px] text-gray-400">最近服务</p>
+                          <p className="mt-1 text-xs font-medium text-gray-700">
+                            {customer.recentServiceAt ? formatDateLabel(customer.recentServiceAt) : '暂无记录'}
+                          </p>
                         </div>
-                        <p className="mt-1 break-all text-xs text-gray-500">{customer.phone}</p>
+                        <div className="min-w-0">
+                          <p className="text-[11px] text-gray-400">累计消费</p>
+                          <p className="mt-1 text-xs font-semibold text-pink-500">{formatMoney(customer.totalSpent)}</p>
+                        </div>
+                        <div className="col-span-2 min-w-0 min-[391px]:col-span-1">
+                          <p className="text-[11px] text-gray-400">服务次数</p>
+                          <p className="mt-1 text-xs font-medium text-gray-700">{customer.totalOrders} 次</p>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {customer.tags.map((tag) => {
-                          const tc = getTagColor(tag, customTags);
-                          return (
-                            <span key={tag} className="rounded-full px-2.5 py-1 text-[11px] font-medium" style={{ backgroundColor: tc.bg, color: tc.text }}>
-                              {tag}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </div>
 
-                    <div className="mt-3 grid grid-cols-2 gap-2 rounded-[18px] bg-[#fcf7f8] p-3 min-[391px]:grid-cols-3">
-                      <div className="min-w-0">
-                        <p className="text-[11px] text-gray-400">最近服务</p>
-                        <p className="mt-1 text-xs font-medium text-gray-700">
-                          {customer.recentServiceAt ? formatDateLabel(customer.recentServiceAt) : '暂无记录'}
-                        </p>
+                      <div className="mt-3 flex flex-col gap-1 text-xs text-gray-400 min-[391px]:flex-row min-[391px]:items-center min-[391px]:justify-between min-[391px]:gap-3">
+                        <span className="break-words">{customer.address}</span>
+                        <span className="shrink-0">{customer.totalOrders} 次服务</span>
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-[11px] text-gray-400">累计消费</p>
-                        <p className="mt-1 text-xs font-semibold text-pink-500">{formatMoney(customer.totalSpent)}</p>
-                      </div>
-                      <div className="col-span-2 min-w-0 min-[391px]:col-span-1">
-                        <p className="text-[11px] text-gray-400">服务次数</p>
-                        <p className="mt-1 text-xs font-medium text-gray-700">{customer.totalOrders} 次</p>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 flex flex-col gap-1 text-xs text-gray-400 min-[391px]:flex-row min-[391px]:items-center min-[391px]:justify-between min-[391px]:gap-3">
-                      <span className="break-words">{customer.address}</span>
-                      <span className="shrink-0">{customer.totalOrders} 次服务</span>
                     </div>
                   </div>
-                </div>
-              </Card>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <Card className="px-lg py-xl text-center text-sm text-gray-400">没有找到匹配的客户</Card>
-      )}
-    </AppPage>
+                </Card>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <Card className="px-lg py-xl text-center text-sm text-gray-400">没有找到匹配的客户</Card>
+        )}
+      </div>
+    </div>
   );
 };

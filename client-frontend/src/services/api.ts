@@ -29,9 +29,10 @@ api.interceptors.response.use(
       localStorage.removeItem('client_token');
       localStorage.removeItem('client_user');
       localStorage.removeItem('client_technician');
-      window.location.href = '/login';
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
-    // Network error
     if (!error.response) {
       console.error('网络错误，请检查网络连接');
     }

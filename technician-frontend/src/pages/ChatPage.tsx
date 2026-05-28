@@ -7,6 +7,7 @@ import { customersService } from '../services/customers';
 import { formatClock, formatRelativeDateLabel } from '../services/technicianData';
 import { useSocket } from '../hooks/useSocket';
 import { useTyping } from '../hooks/useTyping';
+import OrderDetailPage from './OrderDetailPage';
 
 const ChatPage: React.FC = () => {
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ const ChatPage: React.FC = () => {
     unreadCount?: number;
   }>>([]);
   const [showClientSelector, setShowClientSelector] = useState(false);
+  const [detailOrderId, setDetailOrderId] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -318,15 +320,21 @@ const ChatPage: React.FC = () => {
     }
   };
 
-  // Group messages by date
-  const groupedMessages = messages.reduce((groups: Record<string, Message[]>, message) => {
-    const date = formatRelativeDateLabel(message.createdAt);
-    if (!groups[date]) {
-      groups[date] = [];
-    }
-    groups[date].push(message);
-    return groups;
-  }, {});
+  // Group messages by date (exclude system messages from conversation)
+  const groupedMessages = messages
+    .filter((message) => {
+      if (message.senderType === 'system') return false;
+      if (['system', 'booking', 'quote', 'order'].includes(message.messageType)) return false;
+      return true;
+    })
+    .reduce((groups: Record<string, Message[]>, message) => {
+      const date = formatRelativeDateLabel(message.createdAt);
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(message);
+      return groups;
+    }, {});
 
   if (loading && !currentClient) {
     return (
@@ -337,9 +345,9 @@ const ChatPage: React.FC = () => {
   }
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-[#fff9f8]">
+    <div className="flex h-full flex-col bg-[#fff9f8]">
       {/* Header */}
-      <div className="sticky top-0 z-10 flex items-center gap-3 bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[#f2e6ec]">
+      <div className="shrink-0 z-10 flex items-center gap-3 bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[#f2e6ec]">
         <button
           type="button"
           onClick={() => navigate(-1)}
@@ -379,7 +387,7 @@ const ChatPage: React.FC = () => {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 pb-28 space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 pb-28 space-y-4">
         {Object.entries(groupedMessages).map(([date, dateMessages]) => (
           <div key={date}>
             {/* Date Separator */}
@@ -393,38 +401,6 @@ const ChatPage: React.FC = () => {
             <div className="space-y-3">
               {dateMessages.map((message) => {
                 const isTechnician = message.senderType === 'technician';
-                const isSystem = message.senderType === 'system' ||
-                  ['system', 'booking', 'quote', 'order'].includes(message.messageType);
-                const isOrderRelated = message.relatedType === 'order' && message.relatedId;
-
-                if (isSystem) {
-                  const titleMap: Record<string, string> = {
-                    booking: '预约提醒',
-                    quote: '美甲师报价',
-                    order: '预约动态',
-                    system: '系统通知',
-                  };
-                  return (
-                    <div
-                      key={message.id}
-                      className="flex justify-center"
-                      onClick={() => {
-                        if (isOrderRelated) navigate(`/orders/${message.relatedId}`);
-                      }}
-                      style={{ cursor: isOrderRelated ? 'pointer' : 'default' }}
-                    >
-                      <div className="max-w-[82%] rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-black/5">
-                        <div className="inline-flex items-center rounded-full bg-pink-50 px-3 py-1 text-[11px] font-medium text-pink-600">
-                          {titleMap[message.messageType] || '系统通知'}
-                        </div>
-                        <p className="mt-2 text-sm leading-6 text-gray-700">{message.content}</p>
-                        {isOrderRelated && (
-                          <p className="mt-2 text-xs font-medium text-pink-500">查看预约 →</p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                }
 
                 return (
                   <div
@@ -486,6 +462,15 @@ const ChatPage: React.FC = () => {
                         ) : (
                           <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                         )}
+                        {message.relatedType === 'order' && message.relatedId && (
+                          <button
+                            type="button"
+                            onClick={() => setDetailOrderId(message.relatedId!)}
+                            className="mt-1.5 text-xs font-medium text-pink-400 active:opacity-70"
+                          >
+                            查看预约 →
+                          </button>
+                        )}
                         <span className={`text-xs mt-1 block ${isTechnician ? 'text-pink-100' : 'text-gray-400'}`}>
                           {formatClock(message.createdAt)}
                         </span>
@@ -502,7 +487,7 @@ const ChatPage: React.FC = () => {
 
       {/* Typing indicator */}
       {isOtherTyping && (
-        <div className="px-4 py-1 text-xs text-gray-400 animate-pulse">
+        <div className="fixed bottom-[5rem] left-0 right-0 z-20 px-4 py-1 text-xs text-gray-400 animate-pulse">
           对方正在输入...
         </div>
       )}
@@ -742,6 +727,14 @@ const ChatPage: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {detailOrderId !== null && (
+        <OrderDetailPage
+          isModal
+          orderIdProp={detailOrderId}
+          onClose={() => setDetailOrderId(null)}
+        />
       )}
     </div>
   );

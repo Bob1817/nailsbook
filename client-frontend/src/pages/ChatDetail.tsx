@@ -6,6 +6,7 @@ import { messageService, type Message, type TechnicianInfo } from '../services/m
 import { uploadService } from '../services/upload';
 import { useSocket } from '../hooks/useSocket';
 import { useTyping } from '../hooks/useTyping';
+import OrderDetail from './OrderDetail';
 
 const ChatDetail: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const ChatDetail: React.FC = () => {
   const [showTechSelector, setShowTechSelector] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [detailOrderId, setDetailOrderId] = useState<number | null>(null);
   const { socket, isConnected } = useSocket();
   const { isOtherTyping, emitTyping } = useTyping(socket, currentConversationId);
 
@@ -245,14 +247,20 @@ const ChatDetail: React.FC = () => {
     navigate(`/chat/direct?tech_id=${tech.id}`, { replace: true });
   };
 
-  const groupedMessages = messages.reduce((groups: Record<string, Message[]>, message) => {
-    const date = formatDate(message.createdAt);
-    if (!groups[date]) {
-      groups[date] = [];
-    }
-    groups[date].push(message);
-    return groups;
-  }, {});
+  const groupedMessages = messages
+    .filter((message) => {
+      if (message.senderType === 'system') return false;
+      if (['system', 'quote', 'booking', 'order'].includes(message.messageType)) return false;
+      return true;
+    })
+    .reduce((groups: Record<string, Message[]>, message) => {
+      const date = formatDate(message.createdAt);
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(message);
+      return groups;
+    }, {});
 
   if (loading) {
     return (
@@ -263,8 +271,8 @@ const ChatDetail: React.FC = () => {
   }
 
   return (
-    <div className="min-h-full bg-[linear-gradient(180deg,#FFFDFD_0%,#F8F3F6_46%,#F4F6FB_100%)] flex flex-col">
-      <div className="sticky top-0 z-20 border-b border-white/60 bg-white/78 px-5 app-header-safe pb-4 backdrop-blur-xl">
+    <div className="h-full bg-[linear-gradient(180deg,#FFFDFD_0%,#F8F3F6_46%,#F4F6FB_100%)] flex flex-col">
+      <div className="shrink-0 border-b border-white/60 bg-white/78 px-5 app-header-safe pb-4 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/chat')}
@@ -303,7 +311,7 @@ const ChatDetail: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-5">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-5">
         {messages.length === 0 ? (
           <div className="rounded-[28px] bg-white/88 px-6 py-12 text-center shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[linear-gradient(135deg,#FFE2EA_0%,#F4F6FB_100%)]">
@@ -328,24 +336,6 @@ const ChatDetail: React.FC = () => {
 
                 <div className="space-y-3">
                   {dateMessages.map((message) => {
-                    if (message.messageType === 'system' || message.messageType === 'quote' || message.messageType === 'booking' || message.messageType === 'order') {
-                      const isOrderRelated = message.relatedType === 'order' && message.relatedId;
-                      return (
-                        <div
-                          key={message.id}
-                          className="flex justify-center"
-                          onClick={() => {
-                            if (isOrderRelated) {
-                              navigate(`/orders/${message.relatedId}`);
-                            }
-                          }}
-                          style={{ cursor: isOrderRelated ? 'pointer' : 'default' }}
-                        >
-                          {renderSystemCard(message)}
-                        </div>
-                      );
-                    }
-
                     const isClient = message.senderType === 'client';
 
                     return (
@@ -375,6 +365,15 @@ const ChatDetail: React.FC = () => {
                             ) : (
                               <p className="text-sm whitespace-pre-wrap leading-6">{message.content}</p>
                             )}
+                            {message.relatedType === 'order' && message.relatedId && (
+                              <button
+                                type="button"
+                                onClick={() => setDetailOrderId(message.relatedId!)}
+                                className={`mt-1.5 text-xs font-medium ${isClient ? 'text-pink-200' : 'text-[#FF6B8A]'} active:opacity-70`}
+                              >
+                                查看预约 →
+                              </button>
+                            )}
                             <span className={`mt-1.5 block text-xs ${isClient ? 'text-pink-100' : 'text-slate-400'}`}>
                               {formatTime(message.createdAt)}
                             </span>
@@ -392,12 +391,12 @@ const ChatDetail: React.FC = () => {
       </div>
 
       {isOtherTyping && (
-        <div className="px-4 py-1 text-xs text-gray-400 animate-pulse">
+        <div className="px-4 py-1 text-xs text-gray-400 animate-pulse shrink-0">
           对方正在输入...
         </div>
       )}
 
-      <div className="border-t border-white/60 bg-white/88 px-4 py-3 safe-area-bottom backdrop-blur-xl">
+      <div className="shrink-0 border-t border-white/60 bg-white/88 px-4 py-3 safe-area-bottom backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -503,6 +502,14 @@ const ChatDetail: React.FC = () => {
           </div>
         </div>
       )}
+
+      {detailOrderId !== null && (
+        <OrderDetail
+          isModal
+          orderIdProp={detailOrderId}
+          onClose={() => setDetailOrderId(null)}
+        />
+      )}
     </div>
   );
 };
@@ -519,32 +526,6 @@ const formatDate = (time: string) => {
     return '昨天';
   }
   return date.format('MM月DD日');
-};
-
-const renderSystemCard = (message: Message) => {
-  const map: Record<string, { title: string; accent: string }> = {
-    booking: { title: '预约提醒', accent: 'from-[#FF9E6D]/20 to-[#FFD8C4]/30 text-[#9A4B16]' },
-    quote: { title: '美甲师报价', accent: 'from-[#A38CFF]/20 to-[#E0D7FF]/35 text-[#5A46C8]' },
-    order: { title: '预约动态', accent: 'from-[#FF6B8A]/20 to-[#FFD8E1]/35 text-[#C84669]' },
-    system: { title: '系统通知', accent: 'from-[#7ED7B9]/20 to-[#D7F6EC]/35 text-[#17785A]' },
-  };
-  const current = map[message.messageType] || map.system;
-  const isOrderRelated = message.relatedType === 'order' && message.relatedId;
-
-  return (
-    <div className="max-w-[82%] rounded-[24px] bg-white/80 px-4 py-3 shadow-[0_12px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
-      <div className={`inline-flex items-center rounded-full bg-gradient-to-r px-3 py-1 text-[11px] font-medium ${current.accent}`}>
-        {current.title}
-      </div>
-      <p className="mt-3 text-sm leading-6 text-slate-700">{message.content || '你有一条新的通知'}</p>
-      <div className="mt-2 flex items-center justify-between">
-        <span className="text-xs text-slate-400">{formatTime(message.createdAt)}</span>
-        {isOrderRelated && (
-          <span className="text-xs font-medium text-[#FF6B8A]">查看预约 →</span>
-        )}
-      </div>
-    </div>
-  );
 };
 
 export default ChatDetail;

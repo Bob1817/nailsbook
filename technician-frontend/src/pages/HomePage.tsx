@@ -6,6 +6,7 @@ import { ServiceTypeSetupModal } from '../components/ServiceTypeSetupModal';
 import type { ServiceTypeSettings, ShopAddress } from '../contexts/authTypes';
 import { ordersService } from '../services/orders';
 import { messageService, type Conversation } from '../services/message';
+import OrderDetailPage from './OrderDetailPage';
 import { worksService, type Work } from '../services/works';
 import {
   buildDashboardSummary,
@@ -108,12 +109,23 @@ function formatTravelDuration(minutes: number) {
   return `${hours}h${rest > 0 ? `${rest}m` : ''}`;
 }
 
+const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+function formatBookingDate(iso: string) {
+  const d = parseDate(iso);
+  if (!d) return '';
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${WEEKDAYS[d.getDay()]}`;
+}
+
 function formatDepartureCountdown(minutes: number) {
   if (minutes <= 0) return '现在出发';
   if (minutes < 60) return `${minutes} 分钟`;
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  return `${hours} 小时${rest ? ` ${rest} 分钟` : ''}`;
+  const totalHours = minutes / 60;
+  if (totalHours < 24) return `${Math.floor(totalHours)} 小时`;
+  const days = Math.floor(totalHours / 24);
+  const restHours = Math.floor(totalHours % 24);
+  if (restHours === 0) return `${days} 天`;
+  return `${days} 天 ${restHours} 小时`;
 }
 
 function isActiveOrderStatus(status: TechnicianOrder['status']) {
@@ -163,6 +175,7 @@ export const HomePage: React.FC = () => {
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [showServiceTypeModal, setShowServiceTypeModal] = useState(false);
+  const [detailOrderId, setDetailOrderId] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -449,15 +462,10 @@ export const HomePage: React.FC = () => {
               )}
             </div>
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="truncate text-[2rem] font-semibold tracking-[-0.03em] text-white">
-                  {technician?.name || '美甲师'}
-                </h1>
-                <span className="rounded-full border border-white/16 bg-white/18 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur-md">
-                  {isAcceptingOrders ? '今日接单中' : '今日暂停中'}
-                </span>
-              </div>
-              <p className="mt-1 max-w-[14rem] text-[14px] font-medium leading-6 text-white [text-shadow:0_1px_2px_rgba(112,35,71,0.16)]">
+              <h1 className="truncate text-[2rem] font-semibold tracking-[-0.03em] text-white">
+                {technician?.name || '美甲师'}
+              </h1>
+              <p className="mt-1 whitespace-nowrap text-[14px] font-medium leading-6 text-white [text-shadow:0_1px_2px_rgba(112,35,71,0.16)]">
                 今日 {todayOrders.length} 单 · 预估 {formatMoney(summary.expectedIncome)}
               </p>
             </div>
@@ -532,104 +540,88 @@ export const HomePage: React.FC = () => {
       </div>
 
       <div className="relative z-10 -mt-6 px-5">
-        <section className="rounded-[30px] bg-[#FFFDFD] p-4 shadow-[0_24px_50px_rgba(57,30,43,0.09)]">
-          <div className="grid gap-3 grid-cols-[minmax(0,1fr)_8.2rem]">
-            <div className="min-w-0">
-              <p className="text-[15px] font-semibold text-[#FF5E93]">下一单</p>
-              {nextOrder ? (
-                <>
-                  <div className="mt-2.5 flex items-start gap-3">
-                    <p className="shrink-0 text-[1.95rem] font-semibold tracking-[-0.04em] text-[#1f2230]">
+        <section
+          className="rounded-[30px] bg-[#FFFDFD] p-4 shadow-[0_24px_50px_rgba(57,30,43,0.09)] cursor-pointer"
+          onClick={nextOrder ? () => setDetailOrderId(nextOrder.id) : undefined}
+        >
+          <div>
+            <p className="text-[15px] font-semibold text-[#FF5E93]">下一单</p>
+            {nextOrder ? (
+              <>
+                <div className="mt-2.5 flex items-start gap-3">
+                  <div className="shrink-0">
+                    <p className="text-[13px] font-medium text-[#a08e98]">{formatBookingDate(nextOrder.startTime)}</p>
+                    <p className="mt-0.5 text-[1.95rem] font-semibold tracking-[-0.04em] text-[#1f2230]">
                       {formatClock(nextOrder.startTime)}
                     </p>
-                    <div className="min-w-0 pt-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="truncate text-[1.25rem] font-semibold text-[#1f2230]">
-                          {nextOrder.customerName}
-                        </p>
-                        {nextPresentation ? (
-                          <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${nextPresentation.accentClasses}`}>
-                            {nextPresentation.serviceTypeLabel}
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="mt-1 line-clamp-1 text-[14px] font-medium text-[#4d4652]">
-                        {nextOrder.serviceName || '预约服务'}
-                      </p>
-                    </div>
                   </div>
-                  <div className="mt-2.5 flex items-start gap-2">
-                    <svg className="mt-[2px] h-4 w-4 shrink-0 text-[#c1b5bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 21s-6-4.35-6-10a6 6 0 1112 0c0 5.65-6 10-6 10zm0-8.25a1.75 1.75 0 100-3.5 1.75 1.75 0 000 3.5z" />
-                    </svg>
-                    <span className="text-[13px] leading-6 text-[#716776]">
-                      {nextPresentation?.fullAddressLabel || nextOrder.address}
-                    </span>
-                  </div>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <div className="rounded-[16px] border border-[#f2e6ec] bg-[#FFFFFF] px-3 py-2.5">
-                      <p className="text-[11px] text-[#a08e98]">预计路程</p>
-                      <p className="mt-1 text-[14px] font-semibold text-[#1f2230]">
-                        {`${nextTravelMinutes} 分钟`}
+                  <div className="min-w-0 pt-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate text-[1.25rem] font-semibold text-[#1f2230]">
+                        {nextOrder.customerName}
                       </p>
+                      {nextPresentation ? (
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${nextPresentation.accentClasses}`}>
+                          {nextPresentation.serviceTypeLabel}
+                        </span>
+                      ) : null}
                     </div>
-                    <div className="rounded-[16px] border border-[#f2e6ec] bg-[#FFFFFF] px-3 py-2.5">
-                      <p className="text-[11px] text-[#a08e98]">建议出发时间</p>
-                      <p className="mt-1 text-[14px] font-semibold text-[#1f2230]">
-                        {formatClock(
-                          suggestedDepartureDate
-                            ? suggestedDepartureDate.toISOString()
-                            : nextOrder.startTime
-                        )}
-                      </p>
-                    </div>
+                    <p className="mt-1 line-clamp-1 text-[14px] font-medium text-[#4d4652]">
+                      {nextOrder.serviceName || '预约服务'}
+                    </p>
                   </div>
-                </>
-              ) : (
-                <div className="mt-3">
-                  <p className="text-[1.2rem] font-semibold text-[#1f2230]">暂无行程安排</p>
-                  <p className="mt-2 text-[14px] leading-6 text-[#7b7480]">当前没有待上门、待到店或服务中的订单，可以安排新预约。</p>
                 </div>
-              )}
-            </div>
-
-            {nextOrder ? (
-              <div className="flex shrink-0 flex-col gap-2.5">
-                <div className="rounded-[22px] border border-[#F6E8EE] bg-[linear-gradient(180deg,#FFF7FA_0%,#FFFDFC_100%)] px-3 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.92)]">
-                  <p className="text-[10px] font-medium tracking-[0.06em] text-[#C69AAF]">距出发还有</p>
-                  <p className="mt-1 text-[1.85rem] font-semibold tracking-[-0.04em] text-[#1f2230]">
-                    {departureCountdownMinutes <= 0 ? '0' : Math.max(departureCountdownMinutes, 0)}
-                  </p>
-                  <p className="mt-0.5 text-[10px] font-medium text-[#8c8590]">
-                    {departureCountdownMinutes <= 0 ? '建议现在出发' : '分钟'}
-                  </p>
-                </div>
-                <div className="relative h-[7rem] overflow-hidden rounded-[22px] border border-[#F4E7EC] bg-[radial-gradient(circle_at_top_left,#FFF8FA_0%,#FFFDFE_55%,#FFF8F6_100%)]">
-                  <div className="absolute inset-0 opacity-45">
-                    <div className="absolute left-[18%] top-[24%] h-px w-[50%] bg-[#F6E8EE]" />
-                    <div className="absolute left-[14%] top-[50%] h-px w-[60%] bg-[#F7EDF1]" />
-                    <div className="absolute left-[30%] top-[20%] h-[48%] w-px bg-[#F7EDF1]" />
-                    <div className="absolute left-[58%] top-[24%] h-[42%] w-px bg-[#F6E8EE]" />
-                  </div>
-                  <svg className="absolute inset-0 h-full w-full" viewBox="0 0 144 148" fill="none" aria-hidden="true">
-                    <path d="M94 30C82 44 72 53 66 68C60 80 72 85 73 97C74 107 66 113 56 120" stroke="#FF7A9A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5 7" />
+                <div className="mt-2.5 flex items-start gap-2">
+                  <svg className="mt-[2px] h-4 w-4 shrink-0 text-[#c1b5bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 21s-6-4.35-6-10a6 6 0 1112 0c0 5.65-6 10-6 10zm0-8.25a1.75 1.75 0 100-3.5 1.75 1.75 0 000 3.5z" />
                   </svg>
-                  <span className="absolute right-4 top-4 flex h-5 w-5 items-center justify-center rounded-full bg-[#FF5A66] shadow-[0_6px_14px_rgba(255,90,102,0.18)]">
-                    <span className="h-2 w-2 rounded-full bg-white" />
-                  </span>
-                  <span className="absolute bottom-4 left-[40%] flex h-5 w-5 items-center justify-center rounded-full bg-[#FF5A66] shadow-[0_6px_14px_rgba(255,95,134,0.18)]">
-                    <span className="h-2 w-2 rounded-full bg-white" />
+                  <span className="text-[13px] leading-6 text-[#716776] break-words">
+                    {nextPresentation?.fullAddressLabel || nextOrder.address}
                   </span>
                 </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="rounded-[16px] border border-[#f2e6ec] bg-[#FFFFFF] px-3 py-2.5">
+                    <p className="text-[11px] text-[#a08e98]">预计路程</p>
+                    <p className="mt-1 text-[14px] font-semibold text-[#1f2230]">
+                      {`${nextTravelMinutes} 分钟`}
+                    </p>
+                  </div>
+                  <div className="rounded-[16px] border border-[#f2e6ec] bg-[#FFFFFF] px-3 py-2.5">
+                    <p className="text-[11px] text-[#a08e98]">建议出发时间</p>
+                    <p className="mt-1 text-[14px] font-semibold text-[#1f2230]">
+                      {formatClock(
+                        suggestedDepartureDate
+                          ? suggestedDepartureDate.toISOString()
+                          : nextOrder.startTime
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="mt-3">
+                <p className="text-[1.2rem] font-semibold text-[#1f2230]">暂无行程安排</p>
+                <p className="mt-2 text-[14px] leading-6 text-[#7b7480]">当前没有待上门、待到店或服务中的预约，可以安排新预约。</p>
               </div>
-            ) : null}
+            )}
           </div>
+
+          {nextOrder && departureCountdownMinutes >= nextTravelMinutes + 10 ? (
+            <div className="mt-3">
+              <div className="rounded-[22px] border border-[#F6E8EE] bg-[linear-gradient(180deg,#FFF7FA_0%,#FFFDFC_100%)] px-4 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.92)]">
+                <p className="text-[10px] font-medium tracking-[0.06em] text-[#C69AAF]">距出发还有</p>
+                <p className="mt-1 text-[1.4rem] font-semibold tracking-[-0.03em] text-[#1f2230]">
+                  {formatDepartureCountdown(departureCountdownMinutes)}
+                </p>
+              </div>
+            </div>
+          ) : null}
 
           {nextOrder ? (
             <div className="mt-3 flex gap-2.5">
               <button
                 type="button"
-                onClick={() => handleNavigateToAddress(nextOrder.address)}
+                onClick={(e) => { e.stopPropagation(); handleNavigateToAddress(nextOrder.address); }}
                 className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-[linear-gradient(135deg,#FF4D84_0%,#FF6E8D_100%)] px-4 py-3 text-[14px] font-semibold text-white shadow-[0_12px_20px_rgba(255,95,134,0.22)]"
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/18 ring-1 ring-white/20">
@@ -641,7 +633,7 @@ export const HomePage: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => handleContactCustomer(nextOrder.customerPhone)}
+                onClick={(e) => { e.stopPropagation(); handleContactCustomer(nextOrder.customerPhone); }}
                 className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-[16px] border border-[#F2D5DE] bg-white px-4 py-3 text-[14px] font-semibold text-[#FF5E93] shadow-[0_8px_16px_rgba(255,110,141,0.08)]"
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FFF1F6] ring-1 ring-[#FFD9E6]">
@@ -1101,6 +1093,14 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       ) : null}
+
+      {detailOrderId !== null && (
+        <OrderDetailPage
+          isModal
+          orderIdProp={detailOrderId}
+          onClose={() => setDetailOrderId(null)}
+        />
+      )}
 
       <ServiceTypeSetupModal
         isOpen={showServiceTypeModal}

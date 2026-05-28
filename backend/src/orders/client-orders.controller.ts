@@ -129,6 +129,22 @@ export class ClientOrdersController {
     );
   }
 
+  @Post(':id/mark-deposit-paid')
+  @ApiOperation({ summary: '标记定金已支付（线下）' })
+  @ApiResponse({ status: 200, description: '标记成功' })
+  @ApiResponse({ status: 400, description: '当前状态不支持' })
+  @ApiResponse({ status: 404, description: '订单不存在' })
+  @ApiParam({ name: 'id', type: Number, description: '订单ID' })
+  markDepositPaid(
+    @Req() request: { user: { clientUserId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.clientOrdersService.markDepositPaid(
+      request.user.clientUserId,
+      id,
+    );
+  }
+
   @Patch(':id/status')
   @ApiOperation({ summary: '更新订单状态' })
   @ApiResponse({ status: 200, description: '更新成功' })

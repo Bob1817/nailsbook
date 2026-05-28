@@ -1,4 +1,4 @@
-// 预约（订单）状态统一展示规则
+// 预约状态统一展示规则
 // 标签去除"美甲师"/"用户"角色字段
 export const ORDER_STATUS_LABEL: Record<string, string> = {
   pending_quote: '待报价',

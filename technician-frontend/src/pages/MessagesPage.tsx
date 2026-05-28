@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/base/Card';
-import { AppPage } from '../components/layout/AppPage';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/feedback/ToastProvider';
 import { ordersService } from '../services/orders';
@@ -17,7 +16,7 @@ import {
   type TechnicianCustomerSummary,
 } from '../services/technicianData';
 
-type MessageTab = 'all' | 'pending' | 'service' | 'system' | 'chat';
+type MessageTab = 'all' | 'unread' | 'pending' | 'service' | 'system' | 'chat';
 
 interface MessageItem {
   id: string;
@@ -104,6 +103,8 @@ export const MessagesPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [selectedMessage, setSelectedMessage] = useState<MessageItem | null>(null);
 
   const { isOnline } = usePresence();
   const { socket } = useSocket();
@@ -180,6 +181,14 @@ export const MessagesPage: React.FC = () => {
   }, []);
 
   function handleMessageAction(message: MessageItem) {
+    // Mark as read
+    if (message.unread > 0) {
+      setReadIds((prev) => new Set(prev).add(message.id));
+      if (message.conversationId) {
+        void messageService.markAsRead(message.conversationId).catch(() => {});
+      }
+    }
+
     if (message.type === 'chat' && (message.conversationId || message.clientId)) {
       if (message.conversationId) {
         navigate(`/chat?conversation_id=${message.conversationId}`);
@@ -189,12 +198,16 @@ export const MessagesPage: React.FC = () => {
       return;
     }
 
+    // Show modal for non-chat messages
+    setSelectedMessage(message);
+  }
+
+  function handleModalAction(message: MessageItem) {
+    setSelectedMessage(null);
     if (!message.actionTo) {
       toast.warning('当前提醒暂无可处理入口。');
       return;
     }
-
-    toast.success(`正在打开${message.actionLabel || '相关页面'}。`);
     navigate(message.actionTo);
   }
 
@@ -230,20 +243,24 @@ export const MessagesPage: React.FC = () => {
     const service = orders
       .filter((order) => order.status === 'pending_home' || order.status === 'pending_shop' || order.status === 'completed')
       .slice(0, 6)
-      .map((order) => ({
-        id: `service-${order.id}`,
-        name: order.customerName,
-        badge: order.status === 'completed' ? '已完成' : '待服务',
-        time: formatDateTimeLabel(order.startTime),
-        lastMessage:
-          order.status === 'pending_home' || order.status === 'pending_shop'
-            ? `服务提醒：${order.serviceName} 即将开始`
-            : `服务完成：${order.serviceName}，记得跟进复购与评价`,
-        unread: order.status === 'pending_home' || order.status === 'pending_shop' ? 1 : 0,
-        type: 'service' as const,
-        actionLabel: order.status === 'pending_home' || order.status === 'pending_shop' ? '查看行程' : '查看订单',
-        actionTo: order.status === 'pending_home' || order.status === 'pending_shop' ? `/schedule` : `/orders?orderId=${order.id}`,
-      }));
+      .map((order) => {
+        const orderDate = new Date(order.startTime);
+        const dateStr = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}-${String(orderDate.getDate()).padStart(2, '0')}`;
+        return {
+          id: `service-${order.id}`,
+          name: order.customerName,
+          badge: order.status === 'completed' ? '已完成' : '待服务',
+          time: formatDateTimeLabel(order.startTime),
+          lastMessage:
+            order.status === 'pending_home' || order.status === 'pending_shop'
+              ? `服务提醒：${order.serviceName} 即将开始`
+              : `服务完成：${order.serviceName}，记得跟进复购与评价`,
+          unread: order.status === 'pending_home' || order.status === 'pending_shop' ? 1 : 0,
+          type: 'service' as const,
+          actionLabel: order.status === 'pending_home' || order.status === 'pending_shop' ? '查看行程' : '查看预约',
+          actionTo: order.status === 'pending_home' || order.status === 'pending_shop' ? `/schedule?date=${dateStr}` : `/orders?orderId=${order.id}`,
+        };
+      });
 
     const depositReminders = orders
       .filter((order) => !order.depositPaid && order.status !== 'cancelled')
@@ -260,6 +277,8 @@ export const MessagesPage: React.FC = () => {
         actionTo: `/orders?orderId=${order.id}`,
       }));
 
+    const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
     const system: MessageItem[] = [
       {
         id: 'system-today',
@@ -270,7 +289,7 @@ export const MessagesPage: React.FC = () => {
         type: 'system',
         isSystem: true,
         actionLabel: '查看行程',
-        actionTo: '/schedule',
+        actionTo: `/schedule?date=${todayDateStr}`,
       },
       {
         id: 'system-customers',
@@ -285,11 +304,22 @@ export const MessagesPage: React.FC = () => {
       },
     ];
 
-    return [...chatMessages, ...pending, ...depositReminders, ...service, ...system];
-  }, [orders, customers, conversations]);
+    return [...chatMessages, ...pending, ...depositReminders, ...service, ...system].map((m) =>
+      readIds.has(m.id) ? { ...m, unread: 0 } : m,
+    );
+  }, [orders, customers, conversations, readIds]);
+
+  const unreadCount = messages.filter((m) => m.unread > 0).length;
+
+  // 数据加载完成后，根据未读数自动切换默认标签
+  useEffect(() => {
+    if (isLoading) return;
+    setActiveTab(unreadCount > 0 ? 'unread' : 'all');
+  }, [isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredMessages = messages.filter((message) => {
-    if (activeTab !== 'all' && message.type !== activeTab) {
+    if (activeTab === 'unread' && message.unread <= 0) return false;
+    if (activeTab !== 'all' && activeTab !== 'unread' && message.type !== activeTab) {
       return false;
     }
 
@@ -305,11 +335,12 @@ export const MessagesPage: React.FC = () => {
   });
 
   const tabs = [
-    { label: '全部', value: 'all' as const, count: messages.length },
-    { label: '聊天', value: 'chat' as const, count: messages.filter((item) => item.type === 'chat').length },
-    { label: '待确认预约', value: 'pending' as const, count: messages.filter((item) => item.type === 'pending').length },
-    { label: '服务提醒', value: 'service' as const, count: messages.filter((item) => item.type === 'service').length },
-    { label: '系统通知', value: 'system' as const, count: messages.filter((item) => item.type === 'system').length },
+    { label: '未读', value: 'unread' as const, count: unreadCount, show: unreadCount > 0 },
+    { label: '全部', value: 'all' as const, count: messages.length, show: true },
+    { label: '聊天', value: 'chat' as const, count: messages.filter((item) => item.type === 'chat').length, show: true },
+    { label: '待确认预约', value: 'pending' as const, count: messages.filter((item) => item.type === 'pending').length, show: true },
+    { label: '服务提醒', value: 'service' as const, count: messages.filter((item) => item.type === 'service').length, show: true },
+    { label: '系统通知', value: 'system' as const, count: messages.filter((item) => item.type === 'system').length, show: true },
   ];
 
   const handleStartNewChat = (customerId: number) => {
@@ -329,115 +360,116 @@ export const MessagesPage: React.FC = () => {
   );
 
   return (
-    <AppPage
-      title="消息"
-      subtitle="查看聊天、预约提醒与系统通知，优先处理待确认事项"
-      actions={(
-        <button
-          onClick={() => setShowNewChatModal(true)}
-          className="flex min-h-[44px] items-center gap-2 rounded-full bg-[#ffe9f0] px-4 py-2 text-sm font-medium text-pink-500 transition-colors active:bg-[#f2d2dc]"
-        >
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          新建对话
-        </button>
-      )}
-    >
-      <Card className="px-lg py-lg">
-        <div className="space-y-4">
-          <div className="relative">
-            <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            <input
-              type="text"
-              placeholder="搜索消息、客户或提醒内容"
-              className="h-11 w-full rounded-[16px] bg-[#f7f2f5] pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-            />
-          </div>
-
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {tabs.map((tab) => (
-              <button
-                key={tab.value}
-                onClick={() => setActiveTab(tab.value)}
-                className={`flex min-h-[44px] flex-shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
-                  activeTab === tab.value
-                    ? 'border-[#efc3d0] bg-[#fdecef] text-pink-500'
-                    : 'border-[#efe4e8] bg-white text-gray-600 active:bg-[#f8edf1]'
-                }`}
-              >
-                <span>{tab.label}</span>
-                <span className={`rounded-full px-2 py-0.5 text-[11px] ${activeTab === tab.value ? 'bg-white text-pink-500' : 'bg-[#f7f2f5] text-gray-500'}`}>
-                  {tab.count}
-                </span>
-              </button>
-            ))}
-          </div>
+    <div className="flex h-full flex-col bg-[#fff9f8]">
+      {/* 固定头部：标题 + 搜索 + 标签 */}
+      <div className="shrink-0 space-y-4 px-5 pt-5 pb-3">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-semibold text-gray-900">消息</h1>
+          <button
+            onClick={() => setShowNewChatModal(true)}
+            className="flex min-h-[44px] items-center gap-2 rounded-full bg-[#ffe9f0] px-4 py-2 text-sm font-medium text-pink-500 transition-colors active:bg-[#f2d2dc]"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            新建对话
+          </button>
         </div>
-      </Card>
 
-      <div className="space-y-3">
-        {isLoading ? (
-          <Card className="px-lg py-xl text-center text-sm text-gray-400">提醒加载中...</Card>
-        ) : filteredMessages.length > 0 ? (
-          filteredMessages.map((message) => {
-            const accent = getMessageAccentClasses(message);
+        <div className="relative">
+          <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <input
+            type="text"
+            placeholder="搜索消息、客户或提醒内容"
+            className="h-11 w-full rounded-[16px] bg-[#f7f2f5] pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
+        </div>
 
-            return (
-              <Card key={message.id} className="transition-colors active:bg-[#fdf3f6]">
-                <button
-                  onClick={() => handleMessageAction(message)}
-                  className="flex min-h-[96px] w-full items-start gap-3 px-lg py-lg text-left"
-                >
-                  <div className="relative shrink-0">
-                    <div className={`flex h-12 w-12 items-center justify-center rounded-full text-base font-semibold ${accent.avatar}`}>
-                      {getMessageAvatarLabel(message)}
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+          {tabs.filter((t) => t.show).map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setActiveTab(tab.value)}
+              className={`flex min-h-[44px] flex-shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === tab.value
+                  ? 'border-[#efc3d0] bg-[#fdecef] text-pink-500'
+                  : 'border-[#efe4e8] bg-white text-gray-600 active:bg-[#f8edf1]'
+              }`}
+            >
+              <span>{tab.label}</span>
+              <span className={`rounded-full px-2 py-0.5 text-[11px] ${activeTab === tab.value ? 'bg-white text-pink-500' : 'bg-[#f7f2f5] text-gray-500'}`}>
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 可滚动内容：消息卡片 */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-6">
+        <div className="space-y-3">
+          {isLoading ? (
+            <Card className="px-lg py-xl text-center text-sm text-gray-400">提醒加载中...</Card>
+          ) : filteredMessages.length > 0 ? (
+            filteredMessages.map((message) => {
+              const accent = getMessageAccentClasses(message);
+
+              return (
+                <Card key={message.id} className="transition-colors active:bg-[#fdf3f6]">
+                  <button
+                    onClick={() => handleMessageAction(message)}
+                    className="flex min-h-[96px] w-full items-start gap-3 px-lg py-lg text-left"
+                  >
+                    <div className="relative shrink-0">
+                      <div className={`flex h-12 w-12 items-center justify-center rounded-full text-base font-semibold ${accent.avatar}`}>
+                        {getMessageAvatarLabel(message)}
+                      </div>
+                      {message.type === 'chat' && message.clientId && isOnline(message.clientId, 'client') && (
+                        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white" />
+                      )}
                     </div>
-                    {message.type === 'chat' && message.clientId && isOnline(message.clientId, 'client') && (
-                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2 pr-1">
-                      <p className="truncate text-sm font-semibold text-gray-900">{message.name}</p>
-                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${accent.badge}`}>
-                        {getMessageBadgeLabel(message)}
-                      </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2 pr-1">
+                        <p className="truncate text-sm font-semibold text-gray-900">{message.name}</p>
+                        <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${accent.badge}`}>
+                          {getMessageBadgeLabel(message)}
+                        </span>
+                      </div>
+                      <p className="mt-1.5 break-words pr-1 text-[13px] leading-5 text-gray-500">
+                        {message.lastMessage}
+                      </p>
                     </div>
-                    <p className="mt-1.5 break-words pr-1 text-[13px] leading-5 text-gray-500">
-                      {message.lastMessage}
-                    </p>
-                  </div>
-                  <div className="flex w-[4.25rem] shrink-0 flex-col items-end gap-2 pt-0.5 text-right">
-                    <p className="text-xs text-gray-400">{message.time}</p>
-                    <div className="flex min-h-[24px] items-center gap-2">
-                      {message.actionLabel ? (
-                        <span className={`text-[11px] font-medium ${accent.action}`}>{message.actionLabel}</span>
-                      ) : null}
-                      {message.unread > 0 ? (
-                        message.unread > 1 ? (
-                          <span className="inline-flex min-w-[20px] items-center justify-center rounded-full bg-[#e85d75] px-1.5 py-0.5 text-[11px] font-medium text-white">
-                            {message.unread}
-                          </span>
-                        ) : (
-                          <span className={`h-2.5 w-2.5 rounded-full ${accent.dot}`} />
-                        )
-                      ) : null}
+                    <div className="flex w-[4.25rem] shrink-0 flex-col items-end gap-2 pt-0.5 text-right">
+                      <p className="text-xs text-gray-400">{message.time}</p>
+                      <div className="flex min-h-[24px] items-center gap-2">
+                        {message.actionLabel ? (
+                          <span className={`text-[11px] font-medium ${accent.action}`}>{message.actionLabel}</span>
+                        ) : null}
+                        {message.unread > 0 ? (
+                          message.unread > 1 ? (
+                            <span className="inline-flex min-w-[20px] items-center justify-center rounded-full bg-[#e85d75] px-1.5 py-0.5 text-[11px] font-medium text-white">
+                              {message.unread}
+                            </span>
+                          ) : (
+                            <span className={`h-2.5 w-2.5 rounded-full ${accent.dot}`} />
+                          )
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                </button>
-              </Card>
-            );
-          })
-        ) : (
-          <Card className="px-lg py-xl text-center text-sm text-gray-400">没有匹配的消息提醒</Card>
-        )}
+                  </button>
+                </Card>
+              );
+            })
+          ) : (
+            <Card className="px-lg py-xl text-center text-sm text-gray-400">没有匹配的消息提醒</Card>
+          )}
+        </div>
       </div>
 
       {showNewChatModal && (
@@ -508,6 +540,61 @@ export const MessagesPage: React.FC = () => {
           </Card>
         </div>
       )}
-    </AppPage>
+
+      {/* Message detail modal */}
+      {selectedMessage && (
+        <div
+          className="fixed inset-0 z-[150] flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center"
+          onClick={() => setSelectedMessage(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-[32px] bg-white p-6 sm:rounded-[32px]"
+            onClick={(e) => e.stopPropagation()}
+            style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <span className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-medium ${getMessageAccentClasses(selectedMessage).badge}`}>
+                {getMessageBadgeLabel(selectedMessage)}
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedMessage(null)}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <p className="text-[15px] font-semibold text-gray-900">{selectedMessage.name}</p>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{selectedMessage.lastMessage}</p>
+
+            <div className="mt-3 flex items-center gap-2 text-xs text-slate-400">
+              <span>{selectedMessage.time}</span>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setSelectedMessage(null)}
+                className="flex-1 rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-700"
+              >
+                关闭
+              </button>
+              {selectedMessage.actionLabel && (
+                <button
+                  type="button"
+                  onClick={() => handleModalAction(selectedMessage)}
+                  className="flex-1 rounded-full bg-gradient-to-r from-[#FF5E93] to-[#FF8AA0] px-4 py-3 text-sm font-semibold text-white shadow-md"
+                >
+                  {selectedMessage.actionLabel}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };

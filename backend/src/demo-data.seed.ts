@@ -1,3 +1,5 @@
+import * as bcrypt from 'bcryptjs';
+
 type DemoSeedResult = {
   technicianPhone: string;
   clientPhones: string[];
@@ -645,10 +647,13 @@ export async function ensureDemoData(
     },
   });
 
+  const demoPasswordHash = await bcrypt.hash('demo1234', 10);
+
   const primaryTechnician = await prisma.technician.upsert({
     where: { phone: PRIMARY_TECHNICIAN_PHONE },
     update: {
       name: '小美',
+      passwordHash: demoPasswordHash,
       city: '上海',
       serviceArea: '上海市区上门 / 静安工作室到店',
       status: 'active',
@@ -686,6 +691,7 @@ export async function ensureDemoData(
     create: {
       name: '小美',
       phone: PRIMARY_TECHNICIAN_PHONE,
+      passwordHash: demoPasswordHash,
       city: '上海',
       serviceArea: '上海市区上门 / 静安工作室到店',
       status: 'active',
@@ -727,6 +733,7 @@ export async function ensureDemoData(
       where: { phone: '13800138080' },
       update: {
         name: 'Momo Studio',
+        passwordHash: demoPasswordHash,
         city: '上海',
         serviceArea: '浦东到店',
         status: 'active',
@@ -737,6 +744,7 @@ export async function ensureDemoData(
       create: {
         name: 'Momo Studio',
         phone: '13800138080',
+        passwordHash: demoPasswordHash,
         city: '上海',
         serviceArea: '浦东到店',
         status: 'active',
@@ -749,6 +757,7 @@ export async function ensureDemoData(
       where: { phone: '13800138081' },
       update: {
         name: '阿宁',
+        passwordHash: demoPasswordHash,
         city: '杭州',
         serviceArea: '滨江区上门',
         status: 'inactive',
@@ -759,6 +768,7 @@ export async function ensureDemoData(
       create: {
         name: '阿宁',
         phone: '13800138081',
+        passwordHash: demoPasswordHash,
         city: '杭州',
         serviceArea: '滨江区上门',
         status: 'inactive',
@@ -846,12 +856,14 @@ export async function ensureDemoData(
       where: { phone: seed.phone },
       update: {
         nickname: seed.nickname,
+        passwordHash: demoPasswordHash,
         status: 'active',
         avatarUrl: AVATAR_URLS[index % AVATAR_URLS.length],
       },
       create: {
         phone: seed.phone,
         nickname: seed.nickname,
+        passwordHash: demoPasswordHash,
         status: 'active',
         avatarUrl: AVATAR_URLS[index % AVATAR_URLS.length],
       },
