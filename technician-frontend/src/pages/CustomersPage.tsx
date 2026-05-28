@@ -4,7 +4,6 @@ import { Card } from '../components/base/Card';
 import { useToast } from '../components/feedback/ToastProvider';
 import { useAuth } from '../hooks/useAuth';
 import { customersService } from '../services/customers';
-import { messageService, type Conversation } from '../services/message';
 import {
   formatDateLabel,
   formatMoney,
@@ -45,7 +44,6 @@ export const CustomersPage: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const [customers, setCustomers] = useState<TechnicianCustomerSummary[]>([]);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeTab, setActiveTab] = useState('全部');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -59,23 +57,18 @@ export const CustomersPage: React.FC = () => {
     async function loadCustomers() {
       setIsLoading(true);
       try {
-        const [nextCustomers, nextConversations] = await Promise.all([
-          customersService.list({
-            technicianId: technician?.id,
-            search: searchQuery.trim() || undefined,
-          }),
-          messageService.getConversations().catch(() => []),
-        ]);
+        const nextCustomers = await customersService.list({
+          technicianId: technician?.id,
+          search: searchQuery.trim() || undefined,
+        });
 
         if (!cancelled) {
           setCustomers(nextCustomers);
-          setConversations(nextConversations);
           setIsLoading(false);
         }
       } catch {
         if (!cancelled) {
           setCustomers([]);
-          setConversations([]);
           setIsLoading(false);
           toast.error('客户数据加载失败，请稍后重试。');
         }

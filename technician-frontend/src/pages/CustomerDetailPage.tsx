@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useToast } from '../components/feedback/ToastProvider';
 import { useAuth } from '../hooks/useAuth';
 import { customersService } from '../services/customers';
-import { messageService, type Conversation } from '../services/message';
 import {
   orderStatusClasses,
   orderStatusLabels,
@@ -44,7 +43,6 @@ const CustomerDetailPage: React.FC = () => {
   const toast = useToast();
   const { technician } = useAuth();
   const [customer, setCustomer] = useState<TechnicianCustomerDetail | null>(null);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showTagEditor, setShowTagEditor] = useState(false);
   const [editingTags, setEditingTags] = useState<string[]>([]);
@@ -65,13 +63,9 @@ const CustomerDetailPage: React.FC = () => {
     async function load() {
       setIsLoading(true);
       try {
-        const [detail, convos] = await Promise.all([
-          customersService.getById(Number(id)),
-          messageService.getConversations().catch(() => []),
-        ]);
+        const detail = await customersService.getById(Number(id));
         if (!cancelled) {
           setCustomer(detail);
-          setConversations(convos);
         }
       } catch {
         if (!cancelled) toast.error('客户详情加载失败');
@@ -96,16 +90,6 @@ const CustomerDetailPage: React.FC = () => {
   function handleCreateOrder() {
     if (!customer) return;
     navigate(`/orders?customerId=${customer.id}`);
-  }
-
-  function handleStartChat() {
-    if (!customer) return;
-    const existing = conversations.find((c) => c.client.id === customer.id);
-    if (existing) {
-      navigate(`/chat?conversation_id=${existing.id}`);
-    } else {
-      navigate(`/chat?client_id=${customer.id}`);
-    }
   }
 
   function handleOpenTagEditor() {

@@ -372,6 +372,7 @@ export const ordersService = {
       quoteRemark: null,
       quotedAt: null,
       depositPaid: false,
+      depositAmount: 0,
       note: input.note,
       isLocalDraft: true,
     };
