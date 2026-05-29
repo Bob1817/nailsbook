@@ -1,10 +1,18 @@
 import api from './api';
 
+export interface ClientMedia {
+  name?: string;
+  url?: string;
+}
+
 export interface ClientUser {
   id: number;
   nickname: string | null;
   phone: string;
   avatarUrl: string | null;
+  city?: string | null;
+  bio?: string | null;
+  socialMedia?: ClientMedia | null;
   status: string;
 }
 
@@ -135,7 +143,13 @@ export const authService = {
     return response.data;
   },
 
-  async updateProfile(data: { nickname?: string; avatarUrl?: string }): Promise<ClientUser> {
+  async updateProfile(data: {
+    nickname?: string;
+    avatarUrl?: string;
+    city?: string | null;
+    bio?: string | null;
+    socialMedia?: ClientMedia | null;
+  }): Promise<ClientUser> {
     const response = await api.put('/auth/me', data);
     return response.data;
   },

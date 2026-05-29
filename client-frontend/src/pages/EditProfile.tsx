@@ -9,6 +9,11 @@ const EditProfile: React.FC = () => {
 
   const [nickname, setNickname] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [city, setCity] = useState('');
+  const [bio, setBio] = useState('');
+  const [mediaEnabled, setMediaEnabled] = useState(false);
+  const [mediaName, setMediaName] = useState('');
+  const [mediaUrl, setMediaUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -16,6 +21,18 @@ const EditProfile: React.FC = () => {
     if (user) {
       setNickname(user.nickname || '');
       setAvatarUrl(user.avatarUrl || '');
+      setCity(user.city || '');
+      setBio(user.bio || '');
+      const media = user.socialMedia;
+      if (media && (media.name || media.url)) {
+        setMediaEnabled(true);
+        setMediaName(media.name || '');
+        setMediaUrl(media.url || '');
+      } else {
+        setMediaEnabled(false);
+        setMediaName('');
+        setMediaUrl('');
+      }
     }
   }, [user]);
 
@@ -41,11 +58,20 @@ const EditProfile: React.FC = () => {
       alert('请输入昵称');
       return;
     }
+    if (mediaEnabled && (!mediaName.trim() || !mediaUrl.trim())) {
+      alert('启用媒体地址后，请填写媒体账号名称和主页地址');
+      return;
+    }
     setSaving(true);
     try {
       await updateProfile({
         nickname: nickname.trim(),
         avatarUrl: avatarUrl || undefined,
+        city: city.trim() || null,
+        bio: bio.trim() || null,
+        socialMedia: mediaEnabled
+          ? { name: mediaName.trim(), url: mediaUrl.trim() }
+          : null,
       });
       navigate(-1);
     } catch (err) {
@@ -131,6 +157,78 @@ const EditProfile: React.FC = () => {
             />
             <p className="mt-1 text-xs text-gray-400">如需修改手机号请联系客服</p>
           </div>
+
+          <div>
+            <label className="mb-2 block text-[13px] font-medium text-gray-700">常驻城市</label>
+            <input
+              type="text"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="例如：上海"
+              maxLength={20}
+              className="w-full rounded-2xl bg-gray-50 px-4 py-3 text-[15px] text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-[#FF6B8A]/20"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-[13px] font-medium text-gray-700">个人简介</label>
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="介绍一下你自己吧～"
+              maxLength={100}
+              rows={3}
+              className="w-full resize-none rounded-2xl bg-gray-50 px-4 py-3 text-[15px] text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-[#FF6B8A]/20"
+            />
+            <p className="mt-1 text-xs text-gray-400">{bio.length}/100</p>
+          </div>
+        </div>
+
+        {/* 媒体地址 */}
+        <div className="mt-4 rounded-[28px] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
+          <div className="flex items-center justify-between">
+            <div className="min-w-0">
+              <p className="text-[15px] font-medium text-gray-900">媒体地址</p>
+              <p className="mt-0.5 text-xs text-gray-400">启用后展示你的社交媒体主页</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={mediaEnabled}
+              aria-label="媒体地址"
+              onClick={() => setMediaEnabled((v) => !v)}
+              className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${mediaEnabled ? 'bg-[#FF6B8A]' : 'bg-gray-300'}`}
+            >
+              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${mediaEnabled ? 'left-[1.15rem]' : 'left-0.5'}`} />
+            </button>
+          </div>
+
+          {mediaEnabled && (
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="mb-2 block text-[13px] font-medium text-gray-700">媒体账号名称</label>
+                <input
+                  type="text"
+                  value={mediaName}
+                  onChange={(e) => setMediaName(e.target.value)}
+                  placeholder="例如：小美的美甲日常"
+                  maxLength={30}
+                  className="w-full rounded-2xl bg-gray-50 px-4 py-3 text-[15px] text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-[#FF6B8A]/20"
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-[13px] font-medium text-gray-700">主页地址</label>
+                <input
+                  type="url"
+                  inputMode="url"
+                  value={mediaUrl}
+                  onChange={(e) => setMediaUrl(e.target.value)}
+                  placeholder="https://"
+                  className="w-full rounded-2xl bg-gray-50 px-4 py-3 text-[15px] text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-[#FF6B8A]/20"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

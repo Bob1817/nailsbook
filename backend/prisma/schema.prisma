@@ -178,6 +178,9 @@ model ClientUser {
   phone                 String                 @unique
   passwordHash          String                 @default("")
   avatarUrl             String?
+  city                  String?
+  bio                   String?
+  socialMedia           String?
   status                String                 @default("active")
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @default(now()) @updatedAt

@@ -16,7 +16,7 @@ interface AuthContextType {
   bindTechnician: (techId: number, inviteCode: string, isDefault?: boolean) => Promise<void>;
   unbindTechnician: (techId: number) => Promise<void>;
   setDefaultTechnician: (techId: number) => Promise<void>;
-  updateProfile: (data: { nickname?: string; avatarUrl?: string }) => Promise<void>;
+  updateProfile: (data: Parameters<typeof authService.updateProfile>[0]) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -155,7 +155,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     await refreshProfile();
   };
 
-  const updateProfile = async (data: { nickname?: string; avatarUrl?: string }) => {
+  const updateProfile = async (data: Parameters<typeof authService.updateProfile>[0]) => {
     const updated = await authService.updateProfile(data);
     setUser(prev => prev ? { ...prev, ...updated } : null);
     localStorage.setItem('client_user', JSON.stringify({ ...user, ...updated }));

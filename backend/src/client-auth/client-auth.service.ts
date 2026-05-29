@@ -135,6 +135,9 @@ export class ClientAuthService {
         nickname: client.nickname,
         phone: client.phone,
         avatarUrl: client.avatarUrl,
+        city: client.city,
+        bio: client.bio,
+        socialMedia: client.socialMedia ? JSON.parse(client.socialMedia) : null,
         status: client.status,
       },
       technician: technicianPayload,
@@ -192,6 +195,9 @@ export class ClientAuthService {
         nickname: client.nickname,
         phone: client.phone,
         avatarUrl: client.avatarUrl,
+        city: client.city,
+        bio: client.bio,
+        socialMedia: client.socialMedia ? JSON.parse(client.socialMedia) : null,
         status: client.status,
       },
       technician: {
@@ -257,6 +263,9 @@ export class ClientAuthService {
       nickname: client.nickname,
       phone: client.phone,
       avatarUrl: client.avatarUrl,
+      city: client.city,
+      bio: client.bio,
+      socialMedia: client.socialMedia ? JSON.parse(client.socialMedia) : null,
       status: client.status,
       binding: defaultBinding
         ? {
@@ -470,18 +479,51 @@ export class ClientAuthService {
 
   async updateProfile(
     clientUserId: number,
-    data: { nickname?: string; avatarUrl?: string },
+    data: {
+      nickname?: string;
+      avatarUrl?: string;
+      city?: string | null;
+      bio?: string | null;
+      socialMedia?: { name?: string; url?: string } | null;
+    },
   ) {
     const client = await this.prisma.clientUser.update({
       where: { id: clientUserId },
-      data,
+      data: {
+        ...(data.nickname !== undefined && { nickname: data.nickname }),
+        ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl }),
+        ...(data.city !== undefined && { city: data.city }),
+        ...(data.bio !== undefined && { bio: data.bio }),
+        ...(data.socialMedia !== undefined && {
+          socialMedia:
+            data.socialMedia && (data.socialMedia.name || data.socialMedia.url)
+              ? JSON.stringify(data.socialMedia)
+              : null,
+        }),
+      },
     });
 
+    return this.mapClientSelf(client);
+  }
+
+  private mapClientSelf(client: {
+    id: number;
+    nickname: string | null;
+    phone: string;
+    avatarUrl: string | null;
+    city: string | null;
+    bio: string | null;
+    socialMedia: string | null;
+    status: string;
+  }) {
     return {
       id: client.id,
       nickname: client.nickname,
       phone: client.phone,
       avatarUrl: client.avatarUrl,
+      city: client.city,
+      bio: client.bio,
+      socialMedia: client.socialMedia ? JSON.parse(client.socialMedia) : null,
       status: client.status,
     };
   }

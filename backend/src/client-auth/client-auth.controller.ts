@@ -152,7 +152,14 @@ export class ClientAuthController {
   })
   async updateProfile(
     @Req() request: { user: { clientUserId: number } },
-    @Body() body: { nickname?: string; avatarUrl?: string },
+    @Body()
+    body: {
+      nickname?: string;
+      avatarUrl?: string;
+      city?: string | null;
+      bio?: string | null;
+      socialMedia?: { name?: string; url?: string } | null;
+    },
   ) {
     return this.clientAuthService.updateProfile(
       request.user.clientUserId,
