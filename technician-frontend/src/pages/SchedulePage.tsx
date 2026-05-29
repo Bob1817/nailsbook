@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { ordersService } from '../services/orders';
 import {
@@ -127,7 +127,6 @@ function CustomerAvatar({ name, avatarUrl, size = 36 }: { name: string; avatarUr
 
 export const SchedulePage: React.FC = () => {
   const { technician } = useAuth();
-  const navigate = useNavigate();
   const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const [orders, setOrders] = useState<TechnicianOrder[]>([]);
@@ -208,8 +207,6 @@ export const SchedulePage: React.FC = () => {
       ),
     [dayOrders],
   );
-
-  const nextOrder = tripOrders[0] ?? null;
 
   // 列表数据源：今日行程=行程状态预约；今日预约=当日所有状态预约
   const listOrders = scheduleTab === 'trips' ? tripOrders : dayOrders;
@@ -356,120 +353,11 @@ export const SchedulePage: React.FC = () => {
         </div>
       </div>
 
-      {/* ===== Tab：今日行程 / 今日预约 ===== */}
-      <div className="mb-4 flex gap-6 border-b border-gray-100">
-        {([['trips', '今日行程'], ['all', '今日预约']] as const).map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setScheduleTab(key)}
-            className={`relative pb-2.5 text-sm font-medium transition-colors ${
-              scheduleTab === key ? 'text-primary' : 'text-text-tertiary'
-            }`}
-          >
-            {label}
-            {scheduleTab === key && (
-              <span className="absolute -bottom-px left-0 right-0 h-0.5 rounded-full bg-primary" />
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* ===== Section 1: 下一单卡片 ===== */}
-      {scheduleTab === 'trips' && !isLoading && nextOrder && (
-        <Card className="mb-4 overflow-hidden p-0 cursor-pointer" onClick={() => setDetailOrderId(nextOrder.id)}>
-          <div
-            className="p-4"
-            style={{ background: 'linear-gradient(135deg, #fff5f5, #fff)' }}
-          >
-            <div className="flex justify-between items-start">
-              <div className="flex-1 min-w-0">
-                <div className="text-[28px] font-bold text-text-primary">
-                  {formatClock(nextOrder.startTime)}
-                </div>
-                <div className="text-sm text-text-secondary mt-1">
-                  预计 {formatClock(nextOrder.endTime)} 结束
-                </div>
-                <div className="flex items-center gap-2.5 mt-3">
-                  <CustomerAvatar
-                    name={nextOrder.customerName}
-                    avatarUrl={nextOrder.customerAvatar}
-                    size={36}
-                  />
-                  <div className="font-semibold text-base">{nextOrder.customerName}</div>
-                </div>
-                <div className="flex gap-2 mt-2">
-                  {nextOrder.serviceType && (
-                    <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">
-                      {serviceTypeLabels[nextOrder.serviceType] || nextOrder.serviceType}
-                    </span>
-                  )}
-                  <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">
-                    {nextOrder.serviceName}
-                  </span>
-                </div>
-                <div className="text-[13px] text-text-tertiary mt-2">
-                  📍 {nextOrder.address}
-                </div>
-              </div>
-              <div className="text-center shrink-0 ml-3">
-                <div className="bg-white border border-gray-100 rounded-xl p-3">
-                  <div className="text-[11px] text-text-tertiary">距出发</div>
-                  <div className="text-2xl font-bold text-primary mt-0.5">
-                    {(() => {
-                      const mins = Math.max(0, Math.round((new Date(nextOrder.startTime).getTime() - Date.now()) / 60000));
-                      return mins >= 60 ? `${Math.floor(mins / 60)}时${mins % 60}分` : `${mins}分`;
-                    })()}
-                  </div>
-                  <div className="text-[11px] text-text-tertiary">建议提前出发</div>
-                </div>
-              </div>
-            </div>
-
-            {/* 路线示意图 */}
-            <div className="mt-4 bg-[#f8f8f8] rounded-xl p-3 flex items-center gap-3">
-              <div className="w-2 h-2 bg-primary rounded-full shrink-0" />
-              <div className="flex-1 h-0.5 border-t-2 border-dashed border-gray-200" />
-              <div className="text-xs text-text-secondary shrink-0">
-                约 {estimateDistance([nextOrder])}km · 预计 {estimateTravelMinutes([nextOrder])} 分钟
-              </div>
-              <div className="flex-1 h-0.5 border-t-2 border-dashed border-gray-200" />
-              <div className="w-2 h-2 bg-gray-800 rounded-full shrink-0" />
-            </div>
-
-            {/* 操作按钮 */}
-            <div className="flex gap-3 mt-4">
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); handleNavigateToAddress(nextOrder.address); }}
-                className="flex-1 flex items-center justify-center gap-1.5 bg-primary text-white rounded-[10px] py-2.5 text-sm font-semibold min-h-[44px]"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 21s-6-4.35-6-10a6 6 0 1112 0c0 5.65-6 10-6 10zm0-8.25a1.75 1.75 0 100-3.5 1.75 1.75 0 000 3.5z" />
-                </svg>
-                开始导航
-              </button>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); handleContactCustomer(nextOrder.customerPhone); }}
-                className="flex-1 flex items-center justify-center gap-1.5 bg-[#f5f5f5] text-text-primary rounded-[10px] py-2.5 text-sm font-semibold min-h-[44px]"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 5a2 2 0 012-2h2.7a1 1 0 01.95.68l1.2 3.59a1 1 0 01-.5 1.21l-1.76.88a11.04 11.04 0 005.5 5.5l.88-1.76a1 1 0 011.21-.5l3.59 1.2a1 1 0 01.68.95V19a2 2 0 01-2 2h-1C9.72 21 3 14.28 3 6V5z" />
-                </svg>
-                联系客户
-              </button>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* ===== Section 2: 当日数据总结 ===== */}
-      {scheduleTab === 'trips' && (
+      {/* ===== Section 2: 今日行程数据统计 ===== */}
       <Card className="mb-4 p-4">
         <div className="flex gap-3">
           {[
-            { value: summary.count, unit: '', label: '今日行程' },
+            { value: summary.count, unit: '', label: '行程数' },
             { value: summary.distance, unit: 'km', label: '总里程' },
             { value: `¥${summary.amount}`, unit: '', label: '预计收入' },
             { value: `${summary.completed}/${summary.count}`, unit: '', label: '已完成' },
@@ -484,10 +372,9 @@ export const SchedulePage: React.FC = () => {
           ))}
         </div>
       </Card>
-      )}
 
       {/* 路线时间轴 - 仅展示确认后/进行中的行程 */}
-      {scheduleTab === 'trips' && tripOrders.length > 0 && (
+      {tripOrders.length > 0 && (
         <Card className="mb-4 p-4">
           <div className="text-sm font-semibold text-text-primary mb-3">当日路线</div>
           <div className="space-y-0">
@@ -525,23 +412,22 @@ export const SchedulePage: React.FC = () => {
       {/* ===== 可滚动区域：行程列表 ===== */}
       <div className="flex-1 min-h-0 overflow-y-auto px-lg pb-24">
       {/* ===== Section 3: 行程/预约列表 ===== */}
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold text-text-primary">
-          {(() => {
-            const noun = scheduleTab === 'trips' ? '行程' : '预约';
-            const datePrefix = sameCalendarDay(activeDate, new Date())
-              ? '今日'
-              : `${activeDate.getMonth() + 1}月${activeDate.getDate()}日`;
-            return `${datePrefix}${noun}`;
-          })()}
-        </h2>
-        <button
-          type="button"
-          onClick={() => navigate('/orders')}
-          className="text-sm text-primary font-medium"
-        >
-          全部预约
-        </button>
+      <div className="mb-3 flex gap-6 border-b border-gray-100">
+        {([['trips', '今日行程'], ['all', '今日预约']] as const).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setScheduleTab(key)}
+            className={`relative pb-2.5 text-[15px] font-semibold transition-colors ${
+              scheduleTab === key ? 'text-text-primary' : 'text-text-tertiary'
+            }`}
+          >
+            {label}
+            {scheduleTab === key && (
+              <span className="absolute -bottom-px left-0 right-0 h-0.5 rounded-full bg-primary" />
+            )}
+          </button>
+        ))}
       </div>
 
       {isLoading ? (
