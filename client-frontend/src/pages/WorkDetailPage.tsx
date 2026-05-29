@@ -317,6 +317,11 @@ const FullscreenImageViewer: React.FC<FullscreenImageViewerProps> = ({
 
 const WorkDetailPage: React.FC = () => {
   const navigate = useNavigate();
+  // 返回上一页（来自作品列表/美甲师名片等），无历史时回退到作品集
+  const handleBack = () => {
+    if (window.history.length > 1) navigate(-1);
+    else navigate('/works');
+  };
   const { id } = useParams<{ id: string }>();
   const [work, setWork] = useState<WorkDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -477,7 +482,7 @@ const WorkDetailPage: React.FC = () => {
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 rounded-full bg-black/28 px-2 py-1.5 backdrop-blur-md">
             <button
-              onClick={() => navigate('/works')}
+              onClick={handleBack}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-white/12 text-white"
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
