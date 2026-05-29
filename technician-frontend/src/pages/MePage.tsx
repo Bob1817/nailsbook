@@ -136,12 +136,12 @@ export const MePage: React.FC = () => {
   return (
     <div className="min-h-full overflow-x-hidden bg-[#fff9f8] pb-24">
       {/* ===== Header ===== */}
-      <div className="relative overflow-hidden bg-[linear-gradient(135deg,#ff8aa0_0%,#ff9ab0_52%,#ffc8b2_100%)] px-5 pb-6 pt-12">
-        <div className="absolute inset-y-0 right-[-14%] w-48 rounded-full bg-white/[0.08] blur-3xl" />
-        <div className="absolute left-[-18%] top-10 h-24 w-40 rounded-full bg-white/[0.08] blur-3xl" />
+      <div className="relative overflow-hidden bg-[linear-gradient(145deg,#FF6FA2_0%,#FF6B9B_34%,#FF81A4_68%,#FFB387_100%)] px-5 pb-6 pt-12">
+        <div className="absolute inset-y-0 right-[-14%] w-48 rounded-full bg-white/[0.10] blur-3xl" />
+        <div className="absolute left-[-18%] top-10 h-24 w-40 rounded-full bg-white/[0.10] blur-3xl" />
 
         <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/30 bg-white/18 shadow-[0_10px_24px_rgba(255,255,255,0.08)]">
+          <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/40 bg-white/15 shadow-[0_10px_24px_rgba(112,35,71,0.18)]">
             {technician?.avatar ? (
               <img src={technician.avatar} alt={technician.name} className="h-full w-full object-cover" />
             ) : (
@@ -150,16 +150,16 @@ export const MePage: React.FC = () => {
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="truncate text-[1.42rem] font-semibold tracking-[-0.03em] text-white">美甲师·{technician?.name || '小美'}</h1>
+              <h1 className="truncate text-[1.42rem] font-semibold tracking-[-0.03em] text-white [text-shadow:0_1px_3px_rgba(112,35,71,0.22)]">美甲师·{technician?.name || '小美'}</h1>
               <button
                 type="button"
                 onClick={() => navigate('/subscription')}
                 className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] leading-none font-medium transition-colors ${
                   trialActive
-                    ? 'bg-[#FFE066]/30 text-[#FFE066] ring-1 ring-[#FFE066]/40'
+                    ? 'bg-[#FFE066]/30 text-[#FFF4B8] ring-1 ring-[#FFE066]/50'
                     : currentPlan.code !== 'free'
-                      ? 'bg-white/[0.18] text-white/90 ring-1 ring-white/20'
-                      : 'bg-white/[0.10] text-white/70'
+                      ? 'bg-white/25 text-white ring-1 ring-white/30'
+                      : 'bg-white/20 text-white ring-1 ring-white/25'
                 }`}
               >
                 <span className="text-[10px]">
@@ -168,22 +168,22 @@ export const MePage: React.FC = () => {
                 {trialActive ? `试用 ${trialDaysLeft}天` : currentPlan.name}
               </button>
             </div>
-            <p className="mt-1.5 text-[0.95rem] leading-none text-white/82">{technician?.phone || '未绑定手机号'}</p>
+            <p className="mt-1.5 text-[0.95rem] leading-none text-white/95 [text-shadow:0_1px_2px_rgba(112,35,71,0.20)]">{technician?.phone || '未绑定手机号'}</p>
           </div>
         </div>
 
         {/* 接单状态 */}
-        <div className="mt-5 flex items-center justify-between rounded-[20px] border border-white/[0.14] bg-white/10 px-4 py-3 backdrop-blur">
+        <div className="mt-5 flex items-center justify-between rounded-[20px] border border-white/25 bg-white/[0.18] px-4 py-3 backdrop-blur">
           <div className="flex items-center gap-2">
-            <div className={`h-2 w-2 rounded-full ${isAcceptingOrders ? 'animate-pulse bg-emerald-300' : 'bg-white/70'}`} />
-            <span className="text-sm font-medium text-white">{isAcceptingOrders ? '当前接单中' : '当前已暂停接单'}</span>
+            <div className={`h-2 w-2 rounded-full ${isAcceptingOrders ? 'animate-pulse bg-emerald-300' : 'bg-white/80'}`} />
+            <span className="text-sm font-semibold text-white [text-shadow:0_1px_2px_rgba(112,35,71,0.18)]">{isAcceptingOrders ? '当前接单中' : '当前已暂停接单'}</span>
           </div>
           <div className="flex items-center gap-2">
             {technician?.homeService && (
-              <span className="rounded-full bg-white/18 px-2.5 py-1 text-[10px] text-white/90">🚗 上门</span>
+              <span className="rounded-full bg-white/25 px-2.5 py-1 text-[10px] font-medium text-white">🚗 上门</span>
             )}
             {technician?.shopService && (
-              <span className="rounded-full bg-white/18 px-2.5 py-1 text-[10px] text-white/90">🏪 到店</span>
+              <span className="rounded-full bg-white/25 px-2.5 py-1 text-[10px] font-medium text-white">🏪 到店</span>
             )}
           </div>
         </div>
@@ -193,10 +193,10 @@ export const MePage: React.FC = () => {
           {headerStats.map((stat) => (
             <div
               key={stat.label}
-              className="rounded-[18px] border border-white/14 bg-white/12 px-3 py-2.5 text-center backdrop-blur"
+              className="rounded-[18px] border border-white/25 bg-white/[0.20] px-3 py-2.5 text-center backdrop-blur"
             >
-              <p className="text-[1.4rem] font-semibold tracking-[-0.02em] text-white">{stat.value}</p>
-              <p className="mt-0.5 text-[11px] text-white/75">{stat.label}</p>
+              <p className="text-[1.5rem] font-bold tracking-[-0.02em] text-white [text-shadow:0_1px_3px_rgba(112,35,71,0.22)]">{stat.value}</p>
+              <p className="mt-0.5 text-[11px] font-medium text-white/90 [text-shadow:0_1px_2px_rgba(112,35,71,0.16)]">{stat.label}</p>
             </div>
           ))}
         </div>
