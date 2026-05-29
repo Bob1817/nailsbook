@@ -168,7 +168,7 @@ export const MePage: React.FC = () => {
                 {trialActive ? `试用 ${trialDaysLeft}天` : currentPlan.name}
               </button>
             </div>
-            <p className="mt-1.5 text-[0.95rem] leading-none text-white/95 [text-shadow:0_1px_2px_rgba(112,35,71,0.20)]">{technician?.phone || '未绑定手机号'}</p>
+            <p className="mt-1.5 text-[0.95rem] leading-none text-white/95 [text-shadow:0_1px_2px_rgba(112,35,71,0.20)]">{technician?.city || '未设置城市'}</p>
           </div>
         </div>
 
@@ -176,16 +176,11 @@ export const MePage: React.FC = () => {
         <div className="mt-5 flex items-center justify-between rounded-[20px] border border-white/25 bg-white/[0.18] px-4 py-3 backdrop-blur">
           <div className="flex items-center gap-2">
             <div className={`h-2 w-2 rounded-full ${isAcceptingOrders ? 'animate-pulse bg-emerald-300' : 'bg-white/80'}`} />
-            <span className="text-sm font-semibold text-white [text-shadow:0_1px_2px_rgba(112,35,71,0.18)]">{isAcceptingOrders ? '当前接单中' : '当前已暂停接单'}</span>
+            <span className="text-sm font-semibold text-white [text-shadow:0_1px_2px_rgba(112,35,71,0.18)]">{isAcceptingOrders ? '接单中' : '休息中'}</span>
           </div>
-          <div className="flex items-center gap-2">
-            {technician?.homeService && (
-              <span className="rounded-full bg-white/25 px-2.5 py-1 text-[10px] font-medium text-white">🚗 上门</span>
-            )}
-            {technician?.shopService && (
-              <span className="rounded-full bg-white/25 px-2.5 py-1 text-[10px] font-medium text-white">🏪 到店</span>
-            )}
-          </div>
+          {technician?.homeService && (
+            <span className="rounded-full bg-white/25 px-2.5 py-1 text-[11px] font-medium text-white">可上门</span>
+          )}
         </div>
 
         {/* 概览数据并入头部 */}
