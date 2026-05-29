@@ -90,25 +90,6 @@ function estimateRouteDistance(orders: TechnicianOrder[]) {
   );
 }
 
-function estimateRouteMinutes(orders: TechnicianOrder[]) {
-  return orders.reduce((total, order, index) => {
-    return total + estimateSingleTravelMinutes(order) + (index === 0 ? 0 : 10);
-  }, 0);
-}
-
-function estimateSavedMinutes(orders: TechnicianOrder[]) {
-  if (orders.length <= 1) return 0;
-  return Math.min(24, 8 + orders.length * 4);
-}
-
-function formatTravelDuration(minutes: number) {
-  if (minutes <= 0) return '0m';
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  return `${hours}h${rest > 0 ? `${rest}m` : ''}`;
-}
-
 const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
 function formatBookingDate(iso: string) {
@@ -251,10 +232,6 @@ export const HomePage: React.FC = () => {
         }),
     [orders]
   );
-  const hasTodayOrders = useMemo(
-    () => todayOrders.some((order) => isActiveOrderStatus(order.status)),
-    [todayOrders]
-  );
   const nextOrder = useMemo(() => {
     const now = Date.now();
     if (!allTripOrders.length) return null;
@@ -276,9 +253,6 @@ export const HomePage: React.FC = () => {
     suggestedDepartureDate
       ? Math.floor((suggestedDepartureDate.getTime() - Date.now()) / (60 * 1000))
       : 0;
-  const routeDistance = estimateRouteDistance(todayOrders);
-  const routeMinutes = estimateRouteMinutes(todayOrders);
-  const routeSavedMinutes = estimateSavedMinutes(todayOrders);
   const unreadMessageCount = conversations.reduce((total, conversation) => total + conversation.unreadCount, 0);
   const customerCount = useMemo(
     () => new Set(orders.map((order) => order.customerId || order.customerName).filter(Boolean)).size,
@@ -584,7 +558,7 @@ export const HomePage: React.FC = () => {
                   <div className="rounded-[16px] border border-[#f2e6ec] bg-[#FFFFFF] px-3 py-2.5">
                     <p className="text-[11px] text-[#a08e98]">预计路程</p>
                     <p className="mt-1 text-[14px] font-semibold text-[#1f2230]">
-                      {`${nextTravelMinutes} 分钟`}
+                      {`${estimateRouteDistance([nextOrder])}km · ${nextTravelMinutes}分钟`}
                     </p>
                   </div>
                   <div className="rounded-[16px] border border-[#f2e6ec] bg-[#FFFFFF] px-3 py-2.5">
@@ -650,76 +624,7 @@ export const HomePage: React.FC = () => {
       </div>
 
       <div className="space-y-3 px-5 pt-3">
-        <div className={`grid grid-cols-1 gap-3 ${hasTodayOrders ? 'lg:grid-cols-[1.15fr_1.05fr]' : ''}`}>
-          {hasTodayOrders ? (
-            <section className="rounded-[30px] bg-[#FFFDFD] p-5 shadow-[0_18px_36px_rgba(36,27,41,0.06)] flex flex-col gap-4">
-              <div className="flex items-stretch gap-4">
-                <div className="shrink-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-[16px] font-semibold text-[#1f2230]">今日路线</p>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#EEF9F1] px-2.5 py-1 text-[11px] font-semibold text-[#31B46C]">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#31B46C]" />
-                      {routeSavedMinutes > 0 ? `路线已优化` : '路线正常'}
-                    </span>
-                  </div>
-                  <div className="mt-3 flex items-end gap-2">
-                    <span className="text-[2.35rem] font-semibold tracking-[-0.05em] text-[#1f2230]">{routeDistance}</span>
-                    <span className="pb-1 text-[16px] font-medium text-[#6d6570]">km</span>
-                  </div>
-                  <p className="mt-1 text-[13px] text-[#7f7681]">预计通勤 {formatTravelDuration(routeMinutes)}</p>
-                </div>
-                <div className="flex-1 min-h-[96px] rounded-[22px] border border-[#f2e6ec] bg-[radial-gradient(circle_at_top_right,#FFF8FA_0%,#FFFDFC_55%,#FFF8F6_100%)] px-4 py-3 flex items-center">
-                  <div className="flex items-start gap-3 w-full">
-                    {todayOrders.filter((o) => isActiveOrderStatus(o.status)).map((order, index, arr) => (
-                      <React.Fragment key={order.id}>
-                        <div className="flex flex-col items-center gap-1 min-w-0">
-                          <span
-                            className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white shadow-[0_4px_10px_rgba(0,0,0,0.1)] ${
-                              order.status === 'in_progress' ? 'bg-[#3b82f6]' : 'bg-[#FF5A66]'
-                            }`}
-                          >
-                            {index + 1}
-                          </span>
-                          <span className="text-[11px] text-[#5a5260] font-medium text-center truncate max-w-[5rem]">{order.customerName}</span>
-                          <span className="text-[9px] text-[#a09aa2]">{formatClock(order.startTime)}</span>
-                          <span className="text-[9px] text-[#b0aab4] text-center leading-tight line-clamp-2 max-w-[5rem]">
-                            {compactAddress(order.address || '')}
-                          </span>
-                        </div>
-                        {index < arr.length - 1 && (
-                          <div className="flex-1 min-w-[1rem] flex items-start pt-3.5">
-                            <div className="w-full border-t-2 border-dashed border-[#e8d8e0]" />
-                          </div>
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="rounded-[20px] bg-[#FFF8FA] px-4 py-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-[13px] leading-6 text-[#7f7681]">
-                    <p>{departureCountdownMinutes <= 0 ? '距离出发已到，建议优先前往下一单。' : `距离出发还有 ${formatDepartureCountdown(departureCountdownMinutes)}`}</p>
-                    <p className="text-[#FF5E93]">
-                      {departureCountdownMinutes <= 0
-                        ? '建议立即开启导航，避免后续行程受影响。'
-                        : routeSavedMinutes > 0
-                          ? `路线已优化，预计可节省 ${routeSavedMinutes} 分钟。`
-                          : '建议按路线顺序跑单，避免迟到。'}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/schedule')}
-                    className="inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-full border border-[#F2D5DE] bg-white px-4 text-[13px] font-semibold text-[#6D6570] shadow-[0_8px_18px_rgba(255,110,141,0.06)]"
-                  >
-                    地图入口
-                  </button>
-                </div>
-              </div>
-            </section>
-          ) : null}
-
+        <div className="grid grid-cols-1 gap-3">
           <section className="rounded-[30px] bg-[#FFFDFD] p-5 shadow-[0_18px_36px_rgba(36,27,41,0.05)]">
             <div className="mb-4 flex items-center justify-between">
               <div>
