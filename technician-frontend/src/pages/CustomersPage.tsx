@@ -92,7 +92,10 @@ export const CustomersPage: React.FC = () => {
     <div className="flex h-full flex-col bg-[#fff9f8]">
       {/* 固定头部：标题 + 搜索框 + 分类标签 */}
       <div className="shrink-0 px-5 pt-5 pb-3 space-y-4">
-        <h1 className="text-xl font-semibold text-gray-900">客户</h1>
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">客户</h1>
+          <p className="mt-1 text-sm text-gray-400">管理客户档案、标签与服务记录</p>
+        </div>
 
         <div className="relative">
           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">

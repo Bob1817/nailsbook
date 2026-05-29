@@ -364,7 +364,10 @@ export const MessagesPage: React.FC = () => {
       {/* 固定头部：标题 + 搜索 + 标签 */}
       <div className="shrink-0 space-y-4 px-5 pt-5 pb-3">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-gray-900">消息</h1>
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">消息</h1>
+            <p className="mt-1 text-sm text-gray-400">查看预约提醒，与客户即时沟通</p>
+          </div>
           <button
             onClick={() => setShowNewChatModal(true)}
             className="flex min-h-[44px] items-center gap-2 rounded-full bg-[#ffe9f0] px-4 py-2 text-sm font-medium text-pink-500 transition-colors active:bg-[#f2d2dc]"
