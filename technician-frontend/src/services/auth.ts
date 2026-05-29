@@ -284,6 +284,10 @@ export const authService = {
     };
   },
 
+  changePassword: async (oldPassword: string, newPassword: string): Promise<void> => {
+    await api.patch('/auth/password', { oldPassword, newPassword });
+  },
+
   isAuthenticated: (): boolean => {
     return !!localStorage.getItem('technician_token');
   },
