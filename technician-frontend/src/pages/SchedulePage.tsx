@@ -33,17 +33,6 @@ const statusPillClass: Record<OrderStatus, string> = {
   cancelled: 'bg-[#f4f4f5] text-[#8f8f95]',
 };
 
-const timelineDotColors: Record<OrderStatus, string> = {
-  pending_quote: '#B3B3B3',
-  pending_agree: '#FF9F43',
-  pending_confirm: '#FF9F43',
-  pending_home: '#FF5A66',
-  pending_shop: '#FF5A66',
-  in_progress: '#FF9F43',
-  completed: '#22C55E',
-  cancelled: '#B3B3B3',
-};
-
 function sameCalendarDay(left: Date, right: Date) {
   return (
     left.getFullYear() === right.getFullYear() &&
@@ -373,40 +362,6 @@ export const SchedulePage: React.FC = () => {
         </div>
       </Card>
 
-      {/* 路线时间轴 - 仅展示确认后/进行中的行程 */}
-      {tripOrders.length > 0 && (
-        <Card className="mb-4 p-4">
-          <div className="text-sm font-semibold text-text-primary mb-3">当日路线</div>
-          <div className="space-y-0">
-            {tripOrders.map((order) => (
-              <div
-                key={order.id}
-                className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0 cursor-pointer"
-                onClick={() => setDetailOrderId(order.id)}
-              >
-                <div
-                  className="w-2 h-2 rounded-full shrink-0"
-                  style={{ backgroundColor: timelineDotColors[order.status] || '#B3B3B3' }}
-                />
-                <div className="text-sm font-semibold w-[50px] shrink-0">
-                  {formatClock(order.startTime)}
-                </div>
-                <CustomerAvatar
-                  name={order.customerName}
-                  avatarUrl={order.customerAvatar}
-                  size={24}
-                />
-                <div className="text-sm flex-1 min-w-0 truncate">
-                  {order.customerName} · {serviceTypeLabels[order.serviceType || ''] || order.serviceName}
-                </div>
-                <span className={`text-xs shrink-0 ${orderStatusLabels[order.status] === '已完成' ? 'text-[#22c55e]' : order.status === 'in_progress' ? 'text-[#f59e0b]' : order.status === 'pending_home' || order.status === 'pending_shop' ? 'text-primary font-semibold' : 'text-text-tertiary'}`}>
-                  {orderStatusLabels[order.status]}
-                </span>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
       </div>
 
       {/* ===== 可滚动区域：行程列表 ===== */}
