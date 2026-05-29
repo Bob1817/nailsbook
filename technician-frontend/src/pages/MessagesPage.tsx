@@ -473,8 +473,14 @@ export const MessagesPage: React.FC = () => {
       </div>
 
       {showNewChatModal && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 px-3 pb-[calc(6.5rem+env(safe-area-inset-bottom,0px))] sm:items-center sm:px-0 sm:pb-0">
-          <Card className="max-h-[min(70vh,36rem)] w-full max-w-md overflow-hidden rounded-[28px] px-lg pt-lg animate-slide-up">
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 sm:items-center sm:p-4"
+          onClick={() => setShowNewChatModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex max-h-[85vh] w-full flex-col overflow-hidden rounded-t-[28px] bg-white px-5 pt-5 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] shadow-[0_-12px_40px_rgba(15,23,42,0.12)] animate-slide-up sm:max-w-md sm:rounded-[28px] sm:pb-5"
+          >
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">选择客户发起对话</h3>
@@ -490,7 +496,7 @@ export const MessagesPage: React.FC = () => {
               </button>
             </div>
 
-            <div className="relative mb-4">
+            <div className="relative mb-4 shrink-0">
               <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -505,7 +511,7 @@ export const MessagesPage: React.FC = () => {
               />
             </div>
 
-            <div className="max-h-[min(50vh,20rem)] space-y-2.5 overflow-y-auto pb-[calc(20px+env(safe-area-inset-bottom,0px))] pr-1">
+            <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto pr-1">
               {filteredCustomers.length > 0 ? (
                 filteredCustomers.map((customer) => {
                   const hasConversation = conversations.some(c => c.client.id === customer.id);
@@ -537,7 +543,7 @@ export const MessagesPage: React.FC = () => {
                 <div className="rounded-[18px] bg-[#fcf7f8] px-4 py-6 text-center text-sm text-gray-400">没有找到匹配的客户</div>
               )}
             </div>
-          </Card>
+          </div>
         </div>
       )}
 
