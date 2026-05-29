@@ -23,6 +23,7 @@ import { CheckPhoneDto } from './dto/check-phone.dto';
 import { UpdateTechnicianProfileDto } from './dto/update-technician-profile.dto';
 import { UpdateTechnicianSelfStatusDto } from './dto/update-technician-status.dto';
 import { UpdateTechnicianServiceTypeDto } from './dto/update-service-type.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { RefreshTokenDto } from '../common/dto/refresh-token.dto';
 
 @ApiTags('美甲师-认证')
@@ -109,6 +110,24 @@ export class TechnicianAuthController {
     return this.technicianAuthService.updateProfile(
       request.user.technicianId,
       body,
+    );
+  }
+
+  @Patch('password')
+  @UseGuards(TechnicianJwtAuthGuard)
+  @ApiOperation({ summary: '修改密码' })
+  @ApiBody({ type: ChangePasswordDto })
+  @ApiResponse({ status: 200, description: '密码修改成功' })
+  @ApiResponse({ status: 400, description: '当前密码不正确或新密码不合规' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  async changePassword(
+    @Req() request: { user: { technicianId: number } },
+    @Body() body: ChangePasswordDto,
+  ) {
+    return this.technicianAuthService.changePassword(
+      request.user.technicianId,
+      body.oldPassword,
+      body.newPassword,
     );
   }
 

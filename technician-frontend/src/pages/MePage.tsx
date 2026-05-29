@@ -22,11 +22,11 @@ const tools = [
 
 const settings = [
   { icon: '⚙️', label: '个人设置', path: '/profile-settings' },
-  { icon: '🔐', label: '账号与安全' },
-  { icon: '🔔', label: '通知设置' },
-  { icon: '🔒', label: '隐私设置' },
-  { icon: '❓', label: '帮助与反馈' },
-  { icon: 'ℹ️', label: '关于我们' },
+  { icon: '🔐', label: '账号与安全', path: '/account-security' },
+  { icon: '🔔', label: '通知设置', path: '/notification-settings' },
+  { icon: '🔒', label: '隐私设置', path: '/privacy-settings' },
+  { icon: '❓', label: '帮助与反馈', path: '/help-feedback' },
+  { icon: 'ℹ️', label: '关于我们', path: '/about' },
 ];
 
 // 统一区块样式，对齐首页的通透卡片风格

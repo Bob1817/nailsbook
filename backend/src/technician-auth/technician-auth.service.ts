@@ -295,6 +295,45 @@ export class TechnicianAuthService {
     return this.issueTokens(technician.id, technician.phone);
   }
 
+  async changePassword(
+    technicianId: number,
+    oldPassword: string,
+    newPassword: string,
+  ) {
+    const technician = await this.prisma.technician.findUnique({
+      where: { id: technicianId },
+    });
+
+    if (!technician) {
+      throw new UnauthorizedException('美甲师不存在');
+    }
+
+    if (!technician.passwordHash) {
+      throw new BadRequestException('账号未设置密码，请联系管理员');
+    }
+
+    const valid = await bcrypt.compare(oldPassword, technician.passwordHash);
+    if (!valid) {
+      throw new BadRequestException('当前密码不正确');
+    }
+
+    const sameAsOld = await bcrypt.compare(
+      newPassword,
+      technician.passwordHash,
+    );
+    if (sameAsOld) {
+      throw new BadRequestException('新密码不能与当前密码相同');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.technician.update({
+      where: { id: technicianId },
+      data: { passwordHash },
+    });
+
+    return { success: true };
+  }
+
   async getProfile(technicianId: number) {
     const technician = await this.prisma.technician.findUnique({
       where: { id: technicianId },

@@ -57,6 +57,11 @@ const TagManagementPage = lazy(async () => {
   return { default: module.TagManagementPage };
 });
 const CustomerDetailPage = lazy(() => import('./pages/CustomerDetailPage'));
+const AccountSecurityPage = lazy(() => import('./pages/AccountSecurityPage'));
+const NotificationSettingsPage = lazy(() => import('./pages/NotificationSettingsPage'));
+const PrivacySettingsPage = lazy(() => import('./pages/PrivacySettingsPage'));
+const HelpFeedbackPage = lazy(() => import('./pages/HelpFeedbackPage'));
+const AboutPage = lazy(() => import('./pages/AboutPage'));
 
 function RouteFallback() {
   return (
@@ -103,6 +108,11 @@ function App() {
                   <Route path="/service-time" element={<ServiceTimePage />} />
                   <Route path="/tag-management" element={<TagManagementPage />} />
                   <Route path="/orders/:id" element={<OrderDetailPage />} />
+                  <Route path="/account-security" element={<AccountSecurityPage />} />
+                  <Route path="/notification-settings" element={<NotificationSettingsPage />} />
+                  <Route path="/privacy-settings" element={<PrivacySettingsPage />} />
+                  <Route path="/help-feedback" element={<HelpFeedbackPage />} />
+                  <Route path="/about" element={<AboutPage />} />
                 </Route>
               </Routes>
             </Suspense>
