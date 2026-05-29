@@ -201,6 +201,100 @@ const HiddenCommentsSection: React.FC<HiddenCommentsSectionProps> = (props) => {
   );
 };
 
+// ─── FullscreenImageViewer ────────────────────────────────────────────────────
+
+interface FullscreenImageViewerProps {
+  images: string[];
+  initialIndex: number;
+  onClose: () => void;
+}
+
+const FullscreenImageViewer: React.FC<FullscreenImageViewerProps> = ({
+  images,
+  initialIndex,
+  onClose,
+}) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [index, setIndex] = useState(initialIndex);
+
+  // Jump to the tapped image on open
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollLeft = initialIndex * el.clientWidth;
+  }, [initialIndex]);
+
+  // Lock background scroll while open
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const i = Math.round(el.scrollLeft / el.clientWidth);
+    setIndex((prev) => (i !== prev ? i : prev));
+  };
+
+  return (
+    <div className="fixed inset-0 z-[300] bg-black">
+      {/* Close button */}
+      <button
+        onClick={onClose}
+        className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur"
+      >
+        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      {/* Counter */}
+      {images.length > 1 && (
+        <div className="absolute left-1/2 top-[max(1rem,env(safe-area-inset-top))] z-10 -translate-x-1/2 rounded-full bg-white/15 px-3 py-1 text-sm text-white backdrop-blur">
+          {index + 1} / {images.length}
+        </div>
+      )}
+
+      {/* Swipeable images */}
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex h-full w-full snap-x snap-mandatory overflow-x-auto scrollbar-hide"
+      >
+        {images.map((url, i) => (
+          <div
+            key={i}
+            onClick={onClose}
+            className="flex h-full w-full flex-shrink-0 snap-center items-center justify-center"
+          >
+            <img
+              src={url}
+              alt={`图片 ${i + 1}`}
+              onClick={(e) => e.stopPropagation()}
+              className="max-h-full max-w-full object-contain"
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Page dots */}
+      {images.length > 1 && (
+        <div className="absolute bottom-[max(1.5rem,env(safe-area-inset-bottom))] left-0 right-0 flex justify-center gap-2">
+          {images.map((_, i) => (
+            <div
+              key={i}
+              className={`h-1.5 w-1.5 rounded-full ${i === index ? 'bg-white' : 'bg-white/40'}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── WorksPage ────────────────────────────────────────────────────────────────
 
 const WorksPage: React.FC = () => {
@@ -228,6 +322,7 @@ const WorksPage: React.FC = () => {
   const [confirmDeleteCommentId, setConfirmDeleteCommentId] = useState<number | null>(null);
   const [confirmHideCommentId, setConfirmHideCommentId] = useState<number | null>(null);
   const [showActionMenu, setShowActionMenu] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
   const imageSliderRef = useRef<HTMLDivElement>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
 
@@ -388,6 +483,7 @@ const WorksPage: React.FC = () => {
   const openWorkDetail = async (work: Work) => {
     setSelectedWork(work);
     setCurrentImageIndex(0);
+    setViewerOpen(false);
     setShowDetailModal(true);
     setShowActionMenu(false);
     await loadComments(work.id);
@@ -754,6 +850,12 @@ const WorksPage: React.FC = () => {
           <div className="relative h-[55vh] flex-shrink-0 bg-black">
             <div
               ref={imageSliderRef}
+              onScroll={() => {
+                const el = imageSliderRef.current;
+                if (!el) return;
+                const i = Math.round(el.scrollLeft / el.clientWidth);
+                setCurrentImageIndex((prev) => (i !== prev ? i : prev));
+              }}
               className="flex h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide"
               style={{ scrollBehavior: 'smooth' }}
             >
@@ -765,7 +867,8 @@ const WorksPage: React.FC = () => {
                   <img
                     src={url}
                     alt={`作品图片 ${index + 1}`}
-                    className="w-full h-full object-cover"
+                    onClick={() => setViewerOpen(true)}
+                    className="w-full h-full object-cover cursor-zoom-in"
                   />
                 </div>
               ))}
@@ -960,6 +1063,15 @@ const WorksPage: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Fullscreen image viewer */}
+          {viewerOpen && selectedWork.imageUrls.length > 0 && (
+            <FullscreenImageViewer
+              images={selectedWork.imageUrls}
+              initialIndex={currentImageIndex}
+              onClose={() => setViewerOpen(false)}
+            />
+          )}
         </div>
       )}
 
