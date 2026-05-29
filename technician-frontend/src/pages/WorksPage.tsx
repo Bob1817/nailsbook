@@ -1,9 +1,193 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/feedback/ToastProvider';
-import { worksService, type Work } from '../services/works';
+import { worksService, type Work, type Comment } from '../services/works';
 import { uploadService } from '../services/upload';
 import { GridSkeleton } from '../components/Skeleton';
+
+// ─── CommentItem ─────────────────────────────────────────────────────────────
+
+interface CommentItemProps {
+  comment: Comment;
+  onReply: (comment: Comment) => void;
+  onPin: (commentId: number) => void;
+  onHide: (commentId: number) => void;
+  onDelete: (commentId: number) => void;
+  actionMenuId: number | null;
+  setActionMenuId: (id: number | null) => void;
+}
+
+const CommentItem: React.FC<CommentItemProps> = ({
+  comment, onReply, onPin, onHide, onDelete, actionMenuId, setActionMenuId,
+}) => {
+  const isDeleted = comment.user.role === 'unknown';
+
+  return (
+    <div className={`flex gap-3 ${comment.isHidden ? 'opacity-60' : ''}`}>
+      {comment.user.avatarUrl ? (
+        <img src={comment.user.avatarUrl} alt={comment.user.name} className="h-8 w-8 shrink-0 rounded-full object-cover" />
+      ) : (
+        <div
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white ${
+            comment.user.role === 'technician' ? 'bg-[#FF5E93]' : 'bg-gray-400'
+          }`}
+        >
+          {comment.user.name.slice(0, 1)}
+        </div>
+      )}
+
+      <div className="min-w-0 flex-1">
+        <div className="relative rounded-2xl bg-gray-50 px-3 py-2">
+          {/* Name row */}
+          <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
+            <span className="font-medium text-gray-700">{comment.user.name}</span>
+            {comment.user.role === 'technician' && (
+              <span className="rounded-full bg-pink-100 px-1.5 py-px text-[10px] font-medium text-pink-500">美甲师</span>
+            )}
+            {comment.isPinned && (
+              <span className="rounded-full bg-amber-100 px-1.5 py-px text-[10px] font-medium text-amber-600">置顶</span>
+            )}
+            {comment.isHidden && (
+              <span className="rounded-full bg-gray-200 px-1.5 py-px text-[10px] font-medium text-gray-500">已隐藏</span>
+            )}
+            <span className="ml-auto">{new Date(comment.createdAt).toLocaleDateString()}</span>
+          </div>
+
+          {/* Content — click to reply */}
+          <p
+            className={`mt-1 text-sm leading-5 ${isDeleted ? 'italic text-gray-400' : 'cursor-pointer text-gray-800 active:opacity-70'}`}
+            onClick={() => !isDeleted && onReply(comment)}
+          >
+            {comment.content}
+          </p>
+
+          {/* More button — always visible for technician (owns the work) */}
+          {!isDeleted && (
+            <div className="absolute right-2 top-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActionMenuId(actionMenuId === comment.id ? null : comment.id);
+                }}
+                className="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 active:bg-gray-200"
+              >
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                </svg>
+              </button>
+
+              {actionMenuId === comment.id && (
+                <div className="absolute right-0 top-7 z-30 w-32 rounded-xl bg-white py-1 shadow-lg ring-1 ring-black/5">
+                  <button
+                    onClick={() => onPin(comment.id)}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-gray-700 active:bg-gray-50"
+                  >
+                    <svg className="h-4 w-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                    {comment.isPinned ? '取消置顶' : '置顶'}
+                  </button>
+                  <button
+                    onClick={() => onHide(comment.id)}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-gray-700 active:bg-gray-50"
+                  >
+                    <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={comment.isHidden
+                        ? 'M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
+                        : 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21'
+                      } />
+                    </svg>
+                    {comment.isHidden ? '取消隐藏' : '隐藏'}
+                  </button>
+                  <div className="my-1 border-t border-gray-100" />
+                  <button
+                    onClick={() => onDelete(comment.id)}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-red-500 active:bg-red-50"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    删除
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Replies */}
+        {comment.replies && comment.replies.length > 0 && (
+          <div className="mt-2 space-y-2 border-l-2 border-gray-100 pl-2">
+            {comment.replies.map((reply) => (
+              <CommentItem
+                key={reply.id}
+                comment={reply}
+                onReply={onReply}
+                onPin={onPin}
+                onHide={onHide}
+                onDelete={onDelete}
+                actionMenuId={actionMenuId}
+                setActionMenuId={setActionMenuId}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ─── HiddenCommentsSection ────────────────────────────────────────────────────
+
+interface HiddenCommentsSectionProps {
+  comments: Comment[];
+  onReply: (c: Comment) => void;
+  onPin: (id: number) => void;
+  onHide: (id: number) => void;
+  onDelete: (id: number) => void;
+  actionMenuId: number | null;
+  setActionMenuId: (id: number | null) => void;
+}
+
+const HiddenCommentsSection: React.FC<HiddenCommentsSectionProps> = (props) => {
+  const [expanded, setExpanded] = useState(false);
+  if (props.comments.length === 0) return null;
+
+  return (
+    <div className="mt-4 border-t border-dashed border-gray-200 pt-3">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-1.5 text-xs text-gray-400"
+      >
+        <svg
+          className={`h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`}
+          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+        {expanded ? '收起隐藏评论' : `查看 ${props.comments.length} 条隐藏评论`}
+      </button>
+      {expanded && (
+        <div className="mt-3 space-y-3">
+          {props.comments.map((c) => (
+            <CommentItem
+              key={c.id}
+              comment={c}
+              onReply={props.onReply}
+              onPin={props.onPin}
+              onHide={props.onHide}
+              onDelete={props.onDelete}
+              actionMenuId={props.actionMenuId}
+              setActionMenuId={props.setActionMenuId}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── WorksPage ────────────────────────────────────────────────────────────────
 
 const WorksPage: React.FC = () => {
   const navigate = useNavigate();
@@ -27,8 +211,11 @@ const WorksPage: React.FC = () => {
   const [comments, setComments] = useState<any[]>([]);
   const [replyingTo, setReplyingTo] = useState<{ id: number; name: string } | null>(null);
   const [commentActionMenuId, setCommentActionMenuId] = useState<number | null>(null);
+  const [confirmDeleteCommentId, setConfirmDeleteCommentId] = useState<number | null>(null);
+  const [confirmHideCommentId, setConfirmHideCommentId] = useState<number | null>(null);
   const [showActionMenu, setShowActionMenu] = useState(false);
   const imageSliderRef = useRef<HTMLDivElement>(null);
+  const commentInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadWorks();
@@ -273,9 +460,10 @@ const WorksPage: React.FC = () => {
     }
   };
 
-  const handleReplyToComment = (comment: any) => {
+  const handleReplyToComment = (comment: Comment) => {
     setReplyingTo({ id: comment.id, name: comment.user?.name || '用户' });
     setCommentActionMenuId(null);
+    setTimeout(() => commentInputRef.current?.focus(), 50);
   };
 
   const handlePinComment = async (commentId: number) => {
@@ -291,12 +479,18 @@ const WorksPage: React.FC = () => {
     }
   };
 
-  const handleHideComment = async (commentId: number) => {
-    if (!selectedWork) return;
+  const handleHideComment = (commentId: number) => {
+    setCommentActionMenuId(null);
+    setConfirmHideCommentId(commentId);
+  };
+
+  const confirmHideComment = async () => {
+    if (!selectedWork || confirmHideCommentId === null) return;
+    const commentId = confirmHideCommentId;
+    setConfirmHideCommentId(null);
     try {
       const result = await worksService.hideComment(selectedWork.id, commentId);
       toast.success(result.hidden ? '评论已隐藏' : '评论已取消隐藏');
-      setCommentActionMenuId(null);
       await loadComments(selectedWork.id);
     } catch (error) {
       console.error('Failed to hide comment:', error);
@@ -304,10 +498,15 @@ const WorksPage: React.FC = () => {
     }
   };
 
-  const handleDeleteComment = async (commentId: number) => {
-    if (!selectedWork) return;
+  const handleDeleteComment = (commentId: number) => {
     setCommentActionMenuId(null);
-    if (!confirm('确定要删除这条评论吗？')) return;
+    setConfirmDeleteCommentId(commentId);
+  };
+
+  const confirmDeleteComment = async () => {
+    if (!selectedWork || confirmDeleteCommentId === null) return;
+    const commentId = confirmDeleteCommentId;
+    setConfirmDeleteCommentId(null);
     try {
       await worksService.deleteComment(selectedWork.id, commentId);
       toast.success('评论已删除');
@@ -662,17 +861,39 @@ const WorksPage: React.FC = () => {
 
             {/* Comments — scrollable */}
             <div className="flex-1 overflow-y-auto border-t border-gray-100 px-5 py-4">
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-900">评论</h3>
-                <span className="text-xs text-gray-400">{comments.length} 条</span>
-              </div>
+              {(() => {
+                const visibleComments = comments.filter((c) => !c.isHidden);
+                const hiddenComments = comments.filter((c) => c.isHidden);
+                return (
+                  <>
+                    <div className="mb-3 flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-gray-900">评论</h3>
+                      <span className="text-xs text-gray-400">{visibleComments.length} 条</span>
+                    </div>
 
-              {comments.length > 0 ? (
-                <div className="space-y-3">
-                  {comments.map((comment) => (
-                    <CommentItem
-                      key={comment.id}
-                      comment={comment}
+                    {visibleComments.length > 0 ? (
+                      <div className="space-y-3">
+                        {visibleComments.map((comment) => (
+                          <CommentItem
+                            key={comment.id}
+                            comment={comment}
+                            onReply={handleReplyToComment}
+                            onPin={handlePinComment}
+                            onHide={handleHideComment}
+                            onDelete={handleDeleteComment}
+                            actionMenuId={commentActionMenuId}
+                            setActionMenuId={setCommentActionMenuId}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl bg-gray-50 px-4 py-6 text-center text-sm text-gray-400">
+                        暂无评论
+                      </div>
+                    )}
+
+                    <HiddenCommentsSection
+                      comments={hiddenComments}
                       onReply={handleReplyToComment}
                       onPin={handlePinComment}
                       onHide={handleHideComment}
@@ -680,13 +901,9 @@ const WorksPage: React.FC = () => {
                       actionMenuId={commentActionMenuId}
                       setActionMenuId={setCommentActionMenuId}
                     />
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-2xl bg-gray-50 px-4 py-6 text-center text-sm text-gray-400">
-                  暂无评论
-                </div>
-              )}
+                  </>
+                );
+              })()}
             </div>
 
             {/* Comment input bar */}
@@ -706,6 +923,7 @@ const WorksPage: React.FC = () => {
               )}
               <div className="flex items-center gap-2">
                 <input
+                  ref={commentInputRef}
                   type="text"
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
@@ -852,6 +1070,52 @@ const WorksPage: React.FC = () => {
             >
               {editingWork ? '保存修改' : '创建作品'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete comment confirm */}
+      {confirmDeleteCommentId !== null && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 px-6">
+          <div className="w-full max-w-xs rounded-2xl bg-white p-6 shadow-xl">
+            <p className="text-center text-sm leading-6 text-gray-700">确定要删除这条评论吗？</p>
+            <div className="mt-5 flex gap-3">
+              <button
+                onClick={() => setConfirmDeleteCommentId(null)}
+                className="flex-1 rounded-full border border-gray-200 py-2.5 text-sm font-medium text-gray-600"
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmDeleteComment}
+                className="flex-1 rounded-full bg-red-500 py-2.5 text-sm font-medium text-white"
+              >
+                删除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hide comment confirm */}
+      {confirmHideCommentId !== null && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 px-6">
+          <div className="w-full max-w-xs rounded-2xl bg-white p-6 shadow-xl">
+            <p className="text-center text-sm leading-6 text-gray-700">确定要隐藏这条评论吗？隐藏后该评论将折叠在评论区底部。</p>
+            <div className="mt-5 flex gap-3">
+              <button
+                onClick={() => setConfirmHideCommentId(null)}
+                className="flex-1 rounded-full border border-gray-200 py-2.5 text-sm font-medium text-gray-600"
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmHideComment}
+                className="flex-1 rounded-full bg-gray-700 py-2.5 text-sm font-medium text-white"
+              >
+                隐藏
+              </button>
+            </div>
           </div>
         </div>
       )}

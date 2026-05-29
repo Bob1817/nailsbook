@@ -146,7 +146,19 @@ export class ClientHomeService {
         likes: true,
         favorites: true,
         comments: {
-          orderBy: { createdAt: 'desc' },
+          where: { parentId: null },
+          orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
+          include: {
+            client: { select: { id: true, nickname: true, avatarUrl: true } },
+            technician: { select: { id: true, name: true, avatarUrl: true } },
+            replies: {
+              orderBy: { createdAt: 'asc' },
+              include: {
+                client: { select: { id: true, nickname: true, avatarUrl: true } },
+                technician: { select: { id: true, name: true, avatarUrl: true } },
+              },
+            },
+          },
         },
         technician: {
           select: { name: true, avatarUrl: true, id: true },
@@ -158,23 +170,21 @@ export class ClientHomeService {
       throw new NotFoundException('作品不存在');
     }
 
-    // Check if current user has liked/favorited this work
     const isLiked = work.likes.some((like) => like.clientId === clientUserId);
     const isFavorited = work.favorites.some(
       (fav) => fav.clientId === clientUserId,
     );
 
+    const mapped = work.comments.map((c) => this.mapComment(c, clientUserId));
+    const pinned = mapped.filter((c) => c.isPinned);
+    const normal = mapped.filter((c) => !c.isPinned && !c.isHidden);
+    const hidden = mapped.filter((c) => c.isHidden && !c.isPinned);
+
     return {
       ...this.mapWork(work),
       isLiked,
       isFavorited,
-      comments: work.comments.map((c) => ({
-        id: c.id,
-        content: c.content,
-        technicianId: c.technicianId,
-        clientId: c.clientId,
-        createdAt: c.createdAt,
-      })),
+      comments: [...pinned, ...normal, ...hidden],
     };
   }
 
@@ -361,13 +371,30 @@ export class ClientHomeService {
       throw new NotFoundException('作品不存在');
     }
 
-    return this.prisma.nailWorkComment.findMany({
-      where: { workId },
-      orderBy: { createdAt: 'desc' },
+    const comments = await this.prisma.nailWorkComment.findMany({
+      where: { workId, parentId: null },
+      orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
+      include: {
+        client: { select: { id: true, nickname: true, avatarUrl: true } },
+        technician: { select: { id: true, name: true, avatarUrl: true } },
+        replies: {
+          orderBy: { createdAt: 'asc' },
+          include: {
+            client: { select: { id: true, nickname: true, avatarUrl: true } },
+            technician: { select: { id: true, name: true, avatarUrl: true } },
+          },
+        },
+      },
     });
+
+    const mapped = comments.map((c) => this.mapComment(c, clientUserId));
+    const pinned = mapped.filter((c) => c.isPinned);
+    const normal = mapped.filter((c) => !c.isPinned && !c.isHidden);
+    const hidden = mapped.filter((c) => c.isHidden && !c.isPinned);
+    return [...pinned, ...normal, ...hidden];
   }
 
-  async addComment(clientUserId: number, workId: number, content: string) {
+  async addComment(clientUserId: number, workId: number, content: string, parentId?: number) {
     const binding = await this.getDefaultBinding(clientUserId);
 
     const work = await this.prisma.nailWork.findFirst({
@@ -378,12 +405,78 @@ export class ClientHomeService {
       throw new NotFoundException('作品不存在');
     }
 
-    return this.prisma.nailWorkComment.create({
-      data: {
-        workId,
-        clientId: clientUserId,
-        content,
+    if (parentId) {
+      const parent = await this.prisma.nailWorkComment.findFirst({
+        where: { id: parentId, workId },
+      });
+      if (!parent) {
+        throw new NotFoundException('回复的评论不存在');
+      }
+    }
+
+    const comment = await this.prisma.nailWorkComment.create({
+      data: { workId, clientId: clientUserId, content, parentId },
+      include: {
+        client: { select: { id: true, nickname: true, avatarUrl: true } },
+        technician: { select: { id: true, name: true, avatarUrl: true } },
       },
     });
+
+    return this.mapComment(comment, clientUserId);
+  }
+
+  async deleteComment(clientUserId: number, commentId: number) {
+    const comment = await this.prisma.nailWorkComment.findFirst({
+      where: { id: commentId },
+      include: { replies: true },
+    });
+
+    if (!comment) {
+      throw new NotFoundException('评论不存在');
+    }
+
+    if (comment.clientId !== clientUserId) {
+      throw new NotFoundException('无权删除此评论');
+    }
+
+    if (comment.replies && comment.replies.length > 0) {
+      await this.prisma.nailWorkComment.update({
+        where: { id: commentId },
+        data: { content: '该评论已被删除', clientId: null },
+      });
+    } else {
+      await this.prisma.nailWorkComment.delete({ where: { id: commentId } });
+    }
+
+    return { success: true };
+  }
+
+  private mapComment(comment: any, clientUserId: number) {
+    const UPLOAD_BASE_URL = process.env.UPLOAD_BASE_URL || 'http://localhost:3000';
+    const toAbs = (url: string | null) => {
+      if (!url) return null;
+      return url.startsWith('http') ? url : `${UPLOAD_BASE_URL}${url}`;
+    };
+
+    const isAuthor = comment.clientId === clientUserId;
+    const user = comment.technician
+      ? { id: comment.technician.id, name: comment.technician.name, avatarUrl: toAbs(comment.technician.avatarUrl), role: 'technician' as const }
+      : comment.client
+        ? { id: comment.client.id, name: comment.client.nickname || '客户', avatarUrl: toAbs(comment.client.avatarUrl), role: 'client' as const }
+        : { id: 0, name: '已删除用户', avatarUrl: null, role: 'unknown' as const };
+
+    return {
+      id: comment.id,
+      workId: comment.workId,
+      parentId: comment.parentId ?? null,
+      content: comment.content,
+      isPinned: comment.isPinned ?? false,
+      isHidden: comment.isHidden ?? false,
+      isAuthor,
+      user,
+      replies: (comment.replies || []).map((r: any) => this.mapComment(r, clientUserId)),
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+    };
   }
 }

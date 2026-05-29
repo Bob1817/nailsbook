@@ -21,12 +21,25 @@ export interface WorkDetail extends NailWork {
   comments: Comment[];
 }
 
+export interface CommentUser {
+  id: number;
+  name: string;
+  avatarUrl: string | null;
+  role: 'technician' | 'client' | 'unknown';
+}
+
 export interface Comment {
   id: number;
+  workId: number;
+  parentId: number | null;
   content: string;
-  technicianId?: number;
-  clientId?: number;
+  isPinned: boolean;
+  isHidden: boolean;
+  isAuthor: boolean;
+  user: CommentUser;
+  replies: Comment[];
   createdAt: string;
+  updatedAt: string;
 }
 
 export const worksService = {
@@ -65,8 +78,13 @@ export const worksService = {
     return response.data;
   },
 
-  async addComment(workId: number, content: string): Promise<Comment> {
-    const response = await api.post(`/works/${workId}/comments`, { content });
+  async addComment(workId: number, content: string, parentId?: number): Promise<Comment> {
+    const response = await api.post(`/works/${workId}/comments`, { content, parentId });
+    return response.data;
+  },
+
+  async deleteComment(workId: number, commentId: number): Promise<{ success: boolean }> {
+    const response = await api.delete(`/works/${workId}/comments/${commentId}`);
     return response.data;
   },
 };

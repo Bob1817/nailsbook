@@ -1,5 +1,7 @@
 import {
+  Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -101,27 +103,33 @@ export class ClientHomeController {
   @Post('works/:id/comments')
   @ApiOperation({ summary: '添加作品评论' })
   @ApiResponse({ status: 200, description: '评论成功' })
-  @ApiResponse({ status: 400, description: '评论内容为空' })
   @ApiParam({ name: 'id', type: Number, description: '作品ID' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        content: { type: 'string', description: '评论内容' },
-      },
-      required: ['content'],
-    },
-  })
   addComment(
     @Req() request: { user: { clientUserId: number } },
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: any,
+    @Body('content') content: string,
+    @Body('parentId') parentId?: number,
   ) {
-    const content = req.body.content;
     return this.clientHomeService.addComment(
       request.user.clientUserId,
       id,
       content,
+      parentId,
+    );
+  }
+
+  @Delete('works/:workId/comments/:commentId')
+  @ApiOperation({ summary: '删除评论（仅限自己的评论）' })
+  @ApiParam({ name: 'workId', type: Number })
+  @ApiParam({ name: 'commentId', type: Number })
+  @ApiResponse({ status: 200, description: '删除成功' })
+  deleteComment(
+    @Req() request: { user: { clientUserId: number } },
+    @Param('commentId', ParseIntPipe) commentId: number,
+  ) {
+    return this.clientHomeService.deleteComment(
+      request.user.clientUserId,
+      commentId,
     );
   }
 }
