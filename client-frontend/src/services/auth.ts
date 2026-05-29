@@ -48,6 +48,7 @@ export interface Technician {
   bindSource?: string;
   bindId?: number;
   invitationCode?: string | null;
+  socialMedia?: Record<string, string> | null;
   homeService?: boolean;
   shopService?: boolean;
   shopAddresses?: ShopAddress[];

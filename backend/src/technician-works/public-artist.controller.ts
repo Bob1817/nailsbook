@@ -9,6 +9,16 @@ function toAbsoluteUrl(url: string | null): string | null {
   return url.startsWith('http') ? url : `${UPLOAD_BASE_URL}${url}`;
 }
 
+function parseJsonObject(value: string | null): Record<string, unknown> | null {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 function parseImageUrls(images: string | null, coverUrl: string | null): string[] {
   if (!images) return coverUrl ? [coverUrl] : [];
   try {
@@ -68,9 +78,12 @@ export class PublicArtistController {
         name: technician.name,
         avatarUrl: toAbsoluteUrl(technician.avatarUrl),
         city: technician.city,
+        serviceArea: technician.serviceArea,
         homeService: technician.homeService,
+        shopService: technician.shopService,
         status: technician.status,
         invitationCode: technician.invitationCode,
+        socialMedia: parseJsonObject(technician.socialMedia),
       },
       works,
     };

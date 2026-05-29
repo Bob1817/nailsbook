@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/ToastProvider';
 import ArtistCardView from '../components/ArtistCardView';
 import { publicArtistService, type PublicArtistCard as PublicArtistCardData } from '../services/publicArtist';
 
 const PublicArtistCard: React.FC = () => {
   const { code } = useParams<{ code: string }>();
+  const navigate = useNavigate();
   const toast = useToast();
+  const { isAuthenticated, technicians } = useAuth();
   const [data, setData] = useState<PublicArtistCardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -55,9 +58,16 @@ const PublicArtistCard: React.FC = () => {
 
   const { artist, works } = data;
   const inviteLink = `${window.location.origin}/invite?invite_code=${encodeURIComponent(artist.invitationCode)}`;
+  const isBound = isAuthenticated && technicians.some((t) => t.id === artist.id);
 
-  const handleBook = () => {
-    window.location.href = inviteLink;
+  const handlePrimary = () => {
+    if (isBound) {
+      // 已登录且已绑定 -> 直接发起预约
+      navigate(`/orders/create?tech_id=${artist.id}`);
+    } else {
+      // 未登录或未绑定 -> 联系美甲师（进入邀请注册/绑定流程）
+      window.location.href = inviteLink;
+    }
   };
 
   const handleShare = async () => {
@@ -81,17 +91,27 @@ const PublicArtistCard: React.FC = () => {
     }
   };
 
+  const handleWorkClick = (workId: number) => {
+    // 已绑定用户可进入可交互的作品详情；其余进入公开只读详情
+    navigate(isBound ? `/works/${workId}` : `/w/${workId}`);
+  };
+
   return (
     <ArtistCardView
       name={artist.name}
       avatarUrl={artist.avatarUrl}
       city={artist.city}
+      serviceArea={artist.serviceArea}
       homeService={artist.homeService}
+      shopService={artist.shopService}
       status={artist.status}
+      socialMedia={artist.socialMedia}
       works={works}
       loadingWorks={false}
-      onBook={handleBook}
+      primaryLabel={isBound ? '预约该美甲师' : '联系美甲师'}
+      onPrimary={handlePrimary}
       onShare={handleShare}
+      onWorkClick={handleWorkClick}
     />
   );
 };

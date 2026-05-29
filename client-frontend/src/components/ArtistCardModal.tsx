@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from './ToastProvider';
 import ArtistCardView, { type ArtistCardWork } from './ArtistCardView';
 import { worksService } from '../services/works';
@@ -10,12 +11,12 @@ interface ArtistCardModalProps {
 }
 
 const ArtistCardModal: React.FC<ArtistCardModalProps> = ({ technician, onClose }) => {
+  const navigate = useNavigate();
   const toast = useToast();
   const [works, setWorks] = useState<ArtistCardWork[]>([]);
   const [loadingWorks, setLoadingWorks] = useState(true);
 
   const code = technician.invitationCode || '';
-  const inviteLink = code ? `${window.location.origin}/invite?invite_code=${encodeURIComponent(code)}` : '';
   const cardUrl = code ? `${window.location.origin}/artist/${encodeURIComponent(code)}` : '';
 
   useEffect(() => {
@@ -45,12 +46,10 @@ const ArtistCardModal: React.FC<ArtistCardModalProps> = ({ technician, onClose }
     };
   }, []);
 
+  // 已登录且已绑定 -> 直接发起预约
   const handleBook = () => {
-    if (!inviteLink) {
-      toast.warning('该美甲师暂无可用邀请链接');
-      return;
-    }
-    window.open(inviteLink, '_blank', 'noopener,noreferrer');
+    onClose();
+    navigate(`/orders/create?tech_id=${technician.id}`);
   };
 
   const handleShare = async () => {
@@ -82,12 +81,20 @@ const ArtistCardModal: React.FC<ArtistCardModalProps> = ({ technician, onClose }
       name={technician.name}
       avatarUrl={technician.avatarUrl ?? null}
       city={technician.city}
+      serviceArea={technician.serviceArea}
       homeService={technician.homeService}
+      shopService={technician.shopService}
       status={technician.status}
+      socialMedia={technician.socialMedia}
       works={works}
       loadingWorks={loadingWorks}
-      onBook={handleBook}
+      primaryLabel="预约该美甲师"
+      onPrimary={handleBook}
       onShare={handleShare}
+      onWorkClick={(workId) => {
+        onClose();
+        navigate(`/works/${workId}`);
+      }}
       onClose={onClose}
     />
   );

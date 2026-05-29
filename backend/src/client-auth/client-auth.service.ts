@@ -218,6 +218,9 @@ export class ClientAuthService {
         homeService: b.technician.homeService,
         shopService: b.technician.shopService,
         invitationCode: b.technician.invitationCode,
+        socialMedia: b.technician.socialMedia
+          ? JSON.parse(b.technician.socialMedia)
+          : null,
         shopAddresses: b.technician.shopAddresses
           ? JSON.parse(b.technician.shopAddresses)
           : [],
@@ -286,6 +289,9 @@ export class ClientAuthService {
         homeService: b.technician.homeService,
         shopService: b.technician.shopService,
         invitationCode: b.technician.invitationCode,
+        socialMedia: b.technician.socialMedia
+          ? JSON.parse(b.technician.socialMedia)
+          : null,
         shopAddresses: b.technician.shopAddresses
           ? JSON.parse(b.technician.shopAddresses)
           : [],

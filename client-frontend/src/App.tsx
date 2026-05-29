@@ -27,6 +27,7 @@ import MyFavorites from './pages/MyFavorites';
 import MyLikes from './pages/MyLikes';
 import EditProfile from './pages/EditProfile';
 import PublicArtistCard from './pages/PublicArtistCard';
+import PublicWorkDetail from './pages/PublicWorkDetail';
 
 function AppRoutes() {
   const { isAuthenticated, user, loading } = useAuth();
@@ -54,6 +55,7 @@ function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/invite" element={<Login />} />
       <Route path="/artist/:code" element={<PublicArtistCard />} />
+      <Route path="/w/:id" element={<PublicWorkDetail />} />
 
       {/* Welcome Page - for first-time users */}
       <Route element={<ProtectedRoute />}>

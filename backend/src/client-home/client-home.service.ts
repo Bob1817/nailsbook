@@ -147,11 +147,17 @@ export class ClientHomeService {
   }
 
   async getWork(clientUserId: number, id: number) {
-    const binding = await this.getDefaultBinding(clientUserId);
+    // 允许查看任意「已绑定美甲师」的作品（不限默认美甲师）
+    const boundTechIds = (
+      await this.prisma.clientTechBinding.findMany({
+        where: { clientId: clientUserId, status: 'active' },
+        select: { techId: true },
+      })
+    ).map((b) => b.techId);
     const work = await this.prisma.nailWork.findFirst({
       where: {
         id,
-        techId: binding.techId,
+        techId: { in: boundTechIds },
         isVisible: true,
       },
       include: {
