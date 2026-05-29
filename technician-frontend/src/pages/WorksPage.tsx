@@ -37,7 +37,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
       )}
 
       <div className="min-w-0 flex-1">
-        <div className="relative rounded-2xl bg-gray-50 px-3 py-2">
+        <div className="rounded-2xl bg-gray-50 px-3 py-2">
           {/* Name row */}
           <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
             <span className="font-medium text-gray-700">{comment.user.name}</span>
@@ -50,7 +50,21 @@ const CommentItem: React.FC<CommentItemProps> = ({
             {comment.isHidden && (
               <span className="rounded-full bg-gray-200 px-1.5 py-px text-[10px] font-medium text-gray-500">已隐藏</span>
             )}
-            <span className="ml-auto">{new Date(comment.createdAt).toLocaleDateString()}</span>
+            <span className="ml-auto whitespace-nowrap">{new Date(comment.createdAt).toLocaleDateString()}</span>
+            {/* More button — always available for technician (owns the work) */}
+            {!isDeleted && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActionMenuId(comment.id);
+                }}
+                className="-mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-gray-400 active:bg-gray-200"
+              >
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6 12a2 2 0 11-4 0 2 2 0 014 0zm8 0a2 2 0 11-4 0 2 2 0 014 0zm6 2a2 2 0 100-4 2 2 0 000 4z" />
+                </svg>
+              </button>
+            )}
           </div>
 
           {/* Content — click to reply */}
@@ -60,60 +74,60 @@ const CommentItem: React.FC<CommentItemProps> = ({
           >
             {comment.content}
           </p>
-
-          {/* More button — always visible for technician (owns the work) */}
-          {!isDeleted && (
-            <div className="absolute right-2 top-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActionMenuId(actionMenuId === comment.id ? null : comment.id);
-                }}
-                className="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 active:bg-gray-200"
-              >
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-                </svg>
-              </button>
-
-              {actionMenuId === comment.id && (
-                <div className="absolute right-0 top-7 z-30 w-32 rounded-xl bg-white py-1 shadow-lg ring-1 ring-black/5">
-                  <button
-                    onClick={() => onPin(comment.id)}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-gray-700 active:bg-gray-50"
-                  >
-                    <svg className="h-4 w-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                    </svg>
-                    {comment.isPinned ? '取消置顶' : '置顶'}
-                  </button>
-                  <button
-                    onClick={() => onHide(comment.id)}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-gray-700 active:bg-gray-50"
-                  >
-                    <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={comment.isHidden
-                        ? 'M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
-                        : 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21'
-                      } />
-                    </svg>
-                    {comment.isHidden ? '取消隐藏' : '隐藏'}
-                  </button>
-                  <div className="my-1 border-t border-gray-100" />
-                  <button
-                    onClick={() => onDelete(comment.id)}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-red-500 active:bg-red-50"
-                  >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    删除
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
         </div>
+
+        {/* Action sheet — slides up from bottom, never clipped */}
+        {actionMenuId === comment.id && (
+          <div
+            className="fixed inset-0 z-[200] flex flex-col justify-end bg-black/40"
+            onClick={() => setActionMenuId(null)}
+          >
+            <div
+              className="rounded-t-2xl bg-white p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => onPin(comment.id)}
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-gray-700 active:bg-gray-50"
+              >
+                <svg className="h-4 w-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+                {comment.isPinned ? '取消置顶' : '置顶'}
+              </button>
+              <div className="my-1 h-px bg-gray-100" />
+              <button
+                onClick={() => onHide(comment.id)}
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-gray-700 active:bg-gray-50"
+              >
+                <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={comment.isHidden
+                    ? 'M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
+                    : 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21'
+                  } />
+                </svg>
+                {comment.isHidden ? '取消隐藏' : '隐藏'}
+              </button>
+              <div className="my-1 h-px bg-gray-100" />
+              <button
+                onClick={() => onDelete(comment.id)}
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-red-500 active:bg-red-50"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                删除
+              </button>
+              <div className="my-1 h-px bg-gray-100" />
+              <button
+                onClick={() => setActionMenuId(null)}
+                className="w-full rounded-xl py-3.5 text-sm font-medium text-gray-500 active:bg-gray-50"
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Replies */}
         {comment.replies && comment.replies.length > 0 && (
