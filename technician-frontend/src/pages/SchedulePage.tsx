@@ -134,6 +134,7 @@ export const SchedulePage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [detailOrderId, setDetailOrderId] = useState<number | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [scheduleTab, setScheduleTab] = useState<'trips' | 'all'>('trips');
   const [activeDate, setActiveDate] = useState<Date>(() => {
     const dateParam = searchParams.get('date');
     if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
@@ -209,6 +210,9 @@ export const SchedulePage: React.FC = () => {
   );
 
   const nextOrder = tripOrders[0] ?? null;
+
+  // 列表数据源：今日行程=行程状态预约；今日预约=当日所有状态预约
+  const listOrders = scheduleTab === 'trips' ? tripOrders : dayOrders;
 
   const summary = useMemo(() => {
     // 统计也只针对行程预约（已确认/进行中）
@@ -352,8 +356,27 @@ export const SchedulePage: React.FC = () => {
         </div>
       </div>
 
+      {/* ===== Tab：今日行程 / 今日预约 ===== */}
+      <div className="mb-4 flex gap-6 border-b border-gray-100">
+        {([['trips', '今日行程'], ['all', '今日预约']] as const).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setScheduleTab(key)}
+            className={`relative pb-2.5 text-sm font-medium transition-colors ${
+              scheduleTab === key ? 'text-primary' : 'text-text-tertiary'
+            }`}
+          >
+            {label}
+            {scheduleTab === key && (
+              <span className="absolute -bottom-px left-0 right-0 h-0.5 rounded-full bg-primary" />
+            )}
+          </button>
+        ))}
+      </div>
+
       {/* ===== Section 1: 下一单卡片 ===== */}
-      {!isLoading && nextOrder && (
+      {scheduleTab === 'trips' && !isLoading && nextOrder && (
         <Card className="mb-4 overflow-hidden p-0 cursor-pointer" onClick={() => setDetailOrderId(nextOrder.id)}>
           <div
             className="p-4"
@@ -442,6 +465,7 @@ export const SchedulePage: React.FC = () => {
       )}
 
       {/* ===== Section 2: 当日数据总结 ===== */}
+      {scheduleTab === 'trips' && (
       <Card className="mb-4 p-4">
         <div className="flex gap-3">
           {[
@@ -460,9 +484,10 @@ export const SchedulePage: React.FC = () => {
           ))}
         </div>
       </Card>
+      )}
 
       {/* 路线时间轴 - 仅展示确认后/进行中的行程 */}
-      {tripOrders.length > 0 && (
+      {scheduleTab === 'trips' && tripOrders.length > 0 && (
         <Card className="mb-4 p-4">
           <div className="text-sm font-semibold text-text-primary mb-3">当日路线</div>
           <div className="space-y-0">
@@ -499,10 +524,16 @@ export const SchedulePage: React.FC = () => {
 
       {/* ===== 可滚动区域：行程列表 ===== */}
       <div className="flex-1 min-h-0 overflow-y-auto px-lg pb-24">
-      {/* ===== Section 3: 行程列表 ===== */}
+      {/* ===== Section 3: 行程/预约列表 ===== */}
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-semibold text-text-primary">
-          {sameCalendarDay(activeDate, new Date()) ? '今日行程' : `${activeDate.getMonth() + 1}月${activeDate.getDate()}日行程`}
+          {(() => {
+            const noun = scheduleTab === 'trips' ? '行程' : '预约';
+            const datePrefix = sameCalendarDay(activeDate, new Date())
+              ? '今日'
+              : `${activeDate.getMonth() + 1}月${activeDate.getDate()}日`;
+            return `${datePrefix}${noun}`;
+          })()}
         </h2>
         <button
           type="button"
@@ -514,12 +545,14 @@ export const SchedulePage: React.FC = () => {
       </div>
 
       {isLoading ? (
-        <Card className="py-8 text-center text-sm text-text-tertiary">行程加载中...</Card>
-      ) : tripOrders.length === 0 ? (
-        <Card className="py-8 text-center text-sm text-text-tertiary">暂无行程</Card>
+        <Card className="py-8 text-center text-sm text-text-tertiary">加载中...</Card>
+      ) : listOrders.length === 0 ? (
+        <Card className="py-8 text-center text-sm text-text-tertiary">
+          {scheduleTab === 'trips' ? '暂无行程' : '暂无预约'}
+        </Card>
       ) : (
         <div className="space-y-3">
-          {tripOrders.map((order) => (
+          {listOrders.map((order) => (
             <Card
               key={order.id}
               className="p-4 cursor-pointer"
