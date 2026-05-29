@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/ToastProvider';
 import SubHeader from '../components/SubHeader';
 import { authService } from '../services/auth';
+import { uploadService } from '../services/upload';
 
 interface NotifyPrefs {
   orderStatus: boolean;
@@ -25,21 +25,54 @@ const DOCS = [
 
 const cardClass = 'rounded-[24px] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5';
 const inputClass =
+  'w-full rounded-2xl bg-gray-50 px-4 py-3 text-[15px] text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-[#FF6B8A]/20';
+const pwInputClass =
   'h-12 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 focus:border-[#FF6B8A] focus:bg-white focus:outline-none';
 
 const Settings: React.FC = () => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const toast = useToast();
 
+  // ----- 资料 -----
+  const [nickname, setNickname] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [city, setCity] = useState('');
+  const [bio, setBio] = useState('');
+  const [mediaEnabled, setMediaEnabled] = useState(false);
+  const [mediaName, setMediaName] = useState('');
+  const [mediaUrl, setMediaUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // ----- 密码 -----
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [submittingPwd, setSubmittingPwd] = useState(false);
 
+  // ----- 通知 / 关于 -----
   const storageKey = `client_notify_prefs_${user?.id ?? 'guest'}`;
   const [prefs, setPrefs] = useState<NotifyPrefs>(DEFAULT_NOTIFY);
   const [openDoc, setOpenDoc] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      setNickname(user.nickname || '');
+      setAvatarUrl(user.avatarUrl || '');
+      setCity(user.city || '');
+      setBio(user.bio || '');
+      const media = user.socialMedia;
+      if (media && (media.name || media.url)) {
+        setMediaEnabled(true);
+        setMediaName(media.name || '');
+        setMediaUrl(media.url || '');
+      } else {
+        setMediaEnabled(false);
+        setMediaName('');
+        setMediaUrl('');
+      }
+    }
+  }, [user]);
 
   useEffect(() => {
     const stored = localStorage.getItem(storageKey);
@@ -54,12 +87,53 @@ const Settings: React.FC = () => {
     }
   }, [storageKey]);
 
-  const toggle = (key: keyof NotifyPrefs, value: boolean) => {
+  const toggleNotify = (key: keyof NotifyPrefs, value: boolean) => {
     setPrefs((prev) => {
       const next = { ...prev, [key]: value };
       localStorage.setItem(storageKey, JSON.stringify(next));
       return next;
     });
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setUploading(true);
+    try {
+      const result = await uploadService.uploadImage(file);
+      setAvatarUrl(result.url);
+    } catch {
+      toast.error('头像上传失败，请重试');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!nickname.trim()) {
+      toast.warning('请输入昵称');
+      return;
+    }
+    if (mediaEnabled && (!mediaName.trim() || !mediaUrl.trim())) {
+      toast.warning('启用媒体地址后，请填写媒体账号名称和主页地址');
+      return;
+    }
+    setSavingProfile(true);
+    try {
+      await updateProfile({
+        nickname: nickname.trim(),
+        avatarUrl: avatarUrl || undefined,
+        city: city.trim() || null,
+        bio: bio.trim() || null,
+        socialMedia: mediaEnabled ? { name: mediaName.trim(), url: mediaUrl.trim() } : null,
+      });
+      toast.success('资料已保存');
+    } catch {
+      toast.error('保存失败，请重试');
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   const handleChangePassword = async () => {
@@ -75,7 +149,7 @@ const Settings: React.FC = () => {
       toast.warning('两次输入的新密码不一致');
       return;
     }
-    setSubmitting(true);
+    setSubmittingPwd(true);
     try {
       await authService.changePassword(oldPassword, newPassword);
       toast.success('密码修改成功');
@@ -86,27 +160,101 @@ const Settings: React.FC = () => {
       const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || '修改失败，请重试';
       toast.error(Array.isArray(msg) ? msg[0] : msg);
     } finally {
-      setSubmitting(false);
+      setSubmittingPwd(false);
     }
   };
 
   return (
     <div className="flex h-[100dvh] flex-col bg-[linear-gradient(180deg,#FFFDFD_0%,#F7F3F6_48%,#F2F6FB_100%)]">
-      <SubHeader title="设置" />
-      <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5 pb-24">
-        {/* 账号 */}
+      <SubHeader title="编辑资料与设置" />
+      <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5 pb-28">
+        {/* 头像 */}
+        <section className={cardClass}>
+          <div className="flex items-center gap-4">
+            <div className="h-20 w-20 overflow-hidden rounded-full bg-gradient-to-br from-pink-200 to-pink-100 ring-2 ring-white shadow-md">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="头像" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-[28px] font-semibold text-[#FF6B8A]">
+                  {(nickname || user?.phone || '我').slice(0, 1)}
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-base font-semibold text-gray-900">头像</p>
+              <p className="mt-1 text-xs text-gray-400">建议使用清晰的人像照片</p>
+              <label className="mt-3 inline-flex cursor-pointer items-center rounded-full bg-[#fff0f5] px-4 py-2 text-[13px] font-medium text-[#FF6B8A]">
+                {uploading ? '上传中...' : '更换头像'}
+                <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} disabled={uploading} />
+              </label>
+            </div>
+          </div>
+        </section>
+
+        {/* 基本资料 */}
+        <section className={`${cardClass} space-y-5`}>
+          <div>
+            <label className="mb-2 block text-[13px] font-medium text-gray-700">
+              昵称 <span className="text-red-500">*</span>
+            </label>
+            <input type="text" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="给自己起一个昵称" maxLength={20} className={inputClass} />
+            <p className="mt-1 text-xs text-gray-400">{nickname.length}/20</p>
+          </div>
+          <div>
+            <label className="mb-2 block text-[13px] font-medium text-gray-700">手机号</label>
+            <input type="tel" value={user?.phone || ''} disabled className="w-full rounded-2xl bg-gray-100 px-4 py-3 text-[15px] text-gray-400" />
+            <p className="mt-1 text-xs text-gray-400">如需修改手机号请联系客服</p>
+          </div>
+          <div>
+            <label className="mb-2 block text-[13px] font-medium text-gray-700">常驻城市</label>
+            <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="例如：上海" maxLength={20} className={inputClass} />
+          </div>
+          <div>
+            <label className="mb-2 block text-[13px] font-medium text-gray-700">个人简介</label>
+            <textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="介绍一下你自己吧～" maxLength={100} rows={3} className={`${inputClass} resize-none`} />
+            <p className="mt-1 text-xs text-gray-400">{bio.length}/100</p>
+          </div>
+        </section>
+
+        {/* 媒体地址 */}
+        <section className={cardClass}>
+          <div className="flex items-center justify-between">
+            <div className="min-w-0">
+              <p className="text-[15px] font-medium text-gray-900">媒体地址</p>
+              <p className="mt-0.5 text-xs text-gray-400">启用后展示你的社交媒体主页</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={mediaEnabled}
+              aria-label="媒体地址"
+              onClick={() => setMediaEnabled((v) => !v)}
+              className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${mediaEnabled ? 'bg-[#FF6B8A]' : 'bg-gray-300'}`}
+            >
+              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${mediaEnabled ? 'left-[1.15rem]' : 'left-0.5'}`} />
+            </button>
+          </div>
+          {mediaEnabled && (
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="mb-2 block text-[13px] font-medium text-gray-700">媒体账号名称</label>
+                <input type="text" value={mediaName} onChange={(e) => setMediaName(e.target.value)} placeholder="例如：小美的美甲日常" maxLength={30} className={inputClass} />
+              </div>
+              <div>
+                <label className="mb-2 block text-[13px] font-medium text-gray-700">主页地址</label>
+                <input type="url" inputMode="url" value={mediaUrl} onChange={(e) => setMediaUrl(e.target.value)} placeholder="https://" className={inputClass} />
+              </div>
+            </div>
+          )}
+        </section>
+
         <button
           type="button"
-          onClick={() => navigate('/profile/edit')}
-          className={`${cardClass} flex w-full items-center justify-between text-left active:bg-gray-50`}
+          onClick={handleSaveProfile}
+          disabled={savingProfile}
+          className="min-h-[48px] w-full rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] text-base font-semibold text-white shadow-md transition-opacity disabled:opacity-50"
         >
-          <div>
-            <p className="text-[15px] font-medium text-gray-900">个人资料</p>
-            <p className="mt-0.5 text-xs text-gray-400">修改昵称与头像</p>
-          </div>
-          <svg className="h-5 w-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
+          {savingProfile ? '保存中...' : '保存资料'}
         </button>
 
         {/* 修改密码 */}
@@ -114,17 +262,17 @@ const Settings: React.FC = () => {
           <h2 className="text-[16px] font-semibold text-gray-900">修改密码</h2>
           <p className="mt-1 text-xs text-gray-400">密码至少 8 位，需同时包含字母和数字</p>
           <div className="mt-4 space-y-3">
-            <input type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} placeholder="当前密码" autoComplete="current-password" className={inputClass} />
-            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="新密码" autoComplete="new-password" className={inputClass} />
-            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="确认新密码" autoComplete="new-password" className={inputClass} />
+            <input type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} placeholder="当前密码" autoComplete="current-password" className={pwInputClass} />
+            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="新密码" autoComplete="new-password" className={pwInputClass} />
+            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="确认新密码" autoComplete="new-password" className={pwInputClass} />
           </div>
           <button
             type="button"
             onClick={handleChangePassword}
-            disabled={submitting}
+            disabled={submittingPwd}
             className="mt-4 min-h-[48px] w-full rounded-2xl bg-[#FF6B8A] text-sm font-semibold text-white transition-colors active:bg-[#e85b7d] disabled:opacity-50"
           >
-            {submitting ? '提交中…' : '确认修改'}
+            {submittingPwd ? '提交中…' : '确认修改'}
           </button>
         </section>
 
@@ -143,7 +291,7 @@ const Settings: React.FC = () => {
                   role="switch"
                   aria-checked={prefs[item.key]}
                   aria-label={item.label}
-                  onClick={() => toggle(item.key, !prefs[item.key])}
+                  onClick={() => toggleNotify(item.key, !prefs[item.key])}
                   className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${prefs[item.key] ? 'bg-[#FF6B8A]' : 'bg-gray-300'}`}
                 >
                   <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${prefs[item.key] ? 'left-[1.15rem]' : 'left-0.5'}`} />

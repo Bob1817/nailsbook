@@ -25,7 +25,6 @@ import WorksPage from './pages/WorksPage';
 import WorkDetailPage from './pages/WorkDetailPage';
 import MyFavorites from './pages/MyFavorites';
 import MyLikes from './pages/MyLikes';
-import EditProfile from './pages/EditProfile';
 import PublicArtistCard from './pages/PublicArtistCard';
 import PublicWorkDetail from './pages/PublicWorkDetail';
 import Settings from './pages/Settings';
@@ -84,7 +83,6 @@ function AppRoutes() {
           <Route path="/profile/addresses/edit" element={<EditAddress />} />
           <Route path="/favorites" element={<MyFavorites />} />
           <Route path="/likes" element={<MyLikes />} />
-          <Route path="/profile/edit" element={<EditProfile />} />
           <Route path="/profile/settings" element={<Settings />} />
           <Route path="/profile/help" element={<HelpFeedback />} />
           {/* Works routes - no bottom tab bar */}
