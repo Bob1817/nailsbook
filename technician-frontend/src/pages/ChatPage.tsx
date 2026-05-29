@@ -4,7 +4,8 @@ import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/feedback/ToastProvider';
 import { messageService, type Message, type ClientInfo } from '../services/message';
 import { customersService } from '../services/customers';
-import { formatClock, formatRelativeDateLabel } from '../services/technicianData';
+import { formatClock, formatRelativeDateLabel, formatDateTimeLabel, orderStatusLabels } from '../services/technicianData';
+import type { OrderStatus } from '../services/technicianData';
 import { useSocket } from '../hooks/useSocket';
 import { useTyping } from '../hooks/useTyping';
 import OrderDetailPage from './OrderDetailPage';
@@ -459,10 +460,76 @@ const ChatPage: React.FC = () => {
                               return <p className="text-sm whitespace-pre-wrap">{message.content}</p>;
                             }
                           })()
+                        ) : message.messageType === 'order_card' ? (
+                          (() => {
+                            let card: {
+                              orderNo?: string;
+                              serviceType?: string | null;
+                              startTime?: string;
+                              status?: string;
+                              price?: number | null;
+                            } = {};
+                            try {
+                              card = JSON.parse(message.content || '{}');
+                            } catch {
+                              card = {};
+                            }
+                            const hasData = Boolean(card.orderNo);
+                            const muted = isTechnician ? 'text-pink-100' : 'text-gray-400';
+                            const serviceLabel =
+                              card.serviceType === 'home'
+                                ? '上门美甲'
+                                : card.serviceType === 'shop'
+                                  ? '到店美甲'
+                                  : card.serviceType || null;
+                            return (
+                              <div className="min-w-[190px]">
+                                <div className="flex items-center gap-1.5 text-sm font-semibold">
+                                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  </svg>
+                                  预约卡片
+                                </div>
+                                {hasData ? (
+                                  <div className="mt-2 space-y-1 text-[13px]">
+                                    <div className="flex justify-between gap-4">
+                                      <span className={muted}>时间</span>
+                                      <span>{card.startTime ? formatDateTimeLabel(card.startTime) : '待定'}</span>
+                                    </div>
+                                    {serviceLabel && (
+                                      <div className="flex justify-between gap-4">
+                                        <span className={muted}>服务</span>
+                                        <span>{serviceLabel}</span>
+                                      </div>
+                                    )}
+                                    <div className="flex justify-between gap-4">
+                                      <span className={muted}>价格</span>
+                                      <span>{card.price != null ? `¥${card.price}` : '待报价'}</span>
+                                    </div>
+                                    <div className="flex justify-between gap-4">
+                                      <span className={muted}>状态</span>
+                                      <span>{orderStatusLabels[card.status as OrderStatus] || card.status || '—'}</span>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="mt-1 text-sm">{message.content}</p>
+                                )}
+                                {message.relatedId && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setDetailOrderId(message.relatedId!)}
+                                    className={`mt-2.5 w-full rounded-lg py-1.5 text-xs font-medium active:opacity-80 ${isTechnician ? 'bg-white/20 text-white' : 'bg-pink-50 text-pink-500'}`}
+                                  >
+                                    查看预约详情 →
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })()
                         ) : (
                           <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                         )}
-                        {message.relatedType === 'order' && message.relatedId && (
+                        {message.relatedType === 'order' && message.relatedId && message.messageType !== 'order_card' && (
                           <button
                             type="button"
                             onClick={() => setDetailOrderId(message.relatedId!)}

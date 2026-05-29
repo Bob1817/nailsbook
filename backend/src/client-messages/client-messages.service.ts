@@ -105,13 +105,28 @@ export class ClientMessagesService {
   async forward(clientUserId: number, orderId: number) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
-      select: { id: true, technicianId: true, orderNo: true, serviceType: true, startTime: true, status: true },
+      select: {
+        id: true,
+        technicianId: true,
+        orderNo: true,
+        serviceType: true,
+        startTime: true,
+        status: true,
+        quotePrice: true,
+      },
     });
     if (!order) {
       throw new NotFoundException('预约不存在');
     }
 
     const preview = `[预约卡片] ${order.orderNo}`;
+    const cardContent = JSON.stringify({
+      orderNo: order.orderNo,
+      serviceType: order.serviceType ?? null,
+      startTime: order.startTime,
+      status: order.status,
+      price: order.quotePrice ?? null,
+    });
     const conversation = await this.prisma.conversation.upsert({
       where: {
         clientId_techId: {
@@ -131,7 +146,7 @@ export class ClientMessagesService {
         receiverType: 'technician',
         receiverId: order.technicianId,
         messageType: 'order_card',
-        content: preview,
+        content: cardContent,
         relatedType: 'order',
         relatedId: orderId,
       },
