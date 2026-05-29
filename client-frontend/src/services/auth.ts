@@ -1,10 +1,5 @@
 import api from './api';
 
-export interface ClientMedia {
-  name?: string;
-  url?: string;
-}
-
 export interface ClientUser {
   id: number;
   nickname: string | null;
@@ -12,7 +7,6 @@ export interface ClientUser {
   avatarUrl: string | null;
   city?: string | null;
   bio?: string | null;
-  socialMedia?: ClientMedia | null;
   status: string;
 }
 
@@ -148,7 +142,6 @@ export const authService = {
     avatarUrl?: string;
     city?: string | null;
     bio?: string | null;
-    socialMedia?: ClientMedia | null;
   }): Promise<ClientUser> {
     const response = await api.put('/auth/me', data);
     return response.data;

@@ -137,7 +137,6 @@ export class ClientAuthService {
         avatarUrl: client.avatarUrl,
         city: client.city,
         bio: client.bio,
-        socialMedia: client.socialMedia ? JSON.parse(client.socialMedia) : null,
         status: client.status,
       },
       technician: technicianPayload,
@@ -197,7 +196,6 @@ export class ClientAuthService {
         avatarUrl: client.avatarUrl,
         city: client.city,
         bio: client.bio,
-        socialMedia: client.socialMedia ? JSON.parse(client.socialMedia) : null,
         status: client.status,
       },
       technician: {
@@ -265,7 +263,6 @@ export class ClientAuthService {
       avatarUrl: client.avatarUrl,
       city: client.city,
       bio: client.bio,
-      socialMedia: client.socialMedia ? JSON.parse(client.socialMedia) : null,
       status: client.status,
       binding: defaultBinding
         ? {
@@ -484,7 +481,6 @@ export class ClientAuthService {
       avatarUrl?: string;
       city?: string | null;
       bio?: string | null;
-      socialMedia?: { name?: string; url?: string } | null;
     },
   ) {
     const client = await this.prisma.clientUser.update({
@@ -494,12 +490,6 @@ export class ClientAuthService {
         ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl }),
         ...(data.city !== undefined && { city: data.city }),
         ...(data.bio !== undefined && { bio: data.bio }),
-        ...(data.socialMedia !== undefined && {
-          socialMedia:
-            data.socialMedia && (data.socialMedia.name || data.socialMedia.url)
-              ? JSON.stringify(data.socialMedia)
-              : null,
-        }),
       },
     });
 
@@ -513,7 +503,6 @@ export class ClientAuthService {
     avatarUrl: string | null;
     city: string | null;
     bio: string | null;
-    socialMedia: string | null;
     status: string;
   }) {
     return {
@@ -523,7 +512,6 @@ export class ClientAuthService {
       avatarUrl: client.avatarUrl,
       city: client.city,
       bio: client.bio,
-      socialMedia: client.socialMedia ? JSON.parse(client.socialMedia) : null,
       status: client.status,
     };
   }

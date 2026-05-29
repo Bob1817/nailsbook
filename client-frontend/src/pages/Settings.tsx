@@ -38,9 +38,6 @@ const Settings: React.FC = () => {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [city, setCity] = useState('');
   const [bio, setBio] = useState('');
-  const [mediaEnabled, setMediaEnabled] = useState(false);
-  const [mediaName, setMediaName] = useState('');
-  const [mediaUrl, setMediaUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
 
@@ -61,16 +58,6 @@ const Settings: React.FC = () => {
       setAvatarUrl(user.avatarUrl || '');
       setCity(user.city || '');
       setBio(user.bio || '');
-      const media = user.socialMedia;
-      if (media && (media.name || media.url)) {
-        setMediaEnabled(true);
-        setMediaName(media.name || '');
-        setMediaUrl(media.url || '');
-      } else {
-        setMediaEnabled(false);
-        setMediaName('');
-        setMediaUrl('');
-      }
     }
   }, [user]);
 
@@ -115,10 +102,6 @@ const Settings: React.FC = () => {
       toast.warning('请输入昵称');
       return;
     }
-    if (mediaEnabled && (!mediaName.trim() || !mediaUrl.trim())) {
-      toast.warning('启用媒体地址后，请填写媒体账号名称和主页地址');
-      return;
-    }
     setSavingProfile(true);
     try {
       await updateProfile({
@@ -126,7 +109,6 @@ const Settings: React.FC = () => {
         avatarUrl: avatarUrl || undefined,
         city: city.trim() || null,
         bio: bio.trim() || null,
-        socialMedia: mediaEnabled ? { name: mediaName.trim(), url: mediaUrl.trim() } : null,
       });
       toast.success('资料已保存');
     } catch {
@@ -214,38 +196,6 @@ const Settings: React.FC = () => {
             <textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="介绍一下你自己吧～" maxLength={100} rows={3} className={`${inputClass} resize-none`} />
             <p className="mt-1 text-xs text-gray-400">{bio.length}/100</p>
           </div>
-        </section>
-
-        {/* 媒体地址 */}
-        <section className={cardClass}>
-          <div className="flex items-center justify-between">
-            <div className="min-w-0">
-              <p className="text-[15px] font-medium text-gray-900">媒体地址</p>
-              <p className="mt-0.5 text-xs text-gray-400">启用后展示你的社交媒体主页</p>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={mediaEnabled}
-              aria-label="媒体地址"
-              onClick={() => setMediaEnabled((v) => !v)}
-              className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${mediaEnabled ? 'bg-[#FF6B8A]' : 'bg-gray-300'}`}
-            >
-              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${mediaEnabled ? 'left-[1.15rem]' : 'left-0.5'}`} />
-            </button>
-          </div>
-          {mediaEnabled && (
-            <div className="mt-4 space-y-3">
-              <div>
-                <label className="mb-2 block text-[13px] font-medium text-gray-700">媒体账号名称</label>
-                <input type="text" value={mediaName} onChange={(e) => setMediaName(e.target.value)} placeholder="例如：小美的美甲日常" maxLength={30} className={inputClass} />
-              </div>
-              <div>
-                <label className="mb-2 block text-[13px] font-medium text-gray-700">主页地址</label>
-                <input type="url" inputMode="url" value={mediaUrl} onChange={(e) => setMediaUrl(e.target.value)} placeholder="https://" className={inputClass} />
-              </div>
-            </div>
-          )}
         </section>
 
         <button

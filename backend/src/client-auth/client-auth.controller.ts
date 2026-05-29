@@ -158,7 +158,6 @@ export class ClientAuthController {
       avatarUrl?: string;
       city?: string | null;
       bio?: string | null;
-      socialMedia?: { name?: string; url?: string } | null;
     },
   ) {
     return this.clientAuthService.updateProfile(
