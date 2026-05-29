@@ -162,32 +162,34 @@ const ArtistCardView: React.FC<ArtistCardViewProps> = ({
             )}
           </div>
           {loadingWorks ? (
-            <div className="grid grid-cols-2 gap-2.5">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="aspect-square animate-pulse rounded-[16px] bg-slate-100" />
+            <div className="columns-2 gap-2.5">
+              {[180, 240, 200, 160].map((h, i) => (
+                <div
+                  key={i}
+                  className="mb-2.5 animate-pulse rounded-[16px] bg-slate-100"
+                  style={{ height: h }}
+                />
               ))}
             </div>
           ) : works.length > 0 ? (
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="columns-2 gap-2.5 [column-fill:_balance]">
               {works.map((work) => (
                 <button
                   key={work.id}
                   type="button"
                   onClick={() => onWorkClick(work.id)}
-                  className="overflow-hidden rounded-[16px] bg-slate-100 text-left active:opacity-90"
+                  className="mb-2.5 block w-full break-inside-avoid overflow-hidden rounded-[16px] bg-slate-100 text-left align-top active:opacity-90"
                 >
-                  <div className="aspect-square w-full">
-                    {work.coverUrl || work.imageUrls?.[0] ? (
-                      <img
-                        src={work.coverUrl || work.imageUrls[0]}
-                        alt={work.title || '作品'}
-                        className="h-full w-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-xs text-slate-400">暂无图片</div>
-                    )}
-                  </div>
+                  {work.coverUrl || work.imageUrls?.[0] ? (
+                    <img
+                      src={work.coverUrl || work.imageUrls[0]}
+                      alt={work.title || '作品'}
+                      className="block h-auto w-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex aspect-square w-full items-center justify-center text-xs text-slate-400">暂无图片</div>
+                  )}
                   {work.title && (
                     <p className="truncate px-2 py-1.5 text-[12px] text-[var(--color-text)]">{work.title}</p>
                   )}
