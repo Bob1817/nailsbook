@@ -213,13 +213,6 @@ const Profile: React.FC = () => {
           {technicians.length > 0 ? (
             <div className="space-y-3">
               {technicians.map((tech) => {
-                const shopAddr = (tech.shopAddresses || [])[0];
-                const shopLine = shopAddr
-                  ? [shopAddr.city, shopAddr.district, shopAddr.detailAddress].filter(Boolean).join(' ')
-                  : '';
-                const serviceTypes: string[] = [];
-                if (tech.homeService) serviceTypes.push('上门美甲');
-                if (tech.shopService) serviceTypes.push('到店美甲');
                 return (
                   <div
                     key={tech.id}
@@ -247,32 +240,32 @@ const Profile: React.FC = () => {
                               <span className="rounded-full bg-[var(--color-primary)] px-2.5 py-1 text-[11px] font-medium text-white">默认</span>
                             )}
                           </div>
-                          {(tech.city || tech.serviceArea) && (
-                            <div className="mt-1 flex flex-wrap items-center gap-1 text-xs text-[var(--color-text-muted)]">
+                          {tech.city && (
+                            <div className="mt-1 flex items-center gap-1 text-xs text-[var(--color-text-muted)]">
                               <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                               </svg>
-                              <span>{[tech.city, tech.serviceArea].filter(Boolean).join(' · ') || '未填写'}</span>
+                              <span>{tech.city}</span>
                             </div>
                           )}
-                          {serviceTypes.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-1.5">
-                              {serviceTypes.map((t) => (
-                                <span
-                                  key={t}
-                                  className="rounded-full bg-pink-50 px-2 py-0.5 text-[11px] font-medium text-[#FF6B8A]"
-                                >
-                                  {t}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                          {tech.shopService && shopLine && (
-                            <p className="mt-2 line-clamp-2 text-xs text-[var(--color-text-muted)]">
-                              门店：{shopLine}
-                            </p>
-                          )}
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                            {tech.homeService && (
+                              <span className="rounded-full bg-pink-50 px-2 py-0.5 text-[11px] font-medium text-[#FF6B8A]">
+                                可上门
+                              </span>
+                            )}
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                                tech.status === 'active'
+                                  ? 'bg-emerald-50 text-emerald-600'
+                                  : 'bg-slate-100 text-[var(--color-text-muted)]'
+                              }`}
+                            >
+                              <span className={`h-1.5 w-1.5 rounded-full ${tech.status === 'active' ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                              {tech.status === 'active' ? '接单中' : '休息中'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                       <div className="flex shrink-0 flex-col items-end gap-2">
