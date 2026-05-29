@@ -14,6 +14,7 @@ import {
 } from '../services/technicianData';
 import { Card } from '../components/base/Card';
 import { useToast } from '../components/feedback/ToastProvider';
+import { CalendarModal } from '../components/CalendarModal';
 import OrderDetailPage from './OrderDetailPage';
 
 const serviceTypeLabels: Record<string, string> = {
@@ -132,6 +133,7 @@ export const SchedulePage: React.FC = () => {
   const [orders, setOrders] = useState<TechnicianOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [detailOrderId, setDetailOrderId] = useState<number | null>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [activeDate, setActiveDate] = useState<Date>(() => {
     const dateParam = searchParams.get('date');
     if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
@@ -255,9 +257,21 @@ export const SchedulePage: React.FC = () => {
     <div className="flex h-full flex-col bg-page overflow-x-hidden">
       {/* ===== 固定头部：标题 + 日期选择 + 汇总 ===== */}
       <div className="shrink-0 px-lg pt-xl pb-2">
-        <header className="mb-lg">
-          <h1 className="text-title-lg font-semibold leading-title text-text-primary">行程</h1>
-          <p className="mt-xs text-body text-text-secondary">高效规划路线，准时上门服务</p>
+        <header className="mb-lg flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-title-lg font-semibold leading-title text-text-primary">行程</h1>
+            <p className="mt-xs text-body text-text-secondary">高效规划路线，准时上门服务</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowCalendar(true)}
+            aria-label="打开日历"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff1f6] text-[#FF5E93] active:bg-[#ffe4ee]"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </button>
         </header>
 
       {/* ===== 日期选择器 ===== */}
@@ -566,6 +580,18 @@ export const SchedulePage: React.FC = () => {
           isModal
           orderIdProp={detailOrderId}
           onClose={() => setDetailOrderId(null)}
+        />
+      )}
+
+      {showCalendar && (
+        <CalendarModal
+          selectedDate={activeDate}
+          markedDateKeys={orderDateKeys}
+          onSelect={(date) => {
+            setActiveDate(date);
+            setShowCalendar(false);
+          }}
+          onClose={() => setShowCalendar(false)}
         />
       )}
     </div>
