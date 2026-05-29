@@ -88,13 +88,52 @@ export const CustomersPage: React.FC = () => {
     return customer.tags.includes(activeTab);
   });
 
+  const handleInvite = async () => {
+    const invitationCode = technician?.invitationCode;
+    if (!invitationCode) {
+      toast.warning('暂未生成邀请码，请稍后重试。');
+      return;
+    }
+    const inviteLink = `${window.location.origin}/invite?invite_code=${encodeURIComponent(invitationCode)}`;
+    const shareText = `${technician?.name || '美甲师'}邀请你预约美甲服务，点击链接完成绑定：`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: '邀请你预约美甲', text: shareText, url: inviteLink });
+      } else {
+        await navigator.clipboard.writeText(inviteLink);
+        toast.success('当前环境不支持分享，邀请链接已复制');
+      }
+    } catch (error) {
+      // 用户主动取消分享不算错误
+      if ((error as { name?: string })?.name === 'AbortError') return;
+      try {
+        await navigator.clipboard.writeText(inviteLink);
+        toast.success('邀请链接已复制');
+      } catch {
+        toast.error('分享失败，请重试');
+      }
+    }
+  };
+
   return (
     <div className="flex h-full flex-col bg-[#fff9f8]">
       {/* 固定头部：标题 + 搜索框 + 分类标签 */}
       <div className="shrink-0 px-5 pt-5 pb-3 space-y-4">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">客户</h1>
-          <p className="mt-1 text-sm text-gray-400">管理客户档案、标签与服务记录</p>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">客户</h1>
+            <p className="mt-1 text-sm text-gray-400">管理客户档案、标签与服务记录</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleInvite}
+            className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full bg-[#ffe9f0] px-4 py-2 text-sm font-medium text-pink-500 transition-colors active:bg-[#f2d2dc]"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.25 8.25h7.5a1.5 1.5 0 011.5 1.5v7.5a1.5 1.5 0 01-1.5 1.5h-7.5a1.5 1.5 0 01-1.5-1.5v-7.5a1.5 1.5 0 011.5-1.5zm2.25-3h7.5m-3.75 0V3m0 2.25v3" />
+            </svg>
+            邀请客户
+          </button>
         </div>
 
         <div className="relative">
