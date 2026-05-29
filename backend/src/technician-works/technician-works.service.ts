@@ -257,11 +257,32 @@ export class TechnicianWorksService {
     return this.mapWork(work, technicianId);
   }
 
-  async getComments(workId: number) {
-    return this.prisma.nailWorkComment.findMany({
-      where: { workId },
-      orderBy: { createdAt: 'desc' },
+  async getComments(workId: number, currentTechnicianId?: number) {
+    const comments = await this.prisma.nailWorkComment.findMany({
+      where: { workId, parentId: null },
+      orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
+      include: {
+        client: { select: { id: true, nickname: true, avatarUrl: true } },
+        technician: { select: { id: true, name: true, avatarUrl: true } },
+        replies: {
+          orderBy: { createdAt: 'asc' },
+          include: {
+            client: { select: { id: true, nickname: true, avatarUrl: true } },
+            technician: { select: { id: true, name: true, avatarUrl: true } },
+          },
+        },
+      },
     });
+
+    // Map comments with user info
+    const mapped = comments.map(c => this.mapComment(c, currentTechnicianId));
+
+    // Separate pinned and non-pinned, hidden go to bottom
+    const pinned = mapped.filter(c => c.isPinned);
+    const normal = mapped.filter(c => !c.isPinned && !c.isHidden);
+    const hidden = mapped.filter(c => c.isHidden && !c.isPinned);
+
+    return [...pinned, ...normal, ...hidden];
   }
 
   async addComment(
@@ -269,11 +290,22 @@ export class TechnicianWorksService {
     content: string,
     technicianId?: number,
     clientId?: number,
+    parentId?: number,
   ) {
     if (!technicianId && !clientId) {
       throw new BadRequestException(
         'Must provide either technicianId or clientId',
       );
+    }
+
+    // Validate parent comment exists and belongs to same work
+    if (parentId) {
+      const parent = await this.prisma.nailWorkComment.findFirst({
+        where: { id: parentId, workId },
+      });
+      if (!parent) {
+        throw new NotFoundException('回复的评论不存在');
+      }
     }
 
     const comment = await this.prisma.nailWorkComment.create({
@@ -282,16 +314,21 @@ export class TechnicianWorksService {
         content,
         technicianId,
         clientId,
+        parentId,
+      },
+      include: {
+        client: { select: { id: true, nickname: true, avatarUrl: true } },
+        technician: { select: { id: true, name: true, avatarUrl: true } },
       },
     });
 
-    return comment;
+    return this.mapComment(comment, technicianId);
   }
 
   async deleteComment(commentId: number, technicianId: number) {
     const comment = await this.prisma.nailWorkComment.findFirst({
       where: { id: commentId },
-      include: { work: true },
+      include: { work: true, replies: true },
     });
 
     if (!comment) {
@@ -305,11 +342,79 @@ export class TechnicianWorksService {
       throw new BadRequestException('无权删除此评论');
     }
 
-    await this.prisma.nailWorkComment.delete({
-      where: { id: commentId },
-    });
+    // If has replies, soft delete (keep for context)
+    if (comment.replies && comment.replies.length > 0) {
+      await this.prisma.nailWorkComment.update({
+        where: { id: commentId },
+        data: { content: '该评论已被删除', clientId: null, technicianId: null },
+      });
+    } else {
+      // No replies, hard delete
+      await this.prisma.nailWorkComment.delete({
+        where: { id: commentId },
+      });
+    }
 
     return { success: true };
+  }
+
+
+  async pinComment(commentId: number, technicianId: number) {
+    const comment = await this.prisma.nailWorkComment.findFirst({
+      where: { id: commentId },
+      include: { work: true },
+    });
+
+    if (!comment) {
+      throw new NotFoundException('评论不存在');
+    }
+
+    if (comment.work.techId !== technicianId) {
+      throw new BadRequestException('无权操作此评论');
+    }
+
+    if (comment.isPinned) {
+      // Unpin
+      await this.prisma.nailWorkComment.update({
+        where: { id: commentId },
+        data: { isPinned: false },
+      });
+      return { pinned: false };
+    }
+
+    // Unpin all other comments for this work first (only one pinned at a time)
+    await this.prisma.nailWorkComment.updateMany({
+      where: { workId: comment.workId, isPinned: true },
+      data: { isPinned: false },
+    });
+
+    // Pin this comment
+    await this.prisma.nailWorkComment.update({
+      where: { id: commentId },
+      data: { isPinned: true },
+    });
+    return { pinned: true };
+  }
+
+  async hideComment(commentId: number, technicianId: number) {
+    const comment = await this.prisma.nailWorkComment.findFirst({
+      where: { id: commentId },
+      include: { work: true },
+    });
+
+    if (!comment) {
+      throw new NotFoundException('评论不存在');
+    }
+
+    if (comment.work.techId !== technicianId) {
+      throw new BadRequestException('无权操作此评论');
+    }
+
+    await this.prisma.nailWorkComment.update({
+      where: { id: commentId },
+      data: { isHidden: !comment.isHidden },
+    });
+    return { hidden: !comment.isHidden };
   }
 
   async markCommentsAsRead(workId: number, technicianId: number) {
@@ -335,6 +440,30 @@ export class TechnicianWorksService {
     if (!url) return null;
     if (url.startsWith('http')) return url;
     return `${UPLOAD_BASE_URL}${url}`;
+  }
+
+  private mapComment(comment: any, currentTechnicianId?: number) {
+    const isAuthor = comment.technicianId === currentTechnicianId;
+    const user = comment.technician
+      ? { id: comment.technician.id, name: comment.technician.name, avatarUrl: this.toAbsoluteUrl(comment.technician.avatarUrl), role: 'technician' as const }
+      : comment.client
+        ? { id: comment.client.id, name: comment.client.nickname || '客户', avatarUrl: this.toAbsoluteUrl(comment.client.avatarUrl), role: 'client' as const }
+        : { id: 0, name: '已删除用户', avatarUrl: null, role: 'unknown' as const };
+
+    return {
+      id: comment.id,
+      workId: comment.workId,
+      parentId: comment.parentId,
+      content: comment.content,
+      isPinned: comment.isPinned ?? false,
+      isHidden: comment.isHidden ?? false,
+      isRead: comment.isRead ?? false,
+      isAuthor,
+      user,
+      replies: (comment.replies || []).map((r: any) => this.mapComment(r, currentTechnicianId)),
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+    };
   }
 
   private mapWork(

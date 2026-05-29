@@ -100,10 +100,10 @@ export function ChatListSkeleton() {
 
 export function GridSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-2 gap-3">
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="bg-white rounded-xl overflow-hidden shadow-sm">
-          <Skeleton variant="rectangular" className="aspect-square" />
+          <Skeleton variant="rectangular" className="aspect-[3/4]" />
           <div className="p-2">
             <Skeleton className="h-3 w-full mb-1" />
             <Skeleton className="h-3 w-1/2" />

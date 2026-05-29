@@ -91,6 +91,7 @@ model Technician {
   designRequests        ClientDesignRequest[]
   conversations         Conversation[]
   customServiceRequests CustomServiceRequest[]
+  workComments  NailWorkComment[]
 }
 
 model Customer {
@@ -187,6 +188,7 @@ model ClientUser {
   designRequests        ClientDesignRequest[]
   conversations         Conversation[]
   customServiceRequests CustomServiceRequest[]
+  workComments          NailWorkComment[]
 }
 
 model ClientTechBinding {
@@ -277,17 +279,25 @@ model NailWorkFavorite {
 }
 
 model NailWorkComment {
-  id           Int      @id @default(autoincrement())
+  id           Int              @id @default(autoincrement())
   workId       Int
   clientId     Int?
   technicianId Int?
+  parentId     Int?
   content      String
-  isRead       Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @default(now()) @updatedAt
-  work         NailWork @relation(fields: [workId], references: [id], onDelete: Cascade)
+  isRead       Boolean          @default(false)
+  isPinned     Boolean          @default(false)
+  isHidden     Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @default(now()) @updatedAt
+  work         NailWork         @relation(fields: [workId], references: [id], onDelete: Cascade)
+  client       ClientUser?      @relation(fields: [clientId], references: [id])
+  technician   Technician?      @relation(fields: [technicianId], references: [id])
+  parent       NailWorkComment? @relation("CommentReplies", fields: [parentId], references: [id])
+  replies      NailWorkComment[] @relation("CommentReplies")
 
   @@index([workId])
+  @@index([parentId])
 }
 
 model ClientDesignRequest {

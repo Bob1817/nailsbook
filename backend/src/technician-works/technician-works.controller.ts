@@ -184,8 +184,11 @@ export class TechnicianWorksController {
   @ApiParam({ name: 'id', type: Number, description: '作品ID' })
   @ApiResponse({ status: 200, description: '返回评论列表' })
   @ApiResponse({ status: 404, description: '作品不存在' })
-  getComments(@Param('id', ParseIntPipe) id: number) {
-    return this.technicianWorksService.getComments(id);
+  getComments(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.technicianWorksService.getComments(id, request.user.technicianId);
   }
 
   @Post(':id/comments')
@@ -204,12 +207,14 @@ export class TechnicianWorksController {
     @Req() request: { user: { technicianId: number } },
     @Param('id', ParseIntPipe) id: number,
     @Body('content') content: string,
+    @Body('parentId') parentId?: number,
   ) {
     return this.technicianWorksService.addComment(
       id,
       content,
       request.user.technicianId,
       undefined,
+      parentId,
     );
   }
 
@@ -225,6 +230,36 @@ export class TechnicianWorksController {
     @Param('commentId', ParseIntPipe) commentId: number,
   ) {
     return this.technicianWorksService.deleteComment(
+      commentId,
+      request.user.technicianId,
+    );
+  }
+
+  @Post(':workId/comments/:commentId/pin')
+  @ApiOperation({ summary: '置顶/取消置顶评论' })
+  @ApiParam({ name: 'workId', type: Number })
+  @ApiParam({ name: 'commentId', type: Number })
+  @ApiResponse({ status: 200, description: '操作成功' })
+  pinComment(
+    @Req() request: { user: { technicianId: number } },
+    @Param('commentId', ParseIntPipe) commentId: number,
+  ) {
+    return this.technicianWorksService.pinComment(
+      commentId,
+      request.user.technicianId,
+    );
+  }
+
+  @Post(':workId/comments/:commentId/hide')
+  @ApiOperation({ summary: '隐藏/取消隐藏评论' })
+  @ApiParam({ name: 'workId', type: Number })
+  @ApiParam({ name: 'commentId', type: Number })
+  @ApiResponse({ status: 200, description: '操作成功' })
+  hideComment(
+    @Req() request: { user: { technicianId: number } },
+    @Param('commentId', ParseIntPipe) commentId: number,
+  ) {
+    return this.technicianWorksService.hideComment(
       commentId,
       request.user.technicianId,
     );

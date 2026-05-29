@@ -37,13 +37,26 @@ export interface CreateWorkDto {
 
 export interface UpdateWorkDto extends Partial<CreateWorkDto> {}
 
+export interface CommentUser {
+  id: number;
+  name: string;
+  avatarUrl: string | null;
+  role: 'technician' | 'client' | 'unknown';
+}
+
 export interface Comment {
   id: number;
   workId: number;
-  clientId?: number;
-  technicianId?: number;
+  parentId: number | null;
   content: string;
+  isPinned: boolean;
+  isHidden: boolean;
+  isRead: boolean;
+  isAuthor: boolean;
+  user: CommentUser;
+  replies: Comment[];
   createdAt: string;
+  updatedAt: string;
 }
 
 function processWork(work: Work): Work {
@@ -138,13 +151,23 @@ export const worksService = {
     return response.data;
   },
 
-  async addComment(workId: number, content: string): Promise<Comment> {
-    const response = await api.post(`/works/${workId}/comments`, { content });
+  async addComment(workId: number, content: string, parentId?: number): Promise<Comment> {
+    const response = await api.post(`/works/${workId}/comments`, { content, parentId });
     return response.data;
   },
 
   async deleteComment(workId: number, commentId: number): Promise<{ success: boolean }> {
     const response = await api.delete(`/works/${workId}/comments/${commentId}`);
+    return response.data;
+  },
+
+  async pinComment(workId: number, commentId: number): Promise<{ pinned: boolean }> {
+    const response = await api.post(`/works/${workId}/comments/${commentId}/pin`);
+    return response.data;
+  },
+
+  async hideComment(workId: number, commentId: number): Promise<{ hidden: boolean }> {
+    const response = await api.post(`/works/${workId}/comments/${commentId}/hide`);
     return response.data;
   },
 

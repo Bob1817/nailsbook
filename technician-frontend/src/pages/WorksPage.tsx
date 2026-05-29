@@ -25,6 +25,8 @@ const WorksPage: React.FC = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState<any[]>([]);
+  const [replyingTo, setReplyingTo] = useState<{ id: number; name: string } | null>(null);
+  const [commentActionMenuId, setCommentActionMenuId] = useState<number | null>(null);
   const [showActionMenu, setShowActionMenu] = useState(false);
   const imageSliderRef = useRef<HTMLDivElement>(null);
 
@@ -254,15 +256,13 @@ const WorksPage: React.FC = () => {
   const handleAddComment = async () => {
     if (!commentText.trim() || !selectedWork) return;
     try {
-      await worksService.addComment(selectedWork.id, commentText);
+      await worksService.addComment(selectedWork.id, commentText, replyingTo?.id);
       setCommentText('');
-      toast.success('评论已发布');
-      // 刷新评论列表
+      setReplyingTo(null);
+      toast.success(replyingTo ? '回复已发布' : '评论已发布');
       await loadComments(selectedWork.id);
-      // 刷新作品列表以更新评论数
       const updatedWorks = await worksService.list();
       setWorks(updatedWorks);
-      // 同步更新当前选中的作品状态
       const updatedWork = updatedWorks.find(w => w.id === selectedWork.id);
       if (updatedWork) {
         setSelectedWork(updatedWork);
@@ -273,13 +273,45 @@ const WorksPage: React.FC = () => {
     }
   };
 
+  const handleReplyToComment = (comment: any) => {
+    setReplyingTo({ id: comment.id, name: comment.user?.name || '用户' });
+    setCommentActionMenuId(null);
+  };
+
+  const handlePinComment = async (commentId: number) => {
+    if (!selectedWork) return;
+    try {
+      const result = await worksService.pinComment(selectedWork.id, commentId);
+      toast.success(result.pinned ? '评论已置顶' : '已取消置顶');
+      setCommentActionMenuId(null);
+      await loadComments(selectedWork.id);
+    } catch (error) {
+      console.error('Failed to pin comment:', error);
+      toast.error('操作失败');
+    }
+  };
+
+  const handleHideComment = async (commentId: number) => {
+    if (!selectedWork) return;
+    try {
+      const result = await worksService.hideComment(selectedWork.id, commentId);
+      toast.success(result.hidden ? '评论已隐藏' : '评论已取消隐藏');
+      setCommentActionMenuId(null);
+      await loadComments(selectedWork.id);
+    } catch (error) {
+      console.error('Failed to hide comment:', error);
+      toast.error('操作失败');
+    }
+  };
+
   const handleDeleteComment = async (commentId: number) => {
     if (!selectedWork) return;
+    setCommentActionMenuId(null);
     if (!confirm('确定要删除这条评论吗？')) return;
     try {
       await worksService.deleteComment(selectedWork.id, commentId);
       toast.success('评论已删除');
-      loadComments(selectedWork.id);
+      await loadComments(selectedWork.id);
       loadWorks();
     } catch (error) {
       console.error('Failed to delete comment:', error);
@@ -299,9 +331,9 @@ const WorksPage: React.FC = () => {
 
   // Masonry layout calculation
   const getMasonryLayout = () => {
-    const columns: Work[][] = [[], [], []];
+    const columns: Work[][] = [[], []];
     works.forEach((work, index) => {
-      columns[index % 3].push(work);
+      columns[index % 2].push(work);
     });
     return columns;
   };
@@ -343,14 +375,14 @@ const WorksPage: React.FC = () => {
             <p className="mt-1 text-sm text-gray-400">点击右上角添加您的第一个作品</p>
           </div>
         ) : (
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             {getMasonryLayout().map((column, colIndex) => (
-              <div key={colIndex} className="flex-1 flex flex-col gap-3">
+              <div key={colIndex} className="flex-1 flex flex-col gap-3.5">
                 {column.map((work) => (
                   <div
                     key={work.id}
                     onClick={() => openWorkDetail(work)}
-                    className="relative overflow-hidden rounded-[12px] bg-gray-100 cursor-pointer"
+                    className="relative overflow-hidden rounded-[16px] bg-gray-100 cursor-pointer shadow-[0_4px_16px_rgba(29,35,53,0.08)] active:scale-[0.97] transition-transform"
                   >
                     {/* Image */}
                     {work.coverUrl || work.imageUrls?.[0] ? (
@@ -638,29 +670,16 @@ const WorksPage: React.FC = () => {
               {comments.length > 0 ? (
                 <div className="space-y-3">
                   {comments.map((comment) => (
-                    <div key={comment.id} className="flex gap-3 group">
-                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-medium text-white ${comment.technicianId ? 'bg-pink-500' : 'bg-gray-400'}`}>
-                        {comment.technicianId ? '师' : '客'}
-                      </div>
-                      <div className="flex-1 min-w-0 rounded-2xl bg-gray-50 px-3 py-2">
-                        <div className="flex items-center justify-between gap-2 text-[11px] text-gray-400">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-gray-600">
-                              {comment.technicianId ? '美甲师' : '客户'}
-                            </span>
-                            <span>·</span>
-                            <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
-                          </div>
-                          <button
-                            onClick={() => handleDeleteComment(comment.id)}
-                            className="text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            删除
-                          </button>
-                        </div>
-                        <p className="mt-1 text-sm leading-5 text-gray-800">{comment.content}</p>
-                      </div>
-                    </div>
+                    <CommentItem
+                      key={comment.id}
+                      comment={comment}
+                      onReply={handleReplyToComment}
+                      onPin={handlePinComment}
+                      onHide={handleHideComment}
+                      onDelete={handleDeleteComment}
+                      actionMenuId={commentActionMenuId}
+                      setActionMenuId={setCommentActionMenuId}
+                    />
                   ))}
                 </div>
               ) : (
@@ -672,12 +691,25 @@ const WorksPage: React.FC = () => {
 
             {/* Comment input bar */}
             <div className="shrink-0 border-t border-gray-100 bg-white px-5 pt-3 pb-[max(0.875rem,env(safe-area-inset-bottom)+0.5rem)]">
+              {replyingTo && (
+                <div className="mb-2 flex items-center gap-2 text-xs text-gray-500">
+                  <span>回复 <span className="font-medium text-pink-500">@{replyingTo.name}</span></span>
+                  <button
+                    onClick={() => setReplyingTo(null)}
+                    className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-100"
+                  >
+                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <input
                   type="text"
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  placeholder="添加评论..."
+                  placeholder={replyingTo ? `回复 @${replyingTo.name}...` : '添加评论...'}
                   className="h-11 flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 text-sm focus:border-pink-500 focus:bg-white focus:outline-none"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
