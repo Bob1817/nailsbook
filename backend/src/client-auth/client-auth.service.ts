@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -483,6 +484,36 @@ export class ClientAuthService {
       avatarUrl: client.avatarUrl,
       status: client.status,
     };
+  }
+
+  async changePassword(
+    clientUserId: number,
+    oldPassword: string,
+    newPassword: string,
+  ) {
+    const client = await this.prisma.clientUser.findUnique({
+      where: { id: clientUserId },
+    });
+    if (!client) {
+      throw new NotFoundException('用户不存在');
+    }
+    if (!client.passwordHash) {
+      throw new BadRequestException('账号未设置密码');
+    }
+    const valid = await bcrypt.compare(oldPassword, client.passwordHash);
+    if (!valid) {
+      throw new BadRequestException('当前密码不正确');
+    }
+    const sameAsOld = await bcrypt.compare(newPassword, client.passwordHash);
+    if (sameAsOld) {
+      throw new BadRequestException('新密码不能与当前密码相同');
+    }
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.clientUser.update({
+      where: { id: clientUserId },
+      data: { passwordHash },
+    });
+    return { success: true };
   }
 
   private async findActiveTechnicianByInviteCode(

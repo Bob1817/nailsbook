@@ -125,7 +125,7 @@ const Profile: React.FC = () => {
         </svg>
       ),
       label: '设置',
-      onClick: () => {},
+      onClick: () => navigate('/profile/settings'),
     },
     {
       icon: (
@@ -134,7 +134,7 @@ const Profile: React.FC = () => {
         </svg>
       ),
       label: '帮助与反馈',
-      onClick: () => {},
+      onClick: () => navigate('/profile/help'),
     },
   ];
 

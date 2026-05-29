@@ -4,6 +4,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Req,
   UseGuards,
@@ -27,6 +28,7 @@ import { RegisterByInviteDto } from './dto/register-by-invite.dto';
 import { BindTechnicianDto } from './dto/bind-technician.dto';
 import { CheckPhoneDto } from '../technician-auth/dto/check-phone.dto';
 import { RefreshTokenDto } from '../common/dto/refresh-token.dto';
+import { ClientChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('client/auth')
 @ApiTags('客户端-认证')
@@ -155,6 +157,23 @@ export class ClientAuthController {
     return this.clientAuthService.updateProfile(
       request.user.clientUserId,
       body,
+    );
+  }
+
+  @Patch('password')
+  @UseGuards(ClientJwtAuthGuard)
+  @ApiOperation({ summary: '修改密码' })
+  @ApiBody({ type: ClientChangePasswordDto })
+  @ApiResponse({ status: 200, description: '密码修改成功' })
+  @ApiResponse({ status: 400, description: '当前密码不正确或新密码不合规' })
+  async changePassword(
+    @Req() request: { user: { clientUserId: number } },
+    @Body() body: ClientChangePasswordDto,
+  ) {
+    return this.clientAuthService.changePassword(
+      request.user.clientUserId,
+      body.oldPassword,
+      body.newPassword,
     );
   }
 }

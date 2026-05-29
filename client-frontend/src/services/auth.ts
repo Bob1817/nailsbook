@@ -139,4 +139,8 @@ export const authService = {
     const response = await api.put('/auth/me', data);
     return response.data;
   },
+
+  async changePassword(oldPassword: string, newPassword: string): Promise<void> {
+    await api.patch('/auth/password', { oldPassword, newPassword });
+  },
 };
