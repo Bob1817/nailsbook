@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { authService } from '../services/auth';
+import { authService, type Technician } from '../services/auth';
+import ArtistCardModal from '../components/ArtistCardModal';
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ const Profile: React.FC = () => {
   }, [refreshProfile]);
 
   const [showBindModal, setShowBindModal] = useState(false);
+  const [cardTech, setCardTech] = useState<Technician | null>(null);
   const [inviteCode, setInviteCode] = useState('');
   const [foundTechnician, setFoundTechnician] = useState<{ id: number; name: string; avatarUrl?: string | null; city?: string | null; serviceArea?: string | null } | null>(null);
   const [checkingInviteCode, setCheckingInviteCode] = useState(false);
@@ -269,6 +271,16 @@ const Profile: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex shrink-0 flex-col items-end gap-2">
+                        <button
+                          onClick={() => setCardTech(tech)}
+                          aria-label="查看美甲师名片"
+                          className="flex h-8 w-8 items-center justify-center rounded-full bg-pink-50 text-[var(--color-primary)] active:bg-pink-100"
+                        >
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        </button>
                         {!tech.isDefault && (
                           <button
                             onClick={() => handleSetDefault(tech.id)}
@@ -457,6 +469,10 @@ const Profile: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {cardTech && (
+        <ArtistCardModal technician={cardTech} onClose={() => setCardTech(null)} />
       )}
     </div>
   );

@@ -59,11 +59,23 @@ export class ClientHomeService {
     };
   }
 
-  async getWorks(clientUserId: number) {
-    const binding = await this.getDefaultBinding(clientUserId);
+  async getWorks(clientUserId: number, techId?: number) {
+    let targetTechId: number;
+    if (techId) {
+      // 校验客户与该美甲师存在有效绑定，再返回其作品
+      const binding = await this.prisma.clientTechBinding.findFirst({
+        where: { clientId: clientUserId, techId, status: 'active' },
+      });
+      if (!binding) {
+        throw new NotFoundException('未绑定该美甲师');
+      }
+      targetTechId = techId;
+    } else {
+      targetTechId = (await this.getDefaultBinding(clientUserId)).techId;
+    }
     const works = await this.prisma.nailWork.findMany({
       where: {
-        techId: binding.techId,
+        techId: targetTechId,
         isVisible: true,
       },
       orderBy: [

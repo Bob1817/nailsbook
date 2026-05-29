@@ -6,6 +6,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -15,6 +16,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiParam,
+  ApiQuery,
   ApiBody,
 } from '@nestjs/swagger';
 import { ClientJwtAuthGuard } from '../client-auth/client-jwt-auth.guard';
@@ -37,8 +39,15 @@ export class ClientHomeController {
   @Get('works')
   @ApiOperation({ summary: '获取作品列表' })
   @ApiResponse({ status: 200, description: '返回作品列表' })
-  getWorks(@Req() request: { user: { clientUserId: number } }) {
-    return this.clientHomeService.getWorks(request.user.clientUserId);
+  @ApiQuery({ name: 'techId', type: Number, required: false, description: '指定美甲师ID（需已绑定）' })
+  getWorks(
+    @Req() request: { user: { clientUserId: number } },
+    @Query('techId') techId?: string,
+  ) {
+    return this.clientHomeService.getWorks(
+      request.user.clientUserId,
+      techId ? parseInt(techId, 10) : undefined,
+    );
   }
 
   @Get('works/:id')

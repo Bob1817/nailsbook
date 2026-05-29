@@ -43,8 +43,8 @@ export interface Comment {
 }
 
 export const worksService = {
-  async getWorks(): Promise<NailWork[]> {
-    const response = await api.get('/works');
+  async getWorks(techId?: number): Promise<NailWork[]> {
+    const response = await api.get('/works', techId ? { params: { techId } } : undefined);
     return response.data;
   },
 

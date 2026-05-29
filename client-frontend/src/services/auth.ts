@@ -47,6 +47,7 @@ export interface Technician {
   isDefault?: boolean;
   bindSource?: string;
   bindId?: number;
+  invitationCode?: string | null;
   homeService?: boolean;
   shopService?: boolean;
   shopAddresses?: ShopAddress[];
