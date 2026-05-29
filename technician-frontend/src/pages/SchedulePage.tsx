@@ -13,6 +13,7 @@ import {
   type TechnicianOrder,
 } from '../services/technicianData';
 import { Card } from '../components/base/Card';
+import { useToast } from '../components/feedback/ToastProvider';
 import OrderDetailPage from './OrderDetailPage';
 
 const serviceTypeLabels: Record<string, string> = {
@@ -126,6 +127,7 @@ function CustomerAvatar({ name, avatarUrl, size = 36 }: { name: string; avatarUr
 export const SchedulePage: React.FC = () => {
   const { technician } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const [orders, setOrders] = useState<TechnicianOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -229,6 +231,24 @@ export const SchedulePage: React.FC = () => {
     if (dateStripRef.current) {
       dateStripRef.current.scrollTo({ left: 0, behavior: 'smooth' });
     }
+  };
+
+  const handleNavigateToAddress = (address?: string) => {
+    if (!address || address === '待补充服务地址') {
+      toast.warning('当前预约还没有地址信息。');
+      return;
+    }
+    // callnative=1 唤起本机高德地图 App 导航，未安装则回退到网页
+    const target = `https://uri.amap.com/search?keyword=${encodeURIComponent(address)}&callnative=1`;
+    window.open(target, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleContactCustomer = (phone?: string) => {
+    if (!phone) {
+      toast.warning('当前客户暂无联系电话。');
+      return;
+    }
+    window.location.href = `tel:${phone}`;
   };
 
   return (
@@ -384,6 +404,7 @@ export const SchedulePage: React.FC = () => {
             <div className="flex gap-3 mt-4">
               <button
                 type="button"
+                onClick={(e) => { e.stopPropagation(); handleNavigateToAddress(nextOrder.address); }}
                 className="flex-1 flex items-center justify-center gap-1.5 bg-primary text-white rounded-[10px] py-2.5 text-sm font-semibold min-h-[44px]"
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -393,6 +414,7 @@ export const SchedulePage: React.FC = () => {
               </button>
               <button
                 type="button"
+                onClick={(e) => { e.stopPropagation(); handleContactCustomer(nextOrder.customerPhone); }}
                 className="flex-1 flex items-center justify-center gap-1.5 bg-[#f5f5f5] text-text-primary rounded-[10px] py-2.5 text-sm font-semibold min-h-[44px]"
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -515,7 +537,7 @@ export const SchedulePage: React.FC = () => {
                 <button
                   type="button"
                   className="flex-1 flex items-center justify-center gap-1.5 bg-primary text-white rounded-lg py-2 text-[13px] min-h-[44px]"
-                  onClick={(e) => { e.stopPropagation(); /* TODO: open nav */ }}
+                  onClick={(e) => { e.stopPropagation(); handleNavigateToAddress(order.address); }}
                 >
                   <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 21s-6-4.35-6-10a6 6 0 1112 0c0 5.65-6 10-6 10zm0-8.25a1.75 1.75 0 100-3.5 1.75 1.75 0 000 3.5z" />
@@ -525,7 +547,7 @@ export const SchedulePage: React.FC = () => {
                 <button
                   type="button"
                   className="flex-1 flex items-center justify-center gap-1.5 bg-[#f5f5f5] text-text-primary rounded-lg py-2 text-[13px] min-h-[44px]"
-                  onClick={(e) => { e.stopPropagation(); /* TODO: contact client */ }}
+                  onClick={(e) => { e.stopPropagation(); handleContactCustomer(order.customerPhone); }}
                 >
                   <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 5a2 2 0 012-2h2.7a1 1 0 01.95.68l1.2 3.59a1 1 0 01-.5 1.21l-1.76.88a11.04 11.04 0 005.5 5.5l.88-1.76a1 1 0 011.21-.5l3.59 1.2a1 1 0 01.68.95V19a2 2 0 01-2 2h-1C9.72 21 3 14.28 3 6V5z" />

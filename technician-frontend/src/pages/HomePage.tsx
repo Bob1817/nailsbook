@@ -433,7 +433,8 @@ export const HomePage: React.FC = () => {
       return;
     }
 
-    const target = `https://uri.amap.com/search?keyword=${encodeURIComponent(address)}&callnative=0`;
+    // callnative=1 唤起本机高德地图 App 导航，未安装则回退到网页
+    const target = `https://uri.amap.com/search?keyword=${encodeURIComponent(address)}&callnative=1`;
     window.open(target, '_blank', 'noopener,noreferrer');
   }
 
