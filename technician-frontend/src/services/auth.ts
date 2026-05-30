@@ -199,6 +199,15 @@ export const authService = {
     return response.data;
   },
 
+  sendResetCode: async (phone: string): Promise<{ sent: boolean; devCode?: string }> => {
+    const response = await api.post('/auth/forgot-password/send-code', { phone });
+    return response.data;
+  },
+
+  resetPassword: async (phone: string, code: string, newPassword: string): Promise<void> => {
+    await api.post('/auth/forgot-password/reset', { phone, code, newPassword });
+  },
+
   register: async (credentials: RegisterCredentials): Promise<AuthResponse> => {
     const response = await api.post<AuthApiResponse>('/auth/register', credentials);
     const mappedResponse: AuthResponse = {

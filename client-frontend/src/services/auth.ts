@@ -150,4 +150,13 @@ export const authService = {
   async changePassword(oldPassword: string, newPassword: string): Promise<void> {
     await api.patch('/auth/password', { oldPassword, newPassword });
   },
+
+  async sendResetCode(phone: string): Promise<{ sent: boolean; devCode?: string }> {
+    const response = await api.post('/auth/forgot-password/send-code', { phone });
+    return response.data;
+  },
+
+  async resetPassword(phone: string, code: string, newPassword: string): Promise<void> {
+    await api.post('/auth/forgot-password/reset', { phone, code, newPassword });
+  },
 };

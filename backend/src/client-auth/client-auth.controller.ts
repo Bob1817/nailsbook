@@ -29,6 +29,7 @@ import { BindTechnicianDto } from './dto/bind-technician.dto';
 import { CheckPhoneDto } from '../technician-auth/dto/check-phone.dto';
 import { RefreshTokenDto } from '../common/dto/refresh-token.dto';
 import { ClientChangePasswordDto } from './dto/change-password.dto';
+import { ClientForgotSendCodeDto, ClientForgotResetDto } from './dto/forgot-password.dto';
 
 @Controller('client/auth')
 @ApiTags('客户端-认证')
@@ -71,6 +72,29 @@ export class ClientAuthController {
   @ApiBody({ type: ClientLoginDto })
   async login(@Body() body: ClientLoginDto) {
     return this.clientAuthService.login(body);
+  }
+
+  @Post('forgot-password/send-code')
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
+  @ApiOperation({ summary: '忘记密码：发送短信验证码' })
+  @ApiBody({ type: ClientForgotSendCodeDto })
+  @ApiResponse({ status: 200, description: '已发送（无论手机号是否注册均返回成功）' })
+  async sendResetCode(@Body() body: ClientForgotSendCodeDto) {
+    return this.clientAuthService.sendResetCode(body.phone);
+  }
+
+  @Post('forgot-password/reset')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @ApiOperation({ summary: '忘记密码：校验验证码并重置密码' })
+  @ApiBody({ type: ClientForgotResetDto })
+  @ApiResponse({ status: 200, description: '重置成功' })
+  @ApiResponse({ status: 400, description: '验证码错误/过期或新密码不合规' })
+  async resetPasswordByCode(@Body() body: ClientForgotResetDto) {
+    return this.clientAuthService.resetPasswordByCode(
+      body.phone,
+      body.code,
+      body.newPassword,
+    );
   }
 
   @Post('refresh')

@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { VerificationCodeModule } from './common/verification-code/verification-code.module';
+import { SmsModule } from './common/sms/sms.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -49,6 +50,7 @@ import { DevelopmentDemoSeedService } from './development-demo-seed.service';
       },
     ]),
     VerificationCodeModule,
+    SmsModule,
     PrismaModule,
     AuthModule,
     TechniciansModule,

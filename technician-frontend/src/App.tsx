@@ -11,6 +11,7 @@ const Login = lazy(async () => {
   const module = await import('./pages/Login');
   return { default: module.Login };
 });
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const HomePage = lazy(async () => {
   const module = await import('./pages/HomePage');
   return { default: module.HomePage };
@@ -83,6 +84,7 @@ function App() {
             <Suspense fallback={<RouteFallback />}>
               <Routes>
                 <Route path="/login" element={<Login />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route
                   element={
                     <ProtectedRoute>

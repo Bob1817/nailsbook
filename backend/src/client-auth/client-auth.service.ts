@@ -12,6 +12,8 @@ import { PrismaService } from '../common/prisma/prisma.service';
 import { ClientLoginDto } from './dto/client-login.dto';
 import { RegisterByInviteDto } from './dto/register-by-invite.dto';
 import { BindTechnicianDto } from './dto/bind-technician.dto';
+import { VerificationCodeService } from '../common/verification-code/verification-code.service';
+import { SmsService } from '../common/sms/sms.service';
 
 @Injectable()
 export class ClientAuthService {
@@ -54,7 +56,38 @@ export class ClientAuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly verificationCode: VerificationCodeService,
+    private readonly sms: SmsService,
   ) {}
+
+  // 忘记密码：发送验证码（防枚举，统一返回；仅已注册账号真正发送）
+  async sendResetCode(phone: string) {
+    try {
+      const client = await this.prisma.clientUser.findUnique({ where: { phone } });
+      if (client && client.passwordHash) {
+        const code = this.verificationCode.generate(phone);
+        await this.sms.sendVerificationCode(phone, code, '重置密码');
+      }
+    } catch {
+      // 频率限制等错误静默，避免暴露手机号是否注册
+    }
+    return { sent: true, devCode: this.verificationCode.getDevCode() };
+  }
+
+  // 忘记密码：校验验证码并重置密码
+  async resetPasswordByCode(phone: string, code: string, newPassword: string) {
+    this.verificationCode.validate(phone, code);
+    const client = await this.prisma.clientUser.findUnique({ where: { phone } });
+    if (!client || !client.passwordHash) {
+      throw new BadRequestException('该手机号未注册');
+    }
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.clientUser.update({
+      where: { id: client.id },
+      data: { passwordHash },
+    });
+    return { success: true };
+  }
 
   async checkPhone(phone: string) {
     const client = await this.prisma.clientUser.findUnique({

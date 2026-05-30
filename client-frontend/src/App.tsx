@@ -27,6 +27,7 @@ import MyFavorites from './pages/MyFavorites';
 import MyLikes from './pages/MyLikes';
 import PublicArtistCard from './pages/PublicArtistCard';
 import PublicWorkDetail from './pages/PublicWorkDetail';
+import ForgotPassword from './pages/ForgotPassword';
 import Settings from './pages/Settings';
 import HelpFeedback from './pages/HelpFeedback';
 
@@ -55,6 +56,7 @@ function AppRoutes() {
       {/* Public Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/invite" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/artist/:code" element={<PublicArtistCard />} />
       <Route path="/w/:id" element={<PublicWorkDetail />} />
 

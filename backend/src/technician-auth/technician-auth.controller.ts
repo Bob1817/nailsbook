@@ -24,6 +24,7 @@ import { UpdateTechnicianProfileDto } from './dto/update-technician-profile.dto'
 import { UpdateTechnicianSelfStatusDto } from './dto/update-technician-status.dto';
 import { UpdateTechnicianServiceTypeDto } from './dto/update-service-type.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ForgotSendCodeDto, ForgotResetDto } from './dto/forgot-password.dto';
 import { RefreshTokenDto } from '../common/dto/refresh-token.dto';
 
 @ApiTags('美甲师-认证')
@@ -40,6 +41,29 @@ export class TechnicianAuthController {
   @ApiResponse({ status: 400, description: '参数校验失败' })
   async login(@Body() body: TechnicianLoginDto) {
     return this.technicianAuthService.login(body.phone, body.password);
+  }
+
+  @Post('forgot-password/send-code')
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
+  @ApiOperation({ summary: '忘记密码：发送短信验证码' })
+  @ApiBody({ type: ForgotSendCodeDto })
+  @ApiResponse({ status: 200, description: '已发送（无论手机号是否注册均返回成功）' })
+  async sendResetCode(@Body() body: ForgotSendCodeDto) {
+    return this.technicianAuthService.sendResetCode(body.phone);
+  }
+
+  @Post('forgot-password/reset')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @ApiOperation({ summary: '忘记密码：校验验证码并重置密码' })
+  @ApiBody({ type: ForgotResetDto })
+  @ApiResponse({ status: 200, description: '重置成功' })
+  @ApiResponse({ status: 400, description: '验证码错误/过期或新密码不合规' })
+  async resetPasswordByCode(@Body() body: ForgotResetDto) {
+    return this.technicianAuthService.resetPasswordByCode(
+      body.phone,
+      body.code,
+      body.newPassword,
+    );
   }
 
   @Post('refresh')

@@ -211,6 +211,15 @@ export const Login: React.FC = () => {
               >
                 {loading ? '登录中...' : '登录'}
               </button>
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => navigate('/forgot-password')}
+                  className="text-sm text-[#ff607b]"
+                >
+                  忘记密码？
+                </button>
+              </div>
             </form>
           )}
 

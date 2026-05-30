@@ -7,6 +7,8 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { VerificationCodeService } from '../common/verification-code/verification-code.service';
+import { SmsService } from '../common/sms/sms.service';
 import type { Prisma } from '@prisma/client';
 
 @Injectable()
@@ -50,7 +52,38 @@ export class TechnicianAuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly verificationCode: VerificationCodeService,
+    private readonly sms: SmsService,
   ) {}
+
+  // 忘记密码：发送验证码（防枚举，统一返回；仅已激活账号真正发送）
+  async sendResetCode(phone: string) {
+    try {
+      const technician = await this.findTechnicianByPhone(phone);
+      if (technician && technician.passwordHash) {
+        const code = this.verificationCode.generate(phone);
+        await this.sms.sendVerificationCode(phone, code, '重置密码');
+      }
+    } catch {
+      // 频率限制等错误也静默，避免暴露手机号是否注册
+    }
+    return { sent: true, devCode: this.verificationCode.getDevCode() };
+  }
+
+  // 忘记密码：校验验证码并重置密码
+  async resetPasswordByCode(phone: string, code: string, newPassword: string) {
+    this.verificationCode.validate(phone, code); // 校验失败抛 BadRequestException
+    const technician = await this.findTechnicianByPhone(phone);
+    if (!technician || !technician.passwordHash) {
+      throw new BadRequestException('该手机号未注册');
+    }
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.technician.update({
+      where: { id: technician.id },
+      data: { passwordHash },
+    });
+    return { success: true };
+  }
 
   private generateInvitationCode(): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
