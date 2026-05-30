@@ -9,6 +9,7 @@ import { CreateTechnicianDto } from './dto/create-technician.dto';
 import { UpdateTechnicianDto } from './dto/update-technician.dto';
 import { UpdateTechnicianStatusDto } from './dto/update-technician-status.dto';
 import * as crypto from 'crypto';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class TechniciansService {
@@ -160,6 +161,43 @@ export class TechniciansService {
     });
 
     return this.mapTechnician(updated);
+  }
+
+  async resetPassword(technicianId: number) {
+    const technician = await this.prisma.technician.findUnique({
+      where: { id: technicianId },
+    });
+    if (!technician) throw new NotFoundException('美甲师不存在');
+    if (!technician.passwordHash) {
+      throw new BadRequestException('该账号尚未激活，请生成邀请密钥让美甲师注册激活');
+    }
+
+    const tempPassword = this.generateTempPassword();
+    const passwordHash = await bcrypt.hash(tempPassword, 10);
+    await this.prisma.technician.update({
+      where: { id: technicianId },
+      data: { passwordHash },
+    });
+
+    // 临时密码仅在本次响应返回一次，由管理员转交给美甲师
+    return { tempPassword };
+  }
+
+  private generateTempPassword(): string {
+    // 10 位，至少含大小写字母与数字，满足强密码规则（≥8 位、含字母和数字）
+    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lower = 'abcdefghijkmnpqrstuvwxyz';
+    const digits = '23456789';
+    const all = upper + lower + digits;
+    const pick = (s: string) => s[crypto.randomInt(s.length)];
+    const chars = [pick(upper), pick(lower), pick(digits), pick(digits)];
+    while (chars.length < 10) chars.push(pick(all));
+    // 洗牌
+    for (let i = chars.length - 1; i > 0; i--) {
+      const j = crypto.randomInt(i + 1);
+      [chars[i], chars[j]] = [chars[j], chars[i]];
+    }
+    return chars.join('');
   }
 
   async generateInviteKey(technicianId: number, note?: string) {

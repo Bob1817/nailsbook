@@ -87,4 +87,9 @@ export const technicianService = {
     const response = await api.post(`/technicians/${id}/invite-key`, { note });
     return response.data;
   },
+
+  resetPassword: async (id: number): Promise<{ tempPassword: string }> => {
+    const response = await api.post(`/technicians/${id}/reset-password`);
+    return response.data;
+  },
 };

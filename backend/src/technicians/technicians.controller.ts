@@ -155,4 +155,21 @@ export class TechniciansController {
   ) {
     return this.techniciansService.updateStatus(parseInt(id, 10), dto);
   }
+
+  @Post(':id/reset-password')
+  @Permissions('technician.edit')
+  @UseInterceptors(OperationLogInterceptor)
+  @OperationLog({
+    module: 'technician',
+    action: 'reset_password',
+    targetType: 'technician',
+  })
+  @ApiOperation({ summary: '重置美甲师密码（生成一次性临时密码）' })
+  @ApiParam({ name: 'id', type: String, description: '美甲师ID' })
+  @ApiResponse({ status: 201, description: '重置成功，返回临时密码（仅此次显示）' })
+  @ApiResponse({ status: 400, description: '账号未激活' })
+  @ApiResponse({ status: 404, description: '美甲师不存在' })
+  resetPassword(@Param('id') id: string) {
+    return this.techniciansService.resetPassword(parseInt(id, 10));
+  }
 }

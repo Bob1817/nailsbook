@@ -18,6 +18,8 @@ const Technicians: React.FC = () => {
   const [filters, setFilters] = useState({ page: 1, limit: 10, status: '', search: '' });
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [keyGenerating, setKeyGenerating] = useState(false);
+  const [resetPwd, setResetPwd] = useState<string | null>(null);
+  const [resetting, setResetting] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -56,6 +58,7 @@ const Technicians: React.FC = () => {
   const openEdit = (technician: Technician) => {
     setSelectedTechnician(technician);
     setGeneratedKey(null);
+    setResetPwd(null);
     editForm.setFieldsValue({
       name: technician.name,
       phone: technician.phone,
@@ -92,6 +95,21 @@ const Technicians: React.FC = () => {
       message.error(err.response?.data?.message || '生成失败');
     } finally {
       setKeyGenerating(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!selectedTechnician) return;
+    setResetting(true);
+    try {
+      const result = await technicianService.resetPassword(selectedTechnician.id);
+      setResetPwd(result.tempPassword);
+      message.success('密码已重置');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || '重置失败');
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -375,6 +393,47 @@ const Technicians: React.FC = () => {
               >
                 生成专属激活密钥
               </Button>
+            )}
+          </div>
+        )}
+
+        {selectedTechnician && selectedTechnician.status !== 'inactive' && (
+          <div style={{ marginTop: 16, padding: 16, background: '#fff1f0', borderRadius: 8 }}>
+            <div style={{ marginBottom: 8, color: '#cf1322', fontSize: 13 }}>
+              美甲师忘记密码时，可在此重置。系统将生成一个一次性临时密码，请转交给美甲师并提醒其登录后尽快修改。
+            </div>
+            {resetPwd ? (
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Space>
+                  <Text code style={{ fontSize: 16, letterSpacing: 1 }}>{resetPwd}</Text>
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<CopyOutlined />}
+                    onClick={() => {
+                      navigator.clipboard.writeText(resetPwd);
+                      message.success('已复制');
+                    }}
+                  >
+                    复制
+                  </Button>
+                </Space>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  临时密码仅显示这一次，请把它和手机号 ({selectedTechnician.phone}) 一并发送给美甲师
+                </Text>
+              </Space>
+            ) : (
+              <Popconfirm
+                title="确认重置该美甲师的登录密码？"
+                description="重置后原密码立即失效，将生成一次性临时密码。"
+                okText="确认重置"
+                cancelText="取消"
+                onConfirm={handleResetPassword}
+              >
+                <Button danger icon={<KeyOutlined />} loading={resetting}>
+                  重置登录密码
+                </Button>
+              </Popconfirm>
             )}
           </div>
         )}
