@@ -66,7 +66,8 @@ export class ClientAuthService {
       const client = await this.prisma.clientUser.findUnique({ where: { phone } });
       if (client && client.passwordHash) {
         const code = this.verificationCode.generate(phone);
-        await this.sms.sendVerificationCode(phone, code, '重置密码');
+        // 后台发送（带重试），不阻塞响应，也消除"是否注册"的响应耗时差异
+        void this.sms.sendVerificationCode(phone, code, '重置密码').catch(() => {});
       }
     } catch {
       // 频率限制等错误静默，避免暴露手机号是否注册
