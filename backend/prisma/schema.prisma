@@ -61,6 +61,7 @@ model Technician {
   name                  String
   phone                 String                  @unique
   passwordHash          String                  @default("")
+  tokenVersion          Int                     @default(0)
   avatarUrl             String?
   city                  String?
   serviceArea           String?
@@ -177,6 +178,7 @@ model ClientUser {
   nickname              String?
   phone                 String                 @unique
   passwordHash          String                 @default("")
+  tokenVersion          Int                    @default(0)
   avatarUrl             String?
   city                  String?
   bio                   String?

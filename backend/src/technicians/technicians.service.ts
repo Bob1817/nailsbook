@@ -176,7 +176,7 @@ export class TechniciansService {
     const passwordHash = await bcrypt.hash(tempPassword, 10);
     await this.prisma.technician.update({
       where: { id: technicianId },
-      data: { passwordHash },
+      data: { passwordHash, tokenVersion: { increment: 1 } },
     });
 
     // 临时密码仅在本次响应返回一次，由管理员转交给美甲师

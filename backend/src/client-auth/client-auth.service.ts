@@ -84,7 +84,7 @@ export class ClientAuthService {
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.prisma.clientUser.update({
       where: { id: client.id },
-      data: { passwordHash },
+      data: { passwordHash, tokenVersion: { increment: 1 } },
     });
     return { success: true };
   }
@@ -161,8 +161,8 @@ export class ClientAuthService {
     };
 
     return {
-      accessToken: this.signToken(client.id, client.phone),
-      refreshToken: this.signRefreshToken(client.id, client.phone),
+      accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
+      refreshToken: this.signRefreshToken(client.id, client.phone, client.tokenVersion),
       client: {
         id: client.id,
         nickname: client.nickname,
@@ -220,8 +220,8 @@ export class ClientAuthService {
       client.bindings.find((b) => b.isDefault) || client.bindings[0];
 
     return {
-      accessToken: this.signToken(client.id, client.phone),
-      refreshToken: this.signRefreshToken(client.id, client.phone),
+      accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
+      refreshToken: this.signRefreshToken(client.id, client.phone, client.tokenVersion),
       client: {
         id: client.id,
         nickname: client.nickname,
@@ -574,7 +574,7 @@ export class ClientAuthService {
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.prisma.clientUser.update({
       where: { id: clientUserId },
-      data: { passwordHash },
+      data: { passwordHash, tokenVersion: { increment: 1 } },
     });
     return { success: true };
   }
@@ -620,17 +620,28 @@ export class ClientAuthService {
     };
   }
 
-  private signToken(clientUserId: number, phone: string) {
+  private signToken(clientUserId: number, phone: string, tokenVersion = 0) {
     return this.jwtService.sign({
       sub: clientUserId,
       phone,
       userType: 'client',
+      tv: tokenVersion,
     });
   }
 
-  private signRefreshToken(clientUserId: number, phone: string) {
+  private signRefreshToken(
+    clientUserId: number,
+    phone: string,
+    tokenVersion = 0,
+  ) {
     return this.jwtService.sign(
-      { sub: clientUserId, phone, userType: 'client', tokenType: 'refresh' },
+      {
+        sub: clientUserId,
+        phone,
+        userType: 'client',
+        tokenType: 'refresh',
+        tv: tokenVersion,
+      },
       { expiresIn: '30d' },
     );
   }
@@ -654,10 +665,13 @@ export class ClientAuthService {
     if (!client || client.status !== 'active') {
       throw new UnauthorizedException('用户不存在或已被禁用');
     }
+    if ((payload.tv ?? 0) !== client.tokenVersion) {
+      throw new UnauthorizedException('登录状态已失效，请重新登录');
+    }
 
     return {
-      accessToken: this.signToken(client.id, client.phone),
-      refreshToken: this.signRefreshToken(client.id, client.phone),
+      accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
+      refreshToken: this.signRefreshToken(client.id, client.phone, client.tokenVersion),
     };
   }
 

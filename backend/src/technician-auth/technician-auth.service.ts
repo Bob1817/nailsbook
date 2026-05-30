@@ -80,7 +80,7 @@ export class TechnicianAuthService {
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.prisma.technician.update({
       where: { id: technician.id },
-      data: { passwordHash },
+      data: { passwordHash, tokenVersion: { increment: 1 } },
     });
     return { success: true };
   }
@@ -265,11 +265,16 @@ export class TechnicianAuthService {
       sub: technician.id,
       phone,
       userType: 'technician',
+      tv: technician.tokenVersion,
     };
 
     return {
       accessToken: this.jwtService.sign(payload),
-      refreshToken: this.signRefreshToken(technician.id, phone),
+      refreshToken: this.signRefreshToken(
+        technician.id,
+        phone,
+        technician.tokenVersion,
+      ),
       technician: this.serializeTechnician(technician),
     };
   }
@@ -361,7 +366,7 @@ export class TechnicianAuthService {
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.prisma.technician.update({
       where: { id: technicianId },
-      data: { passwordHash },
+      data: { passwordHash, tokenVersion: { increment: 1 } },
     });
 
     return { success: true };
@@ -642,26 +647,39 @@ export class TechnicianAuthService {
     if (!technician || technician.status === 'suspended') {
       throw new UnauthorizedException('美甲师不存在或已被禁用');
     }
+    if ((payload.tv ?? 0) !== technician.tokenVersion) {
+      throw new UnauthorizedException('登录状态已失效，请重新登录');
+    }
 
     const newPayload = {
       sub: technician.id,
       phone: technician.phone,
       userType: 'technician',
+      tv: technician.tokenVersion,
     };
 
     return {
       accessToken: this.jwtService.sign(newPayload),
-      refreshToken: this.signRefreshToken(technician.id, technician.phone),
+      refreshToken: this.signRefreshToken(
+        technician.id,
+        technician.phone,
+        technician.tokenVersion,
+      ),
     };
   }
 
-  private signRefreshToken(technicianId: number, phone: string) {
+  private signRefreshToken(
+    technicianId: number,
+    phone: string,
+    tokenVersion: number,
+  ) {
     return this.jwtService.sign(
       {
         sub: technicianId,
         phone,
         userType: 'technician',
         tokenType: 'refresh',
+        tv: tokenVersion,
       },
       { expiresIn: '30d' },
     );
