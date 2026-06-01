@@ -14,6 +14,7 @@ type OrderStatus =
   | 'pending_quote'
   | 'pending_agree'
   | 'pending_confirm'
+  | 'pending_client_confirm'
   | 'pending_home'
   | 'pending_shop'
   | 'in_progress'
@@ -24,6 +25,7 @@ const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   pending_quote: ['pending_agree', 'cancelled'],
   pending_agree: ['pending_confirm', 'pending_quote', 'cancelled'],
   pending_confirm: ['pending_home', 'pending_shop', 'cancelled'],
+  pending_client_confirm: ['pending_confirm', 'cancelled'],
   pending_home: ['in_progress'],
   pending_shop: ['in_progress'],
   in_progress: ['completed'],
@@ -46,30 +48,56 @@ export class OrdersService {
     technicianId: number,
     dto: CreateTechnicianOrderDto,
   ) {
-    const customer = await this.prisma.customer.findUnique({
-      where: { id: dto.customerId },
-    });
-
-    if (!customer) {
-      throw new NotFoundException('客户不存在');
+    // Resolve Customer record: accept either customerId or clientUserId
+    let customerId: number;
+    if (dto.customerId) {
+      const customer = await this.prisma.customer.findUnique({
+        where: { id: dto.customerId },
+      });
+      if (!customer) throw new NotFoundException('客户不存在');
+      if (customer.technicianId !== technicianId)
+        throw new ForbiddenException('无权为该客户创建订单');
+      customerId = dto.customerId;
+    } else if (dto.clientUserId) {
+      const customer = await this.prisma.customer.findFirst({
+        where: { technicianId, clientUserId: dto.clientUserId },
+      });
+      if (!customer) throw new NotFoundException('未找到该客户的绑定记录');
+      customerId = customer.id;
+    } else {
+      throw new BadRequestException('customerId 或 clientUserId 必须提供一个');
     }
 
-    if (customer.technicianId !== technicianId) {
-      throw new ForbiddenException('无权为该客户创建订单');
+    if (dto.shareToClient && dto.price == null) {
+      throw new BadRequestException('生成微信确认链接时，价格为必填项');
     }
 
-    return this.prisma.order.create({
+    const confirmToken = dto.shareToClient
+      ? (crypto.randomUUID as () => string)()
+      : null;
+    const confirmTokenExpiresAt = confirmToken
+      ? new Date(Date.now() + 24 * 60 * 60 * 1000)
+      : null;
+
+    const order = await this.prisma.order.create({
       data: {
         orderNo: this.generateOrderNo(),
         technicianId,
-        customerId: customer.id,
-        clientUserId: customer.clientUserId ?? null,
+        customerId,
+        clientUserId: dto.clientUserId ?? null,
         startTime: new Date(dto.startTime),
         endTime: new Date(dto.endTime),
         address: dto.address,
         serviceType: dto.serviceType || null,
-        status: 'pending_quote',
-        remark: dto.note || dto.serviceName || null,
+        status: dto.shareToClient ? 'pending_client_confirm' : 'pending_quote',
+        remark: dto.note || null,
+        customDescription: dto.customDescription || null,
+        customImages: dto.customImages?.length
+          ? JSON.stringify(dto.customImages)
+          : null,
+        quotePrice: dto.price ?? 0,
+        confirmToken,
+        confirmTokenExpiresAt,
       },
       include: {
         technician: { select: { id: true, name: true, phone: true } },
@@ -78,6 +106,13 @@ export class OrdersService {
         },
       },
     });
+
+    const result: Record<string, unknown> = { ...order };
+    if (confirmToken) {
+      const webappUrl = process.env.WEBAPP_URL ?? 'http://localhost:3000';
+      result['confirmUrl'] = `${webappUrl}/confirm/${confirmToken}`;
+    }
+    return result;
   }
 
   async findAll(
