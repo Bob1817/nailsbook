@@ -112,11 +112,13 @@ export class TechniciansService {
     }
 
     const invitationCode = this.generateInvitationCode();
+    const defaultPasswordHash = await bcrypt.hash('123456', 10);
 
     const technician = await this.prisma.technician.create({
       data: {
         ...dto,
         invitationCode,
+        passwordHash: defaultPasswordHash,
         status: 'inactive',
       },
     });
