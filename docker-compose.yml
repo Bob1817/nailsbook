@@ -7,9 +7,11 @@ services:
     env_file: ./backend/.env.production
     volumes:
       - backend_db:/app/data
-      - backend_uploads:/app/uploads
+      # 图片存储已迁移到阿里云 OSS，不再需要 uploads volume
     expose:
       - "3000"
+    ports:
+      - "3001:3000"
     networks:
       - internal
 
@@ -36,7 +38,6 @@ services:
 
 volumes:
   backend_db:
-  backend_uploads:
   certbot_www:
   certbot_certs:
 

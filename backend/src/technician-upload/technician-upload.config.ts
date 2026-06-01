@@ -1,6 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import * as crypto from 'crypto';
-import { diskStorage } from 'multer';
+import { memoryStorage } from 'multer';
 import * as path from 'path';
 
 const ALLOWED_IMAGE_TYPES: Record<string, string> = {
@@ -11,22 +10,12 @@ const ALLOWED_IMAGE_TYPES: Record<string, string> = {
 
 export const TECHNICIAN_UPLOAD_IMAGE_LIMIT_BYTES = 5 * 1024 * 1024;
 
-export const technicianUploadStorage = {
-  getDestination() {
-    return path.resolve(process.cwd(), 'uploads');
-  },
-  getFilename(
-    file: {
-      mimetype: string;
-      originalname?: string;
-    },
-    callback: (error: Error | null, filename: string) => void,
-  ) {
-    const extension = getSafeImageExtension(file);
-    callback(
-      null,
-      `${Date.now()}-${crypto.randomBytes(4).toString('hex')}${extension}`,
-    );
+export const technicianUploadMulterOptions = {
+  // 内存存储：拿到 buffer 后交由 StorageService 上传 OSS
+  storage: memoryStorage(),
+  fileFilter: technicianUploadFileFilter,
+  limits: {
+    fileSize: TECHNICIAN_UPLOAD_IMAGE_LIMIT_BYTES,
   },
 };
 
@@ -45,19 +34,6 @@ export function technicianUploadFileFilter(
     callback(error as Error, false);
   }
 }
-
-export const technicianUploadMulterOptions = {
-  storage: diskStorage({
-    destination: technicianUploadStorage.getDestination(),
-    filename: (_request, file, callback) => {
-      technicianUploadStorage.getFilename(file, callback);
-    },
-  }),
-  fileFilter: technicianUploadFileFilter,
-  limits: {
-    fileSize: TECHNICIAN_UPLOAD_IMAGE_LIMIT_BYTES,
-  },
-};
 
 function getSafeImageExtension(file: {
   mimetype: string;

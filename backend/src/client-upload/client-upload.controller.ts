@@ -29,11 +29,11 @@ export class ClientUploadController {
   @ApiOperation({ summary: '上传图片' })
   @ApiResponse({ status: 200, description: '上传成功，返回图片URL' })
   @ApiResponse({ status: 400, description: '未选择图片文件' })
-  uploadImage(@UploadedFile() file: { filename: string } | undefined) {
+  uploadImage(@UploadedFile() file: Express.Multer.File | undefined) {
     if (!file) {
       throw new BadRequestException('请选择图片文件');
     }
 
-    return this.clientUploadService.buildImageResponse(file.filename);
+    return this.clientUploadService.uploadImage(file);
   }
 }

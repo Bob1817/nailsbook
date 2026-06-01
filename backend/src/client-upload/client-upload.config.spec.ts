@@ -3,7 +3,6 @@ import {
   CLIENT_UPLOAD_IMAGE_LIMIT_BYTES,
   clientUploadFileFilter,
   clientUploadMulterOptions,
-  clientUploadStorage,
 } from './client-upload.config';
 
 describe('client-upload config', () => {
@@ -40,27 +39,17 @@ describe('client-upload config', () => {
     );
   });
 
-  it('normalizes generated filenames to safe allowlisted extensions', () => {
-    const callback = jest.fn();
-
-    clientUploadStorage.getFilename(
-      {
-        originalname: 'My Design.JPEG',
-        mimetype: 'image/jpeg',
-      },
-      callback,
-    );
-
-    expect(callback).toHaveBeenCalledWith(
-      null,
-      expect.stringMatching(/^\d+-[0-9a-f]{8}\.jpg$/),
-    );
-  });
-
   it('exposes a finite file size limit for uploaded images', () => {
     expect(CLIENT_UPLOAD_IMAGE_LIMIT_BYTES).toBeGreaterThan(0);
     expect(clientUploadMulterOptions.limits).toEqual({
       fileSize: CLIENT_UPLOAD_IMAGE_LIMIT_BYTES,
     });
+  });
+
+  it('uses memory storage for OSS upload pipeline', () => {
+    // memoryStorage() 返回的存储引擎不包含 getDestination 和 getFilename
+    // 文件 buffer 直接交由 StorageService 处理
+    expect(clientUploadMulterOptions.storage).toBeDefined();
+    expect(typeof clientUploadMulterOptions.fileFilter).toBe('function');
   });
 });

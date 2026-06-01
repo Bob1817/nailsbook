@@ -32,11 +32,11 @@ export class TechnicianUploadController {
   @ApiResponse({ status: 200, description: '图片上传成功' })
   @ApiResponse({ status: 400, description: '请选择图片文件' })
   @ApiResponse({ status: 401, description: '未授权' })
-  uploadImage(@UploadedFile() file: { filename: string } | undefined) {
+  uploadImage(@UploadedFile() file: Express.Multer.File | undefined) {
     if (!file) {
       throw new BadRequestException('请选择图片文件');
     }
 
-    return this.technicianUploadService.buildImageResponse(file.filename);
+    return this.technicianUploadService.uploadImage(file);
   }
 }

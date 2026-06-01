@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
+import { StorageService, type UploadFile } from '../common/storage/storage.service';
 
 @Injectable()
 export class TechnicianUploadService {
-  buildImageResponse(filename: string) {
-    return { url: `/uploads/${filename}` };
+  constructor(private readonly storage: StorageService) {}
+
+  uploadImage(file: UploadFile) {
+    return this.storage.uploadImage(file);
   }
 }
