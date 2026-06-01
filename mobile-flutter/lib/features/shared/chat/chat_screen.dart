@@ -3,13 +3,20 @@ import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/auth/auth_session.dart';
 import '../../../core/socket/chat_socket.dart';
+import '../booking/chat_booking_sheet.dart';
 import 'chat_service.dart';
 
 class ChatScreen extends StatefulWidget {
   final int conversationId;
   final String title;
+  final int? otherPartyId;
 
-  const ChatScreen({super.key, required this.conversationId, required this.title});
+  const ChatScreen({
+    super.key,
+    required this.conversationId,
+    required this.title,
+    this.otherPartyId,
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -20,12 +27,15 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _loading = true;
   final _inputCtl = TextEditingController();
   final _scrollCtl = ScrollController();
+  int? _otherPartyId;
 
   @override
   void initState() {
     super.initState();
+    _otherPartyId = widget.otherPartyId;
     _loadMessages();
     _listenSocket();
+    if (_otherPartyId == null) _resolveOtherPartyId();
   }
 
   @override
@@ -77,6 +87,38 @@ class _ChatScreenState extends State<ChatScreen> {
     } catch (_) {}
   }
 
+  /// Resolve the other party's id when opened via a deep link (which only
+  /// carries conversationId). Looks up the conversation in the list and
+  /// extracts the technician id (client side) or client-user id (technician side).
+  Future<void> _resolveOtherPartyId() async {
+    final authSession = context.read<AuthSession>();
+    final isClient = authSession.isClient;
+    try {
+      final api = context.read<ApiClient>();
+      final convs = await ChatService(api).conversations();
+      final conv = convs.cast<Map<String, dynamic>?>().firstWhere(
+            (c) => c?['id'] == widget.conversationId,
+            orElse: () => null,
+          );
+      if (conv == null) return;
+      final party = (isClient ? conv['technician'] : conv['client'])
+          as Map<String, dynamic>?;
+      final id = party?['id'] as int?;
+      if (id != null && mounted) setState(() => _otherPartyId = id);
+    } catch (_) {}
+  }
+
+  Future<void> _openBookingSheet() async {
+    final otherPartyId = _otherPartyId;
+    if (otherPartyId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('无法获取对方信息，请从消息列表重新进入')),
+      );
+      return;
+    }
+    await showChatBookingSheet(context, otherPartyId: otherPartyId);
+  }
+
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollCtl.hasClients) {
@@ -95,7 +137,19 @@ class _ChatScreenState extends State<ChatScreen> {
     final isClient = authSession.isClient;
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: AppBar(
+        title: Text(widget.title),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: TextButton.icon(
+              onPressed: _openBookingSheet,
+              icon: const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFFE91E63)),
+              label: const Text('发起预约', style: TextStyle(color: Color(0xFFE91E63), fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ],
+      ),
       body: Column(children: [
         Expanded(
           child: _loading

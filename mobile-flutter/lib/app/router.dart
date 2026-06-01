@@ -19,6 +19,7 @@ import '../features/technician/services/technician_services_screen.dart';
 import '../features/technician/profile/technician_profile_screen.dart';
 import '../features/shared/chat/conversations_screen.dart';
 import '../features/shared/chat/chat_screen.dart';
+import '../features/shared/booking/order_confirm_screen.dart';
 import 'role_select_screen.dart';
 
 GoRouter createRouter(AuthSession authSession) {
@@ -30,6 +31,9 @@ GoRouter createRouter(AuthSession authSession) {
       final location = state.matchedLocation;
 
       if (status == AuthStatus.unknown) return null;
+
+      // Public route: WeChat confirm link, accessible without login
+      if (location.startsWith('/confirm')) return null;
 
       final authRoutes = ['/client/login', '/technician/login', '/role-select'];
       final isOnAuthRoute = authRoutes.contains(location);
@@ -61,6 +65,11 @@ GoRouter createRouter(AuthSession authSession) {
       GoRoute(
         path: '/role-select',
         builder: (context, state) => const RoleSelectScreen(),
+      ),
+      GoRoute(
+        path: '/confirm/:token',
+        builder: (context, state) =>
+            OrderConfirmScreen(token: state.pathParameters['token']!),
       ),
       GoRoute(
         path: '/client/login',

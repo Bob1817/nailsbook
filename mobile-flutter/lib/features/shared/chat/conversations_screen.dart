@@ -54,10 +54,15 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                       final lastTime = conv['lastMessageAt'] as String? ?? '';
 
                       String title;
+                      int? otherPartyId;
                       if (authSession.isClient) {
-                        title = (conv['technician'] as Map<String, dynamic>?)?['name']?.toString() ?? '美甲师';
+                        final tech = conv['technician'] as Map<String, dynamic>?;
+                        title = tech?['name']?.toString() ?? '美甲师';
+                        otherPartyId = tech?['id'] as int?;
                       } else {
-                        title = (conv['client'] as Map<String, dynamic>?)?['nickname']?.toString() ?? '客户';
+                        final client = conv['client'] as Map<String, dynamic>?;
+                        title = client?['nickname']?.toString() ?? '客户';
+                        otherPartyId = client?['id'] as int?;
                       }
 
                       return Card(
@@ -72,7 +77,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => ChatScreen(conversationId: conversationId, title: title),
+                              builder: (_) => ChatScreen(conversationId: conversationId, title: title, otherPartyId: otherPartyId),
                             ),
                           ),
                         ),
