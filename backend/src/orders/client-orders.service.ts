@@ -69,7 +69,8 @@ export class ClientOrdersService {
       (!dto.selectedServiceIds || dto.selectedServiceIds.length === 0) &&
       (dto.customTitle || dto.customDescription || (dto.customImages && dto.customImages.length > 0));
 
-    if (!isCustom && (!dto.selectedServiceIds || dto.selectedServiceIds.length === 0)) {
+    // chatMode: booking initiated from chat; service details agreed verbally, no content required
+    if (!dto.chatMode && !isCustom && (!dto.selectedServiceIds || dto.selectedServiceIds.length === 0)) {
       throw new BadRequestException('请选择至少一项服务内容或填写自定义需求');
     }
 

@@ -4,6 +4,7 @@ import {
   IsInt,
   IsArray,
   ValidateNested,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -71,4 +72,9 @@ export class CreateClientOrderDto {
   @ValidateNested()
   @Type(() => ShopAddressDto)
   shopAddress?: ShopAddressDto;
+
+  @ApiPropertyOptional({ description: '从聊天发起的预约，跳过服务内容必填校验' })
+  @IsOptional()
+  @IsBoolean()
+  chatMode?: boolean;
 }
