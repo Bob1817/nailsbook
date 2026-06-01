@@ -15,10 +15,32 @@ services:
     networks:
       - internal
 
-  # 用户端 WebApp（静态 SPA，内部 nginx 提供；边缘 nginx 反代 m.lunails.cn）
+  # 用户端 WebApp（静态 SPA，内部 nginx 提供服务）
   client-web:
     build:
       context: ./client-frontend
+      dockerfile: Dockerfile
+    restart: always
+    expose:
+      - "80"
+    networks:
+      - internal
+
+  # 管理后台（静态 SPA，内部 nginx 提供服务）
+  admin-web:
+    build:
+      context: ./admin-frontend
+      dockerfile: Dockerfile
+    restart: always
+    expose:
+      - "80"
+    networks:
+      - internal
+
+  # 美甲师端（静态 SPA，内部 nginx 提供服务）
+  tech-web:
+    build:
+      context: ./technician-frontend
       dockerfile: Dockerfile
     restart: always
     expose:
@@ -39,6 +61,8 @@ services:
     depends_on:
       - backend
       - client-web
+      - admin-web
+      - tech-web
     networks:
       - internal
 

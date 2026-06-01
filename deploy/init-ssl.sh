@@ -1,24 +1,42 @@
 #!/bin/sh
-# 首次申请 SSL 证书。已有证书后无需再运行。
-# 用法: ./deploy/init-ssl.sh api.YOUR_DOMAIN.com admin@YOUR_DOMAIN.com
+# 首次申请 SSL 证书（支持多域名）。
+# 用法: ./deploy/init-ssl.sh <email>
+# 会为所有 4 个域名申请证书：api.lunails.cn, m.lunails.cn, admin.lunails.cn, tech.lunails.cn
 
 set -e
-DOMAIN=${1:?usage: $0 <domain> <email>}
-EMAIL=${2:?usage: $0 <domain> <email>}
+EMAIL=${1:?usage: $0 <email>}
 
 cd "$(dirname "$0")/.."
 
-# 启动 nginx（仅 HTTP 模式，先注释掉 HTTPS server block 或用 --staging 测试）
+DOMAINS="api.lunails.cn m.lunails.cn admin.lunails.cn tech.lunails.cn"
+
+# 启动 nginx（HTTP 模式，用于 ACME 验证）
 docker compose up -d nginx
 
-docker compose run --rm certbot certonly \
-  --webroot \
-  --webroot-path /var/www/certbot \
-  --email "$EMAIL" \
-  --agree-tos \
-  --no-eff-email \
-  -d "$DOMAIN"
+for DOMAIN in $DOMAINS; do
+    echo "===== 申请证书: $DOMAIN ====="
+    docker compose run --rm certbot certonly \
+      --webroot \
+      --webroot-path /var/www/certbot \
+      --email "$EMAIL" \
+      --agree-tos \
+      --no-eff-email \
+      -d "$DOMAIN"
+    echo ""
+done
 
-echo "证书申请完成，重启 nginx..."
+echo "===== 所有证书申请完成，启用 HTTPS 配置 ====="
+
+# 去掉所有 .disabled 后缀
+for DOMAIN in m.lunails.cn admin.lunails.cn tech.lunails.cn; do
+    DISABLED="deploy/nginx/conf.d/${DOMAIN}-ssl.conf.disabled"
+    ENABLED="deploy/nginx/conf.d/${DOMAIN}-ssl.conf"
+    if [ -f "$DISABLED" ]; then
+        mv "$DISABLED" "$ENABLED"
+        echo "已启用: $ENABLED"
+    fi
+done
+
+echo "重启 nginx..."
 docker compose restart nginx
 echo "完成。之后由 renew-ssl.sh 自动续期。"
