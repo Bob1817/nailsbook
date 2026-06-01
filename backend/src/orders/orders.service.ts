@@ -37,6 +37,8 @@ function canTransition(from: OrderStatus, to: OrderStatus): boolean {
   return STATUS_TRANSITIONS[from]?.includes(to) ?? false;
 }
 
+const CONFIRM_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+
 @Injectable()
 export class OrdersService {
   constructor(
@@ -50,6 +52,7 @@ export class OrdersService {
   ) {
     // Resolve Customer record: accept either customerId or clientUserId
     let customerId: number;
+    let resolvedClientUserId: number | null = null;
     if (dto.customerId) {
       const customer = await this.prisma.customer.findUnique({
         where: { id: dto.customerId },
@@ -58,12 +61,14 @@ export class OrdersService {
       if (customer.technicianId !== technicianId)
         throw new ForbiddenException('无权为该客户创建订单');
       customerId = dto.customerId;
+      resolvedClientUserId = customer.clientUserId ?? null;
     } else if (dto.clientUserId) {
       const customer = await this.prisma.customer.findFirst({
         where: { technicianId, clientUserId: dto.clientUserId },
       });
       if (!customer) throw new NotFoundException('未找到该客户的绑定记录');
       customerId = customer.id;
+      resolvedClientUserId = dto.clientUserId;
     } else {
       throw new BadRequestException('customerId 或 clientUserId 必须提供一个');
     }
@@ -72,11 +77,9 @@ export class OrdersService {
       throw new BadRequestException('生成微信确认链接时，价格为必填项');
     }
 
-    const confirmToken = dto.shareToClient
-      ? (crypto.randomUUID as () => string)()
-      : null;
+    const confirmToken = dto.shareToClient ? crypto.randomUUID() : null;
     const confirmTokenExpiresAt = confirmToken
-      ? new Date(Date.now() + 24 * 60 * 60 * 1000)
+      ? new Date(Date.now() + CONFIRM_TOKEN_TTL_MS)
       : null;
 
     const order = await this.prisma.order.create({
@@ -84,13 +87,13 @@ export class OrdersService {
         orderNo: this.generateOrderNo(),
         technicianId,
         customerId,
-        clientUserId: dto.clientUserId ?? null,
+        clientUserId: dto.clientUserId ?? resolvedClientUserId ?? null,
         startTime: new Date(dto.startTime),
         endTime: new Date(dto.endTime),
         address: dto.address,
         serviceType: dto.serviceType || null,
         status: dto.shareToClient ? 'pending_client_confirm' : 'pending_quote',
-        remark: dto.note || null,
+        remark: dto.note || dto.serviceName || null,
         customDescription: dto.customDescription || null,
         customImages: dto.customImages?.length
           ? JSON.stringify(dto.customImages)
