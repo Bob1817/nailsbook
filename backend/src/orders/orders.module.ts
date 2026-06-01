@@ -3,13 +3,14 @@ import { OrdersService } from './orders.service';
 import { ClientOrdersService } from './client-orders.service';
 import { TechnicianOrdersController } from './technician-orders.controller';
 import { ClientOrdersController } from './client-orders.controller';
+import { PublicOrdersController } from './public-orders.controller';
 import { OrdersScheduler } from './orders.scheduler';
 import { PrismaModule } from '../common/prisma/prisma.module';
 import { ChatModule } from '../chat/chat.module';
 
 @Module({
   imports: [PrismaModule, ChatModule],
-  controllers: [TechnicianOrdersController, ClientOrdersController],
+  controllers: [TechnicianOrdersController, ClientOrdersController, PublicOrdersController],
   providers: [OrdersService, ClientOrdersService, OrdersScheduler],
   exports: [OrdersService, ClientOrdersService],
 })
