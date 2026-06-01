@@ -15,6 +15,17 @@ services:
     networks:
       - internal
 
+  # 用户端 WebApp（静态 SPA，内部 nginx 提供；边缘 nginx 反代 m.lunails.cn）
+  client-web:
+    build:
+      context: ./client-frontend
+      dockerfile: Dockerfile
+    restart: always
+    expose:
+      - "80"
+    networks:
+      - internal
+
   nginx:
     image: nginx:alpine
     restart: always
@@ -27,6 +38,7 @@ services:
       - certbot_certs:/etc/letsencrypt:ro
     depends_on:
       - backend
+      - client-web
     networks:
       - internal
 
