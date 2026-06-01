@@ -20,7 +20,6 @@ export class PublicOrdersController {
         technician: {
           select: { id: true, name: true, phone: true, avatarUrl: true },
         },
-        customer: { select: { id: true, name: true, phone: true } },
       },
     });
 
@@ -62,18 +61,16 @@ export class PublicOrdersController {
     if (order.confirmTokenExpiresAt && order.confirmTokenExpiresAt < new Date()) {
       throw new BadRequestException('链接已过期，请联系美甲师重新发送');
     }
-    if (order.confirmTokenUsedAt) {
-      throw new BadRequestException('该链接已使用');
-    }
 
-    await this.prisma.order.update({
-      where: { id: order.id },
+    const result = await this.prisma.order.updateMany({
+      where: { id: order.id, confirmTokenUsedAt: null },
       data: {
         status: 'pending_confirm',
         confirmTokenUsedAt: new Date(),
         confirmedAt: new Date(),
       },
     });
+    if (result.count === 0) throw new BadRequestException('该链接已使用');
     return { success: true, message: '预约已确认' };
   }
 
@@ -85,14 +82,11 @@ export class PublicOrdersController {
     });
     if (!order) throw new NotFoundException('预约链接无效');
     if (order.confirmTokenExpiresAt && order.confirmTokenExpiresAt < new Date()) {
-      throw new BadRequestException('链接已过期');
-    }
-    if (order.confirmTokenUsedAt) {
-      throw new BadRequestException('该链接已使用');
+      throw new BadRequestException('链接已过期，请联系美甲师重新发送');
     }
 
-    await this.prisma.order.update({
-      where: { id: order.id },
+    const result = await this.prisma.order.updateMany({
+      where: { id: order.id, confirmTokenUsedAt: null },
       data: {
         status: 'cancelled',
         confirmTokenUsedAt: new Date(),
@@ -100,6 +94,7 @@ export class PublicOrdersController {
         cancelReason: '客户通过链接取消',
       },
     });
+    if (result.count === 0) throw new BadRequestException('该链接已使用');
     return { success: true, message: '预约已取消' };
   }
 }
