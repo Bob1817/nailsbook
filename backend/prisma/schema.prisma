@@ -143,6 +143,9 @@ model Order {
   quotePrice             Float?
   quoteRemark            String?
   quotedAt               DateTime?
+  confirmToken          String?
+  confirmTokenExpiresAt DateTime?
+  confirmTokenUsedAt    DateTime?
   status                 String                @default("pending_quote")
   isDepositPaid          Boolean               @default(false)
   depositAmount          Float?                @default(0)
