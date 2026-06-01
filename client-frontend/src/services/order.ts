@@ -53,6 +53,8 @@ export interface CreateOrderDto {
   customImages?: string[];
   remark?: string;
   shopAddress?: ShopAddress;
+  /** 从聊天发起的预约：跳过服务内容必填校验（后端按 chatMode 放行） */
+  chatMode?: boolean;
 }
 
 export interface UpdateOrderDto {

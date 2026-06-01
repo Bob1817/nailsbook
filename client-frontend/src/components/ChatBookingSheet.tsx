@@ -1,0 +1,399 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import dayjs from 'dayjs';
+import type { Technician } from '../services/auth';
+import { addressService, type ClientAddress } from '../services/address';
+import { orderService } from '../services/order';
+import { uploadService } from '../services/upload';
+
+const TIME_SLOTS = [
+  '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+  '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+  '16:00', '16:30', '17:00', '17:30', '18:00', '18:30',
+  '19:00', '19:30', '20:00', '20:30',
+];
+
+interface ChatBookingSheetProps {
+  technician: Technician;
+  onClose: () => void;
+  onCreated?: () => void;
+}
+
+const ChatBookingSheet: React.FC<ChatBookingSheetProps> = ({ technician, onClose, onCreated }) => {
+  const enabledShopAddresses = useMemo(
+    () => (technician.shopAddresses || []).filter((s) => s.enabled !== false),
+    [technician.shopAddresses],
+  );
+
+  const availableTypes = useMemo(() => {
+    const types: string[] = [];
+    if (technician.homeService) types.push('上门美甲');
+    if (technician.shopService && enabledShopAddresses.length > 0) types.push('到店美甲');
+    return types;
+  }, [technician.homeService, technician.shopService, enabledShopAddresses]);
+
+  const [serviceType, setServiceType] = useState<string>(availableTypes.length === 1 ? availableTypes[0] : '');
+  const [addresses, setAddresses] = useState<ClientAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [showInlineForm, setShowInlineForm] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [newAddr, setNewAddr] = useState('');
+  const [serviceDate, setServiceDate] = useState(dayjs().add(1, 'day').format('YYYY-MM-DD'));
+  const [startTime, setStartTime] = useState('14:00');
+  const [note, setNote] = useState('');
+  const [images, setImages] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    addressService
+      .getAddresses()
+      .then((list) => {
+        if (!active) return;
+        setAddresses(list);
+        if (list.length > 0) {
+          const def = list.find((a) => a.isDefault) || list[0];
+          setSelectedAddressId(def.id);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const isHome = serviceType === '上门美甲';
+  const isShop = serviceType === '到店美甲';
+
+  const fullAddress = (a: ClientAddress) =>
+    [a.province, a.city, a.district, a.detailAddress, a.doorInfo].filter(Boolean).join(' ');
+
+  const canSubmit = (() => {
+    if (!serviceType) return false;
+    if (isHome) {
+      if (showInlineForm) return newName.trim().length > 0 && newAddr.trim().length > 0;
+      return selectedAddressId != null;
+    }
+    if (isShop) return enabledShopAddresses.length > 0;
+    return true;
+  })();
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setUploading(true);
+    try {
+      const { url } = await uploadService.uploadImage(file);
+      setImages((prev) => [...prev, url]);
+    } catch {
+      alert('图片上传失败');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!canSubmit || submitting) return;
+    setSubmitting(true);
+    try {
+      let addressId: number | undefined;
+      if (isHome) {
+        if (showInlineForm) {
+          const saved = await addressService.createAddress({
+            contactName: newName.trim(),
+            contactPhone: newPhone.trim() || undefined,
+            detailAddress: newAddr.trim(),
+            isDefault: addresses.length === 0,
+          });
+          addressId = saved.id;
+        } else {
+          addressId = selectedAddressId ?? undefined;
+        }
+      }
+
+      await orderService.createOrder({
+        techId: technician.id,
+        serviceType,
+        serviceDate,
+        startTime,
+        chatMode: true,
+        addressId: isHome ? addressId : undefined,
+        shopAddress: isShop ? enabledShopAddresses[0] : undefined,
+        customDescription: note.trim() || undefined,
+        customImages: images.length > 0 ? images : undefined,
+      });
+      onCreated?.();
+      onClose();
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string | string[] } } };
+      const msg = e.response?.data?.message;
+      const text = Array.isArray(msg) ? msg[0] : msg;
+      alert('发起预约失败：' + (text || (err as Error).message || '请稍后重试'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[110] flex items-end justify-center bg-black/35 backdrop-blur-sm sm:items-center"
+      onClick={onClose}
+    >
+      <div
+        className="flex max-h-[88vh] w-full max-w-md flex-col rounded-t-[32px] bg-white shadow-[0_-20px_50px_rgba(15,23,42,0.18)] sm:rounded-[32px]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-6 pt-5 pb-2">
+          <h3 className="text-lg font-semibold text-slate-900">📅 发起预约</h3>
+          <button
+            onClick={onClose}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100"
+          >
+            <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="flex-1 space-y-5 overflow-y-auto px-6 pb-2">
+          {/* Service type */}
+          {availableTypes.length === 0 ? (
+            <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
+              该美甲师暂未开启可预约的服务方式
+            </p>
+          ) : availableTypes.length === 1 ? (
+            <div>
+              <Label>服务方式</Label>
+              <span className="inline-block rounded-full bg-[var(--color-primary-soft)] px-3 py-1 text-xs font-medium text-[var(--color-primary)]">
+                {availableTypes[0]}
+              </span>
+            </div>
+          ) : (
+            <div>
+              <Label>服务方式</Label>
+              <div className="flex gap-2">
+                {availableTypes.map((t) => {
+                  const sel = serviceType === t;
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => {
+                        setServiceType(t);
+                        setShowInlineForm(false);
+                      }}
+                      className={`flex-1 rounded-xl py-3 text-sm font-medium ${
+                        sel
+                          ? 'bg-[var(--color-primary-soft)] text-[var(--color-primary)] ring-1 ring-[var(--color-primary)]/30'
+                          : 'bg-slate-50 text-slate-600'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Address (home) */}
+          {isHome && (
+            <div>
+              <Label>上门地址</Label>
+              {showInlineForm ? (
+                <div className="space-y-2">
+                  <Field value={newName} onChange={setNewName} placeholder="姓名" />
+                  <Field value={newPhone} onChange={setNewPhone} placeholder="手机号（选填）" type="tel" />
+                  <Field value={newAddr} onChange={setNewAddr} placeholder="详细地址" />
+                  {addresses.length > 0 && (
+                    <button
+                      onClick={() => setShowInlineForm(false)}
+                      className="text-xs text-slate-400"
+                    >
+                      取消，使用已有地址
+                    </button>
+                  )}
+                </div>
+              ) : addresses.length === 0 ? (
+                <button
+                  onClick={() => setShowInlineForm(true)}
+                  className="flex w-full items-center gap-2 rounded-xl bg-slate-50 px-4 py-3 text-sm font-medium text-[var(--color-primary)] ring-1 ring-[var(--color-primary)]/20"
+                >
+                  + 添加上门地址
+                </button>
+              ) : addresses.length === 1 ? (
+                <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-4 py-3">
+                  <span className="flex-1 text-sm text-slate-900">{fullAddress(addresses[0])}</span>
+                  <button
+                    onClick={() => setShowInlineForm(true)}
+                    className="text-xs text-[var(--color-primary)]"
+                  >
+                    更换
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <select
+                    value={selectedAddressId ?? ''}
+                    onChange={(e) => setSelectedAddressId(Number(e.target.value))}
+                    className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
+                  >
+                    {addresses.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {fullAddress(a)}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => {
+                      setShowInlineForm(true);
+                      setSelectedAddressId(null);
+                    }}
+                    className="text-xs text-[var(--color-primary)]"
+                  >
+                    + 新增地址
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Shop address (read-only) */}
+          {isShop && enabledShopAddresses.length > 0 && (
+            <div>
+              <Label>门店地址</Label>
+              <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900">
+                {[
+                  enabledShopAddresses[0].province,
+                  enabledShopAddresses[0].city,
+                  enabledShopAddresses[0].district,
+                  enabledShopAddresses[0].detailAddress,
+                ]
+                  .filter(Boolean)
+                  .join(' ') || enabledShopAddresses[0].name}
+              </div>
+            </div>
+          )}
+
+          {/* Date */}
+          <div>
+            <Label>预约日期</Label>
+            <input
+              type="date"
+              value={serviceDate}
+              min={dayjs().format('YYYY-MM-DD')}
+              max={dayjs().add(60, 'day').format('YYYY-MM-DD')}
+              onChange={(e) => setServiceDate(e.target.value)}
+              className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
+            />
+          </div>
+
+          {/* Time */}
+          <div>
+            <Label>预约时间</Label>
+            <div className="grid grid-cols-4 gap-2">
+              {TIME_SLOTS.map((t) => {
+                const sel = startTime === t;
+                return (
+                  <button
+                    key={t}
+                    onClick={() => setStartTime(t)}
+                    className={`rounded-lg py-2 text-[13px] font-medium ${
+                      sel
+                        ? 'bg-[linear-gradient(135deg,#FF6B8A_0%,#FF8FA3_100%)] text-white shadow-[0_8px_18px_rgba(255,107,138,0.3)]'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Note + images */}
+          <div>
+            <Label>服务说明（选填）</Label>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={3}
+              placeholder="简短描述美甲需求，或上传参考图片..."
+              className="w-full resize-none rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400"
+            />
+            <div className="mt-2 flex flex-wrap gap-2">
+              {images.map((url, i) => (
+                <div key={url} className="relative h-16 w-16">
+                  <img src={url} alt="" className="h-16 w-16 rounded-lg object-cover" />
+                  <button
+                    onClick={() => setImages((prev) => prev.filter((_, idx) => idx !== i))}
+                    className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white"
+                  >
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+              {images.length < 3 && (
+                <label className="flex h-16 w-16 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-slate-300 text-slate-400">
+                  {uploading ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-primary)] border-t-transparent" />
+                  ) : (
+                    <>
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 4v16m8-8H4" />
+                      </svg>
+                      <span className="text-[10px]">添加</span>
+                    </>
+                  )}
+                  <input type="file" accept="image/*" onChange={handleUpload} className="hidden" disabled={uploading} />
+                </label>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-slate-100 px-6 py-4 safe-area-bottom">
+          <button
+            onClick={handleSubmit}
+            disabled={!canSubmit || submitting}
+            className={`flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold ${
+              canSubmit && !submitting
+                ? 'bg-[linear-gradient(135deg,#FF6B8A_0%,#FF8FA3_100%)] text-white shadow-[0_12px_24px_rgba(255,107,138,0.3)]'
+                : 'bg-slate-100 text-slate-400'
+            }`}
+          >
+            {submitting ? (
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            ) : (
+              '发起预约'
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <p className="mb-2 text-[13px] font-semibold text-slate-900">{children}</p>
+);
+
+const Field: React.FC<{
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  type?: string;
+}> = ({ value, onChange, placeholder, type = 'text' }) => (
+  <input
+    type={type}
+    value={value}
+    onChange={(e) => onChange(e.target.value)}
+    placeholder={placeholder}
+    className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400"
+  />
+);
+
+export default ChatBookingSheet;

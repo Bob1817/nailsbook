@@ -7,6 +7,7 @@ import { uploadService } from '../services/upload';
 import { useSocket } from '../hooks/useSocket';
 import { useTyping } from '../hooks/useTyping';
 import OrderDetail from './OrderDetail';
+import ChatBookingSheet from '../components/ChatBookingSheet';
 import { ORDER_STATUS_LABEL } from '../utils/orderStatus';
 
 const ChatDetail: React.FC = () => {
@@ -24,6 +25,7 @@ const ChatDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showTechSelector, setShowTechSelector] = useState(false);
+  const [showBookingSheet, setShowBookingSheet] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [detailOrderId, setDetailOrderId] = useState<number | null>(null);
@@ -309,6 +311,18 @@ const ChatDetail: React.FC = () => {
               <p className="text-xs text-slate-500">一对一沟通与服务提醒</p>
             </div>
           </div>
+
+          {currentTechnician && (
+            <button
+              onClick={() => setShowBookingSheet(true)}
+              className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(135deg,#FF6B8A_0%,#FF8FA3_100%)] px-3.5 py-2 text-[13px] font-semibold text-white shadow-[0_10px_24px_rgba(255,107,138,0.3)]"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              发起预约
+            </button>
+          )}
         </div>
       </div>
 
@@ -577,6 +591,32 @@ const ChatDetail: React.FC = () => {
           onClose={() => setDetailOrderId(null)}
         />
       )}
+
+      {showBookingSheet && currentTechnician && (() => {
+        const fullTech = technicians.find((t) => t.id === currentTechnician.id);
+        if (!fullTech) {
+          return (
+            <div
+              className="fixed inset-0 z-[110] flex items-end justify-center bg-black/35 backdrop-blur-sm sm:items-center"
+              onClick={() => setShowBookingSheet(false)}
+            >
+              <div
+                className="w-full max-w-md rounded-t-[32px] bg-white p-6 text-center sm:rounded-[32px]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <p className="text-sm text-slate-500">无法获取该美甲师的服务信息，请稍后重试</p>
+              </div>
+            </div>
+          );
+        }
+        return (
+          <ChatBookingSheet
+            technician={fullTech}
+            onClose={() => setShowBookingSheet(false)}
+            onCreated={() => navigate('/orders')}
+          />
+        );
+      })()}
     </div>
   );
 };
