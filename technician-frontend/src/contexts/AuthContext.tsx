@@ -79,6 +79,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     setToken(response.access_token);
     setTechnician(response.technician as unknown as Technician);
+
+    return { mustChangePassword: response.mustChangePassword };
   };
 
   const register = async (params: {
@@ -90,6 +92,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const response = await authService.register(params);
     localStorage.setItem('technician_token', response.access_token);
     localStorage.setItem('technician_info', JSON.stringify(response.technician));
+    setToken(response.access_token);
+    setTechnician(response.technician as unknown as Technician);
+  };
+
+  const setPassword = async (newPassword: string) => {
+    const response = await authService.setPassword(newPassword);
+
+    localStorage.setItem('technician_token', response.access_token);
+    localStorage.setItem('technician_info', JSON.stringify(response.technician));
+
     setToken(response.access_token);
     setTechnician(response.technician as unknown as Technician);
   };
@@ -138,7 +150,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ technician, token, loading, login, register, updateTechnicianStatus, updateServiceType, updateTechnicianProfile, logout }}>
+    <AuthContext.Provider value={{ technician, token, loading, login, register, setPassword, updateTechnicianStatus, updateServiceType, updateTechnicianProfile, logout }}>
       {children}
     </AuthContext.Provider>
   );

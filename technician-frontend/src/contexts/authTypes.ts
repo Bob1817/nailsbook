@@ -139,8 +139,9 @@ export interface AuthContextType {
   technician: Technician | null;
   token: string | null;
   loading: boolean;
-  login: (phone: string, passwordOrCode: string) => Promise<void>;
+  login: (phone: string, passwordOrCode: string) => Promise<{ mustChangePassword: boolean }>;
   register: (params: { inviteKey: string; name: string; phone: string; password: string }) => Promise<void>;
+  setPassword: (newPassword: string) => Promise<void>;
   updateTechnicianStatus: (status: string) => Promise<void>;
   updateServiceType: (settings: ServiceTypeSettings) => Promise<void>;
   updateTechnicianProfile: (profile: Partial<Technician>) => Promise<void>;
