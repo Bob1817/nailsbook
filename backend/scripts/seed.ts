@@ -52,6 +52,7 @@ async function main() {
     { name: '美甲师创建', code: 'technician:create', module: 'technician', action: 'create' },
     { name: '美甲师更新', code: 'technician:update', module: 'technician', action: 'update' },
     { name: '美甲师禁用', code: 'technician:disable', module: 'technician', action: 'disable' },
+    { name: '美甲师删除', code: 'technician:delete', module: 'technician', action: 'delete' },
     { name: '客户查看', code: 'customer:view', module: 'customer', action: 'view' },
     { name: '报价查看', code: 'quote:view', module: 'quote', action: 'view' },
     { name: '报价取消', code: 'quote:cancel', module: 'quote', action: 'cancel' },
