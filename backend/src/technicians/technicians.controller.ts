@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   Post,
   Patch,
@@ -171,5 +172,37 @@ export class TechniciansController {
   @ApiResponse({ status: 404, description: '美甲师不存在' })
   resetPassword(@Param('id') id: string) {
     return this.techniciansService.resetPassword(parseInt(id, 10));
+  }
+
+  @Delete(':id')
+  @Permissions('technician.delete')
+  @UseInterceptors(OperationLogInterceptor)
+  @OperationLog({
+    module: 'technician',
+    action: 'delete',
+    targetType: 'technician',
+  })
+  @ApiOperation({ summary: '删除美甲师（软删除）' })
+  @ApiParam({ name: 'id', type: String, description: '美甲师ID' })
+  @ApiResponse({ status: 200, description: '删除成功' })
+  @ApiResponse({ status: 404, description: '美甲师不存在' })
+  remove(@Param('id') id: string) {
+    return this.techniciansService.deleteTechnician(parseInt(id, 10));
+  }
+
+  @Patch(':id/disable')
+  @Permissions('technician.disable')
+  @UseInterceptors(OperationLogInterceptor)
+  @OperationLog({
+    module: 'technician',
+    action: 'disable',
+    targetType: 'technician',
+  })
+  @ApiOperation({ summary: '禁用美甲师' })
+  @ApiParam({ name: 'id', type: String, description: '美甲师ID' })
+  @ApiResponse({ status: 200, description: '禁用成功' })
+  @ApiResponse({ status: 404, description: '美甲师不存在' })
+  disable(@Param('id') id: string) {
+    return this.techniciansService.disableTechnician(parseInt(id, 10));
   }
 }

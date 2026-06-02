@@ -136,6 +136,28 @@ export class TechniciansService {
     });
   }
 
+  async deleteTechnician(id: number) {
+    const technician = await this.prisma.technician.findUnique({ where: { id } });
+    if (!technician) throw new NotFoundException('美甲师不存在');
+    if (technician.status === 'deleted') return technician;
+
+    return this.prisma.technician.update({
+      where: { id },
+      data: { status: 'deleted' },
+    });
+  }
+
+  async disableTechnician(id: number) {
+    const technician = await this.prisma.technician.findUnique({ where: { id } });
+    if (!technician) throw new NotFoundException('美甲师不存在');
+    if (technician.status === 'suspended') return technician;
+
+    return this.prisma.technician.update({
+      where: { id },
+      data: { status: 'suspended' },
+    });
+  }
+
   async update(id: number, dto: UpdateTechnicianDto) {
     const existing = await this.prisma.technician.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Technician not found');
