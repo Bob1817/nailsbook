@@ -16,8 +16,6 @@ const Technicians: React.FC = () => {
   const [form] = Form.useForm();
   const [editForm] = Form.useForm();
   const [filters, setFilters] = useState({ page: 1, limit: 10, status: '', search: '' });
-  const [generatedKey, setGeneratedKey] = useState<string | null>(null);
-  const [keyGenerating, setKeyGenerating] = useState(false);
   const [resetPwd, setResetPwd] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
 
@@ -57,7 +55,6 @@ const Technicians: React.FC = () => {
 
   const openEdit = (technician: Technician) => {
     setSelectedTechnician(technician);
-    setGeneratedKey(null);
     setResetPwd(null);
     editForm.setFieldsValue({
       name: technician.name,
@@ -80,21 +77,6 @@ const Technicians: React.FC = () => {
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       message.error(err.response?.data?.message || '保存失败');
-    }
-  };
-
-  const handleGenerateKey = async () => {
-    if (!selectedTechnician) return;
-    setKeyGenerating(true);
-    try {
-      const result = await technicianService.generateInviteKey(selectedTechnician.id);
-      setGeneratedKey(result.key);
-      message.success('密钥生成成功');
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      message.error(err.response?.data?.message || '生成失败');
-    } finally {
-      setKeyGenerating(false);
     }
   };
 
@@ -121,6 +103,46 @@ const Technicians: React.FC = () => {
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       message.error(err.response?.data?.message || '状态更新失败');
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await technicianService.deleteTechnician(id);
+      message.success('删除成功');
+      fetchData();
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || '删除失败');
+    }
+  };
+
+  const handleDisable = async (id: number) => {
+    try {
+      await technicianService.disableTechnician(id);
+      message.success('禁用成功');
+      fetchData();
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || '禁用失败');
+    }
+  };
+
+  const handleResetFromList = async (id: number) => {
+    try {
+      const result = await technicianService.resetPassword(id);
+      Modal.success({
+        title: '密码重置成功',
+        content: (
+          <div>
+            <p>临时密码：<code style={{ fontSize: 16, letterSpacing: 1 }}>{result.tempPassword}</code></p>
+            <p style={{ color: '#999', fontSize: 12, marginTop: 8 }}>请将此密码发送给美甲师，美甲师下次登录时需重新设置密码。</p>
+          </div>
+        ),
+      });
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || '重置失败');
     }
   };
 
@@ -174,11 +196,13 @@ const Technicians: React.FC = () => {
           active: 'green',
           inactive: 'orange',
           suspended: 'red',
+          deleted: 'default',
         };
         const textMap: Record<string, string> = {
           active: '活跃',
           inactive: '未激活',
           suspended: '已禁用',
+          deleted: '已删除',
         };
         return <Tag color={colorMap[status]}>{textMap[status] || status}</Tag>;
       },
@@ -195,20 +219,32 @@ const Technicians: React.FC = () => {
       key: 'action',
       render: (_: unknown, record: Technician) => (
         <Space>
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>
-            编辑
-          </Button>
+          {record.status !== 'deleted' && (
+            <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>
+              编辑
+            </Button>
+          )}
           <Button type="link" size="small" onClick={() => { setSelectedTechnician(record); setDetailVisible(true); }}>
             详情
           </Button>
           {record.status === 'active' && (
-            <Popconfirm title="确定要禁用该美甲师吗？" onConfirm={() => handleStatusChange(record.id, 'suspended')}>
-              <Button type="link" size="small" danger>禁用</Button>
-            </Popconfirm>
+            <>
+              <Popconfirm title="确定要禁用该美甲师吗？" description="禁用后该账号将无法登录。" onConfirm={() => handleDisable(record.id)}>
+                <Button type="link" size="small" danger>禁用</Button>
+              </Popconfirm>
+              <Popconfirm title="确定要重置该美甲师的密码？" description="重置后美甲师需要在下次登录时重新设置密码。" onConfirm={() => handleResetFromList(record.id)}>
+                <Button type="link" size="small">重置密码</Button>
+              </Popconfirm>
+            </>
           )}
           {record.status === 'suspended' && (
             <Popconfirm title="确定要启用该美甲师吗？" onConfirm={() => handleStatusChange(record.id, 'active')}>
               <Button type="link" size="small">启用</Button>
+            </Popconfirm>
+          )}
+          {record.status !== 'deleted' && (
+            <Popconfirm title="确定要删除该美甲师账号？" description="删除后该账号将无法登录，但历史数据将被保留。" onConfirm={() => handleDelete(record.id)}>
+              <Button type="link" size="small" danger>删除</Button>
             </Popconfirm>
           )}
         </Space>
@@ -238,6 +274,7 @@ const Technicians: React.FC = () => {
                 { value: 'active', label: '活跃' },
                 { value: 'inactive', label: '未激活' },
                 { value: 'suspended', label: '已禁用' },
+                { value: 'deleted', label: '已删除' },
               ]}
             />
           </Space>
@@ -330,7 +367,7 @@ const Technicians: React.FC = () => {
       <Modal
         title="编辑美甲师"
         open={editVisible}
-        onCancel={() => { setEditVisible(false); setSelectedTechnician(null); setGeneratedKey(null); }}
+        onCancel={() => { setEditVisible(false); setSelectedTechnician(null); }}
         onOk={() => editForm.submit()}
         okText="保存"
         cancelText="取消"
@@ -355,49 +392,13 @@ const Technicians: React.FC = () => {
                 { value: 'active', label: '活跃' },
                 { value: 'inactive', label: '未激活' },
                 { value: 'suspended', label: '已禁用' },
+                { value: 'deleted', label: '已删除' },
               ]}
             />
           </Form.Item>
         </Form>
 
-        {selectedTechnician && selectedTechnician.status === 'inactive' && (
-          <div style={{ marginTop: 16, padding: 16, background: '#fff7e6', borderRadius: 8 }}>
-            <div style={{ marginBottom: 8, color: '#fa8c16', fontSize: 13 }}>
-              该账号未激活，可生成专属邀请密钥，美甲师在 App 上使用此密钥+手机号即可激活
-            </div>
-            {generatedKey ? (
-              <Space direction="vertical" style={{ width: '100%' }}>
-                <Space>
-                  <Text code style={{ fontSize: 14, letterSpacing: 1 }}>{generatedKey}</Text>
-                  <Button
-                    type="text"
-                    size="small"
-                    icon={<CopyOutlined />}
-                    onClick={() => {
-                      navigator.clipboard.writeText(generatedKey);
-                      message.success('已复制');
-                    }}
-                  >
-                    复制
-                  </Button>
-                </Space>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  请把这个密钥和手机号 ({selectedTechnician.phone}) 一并发送给美甲师
-                </Text>
-              </Space>
-            ) : (
-              <Button
-                icon={<KeyOutlined />}
-                loading={keyGenerating}
-                onClick={handleGenerateKey}
-              >
-                生成专属激活密钥
-              </Button>
-            )}
-          </div>
-        )}
-
-        {selectedTechnician && selectedTechnician.status !== 'inactive' && (
+        {selectedTechnician && selectedTechnician.status !== 'deleted' && (
           <div style={{ marginTop: 16, padding: 16, background: '#fff1f0', borderRadius: 8 }}>
             <div style={{ marginBottom: 8, color: '#cf1322', fontSize: 13 }}>
               美甲师忘记密码时，可在此重置。系统将生成一个一次性临时密码，请转交给美甲师并提醒其登录后尽快修改。
