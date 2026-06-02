@@ -171,15 +171,15 @@ export class TechniciansService {
       where: { id: technicianId },
     });
     if (!technician) throw new NotFoundException('美甲师不存在');
-    if (!technician.passwordHash) {
-      throw new BadRequestException('该账号尚未激活，请生成邀请密钥让美甲师注册激活');
+    if (technician.status === 'deleted') {
+      throw new BadRequestException('该账号已删除，无法重置密码');
     }
 
     const tempPassword = this.generateTempPassword();
     const passwordHash = await bcrypt.hash(tempPassword, 10);
     await this.prisma.technician.update({
       where: { id: technicianId },
-      data: { passwordHash, tokenVersion: { increment: 1 } },
+      data: { passwordHash, tokenVersion: { increment: 1 }, mustChangePassword: true },
     });
 
     // 临时密码仅在本次响应返回一次，由管理员转交给美甲师
