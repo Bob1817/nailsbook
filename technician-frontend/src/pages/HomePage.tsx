@@ -700,23 +700,38 @@ export const HomePage: React.FC = () => {
               </Link>
             </div>
             {featuredWorks.length ? (
-              <div className="grid grid-cols-4 gap-3">
-                {featuredWorks.map((work) => (
-                  <Link key={work.id} to="/works" className="group">
-                    <div className="overflow-hidden rounded-[18px] bg-[#ffe9f0] shadow-[0_10px_20px_rgba(36,27,41,0.06)]">
+              <div className="columns-2 gap-2.5 space-y-2.5">
+                {featuredWorks.map((work) => {
+                  return (
+                    <Link key={work.id} to="/works" className="group relative block break-inside-avoid overflow-hidden rounded-[14px] bg-gray-100">
                       {work.coverUrl ? (
-                        <img src={work.coverUrl} alt={work.title || '作品'} className="aspect-[0.82] w-full object-cover transition-transform duration-300 group-active:scale-[0.98]" />
+                        <img
+                          src={work.coverUrl}
+                          alt={work.title || '作品'}
+                          className="w-full object-cover"
+                          loading="lazy"
+                        />
                       ) : (
-                        <div className="flex aspect-[0.82] items-center justify-center bg-[#ffe9f0] text-[#d1a1b3]">作品</div>
+                        <div className="flex aspect-[0.82] items-center justify-center bg-gradient-to-br from-rose-50 to-pink-50 text-sm text-gray-400">作品</div>
                       )}
-                    </div>
-                    <div className="mt-2 flex items-center gap-1 text-[12px] text-[#8d8590]">
-                      <span className="text-pink-500">❤</span>
-                      <span>{work.favoriteCount || work.likeCount}</span>
-                      <span>人收藏</span>
-                    </div>
-                  </Link>
-                ))}
+                      {/* 评论红点 */}
+                      {work.commentCount > 0 && (
+                        <div className="absolute right-1.5 top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white shadow-sm">
+                          {work.commentCount}
+                        </div>
+                      )}
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent px-2.5 pb-2 pt-6">
+                        <p className="truncate text-[12px] font-medium leading-4 text-white">{work.title || '未命名'}</p>
+                        <div className="mt-1 flex items-center gap-1">
+                          <svg className="h-3 w-3 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
+                          </svg>
+                          <span className="text-[10px] text-white/80">{work.favoriteCount || work.likeCount || 0}</span>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             ) : (
               <div className="rounded-[22px] bg-[#fff9f8] px-4 py-8 text-center text-[14px] text-[#b7aeb7]">
