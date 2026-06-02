@@ -318,6 +318,10 @@ export class TechnicianAuthService {
       throw new UnauthorizedException('手机号或密码错误');
     }
 
+    if (technician.status === 'deleted') {
+      throw new UnauthorizedException('账号已被删除');
+    }
+
     if (technician.status === 'suspended') {
       throw new UnauthorizedException('账号已被禁用');
     }
@@ -331,7 +335,11 @@ export class TechnicianAuthService {
       throw new UnauthorizedException('手机号或密码错误');
     }
 
-    return this.issueTokens(technician.id, technician.phone);
+    const result = await this.issueTokens(technician.id, technician.phone);
+    return {
+      ...result,
+      mustChangePassword: technician.mustChangePassword,
+    };
   }
 
   async changePassword(
