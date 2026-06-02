@@ -732,18 +732,8 @@ const WorksPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Top-right area: badges + action button */}
-                <div className="absolute right-1.5 top-1.5 flex flex-col items-end gap-1.5">
-                  {/* Action button */}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setCardActionWork(work); }}
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm active:bg-black/60"
-                  >
-                    <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                    </svg>
-                  </button>
-                  {/* Badges */}
+                {/* Left-top badges */}
+                <div className="absolute left-1.5 top-1.5 flex flex-col gap-1">
                   {work.isPinned && (
                     <span className="rounded-full bg-pink-500 px-1.5 py-0.5 text-[9px] text-white">置顶</span>
                   )}
@@ -753,7 +743,18 @@ const WorksPage: React.FC = () => {
                   {!work.isVisible && (
                     <span className="rounded-full bg-gray-500/80 px-1.5 py-0.5 text-[9px] text-white">隐藏</span>
                   )}
-                  {/* 评论红点 */}
+                </div>
+
+                {/* Right-top: action button + comment count */}
+                <div className="absolute right-1.5 top-1.5 flex flex-col items-end gap-1.5">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setCardActionWork(work); }}
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm active:bg-black/60"
+                  >
+                    <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                    </svg>
+                  </button>
                   {work.commentCount > 0 && (
                     <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-semibold text-white shadow-sm">
                       {work.commentCount}
@@ -788,42 +789,42 @@ const WorksPage: React.FC = () => {
             <div className="px-2 py-1.5">
               <button
                 onClick={() => { handleEdit(cardActionWork); setCardActionWork(null); }}
-                className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[15px] text-gray-700 active:bg-gray-50"
+                className="flex w-full items-center rounded-xl px-4 py-3 active:bg-gray-50"
               >
-                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-5 w-5 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
-                编辑
+                <span className="flex-1 text-center text-[15px] text-gray-700">编辑</span>
               </button>
               <button
                 onClick={() => { handleTogglePinned(cardActionWork); setCardActionWork(null); }}
-                className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[15px] text-gray-700 active:bg-gray-50"
+                className="flex w-full items-center rounded-xl px-4 py-3 active:bg-gray-50"
               >
-                <svg className="h-5 w-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-5 w-5 shrink-0 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                 </svg>
-                {cardActionWork.isPinned ? '取消置顶' : '置顶'}
+                <span className="flex-1 text-center text-[15px] text-gray-700">{cardActionWork.isPinned ? '取消置顶' : '置顶'}</span>
               </button>
               <button
                 onClick={() => { handleToggleFeatured(cardActionWork); setCardActionWork(null); }}
-                className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[15px] text-gray-700 active:bg-gray-50"
+                className="flex w-full items-center rounded-xl px-4 py-3 active:bg-gray-50"
               >
-                <svg className="h-5 w-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-5 w-5 shrink-0 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                 </svg>
-                {cardActionWork.isFeatured ? '取消精品' : '设为精品'}
+                <span className="flex-1 text-center text-[15px] text-gray-700">{cardActionWork.isFeatured ? '取消精品' : '设为精品'}</span>
               </button>
               <button
                 onClick={() => { handleToggleVisible(cardActionWork); setCardActionWork(null); }}
-                className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[15px] text-gray-700 active:bg-gray-50"
+                className="flex w-full items-center rounded-xl px-4 py-3 active:bg-gray-50"
               >
-                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-5 w-5 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d={cardActionWork.isVisible
                     ? 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21'
                     : 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
                   } />
                 </svg>
-                {cardActionWork.isVisible ? '隐藏' : '显示'}
+                <span className="flex-1 text-center text-[15px] text-gray-700">{cardActionWork.isVisible ? '隐藏' : '显示'}</span>
               </button>
             </div>
             {/* 分隔线 */}
@@ -832,12 +833,12 @@ const WorksPage: React.FC = () => {
             <div className="px-2 py-1.5">
               <button
                 onClick={() => { handleDelete(cardActionWork); setCardActionWork(null); }}
-                className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[15px] text-red-500 active:bg-red-50"
+                className="flex w-full items-center rounded-xl px-4 py-3 active:bg-red-50"
               >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-5 w-5 shrink-0 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
-                删除
+                <span className="flex-1 text-center text-[15px] text-red-500">删除</span>
               </button>
             </div>
             {/* 取消按钮 */}
@@ -1003,12 +1004,14 @@ const WorksPage: React.FC = () => {
           <div className="relative z-10 -mt-6 flex min-h-0 flex-1 flex-col rounded-t-[28px] bg-white shadow-[0_-12px_40px_rgba(15,23,42,0.06)]">
             {/* Title block */}
             <div className="shrink-0 px-5 pt-5 pb-4">
-              <h2 className="text-[1.35rem] font-bold leading-tight tracking-[-0.02em] text-gray-900">
-                {selectedWork.title || '未命名作品'}
-              </h2>
-              {selectedWork.price != null && selectedWork.price > 0 && (
-                <p className="mt-1 text-lg font-semibold text-pink-500">¥{selectedWork.price}</p>
-              )}
+              <div className="flex items-baseline gap-2">
+                <h2 className="text-[1.35rem] font-bold leading-tight tracking-[-0.02em] text-gray-900">
+                  {selectedWork.title || '未命名作品'}
+                </h2>
+                {selectedWork.price != null && selectedWork.price > 0 && (
+                  <span className="shrink-0 text-[15px] font-semibold text-pink-500">¥{selectedWork.price}</span>
+                )}
+              </div>
               {selectedWork.description && (
                 <p className="mt-2 text-sm leading-6 text-gray-500">{selectedWork.description}</p>
               )}
