@@ -92,4 +92,13 @@ export const technicianService = {
     const response = await api.post(`/technicians/${id}/reset-password`);
     return response.data;
   },
+
+  deleteTechnician: async (id: number): Promise<void> => {
+    await api.delete(`/technicians/${id}`);
+  },
+
+  disableTechnician: async (id: number): Promise<Technician> => {
+    const response = await api.patch(`/technicians/${id}/disable`);
+    return response.data;
+  },
 };
