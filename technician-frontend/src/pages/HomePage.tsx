@@ -200,10 +200,12 @@ export const HomePage: React.FC = () => {
     };
   }, [technician?.id, toast]);
 
-  const shareBaseUrl = import.meta.env.VITE_TECHNICIAN_SHARE_BASE_URL || window.location.origin;
+  const clientBaseUrl = import.meta.env.VITE_CLIENT_BASE_URL || 'https://m.lunails.cn';
   const shareUrl = technician
-    ? `${shareBaseUrl.replace(/\/$/, '')}/technicians/${technician.id}${technician.invitationCode ? `?invite_code=${technician.invitationCode}` : ''}`
-    : shareBaseUrl;
+    ? technician.invitationCode
+      ? `${clientBaseUrl}/artist/${encodeURIComponent(technician.invitationCode)}`
+      : `${clientBaseUrl}/artist/${technician.id}`
+    : clientBaseUrl;
   const isAcceptingOrders = technician?.status === 'active';
   const availableShops = technician?.shopAddresses?.filter((shop) => shop.enabled !== false) ?? [];
   const summary = useMemo(() => buildDashboardSummary(orders, new Date()), [orders]);

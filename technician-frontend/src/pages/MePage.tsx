@@ -39,7 +39,8 @@ export const MePage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showServiceTypeModal, setShowServiceTypeModal] = useState(false);
   const invitationCode = technician?.invitationCode;
-  const inviteLink = invitationCode ? `${window.location.origin}/invite?invite_code=${encodeURIComponent(invitationCode)}` : '';
+  const clientBaseUrl = import.meta.env.VITE_CLIENT_BASE_URL || 'https://m.lunails.cn';
+  const inviteLink = invitationCode ? `${clientBaseUrl}/invite?invite_code=${encodeURIComponent(invitationCode)}` : '';
   const moduleClassName = 'mb-4 p-4';
   const moduleHeaderClassName = 'mb-4 flex items-center justify-between gap-3';
   const iconPlateClassName = 'flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#ffe9f0] text-lg ring-1 ring-black/[0.03]';

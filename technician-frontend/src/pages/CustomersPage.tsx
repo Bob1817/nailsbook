@@ -94,7 +94,8 @@ export const CustomersPage: React.FC = () => {
       toast.warning('暂未生成邀请码，请稍后重试。');
       return;
     }
-    const inviteLink = `${window.location.origin}/invite?invite_code=${encodeURIComponent(invitationCode)}`;
+    const clientBaseUrl = import.meta.env.VITE_CLIENT_BASE_URL || 'https://m.lunails.cn';
+    const inviteLink = `${clientBaseUrl}/invite?invite_code=${encodeURIComponent(invitationCode)}`;
     const shareText = `${technician?.name || '美甲师'}邀请你预约美甲服务，点击链接完成绑定：`;
     try {
       if (navigator.share) {
