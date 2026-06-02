@@ -1,0 +1,39 @@
+<view class="container">
+  <!-- 头像 -->
+  <view class="avatar-section" bindtap="chooseAvatar">
+    <view class="avatar-wrap">
+      <image wx:if="{{avatarUrl}}" src="{{avatarUrl}}" mode="aspectFill" class="avatar" />
+      <view wx:else class="avatar-placeholder">
+        <text class="avatar-icon">👤</text>
+      </view>
+      <view wx:if="{{uploading}}" class="avatar-uploading">
+        <view class="upload-spinner"></view>
+      </view>
+    </view>
+    <text class="avatar-hint">点击更换头像</text>
+  </view>
+
+  <!-- 表单 -->
+  <view class="form-section">
+    <view class="form-item">
+      <text class="form-label">昵称</text>
+      <input
+        class="form-input"
+        type="nickname"
+        value="{{nickname}}"
+        bindinput="onNicknameInput"
+        placeholder="请输入昵称"
+        placeholder-class="form-placeholder"
+        maxlength="20"
+      />
+    </view>
+  </view>
+
+  <!-- 保存按钮 -->
+  <view class="save-btn {{saving ? 'saving' : ''}}" bindtap="saveProfile">
+    <text>{{saving ? '保存中...' : '保存'}}</text>
+  </view>
+
+  <!-- 退出登录 -->
+  <view class="logout-btn" bindtap="logout">退出登录</view>
+</view>

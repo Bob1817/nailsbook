@@ -1,0 +1,17 @@
+.container { min-height: 100vh; background: #f5f5f5; padding: 32rpx; }
+.loading-wrap { display: flex; justify-content: center; padding: 200rpx 0; }
+.loading-spinner { width: 60rpx; height: 60rpx; border: 4rpx solid #FF6B8A; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.form { background: #fff; border-radius: 24rpx; overflow: hidden; margin-bottom: 32rpx; }
+.field { padding: 28rpx 32rpx; border-bottom: 1rpx solid #f5f5f5; display: flex; align-items: center; justify-content: space-between; }
+.field:last-child { border-bottom: none; }
+.field-switch { }
+.field-textarea { align-items: flex-start; flex-direction: column; }
+.label { font-size: 30rpx; color: #1a1a1a; margin-bottom: 0; }
+.field-textarea .label { margin-bottom: 12rpx; }
+.input { flex: 1; font-size: 30rpx; color: #1a1a1a; text-align: right; height: 60rpx; }
+.textarea { width: 100%; font-size: 28rpx; color: #1a1a1a; min-height: 100rpx; }
+.ph { color: #ccc; }
+.save-btn { background: linear-gradient(135deg, #FF6B8A, #FF8FA3); color: #fff; font-size: 32rpx; font-weight: 600; text-align: center; padding: 28rpx; border-radius: 24rpx; box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.3); }
+.save-btn:active { opacity: 0.85; }
+.btn-disabled { opacity: 0.6; }

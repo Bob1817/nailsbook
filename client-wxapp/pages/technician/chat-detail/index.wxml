@@ -1,0 +1,53 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="loading-wrap">
+    <view class="loading-spinner"></view>
+  </view>
+
+  <scroll-view wx:else scroll-y class="msg-list" scroll-into-view="{{scrollToId}}" scroll-with-animation>
+    <view wx:if="{{messages.length === 0}}" class="empty-chat">
+      <text class="empty-icon">💬</text>
+      <text class="empty-title">与{{clientName || '客户'}}的对话</text>
+      <text class="empty-desc">暂无消息记录</text>
+    </view>
+
+    <view wx:for="{{messages}}" wx:key="id" id="msg-{{item.id}}" class="msg-row {{item.isMe ? 'row-right' : 'row-left'}}">
+      <view wx:if="{{!item.isMe}}" class="msg-avatar">
+        <image wx:if="{{clientAvatar}}" src="{{clientAvatar}}" mode="aspectFill" class="avatar-img" />
+        <view wx:else class="avatar-placeholder"><text>{{clientName[0] || '客'}}</text></view>
+      </view>
+
+      <view class="msg-content-wrap">
+        <view wx:if="{{item.messageType === 'image' && item.imageUrl}}" class="bubble bubble-{{item.isMe ? 'right' : 'left'}} bubble-img" bindtap="previewImage" data-url="{{item.imageUrl}}">
+          <image src="{{item.imageUrl}}" mode="widthFix" class="msg-image" />
+        </view>
+        <view wx:else class="bubble bubble-{{item.isMe ? 'right' : 'left'}}">
+          <text class="msg-text">{{item.content}}</text>
+        </view>
+        <text class="msg-time {{item.isMe ? 'time-right' : 'time-left'}}">{{item.timeStr}}</text>
+      </view>
+
+      <view wx:if="{{item.isMe}}" class="msg-avatar">
+        <view class="avatar-self"><text>我</text></view>
+      </view>
+    </view>
+    <view class="list-bottom"></view>
+  </scroll-view>
+
+  <view class="input-bar">
+    <view class="input-btn" bindtap="sendImage"><text class="input-btn-icon">🖼️</text></view>
+    <input
+      class="input-field"
+      type="text"
+      value="{{inputText}}"
+      bindinput="onInputChange"
+      placeholder="发消息..."
+      placeholder-class="input-placeholder"
+      confirm-type="send"
+      bindconfirm="sendText"
+    />
+    <button class="send-btn {{inputText.length > 0 ? 'send-btn-active' : ''}}" bindtap="sendText" disabled="{{!inputText || sending}}">
+      <text wx:if="{{!sending}}">发送</text>
+      <view wx:else class="sending-spinner"></view>
+    </button>
+  </view>
+</view>

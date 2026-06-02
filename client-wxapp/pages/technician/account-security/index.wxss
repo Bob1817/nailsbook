@@ -1,0 +1,13 @@
+.container { min-height: 100vh; background: #f5f5f5; padding: 32rpx; }
+.section-title-row { margin-bottom: 16rpx; }
+.section-title { font-size: 28rpx; font-weight: 600; color: #1a1a1a; }
+.form { background: #fff; border-radius: 24rpx; overflow: hidden; margin-bottom: 32rpx; }
+.field { padding: 28rpx 32rpx; border-bottom: 1rpx solid #f5f5f5; }
+.field:last-child { border-bottom: none; }
+.label { display: block; font-size: 26rpx; color: #666; margin-bottom: 12rpx; }
+.input { width: 100%; font-size: 30rpx; color: #1a1a1a; height: 60rpx; }
+.ph { color: #ccc; }
+.save-btn { background: linear-gradient(135deg, #FF6B8A, #FF8FA3); color: #fff; font-size: 32rpx; font-weight: 600; text-align: center; padding: 28rpx; border-radius: 24rpx; box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.3); margin-bottom: 24rpx; }
+.save-btn:active { opacity: 0.85; }
+.btn-disabled { opacity: 0.6; }
+.tip { display: block; text-align: center; font-size: 24rpx; color: #999; }

@@ -1,0 +1,33 @@
+<view class="container">
+  <view class="avatar-section" bindtap="chooseAvatar">
+    <view class="avatar-wrap">
+      <image wx:if="{{avatarUrl}}" src="{{avatarUrl}}" mode="aspectFill" class="avatar" />
+      <view wx:else class="avatar-placeholder"><text class="avatar-icon">👤</text></view>
+      <view wx:if="{{uploading}}" class="avatar-uploading"><view class="upload-spinner"></view></view>
+    </view>
+    <text class="avatar-hint">点击更换头像</text>
+  </view>
+
+  <view class="form">
+    <view class="field">
+      <text class="label">姓名</text>
+      <input class="input" value="{{name}}" bindinput="onNameInput" placeholder="请输入姓名" placeholder-class="ph" />
+    </view>
+    <view class="field">
+      <text class="label">城市</text>
+      <input class="input" value="{{city}}" bindinput="onCityInput" placeholder="如：北京" placeholder-class="ph" />
+    </view>
+    <view class="field">
+      <text class="label">服务区域</text>
+      <input class="input" value="{{serviceArea}}" bindinput="onServiceAreaInput" placeholder="如：朝阳、海淀" placeholder-class="ph" />
+    </view>
+    <view class="field field-textarea">
+      <text class="label">个人简介</text>
+      <textarea class="textarea" value="{{bio}}" bindinput="onBioInput" placeholder="介绍一下自己吧" placeholder-class="ph" maxlength="200" />
+    </view>
+  </view>
+
+  <view class="save-btn {{saving ? 'btn-disabled' : ''}}" bindtap="saveProfile">
+    <text>{{saving ? '保存中...' : '保存'}}</text>
+  </view>
+</view>

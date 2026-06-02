@@ -29,7 +29,10 @@
     <button class="btn-primary" bindtap="handleLogin" disabled="{{loading}}">
       {{loading ? '登录中...' : '登录'}}
     </button>
-    <text class="link" data-step="phone" bindtap="switchPhase">换个手机号</text>
+    <view class="link-row">
+      <text class="link" data-step="phone" bindtap="switchPhase">换个手机号</text>
+      <text class="link" bindtap="goForgotPassword">忘记密码？</text>
+    </view>
   </view>
 
   <!-- Step 3: 注册（新用户） -->

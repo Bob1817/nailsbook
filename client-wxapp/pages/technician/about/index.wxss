@@ -1,0 +1,11 @@
+.container { min-height: 100vh; background: #f5f5f5; padding: 60rpx 32rpx; }
+.logo-section { display: flex; flex-direction: column; align-items: center; margin-bottom: 60rpx; }
+.logo { font-size: 120rpx; margin-bottom: 20rpx; }
+.app-name { font-size: 48rpx; font-weight: 700; color: #1a1a1a; margin-bottom: 10rpx; }
+.version { font-size: 26rpx; color: #999; }
+.info-card { background: #fff; border-radius: 24rpx; overflow: hidden; margin-bottom: 40rpx; }
+.info-item { padding: 28rpx 32rpx; }
+.info-item-border { border-top: 1rpx solid #f5f5f5; border-bottom: 1rpx solid #f5f5f5; }
+.info-label { display: block; font-size: 26rpx; color: #999; margin-bottom: 8rpx; }
+.info-value { display: block; font-size: 28rpx; color: #1a1a1a; line-height: 1.5; }
+.copyright { display: block; text-align: center; font-size: 24rpx; color: #ccc; }

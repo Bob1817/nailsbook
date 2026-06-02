@@ -1,5 +1,37 @@
 <view class="container">
-  <view class="empty-page">
-    <text>功能开发中</text>
+  <view wx:if="{{loading}}" class="loading-wrap">
+    <view class="loading-spinner"></view>
+  </view>
+
+  <view wx:elif="{{conversations.length === 0}}" class="empty-wrap">
+    <text class="empty-icon">💬</text>
+    <text class="empty-title">暂无消息</text>
+    <text class="empty-desc">和你的美甲师开始沟通吧</text>
+  </view>
+
+  <view wx:else class="list">
+    <view
+      wx:for="{{conversations}}"
+      wx:key="id"
+      class="conv-item"
+      bindtap="openChat"
+      data-id="{{item.id}}"
+      data-techid="{{item.techId}}"
+    >
+      <view class="avatar-wrap">
+        <image wx:if="{{item.techAvatar}}" class="avatar" src="{{item.techAvatar}}" mode="aspectFill" />
+        <view wx:else class="avatar-placeholder">
+          <text class="avatar-text">{{item.techName[0]}}</text>
+        </view>
+        <view wx:if="{{item.unreadCount > 0}}" class="badge">{{item.unreadCount > 99 ? '99+' : item.unreadCount}}</view>
+      </view>
+      <view class="conv-info">
+        <view class="conv-top">
+          <text class="tech-name">{{item.techName}}</text>
+          <text class="last-time">{{item.lastTime}}</text>
+        </view>
+        <text class="last-msg">{{item.lastMessage || '暂无消息'}}</text>
+      </view>
+    </view>
   </view>
 </view>

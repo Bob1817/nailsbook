@@ -97,8 +97,18 @@
   display: block;
   text-align: center;
   font-size: 26rpx;
-  color: #667eea;
+  color: #FF6B8A;
   margin-top: 32rpx;
+}
+
+.link-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 32rpx;
+}
+
+.link-row .link {
+  margin-top: 0;
 }
 
 .footer {

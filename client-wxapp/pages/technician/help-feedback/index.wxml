@@ -1,0 +1,17 @@
+<view class="container">
+  <view class="section">
+    <text class="section-title">常见问题</text>
+    <view class="faq-card">
+      <view wx:for="{{faqs}}" wx:key="q" class="faq-item {{index < faqs.length - 1 ? 'faq-border' : ''}}">
+        <view class="faq-header" bindtap="toggleFaq" data-idx="{{index}}">
+          <text class="faq-q">{{item.q}}</text>
+          <text class="faq-arrow {{item.open ? 'arrow-open' : ''}}">›</text>
+        </view>
+        <view wx:if="{{item.open}}" class="faq-answer">
+          <text class="faq-a">{{item.a}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  <text class="tip">如有其他问题，请联系平台客服或通过消息与客户沟通。</text>
+</view>

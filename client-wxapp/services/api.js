@@ -27,28 +27,47 @@ const auth = {
 
   getUserInfo: (role = 'client') => {
     return api.get(`${getBaseUrl(role)}/auth/me`);
+  },
+
+  resetPassword: (phone, newPassword, role = 'client') => {
+    return api.post(`${getBaseUrl(role)}/auth/reset-password`, { phone, newPassword });
   }
 };
 
 const client = {
   home: () => api.get('/home'),
 
+  profile: {
+    update: (data) => api.patch('/api/client/auth/profile', data),
+    findTechByInviteCode: (code) => api.get(`/api/client/auth/find-technician?inviteCode=${encodeURIComponent(code)}`),
+    bindTechnician: (techId, inviteCode) => api.post('/api/client/auth/bind-technician', { techId, inviteCode }),
+    unbindTechnician: (techId) => api.del(`/api/client/auth/unbind-technician/${techId}`),
+    setDefaultTechnician: (techId) => api.patch(`/api/client/auth/set-default-technician`, { techId })
+  },
+
   works: {
     list: (params) => api.get('/works', params),
     detail: (id) => api.get(`/works/${id}`),
     like: (id) => api.post(`/works/${id}/like`),
-    unlike: (id) => api.delete(`/works/${id}/like`),
+    unlike: (id) => api.del(`/works/${id}/like`),
     favorite: (id) => api.post(`/works/${id}/favorite`),
-    unfavorite: (id) => api.delete(`/works/${id}/favorite`),
+    unfavorite: (id) => api.del(`/works/${id}/favorite`),
     comments: (id, params) => api.get(`/works/${id}/comments`, params),
     addComment: (id, data) => api.post(`/works/${id}/comments`, data)
+  },
+
+  favorites: {
+    list: () => api.get('/favorites')
+  },
+
+  likes: {
+    list: () => api.get('/likes')
   },
 
   orders: {
     list: (params) => api.get('/orders', params),
     detail: (id) => api.get(`/orders/${id}`),
     create: (data) => api.post('/orders', data),
-    cancel: (id, reason) => api.post(`/orders/${id}/cancel`, { reason }),
     acceptQuote: (id) => api.post(`/orders/${id}/agree`),
     rejectQuote: (id, reason) => api.post(`/orders/${id}/reject-quote`, { reason }),
     cancel: (id) => api.patch(`/orders/${id}/status`, { status: 'cancelled' }),
@@ -83,51 +102,76 @@ const client = {
 
 const technician = {
   auth: {
-    requestCode: (phone) => auth.requestCode(phone, 'technician'),
-    verifyCode: (phone, code) => auth.verifyCode(phone, code, 'technician'),
-    login: (phone, code) => auth.login(phone, code, 'technician'),
+    login: (phone, password) => auth.login(phone, password, 'technician'),
     getUserInfo: () => auth.getUserInfo('technician'),
-    updateProfile: (data) => api.patch('/auth/profile', data),
-    updateStatus: (status) => api.patch('/auth/status', { status })
+    updateProfile: (data) => api.patch('/api/technician/auth/profile', data),
+    updateStatus: (status) => api.patch('/api/technician/auth/status', { status }),
+    changePassword: (oldPassword, newPassword) => api.post('/api/technician/auth/change-password', { oldPassword, newPassword })
   },
 
-  dashboard: () => api.get('/dashboard'),
+  dashboard: () => api.get('/api/technician/dashboard'),
 
   orders: {
-    list: (params) => api.get('/orders', params),
-    detail: (id) => api.get(`/orders/${id}`),
-    review: (id, data) => api.patch(`/orders/${id}/review`, data),
-    confirm: (id) => api.patch(`/orders/${id}/confirm`, {}),
-    complete: (id) => api.patch(`/orders/${id}/complete`, {}),
-    cancel: (id) => api.patch(`/orders/${id}/cancel`, {})
+    list: (params) => api.get('/api/technician/orders', params),
+    detail: (id) => api.get(`/api/technician/orders/${id}`),
+    quote: (id, data) => api.patch(`/api/technician/orders/${id}/quote`, data),
+    confirm: (id) => api.patch(`/api/technician/orders/${id}/confirm`, {}),
+    complete: (id) => api.patch(`/api/technician/orders/${id}/complete`, {}),
+    cancel: (id, reason) => api.patch(`/api/technician/orders/${id}/cancel`, { reason })
   },
 
   customers: {
-    list: (params) => api.get('/customers', params),
-    detail: (id) => api.get(`/customers/${id}`),
-    updateTags: (id, tags) => api.patch(`/customers/${id}/tags`, { tags })
+    list: (params) => api.get('/api/technician/customers', params),
+    detail: (id) => api.get(`/api/technician/customers/${id}`),
+    updateTags: (id, tags) => api.patch(`/api/technician/customers/${id}/tags`, { tags })
   },
 
   works: {
-    list: (params) => api.get('/works', params),
-    detail: (id) => api.get(`/works/${id}`),
-    create: (data) => api.post('/works', data),
-    update: (id, data) => api.patch(`/works/${id}`, data),
-    delete: (id) => api.del(`/works/${id}`),
-    toggleVisible: (id) => api.post(`/works/${id}/toggle-visible`),
-    togglePinned: (id) => api.post(`/works/${id}/toggle-pinned`),
-    toggleFeatured: (id) => api.post(`/works/${id}/toggle-featured`)
+    list: (params) => api.get('/api/technician/works', params),
+    detail: (id) => api.get(`/api/technician/works/${id}`),
+    create: (data) => api.post('/api/technician/works', data),
+    update: (id, data) => api.patch(`/api/technician/works/${id}`, data),
+    delete: (id) => api.del(`/api/technician/works/${id}`),
+    toggleVisible: (id) => api.post(`/api/technician/works/${id}/toggle-visible`),
+    togglePinned: (id) => api.post(`/api/technician/works/${id}/toggle-pinned`),
+    toggleFeatured: (id) => api.post(`/api/technician/works/${id}/toggle-featured`)
   },
 
   services: {
-    list: () => api.get('/services'),
-    create: (data) => api.post('/services', data),
-    update: (id, data) => api.patch(`/services/${id}`, data),
-    delete: (id) => api.delete(`/services/${id}`),
-    toggle: (id) => api.post(`/services/${id}/toggle`)
+    list: () => api.get('/api/technician/services'),
+    create: (data) => api.post('/api/technician/services', data),
+    update: (id, data) => api.patch(`/api/technician/services/${id}`, data),
+    delete: (id) => api.del(`/api/technician/services/${id}`),
+    toggle: (id) => api.post(`/api/technician/services/${id}/toggle`)
   },
 
-  schedule: () => api.get('/schedule')
+  schedule: {
+    get: () => api.get('/api/technician/schedule'),
+    update: (data) => api.patch('/api/technician/schedule', data)
+  },
+
+  shops: {
+    list: () => api.get('/api/technician/shops'),
+    create: (data) => api.post('/api/technician/shops', data),
+    update: (id, data) => api.patch(`/api/technician/shops/${id}`, data),
+    delete: (id) => api.del(`/api/technician/shops/${id}`)
+  },
+
+  subscription: {
+    get: () => api.get('/api/technician/subscription'),
+    plans: () => api.get('/api/technician/subscription/plans')
+  },
+
+  homeService: {
+    get: () => api.get('/api/technician/home-service'),
+    update: (data) => api.patch('/api/technician/home-service', data)
+  },
+
+  tagTemplates: {
+    list: () => api.get('/api/technician/tag-templates'),
+    create: (data) => api.post('/api/technician/tag-templates', data),
+    delete: (id) => api.del(`/api/technician/tag-templates/${id}`)
+  }
 };
 
 const chat = {

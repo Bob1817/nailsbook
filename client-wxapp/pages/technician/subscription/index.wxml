@@ -1,0 +1,29 @@
+<view class="container">
+  <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
+  <view wx:else>
+    <!-- 当前套餐 -->
+    <view class="current-plan">
+      <text class="plan-label">当前套餐</text>
+      <text class="plan-name">{{currentPlan ? currentPlan.planName || '基础版' : '免费试用'}}</text>
+      <text wx:if="{{currentPlan && currentPlan.expiresAt}}" class="plan-expire">到期时间：{{currentPlan.expiresAt}}</text>
+    </view>
+
+    <!-- 套餐列表 -->
+    <view wx:if="{{plans.length > 0}}">
+      <text class="section-title">可选套餐</text>
+      <view wx:for="{{plans}}" wx:key="id" class="plan-card">
+        <view class="plan-info">
+          <text class="plan-card-name">{{item.name}}</text>
+          <text class="plan-price">¥{{item.price}}<text class="plan-cycle">/{{item.cycle || '月'}}</text></text>
+          <text wx:if="{{item.description}}" class="plan-desc">{{item.description}}</text>
+        </view>
+        <view class="upgrade-btn" bindtap="contactSupport">了解升级</view>
+      </view>
+    </view>
+
+    <view wx:else class="empty">
+      <text class="empty-text">请联系平台了解套餐详情</text>
+      <view class="contact-btn" bindtap="contactSupport">联系客服</view>
+    </view>
+  </view>
+</view>

@@ -1,13 +1,150 @@
 <view class="container">
-  <view class="header">
-    <image class="avatar" src="{{avatar}}" mode="aspectFill"></image>
-    <text class="nickname">{{nickname}}</text>
-    <text class="phone">{{phone}}</text>
+  <!-- 用户信息头部 -->
+  <view class="header" bindtap="editProfile">
+    <view class="avatar-wrap">
+      <image wx:if="{{avatar}}" src="{{avatar}}" mode="aspectFill" class="avatar" />
+      <view wx:else class="avatar-placeholder">
+        <text class="avatar-char">{{nickname[0] || '我'}}</text>
+      </view>
+    </view>
+    <view class="user-info">
+      <text class="nickname">{{nickname}}</text>
+      <text class="phone">{{phone}}</text>
+      <text class="edit-hint">点击编辑资料</text>
+    </view>
+    <text class="header-arrow">›</text>
   </view>
-  <view class="actions">
-    <view bindtap="navigateToAddresses">收货地址</view>
-    <view bindtap="navigateToOrders">我的订单</view>
-    <view bindtap="navigateToFavorites">我的收藏</view>
-    <view bindtap="switchRole">切换身份</view>
+
+  <!-- 我的美甲师 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">我的美甲师</text>
+      <view class="bind-btn" bindtap="openBindModal">+ 绑定</view>
+    </view>
+
+    <view wx:if="{{technicians.length === 0}}" class="no-tech">
+      <text class="no-tech-text">还没有绑定美甲师</text>
+      <view class="bind-now-btn" bindtap="openBindModal">立即绑定</view>
+    </view>
+
+    <view wx:for="{{technicians}}" wx:key="id" class="tech-card {{item.isDefault ? 'tech-card-default' : ''}}">
+      <view class="tech-avatar-wrap">
+        <image wx:if="{{item.avatar}}" src="{{item.avatar}}" mode="aspectFill" class="tech-avatar" />
+        <view wx:else class="tech-avatar-placeholder">
+          <text>{{item.name[0]}}</text>
+        </view>
+      </view>
+      <view class="tech-info">
+        <view class="tech-name-row">
+          <text class="tech-name">{{item.name}}</text>
+          <view wx:if="{{item.isDefault}}" class="default-badge">默认</view>
+        </view>
+        <view class="tech-tags">
+          <text wx:if="{{item.city}}" class="tech-tag">{{item.city}}</text>
+          <text wx:if="{{item.homeService}}" class="tech-tag tech-tag-pink">可上门</text>
+          <text class="tech-tag {{item.status === 'active' ? 'tech-tag-green' : ''}}">
+            {{item.status === 'active' ? '接单中' : '休息中'}}
+          </text>
+        </view>
+      </view>
+      <view class="tech-actions">
+        <view wx:if="{{!item.isDefault}}" class="tech-action-btn" bindtap="setDefaultTech" data-id="{{item.id}}">设默认</view>
+        <view class="tech-action-btn tech-action-unbind" bindtap="unbindTechnician" data-id="{{item.id}}" data-name="{{item.name}}">解除</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 功能菜单 -->
+  <view class="section">
+    <view class="menu-list">
+      <view class="menu-item" bindtap="navigateToAddresses">
+        <text class="menu-icon">📍</text>
+        <text class="menu-label">地址管理</text>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-item" bindtap="navigateToOrders">
+        <text class="menu-icon">📋</text>
+        <text class="menu-label">我的预约</text>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-item" bindtap="navigateToFavorites">
+        <text class="menu-icon">🔖</text>
+        <text class="menu-label">我的收藏</text>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-item" bindtap="navigateToLikes">
+        <text class="menu-icon">❤️</text>
+        <text class="menu-label">我的点赞</text>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-item" bindtap="navigateToChat">
+        <text class="menu-icon">💬</text>
+        <text class="menu-label">联系美甲师</text>
+        <text class="menu-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 更多 -->
+  <view class="section">
+    <view class="menu-list">
+      <view class="menu-item" bindtap="navigateToHelp">
+        <text class="menu-icon">❓</text>
+        <text class="menu-label">帮助与反馈</text>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-item" bindtap="switchRole">
+        <text class="menu-icon">🔄</text>
+        <text class="menu-label">切换身份</text>
+        <text class="menu-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 退出登录 -->
+  <view class="logout-btn" bindtap="logout">退出登录</view>
+  <text class="version">版本 1.0.0</text>
+
+  <!-- 绑定美甲师弹窗 -->
+  <view wx:if="{{showBindModal}}" class="modal-mask" bindtap="closeBindModal">
+    <view class="modal-content" catchtap="">
+      <view class="modal-header">
+        <text class="modal-title">绑定美甲师</text>
+        <view class="modal-close" bindtap="closeBindModal">✕</view>
+      </view>
+
+      <view class="modal-body">
+        <text class="field-label">邀请码</text>
+        <view class="code-input-wrap">
+          <input
+            class="code-input"
+            value="{{inviteCode}}"
+            bindinput="onInviteCodeInput"
+            placeholder="请输入美甲师邀请码"
+            placeholder-class="code-placeholder"
+          />
+          <view wx:if="{{checkingCode}}" class="code-spinner"></view>
+        </view>
+        <text class="field-hint">输入美甲师提供的邀请码后，即可完成绑定</text>
+
+        <view wx:if="{{foundTech}}" class="found-tech">
+          <view class="found-avatar">
+            <image wx:if="{{foundTech.avatarUrl}}" src="{{foundTech.avatarUrl}}" mode="aspectFill" class="found-avatar-img" />
+            <text wx:else class="found-avatar-char">{{foundTech.name[0]}}</text>
+          </view>
+          <view class="found-info">
+            <text class="found-name">{{foundTech.name}}</text>
+            <text class="found-city">{{foundTech.city || '未知城市'}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view
+        class="modal-btn {{!foundTech || binding ? 'modal-btn-disabled' : ''}}"
+        bindtap="bindTechnician"
+      >
+        <text>{{binding ? '绑定中...' : '确认绑定'}}</text>
+      </view>
+    </view>
   </view>
 </view>

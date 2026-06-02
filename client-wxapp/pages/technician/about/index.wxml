@@ -1,0 +1,24 @@
+<view class="container">
+  <view class="logo-section">
+    <view class="logo">💅</view>
+    <text class="app-name">NailBook</text>
+    <text class="version">版本 {{version}}</text>
+  </view>
+
+  <view class="info-card">
+    <view class="info-item">
+      <text class="info-label">产品定位</text>
+      <text class="info-value">专为美甲师与客户打造的一对一预约管理平台</text>
+    </view>
+    <view class="info-item info-item-border">
+      <text class="info-label">核心功能</text>
+      <text class="info-value">作品展示、在线预约、订单管理、客户沟通</text>
+    </view>
+    <view class="info-item">
+      <text class="info-label">服务对象</text>
+      <text class="info-value">独立美甲师及其私域客户</text>
+    </view>
+  </view>
+
+  <text class="copyright">© 2024 NailBook. All rights reserved.</text>
+</view>

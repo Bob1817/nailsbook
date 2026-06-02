@@ -1,0 +1,13 @@
+.container { min-height: 100vh; background: #f5f5f5; padding: 60rpx 32rpx 40rpx; }
+.header { margin-bottom: 48rpx; }
+.title { display: block; font-size: 48rpx; font-weight: 700; color: #1a1a1a; margin-bottom: 12rpx; }
+.subtitle { display: block; font-size: 28rpx; color: #999; }
+.form { background: #fff; border-radius: 24rpx; overflow: hidden; margin-bottom: 40rpx; }
+.field { padding: 28rpx 32rpx; border-bottom: 1rpx solid #f5f5f5; }
+.field:last-child { border-bottom: none; }
+.label { display: block; font-size: 26rpx; color: #666; margin-bottom: 12rpx; }
+.input { width: 100%; font-size: 32rpx; color: #1a1a1a; height: 60rpx; }
+.ph { color: #ccc; }
+.submit-btn { background: linear-gradient(135deg, #FF6B8A, #FF8FA3); color: #fff; font-size: 32rpx; font-weight: 600; text-align: center; padding: 28rpx; border-radius: 24rpx; box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.3); }
+.submit-btn:active { opacity: 0.85; }
+.btn-disabled { opacity: 0.6; }

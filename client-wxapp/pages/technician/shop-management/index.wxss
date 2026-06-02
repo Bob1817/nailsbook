@@ -1,0 +1,31 @@
+.container { min-height: 100vh; background: #f5f5f5; padding: 32rpx; }
+.loading-wrap { display: flex; justify-content: center; padding: 200rpx 0; }
+.loading-spinner { width: 60rpx; height: 60rpx; border: 4rpx solid #FF6B8A; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.add-btn { background: linear-gradient(135deg, #FF6B8A, #FF8FA3); color: #fff; font-size: 30rpx; font-weight: 600; text-align: center; padding: 24rpx; border-radius: 20rpx; margin-bottom: 24rpx; }
+.add-btn:active { opacity: 0.85; }
+.empty { display: flex; flex-direction: column; align-items: center; padding: 80rpx; }
+.empty-icon { font-size: 80rpx; margin-bottom: 20rpx; }
+.empty-text { font-size: 28rpx; color: #999; }
+.shop-card { background: #fff; border-radius: 20rpx; padding: 28rpx; margin-bottom: 16rpx; display: flex; align-items: flex-start; justify-content: space-between; gap: 20rpx; }
+.shop-info { flex: 1; min-width: 0; }
+.shop-name { display: block; font-size: 30rpx; font-weight: 600; color: #1a1a1a; margin-bottom: 8rpx; }
+.shop-address { display: block; font-size: 26rpx; color: #666; margin-bottom: 6rpx; }
+.shop-phone { display: block; font-size: 24rpx; color: #999; }
+.shop-actions { display: flex; gap: 12rpx; flex-shrink: 0; }
+.action-btn { font-size: 24rpx; padding: 10rpx 20rpx; border-radius: 12rpx; }
+.action-edit { color: #FF6B8A; border: 1rpx solid #FF6B8A; }
+.action-del { color: #ff4d4f; border: 1rpx solid #ff4d4f; }
+.modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; z-index: 100; }
+.modal-content { width: 100%; background: #fff; border-radius: 40rpx 40rpx 0 0; padding: 40rpx 32rpx; padding-bottom: calc(40rpx + env(safe-area-inset-bottom)); }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32rpx; }
+.modal-title { font-size: 34rpx; font-weight: 700; color: #1a1a1a; }
+.modal-close { width: 56rpx; height: 56rpx; background: #f5f5f5; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26rpx; color: #666; }
+.form { margin-bottom: 32rpx; }
+.field { background: #f7f7f7; border-radius: 16rpx; padding: 24rpx; margin-bottom: 16rpx; }
+.label { display: block; font-size: 24rpx; color: #999; margin-bottom: 10rpx; }
+.input { width: 100%; font-size: 30rpx; color: #1a1a1a; height: 56rpx; }
+.ph { color: #ccc; }
+.modal-btn { background: linear-gradient(135deg, #FF6B8A, #FF8FA3); color: #fff; font-size: 32rpx; font-weight: 600; text-align: center; padding: 28rpx; border-radius: 24rpx; box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.3); }
+.modal-btn:active { opacity: 0.85; }
+.btn-disabled { opacity: 0.6; }

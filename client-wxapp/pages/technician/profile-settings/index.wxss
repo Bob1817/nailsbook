@@ -1,0 +1,21 @@
+.container { min-height: 100vh; background: #f5f5f5; padding: 40rpx 32rpx; }
+.avatar-section { display: flex; flex-direction: column; align-items: center; margin-bottom: 40rpx; }
+.avatar-wrap { position: relative; width: 160rpx; height: 160rpx; border-radius: 50%; margin-bottom: 16rpx; }
+.avatar { width: 160rpx; height: 160rpx; border-radius: 50%; }
+.avatar-placeholder { width: 160rpx; height: 160rpx; border-radius: 50%; background: linear-gradient(135deg, #FFE0EA, #F4F7FB); display: flex; align-items: center; justify-content: center; }
+.avatar-icon { font-size: 64rpx; }
+.avatar-uploading { position: absolute; inset: 0; border-radius: 50%; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; }
+.upload-spinner { width: 48rpx; height: 48rpx; border: 4rpx solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.avatar-hint { font-size: 26rpx; color: #FF6B8A; }
+.form { background: #fff; border-radius: 24rpx; overflow: hidden; margin-bottom: 40rpx; }
+.field { padding: 28rpx 32rpx; border-bottom: 1rpx solid #f5f5f5; }
+.field:last-child { border-bottom: none; }
+.field-textarea { align-items: flex-start; }
+.label { display: block; font-size: 26rpx; color: #666; margin-bottom: 12rpx; }
+.input { width: 100%; font-size: 30rpx; color: #1a1a1a; height: 60rpx; }
+.textarea { width: 100%; font-size: 30rpx; color: #1a1a1a; min-height: 120rpx; }
+.ph { color: #ccc; }
+.save-btn { background: linear-gradient(135deg, #FF6B8A, #FF8FA3); color: #fff; font-size: 32rpx; font-weight: 600; text-align: center; padding: 28rpx; border-radius: 24rpx; box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.3); }
+.save-btn:active { opacity: 0.85; }
+.btn-disabled { opacity: 0.6; }

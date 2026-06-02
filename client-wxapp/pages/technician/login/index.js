@@ -26,6 +26,10 @@ Page({
     this.setData({ step: e.currentTarget.dataset.step });
   },
 
+  goForgotPassword() {
+    wx.navigateTo({ url: '/pages/technician/forgot-password/index' });
+  },
+
   async handlePhoneNext() {
     const phone = this.data.phone.trim();
     if (!validatePhone(phone)) {

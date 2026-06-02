@@ -1,22 +1,24 @@
 const api = require('../../../services/api');
+const { phoneMask } = require('../../../utils/util');
 
 Page({
   data: {
-    userInfo: null,
-    stats: {
-      worksCount: 0,
-      customersCount: 0,
-      ordersCount: 0
-    }
+    userInfo: {},
+    stats: { worksCount: 0, customersCount: 0, ordersCount: 0 }
   },
 
   onLoad() {
     this.loadProfile();
   },
 
+  onShow() {
+    this.loadProfile();
+  },
+
   async loadProfile() {
     try {
-      const userInfo = wx.getStorageSync('userInfo');
+      const userInfo = wx.getStorageSync('userInfo') || wx.getStorageSync('technician_userInfo') || {};
+      if (userInfo.phone) userInfo.phoneDisplay = phoneMask(userInfo.phone);
       this.setData({ userInfo });
 
       const res = await api.technician.dashboard();
@@ -35,20 +37,14 @@ Page({
   async toggleStatus() {
     const { userInfo } = this.data;
     const newStatus = userInfo.status === 'active' ? 'inactive' : 'active';
-
     try {
       wx.showLoading({ title: '更新中...' });
       await api.technician.auth.updateStatus(newStatus);
-
       userInfo.status = newStatus;
       this.setData({ userInfo });
       wx.setStorageSync('userInfo', userInfo);
-
       wx.hideLoading();
-      wx.showToast({
-        title: newStatus === 'active' ? '已开启服务' : '已暂停服务',
-        icon: 'success'
-      });
+      wx.showToast({ title: newStatus === 'active' ? '已开启接单' : '已暂停接单', icon: 'success' });
     } catch (err) {
       wx.hideLoading();
       wx.showToast({ title: err.message || '更新失败', icon: 'none' });
@@ -56,42 +52,34 @@ Page({
   },
 
   editProfile() {
-    wx.showToast({ title: '功能开发中', icon: 'none' });
-  },
-
-  manageServices() {
-    wx.navigateTo({ url: '/pages/technician/services/index' });
-  },
-
-  manageWorks() {
-    wx.navigateTo({ url: '/pages/technician/works/index' });
+    wx.navigateTo({ url: '/pages/technician/profile-settings/index' });
   },
 
   shareInvite() {
-    const { userInfo } = this.data;
-    const inviteCode = userInfo?.invitationCode || '';
-
-    if (inviteCode) {
-      wx.showModal({
-        title: '邀请码',
-        content: `您的邀请码是：${inviteCode}\n分享给客户，让他们绑定到您的账号`,
-        showCancel: true,
-        confirmText: '复制',
-        success: (res) => {
-          if (res.confirm) {
-            wx.setClipboardData({
-              data: inviteCode,
-              success: () => {
-                wx.showToast({ title: '已复制', icon: 'success' });
-              }
-            });
-          }
+    const code = this.data.userInfo?.invitationCode;
+    if (!code) { wx.showToast({ title: '暂无邀请码', icon: 'none' }); return; }
+    wx.showModal({
+      title: '我的邀请码',
+      content: `邀请码：${code}\n分享给客户，让他们绑定到你的账号`,
+      confirmText: '复制',
+      success: (res) => {
+        if (res.confirm) {
+          wx.setClipboardData({ data: code, success: () => wx.showToast({ title: '已复制', icon: 'success' }) });
         }
-      });
-    } else {
-      wx.showToast({ title: '暂无邀请码', icon: 'none' });
-    }
+      }
+    });
   },
+
+  navigateToServices() { wx.navigateTo({ url: '/pages/technician/services/index' }); },
+  navigateToWorks() { wx.navigateTo({ url: '/pages/technician/works/index' }); },
+  navigateToHomeService() { wx.navigateTo({ url: '/pages/technician/home-service-settings/index' }); },
+  navigateToServiceTime() { wx.navigateTo({ url: '/pages/technician/service-time/index' }); },
+  navigateToShops() { wx.navigateTo({ url: '/pages/technician/shop-management/index' }); },
+  navigateToTagManagement() { wx.navigateTo({ url: '/pages/technician/tag-management/index' }); },
+  navigateToSubscription() { wx.navigateTo({ url: '/pages/technician/subscription/index' }); },
+  navigateToAccountSecurity() { wx.navigateTo({ url: '/pages/technician/account-security/index' }); },
+  navigateToHelp() { wx.navigateTo({ url: '/pages/technician/help-feedback/index' }); },
+  navigateToAbout() { wx.navigateTo({ url: '/pages/technician/about/index' }); },
 
   switchRole() {
     wx.navigateTo({ url: '/pages/role-select/index' });
@@ -103,8 +91,7 @@ Page({
       content: '确定要退出登录吗？',
       success: (res) => {
         if (res.confirm) {
-          const app = getApp();
-          app.logout();
+          getApp().logout();
           wx.redirectTo({ url: '/pages/role-select/index' });
         }
       }

@@ -1,0 +1,35 @@
+<view class="container">
+  <view class="section">
+    <text class="section-title">常见问题</text>
+    <view class="faq-card">
+      <view
+        wx:for="{{faqs}}"
+        wx:key="q"
+        class="faq-item {{index < faqs.length - 1 ? 'faq-border' : ''}}"
+      >
+        <view class="faq-header" bindtap="toggleFaq" data-idx="{{index}}">
+          <text class="faq-q">{{item.q}}</text>
+          <text class="faq-arrow {{item.open ? 'arrow-open' : ''}}">›</text>
+        </view>
+        <view wx:if="{{item.open}}" class="faq-answer">
+          <text class="faq-a">{{item.a}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <text class="section-title">需要帮助？</text>
+    <view class="contact-card" bindtap="goChat">
+      <view class="contact-icon-wrap">
+        <text class="contact-icon">💬</text>
+      </view>
+      <view class="contact-info">
+        <text class="contact-title">联系我的美甲师</text>
+        <text class="contact-desc">预约、款式等问题可直接沟通</text>
+      </view>
+      <text class="arrow">›</text>
+    </view>
+    <text class="contact-tip">更多问题可在与美甲师的聊天中咨询，我们会持续完善帮助内容。</text>
+  </view>
+</view>

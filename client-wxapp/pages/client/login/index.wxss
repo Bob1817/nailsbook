@@ -99,3 +99,13 @@
   color: #ff6b9d;
   margin-top: 32rpx;
 }
+
+.link-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 32rpx;
+}
+
+.link-row .link {
+  margin-top: 0;
+}
