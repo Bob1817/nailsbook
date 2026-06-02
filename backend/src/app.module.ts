@@ -37,6 +37,7 @@ import { AdminInviteKeysModule } from './admin-invite-keys/admin-invite-keys.mod
 import { PrismaModule } from './common/prisma/prisma.module';
 import { DevelopmentAuthSeedService } from './development-auth-seed.service';
 import { DevelopmentDemoSeedService } from './development-demo-seed.service';
+import { ProductionSeedService } from './production-seed.service';
 
 @Module({
   imports: [
@@ -85,6 +86,7 @@ import { DevelopmentDemoSeedService } from './development-demo-seed.service';
   controllers: [AppController],
   providers: [
     AppService,
+    ProductionSeedService,
     DevelopmentAuthSeedService,
     DevelopmentDemoSeedService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },

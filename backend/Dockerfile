@@ -27,4 +27,4 @@ RUN mkdir -p data
 EXPOSE 3000
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["sh", "-c", "DATABASE_URL=${DATABASE_URL:-file:/app/data/prod.db} npx prisma db push --accept-data-loss && node dist/src/main"]
+CMD ["sh", "-c", "DATABASE_URL=${DATABASE_URL:-file:/app/data/prod.db} npx prisma db push --skip-generate 2>&1 || echo '[WARN] prisma db push failed — non-destructive changes only, starting app with existing schema'; DATABASE_URL=${DATABASE_URL:-file:/app/data/prod.db} node dist/src/main"]
