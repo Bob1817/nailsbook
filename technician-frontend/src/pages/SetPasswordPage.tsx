@@ -10,6 +10,13 @@ export const SetPasswordPage: React.FC = () => {
   const { setPassword } = useAuth();
   const navigate = useNavigate();
 
+  // Redirect to login if not authenticated
+  React.useEffect(() => {
+    if (!localStorage.getItem('technician_token')) {
+      navigate('/login', { replace: true });
+    }
+  }, [navigate]);
+
   const validatePassword = (pwd: string): string | null => {
     if (pwd.length < 8) return '密码至少 8 位';
     if (!/[a-zA-Z]/.test(pwd) || !/[0-9]/.test(pwd)) return '密码需同时包含字母和数字';

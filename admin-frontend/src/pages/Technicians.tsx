@@ -392,7 +392,6 @@ const Technicians: React.FC = () => {
                 { value: 'active', label: '活跃' },
                 { value: 'inactive', label: '未激活' },
                 { value: 'suspended', label: '已禁用' },
-                { value: 'deleted', label: '已删除' },
               ]}
             />
           </Form.Item>

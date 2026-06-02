@@ -390,6 +390,10 @@ export class TechnicianAuthService {
       throw new UnauthorizedException('美甲师不存在');
     }
 
+    if (!technician.mustChangePassword) {
+      throw new BadRequestException('无需设置密码');
+    }
+
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.prisma.technician.update({
       where: { id: technicianId },
