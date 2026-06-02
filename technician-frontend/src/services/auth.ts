@@ -17,11 +17,13 @@ export interface LoginCredentials {
 
 export interface AuthResponse {
   access_token: string;
+  mustChangePassword: boolean;
   technician: Technician;
 }
 
 interface AuthApiResponse {
   accessToken: string;
+  mustChangePassword?: boolean;
   technician: {
     id: number;
     name: string;
@@ -102,6 +104,7 @@ export const authService = {
     const response = await api.post<AuthApiResponse>('/auth/login', credentials);
     const mappedResponse: AuthResponse = {
       access_token: response.data.accessToken,
+      mustChangePassword: response.data.mustChangePassword ?? false,
       technician: {
         id: response.data.technician.id,
         name: response.data.technician.name,
@@ -212,6 +215,7 @@ export const authService = {
     const response = await api.post<AuthApiResponse>('/auth/register', credentials);
     const mappedResponse: AuthResponse = {
       access_token: response.data.accessToken,
+      mustChangePassword: response.data.mustChangePassword ?? false,
       technician: {
         id: response.data.technician.id,
         name: response.data.technician.name,
@@ -295,6 +299,35 @@ export const authService = {
 
   changePassword: async (oldPassword: string, newPassword: string): Promise<void> => {
     await api.patch('/auth/password', { oldPassword, newPassword });
+  },
+
+  setPassword: async (newPassword: string): Promise<AuthResponse> => {
+    const response = await api.post<AuthApiResponse>('/auth/set-password', { newPassword });
+    const mappedResponse: AuthResponse = {
+      access_token: response.data.accessToken,
+      mustChangePassword: false,
+      technician: {
+        id: response.data.technician.id,
+        name: response.data.technician.name,
+        email: `${response.data.technician.phone}@nailbook.local`,
+        phone: response.data.technician.phone,
+        avatar: response.data.technician.avatarUrl,
+        status: response.data.technician.status,
+        invitationCode: response.data.technician.invitationCode,
+        city: response.data.technician.city,
+        serviceArea: response.data.technician.serviceArea,
+        homeService: response.data.technician.homeService,
+        shopService: response.data.technician.shopService,
+        shopAddresses: normalizeShopAddresses(response.data.technician.shopAddresses),
+        socialMedia: response.data.technician.socialMedia,
+        subscription: response.data.technician.subscription ?? null,
+        serviceItems: response.data.technician.serviceItems,
+      },
+    };
+    if (mappedResponse.access_token) {
+      localStorage.setItem('technician_token', mappedResponse.access_token);
+    }
+    return mappedResponse;
   },
 
   isAuthenticated: (): boolean => {
