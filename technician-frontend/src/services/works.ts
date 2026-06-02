@@ -10,6 +10,7 @@ export interface Work {
   imageUrls: string[];
   description: string | null;
   tags: string[];
+  price: number | null;
   isVisible: boolean;
   isPinned: boolean;
   isFeatured: boolean;
@@ -31,6 +32,7 @@ export interface CreateWorkDto {
   images?: string[];
   description?: string;
   tags?: string[];
+  price?: number;
   isVisible?: boolean;
   sortOrder?: number;
 }
@@ -99,6 +101,7 @@ export const worksService = {
       coverUrl: data.coverUrl ?? data.images?.[0],
       images: data.images ? JSON.stringify(data.images) : undefined,
       tags: data.tags ? data.tags.join(',') : undefined,
+      price: data.price ?? undefined,
     });
     return processWork(response.data);
   },
@@ -109,6 +112,7 @@ export const worksService = {
       coverUrl: data.coverUrl ?? data.images?.[0],
       images: data.images ? JSON.stringify(data.images) : undefined,
       tags: data.tags ? data.tags.join(',') : undefined,
+      price: data.price ?? undefined,
     });
     return processWork(response.data);
   },

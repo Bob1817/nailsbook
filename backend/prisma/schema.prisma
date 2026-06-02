@@ -251,6 +251,7 @@ model NailWork {
   isPinned    Boolean            @default(false)
   isFeatured  Boolean            @default(false)
   sortOrder   Int                @default(0)
+  price       Float?
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @default(now()) @updatedAt
   technician  Technician         @relation(fields: [techId], references: [id])

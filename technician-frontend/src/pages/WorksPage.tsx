@@ -310,6 +310,7 @@ const WorksPage: React.FC = () => {
     title: '',
     description: '',
     tags: '',
+    price: '',
     images: [] as string[],
     isVisible: true,
   });
@@ -322,6 +323,7 @@ const WorksPage: React.FC = () => {
   const [confirmDeleteCommentId, setConfirmDeleteCommentId] = useState<number | null>(null);
   const [confirmHideCommentId, setConfirmHideCommentId] = useState<number | null>(null);
   const [showActionMenu, setShowActionMenu] = useState(false);
+  const [cardActionWork, setCardActionWork] = useState<Work | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const imageSliderRef = useRef<HTMLDivElement>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
@@ -386,6 +388,7 @@ const WorksPage: React.FC = () => {
     }
 
     try {
+      const priceValue = formData.price.trim() ? Number(formData.price) : undefined;
       if (editingWork) {
         await worksService.update(editingWork.id, {
           title: formData.title,
@@ -393,6 +396,7 @@ const WorksPage: React.FC = () => {
           tags: formData.tags.split(',').map((t) => t.trim()).filter(Boolean),
           coverUrl: formData.images[0],
           images: formData.images,
+          price: priceValue,
           isVisible: formData.isVisible,
         });
         toast.success('作品更新成功');
@@ -403,13 +407,14 @@ const WorksPage: React.FC = () => {
           tags: formData.tags.split(',').map((t) => t.trim()).filter(Boolean),
           coverUrl: formData.images[0],
           images: formData.images,
+          price: priceValue,
           isVisible: formData.isVisible,
         });
         toast.success('作品创建成功');
       }
       setShowCreateModal(false);
       setEditingWork(null);
-      setFormData({ title: '', description: '', tags: '', images: [], isVisible: true });
+      setFormData({ title: '', description: '', tags: '', price: '', images: [], isVisible: true });
       loadWorks();
     } catch (error) {
       console.error('Failed to save work:', error);
@@ -423,6 +428,7 @@ const WorksPage: React.FC = () => {
       title: work.title || '',
       description: work.description || '',
       tags: work.tags.join(','),
+      price: work.price != null ? String(work.price) : '',
       images: work.imageUrls,
       isVisible: work.isVisible,
     });
@@ -722,7 +728,12 @@ const WorksPage: React.FC = () => {
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
                       <p className="text-white text-sm font-medium truncate">{work.title || '未命名作品'}</p>
                       <div className="flex items-center justify-between mt-1">
-                        <span className="text-white/80 text-xs">{work.technicianName}</span>
+                        <div className="flex items-center gap-2">
+                          {work.price != null && work.price > 0 && (
+                            <span className="text-[#FFD700] text-xs font-semibold">¥{work.price}</span>
+                          )}
+                          <span className="text-white/80 text-xs">{work.technicianName}</span>
+                        </div>
                         <span className="text-white/80 text-xs flex items-center gap-1">
                           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
@@ -749,7 +760,7 @@ const WorksPage: React.FC = () => {
                       </div>
                     )}
                     {/* 未读评论提示 */}
-                    {work.unreadComments > 0 && (
+                    {work.unreadComments > 0 && !work.isPinned && !work.isFeatured && (
                       <div className="absolute top-2 right-2 rounded-full bg-red-500 px-2 py-0.5 text-[10px] text-white flex items-center gap-1">
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
@@ -757,6 +768,15 @@ const WorksPage: React.FC = () => {
                         {work.unreadComments}条新评论
                       </div>
                     )}
+                    {/* More action button */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setCardActionWork(work); }}
+                      className="absolute bottom-[3.2rem] right-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm active:bg-black/60"
+                    >
+                      <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                      </svg>
+                    </button>
                   </div>
                 ))}
               </div>
@@ -764,6 +784,79 @@ const WorksPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Card Action Sheet */}
+      {cardActionWork && (
+        <div
+          className="fixed inset-0 z-[200] flex flex-col justify-end bg-black/40"
+          onClick={() => setCardActionWork(null)}
+        >
+          <div
+            className="rounded-t-2xl bg-white p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => { handleEdit(cardActionWork); setCardActionWork(null); }}
+              className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-gray-700 active:bg-gray-50"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              编辑
+            </button>
+            <div className="my-1 h-px bg-gray-100" />
+            <button
+              onClick={() => { handleTogglePinned(cardActionWork); setCardActionWork(null); }}
+              className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-gray-700 active:bg-gray-50"
+            >
+              <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+              </svg>
+              {cardActionWork.isPinned ? '取消置顶' : '置顶'}
+            </button>
+            <div className="my-1 h-px bg-gray-100" />
+            <button
+              onClick={() => { handleToggleFeatured(cardActionWork); setCardActionWork(null); }}
+              className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-gray-700 active:bg-gray-50"
+            >
+              <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+              </svg>
+              {cardActionWork.isFeatured ? '取消精品' : '设为精品'}
+            </button>
+            <div className="my-1 h-px bg-gray-100" />
+            <button
+              onClick={() => { handleToggleVisible(cardActionWork); setCardActionWork(null); }}
+              className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-gray-700 active:bg-gray-50"
+            >
+              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={cardActionWork.isVisible
+                  ? 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21'
+                  : 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
+                } />
+              </svg>
+              {cardActionWork.isVisible ? '隐藏' : '显示'}
+            </button>
+            <div className="my-1 h-px bg-gray-100" />
+            <button
+              onClick={() => { handleDelete(cardActionWork); setCardActionWork(null); }}
+              className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-red-500 active:bg-red-50"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              删除
+            </button>
+            <div className="my-1 h-px bg-gray-100" />
+            <button
+              onClick={() => setCardActionWork(null)}
+              className="w-full rounded-xl py-3.5 text-sm font-medium text-gray-500 active:bg-gray-50"
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Work Detail Modal */}
       {showDetailModal && selectedWork && (
@@ -918,6 +1011,9 @@ const WorksPage: React.FC = () => {
               <h2 className="text-[1.35rem] font-bold leading-tight tracking-[-0.02em] text-gray-900">
                 {selectedWork.title || '未命名作品'}
               </h2>
+              {selectedWork.price != null && selectedWork.price > 0 && (
+                <p className="mt-1 text-lg font-semibold text-pink-500">¥{selectedWork.price}</p>
+              )}
               {selectedWork.description && (
                 <p className="mt-2 text-sm leading-6 text-gray-500">{selectedWork.description}</p>
               )}
@@ -1087,7 +1183,7 @@ const WorksPage: React.FC = () => {
                 onClick={() => {
                   setShowCreateModal(false);
                   setEditingWork(null);
-                  setFormData({ title: '', description: '', tags: '', images: [], isVisible: true });
+                  setFormData({ title: '', description: '', tags: '', price: '', images: [], isVisible: true });
                 }}
                 className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100"
               >
@@ -1133,6 +1229,23 @@ const WorksPage: React.FC = () => {
                   placeholder="例如：法式,渐变,简约"
                   className="w-full rounded-[16px] border border-gray-200 px-4 py-3 text-sm focus:border-pink-500 focus:outline-none"
                 />
+              </div>
+
+              {/* Price */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">作品价格</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">¥</span>
+                  <input
+                    type="number"
+                    value={formData.price}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, price: e.target.value }))}
+                    placeholder="输入价格（可选）"
+                    min="0"
+                    step="0.01"
+                    className="w-full rounded-[16px] border border-gray-200 py-3 pl-8 pr-4 text-sm focus:border-pink-500 focus:outline-none"
+                  />
+                </div>
               </div>
 
               {/* Images */}

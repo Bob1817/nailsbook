@@ -62,6 +62,7 @@ export class TechnicianWorksService {
         images: dto.images ?? null,
         description: dto.description ?? null,
         tags: dto.tags ?? null,
+        price: dto.price ?? null,
         isVisible: dto.isVisible ?? true,
         sortOrder: dto.sortOrder ?? 0,
       },
@@ -92,6 +93,7 @@ export class TechnicianWorksService {
         ...(dto.images !== undefined && { images: dto.images }),
         ...(dto.description !== undefined && { description: dto.description }),
         ...(dto.tags !== undefined && { tags: dto.tags }),
+        ...(dto.price !== undefined && { price: dto.price }),
         ...(dto.isVisible !== undefined && { isVisible: dto.isVisible }),
         ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
       },
@@ -478,6 +480,7 @@ export class TechnicianWorksService {
       isPinned?: boolean;
       isFeatured?: boolean;
       sortOrder: number;
+      price?: number | null;
       createdAt: Date;
       updatedAt: Date;
       likes?: {
@@ -523,6 +526,7 @@ export class TechnicianWorksService {
       imageUrls,
       description: work.description ?? null,
       tags: this.parseTags(work.tags ?? null),
+      price: work.price ?? null,
       isVisible: work.isVisible,
       isPinned: work.isPinned ?? false,
       isFeatured: work.isFeatured ?? false,
