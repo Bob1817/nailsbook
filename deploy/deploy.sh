@@ -48,8 +48,16 @@ if [ -n "$TARGET" ] && [ "$TARGET" != "all" ]; then
 elif [ "$TARGET" = "all" ]; then
     SERVICES="backend client-web admin-web tech-web"
 else
-    # 自动检测变更文件
-    CHANGED=$(git diff --name-only "$BEFORE" "$AFTER" 2>/dev/null || echo "")
+    # 自动检测变更文件（排除 client-wxapp / mobile-flutter / docs 等非 Web 目录）
+    ALL_CHANGED=$(git diff --name-only "$BEFORE" "$AFTER" 2>/dev/null || echo "")
+    CHANGED=$(echo "$ALL_CHANGED" | grep -v "^client-wxapp/" | grep -v "^mobile-flutter/" | grep -v "^docs/" || true)
+
+    # 如果过滤后无 Web 相关变更，跳过部署
+    if [ -z "$CHANGED" ] && [ -n "$ALL_CHANGED" ]; then
+        log "本次变更仅涉及 client-wxapp / mobile-flutter / docs，无需更新 ECS ✓"
+        exit 0
+    fi
+
     SERVICES=""
 
     echo "$CHANGED" | grep -q "^backend/"              && SERVICES="$SERVICES backend"
@@ -61,8 +69,11 @@ else
     echo "$CHANGED" | grep -q "^docker-compose.yml"    && SERVICES="backend client-web admin-web tech-web"
     echo "$CHANGED" | grep -q "^deploy/nginx/"         && SERVICES="$SERVICES nginx-restart"
 
-    # 如果没检测到具体变更，默认全量
-    [ -z "$SERVICES" ] && SERVICES="backend client-web admin-web tech-web"
+    # 如果过滤后仍无具体 Web 服务变更，跳过
+    if [ -z "$SERVICES" ]; then
+        log "未检测到 Web 服务相关变更，跳过部署 ✓"
+        exit 0
+    fi
 fi
 
 # 去重
