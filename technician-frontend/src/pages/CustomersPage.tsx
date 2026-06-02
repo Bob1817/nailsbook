@@ -39,6 +39,11 @@ function getCustomerAvatar(name: string) {
   return name.slice(0, 1).toUpperCase();
 }
 
+/** 判断 name 是否只是手机号（说明客户未设置昵称） */
+function isPhoneNumberAsName(name: string): boolean {
+  return /^1\d{10}$/.test(name);
+}
+
 export const CustomersPage: React.FC = () => {
   const { technician } = useAuth();
   const navigate = useNavigate();
@@ -204,7 +209,13 @@ export const CustomersPage: React.FC = () => {
                         }}
                         className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#fdecef] text-sm font-semibold text-[#e86b8f] active:opacity-80"
                       >
-                        {getCustomerAvatar(customer.name)}
+                        {isPhoneNumberAsName(customer.name) ? (
+                          <svg className="h-6 w-6 text-[#e86b8f]/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
+                          </svg>
+                        ) : (
+                          <span className="text-sm font-semibold text-[#e86b8f]">{getCustomerAvatar(customer.name)}</span>
+                        )}
                       </button>
                       {avatarTagCustomerId === customer.id && customer.tags.length > 0 && (
                         <div
@@ -229,12 +240,18 @@ export const CustomersPage: React.FC = () => {
                       <div className="flex flex-col gap-3 min-[391px]:flex-row min-[391px]:items-start min-[391px]:justify-between">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="truncate text-sm font-semibold text-gray-900">{customer.name}</p>
+                            <p className="truncate text-sm font-semibold text-gray-900">
+                              {isPhoneNumberAsName(customer.name) ? '未设置名称' : customer.name}
+                            </p>
                             <svg className="h-4 w-4 shrink-0 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
                           </div>
-                          <p className="mt-1 break-all text-xs text-gray-500">{customer.phone}</p>
+                          {customer.address ? (
+                            <p className="mt-1 truncate text-xs text-gray-500">{customer.address}</p>
+                          ) : (
+                            <p className="mt-1 text-xs text-gray-400">暂无地址</p>
+                          )}
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {customer.tags.map((tag) => {
