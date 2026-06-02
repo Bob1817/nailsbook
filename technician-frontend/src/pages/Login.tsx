@@ -68,7 +68,11 @@ export const Login: React.FC = () => {
     }
     setLoading(true);
     try {
-      await login(phone, password);
+      const result = await login(phone, password);
+      if (result.mustChangePassword) {
+        navigate('/set-password');
+        return;
+      }
       const storedTechnician = localStorage.getItem('technician_info');
       if (storedTechnician) {
         const technician = JSON.parse(storedTechnician);

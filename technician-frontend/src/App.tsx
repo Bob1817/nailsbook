@@ -12,6 +12,10 @@ const Login = lazy(async () => {
   return { default: module.Login };
 });
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const SetPasswordPage = lazy(async () => {
+  const module = await import('./pages/SetPasswordPage');
+  return { default: module.SetPasswordPage };
+});
 const HomePage = lazy(async () => {
   const module = await import('./pages/HomePage');
   return { default: module.HomePage };
@@ -85,6 +89,7 @@ function App() {
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/set-password" element={<SetPasswordPage />} />
                 <Route
                   element={
                     <ProtectedRoute>
