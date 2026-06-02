@@ -130,6 +130,24 @@ export class CustomersService {
     });
   }
 
+  async updateName(id: number, technicianId: number, name: string) {
+    const customer = await this.findOne(id);
+
+    if (customer.technicianId !== technicianId) {
+      throw new ForbiddenException('无权修改该客户名称');
+    }
+
+    if (!name || !name.trim()) {
+      throw new ForbiddenException('客户名称不能为空');
+    }
+
+    return this.prisma.customer.update({
+      where: { id },
+      data: { name: name.trim() },
+      select: { id: true, name: true, tags: true },
+    });
+  }
+
   async getDistinctTags(technicianId: number) {
     const customers = await this.prisma.customer.findMany({
       where: { technicianId, tags: { not: null } },

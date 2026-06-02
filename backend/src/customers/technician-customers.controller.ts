@@ -103,4 +103,27 @@ export class TechnicianCustomersController {
       body.tags,
     );
   }
+
+  @Patch(':id/name')
+  @ApiOperation({ summary: '更新客户备注名（仅美甲师可见）' })
+  @ApiParam({ name: 'id', type: String, description: '客户ID' })
+  @ApiBody({
+    schema: {
+      properties: { name: { type: 'string', description: '客户备注名' } },
+    },
+  })
+  @ApiResponse({ status: 200, description: '备注名更新成功' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiResponse({ status: 404, description: '客户不存在' })
+  updateName(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id') id: string,
+    @Body() body: { name: string },
+  ) {
+    return this.customersService.updateName(
+      parseInt(id, 10),
+      request.user.technicianId,
+      body.name,
+    );
+  }
 }
