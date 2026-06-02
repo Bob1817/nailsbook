@@ -81,7 +81,14 @@ SERVICES=$(echo "$SERVICES" | tr ' ' '\n' | sort -u | tr '\n' ' ' | xargs)
 
 log "变更服务: $SERVICES"
 
-# ---------- 3. 逐个构建（避免 OOM）----------
+# ---------- 3. 执行数据库迁移（如有）----------
+if echo "$SERVICES" | grep -q "backend"; then
+    log "执行数据库迁移 ..."
+    cd backend && npx prisma migrate deploy 2>&1 && cd ..
+    log "数据库迁移完成 ✓"
+fi
+
+# ---------- 4. 逐个构建（避免 OOM）----------
 NEED_NGINX_RESTART=false
 
 for SVC in $SERVICES; do
