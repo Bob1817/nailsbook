@@ -24,6 +24,7 @@ import { UpdateTechnicianProfileDto } from './dto/update-technician-profile.dto'
 import { UpdateTechnicianSelfStatusDto } from './dto/update-technician-status.dto';
 import { UpdateTechnicianServiceTypeDto } from './dto/update-service-type.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { SetPasswordDto } from './dto/set-password.dto';
 import { ForgotSendCodeDto, ForgotResetDto } from './dto/forgot-password.dto';
 import { RefreshTokenDto } from '../common/dto/refresh-token.dto';
 
@@ -151,6 +152,22 @@ export class TechnicianAuthController {
     return this.technicianAuthService.changePassword(
       request.user.technicianId,
       body.oldPassword,
+      body.newPassword,
+    );
+  }
+
+  @Post('set-password')
+  @UseGuards(TechnicianJwtAuthGuard)
+  @ApiOperation({ summary: '首次登录设置密码' })
+  @ApiBody({ type: SetPasswordDto })
+  @ApiResponse({ status: 200, description: '密码设置成功，返回新 token' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  async setPassword(
+    @Req() request: { user: { technicianId: number } },
+    @Body() body: SetPasswordDto,
+  ) {
+    return this.technicianAuthService.setPassword(
+      request.user.technicianId,
       body.newPassword,
     );
   }

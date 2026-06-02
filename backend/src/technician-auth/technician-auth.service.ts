@@ -381,6 +381,24 @@ export class TechnicianAuthService {
     return { success: true };
   }
 
+  async setPassword(technicianId: number, newPassword: string) {
+    const technician = await this.prisma.technician.findUnique({
+      where: { id: technicianId },
+    });
+
+    if (!technician) {
+      throw new UnauthorizedException('美甲师不存在');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.technician.update({
+      where: { id: technicianId },
+      data: { passwordHash, tokenVersion: { increment: 1 }, mustChangePassword: false },
+    });
+
+    return this.issueTokens(technician.id, technician.phone);
+  }
+
   async getProfile(technicianId: number) {
     const technician = await this.prisma.technician.findUnique({
       where: { id: technicianId },
