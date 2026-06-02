@@ -119,7 +119,8 @@ export class TechniciansService {
         ...dto,
         invitationCode,
         passwordHash: defaultPasswordHash,
-        status: 'inactive',
+        status: 'active',
+        mustChangePassword: true,
       },
     });
 
