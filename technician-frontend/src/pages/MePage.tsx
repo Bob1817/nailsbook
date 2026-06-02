@@ -139,7 +139,7 @@ export const MePage: React.FC = () => {
 
   return (
     <div className="min-h-full overflow-x-hidden bg-[#fff9f8] pb-24">
-      <div className="relative overflow-hidden bg-[linear-gradient(135deg,#ff8aa0_0%,#ff9ab0_52%,#ffc8b2_100%)] px-5 pb-20 pt-12">
+      <div className="relative overflow-hidden bg-[linear-gradient(135deg,#ff8aa0_0%,#ff9ab0_52%,#ffc8b2_100%)] px-5 pb-10 pt-12">
         <div className="absolute inset-y-0 right-[-14%] w-48 rounded-full bg-white/[0.08] blur-3xl" />
         <div className="absolute left-[-18%] top-10 h-24 w-40 rounded-full bg-white/[0.08] blur-3xl" />
         <div className="mb-5 flex items-start justify-between gap-3">
@@ -219,7 +219,7 @@ export const MePage: React.FC = () => {
 
       <div className="px-5 pt-0">
         {/* Data card - 核心展示 */}
-        <Card className="relative z-10 -mt-6 mb-4 p-4 shadow-[0_14px_32px_rgba(29,35,53,0.08)]">
+        <Card className="relative z-10 -mt-5 mb-4 p-4 shadow-[0_14px_32px_rgba(29,35,53,0.08)]">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <p className="text-2xl font-bold text-gray-900">{summary.todayOrders.length}</p>
