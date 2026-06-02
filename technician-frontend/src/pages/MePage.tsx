@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/feedback/ToastProvider';
@@ -8,7 +8,261 @@ import { ordersService } from '../services/orders';
 import { customersService } from '../services/customers';
 import { uploadService } from '../services/upload';
 import { buildDashboardSummary, formatMoney, type TechnicianOrder, type TechnicianCustomerSummary } from '../services/technicianData';
-import type { ServiceTypeSettings } from '../contexts/authTypes';
+import type { ServiceTypeSettings, DaySchedule, ServiceSchedule } from '../contexts/authTypes';
+
+const DAY_LABELS: Record<string, string> = {
+  mon: '周一', tue: '周二', wed: '周三', thu: '周四',
+  fri: '周五', sat: '周六', sun: '周日',
+};
+const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+  const h = Math.floor(i / 2);
+  const m = i % 2 === 0 ? '00' : '30';
+  return `${String(h).padStart(2, '0')}:${m}`;
+});
+
+function buildDefaultSchedule(): ServiceSchedule {
+  const days: Record<string, DaySchedule> = {};
+  for (const key of DAY_KEYS) {
+    days[key] = { enabled: true, startTime: '10:00', endTime: '21:00' };
+  }
+  return { days, selectedDates: [] };
+}
+
+function mergeSchedule(saved: ServiceSchedule | null | undefined): ServiceSchedule {
+  const defaults = buildDefaultSchedule();
+  if (!saved?.days) return defaults;
+  const merged: Record<string, DaySchedule> = {};
+  for (const key of DAY_KEYS) {
+    merged[key] = saved.days[key] ?? defaults.days[key];
+  }
+  return { days: merged, selectedDates: saved.selectedDates ?? [] };
+}
+
+interface WorkScheduleModalProps {
+  onClose: () => void;
+  technician: any;
+  updateTechnicianProfile: (profile: any) => Promise<any>;
+  toast: any;
+}
+
+const WorkScheduleModal: React.FC<WorkScheduleModalProps> = ({ onClose, technician, updateTechnicianProfile, toast }) => {
+  const [schedule, setSchedule] = useState<ServiceSchedule>(() => mergeSchedule(technician?.serviceSchedule));
+  const [saving, setSaving] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+
+  const toggleDay = useCallback((key: string) => {
+    setSchedule((prev) => ({
+      ...prev,
+      days: { ...prev.days, [key]: { ...prev.days[key], enabled: !prev.days[key].enabled } },
+    }));
+  }, []);
+
+  const updateTime = useCallback((key: string, field: 'startTime' | 'endTime', value: string) => {
+    setSchedule((prev) => ({
+      ...prev,
+      days: { ...prev.days, [key]: { ...prev.days[key], [field]: value } },
+    }));
+  }, []);
+
+  const toggleDate = useCallback((dateStr: string) => {
+    setSchedule((prev) => {
+      const dates = prev.selectedDates || [];
+      const idx = dates.indexOf(dateStr);
+      return {
+        ...prev,
+        selectedDates: idx >= 0 ? dates.filter((d) => d !== dateStr) : [...dates, dateStr],
+      };
+    });
+  }, []);
+
+  const getCalendarDays = () => {
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startOffset = (firstDay.getDay() + 6) % 7; // Monday = 0
+    const days: { date: Date; dateStr: string; isCurrentMonth: boolean }[] = [];
+    for (let i = startOffset - 1; i >= 0; i--) {
+      const d = new Date(year, month, -i);
+      days.push({ date: d, dateStr: formatDateStr(d), isCurrentMonth: false });
+    }
+    for (let i = 1; i <= lastDay.getDate(); i++) {
+      const d = new Date(year, month, i);
+      days.push({ date: d, dateStr: formatDateStr(d), isCurrentMonth: true });
+    }
+    const remaining = 42 - days.length;
+    for (let i = 1; i <= remaining; i++) {
+      const d = new Date(year, month + 1, i);
+      days.push({ date: d, dateStr: formatDateStr(d), isCurrentMonth: false });
+    }
+    return days;
+  };
+
+  function formatDateStr(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await updateTechnicianProfile({ serviceSchedule: schedule });
+      toast.success('工作时间已保存');
+      onClose();
+    } catch {
+      toast.error('保存失败');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const calendarDays = getCalendarDays();
+  const todayStr = formatDateStr(new Date());
+
+  return (
+    <div className="fixed inset-0 z-[300] flex items-end justify-center bg-black/50" onClick={onClose}>
+      <div
+        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-[20px] bg-white"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white px-5 py-3.5">
+          <h2 className="text-lg font-bold text-gray-900">工作时间设置</h2>
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
+            <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Part 1: Daily work time */}
+        <div className="px-5 pt-4 pb-2">
+          <h3 className="mb-3 text-sm font-semibold text-gray-900">每日工作时间段</h3>
+          <div className="space-y-2.5">
+            {DAY_KEYS.map((key) => {
+              const day = schedule.days[key];
+              return (
+                <div key={key} className="flex items-center gap-3 rounded-xl bg-gray-50 px-3 py-2.5">
+                  <button
+                    onClick={() => toggleDay(key)}
+                    className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold ${
+                      day.enabled ? 'bg-pink-500 text-white' : 'bg-gray-200 text-gray-400'
+                    }`}
+                  >
+                    {DAY_LABELS[key].charAt(1)}
+                  </button>
+                  <span className={`w-10 text-sm ${day.enabled ? 'text-gray-700' : 'text-gray-400'}`}>
+                    {DAY_LABELS[key]}
+                  </span>
+                  {day.enabled ? (
+                    <div className="flex flex-1 items-center gap-1.5">
+                      <select
+                        value={day.startTime}
+                        onChange={(e) => updateTime(key, 'startTime', e.target.value)}
+                        className="flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-700"
+                      >
+                        {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                      <span className="text-xs text-gray-400">至</span>
+                      <select
+                        value={day.endTime}
+                        onChange={(e) => updateTime(key, 'endTime', e.target.value)}
+                        className="flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-700"
+                      >
+                        {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </div>
+                  ) : (
+                    <span className="flex-1 text-center text-sm text-gray-400">休息</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Part 2: Calendar date selection */}
+        <div className="px-5 pt-4 pb-2">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-900">选择可接单日期</h3>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 active:bg-gray-200"
+              >
+                <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <span className="text-sm font-medium text-gray-700">
+                {calendarMonth.getFullYear()}年{calendarMonth.getMonth() + 1}月
+              </span>
+              <button
+                onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 active:bg-gray-200"
+              >
+                <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          {/* Weekday headers */}
+          <div className="mb-1 grid grid-cols-7 gap-1 text-center">
+            {['一', '二', '三', '四', '五', '六', '日'].map((d) => (
+              <span key={d} className="text-[11px] font-medium text-gray-400">{d}</span>
+            ))}
+          </div>
+          {/* Calendar grid */}
+          <div className="grid grid-cols-7 gap-1">
+            {calendarDays.map(({ date, dateStr, isCurrentMonth }) => {
+              const isSelected = schedule.selectedDates?.includes(dateStr);
+              const isPast = dateStr < todayStr;
+              return (
+                <button
+                  key={dateStr}
+                  onClick={() => !isPast && toggleDate(dateStr)}
+                  disabled={isPast}
+                  className={`relative flex h-9 items-center justify-center rounded-lg text-sm transition-colors ${
+                    !isCurrentMonth
+                      ? 'text-gray-300'
+                      : isPast
+                        ? 'text-gray-300 cursor-not-allowed'
+                        : isSelected
+                          ? 'bg-pink-500 text-white font-semibold'
+                          : 'text-gray-700 active:bg-gray-100'
+                  }`}
+                >
+                  {date.getDate()}
+                  {isSelected && (
+                    <svg className="absolute right-0.5 top-0.5 h-3 w-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-[11px] text-gray-400">选中日期为可接单日，未选中日期为休息日</p>
+        </div>
+
+        {/* Save button */}
+        <div className="sticky bottom-0 border-t border-gray-100 bg-white px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full rounded-[16px] bg-pink-500 py-3 text-[15px] font-semibold text-white active:bg-pink-600 disabled:opacity-50"
+          >
+            {saving ? '保存中...' : '保存设置'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const tools = [
   { icon: '💅', label: '服务管理', path: '/services' },
@@ -31,13 +285,13 @@ const settings = [
 
 export const MePage: React.FC = () => {
   const navigate = useNavigate();
-  const { technician, logout, updateServiceType, updateTechnicianStatus, updateTechnicianProfile } = useAuth();
+  const { technician, logout, updateServiceType, updateTechnicianProfile } = useAuth();
   const toast = useToast();
   const [orders, setOrders] = useState<TechnicianOrder[]>([]);
   const [customers, setCustomers] = useState<TechnicianCustomerSummary[]>([]);
   const [showServiceTypeModal, setShowServiceTypeModal] = useState(false);
   const [showAvatarViewer, setShowAvatarViewer] = useState(false);
-  const [isTogglingStatus, setIsTogglingStatus] = useState(false);
+  const [showWorkScheduleModal, setShowWorkScheduleModal] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const invitationCode = technician?.invitationCode;
   const clientBaseUrl = import.meta.env.VITE_CLIENT_BASE_URL || 'https://m.lunails.cn';
@@ -116,19 +370,6 @@ export const MePage: React.FC = () => {
     }
   }
 
-  async function handleToggleStatus() {
-    const nextStatus = isAcceptingOrders ? 'inactive' : 'active';
-    setIsTogglingStatus(true);
-    try {
-      await updateTechnicianStatus(nextStatus);
-      toast.success(nextStatus === 'active' ? '已开启接单' : '已暂停接单');
-    } catch {
-      toast.error('状态更新失败');
-    } finally {
-      setIsTogglingStatus(false);
-    }
-  }
-
   function handleAvatarClick() {
     if (technician?.avatar) {
       setShowAvatarViewer(true);
@@ -201,16 +442,15 @@ export const MePage: React.FC = () => {
               {technician?.shopService && (
                 <span className="rounded-full bg-white/18 px-2.5 py-1 text-[10px] text-white/90">🏪 到店</span>
               )}
-              {/* 接单状态开关 */}
+              {/* 工作时间设置 */}
               <button
                 type="button"
-                onClick={handleToggleStatus}
-                disabled={isTogglingStatus}
-                className={`relative h-6 w-11 rounded-full transition-colors ${isAcceptingOrders ? 'bg-emerald-400/90' : 'bg-white/30'}`}
+                onClick={() => setShowWorkScheduleModal(true)}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15 text-white active:bg-white/25"
               >
-                <span
-                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-all ${isAcceptingOrders ? 'left-[1.3rem]' : 'left-0.5'}`}
-                />
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </button>
             </div>
           </div>
@@ -485,6 +725,16 @@ export const MePage: React.FC = () => {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Work Schedule Modal */}
+      {showWorkScheduleModal && (
+        <WorkScheduleModal
+          onClose={() => setShowWorkScheduleModal(false)}
+          technician={technician}
+          updateTechnicianProfile={updateTechnicianProfile}
+          toast={toast}
+        />
       )}
     </div>
   );

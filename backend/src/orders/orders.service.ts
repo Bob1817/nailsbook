@@ -82,32 +82,49 @@ export class OrdersService {
       ? new Date(Date.now() + CONFIRM_TOKEN_TTL_MS)
       : null;
 
-    const order = await this.prisma.order.create({
-      data: {
-        orderNo: this.generateOrderNo(),
-        technicianId,
-        customerId,
-        clientUserId: dto.clientUserId ?? resolvedClientUserId ?? null,
-        startTime: new Date(dto.startTime),
-        endTime: new Date(dto.endTime),
-        address: dto.address,
-        serviceType: dto.serviceType || null,
-        status: dto.shareToClient ? 'pending_client_confirm' : 'pending_quote',
-        remark: dto.note || dto.serviceName || null,
-        customDescription: dto.customDescription || null,
-        customImages: dto.customImages?.length
-          ? JSON.stringify(dto.customImages)
-          : null,
-        quotePrice: dto.price ?? 0,
-        confirmToken,
-        confirmTokenExpiresAt,
-      },
-      include: {
-        technician: { select: { id: true, name: true, phone: true } },
-        customer: {
-          select: { id: true, name: true, phone: true, avatarUrl: true },
+    const order = await this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.create({
+        data: {
+          orderNo: this.generateOrderNo(),
+          technicianId,
+          customerId,
+          clientUserId: dto.clientUserId ?? resolvedClientUserId ?? null,
+          startTime: new Date(dto.startTime),
+          endTime: new Date(dto.endTime),
+          address: dto.address,
+          serviceType: dto.serviceType || null,
+          status: dto.shareToClient ? 'pending_client_confirm' : 'pending_quote',
+          remark: dto.note || dto.serviceName || null,
+          customDescription: dto.customDescription || null,
+          customImages: dto.customImages?.length
+            ? JSON.stringify(dto.customImages)
+            : null,
+          quotePrice: dto.price ?? 0,
+          confirmToken,
+          confirmTokenExpiresAt,
         },
-      },
+        include: {
+          technician: { select: { id: true, name: true, phone: true } },
+          customer: {
+            select: { id: true, name: true, phone: true, avatarUrl: true },
+          },
+        },
+      });
+
+      // Freeze time slot: booking time + 5 hours
+      const startTime = new Date(dto.startTime);
+      const blockEndTime = new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
+      await tx.blockedTimeSlot.create({
+        data: {
+          techId: technicianId,
+          orderId: order.id,
+          startTime,
+          endTime: blockEndTime,
+          reason: 'booking',
+        },
+      });
+
+      return order;
     });
 
     const result: Record<string, unknown> = { ...order };
@@ -552,6 +569,11 @@ export class OrdersService {
     let conversationId: number | null = null;
 
     const updated = await this.prisma.$transaction(async (tx) => {
+      // Release blocked time slot
+      await tx.blockedTimeSlot.deleteMany({
+        where: { orderId: id },
+      });
+
       const updated = await tx.order.update({
         where: { id },
         data: {

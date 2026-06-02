@@ -95,6 +95,7 @@ const CreateOrder: React.FC = () => {
   const [technicianWorks, setTechnicianWorks] = useState<NailWork[]>([]);
   const [showWorkSelector, setShowWorkSelector] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [blockedSlots, setBlockedSlots] = useState<{ startTime: string; endTime: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedTechnician = useMemo(
@@ -139,6 +140,39 @@ const CreateOrder: React.FC = () => {
       return slotMinutes >= startMinutes && slotMinutes < endMinutes;
     });
   }, [isShopService, selectedShopAddress, selectedShopHours]);
+
+  // Filter time slots based on blocked slots
+  const availableTimeSlots = useMemo(() => {
+    const baseSlots = isShopService ? shopAvailableTimeSlots : timeSlots;
+    if (blockedSlots.length === 0) return baseSlots;
+
+    return baseSlots.filter((slot) => {
+      const slotDateTime = new Date(`${formData.serviceDate}T${slot}:00`);
+      return !blockedSlots.some((blocked) => {
+        const blockStart = new Date(blocked.startTime);
+        const blockEnd = new Date(blocked.endTime);
+        return slotDateTime >= blockStart && slotDateTime < blockEnd;
+      });
+    });
+  }, [isShopService, shopAvailableTimeSlots, blockedSlots, formData.serviceDate]);
+
+  // Check if a date is available based on technician's schedule
+  const isDateAvailable = useCallback((dateStr: string) => {
+    if (!selectedTechnician?.serviceSchedule) return true;
+    const { selectedDates, days } = selectedTechnician.serviceSchedule;
+    
+    // If selectedDates is set, only those dates are available
+    if (selectedDates && selectedDates.length > 0) {
+      return selectedDates.includes(dateStr);
+    }
+    
+    // Otherwise, check by day of week
+    const weekday = new Date(`${dateStr}T00:00:00`).getDay();
+    const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    const dayKey = dayKeys[weekday];
+    return days[dayKey]?.enabled ?? true;
+  }, [selectedTechnician]);
+
   const activeServiceItems = useMemo(
     () =>
       (selectedTechnician?.serviceItems || [])
@@ -196,7 +230,14 @@ const CreateOrder: React.FC = () => {
     if (bookableTechnicians.length === 1 && formData.techId === 0) {
       setFormData((prev) => ({ ...prev, techId: bookableTechnicians[0].id }));
     }
-  }, [bookableTechnicians, formData.techId]);
+
+    // Fetch blocked time slots when technician is selected
+    if (formData.techId > 0) {
+      orderService.getBlockedSlots(formData.techId).then(setBlockedSlots).catch(() => setBlockedSlots([]));
+    } else {
+      setBlockedSlots([]);
+    }
+  }, [formData.techId, bookableTechnicians]);
 
   useEffect(() => {
     setFormData((prev) => {
@@ -251,12 +292,12 @@ const CreateOrder: React.FC = () => {
       return;
     }
 
-    if (!shopAvailableTimeSlots.includes(formData.startTime)) {
+    if (!availableTimeSlots.includes(formData.startTime)) {
       requestAnimationFrame(() => {
-        setFormData((prev) => ({ ...prev, startTime: shopAvailableTimeSlots[0] }));
+        setFormData((prev) => ({ ...prev, startTime: availableTimeSlots[0] || '' }));
       });
     }
-  }, [formData.startTime, isShopService, selectedShopAddress, shopAvailableTimeSlots]);
+  }, [formData.startTime, isShopService, selectedShopAddress, shopAvailableTimeSlots, availableTimeSlots]);
 
   useEffect(() => {
     if (selectedTechnician) {
@@ -331,7 +372,7 @@ const CreateOrder: React.FC = () => {
       return false;
     }
 
-    if (isShopService && selectedShopAddress && !shopAvailableTimeSlots.includes(formData.startTime)) {
+    if (!availableTimeSlots.includes(formData.startTime)) {
       return false;
     }
 
@@ -960,9 +1001,20 @@ const CreateOrder: React.FC = () => {
                 type="date"
               value={formData.serviceDate}
               min={dayjs().format('YYYY-MM-DD')}
-              onChange={(e) => setFormData((prev) => ({ ...prev, serviceDate: e.target.value }))}
+              onChange={(e) => {
+                const newDate = e.target.value;
+                if (!isDateAvailable(newDate)) {
+                  return; // Don't allow selecting unavailable dates
+                }
+                setFormData((prev) => ({ ...prev, serviceDate: newDate }));
+              }}
                 className="w-full rounded-2xl bg-slate-50 px-4 py-3 text-gray-900 outline-none ring-1 ring-transparent focus:ring-[#FF6B8A]/20"
               />
+              {selectedTechnician?.serviceSchedule?.selectedDates && selectedTechnician.serviceSchedule.selectedDates.length > 0 && (
+                <div className="rounded-2xl bg-pink-50 px-4 py-3 text-sm text-pink-600">
+                  该美甲师仅在特定日期接单，请选择可预约日期
+                </div>
+              )}
               {isShopService && selectedShopAddress && (
                 <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
                   {shopAvailableTimeSlots.length > 0
@@ -971,18 +1023,15 @@ const CreateOrder: React.FC = () => {
                 </div>
               )}
               <div className="grid max-h-44 grid-cols-4 gap-2 overflow-y-auto scrollbar-hide">
-                {timeSlots.map((time) => (
+                {availableTimeSlots.map((time) => (
                   <button
                     key={time}
                     type="button"
                     onClick={() => setFormData((prev) => ({ ...prev, startTime: time }))}
-                    disabled={isShopService && selectedShopAddress ? !shopAvailableTimeSlots.includes(time) : false}
                     className={`rounded-2xl py-2.5 text-sm font-medium transition ${
                       formData.startTime === time
                         ? 'bg-[linear-gradient(135deg,#FF6B8A_0%,#FF8FA3_100%)] text-white shadow-lg shadow-pink-200/80'
-                        : isShopService && selectedShopAddress && !shopAvailableTimeSlots.includes(time)
-                          ? 'cursor-not-allowed bg-slate-100 text-slate-300'
-                          : 'bg-slate-50 text-slate-600'
+                        : 'bg-slate-50 text-slate-600'
                     }`}
                   >
                     {time}
