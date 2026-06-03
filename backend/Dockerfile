@@ -27,4 +27,4 @@ RUN mkdir -p data
 EXPOSE 3000
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["sh", "-c", "DATABASE_URL=${DATABASE_URL:-file:./data/prod.db} npx prisma migrate deploy 2>&1; DATABASE_URL=${DATABASE_URL:-file:./data/prod.db} node dist/src/main"]
+CMD ["sh", "-c", "DATABASE_URL=${DATABASE_URL:-file:./data/prod.db} npx prisma db push --skip-generate 2>&1; DATABASE_URL=${DATABASE_URL:-file:./data/prod.db} node dist/src/main"]
