@@ -741,7 +741,7 @@ export const HomePage: React.FC = () => {
               </div>
             ) : (
               <div className="rounded-[22px] bg-[#fff9f8] px-4 py-8 text-center text-[14px] text-[#b7aeb7]">
-                还没有上传作品，先补几张好看的款式吧。
+                还没有推荐作品，去作品管理把好看的款式设为推荐吧。
               </div>
             )}
         </section>

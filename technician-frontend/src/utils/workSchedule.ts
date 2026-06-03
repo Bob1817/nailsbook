@@ -27,14 +27,12 @@ export function normalizeSchedule(saved?: ServiceSchedule | null): ServiceSchedu
     enabled.forEach((k) => { const d = saved.days![k]; const key = `${d.startTime}-${d.endTime}`; counts[key] = (counts[key] || 0) + 1; });
     const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
     const [startTime, endTime] = top ? top.split('-') : ['10:00', '21:00'];
-    const scheme: WorkTimeScheme = { id: 'default', label: '默认', startTime, endTime, days: enabled.length ? enabled : [...DAY_KEYS] };
+    // 保留原可约性：若旧数据所有日都关闭，迁移后 days 为空（仍不可约），不擅自全开
+    const scheme: WorkTimeScheme = { id: 'default', label: '默认', startTime, endTime, days: enabled };
     return { ...saved, schemes: [scheme], activeSchemeId: scheme.id, restDays: [] };
   }
   const scheme: WorkTimeScheme = { id: genId(), label: '默认', startTime: '10:00', endTime: '21:00', days: [...DAY_KEYS] };
-  // For a new schedule, we need to provide a default days object for backward compatibility
-  const defaultDays: Record<string, { enabled: boolean; startTime: string; endTime: string }> = {};
-  DAY_KEYS.forEach(k => { defaultDays[k] = { enabled: true, startTime: '10:00', endTime: '21:00' }; });
-  return { schemes: [scheme], activeSchemeId: scheme.id, restDays: [], days: defaultDays };
+  return { schemes: [scheme], activeSchemeId: scheme.id, restDays: [] };
 }
 
 export function activeScheme(s: ServiceSchedule): WorkTimeScheme | null {

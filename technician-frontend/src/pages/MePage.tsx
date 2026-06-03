@@ -91,6 +91,10 @@ const WorkScheduleModal: React.FC<WorkScheduleModalProps> = ({ onClose, technici
   };
 
   const handleSave = async () => {
+    if (!schedule.schemes?.length) {
+      toast.error('请至少添加一个工作时间方案');
+      return;
+    }
     setSaving(true);
     try {
       await updateTechnicianProfile({ serviceSchedule: schedule });
