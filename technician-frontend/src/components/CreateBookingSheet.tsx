@@ -79,7 +79,6 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
 
   // Calendar state
   const [viewMonth, setViewMonth] = useState(new Date());
-  const [dateHint, setDateHint] = useState('');
 
   // Orders for conflict detection
   const [orders, setOrders] = useState<TechnicianOrder[]>([]);
@@ -97,7 +96,6 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
       setNote('');
       setFormError('');
       setIsSubmitting(false);
-      setDateHint('');
 
       // Load technician's orders for conflict detection
       if (technician?.id) {
@@ -164,17 +162,10 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
   };
 
   const selectDate = (day: number) => {
+    if (isDateDisabled(day)) return; // 休息日/非工作日/过去：置灰不可选
     const date = new Date(year, month, day);
-    const dateStr = formatDateStr(date);
-
-    if (isDateDisabled(day)) {
-      setDateHint('该美甲师休息中');
-      return;
-    }
-
-    setServiceDate(dateStr);
+    setServiceDate(formatDateStr(date));
     setStartClock(''); // Clear selected time slot
-    setDateHint('');
   };
 
   // Generate available time slots for selected date
@@ -194,23 +185,31 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
     return generateTimeSlots(active.startTime, active.endTime);
   }, [serviceDate, active, restDays]);
 
-  // Filter out conflicting time slots
-  const nonConflictingSlots = useMemo(() => {
-    if (!serviceDate) return availableTimeSlots;
+  // 占用区间：每笔已有预约 [开始, max(结束, 开始+5h)]（默认 5 小时，已确认结束时间则以其为准）
+  const occupiedRanges = useMemo(
+    () =>
+      orders
+        .filter((o) => o.startTime)
+        .map((o) => {
+          const start = new Date(o.startTime).getTime();
+          const end = o.endTime ? new Date(o.endTime).getTime() : 0;
+          return { start, end: Math.max(end, start + 5 * 60 * 60 * 1000) };
+        }),
+    [orders],
+  );
 
-    return availableTimeSlots.filter(slot => {
-      const slotStartTime = `${serviceDate}T${slot}:00`;
-      const slotEndTime = buildEndTime(serviceDate, slot, Number(durationMinutes) || 90);
-
-      if (!slotEndTime) return true; // Include if can't compute end time
-
-      return !detectOrderConflict(
-        new Date(slotStartTime).toISOString(),
-        slotEndTime,
-        orders
-      );
-    });
-  }, [availableTimeSlots, serviceDate, durationMinutes, orders]);
+  // 工作时段内每个档的占用状态（占用的显示为"已预约"）
+  const slotStatuses = useMemo(
+    () =>
+      availableTimeSlots.map((slot) => {
+        const slotMs = new Date(`${serviceDate}T${slot}:00`).getTime();
+        return {
+          slot,
+          occupied: occupiedRanges.some((r) => slotMs >= r.start && slotMs < r.end),
+        };
+      }),
+    [availableTimeSlots, serviceDate, occupiedRanges],
+  );
 
   // Submit handler
   const handleSubmit = async () => {
@@ -383,25 +382,31 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
             </div>
 
             {/* Date Hint */}
-            {dateHint && <p className="text-xs text-orange-600 mb-2">{dateHint}</p>}
+            {/* 图例 */}
+            <p className="mb-2 text-xs text-gray-400">灰色日期为休息日，不可预约</p>
 
             {/* Time Slots */}
             {serviceDate && (
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-2">选择时间</h4>
-                {nonConflictingSlots.length > 0 ? (
+                {slotStatuses.length > 0 ? (
                   <div className="grid grid-cols-3 gap-2">
-                    {nonConflictingSlots.map((slot) => (
+                    {slotStatuses.map(({ slot, occupied }) => (
                       <button
                         key={slot}
-                        onClick={() => setStartClock(slot)}
-                        className={`h-10 rounded-lg text-sm font-medium transition-colors ${
-                          startClock === slot
+                        type="button"
+                        disabled={occupied}
+                        onClick={() => !occupied && setStartClock(slot)}
+                        className={`flex h-10 flex-col items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                          occupied
+                            ? 'cursor-not-allowed bg-gray-100 text-gray-400'
+                            : startClock === slot
                             ? 'bg-[#FF5A66] text-white'
                             : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 active:bg-gray-100'
                         }`}
                       >
-                        {slot}
+                        <span className={occupied ? 'text-xs leading-none line-through' : ''}>{slot}</span>
+                        {occupied && <span className="mt-0.5 text-[10px] leading-none">已预约</span>}
                       </button>
                     ))}
                   </div>
