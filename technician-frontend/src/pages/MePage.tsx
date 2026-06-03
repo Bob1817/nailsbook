@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/feedback/ToastProvider';
@@ -8,103 +8,87 @@ import { ordersService } from '../services/orders';
 import { customersService } from '../services/customers';
 import { uploadService } from '../services/upload';
 import { buildDashboardSummary, formatMoney, type TechnicianOrder, type TechnicianCustomerSummary } from '../services/technicianData';
-import type { ServiceTypeSettings, DaySchedule, ServiceSchedule } from '../contexts/authTypes';
+import type { ServiceTypeSettings, ServiceSchedule, WorkTimeScheme } from '../contexts/authTypes';
+import { normalizeSchedule, daysSummary, genId } from '../utils/workSchedule';
+import { SchemeEditorModal } from '../components/SchemeEditorModal';
+import { RestDayCalendar } from '../components/RestDayCalendar';
 
-const DAY_LABELS: Record<string, string> = {
-  mon: '周一', tue: '周二', wed: '周三', thu: '周四',
-  fri: '周五', sat: '周六', sun: '周日',
-};
-const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
-  const h = Math.floor(i / 2);
-  const m = i % 2 === 0 ? '00' : '30';
-  return `${String(h).padStart(2, '0')}:${m}`;
-});
-
-function buildDefaultSchedule(): ServiceSchedule {
-  const days: Record<string, DaySchedule> = {};
-  for (const key of DAY_KEYS) {
-    days[key] = { enabled: true, startTime: '10:00', endTime: '21:00' };
-  }
-  return { days, selectedDates: [] };
-}
-
-function mergeSchedule(saved: ServiceSchedule | null | undefined): ServiceSchedule {
-  const defaults = buildDefaultSchedule();
-  if (!saved?.days) return defaults;
-  const merged: Record<string, DaySchedule> = {};
-  for (const key of DAY_KEYS) {
-    merged[key] = saved.days[key] ?? defaults.days[key];
-  }
-  return { days: merged, selectedDates: saved.selectedDates ?? [] };
-}
 
 interface WorkScheduleModalProps {
   onClose: () => void;
-  technician: any;
-  updateTechnicianProfile: (profile: any) => Promise<any>;
-  toast: any;
+  technician: { serviceSchedule?: ServiceSchedule | null } | null;
+  updateTechnicianProfile: (profile: { serviceSchedule: ServiceSchedule }) => Promise<void>;
+  toast: { success: (message: string) => void; error: (message: string) => void };
 }
 
 const WorkScheduleModal: React.FC<WorkScheduleModalProps> = ({ onClose, technician, updateTechnicianProfile, toast }) => {
-  const [schedule, setSchedule] = useState<ServiceSchedule>(() => mergeSchedule(technician?.serviceSchedule));
+  const [schedule, setSchedule] = useState<ServiceSchedule>(() => normalizeSchedule(technician?.serviceSchedule));
   const [saving, setSaving] = useState(false);
-  const [calendarMonth, setCalendarMonth] = useState(() => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), 1);
-  });
+  const [editingScheme, setEditingScheme] = useState<WorkTimeScheme | null>(null);
+  const [showRestDayCalendar, setShowRestDayCalendar] = useState(false);
 
-  const toggleDay = useCallback((key: string) => {
+  const handleAddScheme = () => {
+    const newScheme: WorkTimeScheme = {
+      id: genId(),
+      label: `方案${(schedule.schemes?.length || 0) + 1}`,
+      startTime: '10:00',
+      endTime: '21:00',
+      days: [],
+    };
     setSchedule((prev) => ({
       ...prev,
-      days: { ...prev.days, [key]: { ...prev.days[key], enabled: !prev.days[key].enabled } },
+      schemes: [...(prev.schemes || []), newScheme],
     }));
-  }, []);
-
-  const updateTime = useCallback((key: string, field: 'startTime' | 'endTime', value: string) => {
-    setSchedule((prev) => ({
-      ...prev,
-      days: { ...prev.days, [key]: { ...prev.days[key], [field]: value } },
-    }));
-  }, []);
-
-  const toggleDate = useCallback((dateStr: string) => {
-    setSchedule((prev) => {
-      const dates = prev.selectedDates || [];
-      const idx = dates.indexOf(dateStr);
-      return {
-        ...prev,
-        selectedDates: idx >= 0 ? dates.filter((d) => d !== dateStr) : [...dates, dateStr],
-      };
-    });
-  }, []);
-
-  const getCalendarDays = () => {
-    const year = calendarMonth.getFullYear();
-    const month = calendarMonth.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startOffset = (firstDay.getDay() + 6) % 7; // Monday = 0
-    const days: { date: Date; dateStr: string; isCurrentMonth: boolean }[] = [];
-    for (let i = startOffset - 1; i >= 0; i--) {
-      const d = new Date(year, month, -i);
-      days.push({ date: d, dateStr: formatDateStr(d), isCurrentMonth: false });
-    }
-    for (let i = 1; i <= lastDay.getDate(); i++) {
-      const d = new Date(year, month, i);
-      days.push({ date: d, dateStr: formatDateStr(d), isCurrentMonth: true });
-    }
-    const remaining = 42 - days.length;
-    for (let i = 1; i <= remaining; i++) {
-      const d = new Date(year, month + 1, i);
-      days.push({ date: d, dateStr: formatDateStr(d), isCurrentMonth: false });
-    }
-    return days;
+    setEditingScheme(newScheme);
   };
 
-  function formatDateStr(d: Date): string {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  }
+  const handleSetActive = (schemeId: string) => {
+    setSchedule((prev) => ({
+      ...prev,
+      activeSchemeId: schemeId,
+    }));
+  };
+
+  const handleSaveScheme = (updatedScheme: WorkTimeScheme) => {
+    setSchedule((prev) => ({
+      ...prev,
+      schemes: (prev.schemes || []).map((s) =>
+        s.id === updatedScheme.id ? updatedScheme : s
+      ),
+    }));
+    setEditingScheme(null);
+  };
+
+  const handleDeleteScheme = () => {
+    if (!editingScheme) return;
+
+    const newSchemes = (schedule.schemes || []).filter((s) => s.id !== editingScheme.id);
+    const newActiveId = editingScheme.id === schedule.activeSchemeId
+      ? (newSchemes[0]?.id || null)
+      : schedule.activeSchemeId;
+
+    setSchedule((prev) => ({
+      ...prev,
+      schemes: newSchemes,
+      activeSchemeId: newActiveId,
+    }));
+    setEditingScheme(null);
+  };
+
+  const handleRestDayConfirm = (dates: string[]) => {
+    setSchedule((prev) => ({
+      ...prev,
+      restDays: dates,
+    }));
+    setShowRestDayCalendar(false);
+  };
+
+  const removeRestDay = (date: string) => {
+    setSchedule((prev) => ({
+      ...prev,
+      restDays: (prev.restDays || []).filter((d) => d !== date),
+    }));
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -113,14 +97,11 @@ const WorkScheduleModal: React.FC<WorkScheduleModalProps> = ({ onClose, technici
       toast.success('工作时间已保存');
       onClose();
     } catch {
-      toast.error('保存失败');
+      toast.error('保存失败，请重试');
     } finally {
       setSaving(false);
     }
   };
-
-  const calendarDays = getCalendarDays();
-  const todayStr = formatDateStr(new Date());
 
   return (
     <div className="fixed inset-0 z-[300] flex items-end justify-center bg-black/50" onClick={onClose}>
@@ -138,127 +119,137 @@ const WorkScheduleModal: React.FC<WorkScheduleModalProps> = ({ onClose, technici
           </button>
         </div>
 
-        {/* Part 1: Daily work time */}
-        <div className="px-5 pt-4 pb-2">
-          <h3 className="mb-3 text-sm font-semibold text-gray-900">每日工作时间段</h3>
-          <div className="space-y-2.5">
-            {DAY_KEYS.map((key) => {
-              const day = schedule.days[key];
+        {/* Content */}
+        <div className="px-5 pt-5 space-y-4">
+          {/* Add Scheme Button */}
+          <button
+            type="button"
+            onClick={handleAddScheme}
+            className="w-full min-h-[48px] rounded-[16px] bg-[#f7f3f5] text-[14px] font-semibold text-[#6d6570] active:bg-[#ece8eb] flex items-center justify-center gap-2"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            新增方案
+          </button>
+
+          {/* Schemes List */}
+          <Card className="p-0 overflow-hidden shadow-[0_12px_28px_rgba(36,27,41,0.05)]">
+            {(schedule.schemes || []).map((scheme, index) => {
+              const isActive = scheme.id === schedule.activeSchemeId;
               return (
-                <div key={key} className="flex items-center gap-3 rounded-xl bg-gray-50 px-3 py-2.5">
+                <div
+                  key={scheme.id}
+                  className={`${index < (schedule.schemes?.length || 0) - 1 ? 'border-b border-gray-50' : ''}`}
+                >
                   <button
-                    onClick={() => toggleDay(key)}
-                    className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold ${
-                      day.enabled ? 'bg-pink-500 text-white' : 'bg-gray-200 text-gray-400'
-                    }`}
+                    type="button"
+                    onClick={() => setEditingScheme(scheme)}
+                    className="w-full px-4 py-3.5 text-left hover:bg-gray-50 active:bg-gray-100"
                   >
-                    {DAY_LABELS[key].charAt(1)}
-                  </button>
-                  <span className={`w-10 text-sm ${day.enabled ? 'text-gray-700' : 'text-gray-400'}`}>
-                    {DAY_LABELS[key]}
-                  </span>
-                  {day.enabled ? (
-                    <div className="flex flex-1 items-center gap-1.5">
-                      <select
-                        value={day.startTime}
-                        onChange={(e) => updateTime(key, 'startTime', e.target.value)}
-                        className="flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-700"
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3">
+                          <span className="text-[15px] font-semibold text-[#1f2230]">
+                            {scheme.label}
+                          </span>
+                          {isActive && (
+                            <span className="rounded-full bg-[#EEF9F1] px-2 py-0.5 text-[10px] font-semibold text-[#31B46C]">
+                              当前
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1 text-[13px] text-[#7f7681]">
+                          {scheme.startTime}–{scheme.endTime} · {daysSummary(scheme.days)}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSetActive(scheme.id);
+                        }}
+                        className={`relative h-7 w-12 rounded-full transition-colors ${
+                          isActive ? 'bg-[#31B46C]' : 'bg-[#ddd8de]'
+                        }`}
                       >
-                        {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                      <span className="text-xs text-gray-400">至</span>
-                      <select
-                        value={day.endTime}
-                        onChange={(e) => updateTime(key, 'endTime', e.target.value)}
-                        className="flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-700"
-                      >
-                        {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
-                      </select>
+                        <span
+                          className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${
+                            isActive ? 'left-[calc(100%-1.625rem)]' : 'left-0.5'
+                          }`}
+                        />
+                      </button>
                     </div>
-                  ) : (
-                    <span className="flex-1 text-center text-sm text-gray-400">休息</span>
-                  )}
+                  </button>
                 </div>
               );
             })}
-          </div>
-        </div>
+          </Card>
 
-        {/* Part 2: Calendar date selection */}
-        <div className="px-5 pt-4 pb-2">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900">选择可接单日期</h3>
-            <div className="flex items-center gap-2">
+          {/* Rest Days Section */}
+          <Card className="p-4 shadow-[0_12px_28px_rgba(36,27,41,0.05)]">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[15px] font-semibold text-[#1f2230]">休息日设置</h3>
               <button
-                onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))}
-                className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 active:bg-gray-200"
+                type="button"
+                onClick={() => setShowRestDayCalendar(true)}
+                className="text-[13px] font-medium text-[#FF5E93] hover:text-[#e54e82] active:text-[#d1457a]"
               >
-                <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <span className="text-sm font-medium text-gray-700">
-                {calendarMonth.getFullYear()}年{calendarMonth.getMonth() + 1}月
-              </span>
-              <button
-                onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))}
-                className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 active:bg-gray-200"
-              >
-                <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                设置休息日
               </button>
             </div>
-          </div>
-          {/* Weekday headers */}
-          <div className="mb-1 grid grid-cols-7 gap-1 text-center">
-            {['一', '二', '三', '四', '五', '六', '日'].map((d) => (
-              <span key={d} className="text-[11px] font-medium text-gray-400">{d}</span>
-            ))}
-          </div>
-          {/* Calendar grid */}
-          <div className="grid grid-cols-7 gap-1">
-            {calendarDays.map(({ date, dateStr, isCurrentMonth }) => {
-              const isSelected = schedule.selectedDates?.includes(dateStr);
-              const isPast = dateStr < todayStr;
-              return (
-                <button
-                  key={dateStr}
-                  onClick={() => !isPast && toggleDate(dateStr)}
-                  disabled={isPast}
-                  className={`relative flex h-9 items-center justify-center rounded-lg text-sm transition-colors ${
-                    !isCurrentMonth
-                      ? 'text-gray-300'
-                      : isPast
-                        ? 'text-gray-300 cursor-not-allowed'
-                        : isSelected
-                          ? 'bg-pink-500 text-white font-semibold'
-                          : 'text-gray-700 active:bg-gray-100'
-                  }`}
-                >
-                  {date.getDate()}
-                  {isSelected && (
-                    <svg className="absolute right-0.5 top-0.5 h-3 w-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          <p className="mt-2 text-[11px] text-gray-400">选中日期为可接单日，未选中日期为休息日</p>
-        </div>
 
-        {/* Save button */}
-        <div className="sticky bottom-0 border-t border-gray-100 bg-white px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            {(schedule.restDays?.length || 0) > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {schedule.restDays!.map((date) => (
+                  <span
+                    key={date}
+                    className="inline-flex items-center gap-1 rounded-full bg-[#f2f0f3] px-2.5 py-1 text-[11px] font-medium text-[#8d8590]"
+                  >
+                    {date}
+                    <button
+                      type="button"
+                      onClick={() => removeRestDay(date)}
+                      className="ml-1 text-[#b0aab4] hover:text-[#8d8590]"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[13px] text-[#7f7681]">暂无设置休息日</p>
+            )}
+          </Card>
+
+          {/* Save Button */}
           <button
-            onClick={handleSave}
+            type="button"
             disabled={saving}
-            className="w-full rounded-[16px] bg-pink-500 py-3 text-[15px] font-semibold text-white active:bg-pink-600 disabled:opacity-50"
+            onClick={handleSave}
+            className="w-full min-h-[52px] rounded-[18px] bg-[#FF5E93] text-[15px] font-semibold text-white shadow-[0_8px_20px_rgba(255,94,147,0.25)] active:bg-[#e54e82] disabled:opacity-60 mb-5"
           >
-            {saving ? '保存中...' : '保存设置'}
+            {saving ? '保存中...' : '保存工作时间'}
           </button>
         </div>
+
+        {/* Nested Modals */}
+        {editingScheme && (
+          <SchemeEditorModal
+            open={!!editingScheme}
+            scheme={editingScheme}
+            onSave={handleSaveScheme}
+            onDelete={handleDeleteScheme}
+            onClose={() => setEditingScheme(null)}
+          />
+        )}
+
+        <RestDayCalendar
+          open={showRestDayCalendar}
+          value={schedule.restDays || []}
+          onConfirm={handleRestDayConfirm}
+          onClose={() => setShowRestDayCalendar(false)}
+        />
       </div>
     </div>
   );
@@ -268,7 +259,6 @@ const tools = [
   { icon: '💅', label: '服务管理', path: '/services' },
   { icon: '💰', label: '价格设置' },
   { icon: '🚗', label: '上门设置', path: '/home-service-settings' },
-  { icon: '⏰', label: '服务时间', path: '/service-time' },
   { icon: '🏪', label: '店铺管理', path: '/shops' },
   { icon: '🖼️', label: '作品管理', path: '/works' },
   { icon: '🏷️', label: '标签管理', path: '/tag-management' },

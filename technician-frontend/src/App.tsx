@@ -53,10 +53,6 @@ const SubscriptionPage = lazy(async () => {
   const module = await import('./pages/SubscriptionPage');
   return { default: module.SubscriptionPage };
 });
-const ServiceTimePage = lazy(async () => {
-  const module = await import('./pages/ServiceTimePage');
-  return { default: module.ServiceTimePage };
-});
 const TagManagementPage = lazy(async () => {
   const module = await import('./pages/TagManagementPage');
   return { default: module.TagManagementPage };
@@ -112,7 +108,6 @@ function App() {
                   <Route path="/home-service-settings" element={<HomeServiceSettingsPage />} />
                   <Route path="/profile-settings" element={<ProfileSettingsPage />} />
                   <Route path="/subscription" element={<SubscriptionPage />} />
-                  <Route path="/service-time" element={<ServiceTimePage />} />
                   <Route path="/tag-management" element={<TagManagementPage />} />
                   <Route path="/orders/:id" element={<OrderDetailPage />} />
                   <Route path="/account-security" element={<AccountSecurityPage />} />

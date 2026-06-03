@@ -88,9 +88,21 @@ export interface DaySchedule {
   endTime: string;
 }
 
+export interface WorkTimeScheme {
+  id: string;
+  label: string;
+  startTime: string; // "10:00"
+  endTime: string;   // "21:00"
+  days: string[];    // subset of ['mon','tue','wed','thu','fri','sat','sun']
+}
+
 export interface ServiceSchedule {
-  days: Record<string, DaySchedule>;
-  selectedDates?: string[]; // ISO date strings like "2024-01-15"
+  schemes?: WorkTimeScheme[];
+  activeSchemeId?: string | null;
+  restDays?: string[]; // 'YYYY-MM-DD'
+  // legacy (read-only compat):
+  days?: Record<string, DaySchedule>;
+  selectedDates?: string[];
 }
 
 export interface CustomTag {
