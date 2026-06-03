@@ -143,6 +143,7 @@ describe('ClientHomeService', () => {
       include: {
         likes: true,
         comments: true,
+        favorites: true,
         technician: {
           select: { name: true, id: true },
         },
@@ -161,6 +162,7 @@ describe('ClientHomeService', () => {
         tags: ['short', 'glitter'],
         likeCount: 0,
         commentCount: 0,
+        favoriteCount: 0,
         technicianName: '美甲师',
         technicianId: 7,
         createdAt: new Date('2026-04-02T00:00:00.000Z'),

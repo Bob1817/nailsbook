@@ -36,17 +36,41 @@ export class ClientHomeController {
     return this.clientHomeService.getHome(request.user.clientUserId);
   }
 
+  @Get('featured-works')
+  @ApiOperation({ summary: '获取已绑定美甲师的推荐作品（分页，首页最新动态用）' })
+  @ApiResponse({ status: 200, description: '返回 { works, hasMore }' })
+  @ApiQuery({ name: 'page', type: Number, required: false })
+  @ApiQuery({ name: 'limit', type: Number, required: false })
+  getFeaturedWorks(
+    @Req() request: { user: { clientUserId: number } },
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.clientHomeService.getFeaturedWorks(
+      request.user.clientUserId,
+      page ? parseInt(page, 10) : 1,
+      limit ? parseInt(limit, 10) : 10,
+    );
+  }
+
   @Get('works')
   @ApiOperation({ summary: '获取作品列表' })
   @ApiResponse({ status: 200, description: '返回作品列表' })
   @ApiQuery({ name: 'techId', type: Number, required: false, description: '指定美甲师ID（需已绑定）' })
+  @ApiQuery({ name: 'sortBy', required: false, description: 'latest|likes|comments|favorites' })
   getWorks(
     @Req() request: { user: { clientUserId: number } },
     @Query('techId') techId?: string,
+    @Query('sortBy') sortBy?: string,
   ) {
+    const allowed = ['latest', 'likes', 'comments', 'favorites'] as const;
+    const sort = (allowed as readonly string[]).includes(sortBy ?? '')
+      ? (sortBy as (typeof allowed)[number])
+      : 'latest';
     return this.clientHomeService.getWorks(
       request.user.clientUserId,
       techId ? parseInt(techId, 10) : undefined,
+      sort,
     );
   }
 

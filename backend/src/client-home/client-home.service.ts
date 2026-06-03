@@ -59,7 +59,11 @@ export class ClientHomeService {
     };
   }
 
-  async getWorks(clientUserId: number, techId?: number) {
+  async getWorks(
+    clientUserId: number,
+    techId?: number,
+    sortBy: 'latest' | 'likes' | 'comments' | 'favorites' = 'latest',
+  ) {
     let targetTechId: number;
     if (techId) {
       // 校验客户与该美甲师存在有效绑定，再返回其作品
@@ -78,14 +82,11 @@ export class ClientHomeService {
         techId: targetTechId,
         isVisible: true,
       },
-      orderBy: [
-        { isPinned: 'desc' },
-        { sortOrder: 'asc' },
-        { createdAt: 'desc' },
-      ],
+      orderBy: this.buildWorksOrderBy(sortBy),
       include: {
         likes: true,
         comments: true,
+        favorites: true,
         technician: {
           select: { name: true, id: true },
         },
@@ -96,6 +97,66 @@ export class ClientHomeService {
       ...this.mapWork(work),
       technicianId: work.techId,
     }));
+  }
+
+  private buildWorksOrderBy(
+    sortBy: 'latest' | 'likes' | 'comments' | 'favorites',
+  ): any[] {
+    switch (sortBy) {
+      case 'likes':
+        return [{ likes: { _count: 'desc' } }, { createdAt: 'desc' }];
+      case 'comments':
+        return [{ comments: { _count: 'desc' } }, { createdAt: 'desc' }];
+      case 'favorites':
+        return [{ favorites: { _count: 'desc' } }, { createdAt: 'desc' }];
+      default:
+        // 最新：置顶优先，再按排序值与发布时间
+        return [{ isPinned: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'desc' }];
+    }
+  }
+
+  // 首页"最新动态"：所有已绑定美甲师的推荐作品，分页（无限上拉）
+  async getFeaturedWorks(clientUserId: number, page = 1, limit = 10) {
+    const boundTechIds = (
+      await this.prisma.clientTechBinding.findMany({
+        where: { clientId: clientUserId, status: 'active' },
+        select: { techId: true },
+      })
+    ).map((b) => b.techId);
+
+    if (boundTechIds.length === 0) {
+      return { works: [], hasMore: false };
+    }
+
+    const where = {
+      techId: { in: boundTechIds },
+      isVisible: true,
+      isFeatured: true,
+    };
+
+    const [works, total] = await Promise.all([
+      this.prisma.nailWork.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' }],
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          likes: true,
+          comments: true,
+          favorites: true,
+          technician: { select: { name: true, id: true } },
+        },
+      }),
+      this.prisma.nailWork.count({ where }),
+    ]);
+
+    return {
+      works: works.map((work) => ({
+        ...this.mapWork(work),
+        technicianId: work.techId,
+      })),
+      hasMore: page * limit < total,
+    };
   }
 
   async getFavorites(clientUserId: number) {
@@ -254,6 +315,7 @@ export class ClientHomeService {
     updatedAt: Date;
     likes?: { id: number }[];
     comments?: { id: number }[];
+    favorites?: { id: number }[];
     technician?: { name: string | null; id?: number };
     techId?: number;
   }) {
@@ -282,6 +344,7 @@ export class ClientHomeService {
       tags: this.parseTags(work.tags ?? null),
       likeCount: work.likes?.length ?? 0,
       commentCount: work.comments?.length ?? 0,
+      favoriteCount: work.favorites?.length ?? 0,
       technicianName: work.technician?.name ?? '美甲师',
       technicianId: technicianId,
       createdAt: work.createdAt,
