@@ -141,11 +141,24 @@ const CreateOrder: React.FC = () => {
     });
   }, [isShopService, selectedShopAddress, selectedShopHours]);
 
-  // Filter time slots based on blocked slots
-  const availableTimeSlots = useMemo(() => {
-    const baseSlots = isShopService ? shopAvailableTimeSlots : timeSlots;
-    if (blockedSlots.length === 0) return baseSlots;
+  const scheduleRange = useMemo(() => {
+    const sched = selectedTechnician?.serviceSchedule;
+    if (!sched || !Array.isArray(sched.schemes)) return null;
+    const active = sched.schemes.find((s) => s.id === sched.activeSchemeId);
+    return active ? { start: active.startTime, end: active.endTime } : null;
+  }, [selectedTechnician]);
 
+  const availableTimeSlots = useMemo(() => {
+    let baseSlots = isShopService ? shopAvailableTimeSlots : timeSlots;
+    if (scheduleRange) {
+      const s = timeToMinutes(scheduleRange.start);
+      const e = timeToMinutes(scheduleRange.end);
+      baseSlots = baseSlots.filter((slot) => {
+        const m = timeToMinutes(slot);
+        return m >= s && m < e;
+      });
+    }
+    if (blockedSlots.length === 0) return baseSlots;
     return baseSlots.filter((slot) => {
       const slotDateTime = new Date(`${formData.serviceDate}T${slot}:00`);
       return !blockedSlots.some((blocked) => {
@@ -154,23 +167,25 @@ const CreateOrder: React.FC = () => {
         return slotDateTime >= blockStart && slotDateTime < blockEnd;
       });
     });
-  }, [isShopService, shopAvailableTimeSlots, blockedSlots, formData.serviceDate]);
+  }, [isShopService, shopAvailableTimeSlots, blockedSlots, formData.serviceDate, scheduleRange]);
 
-  // Check if a date is available based on technician's schedule
   const isDateAvailable = useCallback((dateStr: string) => {
-    if (!selectedTechnician?.serviceSchedule) return true;
-    const { selectedDates, days } = selectedTechnician.serviceSchedule;
-    
-    // If selectedDates is set, only those dates are available
-    if (selectedDates && selectedDates.length > 0) {
-      return selectedDates.includes(dateStr);
-    }
-    
-    // Otherwise, check by day of week
+    const sched = selectedTechnician?.serviceSchedule;
+    if (!sched) return true;
     const weekday = new Date(`${dateStr}T00:00:00`).getDay();
-    const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-    const dayKey = dayKeys[weekday];
-    return days[dayKey]?.enabled ?? true;
+    const dayKey = ['sun','mon','tue','wed','thu','fri','sat'][weekday];
+
+    // New format: schemes + activeSchemeId + restDays
+    if (Array.isArray(sched.schemes)) {
+      if (sched.restDays?.includes(dateStr)) return false;
+      const active = sched.schemes.find((s) => s.id === sched.activeSchemeId);
+      if (!active) return false;
+      return active.days.includes(dayKey);
+    }
+
+    // Legacy format
+    if (sched.selectedDates && sched.selectedDates.length > 0) return sched.selectedDates.includes(dateStr);
+    return sched.days?.[dayKey]?.enabled ?? true;
   }, [selectedTechnician]);
 
   const activeServiceItems = useMemo(

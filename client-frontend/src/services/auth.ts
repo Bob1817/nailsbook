@@ -44,8 +44,20 @@ export interface DaySchedule {
   endTime: string;
 }
 
+export interface WorkTimeScheme {
+  id: string;
+  label: string;
+  startTime: string;
+  endTime: string;
+  days: string[];
+}
+
 export interface ServiceSchedule {
-  days: Record<string, DaySchedule>;
+  schemes?: WorkTimeScheme[];
+  activeSchemeId?: string | null;
+  restDays?: string[];
+  // legacy:
+  days?: Record<string, DaySchedule>;
   selectedDates?: string[];
 }
 
