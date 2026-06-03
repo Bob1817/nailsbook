@@ -347,11 +347,6 @@ export const CustomersPage: React.FC = () => {
                           <p className="mt-1 text-xs font-medium text-gray-700">{customer.totalOrders} 次</p>
                         </div>
                       </div>
-
-                      <div className="mt-3 flex flex-col gap-1 text-xs text-gray-400 min-[391px]:flex-row min-[391px]:items-center min-[391px]:justify-between min-[391px]:gap-3">
-                        <span className="break-words">{customer.address}</span>
-                        <span className="shrink-0">{customer.totalOrders} 次服务</span>
-                      </div>
                     </div>
                   </div>
                 </Card>
