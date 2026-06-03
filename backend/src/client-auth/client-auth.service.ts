@@ -265,6 +265,7 @@ export class ClientAuthService {
           ? JSON.parse(b.technician.shopAddresses)
           : [],
         serviceItems: this.parseServiceItems(b.technician.serviceItems),
+        serviceSchedule: this.parseServiceSchedule(b.technician.serviceSchedule),
         isDefault: b.isDefault,
         bindSource: b.bindSource,
       })),
@@ -338,6 +339,7 @@ export class ClientAuthService {
           ? JSON.parse(b.technician.shopAddresses)
           : [],
         serviceItems: this.parseServiceItems(b.technician.serviceItems),
+        serviceSchedule: this.parseServiceSchedule(b.technician.serviceSchedule),
         isDefault: b.isDefault,
         bindSource: b.bindSource,
         bindId: b.id,
@@ -689,5 +691,15 @@ export class ClientAuthService {
     return serviceItems
       ? JSON.parse(serviceItems)
       : ClientAuthService.DEFAULT_SERVICE_ITEMS;
+  }
+
+  // 解析技师工作时间方案（供客户端预约日历联动休息日/工作时段）
+  private parseServiceSchedule(serviceSchedule: string | null) {
+    if (!serviceSchedule) return null;
+    try {
+      return JSON.parse(serviceSchedule);
+    } catch {
+      return null;
+    }
   }
 }
