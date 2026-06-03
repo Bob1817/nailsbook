@@ -297,14 +297,14 @@ export const HomePage: React.FC = () => {
   const activePendingItems = pendingItems.filter((item) => item.count > 0);
   const featuredWorks = useMemo(
     () =>
-      [...works]
+      works
+        .filter((w) => w.isFeatured)
         .sort((left, right) => {
           const leftScore = (left.viewCount || 0) + left.likeCount + left.favoriteCount + left.commentCount;
           const rightScore = (right.viewCount || 0) + right.likeCount + right.favoriteCount + right.commentCount;
           if (rightScore !== leftScore) return rightScore - leftScore;
           return (parseDate(right.createdAt)?.getTime() ?? 0) - (parseDate(left.createdAt)?.getTime() ?? 0);
-        })
-        .slice(0, 4),
+        }),
     [works]
   );
   const hasUnreadWorkActivity = works.some(
