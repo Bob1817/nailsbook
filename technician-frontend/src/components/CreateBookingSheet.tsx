@@ -304,8 +304,9 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/30">
-      <div className="absolute bottom-0 left-0 right-0 rounded-t-3xl bg-white px-5 pb-8 pt-5 max-h-[90vh] overflow-y-auto">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="absolute bottom-0 left-0 right-0 flex max-h-[90vh] flex-col rounded-t-3xl bg-white">
+        {/* 固定标题栏（不随内容滚动） */}
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 pb-3 pt-5">
           <div>
             <h2 className="text-lg font-bold text-gray-900">新建预约</h2>
             <p className="text-xs text-gray-400">创建后会直接写入系统并同步到行程、首页和客户记录</p>
@@ -318,7 +319,8 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
           </button>
         </div>
 
-        <div className="space-y-3">
+        {/* 滚动内容区 */}
+        <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
           {/* Customer Selection */}
           <select
             value={selectedCustomerId}
@@ -449,10 +451,11 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
             className="min-h-[96px] w-full rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
           />
 
-          {/* Error */}
-          {formError && <p className="text-sm text-red-500">{formError}</p>}
+        </div>
 
-          {/* Submit */}
+        {/* 固定底部：创建按钮（不随内容滚动） */}
+        <div className="shrink-0 border-t border-gray-100 px-5 pb-8 pt-3">
+          {formError && <p className="mb-2 text-sm text-red-500">{formError}</p>}
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
