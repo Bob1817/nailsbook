@@ -46,6 +46,14 @@ export class CustomersService {
               phone: true,
             },
           },
+          _count: { select: { orders: true } },
+          // 最近一笔有地址的订单，用于地址回退
+          orders: {
+            where: { address: { not: null } },
+            orderBy: { startTime: 'desc' },
+            take: 1,
+            select: { address: true },
+          },
         },
         orderBy: {
           createdAt: 'desc',
@@ -55,7 +63,12 @@ export class CustomersService {
     ]);
 
     return {
-      data: customers,
+      data: customers.map((customer) => ({
+        ...customer,
+        // 地址回退：客户地址 → 最近订单地址
+        address: customer.address || customer.orders[0]?.address || null,
+        orderCount: customer._count.orders,
+      })),
       meta: {
         total,
         page,
@@ -84,6 +97,9 @@ export class CustomersService {
             status: true,
             createdAt: true,
             isDepositPaid: true,
+            address: true,
+            customTitle: true,
+            quotePrice: true,
           },
           orderBy: { startTime: 'desc' },
         },
@@ -103,7 +119,14 @@ export class CustomersService {
       throw new NotFoundException('Customer not found');
     }
 
-    return customer;
+    return {
+      ...customer,
+      // 地址回退：客户地址 → 最近一笔有地址的订单
+      address:
+        customer.address ||
+        customer.orders.find((order) => order.address)?.address ||
+        null,
+    };
   }
 
   async findOneForTechnician(id: number, technicianId: number) {

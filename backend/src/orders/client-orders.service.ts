@@ -107,7 +107,7 @@ export class ClientOrdersService {
             clientUserId,
           },
         },
-        update: {},
+        update: orderAddress ? { address: orderAddress } : {},
         create: {
           technicianId: dto.techId,
           clientUserId,
@@ -308,7 +308,7 @@ export class ClientOrdersService {
             clientUserId,
           },
         },
-        update: {},
+        update: orderAddress ? { address: orderAddress } : {},
         create: {
           technicianId: dto.techId,
           clientUserId,
