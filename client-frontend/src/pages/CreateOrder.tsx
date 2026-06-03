@@ -96,6 +96,10 @@ const CreateOrder: React.FC = () => {
   const [showWorkSelector, setShowWorkSelector] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [blockedSlots, setBlockedSlots] = useState<{ startTime: string; endTime: string }[]>([]);
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedTechnician = useMemo(
@@ -168,6 +172,26 @@ const CreateOrder: React.FC = () => {
       });
     });
   }, [isShopService, shopAvailableTimeSlots, blockedSlots, formData.serviceDate, scheduleRange]);
+
+  // 工作时段内每个档的占用状态（占用=blockedSlots 覆盖，显示"已预约"）
+  const slotStatuses = useMemo(() => {
+    let baseSlots = isShopService ? shopAvailableTimeSlots : timeSlots;
+    if (scheduleRange) {
+      const s = timeToMinutes(scheduleRange.start);
+      const e = timeToMinutes(scheduleRange.end);
+      baseSlots = baseSlots.filter((slot) => {
+        const m = timeToMinutes(slot);
+        return m >= s && m < e;
+      });
+    }
+    return baseSlots.map((time) => {
+      const slotDateTime = new Date(`${formData.serviceDate}T${time}:00`);
+      const occupied = blockedSlots.some(
+        (b) => slotDateTime >= new Date(b.startTime) && slotDateTime < new Date(b.endTime),
+      );
+      return { time, occupied };
+    });
+  }, [isShopService, shopAvailableTimeSlots, scheduleRange, blockedSlots, formData.serviceDate]);
 
   const isDateAvailable = useCallback((dateStr: string) => {
     const sched = selectedTechnician?.serviceSchedule;
@@ -1012,19 +1036,70 @@ const CreateOrder: React.FC = () => {
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">确认服务方式后，选择你方便的预约时间段</p>
           </div>
             <div className="space-y-4">
-              <input
-                type="date"
-              value={formData.serviceDate}
-              min={dayjs().format('YYYY-MM-DD')}
-              onChange={(e) => {
-                const newDate = e.target.value;
-                if (!isDateAvailable(newDate)) {
-                  return; // Don't allow selecting unavailable dates
-                }
-                setFormData((prev) => ({ ...prev, serviceDate: newDate }));
-              }}
-                className="w-full rounded-2xl bg-slate-50 px-4 py-3 text-gray-900 outline-none ring-1 ring-transparent focus:ring-[#FF6B8A]/20"
-              />
+              {/* 自定义月历：休息日/非工作日置灰不可选 */}
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setCalendarMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-200"
+                  >
+                    ‹
+                  </button>
+                  <span className="text-sm font-medium text-gray-900">
+                    {calendarMonth.getFullYear()}年{calendarMonth.getMonth() + 1}月
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCalendarMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-200"
+                  >
+                    ›
+                  </button>
+                </div>
+                <div className="mb-1 grid grid-cols-7 gap-1">
+                  {['日', '一', '二', '三', '四', '五', '六'].map((w) => (
+                    <div key={w} className="flex h-6 items-center justify-center text-xs text-slate-400">
+                      {w}
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                  {(() => {
+                    const year = calendarMonth.getFullYear();
+                    const month = calendarMonth.getMonth();
+                    const firstWeekday = new Date(year, month, 1).getDay();
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    const todayStr = dayjs().format('YYYY-MM-DD');
+                    const cells: React.ReactNode[] = [];
+                    for (let i = 0; i < firstWeekday; i++) cells.push(<div key={`e${i}`} className="h-10" />);
+                    for (let day = 1; day <= daysInMonth; day++) {
+                      const dateStr = dayjs(new Date(year, month, day)).format('YYYY-MM-DD');
+                      const disabled = dateStr < todayStr || !isDateAvailable(dateStr);
+                      const selected = formData.serviceDate === dateStr;
+                      cells.push(
+                        <button
+                          key={day}
+                          type="button"
+                          disabled={disabled}
+                          onClick={() => setFormData((prev) => ({ ...prev, serviceDate: dateStr, startTime: '' }))}
+                          className={`h-10 rounded-lg text-sm font-medium transition ${
+                            disabled
+                              ? 'cursor-not-allowed text-slate-300'
+                              : selected
+                              ? 'bg-[#FF6B8A] text-white'
+                              : 'text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          {day}
+                        </button>,
+                      );
+                    }
+                    return cells;
+                  })()}
+                </div>
+                <p className="mt-2 text-xs text-slate-400">灰色日期为休息日，不可预约</p>
+              </div>
               {selectedTechnician?.serviceSchedule?.selectedDates && selectedTechnician.serviceSchedule.selectedDates.length > 0 && (
                 <div className="rounded-2xl bg-pink-50 px-4 py-3 text-sm text-pink-600">
                   该美甲师仅在特定日期接单，请选择可预约日期
@@ -1038,18 +1113,22 @@ const CreateOrder: React.FC = () => {
                 </div>
               )}
               <div className="grid max-h-44 grid-cols-4 gap-2 overflow-y-auto scrollbar-hide">
-                {availableTimeSlots.map((time) => (
+                {slotStatuses.map(({ time, occupied }) => (
                   <button
                     key={time}
                     type="button"
-                    onClick={() => setFormData((prev) => ({ ...prev, startTime: time }))}
-                    className={`rounded-2xl py-2.5 text-sm font-medium transition ${
-                      formData.startTime === time
+                    disabled={occupied}
+                    onClick={() => !occupied && setFormData((prev) => ({ ...prev, startTime: time }))}
+                    className={`flex flex-col items-center justify-center rounded-2xl py-2 text-sm font-medium transition ${
+                      occupied
+                        ? 'cursor-not-allowed bg-slate-100 text-slate-400'
+                        : formData.startTime === time
                         ? 'bg-[linear-gradient(135deg,#FF6B8A_0%,#FF8FA3_100%)] text-white shadow-lg shadow-pink-200/80'
                         : 'bg-slate-50 text-slate-600'
                     }`}
                   >
-                    {time}
+                    <span className={occupied ? 'text-xs leading-none line-through' : ''}>{time}</span>
+                    {occupied && <span className="mt-0.5 text-[10px] leading-none">已预约</span>}
                 </button>
               ))}
             </div>
