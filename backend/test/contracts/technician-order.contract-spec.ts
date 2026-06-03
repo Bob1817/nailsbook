@@ -128,6 +128,55 @@ describe('Technician operation HTTP contract', () => {
         shopService: true,
       });
     });
+
+    it('first-time set-password flow: empty password → set → auto-login', async () => {
+      // 模拟超管创建的账号：无登录密码（passwordHash 为空）
+      const phone = uniquePhone();
+      const technician = await testApp.prisma.technician.create({
+        data: {
+          name: 'Contract Tech initpwd',
+          phone,
+          status: 'active',
+          invitationCode: uniqueInviteCode('initpwd'),
+        },
+      });
+      ownedTechnicianIds.push(technician.id);
+
+      // 1. check-phone：已注册但未设置密码
+      const check1 = await request(testApp.app.getHttpServer())
+        .post('/api/technician/auth/check-phone')
+        .send({ phone })
+        .expect(201);
+      expect(check1.body).toEqual({ exists: true, activated: false });
+
+      // 2. set-initial-password：设置成功并返回 token（自动登录）
+      const setRes = await request(testApp.app.getHttpServer())
+        .post('/api/technician/auth/set-initial-password')
+        .send({ phone, newPassword: 'abcd1234' })
+        .expect(201);
+      expect(setRes.body.accessToken).toEqual(expect.any(String));
+      expect(setRes.body.technician).toMatchObject({ id: technician.id, phone });
+
+      // 3. check-phone：现在已激活
+      const check2 = await request(testApp.app.getHttpServer())
+        .post('/api/technician/auth/check-phone')
+        .send({ phone })
+        .expect(201);
+      expect(check2.body).toEqual({ exists: true, activated: true });
+
+      // 4. 再次 set-initial-password：已设置密码，拒绝
+      await request(testApp.app.getHttpServer())
+        .post('/api/technician/auth/set-initial-password')
+        .send({ phone, newPassword: 'efgh5678' })
+        .expect(400);
+
+      // 5. 用新密码可正常登录
+      const loginRes = await request(testApp.app.getHttpServer())
+        .post('/api/technician/auth/login')
+        .send({ phone, password: 'abcd1234' })
+        .expect(201);
+      expect(loginRes.body.accessToken).toEqual(expect.any(String));
+    });
   });
 
   describe('Technician Orders', () => {

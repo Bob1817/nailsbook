@@ -34,6 +34,7 @@ describe('TechniciansService', () => {
       serviceArea: 'Pudong',
     });
 
+    // 不设置默认密码：passwordHash 保持空，首次登录时引导设置
     expect(prisma.technician.create).toHaveBeenCalledWith({
       data: {
         name: 'Anna',
@@ -41,7 +42,7 @@ describe('TechniciansService', () => {
         city: 'Shanghai',
         serviceArea: 'Pudong',
         invitationCode: expect.stringMatching(/^[A-F0-9]{8}$/),
-        status: 'inactive',
+        status: 'active',
       },
     });
     expect(result.invitationCode).toMatch(/^[A-F0-9]{8}$/);

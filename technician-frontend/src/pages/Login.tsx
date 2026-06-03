@@ -7,7 +7,7 @@ import { ServiceTypeSetupModal } from '../components/ServiceTypeSetupModal';
 import loginHero from '../assets/nail-login-bg.png';
 import type { ServiceTypeSettings } from '../contexts/authTypes';
 
-type Step = 'phone' | 'login' | 'set-password' | 'register';
+type Step = 'phone' | 'login' | 'register';
 
 export const Login: React.FC = () => {
   const [step, setStep] = useState<Step>('phone');
@@ -18,6 +18,7 @@ export const Login: React.FC = () => {
   const [inviteKey, setInviteKey] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showServiceTypeModal, setShowServiceTypeModal] = useState(false);
   const { login, register, updateServiceType } = useAuth();
@@ -40,25 +41,27 @@ export const Login: React.FC = () => {
 
   const handlePhoneNext = async () => {
     setError('');
+    setPhoneError('');
+    // （1）是否为有效手机号码
     if (!/^1\d{10}$/.test(phone)) {
-      setError('请输入正确的手机号');
+      setPhoneError('请输入有效手机号码');
       return;
     }
     setLoading(true);
     try {
       const res = await authService.checkPhone(phone);
       if (!res.exists) {
-        // 未注册 → 跳转注册页
+        // （2）未注册 → 跳转注册
         setStep('register');
       } else if (!res.activated) {
-        // 已注册但未设置密码 → 显示设置密码框
-        setStep('set-password');
+        // （3）已注册但未设置登录密码 → 跳转设置密码（设置后自动登录）
+        navigate('/set-password', { state: { phone } });
       } else {
-        // 已注册且有密码 → 显示登录密码框
+        // （4）已设置登录密码 → 进入密码登录
         setStep('login');
       }
     } catch (e) {
-      setError(getErrorMessage(e, '检查失败，请重试'));
+      setPhoneError(getErrorMessage(e, '检查失败，请重试'));
     } finally {
       setLoading(false);
     }
@@ -79,7 +82,7 @@ export const Login: React.FC = () => {
     try {
       const result = await login(phone, password);
       if (result.mustChangePassword) {
-        navigate('/set-password');
+        navigate('/set-password', { state: { phone } });
         return;
       }
       const storedTechnician = localStorage.getItem('technician_info');
@@ -93,43 +96,6 @@ export const Login: React.FC = () => {
       navigate('/');
     } catch (e) {
       setError(getErrorMessage(e, '登录失败，请检查手机号和密码'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    if (!agreed) {
-      setError('请阅读并同意用户协议和隐私政策');
-      return;
-    }
-    const pwdErr = validatePassword(password);
-    if (pwdErr) {
-      setError(pwdErr);
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError('两次密码不一致');
-      return;
-    }
-    setLoading(true);
-    try {
-      await authService.setInitialPassword(phone, password);
-      // 设置密码后自动登录
-      await login(phone, password);
-      const storedTechnician = localStorage.getItem('technician_info');
-      if (storedTechnician) {
-        const technician = JSON.parse(storedTechnician);
-        if (technician.homeService === undefined && technician.shopService === undefined) {
-          setShowServiceTypeModal(true);
-          return;
-        }
-      }
-      navigate('/');
-    } catch (e) {
-      setError(getErrorMessage(e, '设置密码失败，请重试'));
     } finally {
       setLoading(false);
     }
@@ -196,13 +162,11 @@ export const Login: React.FC = () => {
             <h2 className="text-3xl font-extrabold text-[#0f1422]">
               {step === 'phone' && '欢迎使用'}
               {step === 'login' && '欢迎回来'}
-              {step === 'set-password' && '设置密码'}
               {step === 'register' && '完成注册'}
             </h2>
             <p className="mt-2 text-sm text-[#5a6475]">
               {step === 'phone' && '输入手机号开始'}
               {step === 'login' && '该手机号已注册，请输入密码登录'}
-              {step === 'set-password' && '该手机号已注册，请设置登录密码'}
               {step === 'register' && '使用邀请密钥完成账号创建'}
             </p>
           </div>
@@ -221,9 +185,16 @@ export const Login: React.FC = () => {
                 type="tel"
                 placeholder="请输入手机号"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
+                onChange={(e) => {
+                  setPhone(e.target.value.replace(/\D/g, '').slice(0, 11));
+                  if (phoneError) setPhoneError('');
+                }}
                 maxLength={11}
-                className="h-14 w-full rounded-2xl border border-[#ece8ec] bg-white px-4 text-base text-[#111] placeholder:text-[#b1b8c4] focus:outline-none focus:ring-2 focus:ring-[#ff7ea9]/30"
+                className={`h-14 w-full rounded-2xl border bg-white px-4 text-base text-[#111] placeholder:text-[#b1b8c4] focus:outline-none focus:ring-2 ${
+                  phoneError
+                    ? 'border-red-500 focus:ring-red-200'
+                    : 'border-[#ece8ec] focus:ring-[#ff7ea9]/30'
+                }`}
               />
               <button
                 onClick={handlePhoneNext}
@@ -232,6 +203,9 @@ export const Login: React.FC = () => {
               >
                 {loading ? '检查中...' : '下一步'}
               </button>
+              {phoneError && (
+                <p className="text-center text-sm font-medium text-red-600">{phoneError}</p>
+              )}
             </div>
           )}
 
@@ -272,47 +246,6 @@ export const Login: React.FC = () => {
                   忘记密码？
                 </button>
               </div>
-            </form>
-          )}
-
-          {/* Step 2.5: set-password (已注册但未设置密码) */}
-          {step === 'set-password' && (
-            <form onSubmit={handleSetPassword} className="mt-8 space-y-4">
-              <div className="rounded-xl bg-[#e6f7ff] px-4 py-3 text-sm text-[#1890ff]">
-                该手机号已注册但未设置密码，请设置登录密码
-              </div>
-              <div className="rounded-2xl bg-[#f5f5f5] px-4 py-4 text-sm text-[#666]">
-                手机号：{phone}
-                <button
-                  type="button"
-                  onClick={() => setStep('phone')}
-                  className="float-right text-[#ff607b]"
-                >
-                  换个号
-                </button>
-              </div>
-              <input
-                type="password"
-                placeholder="设置登录密码（至少 8 位，含字母和数字）"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-14 w-full rounded-2xl border border-[#ece8ec] bg-white px-4 text-base focus:outline-none focus:ring-2 focus:ring-[#ff7ea9]/30"
-              />
-              <input
-                type="password"
-                placeholder="确认登录密码"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="h-14 w-full rounded-2xl border border-[#ece8ec] bg-white px-4 text-base focus:outline-none focus:ring-2 focus:ring-[#ff7ea9]/30"
-              />
-              <AgreementCheckbox agreed={agreed} setAgreed={setAgreed} />
-              <button
-                type="submit"
-                disabled={loading}
-                className="h-14 w-full rounded-2xl bg-gradient-to-r from-[#ff636e] to-[#ff71aa] text-base font-semibold text-white shadow-lg active:scale-[0.99] disabled:opacity-50"
-              >
-                {loading ? '设置中...' : '确认设置'}
-              </button>
             </form>
           )}
 

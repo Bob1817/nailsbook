@@ -25,6 +25,7 @@ import { UpdateTechnicianSelfStatusDto } from './dto/update-technician-status.dt
 import { UpdateTechnicianServiceTypeDto } from './dto/update-service-type.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { SetPasswordDto } from './dto/set-password.dto';
+import { SetInitialPasswordDto } from './dto/set-initial-password.dto';
 import { ForgotSendCodeDto, ForgotResetDto } from './dto/forgot-password.dto';
 import { RefreshTokenDto } from '../common/dto/refresh-token.dto';
 
@@ -81,28 +82,22 @@ export class TechnicianAuthController {
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: '检查手机号是否已注册' })
   @ApiBody({ type: CheckPhoneDto })
-  @ApiResponse({ status: 200, description: '返回 { exists: boolean, activated: boolean }' })
+  @ApiResponse({ status: 200, description: '返回 { exists: boolean }' })
   async checkPhone(@Body() body: CheckPhoneDto) {
     return this.technicianAuthService.checkPhone(body.phone);
   }
 
   @Post('set-initial-password')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
-  @ApiOperation({ summary: '设置初始密码（仅限未设置密码的账号）' })
-  @ApiBody({
-    schema: {
-      properties: {
-        phone: { type: 'string', description: '手机号' },
-        password: { type: 'string', description: '新密码' },
-      },
-      required: ['phone', 'password'],
-    },
-  })
-  @ApiResponse({ status: 200, description: '密码设置成功，返回 token' })
-  @ApiResponse({ status: 400, description: '密码格式错误或账号已有密码' })
-  @ApiResponse({ status: 404, description: '手机号未注册' })
-  async setInitialPassword(@Body() body: { phone: string; password: string }) {
-    return this.technicianAuthService.setInitialPassword(body.phone, body.password);
+  @ApiOperation({ summary: '首次登录设置密码（账号未设置密码时，凭手机号设置并自动登录）' })
+  @ApiBody({ type: SetInitialPasswordDto })
+  @ApiResponse({ status: 201, description: '密码设置成功，返回 token（自动登录）' })
+  @ApiResponse({ status: 400, description: '手机号未注册或账号已设置密码' })
+  async setInitialPassword(@Body() body: SetInitialPasswordDto) {
+    return this.technicianAuthService.setInitialPassword(
+      body.phone,
+      body.newPassword,
+    );
   }
 
   @Post('register')

@@ -143,6 +143,7 @@ export interface AuthContextType {
   login: (phone: string, passwordOrCode: string) => Promise<{ mustChangePassword: boolean }>;
   register: (params: { inviteKey: string; name: string; phone: string; password: string }) => Promise<void>;
   setPassword: (newPassword: string) => Promise<void>;
+  setInitialPassword: (phone: string, newPassword: string) => Promise<void>;
   updateTechnicianStatus: (status: string) => Promise<void>;
   updateServiceType: (settings: ServiceTypeSettings) => Promise<void>;
   updateTechnicianProfile: (profile: Partial<Technician>) => Promise<void>;

@@ -112,15 +112,14 @@ export class TechniciansService {
     }
 
     const invitationCode = this.generateInvitationCode();
-    const defaultPasswordHash = await bcrypt.hash('123456', 10);
 
+    // 不设置默认密码：passwordHash 保持空（schema 默认 ""），
+    // 美甲师首次登录时会被引导设置登录密码
     const technician = await this.prisma.technician.create({
       data: {
         ...dto,
         invitationCode,
-        passwordHash: defaultPasswordHash,
         status: 'active',
-        mustChangePassword: true,
       },
     });
 
