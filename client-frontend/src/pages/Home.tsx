@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { homeService, type HomeData } from '../services/home';
+import { homeService, type HomeData, type NailWork } from '../services/home';
 import { orderService, type Order } from '../services/order';
 import { TripCardSkeleton, Skeleton } from '../components/Skeleton';
 import OrderDetail from './OrderDetail';
@@ -42,7 +42,47 @@ const Home: React.FC = () => {
   const [detailOrderId, setDetailOrderId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [, setNow] = useState(Date.now());
+  const [, setNow] = useState(() => Date.now());
+  // 最新动态：所有已绑定美甲师的推荐作品，无限上拉
+  const [featuredWorks, setFeaturedWorks] = useState<NailWork[]>([]);
+  const [featPage, setFeatPage] = useState(1);
+  const [featHasMore, setFeatHasMore] = useState(true);
+  const [featLoading, setFeatLoading] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  const loadFeatured = useCallback(async (page: number) => {
+    setFeatLoading(true);
+    try {
+      const res = await homeService.getFeaturedWorks(page, 10);
+      setFeaturedWorks((prev) => (page === 1 ? res.works : [...prev, ...res.works]));
+      setFeatHasMore(res.hasMore);
+      setFeatPage(page);
+    } catch (err) {
+      console.error('Failed to load featured works', err);
+      setFeatHasMore(false);
+    } finally {
+      setFeatLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadFeatured(1);
+  }, [loadFeatured]);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && featHasMore && !featLoading) {
+          loadFeatured(featPage + 1);
+        }
+      },
+      { rootMargin: '200px' },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [featHasMore, featLoading, featPage, loadFeatured]);
 
   const loadHomeData = useCallback(async () => {
     try {
@@ -468,9 +508,10 @@ const Home: React.FC = () => {
           </button>
         </div>
 
-        {homeData?.works && homeData.works.length > 0 ? (
+        {featuredWorks.length > 0 ? (
+          <>
           <div className="grid grid-cols-2 gap-3">
-            {homeData.works.slice(0, 4).map((work, index) => (
+            {featuredWorks.map((work, index) => (
               <div
                 key={work.id}
                 onClick={() => navigate(`/works/${work.id}`)}
@@ -537,6 +578,18 @@ const Home: React.FC = () => {
               </div>
             ))}
           </div>
+          {/* 无限上拉哨兵 */}
+          <div ref={sentinelRef} className="flex h-12 items-center justify-center">
+            {featLoading && (
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--color-primary)] border-t-transparent" />
+            )}
+            {!featHasMore && (
+              <span className="text-xs text-[var(--color-text-muted)]">没有更多了</span>
+            )}
+          </div>
+          </>
+        ) : featLoading ? (
+          <div className="py-10 text-center text-sm text-[var(--color-text-muted)]">加载中...</div>
         ) : (
           <div className="rounded-3xl bg-white p-8 text-center shadow-sm ring-1 ring-black/5">
             <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-slate-50 flex items-center justify-center">
@@ -549,63 +602,6 @@ const Home: React.FC = () => {
         )}
       </div>
 
-      {/* Quick Actions */}
-      <div className="px-5 mt-6">
-        <div className="rounded-[28px] bg-white px-4 py-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-heading-3 text-[var(--color-text)]">服务入口</h2>
-              <p className="mt-1 text-caption text-[var(--color-text-muted)]">快速发起预约、设计与沟通</p>
-            </div>
-          </div>
-        <div className="grid grid-cols-4 gap-3">
-          <button
-            onClick={() => navigate('/orders/create')}
-            className="flex flex-col items-center gap-2 active:scale-95 transition-transform"
-          >
-            <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-[#FF6B8A] to-[#FF8FA3] flex items-center justify-center shadow-lg shadow-pink-200">
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <span className="text-caption font-medium text-[var(--color-text)]">预约服务</span>
-          </button>
-          <button
-            onClick={() => navigate('/designs/create')}
-            className="flex flex-col items-center gap-2 active:scale-95 transition-transform"
-          >
-            <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-[#FF6B8A] to-[#FF8FA3] flex items-center justify-center shadow-lg shadow-pink-200">
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <span className="text-caption font-medium text-[var(--color-text)]">发起设计</span>
-          </button>
-          <button
-            onClick={() => navigate('/orders')}
-            className="flex flex-col items-center gap-2 active:scale-95 transition-transform"
-          >
-            <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-[#FF6B8A] to-[#FF8FA3] flex items-center justify-center shadow-lg shadow-pink-200">
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-            </div>
-            <span className="text-caption font-medium text-[var(--color-text)]">查看预约</span>
-          </button>
-          <button
-            onClick={() => navigate('/chat')}
-            className="flex flex-col items-center gap-2 active:scale-95 transition-transform"
-          >
-            <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-[#FF6B8A] to-[#FF8FA3] flex items-center justify-center shadow-lg shadow-pink-200">
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-            </div>
-            <span className="text-caption font-medium text-[var(--color-text)]">联系美甲师</span>
-          </button>
-        </div>
-        </div>
-      </div>
 
       {detailOrderId !== null && (
         <OrderDetail
