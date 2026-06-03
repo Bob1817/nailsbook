@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import type { Technician } from '../services/auth';
 import { addressService, type ClientAddress } from '../services/address';
@@ -44,6 +44,73 @@ const ChatBookingSheet: React.FC<ChatBookingSheetProps> = ({ technician, onClose
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+  const [blockedSlots, setBlockedSlots] = useState<{ startTime: string; endTime: string }[]>([]);
+
+  // 拉取该美甲师已占用时段（默认 5 小时）
+  useEffect(() => {
+    let active = true;
+    orderService
+      .getBlockedSlots(technician.id)
+      .then((list) => active && setBlockedSlots(list))
+      .catch(() => active && setBlockedSlots([]));
+    return () => {
+      active = false;
+    };
+  }, [technician.id]);
+
+  // 工作时间联动
+  const scheduleRange = useMemo(() => {
+    const sched = technician.serviceSchedule;
+    if (!sched || !Array.isArray(sched.schemes)) return null;
+    const act = sched.schemes.find((s) => s.id === sched.activeSchemeId);
+    return act ? { start: act.startTime, end: act.endTime } : null;
+  }, [technician.serviceSchedule]);
+
+  const isDateAvailable = useCallback(
+    (dateStr: string) => {
+      const sched = technician.serviceSchedule;
+      if (!sched) return true;
+      const weekday = new Date(`${dateStr}T00:00:00`).getDay();
+      const dayKey = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][weekday];
+      if (Array.isArray(sched.schemes)) {
+        if (sched.restDays?.includes(dateStr)) return false;
+        const act = sched.schemes.find((s) => s.id === sched.activeSchemeId);
+        if (!act) return false;
+        return act.days.includes(dayKey);
+      }
+      if (sched.selectedDates && sched.selectedDates.length > 0)
+        return sched.selectedDates.includes(dateStr);
+      return sched.days?.[dayKey]?.enabled ?? true;
+    },
+    [technician.serviceSchedule],
+  );
+
+  const slotStatuses = useMemo(() => {
+    const toMin = (t: string) => {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    };
+    let base = TIME_SLOTS;
+    if (scheduleRange) {
+      const s = toMin(scheduleRange.start);
+      const e = toMin(scheduleRange.end);
+      base = base.filter((t) => {
+        const m = toMin(t);
+        return m >= s && m < e;
+      });
+    }
+    return base.map((time) => {
+      const slotDt = new Date(`${serviceDate}T${time}:00`);
+      const occupied = blockedSlots.some(
+        (b) => slotDt >= new Date(b.startTime) && slotDt < new Date(b.endTime),
+      );
+      return { time, occupied };
+    });
+  }, [scheduleRange, serviceDate, blockedSlots]);
 
   useEffect(() => {
     let active = true;
@@ -276,40 +343,84 @@ const ChatBookingSheet: React.FC<ChatBookingSheetProps> = ({ technician, onClose
             </div>
           )}
 
-          {/* Date */}
+          {/* Date — 自定义月历，置灰休息日/非工作日 */}
           <div>
             <Label>预约日期</Label>
-            <input
-              type="date"
-              value={serviceDate}
-              min={dayjs().format('YYYY-MM-DD')}
-              max={dayjs().add(60, 'day').format('YYYY-MM-DD')}
-              onChange={(e) => setServiceDate(e.target.value)}
-              className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
-            />
+            <div className="rounded-xl bg-slate-50 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <button type="button" onClick={() => setCalendarMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1))} className="flex h-7 w-7 items-center justify-center rounded-full text-slate-500 hover:bg-slate-200">‹</button>
+                <span className="text-sm font-medium text-slate-900">{calendarMonth.getFullYear()}年{calendarMonth.getMonth() + 1}月</span>
+                <button type="button" onClick={() => setCalendarMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1))} className="flex h-7 w-7 items-center justify-center rounded-full text-slate-500 hover:bg-slate-200">›</button>
+              </div>
+              <div className="mb-1 grid grid-cols-7 gap-1">
+                {['日', '一', '二', '三', '四', '五', '六'].map((w) => (
+                  <div key={w} className="flex h-6 items-center justify-center text-[11px] text-slate-400">{w}</div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {(() => {
+                  const year = calendarMonth.getFullYear();
+                  const month = calendarMonth.getMonth();
+                  const firstWeekday = new Date(year, month, 1).getDay();
+                  const daysInMonth = new Date(year, month + 1, 0).getDate();
+                  const todayStr = dayjs().format('YYYY-MM-DD');
+                  const cells: React.ReactNode[] = [];
+                  for (let i = 0; i < firstWeekday; i++) cells.push(<div key={`e${i}`} className="h-9" />);
+                  for (let day = 1; day <= daysInMonth; day++) {
+                    const dateStr = dayjs(new Date(year, month, day)).format('YYYY-MM-DD');
+                    const disabled = dateStr < todayStr || !isDateAvailable(dateStr);
+                    const selected = serviceDate === dateStr;
+                    cells.push(
+                      <button
+                        key={day}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => { setServiceDate(dateStr); setStartTime(''); }}
+                        className={`h-9 rounded-lg text-[13px] font-medium transition ${
+                          disabled ? 'cursor-not-allowed text-slate-300' : selected ? 'bg-[#FF6B8A] text-white' : 'text-slate-700 hover:bg-slate-200'
+                        }`}
+                      >
+                        {day}
+                      </button>,
+                    );
+                  }
+                  return cells;
+                })()}
+              </div>
+              <p className="mt-2 text-[11px] text-slate-400">灰色日期为休息日，不可预约</p>
+            </div>
           </div>
 
-          {/* Time */}
+          {/* Time — 只显工作时段，占用显示已预约 */}
           <div>
             <Label>预约时间</Label>
-            <div className="grid grid-cols-4 gap-2">
-              {TIME_SLOTS.map((t) => {
-                const sel = startTime === t;
-                return (
-                  <button
-                    key={t}
-                    onClick={() => setStartTime(t)}
-                    className={`rounded-lg py-2 text-[13px] font-medium ${
-                      sel
-                        ? 'bg-[linear-gradient(135deg,#FF6B8A_0%,#FF8FA3_100%)] text-white shadow-[0_8px_18px_rgba(255,107,138,0.3)]'
-                        : 'bg-slate-100 text-slate-600'
-                    }`}
-                  >
-                    {t}
-                  </button>
-                );
-              })}
-            </div>
+            {slotStatuses.length > 0 ? (
+              <div className="grid grid-cols-4 gap-2">
+                {slotStatuses.map(({ time, occupied }) => {
+                  const sel = startTime === time;
+                  return (
+                    <button
+                      key={time}
+                      type="button"
+                      disabled={occupied}
+                      onClick={() => !occupied && setStartTime(time)}
+                      className={`flex flex-col items-center justify-center rounded-lg py-1.5 text-[13px] font-medium ${
+                        occupied
+                          ? 'cursor-not-allowed bg-slate-100 text-slate-400'
+                          : sel
+                          ? 'bg-[linear-gradient(135deg,#FF6B8A_0%,#FF8FA3_100%)] text-white shadow-[0_8px_18px_rgba(255,107,138,0.3)]'
+                          : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      <span className={occupied ? 'text-xs leading-none line-through' : ''}>{time}</span>
+                      {occupied && <span className="mt-0.5 text-[10px] leading-none">已预约</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="py-2 text-sm text-slate-400">该美甲师休息中</p>
+            )}
           </div>
 
           {/* Note + images */}
