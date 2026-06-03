@@ -21,6 +21,7 @@ export const Login: React.FC = () => {
   const [phoneError, setPhoneError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showServiceTypeModal, setShowServiceTypeModal] = useState(false);
+  const [showWorkTimePrompt, setShowWorkTimePrompt] = useState(false);
   const { login, register, updateServiceType } = useAuth();
   const navigate = useNavigate();
 
@@ -315,13 +316,40 @@ export const Login: React.FC = () => {
 
       <ServiceTypeSetupModal
         isOpen={showServiceTypeModal}
-        isForceSetup={true}
+        isForceSetup={false}
+        onClose={() => navigate('/')}
         onSubmit={async (settings: ServiceTypeSettings) => {
           await updateServiceType(settings);
           setShowServiceTypeModal(false);
-          navigate('/');
+          setShowWorkTimePrompt(true);
         }}
       />
+
+      {/* Step 2: Work Time Prompt */}
+      {showWorkTimePrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-5">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
+            <h3 className="mb-3 text-lg font-bold text-[#0f1422]">设置工作时间</h3>
+            <p className="mb-6 text-sm text-[#5a6475]">
+              服务类型已设置。建议现在设置工作时间，方便客户预约。
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigate('/')}
+                className="flex-1 min-h-[44px] rounded-2xl border border-[#e5e7eb] bg-white px-4 py-3 text-sm font-medium text-[#6b7280] hover:bg-gray-50 active:bg-gray-100"
+              >
+                暂不设置
+              </button>
+              <button
+                onClick={() => navigate('/me?setup=worktime')}
+                className="flex-1 min-h-[44px] rounded-2xl bg-gradient-to-r from-pink-500 to-pink-600 px-4 py-3 text-sm font-semibold text-white shadow-lg active:scale-[0.99]"
+              >
+                去设置工作时间
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

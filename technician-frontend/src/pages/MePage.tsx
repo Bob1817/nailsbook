@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/feedback/ToastProvider';
 import { ServiceTypeSetupModal } from '../components/ServiceTypeSetupModal';
@@ -275,6 +275,7 @@ const settings = [
 
 export const MePage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { technician, logout, updateServiceType, updateTechnicianProfile } = useAuth();
   const toast = useToast();
   const [orders, setOrders] = useState<TechnicianOrder[]>([]);
@@ -318,6 +319,14 @@ export const MePage: React.FC = () => {
       cancelled = true;
     };
   }, [technician?.id, toast]);
+
+  // Auto-open work schedule modal when coming from setup flow
+  useEffect(() => {
+    if (searchParams.get('setup') === 'worktime') {
+      setShowWorkScheduleModal(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const summary = useMemo(() => buildDashboardSummary(orders, new Date()), [orders]);
   const weekOrders = useMemo(() => {
