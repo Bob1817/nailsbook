@@ -179,6 +179,18 @@ export class ClientOrdersService {
         },
       });
 
+      // Freeze time slot: booking time + 5 hours
+      const blockEndTime = new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
+      await tx.blockedTimeSlot.create({
+        data: {
+          techId: dto.techId,
+          orderId: createdOrder.id,
+          startTime,
+          endTime: blockEndTime,
+          reason: 'booking',
+        },
+      });
+
       return createdOrder;
     });
 
@@ -666,13 +678,20 @@ export class ClientOrdersService {
       throw new BadRequestException('当前订单状态不支持取消');
     }
 
-    const updatedOrder = await this.prisma.order.update({
-      where: { id },
-      data: {
-        status: 'cancelled',
-        cancelledAt: new Date(),
-      },
-      include: this.orderInclude(),
+    const updatedOrder = await this.prisma.$transaction(async (tx) => {
+      // Release blocked time slot
+      await tx.blockedTimeSlot.deleteMany({
+        where: { orderId: id },
+      });
+
+      return tx.order.update({
+        where: { id },
+        data: {
+          status: 'cancelled',
+          cancelledAt: new Date(),
+        },
+        include: this.orderInclude(),
+      });
     });
 
     return this.mapOrder(updatedOrder);
@@ -1053,6 +1072,23 @@ export class ClientOrdersService {
     }
 
     throw new BadRequestException('请选择有效的服务类型');
+  }
+
+  async getBlockedSlots(techId: number) {
+    const now = new Date();
+    const blockedSlots = await this.prisma.blockedTimeSlot.findMany({
+      where: {
+        techId,
+        endTime: { gte: now },
+      },
+      select: {
+        startTime: true,
+        endTime: true,
+      },
+      orderBy: { startTime: 'asc' },
+    });
+
+    return blockedSlots;
   }
 
   private formatAddress(address: {

@@ -10,14 +10,18 @@ export interface Work {
   imageUrls: string[];
   description: string | null;
   tags: string[];
+  price: number | null;
   isVisible: boolean;
   isPinned: boolean;
   isFeatured: boolean;
   sortOrder: number;
+  viewCount: number;
   likeCount: number;
   favoriteCount: number;
   commentCount: number;
   unreadComments: number;
+  unreadLikes: number;
+  unreadFavorites: number;
   isLiked: boolean;
   isFavorited: boolean;
   technicianName: string;
@@ -31,6 +35,7 @@ export interface CreateWorkDto {
   images?: string[];
   description?: string;
   tags?: string[];
+  price?: number;
   isVisible?: boolean;
   sortOrder?: number;
 }
@@ -99,6 +104,7 @@ export const worksService = {
       coverUrl: data.coverUrl ?? data.images?.[0],
       images: data.images ? JSON.stringify(data.images) : undefined,
       tags: data.tags ? data.tags.join(',') : undefined,
+      price: data.price ?? undefined,
     });
     return processWork(response.data);
   },
@@ -109,6 +115,7 @@ export const worksService = {
       coverUrl: data.coverUrl ?? data.images?.[0],
       images: data.images ? JSON.stringify(data.images) : undefined,
       tags: data.tags ? data.tags.join(',') : undefined,
+      price: data.price ?? undefined,
     });
     return processWork(response.data);
   },
@@ -173,6 +180,16 @@ export const worksService = {
 
   async markCommentsAsRead(workId: number): Promise<{ success: boolean }> {
     const response = await api.post(`/works/${workId}/mark-comments-read`);
+    return response.data;
+  },
+
+  async markLikesAsRead(workId: number): Promise<{ success: boolean }> {
+    const response = await api.post(`/works/${workId}/mark-likes-read`);
+    return response.data;
+  },
+
+  async markFavoritesAsRead(workId: number): Promise<{ success: boolean }> {
+    const response = await api.post(`/works/${workId}/mark-favorites-read`);
     return response.data;
   },
 };

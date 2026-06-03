@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -100,6 +101,40 @@ export class TechnicianAuthService {
     return {
       exists: !!technician,
       activated: !!(technician && technician.passwordHash),
+    };
+  }
+
+  async setInitialPassword(phone: string, password: string) {
+    const technician = await this.findTechnicianByPhone(phone);
+
+    if (!technician) {
+      throw new NotFoundException('手机号未注册');
+    }
+
+    if (technician.passwordHash) {
+      throw new BadRequestException('该账号已设置密码，请直接登录');
+    }
+
+    // Validate password
+    if (password.length < 8) {
+      throw new BadRequestException('密码至少 8 位');
+    }
+    if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+      throw new BadRequestException('密码需同时包含字母和数字');
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    await this.prisma.technician.update({
+      where: { id: technician.id },
+      data: { passwordHash },
+    });
+
+    // Issue tokens for auto-login
+    const result = await this.issueTokens(technician.id, technician.phone);
+    return {
+      ...result,
+      mustChangePassword: false,
     };
   }
 

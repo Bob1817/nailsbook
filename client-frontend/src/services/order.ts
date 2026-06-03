@@ -135,4 +135,9 @@ export const orderService = {
     const response = await api.post(`/orders/${id}/mark-deposit-paid`);
     return response.data;
   },
+
+  async getBlockedSlots(techId: number): Promise<{ startTime: string; endTime: string }[]> {
+    const response = await api.get(`/orders/blocked-slots/${techId}`);
+    return response.data;
+  },
 };

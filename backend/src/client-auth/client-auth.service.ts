@@ -117,6 +117,7 @@ export class ClientAuthService {
         data: {
           phone: dto.phone,
           passwordHash,
+          nickname: dto.nickname || null,
         },
       });
 
@@ -135,7 +136,7 @@ export class ClientAuthService {
         data: {
           technicianId: technician.id,
           clientUserId: created.id,
-          name: created.nickname || dto.phone,
+          name: dto.nickname || dto.phone,
           phone: dto.phone,
         },
       });
@@ -526,6 +527,14 @@ export class ClientAuthService {
         ...(data.bio !== undefined && { bio: data.bio }),
       },
     });
+
+    // Sync nickname to Customer.name for all technicians this client is bound to
+    if (data.nickname !== undefined && data.nickname) {
+      await this.prisma.customer.updateMany({
+        where: { clientUserId },
+        data: { name: data.nickname },
+      });
+    }
 
     return this.mapClientSelf(client);
   }

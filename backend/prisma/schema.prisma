@@ -94,6 +94,7 @@ model Technician {
   conversations         Conversation[]
   customServiceRequests CustomServiceRequest[]
   workComments  NailWorkComment[]
+  blockedTimeSlots BlockedTimeSlot[]
 }
 
 model Customer {
@@ -251,6 +252,8 @@ model NailWork {
   isPinned    Boolean            @default(false)
   isFeatured  Boolean            @default(false)
   sortOrder   Int                @default(0)
+  price       Float?
+  viewCount   Int                @default(0)
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @default(now()) @updatedAt
   technician  Technician         @relation(fields: [techId], references: [id])
@@ -267,6 +270,7 @@ model NailWorkLike {
   workId       Int
   clientId     Int?
   technicianId Int?
+  isRead       Boolean  @default(false)
   createdAt    DateTime @default(now())
   work         NailWork @relation(fields: [workId], references: [id], onDelete: Cascade)
 
@@ -279,6 +283,7 @@ model NailWorkFavorite {
   workId       Int
   clientId     Int?
   technicianId Int?
+  isRead       Boolean  @default(false)
   createdAt    DateTime @default(now())
   work         NailWork @relation(fields: [workId], references: [id], onDelete: Cascade)
 
@@ -513,4 +518,19 @@ model TechnicianInviteKey {
   technician         Technician? @relation(fields: [usedByTechnicianId], references: [id])
 
   @@index([usedByTechnicianId])
+}
+
+model BlockedTimeSlot {
+  id           Int        @id @default(autoincrement())
+  techId       Int
+  orderId      Int?
+  startTime    DateTime
+  endTime      DateTime
+  reason       String?
+  createdAt    DateTime   @default(now())
+  technician   Technician @relation(fields: [techId], references: [id])
+
+  @@index([techId])
+  @@index([startTime])
+  @@index([endTime])
 }

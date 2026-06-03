@@ -90,6 +90,7 @@ export interface DaySchedule {
 
 export interface ServiceSchedule {
   days: Record<string, DaySchedule>;
+  selectedDates?: string[]; // ISO date strings like "2024-01-15"
 }
 
 export interface CustomTag {

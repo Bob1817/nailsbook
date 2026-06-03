@@ -310,6 +310,7 @@ const WorksPage: React.FC = () => {
     title: '',
     description: '',
     tags: '',
+    price: '',
     images: [] as string[],
     isVisible: true,
   });
@@ -322,6 +323,7 @@ const WorksPage: React.FC = () => {
   const [confirmDeleteCommentId, setConfirmDeleteCommentId] = useState<number | null>(null);
   const [confirmHideCommentId, setConfirmHideCommentId] = useState<number | null>(null);
   const [showActionMenu, setShowActionMenu] = useState(false);
+  const [cardActionWork, setCardActionWork] = useState<Work | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const imageSliderRef = useRef<HTMLDivElement>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
@@ -386,6 +388,7 @@ const WorksPage: React.FC = () => {
     }
 
     try {
+      const priceValue = formData.price.trim() ? Number(formData.price) : undefined;
       if (editingWork) {
         await worksService.update(editingWork.id, {
           title: formData.title,
@@ -393,6 +396,7 @@ const WorksPage: React.FC = () => {
           tags: formData.tags.split(',').map((t) => t.trim()).filter(Boolean),
           coverUrl: formData.images[0],
           images: formData.images,
+          price: priceValue,
           isVisible: formData.isVisible,
         });
         toast.success('作品更新成功');
@@ -403,13 +407,14 @@ const WorksPage: React.FC = () => {
           tags: formData.tags.split(',').map((t) => t.trim()).filter(Boolean),
           coverUrl: formData.images[0],
           images: formData.images,
+          price: priceValue,
           isVisible: formData.isVisible,
         });
         toast.success('作品创建成功');
       }
       setShowCreateModal(false);
       setEditingWork(null);
-      setFormData({ title: '', description: '', tags: '', images: [], isVisible: true });
+      setFormData({ title: '', description: '', tags: '', price: '', images: [], isVisible: true });
       loadWorks();
     } catch (error) {
       console.error('Failed to save work:', error);
@@ -423,6 +428,7 @@ const WorksPage: React.FC = () => {
       title: work.title || '',
       description: work.description || '',
       tags: work.tags.join(','),
+      price: work.price != null ? String(work.price) : '',
       images: work.imageUrls,
       isVisible: work.isVisible,
     });
@@ -638,15 +644,6 @@ const WorksPage: React.FC = () => {
     }
   };
 
-  // Masonry layout calculation
-  const getMasonryLayout = () => {
-    const columns: Work[][] = [[], []];
-    works.forEach((work, index) => {
-      columns[index % 2].push(work);
-    });
-    return columns;
-  };
-
   return (
     <div className="flex h-[100dvh] flex-col bg-[#fff9f8]">
       {/* Header */}
@@ -672,9 +669,9 @@ const WorksPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Masonry Photo Wall */}
+      {/* Masonry Photo Wall - 小红书风格 */}
       <div className="flex-1 overflow-y-auto pb-8">
-      <div className="px-3 py-4">
+      <div className="px-2.5 py-3">
         {loading ? (
           <div className="p-1"><GridSkeleton /></div>
         ) : works.length === 0 ? (
@@ -684,86 +681,178 @@ const WorksPage: React.FC = () => {
             <p className="mt-1 text-sm text-gray-400">点击右上角添加您的第一个作品</p>
           </div>
         ) : (
-          <div className="flex gap-3">
-            {getMasonryLayout().map((column, colIndex) => (
-              <div key={colIndex} className="flex-1 flex flex-col gap-3.5">
-                {column.map((work) => (
-                  <div
-                    key={work.id}
-                    onClick={() => openWorkDetail(work)}
-                    className="relative overflow-hidden rounded-[16px] bg-gray-100 cursor-pointer shadow-[0_4px_16px_rgba(29,35,53,0.08)] active:scale-[0.97] transition-transform"
-                  >
-                    {/* Image */}
-                    {work.coverUrl || work.imageUrls?.[0] ? (
-                      <img
-                        src={work.coverUrl || work.imageUrls[0]}
-                        alt={work.title || '作品'}
-                        className="w-full h-auto object-cover"
-                        loading="lazy"
-                        onError={(event) => {
-                          event.currentTarget.style.display = 'none';
-                          const nextElement = event.currentTarget.nextElementSibling as HTMLElement | null;
-                          if (nextElement?.dataset.placeholder === 'true') {
-                            nextElement.style.display = 'flex';
-                          }
-                        }}
-                      />
-                    ) : null}
-                    <div
-                      data-placeholder="true"
-                      className={`min-h-[9rem] w-full items-center justify-center bg-gradient-to-br from-rose-50 via-white to-pink-50 text-sm text-gray-400 ${
-                        work.coverUrl || work.imageUrls?.[0] ? 'hidden' : 'flex'
-                      }`}
-                    >
-                      暂无作品图片
-                    </div>
+          <div className="columns-2 gap-2 space-y-2">
+            {works.map((work) => (
+              <div
+                key={work.id}
+                onClick={() => openWorkDetail(work)}
+                className="relative break-inside-avoid overflow-hidden rounded-[12px] bg-gray-100 cursor-pointer shadow-[0_2px_8px_rgba(29,35,53,0.06)] active:scale-[0.97] transition-transform"
+              >
+                {/* Image */}
+                {work.coverUrl || work.imageUrls?.[0] ? (
+                  <img
+                    src={work.coverUrl || work.imageUrls[0]}
+                    alt={work.title || '作品'}
+                    className="w-full h-auto object-cover"
+                    loading="lazy"
+                    onError={(event) => {
+                      event.currentTarget.style.display = 'none';
+                      const nextElement = event.currentTarget.nextElementSibling as HTMLElement | null;
+                      if (nextElement?.dataset.placeholder === 'true') {
+                        nextElement.style.display = 'flex';
+                      }
+                    }}
+                  />
+                ) : null}
+                <div
+                  data-placeholder="true"
+                  className={`min-h-[7rem] w-full items-center justify-center bg-gradient-to-br from-rose-50 via-white to-pink-50 text-sm text-gray-400 ${
+                    work.coverUrl || work.imageUrls?.[0] ? 'hidden' : 'flex'
+                  }`}
+                >
+                  暂无作品图片
+                </div>
 
-                    {/* Info overlay at bottom */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-                      <p className="text-white text-sm font-medium truncate">{work.title || '未命名作品'}</p>
-                      <div className="flex items-center justify-between mt-1">
-                        <span className="text-white/80 text-xs">{work.technicianName}</span>
-                        <span className="text-white/80 text-xs flex items-center gap-1">
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
-                          </svg>
-                          {work.likeCount || 0}
-                        </span>
-                      </div>
+                {/* Info overlay at bottom */}
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent px-2 pb-1.5 pt-5">
+                  <p className="truncate text-[11px] font-medium leading-4 text-white">{work.title || '未命名作品'}</p>
+                  <div className="mt-1 flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      {work.price != null && work.price > 0 && (
+                        <span className="text-[10px] font-semibold text-[#FFD700]">¥{work.price}</span>
+                      )}
+                      <span className="text-[10px] text-white/70">{work.technicianName}</span>
                     </div>
-
-                    {/* Badges */}
-                    {work.isPinned && (
-                      <div className="absolute top-2 left-2 rounded-full bg-pink-500 px-2 py-0.5 text-[10px] text-white">
-                        置顶
-                      </div>
-                    )}
-                    {work.isFeatured && (
-                      <div className="absolute top-2 left-2 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] text-white" style={{ marginTop: work.isPinned ? '20px' : '0' }}>
-                        精品
-                      </div>
-                    )}
-                    {!work.isVisible && (
-                      <div className="absolute top-2 right-2 rounded-full bg-gray-500/80 px-2 py-0.5 text-[10px] text-white">
-                        已隐藏
-                      </div>
-                    )}
-                    {/* 未读评论提示 */}
-                    {work.unreadComments > 0 && (
-                      <div className="absolute top-2 right-2 rounded-full bg-red-500 px-2 py-0.5 text-[10px] text-white flex items-center gap-1">
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
-                        </svg>
-                        {work.unreadComments}条新评论
-                      </div>
-                    )}
+                    <span className="flex items-center gap-0.5 text-[10px] text-white/70">
+                      <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
+                      </svg>
+                      {work.likeCount || 0}
+                    </span>
                   </div>
-                ))}
+                </div>
+
+                {/* Left-top badges */}
+                <div className="absolute left-1.5 top-1.5 flex flex-col gap-1">
+                  {work.isPinned && (
+                    <span className="rounded-full bg-pink-500 px-1.5 py-0.5 text-[9px] text-white">置顶</span>
+                  )}
+                  {work.isFeatured && (
+                    <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] text-white">推荐</span>
+                  )}
+                  {!work.isVisible && (
+                    <span className="rounded-full bg-gray-500/80 px-1.5 py-0.5 text-[9px] text-white">隐藏</span>
+                  )}
+                </div>
+
+                {/* Right-top: action button + unread count */}
+                <div className="absolute right-1.5 top-1.5 flex flex-col items-end gap-1.5">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setCardActionWork(work); }}
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm active:bg-black/60"
+                  >
+                    <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                    </svg>
+                  </button>
+                  {(work.commentCount > 0 || work.unreadLikes > 0 || work.unreadFavorites > 0) && (
+                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-semibold text-white shadow-sm">
+                      {work.commentCount + work.unreadLikes + work.unreadFavorites}
+                    </span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Card Action Sheet - 移动端优化 */}
+      {cardActionWork && (
+        <div
+          className="fixed inset-0 z-[200] flex flex-col justify-end bg-black/40"
+          onClick={() => setCardActionWork(null)}
+        >
+          <div
+            className="rounded-t-[20px] bg-white pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 拖拽指示条 */}
+            <div className="flex justify-center pt-2.5 pb-1">
+              <div className="h-1 w-9 rounded-full bg-gray-300" />
+            </div>
+            {/* 作品名称 */}
+            <div className="px-5 py-2 border-b border-gray-100">
+              <p className="text-sm font-medium text-gray-900 truncate">{cardActionWork.title || '未命名作品'}</p>
+            </div>
+            {/* 操作列表 */}
+            <div className="px-2 py-1.5">
+              <button
+                onClick={() => { handleEdit(cardActionWork); setCardActionWork(null); }}
+                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] text-gray-700 active:bg-gray-50"
+              >
+                <svg className="h-5 w-5 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                编辑作品
+              </button>
+              <button
+                onClick={() => { handleTogglePinned(cardActionWork); setCardActionWork(null); }}
+                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] text-gray-700 active:bg-gray-50"
+              >
+                <svg className="h-5 w-5 shrink-0 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+                {cardActionWork.isPinned ? '取消置顶' : '置顶作品'}
+              </button>
+              <button
+                onClick={() => { handleToggleFeatured(cardActionWork); setCardActionWork(null); }}
+                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] text-gray-700 active:bg-gray-50"
+              >
+                <svg className="h-5 w-5 shrink-0 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                </svg>
+                {cardActionWork.isFeatured ? '取消推荐' : '推荐作品'}
+              </button>
+              <button
+                onClick={() => { handleToggleVisible(cardActionWork); setCardActionWork(null); }}
+                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] text-gray-700 active:bg-gray-50"
+              >
+                <svg className="h-5 w-5 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d={cardActionWork.isVisible
+                    ? 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21'
+                    : 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
+                  } />
+                </svg>
+                {cardActionWork.isVisible ? '隐藏作品' : '取消隐藏'}
+              </button>
+            </div>
+            {/* 分隔线 */}
+            <div className="mx-4 my-1 h-px bg-gray-100" />
+            {/* 危险操作 */}
+            <div className="px-2 py-1.5">
+              <button
+                onClick={() => { handleDelete(cardActionWork); setCardActionWork(null); }}
+                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] text-red-500 active:bg-red-50"
+              >
+                <svg className="h-5 w-5 shrink-0 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                删除作品
+              </button>
+            </div>
+            {/* 取消按钮 */}
+            <div className="mx-2 mb-1">
+              <button
+                onClick={() => setCardActionWork(null)}
+                className="w-full rounded-xl bg-gray-50 py-3 text-[15px] font-medium text-gray-500 active:bg-gray-100"
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Work Detail Modal */}
       {showDetailModal && selectedWork && (
@@ -915,9 +1004,14 @@ const WorksPage: React.FC = () => {
           <div className="relative z-10 -mt-6 flex min-h-0 flex-1 flex-col rounded-t-[28px] bg-white shadow-[0_-12px_40px_rgba(15,23,42,0.06)]">
             {/* Title block */}
             <div className="shrink-0 px-5 pt-5 pb-4">
-              <h2 className="text-[1.35rem] font-bold leading-tight tracking-[-0.02em] text-gray-900">
-                {selectedWork.title || '未命名作品'}
-              </h2>
+              <div className="flex items-baseline gap-2">
+                <h2 className="text-[1.35rem] font-bold leading-tight tracking-[-0.02em] text-gray-900">
+                  {selectedWork.title || '未命名作品'}
+                </h2>
+                {selectedWork.price != null && selectedWork.price > 0 && (
+                  <span className="shrink-0 text-[15px] font-semibold text-pink-500">¥{selectedWork.price}</span>
+                )}
+              </div>
               {selectedWork.description && (
                 <p className="mt-2 text-sm leading-6 text-gray-500">{selectedWork.description}</p>
               )}
@@ -1087,7 +1181,7 @@ const WorksPage: React.FC = () => {
                 onClick={() => {
                   setShowCreateModal(false);
                   setEditingWork(null);
-                  setFormData({ title: '', description: '', tags: '', images: [], isVisible: true });
+                  setFormData({ title: '', description: '', tags: '', price: '', images: [], isVisible: true });
                 }}
                 className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100"
               >
@@ -1133,6 +1227,23 @@ const WorksPage: React.FC = () => {
                   placeholder="例如：法式,渐变,简约"
                   className="w-full rounded-[16px] border border-gray-200 px-4 py-3 text-sm focus:border-pink-500 focus:outline-none"
                 />
+              </div>
+
+              {/* Price */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">作品价格</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">¥</span>
+                  <input
+                    type="number"
+                    value={formData.price}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, price: e.target.value }))}
+                    placeholder="输入价格（可选）"
+                    min="0"
+                    step="0.01"
+                    className="w-full rounded-[16px] border border-gray-200 py-3 pl-8 pr-4 text-sm focus:border-pink-500 focus:outline-none"
+                  />
+                </div>
               </div>
 
               {/* Images */}

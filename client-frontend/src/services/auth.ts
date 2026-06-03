@@ -38,6 +38,17 @@ export interface TechnicianServiceItem {
   updatedAt: string;
 }
 
+export interface DaySchedule {
+  enabled: boolean;
+  startTime: string;
+  endTime: string;
+}
+
+export interface ServiceSchedule {
+  days: Record<string, DaySchedule>;
+  selectedDates?: string[];
+}
+
 export interface Technician {
   id: number;
   name: string;
@@ -55,6 +66,7 @@ export interface Technician {
   shopService?: boolean;
   shopAddresses?: ShopAddress[];
   serviceItems?: TechnicianServiceItem[];
+  serviceSchedule?: ServiceSchedule | null;
 }
 
 export interface AuthResponse {

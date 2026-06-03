@@ -154,7 +154,6 @@ export const HomePage: React.FC = () => {
   const [works, setWorks] = useState<Work[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showShareSheet, setShowShareSheet] = useState(false);
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [showServiceTypeModal, setShowServiceTypeModal] = useState(false);
   const [detailOrderId, setDetailOrderId] = useState<number | null>(null);
 
@@ -206,7 +205,6 @@ export const HomePage: React.FC = () => {
       ? `${clientBaseUrl}/artist/${encodeURIComponent(technician.invitationCode)}`
       : `${clientBaseUrl}/artist/${technician.id}`
     : clientBaseUrl;
-  const isAcceptingOrders = technician?.status === 'active';
   const availableShops = technician?.shopAddresses?.filter((shop) => shop.enabled !== false) ?? [];
   const summary = useMemo(() => buildDashboardSummary(orders, new Date()), [orders]);
   const todayOrders = useMemo(
@@ -256,10 +254,6 @@ export const HomePage: React.FC = () => {
       ? Math.floor((suggestedDepartureDate.getTime() - Date.now()) / (60 * 1000))
       : 0;
   const unreadMessageCount = conversations.reduce((total, conversation) => total + conversation.unreadCount, 0);
-  const customerCount = useMemo(
-    () => new Set(orders.map((order) => order.customerId || order.customerName).filter(Boolean)).size,
-    [orders]
-  );
   const unpaidDepositCount = orders.filter(
     (order) => isActiveOrderStatus(order.status) && !order.depositPaid
   ).length;
@@ -301,32 +295,21 @@ export const HomePage: React.FC = () => {
     },
   ];
   const activePendingItems = pendingItems.filter((item) => item.count > 0);
-  const serviceChips = useMemo(() => {
-    const chips: string[] = [];
-    if (technician?.homeService) chips.push('上门');
-    if (technician?.shopService) chips.push('到店');
-    chips.push(`客户数 ${customerCount}`);
-    return chips;
-  }, [customerCount, technician?.homeService, technician?.shopService]);
   const featuredWorks = useMemo(
     () =>
       [...works]
         .sort((left, right) => {
-          const hotScore = right.favoriteCount + right.likeCount - (left.favoriteCount + left.likeCount);
-          if (hotScore !== 0) return hotScore;
+          const leftScore = (left.viewCount || 0) + left.likeCount + left.favoriteCount + left.commentCount;
+          const rightScore = (right.viewCount || 0) + right.likeCount + right.favoriteCount + right.commentCount;
+          if (rightScore !== leftScore) return rightScore - leftScore;
           return (parseDate(right.createdAt)?.getTime() ?? 0) - (parseDate(left.createdAt)?.getTime() ?? 0);
         })
         .slice(0, 4),
     [works]
   );
-  const quickActions = [
-    { label: '新建预约', to: '/orders', color: 'bg-[#ffe9f0]', icon: '＋' },
-    { label: '客户管理', to: '/customers', color: 'bg-[#eef5ff]', icon: '客' },
-    { label: '作品管理', to: '/works', color: 'bg-[#F0F7FF]', icon: '作' },
-    { label: '我的行程', to: '/schedule', color: 'bg-[#eefaf4]', icon: '程' },
-    { label: '店铺管理', to: '/shops', color: 'bg-[#fff7fa]', icon: '店' },
-    { label: '服务管理', to: '/services', color: 'bg-[#f7f1ff]', icon: '服' },
-  ];
+  const hasUnreadWorkActivity = works.some(
+    (w) => w.unreadComments > 0 || w.unreadLikes > 0 || w.unreadFavorites > 0
+  );
 
   async function copyShareUrl() {
     if (!navigator.clipboard?.writeText) {
@@ -362,34 +345,6 @@ export const HomePage: React.FC = () => {
     }
 
     await copyShareUrl();
-  }
-
-  async function handleToggleStatus() {
-    const nextStatus = isAcceptingOrders ? 'inactive' : 'active';
-
-    if (!isAcceptingOrders) {
-      const hasServiceType = technician?.homeService || technician?.shopService;
-      const needsShopSetup =
-        !!technician?.shopService &&
-        (!technician.shopAddresses || technician.shopAddresses.length === 0);
-
-      if (!hasServiceType || needsShopSetup) {
-        setShowServiceTypeModal(true);
-        return;
-      }
-    }
-
-    setIsUpdatingStatus(true);
-    void updateTechnicianStatus(nextStatus)
-      .then(() => {
-        toast.success(nextStatus === 'active' ? '已开启接单状态。' : '已关闭接单状态。');
-      })
-      .catch(() => {
-        toast.error('接单状态更新失败，请稍后重试。');
-      })
-      .finally(() => {
-        setIsUpdatingStatus(false);
-      });
   }
 
   async function handleServiceTypeSubmit(settings: ServiceTypeSettings) {
@@ -449,19 +404,6 @@ export const HomePage: React.FC = () => {
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            <Link
-              to="/messages"
-              className="relative inline-flex min-h-[52px] min-w-[52px] items-center justify-center rounded-[20px] border border-white/18 bg-white/12 text-white shadow-[0_16px_32px_rgba(61,27,49,0.14)] backdrop-blur-md"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 10h8m-8 4h4m-4-9h8a3 3 0 013 3v8a3 3 0 01-3 3H9l-5 3V7a3 3 0 013-3z" />
-              </svg>
-              {unreadMessageCount > 0 ? (
-                <span className="absolute -right-1 -top-1 inline-flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#ff4962] px-1 text-[10px] font-semibold text-white">
-                  {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
-                </span>
-              ) : null}
-            </Link>
             <button
               type="button"
               onClick={() => setShowShareSheet(true)}
@@ -475,45 +417,6 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={handleToggleStatus}
-          disabled={isUpdatingStatus}
-          className={`relative z-10 mt-4 flex min-h-[44px] w-full items-center justify-between rounded-[22px] border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.1)_100%)] px-4 py-3 text-left shadow-[0_16px_34px_rgba(61,27,49,0.12)] backdrop-blur-md transition-colors active:bg-white/[0.17] ${
-            isUpdatingStatus ? 'opacity-70' : ''
-          }`}
-          aria-pressed={isAcceptingOrders}
-        >
-          <div className="min-w-0">
-                <p className="text-[11px] tracking-[0.04em] text-white [text-shadow:0_1px_2px_rgba(112,35,71,0.14)]">接单状态</p>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              <p className="text-[15px] font-semibold text-white">
-                {isUpdatingStatus ? '更新中' : isAcceptingOrders ? '接单中' : '已暂停'}
-              </p>
-              <div className="flex flex-wrap items-center gap-1.5">
-                {serviceChips.map((chip) => (
-                  <span
-                    key={chip}
-                      className="inline-flex rounded-full border border-white/18 bg-white/12 px-2.5 py-1 text-[10px] font-medium text-white [text-shadow:0_1px_2px_rgba(112,35,71,0.12)]"
-                  >
-                    {chip}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-          <span
-            className={`relative flex h-6 w-10 flex-shrink-0 items-center rounded-full transition-colors ${
-              isAcceptingOrders ? 'bg-emerald-400/90' : 'bg-white/30'
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-[0_2px_8px_rgba(29,35,53,0.18)] transition-all ${
-                isAcceptingOrders ? 'left-[1.15rem]' : 'left-0.5'
-              }`}
-            />
-          </span>
-        </button>
       </div>
 
       <div className="relative z-10 -mt-6 px-5">
@@ -792,63 +695,57 @@ export const HomePage: React.FC = () => {
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.15fr_1fr]">
           <section className="rounded-[30px] bg-[#FFFDFD] p-5 shadow-[0_18px_36px_rgba(36,27,41,0.05)]">
             <div className="mb-4 flex items-center justify-between">
-              <div>
+              <div className="flex items-center gap-2">
                 <h2 className="text-[18px] font-semibold text-[#1f2230]">今日热门作品</h2>
-                <p className="mt-1 text-[12px] text-[#8d8590]">最近受欢迎的款式和客户收藏</p>
+                {hasUnreadWorkActivity && (
+                  <span className="flex h-2 w-2 rounded-full bg-red-500"></span>
+                )}
               </div>
               <Link to="/works" className="text-[13px] font-semibold text-pink-500">
                 更多
               </Link>
             </div>
             {featuredWorks.length ? (
-              <div className="grid grid-cols-4 gap-3">
-                {featuredWorks.map((work) => (
-                  <Link key={work.id} to="/works" className="group">
-                    <div className="overflow-hidden rounded-[18px] bg-[#ffe9f0] shadow-[0_10px_20px_rgba(36,27,41,0.06)]">
+              <div className="columns-2 gap-2.5 space-y-2.5">
+                {featuredWorks.map((work) => {
+                  return (
+                    <Link key={work.id} to="/works" className="group relative block break-inside-avoid overflow-hidden rounded-[14px] bg-gray-100">
                       {work.coverUrl ? (
-                        <img src={work.coverUrl} alt={work.title || '作品'} className="aspect-[0.82] w-full object-cover transition-transform duration-300 group-active:scale-[0.98]" />
+                        <img
+                          src={work.coverUrl}
+                          alt={work.title || '作品'}
+                          className="w-full object-cover"
+                          loading="lazy"
+                        />
                       ) : (
-                        <div className="flex aspect-[0.82] items-center justify-center bg-[#ffe9f0] text-[#d1a1b3]">作品</div>
+                        <div className="flex aspect-[0.82] items-center justify-center bg-gradient-to-br from-rose-50 to-pink-50 text-sm text-gray-400">作品</div>
                       )}
-                    </div>
-                    <div className="mt-2 flex items-center gap-1 text-[12px] text-[#8d8590]">
-                      <span className="text-pink-500">❤</span>
-                      <span>{work.favoriteCount || work.likeCount}</span>
-                      <span>人收藏</span>
-                    </div>
-                  </Link>
-                ))}
+                      {/* 未读提醒 */}
+                      {(work.commentCount > 0 || work.unreadLikes > 0 || work.unreadFavorites > 0) && (
+                        <div className="absolute right-1.5 top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white shadow-sm">
+                          {work.commentCount + work.unreadLikes + work.unreadFavorites}
+                        </div>
+                      )}
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent px-2.5 pb-2 pt-6">
+                        <p className="truncate text-[12px] font-medium leading-4 text-white">{work.title || '未命名'}</p>
+                        <div className="mt-1 flex items-center gap-1">
+                          <svg className="h-3 w-3 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
+                          </svg>
+                          <span className="text-[10px] text-white/80">{work.favoriteCount || work.likeCount || 0}</span>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             ) : (
               <div className="rounded-[22px] bg-[#fff9f8] px-4 py-8 text-center text-[14px] text-[#b7aeb7]">
                 还没有上传作品，先补几张好看的款式吧。
               </div>
             )}
-          </section>
-
-          <section className="rounded-[30px] bg-[#FFFDFD] p-5 shadow-[0_18px_36px_rgba(36,27,41,0.05)]">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-[18px] font-semibold text-[#1f2230]">快速操作</h2>
-                <p className="mt-1 text-[12px] text-[#8d8590]">高频工作动作保留在手边</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              {quickActions.map((item) => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className="flex min-h-[44px] flex-col items-center gap-2 rounded-[20px] bg-[radial-gradient(circle_at_top,#FFF9FB_0%,#FFFFFF_72%)] px-2 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)] transition-colors active:bg-[#fff7fa]"
-                >
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-[16px] text-[1.15rem] font-semibold shadow-[0_8px_16px_rgba(36,27,41,0.05)] ${item.color} text-[#7d6a75]`}>
-                    {item.icon}
-                  </div>
-                  <span className="text-center text-[12px] font-medium text-[#574d58]">{item.label}</span>
-                </Link>
-              ))}
-            </div>
-          </section>
-        </div>
+        </section>
+      </div>
       </div>
 
 

@@ -125,6 +125,10 @@ export const customersService = {
     await api.patch(`/customers/${id}/tags`, { tags });
   },
 
+  async updateName(id: number, name: string): Promise<void> {
+    await api.patch(`/customers/${id}/name`, { name });
+  },
+
   async getDistinctTags(): Promise<string[]> {
     try {
       const response = await api.get<string[]>('/customers/tags');

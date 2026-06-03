@@ -163,4 +163,14 @@ export class ClientOrdersController {
       dto.status,
     );
   }
+
+  @Get('blocked-slots/:techId')
+  @ApiOperation({ summary: '获取美甲师的冻结时间段' })
+  @ApiResponse({ status: 200, description: '返回冻结时间段列表' })
+  @ApiParam({ name: 'techId', type: Number, description: '美甲师ID' })
+  getBlockedSlots(
+    @Param('techId', ParseIntPipe) techId: number,
+  ) {
+    return this.clientOrdersService.getBlockedSlots(techId);
+  }
 }
