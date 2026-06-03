@@ -197,8 +197,13 @@ export const authService = {
     return technician;
   },
 
-  checkPhone: async (phone: string): Promise<{ exists: boolean }> => {
-    const response = await api.post<{ exists: boolean }>('/auth/check-phone', { phone });
+  checkPhone: async (phone: string): Promise<{ exists: boolean; activated: boolean }> => {
+    const response = await api.post<{ exists: boolean; activated: boolean }>('/auth/check-phone', { phone });
+    return response.data;
+  },
+
+  setInitialPassword: async (phone: string, password: string): Promise<{ accessToken: string; refreshToken: string }> => {
+    const response = await api.post('/auth/set-initial-password', { phone, password });
     return response.data;
   },
 

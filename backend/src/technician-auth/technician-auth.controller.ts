@@ -81,9 +81,28 @@ export class TechnicianAuthController {
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: '检查手机号是否已注册' })
   @ApiBody({ type: CheckPhoneDto })
-  @ApiResponse({ status: 200, description: '返回 { exists: boolean }' })
+  @ApiResponse({ status: 200, description: '返回 { exists: boolean, activated: boolean }' })
   async checkPhone(@Body() body: CheckPhoneDto) {
     return this.technicianAuthService.checkPhone(body.phone);
+  }
+
+  @Post('set-initial-password')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @ApiOperation({ summary: '设置初始密码（仅限未设置密码的账号）' })
+  @ApiBody({
+    schema: {
+      properties: {
+        phone: { type: 'string', description: '手机号' },
+        password: { type: 'string', description: '新密码' },
+      },
+      required: ['phone', 'password'],
+    },
+  })
+  @ApiResponse({ status: 200, description: '密码设置成功，返回 token' })
+  @ApiResponse({ status: 400, description: '密码格式错误或账号已有密码' })
+  @ApiResponse({ status: 404, description: '手机号未注册' })
+  async setInitialPassword(@Body() body: { phone: string; password: string }) {
+    return this.technicianAuthService.setInitialPassword(body.phone, body.password);
   }
 
   @Post('register')
