@@ -27,4 +27,7 @@ RUN mkdir -p data
 EXPOSE 3000
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["sh", "-c", "DATABASE_URL=${DATABASE_URL:-file:./data/prod.db} npx prisma db push --skip-generate 2>&1; DATABASE_URL=${DATABASE_URL:-file:./data/prod.db} node dist/src/main"]
+# ⚠️ DATABASE_URL 必须用绝对路径 /app/data/prod.db（卷挂载点）。
+# 相对路径 file:./data/prod.db 会被 Prisma 解析到 schema 目录 /app/prisma/data/prod.db（镜像内临时库），
+# 导致每次重建容器都用空库、丢失生产数据。切勿改回相对路径。
+CMD ["sh", "-c", "DATABASE_URL=${DATABASE_URL:-file:/app/data/prod.db} npx prisma db push --skip-generate 2>&1; DATABASE_URL=${DATABASE_URL:-file:/app/data/prod.db} node dist/src/main"]
