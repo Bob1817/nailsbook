@@ -1,24 +1,32 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { worksService, type NailWork } from '../services/works';
+import { worksService, type NailWork, type WorksSortBy } from '../services/works';
+
+const SORT_TABS: { key: WorksSortBy; label: string }[] = [
+  { key: 'latest', label: '最新' },
+  { key: 'likes', label: '点赞' },
+  { key: 'comments', label: '评论' },
+  { key: 'favorites', label: '收藏' },
+];
 
 const WorksPage: React.FC = () => {
   const navigate = useNavigate();
   const [works, setWorks] = useState<NailWork[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTechnician, setSelectedTechnician] = useState('全部');
+  const [sortBy, setSortBy] = useState<WorksSortBy>('latest');
 
   const loadWorks = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await worksService.getWorks();
+      const data = await worksService.getWorks(undefined, sortBy);
       setWorks(data);
     } catch (error) {
       console.error('Failed to load works:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [sortBy]);
 
   useEffect(() => {
     loadWorks();
@@ -94,6 +102,27 @@ const WorksPage: React.FC = () => {
             <div className="rounded-full bg-white/80 px-3 py-1 text-xs text-[var(--color-text-secondary)] ring-1 ring-black/5 backdrop-blur">
               多美甲师聚合
             </div>
+          </div>
+        )}
+
+        {!loading && works.length > 0 && (
+          <div className="mb-3 flex gap-2 px-1">
+            {SORT_TABS.map((tab) => {
+              const active = sortBy === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setSortBy(tab.key)}
+                  className={`flex-1 rounded-full px-3 py-2 text-sm font-medium transition-colors ${
+                    active
+                      ? 'bg-[var(--color-primary)] text-white shadow-sm'
+                      : 'bg-white text-[var(--color-text-secondary)] ring-1 ring-black/5'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
         )}
 

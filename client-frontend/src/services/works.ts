@@ -9,11 +9,14 @@ export interface NailWork {
   tags: string[];
   likeCount: number;
   commentCount: number;
+  favoriteCount?: number;
   technicianName: string;
   technicianId?: number;
   createdAt: string;
   updatedAt: string;
 }
+
+export type WorksSortBy = 'latest' | 'likes' | 'comments' | 'favorites';
 
 export interface WorkDetail extends NailWork {
   isLiked: boolean;
@@ -43,8 +46,11 @@ export interface Comment {
 }
 
 export const worksService = {
-  async getWorks(techId?: number): Promise<NailWork[]> {
-    const response = await api.get('/works', techId ? { params: { techId } } : undefined);
+  async getWorks(techId?: number, sortBy?: WorksSortBy): Promise<NailWork[]> {
+    const params: Record<string, string | number> = {};
+    if (techId) params.techId = techId;
+    if (sortBy) params.sortBy = sortBy;
+    const response = await api.get('/works', Object.keys(params).length ? { params } : undefined);
     return response.data;
   },
 
