@@ -14,26 +14,19 @@ interface CustomerApiSummary {
   tags?: string | null;
   notes?: string | null;
   createdAt: string;
+  orderCount?: number;
 }
 
 interface CustomerApiDetail extends CustomerApiSummary {
-  quotes?: Array<{
+  orders?: Array<{
     id: number;
-    quoteNo: string;
-    price: number;
-    status: string;
-    createdAt: string;
-  }>;
-  bookings?: Array<{
-    id: number;
-    bookingNo: string;
+    orderNo: string;
     startTime: string;
     status: string;
     isDepositPaid?: boolean;
-    quote?: {
-      title?: string | null;
-      price?: number | null;
-    };
+    customTitle?: string | null;
+    quotePrice?: number | null;
+    address?: string | null;
   }>;
   revenues?: Array<{
     id: number;
@@ -55,14 +48,14 @@ function normalizeCustomerSummary(item: CustomerApiSummary): TechnicianCustomerS
     tags: parseTagString(item.tags),
     note: item.notes || '暂无备注',
     recentServiceAt: item.createdAt,
-    totalOrders: 0,
+    totalOrders: item.orderCount ?? 0,
     totalSpent: 0,
   };
 }
 
 function normalizeCustomerDetail(item: CustomerApiDetail): TechnicianCustomerDetail {
   const tags = parseTagString(item.tags);
-  const bookings = item.bookings ?? [];
+  const orders = item.orders ?? [];
   const revenues = item.revenues ?? [];
 
   return {
@@ -72,19 +65,19 @@ function normalizeCustomerDetail(item: CustomerApiDetail): TechnicianCustomerDet
     address: item.address || '未填写地址',
     tags,
     note: item.notes || '暂无备注',
-    recentServiceAt: bookings[0]?.startTime || item.createdAt,
-    totalOrders: bookings.length,
+    recentServiceAt: orders[0]?.startTime || item.createdAt,
+    totalOrders: orders.length,
     totalSpent: revenues.reduce((sum, entry) => sum + Number(entry.amount || 0), 0),
     preferenceStyle: tags[0] || '简约',
     preferenceColor: tags[1] || '裸色系',
     allergyNote: '暂无记录',
-    history: bookings.map((booking) => ({
-      id: booking.id,
-      label: booking.quote?.title || booking.bookingNo,
-      date: booking.startTime,
-      price: Number(booking.quote?.price ?? 0),
-      status: booking.status,
-      depositPaid: Boolean(booking.isDepositPaid),
+    history: orders.map((order) => ({
+      id: order.id,
+      label: order.customTitle || order.orderNo,
+      date: order.startTime,
+      price: Number(order.quotePrice ?? 0),
+      status: order.status,
+      depositPaid: Boolean(order.isDepositPaid),
     })),
   };
 }
