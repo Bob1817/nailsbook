@@ -299,12 +299,16 @@ export const HomePage: React.FC = () => {
     () =>
       [...works]
         .sort((left, right) => {
-          const hotScore = right.favoriteCount + right.likeCount - (left.favoriteCount + left.likeCount);
-          if (hotScore !== 0) return hotScore;
+          const leftScore = (left.viewCount || 0) + left.likeCount + left.favoriteCount + left.commentCount;
+          const rightScore = (right.viewCount || 0) + right.likeCount + right.favoriteCount + right.commentCount;
+          if (rightScore !== leftScore) return rightScore - leftScore;
           return (parseDate(right.createdAt)?.getTime() ?? 0) - (parseDate(left.createdAt)?.getTime() ?? 0);
         })
         .slice(0, 4),
     [works]
+  );
+  const hasUnreadWorkActivity = works.some(
+    (w) => w.unreadComments > 0 || w.unreadLikes > 0 || w.unreadFavorites > 0
   );
 
   async function copyShareUrl() {
@@ -691,9 +695,11 @@ export const HomePage: React.FC = () => {
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.15fr_1fr]">
           <section className="rounded-[30px] bg-[#FFFDFD] p-5 shadow-[0_18px_36px_rgba(36,27,41,0.05)]">
             <div className="mb-4 flex items-center justify-between">
-              <div>
+              <div className="flex items-center gap-2">
                 <h2 className="text-[18px] font-semibold text-[#1f2230]">今日热门作品</h2>
-                <p className="mt-1 text-[12px] text-[#8d8590]">最近受欢迎的款式和客户收藏</p>
+                {hasUnreadWorkActivity && (
+                  <span className="flex h-2 w-2 rounded-full bg-red-500"></span>
+                )}
               </div>
               <Link to="/works" className="text-[13px] font-semibold text-pink-500">
                 更多
@@ -714,10 +720,10 @@ export const HomePage: React.FC = () => {
                       ) : (
                         <div className="flex aspect-[0.82] items-center justify-center bg-gradient-to-br from-rose-50 to-pink-50 text-sm text-gray-400">作品</div>
                       )}
-                      {/* 评论红点 */}
-                      {work.commentCount > 0 && (
+                      {/* 未读提醒 */}
+                      {(work.commentCount > 0 || work.unreadLikes > 0 || work.unreadFavorites > 0) && (
                         <div className="absolute right-1.5 top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white shadow-sm">
-                          {work.commentCount}
+                          {work.commentCount + work.unreadLikes + work.unreadFavorites}
                         </div>
                       )}
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent px-2.5 pb-2 pt-6">

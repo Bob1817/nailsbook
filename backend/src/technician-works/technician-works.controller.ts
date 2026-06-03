@@ -280,4 +280,36 @@ export class TechnicianWorksController {
       request.user.technicianId,
     );
   }
+
+  @Post(':id/mark-likes-read')
+  @ApiOperation({ summary: '标记点赞已读' })
+  @ApiParam({ name: 'id', type: Number, description: '作品ID' })
+  @ApiResponse({ status: 200, description: '标记成功' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiResponse({ status: 404, description: '作品不存在' })
+  markLikesAsRead(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.technicianWorksService.markLikesAsRead(
+      id,
+      request.user.technicianId,
+    );
+  }
+
+  @Post(':id/mark-favorites-read')
+  @ApiOperation({ summary: '标记收藏已读' })
+  @ApiParam({ name: 'id', type: Number, description: '作品ID' })
+  @ApiResponse({ status: 200, description: '标记成功' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiResponse({ status: 404, description: '作品不存在' })
+  markFavoritesAsRead(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.technicianWorksService.markFavoritesAsRead(
+      id,
+      request.user.technicianId,
+    );
+  }
 }

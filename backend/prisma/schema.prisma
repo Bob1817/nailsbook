@@ -253,6 +253,7 @@ model NailWork {
   isFeatured  Boolean            @default(false)
   sortOrder   Int                @default(0)
   price       Float?
+  viewCount   Int                @default(0)
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @default(now()) @updatedAt
   technician  Technician         @relation(fields: [techId], references: [id])
@@ -269,6 +270,7 @@ model NailWorkLike {
   workId       Int
   clientId     Int?
   technicianId Int?
+  isRead       Boolean  @default(false)
   createdAt    DateTime @default(now())
   work         NailWork @relation(fields: [workId], references: [id], onDelete: Cascade)
 
@@ -281,6 +283,7 @@ model NailWorkFavorite {
   workId       Int
   clientId     Int?
   technicianId Int?
+  isRead       Boolean  @default(false)
   createdAt    DateTime @default(now())
   work         NailWork @relation(fields: [workId], references: [id], onDelete: Cascade)
 

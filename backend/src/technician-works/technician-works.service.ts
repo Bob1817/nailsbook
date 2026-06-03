@@ -438,6 +438,47 @@ export class TechnicianWorksService {
     return { success: true };
   }
 
+  async incrementViewCount(workId: number) {
+    await this.prisma.nailWork.update({
+      where: { id: workId },
+      data: { viewCount: { increment: 1 } },
+    });
+  }
+
+  async markLikesAsRead(workId: number, technicianId: number) {
+    const work = await this.prisma.nailWork.findFirst({
+      where: { id: workId, techId: technicianId },
+    });
+
+    if (!work) {
+      throw new NotFoundException('作品不存在');
+    }
+
+    await this.prisma.nailWorkLike.updateMany({
+      where: { workId, isRead: false },
+      data: { isRead: true },
+    });
+
+    return { success: true };
+  }
+
+  async markFavoritesAsRead(workId: number, technicianId: number) {
+    const work = await this.prisma.nailWork.findFirst({
+      where: { id: workId, techId: technicianId },
+    });
+
+    if (!work) {
+      throw new NotFoundException('作品不存在');
+    }
+
+    await this.prisma.nailWorkFavorite.updateMany({
+      where: { workId, isRead: false },
+      data: { isRead: true },
+    });
+
+    return { success: true };
+  }
+
   private toAbsoluteUrl(url: string | null): string | null {
     if (!url) return null;
     if (url.startsWith('http')) return url;
@@ -481,17 +522,20 @@ export class TechnicianWorksService {
       isFeatured?: boolean;
       sortOrder: number;
       price?: number | null;
+      viewCount?: number;
       createdAt: Date;
       updatedAt: Date;
       likes?: {
         id: number;
         technicianId?: number | null;
         clientId?: number | null;
+        isRead?: boolean;
       }[];
       favorites?: {
         id: number;
         technicianId?: number | null;
         clientId?: number | null;
+        isRead?: boolean;
       }[];
       comments?: { id: number; isRead?: boolean }[];
       technician?: { name: string | null };
@@ -518,6 +562,9 @@ export class TechnicianWorksService {
 
     // Count unread comments
     const unreadComments = work.comments?.filter((c) => !c.isRead).length ?? 0;
+    // Count unread likes and favorites
+    const unreadLikes = work.likes?.filter((l) => !l.isRead).length ?? 0;
+    const unreadFavorites = work.favorites?.filter((f) => !f.isRead).length ?? 0;
 
     return {
       id: work.id,
@@ -531,10 +578,13 @@ export class TechnicianWorksService {
       isPinned: work.isPinned ?? false,
       isFeatured: work.isFeatured ?? false,
       sortOrder: work.sortOrder,
+      viewCount: work.viewCount ?? 0,
       likeCount: work.likes?.length ?? 0,
       favoriteCount: work.favorites?.length ?? 0,
       commentCount: work.comments?.length ?? 0,
       unreadComments,
+      unreadLikes,
+      unreadFavorites,
       isLiked,
       isFavorited,
       technicianName: work.technician?.name ?? '美甲师',
