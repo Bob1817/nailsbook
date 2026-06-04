@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from './ToastProvider';
 import ArtistCardView, { type ArtistCardWork } from './ArtistCardView';
+import BookingSheet from './BookingSheet';
 import { worksService } from '../services/works';
 import type { Technician } from '../services/auth';
 
@@ -15,6 +16,7 @@ const ArtistCardModal: React.FC<ArtistCardModalProps> = ({ technician, onClose }
   const toast = useToast();
   const [works, setWorks] = useState<ArtistCardWork[]>([]);
   const [loadingWorks, setLoadingWorks] = useState(true);
+  const [showBooking, setShowBooking] = useState(false);
 
   const code = technician.invitationCode || '';
   const cardUrl = code ? `${window.location.origin}/artist/${encodeURIComponent(code)}` : '';
@@ -48,6 +50,11 @@ const ArtistCardModal: React.FC<ArtistCardModalProps> = ({ technician, onClose }
 
   // 已登录且已绑定 -> 直接发起预约
   const handleBook = () => {
+    if (technician.serviceSchedule || technician.homeService || technician.shopService) {
+      setShowBooking(true);
+      return;
+    }
+    // 信息不全：回退到完整表单
     onClose();
     navigate(`/orders/create?tech_id=${technician.id}`);
   };
@@ -77,6 +84,7 @@ const ArtistCardModal: React.FC<ArtistCardModalProps> = ({ technician, onClose }
   };
 
   return (
+    <>
     <ArtistCardView
       name={technician.name}
       avatarUrl={technician.avatarUrl ?? null}
@@ -97,6 +105,14 @@ const ArtistCardModal: React.FC<ArtistCardModalProps> = ({ technician, onClose }
       }}
       onClose={onClose}
     />
+    {showBooking && (
+      <BookingSheet
+        technician={technician}
+        onClose={() => setShowBooking(false)}
+        onCreated={() => { setShowBooking(false); onClose(); navigate('/orders'); }}
+      />
+    )}
+    </>
   );
 };
 
