@@ -1,18 +1,28 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Technician } from '../services/auth';
+import type { Technician, ServiceSchedule } from '../services/auth';
 import { orderService } from '../services/order';
 
-export const TIME_SLOTS = [
-  '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-  '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
-  '16:00', '16:30', '17:00', '17:30', '18:00', '18:30',
-  '19:00', '19:30', '20:00', '20:30',
-];
+export const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
+  const h = Math.floor(i / 2);
+  const m = i % 2 === 0 ? '00' : '30';
+  return `${String(h).padStart(2, '0')}:${m}`;
+});
 
 const timeToMinutes = (value: string) => {
   const [hours, minutes] = value.split(':').map(Number);
   return hours * 60 + minutes;
 };
+
+function hasEffectiveWorkTime(sched?: ServiceSchedule | null): boolean {
+  if (!sched) return false;
+  if (Array.isArray(sched.schemes)) {
+    const active = sched.schemes.find((s) => s.id === sched.activeSchemeId);
+    return !!active && Array.isArray(active.days) && active.days.length > 0;
+  }
+  if (sched.selectedDates && sched.selectedDates.length > 0) return true;
+  if (sched.days) return Object.values(sched.days).some((d) => d?.enabled);
+  return false;
+}
 
 export interface SlotStatus {
   time: string;
@@ -31,24 +41,24 @@ interface SlotStatusOptions {
 export function useTechnicianAvailability(technician: Technician | null) {
   const [blockedSlots, setBlockedSlots] = useState<{ startTime: string; endTime: string }[]>([]);
 
-  useEffect(() => {
-    let active = true;
+  const fetchBlocked = useCallback(() => {
     if (!technician) {
       setBlockedSlots([]);
       return;
     }
     orderService
       .getBlockedSlots(technician.id)
-      .then((list) => active && setBlockedSlots(list))
-      .catch(() => active && setBlockedSlots([]));
-    return () => {
-      active = false;
-    };
+      .then(setBlockedSlots)
+      .catch(() => setBlockedSlots([]));
   }, [technician]);
+
+  useEffect(() => {
+    fetchBlocked();
+  }, [fetchBlocked]);
 
   const scheduleRange = useMemo(() => {
     const sched = technician?.serviceSchedule;
-    if (!sched || !Array.isArray(sched.schemes)) return null;
+    if (!hasEffectiveWorkTime(sched) || !sched || !Array.isArray(sched.schemes)) return null;
     const active = sched.schemes.find((s) => s.id === sched.activeSchemeId);
     return active ? { start: active.startTime, end: active.endTime } : null;
   }, [technician]);
@@ -56,14 +66,13 @@ export function useTechnicianAvailability(technician: Technician | null) {
   const isDateAvailable = useCallback(
     (dateStr: string) => {
       const sched = technician?.serviceSchedule;
-      if (!sched) return true;
+      if (!hasEffectiveWorkTime(sched) || !sched) return true;
       const weekday = new Date(`${dateStr}T00:00:00`).getDay();
       const dayKey = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][weekday];
       if (Array.isArray(sched.schemes)) {
         if (sched.restDays?.includes(dateStr)) return false;
         const active = sched.schemes.find((s) => s.id === sched.activeSchemeId);
-        if (!active) return false;
-        return active.days.includes(dayKey);
+        return !!active && active.days.includes(dayKey);
       }
       if (sched.selectedDates && sched.selectedDates.length > 0)
         return sched.selectedDates.includes(dateStr);
@@ -92,16 +101,20 @@ export function useTechnicianAvailability(technician: Technician | null) {
           return m >= s && m < e;
         });
       }
+      const now = Date.now();
+      const td = new Date();
+      const todayStr = `${td.getFullYear()}-${String(td.getMonth() + 1).padStart(2, '0')}-${String(td.getDate()).padStart(2, '0')}`;
       return base.map((time) => {
         const slotDt = new Date(`${dateStr}T${time}:00`);
-        const occupied = blockedSlots.some(
-          (b) => slotDt >= new Date(b.startTime) && slotDt < new Date(b.endTime),
-        );
+        const isPast = dateStr === todayStr && slotDt.getTime() <= now;
+        const occupied =
+          isPast ||
+          blockedSlots.some((b) => slotDt >= new Date(b.startTime) && slotDt < new Date(b.endTime));
         return { time, occupied };
       });
     },
     [scheduleRange, blockedSlots],
   );
 
-  return { blockedSlots, isDateAvailable, getSlotStatuses, scheduleRange };
+  return { blockedSlots, isDateAvailable, getSlotStatuses, scheduleRange, refresh: fetchBlocked };
 }
