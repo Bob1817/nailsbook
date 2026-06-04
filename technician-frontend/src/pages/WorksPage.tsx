@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '../components/feedback/ToastProvider';
 import { worksService, type Work, type Comment } from '../services/works';
 import { uploadService } from '../services/upload';
@@ -299,6 +299,7 @@ const FullscreenImageViewer: React.FC<FullscreenImageViewerProps> = ({
 
 const WorksPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const toast = useToast();
   const [works, setWorks] = useState<Work[]>([]);
   const [loading, setLoading] = useState(true);
@@ -504,6 +505,18 @@ const WorksPage: React.FC = () => {
       }
     }
   };
+
+  useEffect(() => {
+    const wid = searchParams.get('workId');
+    if (!wid || works.length === 0) return;
+    const target = works.find((w) => w.id === Number(wid));
+    if (target) {
+      openWorkDetail(target);
+      searchParams.delete('workId');
+      setSearchParams(searchParams, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, works]);
 
   const loadComments = async (workId: number) => {
     try {

@@ -709,7 +709,7 @@ export const HomePage: React.FC = () => {
               <div className="columns-2 gap-2.5 space-y-2.5">
                 {featuredWorks.map((work) => {
                   return (
-                    <Link key={work.id} to="/works" className="group relative block break-inside-avoid overflow-hidden rounded-[14px] bg-gray-100">
+                    <Link key={work.id} to={`/works?workId=${work.id}`} className="group relative block break-inside-avoid overflow-hidden rounded-[14px] bg-gray-100">
                       {work.coverUrl ? (
                         <img
                           src={work.coverUrl}
