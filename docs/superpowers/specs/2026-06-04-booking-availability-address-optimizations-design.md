@@ -12,8 +12,9 @@
 在「预约入口收敛」上线后，继续优化预约的可用性判定、冲突处理与地址体验。共 5 项，归为三组：
 
 - **A 组｜可用性 & 冲突**（后端 + 双端）：需求 1、2
-- **B 组｜地址体验**（仅客户端 + 后端校验）：需求 3、4
+- **B 组｜地址体验**（客户端 + 后端校验）：需求 3、4
 - **C 组｜小修复**（技师端）：需求 5
+- **D 组｜美甲师省市结构化 + 强制完善**（技师端 + 后端）：需求 6（需求 4 同城判定的数据基础）
 
 一份 spec、一次部署。部署串行构建 `backend → client-web → tech-web`，绝不触碰生产数据库数据。
 
@@ -23,7 +24,7 @@
 
 1. 无生效工时时，时间网格改为**全天 00:00–23:30（48 格，半小时一格）**。
 2. 冲突沿用现有「下单冻结 5 小时 `BlockedTimeSlot`」机制，**新预约 5h 窗口与他人已有占用重叠即冲突**。
-3. 同城判定以 `technician.city` 字符串为准（归一化去尾「市」）。
+3. 美甲师服务城市升级为**结构化省+市**：新增 `Technician.province` 列，技师端用**内置省/市两级下拉选择器**录入；**登录后硬性拦截完善**（未填省/市不能用主功能）。同城判定按**省+市**比对（各自归一化去尾「市/省」）。
 4. 需求 3、4 仅客户端实现（技师端代客下单是自由文本地址、天然同城，不涉及）。
 
 ---
@@ -114,20 +115,23 @@
 
 ## 需求 4：同城锁定省市（仅客户端）
 
+> 城市来源升级为结构化省+市，见「需求 6」。本节描述客户端基于该数据的同城锁定。
+
 ### 设计
-- **城市归一化**：`normalizeCity(s) = (s||'').trim().replace(/市$/,'')`。判定 `normalizeCity(addr.city) === normalizeCity(tech.city)`。
+- **归一化与匹配**：
+  - `normalizeCity(s) = (s||'').trim().replace(/市$/,'')`；`normalizeProvince(s) = (s||'').trim().replace(/省$/,'')`。
+  - 同城 = `normalizeProvince(addr.province)===normalizeProvince(tech.province)` 且 `normalizeCity(addr.city)===normalizeCity(tech.city)`。
 - **内联地址表单**（`CreateOrder` 与 `BookingSheet` 共用模式）：
-  - 当美甲师有 `city` 时，地址 `city` 字段锁定为 `technician.city`、不可编辑（展示为只读）。
-  - 美甲师无省份字段，故 `province` 不单独要求（提交时 `province` 留空或与 `city` 一致）；仅锁城市。
-  - 美甲师 `city` 为空时，回退为可自由填写（不强制同城）。
+  - 当美甲师有省/市时，地址 `province`、`city` 字段锁定为美甲师的省/市、不可编辑（只读展示）；用户仅填区/详细地址。
+  - 美甲师省/市为空时（理论上被「需求 6」强制完善挡住，极少出现）回退为可自由填写。
 - **已有地址选择**：
-  - 列表渲染时对每个地址做同城比对；不匹配项**置灰、禁用点击**。
+  - 列表渲染时对每个地址做省+市比对；不匹配项**置灰、禁用点击**。
   - 用户点选不匹配项 → 弹 `美甲师不支持跨城上门美甲`。
-- **后端兜底校验**（防绕过）：上门下单（`createOrder`、`createFromDesign`）解析地址后，若 `technician.city` 非空且地址 `city` 归一化不等于 `technician.city` 归一化 →
+- **后端兜底校验**（防绕过）：上门下单（`createOrder`、`createFromDesign`）解析地址后，若美甲师省/市非空且地址省+市归一化不一致 →
   `throw new BadRequestException('美甲师不支持跨城上门美甲')`。
 
 ### 影响文件
-- `client-frontend/src/components/BookingSheet.tsx`（内联表单城市锁定 + 已有地址同城过滤）
+- `client-frontend/src/components/BookingSheet.tsx`（内联表单省/市锁定 + 已有地址同城过滤）
 - `client-frontend/src/pages/CreateOrder.tsx`（同上）
 - `backend/src/orders/client-orders.service.ts`（上门下单同城兜底校验）
 
@@ -146,6 +150,40 @@
 
 ---
 
+## 需求 6：美甲师省市结构化 + 登录强制完善（技师端 + 后端）
+
+为支撑同城判定与将来的"定位查看可预约美甲师"，把美甲师服务城市升级为结构化省+市并强制完善。
+
+### 现状
+- `Technician` 仅有 `city String?`（自由文本）+ `serviceArea String?`，无 `province`。
+- `ProfileSettingsPage.tsx` 用纯文本框录入「所在城市」（占位"如：北京市"）。
+- `ShopAddressDto` 的 `province/city` 是**门店地址**字段，与美甲师本人服务城市无关。
+- 首次改密通过 `AuthContext` 的 `mustChangePassword` 驱动跳转。
+
+### 设计（后端）
+- `Technician` 新增列 `province String?`（**仅新增可空列，增量迁移，非破坏**；生产现有 3 位技师 `province=null`，靠强制完善补齐）。
+- `UpdateTechnicianProfileDto` 增加 `province?: string`；`updateProfile` 持久化 `province`（trim，空转 null）。
+- 登录响应 / `me` / profile 查询的 `select` 增加 `province` 字段返回。
+
+### 设计（技师端）
+- **省市数据集**：新增 `technician-frontend/src/data/regions.ts`（或 JSON）—— 中国省→市两级数据（含 4 直辖市，province===city）。
+- **RegionSelect 组件**：`technician-frontend/src/components/RegionSelect.tsx`，省份下拉 → 联动城市下拉，受控输出 `{province, city}`。
+- **ProfileSettingsPage**：把「所在城市」文本框替换为 `RegionSelect`（省+市），保存时一并提交 `province`、`city`；`serviceArea` 保留为补充文本。
+- **登录强制完善守卫**：在路由守卫处（`App.tsx` / `AuthContext`），登录后若 `!technician.province || !technician.city` → 强制跳转到资料完善页（复用 `RegionSelect`，类似首次改密的拦截），未填不能进入主功能。完善保存后解除拦截。
+
+### 影响文件
+- `backend/prisma/schema.prisma`（`Technician.province String?`）
+- `backend/src/technician-auth/dto/update-technician-profile.dto.ts`
+- `backend/src/technician-auth/technician-auth.service.ts`（持久化 + 返回 province）
+- `technician-frontend/src/data/regions.ts`（新增）
+- `technician-frontend/src/components/RegionSelect.tsx`（新增）
+- `technician-frontend/src/pages/ProfileSettingsPage.tsx`
+- `technician-frontend/src/App.tsx` / `technician-frontend/src/contexts/AuthContext.tsx`（强制完善守卫）
+- `technician-frontend/src/services/auth.ts`（`province` 字段类型 + 透传）
+- 客户端 `Technician` 类型（`client-frontend/src/services/auth.ts`）增加 `province?: string`，供需求 4 同城判定读取。
+
+---
+
 ## 测试与验证
 
 - 三端 `npm run build` + `npm run lint` 全绿。
@@ -157,19 +195,24 @@
   2. 两个客户先后约同一时段 → 第二个提交弹「该时间段已经被其他用户预约…」并刷新日历、清空所选。
   3. 取消订单 → 该时段重新可约。
   4. 客户无地址发起上门 → 预约页内联填地址 → 成功且地址出现在地址簿。
-  5. 地址城市与美甲师不同城 → 该地址置灰；强选弹「美甲师不支持跨城上门美甲」；内联表单城市锁定为美甲师城市。
+  5. 地址省/市与美甲师不同城 → 该地址置灰；强选弹「美甲师不支持跨城上门美甲」；内联表单省/市锁定为美甲师省/市。
   6. 技师端首页点热门作品 → 进入该作品详情页。
+  7. 省/市为空的技师登录 → 被强制跳转完善页，选完省/市保存后方可进入主功能；现有 demo 技师可清空 province 复现。
+  8. 技师用 RegionSelect 选省→联动市→保存 → profile 返回结构化 province/city。
 
 ## 部署
 
 - 串行构建：`DEPLOY_BRANCH=<branch> ./deploy/deploy.sh backend` → `client-web` → `tech-web`（一次一个，避免 OOM）；或 `deploy.sh` 自动检测逐个构建。构建后 `docker compose restart nginx`。
+- 后端含 schema 变更（新增 `Technician.province` 可空列）：靠容器启动的 `prisma db push --skip-generate` 增量应用，**仅加列、非破坏**，不触碰 `prod.db` 已有数据。
 - backend 重建不触碰 `prod.db`（数据在 Docker 卷）；部署后核验 `DATABASE_URL` 为绝对路径且行数不变。
+- 部署后生产 3 位技师 `province=null` → 下次登录被强制完善（符合预期）。
 
 ---
 
 ## 不做（YAGNI）
 
 - 不改技师端代客下单的自由文本地址（需求 3、4 不涉及技师端）。
-- 不给美甲师新增结构化省/市字段（同城判定用 `city` 字符串）。
+- 省市只到「市」两级，不做区/县级联（技师服务城市无需到区）。
+- 不引入定位/经纬度与"附近美甲师"功能本身——本次只把结构化省市数据补齐，为将来定位打基础。
 - 不改时间选择的整体交互范式（仍是日历 + 时段网格）。
 - 不动 `client-wxapp`、`mobile-flutter`。
