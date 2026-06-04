@@ -12,6 +12,7 @@ export interface NailWork {
   favoriteCount?: number;
   isLiked?: boolean;
   technicianName: string;
+  technicianAvatarUrl?: string | null;
   technicianId?: number;
   createdAt: string;
   updatedAt: string;
@@ -22,6 +23,7 @@ export type WorksSortBy = 'latest' | 'likes' | 'comments' | 'favorites';
 export interface WorkDetail extends NailWork {
   isLiked: boolean;
   isFavorited: boolean;
+  technician?: { id: number; name: string; avatarUrl: string | null };
   comments: Comment[];
 }
 

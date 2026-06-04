@@ -217,7 +217,14 @@ const WorksPage: React.FC = () => {
                         {work.title || '未命名作品'}
                       </p>
                       <div className="mt-1 flex items-center justify-between gap-2">
-                        <span className="truncate text-xs text-white/78">来自 {work.technicianName}</span>
+                        <span className="flex min-w-0 items-center gap-1.5 text-xs text-white/78">
+                          {work.technicianAvatarUrl ? (
+                            <img src={work.technicianAvatarUrl} alt="" className="h-5 w-5 shrink-0 rounded-full object-cover ring-1 ring-white/40" />
+                          ) : (
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/25 text-[10px] font-medium text-white">{work.technicianName?.slice(0, 1) || '美'}</span>
+                          )}
+                          <span className="truncate">{work.technicianName}</span>
+                        </span>
                         <span className="text-[11px] text-white/72">
                           {work.commentCount || 0} 条评论
                         </span>

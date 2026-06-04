@@ -10,7 +10,9 @@ export interface NailWork {
   likeCount: number;
   commentCount: number;
   favoriteCount?: number;
+  isLiked?: boolean;
   technicianName: string;
+  technicianAvatarUrl?: string | null;
   technicianId?: number;
   createdAt: string;
   updatedAt: string;

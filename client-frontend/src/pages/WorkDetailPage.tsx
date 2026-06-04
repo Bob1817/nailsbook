@@ -504,8 +504,19 @@ const WorkDetailPage: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
+            {work.technician?.avatarUrl ? (
+              <img
+                src={work.technician.avatarUrl}
+                alt=""
+                className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-white/30"
+              />
+            ) : (
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/18 text-[11px] font-semibold text-white">
+                {(work.technician?.name || work.technicianName)?.slice(0, 1) || '美'}
+              </div>
+            )}
             <div className="min-w-0 pr-1">
-              <p className="truncate text-sm font-medium text-white">{work.technicianName || '美甲师作品'}</p>
+              <p className="truncate text-sm font-medium text-white">{work.technician?.name || work.technicianName || '美甲师作品'}</p>
               <p className="text-[11px] text-white/70">作品详情</p>
             </div>
           </div>

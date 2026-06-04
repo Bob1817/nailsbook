@@ -535,8 +535,12 @@ const Home: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
                 <div className="absolute left-3 right-3 top-3 flex items-start justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2 rounded-full bg-black/24 px-2 py-1.5 backdrop-blur-md ring-1 ring-white/10">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/18 text-[11px] font-semibold text-white">
-                      {work.technicianName?.slice(0, 1) || '美'}
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/18 text-[11px] font-semibold text-white">
+                      {work.technicianAvatarUrl ? (
+                        <img src={work.technicianAvatarUrl} alt="" className="h-full w-full rounded-full object-cover" />
+                      ) : (
+                        work.technicianName?.slice(0, 1) || '美'
+                      )}
                     </div>
                     <div className="min-w-0">
                       <p className="truncate text-[10px] font-medium text-white">{work.technicianName}</p>
@@ -564,7 +568,7 @@ const Home: React.FC = () => {
                   <div className="mt-2 flex items-center justify-between text-[11px] text-white/76">
                     <span>来自 {work.technicianName}</span>
                     <span className="flex items-center gap-1">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className={`w-3 h-3 ${work.isLiked ? 'text-[#FF6B8A]' : 'text-white'}`} fill="currentColor" viewBox="0 0 20 20">
                         <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
                       </svg>
                       {work.likeCount || 0}
