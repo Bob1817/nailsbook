@@ -6,6 +6,7 @@ import { orderService } from '../services/order';
 import { uploadService } from '../services/upload';
 import { useTechnicianAvailability } from '../hooks/useTechnicianAvailability';
 import { sameCity } from '../utils/sameCity';
+import DistrictSelect from './DistrictSelect';
 
 interface BookingSheetProps {
   technician: Technician;
@@ -39,6 +40,8 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
   const [newName, setNewName] = useState('');
   const [newPhone, setNewPhone] = useState('');
   const [newAddr, setNewAddr] = useState('');
+  const [newDistrict, setNewDistrict] = useState('');
+  const [showShopConfirm, setShowShopConfirm] = useState(false);
   const [serviceDate, setServiceDate] = useState(dayjs().add(1, 'day').format('YYYY-MM-DD'));
   const [startTime, setStartTime] = useState('14:00');
   const [note, setNote] = useState(prefill?.description || prefill?.title || '');
@@ -83,7 +86,10 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
   const canSubmit = (() => {
     if (!serviceType) return false;
     if (isHome) {
-      if (showInlineForm) return newName.trim().length > 0 && newAddr.trim().length > 0;
+      if (showInlineForm) {
+        const districtOk = lockedCity ? newDistrict.trim().length > 0 : true;
+        return newName.trim().length > 0 && newAddr.trim().length > 0 && districtOk;
+      }
       return selectedAddressId != null;
     }
     if (isShop) return enabledShopAddresses.length > 0;
@@ -105,23 +111,37 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
     }
   };
 
-  const handleSubmit = async () => {
-    if (!canSubmit || submitting) return;
+  const shopForConfirm = enabledShopAddresses[0] || null;
+
+  const doCreate = async () => {
+    if (submitting) return;
     setSubmitting(true);
     try {
       let addressId: number | undefined;
       if (isHome) {
         if (showInlineForm) {
+          const districtOk = lockedCity ? newDistrict.trim().length > 0 : true;
+          if (!newName.trim() || !newAddr.trim() || !districtOk) {
+            setSubmitting(false);
+            return;
+          }
           const saved = await addressService.createAddress({
             contactName: newName.trim(),
             contactPhone: newPhone.trim() || undefined,
             detailAddress: newAddr.trim(),
+            district: newDistrict || undefined,
             province: lockedProvince || undefined,
             city: lockedCity || undefined,
             isDefault: addresses.length === 0,
           });
           addressId = saved.id;
         } else {
+          const chosen = addresses.find((a) => a.id === selectedAddressId);
+          if (chosen && !sameCity(chosen, technician)) {
+            alert('跨城美甲无法预约');
+            setSubmitting(false);
+            return;
+          }
           addressId = selectedAddressId ?? undefined;
         }
       }
@@ -153,6 +173,15 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSubmit = async () => {
+    if (!canSubmit || submitting) return;
+    if (isShop) {
+      setShowShopConfirm(true);
+      return;
+    }
+    await doCreate();
   };
 
   return (
@@ -229,7 +258,8 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
                   )}
                   <Field value={newName} onChange={setNewName} placeholder="姓名" />
                   <Field value={newPhone} onChange={setNewPhone} placeholder="手机号（选填）" type="tel" />
-                  <Field value={newAddr} onChange={setNewAddr} placeholder="详细地址" />
+                  <DistrictSelect city={lockedCity} value={newDistrict} onChange={setNewDistrict} />
+                  <Field value={newAddr} onChange={setNewAddr} placeholder="街道、村、道路、小区、门牌等详细地址" />
                   {addresses.length > 0 && (
                     <button
                       onClick={() => setShowInlineForm(false)}
@@ -464,6 +494,23 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
           </button>
         </div>
       </div>
+
+      {showShopConfirm && (
+        <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/40 sm:items-center" onClick={() => setShowShopConfirm(false)}>
+          <div className="w-full max-w-sm rounded-t-2xl bg-white p-5 sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-semibold text-slate-900">确认到店地址</h3>
+            <p className="mt-1 text-sm text-slate-500">请确认前往的美甲师店铺地址：</p>
+            <div className="mt-3 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-800">
+              <div className="font-medium">{shopForConfirm?.name}</div>
+              <div className="mt-1 text-slate-600">{[shopForConfirm?.province, shopForConfirm?.city, shopForConfirm?.district, shopForConfirm?.detailAddress].filter(Boolean).join(' ')}</div>
+            </div>
+            <div className="mt-4 flex gap-3">
+              <button onClick={() => setShowShopConfirm(false)} className="flex-1 rounded-full bg-slate-100 py-2.5 text-sm font-medium text-slate-600">取消</button>
+              <button onClick={async () => { setShowShopConfirm(false); await doCreate(); }} className="flex-1 rounded-full bg-[linear-gradient(135deg,#FF6B8A_0%,#FF8FA3_100%)] py-2.5 text-sm font-medium text-white">确认预约</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
