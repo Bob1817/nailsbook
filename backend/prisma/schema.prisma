@@ -65,6 +65,7 @@ model Technician {
   mustChangePassword    Boolean                 @default(false)
   avatarUrl             String?
   city                  String?
+  province              String?
   serviceArea           String?
   status                String                  @default("inactive")
   invitationCode        String?                 @unique

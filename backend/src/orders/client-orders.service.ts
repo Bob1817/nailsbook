@@ -293,7 +293,7 @@ export class ClientOrdersService {
       }
 
       this.assertSameCity(
-        { city: design.technician.city },
+        { province: design.technician.province, city: design.technician.city },
         { province: address.province, city: address.city },
       );
 

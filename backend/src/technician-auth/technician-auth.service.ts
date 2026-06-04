@@ -291,6 +291,7 @@ export class TechnicianAuthService {
       phone: technician.phone,
       avatarUrl: technician.avatarUrl,
       city: technician.city,
+      province: technician.province,
       serviceArea: technician.serviceArea,
       status: technician.status,
       invitationCode: technician.invitationCode,
@@ -458,6 +459,7 @@ export class TechnicianAuthService {
       phone: technician.phone,
       avatarUrl: technician.avatarUrl,
       city: technician.city,
+      province: technician.province,
       serviceArea: technician.serviceArea,
       status: technician.status,
       invitationCode: technician.invitationCode,
@@ -506,6 +508,7 @@ export class TechnicianAuthService {
         phone: true,
         avatarUrl: true,
         city: true,
+        province: true,
         serviceArea: true,
         status: true,
         socialMedia: true,
@@ -518,6 +521,7 @@ export class TechnicianAuthService {
     dto: {
       name?: string;
       city?: string;
+      province?: string;
       serviceArea?: string;
       avatarUrl?: string;
       socialMedia?: Record<string, string>;
@@ -541,6 +545,10 @@ export class TechnicianAuthService {
 
     if (dto.city !== undefined) {
       updateData.city = dto.city.trim() || null;
+    }
+
+    if (dto.province !== undefined) {
+      updateData.province = dto.province.trim() || null;
     }
 
     if (dto.serviceArea !== undefined) {
@@ -583,6 +591,7 @@ export class TechnicianAuthService {
         phone: true,
         avatarUrl: true,
         city: true,
+        province: true,
         serviceArea: true,
         status: true,
         invitationCode: true,
@@ -676,6 +685,7 @@ export class TechnicianAuthService {
         phone: true,
         avatarUrl: true,
         city: true,
+        province: true,
         serviceArea: true,
         status: true,
         homeService: true,

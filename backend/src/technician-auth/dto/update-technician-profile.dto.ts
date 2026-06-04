@@ -21,6 +21,11 @@ export class UpdateTechnicianProfileDto {
   @MaxLength(50)
   city?: string;
 
+  @ApiPropertyOptional({ description: '省份', example: '上海市' })
+  @IsString()
+  @IsOptional()
+  province?: string;
+
   @ApiPropertyOptional({ description: '服务区域', example: '浦东新区' })
   @IsOptional()
   @IsString()
