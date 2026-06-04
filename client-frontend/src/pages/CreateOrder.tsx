@@ -9,6 +9,7 @@ import { worksService, type NailWork } from '../services/works';
 import { designService } from '../services/design';
 import { useTechnicianAvailability } from '../hooks/useTechnicianAvailability';
 import { sameCity } from '../utils/sameCity';
+import { shopHoursOptionForDate, isShopOpenOnDate } from '../utils/shopHours';
 import DistrictSelect from '../components/DistrictSelect';
 import type { ShopAddress, Technician, TechnicianServiceItem } from '../services/auth';
 
@@ -128,13 +129,12 @@ const CreateOrder: React.FC = () => {
 
   const shopHoursOpt = useMemo(() => {
     if (!isShopService || !selectedShopAddress) return null;
-    if (!selectedShopHours || selectedShopHours.closed) return { start: '', end: '', closed: true };
-    return { start: selectedShopHours.start, end: selectedShopHours.end };
-  }, [isShopService, selectedShopAddress, selectedShopHours]);
+    return shopHoursOptionForDate(selectedShopAddress, formData.serviceDate);
+  }, [isShopService, selectedShopAddress, formData.serviceDate]);
 
   const slotStatuses = useMemo(
-    () => getSlotStatuses(formData.serviceDate, { shopHours: shopHoursOpt }),
-    [getSlotStatuses, formData.serviceDate, shopHoursOpt],
+    () => getSlotStatuses(formData.serviceDate, { shopMode: isShopService, shopHours: shopHoursOpt }),
+    [getSlotStatuses, formData.serviceDate, shopHoursOpt, isShopService],
   );
 
   const availableTimeSlots = useMemo(
@@ -1104,7 +1104,10 @@ const CreateOrder: React.FC = () => {
                     for (let i = 0; i < firstWeekday; i++) cells.push(<div key={`e${i}`} className="h-10" />);
                     for (let day = 1; day <= daysInMonth; day++) {
                       const dateStr = dayjs(new Date(year, month, day)).format('YYYY-MM-DD');
-                      const disabled = dateStr < todayStr || !isDateAvailable(dateStr);
+                      const dateOk = isShopService
+                        ? isShopOpenOnDate(selectedShopAddress, dateStr)
+                        : isDateAvailable(dateStr);
+                      const disabled = dateStr < todayStr || !dateOk;
                       const selected = formData.serviceDate === dateStr;
                       cells.push(
                         <button

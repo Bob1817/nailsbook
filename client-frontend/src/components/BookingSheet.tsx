@@ -6,6 +6,7 @@ import { orderService } from '../services/order';
 import { uploadService } from '../services/upload';
 import { useTechnicianAvailability } from '../hooks/useTechnicianAvailability';
 import { sameCity } from '../utils/sameCity';
+import { shopHoursOptionForDate, isShopOpenOnDate } from '../utils/shopHours';
 import DistrictSelect from './DistrictSelect';
 
 interface BookingSheetProps {
@@ -54,7 +55,17 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
   });
 
   const { isDateAvailable, getSlotStatuses, refresh } = useTechnicianAvailability(technician);
-  const slotStatuses = useMemo(() => getSlotStatuses(serviceDate), [getSlotStatuses, serviceDate]);
+  const selectedShop = enabledShopAddresses[0] || null;
+  const slotStatuses = useMemo(
+    () =>
+      getSlotStatuses(
+        serviceDate,
+        serviceType === '到店美甲'
+          ? { shopMode: true, shopHours: shopHoursOptionForDate(selectedShop, serviceDate) }
+          : undefined,
+      ),
+    [getSlotStatuses, serviceDate, serviceType, selectedShop],
+  );
 
   useEffect(() => {
     let active = true;
@@ -378,7 +389,10 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
                   for (let i = 0; i < firstWeekday; i++) cells.push(<div key={`e${i}`} className="h-9" />);
                   for (let day = 1; day <= daysInMonth; day++) {
                     const dateStr = dayjs(new Date(year, month, day)).format('YYYY-MM-DD');
-                    const disabled = dateStr < todayStr || !isDateAvailable(dateStr);
+                    const dateOk = isShop
+                      ? isShopOpenOnDate(selectedShop, dateStr)
+                      : isDateAvailable(dateStr);
+                    const disabled = dateStr < todayStr || !dateOk;
                     const selected = serviceDate === dateStr;
                     cells.push(
                       <button

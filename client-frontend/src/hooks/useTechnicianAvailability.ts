@@ -32,6 +32,8 @@ export interface SlotStatus {
 interface SlotStatusOptions {
   /** 到店美甲：传入当天店铺营业时段；closed=true 当天歇业返回空数组 */
   shopHours?: { start: string; end: string; closed?: boolean } | null;
+  /** 到店模式：以店铺营业时间为准，不叠加美甲师工时；店铺无营业时间则不限制 */
+  shopMode?: boolean;
 }
 
 /**
@@ -84,16 +86,19 @@ export function useTechnicianAvailability(technician: Technician | null) {
   const getSlotStatuses = useCallback(
     (dateStr: string, opts?: SlotStatusOptions): SlotStatus[] => {
       let base = TIME_SLOTS;
-      if (opts?.shopHours) {
-        if (opts.shopHours.closed) return [];
-        const s = timeToMinutes(opts.shopHours.start);
-        const e = timeToMinutes(opts.shopHours.end);
-        base = base.filter((t) => {
-          const m = timeToMinutes(t);
-          return m >= s && m < e;
-        });
-      }
-      if (scheduleRange) {
+      if (opts?.shopMode) {
+        // 到店：以店铺营业时间为准（不叠加美甲师工时）；无营业时间则不限制
+        if (opts.shopHours) {
+          if (opts.shopHours.closed) return [];
+          const s = timeToMinutes(opts.shopHours.start);
+          const e = timeToMinutes(opts.shopHours.end);
+          base = base.filter((t) => {
+            const m = timeToMinutes(t);
+            return m >= s && m < e;
+          });
+        }
+      } else if (scheduleRange) {
+        // 上门：按美甲师工时
         const s = timeToMinutes(scheduleRange.start);
         const e = timeToMinutes(scheduleRange.end);
         base = base.filter((t) => {
