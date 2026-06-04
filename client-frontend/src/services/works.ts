@@ -10,6 +10,7 @@ export interface NailWork {
   likeCount: number;
   commentCount: number;
   favoriteCount?: number;
+  isLiked?: boolean;
   technicianName: string;
   technicianId?: number;
   createdAt: string;
@@ -46,10 +47,11 @@ export interface Comment {
 }
 
 export const worksService = {
-  async getWorks(techId?: number, sortBy?: WorksSortBy): Promise<NailWork[]> {
+  async getWorks(techId?: number, sortBy?: WorksSortBy, sortDir?: 'asc' | 'desc'): Promise<NailWork[]> {
     const params: Record<string, string | number> = {};
     if (techId) params.techId = techId;
     if (sortBy) params.sortBy = sortBy;
+    if (sortDir) params.sortDir = sortDir;
     const response = await api.get('/works', Object.keys(params).length ? { params } : undefined);
     return response.data;
   },
