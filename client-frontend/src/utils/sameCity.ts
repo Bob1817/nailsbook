@@ -8,7 +8,5 @@ export function sameCity(
   tech: { province?: string | null; city?: string | null },
 ): boolean {
   if (!tech.city) return true; // 技师未设城市则不限制
-  const cityOk = normCity(addr.city) === normCity(tech.city);
-  const provOk = !tech.province || normProv(addr.province) === normProv(tech.province);
-  return cityOk && provOk;
+  return normCity(addr.city) === normCity(tech.city);
 }

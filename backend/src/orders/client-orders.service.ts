@@ -1050,20 +1050,14 @@ export class ClientOrdersService {
   private normalizeCity(s?: string | null) {
     return (s || '').trim().replace(/市$/, '');
   }
-  private normalizeProvince(s?: string | null) {
-    return (s || '').trim().replace(/[省市]$/, '');
-  }
   private assertSameCity(
     tech: { province?: string | null; city?: string | null },
     addr: { province?: string | null; city?: string | null },
   ) {
     if (!tech.city) return;
     const cityOk = this.normalizeCity(addr.city) === this.normalizeCity(tech.city);
-    const provinceOk =
-      !tech.province ||
-      this.normalizeProvince(addr.province) === this.normalizeProvince(tech.province);
-    if (!cityOk || !provinceOk) {
-      throw new BadRequestException('美甲师不支持跨城上门美甲');
+    if (!cityOk) {
+      throw new BadRequestException('跨城美甲无法预约');
     }
   }
 

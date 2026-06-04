@@ -14,6 +14,11 @@ describe('ClientOrdersService helpers', () => {
       svc.assertSameCity({ province: '江苏', city: '苏州' }, { province: '江苏', city: '南京' }),
     ).toThrow(BadRequestException);
   });
+  it('assertSameCity 通过：城市相同省份为空（修复跨城误判）', () => {
+    expect(() =>
+      svc.assertSameCity({ province: '浙江省', city: '杭州市' }, { province: null, city: '杭州' }),
+    ).not.toThrow();
+  });
   it('assertSameCity 不限制：技师无城市', () => {
     expect(() => svc.assertSameCity({ city: null }, { city: '北京' })).not.toThrow();
   });
