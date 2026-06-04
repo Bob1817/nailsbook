@@ -25,5 +25,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  const needProfile = !technician.province || !technician.city;
+  if (needProfile && location.pathname !== '/profile-completion') {
+    return <Navigate to="/profile-completion" replace />;
+  }
+
   return <>{children}</>;
 };
