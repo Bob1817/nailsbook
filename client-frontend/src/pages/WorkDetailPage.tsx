@@ -504,9 +504,9 @@ const WorkDetailPage: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            {work.technician?.avatarUrl ? (
+            {(work.technician?.avatarUrl || work.technicianAvatarUrl) ? (
               <img
-                src={work.technician.avatarUrl}
+                src={work.technician?.avatarUrl || work.technicianAvatarUrl || ''}
                 alt=""
                 className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-white/30"
               />
