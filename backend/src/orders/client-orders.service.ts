@@ -8,6 +8,7 @@ import { ChatGateway } from '../chat/chat.gateway';
 import { CreateClientOrderDto } from './dto/create-client-order.dto';
 import { UpdateClientOrderDto } from './dto/update-client-order.dto';
 import { CreateOrderFromDesignDto } from './dto/create-order-from-design.dto';
+import { Prisma } from '@prisma/client';
 
 import * as crypto from 'crypto';
 
@@ -181,6 +182,7 @@ export class ClientOrdersService {
 
       // Freeze time slot: booking time + 5 hours
       const blockEndTime = new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
+      await this.assertNoBlockedConflict(tx, dto.techId, startTime, blockEndTime);
       await tx.blockedTimeSlot.create({
         data: {
           techId: dto.techId,
@@ -290,6 +292,11 @@ export class ClientOrdersService {
         throw new NotFoundException('地址不存在');
       }
 
+      this.assertSameCity(
+        { city: design.technician.city },
+        { province: address.province, city: address.city },
+      );
+
       addressId = address.id;
       orderAddress = this.formatAddress(address);
     } else {
@@ -323,7 +330,11 @@ export class ClientOrdersService {
         data: { status: 'converted' },
       });
 
-      return tx.order.create({
+      // Freeze time slot: booking time + 5 hours
+      const blockEndTime = new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
+      await this.assertNoBlockedConflict(tx, dto.techId, startTime, blockEndTime);
+
+      const createdOrder = await tx.order.create({
         data: {
           orderNo: this.generateOrderNo(),
           technicianId: dto.techId,
@@ -341,6 +352,18 @@ export class ClientOrdersService {
         },
         include: this.orderInclude(),
       });
+
+      await tx.blockedTimeSlot.create({
+        data: {
+          techId: dto.techId,
+          orderId: createdOrder.id,
+          startTime,
+          endTime: blockEndTime,
+          reason: 'booking',
+        },
+      });
+
+      return createdOrder;
     });
 
     return this.mapOrder(order);
@@ -1003,10 +1026,55 @@ export class ClientOrdersService {
     }
   }
 
+  private async assertNoBlockedConflict(
+    tx: Prisma.TransactionClient,
+    techId: number,
+    startTime: Date,
+    blockEnd: Date,
+    ignoreOrderId?: number,
+  ) {
+    const conflict = await tx.blockedTimeSlot.findFirst({
+      where: {
+        techId,
+        NOT: ignoreOrderId ? { orderId: ignoreOrderId } : undefined,
+        startTime: { lt: blockEnd },
+        endTime: { gt: startTime },
+      },
+      select: { id: true },
+    });
+    if (conflict) {
+      throw new BadRequestException('该时间段已经被其他用户预约，请重新选择预约时间');
+    }
+  }
+
+  private normalizeCity(s?: string | null) {
+    return (s || '').trim().replace(/市$/, '');
+  }
+  private normalizeProvince(s?: string | null) {
+    return (s || '').trim().replace(/[省市]$/, '');
+  }
+  private assertSameCity(
+    tech: { province?: string | null; city?: string | null },
+    addr: { province?: string | null; city?: string | null },
+  ) {
+    if (!tech.city) return;
+    const cityOk = this.normalizeCity(addr.city) === this.normalizeCity(tech.city);
+    const provinceOk =
+      !tech.province ||
+      this.normalizeProvince(addr.province) === this.normalizeProvince(tech.province);
+    if (!cityOk || !provinceOk) {
+      throw new BadRequestException('美甲师不支持跨城上门美甲');
+    }
+  }
+
   private async resolveOrderAddressAndCustomerName(
     clientUserId: number,
     client: { nickname: string | null; phone: string },
-    technician: { shopAddresses: string | null },
+    technician: {
+      shopAddresses: string | null;
+      province?: string | null;
+      city?: string | null;
+    },
     dto: CreateClientOrderDto,
   ) {
     if (dto.serviceType === '上门美甲') {
@@ -1024,6 +1092,11 @@ export class ClientOrdersService {
       if (!address) {
         throw new NotFoundException('地址不存在');
       }
+
+      this.assertSameCity(
+        { province: technician.province, city: technician.city },
+        { province: address.province, city: address.city },
+      );
 
       return {
         addressId: address.id,
