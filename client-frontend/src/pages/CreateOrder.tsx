@@ -951,7 +951,7 @@ const CreateOrder: React.FC = () => {
                       type="button"
                       onClick={() => {
                         if (!sameCity(address, selectedTechnician || {})) {
-                          alert('美甲师不支持跨城上门美甲');
+                          alert('跨城美甲无法预约');
                           return;
                         }
                         setFormData((prev) => ({ ...prev, addressId: address.id }));

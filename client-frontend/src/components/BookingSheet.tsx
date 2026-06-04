@@ -308,7 +308,7 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
                       const id = Number(e.target.value);
                       const chosen = addresses.find((a) => a.id === id);
                       if (chosen && !sameCity(chosen, technician)) {
-                        alert('美甲师不支持跨城上门美甲');
+                        alert('跨城美甲无法预约');
                         return;
                       }
                       setSelectedAddressId(id);
