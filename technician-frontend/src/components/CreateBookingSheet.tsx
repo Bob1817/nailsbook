@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/feedback/ToastProvider';
 import { ordersService } from '../services/orders';
-import { normalizeSchedule, activeScheme } from '../utils/workSchedule';
+import { normalizeSchedule, activeScheme, hasEffectiveWorkTime, FULL_DAY_SLOTS } from '../utils/workSchedule';
 import { detectOrderConflict, type TechnicianCustomerSummary, type TechnicianOrder } from '../services/technicianData';
 
 interface CreateBookingSheetProps {
@@ -125,6 +125,10 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
   );
   const active = useMemo(() => activeScheme(schedule), [schedule]);
   const restDays = useMemo(() => schedule.restDays ?? [], [schedule.restDays]);
+  const effective = useMemo(
+    () => hasEffectiveWorkTime(technician?.serviceSchedule),
+    [technician?.serviceSchedule],
+  );
 
   // Calendar helpers
   const today = new Date();
@@ -142,6 +146,10 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
     const date = new Date(year, month, day);
     const dateStr = formatDateStr(date);
     const weekdayKey = DAY_KEY_MAP[date.getDay()];
+
+    if (!effective) {
+      return date < today && formatDateStr(date) !== formatDateStr(today);
+    }
 
     // Disable if before today
     if (date < today && formatDateStr(date) !== formatDateStr(today)) {
@@ -170,20 +178,14 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
 
   // Generate available time slots for selected date
   const availableTimeSlots = useMemo(() => {
-    if (!serviceDate || !active) {
-      return [];
-    }
-
+    if (!serviceDate) return [];
+    if (!effective) return FULL_DAY_SLOTS;
+    if (!active) return [];
     const date = new Date(`${serviceDate}T00:00:00`);
     const weekdayKey = DAY_KEY_MAP[date.getDay()];
-
-    // Check if this date is a work day
-    if (!active.days.includes(weekdayKey) || restDays.includes(serviceDate)) {
-      return [];
-    }
-
+    if (!active.days.includes(weekdayKey) || restDays.includes(serviceDate)) return [];
     return generateTimeSlots(active.startTime, active.endTime);
-  }, [serviceDate, active, restDays]);
+  }, [serviceDate, active, restDays, effective]);
 
   // 占用区间：每笔已有预约 [开始, max(结束, 开始+5h)]（默认 5 小时，已确认结束时间则以其为准）
   const occupiedRanges = useMemo(
@@ -199,17 +201,19 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
   );
 
   // 工作时段内每个档的占用状态（占用的显示为"已预约"）
-  const slotStatuses = useMemo(
-    () =>
-      availableTimeSlots.map((slot) => {
-        const slotMs = new Date(`${serviceDate}T${slot}:00`).getTime();
-        return {
-          slot,
-          occupied: occupiedRanges.some((r) => slotMs >= r.start && slotMs < r.end),
-        };
-      }),
-    [availableTimeSlots, serviceDate, occupiedRanges],
-  );
+  const slotStatuses = useMemo(() => {
+    const nowMs = Date.now();
+    const todayStr = formatDateStr(new Date());
+    return availableTimeSlots.map((slot) => {
+      const slotMs = new Date(`${serviceDate}T${slot}:00`).getTime();
+      return {
+        slot,
+        occupied:
+          (serviceDate === todayStr && slotMs <= nowMs) ||
+          occupiedRanges.some((r) => slotMs >= r.start && slotMs < r.end),
+      };
+    });
+  }, [availableTimeSlots, serviceDate, occupiedRanges]);
 
   // Submit handler
   const handleSubmit = async () => {
@@ -256,9 +260,20 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
       }
 
       onCreated(createdOrder);
-    } catch {
-      setFormError('创建预约失败，请稍后重试');
-      toast.error('创建预约失败，请检查网络或稍后再试。');
+    } catch (err) {
+      const e = err as { response?: { data?: { message?: string | string[] } } };
+      const m = e.response?.data?.message;
+      const text = Array.isArray(m) ? m[0] : m;
+      if (typeof text === 'string' && text.includes('该时间段已经被其他用户预约')) {
+        toast.error('该时间段已经被其他用户预约，请重新选择预约时间');
+        if (technician?.id) {
+          ordersService.list({ technicianId: technician.id }).then(setOrders).catch(() => {});
+        }
+        setStartClock('');
+      } else {
+        setFormError('创建预约失败，请稍后重试');
+        toast.error('创建预约失败，请检查网络或稍后再试。');
+      }
     } finally {
       setIsSubmitting(false);
     }

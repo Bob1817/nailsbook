@@ -39,6 +39,23 @@ export function activeScheme(s: ServiceSchedule): WorkTimeScheme | null {
   return s.schemes?.find((x) => x.id === s.activeSchemeId) ?? null;
 }
 
+export function hasEffectiveWorkTime(saved?: ServiceSchedule | null): boolean {
+  if (!saved) return false;
+  if (Array.isArray(saved.schemes)) {
+    const active = saved.schemes.find((s) => s.id === saved.activeSchemeId);
+    return !!active && Array.isArray(active.days) && active.days.length > 0;
+  }
+  if (saved.selectedDates && saved.selectedDates.length > 0) return true;
+  if (saved.days) return Object.values(saved.days).some((d) => d?.enabled);
+  return false;
+}
+
+export const FULL_DAY_SLOTS = Array.from({ length: 48 }, (_, i) => {
+  const h = Math.floor(i / 2);
+  const m = i % 2 === 0 ? '00' : '30';
+  return `${String(h).padStart(2, '0')}:${m}`;
+});
+
 export function daysSummary(days: string[]): string {
   if (days.length === 7) return '每天';
   if (days.length === 0) return '未选择';
