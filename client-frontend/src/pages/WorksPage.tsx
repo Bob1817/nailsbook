@@ -204,7 +204,7 @@ const WorksPage: React.FC = () => {
                         </div>
                       </div>
                       <span className="flex items-center gap-1 rounded-full bg-black/24 px-2.5 py-1 text-[10px] font-medium text-white backdrop-blur-md">
-                        <svg className={`h-3 w-3 ${work.isLiked ? 'text-[#FF6B8A]' : 'text-[var(--color-text-muted)]'}`} fill="currentColor" viewBox="0 0 20 20">
+                        <svg className={`h-3 w-3 ${work.isLiked ? 'text-[#FF6B8A]' : 'text-white'}`} fill="currentColor" viewBox="0 0 20 20">
                           <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
                         </svg>
                         {work.likeCount || 0}
