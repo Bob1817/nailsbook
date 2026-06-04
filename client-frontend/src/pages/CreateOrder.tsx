@@ -7,14 +7,8 @@ import { addressService, type ClientAddress } from '../services/address';
 import { uploadService } from '../services/upload';
 import { worksService, type NailWork } from '../services/works';
 import { designService } from '../services/design';
+import { useTechnicianAvailability } from '../hooks/useTechnicianAvailability';
 import type { ShopAddress, Technician, TechnicianServiceItem } from '../services/auth';
-
-const timeSlots = [
-  '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-  '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
-  '16:00', '16:30', '17:00', '17:30', '18:00', '18:30',
-  '19:00', '19:30', '20:00', '20:30',
-];
 
 const serviceTypeOptions = [
   { value: '上门美甲', label: '上门美甲', description: '美甲师按预约时间上门服务' },
@@ -27,12 +21,7 @@ const formatClientAddress = (address: ClientAddress) =>
 const formatShopAddress = (address: ShopAddress) =>
   [address.province, address.city, address.district, address.detailAddress].filter(Boolean).join(' ');
 
-const timeToMinutes = (value: string) => {
-  const [hours, minutes] = value.split(':').map(Number);
-  return hours * 60 + minutes;
-};
-
-const getShopHoursForDate = (shopAddress: ShopAddress | null, serviceDate: string) => {
+const getShopHoursForDate =(shopAddress: ShopAddress | null, serviceDate: string) => {
   if (!shopAddress?.businessHours || !serviceDate) {
     return null;
   }
@@ -95,7 +84,6 @@ const CreateOrder: React.FC = () => {
   const [technicianWorks, setTechnicianWorks] = useState<NailWork[]>([]);
   const [showWorkSelector, setShowWorkSelector] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [blockedSlots, setBlockedSlots] = useState<{ startTime: string; endTime: string }[]>([]);
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -106,6 +94,7 @@ const CreateOrder: React.FC = () => {
     () => bookableTechnicians.find((item) => item.id === formData.techId) || null,
     [bookableTechnicians, formData.techId],
   );
+  const { isDateAvailable, getSlotStatuses } = useTechnicianAvailability(selectedTechnician);
   const isHomeService = formData.serviceType === '上门美甲';
   const isShopService = formData.serviceType === '到店美甲';
   const canChooseServiceType = !!selectedTechnician;
@@ -128,89 +117,22 @@ const CreateOrder: React.FC = () => {
     () => getShopHoursForDate(selectedShopAddress, formData.serviceDate),
     [formData.serviceDate, selectedShopAddress],
   );
-  const shopAvailableTimeSlots = useMemo(() => {
-    if (!isShopService || !selectedShopAddress) {
-      return timeSlots;
-    }
 
-    if (!selectedShopHours || selectedShopHours.closed) {
-      return [];
-    }
-
-    const startMinutes = timeToMinutes(selectedShopHours.start);
-    const endMinutes = timeToMinutes(selectedShopHours.end);
-    return timeSlots.filter((slot) => {
-      const slotMinutes = timeToMinutes(slot);
-      return slotMinutes >= startMinutes && slotMinutes < endMinutes;
-    });
+  const shopHoursOpt = useMemo(() => {
+    if (!isShopService || !selectedShopAddress) return null;
+    if (!selectedShopHours || selectedShopHours.closed) return { start: '', end: '', closed: true };
+    return { start: selectedShopHours.start, end: selectedShopHours.end };
   }, [isShopService, selectedShopAddress, selectedShopHours]);
 
-  const scheduleRange = useMemo(() => {
-    const sched = selectedTechnician?.serviceSchedule;
-    if (!sched || !Array.isArray(sched.schemes)) return null;
-    const active = sched.schemes.find((s) => s.id === sched.activeSchemeId);
-    return active ? { start: active.startTime, end: active.endTime } : null;
-  }, [selectedTechnician]);
+  const slotStatuses = useMemo(
+    () => getSlotStatuses(formData.serviceDate, { shopHours: shopHoursOpt }),
+    [getSlotStatuses, formData.serviceDate, shopHoursOpt],
+  );
 
-  const availableTimeSlots = useMemo(() => {
-    let baseSlots = isShopService ? shopAvailableTimeSlots : timeSlots;
-    if (scheduleRange) {
-      const s = timeToMinutes(scheduleRange.start);
-      const e = timeToMinutes(scheduleRange.end);
-      baseSlots = baseSlots.filter((slot) => {
-        const m = timeToMinutes(slot);
-        return m >= s && m < e;
-      });
-    }
-    if (blockedSlots.length === 0) return baseSlots;
-    return baseSlots.filter((slot) => {
-      const slotDateTime = new Date(`${formData.serviceDate}T${slot}:00`);
-      return !blockedSlots.some((blocked) => {
-        const blockStart = new Date(blocked.startTime);
-        const blockEnd = new Date(blocked.endTime);
-        return slotDateTime >= blockStart && slotDateTime < blockEnd;
-      });
-    });
-  }, [isShopService, shopAvailableTimeSlots, blockedSlots, formData.serviceDate, scheduleRange]);
-
-  // 工作时段内每个档的占用状态（占用=blockedSlots 覆盖，显示"已预约"）
-  const slotStatuses = useMemo(() => {
-    let baseSlots = isShopService ? shopAvailableTimeSlots : timeSlots;
-    if (scheduleRange) {
-      const s = timeToMinutes(scheduleRange.start);
-      const e = timeToMinutes(scheduleRange.end);
-      baseSlots = baseSlots.filter((slot) => {
-        const m = timeToMinutes(slot);
-        return m >= s && m < e;
-      });
-    }
-    return baseSlots.map((time) => {
-      const slotDateTime = new Date(`${formData.serviceDate}T${time}:00`);
-      const occupied = blockedSlots.some(
-        (b) => slotDateTime >= new Date(b.startTime) && slotDateTime < new Date(b.endTime),
-      );
-      return { time, occupied };
-    });
-  }, [isShopService, shopAvailableTimeSlots, scheduleRange, blockedSlots, formData.serviceDate]);
-
-  const isDateAvailable = useCallback((dateStr: string) => {
-    const sched = selectedTechnician?.serviceSchedule;
-    if (!sched) return true;
-    const weekday = new Date(`${dateStr}T00:00:00`).getDay();
-    const dayKey = ['sun','mon','tue','wed','thu','fri','sat'][weekday];
-
-    // New format: schemes + activeSchemeId + restDays
-    if (Array.isArray(sched.schemes)) {
-      if (sched.restDays?.includes(dateStr)) return false;
-      const active = sched.schemes.find((s) => s.id === sched.activeSchemeId);
-      if (!active) return false;
-      return active.days.includes(dayKey);
-    }
-
-    // Legacy format
-    if (sched.selectedDates && sched.selectedDates.length > 0) return sched.selectedDates.includes(dateStr);
-    return sched.days?.[dayKey]?.enabled ?? true;
-  }, [selectedTechnician]);
+  const availableTimeSlots = useMemo(
+    () => slotStatuses.filter((s) => !s.occupied).map((s) => s.time),
+    [slotStatuses],
+  );
 
   const activeServiceItems = useMemo(
     () =>
@@ -269,13 +191,6 @@ const CreateOrder: React.FC = () => {
     if (bookableTechnicians.length === 1 && formData.techId === 0) {
       setFormData((prev) => ({ ...prev, techId: bookableTechnicians[0].id }));
     }
-
-    // Fetch blocked time slots when technician is selected
-    if (formData.techId > 0) {
-      orderService.getBlockedSlots(formData.techId).then(setBlockedSlots).catch(() => setBlockedSlots([]));
-    } else {
-      setBlockedSlots([]);
-    }
   }, [formData.techId, bookableTechnicians]);
 
   useEffect(() => {
@@ -324,7 +239,7 @@ const CreateOrder: React.FC = () => {
       return;
     }
 
-    if (shopAvailableTimeSlots.length === 0) {
+    if (slotStatuses.length === 0) {
       requestAnimationFrame(() => {
         setFormData((prev) => ({ ...prev, startTime: '' }));
       });
@@ -336,7 +251,7 @@ const CreateOrder: React.FC = () => {
         setFormData((prev) => ({ ...prev, startTime: availableTimeSlots[0] || '' }));
       });
     }
-  }, [formData.startTime, isShopService, selectedShopAddress, shopAvailableTimeSlots, availableTimeSlots]);
+  }, [formData.startTime, isShopService, selectedShopAddress, slotStatuses, availableTimeSlots]);
 
   useEffect(() => {
     if (selectedTechnician) {
@@ -538,7 +453,31 @@ const CreateOrder: React.FC = () => {
               {bookableTechnicians.length > 1 ? '请选择当前已开启接单的美甲师' : '当前仅有 1 位可预约的美甲师'}
             </p>
           </div>
-          {bookableTechnicians.length > 0 ? (
+          {bookableTechnicians.length === 0 ? (
+            <div className="rounded-[24px] bg-slate-50 px-5 py-8 text-center">
+              <p className="text-sm font-medium text-slate-700">当前暂无可预约的美甲师</p>
+              <p className="mt-2 text-sm leading-6 text-slate-400">请等待美甲师开启接单并配置可用服务后再发起预约</p>
+            </div>
+          ) : bookableTechnicians.length === 1 ? (
+            <div className="flex items-center gap-3 rounded-[24px] bg-slate-50/80 p-4 ring-1 ring-black/5">
+              <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-[18px] bg-[linear-gradient(135deg,#FFE0EA_0%,#F4F7FB_100%)]">
+                {bookableTechnicians[0].avatarUrl ? (
+                  <img src={bookableTechnicians[0].avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-base font-semibold text-[var(--color-primary)]">{bookableTechnicians[0].name[0]}</span>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-900">{bookableTechnicians[0].name}</span>
+                  {bookableTechnicians[0].isDefault && (
+                    <span className="rounded-full bg-[var(--color-primary-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-primary)]">默认</span>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-gray-500">{bookableTechnicians[0].city || bookableTechnicians[0].serviceArea || '暂未设置服务区域'}</p>
+              </div>
+            </div>
+          ) : (
             <div className="space-y-3">
               {bookableTechnicians.map((tech) => {
               const isSelected = formData.techId === tech.id;
@@ -597,11 +536,6 @@ const CreateOrder: React.FC = () => {
                 </button>
               );
             })}
-            </div>
-          ) : (
-            <div className="rounded-[24px] bg-slate-50 px-5 py-8 text-center">
-              <p className="text-sm font-medium text-slate-700">当前暂无可预约的美甲师</p>
-              <p className="mt-2 text-sm leading-6 text-slate-400">请等待美甲师开启接单并配置可用服务后再发起预约</p>
             </div>
           )}
         </section>
@@ -670,35 +604,27 @@ const CreateOrder: React.FC = () => {
             <div className="rounded-[24px] bg-slate-50 px-5 py-6 text-sm text-slate-400">选择美甲师后，这里会显示她在服务管理里设置的服务内容</div>
           ) : (
             <div className="space-y-3">
-              {/* Custom Service Option */}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsCustomService(!isCustomService);
-                  if (!isCustomService) {
-                    setFormData((prev) => ({ ...prev, selectedServiceIds: [] }));
-                  }
-                }}
-                className={`flex w-full items-start gap-3 rounded-[24px] p-4 text-left ring-1 transition ${
-                  isCustomService
-                    ? 'bg-[linear-gradient(135deg,#FFF0F5_0%,#FAFBFF_100%)] ring-[#FF6B8A]/25'
-                    : 'bg-slate-50/80 ring-black/5'
-                }`}
-              >
-                <div className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-md border-2 ${
-                  isCustomService ? 'border-[#FF6B8A] bg-[#FF6B8A]' : 'border-slate-300'
-                }`}>
-                  {isCustomService && (
-                    <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <span className="text-sm font-medium text-gray-900">自定义服务</span>
-                  <p className="mt-1 text-sm leading-6 text-gray-500">描述你的需求，上传参考图片或选择美甲师作品，等待报价</p>
-                </div>
-              </button>
+              {/* Segmented control: 选服务项目 | 自定义需求 */}
+              <div className="mb-3 grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1">
+                <button
+                  type="button"
+                  onClick={() => { setIsCustomService(false); }}
+                  className={`rounded-xl py-2.5 text-sm font-medium transition ${
+                    !isCustomService ? 'bg-white text-gray-900 shadow-sm' : 'text-slate-500'
+                  }`}
+                >
+                  选服务项目
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setIsCustomService(true); setFormData((prev) => ({ ...prev, selectedServiceIds: [] })); }}
+                  className={`rounded-xl py-2.5 text-sm font-medium transition ${
+                    isCustomService ? 'bg-white text-gray-900 shadow-sm' : 'text-slate-500'
+                  }`}
+                >
+                  自定义需求
+                </button>
+              </div>
 
               {/* Custom Service Form */}
               {isCustomService && (
@@ -1107,7 +1033,7 @@ const CreateOrder: React.FC = () => {
               )}
               {isShopService && selectedShopAddress && (
                 <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
-                  {shopAvailableTimeSlots.length > 0
+                  {slotStatuses.length > 0
                     ? `店铺营业时间：${selectedShopHours?.start} - ${selectedShopHours?.end}`
                     : '所选日期为该店铺休息日，请改选其他日期'}
                 </div>
