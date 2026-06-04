@@ -60,15 +60,15 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
       .then((list) => {
         if (!active) return;
         setAddresses(list);
-        if (list.length > 0) {
-          const def = list.find((a) => a.isDefault) || list[0];
-          setSelectedAddressId(def.id);
-        }
+        const candidates = list.filter((a) => sameCity(a, technician));
+        const def = candidates.find((a) => a.isDefault) || candidates[0] || null;
+        setSelectedAddressId(def ? def.id : null);
       })
       .catch(() => {});
     return () => {
       active = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const isHome = serviceType === '上门美甲';
