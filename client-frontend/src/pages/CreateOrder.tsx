@@ -8,6 +8,7 @@ import { uploadService } from '../services/upload';
 import { worksService, type NailWork } from '../services/works';
 import { designService } from '../services/design';
 import { useTechnicianAvailability } from '../hooks/useTechnicianAvailability';
+import { sameCity } from '../utils/sameCity';
 import type { ShopAddress, Technician, TechnicianServiceItem } from '../services/auth';
 
 const serviceTypeOptions = [
@@ -59,6 +60,10 @@ const CreateOrder: React.FC = () => {
   const bookableTechnicians = useMemo(() => getBookableTechnicians(technicians), [technicians]);
   const [addresses, setAddresses] = useState<ClientAddress[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [useInlineAddr, setUseInlineAddr] = useState(false);
+  const [inlineName, setInlineName] = useState('');
+  const [inlinePhone, setInlinePhone] = useState('');
+  const [inlineAddr, setInlineAddr] = useState('');
   
   // Get design info from URL params
   const designId = searchParams.get('design_id');
@@ -94,7 +99,7 @@ const CreateOrder: React.FC = () => {
     () => bookableTechnicians.find((item) => item.id === formData.techId) || null,
     [bookableTechnicians, formData.techId],
   );
-  const { isDateAvailable, getSlotStatuses } = useTechnicianAvailability(selectedTechnician);
+  const { isDateAvailable, getSlotStatuses, refresh } = useTechnicianAvailability(selectedTechnician);
   const isHomeService = formData.serviceType === '上门美甲';
   const isShopService = formData.serviceType === '到店美甲';
   const canChooseServiceType = !!selectedTechnician;
@@ -146,10 +151,6 @@ const CreateOrder: React.FC = () => {
     try {
       const data = await addressService.getAddresses();
       setAddresses(data);
-      if (data.length > 0) {
-        const defaultAddress = data.find((item) => item.isDefault) || data[0];
-        setFormData((prev) => ({ ...prev, addressId: prev.addressId || defaultAddress.id }));
-      }
     } catch {
       console.error('Failed to load addresses');
     }
@@ -172,6 +173,21 @@ const CreateOrder: React.FC = () => {
   useEffect(() => {
     loadAddresses();
   }, [loadAddresses]);
+
+  // 默认仅自动选择同城地址；无同城地址则留空，由用户走内联建址
+  useEffect(() => {
+    if (!isHomeService || !selectedTechnician || addresses.length === 0 || useInlineAddr) {
+      return;
+    }
+    const sameCityAddresses = addresses.filter((item) => sameCity(item, selectedTechnician));
+    setFormData((prev) => {
+      if (prev.addressId && sameCityAddresses.some((item) => item.id === prev.addressId)) {
+        return prev;
+      }
+      const defaultAddress = sameCityAddresses.find((item) => item.isDefault) || sameCityAddresses[0];
+      return { ...prev, addressId: defaultAddress ? defaultAddress.id : 0 };
+    });
+  }, [isHomeService, selectedTechnician, addresses, useInlineAddr]);
 
   // Load design from URL if design_id is provided
   useEffect(() => {
@@ -308,8 +324,15 @@ const CreateOrder: React.FC = () => {
       return false;
     }
 
-    if (isHomeService && formData.addressId === 0) {
-      return false;
+    if (isHomeService) {
+      const usingInline = addresses.length === 0 || useInlineAddr;
+      if (usingInline) {
+        if (!inlineName.trim() || !inlineAddr.trim()) {
+          return false;
+        }
+      } else if (formData.addressId === 0) {
+        return false;
+      }
     }
 
     if (isShopService && !selectedShopAddress) {
@@ -364,9 +387,17 @@ const CreateOrder: React.FC = () => {
       return;
     }
 
-    if (isHomeService && formData.addressId === 0) {
-      alert('请选择上门服务地址');
-      return;
+    const usingInlineAddr = isHomeService && (addresses.length === 0 || useInlineAddr);
+    if (isHomeService) {
+      if (usingInlineAddr) {
+        if (!inlineName.trim() || !inlineAddr.trim()) {
+          alert('请填写或选择上门地址');
+          return;
+        }
+      } else if (formData.addressId === 0) {
+        alert('请填写或选择上门地址');
+        return;
+      }
     }
 
     if (isShopService && !selectedShopAddress) {
@@ -395,13 +426,26 @@ const CreateOrder: React.FC = () => {
         }
       }
 
+      let homeAddressId = formData.addressId;
+      if (usingInlineAddr) {
+        const saved = await addressService.createAddress({
+          contactName: inlineName.trim(),
+          contactPhone: inlinePhone.trim() || undefined,
+          province: selectedTechnician?.province || undefined,
+          city: selectedTechnician?.city || undefined,
+          detailAddress: inlineAddr.trim(),
+          isDefault: addresses.length === 0,
+        });
+        homeAddressId = saved.id;
+      }
+
       // 统一走 createOrder 接口
       await orderService.createOrder({
         serviceDate: formData.serviceDate,
         startTime: formData.startTime,
         techId: formData.techId,
         serviceType: formData.serviceType,
-        addressId: isHomeService ? formData.addressId : undefined,
+        addressId: isHomeService ? homeAddressId : undefined,
         shopAddress: isShopService ? selectedShopAddress || undefined : undefined,
         remark: formData.remark,
         ...(isCustomService
@@ -419,6 +463,12 @@ const CreateOrder: React.FC = () => {
       const e = err as { response?: { data?: { message?: string | string[] } } };
       const msg = e.response?.data?.message;
       const text = Array.isArray(msg) ? msg[0] : msg;
+      if (typeof text === 'string' && text.includes('该时间段已经被其他用户预约')) {
+        alert('该时间段已经被其他用户预约，请重新选择预约时间');
+        refresh();
+        setFormData((prev) => ({ ...prev, startTime: '' }));
+        return;
+      }
       alert('创建预约失败：' + (text || (err as Error).message || '请稍后重试'));
       console.error('Create order failed', err);
     } finally {
@@ -846,17 +896,43 @@ const CreateOrder: React.FC = () => {
                 管理地址
               </button>
             </div>
-            {addresses.length > 0 ? (
+            {addresses.length === 0 || useInlineAddr ? (
+              <div className="space-y-3">
+                {(selectedTechnician?.province || selectedTechnician?.city) && (
+                  <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                    服务城市：{[selectedTechnician?.province, selectedTechnician?.city].filter(Boolean).join(' ')}（仅支持同城上门）
+                  </div>
+                )}
+                <input value={inlineName} onChange={(e) => setInlineName(e.target.value)} placeholder="联系人姓名"
+                  className="w-full rounded-2xl bg-slate-50 px-4 py-3 text-sm text-gray-900 outline-none ring-1 ring-slate-200 focus:ring-[#FF6B8A]/20" />
+                <input value={inlinePhone} onChange={(e) => setInlinePhone(e.target.value)} placeholder="联系电话（选填）" type="tel"
+                  className="w-full rounded-2xl bg-slate-50 px-4 py-3 text-sm text-gray-900 outline-none ring-1 ring-slate-200 focus:ring-[#FF6B8A]/20" />
+                <input value={inlineAddr} onChange={(e) => setInlineAddr(e.target.value)} placeholder="详细地址（街道、门牌等）"
+                  className="w-full rounded-2xl bg-slate-50 px-4 py-3 text-sm text-gray-900 outline-none ring-1 ring-slate-200 focus:ring-[#FF6B8A]/20" />
+                {addresses.length > 0 && (
+                  <button type="button" onClick={() => setUseInlineAddr(false)} className="text-xs text-slate-400">取消，使用已有地址</button>
+                )}
+              </div>
+            ) : (
               <div className="space-y-3">
                 {addresses.map((address) => {
                   const isSelected = formData.addressId === address.id;
+                  const cityOk = sameCity(address, selectedTechnician || {});
                   return (
                     <button
                       key={address.id}
                       type="button"
-                      onClick={() => setFormData((prev) => ({ ...prev, addressId: address.id }))}
+                      onClick={() => {
+                        if (!sameCity(address, selectedTechnician || {})) {
+                          alert('美甲师不支持跨城上门美甲');
+                          return;
+                        }
+                        setFormData((prev) => ({ ...prev, addressId: address.id }));
+                      }}
                       className={`w-full rounded-[24px] p-4 text-left ring-1 transition ${
-                        isSelected
+                        !cityOk
+                          ? 'bg-slate-50/80 ring-black/5 opacity-50'
+                          : isSelected
                           ? 'bg-[linear-gradient(135deg,#FFF0F5_0%,#FAFBFF_100%)] ring-[#FF6B8A]/25'
                           : 'bg-slate-50/80 ring-black/5'
                       }`}
@@ -880,6 +956,11 @@ const CreateOrder: React.FC = () => {
                                 默认
                               </span>
                             )}
+                            {!cityOk && (
+                              <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-500">
+                                跨城不可用
+                              </span>
+                            )}
                           </div>
                           <p className="mt-2 text-sm leading-6 text-gray-600">{formatClientAddress(address)}</p>
                         </div>
@@ -887,17 +968,12 @@ const CreateOrder: React.FC = () => {
                     </button>
                   );
                 })}
-              </div>
-            ) : (
-              <div className="rounded-[24px] bg-slate-50 px-5 py-8 text-center">
-                <p className="text-sm font-medium text-slate-700">暂无上门地址，请先添加</p>
-                <p className="mt-2 text-sm leading-6 text-slate-400">至少添加一个上门地址后，才能继续预约上门美甲</p>
                 <button
                   type="button"
-                  onClick={() => navigate('/profile/addresses')}
-                  className="mt-4 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white"
+                  onClick={() => setUseInlineAddr(true)}
+                  className="w-full rounded-[24px] border-2 border-dashed border-slate-200 py-3 text-sm font-medium text-[var(--color-primary)]"
                 >
-                  添加地址
+                  + 新增同城地址
                 </button>
               </div>
             )}
