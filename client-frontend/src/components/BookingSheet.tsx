@@ -1,24 +1,24 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import type { Technician } from '../services/auth';
 import { addressService, type ClientAddress } from '../services/address';
 import { orderService } from '../services/order';
 import { uploadService } from '../services/upload';
+import { useTechnicianAvailability } from '../hooks/useTechnicianAvailability';
 
-const TIME_SLOTS = [
-  '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-  '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
-  '16:00', '16:30', '17:00', '17:30', '18:00', '18:30',
-  '19:00', '19:30', '20:00', '20:30',
-];
-
-interface ChatBookingSheetProps {
+interface BookingSheetProps {
   technician: Technician;
+  prefill?: {
+    title?: string;
+    description?: string;
+    images?: string[];
+  };
+  mode?: 'chat' | 'standalone';
   onClose: () => void;
   onCreated?: () => void;
 }
 
-const ChatBookingSheet: React.FC<ChatBookingSheetProps> = ({ technician, onClose, onCreated }) => {
+const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode = 'standalone', onClose, onCreated }) => {
   const enabledShopAddresses = useMemo(
     () => (technician.shopAddresses || []).filter((s) => s.enabled !== false),
     [technician.shopAddresses],
@@ -40,77 +40,17 @@ const ChatBookingSheet: React.FC<ChatBookingSheetProps> = ({ technician, onClose
   const [newAddr, setNewAddr] = useState('');
   const [serviceDate, setServiceDate] = useState(dayjs().add(1, 'day').format('YYYY-MM-DD'));
   const [startTime, setStartTime] = useState('14:00');
-  const [note, setNote] = useState('');
-  const [images, setImages] = useState<string[]>([]);
+  const [note, setNote] = useState(prefill?.description || prefill?.title || '');
+  const [images, setImages] = useState<string[]>(prefill?.images || []);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
-  const [blockedSlots, setBlockedSlots] = useState<{ startTime: string; endTime: string }[]>([]);
 
-  // 拉取该美甲师已占用时段（默认 5 小时）
-  useEffect(() => {
-    let active = true;
-    orderService
-      .getBlockedSlots(technician.id)
-      .then((list) => active && setBlockedSlots(list))
-      .catch(() => active && setBlockedSlots([]));
-    return () => {
-      active = false;
-    };
-  }, [technician.id]);
-
-  // 工作时间联动
-  const scheduleRange = useMemo(() => {
-    const sched = technician.serviceSchedule;
-    if (!sched || !Array.isArray(sched.schemes)) return null;
-    const act = sched.schemes.find((s) => s.id === sched.activeSchemeId);
-    return act ? { start: act.startTime, end: act.endTime } : null;
-  }, [technician.serviceSchedule]);
-
-  const isDateAvailable = useCallback(
-    (dateStr: string) => {
-      const sched = technician.serviceSchedule;
-      if (!sched) return true;
-      const weekday = new Date(`${dateStr}T00:00:00`).getDay();
-      const dayKey = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][weekday];
-      if (Array.isArray(sched.schemes)) {
-        if (sched.restDays?.includes(dateStr)) return false;
-        const act = sched.schemes.find((s) => s.id === sched.activeSchemeId);
-        if (!act) return false;
-        return act.days.includes(dayKey);
-      }
-      if (sched.selectedDates && sched.selectedDates.length > 0)
-        return sched.selectedDates.includes(dateStr);
-      return sched.days?.[dayKey]?.enabled ?? true;
-    },
-    [technician.serviceSchedule],
-  );
-
-  const slotStatuses = useMemo(() => {
-    const toMin = (t: string) => {
-      const [h, m] = t.split(':').map(Number);
-      return h * 60 + m;
-    };
-    let base = TIME_SLOTS;
-    if (scheduleRange) {
-      const s = toMin(scheduleRange.start);
-      const e = toMin(scheduleRange.end);
-      base = base.filter((t) => {
-        const m = toMin(t);
-        return m >= s && m < e;
-      });
-    }
-    return base.map((time) => {
-      const slotDt = new Date(`${serviceDate}T${time}:00`);
-      const occupied = blockedSlots.some(
-        (b) => slotDt >= new Date(b.startTime) && slotDt < new Date(b.endTime),
-      );
-      return { time, occupied };
-    });
-  }, [scheduleRange, serviceDate, blockedSlots]);
+  const { isDateAvailable, getSlotStatuses } = useTechnicianAvailability(technician);
+  const slotStatuses = useMemo(() => getSlotStatuses(serviceDate), [getSlotStatuses, serviceDate]);
 
   useEffect(() => {
     let active = true;
@@ -185,7 +125,7 @@ const ChatBookingSheet: React.FC<ChatBookingSheetProps> = ({ technician, onClose
         serviceType,
         serviceDate,
         startTime,
-        chatMode: true,
+        chatMode: mode === 'chat',
         addressId: isHome ? addressId : undefined,
         shopAddress: isShop ? enabledShopAddresses[0] : undefined,
         customDescription: note.trim() || undefined,
@@ -507,4 +447,4 @@ const Field: React.FC<{
   />
 );
 
-export default ChatBookingSheet;
+export default BookingSheet;

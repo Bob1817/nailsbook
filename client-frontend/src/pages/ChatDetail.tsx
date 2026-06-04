@@ -7,7 +7,7 @@ import { uploadService } from '../services/upload';
 import { useSocket } from '../hooks/useSocket';
 import { useTyping } from '../hooks/useTyping';
 import OrderDetail from './OrderDetail';
-import ChatBookingSheet from '../components/ChatBookingSheet';
+import BookingSheet from '../components/BookingSheet';
 import OrderCardMessage from '../components/OrderCardMessage';
 
 const ChatDetail: React.FC = () => {
@@ -550,8 +550,9 @@ const ChatDetail: React.FC = () => {
           );
         }
         return (
-          <ChatBookingSheet
+          <BookingSheet
             technician={fullTech}
+            mode="chat"
             onClose={() => setShowBookingSheet(false)}
             onCreated={() => navigate('/orders')}
           />
