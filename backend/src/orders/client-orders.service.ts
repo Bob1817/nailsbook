@@ -75,12 +75,13 @@ export class ClientOrdersService {
       throw new BadRequestException('请选择至少一项服务内容或填写自定义需求');
     }
 
-    const selectedServiceNames = isCustom
-      ? []
-      : this.resolveSelectedServiceNames(
-          binding.technician.serviceItems,
-          dto.selectedServiceIds,
-        );
+    const selectedServiceNames =
+      isCustom || dto.chatMode
+        ? []
+        : this.resolveSelectedServiceNames(
+            binding.technician.serviceItems,
+            dto.selectedServiceIds,
+          );
 
     const client = await this.prisma.clientUser.findUnique({
       where: { id: clientUserId },
@@ -145,7 +146,9 @@ export class ClientOrdersService {
 
       const previewContent = isCustom
         ? (dto.customTitle || '自定义美甲需求')
-        : selectedServiceNames.join('、');
+        : selectedServiceNames.length > 0
+          ? selectedServiceNames.join('、')
+          : '到店/上门预约';
       const preview = `新的预约申请：${previewContent} · ${dto.serviceType}`;
       const conversation = await tx.conversation.upsert({
         where: {

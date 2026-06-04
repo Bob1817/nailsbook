@@ -1193,7 +1193,7 @@ const CreateOrder: React.FC = () => {
 
       {showShopConfirm && selectedShopAddress && (
         <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/40 sm:items-center" onClick={() => setShowShopConfirm(false)}>
-          <div className="w-full max-w-sm rounded-t-2xl bg-white p-5 sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md rounded-t-[28px] bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:max-w-sm sm:rounded-[28px] sm:pb-5" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-base font-semibold text-gray-900">确认到店地址</h3>
             <p className="mt-1 text-sm text-gray-500">请确认前往的美甲师店铺地址：</p>
             <div className="mt-3 rounded-xl bg-slate-50 px-4 py-3 text-sm text-gray-800">
@@ -1201,8 +1201,8 @@ const CreateOrder: React.FC = () => {
               <div className="mt-1 text-gray-600">{[selectedShopAddress.province, selectedShopAddress.city, selectedShopAddress.district, selectedShopAddress.detailAddress].filter(Boolean).join(' ')}</div>
             </div>
             <div className="mt-4 flex gap-3">
-              <button onClick={() => setShowShopConfirm(false)} className="flex-1 rounded-full bg-slate-100 py-2.5 text-sm font-medium text-gray-600">取消</button>
-              <button onClick={async () => { setShowShopConfirm(false); await doCreate(); }} className="flex-1 rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-2.5 text-sm font-medium text-white">确认预约</button>
+              <button onClick={() => setShowShopConfirm(false)} className="flex-1 rounded-full bg-slate-100 py-3 text-sm font-medium text-gray-600 min-h-[48px]">取消</button>
+              <button onClick={async () => { setShowShopConfirm(false); await doCreate(); }} className="flex-1 rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-3 text-sm font-medium text-white min-h-[48px]">确认预约</button>
             </div>
           </div>
         </div>
