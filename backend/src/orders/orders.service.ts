@@ -114,6 +114,19 @@ export class OrdersService {
       // Freeze time slot: booking time + 5 hours
       const startTime = new Date(dto.startTime);
       const blockEndTime = new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
+      const conflict = await tx.blockedTimeSlot.findFirst({
+        where: {
+          techId: technicianId,
+          startTime: { lt: blockEndTime },
+          endTime: { gt: startTime },
+        },
+        select: { id: true },
+      });
+      if (conflict) {
+        throw new BadRequestException(
+          '该时间段已经被其他用户预约，请重新选择预约时间',
+        );
+      }
       await tx.blockedTimeSlot.create({
         data: {
           techId: technicianId,
