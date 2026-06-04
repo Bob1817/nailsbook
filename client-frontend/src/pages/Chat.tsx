@@ -222,13 +222,13 @@ const Chat: React.FC = () => {
   return (
     <div className="min-h-full bg-[linear-gradient(180deg,#FFFDFD_0%,#F7F3F6_48%,#F2F6FB_100%)]">
       <div className="border-b border-white/60 bg-white/76 px-5 app-header-safe pb-5 backdrop-blur-xl">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <span className="text-[11px] uppercase tracking-[0.34em] text-slate-400">MESSAGES</span>
-            <h1 className="mt-0.5 text-[1.75rem] font-bold tracking-[-0.03em] text-slate-900">消息</h1>
-          </div>
-          <div className="rounded-full bg-white/88 px-4 py-2 text-sm font-medium text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
-            {unreadCount > 0 ? `${unreadCount} 条未读` : `${conversations.length} 个会话`}
+        <div>
+          <span className="text-[11px] uppercase tracking-[0.34em] text-slate-400">MESSAGES</span>
+          <div className="mt-0.5 flex items-center justify-between gap-4">
+            <h1 className="text-[1.75rem] font-bold tracking-[-0.03em] text-slate-900">消息</h1>
+            <div className="rounded-full bg-white/88 px-4 py-2 text-sm font-medium text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
+              {unreadCount > 0 ? `${unreadCount} 条未读` : `${conversations.length} 个会话`}
+            </div>
           </div>
         </div>
       </div>

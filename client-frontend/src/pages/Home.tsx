@@ -189,11 +189,10 @@ const Home: React.FC = () => {
     return (
       <div className="min-h-full bg-[var(--color-bg)] pb-24">
         <div className="sticky top-0 z-20 border-b border-white/60 bg-white/82 px-5 app-header-safe pb-3 backdrop-blur-md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]">NailArt</p>
-              <h1 className="mt-0.5 text-[1.75rem] font-bold tracking-[-0.03em] text-[var(--color-text)]">首页</h1>
-            </div>
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]">NailArt</p>
+            <div className="mt-0.5 flex items-center justify-between">
+              <h1 className="text-[1.75rem] font-bold tracking-[-0.03em] text-[var(--color-text)]">首页</h1>
             <div className="flex items-center gap-2">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-black/5">
                 <Skeleton variant="circular" width="20px" height="20px" />
@@ -202,6 +201,7 @@ const Home: React.FC = () => {
                 <Skeleton variant="circular" width="20px" height="20px" />
               </div>
             </div>
+          </div>
           </div>
         </div>
         <div className="px-5 pt-4 space-y-4">
@@ -231,11 +231,10 @@ const Home: React.FC = () => {
     <div className="min-h-full bg-[linear-gradient(180deg,#fff8fa_0%,#f8f9fc_24%,#f5f6f8_100%)] pb-24">
       {/* Header */}
       <div className="sticky top-0 z-20 border-b border-white/60 bg-white/82 px-5 app-header-safe pb-3 backdrop-blur-md">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]">NailArt</p>
-            <h1 className="mt-0.5 text-[1.75rem] font-bold tracking-[-0.03em] text-[var(--color-text)]">首页</h1>
-          </div>
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]">NailArt</p>
+          <div className="mt-0.5 flex items-center justify-between">
+            <h1 className="text-[1.75rem] font-bold tracking-[-0.03em] text-[var(--color-text)]">首页</h1>
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate('/chat')}
@@ -257,6 +256,7 @@ const Home: React.FC = () => {
                 </svg>
               )}
             </button>
+          </div>
           </div>
         </div>
       </div>

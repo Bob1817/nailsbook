@@ -61,14 +61,14 @@ const DesignList: React.FC = () => {
     <div className="min-h-full bg-[linear-gradient(180deg,#fff8fa_0%,#f8f9fc_24%,#f5f6f8_100%)]">
       {/* Header */}
       <div className="sticky top-0 z-10 border-b border-white/60 bg-white/82 px-5 app-header-safe pb-4 backdrop-blur-md">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]">Design Requests</p>
-            <h1 className="mt-0.5 text-[1.75rem] font-bold tracking-[-0.03em] text-[var(--color-text)]">我的设计</h1>
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]">Design Requests</p>
+          <div className="mt-0.5 flex items-center justify-between">
+            <h1 className="text-[1.75rem] font-bold tracking-[-0.03em] text-[var(--color-text)]">我的设计</h1>
+            <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm ring-1 ring-black/5">
+              {designs.length} 条记录
+            </span>
           </div>
-          <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm ring-1 ring-black/5">
-            {designs.length} 条记录
-          </span>
         </div>
       </div>
 
