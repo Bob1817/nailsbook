@@ -119,6 +119,7 @@ export interface Technician {
   avatar?: string;
   status: string;
   invitationCode?: string;
+  province?: string;
   city?: string;
   serviceArea?: string;
   homeService?: boolean;

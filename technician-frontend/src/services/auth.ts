@@ -29,6 +29,7 @@ interface AuthApiResponse {
     name: string;
     phone: string;
     avatarUrl?: string;
+    province?: string;
     city?: string;
     serviceArea?: string;
     status: string;
@@ -47,6 +48,7 @@ interface MeApiResponse {
   name: string;
   phone: string;
   avatarUrl?: string;
+  province?: string;
   city?: string;
   serviceArea?: string;
   status: string;
@@ -113,6 +115,7 @@ export const authService = {
         avatar: response.data.technician.avatarUrl,
         status: response.data.technician.status,
         invitationCode: response.data.technician.invitationCode,
+        province: response.data.technician.province,
         city: response.data.technician.city,
         serviceArea: response.data.technician.serviceArea,
         homeService: response.data.technician.homeService,
@@ -146,6 +149,7 @@ export const authService = {
         avatar: response.data.avatarUrl,
         status: response.data.status,
         invitationCode: response.data.invitationCode,
+        province: response.data.province,
         city: response.data.city,
         serviceArea: response.data.serviceArea,
         homeService: response.data.homeService,
@@ -229,6 +233,7 @@ export const authService = {
         avatar: response.data.technician.avatarUrl,
         status: response.data.technician.status,
         invitationCode: response.data.technician.invitationCode,
+        province: response.data.technician.province,
         city: response.data.technician.city,
         serviceArea: response.data.technician.serviceArea,
         homeService: response.data.technician.homeService,
@@ -272,6 +277,7 @@ export const authService = {
   updateProfile: async (profile: Partial<Technician>): Promise<Technician> => {
     const payload = {
       name: profile.name?.trim(),
+      province: profile.province,
       city: profile.city,
       serviceArea: profile.serviceArea,
       avatarUrl: profile.avatar?.trim() ? profile.avatar.trim() : undefined,
@@ -289,6 +295,7 @@ export const authService = {
       avatar: data.avatarUrl,
       status: data.status,
       invitationCode: data.invitationCode,
+      province: data.province,
       city: data.city,
       serviceArea: data.serviceArea,
       homeService: data.homeService,
