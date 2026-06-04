@@ -67,6 +67,7 @@ export interface Technician {
   phone: string;
   avatarUrl?: string | null;
   city?: string | null;
+  province?: string | null;
   serviceArea?: string | null;
   status?: string;
   isDefault?: boolean;

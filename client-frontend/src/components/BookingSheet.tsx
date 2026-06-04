@@ -5,6 +5,7 @@ import { addressService, type ClientAddress } from '../services/address';
 import { orderService } from '../services/order';
 import { uploadService } from '../services/upload';
 import { useTechnicianAvailability } from '../hooks/useTechnicianAvailability';
+import { sameCity } from '../utils/sameCity';
 
 interface BookingSheetProps {
   technician: Technician;
@@ -49,7 +50,7 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
 
-  const { isDateAvailable, getSlotStatuses } = useTechnicianAvailability(technician);
+  const { isDateAvailable, getSlotStatuses, refresh } = useTechnicianAvailability(technician);
   const slotStatuses = useMemo(() => getSlotStatuses(serviceDate), [getSlotStatuses, serviceDate]);
 
   useEffect(() => {
@@ -72,6 +73,9 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
 
   const isHome = serviceType === '上门美甲';
   const isShop = serviceType === '到店美甲';
+
+  const lockedProvince = technician.province || '';
+  const lockedCity = technician.city || '';
 
   const fullAddress = (a: ClientAddress) =>
     [a.province, a.city, a.district, a.detailAddress, a.doorInfo].filter(Boolean).join(' ');
@@ -112,6 +116,8 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
             contactName: newName.trim(),
             contactPhone: newPhone.trim() || undefined,
             detailAddress: newAddr.trim(),
+            province: lockedProvince || undefined,
+            city: lockedCity || undefined,
             isDefault: addresses.length === 0,
           });
           addressId = saved.id;
@@ -137,7 +143,13 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
       const e = err as { response?: { data?: { message?: string | string[] } } };
       const msg = e.response?.data?.message;
       const text = Array.isArray(msg) ? msg[0] : msg;
-      alert('发起预约失败：' + (text || (err as Error).message || '请稍后重试'));
+      if (typeof text === 'string' && text.includes('该时间段已经被其他用户预约')) {
+        alert('该时间段已经被其他用户预约，请重新选择预约时间');
+        refresh();
+        setStartTime('');
+      } else {
+        alert('发起预约失败：' + (text || (err as Error).message || '请稍后重试'));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -210,6 +222,11 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
               <Label>上门地址</Label>
               {showInlineForm ? (
                 <div className="space-y-2">
+                  {(lockedProvince || lockedCity) && (
+                    <div className="rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-500">
+                      服务城市：{[lockedProvince, lockedCity].filter(Boolean).join(' ')}（仅支持同城上门）
+                    </div>
+                  )}
                   <Field value={newName} onChange={setNewName} placeholder="姓名" />
                   <Field value={newPhone} onChange={setNewPhone} placeholder="手机号（选填）" type="tel" />
                   <Field value={newAddr} onChange={setNewAddr} placeholder="详细地址" />
@@ -230,25 +247,48 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
                   + 添加上门地址
                 </button>
               ) : addresses.length === 1 ? (
-                <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-4 py-3">
-                  <span className="flex-1 text-sm text-slate-900">{fullAddress(addresses[0])}</span>
-                  <button
-                    onClick={() => setShowInlineForm(true)}
-                    className="text-xs text-[var(--color-primary)]"
-                  >
-                    更换
-                  </button>
-                </div>
+                !sameCity(addresses[0], technician) ? (
+                  <div className="space-y-2">
+                    <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                      该地址非美甲师所在城市，不支持跨城上门
+                    </p>
+                    <button
+                      onClick={() => setShowInlineForm(true)}
+                      className="flex w-full items-center gap-2 rounded-xl bg-slate-50 px-4 py-3 text-sm font-medium text-[var(--color-primary)] ring-1 ring-[var(--color-primary)]/20"
+                    >
+                      + 添加同城地址
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-4 py-3">
+                    <span className="flex-1 text-sm text-slate-900">{fullAddress(addresses[0])}</span>
+                    <button
+                      onClick={() => setShowInlineForm(true)}
+                      className="text-xs text-[var(--color-primary)]"
+                    >
+                      更换
+                    </button>
+                  </div>
+                )
               ) : (
                 <div className="space-y-2">
                   <select
                     value={selectedAddressId ?? ''}
-                    onChange={(e) => setSelectedAddressId(Number(e.target.value))}
+                    onChange={(e) => {
+                      const id = Number(e.target.value);
+                      const chosen = addresses.find((a) => a.id === id);
+                      if (chosen && !sameCity(chosen, technician)) {
+                        alert('美甲师不支持跨城上门美甲');
+                        return;
+                      }
+                      setSelectedAddressId(id);
+                    }}
                     className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
                   >
                     {addresses.map((a) => (
-                      <option key={a.id} value={a.id}>
+                      <option key={a.id} value={a.id} disabled={!sameCity(a, technician)}>
                         {fullAddress(a)}
+                        {sameCity(a, technician) ? '' : '（跨城不可选）'}
                       </option>
                     ))}
                   </select>
