@@ -117,15 +117,11 @@ const Profile: React.FC = () => {
   ];
 
   const settingItems = [
-    {
-      icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      label: '帮助与反馈',
-      onClick: () => navigate('/profile/help'),
-    },
+    { icon: (<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>), label: '修改密码', onClick: () => navigate('/profile/password') },
+    { icon: (<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>), label: '通知设置', onClick: () => navigate('/profile/notifications') },
+    { icon: (<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>), label: '帮助与反馈', onClick: () => navigate('/profile/help') },
+    { icon: (<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>), label: '用户协议', onClick: () => navigate('/profile/legal/terms') },
+    { icon: (<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>), label: '隐私政策', onClick: () => navigate('/profile/legal/privacy') },
   ];
 
   return (
@@ -158,7 +154,7 @@ const Profile: React.FC = () => {
                   {user?.nickname || user?.phone || '用户'}
                 </h1>
                 <p className="mt-1 text-sm text-white/80">{user?.phone}</p>
-                <p className="mt-1 text-xs text-white/70">点击编辑资料与设置</p>
+                <p className="mt-1 text-xs text-white/70">点击编辑资料</p>
               </div>
               <svg className="h-5 w-5 text-white/70 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -322,7 +318,7 @@ const Profile: React.FC = () => {
         <div className="rounded-[32px] bg-white/88 p-2 shadow-[0_24px_64px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
           <div className="px-3 pb-2 pt-1">
             <h3 className="text-lg font-semibold text-[var(--color-text)]">更多</h3>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">查看帮助、反馈问题与账号设置</p>
+            <p className="mt-1 text-sm text-[var(--color-text-muted)]">账号设置、协议与版本信息</p>
           </div>
           {settingItems.map((item, index) => (
             <button
@@ -343,6 +339,15 @@ const Profile: React.FC = () => {
               </svg>
             </button>
           ))}
+          <div className="flex items-center justify-between rounded-[24px] px-4 py-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#FFF0F5_0%,#F4F7FB_100%)] text-[var(--color-text-secondary)]">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              </span>
+              <span className="text-body text-[var(--color-text)]">版本</span>
+            </div>
+            <span className="text-sm text-[var(--color-text-muted)]">1.0.0</span>
+          </div>
         </div>
       </div>
 
@@ -355,9 +360,6 @@ const Profile: React.FC = () => {
           退出登录
         </button>
       </div>
-
-      {/* Version */}
-      <p className="mt-6 text-center text-caption text-[var(--color-text-muted)]">版本 1.0.0</p>
 
       {/* Bind Technician Modal */}
       {showBindModal && (

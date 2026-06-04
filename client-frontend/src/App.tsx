@@ -30,6 +30,9 @@ import PublicWorkDetail from './pages/PublicWorkDetail';
 import ForgotPassword from './pages/ForgotPassword';
 import Settings from './pages/Settings';
 import HelpFeedback from './pages/HelpFeedback';
+import ChangePassword from './pages/ChangePassword';
+import NotificationSettings from './pages/NotificationSettings';
+import LegalDoc from './pages/LegalDoc';
 
 function AppRoutes() {
   const { isAuthenticated, user, loading } = useAuth();
@@ -87,6 +90,9 @@ function AppRoutes() {
           <Route path="/likes" element={<MyLikes />} />
           <Route path="/profile/settings" element={<Settings />} />
           <Route path="/profile/help" element={<HelpFeedback />} />
+          <Route path="/profile/password" element={<ChangePassword />} />
+          <Route path="/profile/notifications" element={<NotificationSettings />} />
+          <Route path="/profile/legal/:type" element={<LegalDoc />} />
           {/* Works routes - no bottom tab bar */}
           <Route path="/works" element={<WorksPage />} />
           <Route path="/works/:id" element={<WorkDetailPage />} />
