@@ -9,6 +9,7 @@ import { worksService, type NailWork } from '../services/works';
 import { designService } from '../services/design';
 import { useTechnicianAvailability } from '../hooks/useTechnicianAvailability';
 import { sameCity } from '../utils/sameCity';
+import DistrictSelect from '../components/DistrictSelect';
 import type { ShopAddress, Technician, TechnicianServiceItem } from '../services/auth';
 
 const serviceTypeOptions = [
@@ -64,7 +65,9 @@ const CreateOrder: React.FC = () => {
   const [inlineName, setInlineName] = useState('');
   const [inlinePhone, setInlinePhone] = useState('');
   const [inlineAddr, setInlineAddr] = useState('');
-  
+  const [inlineDistrict, setInlineDistrict] = useState('');
+  const [showShopConfirm, setShowShopConfirm] = useState(false);
+
   // Get design info from URL params
   const designId = searchParams.get('design_id');
   const designTechId = searchParams.get('tech_id');
@@ -327,7 +330,8 @@ const CreateOrder: React.FC = () => {
     if (isHomeService) {
       const usingInline = addresses.length === 0 || useInlineAddr;
       if (usingInline) {
-        if (!inlineName.trim() || !inlineAddr.trim()) {
+        const districtOk = selectedTechnician?.city ? inlineDistrict.trim().length > 0 : true;
+        if (!inlineName.trim() || !inlineAddr.trim() || !districtOk) {
           return false;
         }
       } else if (formData.addressId === 0) {
@@ -390,13 +394,21 @@ const CreateOrder: React.FC = () => {
     const usingInlineAddr = isHomeService && (addresses.length === 0 || useInlineAddr);
     if (isHomeService) {
       if (usingInlineAddr) {
-        if (!inlineName.trim() || !inlineAddr.trim()) {
+        const districtOk = selectedTechnician?.city ? inlineDistrict.trim().length > 0 : true;
+        if (!inlineName.trim() || !inlineAddr.trim() || !districtOk) {
           alert('请填写或选择上门地址');
           return;
         }
-      } else if (formData.addressId === 0) {
-        alert('请填写或选择上门地址');
-        return;
+      } else {
+        if (formData.addressId === 0) {
+          alert('请填写或选择上门地址');
+          return;
+        }
+        const chosen = addresses.find((a) => a.id === formData.addressId);
+        if (chosen && !sameCity(chosen, selectedTechnician)) {
+          alert('跨城美甲无法预约');
+          return;
+        }
       }
     }
 
@@ -405,6 +417,19 @@ const CreateOrder: React.FC = () => {
       return;
     }
 
+    if (isShopService) {
+      setShowShopConfirm(true);
+      return;
+    }
+
+    await doCreate();
+  };
+
+  const doCreate = async () => {
+    if (!selectedTechnician) {
+      return;
+    }
+    const usingInlineAddr = isHomeService && (addresses.length === 0 || useInlineAddr);
     setSubmitting(true);
     try {
       if (isCustomService) {
@@ -433,6 +458,7 @@ const CreateOrder: React.FC = () => {
           contactPhone: inlinePhone.trim() || undefined,
           province: selectedTechnician?.province || undefined,
           city: selectedTechnician?.city || undefined,
+          district: inlineDistrict || undefined,
           detailAddress: inlineAddr.trim(),
           isDefault: addresses.length === 0,
         });
@@ -907,7 +933,8 @@ const CreateOrder: React.FC = () => {
                   className="w-full rounded-2xl bg-slate-50 px-4 py-3 text-sm text-gray-900 outline-none ring-1 ring-slate-200 focus:ring-[#FF6B8A]/20" />
                 <input value={inlinePhone} onChange={(e) => setInlinePhone(e.target.value)} placeholder="联系电话（选填）" type="tel"
                   className="w-full rounded-2xl bg-slate-50 px-4 py-3 text-sm text-gray-900 outline-none ring-1 ring-slate-200 focus:ring-[#FF6B8A]/20" />
-                <input value={inlineAddr} onChange={(e) => setInlineAddr(e.target.value)} placeholder="详细地址（街道、门牌等）"
+                <DistrictSelect city={selectedTechnician?.city || ''} value={inlineDistrict} onChange={setInlineDistrict} />
+                <input value={inlineAddr} onChange={(e) => setInlineAddr(e.target.value)} placeholder="街道、村、道路、小区、门牌等详细地址"
                   className="w-full rounded-2xl bg-slate-50 px-4 py-3 text-sm text-gray-900 outline-none ring-1 ring-slate-200 focus:ring-[#FF6B8A]/20" />
                 {addresses.length > 0 && (
                   <button type="button" onClick={() => setUseInlineAddr(false)} className="text-xs text-slate-400">取消，使用已有地址</button>
@@ -1163,6 +1190,23 @@ const CreateOrder: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {showShopConfirm && selectedShopAddress && (
+        <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/40 sm:items-center" onClick={() => setShowShopConfirm(false)}>
+          <div className="w-full max-w-sm rounded-t-2xl bg-white p-5 sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-semibold text-gray-900">确认到店地址</h3>
+            <p className="mt-1 text-sm text-gray-500">请确认前往的美甲师店铺地址：</p>
+            <div className="mt-3 rounded-xl bg-slate-50 px-4 py-3 text-sm text-gray-800">
+              <div className="font-medium">{selectedShopAddress.name}</div>
+              <div className="mt-1 text-gray-600">{[selectedShopAddress.province, selectedShopAddress.city, selectedShopAddress.district, selectedShopAddress.detailAddress].filter(Boolean).join(' ')}</div>
+            </div>
+            <div className="mt-4 flex gap-3">
+              <button onClick={() => setShowShopConfirm(false)} className="flex-1 rounded-full bg-slate-100 py-2.5 text-sm font-medium text-gray-600">取消</button>
+              <button onClick={async () => { setShowShopConfirm(false); await doCreate(); }} className="flex-1 rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-2.5 text-sm font-medium text-white">确认预约</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
