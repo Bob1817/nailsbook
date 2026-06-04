@@ -332,6 +332,9 @@ const WorkDetailPage: React.FC = () => {
   const [actionMenuId, setActionMenuId] = useState<number | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
+  const [imageHeightVh, setImageHeightVh] = useState(55);
+  const dragRef = useRef<{ startY: number; startVh: number } | null>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
   const imageSliderRef = useRef<HTMLDivElement>(null);
 
@@ -433,6 +436,18 @@ const WorkDetailPage: React.FC = () => {
     }
   };
 
+  const onGrabberDown = (e: React.PointerEvent) => {
+    dragRef.current = { startY: e.clientY, startVh: imageHeightVh };
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+  };
+  const onGrabberMove = (e: React.PointerEvent) => {
+    if (!dragRef.current) return;
+    const vhPx = window.innerHeight / 100;
+    const next = Math.min(55, Math.max(22, dragRef.current.startVh + (e.clientY - dragRef.current.startY) / vhPx));
+    setImageHeightVh(next);
+  };
+  const onGrabberUp = () => { dragRef.current = null; };
+
   const handleShare = async () => {
     if (!work) return;
     try {
@@ -479,7 +494,7 @@ const WorkDetailPage: React.FC = () => {
     <div className="fixed inset-0 z-[100] flex h-[100dvh] flex-col bg-black">
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-20 px-4 pt-[max(0.875rem,env(safe-area-inset-top)+0.5rem)] pb-2">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 rounded-full bg-black/28 px-2 py-1.5 backdrop-blur-md">
             <button
               onClick={handleBack}
@@ -494,19 +509,11 @@ const WorkDetailPage: React.FC = () => {
               <p className="text-[11px] text-white/70">作品详情</p>
             </div>
           </div>
-          <button
-            onClick={handleShare}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-black/28 text-white backdrop-blur-md"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-            </svg>
-          </button>
         </div>
       </div>
 
       {/* Image Slider */}
-      <div className="relative h-[55vh] flex-shrink-0 bg-black">
+      <div className="relative flex-shrink-0 bg-black transition-[height] duration-150" style={{ height: `${imageHeightVh}vh` }}>
         <div
           ref={imageSliderRef}
           onScroll={() => {
@@ -565,6 +572,16 @@ const WorkDetailPage: React.FC = () => {
 
       {/* Work Info Panel */}
       <div className="relative z-10 -mt-6 flex min-h-0 flex-1 flex-col rounded-t-[28px] bg-white shadow-[0_-12px_40px_rgba(15,23,42,0.06)]">
+        {/* Grabber handle */}
+        <div
+          className="flex shrink-0 cursor-grab touch-none items-center justify-center pt-2 pb-1 active:cursor-grabbing"
+          onPointerDown={onGrabberDown}
+          onPointerMove={onGrabberMove}
+          onPointerUp={onGrabberUp}
+          onPointerCancel={onGrabberUp}
+        >
+          <div className="h-1.5 w-10 rounded-full bg-gray-300" />
+        </div>
         {/* Title block */}
         <div className="shrink-0 px-5 pt-5 pb-4">
           <h2 className="text-[1.35rem] font-bold leading-tight tracking-[-0.02em] text-gray-900">
@@ -582,53 +599,6 @@ const WorkDetailPage: React.FC = () => {
               ))}
             </div>
           )}
-
-          {/* Action bar */}
-          <div className="mt-4 flex items-center gap-3 border-t border-gray-100 pt-4">
-            <button
-              onClick={handleLike}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-medium transition-colors ${
-                work.isLiked ? 'bg-red-50 text-red-500' : 'bg-gray-50 text-gray-600'
-              }`}
-            >
-              {work.isLiked ? (
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                </svg>
-              ) : (
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-              )}
-              <span>{work.isLiked ? '已喜欢' : '喜欢'}</span>
-              {(work.likeCount || 0) > 0 && <span className="text-xs text-gray-400">{work.likeCount}</span>}
-            </button>
-            <button
-              onClick={handleFavorite}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-medium transition-colors ${
-                work.isFavorited ? 'bg-amber-50 text-amber-600' : 'bg-gray-50 text-gray-600'
-              }`}
-            >
-              {work.isFavorited ? (
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                </svg>
-              ) : (
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                </svg>
-              )}
-              <span>{work.isFavorited ? '已收藏' : '收藏'}</span>
-            </button>
-            <button
-              onClick={handleShare}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gray-50 text-gray-600"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-              </svg>
-            </button>
-          </div>
         </div>
 
         {/* Comments — scrollable */}
@@ -687,6 +657,8 @@ const WorkDetailPage: React.FC = () => {
               type="text"
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
+              onFocus={() => setInputFocused(true)}
+              onBlur={() => setInputFocused(false)}
               placeholder={replyingTo ? `回复 @${replyingTo.name}...` : '添加评论...'}
               className="h-11 flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 text-sm focus:border-[var(--color-primary)] focus:bg-white focus:outline-none"
               onKeyDown={(e) => {
@@ -696,13 +668,38 @@ const WorkDetailPage: React.FC = () => {
                 }
               }}
             />
-            <button
-              onClick={handleAddComment}
-              disabled={!commentText.trim()}
-              className="h-11 rounded-full bg-[var(--color-primary)] px-5 text-sm font-medium text-white disabled:opacity-40"
-            >
-              发送
-            </button>
+            {inputFocused || commentText.trim() ? (
+              <button
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleAddComment}
+                disabled={!commentText.trim()}
+                className="h-11 shrink-0 rounded-full bg-[#FF6B8A] px-5 text-sm font-medium text-white disabled:opacity-40"
+              >
+                发送
+              </button>
+            ) : (
+              <div className="flex shrink-0 items-center gap-1">
+                <button onClick={handleLike} className="flex h-11 items-center gap-1 px-2 text-gray-600" aria-label="点赞">
+                  {work.isLiked ? (
+                    <svg className="h-6 w-6 text-[#FF6B8A]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
+                  ) : (
+                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                  )}
+                  {(work.likeCount || 0) > 0 && <span className="text-xs text-gray-500">{work.likeCount}</span>}
+                </button>
+                <button onClick={handleFavorite} className="flex h-11 items-center gap-1 px-2 text-gray-600" aria-label="收藏">
+                  {work.isFavorited ? (
+                    <svg className="h-6 w-6 text-amber-500" fill="currentColor" viewBox="0 0 24 24"><path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118L2.49 9.901c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+                  ) : (
+                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118L2.49 9.901c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+                  )}
+                  {(work.favoriteCount || 0) > 0 && <span className="text-xs text-gray-500">{work.favoriteCount}</span>}
+                </button>
+                <button onClick={handleShare} className="flex h-11 items-center px-2 text-gray-600" aria-label="分享">
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
