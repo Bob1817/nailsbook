@@ -1,6 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { worksService, type Comment, type WorkDetail } from '../services/works';
+import { useAuth } from '../contexts/AuthContext';
+import BookingSheet from '../components/BookingSheet';
+import type { Technician } from '../services/auth';
 
 // ─── CommentItem ────────────────────────────────────────────────────────────
 
@@ -323,6 +326,8 @@ const WorkDetailPage: React.FC = () => {
     else navigate('/works');
   };
   const { id } = useParams<{ id: string }>();
+  const { technicians } = useAuth();
+  const [quickBookTech, setQuickBookTech] = useState<Technician | null>(null);
   const [work, setWork] = useState<WorkDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -463,6 +468,22 @@ const WorkDetailPage: React.FC = () => {
     }
   };
 
+  const handleContactTech = () => {
+    if (!work?.technicianId) return;
+    navigate(`/chat/direct?tech_id=${work.technicianId}`);
+  };
+
+  const handleBookSame = () => {
+    if (!work) return;
+    const fullTech = technicians.find((t) => t.id === work.technicianId);
+    if (fullTech) {
+      setQuickBookTech(fullTech);
+      return;
+    }
+    // 取不到完整美甲师信息：回退到完整预约表单
+    if (work.technicianId) navigate(`/orders/create?tech_id=${work.technicianId}`);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
@@ -494,8 +515,8 @@ const WorkDetailPage: React.FC = () => {
     <div className="fixed inset-0 z-[100] flex h-[100dvh] flex-col bg-black">
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-20 px-4 pt-[max(0.875rem,env(safe-area-inset-top)+0.5rem)] pb-2">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-full bg-black/28 px-2 py-1.5 backdrop-blur-md">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2 rounded-full bg-black/28 px-2 py-1.5 backdrop-blur-md">
             <button
               onClick={handleBack}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-white/12 text-white"
@@ -520,6 +541,13 @@ const WorkDetailPage: React.FC = () => {
               <p className="text-[11px] text-white/70">作品详情</p>
             </div>
           </div>
+          <button
+            onClick={handleShare}
+            aria-label="分享"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black/28 text-white backdrop-blur-md"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+          </button>
         </div>
       </div>
 
@@ -610,6 +638,13 @@ const WorkDetailPage: React.FC = () => {
               ))}
             </div>
           )}
+          <button
+            onClick={handleBookSame}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(255,107,138,0.3)] active:scale-[0.99] transition-transform"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+            预约同款
+          </button>
         </div>
 
         {/* Comments — scrollable */}
@@ -706,14 +741,27 @@ const WorkDetailPage: React.FC = () => {
                   )}
                   {(work.favoriteCount || 0) > 0 && <span className="text-xs text-gray-500">{work.favoriteCount}</span>}
                 </button>
-                <button onClick={handleShare} className="flex h-11 items-center px-2 text-gray-600" aria-label="分享">
-                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                <button onClick={handleContactTech} className="flex h-11 items-center px-2 text-gray-600" aria-label="联系美甲师">
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
                 </button>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* 预约同款 */}
+      {quickBookTech && (
+        <BookingSheet
+          technician={quickBookTech}
+          prefill={{
+            title: work.title || '预约同款',
+            images: work.imageUrls || [],
+          }}
+          onClose={() => setQuickBookTech(null)}
+          onCreated={() => { setQuickBookTech(null); navigate('/orders'); }}
+        />
+      )}
 
       {/* Delete confirm dialog */}
       {confirmDelete !== null && (
