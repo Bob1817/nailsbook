@@ -230,7 +230,7 @@ const Works: React.FC = () => {
 
       <Drawer
         title="作品详情"
-        width={480}
+        styles={{ wrapper: { width: 480 } }}
         open={!!drawerWork}
         onClose={() => setDrawerWork(null)}
       >
