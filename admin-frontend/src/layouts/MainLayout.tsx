@@ -4,8 +4,6 @@ import {
   DashboardOutlined,
   TeamOutlined,
   UserOutlined,
-  FileTextOutlined,
-  CalendarOutlined,
   DollarOutlined,
   CrownOutlined,
   HistoryOutlined,
@@ -73,18 +71,6 @@ const MainLayout: React.FC = () => {
       icon: <FormOutlined />,
       label: '美甲师申请',
       permission: 'application:view',
-    },
-    {
-      key: '/quotes',
-      icon: <FileTextOutlined />,
-      label: '报价管理',
-      permission: 'quote:view',
-    },
-    {
-      key: '/orders',
-      icon: <CalendarOutlined />,
-      label: '订单管理',
-      permission: 'order:view',
     },
     {
       key: '/revenues',

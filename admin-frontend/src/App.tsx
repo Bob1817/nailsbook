@@ -9,8 +9,6 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Technicians from './pages/Technicians';
 import Customers from './pages/Customers';
-import Quotes from './pages/Quotes';
-import Orders from './pages/Orders';
 import Revenues from './pages/Revenues';
 import Subscriptions from './pages/Subscriptions';
 import OperationLogs from './pages/OperationLogs';
@@ -46,8 +44,6 @@ const App: React.FC = () => {
               <Route path="comments" element={<ProtectedRoute permission="comment:view"><Comments /></ProtectedRoute>} />
               <Route path="reports" element={<ProtectedRoute permission="report:view"><Reports /></ProtectedRoute>} />
               <Route path="applications" element={<ProtectedRoute permission="application:view"><ArtistApplications /></ProtectedRoute>} />
-              <Route path="quotes" element={<ProtectedRoute permission="quote:view"><Quotes /></ProtectedRoute>} />
-              <Route path="orders" element={<ProtectedRoute permission="order:view"><Orders /></ProtectedRoute>} />
               <Route path="revenues" element={<ProtectedRoute permission="revenue:view"><Revenues /></ProtectedRoute>} />
               <Route path="subscriptions" element={<ProtectedRoute permission="subscription:view"><Subscriptions /></ProtectedRoute>} />
               <Route path="logs" element={<ProtectedRoute permission="log:view"><OperationLogs /></ProtectedRoute>} />

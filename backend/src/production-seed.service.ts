@@ -44,7 +44,6 @@ export class ProductionSeedService implements OnModuleInit {
       { name: '预约确认', code: 'booking:confirm', module: 'booking', action: 'confirm' },
       { name: '预约完成', code: 'booking:complete', module: 'booking', action: 'complete' },
       { name: '预约取消', code: 'booking:cancel', module: 'booking', action: 'cancel' },
-      { name: '订单查看', code: 'order:view', module: 'order', action: 'view' },
       { name: '收入查看', code: 'revenue:view', module: 'revenue', action: 'view' },
       { name: '订阅查看', code: 'subscription:view', module: 'subscription', action: 'view' },
       { name: '订阅更新', code: 'subscription:update', module: 'subscription', action: 'update' },
