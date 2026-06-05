@@ -34,6 +34,7 @@ import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
 import { AdminRolesModule } from './admin-roles/admin-roles.module';
 import { AdminPermissionsModule } from './admin-permissions/admin-permissions.module';
 import { AdminInviteKeysModule } from './admin-invite-keys/admin-invite-keys.module';
+import { AdminWorksModule } from './admin-works/admin-works.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { DevelopmentAuthSeedService } from './development-auth-seed.service';
 import { DevelopmentDemoSeedService } from './development-demo-seed.service';
@@ -82,6 +83,7 @@ import { ProductionSeedService } from './production-seed.service';
     AdminRolesModule,
     AdminPermissionsModule,
     AdminInviteKeysModule,
+    AdminWorksModule,
   ],
   controllers: [AppController],
   providers: [
