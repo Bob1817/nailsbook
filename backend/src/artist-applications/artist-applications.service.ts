@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import * as crypto from 'crypto';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CreateArtistApplicationDto } from './dto/create-artist-application.dto';
 
@@ -42,9 +43,50 @@ export class ArtistApplicationsService {
   }
 
   async approve(id: number, reviewedBy: number) {
-    return this.prisma.artistApplication.update({
+    const application = await this.prisma.artistApplication.findUnique({
       where: { id },
-      data: { status: 'approved', reviewedBy, reviewedAt: new Date() },
+    });
+    if (!application) {
+      throw new NotFoundException('申请不存在');
+    }
+
+    const homeService =
+      application.serviceMode === 'home' || application.serviceMode === 'both';
+    const shopService =
+      application.serviceMode === 'shop' || application.serviceMode === 'both';
+
+    // 事务：标记通过 + 按需创建美甲师账号（按手机号去重，幂等）
+    return this.prisma.$transaction(async (tx) => {
+      const updatedApplication = await tx.artistApplication.update({
+        where: { id },
+        data: { status: 'approved', reviewedBy, reviewedAt: new Date() },
+      });
+
+      const existing = await tx.technician.findUnique({
+        where: { phone: application.phone },
+      });
+
+      // 已存在同手机号美甲师则不重复创建；新建时 passwordHash 留空，
+      // 美甲师凭手机号首次登录时设置登录密码（与 technicians.create 一致）
+      const technician =
+        existing ??
+        (await tx.technician.create({
+          data: {
+            name: application.name,
+            phone: application.phone,
+            city: application.city,
+            homeService,
+            shopService,
+            invitationCode: crypto.randomBytes(4).toString('hex').toUpperCase(),
+            status: 'active',
+          },
+        }));
+
+      return {
+        application: updatedApplication,
+        technician,
+        technicianCreated: !existing,
+      };
     });
   }
 
