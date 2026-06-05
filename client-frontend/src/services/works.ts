@@ -97,4 +97,12 @@ export const worksService = {
     const response = await api.delete(`/works/${workId}/comments/${commentId}`);
     return response.data;
   },
+
+  async reportComment(
+    commentId: number,
+    reason: 'spam' | 'inappropriate' | 'harassment' | 'other',
+  ): Promise<{ success: boolean; alreadyReported: boolean }> {
+    const response = await api.post('/client/reports', { commentId, reason });
+    return response.data;
+  },
 };

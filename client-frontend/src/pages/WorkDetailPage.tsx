@@ -11,6 +11,7 @@ interface CommentItemProps {
   comment: Comment;
   onReply: (comment: Comment) => void;
   onDelete: (commentId: number) => void;
+  onReport: (commentId: number) => void;
   actionMenuId: number | null;
   setActionMenuId: (id: number | null) => void;
 }
@@ -19,6 +20,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   comment,
   onReply,
   onDelete,
+  onReport,
   actionMenuId,
   setActionMenuId,
 }) => {
@@ -66,8 +68,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
             <span className="ml-auto whitespace-nowrap">
               {new Date(comment.createdAt).toLocaleDateString()}
             </span>
-            {/* More button (own comments only) */}
-            {comment.isAuthor && !isDeleted && (
+            {/* More button — delete for own comments, report for others */}
+            {!isDeleted && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -101,18 +103,33 @@ const CommentItem: React.FC<CommentItemProps> = ({
               className="rounded-t-2xl bg-white p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
               onClick={(e) => e.stopPropagation()}
             >
-              <button
-                onClick={() => {
-                  setActionMenuId(null);
-                  onDelete(comment.id);
-                }}
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-red-500 active:bg-red-50"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                删除评论
-              </button>
+              {comment.isAuthor ? (
+                <button
+                  onClick={() => {
+                    setActionMenuId(null);
+                    onDelete(comment.id);
+                  }}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-red-500 active:bg-red-50"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  删除评论
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setActionMenuId(null);
+                    onReport(comment.id);
+                  }}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-orange-500 active:bg-orange-50"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 2H21l-3 6 3 6h-8.5l-1-2H5a2 2 0 00-2 2z" />
+                  </svg>
+                  举报
+                </button>
+              )}
               <div className="my-1 h-px bg-gray-100" />
               <button
                 onClick={() => setActionMenuId(null)}
@@ -133,6 +150,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 comment={reply}
                 onReply={onReply}
                 onDelete={onDelete}
+                onReport={onReport}
                 actionMenuId={actionMenuId}
                 setActionMenuId={setActionMenuId}
               />
@@ -180,12 +198,13 @@ interface HiddenCommentsSectionProps {
   comments: Comment[];
   onReply: (c: Comment) => void;
   onDelete: (id: number) => void;
+  onReport: (id: number) => void;
   actionMenuId: number | null;
   setActionMenuId: (id: number | null) => void;
 }
 
 const HiddenCommentsSection: React.FC<HiddenCommentsSectionProps> = ({
-  comments, onReply, onDelete, actionMenuId, setActionMenuId,
+  comments, onReply, onDelete, onReport, actionMenuId, setActionMenuId,
 }) => {
   const [expanded, setExpanded] = useState(false);
   if (comments.length === 0) return null;
@@ -212,6 +231,7 @@ const HiddenCommentsSection: React.FC<HiddenCommentsSectionProps> = ({
               comment={c}
               onReply={onReply}
               onDelete={onDelete}
+              onReport={onReport}
               actionMenuId={actionMenuId}
               setActionMenuId={setActionMenuId}
             />
@@ -336,6 +356,8 @@ const WorkDetailPage: React.FC = () => {
   const [replyingTo, setReplyingTo] = useState<{ id: number; name: string } | null>(null);
   const [actionMenuId, setActionMenuId] = useState<number | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
+  const [reportTarget, setReportTarget] = useState<number | null>(null);
+  const [reportToast, setReportToast] = useState<string | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
   // 默认图高调低，首屏即露出评论；用户仍可拖拽手柄放大至 55vh 或缩到 22vh
@@ -395,6 +417,20 @@ const WorkDetailPage: React.FC = () => {
 
   const handleDeleteRequest = (commentId: number) => {
     setConfirmDelete(commentId);
+  };
+
+  const handleReport = async (reason: 'spam' | 'inappropriate' | 'harassment' | 'other') => {
+    if (reportTarget === null) return;
+    const commentId = reportTarget;
+    setReportTarget(null);
+    try {
+      const res = await worksService.reportComment(commentId, reason);
+      setReportToast(res.alreadyReported ? '你已举报过该评论' : '已举报，我们将尽快处理');
+    } catch {
+      setReportToast('举报失败，请稍后再试');
+    } finally {
+      setTimeout(() => setReportToast(null), 2200);
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -679,6 +715,7 @@ const WorkDetailPage: React.FC = () => {
                   comment={comment}
                   onReply={handleReply}
                   onDelete={handleDeleteRequest}
+                  onReport={setReportTarget}
                   actionMenuId={actionMenuId}
                   setActionMenuId={setActionMenuId}
                 />
@@ -694,6 +731,7 @@ const WorkDetailPage: React.FC = () => {
             comments={hiddenComments}
             onReply={handleReply}
             onDelete={handleDeleteRequest}
+            onReport={setReportTarget}
             actionMenuId={actionMenuId}
             setActionMenuId={setActionMenuId}
           />
@@ -796,6 +834,49 @@ const WorkDetailPage: React.FC = () => {
           onConfirm={handleDeleteConfirm}
           onCancel={() => setConfirmDelete(null)}
         />
+      )}
+
+      {/* Report reason sheet */}
+      {reportTarget !== null && (
+        <div
+          className="fixed inset-0 z-[200] flex flex-col justify-end bg-black/40"
+          onClick={() => setReportTarget(null)}
+        >
+          <div
+            className="rounded-t-2xl bg-white p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="py-2 text-center text-sm font-medium text-gray-900">举报原因</p>
+            {([
+              { value: 'spam', label: '广告/垃圾信息' },
+              { value: 'inappropriate', label: '不雅内容' },
+              { value: 'harassment', label: '骚扰' },
+              { value: 'other', label: '其他' },
+            ] as const).map((item) => (
+              <button
+                key={item.value}
+                onClick={() => handleReport(item.value)}
+                className="w-full rounded-xl py-3.5 text-sm font-medium text-gray-700 active:bg-gray-50"
+              >
+                {item.label}
+              </button>
+            ))}
+            <div className="my-1 h-px bg-gray-100" />
+            <button
+              onClick={() => setReportTarget(null)}
+              className="w-full rounded-xl py-3.5 text-sm font-medium text-gray-500 active:bg-gray-50"
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Report toast */}
+      {reportToast && (
+        <div className="fixed left-1/2 top-1/2 z-[250] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-black/80 px-5 py-3 text-sm text-white">
+          {reportToast}
+        </div>
       )}
 
       {/* Fullscreen image viewer */}
