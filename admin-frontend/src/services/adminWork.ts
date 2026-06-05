@@ -28,32 +28,32 @@ export const adminWorkService = {
     isVisible?: boolean;
     isHomepageFeatured?: boolean;
   }) => {
-    const response = await api.get('/admin/works', { params });
+    const response = await api.get('/works', { params });
     return response.data as { items: AdminWork[]; total: number; page: number; pageSize: number };
   },
 
   getById: async (id: number): Promise<AdminWork> => {
-    const response = await api.get(`/admin/works/${id}`);
+    const response = await api.get(`/works/${id}`);
     return response.data;
   },
 
   toggleVisibility: async (id: number): Promise<{ id: number; isVisible: boolean }> => {
-    const response = await api.patch(`/admin/works/${id}/visibility`);
+    const response = await api.patch(`/works/${id}/visibility`);
     return response.data;
   },
 
   toggleHomepageFeatured: async (id: number): Promise<{ id: number; isHomepageFeatured: boolean }> => {
-    const response = await api.patch(`/admin/works/${id}/homepage-featured`);
+    const response = await api.patch(`/works/${id}/homepage-featured`);
     return response.data;
   },
 
   updateTags: async (id: number, tags: string): Promise<{ id: number; tags: string }> => {
-    const response = await api.patch(`/admin/works/${id}/tags`, { tags });
+    const response = await api.patch(`/works/${id}/tags`, { tags });
     return response.data;
   },
 
   remove: async (id: number): Promise<{ success: boolean }> => {
-    const response = await api.delete(`/admin/works/${id}`);
+    const response = await api.delete(`/works/${id}`);
     return response.data;
   },
 };

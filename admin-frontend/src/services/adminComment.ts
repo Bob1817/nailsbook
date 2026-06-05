@@ -21,17 +21,17 @@ export const adminCommentService = {
     status?: 'normal' | 'hidden';
     authorType?: 'client' | 'technician';
   }) => {
-    const response = await api.get('/admin/comments', { params });
+    const response = await api.get('/comments', { params });
     return response.data as { items: AdminComment[]; total: number; page: number; pageSize: number };
   },
 
   toggleHide: async (id: number): Promise<{ id: number; isHidden: boolean }> => {
-    const response = await api.patch(`/admin/comments/${id}/hide`);
+    const response = await api.patch(`/comments/${id}/hide`);
     return response.data;
   },
 
   remove: async (id: number): Promise<{ success: boolean }> => {
-    const response = await api.delete(`/admin/comments/${id}`);
+    const response = await api.delete(`/comments/${id}`);
     return response.data;
   },
 };

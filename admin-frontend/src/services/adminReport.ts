@@ -28,7 +28,7 @@ export const adminReportService = {
     pageSize?: number;
     status?: string;
   }) => {
-    const response = await api.get('/admin/reports', { params });
+    const response = await api.get('/reports', { params });
     return response.data as {
       items: AdminReport[];
       total: number;
@@ -39,12 +39,12 @@ export const adminReportService = {
   },
 
   resolve: async (id: number): Promise<{ success: boolean }> => {
-    const response = await api.patch(`/admin/reports/${id}/resolve`);
+    const response = await api.patch(`/reports/${id}/resolve`);
     return response.data;
   },
 
   dismiss: async (id: number): Promise<{ success: boolean }> => {
-    const response = await api.patch(`/admin/reports/${id}/dismiss`);
+    const response = await api.patch(`/reports/${id}/dismiss`);
     return response.data;
   },
 };

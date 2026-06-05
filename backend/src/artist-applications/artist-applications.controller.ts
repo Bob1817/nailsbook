@@ -25,12 +25,12 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('管理员-艺术家申请')
 @ApiBearerAuth()
-@Controller('artist-applications')
+@Controller()
 export class ArtistApplicationsController {
   constructor(private readonly service: ArtistApplicationsService) {}
 
-  @Post()
-  @ApiOperation({ summary: '提交艺术家申请' })
+  @Post('artist-applications')
+  @ApiOperation({ summary: '提交艺术家申请（公开）' })
   @ApiBody({ type: CreateArtistApplicationDto })
   @ApiResponse({ status: 201, description: '申请提交成功' })
   @ApiResponse({ status: 400, description: '参数校验失败' })
@@ -38,7 +38,7 @@ export class ArtistApplicationsController {
     return this.service.create(dto);
   }
 
-  @Get()
+  @Get('admin/artist-applications')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '获取艺术家申请列表' })
   @ApiQuery({
@@ -72,7 +72,7 @@ export class ArtistApplicationsController {
     );
   }
 
-  @Get(':id')
+  @Get('admin/artist-applications/:id')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '获取艺术家申请详情' })
   @ApiParam({ name: 'id', type: Number, description: '申请ID' })
@@ -82,7 +82,7 @@ export class ArtistApplicationsController {
     return this.service.findOne(id);
   }
 
-  @Patch(':id/approve')
+  @Patch('admin/artist-applications/:id/approve')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '批准艺术家申请' })
   @ApiParam({ name: 'id', type: Number, description: '申请ID' })
@@ -95,7 +95,7 @@ export class ArtistApplicationsController {
     return this.service.approve(id, request.user.userId);
   }
 
-  @Patch(':id/reject')
+  @Patch('admin/artist-applications/:id/reject')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '拒绝艺术家申请' })
   @ApiParam({ name: 'id', type: Number, description: '申请ID' })
