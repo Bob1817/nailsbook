@@ -55,6 +55,14 @@ export class ProductionSeedService implements OnModuleInit {
       { name: '角色更新', code: 'role:update', module: 'role', action: 'update' },
       { name: '角色删除', code: 'role:delete', module: 'role', action: 'delete' },
       { name: '权限查看', code: 'permission:view', module: 'permission', action: 'view' },
+      { name: '作品查看', code: 'work:view', module: 'work', action: 'view' },
+      { name: '作品管理', code: 'work:manage', module: 'work', action: 'manage' },
+      { name: '评论查看', code: 'comment:view', module: 'comment', action: 'view' },
+      { name: '评论管理', code: 'comment:manage', module: 'comment', action: 'manage' },
+      { name: '举报查看', code: 'report:view', module: 'report', action: 'view' },
+      { name: '举报管理', code: 'report:manage', module: 'report', action: 'manage' },
+      { name: '申请查看', code: 'application:view', module: 'application', action: 'view' },
+      { name: '申请管理', code: 'application:manage', module: 'application', action: 'manage' },
     ];
 
     // 3. 逐个创建权限并关联到角色（upsert 幂等）
