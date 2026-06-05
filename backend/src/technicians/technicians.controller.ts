@@ -36,7 +36,7 @@ export class TechniciansController {
   constructor(private readonly techniciansService: TechniciansService) {}
 
   @Get()
-  @Permissions('technician.view')
+  @Permissions('technician:view')
   @ApiOperation({ summary: '获取美甲师列表' })
   @ApiQuery({
     name: 'page',
@@ -78,7 +78,7 @@ export class TechniciansController {
   }
 
   @Get(':id')
-  @Permissions('technician.view')
+  @Permissions('technician:view')
   @ApiOperation({ summary: '获取美甲师详情' })
   @ApiParam({ name: 'id', type: String, description: '美甲师ID' })
   @ApiResponse({ status: 200, description: '返回美甲师详情' })
@@ -88,7 +88,7 @@ export class TechniciansController {
   }
 
   @Post()
-  @Permissions('technician.create')
+  @Permissions('technician:create')
   @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'technician',
@@ -104,7 +104,7 @@ export class TechniciansController {
   }
 
   @Patch(':id')
-  @Permissions('technician.edit')
+  @Permissions('technician:update')
   @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'technician',
@@ -120,7 +120,7 @@ export class TechniciansController {
   }
 
   @Post(':id/invite-key')
-  @Permissions('technician.edit')
+  @Permissions('technician:update')
   @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'technician',
@@ -138,7 +138,7 @@ export class TechniciansController {
   }
 
   @Patch(':id/status')
-  @Permissions('technician.disable')
+  @Permissions('technician:disable')
   @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'technician',
@@ -158,7 +158,7 @@ export class TechniciansController {
   }
 
   @Post(':id/reset-password')
-  @Permissions('technician.edit')
+  @Permissions('technician:update')
   @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'technician',
@@ -175,7 +175,7 @@ export class TechniciansController {
   }
 
   @Delete(':id')
-  @Permissions('technician.delete')
+  @Permissions('technician:delete')
   @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'technician',
@@ -191,7 +191,7 @@ export class TechniciansController {
   }
 
   @Patch(':id/disable')
-  @Permissions('technician.disable')
+  @Permissions('technician:disable')
   @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'technician',

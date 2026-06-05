@@ -50,7 +50,7 @@ export class SubscriptionPlansController {
   constructor(private readonly subscriptionsService: SubscriptionsService) {}
 
   @Get()
-  @Permissions('subscription.view')
+  @Permissions('subscription:view')
   @ApiOperation({ summary: '获取所有订阅套餐' })
   @ApiResponse({ status: 200, description: '返回套餐列表' })
   findAll() {
@@ -58,7 +58,7 @@ export class SubscriptionPlansController {
   }
 
   @Get(':id')
-  @Permissions('subscription.view')
+  @Permissions('subscription:view')
   @ApiOperation({ summary: '获取订阅套餐详情' })
   @ApiParam({ name: 'id', type: String, description: '套餐ID' })
   @ApiResponse({ status: 200, description: '返回套餐详情' })
@@ -68,7 +68,7 @@ export class SubscriptionPlansController {
   }
 
   @Post()
-  @Permissions('subscription.update')
+  @Permissions('subscription:update')
   @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'subscription',
@@ -84,7 +84,7 @@ export class SubscriptionPlansController {
   }
 
   @Patch(':id')
-  @Permissions('subscription.update')
+  @Permissions('subscription:update')
   @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'subscription',
@@ -112,7 +112,7 @@ export class TechnicianSubscriptionsController {
   constructor(private readonly subscriptionsService: SubscriptionsService) {}
 
   @Get()
-  @Permissions('subscription.view')
+  @Permissions('subscription:view')
   @ApiOperation({ summary: '获取美甲师订阅列表' })
   @ApiQuery({
     name: 'technicianId',
@@ -138,7 +138,7 @@ export class TechnicianSubscriptionsController {
   }
 
   @Patch('technicians/:technicianId')
-  @Permissions('subscription.update')
+  @Permissions('subscription:update')
   @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'subscription',

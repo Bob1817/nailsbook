@@ -19,7 +19,7 @@ export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
 
   @Get()
-  @Permissions('customer.view')
+  @Permissions('customer:view')
   @ApiOperation({ summary: '获取客户列表' })
   @ApiQuery({
     name: 'page',
@@ -69,7 +69,7 @@ export class CustomersController {
   }
 
   @Get(':id')
-  @Permissions('customer.view')
+  @Permissions('customer:view')
   @ApiOperation({ summary: '获取客户详情' })
   @ApiParam({ name: 'id', type: String, description: '客户ID' })
   @ApiResponse({ status: 200, description: '返回客户详情' })

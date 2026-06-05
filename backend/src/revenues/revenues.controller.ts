@@ -20,7 +20,7 @@ export class RevenuesController {
   constructor(private readonly revenuesService: RevenuesService) {}
 
   @Get('export')
-  @Permissions('revenue.view')
+  @Permissions('revenue:view')
   @ApiOperation({ summary: '导出收入CSV' })
   @ApiQuery({
     name: 'technicianId',
@@ -66,7 +66,7 @@ export class RevenuesController {
   }
 
   @Get()
-  @Permissions('revenue.view')
+  @Permissions('revenue:view')
   @ApiOperation({ summary: '获取收入记录列表' })
   @ApiQuery({
     name: 'page',
@@ -124,7 +124,7 @@ export class RevenuesController {
   }
 
   @Get('statistics')
-  @Permissions('revenue.view')
+  @Permissions('revenue:view')
   @ApiOperation({ summary: '获取收入统计' })
   @ApiQuery({
     name: 'technicianId',
@@ -158,7 +158,7 @@ export class RevenuesController {
   }
 
   @Get(':id')
-  @Permissions('revenue.view')
+  @Permissions('revenue:view')
   @ApiOperation({ summary: '获取收入记录详情' })
   @ApiParam({ name: 'id', type: String, description: '收入记录ID' })
   @ApiResponse({ status: 200, description: '返回收入记录详情' })
