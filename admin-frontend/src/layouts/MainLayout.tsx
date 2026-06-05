@@ -15,6 +15,10 @@ import {
   FlagOutlined,
   SafetyOutlined,
   KeyOutlined,
+  PictureOutlined,
+  MessageOutlined,
+  WarningOutlined,
+  FormOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -45,6 +49,30 @@ const MainLayout: React.FC = () => {
       icon: <UserOutlined />,
       label: '客户管理',
       permission: 'customer:view',
+    },
+    {
+      key: '/works',
+      icon: <PictureOutlined />,
+      label: '作品管理',
+      permission: 'work:view',
+    },
+    {
+      key: '/comments',
+      icon: <MessageOutlined />,
+      label: '评论管理',
+      permission: 'comment:view',
+    },
+    {
+      key: '/reports',
+      icon: <WarningOutlined />,
+      label: '举报队列',
+      permission: 'report:view',
+    },
+    {
+      key: '/applications',
+      icon: <FormOutlined />,
+      label: '美甲师申请',
+      permission: 'application:view',
     },
     {
       key: '/quotes',

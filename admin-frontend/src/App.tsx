@@ -18,6 +18,10 @@ import Forbidden from './pages/Forbidden';
 import FeatureFlags from './pages/FeatureFlags';
 import Roles from './pages/Roles';
 import InviteKeys from './pages/InviteKeys';
+import Works from './pages/Works';
+import Comments from './pages/Comments';
+import Reports from './pages/Reports';
+import ArtistApplications from './pages/ArtistApplications';
 
 const App: React.FC = () => {
   return (
@@ -38,6 +42,10 @@ const App: React.FC = () => {
               <Route index element={<Dashboard />} />
               <Route path="technicians" element={<ProtectedRoute permission="technician:view"><Technicians /></ProtectedRoute>} />
               <Route path="customers" element={<ProtectedRoute permission="customer:view"><Customers /></ProtectedRoute>} />
+              <Route path="works" element={<ProtectedRoute permission="work:view"><Works /></ProtectedRoute>} />
+              <Route path="comments" element={<ProtectedRoute permission="comment:view"><Comments /></ProtectedRoute>} />
+              <Route path="reports" element={<ProtectedRoute permission="report:view"><Reports /></ProtectedRoute>} />
+              <Route path="applications" element={<ProtectedRoute permission="application:view"><ArtistApplications /></ProtectedRoute>} />
               <Route path="quotes" element={<ProtectedRoute permission="quote:view"><Quotes /></ProtectedRoute>} />
               <Route path="orders" element={<ProtectedRoute permission="order:view"><Orders /></ProtectedRoute>} />
               <Route path="revenues" element={<ProtectedRoute permission="revenue:view"><Revenues /></ProtectedRoute>} />
