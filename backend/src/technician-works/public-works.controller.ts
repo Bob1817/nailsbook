@@ -1,4 +1,4 @@
-import { Controller, Get, NotFoundException, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, NotFoundException, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { PrismaService } from '../common/prisma/prisma.service';
 
@@ -58,6 +58,43 @@ export class PublicWorksController {
       tags: work.tags,
       technician: work.technician,
     }));
+  }
+
+  @Get('homepage-featured')
+  @ApiOperation({ summary: '获取官网精选作品列表（超管标记）' })
+  @ApiResponse({ status: 200, description: '返回官网精选作品列表' })
+  async getHomepageFeatured(@Query('limit') limit?: string) {
+    const take = Math.min(50, Math.max(1, Number(limit) || 20));
+
+    const works = await this.prisma.nailWork.findMany({
+      where: {
+        isHomepageFeatured: true,
+        isVisible: true,
+      },
+      include: {
+        technician: { select: { name: true, avatarUrl: true } },
+        _count: { select: { likes: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+      take,
+    });
+
+    return works.map((work) => {
+      const imageUrls = parseImageUrls(work.images, work.coverUrl)
+        .map((url) => toAbsoluteUrl(url))
+        .filter((url): url is string => Boolean(url));
+
+      return {
+        id: work.id,
+        title: work.title,
+        coverUrl: toAbsoluteUrl(work.coverUrl) ?? imageUrls[0] ?? null,
+        imageUrls,
+        tags: work.tags ? work.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
+        technicianName: work.technician?.name ?? '',
+        technicianAvatarUrl: toAbsoluteUrl(work.technician?.avatarUrl ?? null),
+        likeCount: work._count.likes,
+      };
+    });
   }
 
   @Get(':id')
