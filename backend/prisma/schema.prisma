@@ -255,6 +255,7 @@ model NailWork {
   sortOrder   Int                @default(0)
   price       Float?
   viewCount   Int                @default(0)
+  isHomepageFeatured Boolean     @default(false)
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @default(now()) @updatedAt
   technician  Technician         @relation(fields: [techId], references: [id])
@@ -264,6 +265,7 @@ model NailWork {
 
   @@index([techId])
   @@index([isVisible])
+  @@index([isHomepageFeatured])
 }
 
 model NailWorkLike {
@@ -309,6 +311,7 @@ model NailWorkComment {
   technician   Technician?      @relation(fields: [technicianId], references: [id])
   parent       NailWorkComment? @relation("CommentReplies", fields: [parentId], references: [id])
   replies      NailWorkComment[] @relation("CommentReplies")
+  reports      NailWorkReport[]
 
   @@index([workId])
   @@index([parentId])
@@ -534,4 +537,20 @@ model BlockedTimeSlot {
   @@index([techId])
   @@index([startTime])
   @@index([endTime])
+}
+
+model NailWorkReport {
+  id           Int             @id @default(autoincrement())
+  commentId    Int
+  reporterId   Int
+  reporterType String
+  reason       String
+  status       String          @default("pending")
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @default(now()) @updatedAt
+  comment      NailWorkComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, reporterId, reporterType])
+  @@index([status])
+  @@index([commentId])
 }
