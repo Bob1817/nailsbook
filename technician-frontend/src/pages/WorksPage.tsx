@@ -327,7 +327,8 @@ const WorksPage: React.FC = () => {
   const [cardActionWork, setCardActionWork] = useState<Work | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
-  const [imageHeightVh, setImageHeightVh] = useState(55);
+  // 默认图高调低，首屏即露出评论；用户仍可拖拽手柄放大至 55vh 或缩到 22vh
+  const [imageHeightVh, setImageHeightVh] = useState(38);
   const dragRef = useRef<{ startY: number; startVh: number } | null>(null);
   const imageSliderRef = useRef<HTMLDivElement>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
@@ -677,14 +678,35 @@ const WorksPage: React.FC = () => {
     }
   };
 
+  // 多图自动轮播（4s 循环；全屏预览时暂停）
+  useEffect(() => {
+    const el = imageSliderRef.current;
+    if (!el || !selectedWork || selectedWork.imageUrls.length <= 1 || viewerOpen) return;
+    const timer = setInterval(() => {
+      const w = el.clientWidth;
+      if (!w) return;
+      const cur = Math.round(el.scrollLeft / w);
+      const next = (cur + 1) % selectedWork.imageUrls.length;
+      el.scrollTo({ left: next * w, behavior: 'smooth' });
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [selectedWork, viewerOpen]);
+
+  // 真正滚动图片容器（snap 横滑）——此前只改 index 不滚动，导致箭头无反应
+  const scrollToImage = (index: number) => {
+    const el = imageSliderRef.current;
+    if (!el) return;
+    el.scrollTo({ left: index * el.clientWidth, behavior: 'smooth' });
+  };
+
   const handleImageSwipe = (direction: 'left' | 'right') => {
     if (!selectedWork) return;
     const maxIndex = selectedWork.imageUrls.length - 1;
-    if (direction === 'left' && currentImageIndex < maxIndex) {
-      setCurrentImageIndex(currentImageIndex + 1);
-    } else if (direction === 'right' && currentImageIndex > 0) {
-      setCurrentImageIndex(currentImageIndex - 1);
-    }
+    const target =
+      direction === 'left'
+        ? Math.min(currentImageIndex + 1, maxIndex)
+        : Math.max(currentImageIndex - 1, 0);
+    scrollToImage(target);
   };
 
   return (
@@ -1055,8 +1077,10 @@ const WorksPage: React.FC = () => {
             >
               <div className="h-1.5 w-10 rounded-full bg-gray-300" />
             </div>
+            {/* 标题 + 评论：统一滚动流，标题随评论一起滚动，评论获得完整高度 */}
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             {/* Title block */}
-            <div className="shrink-0 px-5 pt-5 pb-4">
+            <div className="px-5 pt-3 pb-4">
               <div className="flex items-baseline gap-2">
                 <h2 className="text-[1.35rem] font-bold leading-tight tracking-[-0.02em] text-gray-900">
                   {selectedWork.title || '未命名作品'}
@@ -1079,8 +1103,8 @@ const WorksPage: React.FC = () => {
               )}
             </div>
 
-            {/* Comments — scrollable */}
-            <div className="flex-1 overflow-y-auto border-t border-gray-100 px-5 py-4">
+            {/* Comments */}
+            <div className="border-t border-gray-100 px-5 py-4">
               {(() => {
                 const visibleComments = comments.filter((c) => !c.isHidden);
                 const hiddenComments = comments.filter((c) => c.isHidden);
@@ -1124,6 +1148,7 @@ const WorksPage: React.FC = () => {
                   </>
                 );
               })()}
+            </div>
             </div>
 
             {/* Comment input bar */}

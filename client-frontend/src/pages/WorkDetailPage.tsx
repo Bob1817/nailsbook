@@ -338,7 +338,8 @@ const WorkDetailPage: React.FC = () => {
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
-  const [imageHeightVh, setImageHeightVh] = useState(55);
+  // 默认图高调低，首屏即露出评论；用户仍可拖拽手柄放大至 55vh 或缩到 22vh
+  const [imageHeightVh, setImageHeightVh] = useState(38);
   const dragRef = useRef<{ startY: number; startVh: number } | null>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
   const imageSliderRef = useRef<HTMLDivElement>(null);
@@ -367,6 +368,20 @@ const WorkDetailPage: React.FC = () => {
     document.addEventListener('click', close);
     return () => document.removeEventListener('click', close);
   }, [actionMenuId]);
+
+  // 多图自动轮播（4s 循环；全屏预览时暂停）
+  useEffect(() => {
+    const el = imageSliderRef.current;
+    if (!el || !work || work.imageUrls.length <= 1 || viewerOpen) return;
+    const timer = setInterval(() => {
+      const w = el.clientWidth;
+      if (!w) return;
+      const cur = Math.round(el.scrollLeft / w);
+      const next = (cur + 1) % work.imageUrls.length;
+      el.scrollTo({ left: next * w, behavior: 'smooth' });
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [work, viewerOpen]);
 
   const refreshComments = async (workId: number) => {
     const data = await worksService.getComments(workId);
@@ -431,14 +446,21 @@ const WorkDetailPage: React.FC = () => {
     }
   };
 
+  // 真正滚动图片容器（snap 横滑）——此前只改 index 不滚动，导致箭头无反应
+  const scrollToImage = (index: number) => {
+    const el = imageSliderRef.current;
+    if (!el) return;
+    el.scrollTo({ left: index * el.clientWidth, behavior: 'smooth' });
+  };
+
   const handleImageSwipe = (direction: 'left' | 'right') => {
     if (!work) return;
     const maxIndex = work.imageUrls.length - 1;
-    if (direction === 'left' && currentImageIndex < maxIndex) {
-      setCurrentImageIndex(currentImageIndex + 1);
-    } else if (direction === 'right' && currentImageIndex > 0) {
-      setCurrentImageIndex(currentImageIndex - 1);
-    }
+    const target =
+      direction === 'left'
+        ? Math.min(currentImageIndex + 1, maxIndex)
+        : Math.max(currentImageIndex - 1, 0);
+    scrollToImage(target);
   };
 
   const onGrabberDown = (e: React.PointerEvent) => {
@@ -621,8 +643,10 @@ const WorkDetailPage: React.FC = () => {
         >
           <div className="h-1.5 w-10 rounded-full bg-gray-300" />
         </div>
+        {/* 标题 + 评论：统一滚动流，标题随评论一起滚动，评论获得完整高度 */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {/* Title block */}
-        <div className="shrink-0 px-5 pt-5 pb-4">
+        <div className="px-5 pt-3 pb-4">
           <h2 className="text-[1.35rem] font-bold leading-tight tracking-[-0.02em] text-gray-900">
             {work.title || '未命名作品'}
           </h2>
@@ -638,17 +662,10 @@ const WorkDetailPage: React.FC = () => {
               ))}
             </div>
           )}
-          <button
-            onClick={handleBookSame}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(255,107,138,0.3)] active:scale-[0.99] transition-transform"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
-            预约同款
-          </button>
         </div>
 
-        {/* Comments — scrollable */}
-        <div className="flex-1 overflow-y-auto border-t border-gray-100 px-5 py-4">
+        {/* Comments */}
+        <div className="border-t border-gray-100 px-5 py-4">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-gray-900">评论</h3>
             <span className="text-xs text-gray-400">{visibleComments.length} 条</span>
@@ -681,9 +698,18 @@ const WorkDetailPage: React.FC = () => {
             setActionMenuId={setActionMenuId}
           />
         </div>
+        </div>
 
         {/* Comment input bar */}
         <div className="shrink-0 border-t border-gray-100 bg-white px-5 pt-3 pb-[max(0.875rem,env(safe-area-inset-bottom)+0.5rem)]">
+          {/* 预约同款 — 常驻主行动入口（原在标题块，移至此处腾出评论空间并常驻可见） */}
+          <button
+            onClick={handleBookSame}
+            className="mb-2.5 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(255,107,138,0.3)] active:scale-[0.99] transition-transform"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+            预约同款
+          </button>
           {replyingTo && (
             <div className="mb-2 flex items-center gap-2 text-xs text-gray-500">
               <span>回复 <span className="font-medium text-[var(--color-primary)]">@{replyingTo.name}</span></span>
