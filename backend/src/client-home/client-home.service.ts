@@ -20,7 +20,7 @@ export class ClientHomeService {
           likes: true,
           comments: true,
           technician: {
-            select: { name: true, id: true },
+            select: { name: true, id: true, avatarUrl: true },
           },
         },
       }),
@@ -33,18 +33,27 @@ export class ClientHomeService {
       }),
     ]);
 
+    const UPLOAD_BASE_URL =
+      process.env.UPLOAD_BASE_URL || 'http://localhost:3000';
+    const toAbsoluteUrl = (url: string | null): string | null => {
+      if (!url) return null;
+      if (url.startsWith('http')) return url;
+      return `${UPLOAD_BASE_URL}${url}`;
+    };
+
     return {
       technician: {
         id: binding.technician.id,
         name: binding.technician.name,
         phone: binding.technician.phone,
-        avatarUrl: binding.technician.avatarUrl,
+        avatarUrl: toAbsoluteUrl(binding.technician.avatarUrl),
         city: binding.technician.city,
         serviceArea: binding.technician.serviceArea,
       },
       works: works.map((work) => ({
         ...this.mapWork(work),
         technicianId: work.techId,
+        isLiked: work.likes.some((like) => like.clientId === clientUserId),
       })),
       latestOrder: latestBooking
         ? {
@@ -63,32 +72,41 @@ export class ClientHomeService {
     clientUserId: number,
     techId?: number,
     sortBy: 'latest' | 'likes' | 'comments' | 'favorites' = 'latest',
+    sortDir: 'asc' | 'desc' = 'desc',
   ) {
-    let targetTechId: number;
+    let techFilter: number | { in: number[] };
     if (techId) {
-      // 校验客户与该美甲师存在有效绑定，再返回其作品
       const binding = await this.prisma.clientTechBinding.findFirst({
         where: { clientId: clientUserId, techId, status: 'active' },
       });
       if (!binding) {
         throw new NotFoundException('未绑定该美甲师');
       }
-      targetTechId = techId;
+      techFilter = techId;
     } else {
-      targetTechId = (await this.getDefaultBinding(clientUserId)).techId;
+      const boundTechIds = (
+        await this.prisma.clientTechBinding.findMany({
+          where: { clientId: clientUserId, status: 'active' },
+          select: { techId: true },
+        })
+      ).map((b) => b.techId);
+      if (boundTechIds.length === 0) {
+        return [];
+      }
+      techFilter = { in: boundTechIds };
     }
     const works = await this.prisma.nailWork.findMany({
       where: {
-        techId: targetTechId,
+        techId: techFilter,
         isVisible: true,
       },
-      orderBy: this.buildWorksOrderBy(sortBy),
+      orderBy: this.buildWorksOrderBy(sortBy, sortDir),
       include: {
         likes: true,
         comments: true,
         favorites: true,
         technician: {
-          select: { name: true, id: true },
+          select: { name: true, id: true, avatarUrl: true },
         },
       },
     });
@@ -96,22 +114,23 @@ export class ClientHomeService {
     return works.map((work) => ({
       ...this.mapWork(work),
       technicianId: work.techId,
+      isLiked: work.likes.some((like) => like.clientId === clientUserId),
     }));
   }
 
   private buildWorksOrderBy(
     sortBy: 'latest' | 'likes' | 'comments' | 'favorites',
+    sortDir: 'asc' | 'desc' = 'desc',
   ): any[] {
     switch (sortBy) {
       case 'likes':
-        return [{ likes: { _count: 'desc' } }, { createdAt: 'desc' }];
+        return [{ likes: { _count: sortDir } }, { createdAt: 'desc' }];
       case 'comments':
-        return [{ comments: { _count: 'desc' } }, { createdAt: 'desc' }];
+        return [{ comments: { _count: sortDir } }, { createdAt: 'desc' }];
       case 'favorites':
-        return [{ favorites: { _count: 'desc' } }, { createdAt: 'desc' }];
+        return [{ favorites: { _count: sortDir } }, { createdAt: 'desc' }];
       default:
-        // 最新：置顶优先，再按排序值与发布时间
-        return [{ isPinned: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'desc' }];
+        return [{ isPinned: 'desc' }, { sortOrder: 'asc' }, { createdAt: sortDir }];
     }
   }
 
@@ -144,7 +163,7 @@ export class ClientHomeService {
           likes: true,
           comments: true,
           favorites: true,
-          technician: { select: { name: true, id: true } },
+          technician: { select: { name: true, id: true, avatarUrl: true } },
         },
       }),
       this.prisma.nailWork.count({ where }),
@@ -154,6 +173,7 @@ export class ClientHomeService {
       works: works.map((work) => ({
         ...this.mapWork(work),
         technicianId: work.techId,
+        isLiked: work.likes.some((like) => like.clientId === clientUserId),
       })),
       hasMore: page * limit < total,
     };
@@ -168,7 +188,7 @@ export class ClientHomeService {
           include: {
             likes: true,
             comments: true,
-            technician: { select: { name: true, id: true } },
+            technician: { select: { name: true, id: true, avatarUrl: true } },
           },
         },
       },
@@ -192,7 +212,7 @@ export class ClientHomeService {
           include: {
             likes: true,
             comments: true,
-            technician: { select: { name: true, id: true } },
+            technician: { select: { name: true, id: true, avatarUrl: true } },
           },
         },
       },
@@ -316,7 +336,7 @@ export class ClientHomeService {
     likes?: { id: number }[];
     comments?: { id: number }[];
     favorites?: { id: number }[];
-    technician?: { name: string | null; id?: number };
+    technician?: { name: string | null; id?: number; avatarUrl?: string | null };
     techId?: number;
   }) {
     const imageUrls = this.parseImageUrls(work.images, work.coverUrl);
@@ -346,6 +366,7 @@ export class ClientHomeService {
       commentCount: work.comments?.length ?? 0,
       favoriteCount: work.favorites?.length ?? 0,
       technicianName: work.technician?.name ?? '美甲师',
+      technicianAvatarUrl: work.technician?.avatarUrl ? toAbsoluteUrl(work.technician.avatarUrl) : null,
       technicianId: technicianId,
       createdAt: work.createdAt,
       updatedAt: work.updatedAt,

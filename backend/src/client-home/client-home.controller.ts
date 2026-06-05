@@ -58,19 +58,23 @@ export class ClientHomeController {
   @ApiResponse({ status: 200, description: '返回作品列表' })
   @ApiQuery({ name: 'techId', type: Number, required: false, description: '指定美甲师ID（需已绑定）' })
   @ApiQuery({ name: 'sortBy', required: false, description: 'latest|likes|comments|favorites' })
+  @ApiQuery({ name: 'sortDir', required: false, description: 'asc|desc' })
   getWorks(
     @Req() request: { user: { clientUserId: number } },
     @Query('techId') techId?: string,
     @Query('sortBy') sortBy?: string,
+    @Query('sortDir') sortDir?: string,
   ) {
     const allowed = ['latest', 'likes', 'comments', 'favorites'] as const;
     const sort = (allowed as readonly string[]).includes(sortBy ?? '')
       ? (sortBy as (typeof allowed)[number])
       : 'latest';
+    const dir = sortDir === 'asc' ? 'asc' : 'desc';
     return this.clientHomeService.getWorks(
       request.user.clientUserId,
       techId ? parseInt(techId, 10) : undefined,
       sort,
+      dir,
     );
   }
 
