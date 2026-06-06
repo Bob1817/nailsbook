@@ -17,6 +17,7 @@ model AdminUser {
   phone        String?
   roleId       Int
   status       String         @default("active")
+  tokenVersion Int            @default(0)
   lastLoginAt  DateTime?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @default(now()) @updatedAt

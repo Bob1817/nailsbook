@@ -59,6 +59,7 @@ export class AuthService {
       username: user.username,
       roleId: user.roleId,
       permissions,
+      tv: user.tokenVersion,
     };
 
     await this.prisma.adminUser.update({
@@ -103,6 +104,7 @@ export class AuthService {
       username: user.username,
       roleId: user.roleId,
       permissions,
+      tv: user.tokenVersion,
     };
 
     return {

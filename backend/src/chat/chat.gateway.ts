@@ -14,8 +14,17 @@ import { PresenceService } from './presence.service';
 import { TypingService } from './typing.service';
 import { SendMessageDto } from './dto/send-message.dto';
 
+function getWsOrigin(): string | string[] | boolean {
+  const configured = process.env.CORS_ORIGINS?.split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  if (configured?.length) return configured;
+  if (process.env.NODE_ENV === 'production') return false;
+  return '*';
+}
+
 @WebSocketGateway({
-  cors: { origin: '*', credentials: true },
+  cors: { origin: getWsOrigin(), credentials: true },
   namespace: '/',
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
