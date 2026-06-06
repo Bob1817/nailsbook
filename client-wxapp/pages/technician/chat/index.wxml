@@ -1,36 +1,181 @@
-<view class="container">
-  <view wx:if="{{loading}}" class="loading-wrap">
-    <view class="loading-spinner"></view>
-  </view>
-
-  <view wx:elif="{{conversations.length === 0}}" class="empty-wrap">
-    <text class="empty-icon">💬</text>
-    <text class="empty-title">暂无客户消息</text>
-    <text class="empty-desc">客户发消息后将在此显示</text>
-  </view>
-
-  <view wx:else class="list">
-    <view
-      wx:for="{{conversations}}"
-      wx:key="id"
-      class="conv-item"
-      bindtap="openChat"
-      data-id="{{item.id}}"
-    >
-      <view class="avatar-wrap">
-        <image wx:if="{{item.clientAvatar}}" class="avatar" src="{{item.clientAvatar}}" mode="aspectFill" />
-        <view wx:else class="avatar-placeholder">
-          <text class="avatar-text">{{item.clientName[0]}}</text>
-        </view>
-        <view wx:if="{{item.unreadCount > 0}}" class="badge">{{item.unreadCount > 99 ? '99+' : item.unreadCount}}</view>
+<nav-bar title="消息"/>
+<view class="page">
+  <!-- 固定头部 -->
+  <view class="header">
+    <!-- 搜索栏 + 新建对话 -->
+    <view class="search-row">
+      <view class="search-bar">
+        <text class="search-icon">S</text>
+        <input class="search-input" placeholder="搜索消息、客户或提醒内容"
+          value="{{searchText}}" bindinput="onSearchInput" confirm-type="search"/>
       </view>
-      <view class="conv-info">
-        <view class="conv-top">
-          <text class="client-name">{{item.clientName}}</text>
-          <text class="last-time">{{item.lastTime}}</text>
+      <view class="header-btn" bindtap="openNewChat">
+        <text class="header-btn-icon">+</text>
+        <text class="header-btn-text">发起对话</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Tab 栏（固定在搜索框下方） -->
+  <scroll-view scroll-x class="tab-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="tab-bar">
+      <view
+        wx:for="{{tabs}}"
+        wx:key="value"
+        class="tab-pill {{activeTab === item.value ? 'tab-pill-active' : ''}}"
+        bindtap="onTabChange"
+        data-tab="{{item.value}}"
+      >
+        <text class="tab-label">{{item.label}}</text>
+        <text class="tab-count">{{item.count}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 可滚动内容区 -->
+  <scroll-view scroll-y class="content-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="content-area">
+      <!-- 加载态 -->
+      <view wx:if="{{loading}}" class="skeleton-list">
+        <view wx:for="{{[1,2,3,4,5]}}" wx:key="*this" class="skeleton-card">
+          <view class="skel-avatar"></view>
+          <view class="skel-lines">
+            <view class="skel-line skel-line-wide"></view>
+            <view class="skel-line skel-line-narrow"></view>
+          </view>
         </view>
-        <text class="last-msg">{{item.lastMessage || '暂无消息'}}</text>
+      </view>
+
+      <block wx:else>
+        <!-- 消息列表 -->
+        <view wx:if="{{filteredItems.length > 0}}" class="msg-list">
+          <view
+            wx:for="{{filteredItems}}"
+            wx:key="id"
+            class="msg-card"
+            bindtap="onItemClick"
+            data-index="{{index}}"
+          >
+            <view class="msg-avatar-wrap">
+              <image wx:if="{{item.clientAvatar && item.type === 'chat'}}" src="{{item.clientAvatar}}" mode="aspectFill" class="msg-avatar-img" />
+              <view wx:else class="msg-avatar-placeholder {{item._avatarBgClass}}">
+                <text class="msg-avatar-char">{{item._avatarChar}}</text>
+              </view>
+            </view>
+            <view class="msg-body">
+              <view class="msg-top-row">
+                <text class="msg-name">{{item.name}}</text>
+                <view class="msg-type-badge {{item._badgeClass}}">
+                  <text class="msg-type-badge-text">{{item.badge}}</text>
+                </view>
+              </view>
+              <text class="msg-preview">{{item.preview}}</text>
+            </view>
+            <view class="msg-right">
+              <text class="msg-time">{{item._timeText}}</text>
+              <text wx:if="{{item._actionLabel}}" class="msg-action {{item._actionClass}}">{{item._actionLabel}}</text>
+              <block wx:if="{{item.unread}}">
+                <view wx:if="{{item.unreadCount > 1}}" class="msg-unread-badge">{{item.unreadCount > 99 ? '99+' : item.unreadCount}}</view>
+                <view wx:else class="msg-unread-dot"></view>
+              </block>
+            </view>
+          </view>
+        </view>
+
+        <!-- 空态 -->
+        <view wx:else class="empty-card">
+          <view class="empty-icon-wrap">
+            <view class="empty-icon-inner"></view>
+          </view>
+          <text class="empty-title">没有匹配的消息提醒</text>
+          <text class="empty-sub">预约提醒和服务通知会统一显示在这里</text>
+        </view>
+      </block>
+    </view>
+  </scroll-view>
+</view>
+
+<!-- 通知详情弹窗 -->
+<view wx:if="{{selectedNotification}}" class="modal-overlay" bindtap="closeNotification">
+  <view class="modal-sheet" catchtap="noop">
+    <view class="modal-header">
+      <view class="modal-type-badge {{selectedNotification._badgeClass}}">
+        <text class="msg-type-badge-text">{{selectedNotification.badge}}</text>
+      </view>
+      <view class="modal-close" bindtap="closeNotification">
+        <text class="modal-close-icon">X</text>
+      </view>
+    </view>
+
+    <text class="modal-name">{{selectedNotification.name}}</text>
+    <text class="modal-preview">{{selectedNotification.preview}}</text>
+
+    <view class="modal-meta">
+      <text class="modal-meta-text">{{selectedNotification.clientName}}</text>
+      <text class="modal-meta-dot">·</text>
+      <text class="modal-meta-text">{{selectedNotification._timeText}}</text>
+    </view>
+
+    <view class="modal-actions">
+      <view class="modal-btn modal-btn-close" bindtap="closeNotification">
+        <text class="modal-btn-close-text">关闭</text>
+      </view>
+      <view wx:if="{{selectedNotification.type === 'pending'}}" class="modal-btn modal-btn-primary" bindtap="viewRelatedOrder">
+        <text class="modal-btn-primary-text">去处理</text>
+      </view>
+      <view wx:elif="{{selectedNotification.type === 'service'}}" class="modal-btn modal-btn-primary" bindtap="viewRelatedOrder">
+        <text class="modal-btn-primary-text">查看行程</text>
+      </view>
+      <view wx:elif="{{selectedNotification.relatedId}}" class="modal-btn modal-btn-primary" bindtap="viewRelatedOrder">
+        <text class="modal-btn-primary-text">查看预约</text>
       </view>
     </view>
   </view>
 </view>
+
+<!-- 新建对话弹窗 -->
+<view wx:if="{{showNewChat}}" class="modal-overlay" bindtap="closeNewChat">
+  <view class="modal-sheet" catchtap="noop">
+    <view class="modal-header">
+      <view>
+        <text class="modal-name">选择客户发起对话</text>
+        <text class="modal-subtitle">选择一个客户开始聊天</text>
+      </view>
+      <view class="modal-close" bindtap="closeNewChat">
+        <text class="modal-close-icon">X</text>
+      </view>
+    </view>
+    <view class="search-bar modal-search">
+      <text class="search-icon">S</text>
+      <input class="search-input" placeholder="搜索客户姓名或手机号"
+        value="{{customerSearch}}" bindinput="onCustomerSearch" confirm-type="search"/>
+    </view>
+    <scroll-view scroll-y class="customer-list-scroll">
+      <view wx:if="{{filteredCustomers.length === 0}}" class="customer-empty">
+        <text class="customer-empty-text">暂无客户</text>
+      </view>
+      <view wx:else>
+        <view
+          wx:for="{{filteredCustomers}}"
+          wx:key="id"
+          class="customer-item"
+          bindtap="selectCustomer"
+          data-index="{{index}}"
+        >
+          <view class="customer-avatar">
+            <text class="customer-avatar-char">{{item._avatarChar}}</text>
+          </view>
+          <view class="customer-info">
+            <text class="customer-name">{{item.name}}</text>
+            <text class="customer-phone">{{item.phone}}</text>
+          </view>
+          <view wx:if="{{item.hasConversation}}" class="customer-badge">
+            <text class="customer-badge-text">已有对话</text>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+</view>
+
+<tab-bar selected="chat" />

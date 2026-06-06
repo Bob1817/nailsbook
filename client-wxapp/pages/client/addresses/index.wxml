@@ -1,3 +1,4 @@
+<nav-bar title="地址" showBack/>
 <view class="container">
 
   <view wx:if="{{!loading && addresses.length === 0}}" class="empty">

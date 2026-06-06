@@ -1,3 +1,7 @@
 {
-  "navigationBarTitleText": "服务项目"
+  "navigationBarTitleText": "服务管理",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "nav-bar": "/components/nav-bar/index"
+  }
 }

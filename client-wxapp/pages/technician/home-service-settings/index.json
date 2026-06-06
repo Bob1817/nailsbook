@@ -1,1 +1,7 @@
-{ "navigationBarTitleText": "上门设置" }
+{
+  "navigationBarTitleText": "上门设置",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "nav-bar": "/components/nav-bar/index"
+  }
+}

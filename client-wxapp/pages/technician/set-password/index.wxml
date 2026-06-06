@@ -1,0 +1,30 @@
+<nav-bar title="设置密码" showBack/>
+<view class="container">
+  <view class="header">
+    <view class="logo-circle">N</view>
+    <text class="title">设置登录密码</text>
+    <text class="subtitle">首次登录请设置登录密码，密码至少 8 位，需包含字母和数字</text>
+  </view>
+
+  <view class="form">
+    <view wx:if="{{phone}}" class="phone-display">
+      <text>手机号：{{phone}}</text>
+    </view>
+    <view class="form-item">
+      <text class="label">设置新密码</text>
+      <input class="input" type="text" password placeholder="至少 8 位，含字母和数字"
+        value="{{newPassword}}" bindinput="onNewPwdInput"/>
+    </view>
+    <view class="form-item">
+      <text class="label">确认新密码</text>
+      <input class="input" type="text" password placeholder="再次输入新密码"
+        value="{{confirmPassword}}" bindinput="onConfirmPwdInput"/>
+    </view>
+
+    <text wx:if="{{error}}" class="error-text">{{error}}</text>
+
+    <button class="btn-primary" bindtap="handleSubmit" disabled="{{loading}}">
+      {{loading ? '设置中...' : '确认设置并登录'}}
+    </button>
+  </view>
+</view>

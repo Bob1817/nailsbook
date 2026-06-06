@@ -1,62 +1,168 @@
-const api = require('../../../services/api');
-const { formatTime } = require('../../../utils/util');
+var api = require('../../../services/api');
+
+var SORT_TABS = [
+  { key: 'latest', label: '最新' },
+  { key: 'likes', label: '点赞' },
+  { key: 'comments', label: '评论' },
+  { key: 'favorites', label: '收藏' }
+];
+
+var ASPECT_PATTERNS = ['aspect-3-4', 'aspect-4-5', 'aspect-5-6', 'aspect-3-4'];
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  var d = new Date(dateStr);
+  var m = d.getMonth() + 1;
+  var day = d.getDate();
+  return m + '月' + day + '日';
+}
 
 Page({
   data: {
     works: [],
-    loading: false,
-    currentTab: 'all'
+    filteredWorks: [],
+    leftCol: [],
+    rightCol: [],
+    loading: true,
+    sortBy: 'latest',
+    sortDirs: { latest: 'desc', likes: 'desc', comments: 'desc', favorites: 'desc' },
+    sortTabs: SORT_TABS,
+    selectedTech: '全部',
+    techFilters: ['全部'],
+    totalCount: 0
   },
 
-  onLoad() {
-    this.loadWorks();
-  },
+  onLoad: function () { this.loadWorks(); },
 
-  onShow() {
-    this.loadWorks();
-  },
+  loadWorks: function () {
+    var self = this;
+    self.setData({ loading: true });
+    Promise.all([
+      api.client.works.list({ sortBy: self.data.sortBy, sortDir: self.data.sortDirs[self.data.sortBy] }),
+      api.client.likes.list().catch(function () { return []; })
+    ]).then(function (results) {
+        var res = results[0];
+        var likedList = results[1] || [];
+        var likedIds = {};
+        likedList.forEach(function (item) {
+          var wid = item.workId || (item.work && item.work.id) || item.id;
+          if (wid) likedIds[wid] = true;
+        });
+        var list = res.list || res.data || res || [];
+        var sortBy = self.data.sortBy;
+        var dir = self.data.sortDirs[sortBy] === 'asc' ? 1 : -1;
+        var works = list.map(function (w) {
+          var name = w.technicianName || (w.technician ? w.technician.name : '') || '';
+          return {
+            id: w.id,
+            coverUrl: w.coverUrl || (w.imageUrls && w.imageUrls[0]) || '',
+            title: w.title || '未命名作品',
+            tags: w.tags || [],
+            technicianName: name,
+            technicianAvatarUrl: w.technicianAvatarUrl || (w.technician ? w.technician.avatarUrl : '') || '',
+            techInitial: name.charAt(0) || '美',
+            likeCount: w.likeCount || 0,
+            isLiked: !!w.isLiked || !!likedIds[w.id],
+            commentCount: w.commentCount || 0,
+            favoriteCount: w.favoriteCount || 0,
+            createdAt: w.createdAt || '',
+            dateStr: formatDate(w.createdAt),
+            aspect: ''
+          };
+        });
 
-  loadWorks() {
-    this.setData({ loading: true });
+        // 客户端排序（保证排序生效，不依赖后端部署）
+        works.sort(function (a, b) {
+          if (sortBy === 'likes') return (b.likeCount - a.likeCount) * dir;
+          if (sortBy === 'comments') return (b.commentCount - a.commentCount) * dir;
+          if (sortBy === 'favorites') return (b.favoriteCount - a.favoriteCount) * dir;
+          return (new Date(b.createdAt) - new Date(a.createdAt)) * dir;
+        });
 
-    api.client.works.list()
-      .then(res => {
-        const works = (res.list || res.data || []).map(work => ({
-          id: work.id,
-          coverUrl: work.coverUrl,
-          title: work.title,
-          technicianAvatar: work.technician?.avatarUrl || '',
-          technicianName: work.technician?.name || '',
-          likes: work.likes || 0
-        }));
+        var techSet = {};
+        works.forEach(function (w) { if (w.technicianName) techSet[w.technicianName] = true; });
+        var techFilters = ['全部'].concat(Object.keys(techSet));
 
-        this.setData({ works, loading: false });
+        self.setData({ works: works, techFilters: techFilters, totalCount: works.length, loading: false });
+        self.applyFilter();
       })
-      .catch(err => {
-        console.error('Load works error:', err);
-        this.setData({ loading: false });
+      .catch(function (err) {
+        console.error('loadWorks error:', err);
+        self.setData({ loading: false, works: [], filteredWorks: [], leftCol: [], rightCol: [] });
       });
   },
 
-  switchTab(e) {
-    const tab = e.currentTarget.dataset.tab;
-    this.setData({ currentTab: tab });
+  applyFilter: function () {
+    var selected = this.data.selectedTech;
+    var filtered = selected === '全部'
+      ? this.data.works
+      : this.data.works.filter(function (w) { return w.technicianName === selected; });
+
+    var leftCol = [], rightCol = [];
+    filtered.forEach(function (w, i) {
+      var colIdx = i % 2;
+      var rowIdx = Math.floor(i / 2);
+      w.aspect = ASPECT_PATTERNS[(rowIdx + colIdx) % ASPECT_PATTERNS.length];
+      if (colIdx === 0) leftCol.push(w); else rightCol.push(w);
+    });
+
+    this.setData({ filteredWorks: filtered, leftCol: leftCol, rightCol: rightCol });
+  },
+
+  switchSort: function (e) {
+    var key = e.currentTarget.dataset.key;
+    var dirs = this.data.sortDirs;
+    if (key === this.data.sortBy) {
+      dirs[key] = dirs[key] === 'desc' ? 'asc' : 'desc';
+    } else {
+      dirs[key] = 'desc';
+    }
+    this.setData({ sortBy: key, sortDirs: dirs });
+    // 先用已有数据立即排序，再从后端刷新
+    this.sortWorks();
     this.loadWorks();
   },
 
-  viewWork(e) {
-    const id = e.currentTarget.dataset.id;
-    wx.navigateTo({ url: `/pages/client/work-detail/index?id=${id}` });
-  },
-
-  onSearch(e) {
-    const keyword = e.detail.value;
-    this.loadWorks({ keyword });
-  },
-
-  onPullDownRefresh() {
-    this.loadWorks().finally(() => {
-      wx.stopPullDownRefresh();
+  sortWorks: function () {
+    var sortBy = this.data.sortBy;
+    var dir = this.data.sortDirs[sortBy] === 'asc' ? 1 : -1;
+    var works = this.data.works.slice();
+    works.sort(function (a, b) {
+      if (sortBy === 'likes') return (b.likeCount - a.likeCount) * dir;
+      if (sortBy === 'comments') return (b.commentCount - a.commentCount) * dir;
+      if (sortBy === 'favorites') return (b.favoriteCount - a.favoriteCount) * dir;
+      return (new Date(b.createdAt) - new Date(a.createdAt)) * dir;
     });
+    this.setData({ works: works });
+    this.applyFilter();
+  },
+
+  switchTech: function (e) {
+    var name = e.currentTarget.dataset.name;
+    this.setData({ selectedTech: name });
+    this.applyFilter();
+  },
+
+  onAvatarError: function (e) {
+    var id = e.currentTarget.dataset.id;
+    var works = this.data.works.map(function (w) {
+      if (String(w.id) === String(id)) {
+        w.technicianAvatarUrl = '';
+      }
+      return w;
+    });
+    this.setData({ works: works });
+    this.applyFilter();
+  },
+
+  viewWork: function (e) {
+    var id = e.currentTarget.dataset.id;
+    wx.navigateTo({ url: '/pages/client/work-detail/index?id=' + id });
+  },
+
+  onPullDownRefresh: function () {
+    var self = this;
+    this.loadWorks();
+    setTimeout(function () { wx.stopPullDownRefresh(); }, 1000);
   }
 });

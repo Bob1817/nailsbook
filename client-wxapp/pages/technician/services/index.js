@@ -126,7 +126,7 @@ Page({
     wx.showModal({
       title: '删除服务',
       content: '确定删除该服务项目吗？',
-      confirmColor: '#ff4d4f',
+      confirmColor: '#ef4444',
       success: (res) => {
         if (res.confirm) this.deleteService(id);
       }

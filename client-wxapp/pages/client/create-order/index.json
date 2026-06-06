@@ -1,3 +1,7 @@
 {
-  "navigationBarTitleText": "创建预约"
+  "navigationBarTitleText": "创建预约",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "nav-bar": "/components/nav-bar/index"
+  }
 }

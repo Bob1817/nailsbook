@@ -1,3 +1,4 @@
+<nav-bar title="帮助" showBack/>
 <view class="container">
   <view class="section">
     <text class="section-title">常见问题</text>
@@ -22,7 +23,7 @@
     <text class="section-title">需要帮助？</text>
     <view class="contact-card" bindtap="goChat">
       <view class="contact-icon-wrap">
-        <text class="contact-icon">💬</text>
+        <view class="menu-icon icon-chat"></view>
       </view>
       <view class="contact-info">
         <text class="contact-title">联系我的美甲师</text>

@@ -7,79 +7,90 @@ Page({
     techName: '',
     techAvatar: '',
     messages: [],
+    groupedMessages: [],
     inputText: '',
     loading: true,
     sending: false,
-    scrollToId: ''
+    scrollToId: '',
+    showBookingSheet: false,
+    recentOrders: [],
+    chatNavHeight: 64,
+    /* 滚动策略 */
+    isAtBottom: true,
+    keyboardHeight: 0
   },
 
   pollingTimer: null,
+  _resizeHandler: null,
 
   onLoad(options) {
-    const { conversationId, techId, techName } = options;
+    this.calcNavHeight();
+    var { conversationId, techId, techName } = options;
     this.setData({
       conversationId: conversationId ? parseInt(conversationId) : null,
       techId: techId ? parseInt(techId) : null
     });
-
     if (techName) {
       wx.setNavigationBarTitle({ title: decodeURIComponent(techName) });
       this.setData({ techName: decodeURIComponent(techName) });
     }
-
     this.loadMessages();
+
+    /* 横竖屏 / 分屏适配 */
+    this._resizeHandler = () => {
+      this.calcNavHeight();
+      if (this.data.isAtBottom) {
+        this.scrollToBottom(true);
+      }
+    };
+    wx.onWindowResize(this._resizeHandler);
   },
 
-  onShow() {
-    this.startPolling();
-  },
-
-  onHide() {
-    this.stopPolling();
-  },
-
+  onShow() { this.startPolling(); },
+  onHide() { this.stopPolling(); },
   onUnload() {
     this.stopPolling();
+    if (this._resizeHandler) wx.offWindowResize(this._resizeHandler);
   },
 
+  /* ===== 轮询 ===== */
   startPolling() {
     this.stopPolling();
     this.pollingTimer = setInterval(() => {
-      if (this.data.conversationId) {
-        this.loadMessages(false);
-      }
+      if (this.data.conversationId) this.loadMessages(false, true);
     }, 3000);
   },
 
   stopPolling() {
-    if (this.pollingTimer) {
-      clearInterval(this.pollingTimer);
-      this.pollingTimer = null;
-    }
+    if (this.pollingTimer) { clearInterval(this.pollingTimer); this.pollingTimer = null; }
   },
 
-  async loadMessages(showLoading = true) {
+  /* ===== 消息加载 ===== */
+  async loadMessages(showLoading = true, isPolling = false) {
     if (showLoading) this.setData({ loading: true });
-
     try {
+      const reqOpts = isPolling ? { timeout: 10000, silent: true } : {};
       if (this.data.conversationId) {
-        const res = await api.chat.messages({ conversationId: this.data.conversationId }, 'client');
-        const messages = this.formatMessages(res.messages || res.data || res || []);
-        const tech = res.technician;
+        var res = await api.chat.messages({ conversationId: this.data.conversationId }, 'client', reqOpts);
+        var messages = this.formatMessages(res.messages || res.data || res || []);
+        var tech = res.technician;
         if (tech) {
           wx.setNavigationBarTitle({ title: tech.name });
-          this.setData({ techName: tech.name, techAvatar: tech.avatarUrl || '' });
+          this.setData({ techName: tech.name, techAvatar: tech.avatarUrl || "" });
         }
+        var isFirst = this.data.messages.length === 0;
         this.setData({ messages, loading: false });
+        this.groupByDate();
         api.chat.markRead(this.data.conversationId, 'client').catch(() => {});
-        this.scrollToBottom();
+        if (isFirst || this.data.isAtBottom) {
+          this.scrollToBottom(true);
+        }
       } else if (this.data.techId) {
-        const bindings = wx.getStorageSync('client_bindings') || [];
-        const tech = bindings.find(b => b.technician?.id === this.data.techId)?.technician
-          || bindings[0]?.technician;
-        if (tech) {
-          wx.setNavigationBarTitle({ title: tech.name });
-          this.setData({ techName: tech.name, techAvatar: tech.avatarUrl || '', loading: false });
+        var bindings = wx.getStorageSync('client_bindings') || [];
+        var t = bindings.find(b => b.technician?.id === this.data.techId)?.technician || bindings[0]?.technician;
+        if (t) {
+          wx.setNavigationBarTitle({ title: t.name });
+          this.setData({ techName: t.name, techAvatar: t.avatarUrl || "", loading: false });
         } else {
           this.setData({ loading: false });
         }
@@ -87,123 +98,165 @@ Page({
         this.setData({ loading: false });
       }
     } catch (err) {
-      console.error('Load messages error:', err);
-      this.setData({ loading: false });
+      if (!isPolling) {
+        console.error('Load messages error:', err);
+        this.setData({ loading: false });
+      }
     }
   },
+
 
   formatMessages(msgs) {
-    return msgs
-      .filter(m => !['system', 'quote', 'booking'].includes(m.messageType))
-      .map(m => ({
-        ...m,
-        timeStr: formatTime(m.createdAt),
-        isClient: m.senderType === 'client'
-      }));
+    return msgs.map(m => ({
+      ...m,
+      timeStr: formatTime(m.createdAt),
+      isClient: m.senderType === 'client',
+      isSystem: ['system','booking','quote','order'].includes(m.messageType),
+      isOrderCard: m.messageType === 'booking' || m.messageType === 'order' || m.relatedType === 'order'
+    }));
   },
 
-  scrollToBottom() {
-    const msgs = this.data.messages;
-    if (msgs.length > 0) {
-      this.setData({ scrollToId: `msg-${msgs[msgs.length - 1].id}` });
-    }
-  },
-
-  onInputChange(e) {
-    this.setData({ inputText: e.detail.value });
-  },
-
-  async sendText() {
-    const text = this.data.inputText.trim();
-    if (!text || this.data.sending) return;
-    if (!this.data.techId && !this.data.conversationId) {
-      wx.showToast({ title: '无法发送消息', icon: 'none' });
-      return;
-    }
-
-    this.setData({ sending: true, inputText: '' });
-
-    try {
-      const payload = {
-        messageType: 'text',
-        content: text
-      };
-      if (this.data.conversationId) {
-        payload.conversationId = this.data.conversationId;
+  groupByDate() {
+    var msgs = this.data.messages;
+    var groups = [];
+    for (var i = 0; i < msgs.length; i++) {
+      var msg = msgs[i];
+      var dateKey = getDateKey(msg.createdAt);
+      var dateLabel = formatDateLabel(msg.createdAt);
+      if (groups.length === 0 || groups[groups.length - 1].dateKey !== dateKey) {
+        groups.push({ dateKey: dateKey, dateLabel: dateLabel, messages: [msg] });
       } else {
-        payload.techId = this.data.techId;
+        groups[groups.length - 1].messages.push(msg);
       }
+    }
+    this.setData({ groupedMessages: groups });
+  },
 
-      const res = await api.chat.sendMessage(payload, 'client');
+  /* ===== 滚动策略 ===== */
+  onScroll(e) {
+    var detail = e.detail;
+    var remaining = detail.scrollHeight - detail.scrollTop - detail.clientHeight;
+    this.setData({ isAtBottom: remaining < 80 });
+  },
 
-      if (res.conversationId && !this.data.conversationId) {
-        this.setData({ conversationId: res.conversationId });
-      }
+  scrollToBottom(force) {
+    var msgs = this.data.messages;
+    if (!msgs.length) return;
+    if (!force && !this.data.isAtBottom) return;
+    var targetId = 'msg-' + msgs[msgs.length - 1].id;
+    this.setData({ scrollToId: '' });
+    wx.nextTick(() => { this.setData({ scrollToId: targetId }); });
+  },
 
+  onInputFocus() {
+    wx.nextTick(() => this.scrollToBottom(true));
+  },
+
+  /* ===== 导航高度 ===== */
+  calcNavHeight() {
+    try {
+      var systemInfo = wx.getSystemInfoSync();
+      var menuButton = wx.getMenuButtonBoundingClientRect();
+      var navBarHeight = menuButton.top + menuButton.height + (menuButton.top - systemInfo.statusBarHeight);
+      this.setData({ chatNavHeight: Math.round(navBarHeight) });
+    } catch (e) {}
+  },
+
+  onInputChange(e) { this.setData({ inputText: e.detail.value }); },
+
+  /* ===== 发送文字 ===== */
+  async sendText() {
+    var text = this.data.inputText.trim();
+    if (!text || this.data.sending) return;
+    if (!this.data.techId && !this.data.conversationId) { wx.showToast({ title: '无法发送消息', icon: 'none' }); return; }
+    this.setData({ sending: true, inputText: '' });
+    try {
+      var payload = { messageType: 'text', content: text };
+      if (this.data.conversationId) payload.conversationId = this.data.conversationId;
+      else payload.techId = this.data.techId;
+      var res = await api.chat.sendMessage(payload, 'client');
+      if (res.conversationId && !this.data.conversationId) this.setData({ conversationId: res.conversationId });
       if (res.message) {
-        const msgs = [...this.data.messages, {
-          ...res.message,
-          timeStr: formatTime(res.message.createdAt),
-          isClient: true
-        }];
-        this.setData({ messages: msgs });
-        this.scrollToBottom();
+        var msgs = [...this.data.messages, { ...res.message, timeStr: formatTime(res.message.createdAt), isClient: true, isSystem: false, isOrderCard: false }];
+        this.setData({ messages: msgs }); this.groupByDate(); this.scrollToBottom(true);
       }
     } catch (err) {
       wx.showToast({ title: err.message || '发送失败', icon: 'none' });
       this.setData({ inputText: text });
-    } finally {
-      this.setData({ sending: false });
-    }
+    } finally { this.setData({ sending: false }); }
   },
 
+  /* ===== 发送图片 ===== */
   async sendImage() {
     if (this.data.sending) return;
-
-    wx.chooseMedia({
-      count: 1,
-      mediaType: ['image'],
+    wx.chooseMedia({ count: 1, mediaType: ['image'],
       success: async (res) => {
-        const filePath = res.tempFiles[0].tempFilePath;
+        var filePath = res.tempFiles[0].tempFilePath;
         this.setData({ sending: true });
-
         try {
-          const uploadRes = await api.upload.image(filePath, 'client');
-          const payload = {
-            messageType: 'image',
-            imageUrl: uploadRes.url
-          };
-          if (this.data.conversationId) {
-            payload.conversationId = this.data.conversationId;
-          } else {
-            payload.techId = this.data.techId;
-          }
-
-          const msgRes = await api.chat.sendMessage(payload, 'client');
-          if (msgRes.conversationId && !this.data.conversationId) {
-            this.setData({ conversationId: msgRes.conversationId });
-          }
+          var uploadRes = await api.upload.image(filePath, 'client');
+          var payload = { messageType: 'image', imageUrl: uploadRes.url };
+          if (this.data.conversationId) payload.conversationId = this.data.conversationId;
+          else payload.techId = this.data.techId;
+          var msgRes = await api.chat.sendMessage(payload, 'client');
+          if (msgRes.conversationId && !this.data.conversationId) this.setData({ conversationId: msgRes.conversationId });
           if (msgRes.message) {
-            const msgs = [...this.data.messages, {
-              ...msgRes.message,
-              timeStr: formatTime(msgRes.message.createdAt),
-              isClient: true
-            }];
-            this.setData({ messages: msgs });
-            this.scrollToBottom();
+            var msgs = [...this.data.messages, { ...msgRes.message, timeStr: formatTime(msgRes.message.createdAt), isClient: true, isSystem: false, isOrderCard: false }];
+            this.setData({ messages: msgs }); this.groupByDate(); this.scrollToBottom(true);
           }
-        } catch (err) {
-          wx.showToast({ title: '图片发送失败', icon: 'none' });
-        } finally {
-          this.setData({ sending: false });
-        }
+        } catch (err) { wx.showToast({ title: '图片发送失败', icon: 'none' }); }
+        finally { this.setData({ sending: false }); }
       }
     });
   },
 
   previewImage(e) {
-    const url = e.currentTarget.dataset.url;
+    var url = e.currentTarget.dataset.url;
     wx.previewImage({ urls: [url], current: url });
+  },
+
+  /* ===== 预约卡片 ===== */
+  async openBookingSheet() {
+    this.setData({ showBookingSheet: true });
+    try {
+      var res = await api.client.orders.list({ limit: 10 });
+      var orders = (res.list || res.data || res || []).map(o => ({
+        id: o.id, orderNo: o.orderNo, status: o.status,
+        statusText: getStatusLabel(o.status),
+        dateStr: formatDateStr(o.startTime),
+        timeStr: formatTime(o.startTime),
+        serviceName: o.customTitle || o.serviceType || '预约服务',
+        techName: o.technician?.name || '美甲师'
+      }));
+      this.setData({ recentOrders: orders });
+    } catch(e) { this.setData({ recentOrders: [] }); }
+  },
+
+  closeBookingSheet() { this.setData({ showBookingSheet: false }); },
+
+  async sendOrderCard(e) {
+    var orderId = e.currentTarget.dataset.id;
+    var order = this.data.recentOrders.find(o => o.id === orderId);
+    if (!order) return;
+    this.setData({ showBookingSheet: false, sending: true });
+    try {
+      var content = '预约 #' + order.orderNo + '\n' + order.serviceName + '\n' + order.dateStr + ' ' + order.timeStr + '\n状态：' + order.statusText;
+      var payload = { messageType: 'booking', content, relatedType: 'order', relatedId: orderId };
+      if (this.data.conversationId) payload.conversationId = this.data.conversationId;
+      else payload.techId = this.data.techId;
+      var res = await api.chat.sendMessage(payload, 'client');
+      if (res.conversationId && !this.data.conversationId) this.setData({ conversationId: res.conversationId });
+      if (res.message) {
+        var msgs = [...this.data.messages, { ...res.message, timeStr: formatTime(res.message.createdAt), isClient: true, isSystem: false, isOrderCard: true }];
+        this.setData({ messages: msgs }); this.groupByDate(); this.scrollToBottom(true);
+      }
+    } catch (err) { wx.showToast({ title: '发送失败', icon: 'none' }); }
+    finally { this.setData({ sending: false }); }
+  },
+
+  viewOrder(e) {
+    var id = e.currentTarget.dataset.id;
+    if (id) wx.navigateTo({ url: '/pages/client/order-detail/index?id=' + id });
   },
 
   goBooking() {
@@ -213,6 +266,39 @@ Page({
 
 function formatTime(time) {
   if (!time) return '';
-  const d = new Date(time);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  var d = new Date(time);
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+
+function formatDateStr(time) {
+  if (!time) return '';
+  var d = new Date(time);
+  var months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  return months[d.getMonth()] + d.getDate() + '日';
+}
+
+function getStatusLabel(status) {
+  var map = { pending_quote:'待报价', pending_agree:'待同意', pending_confirm:'待确认', pending_home:'待上门', pending_shop:'待到店', in_progress:'服务中', completed:'已完成', cancelled:'已取消' };
+  return map[status] || status;
+}
+
+function getDateKey(time) {
+  if (!time) return '';
+  var d = new Date(time);
+  return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+}
+
+function formatDateLabel(time) {
+  if (!time) return '';
+  var d = new Date(time);
+  var now = new Date();
+  var todayKey = now.getFullYear() + '-' + now.getMonth() + '-' + now.getDate();
+  var dateKey = d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+  if (todayKey === dateKey) return '今天';
+  var yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  var yKey = yesterday.getFullYear() + '-' + yesterday.getMonth() + '-' + yesterday.getDate();
+  if (yKey === dateKey) return '昨天';
+  var months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  return months[d.getMonth()] + d.getDate() + '日';
 }

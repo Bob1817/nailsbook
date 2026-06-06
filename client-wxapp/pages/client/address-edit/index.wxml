@@ -1,3 +1,4 @@
+<nav-bar title="编辑地址" showBack/>
 <view class="container">
 
   <view class="section">
@@ -13,7 +14,7 @@
 
   <view class="section">
     <view class="location-row" bindtap="chooseLocation">
-      <text class="location-label">📍 从地图选择位置</text>
+      <text class="location-label"><view class="menu-icon icon-location"></view> 从地图选择位置</text>
       <text class="location-hint">自动填入地址</text>
     </view>
   </view>

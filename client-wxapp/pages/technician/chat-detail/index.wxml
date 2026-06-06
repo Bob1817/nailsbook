@@ -1,53 +1,103 @@
-<view class="page">
+<nav-bar title="{{clientName || '对话'}}" showBack titleCenter/>
+<view class="page" style="top: {{chatNavHeight}}px; bottom: {{keyboardHeight > 0 ? keyboardHeight : 0}}px;">
+  <!-- 加载中 -->
   <view wx:if="{{loading}}" class="loading-wrap">
     <view class="loading-spinner"></view>
   </view>
 
-  <scroll-view wx:else scroll-y class="msg-list" scroll-into-view="{{scrollToId}}" scroll-with-animation>
-    <view wx:if="{{messages.length === 0}}" class="empty-chat">
-      <text class="empty-icon">💬</text>
-      <text class="empty-title">与{{clientName || '客户'}}的对话</text>
-      <text class="empty-desc">暂无消息记录</text>
+  <!-- 消息列表 -->
+  <scroll-view
+    wx:else
+    scroll-y
+    class="msg-list"
+    scroll-into-view="{{scrollToId}}"
+    scroll-with-animation
+    enhanced
+    show-scrollbar="{{false}}"
+    bindscroll="onScroll"
+  >
+    <view wx:if="{{groupedMessages.length === 0}}" class="empty-chat">
+      <view class="empty-icon-wrap">
+        <view class="empty-icon-dot"></view>
+      </view>
+      <text class="empty-title">开始和{{clientName || '客户'}}沟通</text>
+      <text class="empty-desc">把报价、到店安排、款式参考发给客户</text>
     </view>
 
-    <view wx:for="{{messages}}" wx:key="id" id="msg-{{item.id}}" class="msg-row {{item.isMe ? 'row-right' : 'row-left'}}">
-      <view wx:if="{{!item.isMe}}" class="msg-avatar">
-        <image wx:if="{{clientAvatar}}" src="{{clientAvatar}}" mode="aspectFill" class="avatar-img" />
-        <view wx:else class="avatar-placeholder"><text>{{clientName[0] || '客'}}</text></view>
+    <block wx:for="{{groupedMessages}}" wx:key="date" wx:for-item="group">
+      <!-- 日期分隔符 -->
+      <view class="date-separator">
+        <text class="date-label">{{group.dateLabel}}</text>
       </view>
 
-      <view class="msg-content-wrap">
-        <view wx:if="{{item.messageType === 'image' && item.imageUrl}}" class="bubble bubble-{{item.isMe ? 'right' : 'left'}} bubble-img" bindtap="previewImage" data-url="{{item.imageUrl}}">
-          <image src="{{item.imageUrl}}" mode="widthFix" class="msg-image" />
+      <!-- 该日期下的消息 -->
+      <view wx:for="{{group.messages}}" wx:key="id" wx:for-item="item" id="msg-{{item.id}}" class="msg-row {{item.isMe ? 'row-right' : 'row-left'}}">
+        <!-- 对方头像 -->
+        <view wx:if="{{!item.isMe}}" class="msg-avatar">
+          <view class="avatar-placeholder"><text>{{clientName[0] || '客'}}</text></view>
         </view>
-        <view wx:else class="bubble bubble-{{item.isMe ? 'right' : 'left'}}">
-          <text class="msg-text">{{item.content}}</text>
-        </view>
-        <text class="msg-time {{item.isMe ? 'time-right' : 'time-left'}}">{{item.timeStr}}</text>
-      </view>
 
-      <view wx:if="{{item.isMe}}" class="msg-avatar">
-        <view class="avatar-self"><text>我</text></view>
+        <view class="msg-content-wrap">
+          <!-- 系统消息 -->
+          <view wx:if="{{item.isSystem && !item.isOrderCard}}" class="system-msg">
+            <text class="system-text">{{item.content}}</text>
+          </view>
+
+          <!-- 预约/预约卡片消息 -->
+          <view wx:elif="{{item.isOrderCard}}" class="order-card-msg {{item.isMe ? 'card-right' : 'card-left'}}" bindtap="viewOrder" data-id="{{item.relatedId}}">
+            <view class="card-accent"></view>
+            <view class="card-inner">
+              <view class="card-header">
+                <text class="card-label">预约卡片</text>
+              </view>
+              <text class="card-content">{{item.content}}</text>
+              <text class="card-action">查看详情 ›</text>
+            </view>
+          </view>
+
+          <!-- 图片消息 -->
+          <view wx:elif="{{item.messageType === 'image' && item.imageUrl}}" class="bubble bubble-{{item.isMe ? 'right' : 'left'}} bubble-img" bindtap="previewImage" data-url="{{item.imageUrl}}">
+            <image src="{{item.imageUrl}}" mode="widthFix" class="msg-image" />
+          </view>
+
+          <!-- 文字消息 -->
+          <view wx:else class="bubble bubble-{{item.isMe ? 'right' : 'left'}}">
+            <text class="msg-text">{{item.content}}</text>
+            <text class="msg-time-inline {{item.isMe ? 'time-right' : 'time-left'}}">{{item.timeStr}}</text>
+          </view>
+        </view>
+
+        <!-- 自己头像 -->
+        <view wx:if="{{item.isMe}}" class="msg-avatar">
+          <view class="avatar-self"><text>我</text></view>
+        </view>
       </view>
-    </view>
-    <view class="list-bottom"></view>
+    </block>
+
+    <!-- 底部间距：键盘弹出时留 12px，否则 0（safe-area 由输入栏处理） -->
+    <view class="list-bottom" style="height: {{keyboardHeight > 0 ? 12 : 0}}px;"></view>
   </scroll-view>
 
-  <view class="input-bar">
-    <view class="input-btn" bindtap="sendImage"><text class="input-btn-icon">🖼️</text></view>
-    <input
-      class="input-field"
-      type="text"
-      value="{{inputText}}"
-      bindinput="onInputChange"
-      placeholder="发消息..."
-      placeholder-class="input-placeholder"
-      confirm-type="send"
-      bindconfirm="sendText"
-    />
-    <button class="send-btn {{inputText.length > 0 ? 'send-btn-active' : ''}}" bindtap="sendText" disabled="{{!inputText || sending}}">
-      <text wx:if="{{!sending}}">发送</text>
-      <view wx:else class="sending-spinner"></view>
-    </button>
+  <!-- 底部输入栏：键盘弹出时 fixed 到键盘上方 -->
+  <view class="input-bar {{keyboardHeight > 0 ? 'input-bar-keyboard' : ''}}" style="bottom: {{keyboardHeight > 0 ? keyboardHeight : 0}}px;">
+    <view class="input-field-wrap">
+      <input
+        class="input-field"
+        type="text"
+        value="{{inputText}}"
+        bindinput="onInputChange"
+        placeholder="发消息..."
+        placeholder-class="input-placeholder"
+        confirm-type="send"
+        bindconfirm="sendText"
+        bindfocus="onInputFocus"
+        bindkeyboardheightchange="onKeyboardChange"
+        adjust-position="{{false}}"
+      />
+    </view>
+    <view class="send-btn {{inputText.length > 0 ? 'send-btn-active' : ''}}" bindtap="sendText">
+      <text wx:if="{{!sending}}" class="send-btn-text">发送</text>
+      <text wx:else class="send-btn-text">发送中</text>
+    </view>
   </view>
 </view>

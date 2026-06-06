@@ -1,51 +1,77 @@
+<nav-bar title="店铺管理" showBack/>
 <view class="container">
+
+  <!-- 页面标题区 -->
+  <view class="page-header">
+    <text class="page-title">店铺管理</text>
+    <text class="page-subtitle">管理你的美甲工作室信息</text>
+  </view>
+
   <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
 
   <view wx:else>
-    <view class="add-btn" bindtap="openAdd">+ 添加店铺</view>
-
+    <!-- 空状态 -->
     <view wx:if="{{shops.length === 0}}" class="empty">
       <text class="empty-icon">🏪</text>
-      <text class="empty-text">还没有店铺，添加一个吧</text>
+      <text class="empty-text">还没有店铺</text>
+      <text class="empty-sub">添加你的店铺信息，方便客户到店</text>
+      <button class="btn-add-first" bindtap="openAdd">添加第一个店铺</button>
     </view>
 
-    <view wx:for="{{shops}}" wx:key="id" class="shop-card">
-      <view class="shop-info">
-        <text class="shop-name">{{item.name}}</text>
-        <text class="shop-address">{{item.address}}</text>
-        <text wx:if="{{item.phone}}" class="shop-phone">📞 {{item.phone}}</text>
-      </view>
-      <view class="shop-actions">
-        <view class="action-btn action-edit" bindtap="openEdit" data-shop="{{item}}">编辑</view>
-        <view class="action-btn action-del" bindtap="deleteShop" data-id="{{item.id}}" data-name="{{item.name}}">删除</view>
+    <!-- 店铺列表 -->
+    <view wx:else class="list">
+      <view wx:for="{{shops}}" wx:key="id" class="shop-card">
+        <view class="card-top">
+          <view class="card-title-area">
+            <text class="shop-name">{{item.name}}</text>
+            <text class="shop-address">{{item.address}}</text>
+            <text wx:if="{{item.phone}}" class="shop-phone">📞 {{item.phone}}</text>
+          </view>
+        </view>
+        <view class="card-actions">
+          <view class="action-btn action-edit" bindtap="openEdit" data-shop="{{item}}">
+            <text>编辑</text>
+          </view>
+          <view class="action-btn action-delete" bindtap="deleteShop" data-id="{{item.id}}" data-name="{{item.name}}">
+            <text>删除</text>
+          </view>
+        </view>
       </view>
     </view>
   </view>
 
-  <!-- 添加/编辑弹窗 -->
-  <view wx:if="{{showAddModal}}" class="modal-mask" bindtap="closeModal">
-    <view class="modal-content" catchtap="">
-      <view class="modal-header">
-        <text class="modal-title">{{editShop ? '编辑店铺' : '添加店铺'}}</text>
-        <view class="modal-close" bindtap="closeModal">✕</view>
-      </view>
-      <view class="form">
-        <view class="field">
-          <text class="label">店铺名称</text>
-          <input class="input" value="{{name}}" bindinput="onNameInput" placeholder="请输入店铺名称" placeholder-class="ph" />
-        </view>
-        <view class="field">
-          <text class="label">详细地址</text>
-          <input class="input" value="{{address}}" bindinput="onAddressInput" placeholder="请输入地址" placeholder-class="ph" />
-        </view>
-        <view class="field">
-          <text class="label">联系电话</text>
-          <input class="input" type="number" value="{{phone}}" bindinput="onPhoneInput" placeholder="选填" placeholder-class="ph" />
-        </view>
-      </view>
-      <view class="modal-btn {{saving ? 'btn-disabled' : ''}}" bindtap="save">
-        <text>{{saving ? '保存中...' : '保存'}}</text>
+  <!-- FAB 添加按钮 -->
+  <view wx:if="{{shops.length > 0}}" class="fab" bindtap="openAdd">
+    <text class="fab-icon">+</text>
+  </view>
+
+  <!-- 底部表单 -->
+  <view wx:if="{{showAddModal}}" class="mask" bindtap="closeModal"/>
+  <view class="form-sheet {{showAddModal ? 'show' : ''}}">
+    <view class="sheet-header">
+      <text class="sheet-title">{{editShop ? '编辑店铺' : '添加店铺'}}</text>
+      <view class="sheet-close" bindtap="closeModal">
+        <text class="sheet-close-icon">×</text>
       </view>
     </view>
+
+    <view class="form-item">
+      <text class="label">店铺名称 *</text>
+      <input class="input" value="{{name}}" bindinput="onNameInput" placeholder="请输入店铺名称" placeholder-class="ph" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">详细地址 *</text>
+      <input class="input" value="{{address}}" bindinput="onAddressInput" placeholder="请输入地址" placeholder-class="ph" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">联系电话（选填）</text>
+      <input class="input" type="number" value="{{phone}}" bindinput="onPhoneInput" placeholder="选填" placeholder-class="ph" />
+    </view>
+
+    <button class="btn-save" bindtap="save" disabled="{{saving}}">
+      {{saving ? '保存中...' : '保存'}}
+    </button>
   </view>
 </view>

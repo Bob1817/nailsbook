@@ -1,6 +1,6 @@
 .container {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: #f8f9fc;
   padding: 32rpx;
 }
 
@@ -12,13 +12,13 @@
   display: block;
   font-size: 28rpx;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #1f2937;
   margin-bottom: 16rpx;
   padding: 0 4rpx;
 }
 
 .faq-card {
-  background: #fff;
+  background: #f8f9fc;
   border-radius: 24rpx;
   overflow: hidden;
 }
@@ -42,13 +42,13 @@
 .faq-q {
   flex: 1;
   font-size: 28rpx;
-  color: #1a1a1a;
+  color: #1f2937;
   line-height: 1.5;
 }
 
 .faq-arrow {
   font-size: 36rpx;
-  color: #ccc;
+  color: #9ca3af;
   transition: transform 0.2s;
   display: inline-block;
 }
@@ -63,16 +63,16 @@
 
 .faq-a {
   font-size: 26rpx;
-  color: #666;
+  color: #374151;
   line-height: 1.7;
 }
 
 .contact-card {
   display: flex;
   align-items: center;
-  background: #fff;
+  background: #f8f9fc;
   border-radius: 24rpx;
-  padding: 28rpx 32rpx;
+  padding: 28rpx 40rpx;
   gap: 24rpx;
   margin-bottom: 16rpx;
 }
@@ -81,7 +81,7 @@
 .contact-icon-wrap {
   width: 80rpx;
   height: 80rpx;
-  border-radius: 20rpx;
+  border-radius: 14rpx;
   background: #fff0f5;
   display: flex;
   align-items: center;
@@ -91,6 +91,40 @@
 
 .contact-icon { font-size: 40rpx; }
 
+/* CSS Icon: Chat Bubble */
+.menu-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+.icon-chat {
+  width: 28rpx;
+  height: 24rpx;
+  position: relative;
+}
+.icon-chat::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 18rpx;
+  border-radius: 6rpx;
+  background: #ff6b8a;
+}
+.icon-chat::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 6rpx;
+  width: 0;
+  height: 0;
+  border-left: 5rpx solid transparent;
+  border-right: 5rpx solid transparent;
+  border-top: 7rpx solid #ff6b8a;
+}
+
 .contact-info {
   flex: 1;
 }
@@ -98,25 +132,25 @@
 .contact-title {
   display: block;
   font-size: 30rpx;
-  color: #1a1a1a;
+  color: #1f2937;
   margin-bottom: 6rpx;
 }
 
 .contact-desc {
   display: block;
   font-size: 24rpx;
-  color: #999;
+  color: #9ca3af;
 }
 
 .arrow {
   font-size: 40rpx;
-  color: #ccc;
+  color: #9ca3af;
 }
 
 .contact-tip {
   display: block;
   font-size: 24rpx;
-  color: #999;
+  color: #9ca3af;
   line-height: 1.6;
   padding: 0 4rpx;
 }

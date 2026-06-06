@@ -1,84 +1,114 @@
-<view class="container">
-  <!-- 用户信息头部 -->
-  <view class="header" bindtap="editProfile">
-    <view class="avatar-wrap">
-      <image wx:if="{{userInfo.avatarUrl}}" src="{{userInfo.avatarUrl}}" mode="aspectFill" class="avatar" />
-      <view wx:else class="avatar-placeholder">
-        <text class="avatar-char">{{userInfo.name ? userInfo.name[0] : '师'}}</text>
-      </view>
-    </view>
-    <view class="user-info">
-      <text class="name">{{userInfo.name || '美甲师'}}</text>
-      <text class="phone">{{userInfo.phone}}</text>
-      <view class="status-row">
-        <view class="status-dot {{userInfo.status === 'active' ? 'dot-green' : 'dot-grey'}}"></view>
-        <text class="status-text">{{userInfo.status === 'active' ? '接单中' : '休息中'}}</text>
-        <view class="toggle-status-btn" catchtap="toggleStatus">
-          {{userInfo.status === 'active' ? '暂停接单' : '开启接单'}}
+<nav-bar title="我的" transparent="{{true}}"/>
+<view class="page">
+  <!-- ============ Header ============ -->
+  <view class="header">
+    <view class="header-row">
+      <view class="avatar-wrap" bindtap="editProfile">
+        <image wx:if="{{userInfo.avatarUrl}}" src="{{userInfo.avatarUrl}}" mode="aspectFill" class="avatar" />
+        <view wx:else class="avatar-placeholder">
+          <text class="avatar-char">{{userInfo.name ? userInfo.name[0] : '美'}}</text>
         </view>
       </view>
+      <view class="user-info" bindtap="editProfile">
+        <text class="name">{{userInfo.name || '美甲师'}}</text>
+        <text class="phone">{{userInfo.phoneDisplay}}</text>
+      </view>
+      <text class="edit-arrow" bindtap="editProfile">›</text>
     </view>
-    <text class="header-arrow">›</text>
-  </view>
 
-  <!-- 统计 -->
-  <view class="stats-row">
-    <view class="stat-item">
-      <text class="stat-num">{{stats.worksCount}}</text>
-      <text class="stat-label">作品</text>
+    <!-- 接单状态 -->
+    <view class="status-bar">
+      <view class="status-left">
+        <view class="status-dot {{isAccepting ? 'dot-on' : 'dot-off'}}"></view>
+        <text class="status-label">{{isAccepting ? '接单中' : '已暂停接单'}}</text>
+      </view>
+      <view class="status-schedule-btn" catchtap="openScheduleModal">
+        <text class="status-schedule-icon">⏰</text>
+      </view>
     </view>
-    <view class="stat-divider"></view>
-    <view class="stat-item">
-      <text class="stat-num">{{stats.customersCount}}</text>
-      <text class="stat-label">客户</text>
-    </view>
-    <view class="stat-divider"></view>
-    <view class="stat-item">
-      <text class="stat-num">{{stats.ordersCount}}</text>
-      <text class="stat-label">预约</text>
-    </view>
-  </view>
 
-  <!-- 邀请码 -->
-  <view class="invite-card" bindtap="shareInvite">
-    <view class="invite-info">
-      <text class="invite-label">我的邀请码</text>
-      <text class="invite-code">{{userInfo.invitationCode || '暂无邀请码'}}</text>
-    </view>
-    <view class="invite-copy">复制分享</view>
-  </view>
-
-  <!-- 工具菜单 -->
-  <view class="section">
-    <text class="section-title">工具</text>
-    <view class="menu-list">
-      <view class="menu-item" bindtap="navigateToServices">
-        <text class="menu-icon">💅</text><text class="menu-label">服务管理</text><text class="menu-arrow">›</text>
+    <!-- 数据概览（悬浮卡） -->
+    <view class="stats-card">
+      <view class="stat-item" bindtap="goStatsOrders">
+        <text class="stat-value">{{stats.todayOrders}}</text>
+        <text class="stat-label">今日预约</text>
       </view>
-      <view class="menu-item" bindtap="navigateToWorks">
-        <text class="menu-icon">🖼️</text><text class="menu-label">作品管理</text><text class="menu-arrow">›</text>
+      <view class="stat-divider"></view>
+      <view class="stat-item" bindtap="goStatsCustomers">
+        <text class="stat-value">{{stats.customers}}</text>
+        <text class="stat-label">客户</text>
       </view>
-      <view class="menu-item" bindtap="navigateToHomeService">
-        <text class="menu-icon">🚗</text><text class="menu-label">上门设置</text><text class="menu-arrow">›</text>
-      </view>
-      <view class="menu-item" bindtap="navigateToServiceTime">
-        <text class="menu-icon">⏰</text><text class="menu-label">服务时间</text><text class="menu-arrow">›</text>
-      </view>
-      <view class="menu-item" bindtap="navigateToShops">
-        <text class="menu-icon">🏪</text><text class="menu-label">店铺管理</text><text class="menu-arrow">›</text>
-      </view>
-      <view class="menu-item" bindtap="navigateToTagManagement">
-        <text class="menu-icon">🏷️</text><text class="menu-label">标签管理</text><text class="menu-arrow">›</text>
-      </view>
-      <view class="menu-item" bindtap="navigateToSubscription">
-        <text class="menu-icon">⭐</text><text class="menu-label">订阅套餐</text><text class="menu-arrow">›</text>
+      <view class="stat-divider"></view>
+      <view class="stat-item" bindtap="goStatsWorks">
+        <text class="stat-value">{{stats.works}}</text>
+        <text class="stat-label">作品</text>
       </view>
     </view>
   </view>
 
-  <!-- 设置菜单 -->
-  <view class="section">
-    <text class="section-title">设置</text>
+  <!-- ============ 我的预约 ============ -->
+  <view class="card card-gap">
+    <view class="card-head">
+      <text class="card-title">我的预约</text>
+      <view class="card-more" bindtap="goAllOrders">全部预约 ›</view>
+    </view>
+    <view class="order-grid">
+      <view
+        wx:for="{{orderShortcuts}}"
+        wx:key="status"
+        class="order-cell"
+        bindtap="goOrderStatus"
+        data-status="{{item.status}}"
+      >
+        <view class="order-cell-badge {{item.count > 0 ? 'has-count' : ''}}">
+          <text class="order-cell-icon">{{item.icon}}</text>
+          <view wx:if="{{item.count > 0}}" class="count-badge">{{item.count > 99 ? '99+' : item.count}}</view>
+        </view>
+        <text class="order-cell-label">{{item.label}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- ============ 邀请码 ============ -->
+  <view class="card invite-card">
+    <view class="invite-head">
+      <view>
+        <text class="card-title">邀请码分享</text>
+        <text class="invite-sub">发给客户，绑定到你的账号</text>
+      </view>
+      <button class="invite-share-btn" open-type="share">分享名片</button>
+    </view>
+    <view class="invite-code-row">
+      <view class="invite-code-block">
+        <text class="invite-code-cap">我的邀请码</text>
+        <text class="invite-code">{{userInfo.invitationCode || '暂无'}}</text>
+      </view>
+      <view wx:if="{{userInfo.invitationCode}}" class="invite-copy" bindtap="copyInvite">复制</view>
+    </view>
+  </view>
+
+  <!-- ============ 工具 ============ -->
+  <view class="card">
+    <text class="card-title">工具</text>
+    <view class="tool-grid">
+      <view
+        wx:for="{{tools}}"
+        wx:key="key"
+        class="tool-cell"
+        bindtap="onTool"
+        data-key="{{item.key}}"
+      >
+        <view class="tool-icon-bg">
+          <text class="tool-icon">{{item.icon}}</text>
+        </view>
+        <text class="tool-label">{{item.label}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- ============ 设置 ============ -->
+  <view class="card">
+    <text class="card-title">设置</text>
     <view class="menu-list">
       <view class="menu-item" bindtap="editProfile">
         <text class="menu-icon">⚙️</text><text class="menu-label">个人设置</text><text class="menu-arrow">›</text>
@@ -100,4 +130,176 @@
 
   <!-- 退出 -->
   <view class="logout-btn" bindtap="logout">退出登录</view>
+  <text class="version">NailBook v1.0.0</text>
 </view>
+
+<!-- ========== 工作时间设置弹窗 ========== -->
+<view wx:if="{{showScheduleModal}}" class="ws-overlay" bindtap="closeScheduleModal">
+  <view class="ws-sheet" catchtap="preventBubble">
+    <!-- Header -->
+    <view class="ws-header">
+      <text class="ws-title">工作时间设置</text>
+      <view class="ws-close" bindtap="closeScheduleModal">
+        <text class="ws-close-icon">✕</text>
+      </view>
+    </view>
+
+    <scroll-view scroll-y class="ws-body" enhanced show-scrollbar="{{false}}">
+      <!-- 新增方案按钮 -->
+      <view class="ws-add-btn" bindtap="addScheme">
+        <text class="ws-add-icon">+</text>
+        <text class="ws-add-text">新增方案</text>
+      </view>
+
+      <!-- 方案列表 -->
+      <view class="ws-scheme-list">
+        <view
+          wx:for="{{schedule.schemes}}"
+          wx:key="id"
+          class="ws-scheme-card"
+          bindtap="editScheme"
+          data-index="{{index}}"
+        >
+          <view class="ws-scheme-row">
+            <view class="ws-scheme-info">
+              <view class="ws-scheme-name-row">
+                <text class="ws-scheme-name">{{item.label}}</text>
+                <view wx:if="{{item.id === schedule.activeSchemeId}}" class="ws-active-badge">
+                  <text class="ws-active-badge-text">当前</text>
+                </view>
+              </view>
+              <text class="ws-scheme-summary">{{item._summary}}</text>
+            </view>
+            <view
+              class="ws-switch {{item.id === schedule.activeSchemeId ? 'ws-switch-on' : ''}}"
+              catchtap="toggleSchemeActive"
+              data-id="{{item.id}}"
+            >
+              <view class="ws-switch-knob"></view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 休息日设置 -->
+      <view class="ws-rest-section">
+        <view class="ws-rest-head">
+          <text class="ws-rest-title">休息日设置</text>
+          <text class="ws-rest-link" bindtap="openRestDayCalendar">设置休息日</text>
+        </view>
+        <view wx:if="{{schedule.restDays.length > 0}}" class="ws-rest-tags">
+          <view wx:for="{{schedule.restDays}}" wx:key="*this" class="ws-rest-tag">
+            <text class="ws-rest-tag-text">{{item}}</text>
+            <text class="ws-rest-tag-x" catchtap="removeRestDay" data-date="{{item}}">×</text>
+          </view>
+        </view>
+        <text wx:else class="ws-rest-empty">暂无设置休息日</text>
+      </view>
+
+      <!-- 底部留白给保存按钮 -->
+      <view style="height: 32rpx;"></view>
+    </scroll-view>
+
+    <!-- 保存按钮（固定在底部） -->
+    <view class="ws-footer">
+      <view class="ws-save-btn {{savingSchedule ? 'ws-save-disabled' : ''}}" bindtap="saveSchedule">
+        <text class="ws-save-text">{{savingSchedule ? '保存中...' : '保存工作时间'}}</text>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- ========== 方案编辑器弹窗 ========== -->
+<view wx:if="{{showSchemeEditor}}" class="se-overlay" catchtap="closeSchemeEditor">
+  <view class="se-sheet" catchtap="preventBubble">
+    <!-- Header -->
+    <view class="se-header">
+      <text class="se-title">工作时间方案</text>
+    </view>
+
+    <scroll-view scroll-y class="se-body" enhanced show-scrollbar="{{false}}">
+      <!-- 错误提示 -->
+      <view wx:if="{{schemeError}}" class="se-error">
+        <text class="se-error-text">{{schemeError}}</text>
+      </view>
+
+      <!-- 时间范围 -->
+      <view class="se-section">
+        <text class="se-label">工作时间</text>
+        <view class="se-time-row">
+          <view class="se-time-col">
+            <text class="se-time-sublabel">开始</text>
+            <picker mode="multiSelector" range="{{[timeOptions]}}" value="{{[startTimeIdx]}}" bindchange="onStartTimeChange">
+              <view class="se-time-picker">
+                <text class="se-time-value">{{editingScheme.startTime}}</text>
+                <text class="se-time-arrow">▾</text>
+              </view>
+            </picker>
+          </view>
+          <text class="se-time-dash">—</text>
+          <view class="se-time-col">
+            <text class="se-time-sublabel">结束</text>
+            <picker mode="multiSelector" range="{{[timeOptions]}}" value="{{[endTimeIdx]}}" bindchange="onEndTimeChange">
+              <view class="se-time-picker">
+                <text class="se-time-value">{{editingScheme.endTime}}</text>
+                <text class="se-time-arrow">▾</text>
+              </view>
+            </picker>
+          </view>
+        </view>
+      </view>
+
+      <!-- 应用范围（星期） -->
+      <view class="se-section">
+        <text class="se-label">应用范围</text>
+        <view class="se-day-grid">
+          <view
+            wx:for="{{dayKeys}}"
+            wx:key="*this"
+            class="se-day-btn {{selectedDaysMap[item] ? 'se-day-active' : ''}}"
+            bindtap="toggleSchemeDay"
+            data-day="{{item}}"
+          >
+            <text class="se-day-text">{{dayLabels[item]}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 方案标签 -->
+      <view class="se-section">
+        <text class="se-label">方案标签</text>
+        <input
+          class="se-label-input"
+          placeholder="如：日常、周末"
+          value="{{editingScheme.label}}"
+          bindinput="onSchemeLabelInput"
+        />
+      </view>
+    </scroll-view>
+
+    <!-- Footer -->
+    <view class="se-footer">
+      <view wx:if="{{editingScheme.days.length > 0}}" class="se-delete-btn" bindtap="deleteScheme">
+        <text class="se-delete-text">删除</text>
+      </view>
+      <view class="se-footer-right">
+        <view class="se-cancel-btn" bindtap="closeSchemeEditor">
+          <text class="se-cancel-text">取消</text>
+        </view>
+        <view class="se-save-btn" bindtap="saveScheme">
+          <text class="se-save-text">保存</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 休息日日历 -->
+<rest-day-calendar
+  show="{{showRestDayCalendar}}"
+  value="{{schedule.restDays}}"
+  bindconfirm="onRestDayConfirm"
+  bindclose="closeRestDayCalendar"
+/>
+
+<tab-bar selected="profile" />

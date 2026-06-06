@@ -1,43 +1,106 @@
+<nav-bar title="作品" showBack>
+</nav-bar>
 <view class="container">
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading-wrap">
+    <view class="spinner"></view>
+  </view>
 
-  <view wx:if="{{!loading && works.length === 0}}" class="empty">
-    <text class="empty-text">还没有作品</text>
+  <!-- 空状态 -->
+  <view wx:elif="{{works.length === 0}}" class="empty">
+    <view class="empty-icon-wrap">
+      <view class="icon-placeholder-circle">
+        <view class="icon-placeholder-inner"></view>
+      </view>
+    </view>
+    <text class="empty-title">还没有作品</text>
     <text class="empty-sub">上传你的美甲作品，吸引更多客户</text>
     <button class="btn-add-first" bindtap="goCreate">上传第一个作品</button>
   </view>
 
-  <view wx:else class="grid">
-    <view
-      class="work-card"
-      wx:for="{{works}}"
-      wx:key="id"
-    >
-      <image
-        class="work-cover"
-        src="{{item.coverUrl}}"
-        mode="aspectFill"
-        bindtap="goEdit"
-        data-id="{{item.id}}"
-      />
-      <view wx:if="{{!item.isVisible}}" class="hidden-mask">
-        <text class="hidden-label">已隐藏</text>
-      </view>
-      <view class="work-info">
-        <text class="work-title">{{item.title || '未命名'}}</text>
-        <view class="work-actions">
-          <text class="action-btn" bindtap="toggleVisible" data-id="{{item.id}}">
-            {{item.isVisible ? '隐藏' : '显示'}}
-          </text>
-          <text class="action-btn" bindtap="goEdit" data-id="{{item.id}}">编辑</text>
-          <text class="action-btn danger" bindtap="confirmDelete" data-id="{{item.id}}">删除</text>
+  <!-- 瀑布流 -->
+  <view wx:else class="waterfall">
+    <!-- 左列 -->
+    <view class="col">
+      <view wx:for="{{leftCol}}" wx:key="id" class="card-img-wrap" bindtap="goDetail" data-id="{{item.id}}">
+        <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="card-img" lazy-load />
+        <view wx:else class="card-img card-img-empty"></view>
+        <view class="card-gradient"></view>
+        <!-- 隐藏状态遮罩 -->
+        <view wx:if="{{!item.isVisible}}" class="hidden-mask">
+          <text class="hidden-label">已隐藏</text>
+        </view>
+        <!-- 左上角标签 -->
+        <view class="card-tags-top">
+          <view wx:if="{{item.isPinned}}" class="tag-pill tag-pin">置顶</view>
+          <view wx:if="{{item.isFeatured}}" class="tag-pill tag-feat">推荐</view>
+        </view>
+        <!-- 右上角更多操作 -->
+        <view class="card-more-btn" catchtap="showActions" data-id="{{item.id}}" data-visible="{{item.isVisible}}" data-pinned="{{item.isPinned}}" data-featured="{{item.isFeatured}}">
+          <text class="card-more-icon">⋯</text>
+        </view>
+        <!-- 底部信息 -->
+        <view class="card-bottom">
+          <text class="card-title">{{item.title || '未命名作品'}}</text>
+          <text wx:if="{{item.price}}" class="card-price">¥{{item.price}}</text>
+          <view class="card-stats-row">
+            <view class="card-stat">
+              <text class="stat-icon">♥</text>
+              <text class="stat-num">{{item.likeCount || 0}}</text>
+            </view>
+            <view class="card-stat">
+              <text class="stat-icon">★</text>
+              <text class="stat-num">{{item.favoriteCount || 0}}</text>
+            </view>
+            <view class="card-stat">
+              <text class="stat-icon">✎</text>
+              <text class="stat-num">{{item.commentCount || 0}}</text>
+            </view>
+          </view>
         </view>
       </view>
     </view>
 
-    <view class="work-card add-card" bindtap="goCreate">
-      <text class="add-icon">+</text>
-      <text class="add-text">上传作品</text>
+    <!-- 右列 -->
+    <view class="col">
+      <view wx:for="{{rightCol}}" wx:key="id" class="card-img-wrap" bindtap="goDetail" data-id="{{item.id}}">
+        <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="card-img" lazy-load />
+        <view wx:else class="card-img card-img-empty"></view>
+        <view class="card-gradient"></view>
+        <view wx:if="{{!item.isVisible}}" class="hidden-mask">
+          <text class="hidden-label">已隐藏</text>
+        </view>
+        <view class="card-tags-top">
+          <view wx:if="{{item.isPinned}}" class="tag-pill tag-pin">置顶</view>
+          <view wx:if="{{item.isFeatured}}" class="tag-pill tag-feat">推荐</view>
+        </view>
+        <view class="card-more-btn" catchtap="showActions" data-id="{{item.id}}" data-visible="{{item.isVisible}}" data-pinned="{{item.isPinned}}" data-featured="{{item.isFeatured}}">
+          <text class="card-more-icon">⋯</text>
+        </view>
+        <view class="card-bottom">
+          <text class="card-title">{{item.title || '未命名作品'}}</text>
+          <text wx:if="{{item.price}}" class="card-price">¥{{item.price}}</text>
+          <view class="card-stats-row">
+            <view class="card-stat">
+              <text class="stat-icon">♥</text>
+              <text class="stat-num">{{item.likeCount || 0}}</text>
+            </view>
+            <view class="card-stat">
+              <text class="stat-icon">★</text>
+              <text class="stat-num">{{item.favoriteCount || 0}}</text>
+            </view>
+            <view class="card-stat">
+              <text class="stat-icon">✎</text>
+              <text class="stat-num">{{item.commentCount || 0}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
     </view>
   </view>
+</view>
 
+<!-- 固定底部发布按钮 -->
+<view wx:if="{{works.length > 0}}" class="fixed-bottom">
+  <button class="btn-publish" bindtap="goCreate">+ 上传作品</button>
 </view>

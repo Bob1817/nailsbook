@@ -1,34 +1,51 @@
+<nav-bar title="上门设置" showBack/>
 <view class="container">
+
+  <!-- 页面标题区 -->
+  <view class="page-header">
+    <text class="page-title">上门服务</text>
+    <text class="page-subtitle">配置你的上门服务参数</text>
+  </view>
+
   <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
 
   <view wx:else>
-    <view class="form">
-      <view class="field field-switch">
-        <text class="label">开启上门服务</text>
+    <!-- 开关卡片 -->
+    <view class="card">
+      <view class="card-row">
+        <view class="card-row-info">
+          <text class="card-row-title">开启上门服务</text>
+          <text class="card-row-desc">允许客户预约上门美甲服务</text>
+        </view>
         <switch checked="{{enabled}}" bindchange="toggleEnabled" color="#FF6B8A" />
-      </view>
-
-      <view wx:if="{{enabled}}">
-        <view class="field">
-          <text class="label">服务范围 (公里)</text>
-          <input class="input" type="digit" value="{{radius}}" bindinput="onRadiusInput" placeholder="如：10" placeholder-class="ph" />
-        </view>
-        <view class="field">
-          <text class="label">上门附加费 (元)</text>
-          <input class="input" type="digit" value="{{extraFee}}" bindinput="onExtraFeeInput" placeholder="如：30" placeholder-class="ph" />
-        </view>
-        <view class="field">
-          <text class="label">最低消费 (元)</text>
-          <input class="input" type="digit" value="{{minOrderAmount}}" bindinput="onMinAmountInput" placeholder="如：200" placeholder-class="ph" />
-        </view>
-        <view class="field field-textarea">
-          <text class="label">备注说明</text>
-          <textarea class="textarea" value="{{notes}}" bindinput="onNotesInput" placeholder="如：地铁3公里内，时间9-21点" placeholder-class="ph" />
-        </view>
       </view>
     </view>
 
-    <view class="save-btn {{saving ? 'btn-disabled' : ''}}" bindtap="save">
+    <!-- 参数设置卡片 -->
+    <view wx:if="{{enabled}}" class="card">
+      <view class="form-item">
+        <text class="label">服务范围 (公里)</text>
+        <input class="input" type="digit" value="{{radius}}" bindinput="onRadiusInput" placeholder="如：10" placeholder-class="ph" />
+      </view>
+
+      <view class="form-item">
+        <text class="label">上门附加费 (元)</text>
+        <input class="input" type="digit" value="{{extraFee}}" bindinput="onExtraFeeInput" placeholder="如：30" placeholder-class="ph" />
+      </view>
+
+      <view class="form-item">
+        <text class="label">最低消费 (元)</text>
+        <input class="input" type="digit" value="{{minOrderAmount}}" bindinput="onMinAmountInput" placeholder="如：200" placeholder-class="ph" />
+      </view>
+
+      <view class="form-item form-item-last">
+        <text class="label">备注说明</text>
+        <textarea class="textarea" value="{{notes}}" bindinput="onNotesInput" placeholder="如：地铁3公里内，时间9-21点" placeholder-class="ph" />
+      </view>
+    </view>
+
+    <!-- 保存按钮 -->
+    <view class="btn-save {{saving ? 'btn-disabled' : ''}}" bindtap="save">
       <text>{{saving ? '保存中...' : '保存设置'}}</text>
     </view>
   </view>

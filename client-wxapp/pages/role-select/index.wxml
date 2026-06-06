@@ -1,12 +1,13 @@
+<nav-bar title="NailBook" subtitle="" transparent/>
 <view class="container">
-  <view class="logo-section">
+  <view class="hero-section">
     <view class="logo-circle">N</view>
-    <text class="app-name">NailBook</text>
+    <text class="page-title">选择身份</text>
     <text class="app-desc">美甲预约，让美丽更简单</text>
   </view>
 
   <view class="role-section">
-    <text class="section-title">选择您的身份</text>
+    <text class="section-title">请选择登录身份</text>
 
     <view class="role-card" bindtap="selectRole" data-role="client">
       <view class="role-icon client-icon">客</view>

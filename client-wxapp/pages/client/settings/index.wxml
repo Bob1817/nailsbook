@@ -1,10 +1,11 @@
+<nav-bar title="设置" showBack/>
 <view class="container">
   <!-- 头像 -->
   <view class="avatar-section" bindtap="chooseAvatar">
     <view class="avatar-wrap">
       <image wx:if="{{avatarUrl}}" src="{{avatarUrl}}" mode="aspectFill" class="avatar" />
       <view wx:else class="avatar-placeholder">
-        <text class="avatar-icon">👤</text>
+        <view class="menu-icon"></view>
       </view>
       <view wx:if="{{uploading}}" class="avatar-uploading">
         <view class="upload-spinner"></view>

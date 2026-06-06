@@ -1,4 +1,9 @@
 {
   "navigationBarTitleText": "作品",
-  "enablePullDownRefresh": true
+  "enablePullDownRefresh": true,
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "nav-bar": "/components/nav-bar/index",
+    "tab-bar": "/components/tab-bar/index"
+  }
 }

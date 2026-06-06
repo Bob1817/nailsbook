@@ -1,71 +1,45 @@
 .container {
   min-height: 100vh;
-  background: #f5f5f5;
-  padding: 60rpx 32rpx 40rpx;
+  background: #f8f9fc;
+  padding: 60rpx 40rpx 40rpx;
 }
-
-.header {
-  margin-bottom: 48rpx;
-}
-
-.title {
-  display: block;
-  font-size: 48rpx;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin-bottom: 12rpx;
-}
-
-.subtitle {
-  display: block;
-  font-size: 28rpx;
-  color: #999;
-}
-
+.header { margin-bottom: 48rpx; }
+.title { display: block; font-size: 48rpx; font-weight: 700; color: #1f2937; margin-bottom: 12rpx; }
+.subtitle { display: block; font-size: 28rpx; color: #9ca3af; }
 .form {
-  background: #fff;
+  background: #f8f9fc;
   border-radius: 24rpx;
   overflow: hidden;
   margin-bottom: 40rpx;
 }
-
-.field {
-  padding: 28rpx 32rpx;
-  border-bottom: 1rpx solid #f5f5f5;
-}
-
-.field:last-child {
-  border-bottom: none;
-}
-
-.label {
-  display: block;
+.field { padding: 28rpx 40rpx; border-bottom: 1rpx solid #f5f5f5; }
+.field:last-child { border-bottom: none; }
+.label { display: block; font-size: 26rpx; color: #374151; margin-bottom: 12rpx; }
+.input  { width: 100%; font-size: 28rpx; color: #1f2937; height: 88rpx;  background: #f9fafb; border-radius: 14rpx;}
+.placeholder { color: #9ca3af; }
+.code-row { display: flex; align-items: center; gap: 16rpx; }
+.code-input  { flex: 1;  background: #f9fafb; border-radius: 14rpx;}
+.code-btn {
+  flex-shrink: 0;
+  background: #fff0f3;
+  color: #FF6B8A;
   font-size: 26rpx;
-  color: #666;
-  margin-bottom: 12rpx;
+  font-weight: 600;
+  padding: 12rpx 40rpx;
+  border-radius: 14rpx;
+  white-space: nowrap;
 }
-
-.input {
-  width: 100%;
-  font-size: 32rpx;
-  color: #1a1a1a;
-  height: 60rpx;
-}
-
-.placeholder {
-  color: #ccc;
-}
-
+.code-btn:active { opacity: 0.8; }
+.code-btn-disabled { opacity: 0.5; }
 .submit-btn {
-  background: linear-gradient(135deg, #FF6B8A, #FF8FA3);
+  background: linear-gradient(135deg, #FF6B8A 0%, #A78BFA 100%);
   color: #fff;
-  font-size: 32rpx;
+  font-size: 30rpx;
   font-weight: 600;
   text-align: center;
   padding: 28rpx;
   border-radius: 24rpx;
-  box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.3);
+  box-shadow: 0 4rpx 24rpx rgba(15, 23, 42, 0.06), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
 }
-
 .submit-btn:active { opacity: 0.85; }
 .btn-disabled { opacity: 0.6; }

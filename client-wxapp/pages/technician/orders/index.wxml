@@ -1,15 +1,189 @@
-<view class="container">
-  <view class="filter-tabs">
-    <view bindtap="switchStatus" data-status="">全部</view>
-    <view bindtap="switchStatus" data-status="pending_quote">待报价</view>
-    <view bindtap="switchStatus" data-status="quoted">待确认</view>
-    <view bindtap="switchStatus" data-status="confirmed">已确认</view>
-    <view bindtap="switchStatus" data-status="completed">已完成</view>
+<nav-bar title="行程"/>
+<view class="page">
+  <!-- ===== 固定头部 ===== -->
+  <view class="head">
+    <!-- 日期条：今天固定 + 未来滚动 + 更多 -->
+    <view class="date-strip">
+      <view
+        class="date-cell today-cell {{activeIsToday ? 'date-cell-active' : ''}}"
+        bindtap="resetToday"
+      >
+        <text class="date-week">今天</text>
+        <view wx:if="{{markedKeys[todayKey]}}" class="date-dot {{activeIsToday ? 'dot-light' : ''}}"></view>
+      </view>
+      <scroll-view scroll-x class="date-scroll" enhanced show-scrollbar="{{false}}">
+        <view class="date-scroll-inner">
+          <view
+            wx:for="{{dateStrip}}"
+            wx:key="key"
+            class="date-cell {{activeKey === item.key ? 'date-cell-active' : ''}}"
+            bindtap="onPickDate"
+            data-key="{{item.key}}"
+          >
+            <text class="date-week">周{{item.week}}</text>
+            <text class="date-day">{{item.day}}</text>
+            <view wx:if="{{markedKeys[item.key]}}" class="date-dot {{activeKey === item.key ? 'dot-light' : ''}}"></view>
+          </view>
+        </view>
+      </scroll-view>
+      <view class="more-btn" bindtap="openCalendar">
+        <text class="more-text">更多</text>
+      </view>
+    </view>
+
+    <!-- 汇总卡 -->
+    <view class="summary-card">
+      <view class="sum-item">
+        <text class="sum-num">{{summary.count}}</text>
+        <text class="sum-label">行程</text>
+      </view>
+      <view class="sum-divider"></view>
+      <view class="sum-item">
+        <text class="sum-num">{{summary.distance}}<text class="sum-unit">km</text></text>
+        <text class="sum-label">里程</text>
+      </view>
+      <view class="sum-divider"></view>
+      <view class="sum-item">
+        <text class="sum-num sum-num-price">¥{{summary.amount}}</text>
+        <text class="sum-label">收入</text>
+      </view>
+      <view class="sum-divider"></view>
+      <view class="sum-item">
+        <text class="sum-num">{{summary.completed}}/{{summary.count}}</text>
+        <text class="sum-label">进行中</text>
+      </view>
+    </view>
+
+    <!-- tab -->
+    <view class="tabs">
+      <view class="tabs-left">
+        <view
+          class="tab {{scheduleTab === 'trips' ? 'tab-active' : ''}}"
+          bindtap="onTabChange"
+          data-tab="trips"
+        >
+          <text>今日行程</text>
+          <view wx:if="{{scheduleTab === 'trips'}}" class="tab-line"></view>
+        </view>
+        <view
+          class="tab {{scheduleTab === 'all' ? 'tab-active' : ''}}"
+          bindtap="onTabChange"
+          data-tab="all"
+        >
+          <text>当日预约</text>
+          <view wx:if="{{scheduleTab === 'all'}}" class="tab-line"></view>
+        </view>
+      </view>
+      <view class="tab-more-wrap">
+        <view class="tab-more-btn" bindtap="toggleMoreMenu">
+          <text class="tab-more-text">更多</text>
+          <view class="tab-more-arrow {{showMoreMenu ? 'tab-more-arrow-up' : ''}}"></view>
+        </view>
+        <view wx:if="{{showMoreMenu}}" class="tab-more-dropdown">
+          <view class="tab-more-item" bindtap="goAllItineraries">
+            <text>全部行程</text>
+          </view>
+          <view class="tab-more-item" bindtap="goAllBookings">
+            <text>全部预约</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view wx:if="{{showMoreMenu}}" class="tab-more-mask" bindtap="toggleMoreMenu"></view>
   </view>
-  <view class="order-list">
-    <view wx:for="{{orders}}" bindtap="viewOrder" data-id="{{item.id}}">
-      <text>{{item.orderNo}}</text>
-      <text>{{item.statusText}}</text>
+
+  <!-- ===== 可滚动列表 ===== -->
+  <scroll-view
+    scroll-y
+    class="list-scroll"
+    enhanced
+    show-scrollbar="{{false}}"
+  >
+    <view class="list-area">
+      <view wx:if="{{loading}}" class="skeleton-list">
+        <view wx:for="{{[1,2]}}" wx:key="*this" class="skel-card"></view>
+      </view>
+
+      <view wx:elif="{{listOrders.length === 0}}" class="empty-card">
+        <text class="empty-title">{{scheduleTab === 'trips' ? '当日暂无行程' : '当日暂无预约'}}</text>
+        <text class="empty-sub">{{scheduleTab === 'trips' ? '已确认排期的预约会显示在这里' : '换个日期看看'}}</text>
+      </view>
+
+      <view wx:else class="trip-list">
+        <view
+          wx:for="{{listOrders}}"
+          wx:key="id"
+          class="trip-card"
+          bindtap="viewOrder"
+          data-id="{{item.id}}"
+        >
+          <view class="trip-top">
+            <text class="trip-time">{{item._clock}}</text>
+            <view class="trip-avatar">
+              <image wx:if="{{item.customerAvatar}}" src="{{item.customerAvatar}}" mode="aspectFill" class="trip-avatar-img" />
+              <text wx:else class="trip-avatar-char">{{item._avatarChar}}</text>
+            </view>
+            <view class="trip-info">
+              <text class="trip-name">{{item.customerName}}</text>
+              <text class="trip-svc">{{item._typeLabel}} · {{item.serviceName}}</text>
+            </view>
+            <text class="trip-status {{item._statusTone}}">{{item._statusLabel}}</text>
+          </view>
+
+          <view wx:if="{{item.address}}" class="trip-addr">{{item.address}}</view>
+
+          <view class="trip-actions">
+            <view class="trip-btn trip-primary" catchtap="navigateToAddress" data-id="{{item.id}}">
+              去导航
+            </view>
+            <view class="trip-btn trip-ghost" catchtap="contactCustomer" data-phone="{{item.customerPhone}}">
+              联系客户
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>
+
+<!-- 日历弹窗 -->
+<view wx:if="{{showCalendar}}" class="calendar-overlay" bindtap="closeCalendar">
+  <view class="calendar-panel" catchtap="noop">
+    <!-- 日历头部 -->
+    <view class="calendar-header">
+      <view class="calendar-nav" bindtap="prevMonth">
+        <text class="calendar-nav-icon">‹</text>
+      </view>
+      <text class="calendar-title">{{calendarYear}}年{{calendarMonth + 1}}月</text>
+      <view class="calendar-nav" bindtap="nextMonth">
+        <text class="calendar-nav-icon">›</text>
+      </view>
+    </view>
+
+    <!-- 星期标题 -->
+    <view class="calendar-weekdays">
+      <text wx:for="{{weekdays}}" wx:key="*this" class="calendar-weekday">{{item}}</text>
+    </view>
+
+    <!-- 日期网格 -->
+    <view class="calendar-days">
+      <view
+        wx:for="{{calendarDays}}"
+        wx:key="date"
+        class="calendar-day {{item.isToday ? 'calendar-today' : ''}} {{item.isSelected ? 'calendar-selected' : ''}} {{!item.isCurrentMonth ? 'calendar-other-month' : ''}}"
+        bindtap="onCalendarDayTap"
+        data-date="{{item.date}}"
+      >
+        <text class="calendar-day-num">{{item.day}}</text>
+        <view wx:if="{{item.hasOrder}}" class="calendar-day-dot"></view>
+      </view>
+    </view>
+
+    <!-- 关闭按钮 -->
+    <view class="calendar-close" bindtap="closeCalendar">
+      <text class="calendar-close-text">关闭</text>
     </view>
   </view>
 </view>
+
+<tab-bar selected="orders" id="tabBar" />

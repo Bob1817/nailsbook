@@ -1,113 +1,189 @@
 const api = require('../../../services/api');
+const { parseDate, formatClock, formatBookingDate, formatMoney } = require('../../../utils/format');
+const { resolveOrderPresentation, getStatusLabel, getStatusTone } = require('../../../utils/order');
 
-const STATUS_TEXT = {
-  pending_quote: '待报价',
-  quoted: '已报价',
-  confirmed: '已确认',
-  in_progress: '服务中',
-  completed: '已完成',
-  cancelled: '已取消',
-  rejected: '已拒绝'
+const STATUS_DESC = {
+  pending_quote: '美甲师正在为你准备报价，请稍候',
+  pending_agree: '美甲师已报价，请确认是否接受',
+  pending_client_confirm: '请确认本次预约信息',
+  pending_confirm: '你已同意报价，等待美甲师确认排期',
+  pending_home: '已确认排期，美甲师将按时上门服务',
+  pending_shop: '已确认排期，请按时到店',
+  in_progress: '服务进行中',
+  completed: '服务已完成，期待再次为你服务',
+  cancelled: '预约已取消'
 };
+
+const CANCELLABLE = ['pending_quote','pending_agree','pending_confirm','pending_home','pending_shop'];
+const EDITABLE = ['pending_quote','pending_agree','pending_confirm'];
+const REJECT_REASONS = ['价格超出预算','时间不合适','想换个款式','其他'];
+const TIME_SLOTS = ['09:00','09:30','10:00','10:30','11:00','11:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30','20:00','20:30'];
+
+function actionsForStatus(order) {
+  const list = [];
+  const s = order.status;
+  if (s === 'pending_agree') list.push({ key:'reject', label:'拒绝报价', style:'action-ghost' }, { key:'agree', label:'同意报价', style:'action-primary' });
+  if (s === 'pending_confirm' && order.depositAmount > 0 && !order.depositPaid) list.push({ key:'deposit', label:'已付定金', style:'action-primary' });
+  if (CANCELLABLE.indexOf(s) >= 0) list.push({ key:'cancel', label:'取消预约', style:'action-danger' });
+  if (EDITABLE.indexOf(s) >= 0) list.push({ key:'edit', label:'修改预约', style:'action-ghost' });
+  return list;
+}
 
 Page({
   data: {
-    order: null,
-    loading: true
+    order: null, loading: true,
+    showReject: false, rejectReason: '', rejectReasons: REJECT_REASONS, submitting: false,
+    showEdit: false, editDate: '', editTime: '', editAddresses: [], editAddressId: null, editTimeSlots: TIME_SLOTS, savingEdit: false
   },
 
-  onLoad(options) {
-    this.orderId = options.id;
-    this.loadOrder();
-  },
-
-  onShow() {
-    if (this.orderId) this.loadOrder();
-  },
+  onLoad(options) { this.orderId = options.id; this.loadOrder(); },
+  onShow() { if (this.orderId && !this.data.loading) this.loadOrder(); },
+  onPullDownRefresh() { this.loadOrder().finally(() => wx.stopPullDownRefresh()); },
 
   async loadOrder() {
     try {
-      const order = await api.client.orders.detail(this.orderId);
-      this.setData({
-        order: {
-          ...order,
-          statusText: STATUS_TEXT[order.status] || order.status,
-          techName: order.technician?.name || '',
-          techAvatar: order.technician?.avatarUrl || '',
-          addressText: order.address
-            ? `${order.address.province || ''}${order.address.city || ''}${order.address.district || ''}${order.address.detail || ''}`
-            : ''
-        },
-        loading: false
-      });
+      const raw = await api.client.orders.detail(this.orderId);
+      const isShop = raw.serviceType === 'shop' || raw.serviceType === '到店美甲';
+      let address = '';
+      if (typeof raw.address === 'string') address = raw.address;
+      else if (raw.address) { const a = raw.address; address = `${a.province||''}${a.city||''}${a.district||''}${a.detail||a.detailAddress||''}`; }
+      else if (raw.clientAddress) { const a = raw.clientAddress; address = `${a.province||''}${a.city||''}${a.district||''}${a.detailAddress||''}`; }
+      const start = parseDate(raw.startTime), end = parseDate(raw.endTime);
+      const durationMinutes = start && end ? Math.round((end.getTime()-start.getTime())/60000) : 0;
+      const price = raw.quotePrice || raw.price || 0;
+      const depositAmount = raw.depositAmount || 0;
+      const depositPaid = !!raw.isDepositPaid;
+      const pres = resolveOrderPresentation({ serviceType: isShop ? 'shop' : 'home', address });
+      const order = {
+        id: raw.id, orderNo: raw.orderNo, status: raw.status, address,
+        serviceName: raw.customTitle || raw.customServiceRequest?.title || raw.designRequest?.title || '预约服务',
+        remark: raw.remark || raw.note || '', durationMinutes, price, depositAmount, depositPaid,
+        techName: raw.technician?.name || '美甲师', techAvatar: raw.technician?.avatarUrl || '',
+        techPhone: raw.technician?.phone || '', techId: raw.technician?.id || raw.technicianId,
+        startTime: raw.startTime, endTime: raw.endTime,
+        _isShop: isShop, _statusLabel: getStatusLabel(raw.status), _statusTone: getStatusTone(raw.status),
+        _statusDesc: STATUS_DESC[raw.status] || '', _typeLabel: pres.typeLabel,
+        _dateLabel: formatBookingDate(raw.startTime),
+        _timeRange: start && end ? `${formatClock(raw.startTime)} - ${formatClock(raw.endTime)}` : formatClock(raw.startTime),
+        _priceText: price ? formatMoney(price) : '待报价',
+        _showPriceCard: price > 0 || depositAmount > 0, _actions: null
+      };
+      order._actions = actionsForStatus(order);
+      this.setData({ order, loading: false });
     } catch (err) {
       this.setData({ loading: false });
-      wx.showToast({ title: '加载失败', icon: 'none' });
+      wx.showToast({ title: err.message || '加载失败', icon: 'none' });
     }
   },
 
-  acceptQuote() {
-    wx.showModal({
-      title: '确认接受报价',
-      content: `报价金额 ¥${this.data.order.price}，确认接受？`,
-      confirmText: '接受',
-      success: async (res) => {
-        if (!res.confirm) return;
-        wx.showLoading({ title: '处理中...' });
-        try {
-          await api.client.orders.acceptQuote(this.orderId);
-          wx.hideLoading();
-          wx.showToast({ title: '已接受报价', icon: 'success' });
-          this.loadOrder();
-        } catch (err) {
-          wx.hideLoading();
-          wx.showToast({ title: err.message || '操作失败', icon: 'none' });
-        }
-      }
-    });
+  onAction(e) {
+    const key = e.currentTarget.dataset.key;
+    if (key === 'agree') return this.agreeQuote();
+    if (key === 'reject') return this.openReject();
+    if (key === 'deposit') return this.markDepositPaid();
+    if (key === 'cancel') return this.cancelOrder();
+    if (key === 'edit') return this.openEdit();
   },
 
-  rejectQuote() {
-    wx.showModal({
-      title: '拒绝报价',
-      content: '确定拒绝当前报价吗？',
-      confirmText: '拒绝',
-      confirmColor: '#ff4d4f',
-      success: async (res) => {
-        if (!res.confirm) return;
-        wx.showLoading({ title: '处理中...' });
-        try {
-          await api.client.orders.rejectQuote(this.orderId, '用户拒绝');
-          wx.hideLoading();
-          wx.showToast({ title: '已拒绝报价', icon: 'success' });
-          this.loadOrder();
-        } catch (err) {
-          wx.hideLoading();
-          wx.showToast({ title: err.message || '操作失败', icon: 'none' });
-        }
-      }
-    });
+  callTech() {
+    const phone = this.data.order?.techPhone;
+    if (!phone) { wx.showToast({ title: '暂无电话', icon: 'none' }); return; }
+    wx.makePhoneCall({ phoneNumber: String(phone) });
   },
 
-  cancelOrder() {
-    wx.showModal({
-      title: '取消预约',
-      content: '确定要取消这个预约吗？',
-      confirmText: '取消预约',
-      confirmColor: '#ff4d4f',
-      success: async (res) => {
-        if (!res.confirm) return;
-        wx.showLoading({ title: '处理中...' });
-        try {
-          await api.client.orders.cancel(this.orderId);
-          wx.hideLoading();
-          wx.showToast({ title: '预约已取消', icon: 'success' });
-          this.loadOrder();
-        } catch (err) {
-          wx.hideLoading();
-          wx.showToast({ title: err.message || '操作失败', icon: 'none' });
-        }
-      }
-    });
+  goChat() {
+    const o = this.data.order;
+    if (!o?.techId) return;
+    wx.navigateTo({ url: `/pages/client/chat-detail/index?techId=${o.techId}&techName=${encodeURIComponent(o.techName)}` });
+  },
+
+  copyAddress() {
+    const addr = this.data.order?.address;
+    if (addr) wx.setClipboardData({ data: addr, success: () => wx.showToast({ title: '已复制', icon: 'success' }) });
+  },
+
+  // ---- 同意报价 ----
+  async agreeQuote() {
+    const r = await wx.showModal({ title: '同意报价', content: `报价金额 ${this.data.order._priceText}，同意后将进入美甲师确认环节。`, confirmText: '同意' });
+    if (!r.confirm) return;
+    try {
+      wx.showLoading({ title: '处理中...' });
+      await api.client.orders.acceptQuote(this.orderId);
+      wx.hideLoading(); wx.showToast({ title: '已同意报价', icon: 'success' });
+      this.loadOrder();
+    } catch (err) { wx.hideLoading(); wx.showToast({ title: err.message || '操作失败', icon: 'none' }); }
+  },
+
+  // ---- 拒绝报价 ----
+  openReject() { this.setData({ showReject: true, rejectReason: '' }); },
+  closeReject() { this.setData({ showReject: false }); },
+  onRejectReasonInput(e) { this.setData({ rejectReason: e.detail.value }); },
+  onPickReason(e) { this.setData({ rejectReason: e.currentTarget.dataset.reason }); },
+  async submitReject() {
+    if (this.data.submitting) return;
+    this.setData({ submitting: true });
+    try {
+      await api.client.orders.rejectQuote(this.orderId, this.data.rejectReason || '用户拒绝');
+      this.setData({ submitting: false, showReject: false });
+      wx.showToast({ title: '已拒绝报价', icon: 'success' }); this.loadOrder();
+    } catch (err) { this.setData({ submitting: false }); wx.showToast({ title: err.message || '操作失败', icon: 'none' }); }
+  },
+
+  // ---- 定金 ----
+  async markDepositPaid() {
+    const r = await wx.showModal({ title: '确认已支付定金', content: `请确认你已通过线下方式向美甲师支付定金 ¥${this.data.order.depositAmount}`, confirmText: '已支付' });
+    if (!r.confirm) return;
+    try {
+      wx.showLoading({ title: '处理中...' });
+      await api.client.orders.markDepositPaid(this.orderId);
+      wx.hideLoading(); wx.showToast({ title: '已确认定金', icon: 'success' }); this.loadOrder();
+    } catch (err) { wx.hideLoading(); wx.showToast({ title: err.message || '操作失败', icon: 'none' }); }
+  },
+
+  // ---- 取消 ----
+  async cancelOrder() {
+    const r = await wx.showModal({ title: '取消预约', content: '确定要取消这个预约吗？', confirmText: '取消预约', confirmColor: '#DC4C58' });
+    if (!r.confirm) return;
+    try {
+      wx.showLoading({ title: '处理中...' });
+      await api.client.orders.cancel(this.orderId);
+      wx.hideLoading(); wx.showToast({ title: '预约已取消', icon: 'success' }); this.loadOrder();
+    } catch (err) { wx.hideLoading(); wx.showToast({ title: err.message || '操作失败', icon: 'none' }); }
+  },
+
+  // ---- 编辑预约 ----
+  async openEdit() {
+    const o = this.data.order;
+    const d = new Date(o.startTime);
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const timeStr = formatClock(o.startTime);
+    this.setData({ showEdit: true, editDate: dateStr, editTime: timeStr, editAddressId: null });
+    try {
+      const res = await api.client.addresses.list();
+      const addrs = res.list || res.data || res || [];
+      this.setData({ editAddresses: addrs, editAddressId: addrs.find(a => a.isDefault)?.id || addrs[0]?.id || null });
+    } catch(e) {}
+  },
+  closeEdit() { this.setData({ showEdit: false }); },
+  onEditDateChange(e) { this.setData({ editDate: e.detail.value }); },
+  onEditTimeChange(e) { this.setData({ editTime: this.data.editTimeSlots[e.detail.value] }); },
+  onEditAddressSelect(e) { this.setData({ editAddressId: e.currentTarget.dataset.id }); },
+  async saveEdit() {
+    if (this.data.savingEdit) return;
+    const { editDate, editTime, editAddressId } = this.data;
+    if (!editDate) { wx.showToast({ title: '请选择日期', icon: 'none' }); return; }
+    if (!editTime) { wx.showToast({ title: '请选择时间', icon: 'none' }); return; }
+    this.setData({ savingEdit: true });
+    wx.showLoading({ title: '保存中...' });
+    try {
+      await api.client.orders.update(this.orderId, {
+        serviceDate: editDate, startTime: editTime,
+        addressId: editAddressId || undefined
+      });
+      wx.hideLoading(); wx.showToast({ title: '修改成功', icon: 'success' });
+      this.setData({ showEdit: false }); this.loadOrder();
+    } catch (err) {
+      wx.hideLoading(); wx.showToast({ title: err.message || '修改失败', icon: 'none' });
+    } finally { this.setData({ savingEdit: false }); }
   }
 });

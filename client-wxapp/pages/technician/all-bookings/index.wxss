@@ -1,0 +1,182 @@
+page {
+  background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ===== 筛选标签栏 ===== */
+.filter-strip {
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(12rpx);
+  border-bottom: 1rpx solid rgba(0,0,0,0.04);
+  padding: 16rpx 0;
+}
+.filter-scroll { white-space: nowrap; }
+.filter-inner {
+  display: inline-flex;
+  padding: 0 24rpx;
+  gap: 16rpx;
+}
+.filter-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12rpx 28rpx;
+  border-radius: 32rpx;
+  font-size: 24rpx;
+  color: #6b7280;
+  background: #f3f4f6;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.filter-tab.active {
+  background: linear-gradient(135deg, #ff6b8a, #8b5cf6);
+  color: #fff;
+  font-weight: 500;
+}
+
+/* ===== 页面头部 ===== */
+.page-header {
+  flex-shrink: 0;
+  padding: 16rpx 40rpx 8rpx;
+}
+.page-count { font-size: 24rpx; color: #9ca3af; }
+
+/* ===== 列表 ===== */
+.list-scroll { flex: 1; min-height: 0; }
+.list-area { padding: 16rpx 32rpx calc(24rpx + env(safe-area-inset-bottom)); }
+
+/* ===== 骨架/空状态 ===== */
+.skeleton-list { display: flex; flex-direction: column; gap: 16rpx; }
+.skel-card {
+  height: 200rpx;
+  border-radius: 18rpx;
+  background: #f3f4f6;
+  animation: skel 1.4s linear infinite;
+}
+@keyframes skel { 0%{opacity:1;} 50%{opacity:0.5;} 100%{opacity:1;} }
+
+.empty-card {
+  margin: 80rpx 0;
+  padding: 60rpx 40rpx;
+  background: #fff;
+  border-radius: 18rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  border: 2rpx solid rgba(255, 107, 138, 0.08);
+  box-shadow: 0 10rpx 26rpx rgba(15, 23, 42, 0.05);
+}
+.empty-title { font-size: 28rpx; font-weight: 600; color: #1f2937; }
+.empty-sub { font-size: 24rpx; color: #9ca3af; text-align: center; }
+
+/* ===== 行程卡片 ===== */
+.trip-list { display: flex; flex-direction: column; gap: 16rpx; }
+.trip-card {
+  background: #fff;
+  border-radius: 18rpx;
+  padding: 24rpx;
+  border: 2rpx solid rgba(255, 107, 138, 0.08);
+  box-shadow: 0 10rpx 26rpx rgba(15, 23, 42, 0.05);
+}
+.trip-card:active { background: #fef7f9; }
+
+.trip-top {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+.trip-time {
+  width: 88rpx;
+  flex-shrink: 0;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1f2937;
+}
+.trip-avatar {
+  width: 64rpx; height: 64rpx;
+  border-radius: 50%;
+  background: #f7f7f7;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.trip-avatar-img { width: 100%; height: 100%; }
+.trip-avatar-char { font-size: 26rpx; font-weight: 600; color: #6b7280; }
+
+.trip-info { flex: 1; min-width: 0; }
+.trip-name { display: block; font-size: 28rpx; font-weight: 600; color: #1f2937; }
+.trip-svc {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trip-status {
+  flex-shrink: 0;
+  padding: 6rpx 16rpx;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+  font-weight: 500;
+}
+.tone-orange  { background: #fff2dc; color: #c97f1a; }
+.tone-purple  { background: #f0e9ff; color: #7c5dd4; }
+.tone-yellow  { background: #fff8d6; color: #a48313; }
+.tone-emerald { background: #e3f6ec; color: #067b4a; }
+.tone-teal    { background: #d8f1ee; color: #107d70; }
+.tone-sky     { background: #dbecff; color: #1f6dd6; }
+.tone-gray    { background: #f4f5f7; color: #8a8f98; }
+.tone-red     { background: #ffe5e6; color: #c5333d; }
+
+.trip-addr {
+  margin-top: 16rpx;
+  padding: 12rpx 16rpx;
+  background: #f9fafb;
+  border-radius: 12rpx;
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: #6b7280;
+}
+
+.trip-actions {
+  margin-top: 16rpx;
+  display: flex;
+  gap: 12rpx;
+}
+.trip-btn {
+  flex: 1;
+  min-height: 72rpx;
+  border-radius: 14rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+}
+.trip-btn:active { opacity: 0.85; }
+.trip-primary {
+  background: linear-gradient(135deg, #ff6b8a, #8b5cf6);
+  color: #fff;
+}
+.trip-ghost {
+  background: #fff;
+  color: #374151;
+  border: 2rpx solid rgba(255, 107, 138, 0.15);
+}

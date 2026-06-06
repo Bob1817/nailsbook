@@ -1,3 +1,4 @@
+<nav-bar title="关于" showBack/>
 <view class="container">
   <view class="logo-section">
     <view class="logo">💅</view>
@@ -12,7 +13,7 @@
     </view>
     <view class="info-item info-item-border">
       <text class="info-label">核心功能</text>
-      <text class="info-value">作品展示、在线预约、订单管理、客户沟通</text>
+      <text class="info-value">作品展示、在线预约、预约管理、客户沟通</text>
     </view>
     <view class="info-item">
       <text class="info-label">服务对象</text>

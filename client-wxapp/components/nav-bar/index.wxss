@@ -1,0 +1,153 @@
+.nav-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px);
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.6);
+}
+
+.nav-bar.transparent {
+  background: transparent;
+  border-bottom: none;
+  backdrop-filter: none;
+}
+
+.nav-bar.light {
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: none;
+  backdrop-filter: blur(20px);
+}
+
+.nav-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32rpx;
+  position: relative;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.back-btn {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-bar.light .back-btn {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.back-icon {
+  font-size: 36rpx;
+  color: #1f2937;
+  font-weight: 300;
+}
+
+.nav-bar.light .back-icon {
+  color: #fff;
+}
+
+.title-wrap {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.subtitle {
+  font-size: 20rpx;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 4rpx;
+  color: #9ca3af;
+  line-height: 1.2;
+}
+
+.nav-bar.light .subtitle {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #1f2937;
+  letter-spacing: -0.5rpx;
+  line-height: 1.2;
+}
+
+.nav-bar.light .title {
+  color: #fff;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.nav-placeholder {
+  width: 100%;
+}
+
+/* ===== Centered title mode ===== */
+.nav-content.title-center {
+  justify-content: center;
+}
+
+.nav-content.title-center .nav-left {
+  position: absolute;
+  left: 32rpx;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+}
+
+.nav-content.title-center .back-btn {
+  background: transparent;
+  width: 48rpx;
+  height: 48rpx;
+}
+
+.nav-content.title-center .back-icon {
+  font-size: 44rpx;
+  font-weight: 300;
+  color: #1f2937;
+}
+
+.title-wrap-center {
+  position: absolute;
+  left: 112rpx;
+  right: 112rpx;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.title-wrap-center .title {
+  font-size: 30rpx;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-bar.light .title-wrap-center .title {
+  color: #fff;
+}

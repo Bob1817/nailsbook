@@ -1,17 +1,208 @@
 <view class="container">
-  <view class="header">
-    <image class="avatar" src="{{avatar}}" mode="aspectFill"></image>
-    <text class="nickname">{{nickname}}</text>
-    <text class="phone">{{phone}}</text>
+  <!-- 顶部导航 -->
+  <nav-bar title="首页"></nav-bar>
+
+  <!-- 轮播 - 最新作品 -->
+  <view class="hero-section">
+    <swiper wx:if="{{recentWorks.length > 0}}" class="hero-swiper" autoplay interval="4000" circular current="{{swiperIndex}}" bindchange="onSwiperChange">
+      <swiper-item wx:for="{{recentWorks}}" wx:key="id" bindtap="viewWork" data-id="{{item.id}}">
+        <view class="hero-item">
+          <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="hero-img" />
+          <view wx:else class="hero-img-empty"></view>
+          <view class="hero-overlay">
+            <view class="hero-top-area">
+              <view class="hero-top-badges">
+                <text class="hero-badge hero-badge-glass">多美甲师动态</text>
+                <text class="hero-badge hero-badge-dark">{{technicianCount}} 位美甲师</text>
+              </view>
+              <text class="hero-slide-counter">{{swiperIndex + 1}}/{{recentWorks.length}}</text>
+            </view>
+            <view class="hero-bottom-area">
+              <text class="hero-caption">已绑定美甲师正在持续发布新作品</text>
+              <text class="hero-headline">今日值得看的美甲灵感</text>
+              <text class="hero-desc">来自你已绑定美甲师的最新作品、风格更新与近期热门款式</text>
+              <view class="hero-bottom-row">
+                <view class="hero-info-box">
+                  <text class="hero-info-title">{{item.title}}</text>
+                  <view class="hero-info-meta">
+                    <text>{{item.technicianName}}</text>
+                    <text class="hero-info-dot">·</text>
+                    <text>最新发布</text>
+                  </view>
+                </view>
+                <view class="hero-cta-btn" catchtap="navigateToWorks">
+                  <text>查看动态</text>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </swiper-item>
+    </swiper>
+
+    <view wx:else class="hero-placeholder">
+      <view class="icon-placeholder-circle">
+        <view class="icon-placeholder-inner"></view>
+      </view>
+      <text class="hero-placeholder-text">绑定美甲师后查看最新作品</text>
+    </view>
+
+    <view wx:if="{{recentWorks.length > 1}}" class="hero-dots">
+      <view
+        wx:for="{{recentWorks}}"
+        wx:key="id"
+        class="hero-dot {{swiperIndex === index ? 'hero-dot-active' : ''}}"
+        data-index="{{index}}"
+        bindtap="onDotTap"
+      ></view>
+    </view>
   </view>
-  <view class="technician-card">
-    <image class="tech-avatar" src="{{techAvatar}}" mode="aspectFill"></image>
-    <text class="tech-name">{{techName}}</text>
+
+  <!-- 我的预约 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">我的预约</text>
+      <view wx:if="{{upcomingOrder}}" class="section-more" bindtap="navigateToOrders">查看全部 ›</view>
+    </view>
+    <text class="section-sub">{{upcomingOrder ? '距最近预约' : '快速发起你的下一次美甲'}}</text>
+
+    <view wx:if="{{upcomingOrder}}" class="order-card" bindtap="viewUpcomingOrder">
+      <view class="order-accent"></view>
+      <view class="order-card-content">
+        <view class="order-card-top">
+          <view class="order-status-badge">{{upcomingOrder.statusText}}</view>
+          <view class="order-countdown">
+            <text class="countdown-dot"></text>
+            <text class="countdown-value">{{upcomingOrder.countdown}}</text>
+          </view>
+        </view>
+        <view class="order-card-body">
+          <view class="order-date-box">
+            <text class="order-date-day">{{orderDay}}</text>
+            <text class="order-date-sub">{{orderMonth}} {{orderWeekday}}</text>
+          </view>
+          <view class="order-details">
+            <text class="order-service-name">{{upcomingOrder.serviceType}}</text>
+            <view class="order-detail-row">
+              <view class="icon icon-clock"></view>
+              <text class="order-detail-text">{{upcomingOrder.timeStr}}</text>
+            </view>
+            <view wx:if="{{upcomingOrder.technician}}" class="order-detail-row">
+              <view class="icon icon-person"></view>
+              <text class="order-detail-text order-detail-truncate">{{upcomingOrder.technician.name}}</text>
+            </view>
+            <view wx:if="{{orderAddress}}" class="order-detail-row">
+              <view class="icon icon-pin"></view>
+              <text class="order-detail-text order-detail-address">{{orderAddress}}</text>
+            </view>
+          </view>
+        </view>
+        <view class="order-card-actions" catchtap="">
+          <view class="order-action-btn" bindtap="navigateToChat">
+            <view class="icon icon-chat-white"></view>
+            <text>发消息</text>
+          </view>
+          <view wx:if="{{upcomingOrder.technician.phone}}" class="order-action-btn" bindtap="callTech">
+            <view class="icon icon-phone-white"></view>
+            <text>打电话</text>
+          </view>
+          <view class="order-action-btn order-action-primary" bindtap="viewUpcomingOrder">查看详情</view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:else class="no-order-card" bindtap="navigateToBooking">
+      <view class="no-order-accent"></view>
+      <view class="no-order-content">
+        <view class="no-order-icon-wrap">
+          <view class="no-order-icon-dot"></view>
+        </view>
+        <text class="no-order-title">还没有预约</text>
+        <text class="no-order-sub">选择时间与服务，发起你的下一次美甲</text>
+        <view class="book-btn">
+          <text>立即预约</text>
+          <text class="book-btn-arrow">→</text>
+        </view>
+      </view>
+    </view>
   </view>
-  <view class="quick-actions">
-    <view bindtap="navigateToWorks">作品浏览</view>
-    <view bindtap="navigateToBooking">立即预约</view>
-    <view bindtap="navigateToAddresses">地址管理</view>
-    <view bindtap="switchRole">切换身份</view>
+
+  <!-- 最新动态 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">最新动态</text>
+      <view class="section-more" bindtap="navigateToWorks">查看全部 ›</view>
+    </view>
+    <text class="section-sub">来自已绑定美甲师的作品</text>
+
+    <view wx:if="{{featuredWorks.length > 0}}" class="home-works-grid">
+      <view
+        wx:for="{{featuredWorks}}"
+        wx:key="id"
+        class="home-work-card"
+        bindtap="viewWork"
+        data-id="{{item.id}}"
+      >
+        <view class="home-work-img-wrap {{index % 3 === 0 ? 'home-work-tall' : 'home-work-short'}}">
+          <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="home-work-img" />
+          <view wx:else class="home-work-img-empty"></view>
+          <view class="home-work-gradient"></view>
+          <!-- 顶部：美甲师头像 + 点赞 -->
+          <view class="home-work-top">
+            <view class="home-work-tech-pill">
+              <image wx:if="{{item.technicianAvatarUrl}}" src="{{item.technicianAvatarUrl}}" mode="aspectFill" class="home-work-tech-av" binderror="onWorkAvatarError" data-id="{{item.id}}" />
+              <view wx:else class="home-work-tech-av-fb">
+                <text class="home-work-tech-av-char">{{item.techInitial}}</text>
+              </view>
+              <view class="home-work-tech-info">
+                <text class="home-work-tech-name">{{item.technicianName}}</text>
+
+              </view>
+            </view>
+            <view class="home-work-like-pill">
+              <image wx:if="{{item.isLiked}}" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAUElEQVR4nGNgQAP/3cP/o2NS5PEqJBVT1TAUQ6lqIDUNG6kG0iSWqZ4OqWEo1txCjsF4DaKZgcQaSrRhxBhKsmH4DCXbMGyGUmwYsqHEqAMAvy56MytYoCsAAAAASUVORK5CYII=" class="heart-icon" />
+              <image wx:else src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAS0lEQVR4nOXTMQ4AIAgDQP7/aV3RkKbFMtmV5hYg4soqosxhUY0VO1Ar6MR+BUe2bL9DB1p+SweG0BjIojTGoDKG0DZWoc9YRpneBsE8yGLtxtorAAAAAElFTkSuQmCC" class="heart-icon" />
+              <text class="home-work-like-num">{{item.likeCount}}</text>
+            </view>
+          </view>
+          <!-- 底部：详情 -->
+          <view class="home-work-bottom">
+            <text class="home-work-title">{{item.title}}</text>
+            <view class="home-work-meta-row">
+              <text class="home-work-source">来自 {{item.technicianName}}</text>
+              <text class="home-work-comments">{{item.commentCount}} 条评论</text>
+            </view>
+            <view wx:if="{{item.tags.length > 0}}" class="home-work-tags">
+              <block wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">
+                <text wx:if="{{index < 2}}" class="home-work-tag">#{{tag}}</text>
+              </block>
+            </view>
+            <view class="home-work-foot-row">
+              <text class="home-work-date">{{item.createdAt}}</text>
+              <view class="home-work-cta">
+                <view class="icon icon-check-circle"></view>
+                <text class="home-work-cta-text">查看详情</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{worksLoading}}" class="works-loading">
+      <view class="loading-spinner"></view>
+    </view>
+    <view wx:if="{{!worksHasMore && featuredWorks.length > 0}}" class="works-end">
+      <text class="works-end-text">没有更多了</text>
+    </view>
+
+    <view wx:if="{{featuredWorks.length === 0 && !worksLoading}}" class="works-empty">
+      <view class="works-empty-icon-wrap">
+        <view class="icon icon-image-placeholder-lg"></view>
+      </view>
+      <text class="works-empty-text">暂无作品展示</text>
+    </view>
   </view>
 </view>
+
+<tab-bar selected="home" />

@@ -18,7 +18,9 @@ function request(options) {
     data,
     header = {},
     needAuth = true,
-    baseUrl
+    baseUrl,
+    timeout,
+    silent
   } = options;
 
   const appInstance = getAppInstance();
@@ -45,7 +47,7 @@ function request(options) {
       method,
       data,
       header: headers,
-      timeout: 30000,
+      timeout: timeout || 30000,
       success: (res) => {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(res.data);
@@ -57,11 +59,13 @@ function request(options) {
         }
       },
       fail: (err) => {
-        console.error('Request failed:', err);
-        wx.showToast({
-          title: '网络错误，请检查网络连接',
-          icon: 'none'
-        });
+        if (!silent) {
+          console.error('Request failed:', err);
+          wx.showToast({
+            title: '网络错误，请检查网络连接',
+            icon: 'none'
+          });
+        }
         reject({ code: -1, message: '网络错误' });
       }
     });
@@ -73,7 +77,7 @@ function handleUnauthorized() {
   if (appInstance && appInstance.logout) {
     appInstance.logout();
   }
-  wx.redirectTo({
+  wx.reLaunch({
     url: '/pages/role-select/index'
   });
 }
@@ -81,9 +85,10 @@ function handleUnauthorized() {
 function get(url, params, options = {}) {
   let queryString = '';
   if (params) {
-    queryString = '?' + Object.keys(params)
-      .map(key => `${key}=${encodeURIComponent(params[key])}`)
-      .join('&');
+    const pairs = Object.keys(params)
+      .filter(key => params[key] !== undefined && params[key] !== null && params[key] !== '')
+      .map(key => `${key}=${encodeURIComponent(params[key])}`);
+    if (pairs.length > 0) queryString = '?' + pairs.join('&');
   }
   return request({
     url: `${url}${queryString}`,

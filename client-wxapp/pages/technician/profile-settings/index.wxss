@@ -1,4 +1,4 @@
-.container { min-height: 100vh; background: #f5f5f5; padding: 40rpx 32rpx; }
+.container { min-height: 100vh; background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%); padding: 40rpx 40rpx; }
 .avatar-section { display: flex; flex-direction: column; align-items: center; margin-bottom: 40rpx; }
 .avatar-wrap { position: relative; width: 160rpx; height: 160rpx; border-radius: 50%; margin-bottom: 16rpx; }
 .avatar { width: 160rpx; height: 160rpx; border-radius: 50%; }
@@ -8,14 +8,14 @@
 .upload-spinner { width: 48rpx; height: 48rpx; border: 4rpx solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .avatar-hint { font-size: 26rpx; color: #FF6B8A; }
-.form { background: #fff; border-radius: 24rpx; overflow: hidden; margin-bottom: 40rpx; }
-.field { padding: 28rpx 32rpx; border-bottom: 1rpx solid #f5f5f5; }
+.form { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%); border-radius: 24rpx; overflow: hidden; margin-bottom: 40rpx; }
+.field { padding: 28rpx 40rpx; border-bottom: 1rpx solid #f5f5f5; }
 .field:last-child { border-bottom: none; }
 .field-textarea { align-items: flex-start; }
-.label { display: block; font-size: 26rpx; color: #666; margin-bottom: 12rpx; }
-.input { width: 100%; font-size: 30rpx; color: #1a1a1a; height: 60rpx; }
-.textarea { width: 100%; font-size: 30rpx; color: #1a1a1a; min-height: 120rpx; }
-.ph { color: #ccc; }
-.save-btn { background: linear-gradient(135deg, #FF6B8A, #FF8FA3); color: #fff; font-size: 32rpx; font-weight: 600; text-align: center; padding: 28rpx; border-radius: 24rpx; box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.3); }
+.label { display: block; font-size: 26rpx; color: #374151; margin-bottom: 12rpx; }
+.input  { width: 100%; font-size: 28rpx; color: #1f2937; height: 88rpx;  background: #f9fafb; border-radius: 14rpx;}
+.textarea  { width: 100%; font-size: 28rpx; color: #1f2937; min-height: 120rpx;  background: #f9fafb; border-radius: 14rpx;}
+.ph { color: #9ca3af; }
+.save-btn { background: linear-gradient(135deg, #ff6b8a, #8b5cf6); color: #fff; font-size: 30rpx; font-weight: 600; text-align: center; padding: 28rpx; border-radius: 48rpx; box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.3); }
 .save-btn:active { opacity: 0.85; }
 .btn-disabled { opacity: 0.6; }

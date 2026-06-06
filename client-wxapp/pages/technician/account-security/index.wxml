@@ -1,3 +1,4 @@
+<nav-bar title="账号安全" showBack/>
 <view class="container">
   <view class="section-title-row"><text class="section-title">修改密码</text></view>
   <view class="form">

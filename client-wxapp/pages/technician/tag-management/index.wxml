@@ -1,5 +1,14 @@
+<nav-bar title="标签管理" showBack/>
 <view class="container">
-  <view class="add-section">
+
+  <!-- 页面标题区 -->
+  <view class="page-header">
+    <text class="page-title">标签管理</text>
+    <text class="page-subtitle">管理客户分类标签，方便筛选和标记</text>
+  </view>
+
+  <!-- 添加标签 -->
+  <view class="add-card">
     <input class="tag-input" value="{{newTag}}" bindinput="onNewTagInput" placeholder="输入标签名" placeholder-class="ph" confirm-type="done" bindconfirm="addTag" />
     <view class="add-btn {{adding ? 'btn-disabled' : ''}}" bindtap="addTag">
       <text>{{adding ? '添加中' : '添加'}}</text>
@@ -8,16 +17,20 @@
 
   <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
 
+  <!-- 空状态 -->
   <view wx:elif="{{tags.length === 0}}" class="empty">
     <text class="empty-icon">🏷️</text>
-    <text class="empty-text">还没有标签，添加一个吧</text>
-    <text class="empty-desc">标签可用于给客户打分类标记</text>
+    <text class="empty-text">还没有标签</text>
+    <text class="empty-sub">在上方输入框添加标签，用于客户分类</text>
   </view>
 
+  <!-- 标签列表 -->
   <view wx:else class="tag-list">
-    <view wx:for="{{tags}}" wx:key="id" class="tag-item">
+    <view wx:for="{{tags}}" wx:key="id" class="tag-card">
       <text class="tag-name"># {{item.name}}</text>
-      <view class="tag-del" bindtap="deleteTag" data-id="{{item.id}}" data-name="{{item.name}}">✕</view>
+      <view class="tag-del" bindtap="deleteTag" data-id="{{item.id}}" data-name="{{item.name}}">
+        <text class="tag-del-icon">×</text>
+      </view>
     </view>
   </view>
 </view>

@@ -12,14 +12,26 @@ const STATUS_LABELS = {
 
 const UPCOMING_STATUSES = new Set(['pending_quote', 'pending_agree', 'pending_confirm', 'pending_home', 'pending_shop', 'in_progress']);
 
+const MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+const WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
+
 Page({
   data: {
     userInfo: {},
     technician: null,
     upcomingOrder: null,
     recentWorks: [],
+    featuredWorks: [],
     loading: true,
-    swiperIndex: 0
+    swiperIndex: 0,
+    technicianCount: 1,
+    orderMonth: '',
+    orderDay: '',
+    orderWeekday: '',
+    orderAddress: '',
+    worksPage: 1,
+    worksHasMore: true,
+    worksLoading: false
   },
 
   onLoad() {
@@ -33,102 +45,210 @@ Page({
   async loadData() {
     const userInfo = wx.getStorageSync('userInfo') || wx.getStorageSync('client_userInfo') || {};
     const bindings = wx.getStorageSync('client_bindings') || [];
-    const tech = bindings[0]?.technician || null;
+    const tech = bindings[0] && bindings[0].technician ? bindings[0].technician : null;
 
-    this.setData({ userInfo, technician: tech, loading: false });
+    this.setData({ userInfo: userInfo, technician: tech, loading: false });
 
-    // 后台加载最新数据
     try {
-      const [homeData, ordersData] = await Promise.all([
-        api.client.home().catch(() => null),
-        api.client.orders.list({ limit: 10 }).catch(() => null)
-      ]);
+      var homeData = await api.client.home().catch(function () { return null; });
+      var ordersData = await api.client.orders.list({ limit: 10 }).catch(function () { return null; });
+      var likedList = await api.client.likes.list().catch(function () { return []; });
+      var likedIds = {};
+      (likedList || []).forEach(function (item) {
+        var wid = item.workId || (item.work && item.work.id) || item.id;
+        if (wid) likedIds[wid] = true;
+      });
+      this._likedIds = likedIds;
 
       if (homeData) {
-        const works = (homeData.works || []).slice(0, 6).map(w => ({
-          id: w.id,
-          title: w.title || '未命名作品',
-          coverUrl: w.coverUrl || (w.imageUrls && w.imageUrls[0]) || '',
-          technicianName: w.technicianName || tech?.name || '',
-          likeCount: w.likeCount || 0,
-          tags: w.tags || []
-        }));
-
-        const techFromHome = homeData.technician;
+        var techFromHome = homeData.technician;
         if (techFromHome) {
           this.setData({ technician: techFromHome });
         }
-        this.setData({ recentWorks: works });
+
+        var boundTech = techFromHome || tech;
+        var works = (homeData.works || []).slice(0, 5).map(function (w) {
+          var name = w.technicianName || (boundTech ? boundTech.name : '') || '';
+          return {
+            id: w.id,
+            title: w.title || '未命名作品',
+            coverUrl: w.coverUrl || (w.imageUrls && w.imageUrls[0]) || '',
+            technicianName: name,
+            technicianAvatarUrl: w.technicianAvatarUrl || (boundTech ? boundTech.avatarUrl : '') || '',
+            techInitial: name.charAt(0) || '美',
+            likeCount: w.likeCount || 0,
+            isLiked: !!w.isLiked || !!likedIds[w.id],
+            commentCount: w.commentCount || 0,
+            tags: w.tags || []
+          };
+        });
+
+        var uniqueTechs = {};
+        works.forEach(function (w) { if (w.technicianName) uniqueTechs[w.technicianName] = true; });
+        var techCount = Object.keys(uniqueTechs).length;
+        if (techCount === 0 && boundTech) techCount = 1;
+
+        this.setData({ recentWorks: works, technicianCount: techCount });
       }
 
       if (ordersData) {
-        const orders = ordersData.list || ordersData.data || ordersData || [];
-        const upcoming = orders
-          .filter(o => UPCOMING_STATUSES.has(o.status) && o.startTime)
-          .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))[0];
+        var orders = ordersData.list || ordersData.data || ordersData || [];
+        var upcoming = orders
+          .filter(function (o) { return UPCOMING_STATUSES.has(o.status) && o.startTime; })
+          .sort(function (a, b) { return new Date(a.startTime) - new Date(b.startTime); })[0];
 
         if (upcoming) {
-          const startDate = new Date(upcoming.startTime);
+          var startDate = new Date(upcoming.startTime);
+          var endStr = upcoming.endTime ? formatTimeShort(upcoming.endTime) : '';
+          var timeRange = formatTime(upcoming.startTime) + (endStr ? ' - ' + endStr : '');
+
           this.setData({
             upcomingOrder: {
-              ...upcoming,
+              id: upcoming.id,
+              status: upcoming.status,
               statusText: STATUS_LABELS[upcoming.status] || upcoming.status,
-              dateStr: formatDateStr(startDate),
-              timeStr: formatTime(upcoming.startTime),
-              countdown: calcCountdown(upcoming.startTime)
-            }
+              serviceType: upcoming.serviceType || '美甲服务',
+              timeStr: timeRange,
+              countdown: calcCountdown(upcoming.startTime),
+              technician: upcoming.technician || null,
+              address: upcoming.address || ''
+            },
+            orderMonth: MONTHS[startDate.getMonth()],
+            orderDay: String(startDate.getDate()),
+            orderWeekday: WEEKDAYS[startDate.getDay()],
+            orderAddress: upcoming.address || ''
           });
+        } else {
+          this.setData({ upcomingOrder: null });
         }
       }
+
+      this.loadMoreWorks(true);
     } catch (err) {
       console.error('loadData error:', err);
     }
+  },
+
+  async loadMoreWorks(reset) {
+    if (this.data.worksLoading) return;
+    if (!reset && !this.data.worksHasMore) return;
+
+    var page = reset ? 1 : this.data.worksPage;
+    this.setData({ worksLoading: true });
+
+    try {
+      var res = await api.client.works.list({ page: page, limit: 10 });
+      var list = res.list || res.data || res || [];
+      var boundTech = this.data.technician;
+      var likedIds = this._likedIds || {};
+      var newWorks = list.map(function (w) {
+        var name = w.technicianName || (boundTech ? boundTech.name : '') || '';
+        return {
+          id: w.id,
+          title: w.title || '未命名作品',
+          coverUrl: w.coverUrl || (w.imageUrls && w.imageUrls[0]) || '',
+          technicianName: name,
+          technicianAvatarUrl: w.technicianAvatarUrl || (boundTech ? boundTech.avatarUrl : '') || '',
+          techInitial: name.charAt(0) || '美',
+          likeCount: w.likeCount || 0,
+          isLiked: !!w.isLiked || !!likedIds[w.id],
+          commentCount: w.commentCount || 0,
+          tags: w.tags || [],
+          createdAt: formatShortDate(w.createdAt)
+        };
+      });
+
+      this.setData({
+        featuredWorks: reset ? newWorks : this.data.featuredWorks.concat(newWorks),
+        worksPage: page + 1,
+        worksHasMore: newWorks.length >= 10,
+        worksLoading: false
+      });
+    } catch (err) {
+      console.error('loadMoreWorks error:', err);
+      this.setData({ worksLoading: false, worksHasMore: false });
+    }
+  },
+
+  onReachBottom() {
+    this.loadMoreWorks(false);
   },
 
   onSwiperChange(e) {
     this.setData({ swiperIndex: e.detail.current });
   },
 
+  onDotTap(e) {
+    var index = e.currentTarget.dataset.index;
+    this.setData({ swiperIndex: index });
+  },
+
   navigateToWorks() { wx.navigateTo({ url: '/pages/client/works/index' }); },
   navigateToBooking() { wx.navigateTo({ url: '/pages/client/create-order/index' }); },
   navigateToOrders() { wx.navigateTo({ url: '/pages/client/orders/index' }); },
   navigateToChat() { wx.navigateTo({ url: '/pages/client/chat/index' }); },
-  navigateToProfile() { wx.navigateTo({ url: '/pages/client/profile/index' }); },
 
   viewWork(e) {
-    const id = e.currentTarget.dataset.id;
-    wx.navigateTo({ url: `/pages/client/work-detail/index?id=${id}` });
+    var id = e.currentTarget.dataset.id;
+    wx.navigateTo({ url: '/pages/client/work-detail/index?id=' + id });
+  },
+
+  onWorkAvatarError(e) {
+    var id = e.currentTarget.dataset.id;
+    var heroWorks = this.data.recentWorks.map(function (w) {
+      if (String(w.id) === String(id)) w.technicianAvatarUrl = '';
+      return w;
+    });
+    var featuredWorks = this.data.featuredWorks.map(function (w) {
+      if (String(w.id) === String(id)) w.technicianAvatarUrl = '';
+      return w;
+    });
+    this.setData({ recentWorks: heroWorks, featuredWorks: featuredWorks });
   },
 
   viewUpcomingOrder() {
     if (this.data.upcomingOrder) {
-      wx.navigateTo({ url: `/pages/client/order-detail/index?id=${this.data.upcomingOrder.id}` });
+      wx.navigateTo({ url: '/pages/client/order-detail/index?id=' + this.data.upcomingOrder.id });
     }
   },
 
   callTech() {
-    const phone = this.data.upcomingOrder?.technician?.phone || this.data.technician?.phone;
+    var phone = null;
+    if (this.data.upcomingOrder && this.data.upcomingOrder.technician) {
+      phone = this.data.upcomingOrder.technician.phone;
+    }
+    if (!phone && this.data.technician) {
+      phone = this.data.technician.phone;
+    }
     if (phone) wx.makePhoneCall({ phoneNumber: phone });
   },
 
   onPullDownRefresh() {
-    this.loadData().finally(() => wx.stopPullDownRefresh());
+    var self = this;
+    this.loadData().finally(function () { wx.stopPullDownRefresh(); });
   }
 });
 
-function formatDateStr(date) {
-  const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
-  const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-  return `${months[date.getMonth()]} ${date.getDate()}日 ${days[date.getDay()]}`;
+function formatTimeShort(dateStr) {
+  var d = new Date(dateStr);
+  var h = String(d.getHours()).padStart(2, '0');
+  var m = String(d.getMinutes()).padStart(2, '0');
+  return h + ':' + m;
+}
+
+function formatShortDate(dateStr) {
+  if (!dateStr) return '';
+  var d = new Date(dateStr);
+  return (d.getMonth() + 1) + '月' + d.getDate() + '日';
 }
 
 function calcCountdown(startTime) {
-  const diff = Math.floor((new Date(startTime) - new Date()) / 60000);
+  var diff = Math.floor((new Date(startTime) - new Date()) / 60000);
   if (diff <= 0) return '已开始';
-  const days = Math.floor(diff / (60 * 24));
-  const hours = Math.floor((diff % (60 * 24)) / 60);
-  const minutes = diff % 60;
-  if (days >= 1) return `${days}天${hours}小时`;
-  if (hours >= 1) return `${hours}小时${minutes}分`;
-  return `${minutes}分钟`;
+  var days = Math.floor(diff / (60 * 24));
+  var hours = Math.floor((diff % (60 * 24)) / 60);
+  var minutes = diff % 60;
+  if (days >= 1) return days + '天' + hours + '小时';
+  if (hours >= 1) return hours + '小时' + minutes + '分';
+  return minutes + '分钟';
 }

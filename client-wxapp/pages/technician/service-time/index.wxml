@@ -1,3 +1,4 @@
+<nav-bar title="服务时间" showBack/>
 <view class="container">
   <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
 

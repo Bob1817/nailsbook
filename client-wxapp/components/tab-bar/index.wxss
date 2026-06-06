@@ -1,0 +1,43 @@
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  background: #ffffff;
+  border-top: 1rpx solid #eeeeee;
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 999;
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.04);
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24rpx 0;
+  transition: transform 0.15s ease;
+}
+
+.tab-item:active {
+  opacity: 0.7;
+}
+
+.tab-label {
+  font-size: 28rpx;
+  color: #999999;
+  line-height: 1.2;
+  transition: color 0.2s ease;
+}
+
+.tab-item-active .tab-label {
+  color: #FF6B8A;
+  font-weight: 600;
+  font-size: 30rpx;
+}
+
+/* 占位高度，避免内容被 tabBar 遮挡 */
+.tab-bar-placeholder {
+  height: calc(100rpx + env(safe-area-inset-bottom));
+}

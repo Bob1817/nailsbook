@@ -1,110 +1,287 @@
 .container {
   min-height: 100vh;
-  background: #f5f5f5;
-  padding: 16rpx;
+  background: #f8f9fc;
+  padding-bottom: 160rpx;
 }
 
+/* 加载中 */
+.loading-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 120rpx 0;
+}
+
+.spinner {
+  width: 48rpx;
+  height: 48rpx;
+  border: 4rpx solid rgba(255, 107, 138, 0.3);
+  border-top-color: #FF6B8A;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 空状态 */
 .empty {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 200rpx 0;
+  padding: 200rpx 60rpx;
 }
-.empty-text {
+
+.empty-icon-wrap {
+  margin-bottom: 32rpx;
+}
+
+.icon-placeholder-circle {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: rgba(255,107,138,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-placeholder-inner {
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 50%;
+  background: rgba(255,107,138,0.3);
+}
+
+.empty-title {
   font-size: 32rpx;
-  color: #333;
-  margin-bottom: 16rpx;
+  font-weight: 600;
+  color: #9ca3af;
+  margin-bottom: 12rpx;
 }
+
 .empty-sub {
   font-size: 26rpx;
-  color: #999;
+  color: #d1d5db;
   margin-bottom: 48rpx;
+  text-align: center;
 }
+
 .btn-add-first {
   height: 88rpx;
   padding: 0 64rpx;
-  background: #ff6b9d;
+  background: linear-gradient(135deg, #ff6b8a, #8b5cf6);
   color: #fff;
-  border-radius: 44rpx;
+  border-radius: 48rpx;
   font-size: 30rpx;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(255, 107, 138, 0.3);
+  border: none;
 }
 
-.grid {
+.btn-add-first::after { border: none; }
+
+/* 瀑布流 */
+.waterfall {
   display: flex;
-  flex-wrap: wrap;
+  gap: 16rpx;
+  padding: 16rpx 32rpx;
+  align-items: flex-start;
+}
+
+.col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   gap: 16rpx;
 }
 
-.work-card {
-  width: calc(50% - 8rpx);
-  background: #fff;
-  border-radius: 16rpx;
-  overflow: hidden;
+/* 卡片 */
+.card-img-wrap {
   position: relative;
-}
-
-.work-cover {
   width: 100%;
-  height: 300rpx;
-  display: block;
+  height: 0;
+  padding-bottom: 133.33%;
+  overflow: hidden;
+  border-radius: 24rpx;
+  box-shadow: 0 4rpx 24rpx rgba(15, 23, 42, 0.06), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
+  border: 1rpx solid rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
 }
 
+.card-img-wrap:active { transform: scale(0.985); opacity: 0.95; }
+
+.card-img {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+}
+
+.card-img-empty {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+}
+
+/* 渐变遮罩 */
+.card-gradient {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.12) 0%, transparent 30%, rgba(0,0,0,0.72) 100%);
+}
+
+/* 隐藏状态遮罩 */
 .hidden-mask {
   position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 300rpx;
-  background: rgba(0,0,0,0.4);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 3;
+  backdrop-filter: blur(4rpx);
 }
+
 .hidden-label {
   font-size: 28rpx;
   color: #fff;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8rpx 40rpx;
+  border-radius: 14rpx;
+}
+
+/* 左上角标签 */
+.card-tags-top {
+  position: absolute;
+  top: 16rpx;
+  left: 16rpx;
+  display: flex;
+  gap: 8rpx;
+  z-index: 2;
+}
+
+.tag-pill {
+  font-size: 20rpx;
+  font-weight: 600;
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+  backdrop-filter: blur(8px);
+}
+
+.tag-pin {
+  background: rgba(255, 107, 138, 0.85);
+  color: #fff;
+}
+
+.tag-feat {
+  background: rgba(167, 139, 250, 0.85);
+  color: #fff;
+}
+
+/* 右上角更多操作 */
+.card-more-btn {
+  position: absolute;
+  top: 12rpx;
+  right: 12rpx;
+  width: 56rpx;
+  height: 56rpx;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  z-index: 2;
+}
+
+.card-more-btn:active { background: rgba(0, 0, 0, 0.5); }
+
+.card-more-icon {
+  font-size: 28rpx;
+  color: #fff;
+  font-weight: bold;
+  letter-spacing: 2rpx;
+}
+
+/* 底部信息 */
+.card-bottom {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 16rpx 20rpx;
+  z-index: 1;
+}
+
+.card-title {
+  display: block;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+.card-price {
+  display: block;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+  margin-top: 4rpx;
+}
+
+.card-stats-row {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  margin-top: 10rpx;
+}
+
+.card-stat {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.stat-icon {
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.stat-num {
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.82);
   font-weight: 500;
 }
 
-.work-info {
-  padding: 16rpx 20rpx;
+/* 固定底部发布按钮 */
+.fixed-bottom {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding: 20rpx 40rpx calc(20rpx + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 30%, #ffffff 100%);
+  backdrop-filter: blur(10px);
 }
-.work-title {
-  font-size: 26rpx;
-  color: #333;
-  display: block;
-  margin-bottom: 12rpx;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.work-actions {
-  display: flex;
-  gap: 20rpx;
-}
-.action-btn {
-  font-size: 24rpx;
-  color: #ff6b9d;
-}
-.action-btn.danger { color: #ff4d4f; }
 
-.add-card {
+.btn-publish {
+  width: 100%;
+  height: 88rpx;
+  background: linear-gradient(135deg, #ff6b8a, #8b5cf6);
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 600;
+  border-radius: 48rpx;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 300rpx;
-  background: #fafafa;
-  border: 2rpx dashed #ddd;
+  box-shadow: 0 8rpx 24rpx rgba(255, 107, 138, 0.3);
+  border: none;
 }
-.add-icon {
-  font-size: 72rpx;
-  color: #ccc;
-  line-height: 1;
-  margin-bottom: 12rpx;
-}
-.add-text {
-  font-size: 26rpx;
-  color: #999;
-}
+
+.btn-publish::after { border: none; }

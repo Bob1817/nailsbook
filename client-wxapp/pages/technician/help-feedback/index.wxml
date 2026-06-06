@@ -1,3 +1,4 @@
+<nav-bar title="帮助" showBack/>
 <view class="container">
   <view class="section">
     <text class="section-title">常见问题</text>

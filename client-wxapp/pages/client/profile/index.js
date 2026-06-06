@@ -54,6 +54,10 @@ Page({
     wx.navigateTo({ url: '/pages/client/addresses/index' });
   },
 
+  navigateToDesigns() {
+    wx.navigateTo({ url: '/pages/client/designs/index' });
+  },
+
   navigateToOrders() {
     wx.navigateTo({ url: '/pages/client/orders/index' });
   },
@@ -74,8 +78,21 @@ Page({
     wx.navigateTo({ url: '/pages/client/help-feedback/index' });
   },
 
+  navigateToPassword() {
+    wx.navigateTo({ url: '/pages/client/forgot-password/index' });
+  },
+
+  showComingSoon() {
+    wx.showToast({ title: '功能开发中', icon: 'none' });
+  },
+
   switchRole() {
     wx.navigateTo({ url: '/pages/role-select/index' });
+  },
+
+  viewTechCard(e) {
+    const { id } = e.currentTarget.dataset;
+    wx.navigateTo({ url: `/pages/client/works/index?techId=${id}` });
   },
 
   // 绑定美甲师

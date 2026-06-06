@@ -1,35 +1,242 @@
-<view class="container">
+<nav-bar title="首页"/>
+<view class="page">
+  <!-- ===== 顶部 Header ===== -->
   <view class="header">
-    <image class="avatar" src="{{avatar}}" mode="aspectFill"></image>
-    <text class="name">{{name}}</text>
-    <text class="phone">{{phone}}</text>
+    <view class="header-bg-blur b1"></view>
+    <view class="header-bg-blur b2"></view>
+
+    <view class="header-top">
+      <view class="user-block">
+        <view class="avatar-wrap">
+          <image wx:if="{{avatar}}" src="{{avatar}}" mode="aspectFill" class="avatar" />
+          <view wx:else class="avatar-placeholder">
+            <text class="avatar-char">{{name[0] || '美'}}</text>
+          </view>
+        </view>
+        <view class="name-block">
+          <view class="name-row">
+            <text class="name">{{name || '美甲师'}}</text>
+            <view class="status-pill {{status === 'active' ? 'status-on' : 'status-off'}}">
+              <view class="status-pill-dot"></view>
+              <text>{{status === 'active' ? '接单中' : '已暂停'}}</text>
+            </view>
+          </view>
+          <text class="subline">今日 {{summary.todayCount}} 单 · 预估 {{summary.expectedIncomeText}}</text>
+        </view>
+      </view>
+
+      <view class="share-wrap">
+        <text class="share-icon-char">↗</text>
+        <button class="share-cover" open-type="share"></button>
+      </view>
+    </view>
   </view>
-  <view class="stats">
-    <view>
-      <text>{{todayOrders}}</text>
-      <text>今日订单</text>
-    </view>
-    <view>
-      <text>{{totalAmount}}</text>
-      <text>本月收入</text>
-    </view>
-    <view>
-      <text>{{rating}}</text>
-      <text>客户评分</text>
+
+  <!-- ===== 下一单 ===== -->
+  <view class="card next-card" bindtap="openOrderDetail" data-id="{{nextOrder.id}}">
+    <text class="next-title">下一单</text>
+
+    <block wx:if="{{nextOrder}}">
+      <view class="next-row">
+        <view class="time-col">
+          <text class="next-date">{{nextOrder._dateLabel}}</text>
+          <text class="next-time">{{nextOrder._clock}}</text>
+        </view>
+        <view class="next-info">
+          <view class="next-name-row">
+            <text class="next-name">{{nextOrder.customerName}}</text>
+            <text class="tag {{nextOrder._typeClass}}">{{nextOrder._typeLabel}}</text>
+          </view>
+          <text class="next-svc">{{nextOrder.serviceName}}</text>
+        </view>
+      </view>
+
+      <view class="next-addr">
+        <text class="addr-icon">📍</text>
+        <text class="addr-text">{{nextOrder._fullAddress}}</text>
+      </view>
+
+      <view class="next-stats">
+        <view class="stat-mini">
+          <text class="stat-mini-cap">预计路程</text>
+          <text class="stat-mini-val">{{nextOrder._distanceText}}</text>
+        </view>
+        <view class="stat-mini">
+          <text class="stat-mini-cap">建议出发</text>
+          <text class="stat-mini-val">{{nextOrder._departureClock}}</text>
+        </view>
+      </view>
+
+      <view wx:if="{{nextOrder._countdownText}}" class="countdown">
+        <text class="countdown-cap">距出发还有</text>
+        <text class="countdown-val">{{nextOrder._countdownText}}</text>
+      </view>
+
+      <view class="next-actions">
+        <view class="btn btn-primary" catchtap="navigateToAddress" data-order-id="{{nextOrder.id}}">
+          <text class="btn-ico">🧭</text>
+          <text>开始导航</text>
+        </view>
+        <view class="btn btn-ghost" catchtap="contactCustomer" data-phone="{{nextOrder.customerPhone}}">
+          <text class="btn-ico">📞</text>
+          <text>联系客户</text>
+        </view>
+      </view>
+    </block>
+
+    <view wx:else class="next-empty">
+      <text class="next-empty-title">暂无行程安排</text>
+      <text class="next-empty-sub">当前没有待上门、待到店或服务中的预约。</text>
     </view>
   </view>
-  <view class="quick-actions">
-    <view bindtap="navigateToOrders">订单管理</view>
-    <view bindtap="navigateToCustomers">客户管理</view>
-    <view bindtap="navigateToWorks">作品管理</view>
-    <view bindtap="navigateToSchedule">日程安排</view>
-  </view>
-  <view class="recent-orders">
-    <view wx:for="{{recentOrders}}" bindtap="viewOrder" data-id="{{item.id}}">
-      <text>{{item.orderNo}}</text>
-      <text>{{item.serviceType}}</text>
-      <text>{{item.startTime}}</text>
-      <text>{{item.address}}</text>
+
+  <!-- ===== 待处理事项 ===== -->
+  <view class="card todo-card">
+    <view class="card-head">
+      <view>
+        <text class="card-title">待处理事项</text>
+        <text class="card-sub">高优先级工作提醒</text>
+      </view>
+      <view wx:if="{{todoTotal > 0}}" class="todo-total-badge">{{todoTotal}}</view>
     </view>
+
+    <view wx:if="{{todoItems.length > 0}}" class="todo-list">
+      <view
+        wx:for="{{todoItems}}"
+        wx:key="key"
+        class="todo-item"
+        bindtap="onTodoTap"
+        data-key="{{item.key}}"
+      >
+        <view class="todo-left">
+          <view class="todo-count {{item.tone}}">{{item.count}}</view>
+          <text class="todo-label">{{item.label}}</text>
+        </view>
+        <text class="todo-arrow">›</text>
+      </view>
+    </view>
+
+    <view wx:else class="empty-soft">今日待办已清空，可以专心服务客户。</view>
+  </view>
+
+  <!-- ===== 今日行程 ===== -->
+  <view class="card schedule-card">
+    <view class="card-head">
+      <view>
+        <text class="card-title">今日行程</text>
+        <text class="card-sub">{{todayLabel}}</text>
+      </view>
+      <view class="card-more" bindtap="navigateToOrders">查看全部</view>
+    </view>
+
+    <view wx:if="{{loading}}" class="skeleton-list">
+      <view wx:for="{{[1,2,3]}}" wx:key="*this" class="skeleton-row"></view>
+    </view>
+
+    <view wx:elif="{{todayOrders.length > 0}}" class="schedule-list">
+      <view
+        wx:for="{{todayOrders}}"
+        wx:key="id"
+        class="schedule-item"
+        bindtap="openOrderDetail"
+        data-id="{{item.id}}"
+      >
+        <view class="sch-time-col">
+          <text class="sch-time">{{item._clock}}</text>
+          <text class="sch-state {{item._stateTone}}">{{item._stateLabel}}</text>
+        </view>
+        <view class="sch-customer">
+          <view class="sch-avatar">
+            <image wx:if="{{item.customerAvatar}}" src="{{item.customerAvatar}}" mode="aspectFill" class="sch-avatar-img" />
+            <text wx:else class="sch-avatar-char">{{item.customerName[0]}}</text>
+          </view>
+        </view>
+        <view class="sch-info">
+          <view class="sch-info-top">
+            <text class="sch-name">{{item.customerName}}</text>
+            <text class="tag {{item._typeClass}}">{{item._typeLabel}}</text>
+          </view>
+          <text class="sch-svc">{{item.serviceName}}</text>
+          <text class="sch-addr">{{item._fullAddress}}</text>
+          <view class="sch-actions">
+            <view class="mini-btn mini-primary" catchtap="navigateToAddress" data-order-id="{{item.id}}">
+              <text>🧭 去导航</text>
+            </view>
+            <view class="mini-btn mini-ghost" catchtap="contactCustomer" data-phone="{{item.customerPhone}}">
+              <text>📞 联系客户</text>
+            </view>
+          </view>
+        </view>
+        <text class="sch-price">{{item._priceText}}</text>
+      </view>
+    </view>
+
+    <view wx:else class="empty-soft">今天还没有新的预约安排</view>
+  </view>
+
+
+  <!-- ===== 热门作品 ===== -->
+  <view class="card works-card">
+    <view class="card-head">
+      <view>
+        <text class="card-title">今日热门作品</text>
+        <text class="card-sub">最近受欢迎的款式和客户收藏</text>
+      </view>
+      <view class="card-more pink" bindtap="navigateToWorks">更多</view>
+    </view>
+
+    <view wx:if="{{featuredWorks.length > 0}}" class="hw-wall">
+      <view class="hw-col">
+        <view wx:for="{{worksLeft}}" wx:key="id" class="hw-card" bindtap="navigateToWorkDetail" data-id="{{item.id}}">
+          <view class="hw-img-wrap">
+            <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="hw-img" />
+            <view wx:else class="hw-img hw-img-empty"></view>
+            <view class="hw-gradient"></view>
+            <view class="hw-tags-top">
+              <view wx:if="{{item.isPinned}}" class="hw-tag hw-tag-pin">置顶</view>
+              <view wx:if="{{item.isFeatured}}" class="hw-tag hw-tag-feat">推荐</view>
+            </view>
+            <view class="hw-bottom">
+              <text class="hw-title">{{item.title || '未命名'}}</text>
+              <view class="hw-stats">
+                <text class="hw-stat-icon">♥</text>
+                <text class="hw-stat-num">{{item.likeCount || 0}}</text>
+                <text class="hw-stat-icon hw-stat-gap">★</text>
+                <text class="hw-stat-num">{{item.favoriteCount || 0}}</text>
+                <text class="hw-stat-icon hw-stat-gap">✎</text>
+                <text class="hw-stat-num">{{item.commentCount || 0}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="hw-col">
+        <view wx:for="{{worksRight}}" wx:key="id" class="hw-card" bindtap="navigateToWorkDetail" data-id="{{item.id}}">
+          <view class="hw-img-wrap">
+            <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="hw-img" />
+            <view wx:else class="hw-img hw-img-empty"></view>
+            <view class="hw-gradient"></view>
+            <view class="hw-tags-top">
+              <view wx:if="{{item.isPinned}}" class="hw-tag hw-tag-pin">置顶</view>
+              <view wx:if="{{item.isFeatured}}" class="hw-tag hw-tag-feat">推荐</view>
+            </view>
+            <view class="hw-bottom">
+              <text class="hw-title">{{item.title || '未命名'}}</text>
+              <view class="hw-stats">
+                <text class="hw-stat-icon">♥</text>
+                <text class="hw-stat-num">{{item.likeCount || 0}}</text>
+                <text class="hw-stat-icon hw-stat-gap">★</text>
+                <text class="hw-stat-num">{{item.favoriteCount || 0}}</text>
+                <text class="hw-stat-icon hw-stat-gap">✎</text>
+                <text class="hw-stat-num">{{item.commentCount || 0}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:else class="empty-soft">还没有上传作品，先补几张好看的款式吧。</view>
   </view>
 </view>
+<tab-bar selected="home" />

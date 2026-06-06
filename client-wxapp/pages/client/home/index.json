@@ -1,5 +1,10 @@
 {
-  "navigationBarTitleText": "首页",
+  "navigationStyle": "custom",
   "enablePullDownRefresh": true,
-  "backgroundTextStyle": "dark"
+  "backgroundTextStyle": "dark",
+  "usingComponents": {
+    "nav-bar": "/components/nav-bar/index",
+    "tab-bar": "/components/tab-bar/index"
+  },
+  "navigationBarTitleText": "首页"
 }

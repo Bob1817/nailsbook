@@ -1,3 +1,4 @@
+<nav-bar title="登录" transparent/>
 <view class="container">
 
   <view class="header">
@@ -13,13 +14,19 @@
         value="{{phone}}" data-field="phone" bindinput="onInput"/>
     </view>
     <button class="btn-primary" bindtap="handlePhoneNext">下一步</button>
+    <view class="link-row">
+      <text class="link" bindtap="goRoleSelect">返回身份选择</text>
+    </view>
   </view>
 
   <!-- Step 2: 登录（已注册） -->
-  <view wx:elif="{{step === 'login'}}" class="form">
+  <view wx:else class="form">
     <view class="form-item">
       <text class="label">手机号</text>
-      <view class="readonly">{{phone}}</view>
+      <view class="readonly">
+        <text class="readonly-phone">{{phone}}</text>
+        <text class="readonly-action" data-step="phone" bindtap="switchPhase">换个手机号</text>
+      </view>
     </view>
     <view class="form-item">
       <text class="label">密码</text>
@@ -30,37 +37,10 @@
       {{loading ? '登录中...' : '登录'}}
     </button>
     <view class="link-row">
-      <text class="link" data-step="phone" bindtap="switchPhase">换个手机号</text>
       <text class="link" bindtap="goForgotPassword">忘记密码？</text>
+      <text class="link-sep">|</text>
+      <text class="link" bindtap="goRoleSelect">返回选择身份</text>
     </view>
-  </view>
-
-  <!-- Step 3: 注册（新用户） -->
-  <view wx:else class="form">
-    <view class="hint-banner">该手机号未注册，请输入美甲师邀请码完成注册</view>
-    <view class="form-item">
-      <text class="label">手机号</text>
-      <view class="readonly">{{phone}}</view>
-    </view>
-    <view class="form-item">
-      <text class="label">美甲师邀请码</text>
-      <input class="input" placeholder="向你的美甲师索要邀请码"
-        value="{{inviteCode}}" data-field="inviteCode" bindinput="onInput"/>
-    </view>
-    <view class="form-item">
-      <text class="label">设置密码</text>
-      <input class="input" type="text" password placeholder="至少 8 位，含字母和数字"
-        value="{{password}}" data-field="password" bindinput="onInput"/>
-    </view>
-    <view class="form-item">
-      <text class="label">确认密码</text>
-      <input class="input" type="text" password placeholder="再次输入密码"
-        value="{{confirmPassword}}" data-field="confirmPassword" bindinput="onInput"/>
-    </view>
-    <button class="btn-primary" bindtap="handleRegister" disabled="{{loading}}">
-      {{loading ? '注册中...' : '注册并登录'}}
-    </button>
-    <text class="link" data-step="phone" bindtap="switchPhase">换个手机号</text>
   </view>
 
 </view>

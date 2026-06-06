@@ -1,4 +1,9 @@
 {
   "navigationBarTitleText": "消息",
-  "enablePullDownRefresh": true
+  "enablePullDownRefresh": true,
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "nav-bar": "/components/nav-bar/index",
+    "tab-bar": "/components/tab-bar/index"
+  }
 }

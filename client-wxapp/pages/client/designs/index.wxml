@@ -1,0 +1,94 @@
+<nav-bar title="设计" showBack/>
+<view class="container">
+  <!-- 顶部创建入口 -->
+  <view class="create-section">
+    <view class="create-card" bindtap="goToCustomizeDesign">
+      <view class="create-card-content">
+        <view class="create-tag">创意定制</view>
+        <view class="create-icon-wrap customize">
+          <view class="create-icon-dot"></view>
+        </view>
+        <view class="create-info">
+          <text class="create-title">设计美甲</text>
+          <text class="create-desc">从风格、配色到甲型，发起你的专属灵感需求</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="create-card" bindtap="goToCreateDesign">
+      <view class="create-card-content">
+        <view class="create-tag upload">图稿参考</view>
+        <view class="create-icon-wrap upload">
+          <view class="create-icon-dot"></view>
+        </view>
+        <view class="create-info">
+          <text class="create-title">上传设计</text>
+          <text class="create-desc">上传喜欢的参考图，与美甲师沟通细节</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 设计列表 -->
+  <view class="list-section">
+    <view class="list-header">
+      <view>
+        <text class="list-title">设计记录</text>
+        <text class="list-subtitle">查看设计素材、灵感需求与状态变化</text>
+      </view>
+      <view class="list-count" wx:if="{{designs.length > 0}}">
+        <text class="count-text">{{designs.length}} 个设计</text>
+      </view>
+    </view>
+
+    <!-- 加载中 -->
+    <view wx:if="{{loading}}" class="loading-wrap">
+      <view class="loading-spinner"></view>
+    </view>
+
+    <!-- 空状态 -->
+    <view wx:elif="{{designs.length === 0}}" class="empty-wrap">
+      <view class="empty-icon-wrap">
+        <view class="empty-icon-dot"></view>
+      </view>
+      <text class="empty-title">暂无设计作品</text>
+      <text class="empty-desc">点击上方按钮创建你的第一个美甲设计</text>
+    </view>
+
+    <!-- 设计列表 -->
+    <view wx:else class="design-grid">
+      <view
+        wx:for="{{designs}}"
+        wx:key="id"
+        class="design-card {{index % 3 === 0 ? 'card-tall' : 'card-square'}}"
+        bindtap="goToDesignDetail"
+        data-id="{{item.id}}"
+      >
+        <!-- 图片 -->
+        <image
+          wx:if="{{item.imageUrls && item.imageUrls.length > 0}}"
+          src="{{item.imageUrls[0]}}"
+          mode="aspectFill"
+          class="design-img"
+        />
+        <view wx:else class="design-img-empty">
+          <view class="empty-img-icon-dot"></view>
+        </view>
+
+        <!-- 状态标签 -->
+        <view class="status-badge {{item.statusClass}}">
+          <text class="status-text">{{item.statusText}}</text>
+        </view>
+
+        <!-- 底部信息 -->
+        <view class="design-overlay">
+          <text class="design-name">{{item.title || '未命名设计'}}</text>
+          <text class="design-desc">{{item.description || '暂无描述'}}</text>
+          <view class="design-meta">
+            <text class="design-date">{{item.dateStr}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

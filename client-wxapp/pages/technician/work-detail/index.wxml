@@ -1,0 +1,201 @@
+<view class="page">
+  <!-- Loading -->
+  <view wx:if="{{loading}}" class="loading-screen">
+    <view class="loading-spinner"></view>
+  </view>
+
+  <view wx:elif="{{work.id}}" class="detail-container">
+    <!-- 固定关闭按钮（左上角） -->
+    <view class="header-fixed">
+      <view class="header-btn" bindtap="goBack">
+        <view class="header-close-icon"></view>
+      </view>
+    </view>
+
+    <!-- Image Slider -->
+    <view class="image-slider">
+      <scroll-view
+        scroll-x
+        enhanced
+        show-scrollbar="{{false}}"
+        scroll-into-view="{{scrollTarget}}"
+        bindscroll="onImageScroll"
+        class="image-scroll"
+      >
+        <view class="image-list">
+          <view
+            wx:for="{{imageUrls}}"
+            wx:key="index"
+            id="img-{{index}}"
+            class="image-item"
+            bindtap="openViewer"
+            data-index="{{index}}"
+          >
+            <image src="{{item}}" mode="aspectFill" class="slide-image" />
+          </view>
+        </view>
+      </scroll-view>
+      <!-- Image indicators -->
+      <view wx:if="{{imageUrls.length > 1}}" class="image-dots">
+        <view
+          wx:for="{{imageUrls}}"
+          wx:key="index"
+          class="dot {{index === currentImageIndex ? 'dot-active' : ''}}"
+        ></view>
+      </view>
+    </view>
+
+    <!-- White Info Panel -->
+    <view class="info-panel">
+      <!-- Title block -->
+      <view class="title-block">
+        <view class="title-row">
+          <text class="work-title">{{work.title || '未命名作品'}}</text>
+          <text wx:if="{{work.price}}" class="work-price">¥{{work.price}}</text>
+        </view>
+        <text wx:if="{{work.description}}" class="work-desc">{{work.description}}</text>
+        <view wx:if="{{work.tags && work.tags.length > 0}}" class="tags-row">
+          <text wx:for="{{work.tags}}" wx:key="*this" class="tag">#{{item}}</text>
+        </view>
+      </view>
+
+      <!-- Comments section -->
+      <view class="comments-section">
+        <view class="comments-header">
+          <text class="comments-title">评论</text>
+          <text class="comments-count">{{visibleComments.length}} 条</text>
+        </view>
+
+        <view wx:if="{{visibleComments.length > 0}}" class="comments-list">
+          <view wx:for="{{visibleComments}}" wx:key="id" class="comment-item">
+            <view class="comment-avatar-wrap">
+              <image wx:if="{{item.user.avatarUrl}}" src="{{item.user.avatarUrl}}" class="comment-avatar" />
+              <view wx:else class="comment-avatar-placeholder {{item.user.role === 'technician' ? 'avatar-tech' : ''}}">
+                <text class="avatar-text">{{item.user.name[0]}}</text>
+              </view>
+            </view>
+            <view class="comment-body">
+              <view class="comment-bubble">
+                <view class="comment-name-row">
+                  <text class="comment-name">{{item.user.name}}</text>
+                  <text wx:if="{{item.user.role === 'technician'}}" class="role-badge">美甲师</text>
+                  <text wx:if="{{item.isPinned}}" class="pin-badge">置顶</text>
+                  <text class="comment-time">{{item.createdAtText}}</text>
+                </view>
+                <text class="comment-content" bindtap="replyComment" data-comment="{{item}}">{{item.content}}</text>
+              </view>
+              <!-- Replies -->
+              <view wx:if="{{item.replies && item.replies.length > 0}}" class="replies-list">
+                <view wx:for="{{item.replies}}" wx:for-item="reply" wx:key="id" class="reply-item">
+                  <view class="comment-avatar-wrap reply-avatar-wrap">
+                    <image wx:if="{{reply.user.avatarUrl}}" src="{{reply.user.avatarUrl}}" class="comment-avatar reply-avatar" />
+                    <view wx:else class="comment-avatar-placeholder reply-avatar-placeholder {{reply.user.role === 'technician' ? 'avatar-tech' : ''}}">
+                      <text class="avatar-text">{{reply.user.name[0]}}</text>
+                    </view>
+                  </view>
+                  <view class="comment-body">
+                    <view class="comment-bubble">
+                      <view class="comment-name-row">
+                        <text class="comment-name">{{reply.user.name}}</text>
+                        <text wx:if="{{reply.user.role === 'technician'}}" class="role-badge">美甲师</text>
+                        <text class="comment-time">{{reply.createdAtText}}</text>
+                      </view>
+                      <text class="comment-content" bindtap="replyComment" data-comment="{{reply}}">{{reply.content}}</text>
+                    </view>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view wx:else class="comments-empty">
+          <text class="empty-text">暂无评论</text>
+        </view>
+
+        <!-- Hidden comments -->
+        <view wx:if="{{hiddenComments.length > 0}}" class="hidden-section">
+          <view class="hidden-toggle" bindtap="toggleHiddenComments">
+            <text class="hidden-toggle-text">{{showHidden ? '收起隐藏评论' : '查看 ' + hiddenComments.length + ' 条隐藏评论'}}</text>
+          </view>
+          <view wx:if="{{showHidden}}" class="comments-list">
+            <view wx:for="{{hiddenComments}}" wx:key="id" class="comment-item comment-hidden">
+              <view class="comment-avatar-wrap">
+                <image wx:if="{{item.user.avatarUrl}}" src="{{item.user.avatarUrl}}" class="comment-avatar" />
+                <view wx:else class="comment-avatar-placeholder">
+                  <text class="avatar-text">{{item.user.name[0]}}</text>
+                </view>
+              </view>
+              <view class="comment-body">
+                <view class="comment-bubble">
+                  <view class="comment-name-row">
+                    <text class="comment-name">{{item.user.name}}</text>
+                    <text class="hidden-badge">已隐藏</text>
+                    <text class="comment-time">{{item.createdAtText}}</text>
+                  </view>
+                  <text class="comment-content">{{item.content}}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 底部占位（为固定评论输入栏留空间） -->
+      <view class="bottom-spacer"></view>
+    </view>
+  </view>
+
+  <!-- 固定底部评论输入栏 -->
+  <view wx:if="{{work.id && !loading}}" class="comment-input-bar">
+    <view wx:if="{{replyingTo}}" class="reply-hint">
+      <text class="reply-hint-text">回复 <text class="reply-name">@{{replyingTo.name}}</text></text>
+      <view class="reply-cancel" bindtap="cancelReply">
+        <view class="reply-cancel-icon"></view>
+      </view>
+    </view>
+    <view class="input-row">
+      <input
+        class="comment-input"
+        placeholder="{{replyingTo ? '回复 @' + replyingTo.name + '...' : '添加评论...'}}"
+        value="{{commentText}}"
+        bindinput="onCommentInput"
+        bindconfirm="submitComment"
+        confirm-type="send"
+        adjust-position="{{true}}"
+        cursor-spacing="20"
+      />
+      <view class="send-btn {{commentText ? '' : 'send-disabled'}}" bindtap="submitComment">
+        <text class="send-text">发送</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Fullscreen Image Viewer -->
+  <view wx:if="{{viewerOpen}}" class="viewer-overlay">
+    <cover-view class="viewer-close" style="top: {{viewerCloseTop}}px" bindtap="closeViewer">
+      <cover-view class="viewer-close-icon">✕</cover-view>
+    </cover-view>
+    <cover-view wx:if="{{imageUrls.length > 1}}" class="viewer-counter">
+      <cover-view class="viewer-counter-text">{{viewerIndex + 1}} / {{imageUrls.length}}</cover-view>
+    </cover-view>
+    <swiper
+      class="viewer-swiper"
+      current="{{viewerIndex}}"
+      bindchange="onViewerSwiperChange"
+      circular="{{false}}"
+    >
+      <swiper-item wx:for="{{imageUrls}}" wx:key="index">
+        <image src="{{item}}" mode="aspectFit" class="viewer-image" bindtap="closeViewer" />
+      </swiper-item>
+    </swiper>
+    <cover-view wx:if="{{imageUrls.length > 1}}" class="viewer-dots">
+      <cover-view
+        wx:for="{{imageUrls}}"
+        wx:key="index"
+        class="viewer-dot {{index === viewerIndex ? 'viewer-dot-active' : ''}}"
+      ></cover-view>
+    </cover-view>
+  </view>
+
+</view>

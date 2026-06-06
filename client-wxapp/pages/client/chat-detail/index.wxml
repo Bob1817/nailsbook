@@ -1,82 +1,137 @@
+<nav-bar title="聊天" showBack/>
 <view class="page">
+  <!-- 顶部信息栏 -->
+  <view class="chat-header">
+    <view class="chat-header-inner">
+      <view class="chat-header-avatar">
+        <image wx:if="{{techAvatar}}" src="{{techAvatar}}" mode="aspectFill" class="chat-header-avatar-img" />
+        <view wx:else class="chat-header-avatar-ph"><text>{{techName[0] || '师'}}</text></view>
+      </view>
+      <view class="chat-header-info">
+        <text class="chat-header-name">{{techName || '消息详情'}}</text>
+        <text class="chat-header-desc">一对一沟通与服务提醒</text>
+      </view>
+    </view>
+    <view wx:if="{{techName}}" class="chat-header-action" bindtap="openBookingSheet">
+      <view class="action-icon"></view>
+      <text class="action-text">预约</text>
+    </view>
+  </view>
+
   <!-- 加载中 -->
   <view wx:if="{{loading}}" class="loading-wrap">
     <view class="loading-spinner"></view>
   </view>
 
   <!-- 消息列表 -->
-  <scroll-view
-    wx:else
-    scroll-y
-    class="msg-list"
-    scroll-into-view="{{scrollToId}}"
-    scroll-with-animation
-  >
-    <view wx:if="{{messages.length === 0}}" class="empty-chat">
-      <text class="empty-icon">💬</text>
+  <scroll-view wx:else scroll-y class="msg-list" scroll-into-view="{{scrollToId}}" scroll-with-animation enhanced show-scrollbar="{{false}}" bindscroll="onScroll">
+    <view wx:if="{{groupedMessages.length === 0}}" class="empty-chat">
+      <view class="empty-icon-wrap">
+        <view class="empty-icon-dot"></view>
+      </view>
       <text class="empty-title">开始和{{techName || '美甲师'}}沟通</text>
       <text class="empty-desc">把你的款式灵感、预约想法发给美甲师</text>
     </view>
 
-    <view
-      wx:for="{{messages}}"
-      wx:key="id"
-      id="msg-{{item.id}}"
-      class="msg-row {{item.isClient ? 'row-right' : 'row-left'}}"
-    >
-      <!-- 对方头像 -->
-      <view wx:if="{{!item.isClient}}" class="msg-avatar">
-        <image wx:if="{{techAvatar}}" src="{{techAvatar}}" mode="aspectFill" class="avatar-img" />
-        <view wx:else class="avatar-placeholder">
-          <text>{{techName[0] || '师'}}</text>
-        </view>
+    <block wx:for="{{groupedMessages}}" wx:key="date" wx:for-item="group">
+      <!-- 日期分隔符 -->
+      <view class="date-separator">
+        <text class="date-label">{{group.dateLabel}}</text>
       </view>
 
-      <view class="msg-content-wrap">
-        <!-- 图片消息 -->
-        <view wx:if="{{item.messageType === 'image' && item.imageUrl}}" class="bubble bubble-{{item.isClient ? 'right' : 'left'}} bubble-img" bindtap="previewImage" data-url="{{item.imageUrl}}">
-          <image src="{{item.imageUrl}}" mode="widthFix" class="msg-image" />
+      <!-- 该日期下的消息 -->
+      <view wx:for="{{group.messages}}" wx:key="id" wx:for-item="item" id="msg-{{item.id}}" class="msg-row {{item.isClient ? 'row-right' : 'row-left'}}">
+        <!-- 对方头像 -->
+        <view wx:if="{{!item.isClient}}" class="msg-avatar">
+          <image wx:if="{{techAvatar}}" src="{{techAvatar}}" mode="aspectFill" class="avatar-img" />
+          <view wx:else class="avatar-placeholder"><text>{{techName[0] || '师'}}</text></view>
         </view>
-        <!-- 文字消息 -->
-        <view wx:else class="bubble bubble-{{item.isClient ? 'right' : 'left'}}">
-          <text class="msg-text">{{item.content}}</text>
-        </view>
-        <text class="msg-time {{item.isClient ? 'time-right' : 'time-left'}}">{{item.timeStr}}</text>
-      </view>
 
-      <!-- 自己头像 -->
-      <view wx:if="{{item.isClient}}" class="msg-avatar">
-        <view class="avatar-self">
-          <text>我</text>
+        <view class="msg-content-wrap">
+          <!-- 系统消息 -->
+          <view wx:if="{{item.isSystem && !item.isOrderCard}}" class="system-msg">
+            <text class="system-text">{{item.content}}</text>
+          </view>
+
+          <!-- 预约/预约卡片消息 -->
+          <view wx:elif="{{item.isOrderCard}}" class="order-card-msg {{item.isClient ? 'card-right' : 'card-left'}}" bindtap="viewOrder" data-id="{{item.relatedId}}">
+            <view class="card-accent"></view>
+            <view class="card-inner">
+              <view class="card-header">
+                <text class="card-label">预约卡片</text>
+              </view>
+              <text class="card-content">{{item.content}}</text>
+              <text class="card-action">查看详情 ›</text>
+            </view>
+          </view>
+
+          <!-- 图片消息 -->
+          <view wx:elif="{{item.messageType === 'image' && item.imageUrl}}" class="bubble bubble-{{item.isClient ? 'right' : 'left'}} bubble-img" bindtap="previewImage" data-url="{{item.imageUrl}}">
+            <image src="{{item.imageUrl}}" mode="widthFix" class="msg-image" />
+          </view>
+
+          <!-- 文字消息 -->
+          <view wx:else class="bubble bubble-{{item.isClient ? 'right' : 'left'}}">
+            <text class="msg-text">{{item.content}}</text>
+            <text class="msg-time-inline {{item.isClient ? 'time-right' : 'time-left'}}">{{item.timeStr}}</text>
+          </view>
+        </view>
+
+        <!-- 自己头像 -->
+        <view wx:if="{{item.isClient}}" class="msg-avatar">
+          <view class="avatar-self"><text>我</text></view>
         </view>
       </view>
-    </view>
+    </block>
 
-    <view class="list-bottom"></view>
+    <view class="list-bottom" style="height: {{24 + keyboardHeight}}px;"></view>
   </scroll-view>
 
   <!-- 底部输入栏 -->
   <view class="input-bar">
-    <view class="input-btn" bindtap="sendImage">
-      <text class="input-btn-icon">🖼️</text>
+    <view class="input-btn" bindtap="openBookingSheet">
+      <view class="input-icon input-icon-calendar"></view>
     </view>
-    <input
-      class="input-field"
-      type="text"
-      value="{{inputText}}"
-      bindinput="onInputChange"
-      placeholder="发消息..."
-      placeholder-class="input-placeholder"
-      confirm-type="send"
-      bindconfirm="sendText"
-    />
-    <button
-      class="send-btn {{inputText.length > 0 ? 'send-btn-active' : ''}}"
-      bindtap="sendText"
-      disabled="{{!inputText || sending}}"
-    >
-      <text wx:if="{{!sending}}">发送</text>
+    <view class="input-btn" bindtap="sendImage">
+      <view class="input-icon input-icon-image"></view>
+    </view>
+    <view class="input-field-wrap">
+      <input class="input-field" type="text" value="{{inputText}}" bindinput="onInputChange" placeholder="发消息..." placeholder-class="input-placeholder" confirm-type="send" bindconfirm="sendText" />
+    </view>
+    <view class="send-btn {{inputText.length > 0 ? 'send-btn-active' : ''}}" bindtap="sendText">
+      <view wx:if="{{!sending}}" class="send-icon"></view>
       <view wx:else class="sending-spinner"></view>
-    </button>
+    </view>
+  </view>
+</view>
+
+<!-- 预约卡片选择弹层 -->
+<view wx:if="{{showBookingSheet}}" class="sheet-mask" bindtap="closeBookingSheet"></view>
+<view class="sheet {{showBookingSheet ? 'sheet-show' : ''}}" catchtap="">
+  <view class="sheet-handle">
+    <view class="sheet-handle-bar"></view>
+  </view>
+  <view class="sheet-header">
+    <text class="sheet-title">发送预约卡片</text>
+    <view class="sheet-close" bindtap="closeBookingSheet">
+      <view class="sheet-close-icon"></view>
+    </view>
+  </view>
+  <view class="sheet-body">
+    <view wx:if="{{recentOrders.length > 0}}" class="order-select-list">
+      <view wx:for="{{recentOrders}}" wx:key="id" class="order-select-item" bindtap="sendOrderCard" data-id="{{item.id}}">
+        <view class="order-select-accent"></view>
+        <view class="order-select-info">
+          <text class="order-select-name">{{item.serviceName}}</text>
+          <text class="order-select-detail">{{item.dateStr}} {{item.timeStr}} · {{item.statusText}}</text>
+        </view>
+        <text class="order-select-send">发送</text>
+      </view>
+    </view>
+    <view wx:else class="empty-orders">
+      <view class="empty-orders-icon"></view>
+      <text class="empty-orders-text">暂无预约记录</text>
+      <view class="go-booking-btn" bindtap="goBooking">去预约</view>
+    </view>
   </view>
 </view>
