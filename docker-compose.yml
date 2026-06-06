@@ -7,7 +7,7 @@ services:
     env_file: ./backend/.env.production
     volumes:
       - backend_db:/app/data
-      # 图片存储已迁移到阿里云 OSS，不再需要 uploads volume
+      - ./backend/uploads:/app/uploads  # bind mount，rsync 同步后容器立即可见；迁移 OSS 完成后可移除
     expose:
       - "3000"
     ports:

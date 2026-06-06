@@ -22,7 +22,7 @@ COPY --from=builder /app/dist ./dist
 COPY prisma ./prisma
 RUN npx prisma generate
 
-RUN mkdir -p data
+RUN mkdir -p data uploads
 
 EXPOSE 3000
 
