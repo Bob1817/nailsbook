@@ -11,6 +11,7 @@ import Home from './pages/Home';
 import OrderList from './pages/OrderList';
 import CreateOrder from './pages/CreateOrder';
 import OrderDetail from './pages/OrderDetail';
+import Discover from './pages/Discover';
 import DesignList from './pages/DesignList';
 import CreateDesign from './pages/CreateDesign';
 import DesignDetail from './pages/DesignDetail';
@@ -76,6 +77,7 @@ function AppRoutes() {
           <Route path="/orders" element={<OrderList />} />
           <Route path="/orders/create" element={<CreateOrder />} />
           <Route path="/orders/:id" element={<OrderDetail />} />
+          <Route path="/discover" element={<Discover />} />
           <Route path="/designs" element={<DesignList />} />
           <Route path="/designs/create" element={<CreateDesign />} />
           <Route path="/designs/customize" element={<CustomizeDesign />} />

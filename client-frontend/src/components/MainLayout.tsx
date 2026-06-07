@@ -39,11 +39,12 @@ const MainLayout: React.FC = () => {
       ),
     },
     {
-      key: '/designs',
-      label: '设计',
+      key: '/discover',
+      label: '发现',
       icon: (active: boolean) => (
         <svg className={`w-6 h-6 ${active ? 'text-[#FF6B8A]' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={active ? 2 : 1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          <circle cx="12" cy="12" r="9" strokeWidth={active ? 2 : 1.5} />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={active ? 2 : 1.5} d="M14.83 9.17l-1.06 4.6-4.6 1.06 1.06-4.6 4.6-1.06z" />
         </svg>
       ),
     },
@@ -74,7 +75,7 @@ const MainLayout: React.FC = () => {
     return location.pathname.startsWith(path);
   };
 
-  const primaryTabPaths = new Set(['/home', '/orders', '/designs', '/chat', '/profile']);
+  const primaryTabPaths = new Set(['/home', '/orders', '/discover', '/chat', '/profile']);
   const showTabBar = primaryTabPaths.has(location.pathname);
 
   return (

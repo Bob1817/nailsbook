@@ -364,8 +364,8 @@ export const SchedulePage: React.FC = () => {
 
       </div>
 
-      {/* ===== 可滚动区域：行程列表 ===== */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-lg pb-24">
+      {/* ===== 可滚动区域：行程列表（底部留出 TabBar 高度 + 安全区，避免最后一条被遮挡） ===== */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-lg pb-[calc(3.5rem+env(safe-area-inset-bottom)+1.5rem)]">
       {/* ===== Section 3: 行程/预约列表 ===== */}
       <div className="mb-3 flex gap-6 border-b border-gray-100">
         {([['trips', '今日行程'], ['all', '今日预约']] as const).map(([key, label]) => (

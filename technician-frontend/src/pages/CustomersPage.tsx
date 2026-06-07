@@ -194,8 +194,8 @@ export const CustomersPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 可滚动内容：客户卡片列表 */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-6">
+      {/* 可滚动内容：客户卡片列表（底部留出 TabBar 高度 + 安全区，避免最后一条被遮挡） */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-[calc(3.5rem+env(safe-area-inset-bottom)+1.5rem)]">
         {isLoading ? (
           <div className="space-y-1">
             {Array.from({ length: 5 }).map((_, i) => (

@@ -2,13 +2,12 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/feedback/ToastProvider';
-import { ServiceTypeSetupModal } from '../components/ServiceTypeSetupModal';
 import { Card } from '../components/base/Card';
 import { ordersService } from '../services/orders';
 import { customersService } from '../services/customers';
 import { uploadService } from '../services/upload';
 import { buildDashboardSummary, formatMoney, type TechnicianOrder, type TechnicianCustomerSummary } from '../services/technicianData';
-import type { ServiceTypeSettings, ServiceSchedule, WorkTimeScheme } from '../contexts/authTypes';
+import type { ServiceSchedule, WorkTimeScheme } from '../contexts/authTypes';
 import { normalizeSchedule, daysSummary, genId } from '../utils/workSchedule';
 import { SchemeEditorModal } from '../components/SchemeEditorModal';
 import { RestDayCalendar } from '../components/RestDayCalendar';
@@ -110,11 +109,11 @@ const WorkScheduleModal: React.FC<WorkScheduleModalProps> = ({ onClose, technici
   return (
     <div className="fixed inset-0 z-[300] flex items-end justify-center bg-black/50" onClick={onClose}>
       <div
-        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-[20px] bg-white"
+        className="max-h-[90dvh] w-full max-w-md flex flex-col rounded-t-[20px] bg-white"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white px-5 py-3.5">
+        <div className="shrink-0 flex items-center justify-between border-b border-gray-100 bg-white px-5 py-3.5">
           <h2 className="text-lg font-bold text-gray-900">工作时间设置</h2>
           <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
             <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -123,8 +122,8 @@ const WorkScheduleModal: React.FC<WorkScheduleModalProps> = ({ onClose, technici
           </button>
         </div>
 
-        {/* Content */}
-        <div className="px-5 pt-5 space-y-4">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto px-5 pt-5 pb-4 space-y-4">
           {/* Add Scheme Button */}
           <button
             type="button"
@@ -225,13 +224,18 @@ const WorkScheduleModal: React.FC<WorkScheduleModalProps> = ({ onClose, technici
               <p className="text-[13px] text-[#7f7681]">暂无设置休息日</p>
             )}
           </Card>
+        </div>
 
-          {/* Save Button */}
+        {/* Sticky Footer Save Button */}
+        <div
+          className="shrink-0 px-5 pt-3 border-t border-gray-50 bg-white"
+          style={{ paddingBottom: 'max(20px, env(safe-area-inset-bottom, 20px))' }}
+        >
           <button
             type="button"
             disabled={saving}
             onClick={handleSave}
-            className="w-full min-h-[52px] rounded-[18px] bg-[#FF5E93] text-[15px] font-semibold text-white shadow-[0_8px_20px_rgba(255,94,147,0.25)] active:bg-[#e54e82] disabled:opacity-60 mb-5"
+            className="w-full min-h-[52px] rounded-[18px] bg-[#FF5E93] text-[15px] font-semibold text-white shadow-[0_8px_20px_rgba(255,94,147,0.25)] active:bg-[#e54e82] disabled:opacity-60"
           >
             {saving ? '保存中...' : '保存工作时间'}
           </button>
@@ -280,11 +284,10 @@ const settings = [
 export const MePage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { technician, logout, updateServiceType, updateTechnicianProfile } = useAuth();
+  const { technician, logout, updateTechnicianProfile } = useAuth();
   const toast = useToast();
   const [orders, setOrders] = useState<TechnicianOrder[]>([]);
   const [customers, setCustomers] = useState<TechnicianCustomerSummary[]>([]);
-  const [showServiceTypeModal, setShowServiceTypeModal] = useState(false);
   const [showAvatarViewer, setShowAvatarViewer] = useState(false);
   const [showWorkScheduleModal, setShowWorkScheduleModal] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -382,7 +385,7 @@ export const MePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-full overflow-x-hidden bg-[#fff9f8] pb-24">
+    <div className="min-h-full overflow-x-hidden bg-[#fff9f8] pb-[calc(3.5rem+env(safe-area-inset-bottom)+1.5rem)]">
       <div className="relative overflow-hidden bg-[linear-gradient(135deg,#ff8aa0_0%,#ff9ab0_52%,#ffc8b2_100%)] px-5 pb-10 pt-12">
         <div className="absolute inset-y-0 right-[-14%] w-48 rounded-full bg-white/[0.08] blur-3xl" />
         <div className="absolute left-[-18%] top-10 h-24 w-40 rounded-full bg-white/[0.08] blur-3xl" />
@@ -635,29 +638,6 @@ export const MePage: React.FC = () => {
               </div>
             </div>
           </div>
-          <button
-            onClick={() => setShowServiceTypeModal(true)}
-            className="flex w-full items-center gap-3 border-b border-gray-50 px-4 py-3.5 text-left transition-colors active:bg-gray-50"
-          >
-            <span className={iconPlateClassName}>🛠️</span>
-            <div className="flex-1">
-              <span className="text-left text-gray-700">服务类型设置</span>
-              <div className="mt-1 flex gap-2">
-                {technician?.homeService && (
-                  <span className="text-[10px] px-1.5 py-0.5 bg-[#ffe9f0] text-pink-500 rounded">上门</span>
-                )}
-                {technician?.shopService && (
-                  <span className="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-500 rounded">到店</span>
-                )}
-                {!technician?.homeService && !technician?.shopService && (
-                  <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-400 rounded">未设置</span>
-                )}
-              </div>
-            </div>
-            <svg className="h-5 w-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
           {settings.map((item) => (
             <button
               key={item.label}
@@ -672,22 +652,6 @@ export const MePage: React.FC = () => {
             </button>
           ))}
         </Card>
-
-        {/* Service Type Setup Modal */}
-        <ServiceTypeSetupModal
-          isOpen={showServiceTypeModal}
-          isForceSetup={false}
-          onClose={() => setShowServiceTypeModal(false)}
-          onSubmit={async (settings: ServiceTypeSettings) => {
-            await updateServiceType(settings);
-            setShowServiceTypeModal(false);
-          }}
-          existingShops={technician?.shopAddresses || []}
-          onNavigateToShop={() => {
-            setShowServiceTypeModal(false);
-            navigate('/shops');
-          }}
-        />
 
         <button
           onClick={logout}

@@ -61,13 +61,23 @@ const DesignList: React.FC = () => {
     <div className="min-h-full bg-[linear-gradient(180deg,#fff8fa_0%,#f8f9fc_24%,#f5f6f8_100%)]">
       {/* Header */}
       <div className="sticky top-0 z-10 border-b border-white/60 bg-white/82 px-5 app-header-safe pb-4 backdrop-blur-md">
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]">Design Requests</p>
-          <div className="mt-0.5 flex items-center justify-between">
-            <h1 className="text-[1.75rem] font-bold tracking-[-0.03em] text-[var(--color-text)]">我的设计</h1>
-            <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm ring-1 ring-black/5">
-              {designs.length} 条记录
-            </span>
+        <div className="flex items-start gap-3">
+          <button
+            onClick={() => navigate('/profile')}
+            className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary-soft)] active:scale-[0.97]"
+          >
+            <svg className="h-5 w-5 text-[var(--color-text)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]">Design Requests</p>
+            <div className="mt-0.5 flex items-center justify-between">
+              <h1 className="text-[1.75rem] font-bold tracking-[-0.03em] text-[var(--color-text)]">我的设计</h1>
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm ring-1 ring-black/5">
+                {designs.length} 条记录
+              </span>
+            </div>
           </div>
         </div>
       </div>
