@@ -22,6 +22,20 @@ export class ArtistApplicationsService {
     });
   }
 
+  async checkPhone(
+    phone: string,
+  ): Promise<{ status: 'none' | 'pending' | 'approved' }> {
+    const application = await this.prisma.artistApplication.findFirst({
+      where: { phone },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!application) return { status: 'none' };
+    if (application.status === 'approved') return { status: 'approved' };
+    if (application.status === 'pending') return { status: 'pending' };
+    // rejected → 允许重新申请
+    return { status: 'none' };
+  }
+
   async findAll(page = 1, limit = 20, status?: string) {
     const where = status ? { status } : {};
     const [data, total] = await Promise.all([

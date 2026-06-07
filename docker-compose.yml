@@ -48,6 +48,17 @@ services:
     networks:
       - internal
 
+  # 官网（静态 SPA，内部 nginx 提供服务）
+  website:
+    build:
+      context: ./website
+      dockerfile: Dockerfile
+    restart: always
+    expose:
+      - "80"
+    networks:
+      - internal
+
   nginx:
     image: nginx:alpine
     restart: always
@@ -63,6 +74,7 @@ services:
       - client-web
       - admin-web
       - tech-web
+      - website
     networks:
       - internal
 

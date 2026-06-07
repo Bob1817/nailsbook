@@ -1,0 +1,62 @@
+# =============================================================
+# 官网 lunails.cn（apex）+ www.lunails.cn HTTPS
+# 启用前提：已为 lunails.cn 和 www.lunails.cn 申请到证书。
+# 启用方式：去掉 .disabled 后缀，然后 docker compose restart nginx
+# =============================================================
+
+# ---- www.lunails.cn HTTPS → 301 到 apex ----
+server {
+    listen 443 ssl;
+    server_name www.lunails.cn;
+
+    ssl_certificate     /etc/letsencrypt/live/lunails.cn/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/lunails.cn/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/lunails.cn/chain.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://lunails.cn$request_uri;
+    }
+}
+
+# ---- lunails.cn HTTPS（官网） ----
+server {
+    listen 443 ssl;
+    server_name lunails.cn;
+
+    ssl_certificate     /etc/letsencrypt/live/lunails.cn/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/lunails.cn/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/lunails.cn/chain.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+
+    # ACME challenge for cert renewal
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    client_max_body_size 20m;
+
+    location /api/ {
+        proxy_pass         http://backend:3000;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        proxy_pass         http://website:80;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+    }
+}

@@ -46,7 +46,7 @@ if [ -n "$TARGET" ] && [ "$TARGET" != "all" ]; then
     # 手动指定服务
     SERVICES="$TARGET"
 elif [ "$TARGET" = "all" ]; then
-    SERVICES="backend client-web admin-web tech-web"
+    SERVICES="backend client-web admin-web tech-web website"
 else
     # 自动检测变更文件（排除 client-wxapp / mobile-flutter / docs 等非 Web 目录）
     ALL_CHANGED=$(git diff --name-only "$BEFORE" "$AFTER" 2>/dev/null || echo "")
@@ -64,9 +64,10 @@ else
     echo "$CHANGED" | grep -q "^client-frontend/"      && SERVICES="$SERVICES client-web"
     echo "$CHANGED" | grep -q "^admin-frontend/"       && SERVICES="$SERVICES admin-web"
     echo "$CHANGED" | grep -q "^technician-frontend/"  && SERVICES="$SERVICES tech-web"
+    echo "$CHANGED" | grep -q "^website/"              && SERVICES="$SERVICES website"
 
     # docker-compose 或 nginx 配置变更 → 全量重建
-    echo "$CHANGED" | grep -q "^docker-compose.yml"    && SERVICES="backend client-web admin-web tech-web"
+    echo "$CHANGED" | grep -q "^docker-compose.yml"    && SERVICES="backend client-web admin-web tech-web website"
     echo "$CHANGED" | grep -q "^deploy/nginx/"         && SERVICES="$SERVICES nginx-restart"
 
     # 如果过滤后仍无具体 Web 服务变更，跳过
@@ -130,6 +131,7 @@ check "api.lunails.cn   " "https://api.lunails.cn/api/admin/feature-flags" "401"
 check "m.lunails.cn     " "https://m.lunails.cn/"                          "200"
 check "admin.lunails.cn " "https://admin.lunails.cn/"                      "200"
 check "tech.lunails.cn  " "https://tech.lunails.cn/"                       "200"
+check "lunails.cn       " "https://lunails.cn/"                            "200"
 
 # ---------- 6. 容器状态 ----------
 log "容器状态:"

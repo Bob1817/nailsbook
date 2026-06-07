@@ -38,6 +38,14 @@ export class ArtistApplicationsController {
     return this.service.create(dto);
   }
 
+  @Get('artist-applications/check-phone')
+  @ApiOperation({ summary: '检查手机号申请状态（公开）' })
+  @ApiQuery({ name: 'phone', type: String, description: '手机号', required: true })
+  @ApiResponse({ status: 200, description: '返回手机号申请状态' })
+  checkPhone(@Query('phone') phone: string) {
+    return this.service.checkPhone(phone);
+  }
+
   @Get('admin/artist-applications')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '获取艺术家申请列表' })
