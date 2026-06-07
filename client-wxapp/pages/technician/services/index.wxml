@@ -1,11 +1,6 @@
 <nav-bar title="服务管理" showBack/>
 <view class="container">
 
-  <!-- 页面标题区 -->
-  <view class="page-header">
-    <text class="page-title">服务管理</text>
-    <text class="page-subtitle">管理你提供的美甲服务项目</text>
-  </view>
 
   <!-- 空状态 -->
   <view wx:if="{{services.length === 0 && !loading}}" class="empty">

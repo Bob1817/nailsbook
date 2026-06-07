@@ -821,7 +821,9 @@ export class ClientOrdersService {
 
   private orderInclude() {
     return {
-      technician: { select: { id: true, name: true, phone: true } },
+      technician: {
+        select: { id: true, name: true, phone: true, avatarUrl: true },
+      },
       customer: { select: { id: true, name: true, phone: true } },
       clientAddress: {
         select: {

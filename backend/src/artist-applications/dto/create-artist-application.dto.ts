@@ -32,6 +32,11 @@ export class CreateArtistApplicationDto {
   @IsOptional()
   specialty?: string;
 
+  @ApiPropertyOptional({ description: '微信号（用于发放激活码）', example: 'wxid_abc123' })
+  @IsString()
+  @IsOptional()
+  wechat?: string;
+
   @ApiPropertyOptional({ description: '备注说明' })
   @IsString()
   @IsOptional()

@@ -1,38 +1,32 @@
-<nav-bar title="点赞" showBack/>
-<view class="container">
+<nav-bar title="我的点赞" showBack/>
+<view class="page">
+
   <view wx:if="{{loading}}" class="loading-wrap">
     <view class="loading-spinner"></view>
   </view>
 
   <view wx:elif="{{works.length === 0}}" class="empty-wrap">
-    <view class="menu-icon empty-icon"></view>
+    <view class="empty-icon"><view class="empty-heart"></view></view>
     <text class="empty-title">还没有点赞的作品</text>
     <text class="empty-desc">去发现喜欢的美甲作品并点赞吧</text>
     <view class="go-btn" bindtap="goWorks">去浏览</view>
   </view>
 
-  <view wx:else class="grid">
-    <view
-      wx:for="{{works}}"
-      wx:key="id"
-      class="work-card"
-      bindtap="viewWork"
-      data-id="{{item.id}}"
-    >
-      <view class="work-img-wrap">
-        <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="work-img" />
-        <view wx:else class="work-img-placeholder">
-          <view class="menu-icon placeholder-icon"></view>
-        </view>
-        <view class="like-badge">
-          <view class="menu-icon like-icon"></view>
-          <text class="like-count">{{item.likeCount}}</text>
+  <view wx:else class="waterfall-wrap">
+    <view class="waterfall">
+      <!-- 左列 -->
+      <view class="col">
+        <view wx:for="{{leftCol}}" wx:key="id" class="w-card {{item.aspect}}" bindtap="viewWork" data-id="{{item.id}}">
+          <work-card work="{{item}}"/>
         </view>
       </view>
-      <view class="work-meta">
-        <text class="tech-name">{{item.technicianName}}</text>
-        <text class="work-title">{{item.title}}</text>
+      <!-- 右列 -->
+      <view class="col">
+        <view wx:for="{{rightCol}}" wx:key="id" class="w-card {{item.aspect}}" bindtap="viewWork" data-id="{{item.id}}">
+          <work-card work="{{item}}"/>
+        </view>
       </view>
     </view>
   </view>
+
 </view>

@@ -197,26 +197,27 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 }
 
 /* 预约记录 */
-.order-list { display: flex; flex-direction: column; }
-.order-item {
+.order-list { display: flex; flex-direction: column; gap: 16rpx; }
+
+.order-card {
+  background: #f9f4f6;
+  border-radius: 20rpx;
+  padding: 24rpx 28rpx;
+}
+
+.order-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 22rpx 0;
-  border-bottom: 1rpx solid #f5f0f3;
+  margin-bottom: 14rpx;
 }
-.order-item:last-child { border-bottom: none; }
-.order-item:active { opacity: 0.7; }
+.order-date { font-size: 24rpx; color: #6b7280; }
 
-.order-left { display: flex; flex-direction: column; gap: 6rpx; min-width: 0; }
-.order-no { font-size: 26rpx; font-weight: 600; color: #1f2937; }
-.order-date { font-size: 22rpx; color: #6b7280; }
-
-.order-right { display: flex; align-items: center; gap: 12rpx; flex-shrink: 0; }
 .order-status {
-  padding: 6rpx 40rpx;
+  padding: 6rpx 20rpx;
   border-radius: 999rpx;
   font-size: 20rpx; font-weight: 600;
+  flex-shrink: 0;
 }
 .tone-orange  { background: #fff2dc; color: #c97f1a; }
 .tone-purple  { background: #f0e9ff; color: #7c5dd4; }
@@ -226,7 +227,48 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 .tone-sky     { background: #dbecff; color: #1f6dd6; }
 .tone-gray    { background: #f4f5f7; color: #8a8f98; }
 .tone-red     { background: #ffe5e6; color: #c5333d; }
-.order-arrow { font-size: 34rpx; color: #9ca3af; }
+
+.order-mid {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 20rpx;
+}
+.order-type {
+  flex-shrink: 0;
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+  font-size: 20rpx; font-weight: 600;
+}
+.type-home { background: #e3f6ec; color: #067b4a; }
+.type-shop { background: #dbecff; color: #1f6dd6; }
+.order-svc-name {
+  font-size: 28rpx; font-weight: 500; color: #1f2937;
+  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.order-bot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.order-price {
+  font-size: 32rpx; font-weight: 700; color: #ff6b8a;
+}
+.order-price-pending {
+  font-size: 26rpx; font-weight: 500; color: #9ca3af;
+}
+.order-detail-btn {
+  height: 56rpx;
+  padding: 0 32rpx;
+  border-radius: 999rpx;
+  background: #fff;
+  color: #ff6b8a;
+  font-size: 24rpx; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  border: 1rpx solid #ffd0de;
+}
+.order-detail-btn:active { opacity: 0.7; }
 
 /* ===== 底部操作 ===== */
 .bottom-actions {

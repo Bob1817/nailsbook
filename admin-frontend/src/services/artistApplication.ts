@@ -5,6 +5,7 @@ export interface ArtistApplication {
   name: string;
   phone: string;
   city: string;
+  wechat?: string | null;
   serviceMode?: string | null;
   experience?: string | null;
   specialty?: string | null;

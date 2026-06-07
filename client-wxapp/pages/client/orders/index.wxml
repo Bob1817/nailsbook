@@ -1,8 +1,20 @@
-<nav-bar title="我的预约" showBack/>
+<nav-bar title="我的预约"/>
 <view class="page">
-  <!-- 固定头部：状态标签 + 发起预约横幅 -->
-  <view class="header">
-    <!-- 状态标签 -->
+
+  <!-- ===== 顶部 Hero ===== -->
+  <view class="page-hero">
+    <view class="hero-left">
+      <text class="hero-count">{{orderCount}}</text>
+      <text class="hero-unit">条预约</text>
+    </view>
+    <view class="hero-cta" bindtap="createOrder">
+      <text class="hero-cta-plus">＋</text>
+      <text class="hero-cta-text">发起预约</text>
+    </view>
+  </view>
+
+  <!-- ===== 吸顶 Tabs（满屏宽，超出横向滚动）===== -->
+  <view class="tabs-bar" style="top: {{navBarHeight}}px;">
     <scroll-view scroll-x class="tab-scroll" enhanced show-scrollbar="{{false}}">
       <view class="tab-list">
         <view
@@ -14,36 +26,28 @@
         >{{item.label}}</view>
       </view>
     </scroll-view>
-
-    <!-- CTA 发起预约横幅 -->
-    <view class="cta-banner" bindtap="createOrder">
-      <view class="cta-accent"></view>
-      <view class="cta-inner">
-        <view class="cta-left">
-          <text class="cta-title">发起预约</text>
-          <text class="cta-desc">选择时间、服务与地址，快速安排你的下一次美甲</text>
-        </view>
-        <view class="cta-arrow">→</view>
-      </view>
-    </view>
   </view>
 
-  <!-- 预约列表 -->
+  <!-- ===== 列表区（原生页面滚动）===== -->
   <view class="list-area">
+
     <!-- 骨架屏 -->
-    <view wx:if="{{loading && orders.length === 0}}" class="skeleton-list">
+    <view wx:if="{{loading && orders.length === 0}}" class="skel-list">
       <view wx:for="{{[1,2,3]}}" wx:key="*this" class="skel-card"></view>
     </view>
 
     <!-- 空状态 -->
-    <view wx:elif="{{!loading && orders.length === 0}}" class="empty-card">
-      <view class="empty-icon-wrap">
-        <view class="empty-icon-dot"></view>
+    <view wx:elif="{{!loading && orders.length === 0}}" class="empty-wrap">
+      <view class="empty-art">
+        <view class="empty-ring"></view>
+        <view class="empty-dot"></view>
       </view>
-      <text class="empty-title">暂无预约</text>
+      <text class="empty-ttl">{{currentStatus ? '该状态下暂无预约' : '还没有预约记录'}}</text>
+      <text class="empty-sub">和你的美甲师约一次，让指尖绽放美丽</text>
+      <view wx:if="{{!currentStatus}}" class="empty-cta" bindtap="createOrder">发起第一个预约</view>
     </view>
 
-    <!-- 预约卡片列表 -->
+    <!-- 预约卡片列表（与首页「我的预约」卡片统一）-->
     <view wx:else class="order-list">
       <view
         wx:for="{{orders}}"
@@ -52,45 +56,59 @@
         bindtap="viewOrder"
         data-id="{{item.id}}"
       >
-        <view class="card-accent"></view>
-        <view class="card-body">
-          <!-- 顶部：状态 -->
-          <view class="card-top">
+        <view class="order-accent"></view>
+        <view class="order-card-content">
+          <!-- 顶部：美甲师 + 状态 -->
+          <view class="order-card-top">
+            <view class="otc-tech">
+              <view wx:if="{{item.techAvatar}}" class="otc-avatar-wrap">
+                <image src="{{item.techAvatar}}" mode="aspectFill" class="otc-avatar"/>
+              </view>
+              <view wx:else class="otc-avatar-ph">
+                <text class="otc-avatar-char">{{item.techName ? item.techName[0] : '美'}}</text>
+              </view>
+              <text class="otc-name">{{item.techName || '美甲师'}}</text>
+            </view>
             <view class="status-badge {{item._statusClass}}">{{item.statusText}}</view>
           </view>
 
-          <!-- 主体：日期块 + 详情 -->
-          <view class="card-main">
-            <view class="date-block">
-              <text class="date-day">{{item._dayText}}</text>
-              <text class="date-sub">{{item._monthText}}</text>
+          <!-- 内容：日期 + 详情 -->
+          <view class="order-card-body">
+            <view class="order-date-box">
+              <text class="order-date-day">{{item._dayText}}</text>
+              <text class="order-date-sub">{{item._monthText}}</text>
             </view>
-            <view class="detail-col">
-              <text class="detail-title">{{item._titleText}}</text>
-              <view class="detail-row" wx:if="{{item._timeRangeText}}">
-                <view class="detail-dot detail-dot-time"></view>
-                <text class="detail-text">{{item._timeRangeText}}</text>
+            <view class="order-details">
+              <text class="order-service-name">{{item._titleText}}</text>
+              <view wx:if="{{item._timeRangeText}}" class="order-detail-row">
+                <view class="info-icon info-icon-time"></view>
+                <text class="order-detail-text">{{item._timeRangeText}}</text>
               </view>
-              <view class="detail-row">
-                <view class="detail-dot detail-dot-loc"></view>
-                <text class="detail-text truncate-text">{{item._addressText}}</text>
-              </view>
-              <view class="detail-footer">
-                <text wx:if="{{item.quotePrice}}" class="quote-pill">报价 ¥{{item._priceText}}</text>
-                <text wx:elif="{{item._footerText}}" class="footer-hint">{{item._footerText}}</text>
+              <view class="order-detail-row">
+                <view class="info-icon info-icon-loc"></view>
+                <text class="order-detail-text order-detail-truncate">{{item._addressText}}</text>
               </view>
             </view>
           </view>
 
-          <!-- 卡片底部操作（报价待确认） -->
-          <view wx:if="{{item.status === 'quoted'}}" class="card-actions" catchtap="">
-            <view class="action-btn action-reject" catchtap="rejectQuote" data-id="{{item.id}}">拒绝</view>
-            <view class="action-btn action-accept" catchtap="acceptQuote" data-id="{{item.id}}">接受报价</view>
+          <!-- 底部：价格 / 报价操作 -->
+          <view class="order-card-foot">
+            <view class="foot-left">
+              <text wx:if="{{item.quotePrice}}" class="price-tag">¥{{item._priceText}}</text>
+              <text wx:elif="{{item.status === 'pending_quote'}}" class="foot-hint">等待美甲师报价中…</text>
+              <text wx:elif="{{item.status === 'pending_confirm' || item.status === 'pending_agree'}}" class="foot-hint">等待美甲师确认中…</text>
+            </view>
+            <view wx:if="{{item.status === 'quoted'}}" class="foot-actions" catchtap="noop">
+              <view class="act-btn act-reject" catchtap="rejectQuote" data-id="{{item.id}}">拒绝</view>
+              <view class="act-btn act-accept" catchtap="acceptQuote" data-id="{{item.id}}">接受报价</view>
+            </view>
+            <text wx:else class="foot-arrow">›</text>
           </view>
         </view>
       </view>
     </view>
+
   </view>
 </view>
 
-<tab-bar selected="orders" />
+<tab-bar selected="orders"/>

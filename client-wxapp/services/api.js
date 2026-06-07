@@ -1,4 +1,4 @@
-// 所有路径以 /api 为全局前缀（后端 setGlobalPrefix('api')）
+// ========== 所有路径以 /api 为全局前缀（后端 setGlobalPrefix('api')）==========
 // 客户端：/api/client/...   技师端：/api/technician/...
 
 const api = require('../utils/request');
@@ -87,11 +87,15 @@ const client = {
 
   addresses: {
     list: () => api.get(`${C}/addresses`),
-    detail: (id) => api.get(`${C}/addresses/${id}`),
+    // 后端无单条详情路由，改用列表按 id 查找
+    detail: (id) => api.get(`${C}/addresses`).then((res) => {
+      const arr = res.list || res.data || res || [];
+      return arr.find((a) => String(a.id) === String(id)) || null;
+    }),
     create: (data) => api.post(`${C}/addresses`, data),
     update: (id, data) => api.patch(`${C}/addresses/${id}`, data),
     delete: (id) => api.del(`${C}/addresses/${id}`),
-    setDefault: (id) => api.patch(`${C}/addresses/${id}/set-default`, {})
+    setDefault: (id) => api.post(`${C}/addresses/${id}/default`, {})
   },
 
   designs: {
@@ -108,6 +112,10 @@ const client = {
     list: (params) => api.get(`${C}/custom-service-requests`, params),
     detail: (id) => api.get(`${C}/custom-service-requests/${id}`),
     create: (data) => api.post(`${C}/custom-service-requests`, data)
+  },
+
+  feedback: {
+    create: (data) => api.post(`${C}/feedback`, data)
   }
 };
 

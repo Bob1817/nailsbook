@@ -1,16 +1,21 @@
 <nav-bar title="消息"/>
 <view class="page">
-  <!-- 固定头部 -->
-  <view class="header">
-    <view class="header-inner">
-      <span class="header-label">MESSAGES</span>
-      <view class="header-row">
-        <text class="header-title">消息</text>
-        <view class="header-badge">
-          <text class="header-badge-text">{{unreadCount > 0 ? unreadCount + ' 条未读' : conversationCount + ' 个会话'}}</text>
+  <!-- 固定 Tab 栏 -->
+  <view class="tabs-bar">
+    <scroll-view scroll-x class="tab-scroll" enhanced show-scrollbar="{{false}}">
+      <view class="tab-bar-inner">
+        <view
+          wx:for="{{tabs}}"
+          wx:key="value"
+          class="tab-pill {{activeTab === item.value ? 'tab-pill-active' : ''}}"
+          bindtap="onTabChange"
+          data-tab="{{item.value}}"
+        >
+          <text class="tab-label">{{item.label}}</text>
+          <text class="tab-count">{{item.count}}</text>
         </view>
       </view>
-    </view>
+    </scroll-view>
   </view>
 
   <!-- 可滚动内容区 -->
@@ -28,22 +33,6 @@
       </view>
 
       <block wx:else>
-        <!-- Tab 栏 -->
-        <scroll-view scroll-x class="tab-scroll" enhanced show-scrollbar="{{false}}">
-          <view class="tab-bar">
-            <view
-              wx:for="{{tabs}}"
-              wx:key="value"
-              class="tab-pill {{activeTab === item.value ? 'tab-pill-active' : ''}}"
-              bindtap="onTabChange"
-              data-tab="{{item.value}}"
-            >
-              <text class="tab-label">{{item.label}}</text>
-              <text class="tab-count">{{item.count}}</text>
-            </view>
-          </view>
-        </scroll-view>
-
         <!-- 消息列表 -->
         <view wx:if="{{filteredItems.length > 0}}" class="msg-list">
           <view

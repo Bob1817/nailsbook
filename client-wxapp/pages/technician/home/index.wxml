@@ -26,7 +26,10 @@
       </view>
 
       <view class="share-wrap">
-        <text class="share-icon-char">↗</text>
+        <view class="share-inner">
+          <view class="share-icon-svg"></view>
+          <text class="share-label">分享名片</text>
+        </view>
         <button class="share-cover" open-type="share"></button>
       </view>
     </view>
@@ -118,62 +121,6 @@
 
     <view wx:else class="empty-soft">今日待办已清空，可以专心服务客户。</view>
   </view>
-
-  <!-- ===== 今日行程 ===== -->
-  <view class="card schedule-card">
-    <view class="card-head">
-      <view>
-        <text class="card-title">今日行程</text>
-        <text class="card-sub">{{todayLabel}}</text>
-      </view>
-      <view class="card-more" bindtap="navigateToOrders">查看全部</view>
-    </view>
-
-    <view wx:if="{{loading}}" class="skeleton-list">
-      <view wx:for="{{[1,2,3]}}" wx:key="*this" class="skeleton-row"></view>
-    </view>
-
-    <view wx:elif="{{todayOrders.length > 0}}" class="schedule-list">
-      <view
-        wx:for="{{todayOrders}}"
-        wx:key="id"
-        class="schedule-item"
-        bindtap="openOrderDetail"
-        data-id="{{item.id}}"
-      >
-        <view class="sch-time-col">
-          <text class="sch-time">{{item._clock}}</text>
-          <text class="sch-state {{item._stateTone}}">{{item._stateLabel}}</text>
-        </view>
-        <view class="sch-customer">
-          <view class="sch-avatar">
-            <image wx:if="{{item.customerAvatar}}" src="{{item.customerAvatar}}" mode="aspectFill" class="sch-avatar-img" />
-            <text wx:else class="sch-avatar-char">{{item.customerName[0]}}</text>
-          </view>
-        </view>
-        <view class="sch-info">
-          <view class="sch-info-top">
-            <text class="sch-name">{{item.customerName}}</text>
-            <text class="tag {{item._typeClass}}">{{item._typeLabel}}</text>
-          </view>
-          <text class="sch-svc">{{item.serviceName}}</text>
-          <text class="sch-addr">{{item._fullAddress}}</text>
-          <view class="sch-actions">
-            <view class="mini-btn mini-primary" catchtap="navigateToAddress" data-order-id="{{item.id}}">
-              <text>🧭 去导航</text>
-            </view>
-            <view class="mini-btn mini-ghost" catchtap="contactCustomer" data-phone="{{item.customerPhone}}">
-              <text>📞 联系客户</text>
-            </view>
-          </view>
-        </view>
-        <text class="sch-price">{{item._priceText}}</text>
-      </view>
-    </view>
-
-    <view wx:else class="empty-soft">今天还没有新的预约安排</view>
-  </view>
-
 
   <!-- ===== 热门作品 ===== -->
   <view class="card works-card">

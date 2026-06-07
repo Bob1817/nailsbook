@@ -1,8 +1,9 @@
 const CLIENT_TABS = [
-  { key: 'home',    icon: '🏠', label: '首页',  path: '/pages/client/home/index' },
-  { key: 'orders',  icon: '📅', label: '预约',  path: '/pages/client/orders/index' },
-  { key: 'chat',    icon: '💬', label: '消息',  path: '/pages/client/chat/index' },
-  { key: 'profile', icon: '👤', label: '我的',  path: '/pages/client/profile/index' }
+  { key: 'home',     icon: '🏠', label: '首页',  path: '/pages/client/home/index' },
+  { key: 'orders',   icon: '📅', label: '预约',  path: '/pages/client/orders/index' },
+  { key: 'discover', icon: '✨', label: '发现',  path: '/pages/client/discover/index' },
+  { key: 'chat',     icon: '💬', label: '消息',  path: '/pages/client/chat/index' },
+  { key: 'profile',  icon: '👤', label: '我的',  path: '/pages/client/profile/index' }
 ];
 
 const TECHNICIAN_TABS = [

@@ -37,9 +37,14 @@ Page({
   data: {
     userInfo: {},
     isAccepting: false,
-    stats: { todayOrders: 0, customers: 0, works: 0 },
+    stats: { todayOrders: 0, monthOrders: 0, pendingTotal: 0, customers: 0, newCustomers: 0, works: 0 },
     orderShortcuts: ORDER_SHORTCUTS.map((s) => ({ ...s, count: 0 })),
     tools: TOOLS,
+
+    // 新手引导
+    needsSetup: false,       // homeService 和 shopService 均未配置时显示引导卡
+    homeServiceOn: false,    // 控制工具格子状态点
+    shopServiceOn: false,
 
     // 工作时间设置
     showScheduleModal: false,
@@ -80,7 +85,10 @@ Page({
   applyUserInfo() {
     const userInfo = wx.getStorageSync('userInfo') || wx.getStorageSync('technician_userInfo') || {};
     if (userInfo.phone) userInfo.phoneDisplay = phoneMask(userInfo.phone);
-    this.setData({ userInfo });
+    const homeServiceOn = !!userInfo.homeService;
+    const shopServiceOn = !!userInfo.shopService;
+    const needsSetup = !homeServiceOn && !shopServiceOn;
+    this.setData({ userInfo, homeServiceOn, shopServiceOn, needsSetup });
     this.computeAccepting();
   },
 
@@ -117,38 +125,62 @@ Page({
 
   // ---------- 统计 ----------
   async loadStats() {
-    const [ordersRes, customersRes, worksRes] = await Promise.all([
-      api.technician.orders.list({}).catch(() => []),
-      api.technician.customers.list({}).catch(() => []),
-      api.technician.works.list().catch(() => [])
-    ]);
+    if (this._statsLoading) return;
+    this._statsLoading = true;
+    try {
+      const [ordersRes, customersRes, worksRes] = await Promise.all([
+        api.technician.orders.list({}).catch(() => []),
+        api.technician.customers.list({}).catch(() => []),
+        api.technician.works.list().catch(() => [])
+      ]);
 
-    const orders = Array.isArray(ordersRes) ? ordersRes : (ordersRes.list || ordersRes.data || []);
-    const customers = Array.isArray(customersRes) ? customersRes : (customersRes.list || customersRes.data || []);
-    const works = Array.isArray(worksRes) ? worksRes : (worksRes.list || worksRes.data || []);
+      const orders    = Array.isArray(ordersRes)    ? ordersRes    : (ordersRes.list    || ordersRes.data    || []);
+      const customers = Array.isArray(customersRes) ? customersRes : (customersRes.list || customersRes.data || []);
+      const works     = Array.isArray(worksRes)     ? worksRes     : (worksRes.list     || worksRes.data     || []);
 
-    const now = new Date();
-    let todayOrders = 0;
-    const counts = {};
-    orders.forEach((o) => {
-      if (o.status) counts[o.status] = (counts[o.status] || 0) + 1;
-      const t = parseDate(o.startTime);
-      if (t && isSameDay(t, now) && o.status !== 'cancelled') todayOrders += 1;
-    });
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const orderShortcuts = ORDER_SHORTCUTS.map((s) => ({
-      ...s,
-      count: counts[s.status] || 0
-    }));
+      let todayOrders = 0;
+      let monthOrders = 0;
+      const counts = {};
 
-    this.setData({
-      stats: {
-        todayOrders,
-        customers: customers.length,
-        works: works.length
-      },
-      orderShortcuts
-    });
+      orders.forEach((o) => {
+        if (o.status) counts[o.status] = (counts[o.status] || 0) + 1;
+        const t = parseDate(o.startTime);
+        if (!t || o.status === 'cancelled') return;
+        if (isSameDay(t, now)) todayOrders += 1;
+        if (t >= monthStart) monthOrders += 1;
+      });
+
+      // 待处理：待报价 + 待我确认
+      const pendingTotal = (counts.pending_quote || 0) + (counts.pending_confirm || 0);
+
+      // 本月新客：以 createdAt 为准，无此字段则降级为 0
+      const newCustomers = customers.filter((c) => {
+        const t = parseDate(c.createdAt);
+        return t && t >= monthStart;
+      }).length;
+
+      const orderShortcuts = ORDER_SHORTCUTS.map((s) => ({
+        ...s,
+        count: counts[s.status] || 0
+      }));
+
+      this.setData({
+        stats: {
+          todayOrders,
+          monthOrders,
+          pendingTotal,
+          customers: customers.length,
+          newCustomers,
+          works: works.length
+        },
+        orderShortcuts
+      });
+    } finally {
+      this._statsLoading = false;
+    }
   },
 
   // ---------- 我的预约 ----------
@@ -163,6 +195,9 @@ Page({
   // ---------- 统计数据跳转 ----------
   goStatsOrders() {
     wx.reLaunch({ url: '/pages/technician/orders/index?tab=all' });
+  },
+  goStatsPending() {
+    wx.reLaunch({ url: '/pages/technician/orders/index?filter=pending' });
   },
   goStatsCustomers() {
     wx.reLaunch({ url: '/pages/technician/customers/index' });
@@ -189,6 +224,14 @@ Page({
       path: code ? `/pages/client/login/index?invite=${code}` : '/pages/role-select/index',
       imageUrl: u.avatarUrl || ''
     };
+  },
+
+  // ---------- 引导入口 ----------
+  goSetupHomeService() {
+    wx.navigateTo({ url: '/pages/technician/home-service-settings/index?from=setup' });
+  },
+  goSetupShop() {
+    wx.navigateTo({ url: '/pages/technician/shop-management/index?from=setup' });
   },
 
   // ---------- 工具 ----------

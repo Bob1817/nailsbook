@@ -19,6 +19,7 @@ import InviteKeys from './pages/InviteKeys';
 import Works from './pages/Works';
 import Comments from './pages/Comments';
 import Reports from './pages/Reports';
+import Feedback from './pages/Feedback';
 import ArtistApplications from './pages/ArtistApplications';
 
 const App: React.FC = () => {
@@ -43,6 +44,7 @@ const App: React.FC = () => {
               <Route path="works" element={<ProtectedRoute permission="work:view"><Works /></ProtectedRoute>} />
               <Route path="comments" element={<ProtectedRoute permission="comment:view"><Comments /></ProtectedRoute>} />
               <Route path="reports" element={<ProtectedRoute permission="report:view"><Reports /></ProtectedRoute>} />
+              <Route path="feedback" element={<ProtectedRoute permission="feedback:view"><Feedback /></ProtectedRoute>} />
               <Route path="applications" element={<ProtectedRoute permission="application:view"><ArtistApplications /></ProtectedRoute>} />
               <Route path="revenues" element={<ProtectedRoute permission="revenue:view"><Revenues /></ProtectedRoute>} />
               <Route path="subscriptions" element={<ProtectedRoute permission="subscription:view"><Subscriptions /></ProtectedRoute>} />

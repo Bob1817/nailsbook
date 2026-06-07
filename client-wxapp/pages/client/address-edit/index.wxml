@@ -43,8 +43,11 @@
   </view>
 
   <view class="section default-row">
-    <text class="label">设为默认地址</text>
-    <switch checked="{{isDefault}}" bindchange="onDefaultChange" color="#ff6b9d"/>
+    <view class="default-label-wrap">
+      <text class="label">设为默认地址</text>
+      <text wx:if="{{lockDefault}}" class="default-hint">默认地址不能为空，需保留一个</text>
+    </view>
+    <switch checked="{{isDefault}}" disabled="{{lockDefault}}" bindchange="onDefaultChange" color="#ff6b9d"/>
   </view>
 
   <view class="footer">

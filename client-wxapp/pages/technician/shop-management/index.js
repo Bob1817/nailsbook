@@ -12,7 +12,8 @@ Page({
     saving: false
   },
 
-  async onLoad() {
+  async onLoad(options) {
+    this._fromSetup = options.from === 'setup';
     await this.loadShops();
   },
 
@@ -62,6 +63,16 @@ Page({
       wx.showToast({ title: '保存成功', icon: 'success' });
       this.setData({ showAddModal: false });
       await this.loadShops();
+
+      // 新建店铺成功：更新缓存，从引导卡进入时自动返回
+      if (!editShop) {
+        const userInfo = wx.getStorageSync('userInfo') || {};
+        userInfo.shopService = true;
+        wx.setStorageSync('userInfo', userInfo);
+        if (this._fromSetup) {
+          setTimeout(() => wx.navigateBack(), 1500);
+        }
+      }
     } catch (err) {
       wx.hideLoading();
       wx.showToast({ title: err.message || '保存失败', icon: 'none' });

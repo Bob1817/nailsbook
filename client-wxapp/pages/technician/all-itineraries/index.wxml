@@ -1,9 +1,8 @@
 <nav-bar title="全部行程" showBack="{{true}}"/>
 <view class="page">
-  <!-- 页面头部 -->
+  <!-- 统计栏 -->
   <view class="page-header">
-    <text class="page-title">全部行程</text>
-    <text class="page-count">共 {{orders.length}} 个</text>
+    <text class="page-count">共 {{orders.length}} 个行程</text>
   </view>
 
   <!-- 行程列表 -->

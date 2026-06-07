@@ -1,11 +1,6 @@
 <nav-bar title="店铺管理" showBack/>
 <view class="container">
 
-  <!-- 页面标题区 -->
-  <view class="page-header">
-    <text class="page-title">店铺管理</text>
-    <text class="page-subtitle">管理你的美甲工作室信息</text>
-  </view>
 
   <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
 

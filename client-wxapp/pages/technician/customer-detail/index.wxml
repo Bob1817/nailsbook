@@ -88,20 +88,21 @@
     <view wx:if="{{customer.orders.length === 0}}" class="muted">暂无预约记录</view>
 
     <view wx:else class="order-list">
-      <view
-        wx:for="{{customer.orders}}"
-        wx:key="id"
-        class="order-item"
-        bindtap="goOrderDetail"
-        data-id="{{item.id}}"
-      >
-        <view class="order-left">
-          <text class="order-no">{{item.orderNo}}</text>
+      <view wx:for="{{customer.orders}}" wx:key="id" class="order-card">
+        <!-- 日期 + 状态 -->
+        <view class="order-top">
           <text class="order-date">{{item._dateStr}}</text>
-        </view>
-        <view class="order-right">
           <text class="order-status {{item._statusTone}}">{{item._statusLabel}}</text>
-          <text class="order-arrow">›</text>
+        </view>
+        <!-- 服务类型 + 服务名称 -->
+        <view class="order-mid">
+          <text class="order-type {{item._serviceTypeClass}}">{{item._serviceTypeLabel}}</text>
+          <text class="order-svc-name">{{item._serviceName}}</text>
+        </view>
+        <!-- 价格 + 查看详情 -->
+        <view class="order-bot">
+          <text class="{{item.quotePrice ? 'order-price' : 'order-price-pending'}}">{{item._priceText}}</text>
+          <view class="order-detail-btn" bindtap="goOrderDetail" data-id="{{item.id}}">查看详情</view>
         </view>
       </view>
     </view>

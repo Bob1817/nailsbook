@@ -10,18 +10,39 @@
   </view>
 
   <view class="form">
+    <!-- 姓名 -->
     <view class="field">
       <text class="label">姓名</text>
       <input class="input" value="{{name}}" bindinput="onNameInput" placeholder="请输入姓名" placeholder-class="ph" />
     </view>
+
+    <!-- 城市：省市二级联动选择 -->
     <view class="field">
       <text class="label">城市</text>
-      <input class="input" value="{{city}}" bindinput="onCityInput" placeholder="如：北京" placeholder-class="ph" />
+      <picker mode="region" value="{{cityRegion}}" bindchange="onCityChange">
+        <view class="picker-row">
+          <text class="picker-val {{cityDisplay ? '' : 'ph'}}">{{cityDisplay || '请选择城市'}}</text>
+          <view class="picker-chevron"></view>
+        </view>
+      </picker>
     </view>
+
+    <!-- 服务区域：省市区三级联动，与预约接单范围关联 -->
     <view class="field">
-      <text class="label">服务区域</text>
-      <input class="input" value="{{serviceArea}}" bindinput="onServiceAreaInput" placeholder="如：朝阳、海淀" placeholder-class="ph" />
+      <view class="field-label-row">
+        <text class="label">服务区域</text>
+        <text class="label-badge">预约服务范围</text>
+      </view>
+      <picker mode="region" value="{{serviceAreaRegion}}" bindchange="onServiceAreaChange">
+        <view class="picker-row">
+          <text class="picker-val {{serviceAreaDisplay ? '' : 'ph'}}">{{serviceAreaDisplay || '请选择服务区域'}}</text>
+          <view class="picker-chevron"></view>
+        </view>
+      </picker>
+      <text class="field-hint">此区域将关联客户预约时的可选范围</text>
     </view>
+
+    <!-- 个人简介 -->
     <view class="field field-textarea">
       <text class="label">个人简介</text>
       <textarea class="textarea" value="{{bio}}" bindinput="onBioInput" placeholder="介绍一下自己吧" placeholder-class="ph" maxlength="200" />

@@ -1,0 +1,34 @@
+<view class="wc-root">
+  <image wx:if="{{work.coverUrl}}" src="{{work.coverUrl}}" mode="aspectFill" class="wc-img" lazy-load/>
+  <view wx:else class="wc-img wc-img-empty"></view>
+  <view class="wc-gradient"></view>
+
+  <!-- 顶部：美甲师 + 点赞 -->
+  <view class="wc-top">
+    <view class="wc-tech-pill">
+      <image wx:if="{{work.technicianAvatarUrl}}" src="{{work.technicianAvatarUrl}}" mode="aspectFill" class="wc-tech-av"/>
+      <view wx:else class="wc-tech-av-ph"><text class="wc-tech-av-char">{{work.techInitial}}</text></view>
+      <text class="wc-tech-name">{{work.technicianName}}</text>
+    </view>
+    <view class="wc-like-pill">
+      <image wx:if="{{work.isLiked}}" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAUElEQVR4nGNgQAP/3cP/o2NS5PEqJBVT1TAUQ6lqIDUNG6kG0iSWqZ4OqWEo1txCjsF4DaKZgcQaSrRhxBhKsmH4DCXbMGyGUmwYsqHEqAMAvy56MytYoCsAAAAASUVORK5CYII=" class="wc-heart"/>
+      <image wx:else src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAS0lEQVR4nOXTMQ4AIAgDQP7/aV3RkKbFMtmV5hYg4soqosxhUY0VO1Ar6MR+BUe2bL9DB1p+SweG0BjIojTGoDKG0DZWoc9YRpneBsE8yGLtxtorAAAAAElFTkSuQmCC" class="wc-heart"/>
+      <text class="wc-like-num">{{work.likeCount}}</text>
+    </view>
+  </view>
+
+  <!-- 底部：标题 + 标签 + 日期 + 查看详情 -->
+  <view class="wc-bottom">
+    <text class="wc-title">{{work.title}}</text>
+    <view wx:if="{{work.tags.length > 0}}" class="wc-tags">
+      <text wx:for="{{work.tags}}" wx:for-item="tag" wx:key="*this" wx:if="{{index < 2}}" class="wc-tag">#{{tag}}</text>
+    </view>
+    <view class="wc-foot">
+      <text class="wc-date">{{work.dateStr}}</text>
+      <view class="wc-cta">
+        <view class="wc-cta-circle"></view>
+        <text class="wc-cta-text">查看详情</text>
+      </view>
+    </view>
+  </view>
+</view>

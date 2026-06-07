@@ -1,5 +1,9 @@
 {
   "navigationBarTitleText": "客户详情",
+  "navigationStyle": "custom",
   "enablePullDownRefresh": true,
-  "backgroundColor": "#FFF9F8"
+  "backgroundColor": "#FFF9F8",
+  "usingComponents": {
+    "nav-bar": "/components/nav-bar/index"
+  }
 }

@@ -1,0 +1,147 @@
+<nav-bar title="发现"/>
+<view class="page">
+
+  <!-- ===== 头部（sticky，top 由 JS 注入）===== -->
+  <view class="discover-head" style="top: {{navBarHeight}}px;">
+    <!-- 搜索栏 -->
+    <view class="search-bar" bindtap="onSearchTap">
+      <view class="search-icon"></view>
+      <text class="search-hint">搜索美甲风格、美甲师…</text>
+    </view>
+    <!-- 分类 pills -->
+    <scroll-view scroll-x class="cats-scroll" enhanced show-scrollbar="{{false}}">
+      <view class="cats-bar">
+        <view
+          wx:for="{{categories}}"
+          wx:key="*this"
+          class="cat-pill {{activeCategory === item ? 'cat-active' : ''}}"
+          bindtap="switchCategory"
+          data-cat="{{item}}"
+        >{{item}}</view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 加载骨架 -->
+  <view wx:if="{{loading && works.length === 0}}" class="waterfall skel-mode">
+    <view class="col">
+      <view wx:for="{{[1,2,3]}}" wx:key="*this" class="skel-card skel-tall"></view>
+    </view>
+    <view class="col">
+      <view wx:for="{{[1,2]}}" wx:key="*this" class="skel-card skel-mid"></view>
+    </view>
+  </view>
+
+  <!-- 空状态：无作品 -->
+  <view wx:elif="{{!loading && works.length === 0}}" class="empty-wrap">
+    <view class="empty-art">
+      <view class="empty-ring-outer"></view>
+      <view class="empty-ring-inner"></view>
+    </view>
+    <text class="empty-ttl">还没有作品可以刷</text>
+    <text class="empty-sub">绑定你的专属美甲师，即可在这里刷她发布的最新美甲作品，种草、预约一步到位</text>
+    <view class="empty-cta" bindtap="goBindTech">绑定美甲师</view>
+  </view>
+
+  <!-- 空状态：筛选为空 -->
+  <view wx:elif="{{filteredWorks.length === 0}}" class="empty-wrap">
+    <text class="empty-ttl">该风格暂无作品</text>
+    <text class="empty-sub">你的美甲师还没有发布此风格的作品</text>
+  </view>
+
+  <!-- 瀑布流 -->
+  <view wx:else class="waterfall-wrap">
+    <view class="waterfall">
+      <!-- 左列 -->
+      <view class="col">
+        <view
+          wx:for="{{leftCol}}"
+          wx:key="id"
+          class="card {{item.aspect}}"
+          bindtap="viewWork"
+          data-id="{{item.id}}"
+        >
+          <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="card-img" lazy-load/>
+          <view wx:else class="card-img card-img-empty"></view>
+          <view class="card-gradient"></view>
+          <view class="card-top">
+            <view class="card-tech-pill">
+              <image wx:if="{{item.technicianAvatarUrl}}" src="{{item.technicianAvatarUrl}}" mode="aspectFill" class="card-tech-av" binderror="onAvatarError" data-id="{{item.id}}"/>
+              <view wx:else class="card-tech-av-ph"><text class="card-tech-av-char">{{item.techInitial}}</text></view>
+              <text class="card-tech-name">{{item.technicianName}}</text>
+            </view>
+            <view class="card-like-pill" catchtap="toggleLike" data-id="{{item.id}}">
+              <image wx:if="{{item.isLiked}}" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAUElEQVR4nGNgQAP/3cP/o2NS5PEqJBVT1TAUQ6lqIDUNG6kG0iSWqZ4OqWEo1txCjsF4DaKZgcQaSrRhxBhKsmH4DCXbMGyGUmwYsqHEqAMAvy56MytYoCsAAAAASUVORK5CYII=" class="heart-icon" />
+              <image wx:else src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAS0lEQVR4nOXTMQ4AIAgDQP7/aV3RkKbFMtmV5hYg4soqosxhUY0VO1Ar6MR+BUe2bL9DB1p+SweG0BjIojTGoDKG0DZWoc9YRpneBsE8yGLtxtorAAAAAElFTkSuQmCC" class="heart-icon" />
+              <text class="card-like-num">{{item.likeCount}}</text>
+            </view>
+          </view>
+          <view class="card-bottom">
+            <text class="card-title">{{item.title}}</text>
+            <view wx:if="{{item.tags.length > 0}}" class="card-tags">
+              <text wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this" wx:if="{{index < 2}}" class="card-tag">#{{tag}}</text>
+            </view>
+            <view class="card-foot">
+              <text class="card-date">{{item.dateStr}}</text>
+              <view class="card-cta">
+                <view class="icon icon-check-circle"></view>
+                <text class="card-cta-text">查看详情</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 右列 -->
+      <view class="col">
+        <view
+          wx:for="{{rightCol}}"
+          wx:key="id"
+          class="card {{item.aspect}}"
+          bindtap="viewWork"
+          data-id="{{item.id}}"
+        >
+          <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="card-img" lazy-load/>
+          <view wx:else class="card-img card-img-empty"></view>
+          <view class="card-gradient"></view>
+          <view class="card-top">
+            <view class="card-tech-pill">
+              <image wx:if="{{item.technicianAvatarUrl}}" src="{{item.technicianAvatarUrl}}" mode="aspectFill" class="card-tech-av" binderror="onAvatarError" data-id="{{item.id}}"/>
+              <view wx:else class="card-tech-av-ph"><text class="card-tech-av-char">{{item.techInitial}}</text></view>
+              <text class="card-tech-name">{{item.technicianName}}</text>
+            </view>
+            <view class="card-like-pill" catchtap="toggleLike" data-id="{{item.id}}">
+              <image wx:if="{{item.isLiked}}" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAUElEQVR4nGNgQAP/3cP/o2NS5PEqJBVT1TAUQ6lqIDUNG6kG0iSWqZ4OqWEo1txCjsF4DaKZgcQaSrRhxBhKsmH4DCXbMGyGUmwYsqHEqAMAvy56MytYoCsAAAAASUVORK5CYII=" class="heart-icon" />
+              <image wx:else src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAS0lEQVR4nOXTMQ4AIAgDQP7/aV3RkKbFMtmV5hYg4soqosxhUY0VO1Ar6MR+BUe2bL9DB1p+SweG0BjIojTGoDKG0DZWoc9YRpneBsE8yGLtxtorAAAAAElFTkSuQmCC" class="heart-icon" />
+              <text class="card-like-num">{{item.likeCount}}</text>
+            </view>
+          </view>
+          <view class="card-bottom">
+            <text class="card-title">{{item.title}}</text>
+            <view wx:if="{{item.tags.length > 0}}" class="card-tags">
+              <text wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this" wx:if="{{index < 2}}" class="card-tag">#{{tag}}</text>
+            </view>
+            <view class="card-foot">
+              <text class="card-date">{{item.dateStr}}</text>
+              <view class="card-cta">
+                <view class="icon icon-check-circle"></view>
+                <text class="card-cta-text">查看详情</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 底部加载 / 到底了 -->
+    <view wx:if="{{loadingMore}}" class="bottom-loader">
+      <view class="spinner"></view>
+    </view>
+    <view wx:elif="{{!hasMore && works.length > 0}}" class="bottom-end">
+      <text class="bottom-end-text">— 已经到底了 —</text>
+    </view>
+  </view>
+
+</view>
+
+<tab-bar selected="discover"/>

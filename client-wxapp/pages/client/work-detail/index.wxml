@@ -18,89 +18,89 @@
     </view>
   </view>
 
-  <!-- Image Slider: 55vh -->
-  <view class="image-area">
-    <swiper class="image-swiper" current="{{currentImageIndex}}" bindchange="onImageSwiperChange" circular="{{imageUrls.length > 1}}">
-      <swiper-item wx:for="{{imageUrls}}" wx:key="index">
-        <image src="{{item}}" mode="aspectFill" class="slide-image" bindtap="openViewer" data-index="{{index}}" />
-      </swiper-item>
-    </swiper>
-    <view wx:if="{{imageUrls.length > 1}}" class="image-dots">
-      <view wx:for="{{imageUrls}}" wx:key="index" class="dot {{currentImageIndex === index ? 'dot-active' : ''}}"></view>
-    </view>
-  </view>
-
-  <!-- 白色信息面板（可上滑展开） -->
-  <view class="info-panel" style="transform: translateY({{panelOffset}}rpx); {{isDragging ? '' : 'transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);'}}">
-    <!-- 拖拽手柄 -->
-    <view class="drag-handle" bindtouchstart="onDragStart" bindtouchmove="onDragMove" bindtouchend="onDragEnd">
-      <view class="drag-bar"></view>
-    </view>
-    <!-- 标题区 -->
-    <view class="title-block">
-      <text class="work-title">{{work.title || '未命名作品'}}</text>
-      <text wx:if="{{work.description}}" class="work-desc">{{work.description}}</text>
-      <view wx:if="{{work.tags.length > 0}}" class="tags-row">
-        <text wx:for="{{work.tags}}" wx:key="*this" class="tag">#{{item}}</text>
+  <!-- 主滚动区：小红书式，整页上滑查看内容与评论 -->
+  <scroll-view class="main-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 图片 -->
+    <view class="image-area">
+      <swiper class="image-swiper" current="{{currentImageIndex}}" bindchange="onImageSwiperChange" circular="{{imageUrls.length > 1}}">
+        <swiper-item wx:for="{{imageUrls}}" wx:key="index">
+          <image src="{{item}}" mode="aspectFill" class="slide-image" bindtap="openViewer" data-index="{{index}}" />
+        </swiper-item>
+      </swiper>
+      <view wx:if="{{imageUrls.length > 1}}" class="image-dots">
+        <view wx:for="{{imageUrls}}" wx:key="index" class="dot {{currentImageIndex === index ? 'dot-active' : ''}}"></view>
       </view>
     </view>
 
-    <!-- 评论区 -->
-    <scroll-view class="comments-section" scroll-y enhanced show-scrollbar="{{false}}">
-      <view class="comments-inner">
-      <view class="comments-header">
-        <text class="comments-title">评论</text>
-        <text class="comments-count">{{comments.length}} 条</text>
+    <!-- 白色内容面板 -->
+    <view class="content-panel">
+      <!-- 标题区 -->
+      <view class="title-block">
+        <text class="work-title">{{work.title || '未命名作品'}}</text>
+        <text wx:if="{{work.description}}" class="work-desc">{{work.description}}</text>
+        <view wx:if="{{work.tags.length > 0}}" class="tags-row">
+          <text wx:for="{{work.tags}}" wx:key="*this" class="tag">#{{item}}</text>
+        </view>
       </view>
 
-      <view wx:if="{{comments.length > 0}}" class="comments-list">
-        <view wx:for="{{comments}}" wx:key="id" class="comment-item" bindtap="onTapComment" data-item="{{item}}">
-          <view class="comment-avatar-wrap">
-            <image wx:if="{{item.userAvatar}}" src="{{item.userAvatar}}" mode="aspectFill" class="comment-avatar" />
-            <view wx:else class="comment-avatar-placeholder {{item.userRole === 'technician' ? 'comment-avatar-tech' : ''}}">
-              <text class="avatar-text">{{item.userName[0] || '用'}}</text>
-            </view>
-          </view>
-          <view class="comment-body">
-            <view class="comment-bubble">
-              <view class="comment-name-row">
-                <text class="comment-name">{{item.userName || '匿名用户'}}</text>
-                <text wx:if="{{item.userRole === 'technician'}}" class="role-badge">美甲师</text>
-                <text class="comment-time">{{item.createdAtText}}</text>
+      <!-- 评论区 -->
+      <view class="comments-section">
+        <view class="comments-inner">
+        <view class="comments-header">
+          <text class="comments-title">评论</text>
+          <text class="comments-count">{{comments.length}} 条</text>
+        </view>
+
+        <view wx:if="{{comments.length > 0}}" class="comments-list">
+          <view wx:for="{{comments}}" wx:key="id" class="comment-item" bindtap="onTapComment" data-item="{{item}}">
+            <view class="comment-avatar-wrap">
+              <image wx:if="{{item.userAvatar}}" src="{{item.userAvatar}}" mode="aspectFill" class="comment-avatar" />
+              <view wx:else class="comment-avatar-placeholder {{item.userRole === 'technician' ? 'comment-avatar-tech' : ''}}">
+                <text class="avatar-text">{{item.userName[0] || '用'}}</text>
               </view>
-              <text class="comment-content">{{item.content}}</text>
             </view>
-            <view wx:if="{{item.replies.length > 0}}" class="replies-list">
-              <view wx:for="{{item.replies}}" wx:for-item="reply" wx:key="id" class="comment-item">
-                <view class="reply-avatar-wrap">
-                  <image wx:if="{{reply.userAvatar}}" src="{{reply.userAvatar}}" mode="aspectFill" class="reply-avatar" />
-                  <view wx:else class="reply-avatar-placeholder">
-                    <text class="avatar-text">{{reply.userName[0] || '用'}}</text>
-                  </view>
+            <view class="comment-body">
+              <view class="comment-bubble">
+                <view class="comment-name-row">
+                  <text class="comment-name">{{item.userName || '匿名用户'}}</text>
+                  <text wx:if="{{item.userRole === 'technician'}}" class="role-badge">美甲师</text>
+                  <text class="comment-time">{{item.createdAtText}}</text>
                 </view>
-                <view class="comment-body">
-                  <view class="comment-bubble">
-                    <view class="comment-name-row">
-                      <text class="comment-name">{{reply.userName || '匿名用户'}}</text>
-                      <text class="comment-time">{{reply.createdAtText}}</text>
+                <text class="comment-content">{{item.content}}</text>
+              </view>
+              <view wx:if="{{item.replies.length > 0}}" class="replies-list">
+                <view wx:for="{{item.replies}}" wx:for-item="reply" wx:key="id" class="comment-item">
+                  <view class="reply-avatar-wrap">
+                    <image wx:if="{{reply.userAvatar}}" src="{{reply.userAvatar}}" mode="aspectFill" class="reply-avatar" />
+                    <view wx:else class="reply-avatar-placeholder">
+                      <text class="avatar-text">{{reply.userName[0] || '用'}}</text>
                     </view>
-                    <text class="comment-content">{{reply.content}}</text>
+                  </view>
+                  <view class="comment-body">
+                    <view class="comment-bubble">
+                      <view class="comment-name-row">
+                        <text class="comment-name">{{reply.userName || '匿名用户'}}</text>
+                        <text class="comment-time">{{reply.createdAtText}}</text>
+                      </view>
+                      <text class="comment-content">{{reply.content}}</text>
+                    </view>
                   </view>
                 </view>
               </view>
             </view>
           </view>
         </view>
-      </view>
 
-      <view wx:else class="comments-empty">
-        <text class="empty-text">暂无评论，欢迎添加第一条评论</text>
+        <view wx:else class="comments-empty">
+          <text class="empty-text">暂无评论，欢迎添加第一条评论</text>
+        </view>
+        </view>
       </view>
-      </view>
-    </scroll-view>
+    </view>
+  </scroll-view>
 
-    <!-- 底部评论输入栏 + 点赞/收藏/咨询图标 -->
-    <view class="comment-input-bar">
+  <!-- 固定底部：评论输入 + 点赞/收藏/咨询/预约同款 -->
+  <view class="comment-input-bar">
       <view wx:if="{{replyingTo}}" class="reply-indicator">
         <text class="reply-indicator-text">回复 <text class="reply-indicator-name">@{{replyingTo.name}}</text></text>
         <view class="reply-cancel-btn" bindtap="cancelReply">
@@ -123,24 +123,27 @@
         <block wx:else>
           <!-- 爱心 + 数字 -->
           <view class="bar-btn bar-first" bindtap="toggleLike">
-            <image wx:if="{{work.isLiked}}" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAhCAYAAACxzQkrAAAA2ElEQVR4nN2X0Q2AIAxEoRvcTo7tTo6gXxgkqcBRBLxPA6/HtUT1TtGxbWf6DPvutfVWHF8CYIyxHKmFlKxr4UgtJLe+lSMMJCjdZ8F5tGwGCXuqoLDfijNfQm4yifujoaNxfmIJ8zrooeBjzpZhcEqI6t8JjTKFpO6jZV+bQu5try3qIa3OnEP9dUp44asJ9TKFDPe1ZTA2VcLLzhCMTJVy1hhq65RQsb84IZCmavdJTziIQ6w5Q8yp2RZTCSFTrOUS0C2DUrT1Rq4/Q7HSNEZ/ed6y/Ou4ACy3bcuB6XBuAAAAAElFTkSuQmCC" class="bar-icon-img" />
-            <image wx:else src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAhCAYAAACxzQkrAAAA1ElEQVR4nN2XQQ6FIAxEoeeb43K//1cYJKmUoQg4SwOvw7REjUFRSulXPwMQtfVenGgBMMZYjvRCLOtGONILaa0f5QgDyar3eXBuLdtBwp4qK+/34uyXUNhMEr5oKA3OTylhXgczlH3s2TIsTglF/SuhVaZQ1b217G1TaL3ttUUzpNXZc6jfTgkPfDWhWabQ4D62DM6mLLzmDMHJlJVzxlB7p4SO/eaEQJrq3Scz4SAOceYMMadmW0wlhEaxkUtAtwxK0dEbef4MlarTWP3lecnzr+MP78VkxYxKHQIAAAAASUVORK5CYII=" class="bar-icon-img" />
+            <image wx:if="{{work.isLiked}}" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2VmNDQ0NCIgZD0iTTEyIDIxLjZsLTEuNS0xLjM3QzUuMSAxNS4zNiAyIDEyLjUzIDIgOS4wNiAyIDYuMyA0LjE2IDQuMTQgNi45MiA0LjE0YzEuNTYgMCAzLjA2LjczIDQuMDQgMS44OGwxLjA0IDEuMjIgMS4wNC0xLjIyYTUuMzMgNS4zMyAwIDAgMSA0LjA0LTEuODhDMTkuODQgNC4xNCAyMiA2LjMgMjIgOS4wNmMwIDMuNDctMy4xIDYuMy04LjUgMTEuMThMMTIgMjEuNnoiLz48L3N2Zz4=" class="bar-icon-img" />
+            <image wx:else src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWNhM2FmIiBzdHJva2Utd2lkdGg9IjEuOCIgZD0iTTEyIDIxLjZsLTEuNS0xLjM3QzUuMSAxNS4zNiAyIDEyLjUzIDIgOS4wNiAyIDYuMyA0LjE2IDQuMTQgNi45MiA0LjE0YzEuNTYgMCAzLjA2LjczIDQuMDQgMS44OGwxLjA0IDEuMjIgMS4wNC0xLjIyYTUuMzMgNS4zMyAwIDAgMSA0LjA0LTEuODhDMTkuODQgNC4xNCAyMiA2LjMgMjIgOS4wNmMwIDMuNDctMy4xIDYuMy04LjUgMTEuMThMMTIgMjEuNnoiLz48L3N2Zz4=" class="bar-icon-img" />
             <text class="bar-num {{work.isLiked ? 'bar-num-liked' : ''}}">{{work.likeCount || 0}}</text>
           </view>
           <!-- 收藏 + 数字 -->
           <view class="bar-btn" bindtap="toggleFavorite">
-            <image wx:if="{{work.isFavorited}}" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAiCAYAAAA6RwvCAAAAv0lEQVR4nO2WwQ2AMAhF2x5chRGdwRH/Kl5qTIxRE5ECVWv85wKvH7CG8KuC0HfZmiOFlyh5uQGjK99wBA6z4QLiKVcQGBxKb2hL+60B44bWqWhNYBUNY9yB3A1EC8Bpa+hw4A6IWWxROLvDXZIdVnJ05yqXuBCU7kgvI15fUrhTEtPeBw2K1pTEtOdIbbUFAqbX82Zw2yGdE5MjtAG4AqoCQkxRLUwxCAkKVXk40XfZ8vhZ41d5JHnqp+vXtzQBRsdU2UeoOQkAAAAASUVORK5CYII=" class="bar-icon-img" />
-            <image wx:else src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAiCAYAAAA6RwvCAAAAtklEQVR4nO2W4Q6AIAiE1ee7x733q7W1Vm0RAlq27rfA5wFZSr8aiOTkzVHSS1Si3KDTlW84woDZCAGJVCgIHQ6VN7Rl/NZQcMPqVPYm8ApAPoD0BsIKcNkanA70gFgkFmWwO9IlxWFFoDt3udSFaHRHexn1+sLgTk3MeB80GlpTEzOeI601FgiFXi+bIW2Hdk5cjmAHcAfUBARCUStMNQgUhZo8nCQnz+Pnjd8UkeSpn65f39IM1NFWZQ3pXqsAAAAASUVORK5CYII=" class="bar-icon-img" />
+            <image wx:if="{{work.isFavorited}}" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2Y1OWUwYiIgZD0iTTEyIDIuNmwyLjcgNS44NiA2LjMuNjYtNC43IDQuMjcgMS4zIDYuMjJMMTIgMTYuOTZsLTUuNiAzLjY1IDEuMy02LjIyLTQuNy00LjI3IDYuMy0uNjZ6Ii8+PC9zdmc+" class="bar-icon-img" />
+            <image wx:else src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWNhM2FmIiBzdHJva2Utd2lkdGg9IjEuOCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTEyIDIuNmwyLjcgNS44NiA2LjMuNjYtNC43IDQuMjcgMS4zIDYuMjJMMTIgMTYuOTZsLTUuNiAzLjY1IDEuMy02LjIyLTQuNy00LjI3IDYuMy0uNjZ6Ii8+PC9zdmc+" class="bar-icon-img" />
             <text class="bar-num {{work.isFavorited ? 'bar-num-star' : ''}}">{{work.favoriteCount || 0}}</text>
           </view>
           <!-- 咨询 -->
           <view class="bar-btn" bindtap="contactTech">
-            <image src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAgCAYAAAB6kdqOAAAArElEQVR4nM3XUQqEMAwE0OngBT3A/s2x+ucBPOLKwi5oUFc/TOZ9KUUytKHEhqBP8xuJ9Brb+p2VYU5rfhaqAvVYtyrMXv32e4hnma1/c2x6yAFhhjBDmCHMEGYIM4QZwgxhhjBDmCHMEGYIR91oQLMbYVtcRAGtptVND1WMsQo1DwP82y09FH64+4Ee3kXe2R0lHOnle0hJ/XUpkBKb/bSHVPzzaHFrI6oOswDanFsF12shzgAAAABJRU5ErkJggg==" class="bar-icon-img" />
+            <image src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWNhM2FmIiBzdHJva2Utd2lkdGg9IjEuOCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTIxIDExLjRjMCA0LTMuOSA3LjItOC43IDcuMi0xIDAtMi0uMTQtMi45LS40TDQgMjBsMS4zLTMuN0M0LjIgMTUuMSAzLjYgMTMuMyAzLjYgMTEuNCAzLjYgNy40IDcuNSA0LjIgMTIuMyA0LjJTMjEgNy40IDIxIDExLjR6Ii8+PC9zdmc+" class="bar-icon-img" />
+          </view>
+          <!-- 预约同款 -->
+          <view class="bar-book-btn" bindtap="bookSameStyle">
+            <text class="bar-book-text">预约同款</text>
           </view>
         </block>
       </view>
     </view>
-  </view>
 
   <!-- Fullscreen Image Viewer -->
   <view wx:if="{{viewerOpen}}" class="viewer-overlay">

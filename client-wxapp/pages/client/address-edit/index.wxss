@@ -52,7 +52,16 @@
   align-items: center;
   justify-content: space-between;
   min-height: 96rpx;
-  padding: 0 32rpx;
+  padding: 20rpx 32rpx;
+}
+.default-label-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+.default-hint {
+  font-size: 22rpx;
+  color: #9ca3af;
 }
 
 .footer {

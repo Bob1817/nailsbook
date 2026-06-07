@@ -137,7 +137,7 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 .info-value-block {
   flex: 1;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12rpx;
 }
@@ -175,10 +175,11 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 
 .deposit-state {
   flex-shrink: 0;
-  padding: 4rpx 40rpx;
+  padding: 4rpx 20rpx;
   border-radius: 999rpx;
   font-size: 20rpx;
   font-weight: 600;
+  line-height: 1.6;
 }
 .deposit-paid { background: #e3f6ec; color: #067b4a; }
 .deposit-unpaid { background: #fff2dc; color: #c97f1a; }

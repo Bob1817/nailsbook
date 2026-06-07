@@ -1,23 +1,5 @@
-<nav-bar title="聊天" showBack/>
+<nav-bar title="{{techName || '聊天'}}" showBack/>
 <view class="page">
-  <!-- 顶部信息栏 -->
-  <view class="chat-header">
-    <view class="chat-header-inner">
-      <view class="chat-header-avatar">
-        <image wx:if="{{techAvatar}}" src="{{techAvatar}}" mode="aspectFill" class="chat-header-avatar-img" />
-        <view wx:else class="chat-header-avatar-ph"><text>{{techName[0] || '师'}}</text></view>
-      </view>
-      <view class="chat-header-info">
-        <text class="chat-header-name">{{techName || '消息详情'}}</text>
-        <text class="chat-header-desc">一对一沟通与服务提醒</text>
-      </view>
-    </view>
-    <view wx:if="{{techName}}" class="chat-header-action" bindtap="openBookingSheet">
-      <view class="action-icon"></view>
-      <text class="action-text">预约</text>
-    </view>
-  </view>
-
   <!-- 加载中 -->
   <view wx:if="{{loading}}" class="loading-wrap">
     <view class="loading-spinner"></view>
@@ -87,20 +69,40 @@
     <view class="list-bottom" style="height: {{24 + keyboardHeight}}px;"></view>
   </scroll-view>
 
-  <!-- 底部输入栏 -->
+  <!-- + 菜单遮罩 -->
+  <view wx:if="{{showAddMenu}}" class="add-menu-mask" bindtap="closeAddMenu"></view>
+
+  <!-- 底部操作栏（固定在页面底部）-->
   <view class="input-bar">
-    <view class="input-btn" bindtap="openBookingSheet">
-      <view class="input-icon input-icon-calendar"></view>
-    </view>
-    <view class="input-btn" bindtap="sendImage">
-      <view class="input-icon input-icon-image"></view>
-    </view>
+    <!-- 信息输入框：左侧内置 + 号（下拉菜单）-->
     <view class="input-field-wrap">
+      <view class="field-add-btn {{showAddMenu ? 'field-add-active' : ''}}" catchtap="toggleAddMenu">
+        <view class="icon-add"></view>
+      </view>
       <input class="input-field" type="text" value="{{inputText}}" bindinput="onInputChange" placeholder="发消息..." placeholder-class="input-placeholder" confirm-type="send" bindconfirm="sendText" />
     </view>
+    <!-- 发送按钮：紧邻输入框 -->
     <view class="send-btn {{inputText.length > 0 ? 'send-btn-active' : ''}}" bindtap="sendText">
-      <view wx:if="{{!sending}}" class="send-icon"></view>
+      <view wx:if="{{!sending}}" class="icon-send"></view>
       <view wx:else class="sending-spinner"></view>
+    </view>
+    <!-- 快速发起预约：美甲师固定为对话对象 -->
+    <view class="booking-btn" bindtap="goCreateBooking">
+      <view class="icon-calendar"></view>
+    </view>
+
+    <!-- + 下拉菜单 -->
+    <view wx:if="{{showAddMenu}}" class="add-menu">
+      <view class="add-menu-item" catchtap="onPickImage">
+        <view class="add-menu-icon menu-icon-image"></view>
+        <text class="add-menu-text">上传图片</text>
+      </view>
+      <view class="add-menu-divider"></view>
+      <view class="add-menu-item" catchtap="onSendBooking">
+        <view class="add-menu-icon menu-icon-booking"></view>
+        <text class="add-menu-text">发送预约</text>
+      </view>
+      <view class="add-menu-arrow"></view>
     </view>
   </view>
 </view>

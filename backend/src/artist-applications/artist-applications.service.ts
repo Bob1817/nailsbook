@@ -16,6 +16,7 @@ export class ArtistApplicationsService {
         serviceMode: dto.serviceMode ?? null,
         experience: dto.experience ?? null,
         specialty: dto.specialty ?? null,
+        wechat: dto.wechat ?? null,
         note: dto.note ?? null,
       },
     });

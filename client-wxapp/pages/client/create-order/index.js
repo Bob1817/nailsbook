@@ -99,9 +99,13 @@ Page({
       calendarMonthLabel: tomorrow.getFullYear() + '年' + (tomorrow.getMonth() + 1) + '月',
       calendarDays: buildCalendar(tomorrow.getFullYear(), tomorrow.getMonth(), defaultDate)
     });
+    // 从聊天「快速发起预约」进入：锁定美甲师为对话对象
+    if (options.techId) this._presetTechId = parseInt(options.techId);
     this.loadTechnicians();
     this.loadAddresses();
     if (options.design_id) this.loadDesign(options.design_id);
+    // 从作品详情「预约同款」进入：以该作品作为预约服务内容
+    if (options.workId) this.loadWork(parseInt(options.workId));
   },
 
   onShow: function () { this.loadAddresses(); },
@@ -124,9 +128,14 @@ Page({
         };
       }).filter(function (t) { return t.status === 'active'; });
       self.setData({ technicians: techs });
-      if (techs.length === 1) {
+      // 优先锁定快速预约带入的美甲师；否则仅一个时默认选中
+      if (self._presetTechId && techs.some(function (t) { return t.id === self._presetTechId; })) {
+        self.selectTechById(self._presetTechId);
+      } else if (techs.length === 1) {
         self.selectTechById(techs[0].id);
       }
+      // 作品预填：美甲师加载完成后应用
+      if (self._pendingWorkPrefill) self.applyWorkPrefill();
     }).catch(function (e) { console.error(e); });
   },
 
@@ -151,6 +160,42 @@ Page({
       });
       if (d.techId) self.selectTechById(d.techId);
     }).catch(function (e) { console.error('loadDesign', e); });
+  },
+
+  // 「预约同款」：以作品（美甲师 + 标题 + 图片）作为预约服务内容
+  loadWork: function (workId) {
+    var self = this;
+    api.client.works.detail(workId).then(function (w) {
+      var techId = w.technicianId || (w.technician && w.technician.id) || 0;
+      var images = (w.imageUrls && w.imageUrls.length)
+        ? w.imageUrls.slice(0, 9)
+        : (w.coverUrl ? [w.coverUrl] : []);
+      self._pendingWorkPrefill = {
+        techId: techId,
+        customTitle: w.title || '同款美甲',
+        customDesc: w.description || '',
+        customImages: images
+      };
+      if (techId) self._presetTechId = techId;
+      // 美甲师已加载则立即应用，否则等 loadTechnicians 完成后应用
+      if (self.data.technicians.length > 0) self.applyWorkPrefill();
+    }).catch(function (e) { console.error('loadWork', e); });
+  },
+
+  applyWorkPrefill: function () {
+    var pf = this._pendingWorkPrefill;
+    if (!pf) return;
+    // 先选中美甲师（会重置自定义字段），再写入作品内容
+    if (pf.techId && this.data.selectedTechId !== pf.techId) {
+      this.selectTechById(pf.techId);
+    }
+    this.setData({
+      isCustomService: true,
+      customTitle: pf.customTitle,
+      customDesc: pf.customDesc,
+      customImages: pf.customImages
+    });
+    this._pendingWorkPrefill = null;
   },
 
   loadTechWorks: function (techId) {
@@ -190,13 +235,16 @@ Page({
     var types = [];
     if (hasHome) types.push({ value: '上门美甲', label: '上门美甲', desc: '美甲师按预约时间上门服务' });
     if (hasShop) types.push({ value: '到店美甲', label: '到店美甲', desc: '前往美甲师门店地址服务' });
-    var serviceType = types.length === 1 ? types[0].value : '';
+    var serviceType = types.length > 0 ? types[0].value : '';
+    var serviceItems = tech.serviceItems || [];
     this.setData({
       selectedTechId: id, selectedTech: tech,
       serviceType: serviceType, availableServiceTypes: types,
       shopAddresses: shopAddrs, selectedShopName: '',
-      activeServiceItems: tech.serviceItems || [],
+      activeServiceItems: serviceItems,
       selectedServiceIds: [], selectedWorkIds: [],
+      // 美甲师无服务项目时自动切换到自定义需求模式
+      isCustomService: serviceItems.length === 0,
       blockedSlots: [], timeSlotStatuses: [], startTime: ''
     });
     this.loadTechWorks(id);
@@ -488,7 +536,7 @@ Page({
     api.client.orders.create(payload).then(function () {
       wx.hideLoading();
       wx.showToast({ title: '预约成功', icon: 'success' });
-      setTimeout(function () { wx.navigateTo({ url: '/pages/client/orders/index' }); }, 1200);
+      setTimeout(function () { wx.reLaunch({ url: '/pages/client/orders/index' }); }, 1200);
     }).catch(function (err) {
       wx.hideLoading();
       wx.showToast({ title: err.message || '提交失败', icon: 'none' });

@@ -1,9 +1,5 @@
 const api = require('../../../services/api');
 
-// 面板拖拽范围（rpx）
-var PANEL_COLLAPSED = 0;       // 初始位置
-var PANEL_EXPANDED = -520;     // 上滑展开最大偏移
-
 function formatTime(dateStr) {
   if (!dateStr) return '';
   var d = new Date(dateStr);
@@ -40,40 +36,9 @@ Page({
     viewerIndex: 0,
     commentText: '',
     replyingTo: null,
-    panelOffset: 0,
-    isDragging: false,
     techAvatar: '',
     techName: '',
     techCity: ''
-  },
-
-  // ── 面板拖拽手势 ──────────────────────────
-
-  onDragStart: function (e) {
-    this._dragStartY = e.touches[0].clientY;
-    this._dragStartOffset = this.data.panelOffset;
-    this.setData({ isDragging: true });
-  },
-
-  onDragMove: function (e) {
-    if (!this._dragStartY) return;
-    var deltaY = e.touches[0].clientY - this._dragStartY;
-    var deltaRpx = deltaY * 2;
-    var newOffset = this._dragStartOffset + deltaRpx;
-    if (newOffset > PANEL_COLLAPSED) newOffset = PANEL_COLLAPSED;
-    if (newOffset < PANEL_EXPANDED) newOffset = PANEL_EXPANDED;
-    this.setData({ panelOffset: newOffset });
-  },
-
-  onDragEnd: function () {
-    var current = this.data.panelOffset;
-    var mid = (PANEL_COLLAPSED + PANEL_EXPANDED) / 2;
-    var expanded = current < mid;
-    this.setData({
-      isDragging: false,
-      panelOffset: expanded ? PANEL_EXPANDED : PANEL_COLLAPSED
-    });
-    this._dragStartY = null;
   },
 
   onLoad: function (options) {
@@ -137,6 +102,17 @@ Page({
     if (work.technicianId) {
       wx.navigateTo({ url: '/pages/client/chat-detail/index?techId=' + work.technicianId });
     }
+  },
+
+  // 预约同款：以该作品作为预约服务内容，跳转创建预约
+  bookSameStyle: function () {
+    var work = this.data.work;
+    if (!work || !work.id) return;
+    if (!work.technicianId) {
+      wx.showToast({ title: '暂无法获取美甲师信息', icon: 'none' });
+      return;
+    }
+    wx.navigateTo({ url: '/pages/client/create-order/index?workId=' + work.id });
   },
 
   // ── 图片轮播 ──────────────────────────────

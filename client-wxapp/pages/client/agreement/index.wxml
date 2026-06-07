@@ -1,0 +1,19 @@
+<nav-bar title="{{title}}" showBack/>
+<view class="page">
+  <scroll-view scroll-y class="scroll">
+    <view class="doc">
+      <text class="doc-title">{{title}}</text>
+      <text class="doc-updated">{{updated}}</text>
+      <text class="doc-intro">{{intro}}</text>
+
+      <view class="sec" wx:for="{{sections}}" wx:key="h">
+        <text class="sec-h">{{item.h}}</text>
+        <text class="sec-p" wx:for="{{item.p}}" wx:for-item="para" wx:key="*this">{{para}}</text>
+      </view>
+
+      <view class="doc-foot">
+        <text class="doc-foot-text">以上内容为通用模板，最终以正式发布版本为准。</text>
+      </view>
+    </view>
+  </scroll-view>
+</view>

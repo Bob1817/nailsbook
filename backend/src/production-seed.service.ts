@@ -62,6 +62,8 @@ export class ProductionSeedService implements OnModuleInit {
       { name: '评论管理', code: 'comment:manage', module: 'comment', action: 'manage' },
       { name: '举报查看', code: 'report:view', module: 'report', action: 'view' },
       { name: '举报管理', code: 'report:manage', module: 'report', action: 'manage' },
+      { name: '反馈查看', code: 'feedback:view', module: 'feedback', action: 'view' },
+      { name: '反馈管理', code: 'feedback:manage', module: 'feedback', action: 'manage' },
       { name: '申请查看', code: 'application:view', module: 'application', action: 'view' },
       { name: '申请管理', code: 'application:manage', module: 'application', action: 'manage' },
     ];

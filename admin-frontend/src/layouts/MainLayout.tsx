@@ -17,6 +17,7 @@ import {
   MessageOutlined,
   WarningOutlined,
   FormOutlined,
+  NotificationOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -65,6 +66,12 @@ const MainLayout: React.FC = () => {
       icon: <WarningOutlined />,
       label: '举报队列',
       permission: 'report:view',
+    },
+    {
+      key: '/feedback',
+      icon: <NotificationOutlined />,
+      label: '问题反馈',
+      permission: 'feedback:view',
     },
     {
       key: '/applications',

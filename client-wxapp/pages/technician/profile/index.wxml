@@ -1,4 +1,4 @@
-<nav-bar title="我的" transparent="{{true}}"/>
+<nav-bar title="我的"/>
 <view class="page">
   <!-- ============ Header ============ -->
   <view class="header">
@@ -23,25 +23,48 @@
         <text class="status-label">{{isAccepting ? '接单中' : '已暂停接单'}}</text>
       </view>
       <view class="status-schedule-btn" catchtap="openScheduleModal">
-        <text class="status-schedule-icon">⏰</text>
+        <view class="status-schedule-icon-svg"></view>
       </view>
     </view>
 
-    <!-- 数据概览（悬浮卡） -->
+    <!-- 数据概览（悬浮卡 · 双行） -->
     <view class="stats-card">
-      <view class="stat-item" bindtap="goStatsOrders">
-        <text class="stat-value">{{stats.todayOrders}}</text>
-        <text class="stat-label">今日预约</text>
+      <!-- 第一行：预约维度 -->
+      <view class="stats-row">
+        <view class="stat-item" bindtap="goStatsOrders">
+          <text class="stat-value">{{stats.todayOrders}}</text>
+          <text class="stat-label">今日预约</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item" bindtap="goStatsOrders">
+          <text class="stat-value">{{stats.monthOrders}}</text>
+          <text class="stat-label">本月预约</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item" bindtap="goStatsPending">
+          <text class="stat-value {{stats.pendingTotal > 0 ? 'stat-value-alert' : ''}}">{{stats.pendingTotal}}</text>
+          <text class="stat-label">待处理</text>
+        </view>
       </view>
-      <view class="stat-divider"></view>
-      <view class="stat-item" bindtap="goStatsCustomers">
-        <text class="stat-value">{{stats.customers}}</text>
-        <text class="stat-label">客户</text>
-      </view>
-      <view class="stat-divider"></view>
-      <view class="stat-item" bindtap="goStatsWorks">
-        <text class="stat-value">{{stats.works}}</text>
-        <text class="stat-label">作品</text>
+
+      <view class="stats-h-divider"></view>
+
+      <!-- 第二行：客户与作品维度 -->
+      <view class="stats-row">
+        <view class="stat-item" bindtap="goStatsCustomers">
+          <text class="stat-value">{{stats.customers}}</text>
+          <text class="stat-label">总客户</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item" bindtap="goStatsCustomers">
+          <text class="stat-value">{{stats.newCustomers}}</text>
+          <text class="stat-label">本月新客</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item" bindtap="goStatsWorks">
+          <text class="stat-value">{{stats.works}}</text>
+          <text class="stat-label">总作品</text>
+        </view>
       </view>
     </view>
   </view>
@@ -60,8 +83,8 @@
         bindtap="goOrderStatus"
         data-status="{{item.status}}"
       >
-        <view class="order-cell-badge {{item.count > 0 ? 'has-count' : ''}}">
-          <text class="order-cell-icon">{{item.icon}}</text>
+        <view class="order-cell-badge order-bg-{{item.status}} {{item.count > 0 ? 'has-count' : ''}}">
+          <view class="order-cell-icon order-icon-{{item.status}}"></view>
           <view wx:if="{{item.count > 0}}" class="count-badge">{{item.count > 99 ? '99+' : item.count}}</view>
         </view>
         <text class="order-cell-label">{{item.label}}</text>
@@ -87,6 +110,50 @@
     </view>
   </view>
 
+  <!-- ============ 新手引导卡 ============ -->
+  <view wx:if="{{needsSetup}}" class="setup-guide-card">
+    <view class="setup-guide-head">
+      <view class="setup-guide-title-row">
+        <text class="setup-guide-title">完成设置，开始接单</text>
+        <view class="setup-guide-badge">待完善</view>
+      </view>
+      <text class="setup-guide-desc">设置服务方式后，客户才能找到你并预约</text>
+    </view>
+    <view class="setup-steps">
+      <view class="setup-step" bindtap="goSetupHomeService">
+        <view class="setup-step-left">
+          <view class="setup-step-icon-wrap setup-step-icon-home">
+            <view class="setup-step-icon-svg setup-step-home-svg"></view>
+          </view>
+          <view class="setup-step-text">
+            <text class="setup-step-label">开启上门服务</text>
+            <text class="setup-step-hint">允许客户预约上门美甲</text>
+          </view>
+        </view>
+        <view class="setup-step-action">
+          <text class="setup-step-btn">去开启</text>
+          <text class="setup-step-arrow">›</text>
+        </view>
+      </view>
+      <view class="setup-step-divider"></view>
+      <view class="setup-step" bindtap="goSetupShop">
+        <view class="setup-step-left">
+          <view class="setup-step-icon-wrap setup-step-icon-shop">
+            <view class="setup-step-icon-svg setup-step-shop-svg"></view>
+          </view>
+          <view class="setup-step-text">
+            <text class="setup-step-label">开启到店服务</text>
+            <text class="setup-step-hint">添加门店，接受到店预约</text>
+          </view>
+        </view>
+        <view class="setup-step-action">
+          <text class="setup-step-btn">去开启</text>
+          <text class="setup-step-arrow">›</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
   <!-- ============ 工具 ============ -->
   <view class="card">
     <text class="card-title">工具</text>
@@ -98,8 +165,12 @@
         bindtap="onTool"
         data-key="{{item.key}}"
       >
-        <view class="tool-icon-bg">
-          <text class="tool-icon">{{item.icon}}</text>
+        <view class="tool-icon-bg tool-bg-{{item.key}}">
+          <view class="tool-icon tool-icon-{{item.key}}"></view>
+          <!-- 服务开启状态点 -->
+          <view wx:if="{{item.key === 'homeService' && homeServiceOn}}" class="tool-status-dot dot-on"></view>
+          <view wx:elif="{{item.key === 'homeService' && !homeServiceOn}}" class="tool-status-dot dot-off"></view>
+          <view wx:elif="{{item.key === 'shops' && shopServiceOn}}" class="tool-status-dot dot-on"></view>
         </view>
         <text class="tool-label">{{item.label}}</text>
       </view>

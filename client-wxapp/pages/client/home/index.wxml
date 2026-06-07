@@ -168,10 +168,6 @@
           <!-- 底部：详情 -->
           <view class="home-work-bottom">
             <text class="home-work-title">{{item.title}}</text>
-            <view class="home-work-meta-row">
-              <text class="home-work-source">来自 {{item.technicianName}}</text>
-              <text class="home-work-comments">{{item.commentCount}} 条评论</text>
-            </view>
             <view wx:if="{{item.tags.length > 0}}" class="home-work-tags">
               <block wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">
                 <text wx:if="{{index < 2}}" class="home-work-tag">#{{tag}}</text>

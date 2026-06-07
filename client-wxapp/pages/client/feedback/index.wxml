@@ -1,0 +1,59 @@
+<nav-bar title="问题反馈" showBack/>
+<view class="page">
+  <scroll-view scroll-y class="content">
+
+    <view class="intro">
+      <text class="intro-title">遇到问题或有建议？</text>
+      <text class="intro-sub">告诉我们，我们会尽快处理并改进</text>
+    </view>
+
+    <view class="card">
+      <!-- 标题 -->
+      <view class="field">
+        <text class="field-label">问题标题</text>
+        <input
+          class="field-input"
+          value="{{title}}"
+          maxlength="{{titleMax}}"
+          placeholder="一句话描述你的问题"
+          placeholder-class="ph"
+          bindinput="onTitleInput"
+        />
+        <text class="field-count">{{title.length}}/{{titleMax}}</text>
+      </view>
+
+      <!-- 类型 -->
+      <view class="field">
+        <text class="field-label">问题类型</text>
+        <picker class="picker" mode="selector" range="{{types}}" value="{{typeIndex}}" bindchange="onTypeChange">
+          <view class="picker-row">
+            <text class="picker-value">{{types[typeIndex]}}</text>
+            <text class="picker-arrow">›</text>
+          </view>
+        </picker>
+      </view>
+
+      <!-- 内容 -->
+      <view class="field field-textarea">
+        <text class="field-label">问题内容</text>
+        <textarea
+          class="field-area"
+          value="{{content}}"
+          maxlength="{{contentMax}}"
+          placeholder="请详细描述你遇到的问题或建议，便于我们快速定位"
+          placeholder-class="ph"
+          bindinput="onContentInput"
+          auto-height
+        />
+        <text class="field-count">{{content.length}}/{{contentMax}}</text>
+      </view>
+    </view>
+
+  </scroll-view>
+
+  <view class="footer">
+    <button class="submit-btn {{submitting ? 'disabled' : ''}}" bindtap="submit" disabled="{{submitting}}">
+      {{submitting ? '提交中...' : '提交反馈'}}
+    </button>
+  </view>
+</view>

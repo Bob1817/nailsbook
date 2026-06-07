@@ -1,11 +1,6 @@
 <nav-bar title="标签管理" showBack/>
 <view class="container">
 
-  <!-- 页面标题区 -->
-  <view class="page-header">
-    <text class="page-title">标签管理</text>
-    <text class="page-subtitle">管理客户分类标签，方便筛选和标记</text>
-  </view>
 
   <!-- 添加标签 -->
   <view class="add-card">

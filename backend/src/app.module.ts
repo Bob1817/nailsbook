@@ -38,6 +38,7 @@ import { AdminWorksModule } from './admin-works/admin-works.module';
 import { AdminCommentsModule } from './admin-comments/admin-comments.module';
 import { AdminReportsModule } from './admin-reports/admin-reports.module';
 import { ClientReportsModule } from './client-reports/client-reports.module';
+import { FeedbackModule } from './feedback/feedback.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { DevelopmentAuthSeedService } from './development-auth-seed.service';
 import { DevelopmentDemoSeedService } from './development-demo-seed.service';
@@ -90,6 +91,7 @@ import { ProductionSeedService } from './production-seed.service';
     AdminCommentsModule,
     AdminReportsModule,
     ClientReportsModule,
+    FeedbackModule,
   ],
   controllers: [AppController],
   providers: [

@@ -91,10 +91,6 @@
             </view>
             <view class="card-bottom">
               <text class="card-title">{{item.title}}</text>
-              <view class="card-meta-row">
-                <text class="card-source">来自 {{item.technicianName}}</text>
-                <text class="card-comments">{{item.commentCount}} 条评论</text>
-              </view>
               <view wx:if="{{item.tags.length > 0}}" class="card-tags">
                 <block wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">
                   <text wx:if="{{index < 2}}" class="card-tag">#{{tag}}</text>
@@ -136,10 +132,6 @@
             </view>
             <view class="card-bottom">
               <text class="card-title">{{item.title}}</text>
-              <view class="card-meta-row">
-                <text class="card-source">来自 {{item.technicianName}}</text>
-                <text class="card-comments">{{item.commentCount}} 条评论</text>
-              </view>
               <view wx:if="{{item.tags.length > 0}}" class="card-tags">
                 <block wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">
                   <text wx:if="{{index < 2}}" class="card-tag">#{{tag}}</text>

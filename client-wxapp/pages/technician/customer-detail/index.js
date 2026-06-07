@@ -73,7 +73,14 @@ Page({
         ...o,
         _statusLabel: getStatusLabel(o.status),
         _statusTone: getStatusTone(o.status),
-        _dateStr: (o.startTime || o.createdAt || '').slice(0, 10)
+        _dateStr: formatBookingDate(o.startTime || o.createdAt),
+        _priceText: o.quotePrice ? formatMoney(o.quotePrice) : '待报价',
+        _serviceTypeLabel: o.serviceType === 'shop' ? '到店' : '上门',
+        _serviceTypeClass: o.serviceType === 'shop' ? 'type-shop' : 'type-home',
+        _serviceName: o.customTitle
+          || (o.customServiceRequest && o.customServiceRequest.title)
+          || (o.designRequest && o.designRequest.title)
+          || '预约服务'
       }));
 
       const revenues = raw.revenues || [];

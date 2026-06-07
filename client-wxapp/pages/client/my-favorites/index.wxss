@@ -1,151 +1,114 @@
-.container {
+page { background: #f0f0f4; }
+
+.page {
   min-height: 100vh;
-  background: #f8f9fc;
-  padding: 16rpx;
+  padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
 }
 
-.menu-icon {
-  width: 36rpx;
-  height: 36rpx;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #FFF0F3 0%, #F5F3FF 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.menu-icon::after {
-  content: '';
-  width: 12rpx;
-  height: 12rpx;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #FF6B8A, #A78BFA);
-}
-
+/* ===== 加载中 ===== */
 .loading-wrap {
   display: flex;
   justify-content: center;
-  padding: 200rpx 0;
+  padding: 160rpx 0;
 }
-
 .loading-spinner {
-  width: 60rpx;
-  height: 60rpx;
-  border: 4rpx solid #FF6B8A;
-  border-top-color: transparent;
+  width: 48rpx;
+  height: 48rpx;
+  border: 4rpx solid rgba(255, 107, 138, 0.2);
+  border-top-color: #FF6B8A;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
-
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ===== 空状态 ===== */
 .empty-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 160rpx 60rpx;
 }
-
 .empty-icon {
-  margin-bottom: 24rpx;
-  width: 80rpx;
-  height: 80rpx;
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFE2EA, #EDE9FE);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 28rpx;
 }
-.empty-icon::after {
-  width: 28rpx;
-  height: 28rpx;
+.empty-bookmark {
+  width: 40rpx;
+  height: 50rpx;
+  background: #FF6B8A;
+  position: relative;
+  border-radius: 4rpx 4rpx 0 0;
 }
-
+.empty-bookmark::after {
+  content: '';
+  position: absolute;
+  left: 0; bottom: 0;
+  width: 0; height: 0;
+  border-left: 20rpx solid transparent;
+  border-right: 20rpx solid transparent;
+  border-bottom: 16rpx solid #FFE2EA;
+}
 .empty-title {
-  font-size: 34rpx;
+  font-size: 32rpx;
   font-weight: 600;
   color: #1f2937;
   margin-bottom: 12rpx;
 }
-
 .empty-desc {
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: #9ca3af;
-  margin-bottom: 40rpx;
+  margin-bottom: 36rpx;
+  text-align: center;
 }
-
 .go-btn {
+  height: 84rpx;
+  padding: 0 56rpx;
+  border-radius: 999rpx;
   background: linear-gradient(135deg, #FF6B8A 0%, #A78BFA 100%);
   color: #fff;
-  font-size: 30rpx;
+  font-size: 28rpx;
   font-weight: 600;
-  padding: 20rpx 60rpx;
-  border-radius: 24rpx;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16rpx;
-}
-
-.work-card {
-  background: #f8f9fc;
-  border-radius: 24rpx;
-  overflow: hidden;
-  box-shadow: 0 4rpx 24rpx rgba(15, 23, 42, 0.06), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
-}
-
-.work-card:active {
-  opacity: 0.85;
-}
-
-.work-img-wrap {
-  position: relative;
-  aspect-ratio: 4/5;
-}
-
-.work-img {
-  width: 100%;
-  height: 100%;
-}
-
-.work-img-placeholder {
-  width: 100%;
-  height: 100%;
-  background: #f0f0f0;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(255, 107, 138, 0.28);
+}
+.go-btn:active { opacity: 0.85; }
+
+/* ===== 瀑布流（与发现/作品列表页一致）===== */
+.waterfall-wrap { padding: 20rpx 16rpx 0; }
+
+.waterfall {
+  display: flex;
+  gap: 16rpx;
+  align-items: flex-start;
 }
 
-.placeholder-icon {
-  width: 60rpx;
-  height: 60rpx;
-}
-.placeholder-icon::after {
-  width: 20rpx;
-  height: 20rpx;
+.col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
 }
 
-.fav-icon {
-  position: absolute;
-  top: 16rpx;
-  right: 16rpx;
-}
-
-.work-meta {
-  padding: 16rpx 40rpx;
-}
-
-.tech-name {
-  display: block;
-  font-size: 24rpx;
-  color: #9ca3af;
-  margin-bottom: 4rpx;
-}
-
-.work-title {
-  display: block;
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #1f2937;
-  white-space: nowrap;
+/* ===== 作品卡片：height:0 + padding-bottom 百分比 ===== */
+.w-card {
+  position: relative;
+  width: 100%;
+  height: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
+  border-radius: 20rpx;
+  box-sizing: border-box;
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.08), 0 1rpx 4rpx rgba(15, 23, 42, 0.04);
 }
+.w-card:active { transform: scale(0.984); opacity: 0.94; }
+
+.aspect-3-4 { padding-bottom: 133.33%; }
+.aspect-4-5 { padding-bottom: 125%; }
+.aspect-5-6 { padding-bottom: 120%; }

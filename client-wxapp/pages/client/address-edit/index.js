@@ -12,6 +12,7 @@ Page({
     detailAddress: '',
     doorInfo: '',
     isDefault: false,
+    lockDefault: false,
     submitting: false
   },
 
@@ -19,6 +20,9 @@ Page({
     if (options.id) {
       this.setData({ isEdit: true, addressId: options.id });
       this.loadAddress(options.id);
+    } else if (options.forceDefault) {
+      // 新增第一个地址：强制为默认且不可取消
+      this.setData({ isDefault: true, lockDefault: true });
     }
   },
 
@@ -26,6 +30,11 @@ Page({
     wx.showLoading({ title: '加载中...' });
     try {
       const addr = await api.client.addresses.detail(id);
+      if (!addr) {
+        wx.hideLoading();
+        wx.showToast({ title: '地址不存在', icon: 'none' });
+        return;
+      }
       this.setData({
         contactName: addr.contactName || '',
         contactPhone: addr.contactPhone || '',
@@ -34,7 +43,9 @@ Page({
         district: addr.district || '',
         detailAddress: addr.detailAddress || addr.detail || '',
         doorInfo: addr.doorInfo || '',
-        isDefault: addr.isDefault || false
+        isDefault: addr.isDefault || false,
+        // 正在编辑当前默认地址：必须保留一个默认，开关锁定为开
+        lockDefault: addr.isDefault || false
       });
       wx.hideLoading();
     } catch (err) {
@@ -48,6 +59,12 @@ Page({
   },
 
   onDefaultChange(e) {
+    // 默认地址不能为空：锁定时不允许关闭
+    if (this.data.lockDefault) {
+      this.setData({ isDefault: true });
+      wx.showToast({ title: '至少保留一个默认地址', icon: 'none' });
+      return;
+    }
     this.setData({ isDefault: e.detail.value });
   },
 

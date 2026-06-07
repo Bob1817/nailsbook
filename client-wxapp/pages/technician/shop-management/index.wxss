@@ -4,25 +4,6 @@
   padding-bottom: 140rpx;
 }
 
-/* ===== 页面标题区 ===== */
-.page-header {
-  padding: 24rpx 40rpx 28rpx;
-}
-.page-title {
-  display: block;
-  font-size: 44rpx;
-  font-weight: 700;
-  color: #1f2937;
-  line-height: 1.2;
-  margin-bottom: 8rpx;
-}
-.page-subtitle {
-  display: block;
-  font-size: 24rpx;
-  color: #9ca3af;
-  line-height: 1.4;
-}
-
 /* ===== 加载 ===== */
 .loading-wrap {
   display: flex;

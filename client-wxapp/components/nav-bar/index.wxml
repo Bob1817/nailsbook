@@ -1,20 +1,24 @@
 <view class="nav-bar {{transparent ? 'transparent' : ''}} {{light ? 'light' : ''}}" style="padding-top: {{statusBarHeight}}px;">
-  <view class="nav-content {{titleCenter ? 'title-center' : ''}}" style="height: {{navBarHeight - statusBarHeight}}px;">
+  <view class="nav-content" style="height: {{navBarHeight - statusBarHeight}}px;">
+
+    <!-- 左侧：返回按钮 -->
     <view class="nav-left">
       <view wx:if="{{showBack}}" class="back-btn" bindtap="onBack">
-        <text class="back-icon">‹</text>
-      </view>
-      <view wx:if="{{!titleCenter}}" class="title-wrap">
-        <text wx:if="{{subtitle}}" class="subtitle">{{subtitle}}</text>
-        <text class="title">{{title}}</text>
+        <view class="back-chevron"></view>
       </view>
     </view>
-    <view wx:if="{{titleCenter}}" class="title-wrap-center">
+
+    <!-- 标题区域：有返回键时居中，否则左对齐 -->
+    <view class="title-zone {{showBack || titleCenter ? 'title-center' : 'title-left'}}">
+      <text wx:if="{{subtitle}}" class="subtitle">{{subtitle}}</text>
       <text class="title">{{title}}</text>
     </view>
+
+    <!-- 右侧插槽 -->
     <view class="nav-right">
       <slot name="right"></slot>
     </view>
+
   </view>
 </view>
 <view class="nav-placeholder" style="height: {{navBarHeight}}px;"></view>

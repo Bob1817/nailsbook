@@ -3,5 +3,6 @@
   "navigationStyle": "custom",
   "usingComponents": {
     "nav-bar": "/components/nav-bar/index"
-  }
+  },
+  "disableScroll": true
 }

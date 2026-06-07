@@ -47,7 +47,6 @@ Page({
     activeTab: 'all',
     tabs: [],
     unreadCount: 0,
-    conversationCount: 0,
     loading: true,
     selectedNotification: null
   },
@@ -145,7 +144,6 @@ Page({
         allItems: chatItems,
         tabs: tabs,
         unreadCount: unreadCount,
-        conversationCount: convList.length,
         loading: false
       });
       self._applyFilter();

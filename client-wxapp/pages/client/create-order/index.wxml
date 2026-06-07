@@ -155,7 +155,7 @@
       </view>
     </view>
     <view wx:if="{{!isCustomService && activeServiceItems.length === 0}}" class="empty-hint">
-      <text>该美甲师暂未设置服务内容</text>
+      <text>该美甲师暂未配置服务项目，请切换至「自定义需求」描述你的需求</text>
     </view>
   </view>
 

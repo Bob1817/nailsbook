@@ -1,3 +1,20 @@
+// 模块级缓存：wx.getSystemInfoSync 和 getMenuButtonBoundingClientRect
+// 在同一设备上结果不变，只需计算一次
+let _navBarInfoCache = null;
+function getNavBarInfo() {
+  if (!_navBarInfoCache) {
+    const si = wx.getSystemInfoSync();
+    const mb = wx.getMenuButtonBoundingClientRect();
+    _navBarInfoCache = {
+      statusBarHeight: si.statusBarHeight,
+      menuButtonHeight: mb.height,
+      menuButtonTop: mb.top,
+      navBarHeight: mb.top + mb.height + (mb.top - si.statusBarHeight)
+    };
+  }
+  return _navBarInfoCache;
+}
+
 Component({
   options: {
     multipleSlots: true
@@ -10,7 +27,7 @@ Component({
     },
     subtitle: {
       type: String,
-      value: 'NailArt'
+      value: ''
     },
     showBack: {
       type: Boolean,
@@ -39,15 +56,7 @@ Component({
 
   lifetimes: {
     attached() {
-      const systemInfo = wx.getSystemInfoSync();
-      const menuButton = wx.getMenuButtonBoundingClientRect();
-      
-      this.setData({
-        statusBarHeight: systemInfo.statusBarHeight,
-        menuButtonHeight: menuButton.height,
-        menuButtonTop: menuButton.top,
-        navBarHeight: menuButton.top + menuButton.height + (menuButton.top - systemInfo.statusBarHeight)
-      });
+      this.setData(getNavBarInfo());
     }
   },
 

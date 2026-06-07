@@ -102,6 +102,12 @@ const ArtistApplications: React.FC = () => {
     },
     { title: '城市', dataIndex: 'city', key: 'city' },
     {
+      title: '微信号',
+      dataIndex: 'wechat',
+      key: 'wechat',
+      render: (value: string | null) => value || '—',
+    },
+    {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
@@ -175,6 +181,7 @@ const ArtistApplications: React.FC = () => {
           <Descriptions column={1} bordered size="small">
             <Descriptions.Item label="姓名">{selected.name}</Descriptions.Item>
             <Descriptions.Item label="手机号">{selected.phone}</Descriptions.Item>
+            <Descriptions.Item label="微信号">{selected.wechat ?? '—'}</Descriptions.Item>
             <Descriptions.Item label="城市">{selected.city}</Descriptions.Item>
             <Descriptions.Item label="服务方式">
               {selected.serviceMode ? serviceModeText[selected.serviceMode] || selected.serviceMode : '—'}

@@ -58,10 +58,6 @@ Page({
     wx.navigateTo({ url: '/pages/client/designs/index' });
   },
 
-  navigateToOrders() {
-    wx.navigateTo({ url: '/pages/client/orders/index' });
-  },
-
   navigateToFavorites() {
     wx.navigateTo({ url: '/pages/client/my-favorites/index' });
   },
@@ -70,20 +66,21 @@ Page({
     wx.navigateTo({ url: '/pages/client/my-likes/index' });
   },
 
-  navigateToChat() {
-    wx.navigateTo({ url: '/pages/client/chat/index' });
+  navigateToFeedback() {
+    wx.navigateTo({ url: '/pages/client/feedback/index' });
   },
 
-  navigateToHelp() {
-    wx.navigateTo({ url: '/pages/client/help-feedback/index' });
+  navigateToManual() {
+    wx.navigateTo({ url: '/pages/client/manual/index' });
+  },
+
+  openAgreement(e) {
+    const type = e.currentTarget.dataset.type || 'user';
+    wx.navigateTo({ url: '/pages/client/agreement/index?type=' + type });
   },
 
   navigateToPassword() {
     wx.navigateTo({ url: '/pages/client/forgot-password/index' });
-  },
-
-  showComingSoon() {
-    wx.showToast({ title: '功能开发中', icon: 'none' });
   },
 
   switchRole() {

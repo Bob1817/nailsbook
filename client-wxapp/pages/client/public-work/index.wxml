@@ -129,6 +129,9 @@
       <button class="comment-input" bindtap="goToLogin">
         <text class="input-placeholder">添加评论…</text>
       </button>
+      <view class="book-same-btn" bindtap="goToLogin">
+        <text class="book-same-text">预约同款</text>
+      </view>
     </view>
   </view>
 </view>

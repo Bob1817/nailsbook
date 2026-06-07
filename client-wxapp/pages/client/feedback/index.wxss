@@ -1,0 +1,119 @@
+page {
+  background: #f5f6fa;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  padding: 24rpx 32rpx;
+}
+
+/* 引导 */
+.intro { padding: 8rpx 8rpx 24rpx; }
+.intro-title {
+  display: block;
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 8rpx;
+}
+.intro-sub {
+  display: block;
+  font-size: 26rpx;
+  color: #9ca3af;
+}
+
+/* 卡片 */
+.card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 8rpx 28rpx;
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
+}
+
+.field {
+  position: relative;
+  padding: 26rpx 0;
+  border-bottom: 1rpx solid #f0f1f4;
+}
+.field:last-child { border-bottom: none; }
+
+.field-label {
+  display: block;
+  font-size: 26rpx;
+  color: #6b7280;
+  margin-bottom: 16rpx;
+}
+
+.field-input {
+  width: 100%;
+  height: 56rpx;
+  font-size: 30rpx;
+  color: #1f2937;
+}
+
+.ph { color: #c4c9d4; }
+
+.field-count {
+  position: absolute;
+  right: 0;
+  top: 26rpx;
+  font-size: 22rpx;
+  color: #c4c9d4;
+}
+
+.picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56rpx;
+}
+.picker-value { font-size: 30rpx; color: #1f2937; }
+.picker-arrow { font-size: 36rpx; color: #d1d5db; transform: rotate(90deg); }
+
+.field-textarea .field-count {
+  position: static;
+  display: block;
+  text-align: right;
+  margin-top: 12rpx;
+}
+
+.field-area {
+  width: 100%;
+  min-height: 200rpx;
+  font-size: 30rpx;
+  color: #1f2937;
+  line-height: 1.6;
+}
+
+/* 底部提交 */
+.footer {
+  flex-shrink: 0;
+  padding: 20rpx 32rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  background: #f5f6fa;
+}
+.submit-btn {
+  width: 100%;
+  height: 92rpx;
+  line-height: 92rpx;
+  background: linear-gradient(135deg, #FF6B8A 0%, #A78BFA 100%);
+  color: #fff;
+  border-radius: 24rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+.submit-btn::after { border: none; }
+.submit-btn.disabled { opacity: 0.6; }

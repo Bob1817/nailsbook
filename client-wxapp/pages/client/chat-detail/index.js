@@ -1,5 +1,10 @@
 const api = require('../../../services/api');
 
+// 图片上传约束：类型 / 单张大小 / 数量
+var IMAGE_MAX_COUNT = 9;
+var IMAGE_MAX_SIZE = 10 * 1024 * 1024; // 10MB
+var IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+
 Page({
   data: {
     conversationId: null,
@@ -12,6 +17,7 @@ Page({
     loading: true,
     sending: false,
     scrollToId: '',
+    showAddMenu: false,
     showBookingSheet: false,
     recentOrders: [],
     chatNavHeight: 64,
@@ -76,7 +82,8 @@ Page({
         var tech = res.technician;
         if (tech) {
           wx.setNavigationBarTitle({ title: tech.name });
-          this.setData({ techName: tech.name, techAvatar: tech.avatarUrl || "" });
+          // 捕获对话对象的美甲师 id，供「快速发起预约」锁定使用
+          this.setData({ techName: tech.name, techAvatar: tech.avatarUrl || "", techId: tech.id || this.data.techId });
         }
         var isFirst = this.data.messages.length === 0;
         this.setData({ messages, loading: false });
@@ -186,28 +193,80 @@ Page({
     } finally { this.setData({ sending: false }); }
   },
 
-  /* ===== 发送图片 ===== */
-  async sendImage() {
+  /* ===== + 下拉菜单 ===== */
+  toggleAddMenu() {
+    this.setData({ showAddMenu: !this.data.showAddMenu });
+  },
+
+  closeAddMenu() {
+    if (this.data.showAddMenu) this.setData({ showAddMenu: false });
+  },
+
+  /* 菜单项：发送预约（发送自己已创建的预约卡片）*/
+  onSendBooking() {
+    this.setData({ showAddMenu: false });
+    this.openBookingSheet();
+  },
+
+  /* ===== 菜单项：上传图片（约束类型 / 大小 / 数量）===== */
+  onPickImage() {
+    this.setData({ showAddMenu: false });
     if (this.data.sending) return;
-    wx.chooseMedia({ count: 1, mediaType: ['image'],
-      success: async (res) => {
-        var filePath = res.tempFiles[0].tempFilePath;
-        this.setData({ sending: true });
-        try {
-          var uploadRes = await api.upload.image(filePath, 'client');
-          var payload = { messageType: 'image', imageUrl: uploadRes.url };
-          if (this.data.conversationId) payload.conversationId = this.data.conversationId;
-          else payload.techId = this.data.techId;
-          var msgRes = await api.chat.sendMessage(payload, 'client');
-          if (msgRes.conversationId && !this.data.conversationId) this.setData({ conversationId: msgRes.conversationId });
-          if (msgRes.message) {
-            var msgs = [...this.data.messages, { ...msgRes.message, timeStr: formatTime(msgRes.message.createdAt), isClient: true, isSystem: false, isOrderCard: false }];
-            this.setData({ messages: msgs }); this.groupByDate(); this.scrollToBottom(true);
-          }
-        } catch (err) { wx.showToast({ title: '图片发送失败', icon: 'none' }); }
-        finally { this.setData({ sending: false }); }
+    wx.chooseMedia({
+      count: IMAGE_MAX_COUNT,
+      mediaType: ['image'],
+      sourceType: ['album', 'camera'],
+      sizeType: ['compressed', 'original'],
+      success: (res) => {
+        var files = res.tempFiles || [];
+        var paths = [];
+        var rejected = false;
+        for (var i = 0; i < files.length; i++) {
+          var f = files[i];
+          var path = f.tempFilePath || '';
+          var ext = (path.split('?')[0].split('.').pop() || '').toLowerCase();
+          if (IMAGE_EXTS.indexOf(ext) === -1) { rejected = true; continue; }      // 类型约束
+          if (f.size && f.size > IMAGE_MAX_SIZE) { rejected = true; continue; }    // 大小约束
+          paths.push(path);
+        }
+        if (rejected) {
+          wx.showToast({ title: '仅支持 10MB 内的 JPG/PNG 图片', icon: 'none' });
+        }
+        if (paths.length === 0) return;
+        this.uploadAndSendImages(paths);
       }
     });
+  },
+
+  async uploadAndSendImages(paths) {
+    this.setData({ sending: true });
+    try {
+      for (var i = 0; i < paths.length; i++) {
+        var uploadRes = await api.upload.image(paths[i], 'client');
+        var payload = { messageType: 'image', imageUrl: uploadRes.url };
+        if (this.data.conversationId) payload.conversationId = this.data.conversationId;
+        else payload.techId = this.data.techId;
+        var msgRes = await api.chat.sendMessage(payload, 'client');
+        if (msgRes.conversationId && !this.data.conversationId) this.setData({ conversationId: msgRes.conversationId });
+        if (msgRes.message) {
+          var msgs = this.data.messages.concat([{ ...msgRes.message, timeStr: formatTime(msgRes.message.createdAt), isClient: true, isSystem: false, isOrderCard: false }]);
+          this.setData({ messages: msgs }); this.groupByDate(); this.scrollToBottom(true);
+        }
+      }
+    } catch (err) {
+      wx.showToast({ title: '图片发送失败', icon: 'none' });
+    } finally {
+      this.setData({ sending: false });
+    }
+  },
+
+  /* ===== 快速发起预约（美甲师固定为对话对象，复用创建预约页）===== */
+  goCreateBooking() {
+    if (!this.data.techId) {
+      wx.showToast({ title: '暂无法获取美甲师信息', icon: 'none' });
+      return;
+    }
+    wx.navigateTo({ url: '/pages/client/create-order/index?techId=' + this.data.techId });
   },
 
   previewImage(e) {

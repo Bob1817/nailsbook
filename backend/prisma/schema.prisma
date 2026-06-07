@@ -501,6 +501,7 @@ model ArtistApplication {
   serviceMode String? // home, shop, both
   experience  String? // years of experience
   specialty   String? // specialties
+  wechat      String? // 微信号，用于发放激活码
   note        String?
   status      String    @default("pending") // pending, approved, rejected
   reviewedBy  Int?
@@ -554,4 +555,21 @@ model NailWorkReport {
   @@unique([commentId, reporterId, reporterType])
   @@index([status])
   @@index([commentId])
+}
+
+model Feedback {
+  id          Int      @id @default(autoincrement())
+  sourceType  String   // 'client' | 'technician'
+  sourceId    Int
+  sourceName  String?
+  sourcePhone String?
+  title       String
+  type        String
+  content     String
+  status      String   @default("pending") // 'pending' | 'resolved'
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@index([status])
+  @@index([sourceType])
 }

@@ -1,11 +1,12 @@
-page { background: #000; }
+page { background: #f5f6fa; }
 
 .page {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: #000;
+  background: #f5f6fa;
   position: relative;
+  overflow: hidden;
 }
 
 /* Loading */
@@ -14,7 +15,30 @@ page { background: #000; }
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background: #000;
+  background: #f5f6fa;
+}
+
+.loading-screen .loading-spinner {
+  border-color: rgba(255, 107, 138, 0.25);
+  border-top-color: #FF6B8A;
+}
+
+/* ===== 主滚动区 ===== */
+.main-scroll {
+  flex: 1;
+  min-height: 0;
+  background: #f5f6fa;
+}
+
+/* ===== 白色内容面板（叠在图片下方，上滑露出）===== */
+.content-panel {
+  position: relative;
+  z-index: 2;
+  background: #fff;
+  border-radius: 24rpx 24rpx 0 0;
+  margin-top: -24rpx;
+  min-height: 50vh;
+  box-shadow: 0 -4rpx 24rpx rgba(15, 23, 42, 0.06);
 }
 
 .loading-spinner {
@@ -126,39 +150,8 @@ page { background: #000; }
 
 .dot-active { background: #fff; }
 
-/* ===== 白色信息面板（可上滑展开） ===== */
-.info-panel {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  background: #fff;
-  border-radius: 24rpx 24rpx 0 0;
-  margin-top: -24rpx;
-  position: relative;
-  z-index: 10;
-  box-shadow: 0 -4rpx 24rpx rgba(15, 23, 42, 0.06);
-  will-change: transform;
-}
-
-.drag-handle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16rpx 0 4rpx;
-  flex-shrink: 0;
-}
-
-.drag-bar {
-  width: 64rpx;
-  height: 8rpx;
-  border-radius: 4rpx;
-  background: #d1d5db;
-}
-
 /* 标题区 */
 .title-block {
-  flex-shrink: 0;
   padding: 36rpx 40rpx 24rpx;
 }
 
@@ -197,8 +190,6 @@ page { background: #000; }
 
 /* ===== 评论区 ===== */
 .comments-section {
-  flex: 1;
-  min-height: 0;
   border-top: 1rpx solid #f3f4f6;
 }
 
@@ -424,6 +415,27 @@ page { background: #000; }
 
 .bar-num-liked { color: #ef4444; }
 .bar-num-star { color: #d97706; }
+
+/* 预约同款 */
+.bar-book-btn {
+  height: 64rpx;
+  padding: 0 28rpx;
+  margin-left: 8rpx;
+  border-radius: 32rpx;
+  background: linear-gradient(135deg, #FF6B8A 0%, #A78BFA 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 6rpx 18rpx rgba(255, 107, 138, 0.3);
+}
+.bar-book-btn:active { opacity: 0.85; }
+.bar-book-text {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
 
 /* 发送按钮 */
 .send-btn {

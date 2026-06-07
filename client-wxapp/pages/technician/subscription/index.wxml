@@ -1,11 +1,6 @@
 <nav-bar title="订阅套餐" showBack/>
 <view class="container">
 
-  <!-- 页面标题区 -->
-  <view class="page-header">
-    <text class="page-title">订阅套餐</text>
-    <text class="page-subtitle">查看和管理你的订阅方案</text>
-  </view>
 
   <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
 

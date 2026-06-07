@@ -107,10 +107,17 @@ Page({
     orderCount: 0,
     loading: false,
     page: 1,
-    hasMore: true
+    hasMore: true,
+    navBarHeight: 88
   },
 
   onLoad(options) {
+    // 计算导航栏高度，供 sticky 筛选栏吸顶定位
+    try {
+      var si = wx.getSystemInfoSync();
+      var mb = wx.getMenuButtonBoundingClientRect();
+      this.setData({ navBarHeight: mb.top + mb.height + (mb.top - si.statusBarHeight) });
+    } catch (e) {}
     if (options.status) {
       this.setData({ currentStatus: options.status });
     }
@@ -141,7 +148,7 @@ Page({
       }
 
       const res = await api.client.orders.list(params);
-      const rawList = res.list || res.data || [];
+      const rawList = res.list || res.data || (Array.isArray(res) ? res : []);
       const orders = rawList.map(decorateOrder);
 
       this.setData({
@@ -167,7 +174,7 @@ Page({
       }
 
       const res = await api.client.orders.list(params);
-      const rawList = res.list || res.data || [];
+      const rawList = res.list || res.data || (Array.isArray(res) ? res : []);
       const newOrders = rawList.map(decorateOrder);
 
       this.setData({
