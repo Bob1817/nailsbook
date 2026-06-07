@@ -1,0 +1,204 @@
+@import "tailwindcss";
+
+/* ─── Seed Tokens (for Nudge controls) ─── */
+:root {
+  --seed-bg: #FFF7F5;
+  --seed-fg: #2B2023;
+  --seed-primary: #EF7F98;
+  --seed-accent: #F5B16E;
+  --seed-surface: #FFFFFF;
+  --seed-radius: 28px;
+  --seed-spacing: 1;
+  --seed-motion: 1;
+}
+
+/* ─── Tailwind v4 Theme ─── */
+@theme {
+  --color-brand: var(--seed-primary);
+  --color-brand-deep: #e96f8b;
+  --color-brand-soft: #ffb8c6;
+  --color-brand-mist: #fff0f3;
+  --color-brand-bg: var(--seed-bg);
+  --color-ink: var(--seed-fg);
+  --color-ink-muted: #6d5c60;
+  --color-ink-soft: #a57972;
+  --color-line: #f7dce0;
+  --color-surface: var(--seed-surface);
+  --color-accent-warm: var(--seed-accent);
+  --color-soft-pink: #ffe8ec;
+}
+
+:root {
+  color: var(--seed-fg);
+  background-color: var(--seed-bg);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer base {
+  html {
+    min-height: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--seed-bg);
+    color: var(--seed-fg);
+  }
+
+  body,
+  #root {
+    width: 100%;
+    min-width: 320px;
+  }
+
+  #root {
+    min-height: 100dvh;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  :where(button, a[href], input, textarea, select, [role="button"]):focus-visible {
+    outline: 2px solid var(--seed-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  button {
+    touch-action: manipulation;
+    cursor: pointer;
+  }
+
+  img,
+  svg {
+    display: block;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    * {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* ─── Keyframes ─── */
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  @keyframes glow-pulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
+  }
+
+  @keyframes drift {
+    0% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(30px, -20px) scale(1.02); }
+    66% { transform: translate(-20px, 15px) scale(0.98); }
+    100% { transform: translate(0, 0) scale(1); }
+  }
+
+  @keyframes count-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.7s ease-out forwards;
+  }
+
+  .animate-float {
+    animation: float calc(5s * var(--seed-motion)) ease-in-out infinite;
+  }
+
+  .animate-shimmer {
+    animation: shimmer 3s ease-in-out infinite;
+    background-size: 200% 100%;
+  }
+
+  .animate-glow-pulse {
+    animation: glow-pulse calc(4s * var(--seed-motion)) ease-in-out infinite;
+  }
+
+  .animate-drift {
+    animation: drift calc(20s * var(--seed-motion)) ease-in-out infinite;
+  }
+
+  .animate-count-up {
+    animation: count-up 0.6s ease-out forwards;
+  }
+
+  .animate-delay-100 { animation-delay: 100ms; }
+  .animate-delay-200 { animation-delay: 200ms; }
+  .animate-delay-300 { animation-delay: 300ms; }
+  .animate-delay-400 { animation-delay: 400ms; }
+
+  /* ─── Gradient Text ─── */
+  .text-gradient-brand {
+    background: linear-gradient(135deg, var(--seed-primary), var(--seed-accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ─── Glass Effect ─── */
+  .glass {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .glass-dark {
+    background: rgba(43, 32, 35, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  /* ─── Seed Token Utilities ─── */
+  .radius-seed {
+    border-radius: var(--seed-radius);
+  }
+
+  .spacing-seed {
+    --spacing-factor: var(--seed-spacing);
+  }
+}
