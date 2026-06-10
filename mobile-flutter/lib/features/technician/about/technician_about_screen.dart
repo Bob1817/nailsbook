@@ -29,7 +29,6 @@ class _TechnicianAboutScreenState extends State<TechnicianAboutScreen> {
     return Scaffold(
       backgroundColor: DT.bgWarm,
       appBar: GlassAppBar(
-        backgroundColor: Colors.white.withValues(alpha: 0.95),
         elevation: 0,
         leading: IconButton(
           icon:
