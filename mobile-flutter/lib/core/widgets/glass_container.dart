@@ -196,12 +196,12 @@ class GlassBottomSurface extends StatelessWidget {
       minimum: EdgeInsets.zero,
       child: GlassContainer(
         blur: DT.glassBlurHeavy,
-        opacity: 0.72,
+        opacity: 0.5,
         borderRadius: 0,
         showBorder: false,
         boxShadow: const [
           BoxShadow(
-            color: Color(0x12000000),
+            color: Color(0x10000000),
             blurRadius: 24,
             offset: Offset(0, -8),
           ),

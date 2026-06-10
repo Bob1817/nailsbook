@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -176,13 +177,8 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
     }
   }
 
-  void _startEdit(Map<String, dynamic> c) {
-    final cur = c['name']?.toString() ?? '';
-    _nameCtl.text = _isPhoneAsName(cur) ? '' : cur;
-    setState(() => _editingId = c['id'] as int);
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _nameFocus.requestFocus());
-  }
+  // ignore: unused_element  — 列表卡片已去除 ✏️ 编辑入口；保留方法以备客户详情页复用
+  // void _startEdit removed: rename happens in detail page only
 
   void _openDetail(int id) {
     Navigator.push(
@@ -194,46 +190,61 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final topPad = MediaQuery.of(context).padding.top;
+    // 头部预估高度（titlebar 60 + 搜索框 56 + tabs 50 + 上下留白 = 约 216）
+    const headerHeight = 216.0;
     return Scaffold(
       backgroundColor: DT.bg,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            _header(),
-            _searchBox(),
-            _tabs(),
-            Expanded(
-              child: _loading
-                  ? const Center(
-                      child: CircularProgressIndicator(color: DT.primary))
-                  : _visibleCustomers.isEmpty
-                      ? _empty()
-                      : RefreshIndicator(
-                          color: DT.primary,
-                          onRefresh: _loadCustomers,
-                          child: ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(20, 4, 20, 100),
-                            itemCount: _visibleCustomers.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 12),
-                            itemBuilder: (_, i) =>
-                                _customerCard(_visibleCustomers[i]),
-                          ),
-                        ),
+      // 让列表滚动到顶部玻璃层背后，形成液态玻璃透视效果
+      body: Stack(
+        children: [
+          _loading
+              ? const Center(
+                  child: CircularProgressIndicator(color: DT.primary))
+              : _visibleCustomers.isEmpty
+                  ? _empty(topPad + headerHeight)
+                  : RefreshIndicator(
+                      color: DT.primary,
+                      onRefresh: _loadCustomers,
+                      child: ListView.separated(
+                        padding: EdgeInsets.fromLTRB(
+                            20, topPad + headerHeight + 4, 20, 100),
+                        itemCount: _visibleCustomers.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: 12),
+                        itemBuilder: (_, i) =>
+                            _customerCard(_visibleCustomers[i]),
+                      ),
+                    ),
+          // 浮于顶部的液态玻璃 header（标题 + 搜索 + 筛选）
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            child: GlassContainer(
+              blur: DT.glassBlurHeavy,
+              opacity: 0.55,
+              borderRadius: 0,
+              showBorder: false,
+              padding: EdgeInsets.only(top: topPad),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _header(),
+                  _searchBox(),
+                  _tabs(),
+                  const SizedBox(height: 10), // 与上方间距保持一致
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _header() {
-    return GlassContainer(
-      blur: DT.glassBlurHeavy,
-      opacity: 0.64,
-      borderRadius: 0,
-      showBorder: false,
+    return Padding(
       padding: const EdgeInsets.fromLTRB(20, 14, 16, 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -282,7 +293,8 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
 
   Widget _searchBox() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+      // 上下间距均为 8，确保与上方标题、下方筛选间距一致
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
       child: Container(
         height: 44,
         decoration: BoxDecoration(
@@ -330,11 +342,14 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
   }
 
   Widget _tabs() {
-    return SizedBox(
-      height: 38,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+    // 上下 padding 相等，与搜索框、列表的间距一致
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+      child: SizedBox(
+        height: 36,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.zero,
         itemCount: _customerTabs.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (_, i) {
@@ -363,13 +378,14 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
           );
         },
       ),
+    ),
     );
   }
 
-  Widget _empty() {
+  Widget _empty(double topInset) {
     return ListView(
       children: [
-        const SizedBox(height: 80),
+        SizedBox(height: topInset + 80),
         Center(
           child: Container(
             width: 72,
@@ -409,60 +425,70 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
         (c['orderCount'] as int?) ?? (c['totalOrders'] as int?) ?? 0;
     final isEditing = _editingId == id;
 
+    final avatarUrl = c['avatarUrl']?.toString() ??
+        c['customerAvatar']?.toString() ??
+        (c['client'] as Map<String, dynamic>?)?['avatarUrl']?.toString();
+
     return GestureDetector(
       onTap: isEditing ? null : () => _openDetail(id),
       child: Container(
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
         decoration: BoxDecoration(
-          color: DT.surface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: DT.border),
-          boxShadow: DT.shadowTile,
+          // 柔玻璃面：去掉硬边框
+          color: Colors.white.withValues(alpha: 0.78),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 16,
+                offset: const Offset(0, 4)),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            // 右上角 chevron 浮动对齐
+            Stack(
               children: [
-                // avatar
-                Container(
-                  width: 44,
-                  height: 44,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                      color: const Color(0xFFFCE7EE), shape: BoxShape.circle),
-                  child: phoneAsName
-                      ? const Icon(CupertinoIcons.person_fill,
-                          size: 22, color: Color(0xFFE86B8F))
-                      : Text(name.isNotEmpty ? name.substring(0, 1) : '?',
-                          style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFFE86B8F))),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 姓名 + 编辑
-                      isEditing
-                          ? _nameEditRow(id)
-                          : _nameDisplayRow(c, phoneAsName),
-                      const SizedBox(height: 4),
-                      Text(
-                        addressOk ? address : '暂无地址',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                            fontSize: 12,
-                            color:
-                                addressOk ? DT.textSecondary : DT.textTertiary),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 真实头像（无则降级到首字/人形 icon）
+                    _avatar(name, avatarUrl, phoneAsName: phoneAsName),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 22),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 姓名（编辑态/展示态；去掉了 ✏️ 编辑入口）
+                            isEditing
+                                ? _nameEditRow(id)
+                                : _nameDisplayRow(c, phoneAsName),
+                            const SizedBox(height: 4),
+                            Text(
+                              addressOk ? address : '暂无地址',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: addressOk
+                                      ? DT.textSecondary
+                                      : DT.textTertiary),
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
+                if (!isEditing)
+                  const Positioned(
+                    right: 0, top: 0,
+                    child: Icon(CupertinoIcons.chevron_right,
+                        size: 14, color: DT.textQuaternary),
+                  ),
               ],
             ),
             // 标签
@@ -516,34 +542,44 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
 
   Widget _nameDisplayRow(Map<String, dynamic> c, bool phoneAsName) {
     final name = c['name']?.toString() ?? '';
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Flexible(
-          child: Text(phoneAsName ? '未设置名称' : name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  fontSize: 15,
+    // 名称单独一行（编辑入口移至客户详情页的编辑标签流程；卡片仅作概览）
+    return Text(phoneAsName ? '未设置名称' : name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: phoneAsName ? DT.textMuted : DT.textPrimary));
+  }
+
+  Widget _avatar(String name, String? url, {required bool phoneAsName}) {
+    if (url != null && url.isNotEmpty) {
+      return ClipOval(
+        child: CachedNetworkImage(
+          imageUrl: url,
+          width: 44, height: 44, fit: BoxFit.cover,
+          placeholder: (_, __) => Container(color: const Color(0xFFFCE7EE)),
+          errorWidget: (_, __, ___) => _avatarFallback(name, phoneAsName),
+        ),
+      );
+    }
+    return _avatarFallback(name, phoneAsName);
+  }
+
+  Widget _avatarFallback(String name, bool phoneAsName) {
+    return Container(
+      width: 44, height: 44,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(
+          color: Color(0xFFFCE7EE), shape: BoxShape.circle),
+      child: phoneAsName
+          ? const Icon(CupertinoIcons.person_fill,
+              size: 22, color: Color(0xFFE86B8F))
+          : Text(name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?',
+              style: const TextStyle(
+                  fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: phoneAsName ? DT.textMuted : DT.textPrimary)),
-        ),
-        GestureDetector(
-          onTap: () {
-            HapticFeedback.lightImpact();
-            _startEdit(c);
-          },
-          behavior: HitTestBehavior.opaque,
-          child: const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            child:
-                Icon(CupertinoIcons.pencil, size: 14, color: DT.textTertiary),
-          ),
-        ),
-        const Spacer(),
-        const Icon(CupertinoIcons.chevron_right,
-            size: 14, color: DT.textQuaternary),
-      ],
+                  color: Color(0xFFE86B8F))),
     );
   }
 

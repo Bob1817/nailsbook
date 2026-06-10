@@ -347,10 +347,15 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
       margin: const EdgeInsets.fromLTRB(20, 4, 20, 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: DT.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: DT.border),
-        boxShadow: DT.shadowTile,
+        // 柔玻璃面：去掉硬边框，仅保留极轻阴影提示层级
+        color: Colors.white.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 4)),
+        ],
       ),
       child: Row(
         children: [
@@ -434,13 +439,9 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
-      child: Container(
-        decoration:
-            const Border(bottom: BorderSide(color: DT.divider, width: 0.5))
-                .toBoxDecoration(),
-        child: Row(children: [tab('trips', '今日行程'), tab('all', '今日预约')]),
-      ),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+      // 去掉底部硬分隔线：用 tab 自带的主题色短下划线作为唯一视觉指示
+      child: Row(children: [tab('trips', '今日行程'), tab('all', '今日预约')]),
     );
   }
 
@@ -496,10 +497,14 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: DT.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: DT.border),
-          boxShadow: DT.shadowTile,
+          color: Colors.white.withValues(alpha: 0.78),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 16,
+                offset: const Offset(0, 4)),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -701,10 +706,6 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
         return (const Color(0xFFF4F4F5), const Color(0xFF8F8F95));
     }
   }
-}
-
-extension on Border {
-  BoxDecoration toBoxDecoration() => BoxDecoration(border: this);
 }
 
 // ───────── 月历弹窗 ─────────

@@ -555,9 +555,10 @@ class _TechnicianWorkDetailScreenState extends State<TechnicianWorkDetailScreen>
       );
 
   Widget _commentInputBar() {
+    // 底部留白 16，与主导航 dock 间距一致；不再叠加 home indicator inset
     return Container(
       decoration: const BoxDecoration(color: DT.surface, border: Border(top: BorderSide(color: DT.divider, width: 0.5))),
-      padding: EdgeInsets.fromLTRB(12, 8, 12, 8 + MediaQuery.of(context).padding.bottom),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

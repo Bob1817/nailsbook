@@ -12,8 +12,11 @@ class ChatScreen extends StatefulWidget {
   final String title;
   final int? otherPartyId;
 
-  /// 直接开聊：尚无会话时按美甲师/对方 id 发起新会话。
+  /// 直接开聊：尚无会话时按美甲师/对方 id 发起新会话（客户端视角）。
   final int? techId;
+
+  /// 直接开聊：尚无会话时按客户用户 id 发起新会话（美甲师视角）。
+  final int? clientId;
 
   const ChatScreen({
     super.key,
@@ -21,6 +24,7 @@ class ChatScreen extends StatefulWidget {
     required this.title,
     this.otherPartyId,
     this.techId,
+    this.clientId,
   });
 
   @override
@@ -38,7 +42,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    _otherPartyId = widget.otherPartyId ?? widget.techId;
+    _otherPartyId = widget.otherPartyId ?? widget.techId ?? widget.clientId;
     _conversationId = widget.conversationId;
     if (_conversationId != null) {
       _loadMessages();
@@ -106,6 +110,7 @@ class _ChatScreenState extends State<ChatScreen> {
       final msg = await service.sendMessage(
         conversationId: _conversationId,
         techId: _conversationId == null ? widget.techId : null,
+        clientId: _conversationId == null ? widget.clientId : null,
         messageType: 'text',
         content: text,
       );

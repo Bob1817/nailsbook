@@ -11,6 +11,8 @@ import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/nb_shared_components.dart';
 import '../../../core/widgets/nb_toast.dart';
+import '../../shared/chat/chat_screen.dart';
+import '../../shared/chat/chat_service.dart';
 import '../auth/technician_auth_service.dart';
 import '../orders/technician_create_booking_sheet.dart';
 import '../orders/technician_order_detail_screen.dart';
@@ -27,14 +29,18 @@ class TechnicianCustomerDetailScreen extends StatefulWidget {
       _TechnicianCustomerDetailScreenState();
 }
 
+// 标签兜底色板：与 webapp CustomerDetailPage 的 TAG_FALLBACK_COLORS 一致。
 const _tagFallbackColors = <String, ({Color bg, Color text})>{
-  '常客': (bg: Color(0xFFFFE9F0), text: Color(0xFFE86B8F)),
+  '常客': (bg: Color(0xFFFFE9F0), text: Color(0xFFFF5E93)),
   '新客': (bg: Color(0xFFEBF4FF), text: Color(0xFF3B82F6)),
   '高频': (bg: Color(0xFFFFF1E5), text: Color(0xFFC9792A)),
   '简约': (bg: Color(0xFFEEF9F1), text: Color(0xFF31B46C)),
   '裸色系': (bg: Color(0xFFFFF8E6), text: Color(0xFFC9860A)),
 };
 const _tagDefaultColor = (bg: Color(0xFFF2F0F3), text: Color(0xFF6D6570));
+// 客户头像配色（webapp 详情页风格）
+const _avatarBg = Color(0xFFFDECEF);
+const _avatarText = Color(0xFFE86B8F);
 
 class _TechnicianCustomerDetailScreenState
     extends State<TechnicianCustomerDetailScreen> {
@@ -87,36 +93,45 @@ class _TechnicianCustomerDetailScreenState
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
     final bottomPad = MediaQuery.of(context).padding.bottom;
+    final headerHeight = topPad + 60;
+    // 底部操作栏固定高度（48 按钮 + 上 12 + 下 16）
+    const bottomBarHeight = 48.0 + 12 + 16;
 
     return Scaffold(
       backgroundColor: DT.bg,
-      body: Column(
+      // 列表滚动可穿过顶部/底部玻璃层，形成液态玻璃透视
+      body: Stack(
         children: [
-          _header(topPad),
-          Expanded(
-            child: _loading
-                ? const Center(
-                    child: CircularProgressIndicator(color: DT.primary))
-                : _customer == null
-                    ? const Center(child: Text('未找到该客户', style: DT.bodySmall))
-                    : RefreshIndicator(
-                        color: DT.primary,
-                        onRefresh: _loadCustomer,
-                        child: ListView(
-                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 116),
-                          children: [
-                            _profileCard(),
-                            const SizedBox(height: 16),
-                            _infoCard(),
-                            const SizedBox(height: 16),
-                            _preferenceCard(),
-                            const SizedBox(height: 16),
-                            _historyCard(),
-                          ],
-                        ),
-                      ),
-          ),
-          if (_customer != null) _bottomBar(bottomPad),
+          if (_loading)
+            const Center(child: CircularProgressIndicator(color: DT.primary))
+          else if (_customer == null)
+            const Center(child: Text('未找到该客户', style: DT.bodySmall))
+          else
+            RefreshIndicator(
+              color: DT.primary,
+              onRefresh: _loadCustomer,
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(
+                    20, headerHeight + 8, 20, bottomBarHeight + 20),
+                children: [
+                  _profileCard(),
+                  const SizedBox(height: 16),
+                  _infoCard(),
+                  const SizedBox(height: 16),
+                  _preferenceCard(),
+                  const SizedBox(height: 16),
+                  _historyCard(),
+                ],
+              ),
+            ),
+          // 顶部液态玻璃 header（透出后方滚动内容）
+          Positioned(
+              left: 0, right: 0, top: 0, child: _header(topPad)),
+          // 底部液态玻璃操作栏
+          if (_customer != null)
+            Positioned(
+                left: 0, right: 0, bottom: 0,
+                child: _bottomBar(bottomPad)),
         ],
       ),
     );
@@ -125,7 +140,7 @@ class _TechnicianCustomerDetailScreenState
   Widget _header(double topPad) {
     return GlassContainer(
       blur: DT.glassBlurHeavy,
-      opacity: 0.72,
+      opacity: 0.5,
       borderRadius: 0,
       showBorder: false,
       padding: EdgeInsets.fromLTRB(20, topPad + 8, 20, 12),
@@ -140,8 +155,10 @@ class _TechnicianCustomerDetailScreenState
           ),
           const SizedBox(width: 12),
           const Expanded(child: Text('客户详情', style: DT.titleMedium)),
+          // 右上角编辑：打开标签编辑弹窗
           if (!_loading && _customer != null)
-            _roundIconButton(CupertinoIcons.phone, _callCustomer),
+            _roundIconButton(CupertinoIcons.pencil,
+                () => _showTagEditor(_tags(_customer!['tags']))),
         ],
       ),
     );
@@ -183,15 +200,15 @@ class _TechnicianCustomerDetailScreenState
             height: 56,
             alignment: Alignment.center,
             decoration: const BoxDecoration(
-              color: DT.primarySoft,
+              color: _avatarBg,
               shape: BoxShape.circle,
             ),
             child: Text(
-              _name.characters.first,
+              _name.characters.first.toUpperCase(),
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: DT.primary,
+                color: _avatarText,
               ),
             ),
           ),
@@ -200,48 +217,16 @@ class _TechnicianCustomerDetailScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(_name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: DT.titleMedium),
-                          const SizedBox(height: 3),
-                          Text(phone,
-                              style: DT.bodySmall
-                                  .copyWith(color: DT.textSecondary)),
-                        ],
-                      ),
-                    ),
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => _showTagEditor(tags),
-                      child: Container(
-                        constraints: const BoxConstraints(minHeight: 44),
-                        alignment: Alignment.center,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: DT.divider),
-                          borderRadius: BorderRadius.circular(DT.rFull),
-                        ),
-                        child: Text(
-                          tags.isEmpty ? '+ 添加标签' : '编辑',
-                          style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: DT.textSecondary),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                Text(_name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: DT.titleMedium),
+                const SizedBox(height: 3),
+                Text(phone,
+                    style: DT.bodySmall.copyWith(color: DT.textSecondary)),
                 if (tags.isNotEmpty) ...[
                   const SizedBox(height: 12),
+                  // 标签胶囊（编辑入口在右上角导航按钮）
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -452,10 +437,14 @@ class _TechnicianCustomerDetailScreenState
                     ],
                   ),
                   const SizedBox(height: 5),
+                  // 服务方式 · 日期（订单编号为次要信息，不在此展示）
                   Text(
-                      _dateLabel(_str(item['date'] ??
-                          item['startTime'] ??
-                          item['createdAt'])),
+                      [
+                        _serviceTypeLabel(_str(item['serviceType'])),
+                        _dateLabel(_str(item['date'] ??
+                            item['startTime'] ??
+                            item['createdAt'])),
+                      ].where((s) => s.isNotEmpty).join(' · '),
                       style: const TextStyle(
                           fontSize: 12, color: DT.textTertiary)),
                 ],
@@ -488,9 +477,20 @@ class _TechnicianCustomerDetailScreenState
   }
 
   Widget _bottomBar(double bottomPad) {
-    return GlassBottomSurface(
-      padding:
-          EdgeInsets.fromLTRB(20, 12, 20, bottomPad > 0 ? bottomPad + 10 : 16),
+    // 玻璃操作区铺满到屏幕底部；按钮距屏幕底部固定 16（与主导航 dock 一致）
+    return GlassContainer(
+      blur: DT.glassBlurHeavy,
+      opacity: 0.5,
+      borderRadius: 0,
+      showBorder: false,
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x10000000),
+          blurRadius: 24,
+          offset: Offset(0, -8),
+        ),
+      ],
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
       child: Row(
         children: [
           Expanded(
@@ -503,16 +503,16 @@ class _TechnicianCustomerDetailScreenState
           const SizedBox(width: 8),
           Expanded(
             child: _actionButton(
-              '查看预约',
-              onTap: _viewActiveOrders,
+              '电话联系',
+              onTap: _callCustomer,
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: _actionButton(
-              '历史预约',
+              '发送消息',
               muted: true,
-              onTap: _viewAllOrders,
+              onTap: _openChat,
             ),
           ),
         ],
@@ -592,32 +592,36 @@ class _TechnicianCustomerDetailScreenState
     );
   }
 
+  /// 通用「label : value (+ 右侧动作)」单元。
+  /// 地址/备注左对齐展示；动作（如「导航」）放在右侧并垂直居中，避免被挤压。
   Widget _infoRow(String label, String value,
       {Widget? action, bool danger = false}) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 72,
-            child: Text(label,
-                style: const TextStyle(fontSize: 14, color: DT.textSecondary)),
-          ),
-          const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontSize: 14,
-                height: 1.45,
-                color: danger ? DT.error : DT.textPrimary,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: const TextStyle(fontSize: 12, color: DT.textTertiary)),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  textAlign: TextAlign.left,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                    color: danger ? DT.error : DT.textPrimary,
+                  ),
+                ),
+              ],
             ),
           ),
           if (action != null) ...[
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             action,
           ],
         ],
@@ -629,10 +633,15 @@ class _TechnicianCustomerDetailScreenState
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: DT.surface,
+        // 柔玻璃面：去掉硬边框，仅以阴影分层
+        color: Colors.white.withValues(alpha: 0.82),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: DT.dividerWarm),
-        boxShadow: DT.shadowSm,
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 18,
+              offset: const Offset(0, 6)),
+        ],
       ),
       child: child,
     );
@@ -680,14 +689,13 @@ class _TechnicianCustomerDetailScreenState
               tagCtl.clear();
             }
 
-            return SafeArea(
-              top: false,
-              child: Container(
+            // 不用 SafeArea：弹窗底部不留空白间隔，内容直接贴底（键盘弹起时跟随 viewInsets）
+            return Container(
                 padding: EdgeInsets.fromLTRB(
                   20,
                   8,
                   20,
-                  MediaQuery.of(ctx).viewInsets.bottom + 20,
+                  MediaQuery.of(ctx).viewInsets.bottom + 16,
                 ),
                 decoration: const BoxDecoration(
                   color: DT.surface,
@@ -865,7 +873,6 @@ class _TechnicianCustomerDetailScreenState
                     ],
                   ),
                 ),
-              ),
             );
           },
         );
@@ -928,14 +935,34 @@ class _TechnicianCustomerDetailScreenState
     );
   }
 
-  void _viewActiveOrders() {
+  /// 发送消息：有会话直接进入对话页，没有则以 clientUserId 发起新会话。
+  Future<void> _openChat() async {
+    final clientUserId = _int(_customer?['clientUserId']) ??
+        _int((_customer?['clientUser'] as Map<String, dynamic>?)?['id']);
+    if (clientUserId == null) {
+      NbToast.error(context, '该客户尚未注册客户端，暂不支持在线消息');
+      return;
+    }
+    final api = context.read<ApiClient>();
+    int? convId;
+    try {
+      final convs = await ChatService(api).conversations();
+      for (final conv in convs) {
+        if ((conv['client'] as Map<String, dynamic>?)?['id'] == clientUserId) {
+          convId = conv['id'] as int?;
+          break;
+        }
+      }
+    } catch (_) {}
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => TechnicianOrdersScreen(
-          initialCustomerId: widget.customerId,
-          initialCustomerName: _name,
-          initialActiveOnly: true,
+        builder: (_) => ChatScreen(
+          conversationId: convId,
+          title: _name,
+          otherPartyId: clientUserId,
+          clientId: clientUserId,
         ),
       ),
     );
@@ -1038,14 +1065,23 @@ class _TechnicianCustomerDetailScreenState
     return const [];
   }
 
+  /// 历史记录标题：美甲主题 / 服务名（订单编号属次要信息，不作为标题展示）。
   String _historyLabel(Map<String, dynamic> item) {
+    final label = _str(item['label']);
+    // _history 映射时 label 可能落到 orderNo，此处过滤掉纯编号
+    if (label.isNotEmpty && !RegExp(r'^[A-Z0-9\-_]{8,}$').hasMatch(label)) {
+      return label;
+    }
     return _str(
-      item['label'] ??
-          item['customTitle'] ??
-          item['serviceName'] ??
-          item['orderNo'],
+      item['customTitle'] ?? item['serviceName'],
       fallback: '预约服务',
     );
+  }
+
+  String _serviceTypeLabel(String s) {
+    if (s == 'home' || s == '上门美甲') return '上门美甲';
+    if (s == 'shop' || s == '到店美甲') return '到店美甲';
+    return s;
   }
 
   String _str(dynamic value, {String fallback = ''}) {
