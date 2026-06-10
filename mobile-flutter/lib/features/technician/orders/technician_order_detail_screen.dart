@@ -765,8 +765,8 @@ class _TechnicianOrderDetailScreenState
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: DT.primary,
-                    foregroundColor: Colors.white,
+                    backgroundColor: DT.cream,
+                    foregroundColor: DT.onCream,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(DT.rMd)),
                     elevation: 0,
@@ -842,8 +842,8 @@ class _TechnicianOrderDetailScreenState
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(ctx),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: DT.primary,
-                    foregroundColor: Colors.white,
+                    backgroundColor: DT.cream,
+                    foregroundColor: DT.onCream,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(DT.rMd)),
                     elevation: 0,

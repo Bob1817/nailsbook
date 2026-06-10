@@ -701,8 +701,8 @@ class _WorkFormSheetState extends State<_WorkFormSheet> {
                     child: ElevatedButton(
                       onPressed: _saving ? null : _save,
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: DT.primary,
-                          foregroundColor: Colors.white,
+                          backgroundColor: DT.cream,
+                          foregroundColor: DT.onCream,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(999))),

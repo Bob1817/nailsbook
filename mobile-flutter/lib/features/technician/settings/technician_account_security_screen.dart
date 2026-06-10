@@ -181,8 +181,8 @@ class _TechnicianAccountSecurityScreenState
                         child: ElevatedButton(
                           onPressed: _submitting ? null : _submit,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: DT.primary,
-                            foregroundColor: Colors.white,
+                            backgroundColor: DT.cream,
+                            foregroundColor: DT.onCream,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(DT.rMd)),
                             elevation: 0,

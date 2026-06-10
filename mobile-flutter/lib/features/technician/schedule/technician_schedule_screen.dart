@@ -789,8 +789,8 @@ class _CalendarSheetState extends State<_CalendarSheet> {
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(context, _selected),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: DT.primary,
-                    foregroundColor: Colors.white,
+                    backgroundColor: DT.cream,
+                    foregroundColor: DT.onCream,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(999)),

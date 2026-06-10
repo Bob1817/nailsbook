@@ -18,6 +18,9 @@ class DT {
 
   static const Color primary = ET.accent;
   static const Color primaryDark = ET.accentDeep;
+  // 主操作填充：奶油色 + 深色文字（对比度优于 accent + 白字）
+  static const Color cream = ET.cream;
+  static const Color onCream = ET.onCream;
   static const Color primaryLight = ET.accentOnDark;
   static const Color primaryPale = ET.accentOnDark;
   static const Color primarySoft = ET.accentSoft;

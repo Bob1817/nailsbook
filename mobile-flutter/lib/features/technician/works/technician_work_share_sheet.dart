@@ -147,8 +147,8 @@ class _TechnicianWorkShareSheetState extends State<TechnicianWorkShareSheet> {
                         : const Icon(CupertinoIcons.share, size: 18),
                     label: Text(_sharing ? '生成中…' : '分享海报'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: DT.primary,
-                      foregroundColor: Colors.white,
+                      backgroundColor: DT.cream,
+                      foregroundColor: DT.onCream,
                       padding: const EdgeInsets.symmetric(vertical: DT.md),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DT.md)),
                     ),

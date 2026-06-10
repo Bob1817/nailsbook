@@ -343,8 +343,8 @@ class _TechnicianTagScreenState extends State<TechnicianTagScreen> {
                       await _saveTags(newTags);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: DT.primary,
-                      foregroundColor: Colors.white,
+                      backgroundColor: DT.cream,
+                      foregroundColor: DT.onCream,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DT.radius14)),
                       elevation: 0,
                     ),

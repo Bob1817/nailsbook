@@ -1028,8 +1028,8 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                         _agree();
                       },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: DT.primary,
-                  foregroundColor: Colors.white,
+                  backgroundColor: DT.cream,
+                  foregroundColor: DT.onCream,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(999)),
                   elevation: 0,
@@ -1777,8 +1777,8 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                                   // TODO: call update API
                                 },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: DT.primary,
-                            foregroundColor: Colors.white,
+                            backgroundColor: DT.cream,
+                            foregroundColor: DT.onCream,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(999)),
                             elevation: 0,

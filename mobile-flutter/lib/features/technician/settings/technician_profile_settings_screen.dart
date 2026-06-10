@@ -206,8 +206,8 @@ class _TechnicianProfileSettingsScreenState
                     child: ElevatedButton(
                       onPressed: _saving ? null : _save,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: DT.primary,
-                        foregroundColor: Colors.white,
+                        backgroundColor: DT.cream,
+                        foregroundColor: DT.onCream,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(DT.lg)),
                         elevation: 0,

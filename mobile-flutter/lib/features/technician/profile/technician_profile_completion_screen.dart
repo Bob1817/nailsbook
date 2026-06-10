@@ -84,9 +84,9 @@ class _State extends State<TechnicianProfileCompletionScreen> {
                     child: ElevatedButton(
                       onPressed: _saving ? null : _submit,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: DT.primary,
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: DT.primary.withValues(alpha: 0.4),
+                        backgroundColor: DT.cream,
+                        foregroundColor: DT.onCream,
+                        disabledBackgroundColor: DT.cream.withValues(alpha: 0.4),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DT.rMd)),
                       ),
                       child: Text(_saving ? '保存中\u2026' : '保存并继续',
