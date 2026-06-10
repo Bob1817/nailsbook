@@ -699,7 +699,7 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
       case 'pending_shop':
         return (const Color(0xFFE3F2FD), const Color(0xFF1565C0));
       case 'in_progress':
-        return (const Color(0xFFFFE9F0), DT.primary);
+        return (const Color(0xFF3A2F23), DT.primary);
       case 'completed':
         return (const Color(0xFFEDF8F1), const Color(0xFF3B9460));
       default:

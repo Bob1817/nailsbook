@@ -32,7 +32,7 @@ class TechnicianCustomerDetailScreen extends StatefulWidget {
 
 // 标签兜底色板：与 webapp CustomerDetailPage 的 TAG_FALLBACK_COLORS 一致。
 const _tagFallbackColors = <String, ({Color bg, Color text})>{
-  '常客': (bg: Color(0xFFFFE9F0), text: Color(0xFFFF5E93)),
+  '常客': (bg: Color(0xFF3A2F23), text: Color(0xFFFF5E93)),
   '新客': (bg: Color(0xFFEBF4FF), text: Color(0xFF3B82F6)),
   '高频': (bg: Color(0xFFFFF1E5), text: Color(0xFFC9792A)),
   '简约': (bg: Color(0xFFEEF9F1), text: Color(0xFF31B46C)),
@@ -1017,7 +1017,7 @@ class _TechnicianCustomerDetailScreenState
       final color = item['color']?.toString() ?? item['textColor']?.toString();
       if (color == null || color.isEmpty) break;
       final preset = <String, Color>{
-        '#FF5E93': const Color(0xFFFFE9F0),
+        '#FF5E93': const Color(0xFF3A2F23),
         '#C9792A': const Color(0xFFFFF1E5),
         '#31B46C': const Color(0xFFEEF9F1),
         '#3B82F6': const Color(0xFFEBF4FF),

@@ -583,7 +583,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               gradient: sel ? DT.primaryGradient : null,
-              color: sel ? null : (s.occupied ? const Color(0xFFEFF1F4) : const Color(0xFFF1F5F9)),
+              color: sel ? null : (s.occupied ? const Color(0xFF2A241E) : const Color(0xFF211C17)),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Column(
@@ -777,7 +777,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
     padding: const EdgeInsets.symmetric(vertical: 12),
     child: Container(
         width: 40, height: 4,
-        decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(999))),
+        decoration: BoxDecoration(color: const Color(0xFF3A2F23), borderRadius: BorderRadius.circular(999))),
   );
 
   /// 顶部条：居中拖拽手柄 + 右上角关闭按钮（整行铺满宽度）。

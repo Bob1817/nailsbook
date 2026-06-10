@@ -609,7 +609,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                           width: 80,
                           height: 80,
                           decoration: BoxDecoration(
-                              color: const Color(0xFFF1F5F9),
+                              color: const Color(0xFF211C17),
                               borderRadius: BorderRadius.circular(14)),
                           child: const Icon(Icons.image_not_supported_outlined,
                               color: Color(0xFFCBD5E1)),
@@ -686,7 +686,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                     height: 48,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
+                      color: const Color(0xFF211C17),
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(_clientWaitingLabel(o.status),
@@ -771,7 +771,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                         ? const Color(0xFFEF4444).withOpacity(0.3)
                         : isOrange
                             ? const Color(0xFFF97316).withOpacity(0.3)
-                            : const Color(0xFFE2E8F0)),
+                            : const Color(0xFF3A2F23)),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(999)),
                 backgroundColor: isRed
@@ -986,7 +986,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9), shape: BoxShape.circle),
+                        color: const Color(0xFF211C17), shape: BoxShape.circle),
                     child: const Icon(Icons.close_rounded,
                         size: 18, color: Color(0xFF64748B)),
                   ),
@@ -1107,7 +1107,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
+                            color: const Color(0xFF211C17),
                             shape: BoxShape.circle),
                         child: const Icon(Icons.close_rounded,
                             size: 18, color: Color(0xFF64748B)),
@@ -1120,7 +1120,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF211C17).withOpacity(0.8),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    border: Border.all(color: const Color(0xFF3A2F23)),
                   ),
                   child: TextField(
                     controller: reasonCtl,
@@ -1145,10 +1145,10 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                               _actionLoading ? null : () => Navigator.pop(ctx),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFF475569),
-                            side: const BorderSide(color: Color(0xFFE2E8F0)),
+                            side: const BorderSide(color: Color(0xFF3A2F23)),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(999)),
-                            backgroundColor: const Color(0xFFF1F5F9),
+                            backgroundColor: const Color(0xFF211C17),
                           ),
                           child: const Text('暂不拒绝',
                               style: TextStyle(fontWeight: FontWeight.w500)),
@@ -1228,7 +1228,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9), shape: BoxShape.circle),
+                        color: const Color(0xFF211C17), shape: BoxShape.circle),
                     child: const Icon(Icons.close_rounded,
                         size: 18, color: Color(0xFF64748B)),
                   ),
@@ -1246,10 +1246,10 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                           _actionLoading ? null : () => Navigator.pop(ctx),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF475569),
-                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        side: const BorderSide(color: Color(0xFF3A2F23)),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(999)),
-                        backgroundColor: const Color(0xFFF1F5F9),
+                        backgroundColor: const Color(0xFF211C17),
                       ),
                       child: const Text('暂不取消',
                           style: TextStyle(fontWeight: FontWeight.w500)),
@@ -1319,7 +1319,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9), shape: BoxShape.circle),
+                        color: const Color(0xFF211C17), shape: BoxShape.circle),
                     child: const Icon(Icons.close_rounded,
                         size: 18, color: Color(0xFF64748B)),
                   ),
@@ -1368,7 +1368,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                       onPressed: () => Navigator.pop(ctx),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF475569),
-                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        side: const BorderSide(color: Color(0xFF3A2F23)),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(999)),
                       ),
@@ -1493,7 +1493,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                               width: 36,
                               height: 36,
                               decoration: BoxDecoration(
-                                  color: const Color(0xFFF1F5F9),
+                                  color: const Color(0xFF211C17),
                                   shape: BoxShape.circle),
                               child: const Icon(Icons.close_rounded,
                                   size: 18, color: Color(0xFF64748B)),
@@ -1547,7 +1547,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                                       borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
                                           color: editDate.isEmpty
-                                              ? const Color(0xFFE2E8F0)
+                                              ? const Color(0xFF3A2F23)
                                               : DT.primary.withOpacity(0.3)),
                                     ),
                                     child: Text(
@@ -1817,21 +1817,21 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                  color: const Color(0xFFE8E8E8), shape: BoxShape.circle)),
+                  color: const Color(0xFF2A241E), shape: BoxShape.circle)),
           const SizedBox(width: 14),
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Container(
                 width: 80,
                 height: 10,
                 decoration: BoxDecoration(
-                    color: const Color(0xFFE8E8E8),
+                    color: const Color(0xFF2A241E),
                     borderRadius: BorderRadius.circular(4))),
             const SizedBox(height: 6),
             Container(
                 width: 60,
                 height: 20,
                 decoration: BoxDecoration(
-                    color: const Color(0xFFE8E8E8),
+                    color: const Color(0xFF2A241E),
                     borderRadius: BorderRadius.circular(4))),
           ]),
         ]),
@@ -1839,25 +1839,25 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
         Container(
             height: 180,
             decoration: BoxDecoration(
-                color: const Color(0xFFE8E8E8),
+                color: const Color(0xFF2A241E),
                 borderRadius: BorderRadius.circular(32))),
         const SizedBox(height: 16),
         Container(
             height: 140,
             decoration: BoxDecoration(
-                color: const Color(0xFFE8E8E8),
+                color: const Color(0xFF2A241E),
                 borderRadius: BorderRadius.circular(28))),
         const SizedBox(height: 16),
         Container(
             height: 80,
             decoration: BoxDecoration(
-                color: const Color(0xFFE8E8E8),
+                color: const Color(0xFF2A241E),
                 borderRadius: BorderRadius.circular(28))),
         const SizedBox(height: 16),
         Container(
             height: 100,
             decoration: BoxDecoration(
-                color: const Color(0xFFE8E8E8),
+                color: const Color(0xFF2A241E),
                 borderRadius: BorderRadius.circular(28))),
       ],
     );
@@ -1895,7 +1895,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               width: 72,
               height: 72,
               decoration: const BoxDecoration(
-                  color: Color(0xFFF1F5F9), shape: BoxShape.circle),
+                  color: Color(0xFF211C17), shape: BoxShape.circle),
               child: const Icon(Icons.error_outline_rounded,
                   size: 32, color: Color(0xFFCBD5E1)),
             ),

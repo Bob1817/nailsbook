@@ -270,7 +270,7 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
               constraints: const BoxConstraints(minHeight: 36),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                  color: const Color(0xFFFFE9F0),
+                  color: const Color(0xFF3A2F23),
                   borderRadius: BorderRadius.circular(999)),
               child: Row(
                 mainAxisSize: MainAxisSize.min,

@@ -193,7 +193,7 @@ class _OrderConfirmScreenState extends State<OrderConfirmScreen> {
               onPressed: _acting ? null : _cancel,
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                side: const BorderSide(color: Color(0xFFE2E8F0)),
+                side: const BorderSide(color: Color(0xFF3A2F23)),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
               ),
               child: const Text('取消预约', style: TextStyle(color: DT.textMuted)),

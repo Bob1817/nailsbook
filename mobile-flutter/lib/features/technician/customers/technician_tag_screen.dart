@@ -8,7 +8,7 @@ import '../auth/technician_auth_service.dart';
 import '../../../core/widgets/nb_toast.dart';
 
 const _tagColors = [
-  {'bg': Color(0xFFFFE9F0), 'text': Color(0xFFFF5E93), 'name': '粉'},
+  {'bg': Color(0xFF3A2F23), 'text': Color(0xFFFF5E93), 'name': '粉'},
   {'bg': Color(0xFFFFF1E5), 'text': Color(0xFFC9792A), 'name': '橙'},
   {'bg': Color(0xFFEEF9F1), 'text': Color(0xFF31B46C), 'name': '绿'},
   {'bg': Color(0xFFEBF4FF), 'text': Color(0xFF3B82F6), 'name': '蓝'},

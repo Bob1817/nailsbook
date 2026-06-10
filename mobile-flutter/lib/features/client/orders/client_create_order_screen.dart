@@ -295,7 +295,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF16120E), Color(0xFF16120E), Color(0xFFF2F6FB)],
+            colors: [Color(0xFF16120E), Color(0xFF16120E), Color(0xFF16120E)],
             stops: [0.0, 0.48, 1.0],
           ),
         ),
@@ -456,7 +456,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
             Container(
               width: 46, height: 46,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFFFFE0EA), Color(0xFF211C17)]),
+                gradient: const LinearGradient(colors: [Color(0xFF3A2F23), Color(0xFF211C17)]),
                 borderRadius: BorderRadius.circular(16),
                 image: tech.avatarUrl != null ? DecorationImage(image: NetworkImage(tech.avatarUrl!), fit: BoxFit.cover) : null,
               ),
@@ -1025,7 +1025,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               gradient: selected ? DT.primaryGradient : null,
-              color: selected ? null : (s.occupied ? const Color(0xFFEFF1F4) : const Color(0xFFF1F5F9)),
+              color: selected ? null : (s.occupied ? const Color(0xFF2A241E) : const Color(0xFF211C17)),
               borderRadius: BorderRadius.circular(DT.rXxl),
               boxShadow: selected ? [BoxShadow(color: const Color(0x4DC4627A), blurRadius: 12, offset: const Offset(0, 4))] : null,
             ),

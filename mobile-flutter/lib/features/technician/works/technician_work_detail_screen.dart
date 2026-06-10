@@ -507,7 +507,7 @@ class _TechnicianWorkDetailScreenState extends State<TechnicianWorkDetailScreen>
                                     ),
                                     if (isTech) ...[const SizedBox(width: 6), _miniTag('美甲师', DT.primary, DT.primarySoft)],
                                     if (pinned) ...[const SizedBox(width: 6), _miniTag('置顶', const Color(0xFFB45309), const Color(0xFFFEF3C7))],
-                                    if (hidden) ...[const SizedBox(width: 6), _miniTag('已隐藏', DT.textSecondary, const Color(0xFFE5E7EB))],
+                                    if (hidden) ...[const SizedBox(width: 6), _miniTag('已隐藏', DT.textSecondary, const Color(0xFF3A2F23))],
                                   ],
                                 ),
                               ),

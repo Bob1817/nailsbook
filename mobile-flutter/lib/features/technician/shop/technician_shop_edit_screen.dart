@@ -262,16 +262,16 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
                     child: Container(
                       height: 50,
                       decoration: BoxDecoration(
-                        gradient: DT.primaryGradient,
+                        color: DT.cream,
                         borderRadius: BorderRadius.circular(DT.lg),
-                        boxShadow: DT.shadowPrimary,
+                        boxShadow: DT.shadowSm,
                       ),
                       alignment: Alignment.center,
                       child: Text(_saving ? '保存中...' : '保存',
                           style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Colors.white)),
+                              color: DT.onCream)),
                     ),
                   ),
                 ),

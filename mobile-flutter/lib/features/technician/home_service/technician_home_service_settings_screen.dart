@@ -333,7 +333,7 @@ class _TechnicianHomeServiceSettingsScreenState extends State<TechnicianHomeServ
           child: Container(
             height: 40,
             decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFFE5E7EB)),
+              border: Border.all(color: const Color(0xFF3A2F23)),
               borderRadius: BorderRadius.circular(10),
             ),
             child: TextField(
@@ -435,7 +435,7 @@ class _TechnicianHomeServiceSettingsScreenState extends State<TechnicianHomeServ
           contentPadding: const EdgeInsets.symmetric(horizontal: 10),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+            borderSide: const BorderSide(color: Color(0xFF3A2F23)),
           ),
           isDense: true,
         ),
