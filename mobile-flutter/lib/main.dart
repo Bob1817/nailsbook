@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'app/app.dart';
@@ -29,15 +31,6 @@ void main() async {
 
   apiClient.onUnauthorized = authSession.handleUnauthorized;
 
-  await authSession.restoreSession();
-
-  if (authSession.isAuthenticated) {
-    chatSocket.configure(baseUrl: apiBaseUrl, token: await tokenStore.getActiveAccessToken() ?? '');
-    chatSocket.connect();
-  }
-
-  await deepLinkService.init();
-
   runApp(
     MultiProvider(
       providers: [
@@ -54,4 +47,38 @@ void main() async {
       ),
     ),
   );
+
+  unawaited(_bootstrapAfterFirstFrame(
+    authSession: authSession,
+    tokenStore: tokenStore,
+    chatSocket: chatSocket,
+    deepLinkService: deepLinkService,
+    apiBaseUrl: apiBaseUrl,
+  ));
+}
+
+Future<void> _bootstrapAfterFirstFrame({
+  required AuthSession authSession,
+  required TokenStore tokenStore,
+  required ChatSocket chatSocket,
+  required DeepLinkService deepLinkService,
+  required String apiBaseUrl,
+}) async {
+  try {
+    await authSession.restoreSession().timeout(const Duration(seconds: 8));
+  } catch (_) {
+    authSession.handleUnauthorized();
+  }
+
+  if (authSession.isAuthenticated) {
+    final token = await tokenStore.getActiveAccessToken();
+    if (token != null && token.isNotEmpty) {
+      chatSocket.configure(baseUrl: apiBaseUrl, token: token);
+      chatSocket.connect();
+    }
+  }
+
+  try {
+    await deepLinkService.init().timeout(const Duration(seconds: 4));
+  } catch (_) {}
 }

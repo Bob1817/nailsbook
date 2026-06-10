@@ -5,6 +5,8 @@ import 'api_error.dart';
 typedef OnUnauthorized = void Function();
 
 class ApiClient {
+  static const _requestTimeout = Duration(seconds: 12);
+
   final String baseUrl;
   OnUnauthorized? onUnauthorized;
 
@@ -35,38 +37,51 @@ class ApiClient {
 
   String get rolePrefix => _rolePrefix;
 
-  Future<Map<String, dynamic>> get(String path, {Map<String, String>? queryParams}) async {
+  Future<Map<String, dynamic>> get(String path,
+      {Map<String, String>? queryParams}) async {
     final uri = _buildUri(path, queryParams);
-    final response = await http.get(uri, headers: _headers);
+    final response =
+        await http.get(uri, headers: _headers).timeout(_requestTimeout);
     return _handleResponse(response);
   }
 
-  Future<Map<String, dynamic>> post(String path, {Map<String, dynamic>? body}) async {
+  Future<Map<String, dynamic>> post(String path,
+      {Map<String, dynamic>? body}) async {
     final uri = _buildUri(path);
-    final response = await http.post(uri, headers: _headers, body: jsonEncode(body));
+    final response = await http
+        .post(uri, headers: _headers, body: jsonEncode(body))
+        .timeout(_requestTimeout);
     return _handleResponse(response);
   }
 
-  Future<Map<String, dynamic>> patch(String path, {Map<String, dynamic>? body}) async {
+  Future<Map<String, dynamic>> patch(String path,
+      {Map<String, dynamic>? body}) async {
     final uri = _buildUri(path);
-    final response = await http.patch(uri, headers: _headers, body: jsonEncode(body));
+    final response = await http
+        .patch(uri, headers: _headers, body: jsonEncode(body))
+        .timeout(_requestTimeout);
     return _handleResponse(response);
   }
 
   Future<Map<String, dynamic>> delete(String path) async {
     final uri = _buildUri(path);
-    final response = await http.delete(uri, headers: _headers);
+    final response =
+        await http.delete(uri, headers: _headers).timeout(_requestTimeout);
     return _handleResponse(response);
   }
 
-  Future<List<dynamic>> getList(String path, {Map<String, String>? queryParams}) async {
+  Future<List<dynamic>> getList(String path,
+      {Map<String, String>? queryParams}) async {
     final uri = _buildUri(path, queryParams);
-    final response = await http.get(uri, headers: _headers);
+    final response =
+        await http.get(uri, headers: _headers).timeout(_requestTimeout);
     _checkStatus(response);
     final decoded = jsonDecode(response.body);
     if (decoded is List) return decoded;
-    if (decoded is Map && decoded.containsKey('data')) return decoded['data'] as List;
-    throw ApiError('Unexpected response format', statusCode: response.statusCode);
+    if (decoded is Map && decoded.containsKey('data'))
+      return decoded['data'] as List;
+    throw ApiError('Unexpected response format',
+        statusCode: response.statusCode);
   }
 
   Future<http.StreamedResponse> uploadMultipart(
@@ -78,7 +93,7 @@ class ApiClient {
     final request = http.MultipartRequest('POST', uri);
     request.headers.addAll(_headers);
     request.files.add(await http.MultipartFile.fromPath(fieldName, filePath));
-    return request.send();
+    return request.send().timeout(_requestTimeout);
   }
 
   Uri _buildUri(String path, [Map<String, String>? queryParams]) {

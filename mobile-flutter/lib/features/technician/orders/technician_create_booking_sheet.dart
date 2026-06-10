@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -103,59 +105,84 @@ class _TechnicianCreateBookingSheetState
 
   @override
   Widget build(BuildContext context) {
+    const sheetRadius = BorderRadius.vertical(top: Radius.circular(28));
     return SafeArea(
       top: false,
+      bottom: false,
       child: Container(
+        width: double.infinity,
         constraints:
             BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
-        decoration: const BoxDecoration(
-          color: DT.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: BoxDecoration(
+          borderRadius: sheetRadius,
+          boxShadow: DT.shadowLg,
         ),
-        child: Column(
-          children: [
-            _header(),
-            Expanded(
-              child: _loading
-                  ? const Center(
-                      child: CircularProgressIndicator(color: DT.primary))
-                  : SingleChildScrollView(
-                      padding: EdgeInsets.fromLTRB(
-                        20,
-                        16,
-                        20,
-                        MediaQuery.of(context).viewInsets.bottom + 16,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _customerPicker(),
-                          const SizedBox(height: 12),
-                          _input(_serviceCtl, '服务内容'),
-                          const SizedBox(height: 12),
-                          _calendar(),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                  child: _input(_durationCtl, '服务时长(分钟)',
-                                      numberOnly: true)),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                  child: _input(_priceCtl, '价格',
-                                      decimalOnly: true)),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          _input(_addressCtl, '服务地址'),
-                          const SizedBox(height: 12),
-                          _input(_noteCtl, '备注（可选）', maxLines: 4),
-                        ],
-                      ),
-                    ),
+        child: ClipRRect(
+          borderRadius: sheetRadius,
+          child: BackdropFilter(
+            filter: ImageFilter.blur(
+              sigmaX: DT.glassBlurHeavy,
+              sigmaY: DT.glassBlurHeavy,
             ),
-            _footer(),
-          ],
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.68),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.28),
+                    Colors.white.withValues(alpha: 0.06),
+                  ],
+                ),
+              ),
+              child: Column(
+                children: [
+                  _header(),
+                  Expanded(
+                    child: _loading
+                        ? const Center(
+                            child: CircularProgressIndicator(color: DT.primary))
+                        : SingleChildScrollView(
+                            padding: EdgeInsets.fromLTRB(
+                              20,
+                              16,
+                              20,
+                              MediaQuery.of(context).viewInsets.bottom + 16,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _customerPicker(),
+                                const SizedBox(height: 12),
+                                _input(_serviceCtl, '服务内容'),
+                                const SizedBox(height: 12),
+                                _calendar(),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                        child: _input(_durationCtl, '服务时长(分钟)',
+                                            numberOnly: true)),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                        child: _input(_priceCtl, '价格',
+                                            decimalOnly: true)),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                _input(_addressCtl, '服务地址'),
+                                const SizedBox(height: 12),
+                                _input(_noteCtl, '备注（可选）', maxLines: 4),
+                              ],
+                            ),
+                          ),
+                  ),
+                  _footer(),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -204,8 +231,9 @@ class _TechnicianCreateBookingSheetState
       height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: DT.surfaceAlt,
+        color: Colors.white.withValues(alpha: 0.56),
         borderRadius: BorderRadius.circular(16),
+        boxShadow: DT.shadowSm,
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int>(
@@ -257,7 +285,7 @@ class _TechnicianCreateBookingSheetState
       decoration: InputDecoration(
         hintText: placeholder,
         filled: true,
-        fillColor: DT.surfaceAlt,
+        fillColor: Colors.white.withValues(alpha: 0.56),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
@@ -288,8 +316,9 @@ class _TechnicianCreateBookingSheetState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: DT.bgWarm,
+        color: Colors.white.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(20),
+        boxShadow: DT.shadowSm,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -358,8 +387,11 @@ class _TechnicianCreateBookingSheetState
         width: 44,
         height: 44,
         alignment: Alignment.center,
-        decoration:
-            const BoxDecoration(color: DT.surface, shape: BoxShape.circle),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.58),
+          shape: BoxShape.circle,
+          boxShadow: DT.shadowSm,
+        ),
         child: Icon(icon, size: 18, color: DT.textSecondary),
       ),
     );
@@ -390,7 +422,7 @@ class _TechnicianCreateBookingSheetState
               ? Colors.transparent
               : selected
                   ? DT.primary
-                  : DT.surface,
+                  : Colors.white.withValues(alpha: 0.58),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
@@ -442,9 +474,9 @@ class _TechnicianCreateBookingSheetState
                   ? DT.surfaceAlt
                   : selected
                       ? DT.primary
-                      : DT.surface,
+                      : Colors.white.withValues(alpha: 0.58),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: selected ? DT.primary : DT.divider),
+              boxShadow: selected ? null : DT.shadowSm,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -474,8 +506,20 @@ class _TechnicianCreateBookingSheetState
   }
 
   Widget _footer() {
-    return GlassBottomSurface(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    return GlassContainer(
+      blur: DT.glassBlurHeavy,
+      opacity: 0.5,
+      borderRadius: 0,
+      showBorder: false,
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x10000000),
+          blurRadius: 24,
+          offset: Offset(0, -8),
+        ),
+      ],
+      padding: EdgeInsets.fromLTRB(20, 12, 20, bottomInset + 12),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
