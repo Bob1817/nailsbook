@@ -989,10 +989,10 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(label,
-                    style: TextStyle(fontSize: 12, color: selected ? Colors.white70 : (enabled ? DT.textMuted : DT.textTertiary.withOpacity(0.5)))),
+                    style: TextStyle(fontSize: 12, color: selected ? DT.onCream.withValues(alpha: 0.7) : (enabled ? DT.textMuted : DT.textTertiary.withOpacity(0.5)))),
                   const SizedBox(height: 4),
                   Text('${d.month}/${d.day}',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: selected ? Colors.white : (enabled ? DT.textPrimary : DT.textTertiary.withOpacity(0.45)))),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: selected ? DT.onCream : (enabled ? DT.textPrimary : DT.textTertiary.withOpacity(0.45)))),
                   const SizedBox(height: 2),
                   Text(enabled ? '' : '休',
                     style: TextStyle(fontSize: 9, height: 1, color: DT.textTertiary.withOpacity(0.7))),
@@ -1035,7 +1035,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                 Text(s.time, style: TextStyle(
                   fontSize: 13,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                  color: selected ? Colors.white : (s.occupied ? DT.textTertiary : const Color(0xFF64748B)),
+                  color: selected ? DT.onCream : (s.occupied ? DT.textTertiary : const Color(0xFF64748B)),
                   decoration: s.occupied ? TextDecoration.lineThrough : null,
                 )),
                 if (s.occupied)

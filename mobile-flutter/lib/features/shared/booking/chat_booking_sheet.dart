@@ -543,9 +543,9 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(label, style: TextStyle(fontSize: 11, color: selected ? Colors.white70 : (enabled ? DT.textMuted : DT.textTertiary.withOpacity(0.5)))),
+                  Text(label, style: TextStyle(fontSize: 11, color: selected ? DT.onCream.withValues(alpha: 0.7) : (enabled ? DT.textMuted : DT.textTertiary.withOpacity(0.5)))),
                   const SizedBox(height: 4),
-                  Text('${d.month}/${d.day}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: selected ? Colors.white : (enabled ? DT.textPrimary : DT.textTertiary.withOpacity(0.45)))),
+                  Text('${d.month}/${d.day}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: selected ? DT.onCream : (enabled ? DT.textPrimary : DT.textTertiary.withOpacity(0.45)))),
                   const SizedBox(height: 2),
                   Text(enabled ? '' : '休', style: TextStyle(fontSize: 9, height: 1, color: DT.textTertiary.withOpacity(0.7))),
                 ],

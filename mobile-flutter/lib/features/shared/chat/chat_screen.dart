@@ -436,7 +436,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 child: Text(
                   msg['content'].toString(),
                   style: DT.bodyMedium.copyWith(
-                    color: isMe ? Colors.white : DT.textPrimary,
+                    color: isMe ? DT.onCream : DT.textPrimary,
                     height: 1.45,
                   ),
                 ),

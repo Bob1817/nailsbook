@@ -266,15 +266,15 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
           constraints: const BoxConstraints(minHeight: 44),
           padding: const EdgeInsets.symmetric(horizontal: DT.lg),
           decoration: BoxDecoration(
-            color: selected ? DT.textPrimary : DT.surface,
+            color: selected ? DT.cream : DT.surface,
             borderRadius: BorderRadius.circular(DT.rFull),
-            border: Border.all(color: selected ? DT.textPrimary : DT.border),
+            border: Border.all(color: selected ? DT.cream : DT.border),
           ),
           child: Text(label,
               style: TextStyle(
                 fontSize: DT.textSm,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                color: selected ? Colors.white : DT.textSecondary,
+                color: selected ? DT.onCream : DT.textSecondary,
               )),
         ),
       ),
@@ -289,14 +289,14 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
         constraints: const BoxConstraints(minHeight: 44),
         padding: const EdgeInsets.symmetric(horizontal: DT.lg),
         decoration: BoxDecoration(
-          color: DT.primary,
+          color: DT.cream,
           borderRadius: BorderRadius.circular(DT.rFull),
         ),
         child: const Text('未支付定金',
             style: TextStyle(
                 fontSize: DT.textSm,
                 fontWeight: FontWeight.w600,
-                color: Colors.white)),
+                color: DT.onCream)),
       ),
     );
   }

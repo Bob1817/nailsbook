@@ -364,15 +364,15 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
               alignment: Alignment.center,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: active ? DT.textPrimary : DT.surface,
+                color: active ? DT.cream : DT.surface,
                 borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: active ? DT.textPrimary : DT.border),
+                border: Border.all(color: active ? DT.cream : DT.border),
               ),
               child: Text(t,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-                    color: active ? Colors.white : DT.textSecondary,
+                    color: active ? DT.onCream : DT.textSecondary,
                   )),
             ),
           );

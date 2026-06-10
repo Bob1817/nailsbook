@@ -289,7 +289,7 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
         width: 58,
         padding: const EdgeInsets.symmetric(vertical: 4),
         decoration: BoxDecoration(
-          color: active ? DT.primary : DT.surfaceAlt,
+          color: active ? DT.cream : DT.surfaceAlt,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
@@ -300,21 +300,21 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
                     fontSize: 11,
                     height: 1,
                     color: active
-                        ? Colors.white.withValues(alpha: 0.85)
+                        ? DT.onCream.withValues(alpha: 0.75)
                         : DT.textTertiary)),
             const SizedBox(height: 2),
             Text('${d.day}',
                 style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: active ? Colors.white : DT.textPrimary,
+                    color: active ? DT.onCream : DT.textPrimary,
                     height: 1.1)),
             Text('${d.month}月',
                 style: TextStyle(
                     fontSize: 11,
                     height: 1,
                     color: active
-                        ? Colors.white.withValues(alpha: 0.85)
+                        ? DT.onCream.withValues(alpha: 0.75)
                         : DT.textTertiary)),
             const SizedBox(height: 2),
             Container(
@@ -830,9 +830,9 @@ class _CalendarSheetState extends State<_CalendarSheet> {
           margin: const EdgeInsets.all(2),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: selected ? DT.primary : Colors.transparent,
+            color: selected ? DT.cream : Colors.transparent,
             border: isToday && !selected
-                ? Border.all(color: DT.primary.withOpacity(0.4))
+                ? Border.all(color: DT.primary.withValues(alpha: 0.5))
                 : null,
             borderRadius: BorderRadius.circular(10),
           ),
@@ -843,14 +843,14 @@ class _CalendarSheetState extends State<_CalendarSheet> {
                   style: TextStyle(
                       fontSize: 14,
                       fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                      color: selected ? Colors.white : DT.textPrimary)),
+                      color: selected ? DT.onCream : DT.textPrimary)),
               const SizedBox(height: 2),
               Container(
                 width: 4,
                 height: 4,
                 decoration: BoxDecoration(
                   color: selected
-                      ? Colors.white
+                      ? DT.onCream
                       : (hasOrders
                           ? const Color(0xFF22C55E)
                           : Colors.transparent),

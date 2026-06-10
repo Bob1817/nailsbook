@@ -379,7 +379,7 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
               alignment: Alignment.center,
               padding: const EdgeInsets.symmetric(horizontal: 14),
               decoration: BoxDecoration(
-                color: active ? DT.textPrimary : DT.surface,
+                color: active ? DT.cream : DT.surface,
                 borderRadius: BorderRadius.circular(DT.rFull),
                 border:
                     Border.all(color: active ? DT.textPrimary : DT.border),
@@ -388,7 +388,7 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
                   style: TextStyle(
                       fontSize: 12,
                       fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-                      color: active ? Colors.white : DT.textSecondary)),
+                      color: active ? DT.onCream : DT.textSecondary)),
             ),
           );
         },
