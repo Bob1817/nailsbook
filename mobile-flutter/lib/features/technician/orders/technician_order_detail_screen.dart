@@ -1,3 +1,5 @@
+import 'dart:ui' show FontFeature;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -103,9 +105,6 @@ class _TechnicianOrderDetailScreenState
     return '¥${amount.toInt()}';
   }
 
-  String _initial(String? name) =>
-      (name != null && name.isNotEmpty) ? name.substring(0, 1) : '客';
-
   @override
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
@@ -117,14 +116,20 @@ class _TechnicianOrderDetailScreenState
           ? const Center(child: CircularProgressIndicator(color: DT.primary))
           : _order == null
               ? _buildError()
-              : Column(
+              : Stack(
                   children: [
-                    // Sticky header
-                    _buildHeader(topPad),
-                    // Scrollable content
-                    Expanded(child: _buildContent()),
-                    // Bottom actions
-                    _buildBottomBar(bottomPad),
+                    // Scrollable content (extends behind header for glass blur)
+                    Column(
+                      children: [
+                        Expanded(child: _buildContent(topPad)),
+                        _buildBottomBar(bottomPad),
+                      ],
+                    ),
+                    // Floating header with liquid glass
+                    Positioned(
+                      left: 0, right: 0, top: 0,
+                      child: _buildHeader(topPad),
+                    ),
                   ],
                 ),
     );
@@ -134,69 +139,77 @@ class _TechnicianOrderDetailScreenState
 
   Widget _buildHeader(double topPad) {
     final o = _order!;
-    return GlassContainer(
-      blur: DT.glassBlurHeavy,
-      opacity: 0.72,
-      borderRadius: 0,
-      showBorder: false,
-      padding: EdgeInsets.fromLTRB(DT.xl, topPad + DT.sm, DT.xl, DT.md),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () {
-              HapticFeedback.lightImpact();
-              context.pop();
-            },
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: DT.fillWarm,
-                shape: BoxShape.circle,
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.72),
+            border: Border(
+              bottom: BorderSide(color: Colors.black.withValues(alpha: 0.06), width: 0.5),
+            ),
+          ),
+          padding: EdgeInsets.fromLTRB(DT.xl, topPad + DT.sm, DT.xl, DT.md),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  context.pop();
+                },
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.45),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(CupertinoIcons.back,
+                      size: 18, color: DT.textPrimary),
+                ),
               ),
-              child: const Icon(CupertinoIcons.back,
-                  size: 18, color: DT.textPrimary),
-            ),
-          ),
-          const SizedBox(width: DT.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('预约详情', style: DT.titleMedium),
-                if (o['orderNo'] != null)
-                  Text(o['orderNo'].toString(), style: DT.captionLarge),
-              ],
-            ),
-          ),
-          GestureDetector(
-            onTap: _showEditSheet,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: DT.lg, vertical: DT.sm),
-              decoration: BoxDecoration(
-                color: DT.primary,
-                borderRadius: BorderRadius.circular(DT.rLg),
-                boxShadow: DT.shadowPrimary,
+              const SizedBox(width: DT.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('预约详情', style: DT.titleMedium),
+                    if (o['orderNo'] != null)
+                      Text(o['orderNo'].toString(), style: DT.captionLarge),
+                  ],
+                ),
               ),
-              child: Text('编辑',
-                  style: DT.bodyMedium.copyWith(
-                      color: Colors.white, fontWeight: FontWeight.w500)),
-            ),
+              GestureDetector(
+                onTap: _showEditSheet,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: DT.lg, vertical: DT.sm),
+                  decoration: BoxDecoration(
+                    color: DT.primary,
+                    borderRadius: BorderRadius.circular(DT.rLg),
+                    boxShadow: DT.shadowPrimary,
+                  ),
+                  child: Text('编辑',
+                      style: DT.bodySmall.copyWith(
+                          color: Colors.white, fontWeight: FontWeight.w500)),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
   // ── Content ──
 
-  Widget _buildContent() {
+  Widget _buildContent(double topPad) {
     final o = _order!;
     final status = o['status']?.toString() ?? '';
     final serviceType = o['serviceType']?.toString() ?? '';
     final customerName = o['customerName']?.toString() ?? '客户';
     final customerPhone = o['customerPhone']?.toString() ?? '';
+    final customerAvatar = o['customerAvatar']?.toString();
     final serviceName = o['serviceName']?.toString() ?? '';
     final address = o['address']?.toString() ?? '';
     final note = o['note']?.toString() ?? '';
@@ -206,109 +219,98 @@ class _TechnicianOrderDetailScreenState
     final depositAmount = o['depositAmount'] as num?;
     final depositPaid = o['depositPaid'] as bool? ?? false;
 
+    // Measure header height for top padding
+    final headerH = topPad + DT.sm + 44 + DT.md; // topPad + spacing + button + bottom
+
     return RefreshIndicator(
       color: DT.primary,
       onRefresh: _load,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(DT.xl, DT.lg, DT.xl, DT.xxl),
+        padding: EdgeInsets.fromLTRB(DT.xl, headerH + DT.md, DT.xl, DT.xxl),
         children: [
-          // Status card
-          _glassCard(
-            child: Row(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('当前状态', style: DT.captionLarge),
-                    const SizedBox(height: 6),
-                    OrderStatusBadge(status: status, fontSize: DT.textSm),
-                  ],
-                ),
-                const Spacer(),
-                if (serviceType.isNotEmpty)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text('服务类型', style: DT.captionLarge),
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: DT.md, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: _serviceTypeBg(serviceType),
-                          borderRadius: BorderRadius.circular(DT.rFull),
-                        ),
-                        child: Text(_serviceTypeLabel(serviceType),
-                            style: DT.bodySmall.copyWith(
-                                fontWeight: FontWeight.w500,
-                                color: _serviceTypeColor(serviceType))),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: DT.lg),
-
           // Customer info
           _glassCard(
             title: '客户信息',
             child: Row(
               children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: DT.primarySoft,
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(_initial(customerName),
-                      style: DT.titleMedium
-                          .copyWith(fontSize: 22, color: DT.primary)),
-                ),
+                if (customerAvatar != null && customerAvatar.isNotEmpty)
+                  ClipOval(
+                    child: CachedNetworkImage(
+                      imageUrl: customerAvatar,
+                      width: 48,
+                      height: 48,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) =>
+                          Container(width: 48, height: 48, color: DT.primarySoft),
+                      errorWidget: (_, __, ___) => _avatarFallback(customerName),
+                    ),
+                  )
+                else
+                  _avatarFallback(customerName),
                 const SizedBox(width: DT.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(customerName,
-                          style: DT.titleMedium.copyWith(fontSize: DT.textMd)),
+                      Text(customerName, style: DT.titleSmall),
                       if (customerPhone.isNotEmpty) ...[
                         const SizedBox(height: 2),
-                        Text(customerPhone, style: DT.bodyMedium),
+                        Text(customerPhone,
+                            style: DT.bodySmall.copyWith(color: DT.textSecondary)),
                       ],
                     ],
                   ),
                 ),
-                // Contact button
                 GestureDetector(
                   onTap: () {
                     HapticFeedback.lightImpact();
                     NbToast.show(context, '联系客户: $customerPhone');
                   },
                   child: Container(
-                    width: 44,
-                    height: 44,
+                    width: 40,
+                    height: 40,
                     decoration: BoxDecoration(
                       color: DT.primarySoft,
                       shape: BoxShape.circle,
                       border: Border.all(color: DT.avatarBorder),
                     ),
                     child: const Icon(CupertinoIcons.phone,
-                        size: 20, color: DT.primary),
+                        size: 18, color: DT.primary),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: DT.lg),
+          const SizedBox(height: DT.md),
 
-          // Service info
+          // Service info (with status + service type integrated)
           _glassCard(
             title: '服务信息',
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Status + service type row
+                Row(
+                  children: [
+                    OrderStatusBadge(status: status, fontSize: 11),
+                    const Spacer(),
+                    if (serviceType.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: DT.sm + 2, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _serviceTypeBg(serviceType),
+                          borderRadius: BorderRadius.circular(DT.rFull),
+                        ),
+                        child: Text(_serviceTypeLabel(serviceType),
+                            style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: _serviceTypeColor(serviceType))),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: DT.md),
                 _detailRow('服务内容', serviceName),
                 _detailRow('预约时间',
                     '${_formatDateLabel(o['startTime'])} ${_formatTimeRange(o['startTime'], o['endTime'])}'),
@@ -320,7 +322,7 @@ class _TechnicianOrderDetailScreenState
                         ? (o['shopName']?.toString() ?? '到店服务')
                         : address),
                 if (customDescription.isNotEmpty) ...[
-                  const SizedBox(height: DT.md),
+                  const SizedBox(height: DT.sm),
                   Container(
                     padding: const EdgeInsets.all(DT.md),
                     decoration: BoxDecoration(
@@ -330,18 +332,22 @@ class _TechnicianOrderDetailScreenState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('需求描述', style: DT.captionLarge),
-                        const SizedBox(height: 6),
+                        Text('需求描述',
+                            style: DT.captionLarge.copyWith(
+                                fontWeight: FontWeight.w500)),
+                        const SizedBox(height: 4),
                         Text(customDescription,
-                            style: DT.bodyMedium.copyWith(height: 1.6)),
+                            style: DT.bodySmall.copyWith(height: 1.5)),
                       ],
                     ),
                   ),
                 ],
                 if (customImages.isNotEmpty) ...[
-                  const SizedBox(height: DT.md),
-                  Text('参考图', style: DT.captionLarge),
                   const SizedBox(height: DT.sm),
+                  Text('参考图',
+                      style: DT.captionLarge.copyWith(
+                          fontWeight: FontWeight.w500)),
+                  const SizedBox(height: DT.xs),
                   Wrap(
                     spacing: DT.sm,
                     runSpacing: DT.sm,
@@ -349,22 +355,22 @@ class _TechnicianOrderDetailScreenState
                         .map((url) => ClipRRect(
                               borderRadius: BorderRadius.circular(DT.rMd),
                               child: Image.network(url.toString(),
-                                  width: 80,
-                                  height: 80,
+                                  width: 72,
+                                  height: 72,
                                   fit: BoxFit.cover,
                                   errorBuilder: (_, __, ___) => Container(
-                                        width: 80,
-                                        height: 80,
+                                        width: 72,
+                                        height: 72,
                                         color: DT.fillGreyLight,
                                         child: const Icon(CupertinoIcons.photo,
-                                            color: DT.iconGrey),
+                                            size: 18, color: DT.iconGrey),
                                       )),
                             ))
                         .toList(),
                   ),
                 ],
                 if (note.isNotEmpty) ...[
-                  const SizedBox(height: DT.md),
+                  const SizedBox(height: DT.sm),
                   Container(
                     padding: const EdgeInsets.all(DT.md),
                     decoration: BoxDecoration(
@@ -375,11 +381,11 @@ class _TechnicianOrderDetailScreenState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(CupertinoIcons.pencil,
-                            size: 16, color: DT.textMuted),
-                        const SizedBox(width: DT.sm),
+                            size: 14, color: DT.textMuted),
+                        const SizedBox(width: DT.xs),
                         Expanded(
                           child: Text(note,
-                              style: DT.bodyMedium
+                              style: DT.bodySmall
                                   .copyWith(color: DT.textSecondary)),
                         ),
                       ],
@@ -389,69 +395,56 @@ class _TechnicianOrderDetailScreenState
               ],
             ),
           ),
-          const SizedBox(height: DT.lg),
+          const SizedBox(height: DT.md),
 
           // Price detail
           _glassCard(
             title: '价格明细',
             child: Column(
               children: [
-                // Price display
-                Container(
-                  padding: const EdgeInsets.all(DT.lg),
-                  decoration: BoxDecoration(
-                    gradient: DT.primaryGradient,
-                    borderRadius: BorderRadius.circular(DT.rLg),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('预约金额',
-                          style: DT.bodyMedium.copyWith(
-                              color: Colors.white.withValues(alpha: 0.8))),
-                      const SizedBox(width: DT.md),
-                      Text(_formatMoney(price),
-                          style:
-                              DT.displayMedium.copyWith(color: Colors.white)),
-                    ],
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('预约金额',
+                        style: DT.bodySmall.copyWith(
+                            color: DT.textSecondary)),
+                    Text(_formatMoney(price),
+                        style: DT.titleMedium.copyWith(
+                            color: DT.primary,
+                            fontFeatures: const [
+                              FontFeature.tabularFigures()
+                            ])),
+                  ],
                 ),
                 if (depositAmount != null && depositAmount > 0) ...[
-                  const SizedBox(height: DT.md),
-                  Container(
-                    padding: const EdgeInsets.all(DT.md),
-                    decoration: BoxDecoration(
-                      color: depositPaid ? DT.successBg : DT.warningBg,
-                      borderRadius: BorderRadius.circular(DT.rMd),
-                      border: Border.all(
-                          color: depositPaid
-                              ? DT.successBorder
-                              : DT.warningBorder),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                            depositPaid
-                                ? CupertinoIcons.check_mark_circled_solid
-                                : CupertinoIcons.clock,
-                            size: 16,
-                            color:
-                                depositPaid ? DT.successText : DT.warningText),
-                        const SizedBox(width: DT.sm),
-                        Text(depositPaid ? '定金已确认' : '待确认定金',
-                            style: DT.bodySmall.copyWith(
-                                fontWeight: FontWeight.w500,
-                                color: depositPaid
-                                    ? DT.successText
-                                    : DT.warningText)),
-                        const Spacer(),
-                        Text(_formatMoney(depositAmount),
-                            style: DT.monospace.copyWith(
-                                color: depositPaid
-                                    ? DT.successText
-                                    : DT.warningText)),
-                      ],
-                    ),
+                  const SizedBox(height: DT.sm),
+                  Container(height: 0.5, color: DT.divider),
+                  const SizedBox(height: DT.sm),
+                  Row(
+                    children: [
+                      Icon(
+                          depositPaid
+                              ? CupertinoIcons.check_mark_circled_solid
+                              : CupertinoIcons.clock,
+                          size: 14,
+                          color:
+                              depositPaid ? DT.successText : DT.warningText),
+                      const SizedBox(width: DT.xs),
+                      Text(depositPaid ? '定金已确认' : '待确认定金',
+                          style: DT.captionLarge.copyWith(
+                              color: depositPaid
+                                  ? DT.successText
+                                  : DT.warningText)),
+                      const Spacer(),
+                      Text(_formatMoney(depositAmount),
+                          style: DT.bodySmall.copyWith(
+                              color: depositPaid
+                                  ? DT.successText
+                                  : DT.warningText,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures()
+                              ])),
+                    ],
                   ),
                 ],
               ],
@@ -462,19 +455,35 @@ class _TechnicianOrderDetailScreenState
     );
   }
 
+  Widget _avatarFallback(String name) {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: const BoxDecoration(
+        color: DT.primarySoft,
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: Text(name.characters.first.toUpperCase(),
+          style: DT.titleSmall.copyWith(fontSize: 18, color: DT.primary)),
+    );
+  }
+
   Widget _detailRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 80,
-            child: Text(label, style: DT.captionLarge),
+            width: 72,
+            child: Text(label,
+                style: DT.captionLarge.copyWith(color: DT.textMuted)),
           ),
           Expanded(
-            child: Text(value,
-                style: DT.bodyMedium.copyWith(fontWeight: FontWeight.w500),
+            child: Text(value.isEmpty ? '—' : value,
+                style: DT.bodySmall.copyWith(
+                    color: DT.textPrimary, fontWeight: FontWeight.w500),
                 textAlign: TextAlign.right),
           ),
         ],
@@ -486,19 +495,19 @@ class _TechnicianOrderDetailScreenState
 
   Widget _glassCard({String? title, required Widget child}) {
     return Container(
-      padding: const EdgeInsets.all(DT.xl),
+      padding: const EdgeInsets.all(DT.lg),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.88),
-        borderRadius: BorderRadius.circular(DT.radius24),
-        boxShadow: DT.shadowMd,
-        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+        borderRadius: BorderRadius.circular(DT.radius16),
+        boxShadow: DT.shadowSm,
+        border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (title != null) ...[
-            Text(title, style: DT.titleLarge),
-            const SizedBox(height: DT.md),
+            Text(title, style: DT.titleSmall),
+            const SizedBox(height: DT.sm),
           ],
           child,
         ],
@@ -530,7 +539,7 @@ class _TechnicianOrderDetailScreenState
       final needsDeposit =
           depositAmount != null && depositAmount > 0 && !depositPaid;
       buttons.add(_ActionButton(
-          needsDeposit ? '等待客户付定金' : label, DT.borderGrey, false, null,
+          needsDeposit ? '等待定金' : label, DT.borderGrey, false, null,
           textColor: DT.textLightGrey));
     }
     if (status == 'in_progress') {
@@ -538,45 +547,43 @@ class _TechnicianOrderDetailScreenState
           '确认完成', DT.success, true, () => _changeStatus('completed')));
     }
 
-    // Send button
-    buttons.add(_ActionButton('发给 $customerName', DT.textPrimary, true, () {
+    buttons.add(_ActionButton('发给客户', DT.textPrimary, true, () {
       HapticFeedback.lightImpact();
       NbToast.show(context, '已发送给 $customerName');
     }));
 
-    // Cancel button
     if (status != 'completed' && status != 'cancelled') {
       buttons.add(_ActionButton(
           '取消预约', Colors.white, false, () => _changeStatus('cancelled'),
-          textColor: DT.error, border: Border.all(color: DT.errorBg)));
+          textColor: DT.error, border: Border.all(color: DT.errorBorder)));
     }
 
     if (buttons.isEmpty) return const SizedBox.shrink();
 
-    return GlassBottomSurface(
-      padding: EdgeInsets.fromLTRB(DT.xl, DT.md, DT.xl, bottomPad + DT.md),
-      child: buttons.length <= 2
-          ? Row(
-              children: buttons
-                  .map((b) => Expanded(
-                        child: Padding(
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: DT.xs),
-                          child: _buildActionButton(b),
-                        ),
-                      ))
-                  .toList(),
-            )
-          : Wrap(
-              spacing: DT.sm,
-              runSpacing: DT.sm,
-              children: buttons
-                  .map((b) => SizedBox(
-                        width: (MediaQuery.of(context).size.width - 56) / 2,
-                        child: _buildActionButton(b),
-                      ))
-                  .toList(),
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.78),
+            border: Border(
+              top: BorderSide(
+                  color: Colors.black.withValues(alpha: 0.06), width: 0.5),
             ),
+          ),
+          padding: EdgeInsets.fromLTRB(DT.xl, DT.sm, DT.xl, bottomPad + DT.sm),
+          child: Row(
+            children: buttons
+                .map((b) => Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: _buildActionButton(b),
+                      ),
+                    ))
+                .toList(),
+          ),
+        ),
+      ),
     );
   }
 
@@ -589,7 +596,7 @@ class _TechnicianOrderDetailScreenState
               btn.onTap?.call();
             },
       child: Container(
-        height: 48,
+        height: 44,
         decoration: BoxDecoration(
           color: btn.bgColor,
           borderRadius: BorderRadius.circular(DT.rLg),
@@ -603,9 +610,9 @@ class _TechnicianOrderDetailScreenState
                 child: CircularProgressIndicator(
                     strokeWidth: 2, color: btn.textColor ?? Colors.white))
             : Text(btn.label,
-                style: DT.titleSmall.copyWith(
+                style: DT.bodySmall.copyWith(
                     color: btn.textColor ?? Colors.white,
-                    fontWeight: FontWeight.w500)),
+                    fontWeight: FontWeight.w600)),
       ),
     );
   }

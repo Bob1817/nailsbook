@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/api/api_client.dart';
@@ -190,28 +191,28 @@ class _TechnicianCustomerDetailScreenState
         _int(c['totalOrders'] ?? c['orderCount'] ?? c['serviceCount']);
     final recentAt =
         _str(c['recentServiceAt'] ?? c['lastVisitDate'] ?? c['createdAt']);
+    final avatarUrl = c['avatarUrl']?.toString() ??
+        c['customerAvatar']?.toString() ??
+        (c['client'] as Map<String, dynamic>?)?['avatarUrl']?.toString();
 
     return _card(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 56,
-            height: 56,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              color: _avatarBg,
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              _name.characters.first.toUpperCase(),
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: _avatarText,
+          if (avatarUrl != null && avatarUrl.isNotEmpty)
+            ClipOval(
+              child: CachedNetworkImage(
+                imageUrl: avatarUrl,
+                width: 56,
+                height: 56,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => Container(
+                    width: 56, height: 56, color: _avatarBg),
+                errorWidget: (_, __, ___) => _avatarFallback(),
               ),
-            ),
-          ),
+            )
+          else
+            _avatarFallback(),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -625,6 +626,26 @@ class _TechnicianCustomerDetailScreenState
             action,
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _avatarFallback() {
+    return Container(
+      width: 56,
+      height: 56,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(
+        color: _avatarBg,
+        shape: BoxShape.circle,
+      ),
+      child: Text(
+        _name.characters.first.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: _avatarText,
+        ),
       ),
     );
   }

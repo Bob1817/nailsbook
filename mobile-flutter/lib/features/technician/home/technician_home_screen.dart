@@ -488,6 +488,8 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
         ? (o['shopName']?.toString() ?? o['address']?.toString() ?? '')
         : (o['address']?.toString() ?? '');
     final phone = o['customerPhone']?.toString() ?? '';
+    final customerName = o['customerName']?.toString() ?? '客户';
+    final customerAvatar = o['customerAvatar']?.toString();
     final orderId = o['id'] as int?;
     return Container(
       width: double.infinity,
@@ -522,6 +524,51 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
             ],
           ),
           SizedBox(height: DT.md),
+          Row(
+            children: [
+              ClipOval(
+                child: (customerAvatar != null && customerAvatar.isNotEmpty)
+                    ? CachedNetworkImage(
+                        imageUrl: customerAvatar,
+                        width: 32,
+                        height: 32,
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) => Container(
+                            width: 32, height: 32, color: DT.primarySoft),
+                        errorWidget: (_, __, ___) => Container(
+                            width: 32,
+                            height: 32,
+                            alignment: Alignment.center,
+                            decoration: const BoxDecoration(
+                                color: DT.primarySoft,
+                                shape: BoxShape.circle),
+                            child: Text(customerName.substring(0, 1),
+                                style: const TextStyle(
+                                    fontSize: 13,
+                                    color: DT.primary,
+                                    fontWeight: FontWeight.w600))))
+                    : Container(
+                        width: 32,
+                        height: 32,
+                        alignment: Alignment.center,
+                        decoration: const BoxDecoration(
+                            color: DT.primarySoft, shape: BoxShape.circle),
+                        child: Text(customerName.substring(0, 1),
+                            style: const TextStyle(
+                                fontSize: 13,
+                                color: DT.primary,
+                                fontWeight: FontWeight.w600))),
+              ),
+              SizedBox(width: DT.sm),
+              Text(customerName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: DT.bodyMedium.copyWith(
+                      color: Colors.white.withValues(alpha: 0.95),
+                      fontWeight: FontWeight.w600)),
+            ],
+          ),
+          SizedBox(height: DT.sm),
           Text(service,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -734,6 +781,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
         ? (o['shopName']?.toString() ?? o['address']?.toString() ?? '到店服务')
         : (o['address']?.toString() ?? '待确认地址');
     final phone = o['customerPhone']?.toString() ?? '';
+    final customerAvatar = o['customerAvatar']?.toString();
     final orderId = o['id'] as int?;
     return Material(
       type: MaterialType.transparency,
@@ -766,6 +814,8 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                               ],
                             )),
                         SizedBox(width: DT.sm),
+                        _scheduleAvatar(customer, customerAvatar),
+                        SizedBox(width: DT.xs),
                         Flexible(
                           child: Text(customer,
                               maxLines: 1,
@@ -794,10 +844,9 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                           child: Text(address,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: DT.bodyMedium.copyWith(
-                                  color: DT.textPrimary,
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.35)),
+                              style: DT.bodySmall.copyWith(
+                                  color: DT.textSecondary,
+                                  height: 1.4)),
                         ),
                       ],
                     ),
@@ -834,6 +883,33 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
           ),
         ),
       ),
+    );
+  }
+
+  // ── 行程卡片头像 ──
+  Widget _scheduleAvatar(String name, String? url) {
+    if (url != null && url.isNotEmpty) {
+      return ClipOval(
+          child: CachedNetworkImage(
+              imageUrl: url,
+              width: 28,
+              height: 28,
+              fit: BoxFit.cover,
+              errorWidget: (_, __, ___) => _scheduleAvatarFallback(name)));
+    }
+    return _scheduleAvatarFallback(name);
+  }
+
+  Widget _scheduleAvatarFallback(String name) {
+    return Container(
+      width: 28,
+      height: 28,
+      alignment: Alignment.center,
+      decoration:
+          const BoxDecoration(color: DT.primarySoft, shape: BoxShape.circle),
+      child: Text(name.isNotEmpty ? name.substring(0, 1) : '?',
+          style: const TextStyle(
+              fontSize: 12, color: DT.primary, fontWeight: FontWeight.w600)),
     );
   }
 

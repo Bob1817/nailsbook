@@ -1,21 +1,24 @@
+import 'dart:ui' show ImageFilter;
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../../core/api/api_client.dart';
 import '../../../core/auth/auth_session.dart';
 import '../../../core/socket/chat_socket.dart';
+import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/nb_toast.dart';
 import '../booking/chat_booking_sheet.dart';
 import 'chat_service.dart';
-import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
 class ChatScreen extends StatefulWidget {
   final int? conversationId;
   final String title;
   final int? otherPartyId;
-
-  /// 直接开聊：尚无会话时按美甲师/对方 id 发起新会话（客户端视角）。
   final int? techId;
-
-  /// 直接开聊：尚无会话时按客户用户 id 发起新会话（美甲师视角）。
   final int? clientId;
 
   const ChatScreen({
@@ -47,11 +50,12 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_conversationId != null) {
       _loadMessages();
     } else {
-      _loading = false; // 新会话：空白等待首条消息
+      _loading = false;
     }
     _listenSocket();
-    if (_otherPartyId == null && _conversationId != null)
+    if (_otherPartyId == null && _conversationId != null) {
       _resolveOtherPartyId();
+    }
   }
 
   @override
@@ -79,10 +83,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _scrollToBottom();
       }
     } catch (_) {
-      if (mounted)
-        setState(() {
-          _loading = false;
-        });
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -91,9 +92,7 @@ class _ChatScreenState extends State<ChatScreen> {
     chatSocket.onMessageNew.listen((data) {
       if (_conversationId != null &&
           data['conversationId'] == _conversationId) {
-        setState(() {
-          _messages.add(data);
-        });
+        setState(() => _messages.add(data));
         _scrollToBottom();
       }
     });
@@ -103,6 +102,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final text = _inputCtl.text.trim();
     if (text.isEmpty) return;
     _inputCtl.clear();
+    HapticFeedback.lightImpact();
 
     try {
       final apiClient = context.read<ApiClient>();
@@ -114,19 +114,15 @@ class _ChatScreenState extends State<ChatScreen> {
         messageType: 'text',
         content: text,
       );
-      // 新会话首条消息：记录后端返回的 conversationId
       _conversationId ??=
           (msg['conversationId'] as int?) ?? (msg['conversation_id'] as int?);
-      setState(() {
-        _messages.add(msg);
-      });
+      setState(() => _messages.add(msg));
       _scrollToBottom();
-    } catch (_) {}
+    } catch (_) {
+      NbToast.error(context, '发送失败，请重试');
+    }
   }
 
-  /// Resolve the other party's id when opened via a deep link (which only
-  /// carries conversationId). Looks up the conversation in the list and
-  /// extracts the technician id (client side) or client-user id (technician side).
   Future<void> _resolveOtherPartyId() async {
     final authSession = context.read<AuthSession>();
     final isClient = authSession.isClient;
@@ -168,140 +164,285 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authSession = context.read<AuthSession>();
-    final isClient = authSession.isClient;
+    final topPad = MediaQuery.of(context).padding.top;
+    final bottomPad = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: DT.bg,
-      appBar: GlassAppBar(
-        title: Text(widget.title),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: TextButton.icon(
-              onPressed: _openBookingSheet,
-              icon: const Icon(Icons.calendar_today_rounded,
-                  size: 16, color: DT.primary),
-              label: const Text('发起预约',
-                  style: TextStyle(
-                      color: DT.primary, fontWeight: FontWeight.w600)),
-            ),
+      backgroundColor: DT.bgWarm,
+      body: Stack(
+        children: [
+          // Main content column
+          Column(
+            children: [
+              // Spacer for header
+              SizedBox(height: topPad + 52),
+              // Messages area
+              Expanded(
+                child: _loading
+                    ? const Center(
+                        child: CupertinoActivityIndicator(radius: 14))
+                    : _messages.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 56,
+                                  height: 56,
+                                  decoration: BoxDecoration(
+                                    color: DT.surfaceAlt,
+                                    borderRadius: BorderRadius.circular(18),
+                                  ),
+                                  child: const Icon(
+                                      CupertinoIcons.chat_bubble_2,
+                                      size: 26,
+                                      color: DT.textTertiary),
+                                ),
+                                const SizedBox(height: DT.md),
+                                Text('暂无消息，发条消息打个招呼吧',
+                                    style: DT.bodyMedium
+                                        .copyWith(color: DT.textMuted)),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            controller: _scrollCtl,
+                            keyboardDismissBehavior:
+                                ScrollViewKeyboardDismissBehavior.onDrag,
+                            padding: EdgeInsets.fromLTRB(
+                                DT.xl, DT.md, DT.xl, DT.md),
+                            itemCount: _messages.length,
+                            itemBuilder: (context, index) {
+                              final authSession = context.read<AuthSession>();
+                              final isClient = authSession.isClient;
+                              final msg = _messages[index];
+                              final isMe = isClient
+                                  ? msg['senderType'] == 'client'
+                                  : msg['senderType'] == 'technician';
+                              return _buildBubble(msg, isMe);
+                            },
+                          ),
+              ),
+              // Input bar
+              _inputBar(bottomPad),
+            ],
+          ),
+          // Floating glass header
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            child: _header(topPad),
           ),
         ],
       ),
-      body: Column(children: [
-        Expanded(
-          child: _loading
-              ? const Center(
-                  child: CircularProgressIndicator(color: DT.primary))
-              : _messages.isEmpty
-                  ? const Center(
-                      child: Text('暂无消息，发条消息打个招呼吧～',
-                          style: TextStyle(color: DT.textMuted)))
-                  : ListView.builder(
-                      controller: _scrollCtl,
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _messages.length,
-                      itemBuilder: (context, index) {
-                        final msg = _messages[index];
-                        final isMe = isClient
-                            ? msg['senderType'] == 'client'
-                            : msg['senderType'] == 'technician';
-                        return _buildMessageBubble(msg, isMe);
-                      },
-                    ),
-        ),
-        SafeArea(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: const BoxDecoration(
-              color: DT.surface,
-              border: Border(top: BorderSide(color: DT.divider)),
+    );
+  }
+
+  Widget _header(double topPad) {
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.72),
+            border: Border(
+              bottom: BorderSide(
+                  color: Colors.black.withValues(alpha: 0.06), width: 0.5),
             ),
-            child: Row(children: [
+          ),
+          padding: EdgeInsets.fromLTRB(DT.xl, topPad + DT.sm, DT.xl, DT.md),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.pop(context);
+                },
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.45),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(CupertinoIcons.back,
+                      size: 18, color: DT.textPrimary),
+                ),
+              ),
+              const SizedBox(width: DT.md),
+              Expanded(
+                child: Text(widget.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: DT.titleMedium),
+              ),
+              GestureDetector(
+                onTap: _openBookingSheet,
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: DT.primarySoft,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(CupertinoIcons.calendar_badge_plus,
+                      size: 20, color: DT.primary),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _inputBar(double bottomPad) {
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.82),
+            border: Border(
+              top: BorderSide(
+                  color: Colors.black.withValues(alpha: 0.06), width: 0.5),
+            ),
+          ),
+          padding:
+              EdgeInsets.fromLTRB(DT.xl, DT.sm, DT.xl, bottomPad + DT.sm),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
               Expanded(
                 child: TextField(
                   controller: _inputCtl,
-                  decoration: InputDecoration(
-                    hintText: '输入消息…',
-                    filled: true,
-                    fillColor: DT.surfaceAlt,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(999),
-                        borderSide: BorderSide.none),
-                    enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(999),
-                        borderSide: BorderSide.none),
-                    focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(999),
-                        borderSide:
-                            const BorderSide(color: DT.primary, width: 1.2)),
-                  ),
+                  style: DT.bodyMedium.copyWith(color: DT.textPrimary),
                   minLines: 1,
                   maxLines: 4,
                   textInputAction: TextInputAction.send,
                   onSubmitted: (_) => _sendMessage(),
+                  decoration: InputDecoration(
+                    hintText: '输入消息…',
+                    hintStyle: DT.bodyMedium.copyWith(color: DT.textTertiary),
+                    filled: true,
+                    fillColor: DT.surfaceAlt,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: BorderSide.none),
+                    enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: BorderSide.none),
+                    focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide:
+                            const BorderSide(color: DT.primary, width: 1.2)),
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: DT.sm),
               GestureDetector(
                 onTap: _sendMessage,
                 child: Container(
-                  width: 44,
-                  height: 44,
+                  width: 40,
+                  height: 40,
                   alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                      color: DT.primary, shape: BoxShape.circle),
-                  child: const Icon(Icons.send_rounded,
+                  decoration: BoxDecoration(
+                    color: DT.primary,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                          color: DT.primary.withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4)),
+                    ],
+                  ),
+                  child: const Icon(CupertinoIcons.arrow_up,
                       color: Colors.white, size: 20),
                 ),
               ),
-            ]),
+            ],
           ),
         ),
-      ]),
+      ),
     );
   }
 
-  Widget _buildMessageBubble(Map<String, dynamic> msg, bool isMe) {
+  Widget _buildBubble(Map<String, dynamic> msg, bool isMe) {
+    final hasImage = msg['imageUrl'] != null;
+    final hasText = msg['content'] != null && msg['content'].toString().isNotEmpty;
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        margin: const EdgeInsets.symmetric(vertical: 3),
         constraints:
-            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-        decoration: BoxDecoration(
-          color: isMe ? DT.primary : DT.surface,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(18),
-            topRight: const Radius.circular(18),
-            bottomLeft: Radius.circular(isMe ? 18 : 4),
-            bottomRight: Radius.circular(isMe ? 4 : 18),
-          ),
-          border: isMe ? null : Border.all(color: DT.border),
+            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+        child: Column(
+          crossAxisAlignment:
+              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: [
+            if (hasImage)
+              Container(
+                margin: const EdgeInsets.only(bottom: 4),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: CachedNetworkImage(
+                    imageUrl: msg['imageUrl'].toString(),
+                    width: 200,
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) => Container(
+                        width: 200, height: 120, color: DT.surfaceAlt),
+                    errorWidget: (_, __, ___) => Container(
+                      width: 200,
+                      height: 120,
+                      color: DT.surfaceAlt,
+                      child: const Icon(CupertinoIcons.photo,
+                          color: DT.textTertiary),
+                    ),
+                  ),
+                ),
+              ),
+            if (hasText)
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isMe ? DT.primary : DT.surface,
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(18),
+                    topRight: const Radius.circular(18),
+                    bottomLeft: Radius.circular(isMe ? 18 : 4),
+                    bottomRight: Radius.circular(isMe ? 4 : 18),
+                  ),
+                  boxShadow: isMe
+                      ? [
+                          BoxShadow(
+                              color: DT.primary.withValues(alpha: 0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2)),
+                        ]
+                      : [
+                          BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2)),
+                        ],
+                ),
+                child: Text(
+                  msg['content'].toString(),
+                  style: DT.bodyMedium.copyWith(
+                    color: isMe ? Colors.white : DT.textPrimary,
+                    height: 1.45,
+                  ),
+                ),
+              ),
+          ],
         ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          if (msg['imageUrl'] != null)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: Image.network(msg['imageUrl'].toString(),
-                  width: 200, fit: BoxFit.cover),
-            ),
-          if (msg['content'] != null)
-            Text(
-              msg['content'].toString(),
-              style: TextStyle(
-                  color: isMe ? Colors.white : DT.textPrimary,
-                  fontSize: 15,
-                  height: 1.4),
-            ),
-        ]),
       ),
     );
   }

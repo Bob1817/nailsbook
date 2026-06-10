@@ -361,8 +361,8 @@ class _TechnicianHomeServiceSettingsScreenState extends State<TechnicianHomeServ
     return Container(
       padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + bottomPad),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: const Border(top: BorderSide(color: Color(0xFFF1F5F9))),
+        color: Colors.white.withValues(alpha: 0.82),
+        border: const Border(top: BorderSide(color: DT.divider)),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, -4))],
       ),
       child: SizedBox(
@@ -390,10 +390,15 @@ class _TechnicianHomeServiceSettingsScreenState extends State<TechnicianHomeServ
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: DT.shadowSm,
-        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+        color: Colors.white.withValues(alpha: 0.78),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,7 +410,7 @@ class _TechnicianHomeServiceSettingsScreenState extends State<TechnicianHomeServ
                 children: [
                   Expanded(
                     child: Text(title,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: DT.textPrimary)),
+                      style: DT.titleSmall.copyWith(color: DT.textPrimary)),
                   ),
                   if (trailing != null) trailing,
                 ],

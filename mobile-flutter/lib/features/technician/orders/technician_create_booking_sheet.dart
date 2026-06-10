@@ -34,6 +34,13 @@ class TechnicianCreateBookingSheet extends StatefulWidget {
 
 const _dayKeyMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
+/// Subtle inset highlight for glass surfaces (Apple HIG).
+const _glassHighlight = LinearGradient(
+  begin: Alignment.topCenter,
+  end: Alignment.bottomCenter,
+  colors: [Color(0x14FFFFFF), Color(0x00FFFFFF)],
+);
+
 class _TechnicianCreateBookingSheetState
     extends State<TechnicianCreateBookingSheet> {
   final _serviceCtl = TextEditingController();
@@ -106,82 +113,121 @@ class _TechnicianCreateBookingSheetState
   @override
   Widget build(BuildContext context) {
     const sheetRadius = BorderRadius.vertical(top: Radius.circular(28));
+    final bottomPad = MediaQuery.paddingOf(context).bottom;
+
     return SafeArea(
       top: false,
       bottom: false,
       child: Container(
         width: double.infinity,
         constraints:
-            BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
+            BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
         decoration: BoxDecoration(
+          color: DT.surface, // opaque white base
           borderRadius: sheetRadius,
-          boxShadow: DT.shadowLg,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 40,
+              offset: const Offset(0, -8),
+            ),
+          ],
         ),
         child: ClipRRect(
           borderRadius: sheetRadius,
-          child: BackdropFilter(
-            filter: ImageFilter.blur(
-              sigmaX: DT.glassBlurHeavy,
-              sigmaY: DT.glassBlurHeavy,
-            ),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.68),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.white.withValues(alpha: 0.28),
-                    Colors.white.withValues(alpha: 0.06),
+          child: Column(
+            children: [
+              // ── Glass top strip: subtle frosted highlight ──
+              BackdropFilter(
+                filter: ImageFilter.blur(
+                  sigmaX: DT.glassBlurStandard,
+                  sigmaY: DT.glassBlurStandard,
+                ),
+                child: Container(
+                  decoration: const BoxDecoration(
+                    gradient: _glassHighlight,
+                  ),
+                  child: _header(),
+                ),
+              ),
+              // ── Hairline divider ──
+              Container(height: 0.5, color: DT.divider),
+              // ── Scrollable content ──
+              Expanded(
+                child: _loading
+                    ? const Center(
+                        child: CupertinoActivityIndicator(radius: 14))
+                    : SingleChildScrollView(
+                        padding: EdgeInsets.fromLTRB(
+                          DT.xl, DT.lg, DT.xl, DT.lg,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _customerPicker(),
+                            const SizedBox(height: DT.md),
+                            _input(_serviceCtl, '服务内容'),
+                            const SizedBox(height: DT.md),
+                            _calendar(),
+                            const SizedBox(height: DT.md),
+                            Row(
+                              children: [
+                                Expanded(
+                                    child: _input(_durationCtl, '服务时长(分钟)',
+                                        numberOnly: true)),
+                                const SizedBox(width: DT.sm),
+                                Expanded(
+                                    child: _input(_priceCtl, '价格',
+                                        decimalOnly: true)),
+                              ],
+                            ),
+                            const SizedBox(height: DT.md),
+                            _input(_addressCtl, '服务地址'),
+                            const SizedBox(height: DT.md),
+                            _input(_noteCtl, '备注（可选）', maxLines: 4),
+                          ],
+                        ),
+                      ),
+              ),
+              // ── Hairline divider ──
+              Container(height: 0.5, color: DT.divider),
+              // ── Fixed footer: error + submit button ──
+              Container(
+                padding: EdgeInsets.fromLTRB(DT.xl, DT.md, DT.xl, bottomPad + DT.md),
+                decoration: const BoxDecoration(color: DT.surface),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_error != null) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(DT.md),
+                        decoration: BoxDecoration(
+                          color: DT.errorBg,
+                          borderRadius: BorderRadius.circular(DT.rMd),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                                CupertinoIcons.exclamationmark_circle,
+                                size: 16,
+                                color: DT.errorText),
+                            const SizedBox(width: DT.sm),
+                            Expanded(
+                              child: Text(_error!,
+                                  style: DT.bodySmall
+                                      .copyWith(color: DT.errorText)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: DT.md),
+                    ],
+                    _submitButton(),
                   ],
                 ),
               ),
-              child: Column(
-                children: [
-                  _header(),
-                  Expanded(
-                    child: _loading
-                        ? const Center(
-                            child: CircularProgressIndicator(color: DT.primary))
-                        : SingleChildScrollView(
-                            padding: EdgeInsets.fromLTRB(
-                              20,
-                              16,
-                              20,
-                              MediaQuery.of(context).viewInsets.bottom + 16,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _customerPicker(),
-                                const SizedBox(height: 12),
-                                _input(_serviceCtl, '服务内容'),
-                                const SizedBox(height: 12),
-                                _calendar(),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                        child: _input(_durationCtl, '服务时长(分钟)',
-                                            numberOnly: true)),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                        child: _input(_priceCtl, '价格',
-                                            decimalOnly: true)),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                _input(_addressCtl, '服务地址'),
-                                const SizedBox(height: 12),
-                                _input(_noteCtl, '备注（可选）', maxLines: 4),
-                              ],
-                            ),
-                          ),
-                  ),
-                  _footer(),
-                ],
-              ),
-            ),
+            ],
           ),
         ),
       ),
@@ -189,37 +235,51 @@ class _TechnicianCreateBookingSheetState
   }
 
   Widget _header() {
-    return GlassContainer(
-      blur: DT.glassBlurHeavy,
-      opacity: 0.72,
-      borderRadius: 0,
-      showBorder: false,
-      padding: const EdgeInsets.fromLTRB(20, 16, 12, 12),
-      child: Row(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(DT.xl, DT.sm, DT.md, DT.md),
+      child: Column(
         children: [
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('新建预约', style: DT.titleMedium),
-                SizedBox(height: 4),
-                Text('创建后同步到预约、行程和客户记录',
-                    style: TextStyle(fontSize: 12, color: DT.textTertiary)),
-              ],
+          // ── Grabber pill (iOS sheet indicator) ──
+          Container(
+            width: 36,
+            height: 5,
+            margin: const EdgeInsets.only(bottom: DT.md),
+            decoration: BoxDecoration(
+              color: DT.textQuaternary,
+              borderRadius: BorderRadius.circular(3),
             ),
           ),
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              width: 44,
-              height: 44,
-              alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                  color: DT.surfaceAlt, shape: BoxShape.circle),
-              child: const Icon(CupertinoIcons.xmark,
-                  size: 16, color: DT.textSecondary),
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('新建预约', style: DT.titleMedium),
+                    const SizedBox(height: DT.xs),
+                    Text(
+                      '创建后同步到预约、行程和客户记录',
+                      style: DT.captionLarge,
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: DT.surfaceAlt,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(CupertinoIcons.xmark,
+                      size: 16, color: DT.textSecondary),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -229,17 +289,18 @@ class _TechnicianCreateBookingSheetState
   Widget _customerPicker() {
     return Container(
       height: 50,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
+      padding: const EdgeInsets.symmetric(horizontal: DT.lg),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.56),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: DT.shadowSm,
+        color: DT.surfaceAlt,
+        borderRadius: BorderRadius.circular(DT.rLg),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int>(
           value: _selectedCustomerId,
           isExpanded: true,
-          hint: const Text('选择客户', style: TextStyle(color: DT.textTertiary)),
+          hint: Text('选择客户', style: DT.bodySmall),
+          dropdownColor: DT.surface,
+          borderRadius: BorderRadius.circular(DT.rMd),
           items: _customers.map((customer) {
             final id = customer['id'] as int;
             final name = customer['name']?.toString() ?? '客户';
@@ -285,21 +346,21 @@ class _TechnicianCreateBookingSheetState
       decoration: InputDecoration(
         hintText: placeholder,
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.56),
+        fillColor: DT.surfaceAlt,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(DT.rLg),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(DT.rLg),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: DT.primary, width: 1.3),
+          borderRadius: BorderRadius.circular(DT.rLg),
+          borderSide: const BorderSide(color: DT.primary, width: 1.5),
         ),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            const EdgeInsets.symmetric(horizontal: DT.lg, vertical: DT.lg),
       ),
     );
   }
@@ -314,17 +375,17 @@ class _TechnicianCreateBookingSheetState
     ];
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(DT.lg),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: DT.shadowSm,
+        color: DT.surface,
+        borderRadius: BorderRadius.circular(DT.rXl),
+        border: Border.all(color: DT.hairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('选择日期', style: DT.titleSmall),
-          const SizedBox(height: 12),
+          Text('选择日期', style: DT.titleSmall),
+          const SizedBox(height: DT.md),
           Row(
             children: [
               _monthButton(CupertinoIcons.chevron_left, () {
@@ -343,7 +404,7 @@ class _TechnicianCreateBookingSheetState
               }),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: DT.sm),
           GridView.count(
             crossAxisCount: 7,
             shrinkWrap: true,
@@ -352,9 +413,7 @@ class _TechnicianCreateBookingSheetState
             crossAxisSpacing: 4,
             children: const ['日', '一', '二', '三', '四', '五', '六']
                 .map((day) => Center(
-                    child: Text(day,
-                        style: const TextStyle(
-                            fontSize: 11, color: DT.textTertiary))))
+                    child: Text(day, style: DT.captionMedium)))
                 .toList(),
           ),
           GridView.count(
@@ -365,13 +424,12 @@ class _TechnicianCreateBookingSheetState
             crossAxisSpacing: 4,
             children: cells,
           ),
-          const SizedBox(height: 8),
-          const Text('灰色日期为休息日或不可预约日期',
-              style: TextStyle(fontSize: 11, color: DT.textTertiary)),
+          const SizedBox(height: DT.sm),
+          Text('灰色日期为休息日或不可预约日期', style: DT.captionMedium),
           if (_selectedDate != null) ...[
-            const SizedBox(height: 14),
-            const Text('选择时间', style: DT.titleSmall),
-            const SizedBox(height: 10),
+            const SizedBox(height: DT.lg),
+            Text('选择时间', style: DT.titleSmall),
+            const SizedBox(height: DT.sm),
             _timeSlots(),
           ],
         ],
@@ -382,15 +440,17 @@ class _TechnicianCreateBookingSheetState
   Widget _monthButton(IconData icon, VoidCallback onTap) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
       child: Container(
         width: 44,
         height: 44,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.58),
+          color: DT.surfaceAlt,
           shape: BoxShape.circle,
-          boxShadow: DT.shadowSm,
         ),
         child: Icon(icon, size: 18, color: DT.textSecondary),
       ),
@@ -422,8 +482,8 @@ class _TechnicianCreateBookingSheetState
               ? Colors.transparent
               : selected
                   ? DT.primary
-                  : Colors.white.withValues(alpha: 0.58),
-          borderRadius: BorderRadius.circular(12),
+                  : DT.surfaceAlt,
+          borderRadius: BorderRadius.circular(DT.md),
         ),
         child: Text(
           '$day',
@@ -444,10 +504,9 @@ class _TechnicianCreateBookingSheetState
   Widget _timeSlots() {
     final slots = _availableSlots();
     if (slots.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 8),
-        child: Text('该日期休息中',
-            style: TextStyle(fontSize: 13, color: DT.textTertiary)),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: DT.sm),
+        child: Text('该日期休息中', style: DT.bodySmall),
       );
     }
     return GridView.count(
@@ -455,8 +514,8 @@ class _TechnicianCreateBookingSheetState
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       childAspectRatio: 2.15,
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 8,
+      mainAxisSpacing: DT.sm,
+      crossAxisSpacing: DT.sm,
       children: slots.map((slot) {
         final occupied = _isSlotOccupied(slot);
         final selected = _startClock == slot;
@@ -474,9 +533,11 @@ class _TechnicianCreateBookingSheetState
                   ? DT.surfaceAlt
                   : selected
                       ? DT.primary
-                      : Colors.white.withValues(alpha: 0.58),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: selected ? null : DT.shadowSm,
+                      : DT.surfaceAlt,
+              borderRadius: BorderRadius.circular(DT.md),
+              border: selected
+                  ? null
+                  : Border.all(color: DT.hairline),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -495,8 +556,7 @@ class _TechnicianCreateBookingSheetState
                   ),
                 ),
                 if (occupied)
-                  const Text('已预约',
-                      style: TextStyle(fontSize: 10, color: DT.textMuted)),
+                  Text('已预约', style: DT.captionSmall),
               ],
             ),
           ),
@@ -505,41 +565,13 @@ class _TechnicianCreateBookingSheetState
     );
   }
 
-  Widget _footer() {
-    final bottomInset = MediaQuery.paddingOf(context).bottom;
-    return GlassContainer(
-      blur: DT.glassBlurHeavy,
-      opacity: 0.5,
-      borderRadius: 0,
-      showBorder: false,
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x10000000),
-          blurRadius: 24,
-          offset: Offset(0, -8),
-        ),
-      ],
-      padding: EdgeInsets.fromLTRB(20, 12, 20, bottomInset + 12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (_error != null) ...[
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(_error!,
-                  style: const TextStyle(fontSize: 13, color: DT.error)),
-            ),
-            const SizedBox(height: 8),
-          ],
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: _submitting ? null : _submit,
-              child: Text(_submitting ? '创建中...' : '创建预约'),
-            ),
-          ),
-        ],
+  Widget _submitButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton(
+        onPressed: _submitting ? null : _submit,
+        child: Text(_submitting ? '创建中...' : '创建预约'),
       ),
     );
   }

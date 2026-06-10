@@ -196,9 +196,9 @@ class _TechnicianProfileSettingsScreenState
                   padding: EdgeInsets.fromLTRB(DT.xl, DT.md, DT.xl,
                       DT.md + MediaQuery.of(context).padding.bottom),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.95),
+                    color: Colors.white.withValues(alpha: 0.82),
                     border:
-                        const Border(top: BorderSide(color: DT.dividerWarm)),
+                        const Border(top: BorderSide(color: DT.divider)),
                   ),
                   child: SizedBox(
                     width: double.infinity,
@@ -283,9 +283,15 @@ class _TechnicianProfileSettingsScreenState
   Widget _buildCard(List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
-        color: DT.surface,
-        borderRadius: BorderRadius.circular(DT.rXxl),
-        boxShadow: DT.shadowSm,
+        color: Colors.white.withValues(alpha: 0.78),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(children: children),
     );

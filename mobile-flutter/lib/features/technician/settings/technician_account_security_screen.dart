@@ -125,9 +125,15 @@ class _TechnicianAccountSecurityScreenState
                 Container(
                   padding: const EdgeInsets.all(DT.xl),
                   decoration: BoxDecoration(
-                    color: DT.surface,
-                    borderRadius: BorderRadius.circular(DT.rXxl),
-                    boxShadow: DT.shadowSm,
+                    color: Colors.white.withValues(alpha: 0.78),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,9 +152,15 @@ class _TechnicianAccountSecurityScreenState
                 Container(
                   padding: const EdgeInsets.all(DT.xl),
                   decoration: BoxDecoration(
-                    color: DT.surface,
-                    borderRadius: BorderRadius.circular(DT.rXxl),
-                    boxShadow: DT.shadowSm,
+                    color: Colors.white.withValues(alpha: 0.78),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
