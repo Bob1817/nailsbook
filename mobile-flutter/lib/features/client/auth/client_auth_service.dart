@@ -11,27 +11,20 @@ class ClientAuthService {
     return Technician.fromJson(json);
   }
 
-  Future<Map<String, dynamic>> requestLoginCode(String phone) async {
-    return _api.post('/auth/request-login-code', body: {'phone': phone});
-  }
-
-  Future<Map<String, dynamic>> requestRegisterCode(String phone, String inviteCode) async {
-    return _api.post('/auth/request-register-code', body: {
-      'phone': phone,
-      'inviteCode': inviteCode,
-    });
+  /// 检查手机号是否已注册（对齐 webapp authService.checkPhone）。
+  Future<bool> checkPhone(String phone) async {
+    final json = await _api.post('/auth/check-phone', body: {'phone': phone});
+    return json['exists'] as bool? ?? false;
   }
 
   Future<AuthResponse> registerByInvite({
     required String phone,
-    required String code,
-    required int techId,
+    required String password,
     required String inviteCode,
   }) async {
     final json = await _api.post('/auth/register-by-invite', body: {
       'phone': phone,
-      'code': code,
-      'techId': techId,
+      'password': password,
       'inviteCode': inviteCode,
     });
     return AuthResponse.fromJson(json);
@@ -39,11 +32,11 @@ class ClientAuthService {
 
   Future<AuthResponse> login({
     required String phone,
-    required String code,
+    required String password,
   }) async {
     final json = await _api.post('/auth/login', body: {
       'phone': phone,
-      'code': code,
+      'password': password,
     });
     return AuthResponse.fromJson(json);
   }
@@ -79,5 +72,25 @@ class ClientAuthService {
     if (avatarUrl != null) body['avatarUrl'] = avatarUrl;
     final json = await _api.patch('/auth/me', body: body);
     return ClientUser.fromJson(json);
+  }
+
+  /// 已登录态修改密码（PATCH /auth/password）。
+  Future<void> changePassword(String oldPassword, String newPassword) async {
+    await _api.patch('/auth/password', body: {
+      'oldPassword': oldPassword,
+      'newPassword': newPassword,
+    });
+  }
+
+  Future<void> sendResetCode(String phone) async {
+    await _api.post('/auth/forgot-password/send-code', body: {'phone': phone});
+  }
+
+  Future<void> resetPassword(String phone, String code, String newPassword) async {
+    await _api.post('/auth/forgot-password/reset', body: {
+      'phone': phone,
+      'code': code,
+      'newPassword': newPassword,
+    });
   }
 }

@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
@@ -10,14 +9,10 @@ import '../auth/client_auth_models.dart';
 import '../auth/client_auth_service.dart';
 import '../addresses/client_address_models.dart';
 import '../addresses/client_address_service.dart';
+import '../addresses/client_addresses_screen.dart';
+import '../../shared/booking/booking_availability.dart';
 import 'client_order_service.dart';
-
-const _timeSlots = [
-  '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-  '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
-  '16:00', '16:30', '17:00', '17:30', '18:00', '18:30',
-  '19:00', '19:30', '20:00', '20:30',
-];
+import '../../../core/widgets/nb_toast.dart';
 
 class ClientCreateOrderScreen extends StatefulWidget {
   final int? preselectedTechId;
@@ -38,9 +33,10 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
   String _shopAddressName = '';
   int? _selectedAddressId;
   String _serviceDate = '';
-  String _startTime = '14:00';
+  String _startTime = '';
   List<String> _selectedServiceIds = [];
   String _remark = '';
+  List<Map<String, dynamic>> _blockedSlots = [];
 
   bool _isCustomService = false;
   String _customTitle = '';
@@ -59,32 +55,52 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
 
   Future<void> _load() async {
     final api = context.read<ApiClient>();
+    // 美甲师与地址独立加载：任一接口失败/超时都不会拖垮整页，避免空白。
+    List<Technician> techs = [];
+    List<ClientAddress> addrs = [];
     try {
-      final profile = await ClientAuthService(api).getProfile();
+      final profile = await ClientAuthService(api)
+          .getProfile()
+          .timeout(const Duration(seconds: 12));
       final techsRaw = (profile['technicians'] as List<dynamic>?) ?? [];
-      final techs = techsRaw
+      // 显示全部已绑定美甲师；可预约性由「服务类型」环节决定，避免整页空白。
+      techs = techsRaw
           .map((e) => Technician.fromJson(e as Map<String, dynamic>))
-          .where((t) => t.status == 'active' && ((t.homeService == true) || (t.shopAddresses?.isNotEmpty == true)))
           .toList();
-      final addrs = await ClientAddressService(api).list();
-      if (mounted) {
-        setState(() {
-          _technicians = techs;
-          _addresses = addrs;
-          _loading = false;
-          if (widget.preselectedTechId != null) {
-            _selectedTechId = widget.preselectedTechId;
-          } else if (techs.length == 1) {
-            _selectedTechId = techs[0].id;
-          }
-          if (addrs.isNotEmpty) {
-            final def = addrs.firstWhere((a) => a.isDefault, orElse: () => addrs[0]);
-            _selectedAddressId = def.id;
-          }
-        });
+    } catch (_) {}
+    try {
+      addrs = await ClientAddressService(api)
+          .list()
+          .timeout(const Duration(seconds: 12));
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() {
+      _technicians = techs;
+      _addresses = addrs;
+      _loading = false;
+      if (widget.preselectedTechId != null) {
+        _selectedTechId = widget.preselectedTechId;
+      } else if (techs.length == 1) {
+        _selectedTechId = techs[0].id;
       }
+      if (addrs.isNotEmpty) {
+        final def = addrs.firstWhere((a) => a.isDefault, orElse: () => addrs[0]);
+        _selectedAddressId = def.id;
+      }
+      _ensureSelection();
+    });
+    if (_selectedTechId != null) _loadBlocked(_selectedTechId!);
+  }
+
+  /// 拉取该美甲师被占用的时段，用于时段联动。
+  Future<void> _loadBlocked(int techId) async {
+    try {
+      final slots = await ClientOrderService(context.read<ApiClient>())
+          .getBlockedSlots(techId)
+          .timeout(const Duration(seconds: 10));
+      if (mounted) setState(() { _blockedSlots = slots; _ensureSelection(); });
     } catch (_) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() => _blockedSlots = []);
     }
   }
 
@@ -112,10 +128,100 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
     return (t.serviceItems ?? []).cast<Map<String, dynamic>>().where((s) => s['isActive'] == true).toList();
   }
 
+  // ── 预约时间联动（与 webapp useTechnicianAvailability 等价）──
+
+  bool get _isShopMode => _serviceType == '到店美甲';
+
+  Map<String, dynamic>? get _selectedShopMap {
+    if (!_isShopMode || _shopAddressName.isEmpty) return null;
+    final found = _shopAddresses.firstWhere((s) => s['name'] == _shopAddressName, orElse: () => {});
+    return found.isEmpty ? null : found;
+  }
+
+  /// 该日期是否可约：到店看店铺营业、上门看美甲师工作日。
+  bool _dateAvailable(String dateStr) {
+    if (_isShopMode) return isShopOpenOnDate(_selectedShopMap, dateStr);
+    return isDateAvailable(_selectedTech?.serviceSchedule, dateStr);
+  }
+
+  List<SlotStatus> get _slotStatuses {
+    if (_selectedTech == null) return const [];
+    return getSlotStatuses(
+      dateStr: _serviceDate,
+      range: _isShopMode ? null : scheduleRange(_selectedTech!.serviceSchedule),
+      blockedSlots: _blockedSlots,
+      shopMode: _isShopMode,
+      shopHours: _isShopMode ? shopHoursOptionForDate(_selectedShopMap, _serviceDate) : null,
+    );
+  }
+
+  List<String> get _availableSlots =>
+      _slotStatuses.where((s) => !s.occupied).map((s) => s.time).toList();
+
+  String _fmtDate(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  String? _firstAvailableDate() {
+    final now = DateTime.now();
+    final base = DateTime(now.year, now.month, now.day);
+    for (int i = 0; i <= 60; i++) {
+      final s = _fmtDate(base.add(Duration(days: i)));
+      if (_dateAvailable(s)) return s;
+    }
+    return null;
+  }
+
+  /// 选择美甲师/服务方式/门店变化后，自动收敛到合法的服务方式、门店、日期与时段。
+  void _ensureSelection() {
+    final types = _availableServiceTypes;
+    if (_serviceType.isEmpty && types.length == 1) _serviceType = types.first;
+    if (_isShopMode && _shopAddressName.isEmpty && _shopAddresses.length == 1) {
+      _shopAddressName = _shopAddresses.first['name']?.toString() ?? '';
+    }
+    if (_serviceDate.isEmpty || !_dateAvailable(_serviceDate)) {
+      _serviceDate = _firstAvailableDate() ?? _serviceDate;
+    }
+    _autoSelectAddress();
+    _ensureSlot();
+  }
+
+  void _ensureSlot() {
+    final avail = _availableSlots;
+    if (_startTime.isEmpty || !avail.contains(_startTime)) {
+      _startTime = avail.isNotEmpty ? avail.first : '';
+    }
+  }
+
+  // ── 跨城上门限制 ──
+
+  bool _sameCity(ClientAddress a) => sameCity(a.city, _selectedTech?.city);
+
+  /// 上门服务城市（用于提示文案）。
+  String get _techServiceCity => (_selectedTech?.city ?? '').trim();
+
+  /// 仅自动选择同城地址；当前选中的若跨城则清空。
+  void _autoSelectAddress() {
+    if (_serviceType != '上门美甲') return;
+    final sameCityAddrs = _addresses.where(_sameCity).toList();
+    if (_selectedAddressId != null && sameCityAddrs.any((a) => a.id == _selectedAddressId)) return;
+    ClientAddress? def;
+    for (final a in sameCityAddrs) {
+      if (a.isDefault) { def = a; break; }
+    }
+    def ??= sameCityAddrs.isNotEmpty ? sameCityAddrs.first : null;
+    _selectedAddressId = def?.id;
+  }
+
   bool get _canSubmit {
     if (_selectedTech == null) return false;
     if (_serviceType.isEmpty) return false;
-    if (_serviceType == '上门美甲' && _selectedAddressId == null) return false;
+    if (_startTime.isEmpty || !_availableSlots.contains(_startTime)) return false;
+    if (_serviceType == '上门美甲') {
+      if (_selectedAddressId == null) return false;
+      for (final a in _addresses) {
+        if (a.id == _selectedAddressId && !_sameCity(a)) return false;
+      }
+    }
     if (_serviceType == '到店美甲' && _shopAddressName.isEmpty) return false;
     if (_isCustomService) return _customTitle.trim().isNotEmpty;
     return _selectedServiceIds.isNotEmpty;
@@ -147,12 +253,12 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
       }
       await ClientOrderService(api).create(body);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('预约已提交')));
-        context.go('/client/orders');
+        NbToast.show(context, '预约已提交');
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('提交失败：$e')));
+        NbToast.show(context, '提交失败：$e');
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -172,7 +278,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
       final url = json['url'] as String?;
       if (url != null && mounted) setState(() => _customImages = [..._customImages, url]);
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('图片上传失败')));
+      if (mounted) NbToast.show(context, '图片上传失败');
     } finally {
       if (mounted) setState(() => _uploadingImage = false);
     }
@@ -243,44 +349,46 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                       ]),
                     ],
                   ),
-                  // Sticky header
-                  Container(
-                    padding: EdgeInsets.fromLTRB(16, topPad + 6, 16, 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.78),
-                      border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.6), width: 0.5)),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(DT.rHero),
+                  // Sticky header（玻璃模糊仅限于头部区域，避免整页被模糊）
+                  Positioned(
+                    left: 0, right: 0, top: 0,
+                    child: ClipRect(
                       child: BackdropFilter(
                         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                        child: Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () => context.pop(),
-                              child: Container(
-                                width: 42, height: 42,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.8),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 24, offset: const Offset(0, 10))],
-                                  border: Border.all(color: Colors.black.withOpacity(0.05)),
+                        child: Container(
+                          padding: EdgeInsets.fromLTRB(16, topPad + 6, 16, 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.6),
+                            border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.6), width: 0.5)),
+                          ),
+                          child: Row(
+                            children: [
+                              GestureDetector(
+                                onTap: () => Navigator.pop(context),
+                                child: Container(
+                                  width: 42, height: 42,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.8),
+                                    shape: BoxShape.circle,
+                                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 24, offset: const Offset(0, 10))],
+                                    border: Border.all(color: Colors.black.withOpacity(0.05)),
+                                  ),
+                                  child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF334155)),
                                 ),
-                                child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF334155)),
                               ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('CREATE BOOKING', style: TextStyle(fontSize: 11, letterSpacing: 2.2, color: DT.textMuted)),
-                                  const SizedBox(height: 1),
-                                  const Text('创建预约', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: DT.textPrimary)),
-                                ],
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('CREATE BOOKING', style: TextStyle(fontSize: 11, letterSpacing: 2.2, color: DT.textMuted)),
+                                    const SizedBox(height: 1),
+                                    const Text('创建预约', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: DT.textPrimary)),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -291,7 +399,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                     child: Container(
                       padding: EdgeInsets.fromLTRB(20, 14, 20, MediaQuery.of(context).padding.bottom + 14),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.88),
+                        color: Colors.white.withOpacity(0.62),
                         border: Border(top: BorderSide(color: Colors.white.withOpacity(0.6), width: 0.5)),
                       ),
                       child: ClipRRect(
@@ -318,12 +426,18 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
   Widget _buildTechCard(Technician tech) {
     final selected = _selectedTechId == tech.id;
     return GestureDetector(
-      onTap: () => setState(() {
-        _selectedTechId = tech.id;
-        _serviceType = '';
-        _shopAddressName = '';
-        _selectedServiceIds = [];
-      }),
+      onTap: () {
+        setState(() {
+          _selectedTechId = tech.id;
+          _serviceType = '';
+          _shopAddressName = '';
+          _selectedServiceIds = [];
+          _blockedSlots = [];
+          _startTime = '';
+          _ensureSelection();
+        });
+        _loadBlocked(tech.id);
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
@@ -393,7 +507,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
     final desc = type == '上门美甲' ? '美甲师按预约时间上门服务' : '前往美甲师提供的门店地址服务';
     final isForced = _availableServiceTypes.length == 1;
     return GestureDetector(
-      onTap: isForced ? null : () => setState(() { _serviceType = type; _shopAddressName = ''; }),
+      onTap: isForced ? null : () => setState(() { _serviceType = type; _shopAddressName = ''; _ensureSelection(); }),
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
@@ -506,8 +620,8 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
             decoration: InputDecoration(
               hintText: '例如：法式渐变美甲',
               filled: true, fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(DT.rXxl), borderSide: BorderSide(color: Colors.grey.shade200)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DT.rXxl), borderSide: BorderSide(color: Colors.grey.shade200)),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(DT.rXxl), borderSide: BorderSide(color: DT.border)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DT.rXxl), borderSide: BorderSide(color: DT.border)),
               focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DT.rXxl), borderSide: const BorderSide(color: DT.primary)),
             ),
             onChanged: (v) => setState(() => _customTitle = v),
@@ -520,8 +634,8 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
             decoration: InputDecoration(
               hintText: '描述你的具体需求，如颜色、款式、特殊要求等...',
               filled: true, fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(DT.rXxl), borderSide: BorderSide(color: Colors.grey.shade200)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DT.rXxl), borderSide: BorderSide(color: Colors.grey.shade200)),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(DT.rXxl), borderSide: BorderSide(color: DT.border)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DT.rXxl), borderSide: BorderSide(color: DT.border)),
               focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DT.rXxl), borderSide: const BorderSide(color: DT.primary)),
             ),
             onChanged: (v) => setState(() => _customDescription = v),
@@ -557,7 +671,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                   child: Container(
                     width: 72, height: 72,
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+                      border: Border.all(color: DT.border, style: BorderStyle.solid),
                       borderRadius: BorderRadius.circular(DT.rMd),
                     ),
                     child: _uploadingImage
@@ -565,8 +679,8 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                         : Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.add_photo_alternate_outlined, color: Colors.grey.shade400, size: 22),
-                              Text('添加', style: TextStyle(fontSize: 11, color: Colors.grey.shade400)),
+                              Icon(Icons.add_photo_alternate_outlined, color: DT.textTertiary, size: 22),
+                              Text('添加', style: TextStyle(fontSize: 11, color: DT.textTertiary)),
                             ],
                           ),
                   ),
@@ -574,7 +688,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
             ],
           ),
           const SizedBox(height: 4),
-          Text('最多可上传3张图片', style: TextStyle(fontSize: 11, color: Colors.grey.shade400)),
+          Text('最多可上传3张图片', style: TextStyle(fontSize: 11, color: DT.textTertiary)),
         ],
       ),
     );
@@ -627,56 +741,90 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
   // ── Address Section ──
   Widget _buildAddressSection() {
     final children = <Widget>[];
+    final hasCityLimit = (_selectedTech?.city ?? '').trim().isNotEmpty;
+    final sameCityCount = _addresses.where(_sameCity).length;
+
+    // 同城上门提示横幅
+    if (hasCityLimit) {
+      children.add(_cityLimitBanner());
+      children.add(const SizedBox(height: 10));
+    }
+
     if (_addresses.isEmpty) {
       children.add(_emptyState('暂无上门地址，请先添加', '至少添加一个上门地址后，才能继续预约上门美甲',
-        action: '添加地址', onAction: () => context.push('/client/addresses')));
+        action: '添加地址', onAction: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ClientAddressesScreen())).then((_) => _load())));
     } else {
+      // 提示：有地址但没有同城地址时
+      if (hasCityLimit && sameCityCount == 0) {
+        children.add(Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: _hintBox('你暂无 ${normCity(_selectedTech?.city)} 的同城地址，请新增一个同城地址后再预约上门'),
+        ));
+      }
       children.addAll(_addresses.map((addr) {
-        final selected = _selectedAddressId == addr.id;
-        return GestureDetector(
-          onTap: () => setState(() => _selectedAddressId = addr.id),
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              gradient: selected
-                  ? const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFFFF0F5), Color(0xFFFAFBFF)])
-                  : null,
-              color: selected ? null : const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(DT.rXxl),
-              border: Border.all(color: selected ? DT.primary.withOpacity(0.25) : Colors.black.withOpacity(0.05)),
-            ),
-            child: Row(
-              children: [
-                _RadioDot(selected: selected),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(addr.contactName ?? '未命名', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: DT.textPrimary)),
-                          if (addr.contactPhone != null) ...[
-                            const SizedBox(width: 8),
-                            Text(addr.contactPhone!, style: const TextStyle(fontSize: 12, color: DT.textMuted)),
+        final cityOk = _sameCity(addr);
+        final selected = _selectedAddressId == addr.id && cityOk;
+        return Opacity(
+          opacity: cityOk ? 1 : 0.55,
+          child: GestureDetector(
+            onTap: () {
+              if (!cityOk) {
+                _showCrossCityTip();
+                return;
+              }
+              setState(() => _selectedAddressId = addr.id);
+            },
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                gradient: selected
+                    ? const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFFFF0F5), Color(0xFFFAFBFF)])
+                    : null,
+                color: selected ? null : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(DT.rXxl),
+                border: Border.all(color: selected ? DT.primary.withOpacity(0.25) : Colors.black.withOpacity(0.05)),
+              ),
+              child: Row(
+                children: [
+                  _RadioDot(selected: selected),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(addr.contactName ?? '未命名', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: DT.textPrimary)),
+                            if (addr.contactPhone != null) ...[
+                              const SizedBox(width: 8),
+                              Text(addr.contactPhone!, style: const TextStyle(fontSize: 12, color: DT.textMuted)),
+                            ],
+                            if (addr.isDefault) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(color: DT.primarySoft, borderRadius: BorderRadius.circular(999)),
+                                child: const Text('默认', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: DT.primary)),
+                              ),
+                            ],
+                            if (!cityOk) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(color: const Color(0xFFE8E8ED), borderRadius: BorderRadius.circular(999)),
+                                child: const Text('跨城不可约', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: DT.textTertiary)),
+                              ),
+                            ],
                           ],
-                          if (addr.isDefault) ...[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(color: DT.primarySoft, borderRadius: BorderRadius.circular(999)),
-                              child: const Text('默认', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: DT.primary)),
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(addr.fullAddress, style: const TextStyle(fontSize: 13, height: 1.5, color: DT.textSecondary)),
-                    ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(addr.fullAddress, style: const TextStyle(fontSize: 13, height: 1.5, color: DT.textSecondary)),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -684,13 +832,48 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
     }
     return _glassCard('上门服务地址', '美甲师会按你选择的地址安排上门服务', children,
       trailing: GestureDetector(
-        onTap: () => context.push('/client/addresses'),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ClientAddressesScreen())).then((_) => _load()),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(color: DT.primarySoft, borderRadius: BorderRadius.circular(999)),
           child: const Text('管理地址', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: DT.primary)),
         ),
       ));
+  }
+
+  Widget _cityLimitBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: DT.primarySoft,
+        borderRadius: BorderRadius.circular(DT.rXxl),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.place_outlined, size: 16, color: DT.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(fontSize: 12.5, height: 1.5, color: DT.primaryDark),
+                children: [
+                  const TextSpan(text: '该美甲师仅支持 '),
+                  TextSpan(text: _techServiceCity, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  const TextSpan(text: ' 同城上门，跨城地址不可预约'),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCrossCityTip() {
+    final city = normCity(_selectedTech?.city);
+    NbToast.error(context, '跨城暂不支持上门，请选择 $city 同城地址');
   }
 
   // ── Shop Section ──
@@ -704,7 +887,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
         final selected = _shopAddressName == name;
         final addr = [shop['province'], shop['city'], shop['district'], shop['detailAddress']].where((s) => s != null).join(' ');
         return GestureDetector(
-          onTap: () => setState(() => _shopAddressName = name),
+          onTap: () => setState(() { _shopAddressName = name; _ensureSelection(); }),
           child: Container(
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(14),
@@ -747,77 +930,130 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
     return _glassCard('到店门店地址', '请选择本次要前往的具体门店地址', children);
   }
 
-  // ── Time Section ──
+  // ── Time Section（日期横滑选择 + 联动时段）──
   Widget _buildTimeSection() {
+    if (_selectedTech == null) {
+      return _emptyPlaceholder('请先选择美甲师与服务方式，再选择预约时间');
+    }
+    final statuses = _slotStatuses;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        GestureDetector(
-          onTap: () async {
-            final now = DateTime.now();
-            final picked = await showDatePicker(
-              context: context,
-              initialDate: now.add(const Duration(days: 1)),
-              firstDate: now,
-              lastDate: now.add(const Duration(days: 60)),
-            );
-            if (picked != null) {
-              setState(() {
-                _serviceDate = '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
-              });
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(DT.rXxl),
+        _buildDateStrip(),
+        const SizedBox(height: 14),
+        if (_isShopMode && _shopAddressName.isNotEmpty)
+          ...() {
+            final opt = shopHoursOptionForDate(_selectedShopMap, _serviceDate);
+            if (opt == null) return <Widget>[];
+            final text = opt['closed'] == true
+                ? '所选日期为该店铺休息日，请改选其他日期'
+                : '店铺营业时间：${opt['start']} - ${opt['end']}';
+            return [Padding(padding: const EdgeInsets.only(bottom: 10), child: _hintBox(text))];
+          }(),
+        if (statuses.isEmpty)
+          _emptyPlaceholder(_isShopMode ? '所选日期店铺休息，请改选日期' : '该美甲师当天暂无可预约时段，请改选日期')
+        else
+          _buildSlotGrid(statuses),
+      ],
+    );
+  }
+
+  Widget _buildDateStrip() {
+    final now = DateTime.now();
+    final base = DateTime(now.year, now.month, now.day);
+    const wk = ['一', '二', '三', '四', '五', '六', '日']; // Dart weekday 1..7
+    return SizedBox(
+      height: 78,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: 45,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (_, i) {
+          final d = base.add(Duration(days: i));
+          final ds = _fmtDate(d);
+          final enabled = _dateAvailable(ds);
+          final selected = _serviceDate == ds;
+          final label = i == 0 ? '今天' : i == 1 ? '明天' : '周${wk[d.weekday - 1]}';
+          return GestureDetector(
+            onTap: enabled ? () => setState(() { _serviceDate = ds; _ensureSlot(); }) : null,
+            child: Container(
+              width: 58,
+              decoration: BoxDecoration(
+                gradient: selected ? DT.primaryGradient : null,
+                color: selected ? null : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: selected ? Colors.transparent : Colors.black.withOpacity(0.05)),
+                boxShadow: selected ? [BoxShadow(color: const Color(0x4DC4627A), blurRadius: 12, offset: const Offset(0, 4))] : null,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(label,
+                    style: TextStyle(fontSize: 12, color: selected ? Colors.white70 : (enabled ? DT.textMuted : DT.textTertiary.withOpacity(0.5)))),
+                  const SizedBox(height: 4),
+                  Text('${d.month}/${d.day}',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: selected ? Colors.white : (enabled ? DT.textPrimary : DT.textTertiary.withOpacity(0.45)))),
+                  const SizedBox(height: 2),
+                  Text(enabled ? '' : '休',
+                    style: TextStyle(fontSize: 9, height: 1, color: DT.textTertiary.withOpacity(0.7))),
+                ],
+              ),
             ),
-            child: Row(
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSlotGrid(List<SlotStatus> statuses) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 1.7,
+      ),
+      itemCount: statuses.length,
+      itemBuilder: (_, i) {
+        final s = statuses[i];
+        final selected = _startTime == s.time && !s.occupied;
+        return GestureDetector(
+          onTap: s.occupied ? null : () => setState(() => _startTime = s.time),
+          child: Container(
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              gradient: selected ? DT.primaryGradient : null,
+              color: selected ? null : (s.occupied ? const Color(0xFFEFF1F4) : const Color(0xFFF1F5F9)),
+              borderRadius: BorderRadius.circular(DT.rXxl),
+              boxShadow: selected ? [BoxShadow(color: const Color(0x4DC4627A), blurRadius: 12, offset: const Offset(0, 4))] : null,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.calendar_today_rounded, size: 16, color: DT.primary),
-                const SizedBox(width: 8),
-                Text(_serviceDate, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: DT.textPrimary)),
-                const Spacer(),
-                Icon(Icons.chevron_right_rounded, size: 18, color: Colors.grey.shade400),
+                Text(s.time, style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  color: selected ? Colors.white : (s.occupied ? DT.textTertiary : const Color(0xFF64748B)),
+                  decoration: s.occupied ? TextDecoration.lineThrough : null,
+                )),
+                if (s.occupied)
+                  const Text('已约', style: TextStyle(fontSize: 9, height: 1.2, color: DT.textTertiary)),
               ],
             ),
           ),
-        ),
-        const SizedBox(height: 12),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 4,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-            childAspectRatio: 2,
-          ),
-          itemCount: _timeSlots.length,
-          itemBuilder: (_, i) {
-            final t = _timeSlots[i];
-            final selected = _startTime == t;
-            return GestureDetector(
-              onTap: () => setState(() => _startTime = t),
-              child: Container(
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  gradient: selected ? DT.primaryGradient : null,
-                  color: selected ? null : const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(DT.rXxl),
-                  boxShadow: selected ? [BoxShadow(color: const Color(0x4DFF6B8A), blurRadius: 12, offset: const Offset(0, 4))] : null,
-                ),
-                child: Text(t, style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                  color: selected ? Colors.white : const Color(0xFF64748B),
-                )),
-              ),
-            );
-          },
-        ),
-      ],
+        );
+      },
+    );
+  }
+
+  Widget _hintBox(String text) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(DT.rXxl)),
+      child: Text(text, style: const TextStyle(fontSize: 12, color: DT.textMuted)),
     );
   }
 
@@ -826,7 +1062,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.88),
+        color: Colors.white.withOpacity(0.62),
         borderRadius: BorderRadius.circular(DT.rCard),
         boxShadow: DT.shadowMd,
         border: Border.all(color: Colors.black.withOpacity(0.05)),

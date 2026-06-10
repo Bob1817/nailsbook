@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../auth/technician_auth_service.dart';
+import '../../../core/widgets/nb_toast.dart';
 
 const _tagColors = [
   {'bg': Color(0xFFFFE9F0), 'text': Color(0xFFFF5E93), 'name': '粉'},
@@ -57,11 +60,7 @@ class _TechnicianTagScreenState extends State<TechnicianTagScreen> {
       await TechnicianAuthService(api).updateProfile({'customTags': tags});
       setState(() => _tags = tags);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('标签已保存'),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ));
+        NbToast.show(context, '标签已保存');
       }
     } catch (_) {} finally {
       if (mounted) setState(() => _saving = false);
@@ -71,7 +70,7 @@ class _TechnicianTagScreenState extends State<TechnicianTagScreen> {
   Map<String, dynamic> _getColorEntry(String hexColor) {
     for (final c in _tagColors) {
       final textColor = c['text'] as Color;
-      final hex = '#${textColor.value.toRadixString(16).substring(2).toUpperCase()}';
+      final hex = '#${textColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(0, 8).toUpperCase()}';
       if (hex == hexColor.toUpperCase()) return c;
     }
     return _tagColors[0];
@@ -92,12 +91,12 @@ class _TechnicianTagScreenState extends State<TechnicianTagScreen> {
                   child: _tags.isEmpty
                       ? _buildEmpty()
                       : ListView(
-                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                          padding: const EdgeInsets.fromLTRB(DT.xl, 0, DT.xl, DT.xxl),
                           children: [
                             _buildInfoBanner(),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: DT.lg),
                             Wrap(
-                              spacing: 8, runSpacing: 8,
+                              spacing: DT.sm, runSpacing: DT.sm,
                               children: _tags.asMap().entries.map((e) {
                                 final i = e.key;
                                 final tag = e.value;
@@ -105,12 +104,16 @@ class _TechnicianTagScreenState extends State<TechnicianTagScreen> {
                                 final bg = colorEntry['bg'] as Color;
                                 final text = colorEntry['text'] as Color;
                                 return GestureDetector(
-                                  onTap: () => _showDeleteDialog(i),
+                                  onTap: () {
+                                    HapticFeedback.lightImpact();
+                                    _showDeleteDialog(i);
+                                  },
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: DT.md, vertical: DT.sm),
+                                    constraints: const BoxConstraints(minHeight: 44),
                                     decoration: BoxDecoration(
                                       color: bg,
-                                      borderRadius: BorderRadius.circular(999),
+                                      borderRadius: BorderRadius.circular(DT.rFull),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
@@ -118,7 +121,7 @@ class _TechnicianTagScreenState extends State<TechnicianTagScreen> {
                                         Text(tag['name']?.toString() ?? '',
                                           style: TextStyle(color: text, fontSize: 14, fontWeight: FontWeight.w500)),
                                         const SizedBox(width: 6),
-                                        Icon(Icons.close, size: 16, color: text),
+                                        Icon(CupertinoIcons.xmark, size: 16, color: text),
                                       ],
                                     ),
                                   ),
@@ -137,34 +140,40 @@ class _TechnicianTagScreenState extends State<TechnicianTagScreen> {
 
   Widget _buildHeader(double topPad) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(8, topPad + 4, 20, 8),
+      padding: EdgeInsets.fromLTRB(DT.sm, topPad + DT.xs, DT.xl, DT.sm),
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              HapticFeedback.lightImpact();
+              Navigator.pop(context);
+            },
             child: Container(
               width: 40, height: 40,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF374151)),
+              child: const Icon(CupertinoIcons.back, size: 18, color: DT.textDarkGrey),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: DT.md),
           const Expanded(
             child: Text('标签管理',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: DT.textPrimary)),
+              style: DT.titleLarge),
           ),
           GestureDetector(
-            onTap: _saving ? null : _showAddSheet,
+            onTap: _saving ? null : () {
+              HapticFeedback.lightImpact();
+              _showAddSheet();
+            },
             child: Container(
               width: 40, height: 40,
               decoration: const BoxDecoration(
                 color: DT.primary,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.add, size: 22, color: Colors.white),
+              child: const Icon(CupertinoIcons.plus, size: 22, color: Colors.white),
             ),
           ),
         ],
@@ -176,20 +185,20 @@ class _TechnicianTagScreenState extends State<TechnicianTagScreen> {
 
   Widget _buildInfoBanner() {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(DT.md),
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF6FF),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFBFDBFE)),
+        color: DT.infoBg,
+        borderRadius: BorderRadius.circular(DT.radius14),
+        border: Border.all(color: DT.infoBorder),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline, size: 20, color: Color(0xFF3B82F6)),
-          const SizedBox(width: 10),
+          const Icon(CupertinoIcons.info_circle, size: 20, color: DT.info),
+          const SizedBox(width: DT.sm),
           Expanded(
             child: Text('标签用于对客户进行分类管理，帮助你快速筛选和跟进客户。点击标签可删除。',
-              style: TextStyle(fontSize: 14, color: const Color(0xFF2563EB).withOpacity(0.8), height: 1.5)),
+              style: TextStyle(fontSize: 14, color: DT.actionBlue.withValues(alpha: 0.8), height: 1.5)),
           ),
         ],
       ),
@@ -213,9 +222,9 @@ class _TechnicianTagScreenState extends State<TechnicianTagScreen> {
           child: Container(
             decoration: const BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(DT.rCard)),
             ),
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(DT.xl),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -224,55 +233,58 @@ class _TechnicianTagScreenState extends State<TechnicianTagScreen> {
                   children: [
                     const Expanded(
                       child: Text('创建标签',
-                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: DT.textPrimary)),
+                        style: DT.titleMedium),
                     ),
                     GestureDetector(
                       onTap: () => Navigator.pop(ctx),
                       child: Container(
                         width: 32, height: 32,
-                        decoration: const BoxDecoration(color: Color(0xFFF2F0F3), shape: BoxShape.circle),
-                        child: const Icon(Icons.close, size: 16, color: Color(0xFF6D6570)),
+                        decoration: const BoxDecoration(color: DT.dividerWarm, shape: BoxShape.circle),
+                        child: const Icon(CupertinoIcons.xmark, size: 16, color: DT.textMidGrey),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: DT.lg),
                 // Name input
                 const Text('标签名称',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF374151))),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: DT.textDarkGrey)),
                 const SizedBox(height: 6),
                 Container(
                   decoration: BoxDecoration(
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
-                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: DT.borderGrey),
+                    borderRadius: BorderRadius.circular(DT.radius14),
                   ),
                   child: TextField(
                     controller: nameCtl,
                     style: const TextStyle(fontSize: 15, color: DT.textPrimary),
                     decoration: const InputDecoration(
                       hintText: '例如：VIP、新客户',
-                      hintStyle: TextStyle(fontSize: 14, color: Color(0xFFB0AAB4)),
+                      hintStyle: TextStyle(fontSize: 14, color: DT.iconGrey),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.all(14),
+                      contentPadding: EdgeInsets.all(DT.md),
                     ),
                     onChanged: (v) => name = v,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: DT.lg),
                 // Color picker
                 const Text('选择颜色',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF374151))),
-                const SizedBox(height: 10),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: DT.textDarkGrey)),
+                const SizedBox(height: DT.sm),
                 Wrap(
-                  spacing: 10, runSpacing: 10,
+                  spacing: DT.sm, runSpacing: DT.sm,
                   children: _tagColors.asMap().entries.map((e) {
                     final i = e.key;
                     final c = e.value;
                     final selected = selectedColorIdx == i;
                     return GestureDetector(
-                      onTap: () => setSheetState(() => selectedColorIdx = i),
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setSheetState(() => selectedColorIdx = i);
+                      },
                       child: Container(
-                        width: 36, height: 36,
+                        width: 44, height: 44,
                         decoration: BoxDecoration(
                           color: c['bg'] as Color,
                           shape: BoxShape.circle,
@@ -282,22 +294,22 @@ class _TechnicianTagScreenState extends State<TechnicianTagScreen> {
                           ),
                         ),
                         child: selected
-                            ? Icon(Icons.check, size: 18, color: c['text'] as Color)
+                            ? Icon(CupertinoIcons.check_mark, size: 18, color: c['text'] as Color)
                             : null,
                       ),
                     );
                   }).toList(),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: DT.lg),
                 // Preview
                 const Text('预览',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF374151))),
-                const SizedBox(height: 8),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: DT.textDarkGrey)),
+                const SizedBox(height: DT.sm),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: DT.md, vertical: DT.sm),
                   decoration: BoxDecoration(
                     color: _tagColors[selectedColorIdx]['bg'] as Color,
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: BorderRadius.circular(DT.rFull),
                   ),
                   child: Text(name.isEmpty ? '预览' : name,
                     style: TextStyle(
@@ -305,24 +317,21 @@ class _TechnicianTagScreenState extends State<TechnicianTagScreen> {
                       fontSize: 14,
                       fontWeight: FontWeight.w500)),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: DT.xl),
                 SizedBox(
                   width: double.infinity, height: 50,
                   child: ElevatedButton(
                     onPressed: () async {
+                      HapticFeedback.mediumImpact();
                       final trimmed = name.trim();
                       if (trimmed.isEmpty) return;
                       if (_tags.any((t) => t['name'] == trimmed)) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: const Text('标签名称已存在'),
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ));
+                        NbToast.show(context, '标签名称已存在');
                         return;
                       }
                       Navigator.pop(ctx);
                       final textColor = _tagColors[selectedColorIdx]['text'] as Color;
-                      final hex = '#${textColor.value.toRadixString(16).substring(2).toUpperCase()}';
+                      final hex = '#${textColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(0, 8).toUpperCase()}';
                       final newTags = [
                         ..._tags,
                         {
@@ -336,7 +345,7 @@ class _TechnicianTagScreenState extends State<TechnicianTagScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: DT.primary,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DT.radius14)),
                       elevation: 0,
                     ),
                     child: const Text('创建标签', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
@@ -355,15 +364,22 @@ class _TechnicianTagScreenState extends State<TechnicianTagScreen> {
   Future<void> _showDeleteDialog(int index) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      builder: (ctx) => CupertinoAlertDialog(
         title: const Text('删除标签'),
         content: Text('确定要删除"${_tags[index]['name']}"吗？'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('删除', style: TextStyle(color: Color(0xFFEF4444)))),
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('取消'),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () {
+              HapticFeedback.heavyImpact();
+              Navigator.pop(ctx, true);
+            },
+            child: const Text('删除')),
         ],
       ),
     );
@@ -377,20 +393,20 @@ class _TechnicianTagScreenState extends State<TechnicianTagScreen> {
   Widget _buildEmpty() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(40),
+        padding: const EdgeInsets.all(DT.space40),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               width: 64, height: 64,
-              decoration: const BoxDecoration(color: Color(0xFFFFF1F5), shape: BoxShape.circle),
+              decoration: const BoxDecoration(color: DT.primarySoft, shape: BoxShape.circle),
               alignment: Alignment.center,
-              child: const Icon(Icons.label_outline, size: 32, color: DT.primary),
+              child: const Icon(CupertinoIcons.tag, size: 32, color: DT.primary),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DT.lg),
             const Text('暂无标签',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF374151))),
-            const SizedBox(height: 4),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: DT.textDarkGrey)),
+            const SizedBox(height: DT.xs),
             Text('点击右上角创建标签',
               style: TextStyle(fontSize: 14, color: DT.textMuted)),
           ],

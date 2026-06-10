@@ -1,8 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import '../../../core/api/api_client.dart';
-import '../orders/client_orders_screen.dart';
+import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/glass_container.dart';
+import '../discover/client_discover_screen.dart';
 import '../../shared/chat/conversations_screen.dart';
+import '../orders/client_create_order_screen.dart';
+import '../orders/client_orders_screen.dart';
+import '../orders/client_order_detail_screen.dart';
+import '../orders/client_order_models.dart';
+import '../orders/client_order_service.dart';
 import '../profile/client_profile_screen.dart';
 import '../works/client_works_screen.dart';
 import '../works/client_work_detail_screen.dart';
@@ -29,147 +41,1047 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     try {
       final apiClient = context.read<ApiClient>();
       final data = await apiClient.get('/home');
-      if (mounted) setState(() { _homeData = data; _loading = false; });
+      if (mounted)
+        setState(() {
+          _homeData = data;
+          _loading = false;
+        });
     } catch (_) {
-      if (mounted) setState(() { _loading = false; });
+      if (mounted)
+        setState(() {
+          _loading = false;
+        });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final pages = <Widget>[
-      _ClientHomeTabPage(homeData: _homeData, loading: _loading, onRefresh: _loadHomeData),
+      _ClientHomeTabPage(
+        homeData: _homeData,
+        loading: _loading,
+        onRefresh: _loadHomeData,
+        onSelectTab: (i) => setState(() => _currentIndex = i),
+      ),
       const ClientOrdersScreen(),
+      const ClientDiscoverScreen(),
       const ConversationsScreen(),
       const ClientProfileScreen(),
     ];
 
     return Scaffold(
+      extendBody: true,
       body: IndexedStack(index: _currentIndex, children: pages),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: _GlassTabBar(
         currentIndex: _currentIndex,
         onTap: (i) => setState(() => _currentIndex = i),
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFFE91E63),
-        unselectedItemColor: const Color(0xFF757575),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: '首页'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: '订单'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: '消息'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: '我的'),
-        ],
       ),
     );
   }
 }
 
-class _ClientHomeTabPage extends StatelessWidget {
-  final Map<String, dynamic>? homeData;
-  final bool loading;
-  final Future<void> Function() onRefresh;
+/// 浮动玻璃态底部导航（Liquid Glass）。对齐 CLAUDE_CODE_GUIDE Step 4。
+class _GlassTabBar extends StatelessWidget {
+  final int currentIndex;
+  final ValueChanged<int> onTap;
 
-  const _ClientHomeTabPage({this.homeData, this.loading = true, required this.onRefresh});
+  const _GlassTabBar({required this.currentIndex, required this.onTap});
+
+  static const _items = <(IconData, IconData, String)>[
+    (Icons.home_rounded, Icons.home_outlined, '首页'),
+    (Icons.calendar_today_rounded, Icons.calendar_today_outlined, '预约'),
+    (Icons.explore_rounded, Icons.explore_outlined, '发现'),
+    (Icons.chat_bubble_rounded, Icons.chat_bubble_outline_rounded, '消息'),
+    (Icons.person_rounded, Icons.person_outline_rounded, '我的'),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('NailBook')),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(onRefresh: onRefresh, child: _buildBody(context)),
+    return SafeArea(
+      top: false,
+      minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: GlassContainer(
+        blur: 56,
+        opacity: 0.18,
+        borderRadius: 28,
+        boxShadow: const [
+          BoxShadow(
+              color: Color(0x1A000000), blurRadius: 24, offset: Offset(0, 8))
+        ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(_items.length, (i) => _tab(i)),
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildBody(BuildContext context) {
-    if (homeData == null) {
-      return ListView(children: [
-        const SizedBox(height: 100),
-        Center(child: Text('暂无数据', style: Theme.of(context).textTheme.bodyLarge)),
-      ]);
+  Widget _tab(int i) {
+    final item = _items[i];
+    final active = i == currentIndex;
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => onTap(i),
+        child: SizedBox(
+          height: 48,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(active ? item.$1 : item.$2,
+                  size: 24, color: active ? DT.primary : DT.textPrimary),
+              const SizedBox(height: 2),
+              Text(
+                item.$3,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                  color: active ? DT.primary : DT.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 3),
+              // 4px 选中指示点
+              Container(
+                width: 4,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: active ? DT.primary : Colors.transparent,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 客户端首页 — 图片优先编辑式（Hero 作品轮播 / 我的预约 / 最新动态）。
+/// 保留 webapp Home.tsx 的功能模块，UI 对齐 Apple + Liquid Glass 设计准则。
+class _ClientHomeTabPage extends StatefulWidget {
+  final Map<String, dynamic>? homeData;
+  final bool loading;
+  final Future<void> Function() onRefresh;
+  final ValueChanged<int> onSelectTab;
+
+  const _ClientHomeTabPage({
+    this.homeData,
+    this.loading = true,
+    required this.onRefresh,
+    required this.onSelectTab,
+  });
+
+  @override
+  State<_ClientHomeTabPage> createState() => _ClientHomeTabPageState();
+}
+
+const _upcomingStatuses = {
+  'pending_quote',
+  'pending_agree',
+  'pending_confirm',
+  'pending_home',
+  'pending_shop',
+  'in_progress',
+};
+
+class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
+  final _scrollController = ScrollController();
+  final _pageController = PageController();
+
+  final List<Map<String, dynamic>> _featured = [];
+  int _featPage = 1;
+  bool _featHasMore = true;
+  bool _featLoading = false;
+
+  ClientOrder? _upcoming;
+  int _heroIndex = 0;
+  Timer? _heroTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFeatured(reset: true);
+    _loadUpcoming();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _heroTimer?.cancel();
+    _scrollController.dispose();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  List<Map<String, dynamic>> get _heroWorks {
+    final works = (widget.homeData?['works'] as List<dynamic>?) ?? const [];
+    return works.take(5).cast<Map<String, dynamic>>().toList();
+  }
+
+  void _ensureHeroTimer() {
+    final count = _heroWorks.length;
+    if (count <= 1) {
+      _heroTimer?.cancel();
+      return;
     }
+    _heroTimer ??= Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted || !_pageController.hasClients) return;
+      final next = (_heroIndex + 1) % count;
+      _pageController.animateToPage(next,
+          duration: const Duration(milliseconds: 600), curve: Curves.easeInOut);
+    });
+  }
 
-    final technician = homeData!['technician'] as Map<String, dynamic>?;
-    final works = homeData!['works'] as List<dynamic>? ?? [];
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 400) {
+      _loadFeatured();
+    }
+  }
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        if (technician != null) ...[
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(children: [
-                CircleAvatar(
-                  backgroundColor: const Color(0xFFE91E63),
-                  child: Text(
-                    (technician['name'] as String?)?.substring(0, 1) ?? '?',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(technician['name']?.toString() ?? '', style: Theme.of(context).textTheme.titleMedium),
-                    if (technician['city'] != null)
-                      Text(technician['city'].toString(), style: Theme.of(context).textTheme.bodySmall),
-                  ]),
-                ),
-              ]),
+  Future<void> _loadFeatured({bool reset = false}) async {
+    if (_featLoading) return;
+    if (!reset && !_featHasMore) return;
+    setState(() => _featLoading = true);
+    final page = reset ? 1 : _featPage + 1;
+    try {
+      final json =
+          await context.read<ApiClient>().get('/featured-works', queryParams: {
+        'page': '$page',
+        'limit': '10',
+      });
+      final works =
+          (json['works'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
+      if (mounted) {
+        setState(() {
+          if (reset) _featured.clear();
+          _featured.addAll(works);
+          _featHasMore = json['hasMore'] as bool? ?? false;
+          _featPage = page;
+          _featLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted)
+        setState(() {
+          _featHasMore = false;
+          _featLoading = false;
+        });
+    }
+  }
+
+  Future<void> _loadUpcoming() async {
+    try {
+      final orders = await ClientOrderService(context.read<ApiClient>()).list();
+      final upcoming = orders
+          .where((o) =>
+              _upcomingStatuses.contains(o.status) &&
+              (o.startTime?.isNotEmpty ?? false))
+          .toList()
+        ..sort((a, b) => (a.startTime ?? '').compareTo(b.startTime ?? ''));
+      if (mounted)
+        setState(() => _upcoming = upcoming.isEmpty ? null : upcoming.first);
+    } catch (_) {/* 静默 */}
+  }
+
+  Future<void> _refreshAll() async {
+    await Future.wait(
+        [widget.onRefresh(), _loadFeatured(reset: true), _loadUpcoming()]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _ensureHeroTimer();
+    final topPad = MediaQuery.of(context).padding.top;
+    return Container(
+      decoration: const BoxDecoration(gradient: DT.screenGradient),
+      child: RefreshIndicator(
+        color: DT.primary,
+        onRefresh: _refreshAll,
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            SliverToBoxAdapter(child: SizedBox(height: topPad + 8)),
+            SliverToBoxAdapter(child: _header()),
+            SliverToBoxAdapter(child: _heroSection()),
+            SliverToBoxAdapter(child: _bookingSection()),
+            SliverToBoxAdapter(child: _latestHeader()),
+            _featuredGrid(),
+            SliverToBoxAdapter(child: _footer()),
+            const SliverToBoxAdapter(child: SizedBox(height: 96)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Header ──────────────────────────────────────────────
+  Widget _header() {
+    final tech = widget.homeData?['technician'] as Map<String, dynamic>?;
+    final avatar = tech?['avatarUrl']?.toString();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('NAILBOOK',
+                    style: TextStyle(
+                        fontSize: 11,
+                        letterSpacing: 2,
+                        fontWeight: FontWeight.w600,
+                        color: DT.textMuted)),
+                SizedBox(height: 2),
+                Text('首页', style: DT.displayMedium),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
-        ],
-        Row(children: [
-          Text('作品', style: Theme.of(context).textTheme.titleMedium),
-          const Spacer(),
-          TextButton(
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ClientWorksScreen())),
-            child: const Text('查看全部'),
+          _circleBtn(
+              Icons.chat_bubble_outline_rounded, () => widget.onSelectTab(3)),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () => widget.onSelectTab(4),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: DT.surface,
+                border: Border.all(color: DT.border),
+                image: (avatar != null && avatar.isNotEmpty)
+                    ? DecorationImage(
+                        image: CachedNetworkImageProvider(avatar),
+                        fit: BoxFit.cover)
+                    : null,
+              ),
+              child: (avatar == null || avatar.isEmpty)
+                  ? const Icon(Icons.person_outline_rounded,
+                      size: 20, color: DT.textSecondary)
+                  : null,
+            ),
           ),
-        ]),
-        const SizedBox(height: 8),
-        if (works.isEmpty)
-          const Center(child: Padding(padding: EdgeInsets.all(32), child: Text('暂无作品')))
-        else
-          SizedBox(
-            height: 200,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: works.length > 6 ? 6 : works.length,
-              itemBuilder: (context, index) {
-                final w = works[index];
-                final images = (w['imageUrls'] as List<dynamic>?) ?? [];
-                return GestureDetector(
-                  onTap: () => Navigator.push(
+        ],
+      ),
+    );
+  }
+
+  Widget _circleBtn(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: DT.surface,
+            border: Border.all(color: DT.border)),
+        child: Icon(icon, size: 20, color: DT.textSecondary),
+      ),
+    );
+  }
+
+  // ── Hero carousel ───────────────────────────────────────
+  Widget _heroSection() {
+    final works = _heroWorks;
+    if (works.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(DT.rHero),
+        child: SizedBox(
+          height: 400,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              PageView.builder(
+                controller: _pageController,
+                itemCount: works.length,
+                onPageChanged: (i) => setState(() => _heroIndex = i),
+                itemBuilder: (_, i) => _heroSlide(works[i]),
+              ),
+              const IgnorePointer(
+                  child: DecoratedBox(
+                      decoration: BoxDecoration(gradient: DT.heroOverlay))),
+              Positioned(
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                  child: _heroTopRow(works.length)),
+              Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 16,
+                  child: _heroBottom(
+                      works[_heroIndex.clamp(0, works.length - 1)])),
+              Positioned(left: 16, bottom: 96, child: _heroDots(works.length)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _heroSlide(Map<String, dynamic> w) {
+    final cover = w['coverUrl']?.toString();
+    final imgs = (w['imageUrls'] as List<dynamic>?) ?? const [];
+    final url = (cover != null && cover.isNotEmpty)
+        ? cover
+        : (imgs.isNotEmpty ? imgs.first.toString() : null);
+    if (url == null) return Container(color: const Color(0xFFEFEAF2));
+    return CachedNetworkImage(
+      imageUrl: url,
+      fit: BoxFit.cover,
+      placeholder: (_, __) => Container(color: const Color(0xFFEFEAF2)),
+      errorWidget: (_, __, ___) => Container(color: const Color(0xFFEFEAF2)),
+    );
+  }
+
+  Widget _heroTopRow(int count) {
+    return Row(
+      children: [
+        // 原底部大标题缩小后移至顶部，替换原有的两个胶囊标签
+        GlassContainer(
+          tint: Colors.black,
+          opacity: 0.28,
+          blur: DT.glassBlurStandard,
+          borderRadius: 999,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          child: const Text('今日推荐美甲',
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.2,
+                  color: Colors.white)),
+        ),
+        const Spacer(),
+        _glassPill('${_heroIndex + 1}/$count'),
+      ],
+    );
+  }
+
+  Widget _heroBottom(Map<String, dynamic> w) {
+    final title = w['title']?.toString();
+    final techName = w['technicianName']?.toString() ?? '已绑定美甲师';
+    final techAvatar = w['technicianAvatarUrl']?.toString();
+    return GestureDetector(
+      onTap: () => Navigator.push(context,
+          MaterialPageRoute(builder: (_) => const ClientWorksScreen())),
+      child: GlassContainer(
+        tint: Colors.black,
+        opacity: 0.22,
+        blur: DT.glassBlurStandard,
+        borderRadius: 18,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 美甲师头像 + 名称（移到标题上方）
+                  Row(
+                    children: [
+                      _heroAvatar(techName, techAvatar),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(techName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(title?.isNotEmpty == true ? title! : '最新作品',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            // 简化后的引导文字，置于胶囊内部
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('查看更多',
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white.withOpacity(0.9))),
+                Icon(Icons.chevron_right_rounded,
+                    size: 18, color: Colors.white.withOpacity(0.9)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _heroAvatar(String name, String? avatar) {
+    if (avatar != null && avatar.isNotEmpty) {
+      return ClipOval(
+          child: CachedNetworkImage(
+              imageUrl: avatar, width: 24, height: 24, fit: BoxFit.cover));
+    }
+    return Container(
+      width: 24,
+      height: 24,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.22), shape: BoxShape.circle),
+      child: Text(name.isNotEmpty ? name.substring(0, 1) : '美',
+          style: const TextStyle(
+              fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
+    );
+  }
+
+  Widget _heroDots(int count) {
+    return Row(
+      children: List.generate(count, (i) {
+        final active = i == _heroIndex;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          margin: const EdgeInsets.only(right: 6),
+          width: active ? 22 : 6,
+          height: 5,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(active ? 1 : 0.55),
+            borderRadius: BorderRadius.circular(999),
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _glassPill(String text) {
+    return GlassContainer(
+      tint: Colors.black,
+      opacity: 0.28,
+      blur: DT.glassBlurStandard,
+      borderRadius: 999,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Text(text,
+          style: const TextStyle(
+              fontSize: 11, fontWeight: FontWeight.w500, color: Colors.white)),
+    );
+  }
+
+  // ── My booking ──────────────────────────────────────────
+  Widget _bookingSection() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionHeader(
+            '我的预约',
+            _upcoming != null ? '距离最近的一次预约' : '快速发起你的下一次美甲',
+            onMore: _upcoming != null
+                ? () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => ClientWorkDetailScreen(workId: w['id'] as int)),
+                    MaterialPageRoute(
+                        builder: (_) => const ClientOrdersScreen()))
+                : null,
+          ),
+          const SizedBox(height: 12),
+          _upcoming != null ? _bookingCard(_upcoming!) : _bookingEmpty(),
+        ],
+      ),
+    );
+  }
+
+  Widget _bookingCard(ClientOrder o) {
+    final tech = o.technician;
+    final start = DateTime.tryParse(o.startTime ?? '');
+    return GestureDetector(
+      onTap: () => _openOrder(o.id),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: DT.surface,
+          borderRadius: BorderRadius.circular(DT.rCard),
+          border: Border.all(color: DT.border),
+          boxShadow: DT.shadowSm,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _tintPill(o.statusLabel, DT.primarySoft, DT.primaryDark),
+                const Spacer(),
+                Text(_countdown(start),
+                    style:
+                        const TextStyle(fontSize: 12, color: DT.textSecondary)),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _dateBlock(start),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(o.serviceType ?? '美甲服务',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: DT.textPrimary)),
+                      const SizedBox(height: 6),
+                      _metaRow(Icons.access_time_rounded,
+                          '${_hm(o.startTime)} - ${_hm(o.endTime)}'),
+                      if (tech?['name'] != null) ...[
+                        const SizedBox(height: 4),
+                        _metaRow(Icons.person_outline_rounded,
+                            tech!['name'].toString()),
+                      ],
+                      if (o.address != null && o.address!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        _metaRow(Icons.location_on_outlined, o.address!,
+                            maxLines: 2),
+                      ],
+                    ],
                   ),
-                  child: Container(
-                    width: 160,
-                    margin: const EdgeInsets.only(right: 8),
-                    child: Card(
-                      clipBehavior: Clip.antiAlias,
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                        Expanded(
-                          child: images.isNotEmpty
-                              ? Image.network(images[0].toString(), fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(color: Colors.grey.shade200, child: const Icon(Icons.spa, color: Colors.grey)))
-                              : Container(color: Colors.grey.shade200, child: const Icon(Icons.spa, color: Colors.grey)),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Text(w['title']?.toString() ?? '未命名作品',
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                              maxLines: 1, overflow: TextOverflow.ellipsis),
-                        ),
-                      ]),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            const Divider(height: 1, color: DT.divider),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                    child: _bookingAction('发消息', () => widget.onSelectTab(3),
+                        filled: false)),
+                if (tech?['phone'] != null) ...[
+                  const SizedBox(width: 8),
+                  Expanded(
+                      child: _bookingAction(
+                          '打电话', () => _call(tech!['phone'].toString()),
+                          filled: false)),
+                ],
+                const SizedBox(width: 8),
+                Expanded(
+                    child: _bookingAction('查看详情', () => _openOrder(o.id),
+                        filled: true)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _bookingEmpty() {
+    return GestureDetector(
+      onTap: () => Navigator.push(context,
+          MaterialPageRoute(builder: (_) => const ClientCreateOrderScreen())),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: DT.surface,
+          borderRadius: BorderRadius.circular(DT.rCard),
+          border: Border.all(color: DT.border),
+          boxShadow: DT.shadowSm,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                  color: DT.primarySoft,
+                  borderRadius: BorderRadius.circular(16)),
+              child: const Icon(Icons.add_rounded, color: DT.primary, size: 26),
+            ),
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('还没有预约美甲',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: DT.textPrimary)),
+                  SizedBox(height: 4),
+                  Text('预约你的美甲吧 ～',
+                      style: TextStyle(fontSize: 13, color: DT.textSecondary)),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+              decoration: BoxDecoration(
+                  color: DT.primary, borderRadius: BorderRadius.circular(999)),
+              child: const Text('立即预约',
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _dateBlock(DateTime? d) {
+    return Container(
+      width: 72,
+      height: 72,
+      decoration: BoxDecoration(
+          color: DT.surfaceAlt, borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(d != null ? '${d.month}月' : '--',
+              style: const TextStyle(fontSize: 11, color: DT.textSecondary)),
+          Text(d != null ? '${d.day}' : '--',
+              style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  height: 1.1,
+                  color: DT.textPrimary)),
+        ],
+      ),
+    );
+  }
+
+  Widget _metaRow(IconData icon, String text, {int maxLines = 1}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 14, color: DT.textTertiary),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(text,
+              maxLines: maxLines,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 13, color: DT.textSecondary)),
+        ),
+      ],
+    );
+  }
+
+  Widget _bookingAction(String label, VoidCallback onTap,
+      {required bool filled}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 40,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: filled ? DT.primary : DT.surfaceAlt,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(label,
+            style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: filled ? Colors.white : DT.textPrimary)),
+      ),
+    );
+  }
+
+  // ── Latest works ────────────────────────────────────────
+  Widget _latestHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+      child: _sectionHeader('最新动态', '来自你已绑定美甲师的作品发布',
+          onMore: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const ClientWorksScreen()))),
+    );
+  }
+
+  Widget _featuredGrid() {
+    if (_featured.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.all(40),
+          child: Center(
+            child: Text(_featLoading ? '加载中…' : '暂无作品展示',
+                style: const TextStyle(fontSize: 13, color: DT.textSecondary)),
+          ),
+        ),
+      );
+    }
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      sliver: SliverGrid(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 0.72,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (_, i) => _workCard(_featured[i]),
+          childCount: _featured.length,
+        ),
+      ),
+    );
+  }
+
+  Widget _workCard(Map<String, dynamic> w) {
+    final id = w['id'] as int;
+    final cover = w['coverUrl']?.toString();
+    final imgs = (w['imageUrls'] as List<dynamic>?) ?? const [];
+    final url = (cover != null && cover.isNotEmpty)
+        ? cover
+        : (imgs.isNotEmpty ? imgs.first.toString() : null);
+    final title = w['title']?.toString();
+    final techName = w['technicianName']?.toString() ?? '';
+    final techAvatar = w['technicianAvatarUrl']?.toString();
+    final likeCount = w['likeCount'] as int? ?? 0;
+    final liked = w['isLiked'] as bool? ?? false;
+    final tags =
+        (w['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+            const [];
+
+    return GestureDetector(
+      onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => ClientWorkDetailScreen(workId: id))),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (url != null)
+              CachedNetworkImage(
+                  imageUrl: url,
+                  fit: BoxFit.cover,
+                  placeholder: (_, __) =>
+                      Container(color: const Color(0xFFEFEAF2)),
+                  errorWidget: (_, __, ___) =>
+                      Container(color: const Color(0xFFEFEAF2)))
+            else
+              Container(color: const Color(0xFFEFEAF2)),
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Color(0x12000000),
+                    Color(0xC2000000)
+                  ],
+                  stops: [0.45, 0.65, 1.0],
+                ),
+              ),
+            ),
+            Positioned(
+              left: 8,
+              top: 8,
+              child: GlassContainer(
+                tint: Colors.black,
+                opacity: 0.24,
+                blur: DT.glassBlurLight,
+                borderRadius: 999,
+                padding: const EdgeInsets.fromLTRB(4, 4, 10, 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircleAvatar(
+                      radius: 9,
+                      backgroundColor: Colors.white24,
+                      backgroundImage:
+                          (techAvatar != null && techAvatar.isNotEmpty)
+                              ? CachedNetworkImageProvider(techAvatar)
+                              : null,
+                      child: (techAvatar == null || techAvatar.isEmpty)
+                          ? Text(
+                              techName.isNotEmpty
+                                  ? techName.substring(0, 1)
+                                  : '美',
+                              style: const TextStyle(
+                                  fontSize: 9, color: Colors.white))
+                          : null,
                     ),
+                    const SizedBox(width: 6),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 70),
+                      child: Text(techName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              left: 10,
+              right: 10,
+              bottom: 10,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(title?.isNotEmpty == true ? title! : '未命名作品',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white)),
+                  if (tags.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 5,
+                      children: tags
+                          .take(2)
+                          .map((t) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.16),
+                                    borderRadius: BorderRadius.circular(999)),
+                                child: Text('#$t',
+                                    style: TextStyle(
+                                        fontSize: 9,
+                                        color: Colors.white.withOpacity(0.92))),
+                              ))
+                          .toList(),
+                    ),
+                  ],
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(liked ? Icons.favorite : Icons.favorite_border,
+                          size: 12, color: liked ? DT.primary : Colors.white),
+                      const SizedBox(width: 3),
+                      Text('$likeCount',
+                          style: const TextStyle(
+                              fontSize: 11, color: Colors.white)),
+                    ],
                   ),
-                );
-              },
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _footer() {
+    if (_featured.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: _featLoading
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: DT.primary))
+            : Text(_featHasMore ? '' : '没有更多了',
+                style: const TextStyle(fontSize: 12, color: DT.textMuted)),
+      ),
+    );
+  }
+
+  // ── Shared ──────────────────────────────────────────────
+  Widget _sectionHeader(String title, String subtitle, {VoidCallback? onMore}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: DT.titleLarge),
+              const SizedBox(height: 2),
+              Text(subtitle,
+                  style: const TextStyle(fontSize: 12, color: DT.textMuted)),
+            ],
+          ),
+        ),
+        if (onMore != null)
+          GestureDetector(
+            onTap: onMore,
+            child: const Row(
+              children: [
+                Text('查看全部',
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: DT.primary)),
+                Icon(Icons.chevron_right_rounded, size: 18, color: DT.primary),
+              ],
             ),
           ),
       ],
     );
+  }
+
+  Widget _tintPill(String text, Color bg, Color fg) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration:
+          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
+      child: Text(text,
+          style:
+              TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: fg)),
+    );
+  }
+
+  void _openOrder(int id) {
+    Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => ClientOrderDetailScreen(orderId: id)))
+        .then((_) => _loadUpcoming());
+  }
+
+  Future<void> _call(String phone) async {
+    final uri = Uri.parse('tel:$phone');
+    if (await canLaunchUrl(uri)) await launchUrl(uri);
+  }
+
+  String _hm(String? iso) {
+    final d = DateTime.tryParse(iso ?? '');
+    if (d == null) return '--';
+    return '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _countdown(DateTime? target) {
+    if (target == null) return '';
+    final diff = target.difference(DateTime.now());
+    if (diff.isNegative) return '已开始';
+    final days = diff.inDays;
+    final hours = diff.inHours % 24;
+    final mins = diff.inMinutes % 60;
+    if (days >= 1) return '倒计时 $days 天 $hours 小时';
+    if (hours >= 1) return '倒计时 $hours 小时 $mins 分';
+    return '倒计时 $mins 分钟';
   }
 }

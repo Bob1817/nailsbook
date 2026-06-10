@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme/design_tokens.dart';
 
@@ -26,9 +27,9 @@ class NBCard extends StatelessWidget {
     final card = Container(
       padding: padding ?? const EdgeInsets.all(DT.lg),
       decoration: BoxDecoration(
-        color: color ?? DT.surface,
+        color: color ?? DT.glassStandard,
         borderRadius: BorderRadius.circular(borderRadius ?? DT.rMd),
-        boxShadow: boxShadow ?? DT.shadowSm,
+        boxShadow: boxShadow ?? DT.shadowTile,
       ),
       child: child,
     );
@@ -74,7 +75,7 @@ class OrderStatusBadge extends StatelessWidget {
       ),
       child: Text(
         displayLabel,
-        style: TextStyle(
+        style: DT.captionLarge.copyWith(
           fontSize: fontSize,
           fontWeight: FontWeight.w600,
           color: colors.text,
@@ -90,7 +91,10 @@ class OrderStatusBadge extends StatelessWidget {
       case 'pending_agree':
         return (bg: DT.statusPendingAgreeBg, text: DT.statusPendingAgreeText);
       case 'pending_confirm':
-        return (bg: DT.statusPendingConfirmBg, text: DT.statusPendingConfirmText);
+        return (
+          bg: DT.statusPendingConfirmBg,
+          text: DT.statusPendingConfirmText
+        );
       case 'pending_home':
         return (bg: DT.statusPendingHomeBg, text: DT.statusPendingHomeText);
       case 'pending_shop':
@@ -108,15 +112,24 @@ class OrderStatusBadge extends StatelessWidget {
 
   String _getStatusLabel(String status) {
     switch (status) {
-      case 'pending_quote': return '待报价';
-      case 'pending_agree': return '待用户确认';
-      case 'pending_confirm': return '待我确认';
-      case 'pending_home': return '待上门';
-      case 'pending_shop': return '待到店';
-      case 'in_progress': return '服务中';
-      case 'completed': return '已完成';
-      case 'cancelled': return '已取消';
-      default: return status;
+      case 'pending_quote':
+        return '待报价';
+      case 'pending_agree':
+        return '待用户确认';
+      case 'pending_confirm':
+        return '待我确认';
+      case 'pending_home':
+        return '待上门';
+      case 'pending_shop':
+        return '待到店';
+      case 'in_progress':
+        return '服务中';
+      case 'completed':
+        return '已完成';
+      case 'cancelled':
+        return '已取消';
+      default:
+        return status;
     }
   }
 }
@@ -136,7 +149,8 @@ class NBPagePadding extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: additionalPadding ?? const EdgeInsets.symmetric(horizontal: DT.xl),
+      padding:
+          additionalPadding ?? const EdgeInsets.symmetric(horizontal: DT.xl),
       child: child,
     );
   }
@@ -186,11 +200,14 @@ class NBSectionTitle extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(actionText!, style: DT.bodySmall.copyWith(
-                      color: DT.primary, fontWeight: FontWeight.w600,
-                    )),
+                    Text(actionText!,
+                        style: DT.bodySmall.copyWith(
+                          color: DT.primary,
+                          fontWeight: FontWeight.w600,
+                        )),
                     const SizedBox(width: DT.xs),
-                    const Icon(Icons.chevron_right, size: 16, color: DT.primary),
+                    const Icon(CupertinoIcons.chevron_right,
+                        size: 16, color: DT.primary),
                   ],
                 ),
               ),

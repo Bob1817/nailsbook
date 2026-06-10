@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
+import 'work_card.dart';
 
 class ClientFavoritesScreen extends StatefulWidget {
   const ClientFavoritesScreen({super.key});
@@ -31,37 +32,57 @@ class _ClientFavoritesScreenState extends State<ClientFavoritesScreen> {
     }
   }
 
+  Future<void> _toggleLike(Map<String, dynamic> work) async {
+    final id = work['id'] as int;
+    final next = !(work['isLiked'] as bool? ?? false);
+    final delta = next ? 1 : -1;
+    setState(() {
+      work['isLiked'] = next;
+      work['likeCount'] = ((work['likeCount'] as int? ?? 0) + delta).clamp(0, 1 << 31);
+    });
+    try {
+      await context.read<ApiClient>().post('/works/$id/like');
+    } catch (_) {
+      if (mounted) setState(() {
+        work['isLiked'] = !next;
+        work['likeCount'] = ((work['likeCount'] as int? ?? 0) - delta).clamp(0, 1 << 31);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
-    final bottomPad = MediaQuery.of(context).padding.bottom;
-
-    return Container(
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFFFFF8FA), Color(0xFFF6F7FB), Color(0xFFF5F6F8)],
+          colors: [Color(0xFFFAFAFC), Color(0xFFF5F5F7), Color(0xFFF2F2F4)],
           stops: [0.0, 0.28, 1.0],
         ),
       ),
-      child: _loading
-          ? _buildSkeleton(topPad)
-          : RefreshIndicator(
-              color: DT.primary,
-              onRefresh: _load,
-              child: ListView(
-                padding: EdgeInsets.fromLTRB(16, topPad + 8, 16, bottomPad + 24),
-                children: [
-                  _buildHeader(topPad),
-                  const SizedBox(height: 16),
-                  if (_works.isEmpty)
-                    _buildEmpty()
-                  else
-                    _buildGrid(),
-                ],
-              ),
-            ),
+      child: Column(
+        children: [
+          _buildHeader(topPad),
+          Expanded(
+            child: _loading
+                ? _buildSkeleton()
+                : _works.isEmpty
+                    ? _buildEmpty()
+                    : WorkMasonryGrid(
+                        works: _works,
+                        onRefresh: _load,
+                        padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(context).padding.bottom + 24),
+                        onTapWork: (w) => context.push('/client/works/${w['id']}'),
+                        onToggleLike: _toggleLike,
+                      ),
+          ),
+        ],
+      ),
+      ),
     );
   }
 
@@ -79,18 +100,18 @@ class _ClientFavoritesScreenState extends State<ClientFavoritesScreen> {
             onTap: () => context.pop(),
             child: Container(
               width: 44, height: 44,
-              decoration: BoxDecoration(color: DT.primarySoft, shape: BoxShape.circle),
+              decoration: const BoxDecoration(color: DT.primarySoft, shape: BoxShape.circle),
               child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: DT.textPrimary),
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('我的收藏',
+                Text('我的收藏',
                   style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -0.5, color: DT.textPrimary)),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Text('查看你收藏的美甲作品', style: TextStyle(fontSize: 13, color: DT.textMuted)),
               ],
             ),
@@ -100,148 +121,40 @@ class _ClientFavoritesScreenState extends State<ClientFavoritesScreen> {
     );
   }
 
-  Widget _buildGrid() {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 0.8,
-      ),
-      itemCount: _works.length,
-      itemBuilder: (_, i) {
-        final work = _works[i];
-        final images = (work['imageUrls'] as List<dynamic>?) ?? [];
-        final techName = (work['technician'] as Map<String, dynamic>?)?['name']?.toString() ?? '';
-        final title = work['title']?.toString() ?? '未命名作品';
-
-        return GestureDetector(
-          onTap: () => context.push('/client/works/${work['id']}'),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 30, offset: const Offset(0, 10))],
-                      border: Border.all(color: Colors.black.withOpacity(0.05)),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: images.isNotEmpty
-                          ? Image.network(images[0].toString(), fit: BoxFit.cover, width: double.infinity,
-                              errorBuilder: (_, __, ___) => Container(
-                                color: const Color(0xFFF1F5F9),
-                                child: const Icon(Icons.image_not_supported_outlined, color: Color(0xFFCBD5E1), size: 32),
-                              ))
-                          : Container(
-                              color: const Color(0xFFF1F5F9),
-                              child: const Icon(Icons.image_outlined, color: Color(0xFFCBD5E1), size: 32),
-                            ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (techName.isNotEmpty)
-                      Row(
-                        children: [
-                          Text(techName,
-                            style: TextStyle(fontSize: 11, color: DT.textMuted)),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.check_circle, size: 12, color: DT.primary),
-                        ],
-                      ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(title,
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: DT.textPrimary),
-                            maxLines: 1, overflow: TextOverflow.ellipsis),
-                        ),
-                        const Icon(Icons.bookmark, size: 18, color: DT.primary),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildEmpty() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: DT.shadowSm,
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
-      ),
-      child: Column(
-        children: [
-          const Text('🔖', style: TextStyle(fontSize: 40)),
-          const SizedBox(height: 12),
-          const Text('暂无收藏作品', style: TextStyle(fontSize: 15, color: DT.textMuted)),
-          const SizedBox(height: 6),
-          Text('去首页发现喜欢的作品并收藏吧',
-            style: TextStyle(fontSize: 13, color: DT.textMuted)),
-          const SizedBox(height: 20),
-          GestureDetector(
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
+      children: [
+        const Center(child: Text('🔖', style: TextStyle(fontSize: 44))),
+        const SizedBox(height: 14),
+        const Center(child: Text('暂无收藏作品', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: DT.textPrimary))),
+        const SizedBox(height: 6),
+        const Center(child: Text('去首页发现喜欢的作品并收藏吧', style: TextStyle(fontSize: 13, color: DT.textMuted))),
+        const SizedBox(height: 22),
+        Center(
+          child: GestureDetector(
             onTap: () => context.go('/client/home'),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 11),
               decoration: BoxDecoration(color: DT.primary, borderRadius: BorderRadius.circular(999)),
               child: const Text('去逛逛', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _buildSkeleton(double topPad) {
-    return ListView(
-      padding: EdgeInsets.fromLTRB(16, topPad + 8, 16, 24),
-      children: [
-        Row(children: [
-          Container(width: 44, height: 44, decoration: BoxDecoration(color: const Color(0xFFE8E8E8), shape: BoxShape.circle)),
-          const SizedBox(width: 12),
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Container(width: 80, height: 26, decoration: BoxDecoration(color: const Color(0xFFE8E8E8), borderRadius: BorderRadius.circular(4))),
-            const SizedBox(height: 4),
-            Container(width: 140, height: 12, decoration: BoxDecoration(color: const Color(0xFFE8E8E8), borderRadius: BorderRadius.circular(4))),
-          ]),
-        ]),
-        const SizedBox(height: 16),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.8,
-          ),
-          itemCount: 4,
-          itemBuilder: (_, __) => Container(
-            decoration: BoxDecoration(color: const Color(0xFFE8E8E8), borderRadius: BorderRadius.circular(20)),
-          ),
-        ),
-      ],
+  Widget _buildSkeleton() {
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.7,
+      ),
+      itemCount: 6,
+      itemBuilder: (_, __) => Container(
+        decoration: BoxDecoration(color: const Color(0xFFE8E8ED), borderRadius: BorderRadius.circular(18)),
+      ),
     );
   }
 }

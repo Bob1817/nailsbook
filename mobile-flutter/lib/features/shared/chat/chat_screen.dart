@@ -5,17 +5,22 @@ import '../../../core/auth/auth_session.dart';
 import '../../../core/socket/chat_socket.dart';
 import '../booking/chat_booking_sheet.dart';
 import 'chat_service.dart';
+import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
 class ChatScreen extends StatefulWidget {
-  final int conversationId;
+  final int? conversationId;
   final String title;
   final int? otherPartyId;
 
+  /// 直接开聊：尚无会话时按美甲师/对方 id 发起新会话。
+  final int? techId;
+
   const ChatScreen({
     super.key,
-    required this.conversationId,
+    this.conversationId,
     required this.title,
     this.otherPartyId,
+    this.techId,
   });
 
   @override
@@ -28,14 +33,21 @@ class _ChatScreenState extends State<ChatScreen> {
   final _inputCtl = TextEditingController();
   final _scrollCtl = ScrollController();
   int? _otherPartyId;
+  int? _conversationId;
 
   @override
   void initState() {
     super.initState();
-    _otherPartyId = widget.otherPartyId;
-    _loadMessages();
+    _otherPartyId = widget.otherPartyId ?? widget.techId;
+    _conversationId = widget.conversationId;
+    if (_conversationId != null) {
+      _loadMessages();
+    } else {
+      _loading = false; // 新会话：空白等待首条消息
+    }
     _listenSocket();
-    if (_otherPartyId == null) _resolveOtherPartyId();
+    if (_otherPartyId == null && _conversationId != null)
+      _resolveOtherPartyId();
   }
 
   @override
@@ -46,24 +58,38 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _loadMessages() async {
+    final cid = _conversationId;
+    if (cid == null) {
+      setState(() => _loading = false);
+      return;
+    }
     try {
       final apiClient = context.read<ApiClient>();
       final service = ChatService(apiClient);
-      final messages = await service.messages(widget.conversationId);
+      final messages = await service.messages(cid);
       if (mounted) {
-        setState(() { _messages = messages; _loading = false; });
+        setState(() {
+          _messages = messages;
+          _loading = false;
+        });
         _scrollToBottom();
       }
     } catch (_) {
-      if (mounted) setState(() { _loading = false; });
+      if (mounted)
+        setState(() {
+          _loading = false;
+        });
     }
   }
 
   void _listenSocket() {
     final chatSocket = context.read<ChatSocket>();
     chatSocket.onMessageNew.listen((data) {
-      if (data['conversationId'] == widget.conversationId) {
-        setState(() { _messages.add(data); });
+      if (_conversationId != null &&
+          data['conversationId'] == _conversationId) {
+        setState(() {
+          _messages.add(data);
+        });
         _scrollToBottom();
       }
     });
@@ -78,11 +104,17 @@ class _ChatScreenState extends State<ChatScreen> {
       final apiClient = context.read<ApiClient>();
       final service = ChatService(apiClient);
       final msg = await service.sendMessage(
-        conversationId: widget.conversationId,
+        conversationId: _conversationId,
+        techId: _conversationId == null ? widget.techId : null,
         messageType: 'text',
         content: text,
       );
-      setState(() { _messages.add(msg); });
+      // 新会话首条消息：记录后端返回的 conversationId
+      _conversationId ??=
+          (msg['conversationId'] as int?) ?? (msg['conversation_id'] as int?);
+      setState(() {
+        _messages.add(msg);
+      });
       _scrollToBottom();
     } catch (_) {}
   }
@@ -97,7 +129,7 @@ class _ChatScreenState extends State<ChatScreen> {
       final api = context.read<ApiClient>();
       final convs = await ChatService(api).conversations();
       final conv = convs.cast<Map<String, dynamic>?>().firstWhere(
-            (c) => c?['id'] == widget.conversationId,
+            (c) => c?["id"] == _conversationId,
             orElse: () => null,
           );
       if (conv == null) return;
@@ -111,9 +143,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _openBookingSheet() async {
     final otherPartyId = _otherPartyId;
     if (otherPartyId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('无法获取对方信息，请从消息列表重新进入')),
-      );
+      NbToast.show(context, '无法获取对方信息，请从消息列表重新进入');
       return;
     }
     await showChatBookingSheet(context, otherPartyId: otherPartyId);
@@ -137,15 +167,19 @@ class _ChatScreenState extends State<ChatScreen> {
     final isClient = authSession.isClient;
 
     return Scaffold(
-      appBar: AppBar(
+      backgroundColor: DT.bg,
+      appBar: GlassAppBar(
         title: Text(widget.title),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: TextButton.icon(
               onPressed: _openBookingSheet,
-              icon: const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFFE91E63)),
-              label: const Text('发起预约', style: TextStyle(color: Color(0xFFE91E63), fontWeight: FontWeight.w600)),
+              icon: const Icon(Icons.calendar_today_rounded,
+                  size: 16, color: DT.primary),
+              label: const Text('发起预约',
+                  style: TextStyle(
+                      color: DT.primary, fontWeight: FontWeight.w600)),
             ),
           ),
         ],
@@ -153,11 +187,16 @@ class _ChatScreenState extends State<ChatScreen> {
       body: Column(children: [
         Expanded(
           child: _loading
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(
+                  child: CircularProgressIndicator(color: DT.primary))
               : _messages.isEmpty
-                  ? const Center(child: Text('暂无消息'))
+                  ? const Center(
+                      child: Text('暂无消息，发条消息打个招呼吧～',
+                          style: TextStyle(color: DT.textMuted)))
                   : ListView.builder(
                       controller: _scrollCtl,
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
                       padding: const EdgeInsets.all(16),
                       itemCount: _messages.length,
                       itemBuilder: (context, index) {
@@ -172,18 +211,31 @@ class _ChatScreenState extends State<ChatScreen> {
         SafeArea(
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: Colors.grey.shade200)),
+            decoration: const BoxDecoration(
+              color: DT.surface,
+              border: Border(top: BorderSide(color: DT.divider)),
             ),
             child: Row(children: [
               Expanded(
                 child: TextField(
                   controller: _inputCtl,
-                  decoration: const InputDecoration(
-                    hintText: '输入消息...',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: InputDecoration(
+                    hintText: '输入消息…',
+                    filled: true,
+                    fillColor: DT.surfaceAlt,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(999),
+                        borderSide: BorderSide.none),
+                    enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(999),
+                        borderSide: BorderSide.none),
+                    focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(999),
+                        borderSide:
+                            const BorderSide(color: DT.primary, width: 1.2)),
                   ),
                   minLines: 1,
                   maxLines: 4,
@@ -192,12 +244,16 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.send, color: Color(0xFFE91E63)),
-                onPressed: _sendMessage,
-                style: IconButton.styleFrom(
-                  backgroundColor: const Color(0xFFFCE4EC),
-                  minimumSize: const Size(44, 44),
+              GestureDetector(
+                onTap: _sendMessage,
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: const BoxDecoration(
+                      color: DT.primary, shape: BoxShape.circle),
+                  child: const Icon(Icons.send_rounded,
+                      color: Colors.white, size: 20),
                 ),
               ),
             ]),
@@ -212,22 +268,33 @@ class _ChatScreenState extends State<ChatScreen> {
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        constraints:
+            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
-          color: isMe ? const Color(0xFFE91E63) : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(16),
+          color: isMe ? DT.primary : DT.surface,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(18),
+            topRight: const Radius.circular(18),
+            bottomLeft: Radius.circular(isMe ? 18 : 4),
+            bottomRight: Radius.circular(isMe ? 4 : 18),
+          ),
+          border: isMe ? null : Border.all(color: DT.border),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           if (msg['imageUrl'] != null)
             ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(msg['imageUrl'].toString(), width: 200, fit: BoxFit.cover),
+              borderRadius: BorderRadius.circular(10),
+              child: Image.network(msg['imageUrl'].toString(),
+                  width: 200, fit: BoxFit.cover),
             ),
           if (msg['content'] != null)
             Text(
               msg['content'].toString(),
-              style: TextStyle(color: isMe ? Colors.white : Colors.black87, fontSize: 15),
+              style: TextStyle(
+                  color: isMe ? Colors.white : DT.textPrimary,
+                  fontSize: 15,
+                  height: 1.4),
             ),
         ]),
       ),

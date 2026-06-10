@@ -3,8 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
-import 'client_address_models.dart';
 import 'client_address_service.dart';
+import '../../../core/widgets/nb_toast.dart';
 
 class ClientEditAddressScreen extends StatefulWidget {
   final int? addressId;
@@ -105,11 +105,7 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
         await service.create(data);
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('地址已保存'),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ));
+        NbToast.show(context, '地址已保存');
         context.pop(true);
       }
     } catch (e) {
@@ -120,12 +116,7 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: const Color(0xFFEF4444),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ));
+    NbToast.show(context, msg);
   }
 
   @override

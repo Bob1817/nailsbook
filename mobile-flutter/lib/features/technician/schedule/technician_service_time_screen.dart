@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../auth/technician_auth_service.dart';
 import '../auth/technician_auth_models.dart';
+import '../../../core/widgets/nb_toast.dart';
 
 const _dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const _dayLabels = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
@@ -54,6 +57,7 @@ class _TechnicianServiceTimeScreenState extends State<TechnicianServiceTimeScree
   }
 
   Future<void> _save() async {
+    HapticFeedback.mediumImpact();
     setState(() => _saving = true);
     try {
       final api = context.read<ApiClient>();
@@ -62,11 +66,7 @@ class _TechnicianServiceTimeScreenState extends State<TechnicianServiceTimeScree
         'serviceSchedule': {'days': _schedule},
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('服务时间已保存'),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ));
+        NbToast.show(context, '服务时间已保存');
       }
     } catch (_) {} finally {
       if (mounted) setState(() => _saving = false);
@@ -87,12 +87,12 @@ class _TechnicianServiceTimeScreenState extends State<TechnicianServiceTimeScree
                 _buildHeader(topPad),
                 Expanded(
                   child: ListView(
-                    padding: EdgeInsets.fromLTRB(20, 0, 20, 24 + bottomPad),
+                    padding: EdgeInsets.fromLTRB(DT.xl, 0, DT.xl, DT.xxl + bottomPad),
                     children: [
                       _buildInfoBanner(),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: DT.lg),
                       ..._dayKeys.asMap().entries.map((e) =>
-                        _buildDayCard(e.key, e.value)),
+                        _buildDayCard(e.value, _dayLabels[e.key])),
                     ],
                   ),
                 ),
@@ -106,23 +106,22 @@ class _TechnicianServiceTimeScreenState extends State<TechnicianServiceTimeScree
 
   Widget _buildHeader(double topPad) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(8, topPad + 4, 20, 8),
+      padding: EdgeInsets.fromLTRB(DT.sm, topPad + DT.xs, DT.xl, DT.sm),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Container(
-              width: 40, height: 40,
+              width: 44, height: 44,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF374151)),
+              child: const Icon(CupertinoIcons.back, size: 18, color: DT.textDarkGrey),
             ),
           ),
-          const SizedBox(width: 12),
-          const Text('服务时间设置',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: DT.textPrimary)),
+          const SizedBox(width: DT.md),
+          Text('服务时间设置', style: DT.titleLarge.copyWith(fontSize: 18)),
         ],
       ),
     );
@@ -132,20 +131,20 @@ class _TechnicianServiceTimeScreenState extends State<TechnicianServiceTimeScree
 
   Widget _buildInfoBanner() {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(DT.md),
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF6FF),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFBFDBFE)),
+        color: DT.infoBg,
+        borderRadius: BorderRadius.circular(DT.rMd),
+        border: Border.all(color: DT.infoBorder),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline, size: 20, color: Color(0xFF3B82F6)),
-          const SizedBox(width: 10),
+          const Icon(CupertinoIcons.info_circle, size: 20, color: DT.info),
+          const SizedBox(width: DT.sm),
           Expanded(
             child: Text('设置每天的服务可用时间，客户仅能在你开启的时间段内预约',
-              style: TextStyle(fontSize: 14, color: const Color(0xFF2563EB).withOpacity(0.8), height: 1.5)),
+              style: DT.bodyMedium.copyWith(color: DT.actionBlue.withValues(alpha: 0.8), height: 1.5)),
           ),
         ],
       ),
@@ -154,44 +153,37 @@ class _TechnicianServiceTimeScreenState extends State<TechnicianServiceTimeScree
 
   // ── Day Card ──
 
-  Widget _buildDayCard(int index, String key) {
+  Widget _buildDayCard(String key, String label) {
     final day = _schedule[key]!;
     final enabled = day['enabled'] as bool;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      margin: const EdgeInsets.only(bottom: DT.sm),
+      padding: const EdgeInsets.symmetric(horizontal: DT.lg, vertical: DT.md),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        color: DT.surface,
+        borderRadius: BorderRadius.circular(DT.rXl),
+        border: Border.all(color: DT.bg),
         boxShadow: DT.shadowSm,
       ),
       child: Row(
         children: [
           SizedBox(
             width: 40,
-            child: Text(_dayLabels[index],
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: DT.textPrimary)),
+            child: Text(_dayLabels[_dayKeys.indexOf(key)],
+              style: DT.titleSmall),
           ),
           // Toggle
-          Container(
-            width: 44, height: 24,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: enabled ? DT.primary : const Color(0xFFE2E8F0),
-            ),
-            child: GestureDetector(
-              onTap: () => setState(() => _schedule[key]!['enabled'] = !enabled),
-              child: AnimatedAlign(
-                duration: const Duration(milliseconds: 200),
-                alignment: enabled ? Alignment.centerRight : Alignment.centerLeft,
-                child: Container(
-                  width: 20, height: 20,
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                  decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
-                ),
-              ),
+          SizedBox(
+            width: 51,
+            height: 44,
+            child: CupertinoSwitch(
+              value: enabled,
+              activeColor: DT.primary,
+              onChanged: (v) {
+                HapticFeedback.selectionClick();
+                setState(() => _schedule[key]!['enabled'] = v);
+              },
             ),
           ),
           if (enabled) ...[
@@ -200,18 +192,17 @@ class _TechnicianServiceTimeScreenState extends State<TechnicianServiceTimeScree
               value: day['startTime'] as String,
               onChanged: (v) => setState(() => _schedule[key]!['startTime'] = v),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 6),
-              child: Text(' - ', style: TextStyle(fontSize: 14, color: Color(0xFF9CA3AF))),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Text(' - ', style: DT.bodyMedium.copyWith(color: DT.textLightGrey)),
             ),
             _TimeInput(
               value: day['endTime'] as String,
               onChanged: (v) => setState(() => _schedule[key]!['endTime'] = v),
             ),
           ] else ...[
-            const SizedBox(width: 12),
-            const Text('休息',
-              style: TextStyle(fontSize: 14, color: Color(0xFF9CA3AF))),
+            const SizedBox(width: DT.md),
+            Text('休息', style: DT.bodyMedium.copyWith(color: DT.textLightGrey)),
           ],
         ],
       ),
@@ -222,11 +213,11 @@ class _TechnicianServiceTimeScreenState extends State<TechnicianServiceTimeScree
 
   Widget _buildSaveButton(double bottomPad) {
     return Container(
-      padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + bottomPad),
+      padding: EdgeInsets.fromLTRB(DT.xl, DT.md, DT.xl, DT.md + bottomPad),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: const Border(top: BorderSide(color: Color(0xFFF1F5F9))),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, -4))],
+        color: DT.surface,
+        border: const Border(top: BorderSide(color: DT.bg)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, -4))],
       ),
       child: SizedBox(
         width: double.infinity, height: 50,
@@ -235,13 +226,13 @@ class _TechnicianServiceTimeScreenState extends State<TechnicianServiceTimeScree
           style: ElevatedButton.styleFrom(
             backgroundColor: DT.primary,
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DT.lg)),
             elevation: 0,
           ),
           child: _saving
-              ? const SizedBox(width: 20, height: 20,
+              ? const SizedBox(width: DT.xl, height: DT.xl,
                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : const Text('保存', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              : Text('保存', style: DT.bodyLarge.copyWith(fontWeight: FontWeight.w600)),
         ),
       ),
     );
@@ -301,14 +292,13 @@ class _TimeInputState extends State<_TimeInput> {
     return GestureDetector(
       onTap: _pick,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: DT.md, vertical: 6),
         decoration: BoxDecoration(
-          color: const Color(0xFFF3F4F6),
+          color: DT.fillGreyLight,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: DT.borderGrey),
         ),
-        child: Text(widget.value,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: DT.textPrimary)),
+        child: Text(widget.value, style: DT.bodyMedium.copyWith(fontWeight: FontWeight.w500)),
       ),
     );
   }

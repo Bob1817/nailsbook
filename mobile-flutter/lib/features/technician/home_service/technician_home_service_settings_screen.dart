@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../auth/technician_auth_service.dart';
+import '../../../core/widgets/nb_toast.dart';
 
 class TechnicianHomeServiceSettingsScreen extends StatefulWidget {
   const TechnicianHomeServiceSettingsScreen({super.key});
@@ -80,11 +81,7 @@ class _TechnicianHomeServiceSettingsScreenState extends State<TechnicianHomeServ
         },
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('设置已保存'),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ));
+        NbToast.show(context, '设置已保存');
       }
     } catch (_) {} finally {
       if (mounted) setState(() => _saving = false);
@@ -137,7 +134,7 @@ class _TechnicianHomeServiceSettingsScreenState extends State<TechnicianHomeServ
             child: Container(
               width: 40, height: 40,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF374151)),
@@ -218,7 +215,7 @@ class _TechnicianHomeServiceSettingsScreenState extends State<TechnicianHomeServ
                 activeTrackColor: DT.primary,
                 inactiveTrackColor: const Color(0xFFFDE7EF),
                 thumbColor: DT.primary,
-                overlayColor: DT.primary.withOpacity(0.1),
+                overlayColor: DT.primary.withValues(alpha: 0.1),
               ),
               child: Slider(
                 value: _serviceRadius,
@@ -366,7 +363,7 @@ class _TechnicianHomeServiceSettingsScreenState extends State<TechnicianHomeServ
       decoration: BoxDecoration(
         color: Colors.white,
         border: const Border(top: BorderSide(color: Color(0xFFF1F5F9))),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, -4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, -4))],
       ),
       child: SizedBox(
         width: double.infinity, height: 50,
@@ -396,7 +393,7 @@ class _TechnicianHomeServiceSettingsScreenState extends State<TechnicianHomeServ
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: DT.shadowSm,
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

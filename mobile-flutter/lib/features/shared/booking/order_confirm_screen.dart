@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
 import 'chat_booking_service.dart';
+import '../../../core/widgets/nb_toast.dart';
 
 class OrderConfirmScreen extends StatefulWidget {
   final String token;
@@ -53,7 +54,7 @@ class _OrderConfirmScreenState extends State<OrderConfirmScreen> {
       if (mounted) setState(() { _state = _ViewState.success; _message = '预约已确认'; });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('确认失败：$e')));
+        NbToast.show(context, '确认失败：$e');
         setState(() => _acting = false);
       }
     }
@@ -79,7 +80,7 @@ class _OrderConfirmScreenState extends State<OrderConfirmScreen> {
       if (mounted) setState(() { _state = _ViewState.success; _message = '预约已取消'; });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('取消失败：$e')));
+        NbToast.show(context, '取消失败：$e');
         setState(() => _acting = false);
       }
     }

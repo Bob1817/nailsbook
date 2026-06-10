@@ -1,5 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme/design_tokens.dart';
+import 'glass_container.dart';
 
 /// ── Glass Container ──
 class NBGlassContainer extends StatelessWidget {
@@ -20,20 +22,16 @@ class NBGlassContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassContainer(
       margin: margin,
-      decoration: BoxDecoration(
-        color: color ?? Colors.white.withOpacity(0.88),
-        borderRadius: BorderRadius.circular(borderRadius),
-        boxShadow: DT.shadowCard,
-        border: Border.all(color: Colors.black.withOpacity(0.05), width: 1),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(borderRadius),
-        child: Padding(
-          padding: padding ?? const EdgeInsets.all(DT.lg),
-          child: child,
-        ),
+      borderRadius: borderRadius,
+      tint: color ?? Colors.white,
+      opacity: color == null ? 0.64 : 0.72,
+      blur: DT.glassBlurStandard,
+      boxShadow: DT.shadowCard,
+      child: Padding(
+        padding: padding ?? const EdgeInsets.all(DT.lg),
+        child: child,
       ),
     );
   }
@@ -102,30 +100,33 @@ class NBSectionHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(
-                  fontSize: 18, fontWeight: FontWeight.w600, color: DT.textPrimary,
-                )),
+                Text(title, style: DT.titleLarge),
                 if (subtitle != null) ...[
-                  const SizedBox(height: 4),
-                  Text(subtitle!, style: const TextStyle(
-                    fontSize: 13, color: DT.textMuted,
-                  )),
+                  const SizedBox(height: DT.xs),
+                  Text(subtitle!, style: DT.bodySmall),
                 ],
               ],
             ),
           ),
           if (actionText != null)
             GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onTap: onAction,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(actionText!, style: const TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w600, color: DT.primary,
-                  )),
-                  const SizedBox(width: 2),
-                  const Icon(Icons.chevron_right, size: 16, color: DT.primary),
-                ],
+              child: SizedBox(
+                height: 44,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(actionText!,
+                        style: DT.bodySmall.copyWith(
+                          color: DT.primary,
+                          fontWeight: FontWeight.w600,
+                        )),
+                    const SizedBox(width: DT.xs),
+                    const Icon(CupertinoIcons.chevron_right,
+                        size: 16, color: DT.primary),
+                  ],
+                ),
               ),
             ),
         ],
@@ -154,17 +155,21 @@ class NBPillBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), // Increased from 4
+      padding: const EdgeInsets.symmetric(horizontal: DT.md, vertical: 6),
       decoration: BoxDecoration(
         color: color ?? DT.primarySoft,
         borderRadius: BorderRadius.circular(DT.rFull),
-        border: borderColor != null ? Border.all(color: borderColor!) : null,
+        border: borderColor != null
+            ? Border.all(
+                color: borderColor!.withValues(alpha: 0.45), width: 0.5)
+            : null,
       ),
-      child: Text(text, style: TextStyle(
-        fontSize: fontSize,
-        fontWeight: FontWeight.w600,
-        color: textColor ?? DT.primary,
-      )),
+      child: Text(text,
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: FontWeight.w600,
+            color: textColor ?? DT.primary,
+          )),
     );
   }
 }
@@ -194,14 +199,16 @@ class NBMenuRow extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(DT.rXxl),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: DT.lg, vertical: DT.lg),
+          padding:
+              const EdgeInsets.symmetric(horizontal: DT.lg, vertical: DT.lg),
           child: Row(
             children: [
               Container(
-                width: 44, height: 44,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [DT.primarySoft, const Color(0xFFF4F7FB)],
+                    colors: [DT.primarySoft, DT.bgWarm],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -211,11 +218,11 @@ class NBMenuRow extends StatelessWidget {
               ),
               const SizedBox(width: DT.md),
               Expanded(
-                child: Text(label, style: const TextStyle(
-                  fontSize: 15, fontWeight: FontWeight.w500, color: DT.textPrimary,
-                )),
+                child: Text(label, style: DT.titleSmall),
               ),
-              trailing ?? const Icon(Icons.chevron_right, size: 20, color: DT.textMuted),
+              trailing ??
+                  const Icon(CupertinoIcons.chevron_right,
+                      size: 20, color: DT.textMuted),
             ],
           ),
         ),
@@ -273,7 +280,7 @@ class _NBSkeletonState extends State<NBSkeleton>
           width: widget.width,
           height: widget.height,
           decoration: BoxDecoration(
-            color: Color.lerp(const Color(0xFFF0F0F0), const Color(0xFFE0E0E0), _animation.value),
+            color: Color.lerp(DT.bgWarm, DT.borderLight, _animation.value),
             borderRadius: BorderRadius.circular(widget.borderRadius),
           ),
         );
@@ -306,7 +313,8 @@ class NBQuickActionItem extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 52, height: 52,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [DT.primary, DT.primaryLight],
@@ -316,7 +324,7 @@ class NBQuickActionItem extends StatelessWidget {
               borderRadius: BorderRadius.circular(DT.rXxl),
               boxShadow: [
                 BoxShadow(
-                  color: DT.primary.withOpacity(0.3),
+                  color: DT.primary.withValues(alpha: 0.22),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                 ),
@@ -325,9 +333,12 @@ class NBQuickActionItem extends StatelessWidget {
             child: Icon(icon, size: 24, color: Colors.white),
           ),
           const SizedBox(height: DT.sm),
-          Text(label, style: const TextStyle(
-            fontSize: 12, fontWeight: FontWeight.w500, color: DT.textPrimary,
-          ), textAlign: TextAlign.center),
+          Text(label,
+              style: DT.captionLarge.copyWith(
+                fontWeight: FontWeight.w500,
+                color: DT.textPrimary,
+              ),
+              textAlign: TextAlign.center),
         ],
       ),
     );
@@ -347,21 +358,28 @@ class NBErrorBanner extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: DT.lg),
       padding: const EdgeInsets.all(DT.md),
       decoration: BoxDecoration(
-        color: const Color(0xFFFEE2E2),
+        color: DT.errorBg,
         borderRadius: BorderRadius.circular(DT.rMd),
-        border: Border.all(color: const Color(0xFFFECACA)),
+        boxShadow: DT.shadowSm,
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, size: 18, color: Color(0xFFDC2626)),
-          const SizedBox(width: 8),
-          Expanded(child: Text(message, style: const TextStyle(
-            fontSize: 13, color: Color(0xFFDC2626),
-          ))),
+          const Icon(CupertinoIcons.exclamationmark_circle,
+              size: 18, color: DT.errorText),
+          const SizedBox(width: DT.sm),
+          Expanded(
+              child: Text(message,
+                  style: DT.bodySmall.copyWith(color: DT.errorText))),
           if (onDismiss != null)
             GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onTap: onDismiss,
-              child: const Icon(Icons.close, size: 16, color: Color(0xFFDC2626)),
+              child: const SizedBox(
+                width: 44,
+                height: 44,
+                child:
+                    Icon(CupertinoIcons.xmark, size: 16, color: DT.errorText),
+              ),
             ),
         ],
       ),

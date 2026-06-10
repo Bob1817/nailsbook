@@ -3,15 +3,18 @@ import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../auth/technician_auth_service.dart';
+import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
 class TechnicianAccountSecurityScreen extends StatefulWidget {
   const TechnicianAccountSecurityScreen({super.key});
 
   @override
-  State<TechnicianAccountSecurityScreen> createState() => _TechnicianAccountSecurityScreenState();
+  State<TechnicianAccountSecurityScreen> createState() =>
+      _TechnicianAccountSecurityScreenState();
 }
 
-class _TechnicianAccountSecurityScreenState extends State<TechnicianAccountSecurityScreen> {
+class _TechnicianAccountSecurityScreenState
+    extends State<TechnicianAccountSecurityScreen> {
   final _oldPwdCtl = TextEditingController();
   final _newPwdCtl = TextEditingController();
   final _confirmPwdCtl = TextEditingController();
@@ -56,6 +59,7 @@ class _TechnicianAccountSecurityScreenState extends State<TechnicianAccountSecur
   }
 
   Future<void> _submit() async {
+    HapticFeedback.mediumImpact();
     final oldPwd = _oldPwdCtl.text.trim();
     final newPwd = _newPwdCtl.text.trim();
     final confirmPwd = _confirmPwdCtl.text.trim();
@@ -64,7 +68,9 @@ class _TechnicianAccountSecurityScreenState extends State<TechnicianAccountSecur
       _showMsg('请输入当前密码');
       return;
     }
-    if (newPwd.length < 8 || !RegExp(r'[a-zA-Z]').hasMatch(newPwd) || !RegExp(r'[0-9]').hasMatch(newPwd)) {
+    if (newPwd.length < 8 ||
+        !RegExp(r'[a-zA-Z]').hasMatch(newPwd) ||
+        !RegExp(r'[0-9]').hasMatch(newPwd)) {
       _showMsg('新密码需至少8位，包含字母和数字');
       return;
     }
@@ -92,90 +98,86 @@ class _TechnicianAccountSecurityScreenState extends State<TechnicianAccountSecur
   }
 
   void _showMsg(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ));
+    NbToast.show(context, msg);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: DT.bgWarm,
-      appBar: AppBar(
-        backgroundColor: Colors.white.withOpacity(0.95),
+      appBar: GlassAppBar(
+        backgroundColor: Colors.white.withValues(alpha: 0.95),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: DT.textPrimary),
+          icon:
+              const Icon(CupertinoIcons.back, size: 20, color: DT.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('账号与安全',
-          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: DT.textPrimary)),
+        title: Text('账号与安全', style: DT.titleMedium),
         centerTitle: true,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: DT.primary))
           : ListView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(DT.xl),
               children: [
                 // Account info
                 Container(
-                  padding: const EdgeInsets.all(18),
+                  padding: const EdgeInsets.all(DT.xl),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
+                    color: DT.surface,
+                    borderRadius: BorderRadius.circular(DT.rXxl),
                     boxShadow: DT.shadowSm,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('登录手机号',
-                        style: TextStyle(fontSize: 13, color: DT.textMuted)),
+                      Text('登录手机号',
+                          style: DT.bodySmall.copyWith(color: DT.textMuted)),
                       const SizedBox(height: 6),
-                      Text(_maskedPhone ?? '未绑定',
-                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: DT.textPrimary)),
+                      Text(_maskedPhone ?? '未绑定', style: DT.titleMedium),
                       const SizedBox(height: 6),
-                      Text('如需更换手机号，请联系平台客服处理。',
-                        style: TextStyle(fontSize: 12, color: DT.textMuted)),
+                      Text('如需更换手机号，请联系平台客服处理。', style: DT.captionLarge),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: DT.lg),
                 // Change password
                 Container(
-                  padding: const EdgeInsets.all(18),
+                  padding: const EdgeInsets.all(DT.xl),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
+                    color: DT.surface,
+                    borderRadius: BorderRadius.circular(DT.rXxl),
                     boxShadow: DT.shadowSm,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('修改密码',
-                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: DT.textPrimary)),
-                      const SizedBox(height: 4),
-                      Text('密码至少8位，需同时包含字母和数字',
-                        style: TextStyle(fontSize: 12, color: DT.textMuted)),
-                      const SizedBox(height: 16),
+                      Text('修改密码', style: DT.titleMedium),
+                      const SizedBox(height: DT.xs),
+                      Text('密码至少8位，需同时包含字母和数字', style: DT.captionLarge),
+                      const SizedBox(height: DT.lg),
                       _buildPwdField('当前密码', _oldPwdCtl, 'current-password'),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: DT.md),
                       _buildPwdField('新密码', _newPwdCtl, 'new-password'),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: DT.md),
                       _buildPwdField('确认新密码', _confirmPwdCtl, 'new-password'),
-                      const SizedBox(height: 20),
-                      GestureDetector(
-                        onTap: _submitting ? null : _submit,
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: DT.primary,
-                            borderRadius: BorderRadius.circular(14),
+                      const SizedBox(height: DT.xl),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: _submitting ? null : _submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: DT.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(DT.rMd)),
+                            elevation: 0,
                           ),
-                          alignment: Alignment.center,
                           child: Text(_submitting ? '提交中...' : '确认修改',
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white)),
+                              style:
+                                  DT.titleSmall.copyWith(color: Colors.white)),
                         ),
                       ),
                     ],
@@ -186,31 +188,34 @@ class _TechnicianAccountSecurityScreenState extends State<TechnicianAccountSecur
     );
   }
 
-  Widget _buildPwdField(String label, TextEditingController ctl, String autocomplete) {
+  Widget _buildPwdField(
+      String label, TextEditingController ctl, String autocomplete) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: DT.textPrimary)),
+            style: DT.bodySmall
+                .copyWith(fontWeight: FontWeight.w500, color: DT.textPrimary)),
         const SizedBox(height: 6),
         TextField(
           controller: ctl,
           obscureText: true,
-          style: const TextStyle(fontSize: 15, color: DT.textPrimary),
+          style: DT.titleSmall,
           decoration: InputDecoration(
             filled: true,
-            fillColor: const Color(0xFFFFF9F8),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            fillColor: DT.fillWarm,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: DT.md, vertical: DT.md),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xFFF2E6EC)),
+              borderRadius: BorderRadius.circular(DT.rMd),
+              borderSide: const BorderSide(color: DT.borderPink),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xFFF2E6EC)),
+              borderRadius: BorderRadius.circular(DT.rMd),
+              borderSide: const BorderSide(color: DT.borderPink),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(DT.rMd),
               borderSide: const BorderSide(color: DT.primary, width: 1.5),
             ),
           ),

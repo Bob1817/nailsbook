@@ -73,7 +73,9 @@ GoRouter createRouter(AuthSession authSession) {
       ),
       GoRoute(
         path: '/client/login',
-        builder: (context, state) => const ClientLoginScreen(),
+        builder: (context, state) => ClientLoginScreen(
+          initialInviteCode: state.uri.queryParameters['inviteCode'],
+        ),
       ),
       GoRoute(
         path: '/client/home',

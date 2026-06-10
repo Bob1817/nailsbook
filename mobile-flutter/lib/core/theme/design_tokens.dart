@@ -1,176 +1,237 @@
 import 'package:flutter/material.dart';
 
-/// Design tokens for NailArt Studio - Airbnb-style design system
+/// Design tokens for NailBook — Apple-inspired neutral system + iOS 26 Liquid Glass.
+///
+/// 设计基调：图片优先的编辑式排版（image-first editorial），界面保持中性，
+/// 视觉张力来自美甲作品照片本身。强调色仅作点缀（Warm Rose）。
+///
+/// 实现说明：本次仅替换调色板与材质系统，**保留全部既有 token 名**以兼容现有页面；
+/// 粉色渐变/阴影已改为中性或暖玫瑰版本，后续按屏逐步细化。
 class DT {
   DT._();
 
   // ──────────────────────────────────────────────────────────────
-  // COLORS - Primary
+  // COLORS - Primary (Warm Rose accent)
   // ──────────────────────────────────────────────────────────────
 
-  static const Color primary = Color(0xFFFF6B8A);
-  static const Color primaryDark = Color(0xFFE00B41);
-  static const Color primaryLight = Color(0xFFFF88A0);
-  static const Color primaryPale = Color(0xFFFFB0BE);
-  static const Color primarySoft = Color(0xFFFFF0F5);
+  static const Color primary = Color(0xFFC4627A); // Warm Rose（强调色，点缀用）
+  static const Color primaryDark = Color(0xFFA34F64);
+  static const Color primaryLight = Color(0xFFD58197);
+  static const Color primaryPale = Color(0xFFE6BDC8);
+  static const Color primarySoft = Color(0xFFF8EEF1); // 极浅玫瑰底
 
   // ──────────────────────────────────────────────────────────────
-  // COLORS - Secondary
+  // COLORS - Secondary (Apple neutral grays)
   // ──────────────────────────────────────────────────────────────
 
-  static const Color secondary = Color(0xFF6B7280);
-  static const Color secondaryDark = Color(0xFF4B5563);
-  static const Color secondaryLight = Color(0xFF9CA3AF);
-  static const Color secondarySoft = Color(0xFFF3F4F6);
+  static const Color secondary = Color(0xFF6E6E73);
+  static const Color secondaryDark = Color(0xFF48484A);
+  static const Color secondaryLight = Color(0xFF8E8E93);
+  static const Color secondarySoft = Color(0xFFF2F2F4);
 
   // ──────────────────────────────────────────────────────────────
   // COLORS - Success
   // ──────────────────────────────────────────────────────────────
 
-  static const Color success = Color(0xFF31B46C);
-  static const Color successDark = Color(0xFF059669);
+  static const Color success = Color(0xFF34C759); // Apple green
+  static const Color successDark = Color(0xFF248A3D);
   static const Color successLight = Color(0xFF6EE7B7);
   static const Color successSoft = Color(0xFFEEF9F1);
   static const Color successBg = Color(0xFFF0FDF4);
   static const Color successBorder = Color(0xFFBBF7D0);
-  static const Color successText = Color(0xFF059669);
+  static const Color successText = Color(0xFF248A3D);
 
   // ──────────────────────────────────────────────────────────────
   // COLORS - Warning
   // ──────────────────────────────────────────────────────────────
 
-  static const Color warning = Color(0xFFFFA500);
-  static const Color warningDark = Color(0xFFD97706);
+  static const Color warning = Color(0xFFFF9500); // Apple orange
+  static const Color warningDark = Color(0xFFC93400);
   static const Color warningLight = Color(0xFFFCD34D);
-  static const Color warningSoft = Color(0xFFFFF1E5);
+  static const Color warningSoft = Color(0xFFFFF4E5);
   static const Color warningBg = Color(0xFFFFF7ED);
   static const Color warningBorder = Color(0xFFFEF3C7);
-  static const Color warningText = Color(0xFFD97706);
+  static const Color warningText = Color(0xFFC93400);
 
   // ──────────────────────────────────────────────────────────────
   // COLORS - Error
   // ──────────────────────────────────────────────────────────────
 
-  static const Color error = Color(0xFFFF4962);
-  static const Color errorDark = Color(0xFFDC2626);
+  static const Color error = Color(0xFFFF3B30); // Apple red
+  static const Color errorDark = Color(0xFFD70015);
   static const Color errorLight = Color(0xFFFCA5A5);
   static const Color errorSoft = Color(0xFFFEF2F2);
   static const Color errorBg = Color(0xFFFEF2F2);
   static const Color errorBorder = Color(0xFFFECACA);
-  static const Color errorText = Color(0xFFDC2626);
+  static const Color errorText = Color(0xFFD70015);
 
   // ──────────────────────────────────────────────────────────────
   // COLORS - Info
   // ──────────────────────────────────────────────────────────────
 
-  static const Color info = Color(0xFF428BFF);
-  static const Color infoDark = Color(0xFF2563EB);
+  static const Color info = Color(0xFF007AFF); // Apple blue
+  static const Color infoDark = Color(0xFF0040DD);
   static const Color infoLight = Color(0xFF93C5FD);
   static const Color infoSoft = Color(0xFFEDF3FF);
   static const Color infoBg = Color(0xFFEFF6FF);
   static const Color infoBorder = Color(0xFFBFDBFE);
-  static const Color infoText = Color(0xFF2563EB);
+  static const Color infoText = Color(0xFF0040DD);
 
   // ──────────────────────────────────────────────────────────────
-  // COLORS - Neutral / Text
+  // COLORS - Neutral / Text (Apple ink scale)
   // ──────────────────────────────────────────────────────────────
 
-  static const Color textPrimary = Color(0xFF1F2230);
-  static const Color textSecondary = Color(0xFF6A6A6A);
-  static const Color textTertiary = Color(0xFF8D8590);
-  static const Color textMuted = Color(0xFF929292);
-  static const Color textQuaternary = Color(0xFFC9BEC6);
+  static const Color textPrimary = Color(0xFF1D1D1F); // Near-Black Ink
+  static const Color textSecondary = Color(0xFF6E6E73); // Apple Secondary
+  static const Color textTertiary = Color(0xFF8E8E93);
+  static const Color textMuted = Color(0xFFA1A1A6);
+  static const Color textQuaternary = Color(0xFFC7C7CC);
   static const Color textWhite = Colors.white;
-  static const Color textDisabled = Color(0xFFD1D5DB);
+  static const Color textDisabled = Color(0xFFD2D2D7);
+
+  /// Semantic aliases（指南命名）
+  static const Color fg = textPrimary; // foreground / 主文本
+  static const Color muted = textSecondary; // 次要文本
 
   // ──────────────────────────────────────────────────────────────
   // COLORS - Surfaces
   // ──────────────────────────────────────────────────────────────
 
-  static const Color bg = Color(0xFFF8F9FC);
-  static const Color bgWarm = Color(0xFFFFF9F8);
-  static const Color bgPink = Color(0xFFFFFDFD);
+  static const Color bg = Color(0xFFF5F5F7); // Apple Pale Gray
+  static const Color bgWarm = Color(0xFFFAFAFC);
+  static const Color bgPink = Color(0xFFFFFFFF);
   static const Color surface = Colors.white;
-  static const Color surfaceAlt = Color(0xFFF7F7F7);
+  static const Color surfaceAlt = Color(0xFFF2F2F4);
   static const Color surfaceDisabled = Color(0xFFF9FAFB);
 
   // ──────────────────────────────────────────────────────────────
-  // COLORS - Borders
+  // COLORS - Extended (widely used across technician screens)
   // ──────────────────────────────────────────────────────────────
 
-  static const Color border = Color(0xFFE5E7EB);
-  static const Color borderLight = Color(0xFFF2E6EC);
-  static const Color borderPrimary = Color(0xFFF2D5DE);
-  static const Color primaryBorder = Color(0xFFFFD9E6);
-  static const Color hairline = Color(0xFFE2E8F0);
-  static const Color divider = Color(0xFFF2F0F3);
+  static const Color borderPink = Color(0x40C4627A); // 柔和暖玫瑰边缘（输入框等）
+  static const Color fillWarm = Color(0xFFFFF9F8); // 暖色填充（输入框等）
+  static const Color dividerWarm = Color(0x1FC4627A); // 暖色分割线
+  static const Color borderGrey = Color(0x243C3C43); // 灰色边框
+  static const Color fillGrey = Color(0xFFF4F5F7); // 灰色填充（禁用态）
+  static const Color fillGreyLight = Color(0xFFF3F4F6); // 浅灰填充
+  static const Color textDarkGrey = Color(0xFF374151); // 深灰文本
+  static const Color textMidGrey = Color(0xFF6B7280); // 中灰文本
+  static const Color textLightGrey = Color(0xFF9CA3AF); // 浅灰文本/占位符
+  static const Color iconGrey = Color(0xFFB0AAB4); // 图标灰色
+  static const Color actionOrange = Color(0xFFEA580C); // 操作橙色
+  static const Color actionGreen = Color(0xFF059669); // 操作绿色
+  static const Color actionBlue = Color(0xFF2563EB); // 操作蓝色
+  static const Color avatarBorder = Color(0xFFFFD9E6); // 头像边框
+
+  // ──────────────────────────────────────────────────────────────
+  // COLORS - Borders (Apple)
+  // ──────────────────────────────────────────────────────────────
+
+  static const Color border = Color(0x293C3C43); // 半透明柔边，替代硬线条
+  static const Color borderStrong = Color(0x667C7C82);
+  static const Color borderLight = Color(0x173C3C43); // 极轻柔边
+  static const Color borderPrimary = Color(0x33C4627A);
+  static const Color primaryBorder = Color(0x2EC4627A);
+  static const Color hairline = Color(0x1F3C3C43);
+  static const Color divider = Color(0x173C3C43);
+
+  // ──────────────────────────────────────────────────────────────
+  // LIQUID GLASS — 材质系统（iOS 26）
+  // 用法见 lib/core/widgets/glass_container.dart
+  // ──────────────────────────────────────────────────────────────
+
+  /// 背景模糊强度（BackdropFilter sigma）
+  static const double glassBlurLight = 12.0;
+  static const double glassBlurStandard = 20.0;
+  static const double glassBlurHeavy = 40.0;
+
+  /// 玻璃饱和度参考值（如做 saturation overlay 时使用）
+  static const double glassSaturation = 1.8;
+
+  /// 玻璃填充色（白底不同不透明度）
+  static const Color glassLight = Color(0x80FFFFFF); // 50% white
+  static const Color glassStandard = Color(0xB8FFFFFF); // 72% white
+  static const Color glassHeavy = Color(0xE0FFFFFF); // 88% white
+
+  /// 玻璃描边（高光边）
+  static const Color glassBorder = Color(0x66FFFFFF); // 40% white
+
+  /// 暗色玻璃（用于深色覆盖层 / 图片之上的 pill）
+  static const Color glassDark = Color(0x52000000); // ~32% black
 
   // ──────────────────────────────────────────────────────────────
   // COLORS - Status specific
   // ──────────────────────────────────────────────────────────────
 
-  static const Color statusBlue = Color(0xFF3B82F6);
+  static const Color statusBlue = Color(0xFF007AFF);
   static const Color statusBlueBg = Color(0xFFEBF4FF);
   static const Color statusCompleted = Color(0xFF8A8F98);
-  static const Color statusCompletedBg = Color(0xFFF4F5F7);
+  static const Color statusCompletedBg = Color(0xFFF2F2F4);
 
   // ──────────────────────────────────────────────────────────────
-  // COLORS - Quick action backgrounds
+  // COLORS - Quick action backgrounds（中性化）
   // ──────────────────────────────────────────────────────────────
 
-  static const Color orange50 = Color(0xFFFFF7FA);
-  static const Color purple50 = Color(0xFFF7F1FF);
-  static const Color blue50 = Color(0xFFF0F7FF);
-  static const Color green50 = Color(0xFFEEFAF4);
-  static const Color pink50 = Color(0xFFFFF7FA);
-  static const Color disabledBg = Color(0xFFE8E8E8);
-  static const Color iconPlaceholder = Color(0xFFD1A1B3);
+  static const Color orange50 = Color(0xFFFFF7ED);
+  static const Color purple50 = Color(0xFFF3F1F8);
+  static const Color blue50 = Color(0xFFEFF4FB);
+  static const Color green50 = Color(0xFFEFF8F2);
+  static const Color pink50 = Color(0xFFF8EEF1);
+  static const Color disabledBg = Color(0xFFE8E8ED);
+  static const Color iconPlaceholder = Color(0xFFB8B0B4);
 
   // ──────────────────────────────────────────────────────────────
-  // GRADIENTS
+  // GRADIENTS（去粉化：强调色用暖玫瑰单色，页面底用中性灰）
   // ──────────────────────────────────────────────────────────────
 
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFFFF6B8A), Color(0xFFFF8FA3)],
+    colors: [Color(0xFFC4627A), Color(0xFFD58197)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient heroGradient = LinearGradient(
-    colors: [Color(0xFFFF6FA2), Color(0xFFFF6B9B), Color(0xFFFF81A4), Color(0xFFFFB387)],
+    colors: [Color(0xFFC4627A), Color(0xFFB5566E)],
     begin: Alignment(0.7, -1.0),
     end: Alignment(-0.7, 1.0),
   );
 
+  /// 个人页头部：深色 sophisticated 渐变（替换原粉色）
   static const LinearGradient profileGradient = LinearGradient(
-    colors: [Color(0xFFFF8AA0), Color(0xFFFF9AB0), Color(0xFFFFC8B2)],
+    colors: [Color(0xFF1D1D1F), Color(0xFF48484A)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient bookingGradient = LinearGradient(
-    colors: [Color(0xFFFF6B8A), Color(0xFFFF7C98), Color(0xFFFF8FA3)],
+    colors: [Color(0xFFC4627A), Color(0xFFD58197)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
+  /// 图片之上的暗部覆盖层（中性黑，用于叠字）
   static const LinearGradient heroOverlay = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Colors.transparent, Color(0x33070A14), Color(0x80070A14), Color(0xD1070A14)],
+    colors: [
+      Colors.transparent,
+      Color(0x29000000),
+      Color(0x80000000),
+      Color(0xCC000000)
+    ],
   );
 
   static const LinearGradient screenGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFFFFF8FA), Color(0xFFF8F9FC), Color(0xFFF5F6F8)],
+    colors: [Color(0xFFFAFAFC), Color(0xFFF5F5F7), Color(0xFFF2F2F4)],
     stops: [0.0, 0.24, 1.0],
   );
 
   static const LinearGradient profilePageGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFFFFFDFD), Color(0xFFF7F3F6), Color(0xFFF2F6FB)],
+    colors: [Color(0xFFFFFFFF), Color(0xFFF5F5F7), Color(0xFFF0F0F3)],
     stops: [0.0, 0.48, 1.0],
   );
 
@@ -182,7 +243,7 @@ class DT {
   static const double space8 = 8;
   static const double space12 = 12;
   static const double space16 = 16;
-  static const double space20 = 20;  // Standard page margin
+  static const double space20 = 20; // Standard page margin
   static const double space24 = 24;
   static const double space32 = 32;
   static const double space40 = 40;
@@ -203,18 +264,21 @@ class DT {
 
   static const double radius8 = 8;
   static const double radius12 = 12;
+  static const double radius14 = 14; // inputs
   static const double radius16 = 16;
   static const double radius24 = 24;
 
   // Legacy aliases
   static const double rSm = radius8;
   static const double rMd = radius12;
+  static const double rInput = radius14; // 输入框
   static const double rLg = radius16;
   static const double rXl = 20;
   static const double rXxl = radius24;
   static const double rCard = 28;
   static const double rHero = 32;
   static const double rFull = 999;
+  static const double rCapsule = 999; // 胶囊（主操作）
 
   // ──────────────────────────────────────────────────────────────
   // TYPOGRAPHY - Font Sizes
@@ -230,21 +294,21 @@ class DT {
   static const double text3xl = 28;
 
   // ──────────────────────────────────────────────────────────────
-  // TYPOGRAPHY - Text Styles (Semantic)
+  // TYPOGRAPHY - Text Styles (Semantic) — SF Pro 风格，标题用紧负字距
   // ──────────────────────────────────────────────────────────────
 
   static const TextStyle displayLarge = TextStyle(
     fontSize: 34,
     fontWeight: FontWeight.w700,
-    letterSpacing: -0.5,
-    height: 1.2,
+    letterSpacing: -0.8,
+    height: 1.15,
     color: textPrimary,
   );
 
   static const TextStyle displayMedium = TextStyle(
     fontSize: 28,
     fontWeight: FontWeight.w700,
-    letterSpacing: -0.5,
+    letterSpacing: -0.6,
     height: 1.2,
     color: textPrimary,
   );
@@ -252,22 +316,23 @@ class DT {
   static const TextStyle displaySmall = TextStyle(
     fontSize: 24,
     fontWeight: FontWeight.w600,
-    letterSpacing: -0.3,
-    height: 1.3,
+    letterSpacing: -0.4,
+    height: 1.25,
     color: textPrimary,
   );
 
   static const TextStyle titleLarge = TextStyle(
     fontSize: 20,
     fontWeight: FontWeight.w600,
-    letterSpacing: -0.2,
-    height: 1.4,
+    letterSpacing: -0.3,
+    height: 1.35,
     color: textPrimary,
   );
 
   static const TextStyle titleMedium = TextStyle(
     fontSize: 17,
     fontWeight: FontWeight.w600,
+    letterSpacing: -0.2,
     height: 1.4,
     color: textPrimary,
   );
@@ -275,6 +340,7 @@ class DT {
   static const TextStyle titleSmall = TextStyle(
     fontSize: 15,
     fontWeight: FontWeight.w600,
+    letterSpacing: -0.1,
     height: 1.4,
     color: textPrimary,
   );
@@ -322,56 +388,68 @@ class DT {
   );
 
   // ──────────────────────────────────────────────────────────────
-  // SHADOWS
+  // SHADOWS — 柔和深度：用扩散阴影承载层级，减少硬边框依赖
   // ──────────────────────────────────────────────────────────────
 
-  static List<BoxShadow> get shadowSm => [
-    BoxShadow(color: const Color(0x0D0F172A), blurRadius: 12, offset: const Offset(0, 4)),
-  ];
+  static List<BoxShadow> get shadowSm => const [
+        BoxShadow(
+            color: Color(0x0A000000), blurRadius: 18, offset: Offset(0, 8)),
+      ];
 
-  static List<BoxShadow> get shadowMd => [
-    BoxShadow(color: const Color(0x140F172A), blurRadius: 32, offset: const Offset(0, 12)),
-  ];
+  static List<BoxShadow> get shadowMd => const [
+        BoxShadow(
+            color: Color(0x0F000000), blurRadius: 36, offset: Offset(0, 16)),
+      ];
 
-  static List<BoxShadow> get shadowLg => [
-    BoxShadow(color: const Color(0x1A0F172A), blurRadius: 50, offset: const Offset(0, 18)),
-  ];
+  static List<BoxShadow> get shadowLg => const [
+        BoxShadow(
+            color: Color(0x14000000), blurRadius: 56, offset: Offset(0, 24)),
+      ];
 
-  static List<BoxShadow> get shadowPrimary => [
-    BoxShadow(color: const Color(0x47FF6B8A), blurRadius: 48, offset: const Offset(0, 18)),
-  ];
+  static List<BoxShadow> get shadowPrimary => const [
+        BoxShadow(
+            color: Color(0x24C4627A), blurRadius: 34, offset: Offset(0, 16)),
+      ];
 
-  static List<BoxShadow> get shadowCard => [
-    BoxShadow(color: const Color(0x14242B3A), blurRadius: 34, offset: const Offset(0, 18)),
-  ];
+  static List<BoxShadow> get shadowCard => const [
+        BoxShadow(
+            color: Color(0x0F000000), blurRadius: 38, offset: Offset(0, 18)),
+      ];
 
-  static List<BoxShadow> get shadowHero => [
-    BoxShadow(color: const Color(0x233D1B31), blurRadius: 32, offset: const Offset(0, 16)),
-  ];
+  static List<BoxShadow> get shadowHero => const [
+        BoxShadow(
+            color: Color(0x1A1D1D1F), blurRadius: 48, offset: Offset(0, 22)),
+      ];
 
-  static List<BoxShadow> get shadowHeroSm => [
-    BoxShadow(color: const Color(0x1F3D1B31), blurRadius: 34, offset: const Offset(0, 16)),
-  ];
+  static List<BoxShadow> get shadowHeroSm => const [
+        BoxShadow(
+            color: Color(0x141D1D1F), blurRadius: 36, offset: Offset(0, 16)),
+      ];
 
-  static List<BoxShadow> get shadowButton => [
-    BoxShadow(color: const Color(0x30FF6B8A), blurRadius: 12, offset: const Offset(0, 6)),
-  ];
+  static List<BoxShadow> get shadowButton => const [
+        BoxShadow(
+            color: Color(0x20C4627A), blurRadius: 18, offset: Offset(0, 8)),
+      ];
 
-  static List<BoxShadow> get shadowButtonLg => [
-    BoxShadow(color: const Color(0x38FF5F86), blurRadius: 20, offset: const Offset(0, 12)),
-  ];
+  static List<BoxShadow> get shadowButtonLg => const [
+        BoxShadow(
+            color: Color(0x24C4627A), blurRadius: 28, offset: Offset(0, 14)),
+      ];
 
-  static List<BoxShadow> get shadowButtonOutline => [
-    BoxShadow(color: const Color(0x14FF6E8D), blurRadius: 16, offset: const Offset(0, 8)),
-  ];
+  static List<BoxShadow> get shadowButtonOutline => const [
+        BoxShadow(
+            color: Color(0x14C4627A), blurRadius: 16, offset: Offset(0, 8)),
+      ];
 
-  static List<BoxShadow> get shadowTile => [
-    BoxShadow(color: const Color(0x0D241B29), blurRadius: 20, offset: const Offset(0, 8)),
-  ];
+  static List<BoxShadow> get shadowTile => const [
+        BoxShadow(
+            color: Color(0x0A000000), blurRadius: 28, offset: Offset(0, 12)),
+      ];
 
-  static List<BoxShadow> get shadowTileLg => [
-    BoxShadow(color: const Color(0x0D241B29), blurRadius: 16, offset: const Offset(0, 8)),
-  ];
+  static List<BoxShadow> get shadowTileLg => const [
+        BoxShadow(
+            color: Color(0x0D000000), blurRadius: 34, offset: Offset(0, 16)),
+      ];
 
   // ──────────────────────────────────────────────────────────────
   // BORDER RADIUS HELPERS
@@ -379,10 +457,13 @@ class DT {
 
   static BorderRadius get borderRadius8 => BorderRadius.circular(radius8);
   static BorderRadius get borderRadius12 => BorderRadius.circular(radius12);
+  static BorderRadius get borderRadius14 => BorderRadius.circular(radius14);
   static BorderRadius get borderRadius16 => BorderRadius.circular(radius16);
   static BorderRadius get borderRadius24 => BorderRadius.circular(radius24);
   static BorderRadius get borderRadiusCard => BorderRadius.circular(rCard);
   static BorderRadius get borderRadiusFull => BorderRadius.circular(rFull);
+  static BorderRadius get borderRadiusCapsule =>
+      BorderRadius.circular(rCapsule);
 
   // ──────────────────────────────────────────────────────────────
   // EDGE INSETS HELPERS
@@ -395,53 +476,64 @@ class DT {
   static const EdgeInsets padding24 = EdgeInsets.all(space24);
   static const EdgeInsets padding32 = EdgeInsets.all(space32);
 
-  static const EdgeInsets paddingHorizontal4 = EdgeInsets.symmetric(horizontal: space4);
-  static const EdgeInsets paddingHorizontal8 = EdgeInsets.symmetric(horizontal: space8);
-  static const EdgeInsets paddingHorizontal12 = EdgeInsets.symmetric(horizontal: space12);
-  static const EdgeInsets paddingHorizontal16 = EdgeInsets.symmetric(horizontal: space16);
-  static const EdgeInsets paddingHorizontal24 = EdgeInsets.symmetric(horizontal: space24);
+  static const EdgeInsets paddingHorizontal4 =
+      EdgeInsets.symmetric(horizontal: space4);
+  static const EdgeInsets paddingHorizontal8 =
+      EdgeInsets.symmetric(horizontal: space8);
+  static const EdgeInsets paddingHorizontal12 =
+      EdgeInsets.symmetric(horizontal: space12);
+  static const EdgeInsets paddingHorizontal16 =
+      EdgeInsets.symmetric(horizontal: space16);
+  static const EdgeInsets paddingHorizontal24 =
+      EdgeInsets.symmetric(horizontal: space24);
 
-  static const EdgeInsets paddingVertical4 = EdgeInsets.symmetric(vertical: space4);
-  static const EdgeInsets paddingVertical8 = EdgeInsets.symmetric(vertical: space8);
-  static const EdgeInsets paddingVertical12 = EdgeInsets.symmetric(vertical: space12);
-  static const EdgeInsets paddingVertical16 = EdgeInsets.symmetric(vertical: space16);
-  static const EdgeInsets paddingVertical24 = EdgeInsets.symmetric(vertical: space24);
+  static const EdgeInsets paddingVertical4 =
+      EdgeInsets.symmetric(vertical: space4);
+  static const EdgeInsets paddingVertical8 =
+      EdgeInsets.symmetric(vertical: space8);
+  static const EdgeInsets paddingVertical12 =
+      EdgeInsets.symmetric(vertical: space12);
+  static const EdgeInsets paddingVertical16 =
+      EdgeInsets.symmetric(vertical: space16);
+  static const EdgeInsets paddingVertical24 =
+      EdgeInsets.symmetric(vertical: space24);
 
   // ──────────────────────────────────────────────────────────────
   // ORDER STATUS COLORS - Unified mapping (iOS HIG compliant)
   // ──────────────────────────────────────────────────────────────
 
   static const Color statusPendingQuoteBg = Color(0xFFFFF3E0);
-  static const Color statusPendingQuoteText = Color(0xFFD97706);
+  static const Color statusPendingQuoteText = Color(0xFFC93400);
 
   static const Color statusPendingAgreeBg = Color(0xFFFFF7ED);
   static const Color statusPendingAgreeText = Color(0xFFC2410C);
 
   static const Color statusPendingConfirmBg = Color(0xFFEEF9F1);
-  static const Color statusPendingConfirmText = Color(0xFF059669);
+  static const Color statusPendingConfirmText = Color(0xFF248A3D);
 
   static const Color statusPendingHomeBg = Color(0xFFEFF6FF);
-  static const Color statusPendingHomeText = Color(0xFF2563EB);
+  static const Color statusPendingHomeText = Color(0xFF0040DD);
 
   static const Color statusPendingShopBg = Color(0xFFEFF6FF);
-  static const Color statusPendingShopText = Color(0xFF2563EB);
+  static const Color statusPendingShopText = Color(0xFF0040DD);
 
   static const Color statusInProgressBg = Color(0xFFEFF6FF);
-  static const Color statusInProgressText = Color(0xFF2563EB);
+  static const Color statusInProgressText = Color(0xFF0040DD);
 
-  static const Color statusCompletedText = Color(0xFF6B7280);
+  static const Color statusCompletedText = Color(0xFF6E6E73);
 
   static const Color statusCancelledBg = Color(0xFFFEF2F2);
-  static const Color statusCancelledText = Color(0xFFDC2626);
+  static const Color statusCancelledText = Color(0xFFD70015);
 
   // ──────────────────────────────────────────────────────────────
-  // MONOSPACE TEXT STYLE - For numbers, prices, times
+  // MONOSPACE / TABULAR FIGURES - For numbers, prices, times
+  // 使用 tabularFigures 而非独立字体，确保 iOS 原生渲染
   // ──────────────────────────────────────────────────────────────
 
   static const TextStyle monospace = TextStyle(
     fontSize: 15,
     fontWeight: FontWeight.w600,
-    fontFamily: 'Courier',
+    fontFeatures: [FontFeature.tabularFigures()],
     height: 1.4,
     color: textPrimary,
   );
@@ -449,9 +541,18 @@ class DT {
   static const TextStyle monospaceLarge = TextStyle(
     fontSize: 20,
     fontWeight: FontWeight.bold,
-    fontFamily: 'Courier',
+    fontFeatures: [FontFeature.tabularFigures()],
     height: 1.2,
     letterSpacing: -0.5,
+    color: textPrimary,
+  );
+
+  static const TextStyle monospaceDisplay = TextStyle(
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    fontFeatures: [FontFeature.tabularFigures()],
+    height: 1.15,
+    letterSpacing: -0.6,
     color: textPrimary,
   );
 }

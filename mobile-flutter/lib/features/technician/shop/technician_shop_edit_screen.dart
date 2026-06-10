@@ -4,13 +4,15 @@ import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../auth/technician_auth_service.dart';
 import '../auth/technician_auth_models.dart';
+import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
 class TechnicianShopEditScreen extends StatefulWidget {
   final int? shopIndex;
   const TechnicianShopEditScreen({super.key, this.shopIndex});
 
   @override
-  State<TechnicianShopEditScreen> createState() => _TechnicianShopEditScreenState();
+  State<TechnicianShopEditScreen> createState() =>
+      _TechnicianShopEditScreenState();
 }
 
 class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
@@ -99,15 +101,23 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
   Future<void> _save() async {
     final name = _nameCtl.text.trim();
     final address = _addressCtl.text.trim();
-    if (name.isEmpty) { _showMsg('请输入店铺名称'); return; }
-    if (address.isEmpty) { _showMsg('请输入详细地址'); return; }
+    if (name.isEmpty) {
+      _showMsg('请输入店铺名称');
+      return;
+    }
+    if (address.isEmpty) {
+      _showMsg('请输入详细地址');
+      return;
+    }
 
-    final businessHours = List.generate(7, (i) => {
-      'weekday': _dayOrder[i],
-      'closed': !_dayEnabled[i],
-      'startTime': _dayStart[i],
-      'endTime': _dayEnd[i],
-    });
+    final businessHours = List.generate(
+        7,
+        (i) => {
+              'weekday': _dayOrder[i],
+              'closed': !_dayEnabled[i],
+              'startTime': _dayStart[i],
+              'endTime': _dayEnd[i],
+            });
 
     final shop = {
       'enabled': _enabled,
@@ -148,11 +158,7 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
   }
 
   void _showMsg(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ));
+    NbToast.show(context, msg);
   }
 
   @override
@@ -161,15 +167,18 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
 
     return Scaffold(
       backgroundColor: DT.bgWarm,
-      appBar: AppBar(
-        backgroundColor: Colors.white.withOpacity(0.95),
+      appBar: GlassAppBar(
+        backgroundColor: Colors.white.withValues(alpha: 0.95),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: DT.textPrimary),
-          onPressed: () => Navigator.pop(context),
+          icon:
+              const Icon(CupertinoIcons.back, size: 20, color: DT.textPrimary),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            Navigator.pop(context);
+          },
         ),
-        title: Text(title,
-          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: DT.textPrimary)),
+        title: Text(title, style: DT.titleMedium),
         centerTitle: true,
       ),
       body: _loading
@@ -178,74 +187,91 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
               children: [
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(DT.xl),
                     children: [
                       // Status toggle
                       _buildStatusToggle(),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: DT.lg),
                       // Shop name
                       _buildCard([
                         _buildTextField('店铺名称', _nameCtl, required: true),
                       ]),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: DT.lg),
                       // Address
                       _buildCard([
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
+                          padding: const EdgeInsets.fromLTRB(
+                              DT.xl - 2, DT.md, DT.xl - 2, 0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('省 / 市 / 区',
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: DT.textPrimary)),
-                              const SizedBox(height: 8),
+                              Text('省 / 市 / 区',
+                                  style: DT.bodySmall.copyWith(
+                                      fontWeight: FontWeight.w500,
+                                      color: DT.textPrimary)),
+                              const SizedBox(height: DT.sm),
                               Row(
                                 children: [
-                                  Expanded(child: _smallField('省', _provinceCtl)),
-                                  const SizedBox(width: 8),
+                                  Expanded(
+                                      child: _smallField('省', _provinceCtl)),
+                                  const SizedBox(width: DT.sm),
                                   Expanded(child: _smallField('市', _cityCtl)),
-                                  const SizedBox(width: 8),
-                                  Expanded(child: _smallField('区', _districtCtl)),
+                                  const SizedBox(width: DT.sm),
+                                  Expanded(
+                                      child: _smallField('区', _districtCtl)),
                                 ],
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        _buildTextField('详细地址', _addressCtl, required: true, hint: '如街道、门牌号等'),
-                        _buildTextField('门牌信息', _doorCtl, hint: '如：楼层、房间号等', isLast: true),
+                        const SizedBox(height: DT.sm),
+                        _buildTextField('详细地址', _addressCtl,
+                            required: true, hint: '如街道、门牌号等'),
+                        _buildTextField('门牌信息', _doorCtl,
+                            hint: '如：楼层、房间号等', isLast: true),
                       ]),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: DT.lg),
                       // Phone
                       _buildCard([
-                        _buildTextField('店铺电话', _phoneCtl, hint: '请输入店铺联系电话', isLast: true),
+                        _buildTextField('店铺电话', _phoneCtl,
+                            hint: '请输入店铺联系电话', isLast: true),
                       ]),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: DT.lg),
                       // Business hours
                       _buildSectionTitle('营业时间', '按周设置，未勾选表示当天休息'),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: DT.md),
                       _buildBusinessHoursCard(),
                     ],
                   ),
                 ),
                 // Save
                 Container(
-                  padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + MediaQuery.of(context).padding.bottom),
+                  padding: EdgeInsets.fromLTRB(DT.xl, DT.md, DT.xl,
+                      DT.md + MediaQuery.of(context).padding.bottom),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.95),
-                    border: const Border(top: BorderSide(color: Color(0xFFF2F0F3))),
+                    color: Colors.white.withValues(alpha: 0.95),
+                    border: Border(top: BorderSide(color: DT.dividerWarm)),
                   ),
                   child: GestureDetector(
-                    onTap: _saving ? null : _save,
+                    onTap: _saving
+                        ? null
+                        : () {
+                            HapticFeedback.mediumImpact();
+                            _save();
+                          },
                     child: Container(
                       height: 50,
                       decoration: BoxDecoration(
                         gradient: DT.primaryGradient,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(DT.lg),
                         boxShadow: DT.shadowPrimary,
                       ),
                       alignment: Alignment.center,
                       child: Text(_saving ? '保存中...' : '保存',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+                          style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white)),
                     ),
                   ),
                 ),
@@ -256,10 +282,10 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
 
   Widget _buildStatusToggle() {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(DT.xl - 2),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(DT.xxl),
         boxShadow: DT.shadowSm,
       ),
       child: Row(
@@ -269,28 +295,23 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('店铺状态',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: DT.textPrimary)),
+                    style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: DT.textPrimary)),
                 const SizedBox(height: 2),
                 Text(_enabled ? '客户可预约到店服务' : '客户暂时无法预约此店铺',
-                  style: TextStyle(fontSize: 12, color: DT.textMuted)),
+                    style: const TextStyle(fontSize: 12, color: DT.textMuted)),
               ],
             ),
           ),
-          GestureDetector(
-            onTap: () => setState(() => _enabled = !_enabled),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: _enabled ? const Color(0xFFEEF9F1) : const Color(0xFFF4F5F7),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(_enabled ? '已启用' : '已关闭',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: _enabled ? const Color(0xFF31B46C) : DT.textMuted,
-                )),
-            ),
+          CupertinoSwitch(
+            value: _enabled,
+            activeColor: DT.primary,
+            onChanged: (v) {
+              HapticFeedback.selectionClick();
+              setState(() => _enabled = v);
+            },
           ),
         ],
       ),
@@ -301,7 +322,7 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(DT.xxl),
         boxShadow: DT.shadowSm,
       ),
       child: Column(
@@ -310,71 +331,67 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: DT.xl - 2, vertical: DT.md),
                 child: Row(
                   children: [
                     SizedBox(
                       width: 40,
                       child: Text(_dayLabels[i],
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: _dayEnabled[i] ? FontWeight.w600 : FontWeight.w400,
-                          color: _dayEnabled[i] ? DT.textPrimary : DT.textMuted,
-                        )),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: _dayEnabled[i]
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                            color:
+                                _dayEnabled[i] ? DT.textPrimary : DT.textMuted,
+                          )),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: DT.sm),
                     if (!_dayEnabled[i])
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: DT.sm, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF4F5F7),
-                          borderRadius: BorderRadius.circular(999),
+                          color: DT.fillGrey,
+                          borderRadius: BorderRadius.circular(DT.rFull),
                         ),
                         child: Text('休息',
-                          style: TextStyle(fontSize: 11, color: DT.textMuted)),
+                            style:
+                                TextStyle(fontSize: 11, color: DT.textMuted)),
                       ),
                     if (_dayEnabled[i]) ...[
                       Expanded(
-                        child: _timeDropdown(_dayStart[i], (v) => setState(() => _dayStart[i] = v)),
+                        child: _timeDropdown(_dayStart[i],
+                            (v) => setState(() => _dayStart[i] = v)),
                       ),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Text('至', style: TextStyle(fontSize: 13, color: DT.textMuted)),
+                        padding: const EdgeInsets.symmetric(horizontal: DT.sm),
+                        child: Text('至',
+                            style:
+                                TextStyle(fontSize: 13, color: DT.textMuted)),
                       ),
                       Expanded(
-                        child: _timeDropdown(_dayEnd[i], (v) => setState(() => _dayEnd[i] = v)),
+                        child: _timeDropdown(
+                            _dayEnd[i], (v) => setState(() => _dayEnd[i] = v)),
                       ),
                     ],
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () => setState(() => _dayEnabled[i] = !_dayEnabled[i]),
-                      child: Container(
-                        width: 44, height: 24,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          color: _dayEnabled[i] ? const Color(0xFF22C55E) : const Color(0xFFE2E8F0),
-                        ),
-                        child: AnimatedAlign(
-                          duration: const Duration(milliseconds: 200),
-                          alignment: _dayEnabled[i] ? Alignment.centerRight : Alignment.centerLeft,
-                          child: Container(
-                            width: 20, height: 20,
-                            margin: const EdgeInsets.symmetric(horizontal: 2),
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
+                    const SizedBox(width: DT.sm),
+                    CupertinoSwitch(
+                      value: _dayEnabled[i],
+                      activeColor: DT.primary,
+                      onChanged: (v) {
+                        HapticFeedback.selectionClick();
+                        setState(() => _dayEnabled[i] = v);
+                      },
                     ),
                   ],
                 ),
               ),
               if (!isLast)
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 18),
-                  child: Divider(height: 1, color: Color(0xFFF2F0F3)),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: DT.xl - 2),
+                  child: const Divider(height: 1, color: DT.dividerWarm),
                 ),
             ],
           );
@@ -391,11 +408,11 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
     });
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: DT.sm, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF9F8),
+        color: DT.fillWarm,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFF2E6EC)),
+        border: Border.all(color: DT.borderPink),
       ),
       child: DropdownButton<String>(
         value: value,
@@ -403,8 +420,12 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
         isExpanded: true,
         underline: const SizedBox(),
         style: const TextStyle(fontSize: 13, color: DT.textPrimary),
-        items: times.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
-        onChanged: (v) { if (v != null) onChanged(v); },
+        items: times
+            .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+            .toList(),
+        onChanged: (v) {
+          if (v != null) onChanged(v);
+        },
       ),
     );
   }
@@ -413,7 +434,7 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(DT.xxl),
         boxShadow: DT.shadowSm,
       ),
       child: Column(children: children),
@@ -424,34 +445,40 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title,
-          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: DT.textPrimary)),
+        Text(title, style: DT.titleMedium),
         const SizedBox(height: 2),
-        Text(subtitle,
-          style: TextStyle(fontSize: 12, color: DT.textMuted)),
+        Text(subtitle, style: TextStyle(fontSize: 12, color: DT.textMuted)),
       ],
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController ctl, {
-    bool required = false, String? hint, bool isLast = false,
+  Widget _buildTextField(
+    String label,
+    TextEditingController ctl, {
+    bool required = false,
+    String? hint,
+    bool isLast = false,
   }) {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
+          padding: const EdgeInsets.fromLTRB(DT.xl - 2, DT.md, DT.xl - 2, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   Text(label,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: DT.textPrimary)),
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: DT.textPrimary)),
                   if (required)
-                    const Text(' *', style: TextStyle(fontSize: 13, color: DT.error)),
+                    const Text(' *',
+                        style: TextStyle(fontSize: 13, color: DT.error)),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: DT.sm),
               TextField(
                 controller: ctl,
                 style: const TextStyle(fontSize: 15, color: DT.textPrimary),
@@ -459,18 +486,19 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
                   hintText: hint,
                   hintStyle: TextStyle(fontSize: 14, color: DT.textMuted),
                   filled: true,
-                  fillColor: const Color(0xFFFFF9F8),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  fillColor: DT.fillWarm,
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: DT.md, vertical: DT.md),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: Color(0xFFF2E6EC)),
+                    borderRadius: BorderRadius.circular(DT.radius14),
+                    borderSide: const BorderSide(color: DT.borderPink),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: Color(0xFFF2E6EC)),
+                    borderRadius: BorderRadius.circular(DT.radius14),
+                    borderSide: const BorderSide(color: DT.borderPink),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(DT.radius14),
                     borderSide: const BorderSide(color: DT.primary, width: 1.5),
                   ),
                 ),
@@ -478,11 +506,11 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: DT.md),
         if (!isLast)
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 18),
-            child: Divider(height: 1, color: Color(0xFFF2F0F3)),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: DT.xl - 2),
+            child: const Divider(height: 1, color: DT.dividerWarm),
           ),
       ],
     );
@@ -497,18 +525,19 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
         hintStyle: TextStyle(fontSize: 13, color: DT.textMuted),
         isDense: true,
         filled: true,
-        fillColor: const Color(0xFFFFF9F8),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        fillColor: DT.fillWarm,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFF2E6EC)),
+          borderRadius: BorderRadius.circular(DT.md),
+          borderSide: const BorderSide(color: DT.borderPink),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFF2E6EC)),
+          borderRadius: BorderRadius.circular(DT.md),
+          borderSide: const BorderSide(color: DT.borderPink),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DT.md),
           borderSide: const BorderSide(color: DT.primary, width: 1.5),
         ),
       ),

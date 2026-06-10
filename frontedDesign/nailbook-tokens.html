@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NailBook Design Tokens — Flutter Reference</title>
+<style>
+/* ═══════════════════════════════════════════
+   NailBook Design Tokens — Visual Spec
+   Apple-Inspired · iOS 26 Liquid Glass
+   ═══════════════════════════════════════════ */
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --font-display: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  --font-text: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  --bg: #f5f5f7;
+  --fg: #1d1d1f;
+  --surface: #ffffff;
+  --muted: #6e6e73;
+  --border: #d2d2d7;
+}
+
+html {
+  font-family: var(--font-text);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  background: var(--bg);
+}
+
+body { padding: 48px 24px; max-width: 960px; margin: 0 auto; }
+
+h1 {
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  font-size: 17px;
+  color: var(--muted);
+  letter-spacing: -0.01em;
+  line-height: 1.5;
+  margin-bottom: 48px;
+  max-width: 600px;
+}
+
+/* Section */
+.token-section {
+  margin-bottom: 56px;
+}
+
+.section-label {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 4px;
+}
+
+.section-desc {
+  font-size: 15px;
+  color: var(--muted);
+  letter-spacing: -0.01em;
+  margin-bottom: 24px;
+  max-width: 560px;
+  line-height: 1.5;
+}
+
+/* Color swatches */
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.color-swatch {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+.swatch-preview {
+  height: 80px;
+}
+
+.swatch-info {
+  padding: 10px 12px;
+  background: var(--surface);
+}
+
+.swatch-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+
+.swatch-value {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'SF Mono', 'Menlo', monospace;
+  letter-spacing: 0;
+}
+
+/* Typography specimens */
+.type-specimen {
+  padding: 20px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.type-specimen:last-child { border-bottom: none; }
+
+.type-meta {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.type-tag {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 100px;
+  background: rgba(0,0,0,0.04);
+  color: var(--muted);
+  font-family: 'SF Mono', 'Menlo', monospace;
+}
+
+/* Spacing scale */
+.spacing-scale {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.spacing-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.spacing-block {
+  background: var(--fg);
+  border-radius: 4px;
+  width: 32px;
+}
+
+.spacing-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  font-family: 'SF Mono', 'Menlo', monospace;
+}
+
+.spacing-value {
+  font-size: 9px;
+  color: var(--muted);
+  font-family: 'SF Mono', 'Menlo', monospace;
+}
+
+/* Radius specimens */
+.radius-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.radius-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.radius-box {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #f5f5f7, #e8e8ed);
+  border: 2px solid var(--fg);
+}
+
+.radius-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  font-family: 'SF Mono', 'Menlo', monospace;
+}
+
+/* Shadow/Glass specimens */
+.depth-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.depth-card {
+  height: 120px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 14px;
+  position: relative;
+}
+
+.depth-name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.depth-desc {
+  font-size: 11px;
+  font-family: 'SF Mono', 'Menlo', monospace;
+  margin-top: 2px;
+}
+
+/* Glass specimens */
+.glass-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.glass-specimen {
+  height: 160px;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  padding: 14px;
+}
+
+.glass-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(145deg, #f4c6d0, #e8a4b8, #c47088);
+}
+
+.glass-panel {
+  position: absolute;
+  inset: 20px;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 12px;
+}
+
+.glass-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.glass-value {
+  font-size: 10px;
+  font-family: 'SF Mono', 'Menlo', monospace;
+  margin-top: 2px;
+}
+
+/* Component specimens */
+.component-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.component-card {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 24px;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+.component-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+/* Button specimens */
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+
+.btn-primary {
+  padding: 10px 28px;
+  border-radius: 100px;
+  border: none;
+  background: linear-gradient(135deg, #c4627a, #a84862);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--font-text);
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(196,98,122,0.25);
+}
+
+.btn-secondary {
+  padding: 10px 24px;
+  border-radius: 14px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--fg);
+  font-size: 15px;
+  font-weight: 500;
+  font-family: var(--font-text);
+  letter-spacing: -0.01em;
+  cursor: pointer;
+}
+
+.btn-capsule {
+  padding: 10px 28px;
+  border-radius: 100px;
+  border: none;
+  background: var(--fg);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-text);
+  letter-spacing: -0.01em;
+  cursor: pointer;
+}
+
+.btn-glass {
+  padding: 10px 24px;
+  border-radius: 100px;
+  border: 1px solid rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: var(--fg);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-text);
+  letter-spacing: -0.01em;
+  cursor: pointer;
+}
+
+/* Pill specimens */
+.pill-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.pill {
+  padding: 5px 14px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.pill-active { background: var(--fg); color: #fff; }
+.pill-inactive { background: rgba(0,0,0,0.04); color: var(--muted); }
+.pill-accent { background: rgba(196,98,122,0.1); color: #c4627a; }
+
+/* Input specimen */
+.input-spec {
+  width: 100%;
+  height: 52px;
+  padding: 0 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(0,0,0,0.02);
+  font-size: 16px;
+  font-family: var(--font-text);
+  color: var(--fg);
+  outline: none;
+  margin-bottom: 10px;
+}
+
+.input-spec::placeholder { color: var(--muted); }
+
+/* Tab bar specimen */
+.tab-bar-spec {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 8px;
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-radius: 28px;
+  border: 1px solid rgba(255,255,255,0.5);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+.tab-spec-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 16px;
+}
+
+.tab-spec-item svg {
+  width: 24px; height: 24px;
+  stroke: var(--muted);
+  fill: none;
+  stroke-width: 1.8;
+}
+
+.tab-spec-item span {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.tab-spec-item.active svg { stroke: #c4627a; fill: #c4627a; stroke-width: 0; }
+.tab-spec-item.active span { color: #c4627a; font-weight: 600; }
+
+/* Dark mode section */
+.dark-section {
+  background: #1d1d1f;
+  border-radius: 24px;
+  padding: 32px;
+  margin-top: 48px;
+}
+
+.dark-section .section-label { color: rgba(255,255,255,0.4); }
+.dark-section .section-title { color: #f5f5f7; }
+.dark-section .section-desc { color: rgba(255,255,255,0.5); }
+
+.dark-color-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.dark-swatch {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.dark-swatch-preview { height: 60px; }
+
+.dark-swatch-info {
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.06);
+}
+
+.dark-swatch-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f5f5f7;
+}
+
+.dark-swatch-value {
+  font-size: 10px;
+  color: rgba(255,255,255,0.4);
+  font-family: 'SF Mono', 'Menlo', monospace;
+}
+
+/* Footer */
+.token-footer {
+  margin-top: 64px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  text-align: center;
+}
+
+.token-footer p {
+  font-size: 13px;
+  color: var(--muted);
+  letter-spacing: -0.01em;
+}
+
+@media (max-width: 600px) {
+  body { padding: 24px 16px; }
+  h1 { font-size: 28px; }
+  .color-grid { grid-template-columns: repeat(2, 1fr); }
+  .component-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<h1>NailBook Design Tokens</h1>
+<p class="subtitle">Flutter design system reference. Apple-inspired aesthetic with iOS 26 Liquid Glass materials, editorial typography, and image-first color philosophy.</p>
+
+<!-- ═══ SEED COLORS ═══ -->
+<div class="token-section">
+  <div class="section-label">Foundation</div>
+  <div class="section-title">Seed Colors</div>
+  <div class="section-desc">The foundational palette. Accent color derives from nail artwork imagery, not from brand identity. Interface stays neutral; images carry the drama.</div>
+  <div class="color-grid">
+    <div class="color-swatch">
+      <div class="swatch-preview" style="background:#f5f5f7"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Background</div>
+        <div class="swatch-value">#f5f5f7</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-preview" style="background:#ffffff"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Surface</div>
+        <div class="swatch-value">#ffffff</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-preview" style="background:#1d1d1f"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Foreground</div>
+        <div class="swatch-value">#1d1d1f</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-preview" style="background:#c4627a"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Primary (Warm Rose)</div>
+        <div class="swatch-value">#c4627a</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-preview" style="background:#0071e3"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Accent (Action Blue)</div>
+        <div class="swatch-value">#0071e3</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-preview" style="background:#6e6e73"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Muted</div>
+        <div class="swatch-value">#6e6e73</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-preview" style="background:#d2d2d7"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Border</div>
+        <div class="swatch-value">#d2d2d7</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-preview" style="background:#86868b"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Border Strong</div>
+        <div class="swatch-value">#86868b</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SEMANTIC COLORS ═══ -->
+<div class="token-section">
+  <div class="section-label">Semantic</div>
+  <div class="section-title">Status & Feedback</div>
+  <div class="section-desc">Reserved for functional states only. Never used decoratively.</div>
+  <div class="color-grid">
+    <div class="color-swatch">
+      <div class="swatch-preview" style="background:#34c759"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Success</div>
+        <div class="swatch-value">#34c759</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-preview" style="background:#ff9500"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Warning</div>
+        <div class="swatch-value">#ff9500</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-preview" style="background:#ff3b30"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Error</div>
+        <div class="swatch-value">#ff3b30</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-preview" style="background:#007aff"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Info</div>
+        <div class="swatch-value">#007aff</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ NAIL ART ACCENT PALETTE ═══ -->
+<div class="token-section">
+  <div class="section-label">Imagery-derived</div>
+  <div class="section-title">Nail Art Accent Spectrum</div>
+  <div class="section-desc">These colors appear only in content (nail art imagery, gradients on cards). They are never used for UI chrome, buttons, or text.</div>
+  <div class="color-grid">
+    <div class="color-swatch">
+      <div class="swatch-preview" style="background:linear-gradient(135deg,#fce4ec,#f48fb1)"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Rose Petal</div>
+        <div class="swatch-value">French / Elegant</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-preview" style="background:linear-gradient(135deg,#fff3e0,#ffb74d)"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Warm Amber</div>
+        <div class="swatch-value">Gradient / Autumn</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-preview" style="background:linear-gradient(135deg,#f3e5f5,#ab47bc)"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Lavender</div>
+        <div class="swatch-value">Japanese / Floral</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-preview" style="background:linear-gradient(135deg,#e8eaf6,#5c6bc0)"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Twilight</div>
+        <div class="swatch-value">Crystal / Galaxy</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-preview" style="background:linear-gradient(135deg,#e0f2f1,#26a69a)"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Matcha</div>
+        <div class="swatch-value">Minimal / Fresh</div>
+      </div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-preview" style="background:linear-gradient(135deg,#fce4ec,#e57373)"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Peach</div>
+        <div class="swatch-value">Cute / Korean</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TYPOGRAPHY ═══ -->
+<div class="token-section">
+  <div class="section-label">Typography</div>
+  <div class="section-title">Type Scale</div>
+  <div class="section-desc">SF Pro Display for display/title hierarchy. SF Pro Text for body and UI. Three-weight system: Regular (400), Medium (500), Semibold (600).</div>
+
+  <div class="type-specimen">
+    <div class="type-meta">
+      <span class="type-tag">34px</span>
+      <span class="type-tag">w600</span>
+      <span class="type-tag">tracking: -0.5px</span>
+      <span class="type-tag">line: 1.1</span>
+    </div>
+    <div style="font-family:var(--font-display);font-size:34px;font-weight:600;letter-spacing:-0.5px;line-height:1.1;">发现你的美甲灵感</div>
+  </div>
+
+  <div class="type-specimen">
+    <div class="type-meta">
+      <span class="type-tag">28px</span>
+      <span class="type-tag">w600</span>
+      <span class="type-tag">tracking: -0.5px</span>
+    </div>
+    <div style="font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.5px;line-height:1.15;">趋势灵感</div>
+  </div>
+
+  <div class="type-specimen">
+    <div class="type-meta">
+      <span class="type-tag">22px</span>
+      <span class="type-tag">w600</span>
+      <span class="type-tag">tracking: -0.3px</span>
+    </div>
+    <div style="font-family:var(--font-display);font-size:22px;font-weight:600;letter-spacing:-0.3px;line-height:1.2;">AI 精选合集</div>
+  </div>
+
+  <div class="type-specimen">
+    <div class="type-meta">
+      <span class="type-tag">17px</span>
+      <span class="type-tag">w600</span>
+      <span class="type-tag">tracking: -0.2px</span>
+    </div>
+    <div style="font-family:var(--font-display);font-size:17px;font-weight:600;letter-spacing:-0.2px;line-height:1.3;">法式珍珠贝壳</div>
+  </div>
+
+  <div class="type-specimen">
+    <div class="type-meta">
+      <span class="type-tag">15px</span>
+      <span class="type-tag">w400</span>
+      <span class="type-tag">tracking: -0.1px</span>
+      <span class="type-tag">line: 1.5</span>
+    </div>
+    <div style="font-size:15px;font-weight:400;letter-spacing:-0.1px;line-height:1.5;">温润的珍珠光泽搭配经典法式设计，指尖散发出优雅与精致。适合日常通勤和轻熟风格。</div>
+  </div>
+
+  <div class="type-specimen">
+    <div class="type-meta">
+      <span class="type-tag">13px</span>
+      <span class="type-tag">w400</span>
+      <span class="type-tag">color: muted</span>
+    </div>
+    <div style="font-size:13px;font-weight:400;color:var(--muted);letter-spacing:0;line-height:1.4;">2.4k 人收藏 · 小雪 NailArt · 上海</div>
+  </div>
+
+  <div class="type-specimen">
+    <div class="type-meta">
+      <span class="type-tag">11px</span>
+      <span class="type-tag">w500</span>
+      <span class="type-tag">uppercase</span>
+      <span class="type-tag">tracking: 0.08em</span>
+    </div>
+    <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);">COLLECTION · SPRING 2026</div>
+  </div>
+</div>
+
+<!-- ═══ SPACING ═══ -->
+<div class="token-section">
+  <div class="section-label">Spacing</div>
+  <div class="section-title">4pt Grid System</div>
+  <div class="section-desc">Base unit: 4px. Semantic aliases for consistent usage.</div>
+  <div class="spacing-scale">
+    <div class="spacing-item">
+      <div class="spacing-block" style="height:4px"></div>
+      <div class="spacing-label">xs</div>
+      <div class="spacing-value">4</div>
+    </div>
+    <div class="spacing-item">
+      <div class="spacing-block" style="height:8px"></div>
+      <div class="spacing-label">sm</div>
+      <div class="spacing-value">8</div>
+    </div>
+    <div class="spacing-item">
+      <div class="spacing-block" style="height:12px"></div>
+      <div class="spacing-label">md</div>
+      <div class="spacing-value">12</div>
+    </div>
+    <div class="spacing-item">
+      <div class="spacing-block" style="height:16px"></div>
+      <div class="spacing-label">lg</div>
+      <div class="spacing-value">16</div>
+    </div>
+    <div class="spacing-item">
+      <div class="spacing-block" style="height:20px"></div>
+      <div class="spacing-label">xl</div>
+      <div class="spacing-value">20</div>
+    </div>
+    <div class="spacing-item">
+      <div class="spacing-block" style="height:24px"></div>
+      <div class="spacing-label">xxl</div>
+      <div class="spacing-value">24</div>
+    </div>
+    <div class="spacing-item">
+      <div class="spacing-block" style="height:32px"></div>
+      <div class="spacing-label">xxxl</div>
+      <div class="spacing-value">32</div>
+    </div>
+    <div class="spacing-item">
+      <div class="spacing-block" style="height:48px"></div>
+      <div class="spacing-label">4xl</div>
+      <div class="spacing-value">48</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ RADIUS ═══ -->
+<div class="token-section">
+  <div class="section-label">Geometry</div>
+  <div class="section-title">Border Radius Scale</div>
+  <div class="section-desc">Purposeful radius tiers. Never use a single radius for all components.</div>
+  <div class="radius-row">
+    <div class="radius-item">
+      <div class="radius-box" style="border-radius:8px"></div>
+      <div class="radius-label">8px<br><span style="font-size:9px;color:var(--muted)">Badge</span></div>
+    </div>
+    <div class="radius-item">
+      <div class="radius-box" style="border-radius:12px"></div>
+      <div class="radius-label">12px<br><span style="font-size:9px;color:var(--muted)">Chip</span></div>
+    </div>
+    <div class="radius-item">
+      <div class="radius-box" style="border-radius:14px"></div>
+      <div class="radius-label">14px<br><span style="font-size:9px;color:var(--muted)">Input</span></div>
+    </div>
+    <div class="radius-item">
+      <div class="radius-box" style="border-radius:16px"></div>
+      <div class="radius-label">16px<br><span style="font-size:9px;color:var(--muted)">Card</span></div>
+    </div>
+    <div class="radius-item">
+      <div class="radius-box" style="border-radius:20px"></div>
+      <div class="radius-label">20px<br><span style="font-size:9px;color:var(--muted)">Gallery</span></div>
+    </div>
+    <div class="radius-item">
+      <div class="radius-box" style="border-radius:28px"></div>
+      <div class="radius-label">28px<br><span style="font-size:9px;color:var(--muted)">Tab Bar</span></div>
+    </div>
+    <div class="radius-item">
+      <div class="radius-box" style="border-radius:32px"></div>
+      <div class="radius-label">32px<br><span style="font-size:9px;color:var(--muted)">Hero</span></div>
+    </div>
+    <div class="radius-item">
+      <div class="radius-box" style="border-radius:50%;width:64px"></div>
+      <div class="radius-label">50%<br><span style="font-size:9px;color:var(--muted)">Avatar</span></div>
+    </div>
+    <div class="radius-item">
+      <div class="radius-box" style="border-radius:100px;width:96px"></div>
+      <div class="radius-label">999px<br><span style="font-size:9px;color:var(--muted)">Capsule</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ GLASS MATERIALS ═══ -->
+<div class="token-section">
+  <div class="section-label">Materials</div>
+  <div class="section-title">iOS 26 Liquid Glass</div>
+  <div class="section-desc">Translucent surfaces with backdrop blur. Three density levels for different UI contexts.</div>
+  <div class="glass-grid">
+    <div class="glass-specimen">
+      <div class="glass-bg"></div>
+      <div class="glass-panel" style="background:rgba(255,255,255,0.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.3);">
+        <div class="glass-label" style="color:var(--fg);">Light Glass</div>
+        <div class="glass-value" style="color:var(--muted);">blur: 12px | alpha: 0.50</div>
+      </div>
+    </div>
+    <div class="glass-specimen">
+      <div class="glass-bg"></div>
+      <div class="glass-panel" style="background:rgba(255,255,255,0.72);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border:1px solid rgba(255,255,255,0.5);">
+        <div class="glass-label" style="color:var(--fg);">Standard Glass</div>
+        <div class="glass-value" style="color:var(--muted);">blur: 20px | alpha: 0.72 | sat: 180%</div>
+      </div>
+    </div>
+    <div class="glass-specimen">
+      <div class="glass-bg"></div>
+      <div class="glass-panel" style="background:rgba(255,255,255,0.88);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border:1px solid rgba(255,255,255,0.6);box-shadow:0 8px 32px rgba(0,0,0,0.08),inset 0 1px 0 rgba(255,255,255,0.6);">
+        <div class="glass-label" style="color:var(--fg);">Heavy Glass</div>
+        <div class="glass-value" style="color:var(--muted);">blur: 40px | alpha: 0.88 | sat: 180%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DEPTH ═══ -->
+<div class="token-section">
+  <div class="section-label">Elevation</div>
+  <div class="section-title">Depth & Shadow</div>
+  <div class="section-desc">Restrained depth. Contrast and surface separation preferred over heavy shadows.</div>
+  <div class="depth-grid">
+    <div class="depth-card" style="background:var(--surface);border:1px solid rgba(0,0,0,0.06);">
+      <div class="depth-name" style="color:var(--fg)">Level 0 — Flat</div>
+      <div class="depth-desc" style="color:var(--muted)">no shadow, border only</div>
+    </div>
+    <div class="depth-card" style="background:var(--surface);box-shadow:0 4px 12px rgba(0,0,0,0.05);">
+      <div class="depth-name" style="color:var(--fg)">Level 1 — Subtle</div>
+      <div class="depth-desc" style="color:var(--muted)">blur:12 y:4 alpha:0.05</div>
+    </div>
+    <div class="depth-card" style="background:var(--surface);box-shadow:0 12px 32px rgba(0,0,0,0.08);">
+      <div class="depth-name" style="color:var(--fg)">Level 2 — Card</div>
+      <div class="depth-desc" style="color:var(--muted)">blur:32 y:12 alpha:0.08</div>
+    </div>
+    <div class="depth-card" style="background:var(--surface);box-shadow:0 24px 64px rgba(0,0,0,0.12);">
+      <div class="depth-name" style="color:var(--fg)">Level 3 — Floating</div>
+      <div class="depth-desc" style="color:var(--muted)">blur:64 y:24 alpha:0.12</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ COMPONENTS ═══ -->
+<div class="token-section">
+  <div class="section-label">Components</div>
+  <div class="section-title">Core Specimens</div>
+  <div class="section-desc">Key interactive components following Apple geometry and glass materials.</div>
+
+  <div class="component-grid">
+    <div class="component-card">
+      <div class="component-title">Buttons</div>
+      <div class="btn-row">
+        <button class="btn-primary">Primary</button>
+        <button class="btn-secondary">Secondary</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn-capsule">Capsule</button>
+        <button class="btn-glass">Glass</button>
+      </div>
+    </div>
+
+    <div class="component-card">
+      <div class="component-title">Pills & Tags</div>
+      <div class="pill-row" style="margin-bottom:10px">
+        <span class="pill pill-active">全部</span>
+        <span class="pill pill-inactive">法式</span>
+        <span class="pill pill-inactive">渐变</span>
+        <span class="pill pill-inactive">日系</span>
+      </div>
+      <div class="pill-row">
+        <span class="pill pill-accent">#法式</span>
+        <span class="pill pill-accent">#优雅</span>
+        <span class="pill pill-accent">#日常</span>
+      </div>
+    </div>
+
+    <div class="component-card">
+      <div class="component-title">Input</div>
+      <input class="input-spec" placeholder="请输入手机号" />
+      <input class="input-spec" placeholder="搜索美甲风格、美甲师..." style="border-radius:100px;" />
+    </div>
+
+    <div class="component-card">
+      <div class="component-title">Glass Tab Bar</div>
+      <div class="tab-bar-spec">
+        <div class="tab-spec-item active">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <span>首页</span>
+        </div>
+        <div class="tab-spec-item">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span>发现</span>
+        </div>
+        <div class="tab-spec-item">
+          <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span>消息</span>
+        </div>
+        <div class="tab-spec-item">
+          <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>我的</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DARK MODE ═══ -->
+<div class="dark-section">
+  <div class="section-label">Appearance</div>
+  <div class="section-title" style="color:#f5f5f7;margin-bottom:4px;">Dark Mode Palette</div>
+  <div class="section-desc">Avoid pure #000 and #fff. Use off-black and off-white to reduce eye strain.</div>
+
+  <div class="dark-color-grid">
+    <div class="dark-swatch">
+      <div class="dark-swatch-preview" style="background:#0f0f0f"></div>
+      <div class="dark-swatch-info">
+        <div class="dark-swatch-name">Background</div>
+        <div class="dark-swatch-value">#0f0f0f</div>
+      </div>
+    </div>
+    <div class="dark-swatch">
+      <div class="dark-swatch-preview" style="background:#1c1c1e"></div>
+      <div class="dark-swatch-info">
+        <div class="dark-swatch-name">Surface</div>
+        <div class="dark-swatch-value">#1c1c1e</div>
+      </div>
+    </div>
+    <div class="dark-swatch">
+      <div class="dark-swatch-preview" style="background:#2c2c2e"></div>
+      <div class="dark-swatch-info">
+        <div class="dark-swatch-name">Surface Elevated</div>
+        <div class="dark-swatch-value">#2c2c2e</div>
+      </div>
+    </div>
+    <div class="dark-swatch">
+      <div class="dark-swatch-preview" style="background:#f0f0f0"></div>
+      <div class="dark-swatch-info">
+        <div class="dark-swatch-name">Foreground</div>
+        <div class="dark-swatch-value">#f0f0f0</div>
+      </div>
+    </div>
+    <div class="dark-swatch">
+      <div class="dark-swatch-preview" style="background:#98989d"></div>
+      <div class="dark-swatch-info">
+        <div class="dark-swatch-name">Muted</div>
+        <div class="dark-swatch-value">#98989d</div>
+      </div>
+    </div>
+    <div class="dark-swatch">
+      <div class="dark-swatch-preview" style="background:#38383a"></div>
+      <div class="dark-swatch-info">
+        <div class="dark-swatch-name">Border</div>
+        <div class="dark-swatch-value">#38383a</div>
+      </div>
+    </div>
+    <div class="dark-swatch">
+      <div class="dark-swatch-preview" style="background:rgba(255,255,255,0.08)"></div>
+      <div class="dark-swatch-info">
+        <div class="dark-swatch-name">Glass Light</div>
+        <div class="dark-swatch-value">rgba(255,255,255,0.08)</div>
+      </div>
+    </div>
+    <div class="dark-swatch">
+      <div class="dark-swatch-preview" style="background:rgba(255,255,255,0.16)"></div>
+      <div class="dark-swatch-info">
+        <div class="dark-swatch-name">Glass Heavy</div>
+        <div class="dark-swatch-value">rgba(255,255,255,0.16)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ FLUTTER MAPPING ═══ -->
+<div class="token-section" style="margin-top:48px;">
+  <div class="section-label">Implementation</div>
+  <div class="section-title">Flutter Token Mapping</div>
+  <div class="section-desc">Map these tokens to your design_tokens.dart DT class. Replace the current pink-heavy palette with the neutral seed system above.</div>
+
+  <div class="component-card" style="font-family:'SF Mono','Menlo',monospace;font-size:12px;line-height:1.7;color:var(--fg);background:#fafafa;border:1px solid rgba(0,0,0,0.06);border-radius:16px;padding:20px;">
+    <div style="color:var(--muted);margin-bottom:8px">// design_tokens.dart — Key replacements</div>
+    <div><span style="color:#c4627a">static const</span> Color primary = Color(<span style="color:#0071e3">0xFFC4627A</span>); <span style="color:var(--muted)">// was #FF6B8A</span></div>
+    <div><span style="color:#c4627a">static const</span> Color bg = Color(<span style="color:#0071e3">0xFFF5F5F7</span>); <span style="color:var(--muted)">// Apple Pale Gray</span></div>
+    <div><span style="color:#c4627a">static const</span> Color surface = Color(<span style="color:#0071e3">0xFFFFFFFF</span>);</div>
+    <div><span style="color:#c4627a">static const</span> Color fg = Color(<span style="color:#0071e3">0xFF1D1D1F</span>); <span style="color:var(--muted)">// Near-Black Ink</span></div>
+    <div><span style="color:#c4627a">static const</span> Color muted = Color(<span style="color:#0071e3">0xFF6E6E73</span>);</div>
+    <div><span style="color:#c4627a">static const</span> Color border = Color(<span style="color:#0071e3">0xFFD2D2D7</span>);</div>
+    <div style="margin-top:12px;color:var(--muted)">// Glass material</div>
+    <div><span style="color:#c4627a">static const</span> double glassBlurLight = 12;</div>
+    <div><span style="color:#c4627a">static const</span> double glassBlurStandard = 20;</div>
+    <div><span style="color:#c4627a">static const</span> double glassBlurHeavy = 40;</div>
+    <div><span style="color:#c4627a">static const</span> double glassSaturation = 1.8;</div>
+  </div>
+</div>
+
+<div class="token-footer">
+  <p>NailBook Design System v2.0 — Apple-Inspired · iOS 26 Liquid Glass</p>
+</div>
+
+</body>
+</html>

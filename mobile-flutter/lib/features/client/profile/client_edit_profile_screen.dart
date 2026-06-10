@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../auth/client_auth_service.dart';
+import '../../../core/widgets/nb_toast.dart';
 
 class ClientEditProfileScreen extends StatefulWidget {
   final String? currentNickname;
@@ -28,6 +28,21 @@ class _ClientEditProfileScreenState extends State<ClientEditProfileScreen> {
     super.initState();
     _nicknameCtl = TextEditingController(text: widget.currentNickname ?? '');
     _avatarUrl = widget.currentAvatarUrl;
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final api = context.read<ApiClient>();
+      final data = await ClientAuthService(api).getProfile();
+      final client = (data['client'] as Map<String, dynamic>?) ?? data;
+      if (mounted) {
+        setState(() {
+          _nicknameCtl.text = client['nickname']?.toString() ?? _nicknameCtl.text;
+          _avatarUrl = client['avatarUrl']?.toString() ?? _avatarUrl;
+        });
+      }
+    } catch (_) {/* 用构造入参兜底 */}
   }
 
   @override
@@ -66,12 +81,8 @@ class _ClientEditProfileScreenState extends State<ClientEditProfileScreen> {
       final api = context.read<ApiClient>();
       await ClientAuthService(api).updateProfile(nickname: nickname, avatarUrl: _avatarUrl);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('资料已更新'),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ));
-        context.pop(true);
+        NbToast.show(context, '资料已更新');
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) _showError('保存失败，请重试');
@@ -81,12 +92,7 @@ class _ClientEditProfileScreenState extends State<ClientEditProfileScreen> {
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: const Color(0xFFEF4444),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ));
+    NbToast.show(context, msg);
   }
 
   @override
@@ -129,7 +135,7 @@ class _ClientEditProfileScreenState extends State<ClientEditProfileScreen> {
     return Row(
       children: [
         GestureDetector(
-          onTap: () => context.pop(),
+          onTap: () => Navigator.pop(context),
           child: Container(
             width: 44, height: 44,
             decoration: BoxDecoration(

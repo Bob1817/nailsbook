@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'app/app.dart';
+import 'core/config.dart';
 import 'core/auth/auth_session.dart';
 import 'core/auth/token_store.dart';
 import 'core/api/api_client.dart';
@@ -11,10 +12,7 @@ import 'core/socket/chat_socket.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  const apiBaseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:3000',
-  );
+  const apiBaseUrl = kApiBaseUrl;
 
   final tokenStore = TokenStore();
   final apiClient = ApiClient(

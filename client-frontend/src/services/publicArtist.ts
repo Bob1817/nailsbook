@@ -48,7 +48,7 @@ export interface PublicWorkDetailData {
   imageUrls: string[];
   likeCount: number;
   commentCount: number;
-  technician: { id: number; name: string; avatarUrl: string | null };
+  technician: { id: number; name: string; avatarUrl: string | null; invitationCode?: string };
   comments: PublicWorkComment[];
   createdAt: string;
 }

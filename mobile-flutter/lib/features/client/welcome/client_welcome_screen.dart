@@ -67,7 +67,7 @@ class _ClientWelcomeScreenState extends State<ClientWelcomeScreen> {
     final topPad = MediaQuery.of(context).padding.top;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF7FA),
+      backgroundColor: const Color(0xFFF5F5F7),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -110,11 +110,11 @@ class _ClientWelcomeScreenState extends State<ClientWelcomeScreen> {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: Colors.grey.shade200),
+                    borderSide: BorderSide(color: DT.border),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: Colors.grey.shade200),
+                    borderSide: BorderSide(color: DT.border),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),

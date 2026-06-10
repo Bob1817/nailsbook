@@ -1,15 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/auth/auth_session.dart';
+import '../../../core/theme/design_tokens.dart';
 import '../auth/technician_auth_service.dart';
 import '../auth/technician_auth_models.dart';
 import '../works/technician_works_screen.dart';
 import '../services/technician_services_screen.dart';
 import '../customers/technician_customers_screen.dart';
+import '../customers/technician_tag_screen.dart';
 import '../orders/technician_orders_screen.dart';
-import '../../shared/chat/conversations_screen.dart';
+import '../shop/technician_shop_screen.dart';
+import '../home_service/technician_home_service_settings_screen.dart';
+import '../settings/technician_profile_settings_screen.dart';
+import '../settings/technician_account_security_screen.dart';
+import '../settings/technician_notification_settings_screen.dart';
+import '../settings/technician_privacy_settings_screen.dart';
+import '../help_feedback/technician_help_feedback_screen.dart';
+import '../about/technician_about_screen.dart';
 
+/// 美甲师「我的」(MePage)：资料头部 + 接单状态 + 功能宫格 + 设置项。
+/// 对齐 webapp technician-frontend/src/pages/MePage.tsx，使用 Flutter 设计系统。
 class TechnicianProfileScreen extends StatefulWidget {
   const TechnicianProfileScreen({super.key});
 
@@ -29,222 +42,223 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
 
   Future<void> _loadProfile() async {
     try {
-      final apiClient = context.read<ApiClient>();
-      final profile = await TechnicianAuthService(apiClient).getProfile();
+      final profile = await TechnicianAuthService(context.read<ApiClient>()).getProfile();
       if (mounted) setState(() { _profile = profile; _loading = false; });
     } catch (_) {
-      if (mounted) setState(() { _loading = false; });
+      if (mounted) setState(() => _loading = false);
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-
-    final name = _profile?.name ?? '';
-    final phone = _profile?.phone ?? '';
-    final avatarUrl = _profile?.avatarUrl;
-    final status = _profile?.status ?? 'inactive';
-    final homeService = _profile?.homeService ?? false;
-    final shopService = _profile?.shopService ?? false;
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('我的')),
-      body: ListView(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [const Color(0xFFE91E63), const Color(0xFFF06292)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: Column(children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundColor: Colors.white,
-                backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
-                child: avatarUrl == null
-                    ? Text(name.isNotEmpty ? name.substring(0, 1) : '?',
-                        style: const TextStyle(fontSize: 28, color: Color(0xFFE91E63)))
-                    : null,
-              ),
-              const SizedBox(height: 12),
-              Text(name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-              const SizedBox(height: 4),
-              Text(phone, style: const TextStyle(color: Colors.white70)),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: status == 'active' ? Colors.green.shade700 : Colors.grey.shade600,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(status == 'active' ? '接单中' : '休息中', style: const TextStyle(color: Colors.white, fontSize: 12)),
-              ),
-            ]),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(children: [
-              if (homeService) _serviceBadge('上门服务', Icons.home, Colors.blue),
-              if (homeService && shopService) const SizedBox(width: 8),
-              if (shopService) _serviceBadge('到店服务', Icons.store, Colors.orange),
-            ]),
-          ),
-          _menuSection('快捷入口', [
-            _MenuItem(Icons.receipt_long, '订单管理', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TechnicianOrdersScreen()))),
-            _MenuItem(Icons.people, '客户管理', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TechnicianCustomersScreen()))),
-            _MenuItem(Icons.photo_library, '作品管理', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TechnicianWorksScreen()))),
-            _MenuItem(Icons.miscellaneous_services, '服务管理', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TechnicianServicesScreen()))),
-            _MenuItem(Icons.chat_bubble_outline, '消息', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ConversationsScreen()))),
-          ]),
-          _menuSection('设置', [
-            _MenuItem(Icons.toggle_on, '状态切换', () => _toggleStatus()),
-            _MenuItem(Icons.edit, '个人设置', () => _showProfileEdit()),
-            _MenuItem(Icons.home_repair_service, '服务类型设置', () => _showServiceTypeEdit()),
-          ]),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: SizedBox(
-              width: double.infinity,
-              height: 44,
-              child: OutlinedButton(
-                onPressed: () => context.read<AuthSession>().logout(),
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
-                child: const Text('退出登录'),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _serviceBadge(String label, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 14, color: color),
-        const SizedBox(width: 4),
-        Text(label, style: TextStyle(fontSize: 12, color: color)),
-      ]),
-    );
-  }
-
-  Widget _menuSection(String title, List<_MenuItem> items) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-        child: Text(title, style: Theme.of(context).textTheme.titleMedium),
-      ),
-      ...items.map((item) => ListTile(
-        leading: Icon(item.icon, color: const Color(0xFFE91E63)),
-        title: Text(item.label),
-        trailing: const Icon(Icons.chevron_right, size: 20),
-        onTap: item.onTap,
-      )),
-    ]);
+  void _push(Widget screen) {
+    HapticFeedback.lightImpact();
+    Navigator.push(context, MaterialPageRoute(builder: (_) => screen)).then((_) => _loadProfile());
   }
 
   Future<void> _toggleStatus() async {
+    HapticFeedback.mediumImpact();
     final newStatus = _profile?.status == 'active' ? 'inactive' : 'active';
     try {
-      final apiClient = context.read<ApiClient>();
-      await TechnicianAuthService(apiClient).updateStatus(newStatus);
+      await TechnicianAuthService(context.read<ApiClient>()).updateStatus(newStatus);
       _loadProfile();
     } catch (_) {}
   }
 
-  void _showProfileEdit() {
-    final nameCtl = TextEditingController(text: _profile?.name ?? '');
-    final cityCtl = TextEditingController(text: _profile?.city ?? '');
-    final areaCtl = TextEditingController(text: _profile?.serviceArea ?? '');
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) return const Scaffold(backgroundColor: DT.bg, body: Center(child: CircularProgressIndicator(color: DT.primary)));
 
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('个人设置'),
-        content: SingleChildScrollView(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            TextField(controller: nameCtl, decoration: const InputDecoration(labelText: '名称')),
-            TextField(controller: cityCtl, decoration: const InputDecoration(labelText: '城市')),
-            TextField(controller: areaCtl, decoration: const InputDecoration(labelText: '服务区域')),
+    final active = _profile?.status == 'active';
+
+    return Scaffold(
+      backgroundColor: DT.bg,
+      body: ListView(
+        padding: const EdgeInsets.only(bottom: 100),
+        children: [
+          _header(active),
+          _sectionTitle('工作管理'),
+          _grid([
+            (CupertinoIcons.doc_text, '订单管理', () => _push(const TechnicianOrdersScreen())),
+            (CupertinoIcons.person_2, '客户管理', () => _push(const TechnicianCustomersScreen())),
+            (CupertinoIcons.photo, '作品管理', () => _push(const TechnicianWorksScreen())),
+            (CupertinoIcons.wrench, '服务管理', () => _push(const TechnicianServicesScreen())),
+            (CupertinoIcons.car_detailed, '上门设置', () => _push(const TechnicianHomeServiceSettingsScreen())),
+            (CupertinoIcons.bag, '店铺管理', () => _push(const TechnicianShopScreen())),
+            (CupertinoIcons.tag, '标签管理', () => _push(const TechnicianTagScreen())),
+            (CupertinoIcons.person_crop_circle, '资料设置', () => _push(const TechnicianProfileSettingsScreen())),
           ]),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              try {
-                final apiClient = context.read<ApiClient>();
-                await TechnicianAuthService(apiClient).updateProfile({
-                  'name': nameCtl.text,
-                  'city': cityCtl.text,
-                  'serviceArea': areaCtl.text,
-                });
-                _loadProfile();
-              } catch (_) {}
-            },
-            child: const Text('保存'),
+          _sectionTitle('设置'),
+          _menuCard([
+            (CupertinoIcons.shield, '账号与安全', () => _push(const TechnicianAccountSecurityScreen())),
+            (CupertinoIcons.bell, '通知设置', () => _push(const TechnicianNotificationSettingsScreen())),
+            (CupertinoIcons.lock, '隐私设置', () => _push(const TechnicianPrivacySettingsScreen())),
+            (CupertinoIcons.question_circle, '帮助与反馈', () => _push(const TechnicianHelpFeedbackScreen())),
+            (CupertinoIcons.info_circle, '关于我们', () => _push(const TechnicianAboutScreen())),
+          ]),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(DT.lg, DT.xxl, DT.lg, DT.sm),
+            child: SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton(
+                onPressed: () {
+                  HapticFeedback.mediumImpact();
+                  context.read<AuthSession>().logout();
+                },
+                style: OutlinedButton.styleFrom(foregroundColor: DT.error, side: const BorderSide(color: DT.border)),
+                child: Text('退出登录', style: DT.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: DT.error)),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  void _showServiceTypeEdit() {
-    bool homeService = _profile?.homeService ?? false;
-    bool shopService = _profile?.shopService ?? false;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('服务类型设置'),
-          content: Column(mainAxisSize: MainAxisSize.min, children: [
-            SwitchListTile(
-              title: const Text('上门服务'),
-              value: homeService,
-              onChanged: (v) => setDialogState(() => homeService = v),
+  Widget _header(bool active) {
+    final name = _profile?.name ?? '';
+    final phone = _profile?.phone ?? '';
+    final avatarUrl = _profile?.avatarUrl;
+    final topPad = MediaQuery.of(context).padding.top;
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(DT.xl, topPad + DT.xl, DT.xl, DT.xxl),
+      decoration: const BoxDecoration(
+        gradient: DT.profileGradient,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(DT.rCard)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 2)),
+                child: CircleAvatar(
+                  radius: 32,
+                  backgroundColor: DT.surface,
+                  backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                  child: avatarUrl == null
+                      ? Text(name.isNotEmpty ? name.substring(0, 1) : '?', style: DT.displaySmall.copyWith(color: DT.textPrimary))
+                      : null,
+                ),
+              ),
+              const SizedBox(width: DT.lg),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('美甲师 \u00B7 $name',
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                        style: DT.titleLarge.copyWith(color: Colors.white)),
+                    const SizedBox(height: DT.xs),
+                    Text(phone, style: DT.bodySmall.copyWith(color: Colors.white.withValues(alpha: 0.7))),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: DT.lg),
+          // 接单状态切换
+          GestureDetector(
+            onTap: _toggleStatus,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: DT.lg, vertical: DT.md),
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(DT.lg)),
+              child: Row(
+                children: [
+                  Icon(active ? CupertinoIcons.check_mark_circled_solid : CupertinoIcons.pause_circle, color: DT.surface, size: 20),
+                  const SizedBox(width: DT.sm),
+                  Expanded(
+                    child: Text(active ? '接单中 \u00B7 客户可以预约你' : '休息中 \u00B7 暂不接受新预约',
+                        style: DT.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.white)),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: DT.md, vertical: DT.xs),
+                    decoration: BoxDecoration(color: DT.surface, borderRadius: BorderRadius.circular(DT.rFull)),
+                    child: Text(active ? '休息' : '开工',
+                        style: DT.captionLarge.copyWith(fontWeight: FontWeight.w700, color: DT.textPrimary)),
+                  ),
+                ],
+              ),
             ),
-            SwitchListTile(
-              title: const Text('到店服务'),
-              value: shopService,
-              onChanged: (v) => setDialogState(() => shopService = v),
-            ),
-          ]),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.pop(ctx);
-                try {
-                  final apiClient = context.read<ApiClient>();
-                  await TechnicianAuthService(apiClient).updateServiceType({
-                    'homeService': homeService,
-                    'shopService': shopService,
-                  });
-                  _loadProfile();
-                } catch (_) {}
-              },
-              child: const Text('保存'),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
-}
 
-class _MenuItem {
-  final IconData icon;
-  final String label;
-  final VoidCallback? onTap;
-  _MenuItem(this.icon, this.label, this.onTap);
+  Widget _sectionTitle(String t) => Padding(
+        padding: EdgeInsets.fromLTRB(DT.xl, DT.xl, DT.xl, DT.sm),
+        child: Text(t, style: DT.titleMedium.copyWith(color: DT.textSecondary)),
+      );
+
+  Widget _grid(List<(IconData, String, VoidCallback)> items) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: DT.lg),
+      child: GridView.count(
+        crossAxisCount: 4,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisSpacing: DT.sm,
+        mainAxisSpacing: DT.sm,
+        childAspectRatio: 0.92,
+        children: items.map((it) => GestureDetector(
+          onTap: it.$3,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 48, height: 48,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: DT.primarySoft,
+                  borderRadius: BorderRadius.circular(DT.radius12),
+                ),
+                child: Icon(it.$1, color: DT.primary, size: 23),
+              ),
+              SizedBox(height: DT.sm),
+              Text(it.$2, style: DT.captionLarge.copyWith(color: DT.textPrimary)),
+            ],
+          ),
+        )).toList(),
+      ),
+    );
+  }
+
+  Widget _menuCard(List<(IconData, String, VoidCallback)> items) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: DT.lg),
+      decoration: BoxDecoration(
+        color: DT.surface,
+        borderRadius: BorderRadius.circular(DT.radius16),
+        border: Border.all(color: DT.border),
+        boxShadow: DT.shadowTile,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: List.generate(items.length, (i) {
+          final it = items[i];
+          return Column(
+            children: [
+              if (i > 0) const Divider(height: 1, indent: 56, color: DT.divider),
+              Material(
+                type: MaterialType.transparency,
+                child: ListTile(
+                  leading: Container(
+                    width: 34, height: 34,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(color: DT.primarySoft, borderRadius: BorderRadius.circular(10)),
+                    child: Icon(it.$1, color: DT.primary, size: 19),
+                  ),
+                  title: Text(it.$2, style: DT.titleSmall),
+                  trailing: const Icon(CupertinoIcons.chevron_right, size: 20, color: DT.textQuaternary),
+                  onTap: it.$3,
+                ),
+              ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
 }

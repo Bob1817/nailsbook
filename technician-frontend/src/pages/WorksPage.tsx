@@ -4,6 +4,7 @@ import { useToast } from '../components/feedback/ToastProvider';
 import { worksService, type Work, type Comment } from '../services/works';
 import { uploadService } from '../services/upload';
 import { GridSkeleton } from '../components/Skeleton';
+import { ShareModal } from '../components/ShareModal';
 
 // ─── CommentItem ─────────────────────────────────────────────────────────────
 
@@ -327,6 +328,8 @@ const WorksPage: React.FC = () => {
   const [cardActionWork, setCardActionWork] = useState<Work | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [sharingWork, setSharingWork] = useState<Work | null>(null);
   // 默认图高调低，首屏即露出评论；用户仍可拖拽手柄放大至 55vh 或缩到 22vh
   const [imageHeightVh, setImageHeightVh] = useState(38);
   const dragRef = useRef<{ startY: number; startVh: number } | null>(null);
@@ -505,17 +508,8 @@ const WorksPage: React.FC = () => {
   const onGrabberUp = () => { dragRef.current = null; };
 
   const handleShare = async (work: Work) => {
-    const shareData = { title: work.title || '美甲作品', text: work.title || '美甲作品' };
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        await navigator.clipboard.writeText(work.title || '美甲作品');
-        toast.success('已复制作品信息');
-      }
-    } catch {
-      /* 用户取消分享，忽略 */
-    }
+    setSharingWork(work);
+    setShowShareModal(true);
   };
 
   const openWorkDetail = async (work: Work) => {
@@ -1428,6 +1422,18 @@ const WorksPage: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {showShareModal && sharingWork && (
+        <ShareModal
+          isOpen={showShareModal}
+          onClose={() => {
+            setShowShareModal(false);
+            setSharingWork(null);
+          }}
+          work={sharingWork}
+          toast={toast}
+        />
       )}
       </div>
     </div>

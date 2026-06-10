@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/design_tokens.dart';
+import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
 class TechnicianHelpFeedbackScreen extends StatefulWidget {
   const TechnicianHelpFeedbackScreen({super.key});
 
   @override
-  State<TechnicianHelpFeedbackScreen> createState() => _TechnicianHelpFeedbackScreenState();
+  State<TechnicianHelpFeedbackScreen> createState() =>
+      _TechnicianHelpFeedbackScreenState();
 }
 
-class _TechnicianHelpFeedbackScreenState extends State<TechnicianHelpFeedbackScreen> {
+class _TechnicianHelpFeedbackScreenState
+    extends State<TechnicianHelpFeedbackScreen> {
   int? _openFaq;
 
   static const _faqs = [
     {
       'q': '客户如何绑定我？',
-      'a': '客户可以通过您分享的邀请码或主页链接绑定您。在「我的」页面点击「分享名片」即可生成邀请码和链接。客户在注册时输入邀请码，或通过链接直接关联。',
+      'a':
+          '客户可以通过您分享的邀请码或主页链接绑定您。在「我的」页面点击「分享名片」即可生成邀请码和链接。客户在注册时输入邀请码，或通过链接直接关联。',
     },
     {
       'q': '预约的状态流转是怎样的？',
@@ -39,28 +43,27 @@ class _TechnicianHelpFeedbackScreenState extends State<TechnicianHelpFeedbackScr
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: DT.bgWarm,
-      appBar: AppBar(
-        backgroundColor: Colors.white.withOpacity(0.95),
+      appBar: GlassAppBar(
+        backgroundColor: Colors.white.withValues(alpha: 0.95),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: DT.textPrimary),
+          icon:
+              const Icon(CupertinoIcons.back, size: 20, color: DT.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('帮助与反馈',
-          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: DT.textPrimary)),
+        title: Text('帮助与反馈', style: DT.titleMedium),
         centerTitle: true,
       ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(DT.xl),
         children: [
           // FAQ
-          const Text('常见问题',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: DT.textPrimary)),
-          const SizedBox(height: 12),
+          Text('常见问题', style: DT.titleMedium),
+          const SizedBox(height: DT.md),
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
+              color: DT.surface,
+              borderRadius: BorderRadius.circular(DT.rXxl),
               boxShadow: DT.shadowSm,
             ),
             child: Column(
@@ -70,20 +73,26 @@ class _TechnicianHelpFeedbackScreenState extends State<TechnicianHelpFeedbackScr
                 return Column(
                   children: [
                     GestureDetector(
-                      onTap: () => setState(() => _openFaq = isOpen ? null : i),
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => _openFaq = isOpen ? null : i);
+                      },
                       behavior: HitTestBehavior.opaque,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: DT.xl, vertical: DT.lg),
                         child: Row(
                           children: [
                             Expanded(
                               child: Text(_faqs[i]['q']!,
-                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: DT.textPrimary)),
+                                  style: DT.bodyMedium
+                                      .copyWith(fontWeight: FontWeight.w500)),
                             ),
                             AnimatedRotation(
                               turns: isOpen ? 0.5 : 0,
                               duration: const Duration(milliseconds: 200),
-                              child: Icon(Icons.keyboard_arrow_down_rounded, size: 22, color: DT.textMuted),
+                              child: Icon(CupertinoIcons.chevron_down,
+                                  size: 22, color: DT.textMuted),
                             ),
                           ],
                         ),
@@ -91,65 +100,64 @@ class _TechnicianHelpFeedbackScreenState extends State<TechnicianHelpFeedbackScr
                     ),
                     if (isOpen)
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
+                        padding:
+                            const EdgeInsets.fromLTRB(DT.xl, 0, DT.xl, DT.lg),
                         child: Text(_faqs[i]['a']!,
-                          style: TextStyle(fontSize: 13, height: 1.7, color: DT.textSecondary)),
+                            style: DT.bodySmall.copyWith(height: 1.7)),
                       ),
                     if (!isLast)
                       const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 18),
-                        child: Divider(height: 1, color: Color(0xFFF2F0F3)),
+                        padding: EdgeInsets.symmetric(horizontal: DT.xl),
+                        child: Divider(height: 1, color: DT.dividerWarm),
                       ),
                   ],
                 );
               }),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: DT.xxl),
           // Contact
-          const Text('联系客服',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: DT.textPrimary)),
-          const SizedBox(height: 12),
+          Text('联系客服', style: DT.titleMedium),
+          const SizedBox(height: DT.md),
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
+              color: DT.surface,
+              borderRadius: BorderRadius.circular(DT.rXxl),
               boxShadow: DT.shadowSm,
             ),
             child: Column(
               children: [
                 _buildContactRow(
-                  icon: '📞',
+                  icon: CupertinoIcons.phone,
                   label: '客服电话',
                   value: '400-800-1234',
                   action: '拨打',
-                  onTap: () {},
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                  },
                 ),
                 const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 18),
-                  child: Divider(height: 1, color: Color(0xFFF2F0F3)),
+                  padding: EdgeInsets.symmetric(horizontal: DT.xl),
+                  child: Divider(height: 1, color: DT.dividerWarm),
                 ),
                 _buildContactRow(
-                  icon: '💬',
+                  icon: CupertinoIcons.chat_bubble,
                   label: '客服微信',
                   value: 'nailbook-service',
                   action: '复制',
                   onTap: () {
-                    Clipboard.setData(const ClipboardData(text: 'nailbook-service'));
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: const Text('客服微信号已复制'),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ));
+                    HapticFeedback.lightImpact();
+                    Clipboard.setData(
+                        const ClipboardData(text: 'nailbook-service'));
+                    NbToast.show(context, '客服微信号已复制');
                   },
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: DT.lg),
           Center(
-            child: Text('客服工作时间：每日 9:00 - 21:00',
-              style: TextStyle(fontSize: 12, color: DT.textMuted)),
+            child: Text('客服工作时间：每日 9:00 - 21:00', style: DT.captionLarge),
           ),
         ],
       ),
@@ -157,7 +165,7 @@ class _TechnicianHelpFeedbackScreenState extends State<TechnicianHelpFeedbackScr
   }
 
   Widget _buildContactRow({
-    required String icon,
+    required IconData icon,
     required String label,
     required String value,
     required String action,
@@ -167,32 +175,34 @@ class _TechnicianHelpFeedbackScreenState extends State<TechnicianHelpFeedbackScr
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: DT.xl, vertical: DT.md),
         child: Row(
           children: [
             Container(
-              width: 40, height: 40,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF1F6),
-                borderRadius: BorderRadius.circular(14),
+                color: DT.primarySoft,
+                borderRadius: BorderRadius.circular(DT.rMd),
               ),
               alignment: Alignment.center,
-              child: Text(icon, style: const TextStyle(fontSize: 18)),
+              child: Icon(icon, size: 20, color: DT.primary),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: DT.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(label,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: DT.textPrimary)),
-                  Text(value,
-                    style: TextStyle(fontSize: 13, color: DT.textMuted)),
+                      style:
+                          DT.bodyMedium.copyWith(fontWeight: FontWeight.w500)),
+                  Text(value, style: DT.captionLarge),
                 ],
               ),
             ),
             Text(action,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: DT.primary)),
+                style: DT.bodyMedium
+                    .copyWith(fontWeight: FontWeight.w600, color: DT.primary)),
           ],
         ),
       ),

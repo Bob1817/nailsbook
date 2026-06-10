@@ -12,6 +12,11 @@ class ClientOrder {
   final Map<String, dynamic>? technician;
   final Map<String, dynamic>? customer;
   final Map<String, dynamic>? clientAddress;
+  final double? depositAmount;
+  final bool isDepositPaid;
+  final String? customTitle;
+  final String? customDescription;
+  final List<String>? customImages;
   final String createdAt;
 
   ClientOrder({
@@ -28,6 +33,11 @@ class ClientOrder {
     this.technician,
     this.customer,
     this.clientAddress,
+    this.depositAmount,
+    this.isDepositPaid = false,
+    this.customTitle,
+    this.customDescription,
+    this.customImages,
     required this.createdAt,
   });
 
@@ -45,6 +55,11 @@ class ClientOrder {
         technician: json['technician'] as Map<String, dynamic>?,
         customer: json['customer'] as Map<String, dynamic>?,
         clientAddress: json['clientAddress'] as Map<String, dynamic>?,
+        depositAmount: (json['depositAmount'] as num?)?.toDouble(),
+        isDepositPaid: json['isDepositPaid'] as bool? ?? false,
+        customTitle: json['customTitle'] as String?,
+        customDescription: json['customDescription'] as String?,
+        customImages: (json['customImages'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
         createdAt: json['createdAt'] as String,
       );
 

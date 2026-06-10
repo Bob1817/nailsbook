@@ -16,7 +16,11 @@ const Login: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [inviteCode, setInviteCode] = useState(searchParams.get('invite_code') || '');
+  const [inviteCode, setInviteCode] = useState(
+    searchParams.get('invite_code') ||
+    localStorage.getItem('pendingInviteCode') ||
+    ''
+  );
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

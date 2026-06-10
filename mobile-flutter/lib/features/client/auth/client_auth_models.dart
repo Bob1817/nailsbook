@@ -13,6 +13,7 @@ class Technician {
   final bool? shopService;
   final List<dynamic>? shopAddresses;
   final List<dynamic>? serviceItems;
+  final Map<String, dynamic>? serviceSchedule;
 
   Technician({
     required this.id,
@@ -29,6 +30,7 @@ class Technician {
     this.shopService,
     this.shopAddresses,
     this.serviceItems,
+    this.serviceSchedule,
   });
 
   factory Technician.fromJson(Map<String, dynamic> json) => Technician(
@@ -46,6 +48,7 @@ class Technician {
         shopService: json['shopService'] as bool?,
         shopAddresses: json['shopAddresses'] as List<dynamic>?,
         serviceItems: json['serviceItems'] as List<dynamic>?,
+        serviceSchedule: json['serviceSchedule'] as Map<String, dynamic>?,
       );
 }
 

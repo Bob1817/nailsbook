@@ -5,15 +5,18 @@ import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
 import 'client_auth_service.dart';
+import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
 class ClientForgotPasswordScreen extends StatefulWidget {
   const ClientForgotPasswordScreen({super.key});
 
   @override
-  State<ClientForgotPasswordScreen> createState() => _ClientForgotPasswordScreenState();
+  State<ClientForgotPasswordScreen> createState() =>
+      _ClientForgotPasswordScreenState();
 }
 
-class _ClientForgotPasswordScreenState extends State<ClientForgotPasswordScreen> {
+class _ClientForgotPasswordScreenState
+    extends State<ClientForgotPasswordScreen> {
   final _phoneCtl = TextEditingController();
   final _codeCtl = TextEditingController();
   final _newPwdCtl = TextEditingController();
@@ -55,7 +58,10 @@ class _ClientForgotPasswordScreenState extends State<ClientForgotPasswordScreen>
       return;
     }
 
-    setState(() { _sending = true; _error = null; });
+    setState(() {
+      _sending = true;
+      _error = null;
+    });
     try {
       final api = context.read<ApiClient>();
       api.setRole('client');
@@ -82,7 +88,9 @@ class _ClientForgotPasswordScreenState extends State<ClientForgotPasswordScreen>
       setState(() => _error = '请输入验证码');
       return;
     }
-    if (newPwd.length < 8 || !RegExp(r'[a-zA-Z]').hasMatch(newPwd) || !RegExp(r'[0-9]').hasMatch(newPwd)) {
+    if (newPwd.length < 8 ||
+        !RegExp(r'[a-zA-Z]').hasMatch(newPwd) ||
+        !RegExp(r'[0-9]').hasMatch(newPwd)) {
       setState(() => _error = '新密码至少8位，需含字母和数字');
       return;
     }
@@ -91,17 +99,16 @@ class _ClientForgotPasswordScreenState extends State<ClientForgotPasswordScreen>
       return;
     }
 
-    setState(() { _submitting = true; _error = null; });
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
     try {
       final api = context.read<ApiClient>();
       api.setRole('client');
       await ClientAuthService(api).resetPassword(phone, code, newPwd);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('密码重置成功，请重新登录'),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ));
+        NbToast.show(context, '密码重置成功，请重新登录');
         context.go('/client/login');
       }
     } catch (e) {
@@ -115,11 +122,12 @@ class _ClientForgotPasswordScreenState extends State<ClientForgotPasswordScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF7FA),
-      appBar: AppBar(
+      appBar: GlassAppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: DT.textPrimary),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              size: 20, color: DT.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -127,20 +135,25 @@ class _ClientForgotPasswordScreenState extends State<ClientForgotPasswordScreen>
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
         children: [
           const Text('找回密码',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: DT.textPrimary)),
+              style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: DT.textPrimary)),
           const SizedBox(height: 8),
           Text('通过注册手机号验证后重置登录密码',
-            style: TextStyle(fontSize: 14, color: DT.textMuted)),
+              style: TextStyle(fontSize: 14, color: DT.textMuted)),
           const SizedBox(height: 32),
           // Phone
-          _buildTextField('手机号', _phoneCtl, '请输入手机号', keyboardType: TextInputType.phone),
+          _buildTextField('手机号', _phoneCtl, '请输入手机号',
+              keyboardType: TextInputType.phone),
           const SizedBox(height: 16),
           // Code row
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _buildTextField('验证码', _codeCtl, '请输入验证码', keyboardType: TextInputType.number),
+                child: _buildTextField('验证码', _codeCtl, '请输入验证码',
+                    keyboardType: TextInputType.number),
               ),
               const SizedBox(width: 12),
               GestureDetector(
@@ -149,13 +162,20 @@ class _ClientForgotPasswordScreenState extends State<ClientForgotPasswordScreen>
                   height: 52,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: _countdown > 0 ? const Color(0xFFF4F5F7) : DT.primarySoft,
+                    color: _countdown > 0
+                        ? const Color(0xFFF4F5F7)
+                        : DT.primarySoft,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: _countdown > 0 ? Colors.transparent : const Color(0xFFFFD9E6)),
+                    border: Border.all(
+                        color: _countdown > 0
+                            ? Colors.transparent
+                            : const Color(0xFFFFD9E6)),
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    _countdown > 0 ? '${_countdown}s' : (_sending ? '发送中...' : '获取验证码'),
+                    _countdown > 0
+                        ? '${_countdown}s'
+                        : (_sending ? '发送中...' : '获取验证码'),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -174,7 +194,8 @@ class _ClientForgotPasswordScreenState extends State<ClientForgotPasswordScreen>
           _buildTextField('确认新密码', _confirmCtl, '再次输入新密码', obscure: true),
           if (_error != null) ...[
             const SizedBox(height: 16),
-            Text(_error!, style: const TextStyle(fontSize: 13, color: DT.error)),
+            Text(_error!,
+                style: const TextStyle(fontSize: 13, color: DT.error)),
           ],
           const SizedBox(height: 32),
           // Submit
@@ -190,7 +211,10 @@ class _ClientForgotPasswordScreenState extends State<ClientForgotPasswordScreen>
               ),
               alignment: Alignment.center,
               child: Text(_submitting ? '提交中...' : '确认重置',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white)),
             ),
           ),
         ],
@@ -198,14 +222,21 @@ class _ClientForgotPasswordScreenState extends State<ClientForgotPasswordScreen>
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController ctl, String hint, {
-    bool obscure = false, TextInputType? keyboardType,
+  Widget _buildTextField(
+    String label,
+    TextEditingController ctl,
+    String hint, {
+    bool obscure = false,
+    TextInputType? keyboardType,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: DT.textPrimary)),
+            style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: DT.textPrimary)),
         const SizedBox(height: 6),
         TextField(
           controller: ctl,
@@ -217,14 +248,15 @@ class _ClientForgotPasswordScreenState extends State<ClientForgotPasswordScreen>
             hintStyle: TextStyle(fontSize: 14, color: DT.textMuted),
             filled: true,
             fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.grey.shade200),
+              borderSide: BorderSide(color: DT.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.grey.shade200),
+              borderSide: BorderSide(color: DT.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),

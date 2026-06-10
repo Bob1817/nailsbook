@@ -66,6 +66,26 @@ class MapService {
     final webUrl = buildWebMapsUrl(lat, lng);
     return await launchUrl(Uri.parse(webUrl));
   }
+
+  /// 按地址文本唤起导航（对齐 webapp：高德地图关键字搜索 + callnative）。
+  static Future<bool> launchAddressNavigation(String address) async {
+    final encoded = Uri.encodeComponent(address);
+    // 优先尝试高德 App 的搜索路由
+    final amapAppUri = Uri.parse('iosamap://poi?sourceApplication=nailbook&keywords=$encoded&dev=0');
+    if (await canLaunchUrl(amapAppUri)) {
+      return launchUrl(amapAppUri);
+    }
+    // 回退到高德通用 URL（系统会尝试拉起 App，未安装则浏览器）
+    final amapWeb = Uri.parse('https://uri.amap.com/search?keyword=$encoded&callnative=1');
+    return launchUrl(amapWeb, mode: LaunchMode.externalApplication);
+  }
+
+  /// 拨打电话。
+  static Future<bool> launchPhoneCall(String phone) async {
+    final uri = Uri(scheme: 'tel', path: phone);
+    if (await canLaunchUrl(uri)) return launchUrl(uri);
+    return false;
+  }
 }
 
 class LocationResult {

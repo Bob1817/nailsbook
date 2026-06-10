@@ -122,7 +122,7 @@ export class PublicWorksController {
             },
           },
         },
-        technician: { select: { id: true, name: true, avatarUrl: true } },
+        technician: { select: { id: true, name: true, avatarUrl: true, invitationCode: true } },
       },
     });
 
@@ -163,6 +163,7 @@ export class PublicWorksController {
         id: work.technician.id,
         name: work.technician.name,
         avatarUrl: toAbsoluteUrl(work.technician.avatarUrl),
+        invitationCode: work.technician.invitationCode,
       },
       comments: (work.comments || []).map(mapComment),
       createdAt: work.createdAt,

@@ -69,9 +69,10 @@ const CreateOrder: React.FC = () => {
   const [inlineDistrict, setInlineDistrict] = useState('');
   const [showShopConfirm, setShowShopConfirm] = useState(false);
 
-  // Get design info from URL params
+  // Get design/work info from URL params
   const designId = searchParams.get('design_id');
   const designTechId = searchParams.get('tech_id');
+  const workId = searchParams.get('work_id');
   
   const [formData, setFormData] = useState({
     serviceDate: dayjs().add(1, 'day').format('YYYY-MM-DD'),
@@ -205,6 +206,23 @@ const CreateOrder: React.FC = () => {
       });
     }
   }, [designId]);
+
+  // Load work from URL if work_id is provided
+  useEffect(() => {
+    if (workId) {
+      worksService.getWorks().then((works) => {
+        const target = works.find((w) => w.id === parseInt(workId, 10));
+        if (target) {
+          setSelectedWorks([target]);
+          setIsCustomService(true);
+          setCustomServiceTitle(target.title || '美甲款式');
+          setCustomServiceDescription(target.description || '');
+        }
+      }).catch((err) => {
+        console.error('Failed to load work reference', err);
+      });
+    }
+  }, [workId]);
 
   useEffect(() => {
     if (bookableTechnicians.length === 1 && formData.techId === 0) {

@@ -8,14 +8,10 @@ import '../../../core/auth/auth_session.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../client/addresses/client_address_models.dart';
 import '../../client/addresses/client_address_service.dart';
+import '../../client/orders/client_order_service.dart';
+import 'booking_availability.dart';
 import 'chat_booking_service.dart';
-
-const _kTimeSlots = [
-  '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-  '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
-  '16:00', '16:30', '17:00', '17:30', '18:00', '18:30',
-  '19:00', '19:30', '20:00', '20:30',
-];
+import '../../../core/widgets/nb_toast.dart';
 
 /// Shows the chat booking bottom sheet. Returns true if a booking was created.
 Future<bool?> showChatBookingSheet(
@@ -56,7 +52,8 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
   final _inlineAddrCtl = TextEditingController();
   String _techAddressText = '';   // technician mode: free text address
   String _serviceDate = '';
-  String _startTime = '14:00';
+  String _startTime = '';
+  List<Map<String, dynamic>> _blockedSlots = [];
   String _customDescription = '';
   List<String> _customImages = [];
   double? _price;
@@ -90,20 +87,67 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
         final svc = ChatBookingService(api);
         final tech = await svc.fetchTechnicianForClient(widget.otherPartyId);
         final addrs = await ClientAddressService(api).list();
+        List<Map<String, dynamic>> blocked = [];
+        try {
+          blocked = await ClientOrderService(api)
+              .getBlockedSlots(widget.otherPartyId)
+              .timeout(const Duration(seconds: 10));
+        } catch (_) {}
         if (mounted) {
           setState(() {
             _techData = tech;
             _addresses = addrs;
+            _blockedSlots = blocked;
             _autoSelectServiceType();
             _autoSelectAddress();
+            _ensureChatSelection();
             _loading = false;
           });
         }
       } else {
-        if (mounted) setState(() => _loading = false);
+        if (mounted) setState(() { _ensureChatSelection(); _loading = false; });
       }
     } catch (_) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() { _ensureChatSelection(); _loading = false; });
+    }
+  }
+
+  // ── 预约时间联动 ──
+
+  Map<String, dynamic>? get _chatSchedule => _techData?['serviceSchedule'] as Map<String, dynamic>?;
+  bool get _chatShopMode => _serviceType == '到店美甲';
+  Map<String, dynamic>? get _chatShopMap =>
+      _chatShopMode && _shopAddresses.isNotEmpty ? _shopAddresses[0] : null;
+
+  bool _chatDateAvailable(String ds) =>
+      _chatShopMode ? isShopOpenOnDate(_chatShopMap, ds) : isDateAvailable(_chatSchedule, ds);
+
+  List<SlotStatus> get _chatSlotStatuses => getSlotStatuses(
+        dateStr: _serviceDate,
+        range: _chatShopMode ? null : scheduleRange(_chatSchedule),
+        blockedSlots: _blockedSlots,
+        shopMode: _chatShopMode,
+        shopHours: _chatShopMode ? shopHoursOptionForDate(_chatShopMap, _serviceDate) : null,
+      );
+
+  List<String> get _chatAvailableSlots =>
+      _chatSlotStatuses.where((s) => !s.occupied).map((s) => s.time).toList();
+
+  String _fmtDate(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  void _ensureChatSelection() {
+    if (_serviceDate.isEmpty || !_chatDateAvailable(_serviceDate)) {
+      final now = DateTime.now();
+      final base = DateTime(now.year, now.month, now.day);
+      for (int i = 0; i <= 60; i++) {
+        final s = _fmtDate(base.add(Duration(days: i)));
+        if (_chatDateAvailable(s)) { _serviceDate = s; break; }
+      }
+    }
+    final avail = _chatAvailableSlots;
+    if (_startTime.isEmpty || !avail.contains(_startTime)) {
+      _startTime = avail.isNotEmpty ? avail.first : '';
     }
   }
 
@@ -141,6 +185,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
 
   bool get _canSubmit {
     if (_serviceType.isEmpty) return false;
+    if (_startTime.isEmpty || !_chatAvailableSlots.contains(_startTime)) return false;
     if (_serviceType == '上门美甲') {
       if (_isClientMode) {
         if (_showInlineAddressForm) {
@@ -194,8 +239,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
         );
         if (mounted) {
           Navigator.pop(context, true);
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text('预约已提交')));
+          NbToast.show(context, '预约已提交');
         }
       } else {
         final result = await svc.createTechnicianChatBooking(
@@ -215,13 +259,12 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
         }
         if (mounted) {
           Navigator.pop(context, true);
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text('预约已创建')));
+          NbToast.show(context, '预约已创建');
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('提交失败：$e')));
+        NbToast.show(context, '提交失败：$e');
       }
     } finally {
       if (mounted && _confirmUrl == null) setState(() => _submitting = false);
@@ -240,7 +283,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
       final url = json['url'] as String?;
       if (url != null && mounted) setState(() => _customImages = [..._customImages, url]);
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('图片上传失败')));
+      if (mounted) NbToast.show(context, '图片上传失败');
     } finally {
       if (mounted) setState(() => _uploadingImage = false);
     }
@@ -259,7 +302,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
       ),
       child: Column(
         children: [
-          _handle(),
+          _sheetTopBar(),
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator(color: DT.primary))
@@ -328,6 +371,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
                 _selectedAddressId = null;
                 _showInlineAddressForm = false;
                 _autoSelectAddress();
+                _ensureChatSelection();
               }),
               child: Container(
                 margin: const EdgeInsets.only(right: 8),
@@ -463,59 +507,97 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
   }
 
   Widget _buildDatePicker() {
-    return GestureDetector(
-      onTap: () async {
-        final now = DateTime.now();
-        final picked = await showDatePicker(
-          context: context,
-          initialDate: now.add(const Duration(days: 1)),
-          firstDate: now,
-          lastDate: now.add(const Duration(days: 60)),
-        );
-        if (picked != null && mounted) {
-          setState(() {
-            _serviceDate =
-                '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
-          });
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(12)),
-        child: Row(children: [
-          const Icon(Icons.calendar_today_rounded, size: 16, color: DT.primary),
-          const SizedBox(width: 8),
-          Text(_serviceDate, style: const TextStyle(fontSize: 14, color: DT.textPrimary)),
-          const Spacer(),
-          Icon(Icons.chevron_right_rounded, size: 18, color: Colors.grey.shade400),
-        ]),
+    final now = DateTime.now();
+    final base = DateTime(now.year, now.month, now.day);
+    const wk = ['一', '二', '三', '四', '五', '六', '日'];
+    return SizedBox(
+      height: 74,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: 45,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (_, i) {
+          final d = base.add(Duration(days: i));
+          final ds = _fmtDate(d);
+          final enabled = _chatDateAvailable(ds);
+          final selected = _serviceDate == ds;
+          final label = i == 0 ? '今天' : i == 1 ? '明天' : '周${wk[d.weekday - 1]}';
+          return GestureDetector(
+            onTap: enabled
+                ? () => setState(() {
+                      _serviceDate = ds;
+                      final avail = _chatAvailableSlots;
+                      if (_startTime.isEmpty || !avail.contains(_startTime)) {
+                        _startTime = avail.isNotEmpty ? avail.first : '';
+                      }
+                    })
+                : null,
+            child: Container(
+              width: 56,
+              decoration: BoxDecoration(
+                gradient: selected ? DT.primaryGradient : null,
+                color: selected ? null : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: selected ? Colors.transparent : Colors.black.withOpacity(0.05)),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(label, style: TextStyle(fontSize: 11, color: selected ? Colors.white70 : (enabled ? DT.textMuted : DT.textTertiary.withOpacity(0.5)))),
+                  const SizedBox(height: 4),
+                  Text('${d.month}/${d.day}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: selected ? Colors.white : (enabled ? DT.textPrimary : DT.textTertiary.withOpacity(0.45)))),
+                  const SizedBox(height: 2),
+                  Text(enabled ? '' : '休', style: TextStyle(fontSize: 9, height: 1, color: DT.textTertiary.withOpacity(0.7))),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
   Widget _buildTimeSlots() {
+    final statuses = _chatSlotStatuses;
+    if (statuses.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 14),
+        decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(12)),
+        child: Text(_chatShopMode ? '所选日期店铺休息，请改选日期' : '该美甲师当天暂无可预约时段，请改选日期',
+            style: const TextStyle(fontSize: 13, color: DT.textMuted)),
+      );
+    }
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4, crossAxisSpacing: 8, mainAxisSpacing: 8, childAspectRatio: 2),
-      itemCount: _kTimeSlots.length,
+          crossAxisCount: 4, crossAxisSpacing: 8, mainAxisSpacing: 8, childAspectRatio: 1.7),
+      itemCount: statuses.length,
       itemBuilder: (_, i) {
-        final t = _kTimeSlots[i];
-        final sel = _startTime == t;
+        final s = statuses[i];
+        final sel = _startTime == s.time && !s.occupied;
         return GestureDetector(
-          onTap: () => setState(() => _startTime = t),
+          onTap: s.occupied ? null : () => setState(() => _startTime = s.time),
           child: Container(
             alignment: Alignment.center,
             decoration: BoxDecoration(
               gradient: sel ? DT.primaryGradient : null,
-              color: sel ? null : const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(8),
+              color: sel ? null : (s.occupied ? const Color(0xFFEFF1F4) : const Color(0xFFF1F5F9)),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Text(t,
-                style: TextStyle(fontSize: 13,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(s.time, style: TextStyle(
+                    fontSize: 13,
                     fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
-                    color: sel ? Colors.white : const Color(0xFF64748B))),
+                    color: sel ? Colors.white : (s.occupied ? DT.textTertiary : const Color(0xFF64748B)),
+                    decoration: s.occupied ? TextDecoration.lineThrough : null)),
+                if (s.occupied)
+                  const Text('已约', style: TextStyle(fontSize: 9, height: 1.2, color: DT.textTertiary)),
+              ],
+            ),
           ),
         );
       },
@@ -583,13 +665,13 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
             child: Container(
               width: 64, height: 64,
               decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: DT.border),
                   borderRadius: BorderRadius.circular(8)),
               child: _uploadingImage
                   ? const Center(child: CircularProgressIndicator(strokeWidth: 2, color: DT.primary))
                   : Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Icon(Icons.add_photo_alternate_outlined, color: Colors.grey.shade400, size: 20),
-                Text('添加', style: TextStyle(fontSize: 10, color: Colors.grey.shade400)),
+                Icon(Icons.add_photo_alternate_outlined, color: DT.textTertiary, size: 20),
+                Text('添加', style: TextStyle(fontSize: 10, color: DT.textTertiary)),
               ]),
             ),
           ),
@@ -610,7 +692,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
         ),
         child: Row(children: [
           Icon(_shareToClient ? Icons.check_circle_rounded : Icons.circle_outlined,
-              color: _shareToClient ? DT.primary : Colors.grey.shade400, size: 20),
+              color: _shareToClient ? DT.primary : DT.textTertiary, size: 20),
           const SizedBox(width: 10),
           const Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -662,8 +744,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
         GestureDetector(
           onTap: () {
             Clipboard.setData(ClipboardData(text: _confirmUrl!));
-            ScaffoldMessenger.of(context)
-                .showSnackBar(const SnackBar(content: Text('链接已复制')));
+            NbToast.show(context, '链接已复制');
           },
           child: Container(
             width: double.infinity,
@@ -697,6 +778,27 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
     child: Container(
         width: 40, height: 4,
         decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(999))),
+  );
+
+  /// 顶部条：居中拖拽手柄 + 右上角关闭按钮（整行铺满宽度）。
+  Widget _sheetTopBar() => Padding(
+    padding: const EdgeInsets.fromLTRB(12, 10, 12, 2),
+    child: Row(
+      children: [
+        const SizedBox(width: 30), // 与右侧关闭按钮对称，保证手柄真正居中
+        Expanded(child: Center(child: _handle())),
+        GestureDetector(
+          onTap: () => Navigator.of(context).maybePop(),
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            width: 30, height: 30,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(color: DT.surfaceAlt, shape: BoxShape.circle),
+            child: const Icon(Icons.close_rounded, size: 18, color: DT.textSecondary),
+          ),
+        ),
+      ],
+    ),
   );
 
   Widget _label(String text) => Padding(

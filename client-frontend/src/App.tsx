@@ -47,6 +47,15 @@ function AppRoutes() {
     }
   }, [isAuthenticated, user, location.pathname, navigate]);
 
+  // Capture inviteCode parameter globally and save to localStorage
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const inviteCode = params.get('inviteCode') || params.get('invite_code');
+    if (inviteCode) {
+      localStorage.setItem('pendingInviteCode', inviteCode);
+    }
+  }, [location.search]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
