@@ -45,10 +45,10 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DT.bg,
-      appBar: GlassAppBar(title: const Text('我的预约')),
+      backgroundColor: ET.bg,
+      appBar: GlassAppBar(title: const Text('我的预约'), dark: true),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: DT.primary))
+          ? const Center(child: CircularProgressIndicator(color: ET.accent))
           : Column(
               children: [
                 // 固定在顶部的「发起预约」入口
@@ -58,7 +58,8 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                 ),
                 Expanded(
                   child: RefreshIndicator(
-                    color: DT.primary,
+                    color: ET.accent,
+                    backgroundColor: ET.surface,
                     onRefresh: _loadOrders,
                     child: ListView(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
@@ -66,11 +67,11 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                         const Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('预约记录', style: DT.titleLarge),
+                            Text('预约记录', style: ET.displaySmall),
                             SizedBox(height: 2),
                             Text('查看你所有预约的进度',
                                 style: TextStyle(
-                                    fontSize: 12, color: DT.textMuted)),
+                                    fontSize: 12, color: ET.inkMuted)),
                           ],
                         ),
                         const SizedBox(height: 12),
@@ -80,7 +81,7 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                             child: Center(
                                 child: Text('暂无预约',
                                     style: TextStyle(
-                                        fontSize: 14, color: DT.textMuted))),
+                                        fontSize: 14, color: ET.inkMuted))),
                           )
                         else
                           ..._orders.expand((o) =>
@@ -104,9 +105,9 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          gradient: DT.primaryGradient,
+          color: ET.cream,
           borderRadius: BorderRadius.circular(DT.rCard),
-          boxShadow: DT.shadowButtonLg,
+          boxShadow: ET.shadowCard,
         ),
         child: Row(
           children: [
@@ -115,10 +116,9 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
               height: 52,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.22),
+                  color: ET.onCream.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(16)),
-              child:
-                  const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+              child: const Icon(Icons.add_rounded, color: ET.onCream, size: 28),
             ),
             const SizedBox(width: 16),
             const Expanded(
@@ -129,15 +129,15 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                       style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white)),
+                          color: ET.onCream)),
                   SizedBox(height: 4),
                   Text('预约你的下一次美甲 ～',
-                      style: TextStyle(fontSize: 13, color: Colors.white70)),
+                      style: TextStyle(fontSize: 13, color: ET.inkFaint)),
                 ],
               ),
             ),
             const Icon(Icons.chevron_right_rounded,
-                color: Colors.white, size: 22),
+                color: ET.onCream, size: 22),
           ],
         ),
       ),
@@ -160,9 +160,9 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-            color: DT.surface,
+            color: ET.surface,
             borderRadius: BorderRadius.circular(DT.rCard),
-            border: Border.all(color: DT.border)),
+            border: Border.all(color: ET.hairline)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -171,7 +171,7 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                 Container(
                   padding: const EdgeInsets.fromLTRB(4, 4, 10, 4),
                   decoration: BoxDecoration(
-                      color: DT.primarySoft,
+                      color: ET.accentSoft,
                       borderRadius: BorderRadius.circular(999)),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     Container(
@@ -179,19 +179,19 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                       height: 30,
                       alignment: Alignment.center,
                       decoration: const BoxDecoration(
-                          color: Colors.white, shape: BoxShape.circle),
+                          color: ET.bgElevated, shape: BoxShape.circle),
                       child: const Text('预',
                           style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: DT.primary)),
+                              color: ET.accentOnDark)),
                     ),
                     const SizedBox(width: 6),
                     const Text('预约',
                         style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: DT.primary)),
+                            color: ET.accentOnDark)),
                   ]),
                 ),
                 const Spacer(),
@@ -217,20 +217,20 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
-                      color: DT.primarySoft,
+                      color: ET.accentSoft,
                       borderRadius: BorderRadius.circular(16)),
                   child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(start != null ? '${start.month}月' : '--',
                             style: const TextStyle(
-                                fontSize: 11, color: DT.primary)),
+                                fontSize: 11, color: ET.accentOnDark)),
                         Text(start != null ? '${start.day}' : '--',
                             style: const TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.w700,
                                 height: 1.1,
-                                color: DT.primary)),
+                                color: ET.accentOnDark)),
                       ]),
                 ),
                 const SizedBox(width: 14),
@@ -244,7 +244,7 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                           style: const TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w600,
-                              color: DT.textPrimary)),
+                              color: ET.ink)),
                       const SizedBox(height: 6),
                       _metaRow(Icons.access_time_rounded,
                           '${_hm(order.startTime)} - ${_hm(order.endTime)}'),
@@ -261,19 +261,19 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                              color: DT.primarySoft,
+                              color: ET.accentSoft,
                               borderRadius: BorderRadius.circular(999)),
                           child: Text(
                               '报价 ¥${order.quotePrice!.toStringAsFixed(0)}',
                               style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
-                                  color: DT.primary)),
+                                  color: ET.accentOnDark)),
                         )
                       else
                         Text(_hint(order.status),
                             style: const TextStyle(
-                                fontSize: 12, color: DT.textMuted)),
+                                fontSize: 12, color: ET.inkMuted)),
                     ],
                   ),
                 ),
@@ -287,13 +287,13 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
 
   Widget _metaRow(IconData icon, String text, {int maxLines = 1}) {
     return Row(children: [
-      Icon(icon, size: 14, color: DT.textTertiary),
+      Icon(icon, size: 14, color: ET.inkMuted),
       const SizedBox(width: 6),
       Expanded(
           child: Text(text,
               maxLines: maxLines,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 13, color: DT.textSecondary))),
+              style: const TextStyle(fontSize: 13, color: ET.inkSecondary))),
     ]);
   }
 
@@ -331,7 +331,7 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
       case 'cancelled':
         return (DT.statusCancelledBg, DT.statusCancelledText);
       default:
-        return (DT.surfaceAlt, DT.textSecondary);
+        return (ET.surface, ET.inkSecondary);
     }
   }
 }

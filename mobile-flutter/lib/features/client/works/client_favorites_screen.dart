@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
-import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/editorial_tokens.dart';
 import 'work_card.dart';
 
 class ClientFavoritesScreen extends StatefulWidget {
@@ -54,16 +54,9 @@ class _ClientFavoritesScreenState extends State<ClientFavoritesScreen> {
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: ET.bg,
       body: Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFFAFAFC), Color(0xFFF5F5F7), Color(0xFFF2F2F4)],
-          stops: [0.0, 0.28, 1.0],
-        ),
-      ),
+      color: ET.bg,
       child: Column(
         children: [
           _buildHeader(topPad),
@@ -89,9 +82,9 @@ class _ClientFavoritesScreenState extends State<ClientFavoritesScreen> {
   Widget _buildHeader(double topPad) {
     return Container(
       padding: EdgeInsets.fromLTRB(20, topPad + 8, 20, 16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.88),
-        border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.6), width: 0.5)),
+      decoration: const BoxDecoration(
+        color: ET.bg,
+        border: Border(bottom: BorderSide(color: ET.hairlineFaint, width: 0.5)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,8 +93,8 @@ class _ClientFavoritesScreenState extends State<ClientFavoritesScreen> {
             onTap: () => context.pop(),
             child: Container(
               width: 44, height: 44,
-              decoration: const BoxDecoration(color: DT.primarySoft, shape: BoxShape.circle),
-              child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: DT.textPrimary),
+              decoration: const BoxDecoration(color: ET.surface, shape: BoxShape.circle),
+              child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: ET.ink),
             ),
           ),
           const SizedBox(width: 12),
@@ -109,10 +102,9 @@ class _ClientFavoritesScreenState extends State<ClientFavoritesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('我的收藏',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -0.5, color: DT.textPrimary)),
+                Text('我的收藏', style: ET.displaySmall),
                 SizedBox(height: 4),
-                Text('查看你收藏的美甲作品', style: TextStyle(fontSize: 13, color: DT.textMuted)),
+                Text('查看你收藏的美甲作品', style: TextStyle(fontSize: 13, color: ET.inkMuted)),
               ],
             ),
           ),
@@ -127,17 +119,17 @@ class _ClientFavoritesScreenState extends State<ClientFavoritesScreen> {
       children: [
         const Center(child: Text('🔖', style: TextStyle(fontSize: 44))),
         const SizedBox(height: 14),
-        const Center(child: Text('暂无收藏作品', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: DT.textPrimary))),
+        const Center(child: Text('暂无收藏作品', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ET.ink))),
         const SizedBox(height: 6),
-        const Center(child: Text('去首页发现喜欢的作品并收藏吧', style: TextStyle(fontSize: 13, color: DT.textMuted))),
+        const Center(child: Text('去首页发现喜欢的作品并收藏吧', style: TextStyle(fontSize: 13, color: ET.inkMuted))),
         const SizedBox(height: 22),
         Center(
           child: GestureDetector(
             onTap: () => context.go('/client/home'),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 11),
-              decoration: BoxDecoration(color: DT.primary, borderRadius: BorderRadius.circular(999)),
-              child: const Text('去逛逛', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
+              decoration: BoxDecoration(color: ET.cream, borderRadius: BorderRadius.circular(999)),
+              child: const Text('去逛逛', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ET.onCream)),
             ),
           ),
         ),
@@ -153,7 +145,7 @@ class _ClientFavoritesScreenState extends State<ClientFavoritesScreen> {
       ),
       itemCount: 6,
       itemBuilder: (_, __) => Container(
-        decoration: BoxDecoration(color: const Color(0xFFE8E8ED), borderRadius: BorderRadius.circular(18)),
+        decoration: BoxDecoration(color: ET.surface, borderRadius: BorderRadius.circular(18)),
       ),
     );
   }

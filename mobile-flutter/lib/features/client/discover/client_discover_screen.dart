@@ -3,8 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/api/api_client.dart';
-import '../../../core/theme/design_tokens.dart';
-import '../../../core/widgets/glass_container.dart';
+import '../../../core/theme/editorial_tokens.dart';
 import '../works/client_work_detail_screen.dart';
 import '../../../core/widgets/nb_toast.dart';
 
@@ -86,7 +85,7 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
   Widget build(BuildContext context) {
     final filtered = _filtered;
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6F8),
+      backgroundColor: ET.bg,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -95,13 +94,14 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
             Expanded(
               child: _loading
                   ? const Center(
-                      child: CircularProgressIndicator(color: DT.primary))
+                      child: CircularProgressIndicator(color: ET.accent))
                   : _works.isEmpty
                       ? _buildEmptyNoWorks()
                       : filtered.isEmpty
                           ? _buildEmptyCategory()
                           : RefreshIndicator(
-                              color: DT.primary,
+                              color: ET.accent,
+                              backgroundColor: ET.surface,
                               onRefresh: _loadWorks,
                               child: _buildMasonry(filtered),
                             ),
@@ -113,45 +113,39 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
   }
 
   Widget _buildHeader() {
-    return GlassContainer(
-      blur: DT.glassBlurHeavy,
-      opacity: 0.68,
-      borderRadius: 0,
-      showBorder: false,
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+    return Container(
+      decoration: const BoxDecoration(
+        color: ET.bg,
+        border: Border(bottom: BorderSide(color: ET.hairlineFaint)),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('发现',
-              style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.w700,
-                  color: DT.textPrimary,
-                  letterSpacing: -0.6)),
+          const Text('发现', style: ET.display),
           const SizedBox(height: 4),
-          const Text('刷一刷你绑定美甲师发布的最新作品',
-              style: TextStyle(fontSize: 13, color: DT.textSecondary)),
+          const Text('刷一刷你绑定美甲师发布的最新作品', style: ET.body),
           const SizedBox(height: 14),
           GestureDetector(
             onTap: () => NbToast.show(context, '搜索功能开发中'),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: DT.surfaceAlt,
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: DT.border),
+                color: ET.surfaceGlass,
+                borderRadius: BorderRadius.circular(ET.rChip),
+                border: Border.all(color: ET.hairline),
               ),
               child: const Row(children: [
-                Icon(Icons.search_rounded, size: 18, color: DT.textTertiary),
+                Icon(Icons.search_rounded, size: 18, color: ET.inkMuted),
                 SizedBox(width: 10),
                 Text('搜索美甲风格、美甲师…',
-                    style: TextStyle(fontSize: 13, color: DT.textTertiary)),
+                    style: TextStyle(fontSize: 13, color: ET.inkMuted)),
               ]),
             ),
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 32,
+            height: 34,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: _categories.length,
@@ -165,17 +159,17 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
                     alignment: Alignment.center,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: active ? DT.textPrimary : DT.surface,
-                      borderRadius: BorderRadius.circular(999),
+                      color: active ? ET.cream : Colors.transparent,
+                      borderRadius: BorderRadius.circular(ET.rChip),
                       border: Border.all(
-                          color: active ? DT.textPrimary : DT.border),
+                          color: active ? ET.cream : ET.hairline),
                     ),
                     child: Text(cat,
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight:
                               active ? FontWeight.w600 : FontWeight.w500,
-                          color: active ? Colors.white : DT.textSecondary,
+                          color: active ? ET.onCream : ET.inkSecondary,
                         )),
                   ),
                 );
@@ -245,23 +239,22 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
                 CachedNetworkImage(
                   imageUrl: imageUrl,
                   fit: BoxFit.cover,
-                  placeholder: (_, __) =>
-                      Container(color: const Color(0xFFEFEAF2)),
+                  placeholder: (_, __) => Container(color: ET.surface),
                   errorWidget: (_, __, ___) => Container(
-                    color: const Color(0xFFEFEAF2),
+                    color: ET.surface,
                     child: const Center(
                         child: Text('暂无图片',
                             style: TextStyle(
-                                fontSize: 12, color: Color(0xFF9CA3AF)))),
+                                fontSize: 12, color: ET.inkMuted))),
                   ),
                 )
               else
                 Container(
-                  color: const Color(0xFFEFEAF2),
+                  color: ET.surface,
                   child: const Center(
                       child: Text('暂无图片',
                           style: TextStyle(
-                              fontSize: 12, color: Color(0xFF9CA3AF)))),
+                              fontSize: 12, color: ET.inkMuted))),
                 ),
               // 更克制的覆盖层（2 段）
               const DecoratedBox(
@@ -412,7 +405,7 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(liked ? Icons.favorite : Icons.favorite_border,
-              size: 14, color: liked ? DT.primary : Colors.white),
+              size: 14, color: liked ? ET.like : Colors.white),
           const SizedBox(width: 4),
           Text('$likeCount',
               style: const TextStyle(
@@ -439,20 +432,16 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                        colors: [Color(0xFFFFE2EA), Color(0xFFEDE9FE)]),
+                        colors: [ET.accentSoft, ET.surface]),
                   ),
+                  child: const Icon(Icons.auto_awesome_outlined,
+                      color: ET.accent, size: 30),
                 ),
                 const SizedBox(height: 16),
-                const Text('还没有作品可以刷',
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: DT.textPrimary)),
+                const Text('还没有作品可以刷', style: ET.displaySmall),
                 const SizedBox(height: 8),
                 const Text('绑定你的专属美甲师，即可在这里刷她发布的最新美甲作品，种草、预约一步到位',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        fontSize: 13, height: 1.5, color: DT.textSecondary)),
+                    textAlign: TextAlign.center, style: ET.body),
               ],
             ),
           ),
@@ -469,14 +458,9 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 32),
             child: Column(children: [
-              Text('该风格暂无作品',
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: DT.textPrimary)),
+              Text('该风格暂无作品', style: ET.displaySmall),
               SizedBox(height: 8),
-              Text('你的美甲师还没有发布此风格的作品',
-                  style: TextStyle(fontSize: 13, color: DT.textSecondary)),
+              Text('你的美甲师还没有发布此风格的作品', style: ET.body),
             ]),
           ),
         ),

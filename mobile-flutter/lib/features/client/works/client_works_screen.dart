@@ -47,15 +47,15 @@ class _ClientWorksScreenState extends State<ClientWorksScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DT.bg,
-      appBar: GlassAppBar(title: const Text('作品')),
+      backgroundColor: ET.bg,
+      appBar: GlassAppBar(title: const Text('作品'), dark: true),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: DT.primary))
+          ? const Center(child: CircularProgressIndicator(color: ET.accent))
           : _works.isEmpty
               ? const Center(
-                  child: Text('暂无作品', style: TextStyle(color: DT.textMuted)))
+                  child: Text('暂无作品', style: TextStyle(color: ET.inkMuted)))
               : RefreshIndicator(
-                  color: DT.primary,
+                  color: ET.accent,
                   onRefresh: _loadWorks,
                   child: GridView.builder(
                     padding: const EdgeInsets.all(16),
@@ -102,14 +102,14 @@ class _ClientWorksScreenState extends State<ClientWorksScreen> {
                   imageUrl: url,
                   fit: BoxFit.cover,
                   placeholder: (_, __) =>
-                      Container(color: const Color(0xFFEFEAF2)),
+                      Container(color: ET.surface),
                   errorWidget: (_, __, ___) =>
-                      Container(color: const Color(0xFFEFEAF2)))
+                      Container(color: ET.surface))
             else
               Container(
-                  color: const Color(0xFFEFEAF2),
+                  color: ET.surface,
                   child:
-                      const Icon(Icons.spa_outlined, color: DT.textQuaternary)),
+                      const Icon(Icons.spa_outlined, color: ET.inkMuted)),
             const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(

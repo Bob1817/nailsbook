@@ -201,7 +201,7 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
     final galleryH = MediaQuery.of(context).size.width * 1.2;
 
     return Scaffold(
-      backgroundColor: DT.surface,
+      backgroundColor: ET.bg,
       resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
@@ -247,7 +247,7 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
                         child: Container(
                           width: double.infinity,
                           decoration: const BoxDecoration(
-                            color: DT.surface,
+                            color: ET.bgElevated,
                             borderRadius:
                                 BorderRadius.vertical(top: Radius.circular(28)),
                           ),
@@ -260,7 +260,7 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
                                     width: 40,
                                     height: 4,
                                     decoration: BoxDecoration(
-                                        color: DT.border,
+                                        color: ET.hairlineStrong,
                                         borderRadius:
                                             BorderRadius.circular(2))),
                               ),
@@ -269,12 +269,17 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Expanded(
-                                      child: Text(title, style: DT.titleLarge)),
+                                      child: Text(title,
+                                          style: const TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w600,
+                                              letterSpacing: -0.3,
+                                              color: ET.ink))),
                                   _actionIcon(
                                       _liked
                                           ? Icons.favorite
                                           : Icons.favorite_border,
-                                      _liked ? DT.primary : DT.textTertiary,
+                                      _liked ? ET.like : ET.inkMuted,
                                       _toggleLike,
                                       label: '$_likeCount'),
                                   const SizedBox(width: 4),
@@ -282,7 +287,7 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
                                       _favorited
                                           ? Icons.bookmark
                                           : Icons.bookmark_border,
-                                      _favorited ? DT.warning : DT.textTertiary,
+                                      _favorited ? ET.accent : ET.inkMuted,
                                       _toggleFavorite),
                                 ],
                               ),
@@ -292,7 +297,7 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
                                     style: const TextStyle(
                                         fontSize: 14,
                                         height: 1.6,
-                                        color: DT.textSecondary)),
+                                        color: ET.inkSecondary)),
                               ],
                               if (tags.isNotEmpty) ...[
                                 const SizedBox(height: 14),
@@ -304,13 +309,13 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
                                             padding: const EdgeInsets.symmetric(
                                                 horizontal: 10, vertical: 5),
                                             decoration: BoxDecoration(
-                                                color: DT.surfaceAlt,
+                                                color: ET.surface,
                                                 borderRadius:
                                                     BorderRadius.circular(999)),
                                             child: Text('#${t.toString()}',
                                                 style: const TextStyle(
                                                     fontSize: 12,
-                                                    color: DT.textSecondary)),
+                                                    color: ET.inkSecondary)),
                                           ))
                                       .toList(),
                                 ),
@@ -319,7 +324,10 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
                               _technicianRow(techName, techAvatar),
                               const SizedBox(height: 22),
                               Text('评论 (${_comments.length})',
-                                  style: DT.titleMedium),
+                                  style: const TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w600,
+                                      color: ET.ink)),
                               const SizedBox(height: 10),
                               if (_comments.isEmpty)
                                 const Padding(
@@ -328,7 +336,7 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
                                       child: Text('暂无评论，快来抢沙发！',
                                           style: TextStyle(
                                               fontSize: 13,
-                                              color: DT.textMuted))),
+                                              color: ET.inkMuted))),
                                 )
                               else
                                 ..._comments.map((c) => _commentTile(c)),
@@ -388,18 +396,18 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-          color: DT.surfaceAlt, borderRadius: BorderRadius.circular(16)),
+          color: ET.surface, borderRadius: BorderRadius.circular(16)),
       child: Row(
         children: [
           CircleAvatar(
             radius: 20,
-            backgroundColor: DT.primarySoft,
+            backgroundColor: ET.accentSoft,
             backgroundImage: (techAvatar != null && techAvatar.isNotEmpty)
                 ? CachedNetworkImageProvider(techAvatar)
                 : null,
             child: (techAvatar == null || techAvatar.isEmpty)
                 ? Text(techName.isNotEmpty ? techName.substring(0, 1) : '美',
-                    style: const TextStyle(color: DT.primary))
+                    style: const TextStyle(color: ET.accentOnDark))
                 : null,
           ),
           const SizedBox(width: 12),
@@ -411,10 +419,10 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
                     style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: DT.textPrimary)),
+                        color: ET.ink)),
                 const SizedBox(height: 2),
                 const Text('发布者',
-                    style: TextStyle(fontSize: 12, color: DT.textSecondary)),
+                    style: TextStyle(fontSize: 12, color: ET.inkSecondary)),
               ],
             ),
           ),
@@ -423,12 +431,12 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
               decoration: BoxDecoration(
-                  color: DT.primary, borderRadius: BorderRadius.circular(999)),
+                  color: ET.cream, borderRadius: BorderRadius.circular(999)),
               child: const Text('预约同款',
                   style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white)),
+                      color: ET.onCream)),
             ),
           ),
         ],
@@ -448,7 +456,7 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
           if (label != null) ...[
             const SizedBox(width: 4),
             Text(label,
-                style: const TextStyle(fontSize: 13, color: DT.textSecondary)),
+                style: const TextStyle(fontSize: 13, color: ET.inkSecondary)),
           ],
         ]),
       ),
@@ -475,13 +483,14 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
             children: [
               CircleAvatar(
                 radius: isReply ? 13 : 16,
-                backgroundColor: DT.primarySoft,
+                backgroundColor: ET.accentSoft,
                 backgroundImage: (avatar != null && avatar.isNotEmpty)
                     ? CachedNetworkImageProvider(avatar)
                     : null,
                 child: (avatar == null || avatar.isEmpty)
                     ? Text(name.substring(0, 1),
-                        style: const TextStyle(color: DT.primary, fontSize: 12))
+                        style:
+                            const TextStyle(color: ET.accentOnDark, fontSize: 12))
                     : null,
               ),
               const SizedBox(width: 10),
@@ -494,29 +503,29 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
                           style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 13,
-                              color: DT.textPrimary)),
+                              color: ET.ink)),
                       if (isTech) ...[
                         const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 5, vertical: 1),
                           decoration: BoxDecoration(
-                              color: DT.primarySoft,
+                              color: ET.accentSoft,
                               borderRadius: BorderRadius.circular(4)),
                           child: const Text('美甲师',
                               style: TextStyle(
-                                  fontSize: 9, color: DT.primaryDark)),
+                                  fontSize: 9, color: ET.accentOnDark)),
                         ),
                       ],
                       const SizedBox(width: 8),
                       Text(_fmtTime(c['createdAt']?.toString()),
                           style: const TextStyle(
-                              fontSize: 11, color: DT.textMuted)),
+                              fontSize: 11, color: ET.inkMuted)),
                     ]),
                     const SizedBox(height: 3),
                     Text(c['content']?.toString() ?? '',
                         style: const TextStyle(
-                            fontSize: 14, color: DT.textPrimary)),
+                            fontSize: 14, color: ET.ink)),
                     const SizedBox(height: 2),
                     Row(children: [
                       GestureDetector(
@@ -527,13 +536,13 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
                               EdgeInsets.symmetric(vertical: 6, horizontal: 0),
                           child: Row(mainAxisSize: MainAxisSize.min, children: [
                             Icon(Icons.reply_rounded,
-                                size: 14, color: DT.primary),
+                                size: 14, color: ET.accentOnDark),
                             SizedBox(width: 4),
                             Text('回复',
                                 style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color: DT.primary)),
+                                    color: ET.accentOnDark)),
                           ]),
                         ),
                       ),
@@ -564,8 +573,9 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
 
   Widget _commentInputBar() {
     return GlassContainer(
+      tint: Colors.black,
       blur: 30,
-      opacity: 0.6,
+      opacity: 0.55,
       borderRadius: 0,
       showBorder: false,
       padding: EdgeInsets.fromLTRB(
@@ -579,12 +589,12 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
               child: Row(children: [
                 Text('回复 @${_replyTo!['name']}',
                     style:
-                        const TextStyle(fontSize: 12, color: DT.textSecondary)),
+                        const TextStyle(fontSize: 12, color: ET.inkSecondary)),
                 const Spacer(),
                 GestureDetector(
                   onTap: () => setState(() => _replyTo = null),
                   child: const Icon(Icons.close_rounded,
-                      size: 16, color: DT.textTertiary),
+                      size: 16, color: ET.inkMuted),
                 ),
               ]),
             ),
@@ -593,11 +603,14 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
               child: TextField(
                 controller: _inputCtl,
                 focusNode: _inputFocus,
+                style: const TextStyle(color: ET.ink, fontSize: 14),
+                cursorColor: ET.accent,
                 decoration: InputDecoration(
                   hintText:
                       _replyTo != null ? '回复 @${_replyTo!['name']}…' : '写评论…',
+                  hintStyle: const TextStyle(color: ET.inkMuted),
                   filled: true,
-                  fillColor: DT.surfaceAlt,
+                  fillColor: ET.surface,
                   isDense: true,
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -610,7 +623,7 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
                   focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(999),
                       borderSide:
-                          const BorderSide(color: DT.primary, width: 1.2)),
+                          const BorderSide(color: ET.accent, width: 1.2)),
                 ),
                 minLines: 1,
                 maxLines: 4,
@@ -626,9 +639,9 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
                 height: 44,
                 alignment: Alignment.center,
                 decoration: const BoxDecoration(
-                    color: DT.primary, shape: BoxShape.circle),
+                    color: ET.accent, shape: BoxShape.circle),
                 child: const Icon(Icons.send_rounded,
-                    color: Colors.white, size: 20),
+                    color: ET.onCream, size: 20),
               ),
             ),
           ]),

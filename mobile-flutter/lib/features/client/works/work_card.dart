@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/editorial_tokens.dart';
 
 /// 作品标准视图：与发现页一致的双列瀑布流卡片（封面 + 美甲师胶囊 + 点赞 + 标题/标签/日期）。
 /// 收藏页 / 点赞页 / 发现页统一复用。
@@ -63,7 +63,7 @@ class WorkMasonryGrid extends StatelessWidget {
       ],
     );
     if (onRefresh == null) return list;
-    return RefreshIndicator(color: DT.primary, onRefresh: onRefresh!, child: list);
+    return RefreshIndicator(color: ET.accent, onRefresh: onRefresh!, child: list);
   }
 }
 
@@ -109,16 +109,16 @@ class WorkCard extends StatelessWidget {
                 CachedNetworkImage(
                   imageUrl: imageUrl,
                   fit: BoxFit.cover,
-                  placeholder: (_, __) => Container(color: const Color(0xFFEFEAF2)),
+                  placeholder: (_, __) => Container(color: ET.surface),
                   errorWidget: (_, __, ___) => Container(
-                    color: const Color(0xFFEFEAF2),
-                    child: const Center(child: Text('暂无图片', style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)))),
+                    color: ET.surface,
+                    child: const Center(child: Text('暂无图片', style: TextStyle(fontSize: 12, color: ET.inkMuted))),
                   ),
                 )
               else
                 Container(
-                  color: const Color(0xFFEFEAF2),
-                  child: const Center(child: Text('暂无图片', style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)))),
+                  color: ET.surface,
+                  child: const Center(child: Text('暂无图片', style: TextStyle(fontSize: 12, color: ET.inkMuted))),
                 ),
               const DecoratedBox(
                 decoration: BoxDecoration(
@@ -224,7 +224,7 @@ class WorkCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(color: Colors.black.withOpacity(0.32), borderRadius: BorderRadius.circular(999)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(liked ? Icons.favorite : Icons.favorite_border, size: 14, color: liked ? DT.primary : Colors.white),
+          Icon(liked ? Icons.favorite : Icons.favorite_border, size: 14, color: liked ? ET.like : Colors.white),
           const SizedBox(width: 4),
           Text('$likeCount', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.white)),
         ]),

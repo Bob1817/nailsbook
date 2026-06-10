@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -7,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/editorial_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../discover/client_discover_screen.dart';
 import '../../shared/chat/conversations_screen.dart';
@@ -100,19 +102,29 @@ class _GlassTabBar extends StatelessWidget {
     return SafeArea(
       top: false,
       minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: GlassContainer(
-        blur: 56,
-        opacity: 0.18,
-        borderRadius: 28,
-        boxShadow: const [
-          BoxShadow(
-              color: Color(0x1A000000), blurRadius: 24, offset: Offset(0, 8))
-        ],
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(_items.length, (i) => _tab(i)),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+          child: Container(
+            decoration: BoxDecoration(
+              color: ET.bgElevated.withValues(alpha: 0.92),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: ET.hairline),
+              boxShadow: const [
+                BoxShadow(
+                    color: Color(0x66000000),
+                    blurRadius: 28,
+                    offset: Offset(0, 10))
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: List.generate(_items.length, (i) => _tab(i)),
+              ),
+            ),
           ),
         ),
       ),
@@ -132,14 +144,14 @@ class _GlassTabBar extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(active ? item.$1 : item.$2,
-                  size: 24, color: active ? DT.primary : DT.textPrimary),
+                  size: 24, color: active ? ET.accent : ET.inkSecondary),
               const SizedBox(height: 2),
               Text(
                 item.$3,
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-                  color: active ? DT.primary : DT.textPrimary,
+                  color: active ? ET.accent : ET.inkSecondary,
                 ),
               ),
               const SizedBox(height: 3),
@@ -148,7 +160,7 @@ class _GlassTabBar extends StatelessWidget {
                 width: 4,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: active ? DT.primary : Colors.transparent,
+                  color: active ? ET.accent : Colors.transparent,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -298,9 +310,10 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
     _ensureHeroTimer();
     final topPad = MediaQuery.of(context).padding.top;
     return Container(
-      decoration: const BoxDecoration(gradient: DT.screenGradient),
+      color: ET.bg,
       child: RefreshIndicator(
-        color: DT.primary,
+        color: ET.accent,
+        backgroundColor: ET.surface,
         onRefresh: _refreshAll,
         child: CustomScrollView(
           controller: _scrollController,
@@ -337,9 +350,9 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
                         fontSize: 11,
                         letterSpacing: 2,
                         fontWeight: FontWeight.w600,
-                        color: DT.textMuted)),
+                        color: ET.inkMuted)),
                 SizedBox(height: 2),
-                Text('首页', style: DT.displayMedium),
+                Text('首页', style: ET.display),
               ],
             ),
           ),
@@ -353,8 +366,8 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
               height: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: DT.surface,
-                border: Border.all(color: DT.border),
+                color: ET.surface,
+                border: Border.all(color: ET.hairline),
                 image: (avatar != null && avatar.isNotEmpty)
                     ? DecorationImage(
                         image: CachedNetworkImageProvider(avatar),
@@ -363,7 +376,7 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
               ),
               child: (avatar == null || avatar.isEmpty)
                   ? const Icon(Icons.person_outline_rounded,
-                      size: 20, color: DT.textSecondary)
+                      size: 20, color: ET.inkSecondary)
                   : null,
             ),
           ),
@@ -380,9 +393,9 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
         height: 40,
         decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: DT.surface,
-            border: Border.all(color: DT.border)),
-        child: Icon(icon, size: 20, color: DT.textSecondary),
+            color: ET.surface,
+            border: Border.all(color: ET.hairline)),
+        child: Icon(icon, size: 20, color: ET.inkSecondary),
       ),
     );
   }
@@ -434,12 +447,12 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
     final url = (cover != null && cover.isNotEmpty)
         ? cover
         : (imgs.isNotEmpty ? imgs.first.toString() : null);
-    if (url == null) return Container(color: const Color(0xFFEFEAF2));
+    if (url == null) return Container(color: ET.surface);
     return CachedNetworkImage(
       imageUrl: url,
       fit: BoxFit.cover,
-      placeholder: (_, __) => Container(color: const Color(0xFFEFEAF2)),
-      errorWidget: (_, __, ___) => Container(color: const Color(0xFFEFEAF2)),
+      placeholder: (_, __) => Container(color: ET.surface),
+      errorWidget: (_, __, ___) => Container(color: ET.surface),
     );
   }
 
@@ -614,21 +627,21 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: DT.surface,
+          color: ET.surface,
           borderRadius: BorderRadius.circular(DT.rCard),
-          border: Border.all(color: DT.border),
-          boxShadow: DT.shadowSm,
+          border: Border.all(color: ET.hairline),
+          boxShadow: ET.shadowTile,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                _tintPill(o.statusLabel, DT.primarySoft, DT.primaryDark),
+                _tintPill(o.statusLabel, ET.accentSoft, ET.accentOnDark),
                 const Spacer(),
                 Text(_countdown(start),
                     style:
-                        const TextStyle(fontSize: 12, color: DT.textSecondary)),
+                        const TextStyle(fontSize: 12, color: ET.inkSecondary)),
               ],
             ),
             const SizedBox(height: 14),
@@ -647,7 +660,7 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
                           style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: DT.textPrimary)),
+                              color: ET.ink)),
                       const SizedBox(height: 6),
                       _metaRow(Icons.access_time_rounded,
                           '${_hm(o.startTime)} - ${_hm(o.endTime)}'),
@@ -667,7 +680,7 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
               ],
             ),
             const SizedBox(height: 14),
-            const Divider(height: 1, color: DT.divider),
+            const Divider(height: 1, color: ET.hairline),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -700,10 +713,10 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: DT.surface,
+          color: ET.surface,
           borderRadius: BorderRadius.circular(DT.rCard),
-          border: Border.all(color: DT.border),
-          boxShadow: DT.shadowSm,
+          border: Border.all(color: ET.hairline),
+          boxShadow: ET.shadowTile,
         ),
         child: Row(
           children: [
@@ -711,9 +724,9 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                  color: DT.primarySoft,
+                  color: ET.accentSoft,
                   borderRadius: BorderRadius.circular(16)),
-              child: const Icon(Icons.add_rounded, color: DT.primary, size: 26),
+              child: const Icon(Icons.add_rounded, color: ET.accent, size: 26),
             ),
             const SizedBox(width: 14),
             const Expanded(
@@ -724,22 +737,22 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
                       style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: DT.textPrimary)),
+                          color: ET.ink)),
                   SizedBox(height: 4),
                   Text('预约你的美甲吧 ～',
-                      style: TextStyle(fontSize: 13, color: DT.textSecondary)),
+                      style: TextStyle(fontSize: 13, color: ET.inkSecondary)),
                 ],
               ),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
               decoration: BoxDecoration(
-                  color: DT.primary, borderRadius: BorderRadius.circular(999)),
+                  color: ET.cream, borderRadius: BorderRadius.circular(999)),
               child: const Text('立即预约',
                   style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white)),
+                      color: ET.onCream)),
             ),
           ],
         ),
@@ -752,18 +765,18 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
       width: 72,
       height: 72,
       decoration: BoxDecoration(
-          color: DT.surfaceAlt, borderRadius: BorderRadius.circular(16)),
+          color: ET.accentSoft, borderRadius: BorderRadius.circular(16)),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(d != null ? '${d.month}月' : '--',
-              style: const TextStyle(fontSize: 11, color: DT.textSecondary)),
+              style: const TextStyle(fontSize: 11, color: ET.accentOnDark)),
           Text(d != null ? '${d.day}' : '--',
               style: const TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.w700,
                   height: 1.1,
-                  color: DT.textPrimary)),
+                  color: ET.ink)),
         ],
       ),
     );
@@ -773,13 +786,13 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 14, color: DT.textTertiary),
+        Icon(icon, size: 14, color: ET.inkMuted),
         const SizedBox(width: 6),
         Expanded(
           child: Text(text,
               maxLines: maxLines,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 13, color: DT.textSecondary)),
+              style: const TextStyle(fontSize: 13, color: ET.inkSecondary)),
         ),
       ],
     );
@@ -793,14 +806,15 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
         height: 40,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: filled ? DT.primary : DT.surfaceAlt,
+          color: filled ? ET.cream : ET.surfaceGlass,
           borderRadius: BorderRadius.circular(999),
+          border: filled ? null : Border.all(color: ET.hairline),
         ),
         child: Text(label,
             style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: filled ? Colors.white : DT.textPrimary)),
+                color: filled ? ET.onCream : ET.ink)),
       ),
     );
   }
@@ -822,7 +836,7 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
           padding: const EdgeInsets.all(40),
           child: Center(
             child: Text(_featLoading ? '加载中…' : '暂无作品展示',
-                style: const TextStyle(fontSize: 13, color: DT.textSecondary)),
+                style: const TextStyle(fontSize: 13, color: ET.inkSecondary)),
           ),
         ),
       );
@@ -875,11 +889,11 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
                   imageUrl: url,
                   fit: BoxFit.cover,
                   placeholder: (_, __) =>
-                      Container(color: const Color(0xFFEFEAF2)),
+                      Container(color: ET.surface),
                   errorWidget: (_, __, ___) =>
-                      Container(color: const Color(0xFFEFEAF2)))
+                      Container(color: ET.surface))
             else
-              Container(color: const Color(0xFFEFEAF2)),
+              Container(color: ET.surface),
             const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -976,7 +990,7 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
                   Row(
                     children: [
                       Icon(liked ? Icons.favorite : Icons.favorite_border,
-                          size: 12, color: liked ? DT.primary : Colors.white),
+                          size: 12, color: liked ? ET.like : Colors.white),
                       const SizedBox(width: 3),
                       Text('$likeCount',
                           style: const TextStyle(
@@ -1002,9 +1016,9 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
                 width: 22,
                 height: 22,
                 child: CircularProgressIndicator(
-                    strokeWidth: 2, color: DT.primary))
+                    strokeWidth: 2, color: ET.accent))
             : Text(_featHasMore ? '' : '没有更多了',
-                style: const TextStyle(fontSize: 12, color: DT.textMuted)),
+                style: const TextStyle(fontSize: 12, color: ET.inkMuted)),
       ),
     );
   }
@@ -1018,10 +1032,10 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: DT.titleLarge),
+              Text(title, style: ET.displaySmall),
               const SizedBox(height: 2),
               Text(subtitle,
-                  style: const TextStyle(fontSize: 12, color: DT.textMuted)),
+                  style: const TextStyle(fontSize: 12, color: ET.inkMuted)),
             ],
           ),
         ),
@@ -1034,8 +1048,9 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
                     style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: DT.primary)),
-                Icon(Icons.chevron_right_rounded, size: 18, color: DT.primary),
+                        color: ET.accentOnDark)),
+                Icon(Icons.chevron_right_rounded,
+                    size: 18, color: ET.accentOnDark),
               ],
             ),
           ),

@@ -3,8 +3,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../theme/design_tokens.dart';
+import '../theme/editorial_tokens.dart';
 
 export 'dart:async' show Timer;
+export '../theme/editorial_tokens.dart';
 export 'dart:convert' show jsonDecode, jsonEncode;
 export 'dart:ui' show ImageFilter;
 export 'package:cached_network_image/cached_network_image.dart';
@@ -136,6 +138,9 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Color? backgroundColor;
   final double? elevation;
 
+  /// 暖调深色编辑风变体（客户端新设计方向）。默认 false 保持原浅色玻璃。
+  final bool dark;
+
   const GlassAppBar({
     super.key,
     this.title,
@@ -146,6 +151,7 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.bottom,
     this.backgroundColor,
     this.elevation,
+    this.dark = false,
   });
 
   @override
@@ -166,14 +172,23 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
       scrolledUnderElevation: 0,
       backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
-      foregroundColor: DT.textPrimary,
-      flexibleSpace: const GlassContainer(
-        blur: DT.glassBlurHeavy,
-        opacity: 0.72,
-        borderRadius: 0,
-        showBorder: false,
-        child: SizedBox.expand(),
-      ),
+      foregroundColor: dark ? ET.ink : DT.textPrimary,
+      flexibleSpace: dark
+          ? GlassContainer(
+              tint: Colors.black,
+              blur: DT.glassBlurHeavy,
+              opacity: 0.55,
+              borderRadius: 0,
+              showBorder: false,
+              child: const SizedBox.expand(),
+            )
+          : const GlassContainer(
+              blur: DT.glassBlurHeavy,
+              opacity: 0.72,
+              borderRadius: 0,
+              showBorder: false,
+              child: SizedBox.expand(),
+            ),
     );
   }
 }
