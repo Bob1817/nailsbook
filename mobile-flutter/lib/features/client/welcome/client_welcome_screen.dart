@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
-import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/editorial_tokens.dart';
 import '../auth/client_auth_service.dart';
 
 class ClientWelcomeScreen extends StatefulWidget {
@@ -67,7 +67,7 @@ class _ClientWelcomeScreenState extends State<ClientWelcomeScreen> {
     final topPad = MediaQuery.of(context).padding.top;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F7),
+      backgroundColor: ET.bg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -79,46 +79,47 @@ class _ClientWelcomeScreenState extends State<ClientWelcomeScreen> {
                 width: 80, height: 80,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(24),
-                  gradient: DT.primaryGradient,
-                  boxShadow: DT.shadowPrimary,
+                  gradient: const LinearGradient(colors: [ET.accent, ET.accentDeep]),
+                  boxShadow: ET.shadowCard,
                 ),
                 alignment: Alignment.center,
-                child: const Icon(Icons.palette_outlined, size: 36, color: Colors.white),
+                child: const Icon(Icons.palette_outlined, size: 36, color: ET.onCream),
               ),
               const SizedBox(height: 24),
               const Text('欢迎使用 NailArt',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: DT.textPrimary)),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: ET.ink)),
               const SizedBox(height: 8),
               Text('让我们更好地了解您',
-                style: TextStyle(fontSize: 15, color: DT.textMuted)),
+                style: TextStyle(fontSize: 15, color: ET.inkMuted)),
               const SizedBox(height: 48),
               // Nickname input
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text('您希望如何被称呼？',
-                  style: TextStyle(fontSize: 14, color: DT.textSecondary)),
+                  style: TextStyle(fontSize: 14, color: ET.inkSecondary)),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _nicknameCtl,
-                style: const TextStyle(fontSize: 16, color: DT.textPrimary),
+                cursorColor: ET.accent,
+                style: const TextStyle(fontSize: 16, color: ET.ink),
                 decoration: InputDecoration(
                   hintText: '请输入您的昵称',
-                  hintStyle: TextStyle(fontSize: 15, color: DT.textMuted),
+                  hintStyle: TextStyle(fontSize: 15, color: ET.inkMuted),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: ET.surface,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: DT.border),
+                    borderSide: BorderSide(color: ET.hairline),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: DT.border),
+                    borderSide: BorderSide(color: ET.hairline),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: DT.primary, width: 1.5),
+                    borderSide: const BorderSide(color: ET.accent, width: 1.5),
                   ),
                   errorText: _error,
                 ),
@@ -131,13 +132,13 @@ class _ClientWelcomeScreenState extends State<ClientWelcomeScreen> {
                   width: double.infinity,
                   height: 52,
                   decoration: BoxDecoration(
-                    gradient: DT.primaryGradient,
+                    color: ET.cream,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: DT.shadowPrimary,
+                    boxShadow: ET.shadowCard,
                   ),
                   alignment: Alignment.center,
                   child: Text(_loading ? '保存中...' : '开始使用',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ET.onCream)),
                 ),
               ),
               const SizedBox(height: 16),
@@ -145,7 +146,7 @@ class _ClientWelcomeScreenState extends State<ClientWelcomeScreen> {
               GestureDetector(
                 onTap: _loading ? null : _skip,
                 child: Text('暂时跳过',
-                  style: TextStyle(fontSize: 14, color: DT.textMuted)),
+                  style: TextStyle(fontSize: 14, color: ET.inkMuted)),
               ),
             ],
           ),

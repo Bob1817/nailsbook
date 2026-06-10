@@ -121,13 +121,14 @@ class _ClientForgotPasswordScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF7FA),
+      backgroundColor: ET.bg,
       appBar: GlassAppBar(
+        dark: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              size: 20, color: DT.textPrimary),
+              size: 20, color: ET.ink),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -138,10 +139,10 @@ class _ClientForgotPasswordScreenState
               style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: DT.textPrimary)),
+                  color: ET.ink)),
           const SizedBox(height: 8),
           Text('通过注册手机号验证后重置登录密码',
-              style: TextStyle(fontSize: 14, color: DT.textMuted)),
+              style: TextStyle(fontSize: 14, color: ET.inkMuted)),
           const SizedBox(height: 32),
           // Phone
           _buildTextField('手机号', _phoneCtl, '请输入手机号',
@@ -162,14 +163,12 @@ class _ClientForgotPasswordScreenState
                   height: 52,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: _countdown > 0
-                        ? const Color(0xFFF4F5F7)
-                        : DT.primarySoft,
+                    color: _countdown > 0 ? ET.surface : ET.accentSoft,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                         color: _countdown > 0
                             ? Colors.transparent
-                            : const Color(0xFFFFD9E6)),
+                            : ET.hairline),
                   ),
                   alignment: Alignment.center,
                   child: Text(
@@ -179,7 +178,7 @@ class _ClientForgotPasswordScreenState
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: _countdown > 0 ? DT.textMuted : DT.primary,
+                      color: _countdown > 0 ? ET.inkMuted : ET.accentOnDark,
                     ),
                   ),
                 ),
@@ -205,16 +204,16 @@ class _ClientForgotPasswordScreenState
               width: double.infinity,
               height: 52,
               decoration: BoxDecoration(
-                gradient: DT.primaryGradient,
+                color: ET.cream,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: DT.shadowPrimary,
+                boxShadow: ET.shadowCard,
               ),
               alignment: Alignment.center,
               child: Text(_submitting ? '提交中...' : '确认重置',
                   style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white)),
+                      color: ET.onCream)),
             ),
           ),
         ],
@@ -236,31 +235,32 @@ class _ClientForgotPasswordScreenState
             style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: DT.textPrimary)),
+                color: ET.ink)),
         const SizedBox(height: 6),
         TextField(
           controller: ctl,
           obscureText: obscure,
           keyboardType: keyboardType,
-          style: const TextStyle(fontSize: 15, color: DT.textPrimary),
+          cursorColor: ET.accent,
+          style: const TextStyle(fontSize: 15, color: ET.ink),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(fontSize: 14, color: DT.textMuted),
+            hintStyle: TextStyle(fontSize: 14, color: ET.inkMuted),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: ET.surface,
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: DT.border),
+              borderSide: BorderSide(color: ET.hairline),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: DT.border),
+              borderSide: BorderSide(color: ET.hairline),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: DT.primary, width: 1.5),
+              borderSide: const BorderSide(color: ET.accent, width: 1.5),
             ),
           ),
         ),

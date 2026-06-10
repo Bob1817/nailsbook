@@ -10,6 +10,7 @@ import '../../../core/config.dart';
 import '../../../core/notifications/push_notification_service.dart';
 import '../../../core/socket/chat_socket.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/editorial_tokens.dart';
 import 'client_auth_service.dart';
 import 'client_forgot_password_screen.dart';
 
@@ -172,7 +173,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: ET.bg,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 48, 24, 32),
@@ -181,9 +182,9 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
             children: [
               _brand(),
               const SizedBox(height: 40),
-              Text(_title(), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: DT.textPrimary)),
+              Text(_title(), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: ET.ink)),
               const SizedBox(height: 6),
-              Text(_subtitle(), style: const TextStyle(fontSize: 13, color: DT.textSecondary)),
+              Text(_subtitle(), style: const TextStyle(fontSize: 13, color: ET.inkSecondary)),
               if (_error != null) ...[
                 const SizedBox(height: 16),
                 _errorBanner(_error!),
@@ -218,16 +219,16 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
           width: 64,
           height: 64,
           alignment: Alignment.center,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [DT.primary, Color(0xFFF55684)]),
-            borderRadius: BorderRadius.circular(18),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(colors: [ET.accent, ET.accentDeep]),
+            borderRadius: BorderRadius.all(Radius.circular(18)),
           ),
-          child: const Text('N', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+          child: const Text('N', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: ET.onCream)),
         ),
         const SizedBox(height: 12),
-        const Text('NailBook', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: DT.textPrimary)),
+        const Text('NailBook', style: TextStyle(fontFamily: ET.serif, fontFamilyFallback: ET.serifFallback, fontSize: 24, fontWeight: FontWeight.w600, letterSpacing: 0.5, color: ET.ink)),
         const SizedBox(height: 4),
-        const Text('美甲预约，让美丽更简单', style: TextStyle(fontSize: 13, color: DT.textSecondary)),
+        const Text('美甲预约，让美丽更简单', style: TextStyle(fontSize: 13, color: ET.inkSecondary)),
       ],
     );
   }
@@ -251,7 +252,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
           child: TextButton(
             onPressed: () => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const ClientForgotPasswordScreen())),
-            child: const Text('忘记密码？', style: TextStyle(color: DT.primary)),
+            child: const Text('忘记密码？', style: TextStyle(color: ET.accentOnDark)),
           ),
         ),
       ];
@@ -259,9 +260,9 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
   List<Widget> _registerStep() => [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(color: const Color(0xFFFFF7E6), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(color: ET.accentSoft, borderRadius: BorderRadius.circular(12)),
           child: const Text('该手机号未注册，请使用美甲师邀请码完成注册',
-              style: TextStyle(fontSize: 13, color: Color(0xFFFA8C16))),
+              style: TextStyle(fontSize: 13, color: ET.accentOnDark)),
         ),
         const SizedBox(height: 12),
         _phoneBadge(),
@@ -287,10 +288,10 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
   Widget _phoneBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: ET.surface, borderRadius: BorderRadius.circular(12)),
       child: Row(
         children: [
-          Expanded(child: Text('手机号：${_phoneCtl.text}', style: const TextStyle(fontSize: 13, color: Color(0xFF666666)))),
+          Expanded(child: Text('手机号：${_phoneCtl.text}', style: const TextStyle(fontSize: 13, color: ET.inkSecondary))),
           GestureDetector(
             onTap: () => setState(() {
               _step = _Step.phone;
@@ -298,7 +299,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
               _passwordCtl.clear();
               _confirmCtl.clear();
             }),
-            child: const Text('换个号', style: TextStyle(fontSize: 13, color: DT.primary)),
+            child: const Text('换个号', style: TextStyle(fontSize: 13, color: ET.accentOnDark)),
           ),
         ],
       ),
@@ -311,22 +312,31 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
       controller: ctl,
       keyboardType: keyboardType,
       inputFormatters: formatters,
+      cursorColor: ET.accent,
+      style: const TextStyle(color: ET.ink, fontSize: 15),
       decoration: _inputDecoration(hint),
     );
   }
 
   Widget _passwordField(TextEditingController ctl, String hint) {
-    return TextField(controller: ctl, obscureText: true, decoration: _inputDecoration(hint));
+    return TextField(
+      controller: ctl,
+      obscureText: true,
+      cursorColor: ET.accent,
+      style: const TextStyle(color: ET.ink, fontSize: 15),
+      decoration: _inputDecoration(hint),
+    );
   }
 
   InputDecoration _inputDecoration(String hint) => InputDecoration(
         hintText: hint,
+        hintStyle: const TextStyle(color: ET.inkMuted),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: ET.surface,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: DT.primary, width: 1.5)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: ET.hairline)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: ET.hairline)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: ET.accent, width: 1.5)),
       );
 
   Widget _primaryButton(String label, VoidCallback? onPressed) {
@@ -334,7 +344,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
       height: 50,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [DT.primary.withOpacity(onPressed == null ? 0.5 : 1), DT.primaryLight.withOpacity(onPressed == null ? 0.5 : 1)]),
+          color: ET.cream.withValues(alpha: onPressed == null ? 0.4 : 1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: ElevatedButton(
@@ -342,7 +352,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.transparent,
             shadowColor: Colors.transparent,
-            foregroundColor: Colors.white,
+            foregroundColor: ET.onCream,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
           child: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
@@ -363,22 +373,22 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
             height: 18,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: _agreed ? DT.primary : Colors.white,
+              color: _agreed ? ET.accent : Colors.transparent,
               shape: BoxShape.circle,
-              border: Border.all(color: _agreed ? DT.primary : const Color(0xFFC6CEDA), width: 1.5),
+              border: Border.all(color: _agreed ? ET.accent : ET.hairlineStrong, width: 1.5),
             ),
-            child: _agreed ? const Icon(Icons.check, size: 12, color: Colors.white) : null,
+            child: _agreed ? const Icon(Icons.check, size: 12, color: ET.onCream) : null,
           ),
           const SizedBox(width: 8),
           const Expanded(
             child: Text.rich(
               TextSpan(
-                style: TextStyle(fontSize: 12, color: Color(0xFF8F96A5)),
+                style: TextStyle(fontSize: 12, color: ET.inkMuted),
                 children: [
                   TextSpan(text: '我已阅读并同意'),
-                  TextSpan(text: '《用户协议》', style: TextStyle(color: DT.primary)),
+                  TextSpan(text: '《用户协议》', style: TextStyle(color: ET.accentOnDark)),
                   TextSpan(text: '和'),
-                  TextSpan(text: '《隐私政策》', style: TextStyle(color: DT.primary)),
+                  TextSpan(text: '《隐私政策》', style: TextStyle(color: ET.accentOnDark)),
                 ],
               ),
             ),
