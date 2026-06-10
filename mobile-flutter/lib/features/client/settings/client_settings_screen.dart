@@ -12,8 +12,8 @@ class ClientSettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6F8),
-      appBar: GlassAppBar(title: const Text('设置')),
+      backgroundColor: ET.bg,
+      appBar: GlassAppBar(title: const Text('设置'), dark: true),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -38,7 +38,7 @@ class ClientSettingsScreen extends StatelessWidget {
   Widget _group(BuildContext context, List<_Item> items) {
     return Container(
       decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(16)),
+          color: ET.surface, borderRadius: BorderRadius.circular(16)),
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: List.generate(items.length, (i) {
@@ -48,12 +48,12 @@ class ClientSettingsScreen extends StatelessWidget {
               if (i > 0)
                 const Divider(height: 1, indent: 56, color: Color(0x11000000)),
               ListTile(
-                leading: Icon(it.icon, color: DT.primary),
+                leading: Icon(it.icon, color: ET.accent),
                 title: Text(it.label,
                     style:
-                        const TextStyle(fontSize: 15, color: DT.textPrimary)),
+                        const TextStyle(fontSize: 15, color: ET.ink)),
                 trailing:
-                    const Icon(Icons.chevron_right, color: Color(0xFFC0C4CC)),
+                    const Icon(Icons.chevron_right, color: ET.inkMuted),
                 onTap: () => Navigator.push(
                     context, MaterialPageRoute(builder: (_) => it.page)),
               ),

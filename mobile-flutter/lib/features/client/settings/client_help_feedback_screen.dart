@@ -26,8 +26,8 @@ class _ClientHelpFeedbackScreenState extends State<ClientHelpFeedbackScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6F8),
-      appBar: GlassAppBar(title: const Text('帮助与反馈')),
+      backgroundColor: ET.bg,
+      appBar: GlassAppBar(title: const Text('帮助与反馈'), dark: true),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -37,11 +37,11 @@ class _ClientHelpFeedbackScreenState extends State<ClientHelpFeedbackScreen> {
                 style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: DT.textPrimary)),
+                    color: ET.ink)),
           ),
           Container(
             decoration: BoxDecoration(
-                color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                color: ET.surface, borderRadius: BorderRadius.circular(16)),
             clipBehavior: Clip.antiAlias,
             child: Column(
               children: List.generate(_faqs.length, (i) => _faqTile(i)),
@@ -54,18 +54,18 @@ class _ClientHelpFeedbackScreenState extends State<ClientHelpFeedbackScreen> {
                 style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: DT.textPrimary)),
+                    color: ET.ink)),
           ),
           Container(
             decoration: BoxDecoration(
-                color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                color: ET.surface, borderRadius: BorderRadius.circular(16)),
             clipBehavior: Clip.antiAlias,
             child: ListTile(
               leading:
-                  const Icon(Icons.headset_mic_outlined, color: DT.primary),
+                  const Icon(Icons.headset_mic_outlined, color: ET.accent),
               title: const Text('联系客服'),
               trailing:
-                  const Icon(Icons.chevron_right, color: Color(0xFFC0C4CC)),
+                  const Icon(Icons.chevron_right, color: ET.inkMuted),
               onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -88,9 +88,9 @@ class _ClientHelpFeedbackScreenState extends State<ClientHelpFeedbackScreen> {
               style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: DT.textPrimary)),
+                  color: ET.ink)),
           trailing: Icon(open ? Icons.expand_less : Icons.expand_more,
-              color: const Color(0xFFC0C4CC)),
+              color: ET.inkMuted),
           onTap: () => setState(() => _open = open ? null : i),
         ),
         if (open)
@@ -100,7 +100,7 @@ class _ClientHelpFeedbackScreenState extends State<ClientHelpFeedbackScreen> {
               alignment: Alignment.centerLeft,
               child: Text(faq.$2,
                   style: const TextStyle(
-                      fontSize: 13, height: 1.6, color: DT.textSecondary)),
+                      fontSize: 13, height: 1.6, color: ET.inkSecondary)),
             ),
           ),
       ],

@@ -59,15 +59,15 @@ class _State extends State<ClientChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6F8),
-      appBar: GlassAppBar(title: const Text('修改密码')),
+      backgroundColor: ET.bg,
+      appBar: GlassAppBar(title: const Text('修改密码'), dark: true),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-                color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                color: ET.surface, borderRadius: BorderRadius.circular(16)),
             child: Column(
               children: [
                 _field(_oldCtl, '当前密码'),
@@ -84,9 +84,9 @@ class _State extends State<ClientChangePasswordScreen> {
             child: ElevatedButton(
               onPressed: _submitting ? null : _submit,
               style: ElevatedButton.styleFrom(
-                backgroundColor: DT.primary,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: DT.primary.withOpacity(0.4),
+                backgroundColor: ET.cream,
+                foregroundColor: ET.onCream,
+                disabledBackgroundColor: ET.cream.withValues(alpha: 0.4),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(999)),
               ),
@@ -104,11 +104,13 @@ class _State extends State<ClientChangePasswordScreen> {
     return TextField(
       controller: ctl,
       obscureText: true,
+      cursorColor: ET.accent,
+      style: const TextStyle(color: ET.ink, fontSize: 14),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13),
+        hintStyle: const TextStyle(color: ET.inkMuted, fontSize: 13),
         filled: true,
-        fillColor: const Color(0xFFF5F6FA),
+        fillColor: ET.bgElevated,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         border: OutlineInputBorder(

@@ -45,16 +45,16 @@ class _State extends State<ClientNotificationSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6F8),
-      appBar: GlassAppBar(title: const Text('通知设置')),
+      backgroundColor: ET.bg,
+      appBar: GlassAppBar(title: const Text('通知设置'), dark: true),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: DT.primary))
+          ? const Center(child: CircularProgressIndicator(color: ET.accent))
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 Container(
                   decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: ET.surface,
                       borderRadius: BorderRadius.circular(16)),
                   clipBehavior: Clip.antiAlias,
                   child: Column(
@@ -65,13 +65,13 @@ class _State extends State<ClientNotificationSettingsScreen> {
                           if (i > 0)
                             const Divider(height: 1, color: Color(0x11000000)),
                           SwitchListTile(
-                            activeColor: DT.primary,
+                            activeColor: ET.accent,
                             title: Text(it.$2,
                                 style: const TextStyle(
-                                    fontSize: 15, color: DT.textPrimary)),
+                                    fontSize: 15, color: ET.ink)),
                             subtitle: Text(it.$3,
                                 style: const TextStyle(
-                                    fontSize: 12, color: DT.textSecondary)),
+                                    fontSize: 12, color: ET.inkSecondary)),
                             value: _prefs[it.$1] ?? it.$4,
                             onChanged: (v) => _set(it.$1, v),
                           ),

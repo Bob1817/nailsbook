@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/editorial_tokens.dart';
 import '../auth/client_auth_service.dart';
 import '../../../core/widgets/nb_toast.dart';
 
@@ -101,14 +102,7 @@ class _ClientEditProfileScreenState extends State<ClientEditProfileScreen> {
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFFFFDFD), Color(0xFFF7F3F6), Color(0xFFF2F6FB)],
-          stops: [0.0, 0.48, 1.0],
-        ),
-      ),
+      color: ET.bg,
       child: Stack(
         children: [
           ListView(
@@ -138,21 +132,19 @@ class _ClientEditProfileScreenState extends State<ClientEditProfileScreen> {
           onTap: () => Navigator.pop(context),
           child: Container(
             width: 44, height: 44,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.8),
+            decoration: const BoxDecoration(
+              color: ET.surface,
               shape: BoxShape.circle,
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 24, offset: const Offset(0, 10))],
-              border: Border.all(color: Colors.black.withOpacity(0.05)),
             ),
-            child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF64748B)),
+            child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: ET.inkSecondary),
           ),
         ),
         const SizedBox(width: 14),
-        Expanded(
+        const Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('编辑资料', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.3, color: DT.textPrimary)),
+              Text('编辑资料', style: ET.displaySmall),
             ],
           ),
         ),
@@ -164,10 +156,10 @@ class _ClientEditProfileScreenState extends State<ClientEditProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.88),
+        color: ET.surface,
         borderRadius: BorderRadius.circular(28),
-        boxShadow: DT.shadowMd,
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        boxShadow: ET.shadowCard,
+        border: Border.all(color: ET.hairline),
       ),
       child: Column(
         children: [
@@ -177,25 +169,18 @@ class _ClientEditProfileScreenState extends State<ClientEditProfileScreen> {
               children: [
                 Container(
                   width: 96, height: 96,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: _avatarUrl == null
-                        ? const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color(0xFFFFE0EA), Color(0xFFF4F7FB)],
-                          )
-                        : null,
-                    boxShadow: [BoxShadow(color: DT.primary.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 8))],
+                    color: ET.accentSoft,
                   ),
                   child: ClipOval(
                     child: _avatarUrl != null
                         ? Image.network(_avatarUrl!, fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Container(
-                              color: const Color(0xFFF1F5F9),
-                              child: const Icon(Icons.person_outline_rounded, size: 40, color: Color(0xFFCBD5E1)),
+                              color: ET.bgElevated,
+                              child: const Icon(Icons.person_outline_rounded, size: 40, color: ET.inkMuted),
                             ))
-                        : const Icon(Icons.person_outline_rounded, size: 40, color: DT.primary),
+                        : const Icon(Icons.person_outline_rounded, size: 40, color: ET.accentOnDark),
                   ),
                 ),
                 Positioned(
@@ -203,24 +188,23 @@ class _ClientEditProfileScreenState extends State<ClientEditProfileScreen> {
                   child: Container(
                     width: 32, height: 32,
                     decoration: BoxDecoration(
-                      color: DT.primary,
+                      color: ET.accent,
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                      boxShadow: [BoxShadow(color: DT.primary.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2))],
+                      border: Border.all(color: ET.bgElevated, width: 2),
                     ),
                     child: _uploadingAvatar
                         ? const Padding(
                             padding: EdgeInsets.all(7),
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: ET.onCream),
                           )
-                        : const Icon(Icons.camera_alt_outlined, color: Colors.white, size: 16),
+                        : const Icon(Icons.camera_alt_outlined, color: ET.onCream, size: 16),
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 12),
-          Text('点击头像更换', style: TextStyle(fontSize: 13, color: DT.textMuted)),
+          const Text('点击头像更换', style: TextStyle(fontSize: 13, color: ET.inkMuted)),
         ],
       ),
     );
@@ -230,33 +214,34 @@ class _ClientEditProfileScreenState extends State<ClientEditProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.88),
+        color: ET.surface,
         borderRadius: BorderRadius.circular(28),
-        boxShadow: DT.shadowMd,
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        boxShadow: ET.shadowCard,
+        border: Border.all(color: ET.hairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('昵称', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: DT.textPrimary)),
+          const Text('昵称', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: ET.ink)),
           const SizedBox(height: 4),
-          Text('设置你在平台上的显示名称', style: TextStyle(fontSize: 13, color: DT.textMuted)),
+          const Text('设置你在平台上的显示名称', style: TextStyle(fontSize: 13, color: ET.inkMuted)),
           const SizedBox(height: 14),
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: ET.bgElevated,
               borderRadius: BorderRadius.circular(16),
             ),
             child: TextField(
               controller: _nicknameCtl,
               maxLength: 20,
-              style: const TextStyle(fontSize: 15, color: DT.textPrimary),
-              decoration: InputDecoration(
+              cursorColor: ET.accent,
+              style: const TextStyle(fontSize: 15, color: ET.ink),
+              decoration: const InputDecoration(
                 hintText: '请输入昵称',
-                hintStyle: TextStyle(color: DT.textMuted),
+                hintStyle: TextStyle(color: ET.inkMuted),
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                counterStyle: TextStyle(fontSize: 11, color: DT.textMuted),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                counterStyle: TextStyle(fontSize: 11, color: ET.inkMuted),
               ),
             ),
           ),
@@ -269,22 +254,22 @@ class _ClientEditProfileScreenState extends State<ClientEditProfileScreen> {
     return ClipRRect(
       child: Container(
         padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPad + 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: const Color(0xFFF1F5F9), width: 1)),
+        decoration: const BoxDecoration(
+          color: ET.bgElevated,
+          border: Border(top: BorderSide(color: ET.hairline, width: 1)),
         ),
         child: SizedBox(
           width: double.infinity, height: 52,
           child: ElevatedButton(
             onPressed: _saving ? null : _save,
             style: ElevatedButton.styleFrom(
-              backgroundColor: DT.primary,
-              foregroundColor: Colors.white,
+              backgroundColor: ET.cream,
+              foregroundColor: ET.onCream,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
               elevation: 0,
             ),
             child: _saving
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: ET.onCream))
                 : const Text('保存', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           ),
         ),

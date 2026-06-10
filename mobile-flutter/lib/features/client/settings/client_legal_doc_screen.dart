@@ -20,18 +20,18 @@ class ClientLegalDocScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final doc = _docs[type] ?? _docs['terms']!;
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6F8),
-      appBar: GlassAppBar(title: Text(doc.$1)),
+      backgroundColor: ET.bg,
+      appBar: GlassAppBar(title: Text(doc.$1), dark: true),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-                color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                color: ET.surface, borderRadius: BorderRadius.circular(20)),
             child: Text(doc.$2,
                 style: const TextStyle(
-                    fontSize: 14, height: 1.8, color: DT.textSecondary)),
+                    fontSize: 14, height: 1.8, color: ET.inkSecondary)),
           ),
         ],
       ),
