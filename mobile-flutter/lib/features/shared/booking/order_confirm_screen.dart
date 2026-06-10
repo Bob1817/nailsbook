@@ -143,7 +143,7 @@ class _OrderConfirmScreenState extends State<OrderConfirmScreen> {
       constraints: const BoxConstraints(maxWidth: 480),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: DT.surface,
         borderRadius: BorderRadius.circular(24),
         boxShadow: DT.shadowMd,
       ),

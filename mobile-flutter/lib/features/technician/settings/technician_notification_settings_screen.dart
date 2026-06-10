@@ -67,7 +67,7 @@ class _TechnicianNotificationSettingsScreenState
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.78),
+                    color: DT.surface.withValues(alpha: 0.78),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(

@@ -134,7 +134,7 @@ class _TechnicianHomeServiceSettingsScreenState extends State<TechnicianHomeServ
             child: Container(
               width: 40, height: 40,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.8),
+                color: DT.surface.withValues(alpha: 0.8),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF374151)),
@@ -192,7 +192,7 @@ class _TechnicianHomeServiceSettingsScreenState extends State<TechnicianHomeServ
                 child: Container(
                   width: 24, height: 24,
                   margin: const EdgeInsets.symmetric(horizontal: 2),
-                  decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
+                  decoration: const BoxDecoration(shape: BoxShape.circle, color: DT.surface),
                 ),
               ),
             ),
@@ -361,7 +361,7 @@ class _TechnicianHomeServiceSettingsScreenState extends State<TechnicianHomeServ
     return Container(
       padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + bottomPad),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.82),
+        color: DT.surface.withValues(alpha: 0.82),
         border: const Border(top: BorderSide(color: DT.divider)),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, -4))],
       ),
@@ -390,7 +390,7 @@ class _TechnicianHomeServiceSettingsScreenState extends State<TechnicianHomeServ
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.78),
+        color: DT.surface.withValues(alpha: 0.78),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(

@@ -435,7 +435,7 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
         decoration: BoxDecoration(
           // 柔玻璃面：去掉硬边框
-          color: Colors.white.withValues(alpha: 0.78),
+          color: DT.surface.withValues(alpha: 0.78),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(

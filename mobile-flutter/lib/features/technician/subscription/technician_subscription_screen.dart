@@ -101,7 +101,7 @@ class _TechnicianSubscriptionScreenState extends State<TechnicianSubscriptionScr
             child: Container(
               width: 44, height: 44,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.8),
+                color: DT.surface.withValues(alpha: 0.8),
                 shape: BoxShape.circle,
               ),
               child: const Icon(CupertinoIcons.back, size: 18, color: DT.textDarkGrey),
@@ -145,7 +145,7 @@ class _TechnicianSubscriptionScreenState extends State<TechnicianSubscriptionScr
             Container(
               padding: const EdgeInsets.symmetric(horizontal: DT.md, vertical: 5),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: DT.surface.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(DT.rFull),
               ),
               child: Text('试用期', style: DT.captionLarge.copyWith(color: Colors.white)),

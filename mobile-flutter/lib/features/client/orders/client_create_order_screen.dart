@@ -358,8 +358,8 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                         child: Container(
                           padding: EdgeInsets.fromLTRB(16, topPad + 6, 16, 12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.6),
-                            border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.6), width: 0.5)),
+                            color: DT.surface.withOpacity(0.6),
+                            border: Border(bottom: BorderSide(color: DT.surface.withOpacity(0.6), width: 0.5)),
                           ),
                           child: Row(
                             children: [
@@ -368,7 +368,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                                 child: Container(
                                   width: 42, height: 42,
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.8),
+                                    color: DT.surface.withOpacity(0.8),
                                     shape: BoxShape.circle,
                                     boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 24, offset: const Offset(0, 10))],
                                     border: Border.all(color: Colors.black.withOpacity(0.05)),
@@ -399,8 +399,8 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                     child: Container(
                       padding: EdgeInsets.fromLTRB(20, 14, 20, MediaQuery.of(context).padding.bottom + 14),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.62),
-                        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.6), width: 0.5)),
+                        color: DT.surface.withOpacity(0.62),
+                        border: Border(top: BorderSide(color: DT.surface.withOpacity(0.6), width: 0.5)),
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(999),
@@ -1062,7 +1062,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.62),
+        color: DT.surface.withOpacity(0.62),
         borderRadius: BorderRadius.circular(DT.rCard),
         boxShadow: DT.shadowMd,
         border: Border.all(color: Colors.black.withOpacity(0.05)),
@@ -1130,7 +1130,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.8),
+        color: DT.surface.withOpacity(0.8),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: Colors.black.withOpacity(0.05)),
       ),

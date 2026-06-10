@@ -144,7 +144,7 @@ class _TechnicianOrderDetailScreenState
         filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.72),
+            color: DT.surface.withValues(alpha: 0.72),
             border: Border(
               bottom: BorderSide(color: Colors.black.withValues(alpha: 0.06), width: 0.5),
             ),
@@ -161,7 +161,7 @@ class _TechnicianOrderDetailScreenState
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.45),
+                    color: DT.surface.withValues(alpha: 0.45),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(CupertinoIcons.back,
@@ -497,7 +497,7 @@ class _TechnicianOrderDetailScreenState
     return Container(
       padding: const EdgeInsets.all(DT.lg),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.88),
+        color: DT.surface.withValues(alpha: 0.88),
         borderRadius: BorderRadius.circular(DT.radius16),
         boxShadow: DT.shadowSm,
         border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
@@ -565,7 +565,7 @@ class _TechnicianOrderDetailScreenState
         filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.78),
+            color: DT.surface.withValues(alpha: 0.78),
             border: Border(
               top: BorderSide(
                   color: Colors.black.withValues(alpha: 0.06), width: 0.5),
@@ -714,7 +714,7 @@ class _TechnicianOrderDetailScreenState
         padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: DT.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(DT.rCard)),
           ),
           padding: const EdgeInsets.all(DT.xl),
@@ -820,7 +820,7 @@ class _TechnicianOrderDetailScreenState
         padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: DT.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(DT.rCard)),
           ),
           padding: const EdgeInsets.all(DT.xl),

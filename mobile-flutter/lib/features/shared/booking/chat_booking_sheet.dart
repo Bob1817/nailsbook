@@ -297,7 +297,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
     return Container(
       margin: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.2),
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: DT.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -710,7 +710,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
     return Container(
       padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPad + 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: DT.surface,
         border: Border(top: BorderSide(color: Colors.black.withOpacity(0.06))),
       ),
       child: SizedBox(
@@ -730,7 +730,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
     return Container(
       margin: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.4),
       decoration: const BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          color: DT.surface, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       padding: EdgeInsets.fromLTRB(24, 24, 24, bottomPad + 24),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         _handle(),

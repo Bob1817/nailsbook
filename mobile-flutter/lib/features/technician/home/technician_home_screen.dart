@@ -513,7 +513,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                 padding: EdgeInsets.symmetric(
                     horizontal: DT.sm + 2, vertical: DT.xs),
                 decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.22),
+                    color: DT.surface.withValues(alpha: 0.22),
                     borderRadius: BorderRadius.circular(DT.rFull)),
                 child: Text(isShop ? '到店美甲' : '上门美甲',
                     style: TextStyle(
@@ -607,7 +607,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                   height: 44,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.18),
+                      color: DT.surface.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(DT.md)),
                   child: const Icon(CupertinoIcons.chevron_right,
                       color: DT.textWhite, size: 18),
@@ -1054,7 +1054,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: DT.surface,
                     borderRadius: BorderRadius.circular(12)),
                 child: QrImageView(
                     data: url,
@@ -1113,7 +1113,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.2),
+          color: DT.surface.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(DT.rFull)),
       child: Text(t,
           style: const TextStyle(

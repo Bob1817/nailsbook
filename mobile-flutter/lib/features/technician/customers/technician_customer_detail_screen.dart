@@ -655,7 +655,7 @@ class _TechnicianCustomerDetailScreenState
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         // 柔玻璃面：去掉硬边框，仅以阴影分层
-        color: Colors.white.withValues(alpha: 0.82),
+        color: DT.surface.withValues(alpha: 0.82),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(

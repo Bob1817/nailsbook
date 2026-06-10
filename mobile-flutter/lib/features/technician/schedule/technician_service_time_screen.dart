@@ -114,7 +114,7 @@ class _TechnicianServiceTimeScreenState extends State<TechnicianServiceTimeScree
             child: Container(
               width: 44, height: 44,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.8),
+                color: DT.surface.withValues(alpha: 0.8),
                 shape: BoxShape.circle,
               ),
               child: const Icon(CupertinoIcons.back, size: 18, color: DT.textDarkGrey),

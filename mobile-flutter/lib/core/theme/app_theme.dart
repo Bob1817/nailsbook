@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'design_tokens.dart';
+import 'editorial_tokens.dart';
 
 /// 应用主题 — Apple 中性系 + 胶囊几何 + 克制深度。
 /// 颜色/圆角/排版统一取自 [DT]。
@@ -8,7 +9,7 @@ class AppTheme {
   static ThemeData get light {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: DT.primary,
-      brightness: Brightness.light,
+      brightness: Brightness.dark,
     ).copyWith(
       surface: DT.surface,
       onSurface: DT.textPrimary,
@@ -51,10 +52,10 @@ class AppTheme {
       // 主操作：胶囊几何
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: DT.primary,
-          foregroundColor: Colors.white,
-          disabledBackgroundColor: DT.primary.withOpacity(0.4),
-          disabledForegroundColor: Colors.white,
+          backgroundColor: ET.cream,
+          foregroundColor: ET.onCream,
+          disabledBackgroundColor: ET.cream.withValues(alpha: 0.4),
+          disabledForegroundColor: ET.onCream,
           minimumSize: const Size(double.infinity, 50),
           elevation: 0,
           shadowColor: Colors.transparent,
@@ -73,7 +74,7 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: DT.textPrimary,
-          backgroundColor: DT.glassStandard,
+          backgroundColor: Colors.transparent,
           minimumSize: const Size(double.infinity, 50),
           side: const BorderSide(color: DT.border, width: 0.5),
           shape: const StadiumBorder(),
@@ -83,7 +84,7 @@ class AppTheme {
 
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: DT.glassStandard,
+        fillColor: DT.surfaceAlt,
         hintStyle: const TextStyle(color: DT.textMuted, fontSize: 14),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: DT.space16, vertical: 14),
@@ -139,8 +140,8 @@ class AppTheme {
 
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: DT.textPrimary,
-        contentTextStyle: const TextStyle(color: Colors.white, fontSize: 14),
+        backgroundColor: ET.bgElevated,
+        contentTextStyle: const TextStyle(color: ET.ink, fontSize: 14),
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(DT.radius12)),
       ),

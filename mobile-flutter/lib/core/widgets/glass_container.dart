@@ -138,7 +138,7 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Color? backgroundColor;
   final double? elevation;
 
-  /// 暖调深色编辑风变体（客户端新设计方向）。默认 false 保持原浅色玻璃。
+  /// 暖调深色编辑风变体。全端已切换为深色，默认 true。
   final bool dark;
 
   const GlassAppBar({
@@ -151,7 +151,7 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.bottom,
     this.backgroundColor,
     this.elevation,
-    this.dark = false,
+    this.dark = true,
   });
 
   @override
@@ -210,6 +210,7 @@ class GlassBottomSurface extends StatelessWidget {
       top: false,
       minimum: EdgeInsets.zero,
       child: GlassContainer(
+        tint: Colors.black,
         blur: DT.glassBlurHeavy,
         opacity: 0.5,
         borderRadius: 0,

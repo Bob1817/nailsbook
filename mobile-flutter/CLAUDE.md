@@ -35,10 +35,16 @@ New screens MUST use `ET`. Core palette:
 
 ### Migration Status
 
-- ✅ `editorial_tokens.dart` (ET) defined — the new source of truth
-- ✅ Sample screen: client 发现页 `lib/features/client/discover/client_discover_screen.dart`
-- ⏳ Remaining screens still on legacy `DT` (light) — migrate screen-by-screen.
-  Until a screen is migrated it renders in the old light style; that is expected.
+全端已切换为暖调深色编辑风（client + technician + shared）。
+
+- ✅ `editorial_tokens.dart` (ET) — new source of truth
+- ✅ `DT` 核心颜色/渐变令牌已**指向 ET 值**（`design_tokens.dart` 中 `bg/surface/
+  textPrimary/primary/border/...` = ET 别名），所有 DT-based 屏自动深色
+- ✅ `app_theme.dart` 改为 `Brightness.dark`；按钮/输入/snackBar 深色化
+- ✅ `GlassAppBar` 默认 `dark: true`；`GlassBottomSurface` 深色玻璃
+- ✅ 客户端各屏直接用 ET；技师端/共享/订单流经令牌翻转 + 硬编码白卡清扫
+- ⏳ 收尾：个别硬编码浅色 hex / 白色前景文字在 accent 按钮上的对比度微调。
+  新代码请用 `ET`；勿再引入浅色 `Colors.white` 卡片背景或浅色 hex。
 
 ### Forbidden Patterns
 

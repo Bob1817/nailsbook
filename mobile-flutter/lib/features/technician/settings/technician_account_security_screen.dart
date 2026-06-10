@@ -125,7 +125,7 @@ class _TechnicianAccountSecurityScreenState
                 Container(
                   padding: const EdgeInsets.all(DT.xl),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.78),
+                    color: DT.surface.withValues(alpha: 0.78),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
@@ -152,7 +152,7 @@ class _TechnicianAccountSecurityScreenState
                 Container(
                   padding: const EdgeInsets.all(DT.xl),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.78),
+                    color: DT.surface.withValues(alpha: 0.78),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(

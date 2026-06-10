@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'editorial_tokens.dart';
+
 /// Design tokens for NailBook — Apple-inspired neutral system + iOS 26 Liquid Glass.
 ///
 /// 设计基调：图片优先的编辑式排版（image-first editorial），界面保持中性，
@@ -14,11 +16,11 @@ class DT {
   // COLORS - Primary (Warm Rose accent)
   // ──────────────────────────────────────────────────────────────
 
-  static const Color primary = Color(0xFFC4627A); // Warm Rose（强调色，点缀用）
-  static const Color primaryDark = Color(0xFFA34F64);
-  static const Color primaryLight = Color(0xFFD58197);
-  static const Color primaryPale = Color(0xFFE6BDC8);
-  static const Color primarySoft = Color(0xFFF8EEF1); // 极浅玫瑰底
+  static const Color primary = ET.accent;
+  static const Color primaryDark = ET.accentDeep;
+  static const Color primaryLight = ET.accentOnDark;
+  static const Color primaryPale = ET.accentOnDark;
+  static const Color primarySoft = ET.accentSoft;
 
   // ──────────────────────────────────────────────────────────────
   // COLORS - Secondary (Apple neutral grays)
@@ -27,7 +29,7 @@ class DT {
   static const Color secondary = Color(0xFF6E6E73);
   static const Color secondaryDark = Color(0xFF48484A);
   static const Color secondaryLight = Color(0xFF8E8E93);
-  static const Color secondarySoft = Color(0xFFF2F2F4);
+  static const Color secondarySoft = ET.bgElevated;
 
   // ──────────────────────────────────────────────────────────────
   // COLORS - Success
@@ -81,13 +83,13 @@ class DT {
   // COLORS - Neutral / Text (Apple ink scale)
   // ──────────────────────────────────────────────────────────────
 
-  static const Color textPrimary = Color(0xFF1D1D1F); // Near-Black Ink
-  static const Color textSecondary = Color(0xFF6E6E73); // Apple Secondary
-  static const Color textTertiary = Color(0xFF8E8E93);
-  static const Color textMuted = Color(0xFFA1A1A6);
-  static const Color textQuaternary = Color(0xFFC7C7CC);
+  static const Color textPrimary = ET.ink;
+  static const Color textSecondary = ET.inkSecondary;
+  static const Color textTertiary = ET.inkMuted;
+  static const Color textMuted = ET.inkMuted;
+  static const Color textQuaternary = ET.inkFaint;
   static const Color textWhite = Colors.white;
-  static const Color textDisabled = Color(0xFFD2D2D7);
+  static const Color textDisabled = ET.inkFaint;
 
   /// Semantic aliases（指南命名）
   static const Color fg = textPrimary; // foreground / 主文本
@@ -97,43 +99,43 @@ class DT {
   // COLORS - Surfaces
   // ──────────────────────────────────────────────────────────────
 
-  static const Color bg = Color(0xFFF5F5F7); // Apple Pale Gray
-  static const Color bgWarm = Color(0xFFFAFAFC);
-  static const Color bgPink = Color(0xFFFFFFFF);
-  static const Color surface = Colors.white;
-  static const Color surfaceAlt = Color(0xFFF2F2F4);
-  static const Color surfaceDisabled = Color(0xFFF9FAFB);
+  static const Color bg = ET.bg;
+  static const Color bgWarm = ET.bgElevated;
+  static const Color bgPink = ET.bgElevated;
+  static const Color surface = ET.surface;
+  static const Color surfaceAlt = ET.bgElevated;
+  static const Color surfaceDisabled = ET.bgElevated;
 
   // ──────────────────────────────────────────────────────────────
   // COLORS - Extended (widely used across technician screens)
   // ──────────────────────────────────────────────────────────────
 
   static const Color borderPink = Color(0x40C4627A); // 柔和暖玫瑰边缘（输入框等）
-  static const Color fillWarm = Color(0xFFFFF9F8); // 暖色填充（输入框等）
+  static const Color fillWarm = ET.surface;
   static const Color dividerWarm = Color(0x1FC4627A); // 暖色分割线
   static const Color borderGrey = Color(0x243C3C43); // 灰色边框
-  static const Color fillGrey = Color(0xFFF4F5F7); // 灰色填充（禁用态）
-  static const Color fillGreyLight = Color(0xFFF3F4F6); // 浅灰填充
-  static const Color textDarkGrey = Color(0xFF374151); // 深灰文本
-  static const Color textMidGrey = Color(0xFF6B7280); // 中灰文本
-  static const Color textLightGrey = Color(0xFF9CA3AF); // 浅灰文本/占位符
-  static const Color iconGrey = Color(0xFFB0AAB4); // 图标灰色
+  static const Color fillGrey = ET.surface;
+  static const Color fillGreyLight = ET.surface;
+  static const Color textDarkGrey = ET.ink;
+  static const Color textMidGrey = ET.inkSecondary;
+  static const Color textLightGrey = ET.inkMuted;
+  static const Color iconGrey = ET.inkMuted;
   static const Color actionOrange = Color(0xFFEA580C); // 操作橙色
   static const Color actionGreen = Color(0xFF059669); // 操作绿色
   static const Color actionBlue = Color(0xFF2563EB); // 操作蓝色
-  static const Color avatarBorder = Color(0xFFFFD9E6); // 头像边框
+  static const Color avatarBorder = ET.hairline;
 
   // ──────────────────────────────────────────────────────────────
   // COLORS - Borders (Apple)
   // ──────────────────────────────────────────────────────────────
 
-  static const Color border = Color(0x293C3C43); // 半透明柔边，替代硬线条
-  static const Color borderStrong = Color(0x667C7C82);
-  static const Color borderLight = Color(0x173C3C43); // 极轻柔边
+  static const Color border = ET.hairline;
+  static const Color borderStrong = ET.hairlineStrong;
+  static const Color borderLight = ET.hairlineFaint;
   static const Color borderPrimary = Color(0x33C4627A);
   static const Color primaryBorder = Color(0x2EC4627A);
-  static const Color hairline = Color(0x1F3C3C43);
-  static const Color divider = Color(0x173C3C43);
+  static const Color hairline = ET.hairline;
+  static const Color divider = ET.hairlineFaint;
 
   // ──────────────────────────────────────────────────────────────
   // LIQUID GLASS — 材质系统（iOS 26）
@@ -172,12 +174,12 @@ class DT {
   // COLORS - Quick action backgrounds（中性化）
   // ──────────────────────────────────────────────────────────────
 
-  static const Color orange50 = Color(0xFFFFF7ED);
-  static const Color purple50 = Color(0xFFF3F1F8);
-  static const Color blue50 = Color(0xFFEFF4FB);
-  static const Color green50 = Color(0xFFEFF8F2);
-  static const Color pink50 = Color(0xFFF8EEF1);
-  static const Color disabledBg = Color(0xFFE8E8ED);
+  static const Color orange50 = ET.surface;
+  static const Color purple50 = ET.surface;
+  static const Color blue50 = ET.surface;
+  static const Color green50 = ET.surface;
+  static const Color pink50 = ET.accentSoft;
+  static const Color disabledBg = ET.surface;
   static const Color iconPlaceholder = Color(0xFFB8B0B4);
 
   // ──────────────────────────────────────────────────────────────
@@ -185,13 +187,13 @@ class DT {
   // ──────────────────────────────────────────────────────────────
 
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFFC4627A), Color(0xFFD58197)],
+    colors: [ET.accent, ET.accentDeep],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient heroGradient = LinearGradient(
-    colors: [Color(0xFFC4627A), Color(0xFFB5566E)],
+    colors: [ET.accent, ET.accentDeep],
     begin: Alignment(0.7, -1.0),
     end: Alignment(-0.7, 1.0),
   );
@@ -204,7 +206,7 @@ class DT {
   );
 
   static const LinearGradient bookingGradient = LinearGradient(
-    colors: [Color(0xFFC4627A), Color(0xFFD58197)],
+    colors: [ET.accent, ET.accentDeep],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -224,14 +226,14 @@ class DT {
   static const LinearGradient screenGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFFFAFAFC), Color(0xFFF5F5F7), Color(0xFFF2F2F4)],
+    colors: [ET.bgElevated, ET.bg, ET.bg],
     stops: [0.0, 0.24, 1.0],
   );
 
   static const LinearGradient profilePageGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFFFFFFFF), Color(0xFFF5F5F7), Color(0xFFF0F0F3)],
+    colors: [ET.bgElevated, ET.bg, ET.bg],
     stops: [0.0, 0.48, 1.0],
   );
 

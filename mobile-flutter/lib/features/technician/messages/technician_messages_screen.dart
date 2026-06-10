@@ -404,7 +404,7 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.78),
+          color: DT.surface.withValues(alpha: 0.78),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(

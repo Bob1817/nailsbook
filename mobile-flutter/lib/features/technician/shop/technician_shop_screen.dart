@@ -127,7 +127,7 @@ class _TechnicianShopScreenState extends State<TechnicianShopScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.8),
+                color: DT.surface.withValues(alpha: 0.8),
                 shape: BoxShape.circle,
               ),
               child: const Icon(CupertinoIcons.back,
@@ -197,7 +197,7 @@ class _TechnicianShopScreenState extends State<TechnicianShopScreen> {
         margin: const EdgeInsets.only(bottom: DT.md),
         padding: const EdgeInsets.all(DT.lg),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: DT.surface,
           borderRadius: BorderRadius.circular(DT.xl),
           border: Border.all(color: DT.borderLight),
           boxShadow: DT.shadowSm,
@@ -425,7 +425,7 @@ class _TechnicianShopScreenState extends State<TechnicianShopScreen> {
         builder: (ctx, setSheetState) => Container(
           height: MediaQuery.of(ctx).size.height * 0.85,
           decoration: const BoxDecoration(
-            color: Colors.white,
+            color: DT.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(DT.rCard)),
           ),
           padding: const EdgeInsets.fromLTRB(DT.xl, DT.xl, DT.xl, DT.xxl),

@@ -158,7 +158,7 @@ class _TechnicianWorksScreenState extends State<TechnicianWorksScreen> {
           filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.9),
+              color: DT.surface.withOpacity(0.9),
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(24)),
             ),
@@ -621,7 +621,7 @@ class _WorkFormSheetState extends State<_WorkFormSheet> {
           filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.94),
+              color: DT.surface.withOpacity(0.94),
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(28)),
             ),
@@ -876,7 +876,7 @@ class _WorkFormSheetState extends State<_WorkFormSheet> {
                   height: 22,
                   margin: const EdgeInsets.symmetric(horizontal: 3),
                   decoration: const BoxDecoration(
-                      color: Colors.white, shape: BoxShape.circle)),
+                      color: DT.surface, shape: BoxShape.circle)),
             ),
           ),
         ],

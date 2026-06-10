@@ -262,9 +262,9 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: DT.lg, vertical: DT.md),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.10),
+        color: DT.surface.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+        border: Border.all(color: DT.surface.withValues(alpha: 0.14)),
       ),
       child: Row(
         children: [
@@ -318,7 +318,7 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: DT.sm, vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.18),
+        color: DT.surface.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(DT.rFull),
       ),
       child: Text(text,
@@ -339,7 +339,7 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.white.withValues(alpha: 0.15),
+          color: DT.surface.withValues(alpha: 0.15),
         ),
         child: Icon(icon, size: 16, color: Colors.white),
       ),
@@ -771,7 +771,7 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: DT.xl),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.78),
+        color: DT.surface.withValues(alpha: 0.78),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -878,7 +878,7 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
       margin: const EdgeInsets.symmetric(horizontal: DT.xl),
       padding: padding ?? const EdgeInsets.all(DT.lg),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.78),
+        color: DT.surface.withValues(alpha: 0.78),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -958,7 +958,7 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.2), width: 2),
+                  color: DT.surface.withValues(alpha: 0.2), width: 2),
             ),
             child: ClipOval(
               child: hasImage

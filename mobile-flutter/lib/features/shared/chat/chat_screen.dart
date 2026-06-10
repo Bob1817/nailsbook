@@ -245,7 +245,7 @@ class _ChatScreenState extends State<ChatScreen> {
         filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.72),
+            color: DT.surface.withValues(alpha: 0.72),
             border: Border(
               bottom: BorderSide(
                   color: Colors.black.withValues(alpha: 0.06), width: 0.5),
@@ -263,7 +263,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.45),
+                    color: DT.surface.withValues(alpha: 0.45),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(CupertinoIcons.back,
@@ -304,7 +304,7 @@ class _ChatScreenState extends State<ChatScreen> {
         filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.82),
+            color: DT.surface.withValues(alpha: 0.82),
             border: Border(
               top: BorderSide(
                   color: Colors.black.withValues(alpha: 0.06), width: 0.5),

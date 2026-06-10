@@ -415,7 +415,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.62),
+        color: DT.surface.withOpacity(0.62),
         borderRadius: BorderRadius.circular(32),
         boxShadow: DT.shadowMd,
         border: Border.all(color: Colors.black.withOpacity(0.05)),
@@ -546,7 +546,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
+                      color: DT.surface.withOpacity(0.9),
                       borderRadius: BorderRadius.circular(999),
                       border: Border.all(color: Colors.black.withOpacity(0.05)),
                     ),
@@ -849,7 +849,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.78),
+            color: DT.surface.withOpacity(0.78),
             borderRadius: BorderRadius.vertical(top: Radius.circular(radius)),
             border: Border(
                 top: BorderSide(
@@ -871,7 +871,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.62),
+        color: DT.surface.withOpacity(0.62),
         borderRadius: BorderRadius.circular(28),
         boxShadow: DT.shadowMd,
         border: Border.all(color: Colors.black.withOpacity(0.05)),
@@ -1457,7 +1457,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               child: Container(
                 height: MediaQuery.of(ctx).size.height * 0.75,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.82),
+                  color: DT.surface.withOpacity(0.82),
                   borderRadius:
                       const BorderRadius.vertical(top: Radius.circular(32)),
                   border: Border(
@@ -1543,7 +1543,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 16, vertical: 14),
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
+                                      color: DT.surface,
                                       borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
                                           color: editDate.isEmpty
@@ -1874,7 +1874,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.8),
+                color: DT.surface.withOpacity(0.8),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(

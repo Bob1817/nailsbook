@@ -151,7 +151,7 @@ class _TechnicianTagScreenState extends State<TechnicianTagScreen> {
             child: Container(
               width: 40, height: 40,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.8),
+                color: DT.surface.withValues(alpha: 0.8),
                 shape: BoxShape.circle,
               ),
               child: const Icon(CupertinoIcons.back, size: 18, color: DT.textDarkGrey),
@@ -221,7 +221,7 @@ class _TechnicianTagScreenState extends State<TechnicianTagScreen> {
           padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
           child: Container(
             decoration: const BoxDecoration(
-              color: Colors.white,
+              color: DT.surface,
               borderRadius: BorderRadius.vertical(top: Radius.circular(DT.rCard)),
             ),
             padding: const EdgeInsets.all(DT.xl),

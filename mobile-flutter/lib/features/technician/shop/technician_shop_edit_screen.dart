@@ -249,7 +249,7 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
                   padding: EdgeInsets.fromLTRB(DT.xl, DT.md, DT.xl,
                       DT.md + MediaQuery.of(context).padding.bottom),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.95),
+                    color: DT.surface.withValues(alpha: 0.95),
                     border: Border(top: BorderSide(color: DT.dividerWarm)),
                   ),
                   child: GestureDetector(
@@ -284,7 +284,7 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
     return Container(
       padding: const EdgeInsets.all(DT.xl - 2),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: DT.surface,
         borderRadius: BorderRadius.circular(DT.xxl),
         boxShadow: DT.shadowSm,
       ),
@@ -321,7 +321,7 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
   Widget _buildBusinessHoursCard() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: DT.surface,
         borderRadius: BorderRadius.circular(DT.xxl),
         boxShadow: DT.shadowSm,
       ),
@@ -433,7 +433,7 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
   Widget _buildCard(List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: DT.surface,
         borderRadius: BorderRadius.circular(DT.xxl),
         boxShadow: DT.shadowSm,
       ),

@@ -185,7 +185,7 @@ class _PosterCard extends StatelessWidget {
     return Container(
       width: 300,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: DT.surface,
         borderRadius: BorderRadius.circular(DT.xl),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 24, offset: const Offset(0, 8))],
       ),
@@ -256,7 +256,7 @@ class _PosterCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: DT.surface,
                         borderRadius: BorderRadius.circular(DT.sm),
                         border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
                       ),

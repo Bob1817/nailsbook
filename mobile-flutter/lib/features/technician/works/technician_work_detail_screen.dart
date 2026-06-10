@@ -241,7 +241,7 @@ class _TechnicianWorkDetailScreenState extends State<TechnicianWorkDetailScreen>
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: Container(
-          decoration: BoxDecoration(color: Colors.white.withOpacity(0.92), borderRadius: BorderRadius.vertical(top: Radius.circular(radius))),
+          decoration: BoxDecoration(color: DT.surface.withOpacity(0.92), borderRadius: BorderRadius.vertical(top: Radius.circular(radius))),
           child: SafeArea(top: false, child: child),
         ),
       ),
