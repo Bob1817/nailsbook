@@ -266,7 +266,7 @@ class _TechnicianShopScreenState extends State<TechnicianShopScreen> {
                         horizontal: DT.sm, vertical: DT.xs),
                     decoration: BoxDecoration(
                       color:
-                          closed ? DT.fillGreyLight : const Color(0xFFFFF1F5),
+                          closed ? DT.fillGreyLight : const Color(0xFF3A2F23),
                       borderRadius: BorderRadius.circular(DT.sm),
                     ),
                     child: Text('$label $time',

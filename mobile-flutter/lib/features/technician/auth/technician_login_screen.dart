@@ -214,7 +214,7 @@ class _TechnicianLoginScreenState extends State<TechnicianLoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFAF9),
+      backgroundColor: const Color(0xFF16120E),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
@@ -341,7 +341,7 @@ class _TechnicianLoginScreenState extends State<TechnicianLoginScreen> {
   Widget _phoneBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: const Color(0xFF2A241E), borderRadius: BorderRadius.circular(12)),
       child: Row(
         children: [
           Expanded(child: Text('手机号：${_phoneCtl.text}', style: const TextStyle(fontSize: 13, color: Color(0xFF666666)))),

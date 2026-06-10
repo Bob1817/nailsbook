@@ -38,7 +38,7 @@ const _tagFallbackColors = <String, ({Color bg, Color text})>{
   '简约': (bg: Color(0xFFEEF9F1), text: Color(0xFF31B46C)),
   '裸色系': (bg: Color(0xFFFFF8E6), text: Color(0xFFC9860A)),
 };
-const _tagDefaultColor = (bg: Color(0xFFF2F0F3), text: Color(0xFF6D6570));
+const _tagDefaultColor = (bg: Color(0xFF2A241E), text: Color(0xFF6D6570));
 // 客户头像配色（webapp 详情页风格）
 const _avatarBg = Color(0xFFFDECEF);
 const _avatarText = Color(0xFFE86B8F);
@@ -1023,7 +1023,7 @@ class _TechnicianCustomerDetailScreenState
         '#3B82F6': const Color(0xFFEBF4FF),
         '#7C3AED': const Color(0xFFF5F0FF),
         '#C9860A': const Color(0xFFFFF8E6),
-        '#6D6570': const Color(0xFFF2F0F3),
+        '#6D6570': const Color(0xFF2A241E),
         '#E53E3E': const Color(0xFFFFE4E4),
       };
       return (bg: preset[color] ?? DT.surfaceAlt, text: _parseHex(color));

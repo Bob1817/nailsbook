@@ -295,7 +295,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFFFFFDFD), Color(0xFFF7F3F6), Color(0xFFF2F6FB)],
+            colors: [Color(0xFF16120E), Color(0xFF16120E), Color(0xFFF2F6FB)],
             stops: [0.0, 0.48, 1.0],
           ),
         ),
@@ -334,7 +334,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                           decoration: InputDecoration(
                             hintText: '请输入你的特殊需求，如：想做粉色渐变、需要自带卸甲等...',
                             filled: true,
-                            fillColor: const Color(0xFFF8FAFC),
+                            fillColor: const Color(0xFF211C17),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(DT.rXxl),
                               borderSide: BorderSide.none,
@@ -443,9 +443,9 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           gradient: selected
-              ? const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFFFF0F5), Color(0xFFFAFBFF)])
+              ? const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF3A2F23), Color(0xFF211C17)])
               : null,
-          color: selected ? null : const Color(0xFFF8FAFC),
+          color: selected ? null : const Color(0xFF211C17),
           borderRadius: BorderRadius.circular(DT.rXxl),
           border: Border.all(color: selected ? DT.primary.withOpacity(0.25) : Colors.black.withOpacity(0.05)),
         ),
@@ -456,7 +456,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
             Container(
               width: 46, height: 46,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFFFFE0EA), Color(0xFFF4F7FB)]),
+                gradient: const LinearGradient(colors: [Color(0xFFFFE0EA), Color(0xFF211C17)]),
                 borderRadius: BorderRadius.circular(16),
                 image: tech.avatarUrl != null ? DecorationImage(image: NetworkImage(tech.avatarUrl!), fit: BoxFit.cover) : null,
               ),
@@ -513,9 +513,9 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           gradient: selected
-              ? const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFFFF0F5), Color(0xFFFAFBFF)])
+              ? const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF3A2F23), Color(0xFF211C17)])
               : null,
-          color: selected ? null : const Color(0xFFF8FAFC),
+          color: selected ? null : const Color(0xFF211C17),
           borderRadius: BorderRadius.circular(DT.rXxl),
           border: Border.all(color: selected ? DT.primary.withOpacity(0.25) : Colors.black.withOpacity(0.05)),
         ),
@@ -577,9 +577,9 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           gradient: _isCustomService
-              ? const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFFFF0F5), Color(0xFFFAFBFF)])
+              ? const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF3A2F23), Color(0xFF211C17)])
               : null,
-          color: _isCustomService ? null : const Color(0xFFF8FAFC),
+          color: _isCustomService ? null : const Color(0xFF211C17),
           borderRadius: BorderRadius.circular(DT.rXxl),
           border: Border.all(color: _isCustomService ? DT.primary.withOpacity(0.25) : Colors.black.withOpacity(0.05)),
         ),
@@ -608,7 +608,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC).withOpacity(0.8),
+        color: const Color(0xFF211C17).withOpacity(0.8),
         borderRadius: BorderRadius.circular(DT.rXxl),
       ),
       child: Column(
@@ -710,9 +710,9 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           gradient: selected
-              ? const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFFFF0F5), Color(0xFFFAFBFF)])
+              ? const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF3A2F23), Color(0xFF211C17)])
               : null,
-          color: selected ? null : const Color(0xFFF8FAFC),
+          color: selected ? null : const Color(0xFF211C17),
           borderRadius: BorderRadius.circular(DT.rXxl),
           border: Border.all(color: selected ? DT.primary.withOpacity(0.25) : Colors.black.withOpacity(0.05)),
         ),
@@ -779,9 +779,9 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 gradient: selected
-                    ? const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFFFF0F5), Color(0xFFFAFBFF)])
+                    ? const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF3A2F23), Color(0xFF211C17)])
                     : null,
-                color: selected ? null : const Color(0xFFF8FAFC),
+                color: selected ? null : const Color(0xFF211C17),
                 borderRadius: BorderRadius.circular(DT.rXxl),
                 border: Border.all(color: selected ? DT.primary.withOpacity(0.25) : Colors.black.withOpacity(0.05)),
               ),
@@ -812,7 +812,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                               const SizedBox(width: 6),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(color: const Color(0xFFE8E8ED), borderRadius: BorderRadius.circular(999)),
+                                decoration: BoxDecoration(color: const Color(0xFF2A241E), borderRadius: BorderRadius.circular(999)),
                                 child: const Text('跨城不可约', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: DT.textTertiary)),
                               ),
                             ],
@@ -893,9 +893,9 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               gradient: selected
-                  ? const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFFFF0F5), Color(0xFFFAFBFF)])
+                  ? const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF3A2F23), Color(0xFF211C17)])
                   : null,
-              color: selected ? null : const Color(0xFFF8FAFC),
+              color: selected ? null : const Color(0xFF211C17),
               borderRadius: BorderRadius.circular(DT.rXxl),
               border: Border.all(color: selected ? DT.primary.withOpacity(0.25) : Colors.black.withOpacity(0.05)),
             ),
@@ -980,7 +980,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
               width: 58,
               decoration: BoxDecoration(
                 gradient: selected ? DT.primaryGradient : null,
-                color: selected ? null : const Color(0xFFF8FAFC),
+                color: selected ? null : const Color(0xFF211C17),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: selected ? Colors.transparent : Colors.black.withOpacity(0.05)),
                 boxShadow: selected ? [BoxShadow(color: const Color(0x4DC4627A), blurRadius: 12, offset: const Offset(0, 4))] : null,
@@ -1052,7 +1052,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(DT.rXxl)),
+      decoration: BoxDecoration(color: const Color(0xFF211C17), borderRadius: BorderRadius.circular(DT.rXxl)),
       child: Text(text, style: const TextStyle(fontSize: 12, color: DT.textMuted)),
     );
   }
@@ -1096,7 +1096,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
   Widget _emptyPlaceholder(String msg) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-      decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(DT.rXxl)),
+      decoration: BoxDecoration(color: const Color(0xFF211C17), borderRadius: BorderRadius.circular(DT.rXxl)),
       child: Text(msg, style: const TextStyle(fontSize: 13, color: DT.textMuted)),
     );
   }
@@ -1104,7 +1104,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
   Widget _emptyState(String title, String subtitle, {String? action, VoidCallback? onAction}) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
-      decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(DT.rXxl)),
+      decoration: BoxDecoration(color: const Color(0xFF211C17), borderRadius: BorderRadius.circular(DT.rXxl)),
       child: Column(
         children: [
           Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: DT.textPrimary)),

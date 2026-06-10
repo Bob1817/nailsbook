@@ -339,9 +339,9 @@ class _TechnicianWorksScreenState extends State<TechnicianWorksScreen> {
                   imageUrl: url,
                   fit: BoxFit.cover,
                   placeholder: (_, __) =>
-                      Container(color: const Color(0xFFEFEAF2)),
+                      Container(color: const Color(0xFF2A241E)),
                   errorWidget: (_, __, ___) => Container(
-                      color: const Color(0xFFEFEAF2),
+                      color: const Color(0xFF2A241E),
                       child: const Center(
                           child: Text('暂无图片',
                               style: TextStyle(
@@ -349,7 +349,7 @@ class _TechnicianWorksScreenState extends State<TechnicianWorksScreen> {
                 )
               else
                 Container(
-                    color: const Color(0xFFEFEAF2),
+                    color: const Color(0xFF2A241E),
                     child: const Center(
                         child: Text('暂无作品图片',
                             style: TextStyle(

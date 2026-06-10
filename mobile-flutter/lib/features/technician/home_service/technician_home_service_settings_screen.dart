@@ -160,7 +160,7 @@ class _TechnicianHomeServiceSettingsScreenState extends State<TechnicianHomeServ
             Container(
               width: 44, height: 44,
               decoration: BoxDecoration(
-                color: _enabled ? const Color(0xFFEFF6FF) : const Color(0xFFF3F4F6),
+                color: _enabled ? const Color(0xFFEFF6FF) : const Color(0xFF2A241E),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(Icons.home_outlined,
@@ -248,7 +248,7 @@ class _TechnicianHomeServiceSettingsScreenState extends State<TechnicianHomeServ
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFF1F5),
+            color: const Color(0xFF3A2F23),
             borderRadius: BorderRadius.circular(999),
           ),
           child: const Text('+ 添加', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: DT.primary)),

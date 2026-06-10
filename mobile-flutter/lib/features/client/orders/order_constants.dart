@@ -18,7 +18,7 @@ const orderStatusColors = {
   'pending_home': (Color(0xFFF0FDF4), Color(0xFF15803D)),
   'pending_shop': (Color(0xFFF0FDF4), Color(0xFF15803D)),
   'in_progress': (Color(0xFFFFF7ED), Color(0xFFC2410C)),
-  'completed': (Color(0xFFF3F4F6), Color(0xFF4B5563)),
+  'completed': (Color(0xFF2A241E), Color(0xFF4B5563)),
   'cancelled': (Color(0xFFFEF2F2), Color(0xFFDC2626)),
 };
 

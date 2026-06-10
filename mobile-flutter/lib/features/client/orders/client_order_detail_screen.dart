@@ -409,7 +409,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
 
   Widget _buildStatusCard(ClientOrder o) {
     final colors = _statusColors[o.status] ??
-        (const Color(0xFFF3F4F6), const Color(0xFF4B5563));
+        (const Color(0xFF2A241E), const Color(0xFF4B5563));
     final hasDeposit = (o.depositAmount ?? 0) > 0;
 
     return Container(
@@ -455,7 +455,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFFFFF0F5), Color(0xFFF9FBFF)],
+                colors: [Color(0xFF3A2F23), Color(0xFF211C17)],
               ),
               borderRadius: BorderRadius.circular(24),
             ),
@@ -913,7 +913,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC).withOpacity(0.8),
+          color: const Color(0xFF211C17).withOpacity(0.8),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -941,7 +941,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC).withOpacity(0.8),
+          color: const Color(0xFF211C17).withOpacity(0.8),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -1002,7 +1002,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                    colors: [Color(0xFFFFF0F5), Color(0xFFF9FBFF)]),
+                    colors: [Color(0xFF3A2F23), Color(0xFF211C17)]),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Column(
@@ -1118,7 +1118,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                 const SizedBox(height: 16),
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC).withOpacity(0.8),
+                    color: const Color(0xFF211C17).withOpacity(0.8),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
@@ -1512,7 +1512,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC).withOpacity(0.8),
+                              color: const Color(0xFF211C17).withOpacity(0.8),
                               borderRadius: BorderRadius.circular(24),
                             ),
                             child: Column(
@@ -1567,7 +1567,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC).withOpacity(0.8),
+                              color: const Color(0xFF211C17).withOpacity(0.8),
                               borderRadius: BorderRadius.circular(24),
                             ),
                             child: Column(
@@ -1633,7 +1633,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC).withOpacity(0.8),
+                              color: const Color(0xFF211C17).withOpacity(0.8),
                               borderRadius: BorderRadius.circular(24),
                             ),
                             child: Column(
@@ -1672,8 +1672,8 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                                                   begin: Alignment.topLeft,
                                                   end: Alignment.bottomRight,
                                                   colors: [
-                                                      Color(0xFFFFF0F5),
-                                                      Color(0xFFFAFBFF)
+                                                      Color(0xFF3A2F23),
+                                                      Color(0xFF211C17)
                                                     ])
                                               : null,
                                           color: selected ? null : Colors.white,

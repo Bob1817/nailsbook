@@ -14,7 +14,7 @@ const _tagColors = [
   {'bg': Color(0xFFEBF4FF), 'text': Color(0xFF3B82F6), 'name': '蓝'},
   {'bg': Color(0xFFF5F0FF), 'text': Color(0xFF7C3AED), 'name': '紫'},
   {'bg': Color(0xFFFFF8E6), 'text': Color(0xFFC9860A), 'name': '黄'},
-  {'bg': Color(0xFFF2F0F3), 'text': Color(0xFF6D6570), 'name': '灰'},
+  {'bg': Color(0xFF2A241E), 'text': Color(0xFF6D6570), 'name': '灰'},
   {'bg': Color(0xFFFFE4E4), 'text': Color(0xFFE53E3E), 'name': '红'},
 ];
 

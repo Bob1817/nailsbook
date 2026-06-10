@@ -32,7 +32,7 @@ const _tagFallbackColors = <String, ({Color bg, Color text})>{
   '新客': (bg: Color(0xFFE8F4FE), text: Color(0xFF4A90C2)),
   '高频': (bg: Color(0xFFFFF4E5), text: Color(0xFFC8892F)),
 };
-const _tagDefaultColor = (bg: Color(0xFFF2F0F3), text: Color(0xFF6D6570));
+const _tagDefaultColor = (bg: Color(0xFF2A241E), text: Color(0xFF6D6570));
 
 bool _isPhoneAsName(String s) => RegExp(r'^1[3-9]\d{9}$').hasMatch(s);
 
@@ -518,7 +518,7 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                  color: const Color(0xFFFCF7F8),
+                  color: const Color(0xFF16120E),
                   borderRadius: BorderRadius.circular(14)),
               child: Row(
                 children: [
