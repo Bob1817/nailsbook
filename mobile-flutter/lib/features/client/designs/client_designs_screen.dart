@@ -46,6 +46,7 @@ class _ClientDesignsScreenState extends State<ClientDesignsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: GlassAppBar(
+        dark: true,
         title: const Text('我的设计'),
         actions: [
           IconButton(
@@ -60,14 +61,14 @@ class _ClientDesignsScreenState extends State<ClientDesignsScreen> {
           ),
         ],
       ),
-      backgroundColor: DT.bg,
+      backgroundColor: ET.bg,
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: DT.primary))
+          ? const Center(child: CircularProgressIndicator(color: ET.accent))
           : _designs.isEmpty
               ? const Center(
-                  child: Text('暂无设计需求', style: TextStyle(color: DT.textMuted)))
+                  child: Text('暂无设计需求', style: TextStyle(color: ET.inkMuted)))
               : RefreshIndicator(
-                  color: DT.primary,
+                  color: ET.accent,
                   onRefresh: _loadDesigns,
                   child: ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -95,9 +96,9 @@ class _ClientDesignsScreenState extends State<ClientDesignsScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-            color: DT.surface,
+            color: ET.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: DT.border)),
+            border: Border.all(color: ET.hairline)),
         child: Row(
           children: [
             ClipRRect(
@@ -109,15 +110,15 @@ class _ClientDesignsScreenState extends State<ClientDesignsScreen> {
                     ? CachedNetworkImage(
                         imageUrl: url,
                         fit: BoxFit.cover,
-                        placeholder: (_, __) => Container(color: DT.surfaceAlt),
+                        placeholder: (_, __) => Container(color: ET.surface),
                         errorWidget: (_, __, ___) => Container(
-                            color: DT.surfaceAlt,
+                            color: ET.surface,
                             child: const Icon(Icons.image_outlined,
-                                color: DT.textQuaternary)))
+                                color: ET.inkMuted)))
                     : Container(
-                        color: DT.surfaceAlt,
+                        color: ET.surface,
                         child: const Icon(Icons.palette_outlined,
-                            color: DT.textQuaternary)),
+                            color: ET.inkMuted)),
               ),
             ),
             const SizedBox(width: 12),
@@ -131,19 +132,19 @@ class _ClientDesignsScreenState extends State<ClientDesignsScreen> {
                       style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: DT.textPrimary)),
+                          color: ET.ink)),
                   const SizedBox(height: 6),
                   Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                        color: DT.surfaceAlt,
+                        color: ET.surface,
                         borderRadius: BorderRadius.circular(999)),
                     child: Text(design.statusLabel,
                         style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: DT.textSecondary)),
+                            color: ET.inkSecondary)),
                   ),
                 ],
               ),
@@ -153,7 +154,7 @@ class _ClientDesignsScreenState extends State<ClientDesignsScreen> {
                   style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: DT.primary)),
+                      color: ET.accent)),
           ],
         ),
       ),

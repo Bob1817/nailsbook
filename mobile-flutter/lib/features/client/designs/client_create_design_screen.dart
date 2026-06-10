@@ -85,8 +85,8 @@ class _ClientCreateDesignScreenState extends State<ClientCreateDesignScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6F8),
-      appBar: GlassAppBar(title: const Text('上传设计')),
+      backgroundColor: ET.bg,
+      appBar: GlassAppBar(title: const Text('上传设计'), dark: true),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -98,6 +98,8 @@ class _ClientCreateDesignScreenState extends State<ClientCreateDesignScreen> {
                 const SizedBox(height: 10),
                 TextField(
                   controller: _titleCtl,
+                  cursorColor: ET.accent,
+                  style: const TextStyle(color: ET.ink, fontSize: 14),
                   decoration: _fieldDecoration('给你的设计起个名字…'),
                 ),
               ],
@@ -124,6 +126,8 @@ class _ClientCreateDesignScreenState extends State<ClientCreateDesignScreen> {
                 TextField(
                   controller: _descCtl,
                   maxLines: 5,
+                  cursorColor: ET.accent,
+                  style: const TextStyle(color: ET.ink, fontSize: 14),
                   decoration: _fieldDecoration('描述你想要的款式，如：想做类似图片的猫眼款式…'),
                 ),
               ],
@@ -135,9 +139,9 @@ class _ClientCreateDesignScreenState extends State<ClientCreateDesignScreen> {
             child: ElevatedButton(
               onPressed: (_submitting || _images.isEmpty) ? null : _submit,
               style: ElevatedButton.styleFrom(
-                backgroundColor: DT.primary,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: DT.primary.withOpacity(0.4),
+                backgroundColor: ET.cream,
+                foregroundColor: ET.onCream,
+                disabledBackgroundColor: ET.cream.withValues(alpha: 0.4),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(999)),
               ),
@@ -202,15 +206,15 @@ class _ClientCreateDesignScreenState extends State<ClientCreateDesignScreen> {
                   width: 22,
                   height: 22,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2, color: DT.primary))
+                      strokeWidth: 2, color: ET.accent))
               : const Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.add, size: 28, color: Color(0xFF9CA3AF)),
+                    Icon(Icons.add, size: 28, color: ET.inkMuted),
                     SizedBox(height: 4),
                     Text('添加图片',
                         style:
-                            TextStyle(fontSize: 12, color: Color(0xFF9CA3AF))),
+                            TextStyle(fontSize: 12, color: ET.inkMuted)),
                   ],
                 ),
         ),
@@ -222,19 +226,19 @@ class _ClientCreateDesignScreenState extends State<ClientCreateDesignScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(20)),
+          color: ET.surface, borderRadius: BorderRadius.circular(20)),
       child: child,
     );
   }
 
   static const _labelStyle = TextStyle(
-      fontSize: 14, fontWeight: FontWeight.w600, color: DT.textPrimary);
+      fontSize: 14, fontWeight: FontWeight.w600, color: ET.ink);
 
   InputDecoration _fieldDecoration(String hint) => InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13),
+        hintStyle: const TextStyle(color: ET.inkMuted, fontSize: 13),
         filled: true,
-        fillColor: const Color(0xFFF5F6FA),
+        fillColor: ET.bgElevated,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         border: OutlineInputBorder(
@@ -251,9 +255,9 @@ class DottedBorderBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFAFC),
+        color: ET.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFD1D5DB), width: 1.5),
+        border: Border.all(color: ET.hairlineStrong, width: 1.5),
       ),
       child: child,
     );

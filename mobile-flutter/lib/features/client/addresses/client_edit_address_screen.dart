@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/editorial_tokens.dart';
 import 'client_address_service.dart';
 import '../../../core/widgets/nb_toast.dart';
 
@@ -125,14 +126,7 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFFFFDFD), Color(0xFFF7F3F6), Color(0xFFF2F6FB)],
-          stops: [0.0, 0.48, 1.0],
-        ),
-      ),
+      color: ET.bg,
       child: _loading
           ? _buildSkeleton(topPad)
           : Stack(
@@ -169,13 +163,11 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
           onTap: () => context.pop(),
           child: Container(
             width: 44, height: 44,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.8),
+            decoration: const BoxDecoration(
+              color: ET.surface,
               shape: BoxShape.circle,
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 24, offset: const Offset(0, 10))],
-              border: Border.all(color: Colors.black.withOpacity(0.05)),
             ),
-            child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF64748B)),
+            child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: ET.inkSecondary),
           ),
         ),
         const SizedBox(width: 14),
@@ -184,7 +176,7 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(_isEdit ? '编辑地址' : '添加地址',
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.3, color: DT.textPrimary)),
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.3, color: ET.ink)),
             ],
           ),
         ),
@@ -237,10 +229,10 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.88),
+        color: ET.surface,
         borderRadius: BorderRadius.circular(28),
-        boxShadow: DT.shadowMd,
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        boxShadow: ET.shadowCard,
+        border: Border.all(color: ET.hairline),
       ),
       child: Row(
         children: [
@@ -249,10 +241,10 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('设为默认地址',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Color(0xFF374151))),
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: ET.ink)),
                 const SizedBox(height: 4),
                 Text('后续预约时会优先使用这个地址',
-                  style: TextStyle(fontSize: 12, color: DT.textMuted)),
+                  style: TextStyle(fontSize: 12, color: ET.inkMuted)),
               ],
             ),
           ),
@@ -262,7 +254,7 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
               duration: const Duration(milliseconds: 200),
               width: 48, height: 28,
               decoration: BoxDecoration(
-                color: _isDefault ? DT.primary : const Color(0xFFD1D5DB),
+                color: _isDefault ? ET.accent : ET.hairlineStrong,
                 borderRadius: BorderRadius.circular(999),
               ),
               child: AnimatedAlign(
@@ -291,22 +283,22 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
     return ClipRRect(
       child: Container(
         padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPad + 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: const Color(0xFFF1F5F9), width: 1)),
+        decoration: const BoxDecoration(
+          color: ET.bgElevated,
+          border: Border(top: BorderSide(color: ET.hairline, width: 1)),
         ),
         child: SizedBox(
           width: double.infinity, height: 52,
           child: ElevatedButton(
             onPressed: _saving ? null : _save,
             style: ElevatedButton.styleFrom(
-              backgroundColor: DT.primary,
-              foregroundColor: Colors.white,
+              backgroundColor: ET.cream,
+              foregroundColor: ET.onCream,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
               elevation: 0,
             ),
             child: _saving
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: ET.onCream))
                 : Text(_isEdit ? '保存修改' : '保存',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           ),
@@ -321,17 +313,17 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.88),
+        color: ET.surface,
         borderRadius: BorderRadius.circular(28),
-        boxShadow: DT.shadowMd,
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        boxShadow: ET.shadowCard,
+        border: Border.all(color: ET.hairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: DT.textPrimary)),
+          Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: ET.ink)),
           const SizedBox(height: 4),
-          Text(subtitle, style: TextStyle(fontSize: 13, color: DT.textMuted)),
+          Text(subtitle, style: TextStyle(fontSize: 13, color: ET.inkMuted)),
           const SizedBox(height: 16),
           ...children,
         ],
@@ -346,24 +338,25 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (!compact) ...[
-          Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF374151))),
+          Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: ET.ink)),
           const SizedBox(height: 8),
         ],
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
+            color: ET.bgElevated,
             borderRadius: BorderRadius.circular(compact ? 14 : 16),
           ),
           child: TextField(
             controller: ctl,
             keyboardType: type,
+            cursorColor: ET.accent,
             maxLines: maxLines,
-            style: const TextStyle(fontSize: 14, color: DT.textPrimary),
+            style: const TextStyle(fontSize: 14, color: ET.ink),
             decoration: InputDecoration(
               labelText: compact ? label : null,
-              labelStyle: TextStyle(fontSize: compact ? 12 : 14, color: DT.textMuted),
+              labelStyle: TextStyle(fontSize: compact ? 12 : 14, color: ET.inkMuted),
               hintText: hint,
-              hintStyle: TextStyle(color: DT.textMuted, fontSize: compact ? 12 : 14),
+              hintStyle: TextStyle(color: ET.inkMuted, fontSize: compact ? 12 : 14),
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(horizontal: compact ? 12 : 16, vertical: compact ? 12 : 14),
               isDense: compact,
@@ -381,20 +374,20 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
       padding: EdgeInsets.fromLTRB(20, topPad + 8, 20, 24),
       children: [
         Row(children: [
-          Container(width: 44, height: 44, decoration: BoxDecoration(color: const Color(0xFFE8E8E8), shape: BoxShape.circle)),
+          Container(width: 44, height: 44, decoration: BoxDecoration(color: ET.surface, shape: BoxShape.circle)),
           const SizedBox(width: 14),
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Container(width: 80, height: 10, decoration: BoxDecoration(color: const Color(0xFFE8E8E8), borderRadius: BorderRadius.circular(4))),
+            Container(width: 80, height: 10, decoration: BoxDecoration(color: ET.surface, borderRadius: BorderRadius.circular(4))),
             const SizedBox(height: 6),
-            Container(width: 60, height: 20, decoration: BoxDecoration(color: const Color(0xFFE8E8E8), borderRadius: BorderRadius.circular(4))),
+            Container(width: 60, height: 20, decoration: BoxDecoration(color: ET.surface, borderRadius: BorderRadius.circular(4))),
           ]),
         ]),
         const SizedBox(height: 20),
-        Container(height: 200, decoration: BoxDecoration(color: const Color(0xFFE8E8E8), borderRadius: BorderRadius.circular(28))),
+        Container(height: 200, decoration: BoxDecoration(color: ET.surface, borderRadius: BorderRadius.circular(28))),
         const SizedBox(height: 14),
-        Container(height: 280, decoration: BoxDecoration(color: const Color(0xFFE8E8E8), borderRadius: BorderRadius.circular(28))),
+        Container(height: 280, decoration: BoxDecoration(color: ET.surface, borderRadius: BorderRadius.circular(28))),
         const SizedBox(height: 14),
-        Container(height: 60, decoration: BoxDecoration(color: const Color(0xFFE8E8E8), borderRadius: BorderRadius.circular(28))),
+        Container(height: 60, decoration: BoxDecoration(color: ET.surface, borderRadius: BorderRadius.circular(28))),
       ],
     );
   }

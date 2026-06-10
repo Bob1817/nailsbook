@@ -88,17 +88,17 @@ class _ClientAddressesScreenState extends State<ClientAddressesScreen> {
   Widget build(BuildContext context) {
     final bottomPad = MediaQuery.of(context).padding.bottom;
     return Scaffold(
-      appBar: GlassAppBar(title: const Text('我的地址')),
-      backgroundColor: DT.bg,
+      appBar: GlassAppBar(title: const Text('我的地址'), dark: true),
+      backgroundColor: ET.bg,
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: DT.primary))
+          ? const Center(child: CircularProgressIndicator(color: ET.accent))
           : Column(
               children: [
                 Expanded(
                   child: _addresses.isEmpty
                       ? _emptyState()
                       : RefreshIndicator(
-                          color: DT.primary,
+                          color: ET.accent,
                           onRefresh: _loadAddresses,
                           child: ListView.separated(
                             padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
@@ -124,9 +124,9 @@ class _ClientAddressesScreenState extends State<ClientAddressesScreen> {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-                color: DT.primarySoft, borderRadius: BorderRadius.circular(24)),
+                color: ET.accentSoft, borderRadius: BorderRadius.circular(24)),
             child: const Icon(Icons.location_on_outlined,
-                size: 34, color: DT.primary),
+                size: 34, color: ET.accent),
           ),
         ),
         const SizedBox(height: 16),
@@ -135,11 +135,11 @@ class _ClientAddressesScreenState extends State<ClientAddressesScreen> {
                 style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: DT.textPrimary))),
+                    color: ET.ink))),
         const SizedBox(height: 6),
         const Center(
             child: Text('添加常用地址，预约上门服务更方便',
-                style: TextStyle(fontSize: 13, color: DT.textMuted))),
+                style: TextStyle(fontSize: 13, color: ET.inkMuted))),
       ],
     );
   }
@@ -150,10 +150,10 @@ class _ClientAddressesScreenState extends State<ClientAddressesScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: DT.surface,
+          color: ET.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.black.withOpacity(0.05)),
-          boxShadow: DT.shadowSm,
+          border: Border.all(color: ET.hairline),
+          boxShadow: ET.shadowTile,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,10 +165,10 @@ class _ClientAddressesScreenState extends State<ClientAddressesScreen> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                      color: DT.primarySoft,
+                      color: ET.accentSoft,
                       borderRadius: BorderRadius.circular(12)),
                   child: const Icon(Icons.location_on_rounded,
-                      size: 20, color: DT.primary),
+                      size: 20, color: ET.accent),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -183,14 +183,14 @@ class _ClientAddressesScreenState extends State<ClientAddressesScreen> {
                                 style: const TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w600,
-                                    color: DT.textPrimary)),
+                                    color: ET.ink)),
                           ),
                           if (addr.contactPhone != null &&
                               addr.contactPhone!.isNotEmpty) ...[
                             const SizedBox(width: 8),
                             Text(addr.contactPhone!,
                                 style: const TextStyle(
-                                    fontSize: 13, color: DT.textSecondary)),
+                                    fontSize: 13, color: ET.inkSecondary)),
                           ],
                           if (addr.isDefault) ...[
                             const SizedBox(width: 8),
@@ -198,13 +198,13 @@ class _ClientAddressesScreenState extends State<ClientAddressesScreen> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 7, vertical: 2),
                               decoration: BoxDecoration(
-                                  color: DT.primarySoft,
+                                  color: ET.accentSoft,
                                   borderRadius: BorderRadius.circular(999)),
                               child: const Text('默认',
                                   style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600,
-                                      color: DT.primary)),
+                                      color: ET.accent)),
                             ),
                           ],
                         ],
@@ -214,16 +214,16 @@ class _ClientAddressesScreenState extends State<ClientAddressesScreen> {
                           style: const TextStyle(
                               fontSize: 13,
                               height: 1.5,
-                              color: DT.textSecondary)),
+                              color: ET.inkSecondary)),
                     ],
                   ),
                 ),
                 const Icon(Icons.chevron_right_rounded,
-                    size: 20, color: DT.textTertiary),
+                    size: 20, color: ET.inkMuted),
               ],
             ),
             const SizedBox(height: 10),
-            const Divider(height: 1, color: DT.divider),
+            const Divider(height: 1, color: ET.hairlineFaint),
             const SizedBox(height: 4),
             Row(
               children: [
@@ -232,14 +232,14 @@ class _ClientAddressesScreenState extends State<ClientAddressesScreen> {
                       ? Icons.check_circle_rounded
                       : Icons.radio_button_unchecked_rounded,
                   label: addr.isDefault ? '默认地址' : '设为默认',
-                  color: addr.isDefault ? DT.primary : DT.textSecondary,
+                  color: addr.isDefault ? ET.accent : ET.inkSecondary,
                   onTap: addr.isDefault ? null : () => _setDefault(addr.id),
                 ),
                 const Spacer(),
                 _cardAction(
                     icon: Icons.edit_outlined,
                     label: '编辑',
-                    color: DT.textSecondary,
+                    color: ET.inkSecondary,
                     onTap: () => _openForm(existing: addr)),
                 const SizedBox(width: 4),
                 _cardAction(
@@ -280,8 +280,8 @@ class _ClientAddressesScreenState extends State<ClientAddressesScreen> {
     return Container(
       padding: EdgeInsets.fromLTRB(16, 10, 16, bottomPad + 12),
       decoration: BoxDecoration(
-        color: DT.surface,
-        border: Border(top: BorderSide(color: DT.divider, width: 0.5)),
+        color: ET.surface,
+        border: Border(top: BorderSide(color: ET.hairlineFaint, width: 0.5)),
       ),
       child: SizedBox(
         width: double.infinity,
@@ -292,8 +292,8 @@ class _ClientAddressesScreenState extends State<ClientAddressesScreen> {
           label: const Text('新增地址',
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
           style: ElevatedButton.styleFrom(
-            backgroundColor: DT.primary,
-            foregroundColor: Colors.white,
+            backgroundColor: ET.cream,
+            foregroundColor: ET.onCream,
             elevation: 0,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(999)),
@@ -409,12 +409,11 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
           filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.92),
+              color: ET.bgElevated.withValues(alpha: 0.96),
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(28)),
-              border: Border(
-                  top: BorderSide(
-                      color: Colors.white.withOpacity(0.6), width: 0.5)),
+              border: const Border(
+                  top: BorderSide(color: ET.hairline, width: 0.5)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -431,12 +430,12 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                               style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  color: DT.textPrimary)),
+                                  color: ET.ink)),
                         ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.close_rounded,
-                            size: 22, color: DT.textSecondary),
+                            size: 22, color: ET.inkSecondary),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
@@ -480,8 +479,8 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                     child: ElevatedButton(
                       onPressed: _saving ? null : _save,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: DT.primary,
-                        foregroundColor: Colors.white,
+                        backgroundColor: ET.cream,
+                        foregroundColor: ET.onCream,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(999)),
@@ -491,7 +490,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                               width: 20,
                               height: 20,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white))
+                                  strokeWidth: 2, color: ET.onCream))
                           : Text(_isEdit ? '保存修改' : '保存地址',
                               style: const TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.w600)),
@@ -508,7 +507,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
 
   Widget _label(String t) => Text(t,
       style: const TextStyle(
-          fontSize: 13, fontWeight: FontWeight.w500, color: DT.textPrimary));
+          fontSize: 13, fontWeight: FontWeight.w500, color: ET.ink));
 
   Widget _field(String label, TextEditingController ctl,
       {String? hint, TextInputType? keyboard, int maxLines = 1}) {
@@ -521,12 +520,13 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
           controller: ctl,
           keyboardType: keyboard,
           maxLines: maxLines,
-          style: const TextStyle(fontSize: 14, color: DT.textPrimary),
+          cursorColor: ET.accent,
+          style: const TextStyle(fontSize: 14, color: ET.ink),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: DT.textMuted, fontSize: 14),
+            hintStyle: const TextStyle(color: ET.inkMuted, fontSize: 14),
             filled: true,
-            fillColor: DT.surfaceAlt,
+            fillColor: ET.surface,
             isDense: true,
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
@@ -538,7 +538,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                 borderSide: BorderSide.none),
             focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: DT.primary, width: 1.4)),
+                borderSide: const BorderSide(color: ET.accent, width: 1.4)),
           ),
         ),
       ],
@@ -552,20 +552,20 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
-            color: DT.surfaceAlt, borderRadius: BorderRadius.circular(14)),
+            color: ET.surface, borderRadius: BorderRadius.circular(14)),
         child: Row(
           children: [
-            const Icon(Icons.map_outlined, size: 18, color: DT.primary),
+            const Icon(Icons.map_outlined, size: 18, color: ET.accent),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 has ? _region.display : '请选择省 / 市 / 区',
                 style: TextStyle(
-                    fontSize: 14, color: has ? DT.textPrimary : DT.textMuted),
+                    fontSize: 14, color: has ? ET.ink : ET.inkMuted),
               ),
             ),
             const Icon(Icons.chevron_right_rounded,
-                size: 20, color: DT.textTertiary),
+                size: 20, color: ET.inkMuted),
           ],
         ),
       ),
@@ -586,10 +586,10 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                     style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: DT.textPrimary)),
+                        color: ET.ink)),
                 SizedBox(height: 3),
                 Text('预约上门时优先使用此地址',
-                    style: TextStyle(fontSize: 12, color: DT.textMuted)),
+                    style: TextStyle(fontSize: 12, color: ET.inkMuted)),
               ],
             ),
           ),
@@ -598,7 +598,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
             width: 48,
             height: 28,
             decoration: BoxDecoration(
-              color: _isDefault ? DT.primary : const Color(0xFFD1D1D6),
+              color: _isDefault ? ET.accent : ET.hairlineStrong,
               borderRadius: BorderRadius.circular(999),
             ),
             child: AnimatedAlign(

@@ -136,8 +136,9 @@ class _ClientDesignDetailScreenState extends State<ClientDesignDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6F8),
+      backgroundColor: ET.bg,
       appBar: GlassAppBar(
+        dark: true,
         title: const Text('设计详情'),
         actions: _design == null
             ? null
@@ -149,7 +150,7 @@ class _ClientDesignDetailScreenState extends State<ClientDesignDetailScreen> {
               ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: DT.primary))
+          ? const Center(child: CircularProgressIndicator(color: ET.accent))
           : _design == null
               ? const Center(child: Text('设计不存在'))
               : _buildBody(_design!),
@@ -173,9 +174,9 @@ class _ClientDesignDetailScreenState extends State<ClientDesignDetailScreen> {
                   imageUrl: images[i],
                   fit: BoxFit.cover,
                   placeholder: (_, __) =>
-                      Container(color: const Color(0xFFEFEAF2)),
+                      Container(color: ET.surface),
                   errorWidget: (_, __, ___) =>
-                      Container(color: const Color(0xFFEFEAF2)),
+                      Container(color: ET.surface),
                 ),
               ),
             ),
@@ -188,7 +189,7 @@ class _ClientDesignDetailScreenState extends State<ClientDesignDetailScreen> {
                   style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: DT.textPrimary)),
+                      color: ET.ink)),
             ),
             _statusBadge(d.status, d.statusLabel),
           ],
@@ -198,7 +199,7 @@ class _ClientDesignDetailScreenState extends State<ClientDesignDetailScreen> {
           _card(
               child: Text(d.description!,
                   style: const TextStyle(
-                      fontSize: 14, height: 1.6, color: DT.textSecondary))),
+                      fontSize: 14, height: 1.6, color: ET.inkSecondary))),
         ],
         if (d.technician != null) ...[
           const SizedBox(height: 12),
@@ -214,8 +215,7 @@ class _ClientDesignDetailScreenState extends State<ClientDesignDetailScreen> {
   }
 
   Widget _statusBadge(String status, String label) {
-    final c = _statusColors[status] ??
-        (const Color(0xFFF3F4F6), const Color(0xFF4B5563));
+    final c = _statusColors[status] ?? (ET.surface, ET.inkSecondary);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration:
@@ -234,13 +234,13 @@ class _ClientDesignDetailScreenState extends State<ClientDesignDetailScreen> {
         children: [
           CircleAvatar(
             radius: 22,
-            backgroundColor: DT.primarySoft,
+            backgroundColor: ET.accentSoft,
             backgroundImage: (avatar != null && avatar.isNotEmpty)
                 ? CachedNetworkImageProvider(avatar)
                 : null,
             child: (avatar == null || avatar.isEmpty)
                 ? Text(name.isNotEmpty ? name.substring(0, 1) : '美',
-                    style: const TextStyle(color: DT.primary))
+                    style: const TextStyle(color: ET.accent))
                 : null,
           ),
           const SizedBox(width: 12),
@@ -252,10 +252,10 @@ class _ClientDesignDetailScreenState extends State<ClientDesignDetailScreen> {
                     style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: DT.textPrimary)),
+                        color: ET.ink)),
                 const SizedBox(height: 2),
                 const Text('你的专属美甲师',
-                    style: TextStyle(fontSize: 12, color: DT.textSecondary)),
+                    style: TextStyle(fontSize: 12, color: ET.inkSecondary)),
               ],
             ),
           ),
@@ -266,22 +266,22 @@ class _ClientDesignDetailScreenState extends State<ClientDesignDetailScreen> {
 
   Widget _quoteCard(ClientDesign d) {
     return _card(
-      color: DT.primarySoft,
+      color: ET.accentSoft,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('美甲师报价',
-              style: TextStyle(fontSize: 13, color: DT.textSecondary)),
+              style: TextStyle(fontSize: 13, color: ET.inkSecondary)),
           const SizedBox(height: 4),
           Text('¥${d.quotePrice!.toStringAsFixed(0)}',
               style: const TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
-                  color: DT.primaryDark)),
+                  color: ET.accentOnDark)),
           if (d.quoteRemark != null && d.quoteRemark!.isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(d.quoteRemark!,
-                style: const TextStyle(fontSize: 13, color: DT.textSecondary)),
+                style: const TextStyle(fontSize: 13, color: ET.inkSecondary)),
           ],
         ],
       ),
@@ -296,8 +296,8 @@ class _ClientDesignDetailScreenState extends State<ClientDesignDetailScreen> {
         child: ElevatedButton(
           onPressed: _book,
           style: ElevatedButton.styleFrom(
-            backgroundColor: DT.primary,
-            foregroundColor: Colors.white,
+            backgroundColor: ET.cream,
+            foregroundColor: ET.onCream,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(999)),
           ),
@@ -308,7 +308,7 @@ class _ClientDesignDetailScreenState extends State<ClientDesignDetailScreen> {
     );
   }
 
-  Widget _card({required Widget child, Color color = Colors.white}) {
+  Widget _card({required Widget child, Color color = ET.surface}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
