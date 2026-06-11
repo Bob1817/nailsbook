@@ -107,11 +107,20 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
 
   void _bookSameStyle() {
     final techId = _work?['technicianId'] as int?;
+    final title = _work?['title']?.toString();
+    final images = ((_work?['imageUrls'] as List<dynamic>?) ?? const [])
+        .map((e) => e.toString())
+        .toList();
     Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (_) =>
-                ClientCreateOrderScreen(preselectedTechId: techId)));
+            builder: (_) => ClientCreateOrderScreen(
+                  preselectedTechId: techId,
+                  // 作品标题/图作为自定义服务内容预填，进入精简向导（方式→时间→确认）
+                  preselectedCustomTitle:
+                      (title == null || title.isEmpty) ? '同款作品' : title,
+                  preselectedCustomImages: images,
+                )));
   }
 
   Future<void> _sendComment() async {

@@ -21,11 +21,17 @@ class ClientCreateOrderScreen extends StatefulWidget {
   /// 从「可约时间」弹窗带入的预选日期/时间（yyyy-MM-dd / HH:mm）。
   final String? preselectedDate;
   final String? preselectedTime;
+
+  /// 「预约同款」：作品标题/图直接作为自定义服务内容预填，并跳过「美甲师/服务内容」步。
+  final String? preselectedCustomTitle;
+  final List<String>? preselectedCustomImages;
   const ClientCreateOrderScreen({
     super.key,
     this.preselectedTechId,
     this.preselectedDate,
     this.preselectedTime,
+    this.preselectedCustomTitle,
+    this.preselectedCustomImages,
   });
 
   @override
@@ -73,8 +79,21 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
           '${tomorrow.year}-${tomorrow.month.toString().padLeft(2, '0')}-${tomorrow.day.toString().padLeft(2, '0')}';
     }
     _pendingTime = widget.preselectedTime;
+    // 「预约同款」：作品标题/图预填为自定义服务内容。
+    if (widget.preselectedCustomTitle != null) {
+      _isCustomService = true;
+      _customTitle = widget.preselectedCustomTitle!;
+      _customImages = List<String>.from(widget.preselectedCustomImages ?? const []);
+    }
     _load();
   }
+
+  /// 是否为「预约同款」模式（美甲师固定 + 服务内容已预填）。
+  bool get _isQuickSameStyle => widget.preselectedCustomTitle != null;
+
+  /// 当前向导要展示的步骤（绝对索引）。预约同款跳过「美甲师」「服务内容」。
+  List<int> get _steps =>
+      _isQuickSameStyle ? const [1, 2, 4] : const [0, 1, 2, 3, 4];
 
   /// 代入时间校验：在可约时段确定后，若代入时间不可约（被服务类型/门店/占用导致冲突）→ 提示。
   void _applyPendingTime() {
@@ -353,7 +372,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                 children: [
                   ListView(
                     padding: EdgeInsets.fromLTRB(20, topPad + 96, 20, 110 + MediaQuery.of(context).padding.bottom),
-                    children: _stepContent(_step),
+                    children: _stepContent(_steps[_step]),
                   ),
                   // Sticky header（玻璃模糊仅限于头部区域，避免整页被模糊）
                   Positioned(
@@ -388,9 +407,9 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text('步骤 ${_step + 1}/${_stepTitles.length}', style: const TextStyle(fontSize: 11, letterSpacing: 1.5, color: ET.inkMuted)),
+                                        Text('步骤 ${_step + 1}/${_steps.length}', style: const TextStyle(fontSize: 11, letterSpacing: 1.5, color: ET.inkMuted)),
                                         const SizedBox(height: 1),
-                                        Text(_stepTitles[_step], style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: ET.ink)),
+                                        Text(_stepTitles[_steps[_step]], style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: ET.ink)),
                                       ],
                                     ),
                                   ),
@@ -399,12 +418,12 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                               const SizedBox(height: 10),
                               // 进度条
                               Row(
-                                children: List.generate(_stepTitles.length, (i) {
+                                children: List.generate(_steps.length, (i) {
                                   final done = i <= _step;
                                   return Expanded(
                                     child: Container(
                                       height: 3,
-                                      margin: EdgeInsets.only(right: i < _stepTitles.length - 1 ? 5 : 0),
+                                      margin: EdgeInsets.only(right: i < _steps.length - 1 ? 5 : 0),
                                       decoration: BoxDecoration(
                                         color: done ? ET.accent : ET.hairline,
                                         borderRadius: BorderRadius.circular(999),
@@ -477,7 +496,16 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
         ];
       case 4:
         return [
+          if (_isQuickSameStyle) ...[
+            _sameStylePreview(),
+            const SizedBox(height: 16),
+          ],
           _summaryCard(),
+          // 预约同款 + 上门：地址选择并入确认步（内容步已跳过）
+          if (_isQuickSameStyle && _serviceType == '上门美甲') ...[
+            const SizedBox(height: 16),
+            _buildAddressSection(),
+          ],
           const SizedBox(height: 16),
           _notesCard(),
         ];
@@ -531,8 +559,8 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
   }
 
   Widget _bottomNav() {
-    final isLast = _step == _stepTitles.length - 1;
-    final valid = _stepValid(_step);
+    final isLast = _step == _steps.length - 1;
+    final valid = _stepValid(_steps[_step]);
     return Row(
       children: [
         if (_step > 0) ...[
@@ -625,6 +653,42 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
         ],
       ),
     );
+  }
+
+  Widget _sameStylePreview() {
+    final img = _customImages.isNotEmpty ? _customImages.first : null;
+    return _glassCard('预约同款', '以下作品将作为本次服务内容，确认后选择方式与时间', [
+      Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: SizedBox(
+              width: 64,
+              height: 64,
+              child: img != null
+                  ? Image.network(img, fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          Container(color: ET.surface))
+                  : Container(
+                      color: ET.surface,
+                      child: const Icon(Icons.image_outlined,
+                          color: ET.inkMuted)),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+                _customTitle.trim().isEmpty ? '同款作品' : _customTitle.trim(),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: ET.ink)),
+          ),
+        ],
+      ),
+    ]);
   }
 
   Widget _notesCard() {
@@ -1170,7 +1234,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildDateStrip(),
-        const SizedBox(height: 14),
+        const SizedBox(height: 8),
         if (_isShopMode && _shopAddressName.isNotEmpty)
           ...() {
             final opt = shopHoursOptionForDate(_selectedShopMap, _serviceDate);
@@ -1193,7 +1257,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
     final base = DateTime(now.year, now.month, now.day);
     const wk = ['一', '二', '三', '四', '五', '六', '日']; // Dart weekday 1..7
     return SizedBox(
-      height: 78,
+      height: 58,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: 45,
@@ -1220,12 +1284,14 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                 children: [
                   Text(label,
                     style: TextStyle(fontSize: 12, color: selected ? DT.onCream.withValues(alpha: 0.7) : (enabled ? DT.textMuted : DT.textTertiary.withOpacity(0.5)))),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text('${d.month}/${d.day}',
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: selected ? DT.onCream : (enabled ? DT.textPrimary : DT.textTertiary.withOpacity(0.45)))),
-                  const SizedBox(height: 2),
-                  Text(enabled ? '' : '休',
-                    style: TextStyle(fontSize: 9, height: 1, color: DT.textTertiary.withOpacity(0.7))),
+                  if (!enabled) ...[
+                    const SizedBox(height: 2),
+                    Text('休',
+                        style: TextStyle(fontSize: 9, height: 1, color: DT.textTertiary.withOpacity(0.7))),
+                  ],
                 ],
               ),
             ),
