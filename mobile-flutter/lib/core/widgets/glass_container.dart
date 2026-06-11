@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/design_tokens.dart';
 import '../theme/editorial_tokens.dart';
+import 'client_detail_back_button.dart';
 
 export 'dart:async' show Timer;
 export '../theme/editorial_tokens.dart';
@@ -171,11 +172,18 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final defaultLeading =
+        automaticallyImplyLeading && Navigator.of(context).canPop()
+            ? const ClientDetailBackButton()
+            : null;
+    final effectiveLeading = leading ?? defaultLeading;
+
     return AppBar(
       title: title,
-      leading: leading,
+      leading: effectiveLeading,
       actions: actions,
-      automaticallyImplyLeading: automaticallyImplyLeading,
+      automaticallyImplyLeading:
+          effectiveLeading == null && automaticallyImplyLeading,
       centerTitle: centerTitle,
       bottom: bottom,
       elevation: 0,

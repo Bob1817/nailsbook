@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/api/api_client.dart';
 import 'client_order_models.dart';
 import 'client_order_service.dart';
@@ -98,28 +99,34 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                   builder: (_) => const ClientCreateOrderScreen()))
           .then((_) => _loadOrders()),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
             color: ET.cream, borderRadius: BorderRadius.circular(999)),
         child: const Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.add_rounded, size: 18, color: ET.onCream),
-          SizedBox(width: 4),
+          Icon(Icons.add_rounded, size: 16, color: ET.onCream),
+          SizedBox(width: 2),
           Text('发起预约',
               style: TextStyle(
-                  fontSize: 14, fontWeight: FontWeight.w600, color: ET.onCream)),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: ET.onCream)),
         ]),
       ),
     );
   }
 
-
-  /// 预约卡片（对齐 webapp OrderList.tsx）：预 徽章 + 日期块 + 标题 + 时间/地址 + 报价/提示。
+  /// 预约卡片（对齐 webapp OrderList.tsx）：服务类型 + 日期块 + 标题 + 美甲师/时间/地址 + 报价/提示。
   Widget _orderCard(ClientOrder order) {
     final colors = _statusColors(order.status);
+    final serviceType = _serviceTypeLabel(order.serviceType);
     final title = (order.customTitle?.isNotEmpty == true)
         ? order.customTitle!
-        : (order.serviceType?.isNotEmpty == true ? order.serviceType! : '美甲服务');
+        : serviceType;
     final start = DateTime.tryParse(order.startTime ?? '');
+    final tech = order.technician;
+    final techName = tech?['name']?.toString() ?? '美甲师';
+    final techAvatar = tech?['avatarUrl']?.toString();
     return GestureDetector(
       onTap: () => Navigator.push(
               context,
@@ -138,30 +145,16 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.fromLTRB(4, 4, 10, 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                       color: ET.accentSoft,
                       borderRadius: BorderRadius.circular(999)),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Container(
-                      width: 30,
-                      height: 30,
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                          color: ET.bgElevated, shape: BoxShape.circle),
-                      child: const Text('预',
-                          style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: ET.accentOnDark)),
-                    ),
-                    const SizedBox(width: 6),
-                    const Text('预约',
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: ET.accentOnDark)),
-                  ]),
+                  child: Text(serviceType,
+                      style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: ET.accentOnDark)),
                 ),
                 const Spacer(),
                 Container(
@@ -188,19 +181,30 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                   decoration: BoxDecoration(
                       color: ET.accentSoft,
                       borderRadius: BorderRadius.circular(16)),
-                  child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
+                  child: Center(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
                         Text(start != null ? '${start.month}月' : '--',
                             style: const TextStyle(
-                                fontSize: 11, color: ET.accentOnDark)),
+                                fontSize: 10,
+                                height: 1.1,
+                                color: ET.accentOnDark)),
                         Text(start != null ? '${start.day}' : '--',
                             style: const TextStyle(
-                                fontSize: 24,
+                                fontSize: 22,
                                 fontWeight: FontWeight.w700,
+                                height: 1.0,
+                                color: ET.accentOnDark)),
+                        Text(start != null ? _weekday(start) : '--',
+                            style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
                                 height: 1.1,
                                 color: ET.accentOnDark)),
                       ]),
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -215,6 +219,8 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                               fontWeight: FontWeight.w600,
                               color: ET.ink)),
                       const SizedBox(height: 6),
+                      _technicianRow(techName, techAvatar),
+                      const SizedBox(height: 4),
                       _metaRow(Icons.access_time_rounded,
                           '${_hm(order.startTime)} - ${_hm(order.endTime)}'),
                       const SizedBox(height: 4),
@@ -266,10 +272,69 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
     ]);
   }
 
+  Widget _technicianRow(String name, String? avatar) {
+    return Row(children: [
+      ClipOval(
+        child: avatar != null && avatar.isNotEmpty
+            ? CachedNetworkImage(
+                imageUrl: avatar,
+                width: 18,
+                height: 18,
+                fit: BoxFit.cover,
+                errorWidget: (_, __, ___) => _technicianAvatarFallback(name),
+              )
+            : _technicianAvatarFallback(name),
+      ),
+      const SizedBox(width: 6),
+      Expanded(
+        child: Text(
+          name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: ET.inkSecondary,
+          ),
+        ),
+      ),
+    ]);
+  }
+
+  Widget _technicianAvatarFallback(String name) {
+    return Container(
+      width: 18,
+      height: 18,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(
+        color: ET.accentSoft,
+        shape: BoxShape.circle,
+      ),
+      child: Text(
+        name.isNotEmpty ? name.substring(0, 1) : '美',
+        style: const TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          color: ET.accentOnDark,
+        ),
+      ),
+    );
+  }
+
   String _hm(String? iso) {
     final d = DateTime.tryParse(iso ?? '');
     if (d == null) return '--';
     return '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _weekday(DateTime date) {
+    const labels = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+    return labels[date.weekday - 1];
+  }
+
+  String _serviceTypeLabel(String? value) {
+    final s = value?.trim() ?? '';
+    return s.isEmpty ? '美甲服务' : s;
   }
 
   String _hint(String status) {

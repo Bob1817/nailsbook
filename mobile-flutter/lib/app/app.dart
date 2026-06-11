@@ -14,7 +14,10 @@ class NailBookApp extends StatefulWidget {
   final String apiBaseUrl;
   final DeepLinkService deepLinkService;
 
-  const NailBookApp({super.key, this.apiBaseUrl = 'http://10.0.2.2:3000', required this.deepLinkService});
+  const NailBookApp(
+      {super.key,
+      this.apiBaseUrl = 'http://10.0.2.2:3000',
+      required this.deepLinkService});
 
   @override
   State<NailBookApp> createState() => _NailBookAppState();
@@ -54,7 +57,8 @@ class _NailBookAppState extends State<NailBookApp> {
 
     // 未登录：带邀请码进入客户端登录/注册页
     if (!authSession.isClient) {
-      router.go(code != null ? '/client/login?inviteCode=$code' : '/client/login');
+      router.go(
+          code != null ? '/client/login?inviteCode=$code' : '/client/login');
       return;
     }
 
@@ -91,6 +95,17 @@ class _NailBookAppState extends State<NailBookApp> {
           routerConfig: router,
           scaffoldMessengerKey: _scaffoldMessengerKey,
           debugShowCheckedModeBanner: false,
+          builder: (context, child) => GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () {
+              final focusScope = FocusScope.of(context);
+              if (!focusScope.hasPrimaryFocus &&
+                  focusScope.focusedChild != null) {
+                focusScope.unfocus();
+              }
+            },
+            child: child ?? const SizedBox.shrink(),
+          ),
         );
       },
     );

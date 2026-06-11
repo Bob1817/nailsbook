@@ -49,14 +49,17 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
 
   Future<void> _loadWork() async {
     try {
-      final data =
-          await context.read<ApiClient>().get('/works/${widget.workId}');
+      final api = context.read<ApiClient>()..setRole('client');
+      final data = await api.get('/works/${widget.workId}');
       if (mounted) {
         setState(() {
           _work = data;
-          _liked = data['isLiked'] as bool? ?? false;
-          _favorited = data['isFavorited'] as bool? ?? false;
-          _likeCount = data['likeCount'] as int? ?? 0;
+          _liked = _bool(data['isLiked'] ?? data['liked']);
+          _favorited = _bool(data['isFavorited'] ??
+              data['favorited'] ??
+              data['isFavorite'] ??
+              data['favorite']);
+          _likeCount = _int(data['likeCount'] ?? data['likesCount']);
           _comments = (data['comments'] as List<dynamic>?)
                   ?.cast<Map<String, dynamic>>() ??
               [];
@@ -70,8 +73,8 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
 
   Future<void> _reloadComments() async {
     try {
-      final data =
-          await context.read<ApiClient>().get('/works/${widget.workId}');
+      final api = context.read<ApiClient>()..setRole('client');
+      final data = await api.get('/works/${widget.workId}');
       if (mounted)
         setState(() => _comments = (data['comments'] as List<dynamic>?)
                 ?.cast<Map<String, dynamic>>() ??
@@ -83,15 +86,23 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
     final next = !_liked;
     setState(() {
       _liked = next;
-      _likeCount += next ? 1 : -1;
+      _likeCount = (_likeCount + (next ? 1 : -1)).clamp(0, 1 << 31);
     });
     try {
-      await context.read<ApiClient>().post('/works/${widget.workId}/like');
+      final api = context.read<ApiClient>()..setRole('client');
+      final res = await api.post('/works/${widget.workId}/like');
+      final payload = _payload(res);
+      if (!mounted) return;
+      setState(() {
+        _liked = _bool(payload['isLiked'] ?? payload['liked'], fallback: next);
+        _likeCount = _int(payload['likeCount'] ?? payload['likesCount'],
+            fallback: _likeCount);
+      });
     } catch (_) {
       if (mounted)
         setState(() {
           _liked = !next;
-          _likeCount += next ? -1 : 1;
+          _likeCount = (_likeCount + (next ? -1 : 1)).clamp(0, 1 << 31);
         });
     }
   }
@@ -100,7 +111,18 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
     final next = !_favorited;
     setState(() => _favorited = next);
     try {
-      await context.read<ApiClient>().post('/works/${widget.workId}/favorite');
+      final api = context.read<ApiClient>()..setRole('client');
+      final res = await api.post('/works/${widget.workId}/favorite');
+      final payload = _payload(res);
+      if (!mounted) return;
+      setState(() {
+        _favorited = _bool(
+            payload['isFavorited'] ??
+                payload['favorited'] ??
+                payload['isFavorite'] ??
+                payload['favorite'],
+            fallback: next);
+      });
     } catch (_) {
       if (mounted) setState(() => _favorited = !next);
     }
@@ -499,8 +521,8 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
                     : null,
                 child: (avatar == null || avatar.isEmpty)
                     ? Text(name.substring(0, 1),
-                        style:
-                            const TextStyle(color: ET.accentOnDark, fontSize: 12))
+                        style: const TextStyle(
+                            color: ET.accentOnDark, fontSize: 12))
                     : null,
               ),
               const SizedBox(width: 10),
@@ -534,8 +556,7 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
                     ]),
                     const SizedBox(height: 3),
                     Text(c['content']?.toString() ?? '',
-                        style: const TextStyle(
-                            fontSize: 14, color: ET.ink)),
+                        style: const TextStyle(fontSize: 14, color: ET.ink)),
                     const SizedBox(height: 2),
                     Row(children: [
                       GestureDetector(
@@ -629,8 +650,8 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
                 alignment: Alignment.center,
                 decoration: const BoxDecoration(
                     color: ET.accent, shape: BoxShape.circle),
-                child: const Icon(Icons.send_rounded,
-                    color: ET.onCream, size: 20),
+                child:
+                    const Icon(Icons.send_rounded, color: ET.onCream, size: 20),
               ),
             ),
           ]),
@@ -648,6 +669,30 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
     if (diff.inHours < 24) return '${diff.inHours}小时前';
     if (diff.inDays < 7) return '${diff.inDays}天前';
     return '${d.month}/${d.day}';
+  }
+
+  bool _bool(dynamic value, {bool fallback = false}) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final normalized = value.toLowerCase().trim();
+      if (normalized == 'true' || normalized == '1') return true;
+      if (normalized == 'false' || normalized == '0') return false;
+    }
+    return fallback;
+  }
+
+  int _int(dynamic value, {int fallback = 0}) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? fallback;
+    return fallback;
+  }
+
+  Map<String, dynamic> _payload(Map<String, dynamic> response) {
+    final data = response['data'];
+    if (data is Map<String, dynamic>) return data;
+    return response;
   }
 }
 

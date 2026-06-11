@@ -2,6 +2,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 
 import '../theme/editorial_tokens.dart';
+import 'client_detail_back_button.dart';
 
 /// 客户端统一固定毛玻璃头部：
 /// 标题（左，编辑感衬线）+ 操作区（右，与标题水平对齐），
@@ -32,6 +33,7 @@ class ClientGlassHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
+    final canPop = Navigator.of(context).canPop();
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: ET.glassBlur, sigmaY: ET.glassBlur),
@@ -49,13 +51,17 @@ class ClientGlassHeader extends StatelessWidget {
                 height: 44,
                 child: Row(
                   children: [
+                    if (canPop) ...[
+                      const ClientDetailBackButton(),
+                      const SizedBox(width: 12),
+                    ],
                     Expanded(
                       child: Text(title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           // 字号对齐美甲师端页面标题（DT.titleLarge = 20），保留衬线
-                          style: ET.display.copyWith(
-                              fontSize: 20, height: 1.3)),
+                          style:
+                              ET.display.copyWith(fontSize: 20, height: 1.3)),
                     ),
                     ...actions,
                   ],
@@ -77,7 +83,8 @@ class ClientGlassHeader extends StatelessWidget {
 class HeaderCircleButton extends StatelessWidget {
   final Widget child;
   final VoidCallback onTap;
-  const HeaderCircleButton({super.key, required this.child, required this.onTap});
+  const HeaderCircleButton(
+      {super.key, required this.child, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

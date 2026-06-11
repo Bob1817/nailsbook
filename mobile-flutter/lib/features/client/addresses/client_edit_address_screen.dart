@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
-import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/editorial_tokens.dart';
+import '../../../core/widgets/client_detail_back_button.dart';
 import 'client_address_service.dart';
 import '../../../core/widgets/nb_toast.dart';
 
@@ -12,7 +12,8 @@ class ClientEditAddressScreen extends StatefulWidget {
   const ClientEditAddressScreen({super.key, this.addressId});
 
   @override
-  State<ClientEditAddressScreen> createState() => _ClientEditAddressScreenState();
+  State<ClientEditAddressScreen> createState() =>
+      _ClientEditAddressScreenState();
 }
 
 class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
@@ -41,7 +42,8 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
     try {
       final api = context.read<ApiClient>();
       final addrs = await ClientAddressService(api).list();
-      final addr = addrs.firstWhere((a) => a.id == widget.addressId, orElse: () => addrs.first);
+      final addr = addrs.firstWhere((a) => a.id == widget.addressId,
+          orElse: () => addrs.first);
       if (mounted) {
         setState(() {
           _nameCtl.text = addr.contactName ?? '';
@@ -132,7 +134,8 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
           : Stack(
               children: [
                 ListView(
-                  padding: EdgeInsets.fromLTRB(20, topPad + 8, 20, 100 + bottomPad),
+                  padding:
+                      EdgeInsets.fromLTRB(20, topPad + 8, 20, 100 + bottomPad),
                   children: [
                     _buildHeader(),
                     const SizedBox(height: 20),
@@ -146,7 +149,9 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
                 ),
                 // Fixed save button
                 Positioned(
-                  left: 0, right: 0, bottom: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
                   child: _buildBottomSave(bottomPad),
                 ),
               ],
@@ -159,24 +164,18 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
   Widget _buildHeader() {
     return Row(
       children: [
-        GestureDetector(
-          onTap: () => context.pop(),
-          child: Container(
-            width: 44, height: 44,
-            decoration: const BoxDecoration(
-              color: ET.surface,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: ET.inkSecondary),
-          ),
-        ),
-        const SizedBox(width: 14),
+        ClientDetailBackButton(onTap: () => context.pop()),
+        const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(_isEdit ? '编辑地址' : '添加地址',
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.3, color: ET.ink)),
+                  style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: -0.3,
+                      color: ET.ink)),
             ],
           ),
         ),
@@ -208,17 +207,25 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
         // Province / City / District in a row
         Row(
           children: [
-            Expanded(child: _inputField('省', _provinceCtl, TextInputType.text, hint: '省', compact: true)),
+            Expanded(
+                child: _inputField('省', _provinceCtl, TextInputType.text,
+                    hint: '省', compact: true)),
             const SizedBox(width: 10),
-            Expanded(child: _inputField('市', _cityCtl, TextInputType.text, hint: '市', compact: true)),
+            Expanded(
+                child: _inputField('市', _cityCtl, TextInputType.text,
+                    hint: '市', compact: true)),
             const SizedBox(width: 10),
-            Expanded(child: _inputField('区', _districtCtl, TextInputType.text, hint: '区', compact: true)),
+            Expanded(
+                child: _inputField('区', _districtCtl, TextInputType.text,
+                    hint: '区', compact: true)),
           ],
         ),
         const SizedBox(height: 12),
-        _inputField('详细地址', _detailCtl, TextInputType.text, hint: '请输入详细地址，如街道、门牌号等', maxLines: 2),
+        _inputField('详细地址', _detailCtl, TextInputType.text,
+            hint: '请输入详细地址，如街道、门牌号等', maxLines: 2),
         const SizedBox(height: 12),
-        _inputField('门禁信息（选填）', _doorCtl, TextInputType.text, hint: '如：小区门禁、楼栋号、单元号等'),
+        _inputField('门禁信息（选填）', _doorCtl, TextInputType.text,
+            hint: '如：小区门禁、楼栋号、单元号等'),
       ],
     );
   }
@@ -241,10 +248,13 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('设为默认地址',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: ET.ink)),
+                    style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: ET.ink)),
                 const SizedBox(height: 4),
-                Text('后续预约时会优先使用这个地址',
-                  style: TextStyle(fontSize: 12, color: ET.inkMuted)),
+                const Text('后续预约时会优先使用这个地址',
+                    style: TextStyle(fontSize: 12, color: ET.inkMuted)),
               ],
             ),
           ),
@@ -252,21 +262,29 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
             onTap: () => setState(() => _isDefault = !_isDefault),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              width: 48, height: 28,
+              width: 48,
+              height: 28,
               decoration: BoxDecoration(
                 color: _isDefault ? ET.accent : ET.hairlineStrong,
                 borderRadius: BorderRadius.circular(999),
               ),
               child: AnimatedAlign(
                 duration: const Duration(milliseconds: 200),
-                alignment: _isDefault ? Alignment.centerRight : Alignment.centerLeft,
+                alignment:
+                    _isDefault ? Alignment.centerRight : Alignment.centerLeft,
                 child: Container(
-                  width: 22, height: 22,
+                  width: 22,
+                  height: 22,
                   margin: const EdgeInsets.symmetric(horizontal: 3),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 1))],
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1))
+                    ],
                   ),
                 ),
               ),
@@ -288,19 +306,26 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
           border: Border(top: BorderSide(color: ET.hairline, width: 1)),
         ),
         child: SizedBox(
-          width: double.infinity, height: 52,
+          width: double.infinity,
+          height: 52,
           child: ElevatedButton(
             onPressed: _saving ? null : _save,
             style: ElevatedButton.styleFrom(
               backgroundColor: ET.cream,
               foregroundColor: ET.onCream,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999)),
               elevation: 0,
             ),
             child: _saving
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: ET.onCream))
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: ET.onCream))
                 : Text(_isEdit ? '保存修改' : '保存',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w600)),
           ),
         ),
       ),
@@ -309,7 +334,10 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
 
   // ── Glass Section Helper ──
 
-  Widget _glassSection({required String title, required String subtitle, required List<Widget> children}) {
+  Widget _glassSection(
+      {required String title,
+      required String subtitle,
+      required List<Widget> children}) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -321,9 +349,12 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: ET.ink)),
+          Text(title,
+              style: const TextStyle(
+                  fontSize: 17, fontWeight: FontWeight.w600, color: ET.ink)),
           const SizedBox(height: 4),
-          Text(subtitle, style: TextStyle(fontSize: 13, color: ET.inkMuted)),
+          Text(subtitle,
+              style: const TextStyle(fontSize: 13, color: ET.inkMuted)),
           const SizedBox(height: 16),
           ...children,
         ],
@@ -333,12 +364,16 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
 
   // ── Input Field ──
 
-  Widget _inputField(String label, TextEditingController ctl, TextInputType type, {String? hint, int maxLines = 1, bool compact = false}) {
+  Widget _inputField(
+      String label, TextEditingController ctl, TextInputType type,
+      {String? hint, int maxLines = 1, bool compact = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (!compact) ...[
-          Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: ET.ink)),
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 13, fontWeight: FontWeight.w500, color: ET.ink)),
           const SizedBox(height: 8),
         ],
         Container(
@@ -354,11 +389,14 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
             style: const TextStyle(fontSize: 14, color: ET.ink),
             decoration: InputDecoration(
               labelText: compact ? label : null,
-              labelStyle: TextStyle(fontSize: compact ? 12 : 14, color: ET.inkMuted),
+              labelStyle:
+                  TextStyle(fontSize: compact ? 12 : 14, color: ET.inkMuted),
               hintText: hint,
-              hintStyle: TextStyle(color: ET.inkMuted, fontSize: compact ? 12 : 14),
+              hintStyle:
+                  TextStyle(color: ET.inkMuted, fontSize: compact ? 12 : 14),
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: compact ? 12 : 16, vertical: compact ? 12 : 14),
+              contentPadding: EdgeInsets.symmetric(
+                  horizontal: compact ? 12 : 16, vertical: compact ? 12 : 14),
               isDense: compact,
             ),
           ),
@@ -374,20 +412,41 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
       padding: EdgeInsets.fromLTRB(20, topPad + 8, 20, 24),
       children: [
         Row(children: [
-          Container(width: 44, height: 44, decoration: BoxDecoration(color: ET.surface, shape: BoxShape.circle)),
+          Container(
+              width: 44,
+              height: 44,
+              decoration:
+                  const BoxDecoration(color: ET.surface, shape: BoxShape.circle)),
           const SizedBox(width: 14),
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Container(width: 80, height: 10, decoration: BoxDecoration(color: ET.surface, borderRadius: BorderRadius.circular(4))),
+            Container(
+                width: 80,
+                height: 10,
+                decoration: BoxDecoration(
+                    color: ET.surface, borderRadius: BorderRadius.circular(4))),
             const SizedBox(height: 6),
-            Container(width: 60, height: 20, decoration: BoxDecoration(color: ET.surface, borderRadius: BorderRadius.circular(4))),
+            Container(
+                width: 60,
+                height: 20,
+                decoration: BoxDecoration(
+                    color: ET.surface, borderRadius: BorderRadius.circular(4))),
           ]),
         ]),
         const SizedBox(height: 20),
-        Container(height: 200, decoration: BoxDecoration(color: ET.surface, borderRadius: BorderRadius.circular(28))),
+        Container(
+            height: 200,
+            decoration: BoxDecoration(
+                color: ET.surface, borderRadius: BorderRadius.circular(28))),
         const SizedBox(height: 14),
-        Container(height: 280, decoration: BoxDecoration(color: ET.surface, borderRadius: BorderRadius.circular(28))),
+        Container(
+            height: 280,
+            decoration: BoxDecoration(
+                color: ET.surface, borderRadius: BorderRadius.circular(28))),
         const SizedBox(height: 14),
-        Container(height: 60, decoration: BoxDecoration(color: ET.surface, borderRadius: BorderRadius.circular(28))),
+        Container(
+            height: 60,
+            decoration: BoxDecoration(
+                color: ET.surface, borderRadius: BorderRadius.circular(28))),
       ],
     );
   }
