@@ -9,6 +9,7 @@ import '../../../core/theme/editorial_tokens.dart';
 import '../auth/client_auth_service.dart';
 import '../auth/client_auth_models.dart';
 import '../addresses/client_addresses_screen.dart';
+import '../orders/tech_availability_sheet.dart';
 import '../designs/client_designs_screen.dart';
 import '../works/client_favorites_screen.dart';
 import '../works/client_likes_screen.dart';
@@ -230,13 +231,29 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: ET.accentSoft,
-            backgroundImage: (tech.avatarUrl != null && tech.avatarUrl!.isNotEmpty) ? NetworkImage(tech.avatarUrl!) : null,
-            child: (tech.avatarUrl == null || tech.avatarUrl!.isEmpty)
-                ? Text(tech.name.substring(0, 1), style: const TextStyle(color: ET.accentOnDark))
-                : null,
+          // 点击头像查看该美甲师可约时间
+          GestureDetector(
+            onTap: () => showTechAvailabilitySheet(context, technician: tech),
+            child: Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: ET.accentSoft,
+                  backgroundImage: (tech.avatarUrl != null && tech.avatarUrl!.isNotEmpty) ? NetworkImage(tech.avatarUrl!) : null,
+                  child: (tech.avatarUrl == null || tech.avatarUrl!.isEmpty)
+                      ? Text(tech.name.substring(0, 1), style: const TextStyle(color: ET.accentOnDark))
+                      : null,
+                ),
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: const BoxDecoration(
+                      color: ET.surface, shape: BoxShape.circle),
+                  child: const Icon(Icons.schedule_rounded,
+                      size: 12, color: ET.accent),
+                ),
+              ],
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(

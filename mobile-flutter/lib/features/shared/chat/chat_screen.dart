@@ -12,6 +12,7 @@ import '../../../core/socket/chat_socket.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/nb_toast.dart';
 import '../booking/chat_booking_sheet.dart';
+import '../../client/orders/tech_availability_sheet.dart';
 import 'chat_service.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -270,7 +271,28 @@ class _ChatScreenState extends State<ChatScreen> {
                       size: 18, color: DT.textPrimary),
                 ),
               ),
-              const SizedBox(width: DT.md),
+              const SizedBox(width: DT.sm),
+              if (widget.techId != null)
+                GestureDetector(
+                  onTap: () => showTechAvailabilitySheet(context,
+                      techId: widget.techId),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                        color: DT.primarySoft, shape: BoxShape.circle),
+                    child: Text(
+                        widget.title.isNotEmpty
+                            ? widget.title.substring(0, 1)
+                            : '美',
+                        style: const TextStyle(
+                            color: DT.primaryDark,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              const SizedBox(width: DT.sm),
               Expanded(
                 child: Text(widget.title,
                     maxLines: 1,
