@@ -34,11 +34,11 @@ class ClientGlassHeader extends StatelessWidget {
     final topPad = MediaQuery.of(context).padding.top;
     return ClipRect(
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+        filter: ImageFilter.blur(sigmaX: ET.glassBlur, sigmaY: ET.glassBlur),
         child: Container(
           padding: EdgeInsets.fromLTRB(20, topPad + 8, 20, 12),
           decoration: const BoxDecoration(
-            color: Color(0x9916120E), // ET.bg @ ~60%
+            color: ET.glassFill,
             border: Border(bottom: BorderSide(color: ET.hairlineFaint)),
           ),
           child: Column(

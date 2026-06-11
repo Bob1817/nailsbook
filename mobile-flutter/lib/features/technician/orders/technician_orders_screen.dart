@@ -135,9 +135,9 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
   Widget _topPanel() {
     final topPad = MediaQuery.of(context).padding.top;
     return GlassContainer(
-      tint: Colors.black,
-      blur: DT.glassBlurHeavy,
-      opacity: 0.38,
+      tint: ET.glassTint,
+      blur: ET.glassBlur,
+      opacity: ET.glassOpacity,
       borderRadius: 0,
       showBorder: false,
       padding: EdgeInsets.fromLTRB(DT.lg, topPad + DT.sm, DT.lg, DT.md),

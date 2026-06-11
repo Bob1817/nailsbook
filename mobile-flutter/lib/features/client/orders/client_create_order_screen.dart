@@ -379,12 +379,12 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                     left: 0, right: 0, top: 0,
                     child: ClipRect(
                       child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                        filter: ImageFilter.blur(sigmaX: ET.glassBlur, sigmaY: ET.glassBlur),
                         child: Container(
                           padding: EdgeInsets.fromLTRB(16, topPad + 6, 16, 12),
-                          decoration: BoxDecoration(
-                            color: DT.surface.withOpacity(0.6),
-                            border: Border(bottom: BorderSide(color: DT.surface.withOpacity(0.6), width: 0.5)),
+                          decoration: const BoxDecoration(
+                            color: ET.glassFill,
+                            border: Border(bottom: BorderSide(color: ET.hairlineFaint, width: 0.5)),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1309,7 +1309,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
     final base = DateTime(now.year, now.month, now.day);
     const wk = ['一', '二', '三', '四', '五', '六', '日']; // Dart weekday 1..7
     return SizedBox(
-      height: 46,
+      height: 42,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: 45,
@@ -1361,7 +1361,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
         crossAxisCount: 4,
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
-        childAspectRatio: 1.7,
+        childAspectRatio: 2.4,
       ),
       itemCount: statuses.length,
       itemBuilder: (_, i) {

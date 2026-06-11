@@ -238,9 +238,9 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
 
   Widget _topPanel(DateTime today) {
     return GlassContainer(
-      tint: Colors.black,
-      blur: DT.glassBlurHeavy,
-      opacity: 0.48,
+      tint: ET.glassTint,
+      blur: ET.glassBlur,
+      opacity: ET.glassOpacity,
       borderRadius: 0,
       showBorder: false,
       padding: EdgeInsets.zero,

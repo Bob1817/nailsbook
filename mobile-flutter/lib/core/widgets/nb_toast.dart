@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../theme/design_tokens.dart';
+import '../theme/editorial_tokens.dart';
 
 enum NbToastType { success, error, info }
 
@@ -135,14 +136,14 @@ class _NbToastWidgetState extends State<_NbToastWidget> with SingleTickerProvide
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.88),
+                              color: ET.bgElevated.withValues(alpha: 0.92),
                               borderRadius: BorderRadius.circular(18),
-                              border: Border.all(color: Colors.white.withOpacity(0.7), width: 0.5),
-                              boxShadow: [
+                              border: Border.all(color: ET.hairlineStrong, width: 0.5),
+                              boxShadow: const [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.12),
+                                  color: Color(0x66000000),
                                   blurRadius: 28,
-                                  offset: const Offset(0, 12),
+                                  offset: Offset(0, 12),
                                 ),
                               ],
                             ),

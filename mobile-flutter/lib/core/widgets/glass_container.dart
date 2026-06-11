@@ -175,9 +175,9 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
       foregroundColor: dark ? ET.ink : DT.textPrimary,
       flexibleSpace: dark
           ? GlassContainer(
-              tint: Colors.black,
-              blur: DT.glassBlurHeavy,
-              opacity: 0.55,
+              tint: ET.glassTint,
+              blur: ET.glassBlur,
+              opacity: ET.glassOpacity,
               borderRadius: 0,
               showBorder: false,
               child: const SizedBox.expand(),
@@ -210,14 +210,14 @@ class GlassBottomSurface extends StatelessWidget {
       top: false,
       minimum: EdgeInsets.zero,
       child: GlassContainer(
-        tint: Colors.black,
-        blur: DT.glassBlurHeavy,
-        opacity: 0.5,
+        tint: ET.glassTint,
+        blur: ET.glassBlur,
+        opacity: ET.glassOpacity,
         borderRadius: 0,
         showBorder: false,
         boxShadow: const [
           BoxShadow(
-            color: Color(0x10000000),
+            color: Color(0x40000000),
             blurRadius: 24,
             offset: Offset(0, -8),
           ),

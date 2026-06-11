@@ -36,6 +36,15 @@ class ET {
   static const Color accentSoft = Color(0xFF3A2F23); // 暖棕浅染暗填充
   static const Color accentOnDark = Color(0xFFE6C9A3); // 暗底上的高光暖棕
 
+  // ── 统一玻璃标准（以发现页顶栏为基准，全端玻璃面统一）──
+  /// BackdropFilter 模糊半径。
+  static const double glassBlur = 30;
+  /// 玻璃填充：暖黑底 @ ~60%（直接用于 BackdropFilter 之上的 Container）。
+  static const Color glassFill = Color(0x9916120E);
+  /// 给 GlassContainer 用的等价参数（tint + opacity）。
+  static const Color glassTint = bg; // #16120E
+  static const double glassOpacity = 0.6;
+
   // ── Lines / hairlines（暖白描边）──
   static const Color hairline = Color(0x1FFFFFFF); // ~12% white
   static const Color hairlineStrong = Color(0x33FFFFFF); // ~20% white

@@ -108,11 +108,11 @@ class _GlassTabBar extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
         child: BackdropFilter(
-          // 增强毛玻璃：更大模糊 + 更透的底色，让滚动内容透出
-          filter: ImageFilter.blur(sigmaX: 36, sigmaY: 36),
+          // 统一玻璃标准（发现页基准）
+          filter: ImageFilter.blur(sigmaX: ET.glassBlur, sigmaY: ET.glassBlur),
           child: Container(
             decoration: BoxDecoration(
-              color: ET.bgElevated.withValues(alpha: 0.58),
+              color: ET.glassFill,
               borderRadius: BorderRadius.circular(28),
               border: Border.all(color: ET.hairlineStrong),
               boxShadow: const [
