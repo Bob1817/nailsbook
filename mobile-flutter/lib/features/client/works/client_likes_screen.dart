@@ -103,22 +103,19 @@ class _ClientLikesScreenState extends State<ClientLikesScreen> {
         border: Border(bottom: BorderSide(color: ET.hairlineFaint, width: 0.5)),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClientDetailBackButton(onTap: () => context.pop()),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('我的点赞',
-                    style: ET.display.copyWith(fontSize: 20, height: 1.3)),
-                const SizedBox(height: 4),
-                const Text('查看你点赞过的美甲作品',
-                    style: TextStyle(fontSize: 13, color: ET.inkMuted)),
-              ],
+          const Expanded(
+            child: Center(
+              child: Text('我的点赞',
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.2,
+                      color: ET.ink)),
             ),
           ),
+          const SizedBox(width: 40),
         ],
       ),
     );
