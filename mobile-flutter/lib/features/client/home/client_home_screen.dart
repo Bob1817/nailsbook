@@ -8,7 +8,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/editorial_tokens.dart';
-import '../../../core/widgets/client_glass_header.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../discover/client_discover_screen.dart';
 import '../../shared/chat/conversations_screen.dart';
@@ -303,168 +302,119 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
   @override
   Widget build(BuildContext context) {
     _ensureHeroTimer();
-    final headerH = ClientGlassHeader.estimateHeight(context);
-    final tech = widget.homeData?['technician'] as Map<String, dynamic>?;
-    final avatar = tech?['avatarUrl']?.toString();
     return Container(
       color: ET.bg,
-      child: Stack(
-        children: [
-          RefreshIndicator(
-            color: ET.accent,
-            backgroundColor: ET.surface,
-            onRefresh: _refreshAll,
-            child: CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                SliverToBoxAdapter(child: SizedBox(height: headerH + 4)),
-                SliverToBoxAdapter(child: _heroSection()),
-                SliverToBoxAdapter(child: _bookingSection()),
-                SliverToBoxAdapter(child: _latestHeader()),
-                _featuredGrid(),
-                SliverToBoxAdapter(child: _footer()),
-                const SliverToBoxAdapter(child: SizedBox(height: 96)),
-              ],
-            ),
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: ClientGlassHeader(
-              title: '首页',
-              actions: [
-                HeaderCircleButton(
-                  onTap: () => widget.onSelectTab(3),
-                  child: const Icon(Icons.chat_bubble_outline_rounded,
-                      size: 20, color: ET.inkSecondary),
-                ),
-                const SizedBox(width: 8),
-                _headerAvatar(avatar),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _headerAvatar(String? avatar) {
-    return GestureDetector(
-      onTap: () => widget.onSelectTab(4),
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: ET.surface,
-          border: Border.all(color: ET.hairline),
-          image: (avatar != null && avatar.isNotEmpty)
-              ? DecorationImage(
-                  image: CachedNetworkImageProvider(avatar), fit: BoxFit.cover)
-              : null,
+      child: RefreshIndicator(
+        color: ET.accent,
+        backgroundColor: ET.surface,
+        onRefresh: _refreshAll,
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            SliverToBoxAdapter(child: _heroSection()),
+            SliverToBoxAdapter(child: _bookingSection()),
+            SliverToBoxAdapter(child: _latestHeader()),
+            _featuredGrid(),
+            SliverToBoxAdapter(child: _footer()),
+            const SliverToBoxAdapter(child: SizedBox(height: 96)),
+          ],
         ),
-        child: (avatar == null || avatar.isEmpty)
-            ? const Icon(Icons.person_outline_rounded,
-                size: 20, color: ET.inkSecondary)
-            : null,
       ),
     );
   }
 
   // ── Hero carousel ───────────────────────────────────────
+  // 全出血：紧贴屏幕顶部与左右边，美甲图占据首屏上半部，
+  // 高度约屏高 46%，保证「我的预约」标题 + 卡片首屏可见。
   Widget _heroSection() {
     final works = _heroWorks;
-    if (works.isEmpty) return const SizedBox.shrink();
+    final media = MediaQuery.of(context);
+    // 无作品时留出状态栏高度，避免下方内容顶进刘海区
+    if (works.isEmpty) return SizedBox(height: media.padding.top + 8);
     final current = works[_heroIndex.clamp(0, works.length - 1)];
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-      child: GestureDetector(
-        onTap: () => _openHeroDetail(current),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(DT.rHero),
-          child: SizedBox(
-            height: 440,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // 美甲图：主角，满铺
-                PageView.builder(
-                  controller: _pageController,
-                  itemCount: works.length,
-                  onPageChanged: (i) => setState(() => _heroIndex = i),
-                  itemBuilder: (_, i) => _heroSlide(works[i]),
+    final heroH = (media.size.height * 0.46).clamp(340.0, 480.0).toDouble();
+    return GestureDetector(
+      onTap: () => _openHeroDetail(current),
+      child: SizedBox(
+        height: heroH,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // 美甲图：主角，满铺
+            PageView.builder(
+              controller: _pageController,
+              itemCount: works.length,
+              onPageChanged: (i) => setState(() => _heroIndex = i),
+              itemBuilder: (_, i) => _heroSlide(works[i]),
+            ),
+            // 顶部 + 底部轻渐变，保证状态栏/分页点/文字可读
+            const IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0x66000000),
+                      Colors.transparent,
+                      Colors.transparent,
+                      Color(0x73000000),
+                      Color(0xB3000000),
+                    ],
+                    stops: [0.0, 0.22, 0.55, 0.82, 1.0],
+                  ),
                 ),
-                // 顶部 + 底部轻渐变，保证分页点/文字可读
-                const IgnorePointer(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Color(0x4D000000),
-                          Colors.transparent,
-                          Colors.transparent,
-                          Color(0x73000000),
-                          Color(0xB3000000),
+              ),
+            ),
+            // 分页点：状态栏下方正中央
+            if (works.length > 1)
+              Positioned(
+                top: media.padding.top + 10,
+                left: 0,
+                right: 0,
+                child: Center(child: _heroDots(works.length)),
+              ),
+            // 底部轻量信息（标题 + 小达人）
+            Positioned(
+              left: 20,
+              right: 20,
+              bottom: 16,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(child: _heroCaption(current)),
+                  const SizedBox(width: 12),
+                  // 右下角「查看详情」按钮
+                  GestureDetector(
+                    onTap: () => _openHeroDetail(current),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.22)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('查看详情',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white)),
+                          SizedBox(width: 2),
+                          Icon(Icons.chevron_right_rounded,
+                              size: 16, color: Colors.white),
                         ],
-                        stops: [0.0, 0.18, 0.55, 0.82, 1.0],
                       ),
                     ),
                   ),
-                ),
-                // 分页点：顶部正中央
-                if (works.length > 1)
-                  Positioned(
-                    top: 14,
-                    left: 0,
-                    right: 0,
-                    child: Center(child: _heroDots(works.length)),
-                  ),
-                // 底部轻量信息（标题 + 小达人）
-                Positioned(
-                  left: 16,
-                  right: 16,
-                  bottom: 16,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(child: _heroCaption(current)),
-                      const SizedBox(width: 12),
-                      // 右下角「查看详情」按钮
-                      GestureDetector(
-                        onTap: () => _openHeroDetail(current),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 7),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.4),
-                            borderRadius: BorderRadius.circular(999),
-                            border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.22)),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text('查看详情',
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white)),
-                              SizedBox(width: 2),
-                              Icon(Icons.chevron_right_rounded,
-                                  size: 16, color: Colors.white),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -802,11 +752,11 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
     );
   }
 
-  // ── Latest works ────────────────────────────────────────
+  // ── Featured works ──────────────────────────────────────
   Widget _latestHeader() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-      child: _sectionHeader('最新动态', '来自你已绑定美甲师的作品发布',
+      child: _sectionHeader('热门推荐', '美甲师精选推荐的人气作品',
           onMore: () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => const ClientWorksScreen()))),
     );
@@ -1015,7 +965,8 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: ET.displaySmall),
+              // 模块标题字号对齐美甲师端首页（DT.titleMedium = 17）
+              Text(title, style: DT.titleMedium),
               const SizedBox(height: 2),
               Text(subtitle,
                   style: const TextStyle(fontSize: 12, color: ET.inkMuted)),

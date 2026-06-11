@@ -53,7 +53,9 @@ class ClientGlassHeader extends StatelessWidget {
                       child: Text(title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: ET.display),
+                          // 字号对齐美甲师端页面标题（DT.titleLarge = 20），保留衬线
+                          style: ET.display.copyWith(
+                              fontSize: 20, height: 1.3)),
                     ),
                     ...actions,
                   ],

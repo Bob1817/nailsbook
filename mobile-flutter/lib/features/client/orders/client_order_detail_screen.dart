@@ -270,7 +270,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          Text('预约详情', style: DT.titleLarge),
+          Text('预约详情', style: DT.titleMedium),
         ],
       ),
     );
