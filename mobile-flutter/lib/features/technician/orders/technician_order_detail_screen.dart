@@ -1001,24 +1001,36 @@ class _TechnicianOrderDetailScreenState
   }
 
   Widget _quoteInput(
-      String hint, TextEditingController ctl, TextInputType type) {
-    return Container(
-      decoration: BoxDecoration(
-        color: DT.fillGrey,
-        borderRadius: BorderRadius.circular(DT.rMd),
-      ),
-      child: TextField(
-        controller: ctl,
-        keyboardType: type,
-        style: DT.titleSmall,
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: DT.bodyMedium.copyWith(color: DT.textMuted),
-          border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: DT.lg, vertical: DT.md),
+      String label, TextEditingController ctl, TextInputType type) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: DT.textSecondary)),
+        const SizedBox(height: 6),
+        Container(
+          decoration: BoxDecoration(
+            // 比 sheet 背景(DT.surface)更深，并加描边，确保深色下输入框可见
+            color: DT.bg,
+            borderRadius: BorderRadius.circular(DT.rMd),
+            border: Border.all(color: DT.border),
+          ),
+          child: TextField(
+            controller: ctl,
+            keyboardType: type,
+            style: DT.titleSmall.copyWith(color: DT.textPrimary),
+            cursorColor: DT.primary,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: DT.lg, vertical: DT.md),
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 
