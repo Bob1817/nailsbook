@@ -11,6 +11,15 @@ const MIME_EXT: Record<string, string> = {
   'image/webp': '.webp',
 };
 
+const AUDIO_MIME_EXT: Record<string, string> = {
+  'audio/mp4': '.m4a',
+  'audio/x-m4a': '.m4a',
+  'audio/m4a': '.m4a',
+  'audio/aac': '.aac',
+  'audio/mpeg': '.mp3',
+  'audio/wav': '.wav',
+};
+
 export interface UploadFile {
   buffer: Buffer;
   mimetype: string;
@@ -49,6 +58,21 @@ export class StorageService {
       throw new BadRequestException('请选择图片文件');
     }
     const ext = MIME_EXT[file.mimetype] ?? '.jpg';
+    const name = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`;
+
+    if (this.useOss) {
+      const url = await this.putToOss(name, file.buffer, file.mimetype);
+      return { url };
+    }
+    const url = this.putToLocal(name, file.buffer);
+    return { url };
+  }
+
+  async uploadAudio(file: UploadFile): Promise<{ url: string }> {
+    if (!file || !file.buffer || file.buffer.length === 0) {
+      throw new BadRequestException('请选择音频文件');
+    }
+    const ext = AUDIO_MIME_EXT[file.mimetype] ?? '.m4a';
     const name = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`;
 
     if (this.useOss) {

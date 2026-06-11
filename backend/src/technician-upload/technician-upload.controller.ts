@@ -14,7 +14,10 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
-import { technicianUploadMulterOptions } from './technician-upload.config';
+import {
+  technicianUploadMulterOptions,
+  technicianUploadAudioMulterOptions,
+} from './technician-upload.config';
 import { TechnicianUploadService } from './technician-upload.service';
 
 @ApiTags('美甲师-上传')
@@ -38,5 +41,19 @@ export class TechnicianUploadController {
     }
 
     return this.technicianUploadService.uploadImage(file);
+  }
+
+  @Post('audio')
+  @UseInterceptors(FileInterceptor('file', technicianUploadAudioMulterOptions))
+  @ApiOperation({ summary: '上传语音' })
+  @ApiResponse({ status: 200, description: '语音上传成功' })
+  @ApiResponse({ status: 400, description: '请选择音频文件' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  uploadAudio(@UploadedFile() file: Express.Multer.File | undefined) {
+    if (!file) {
+      throw new BadRequestException('请选择音频文件');
+    }
+
+    return this.technicianUploadService.uploadAudio(file);
   }
 }

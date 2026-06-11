@@ -19,6 +19,28 @@ export const technicianUploadMulterOptions = {
   },
 };
 
+export const TECHNICIAN_UPLOAD_AUDIO_LIMIT_BYTES = 10 * 1024 * 1024;
+
+export const technicianUploadAudioMulterOptions = {
+  storage: memoryStorage(),
+  fileFilter: audioFileFilter,
+  limits: {
+    fileSize: TECHNICIAN_UPLOAD_AUDIO_LIMIT_BYTES,
+  },
+};
+
+export function audioFileFilter(
+  _request: unknown,
+  file: { mimetype: string },
+  callback: (error: Error | null, acceptFile: boolean) => void,
+) {
+  if (typeof file.mimetype === 'string' && file.mimetype.startsWith('audio/')) {
+    callback(null, true);
+  } else {
+    callback(new BadRequestException('仅支持音频文件上传'), false);
+  }
+}
+
 export function technicianUploadFileFilter(
   _request: unknown,
   file: {

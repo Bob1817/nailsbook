@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/cupertino.dart';
@@ -6,6 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/auth/auth_session.dart';
@@ -49,6 +54,18 @@ class _ChatScreenState extends State<ChatScreen> {
   String? _myAvatar;
   String? _otherAvatar;
 
+  // ── 语音 ──
+  final AudioRecorder _recorder = AudioRecorder();
+  final AudioPlayer _player = AudioPlayer();
+  bool _voiceMode = false; // true=按住说话，false=文字
+  bool _recording = false;
+  bool _cancelArmed = false; // 上滑取消已就绪
+  int _recordSeconds = 0;
+  Timer? _recordTimer;
+  String? _recordPath;
+  bool _sendingVoice = false;
+  int? _playingMsgId; // 正在播放的消息 id
+
   @override
   void initState() {
     super.initState();
@@ -64,6 +81,9 @@ class _ChatScreenState extends State<ChatScreen> {
       _resolveOtherPartyId();
     }
     _loadAvatars();
+    _player.onPlayerComplete.listen((_) {
+      if (mounted) setState(() => _playingMsgId = null);
+    });
   }
 
   /// 拉取会话双方真实头像（消息接口不含头像）。
@@ -105,6 +125,9 @@ class _ChatScreenState extends State<ChatScreen> {
     _inputCtl.dispose();
     _inputFocus.dispose();
     _scrollCtl.dispose();
+    _recordTimer?.cancel();
+    _recorder.dispose();
+    _player.dispose();
     super.dispose();
   }
 
@@ -164,6 +187,123 @@ class _ChatScreenState extends State<ChatScreen> {
     } catch (_) {
       if (!mounted) return;
       NbToast.error(context, '发送失败，请重试');
+    }
+  }
+
+  // ── 语音录制 / 播放 ──
+
+  void _toggleVoiceMode() {
+    HapticFeedback.selectionClick();
+    if (!_voiceMode) FocusScope.of(context).unfocus();
+    setState(() => _voiceMode = !_voiceMode);
+  }
+
+  Future<void> _startRecording() async {
+    if (_recording || _sendingVoice) return;
+    final ok = await _recorder.hasPermission();
+    if (!ok) {
+      if (mounted) NbToast.error(context, '请在系统设置中允许麦克风权限');
+      return;
+    }
+    final dir = await getTemporaryDirectory();
+    final path =
+        '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+    try {
+      await _recorder.start(
+          const RecordConfig(encoder: AudioEncoder.aacLc), path: path);
+    } catch (_) {
+      if (mounted) NbToast.error(context, '无法开始录音');
+      return;
+    }
+    HapticFeedback.mediumImpact();
+    _recordPath = path;
+    _recordSeconds = 0;
+    _cancelArmed = false;
+    setState(() => _recording = true);
+    _recordTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) return;
+      setState(() => _recordSeconds++);
+      if (_recordSeconds >= 60) _finishRecording(); // 最长 60s 自动结束
+    });
+  }
+
+  void _updateRecordingDrag(double dy) {
+    if (!_recording) return;
+    final armed = dy < -70; // 上滑超过阈值进入「取消」区
+    if (armed != _cancelArmed) setState(() => _cancelArmed = armed);
+  }
+
+  Future<void> _finishRecording() async {
+    if (!_recording) return;
+    _recordTimer?.cancel();
+    final seconds = _recordSeconds;
+    final cancel = _cancelArmed;
+    setState(() {
+      _recording = false;
+      _cancelArmed = false;
+    });
+    String? path;
+    try {
+      path = await _recorder.stop();
+    } catch (_) {}
+    final file = path ?? _recordPath;
+    if (cancel || seconds < 1) {
+      if (!cancel && seconds < 1 && mounted) NbToast.show(context, '说话时间太短');
+      if (file != null) {
+        try {
+          await File(file).delete();
+        } catch (_) {}
+      }
+      return;
+    }
+    if (file != null) await _sendVoice(file, seconds);
+  }
+
+  Future<void> _sendVoice(String filePath, int seconds) async {
+    setState(() => _sendingVoice = true);
+    HapticFeedback.lightImpact();
+    try {
+      final api = context.read<ApiClient>();
+      final service = ChatService(api);
+      final url = await service.uploadAudio(filePath);
+      if (url == null) throw Exception('upload failed');
+      final msg = await service.sendMessage(
+        conversationId: _conversationId,
+        techId: _conversationId == null ? widget.techId : null,
+        clientId: _conversationId == null ? widget.clientId : null,
+        messageType: 'voice',
+        imageUrl: url,
+        content: seconds.toString(),
+      );
+      _conversationId ??=
+          (msg['conversationId'] as int?) ?? (msg['conversation_id'] as int?);
+      if (mounted) setState(() => _messages.add(msg));
+      _scrollToBottom();
+    } catch (_) {
+      if (mounted) NbToast.error(context, '语音发送失败，请重试');
+    } finally {
+      if (mounted) setState(() => _sendingVoice = false);
+      try {
+        await File(filePath).delete();
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _playVoice(Map<String, dynamic> msg) async {
+    final url = msg['imageUrl']?.toString();
+    if (url == null || url.isEmpty) return;
+    final id = msg['id'] as int?;
+    if (_playingMsgId == id) {
+      await _player.stop();
+      if (mounted) setState(() => _playingMsgId = null);
+      return;
+    }
+    try {
+      await _player.stop();
+      await _player.play(UrlSource(url));
+      if (mounted) setState(() => _playingMsgId = id);
+    } catch (_) {
+      if (mounted) NbToast.error(context, '语音播放失败');
     }
   }
 
@@ -284,7 +424,47 @@ class _ChatScreenState extends State<ChatScreen> {
             top: 0,
             child: _header(topPad),
           ),
+          if (_recording) _recordingOverlay(),
         ],
+      ),
+    );
+  }
+
+  Widget _recordingOverlay() {
+    final cancel = _cancelArmed;
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: Container(
+          color: Colors.black.withValues(alpha: 0.25),
+          alignment: Alignment.center,
+          child: Container(
+            width: 150,
+            padding: const EdgeInsets.symmetric(vertical: 22),
+            decoration: BoxDecoration(
+              color: (cancel ? DT.error : DT.surface).withValues(alpha: 0.96),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(cancel ? Icons.delete_outline : Icons.mic,
+                    size: 40, color: Colors.white),
+                const SizedBox(height: 14),
+                Text(
+                    '${_recordSeconds ~/ 60}:${(_recordSeconds % 60).toString().padLeft(2, '0')}',
+                    style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white)),
+                const SizedBox(height: 10),
+                Text(cancel ? '松开手指，取消发送' : '手指上滑，取消发送',
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.9))),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -372,92 +552,141 @@ class _ChatScreenState extends State<ChatScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Expanded(
-                child: AnimatedBuilder(
-                  animation: _inputFocus,
-                  builder: (context, child) {
-                    final focused = _inputFocus.hasFocus;
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      curve: Curves.easeOut,
-                      decoration: BoxDecoration(
-                        color: focused
-                            ? DT.surface.withValues(alpha: 0.84)
-                            : DT.surfaceAlt,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: focused
-                            ? [
-                                BoxShadow(
-                                  color: DT.primary.withValues(alpha: 0.22),
-                                  blurRadius: 18,
-                                  spreadRadius: 1,
-                                  offset: const Offset(0, 0),
-                                ),
-                                BoxShadow(
-                                  color: Colors.white.withValues(alpha: 0.28),
-                                  blurRadius: 10,
-                                  spreadRadius: -2,
-                                  offset: const Offset(0, -1),
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: child,
-                    );
-                  },
-                  child: TextField(
-                    controller: _inputCtl,
-                    focusNode: _inputFocus,
-                    style: DT.bodyMedium.copyWith(color: DT.textPrimary),
-                    minLines: 1,
-                    maxLines: 4,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => _sendMessage(),
-                    decoration: InputDecoration(
-                      hintText: '输入消息…',
-                      hintStyle: DT.bodyMedium.copyWith(color: DT.textTertiary),
-                      filled: true,
-                      fillColor: Colors.transparent,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          borderSide: BorderSide.none),
-                      enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          borderSide: BorderSide.none),
-                      focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          borderSide: BorderSide.none),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: DT.sm),
+              // 语音 / 键盘 切换
               GestureDetector(
-                onTap: _sendMessage,
+                onTap: _toggleVoiceMode,
                 child: Container(
                   width: 40,
                   height: 40,
                   alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: DT.primary,
+                  decoration: const BoxDecoration(
+                    color: DT.surfaceAlt,
                     shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                          color: DT.primary.withValues(alpha: 0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4)),
-                    ],
                   ),
-                  child: const Icon(CupertinoIcons.arrow_up,
-                      color: Colors.white, size: 20),
+                  child: Icon(
+                      _voiceMode
+                          ? CupertinoIcons.keyboard
+                          : CupertinoIcons.mic,
+                      size: 20,
+                      color: DT.textPrimary),
                 ),
               ),
+              const SizedBox(width: DT.sm),
+              Expanded(
+                  child: _voiceMode ? _holdToTalkButton() : _textInput()),
+              if (!_voiceMode) ...[
+                const SizedBox(width: DT.sm),
+                GestureDetector(
+                  onTap: _sendMessage,
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: DT.primary,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                            color: DT.primary.withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4)),
+                      ],
+                    ),
+                    child: const Icon(CupertinoIcons.arrow_up,
+                        color: Colors.white, size: 20),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _textInput() {
+    return AnimatedBuilder(
+      animation: _inputFocus,
+      builder: (context, child) {
+        final focused = _inputFocus.hasFocus;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          decoration: BoxDecoration(
+            color: focused ? DT.surface.withValues(alpha: 0.84) : DT.surfaceAlt,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: focused
+                ? [
+                    BoxShadow(
+                      color: DT.primary.withValues(alpha: 0.22),
+                      blurRadius: 18,
+                      spreadRadius: 1,
+                      offset: const Offset(0, 0),
+                    ),
+                    BoxShadow(
+                      color: Colors.white.withValues(alpha: 0.28),
+                      blurRadius: 10,
+                      spreadRadius: -2,
+                      offset: const Offset(0, -1),
+                    ),
+                  ]
+                : null,
+          ),
+          child: child,
+        );
+      },
+      child: TextField(
+        controller: _inputCtl,
+        focusNode: _inputFocus,
+        style: DT.bodyMedium.copyWith(color: DT.textPrimary),
+        minLines: 1,
+        maxLines: 4,
+        textInputAction: TextInputAction.send,
+        onSubmitted: (_) => _sendMessage(),
+        decoration: InputDecoration(
+          hintText: '输入消息…',
+          hintStyle: DT.bodyMedium.copyWith(color: DT.textTertiary),
+          filled: true,
+          fillColor: Colors.transparent,
+          isDense: true,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide.none),
+          enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide.none),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide.none),
+        ),
+      ),
+    );
+  }
+
+  Widget _holdToTalkButton() {
+    final active = _recording;
+    return GestureDetector(
+      onLongPressStart: (_) => _startRecording(),
+      onLongPressMoveUpdate: (d) =>
+          _updateRecordingDrag(d.localOffsetFromOrigin.dy),
+      onLongPressEnd: (_) => _finishRecording(),
+      onLongPressCancel: () {
+        if (_recording) _finishRecording();
+      },
+      child: Container(
+        height: 40,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: active ? DT.primary.withValues(alpha: 0.18) : DT.surfaceAlt,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+              color: active ? DT.primary : Colors.transparent, width: 1),
+        ),
+        child: Text(active ? '松开 发送' : '按住 说话',
+            style: DT.bodyMedium
+                .copyWith(color: DT.textPrimary, fontWeight: FontWeight.w600)),
       ),
     );
   }
@@ -567,6 +796,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildBubble(Map<String, dynamic> msg, bool isMe) {
     if (msg['messageType'] == 'order_card') return _orderCard(msg, isMe);
+    if (msg['messageType'] == 'voice') return _voiceBubble(msg, isMe);
     final hasImage = msg['imageUrl'] != null;
     final hasText =
         msg['content'] != null && msg['content'].toString().isNotEmpty;
@@ -636,6 +866,53 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // ── 语音消息气泡（messageType == voice）──
+
+  Widget _voiceBubble(Map<String, dynamic> msg, bool isMe) {
+    final seconds = int.tryParse(msg['content']?.toString() ?? '') ?? 0;
+    final playing = _playingMsgId == (msg['id'] as int?);
+    // 气泡宽度随时长增长（微信式）
+    final width = (70 + seconds * 6).clamp(70, 180).toDouble();
+    final color = isMe ? DT.primary : DT.surface;
+    final fg = isMe ? DT.onCream : DT.textPrimary;
+    final icon =
+        playing ? CupertinoIcons.waveform : CupertinoIcons.volume_up;
+    return Align(
+      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: GestureDetector(
+        onTap: () => _playVoice(msg),
+        child: Container(
+          width: width,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.only(
+              topLeft: const Radius.circular(18),
+              topRight: const Radius.circular(18),
+              bottomLeft: Radius.circular(isMe ? 18 : 4),
+              bottomRight: Radius.circular(isMe ? 4 : 18),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment:
+                isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+            children: isMe
+                ? [
+                    Text("$seconds''", style: TextStyle(fontSize: 13, color: fg)),
+                    const SizedBox(width: 8),
+                    Icon(icon, size: 18, color: fg),
+                  ]
+                : [
+                    Icon(icon, size: 18, color: fg),
+                    const SizedBox(width: 8),
+                    Text("$seconds''", style: TextStyle(fontSize: 13, color: fg)),
+                  ],
+          ),
         ),
       ),
     );

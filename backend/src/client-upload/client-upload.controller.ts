@@ -14,7 +14,10 @@ import {
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ClientJwtAuthGuard } from '../client-auth/client-jwt-auth.guard';
-import { clientUploadMulterOptions } from './client-upload.config';
+import {
+  clientUploadMulterOptions,
+  clientUploadAudioMulterOptions,
+} from './client-upload.config';
 import { ClientUploadService } from './client-upload.service';
 
 @Controller('client/uploads')
@@ -35,5 +38,18 @@ export class ClientUploadController {
     }
 
     return this.clientUploadService.uploadImage(file);
+  }
+
+  @Post('audio')
+  @UseInterceptors(FileInterceptor('file', clientUploadAudioMulterOptions))
+  @ApiOperation({ summary: '上传语音' })
+  @ApiResponse({ status: 200, description: '上传成功，返回音频URL' })
+  @ApiResponse({ status: 400, description: '未选择音频文件' })
+  uploadAudio(@UploadedFile() file: Express.Multer.File | undefined) {
+    if (!file) {
+      throw new BadRequestException('请选择音频文件');
+    }
+
+    return this.clientUploadService.uploadAudio(file);
   }
 }

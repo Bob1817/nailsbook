@@ -1,9 +1,23 @@
+import 'dart:convert';
+
 import 'package:nailbook_mobile/core/api/api_client.dart';
 
 class ChatService {
   final ApiClient _api;
 
   ChatService(this._api);
+
+  /// 上传语音文件，返回音频 URL。
+  Future<String?> uploadAudio(String filePath) async {
+    final res = await _api.uploadMultipart('/uploads/audio', filePath, 'file');
+    final body = await res.stream.bytesToString();
+    try {
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      return json['url'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
 
   Future<List<Map<String, dynamic>>> conversations() async {
     final items = await _api.getList('/messages/conversations');

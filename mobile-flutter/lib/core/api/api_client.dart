@@ -103,6 +103,10 @@ class ApiClient {
     final (MediaType type, String filename) = switch (ext) {
       'png' => (MediaType('image', 'png'), 'upload.png'),
       'webp' => (MediaType('image', 'webp'), 'upload.webp'),
+      'm4a' => (MediaType('audio', 'mp4'), 'voice.m4a'),
+      'aac' => (MediaType('audio', 'aac'), 'voice.aac'),
+      'mp3' => (MediaType('audio', 'mpeg'), 'voice.mp3'),
+      'wav' => (MediaType('audio', 'wav'), 'voice.wav'),
       _ => (MediaType('image', 'jpeg'), 'upload.jpg'),
     };
     request.files.add(await http.MultipartFile.fromPath(

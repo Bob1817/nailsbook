@@ -8,4 +8,8 @@ export class TechnicianUploadService {
   uploadImage(file: UploadFile) {
     return this.storage.uploadImage(file);
   }
+
+  uploadAudio(file: UploadFile) {
+    return this.storage.uploadAudio(file);
+  }
 }

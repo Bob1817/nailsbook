@@ -19,6 +19,28 @@ export const clientUploadMulterOptions = {
   },
 };
 
+export const CLIENT_UPLOAD_AUDIO_LIMIT_BYTES = 10 * 1024 * 1024;
+
+export const clientUploadAudioMulterOptions = {
+  storage: memoryStorage(),
+  fileFilter: clientAudioFileFilter,
+  limits: {
+    fileSize: CLIENT_UPLOAD_AUDIO_LIMIT_BYTES,
+  },
+};
+
+export function clientAudioFileFilter(
+  _request: unknown,
+  file: { mimetype: string },
+  callback: (error: Error | null, acceptFile: boolean) => void,
+) {
+  if (typeof file.mimetype === 'string' && file.mimetype.startsWith('audio/')) {
+    callback(null, true);
+  } else {
+    callback(new BadRequestException('仅支持音频文件上传'), false);
+  }
+}
+
 export function clientUploadFileFilter(
   _request: unknown,
   file: {
