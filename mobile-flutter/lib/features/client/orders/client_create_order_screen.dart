@@ -413,6 +413,18 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                                       ],
                                     ),
                                   ),
+                                  // 终止预约（关闭）
+                                  GestureDetector(
+                                    onTap: _confirmCancel,
+                                    child: Container(
+                                      width: 42, height: 42,
+                                      decoration: const BoxDecoration(
+                                        color: ET.surface,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.close_rounded, size: 20, color: ET.inkSecondary),
+                                    ),
+                                  ),
                                 ],
                               ),
                               const SizedBox(height: 10),
@@ -552,6 +564,30 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
     }
   }
 
+  /// 终止预约：弹窗确认后退出整个预约流程。
+  Future<void> _confirmCancel() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: ET.bgElevated,
+        title: const Text('终止预约', style: TextStyle(color: ET.ink)),
+        content: const Text('确定要终止本次预约吗？已填写的信息将不会保存。',
+            style: TextStyle(color: ET.inkSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('继续预约', style: TextStyle(color: ET.inkSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('确认终止', style: TextStyle(color: ET.like)),
+          ),
+        ],
+      ),
+    );
+    if (ok == true && mounted) Navigator.pop(context);
+  }
+
   void _next() {
     if (!_stepValid(_step)) return;
     FocusScope.of(context).unfocus();
@@ -656,39 +692,55 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
   }
 
   Widget _sameStylePreview() {
-    final img = _customImages.isNotEmpty ? _customImages.first : null;
     return _glassCard('预约同款', '以下作品将作为本次服务内容，确认后选择方式与时间', [
-      Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(14),
-            child: SizedBox(
-              width: 64,
-              height: 64,
-              child: img != null
-                  ? Image.network(img, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          Container(color: ET.surface))
-                  : Container(
-                      color: ET.surface,
-                      child: const Icon(Icons.image_outlined,
-                          color: ET.inkMuted)),
+      // 标题在上
+      Text(_customTitle.trim().isEmpty ? '同款作品' : _customTitle.trim(),
+          style: const TextStyle(
+              fontSize: 15, fontWeight: FontWeight.w600, color: ET.ink)),
+      const SizedBox(height: 10),
+      // 图片在下：横向可滑，支持多图
+      if (_customImages.isEmpty)
+        Container(
+          height: 96,
+          width: double.infinity,
+          decoration: BoxDecoration(
+              color: ET.surface, borderRadius: BorderRadius.circular(14)),
+          alignment: Alignment.center,
+          child: const Icon(Icons.image_outlined, color: ET.inkMuted),
+        )
+      else
+        SizedBox(
+          height: 110,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: _customImages.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (_, i) => GestureDetector(
+              onTap: () => _openImageViewer(i),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Image.network(_customImages[i],
+                    width: 110, height: 110, fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                        width: 110, height: 110, color: ET.surface)),
+              ),
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-                _customTitle.trim().isEmpty ? '同款作品' : _customTitle.trim(),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: ET.ink)),
-          ),
-        ],
-      ),
+        ),
     ]);
+  }
+
+  /// 全屏查看作品图（左右翻页）。
+  void _openImageViewer(int index) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black,
+        pageBuilder: (_, __, ___) => _FullscreenImages(
+            images: _customImages, initialIndex: index),
+      ),
+    );
   }
 
   Widget _notesCard() {
@@ -1234,7 +1286,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildDateStrip(),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         if (_isShopMode && _shopAddressName.isNotEmpty)
           ...() {
             final opt = shopHoursOptionForDate(_selectedShopMap, _serviceDate);
@@ -1257,7 +1309,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
     final base = DateTime(now.year, now.month, now.day);
     const wk = ['一', '二', '三', '四', '五', '六', '日']; // Dart weekday 1..7
     return SizedBox(
-      height: 58,
+      height: 46,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: 45,
@@ -1471,6 +1523,93 @@ class _CheckboxDot extends StatelessWidget {
       child: selected
           ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
           : null,
+    );
+  }
+}
+
+/// 作品图全屏预览：左右翻页 + 双指缩放 + 点击关闭。
+class _FullscreenImages extends StatefulWidget {
+  final List<String> images;
+  final int initialIndex;
+  const _FullscreenImages({required this.images, required this.initialIndex});
+
+  @override
+  State<_FullscreenImages> createState() => _FullscreenImagesState();
+}
+
+class _FullscreenImagesState extends State<_FullscreenImages> {
+  late final PageController _ctl =
+      PageController(initialPage: widget.initialIndex);
+  late int _index = widget.initialIndex;
+
+  @override
+  void dispose() {
+    _ctl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final topPad = MediaQuery.of(context).padding.top;
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          PageView.builder(
+            controller: _ctl,
+            itemCount: widget.images.length,
+            onPageChanged: (i) => setState(() => _index = i),
+            itemBuilder: (_, i) => GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: InteractiveViewer(
+                minScale: 1,
+                maxScale: 4,
+                child: Center(
+                  child: Image.network(widget.images[i], fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(
+                          Icons.image_not_supported,
+                          color: Colors.white24, size: 48)),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 16,
+            top: topPad + 8,
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    shape: BoxShape.circle),
+                child: const Icon(Icons.close_rounded,
+                    color: Colors.white, size: 22),
+              ),
+            ),
+          ),
+          if (widget.images.length > 1)
+            Positioned(
+              bottom: MediaQuery.of(context).padding.bottom + 20,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(999)),
+                  child: Text('${_index + 1} / ${widget.images.length}',
+                      style:
+                          const TextStyle(color: Colors.white, fontSize: 13)),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
