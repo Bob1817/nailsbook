@@ -574,11 +574,17 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
           children: [
             Row(
               children: [
+                Expanded(
+                  child: Text(o.serviceType ?? '美甲服务',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: ET.ink)),
+                ),
+                const SizedBox(width: 8),
                 _tintPill(o.statusLabel, ET.accentSoft, ET.accentOnDark),
-                const Spacer(),
-                Text(_countdown(start),
-                    style:
-                        const TextStyle(fontSize: 12, color: ET.inkSecondary)),
               ],
             ),
             const SizedBox(height: 14),
@@ -591,14 +597,6 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(o.serviceType ?? '美甲服务',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: ET.ink)),
-                      const SizedBox(height: 6),
                       _metaRow(Icons.access_time_rounded,
                           '${_hm(o.startTime)} - ${_hm(o.endTime)}'),
                       if (tech?['name'] != null) ...[
@@ -700,22 +698,48 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
     return Container(
       width: 72,
       height: 72,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
           color: ET.accentSoft, borderRadius: BorderRadius.circular(16)),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(d != null ? '${d.month}月' : '--',
-              style: const TextStyle(fontSize: 11, color: ET.accentOnDark)),
-          Text(d != null ? '${d.day}' : '--',
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(_relDay(d),
+                style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    height: 1.1,
+                    color: ET.ink)),
+          ),
+          const SizedBox(height: 3),
+          Text(d != null ? _weekday(d) : '--',
               style: const TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  height: 1.1,
-                  color: ET.ink)),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: ET.accentOnDark)),
         ],
       ),
     );
+  }
+
+  // 相对日期：今天 / 明天 / 后天，否则「M月D日」
+  String _relDay(DateTime? d) {
+    if (d == null) return '--';
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final that = DateTime(d.year, d.month, d.day);
+    final diff = that.difference(today).inDays;
+    if (diff == 0) return '今天';
+    if (diff == 1) return '明天';
+    if (diff == 2) return '后天';
+    return '${d.month}月${d.day}日';
+  }
+
+  String _weekday(DateTime d) {
+    const names = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+    return names[d.weekday - 1];
   }
 
   Widget _metaRow(IconData icon, String text, {int maxLines = 1}) {
@@ -1023,17 +1047,5 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
     final d = DateTime.tryParse(iso ?? '');
     if (d == null) return '--';
     return '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
-  }
-
-  String _countdown(DateTime? target) {
-    if (target == null) return '';
-    final diff = target.difference(DateTime.now());
-    if (diff.isNegative) return '已开始';
-    final days = diff.inDays;
-    final hours = diff.inHours % 24;
-    final mins = diff.inMinutes % 60;
-    if (days >= 1) return '倒计时 $days 天 $hours 小时';
-    if (hours >= 1) return '倒计时 $hours 小时 $mins 分';
-    return '倒计时 $mins 分钟';
   }
 }
