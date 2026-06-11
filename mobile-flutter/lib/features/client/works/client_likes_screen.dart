@@ -107,13 +107,13 @@ class _ClientLikesScreenState extends State<ClientLikesScreen> {
         children: [
           ClientDetailBackButton(onTap: () => context.pop()),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('我的点赞', style: ET.displaySmall),
-                SizedBox(height: 4),
-                Text('查看你点赞过的美甲作品',
+                Text('我的点赞', style: ET.displaySmall.copyWith(fontSize: 22)),
+                const SizedBox(height: 4),
+                const Text('查看你点赞过的美甲作品',
                     style: TextStyle(fontSize: 13, color: ET.inkMuted)),
               ],
             ),

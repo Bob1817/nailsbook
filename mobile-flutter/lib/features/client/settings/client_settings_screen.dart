@@ -1,6 +1,5 @@
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
-import '../../../core/theme/design_tokens.dart';
 import 'client_change_password_screen.dart';
 import 'client_legal_doc_screen.dart';
 import 'client_notification_settings_screen.dart';
@@ -13,7 +12,7 @@ class ClientSettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ET.bg,
-      appBar: GlassAppBar(title: const Text('设置'), dark: true),
+      appBar: const GlassAppBar(title: Text('设置'), dark: true),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -36,9 +35,9 @@ class ClientSettingsScreen extends StatelessWidget {
   }
 
   Widget _group(BuildContext context, List<_Item> items) {
-    return Container(
-      decoration: BoxDecoration(
-          color: ET.surface, borderRadius: BorderRadius.circular(16)),
+    return Material(
+      color: ET.surface,
+      borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: List.generate(items.length, (i) {
@@ -50,10 +49,8 @@ class ClientSettingsScreen extends StatelessWidget {
               ListTile(
                 leading: Icon(it.icon, color: ET.accent),
                 title: Text(it.label,
-                    style:
-                        const TextStyle(fontSize: 15, color: ET.ink)),
-                trailing:
-                    const Icon(Icons.chevron_right, color: ET.inkMuted),
+                    style: const TextStyle(fontSize: 15, color: ET.ink)),
+                trailing: const Icon(Icons.chevron_right, color: ET.inkMuted),
                 onTap: () => Navigator.push(
                     context, MaterialPageRoute(builder: (_) => it.page)),
               ),

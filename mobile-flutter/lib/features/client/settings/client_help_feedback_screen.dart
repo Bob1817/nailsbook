@@ -36,9 +36,9 @@ class _ClientHelpFeedbackScreenState extends State<ClientHelpFeedbackScreen> {
                 style: TextStyle(
                     fontSize: 15, fontWeight: FontWeight.w600, color: ET.ink)),
           ),
-          Container(
-            decoration: BoxDecoration(
-                color: ET.surface, borderRadius: BorderRadius.circular(16)),
+          Material(
+            color: ET.surface,
+            borderRadius: BorderRadius.circular(16),
             clipBehavior: Clip.antiAlias,
             child: Column(
               children: List.generate(_faqs.length, (i) => _faqTile(i)),
@@ -51,9 +51,9 @@ class _ClientHelpFeedbackScreenState extends State<ClientHelpFeedbackScreen> {
                 style: TextStyle(
                     fontSize: 15, fontWeight: FontWeight.w600, color: ET.ink)),
           ),
-          Container(
-            decoration: BoxDecoration(
-                color: ET.surface, borderRadius: BorderRadius.circular(16)),
+          Material(
+            color: ET.surface,
+            borderRadius: BorderRadius.circular(16),
             clipBehavior: Clip.antiAlias,
             child: ListTile(
               leading: const Icon(Icons.headset_mic_outlined, color: ET.accent),

@@ -1,7 +1,5 @@
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
-import '../../../core/theme/design_tokens.dart';
-
 /// 通知设置：本地偏好（SharedPreferences）。对齐 webapp NotificationSettings.tsx。
 class ClientNotificationSettingsScreen extends StatefulWidget {
   const ClientNotificationSettingsScreen({super.key});
@@ -46,16 +44,15 @@ class _State extends State<ClientNotificationSettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ET.bg,
-      appBar: GlassAppBar(title: const Text('通知设置'), dark: true),
+      appBar: const GlassAppBar(title: Text('通知设置'), dark: true),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: ET.accent))
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                Container(
-                  decoration: BoxDecoration(
-                      color: ET.surface,
-                      borderRadius: BorderRadius.circular(16)),
+                Material(
+                  color: ET.surface,
+                  borderRadius: BorderRadius.circular(16),
                   clipBehavior: Clip.antiAlias,
                   child: Column(
                     children: List.generate(_items.length, (i) {
@@ -65,7 +62,7 @@ class _State extends State<ClientNotificationSettingsScreen> {
                           if (i > 0)
                             const Divider(height: 1, color: Color(0x11000000)),
                           SwitchListTile(
-                            activeColor: ET.accent,
+                            activeThumbColor: ET.accent,
                             title: Text(it.$2,
                                 style: const TextStyle(
                                     fontSize: 15, color: ET.ink)),
