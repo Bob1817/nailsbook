@@ -9,6 +9,7 @@ export interface AdminFeedback {
   title: string;
   type: string;
   content: string;
+  attachmentUrls: string[];
   status: 'pending' | 'resolved';
   createdAt: string;
 }

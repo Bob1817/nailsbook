@@ -1,7 +1,6 @@
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
-import '../../../core/theme/design_tokens.dart';
-import '../../shared/chat/conversations_screen.dart';
+import 'client_feedback_screen.dart';
 
 /// 帮助与反馈：常见问题（折叠）+ 联系客服。对齐 webapp HelpFeedback.tsx。
 class ClientHelpFeedbackScreen extends StatefulWidget {
@@ -27,7 +26,7 @@ class _ClientHelpFeedbackScreenState extends State<ClientHelpFeedbackScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ET.bg,
-      appBar: GlassAppBar(title: const Text('帮助与反馈'), dark: true),
+      appBar: const GlassAppBar(title: Text('帮助与反馈'), dark: true),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -35,9 +34,7 @@ class _ClientHelpFeedbackScreenState extends State<ClientHelpFeedbackScreen> {
             padding: EdgeInsets.only(left: 4, bottom: 10),
             child: Text('常见问题',
                 style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: ET.ink)),
+                    fontSize: 15, fontWeight: FontWeight.w600, color: ET.ink)),
           ),
           Container(
             decoration: BoxDecoration(
@@ -52,24 +49,20 @@ class _ClientHelpFeedbackScreenState extends State<ClientHelpFeedbackScreen> {
             padding: EdgeInsets.only(left: 4, bottom: 10),
             child: Text('需要帮助？',
                 style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: ET.ink)),
+                    fontSize: 15, fontWeight: FontWeight.w600, color: ET.ink)),
           ),
           Container(
             decoration: BoxDecoration(
                 color: ET.surface, borderRadius: BorderRadius.circular(16)),
             clipBehavior: Clip.antiAlias,
             child: ListTile(
-              leading:
-                  const Icon(Icons.headset_mic_outlined, color: ET.accent),
+              leading: const Icon(Icons.headset_mic_outlined, color: ET.accent),
               title: const Text('联系客服'),
-              trailing:
-                  const Icon(Icons.chevron_right, color: ET.inkMuted),
+              trailing: const Icon(Icons.chevron_right, color: ET.inkMuted),
               onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (_) => const ConversationsScreen())),
+                      builder: (_) => const ClientFeedbackScreen())),
             ),
           ),
         ],
@@ -86,9 +79,7 @@ class _ClientHelpFeedbackScreenState extends State<ClientHelpFeedbackScreen> {
         ListTile(
           title: Text(faq.$1,
               style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: ET.ink)),
+                  fontSize: 14, fontWeight: FontWeight.w500, color: ET.ink)),
           trailing: Icon(open ? Icons.expand_less : Icons.expand_more,
               color: ET.inkMuted),
           onTap: () => setState(() => _open = open ? null : i),

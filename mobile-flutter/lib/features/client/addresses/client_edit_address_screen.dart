@@ -243,17 +243,17 @@ class _ClientEditAddressScreenState extends State<ClientEditAddressScreen> {
       ),
       child: Row(
         children: [
-          Expanded(
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('设为默认地址',
+                Text('设为默认地址',
                     style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
                         color: ET.ink)),
-                const SizedBox(height: 4),
-                const Text('后续预约时会优先使用这个地址',
+                SizedBox(height: 4),
+                Text('后续预约时会优先使用这个地址',
                     style: TextStyle(fontSize: 12, color: ET.inkMuted)),
               ],
             ),

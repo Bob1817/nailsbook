@@ -558,17 +558,18 @@ model NailWorkReport {
 }
 
 model Feedback {
-  id          Int      @id @default(autoincrement())
-  sourceType  String   // 'client' | 'technician'
-  sourceId    Int
-  sourceName  String?
-  sourcePhone String?
-  title       String
-  type        String
-  content     String
-  status      String   @default("pending") // 'pending' | 'resolved'
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
+  id             Int      @id @default(autoincrement())
+  sourceType     String // 'client' | 'technician'
+  sourceId       Int
+  sourceName     String?
+  sourcePhone    String?
+  title          String
+  type           String
+  content        String
+  attachmentUrls String   @default("[]")
+  status         String   @default("pending") // 'pending' | 'resolved'
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
 
   @@index([status])
   @@index([sourceType])

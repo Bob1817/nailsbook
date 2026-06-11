@@ -7,6 +7,7 @@ interface CreateFeedbackInput {
   title: string;
   type: string;
   content: string;
+  attachmentUrls?: string[];
 }
 
 @Injectable()
@@ -42,6 +43,7 @@ export class FeedbackService {
         title: (input.title ?? '').trim(),
         type: (input.type ?? '其他').trim(),
         content: (input.content ?? '').trim(),
+        attachmentUrls: JSON.stringify(input.attachmentUrls ?? []),
       },
     });
   }
@@ -70,7 +72,15 @@ export class FeedbackService {
       }),
     ]);
 
-    return { list, total, page, pageSize };
+    return {
+      list: list.map((item) => ({
+        ...item,
+        attachmentUrls: this.parseAttachmentUrls(item.attachmentUrls),
+      })),
+      total,
+      page,
+      pageSize,
+    };
   }
 
   async resolve(id: number) {
@@ -80,5 +90,17 @@ export class FeedbackService {
       where: { id },
       data: { status: 'resolved' },
     });
+  }
+
+  private parseAttachmentUrls(raw: string | null) {
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed)
+        ? parsed.filter((url) => typeof url === 'string')
+        : [];
+    } catch {
+      return [];
+    }
   }
 }

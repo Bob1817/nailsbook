@@ -14,7 +14,13 @@ export class TechnicianFeedbackController {
   @ApiOperation({ summary: '提交问题反馈' })
   create(
     @Req() req: { user: { technicianId: number } },
-    @Body() body: { title: string; type: string; content: string },
+    @Body()
+    body: {
+      title: string;
+      type: string;
+      content: string;
+      attachmentUrls?: string[];
+    },
   ) {
     return this.service.create({
       sourceType: 'technician',
@@ -22,6 +28,7 @@ export class TechnicianFeedbackController {
       title: body.title,
       type: body.type,
       content: body.content,
+      attachmentUrls: body.attachmentUrls,
     });
   }
 }

@@ -78,8 +78,9 @@ class ApiClient {
     _checkStatus(response);
     final decoded = jsonDecode(response.body);
     if (decoded is List) return decoded;
-    if (decoded is Map && decoded.containsKey('data'))
+    if (decoded is Map && decoded.containsKey('data')) {
       return decoded['data'] as List;
+    }
     throw ApiError('Unexpected response format',
         statusCode: response.statusCode);
   }
@@ -91,7 +92,10 @@ class ApiClient {
   ) async {
     final uri = _buildUri(path);
     final request = http.MultipartRequest('POST', uri);
-    request.headers.addAll(_headers);
+    request.headers['Accept'] = 'application/json';
+    if (_token != null) {
+      request.headers['Authorization'] = 'Bearer $_token';
+    }
     request.files.add(await http.MultipartFile.fromPath(fieldName, filePath));
     return request.send().timeout(_requestTimeout);
   }

@@ -15,6 +15,13 @@ import type { AdminFeedback } from '../services/adminFeedback';
 
 const { Text, Paragraph } = Typography;
 
+const resolveAttachmentUrl = (url: string) => {
+  if (/^https?:\/\//i.test(url)) return url;
+  const apiBase =
+    import.meta.env.VITE_API_URL || 'http://localhost:3000/api/admin';
+  return `${apiBase.replace(/\/api\/admin\/?$/, '')}${url}`;
+};
+
 const Feedback: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<'pending' | 'resolved'>('pending');
@@ -107,6 +114,30 @@ const Feedback: React.FC = () => {
           {content}
         </Paragraph>
       ),
+    },
+    {
+      title: '附件',
+      dataIndex: 'attachmentUrls',
+      key: 'attachmentUrls',
+      width: 120,
+      render: (urls: string[] = []) => {
+        if (!urls.length) return <Text type="secondary">—</Text>;
+        return (
+          <Space wrap size={4}>
+            {urls.map((url, index) => (
+              <Button
+                key={`${url}-${index}`}
+                type="link"
+                size="small"
+                href={resolveAttachmentUrl(url)}
+                target="_blank"
+              >
+                附件{index + 1}
+              </Button>
+            ))}
+          </Space>
+        );
+      },
     },
     {
       title: '提交时间',
