@@ -219,9 +219,12 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
             children: [
               _buildTechAddressCard(o),
               const SizedBox(height: DT.space16),
-              _buildStatusCard(o),
-              const SizedBox(height: DT.space16),
               _buildServiceInfo(o),
+              // 美甲师报价后才显示服务价格卡片
+              if (o.quotePrice != null && o.quotePrice! > 0) ...[
+                const SizedBox(height: DT.space16),
+                _buildStatusCard(o),
+              ],
               const SizedBox(height: DT.space24),
             ],
           ),
@@ -436,6 +439,12 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Text('服务价格',
+              style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: DT.textPrimary)),
+          const SizedBox(height: 12),
           // 报价框（状态徽章已移至服务信息卡头部）
           Container(
             width: double.infinity,

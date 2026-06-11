@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
+import '../../../core/widgets/glow_field.dart';
 import '../orders/client_create_order_screen.dart';
 import '../../../core/widgets/nb_toast.dart';
 
@@ -609,31 +610,10 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
             ),
           Row(children: [
             Expanded(
-              child: TextField(
+              child: GlowField(
                 controller: _inputCtl,
                 focusNode: _inputFocus,
-                style: const TextStyle(color: ET.ink, fontSize: 14),
-                cursorColor: ET.accent,
-                decoration: InputDecoration(
-                  hintText:
-                      _replyTo != null ? '回复 @${_replyTo!['name']}…' : '写评论…',
-                  hintStyle: const TextStyle(color: ET.inkMuted),
-                  filled: true,
-                  fillColor: ET.surface,
-                  isDense: true,
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(999),
-                      borderSide: BorderSide.none),
-                  enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(999),
-                      borderSide: BorderSide.none),
-                  focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(999),
-                      borderSide:
-                          const BorderSide(color: ET.accent, width: 1.2)),
-                ),
+                hint: _replyTo != null ? '回复 @${_replyTo!['name']}…' : '写评论…',
                 minLines: 1,
                 maxLines: 4,
                 textInputAction: TextInputAction.send,

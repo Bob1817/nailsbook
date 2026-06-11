@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/editorial_tokens.dart';
 import '../../../core/widgets/client_glass_header.dart';
+import '../../../core/widgets/glow_field.dart';
 import '../works/client_work_detail_screen.dart';
 
 /// 发现页：刷一刷绑定美甲师发布的最新作品（种草核心）。
@@ -182,46 +183,25 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
   Widget _searchBox() {
     return Material(
       color: Colors.transparent,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-        decoration: BoxDecoration(
-          color: ET.surface,
-          borderRadius: BorderRadius.circular(ET.rChip),
-          border: Border.all(color: ET.hairlineStrong),
-          boxShadow: ET.shadowCard,
-        ),
-        child: Row(
-          children: [
+      child: GlowField(
+        controller: _searchCtl,
+        focusNode: _searchFocus,
+        hint: '搜索美甲风格、美甲师…',
+        textInputAction: TextInputAction.search,
+        onChanged: (v) => setState(() => _searchQuery = v),
+        onSubmitted: (_) => _closeSearch(),
+        prefix:
             const Icon(Icons.search_rounded, size: 18, color: ET.inkMuted),
-            const SizedBox(width: 10),
-            Expanded(
-              child: TextField(
-                controller: _searchCtl,
-                focusNode: _searchFocus,
-                cursorColor: ET.accent,
-                style: const TextStyle(color: ET.ink, fontSize: 14),
-                textInputAction: TextInputAction.search,
-                decoration: const InputDecoration(
-                  hintText: '搜索美甲风格、美甲师…',
-                  hintStyle: TextStyle(color: ET.inkMuted, fontSize: 14),
-                  border: InputBorder.none,
-                  isDense: true,
-                ),
-                onChanged: (v) => setState(() => _searchQuery = v),
-                onSubmitted: (_) => _closeSearch(),
-              ),
-            ),
-            if (_searchQuery.isNotEmpty)
-              GestureDetector(
+        suffix: _searchQuery.isNotEmpty
+            ? GestureDetector(
                 onTap: () => setState(() {
                   _searchQuery = '';
                   _searchCtl.clear();
                 }),
                 child: const Icon(Icons.close_rounded,
                     size: 18, color: ET.inkMuted),
-              ),
-          ],
-        ),
+              )
+            : null,
       ),
     );
   }

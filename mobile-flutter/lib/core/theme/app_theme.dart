@@ -82,26 +82,27 @@ class AppTheme {
         ),
       ),
 
+      // 统一输入框：无边框线条，填充式柔和底（聚焦柔光由 GlowField 提供）
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: DT.surfaceAlt,
+        fillColor: ET.surface,
         hintStyle: const TextStyle(color: DT.textMuted, fontSize: 14),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: DT.space16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(DT.rInput),
-          borderSide: const BorderSide(color: DT.border, width: 0.5),
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(DT.rInput),
-          borderSide: const BorderSide(color: DT.border, width: 0.5),
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(DT.rInput),
-          borderSide: const BorderSide(color: DT.primaryBorder),
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide.none,
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(DT.rInput),
+          borderRadius: BorderRadius.circular(18),
           borderSide: const BorderSide(color: DT.errorBorder),
         ),
       ),
