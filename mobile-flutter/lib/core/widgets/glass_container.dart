@@ -22,6 +22,14 @@ export 'nb_shared_components.dart';
 export 'nb_toast.dart';
 export 'region_picker.dart';
 
+class TechnicianGlassStyle {
+  TechnicianGlassStyle._();
+
+  static const Color tint = Colors.black;
+  static const double blur = DT.glassBlurHeavy;
+  static const double opacity = 0.48;
+}
+
 /// Liquid Glass 容器（iOS 26 风格）：背景模糊 + 半透明底色 + 高光描边。
 ///
 /// 用于导航栏、浮层、图片之上的 pill 等需要「磨砂玻璃」材质的表面。
@@ -140,6 +148,7 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   /// 暖调深色编辑风变体。全端已切换为深色，默认 true。
   final bool dark;
+  final bool technician;
 
   const GlassAppBar({
     super.key,
@@ -152,6 +161,7 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.backgroundColor,
     this.elevation,
     this.dark = true,
+    this.technician = false,
   });
 
   @override
@@ -175,9 +185,10 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
       foregroundColor: dark ? ET.ink : DT.textPrimary,
       flexibleSpace: dark
           ? GlassContainer(
-              tint: ET.glassTint,
-              blur: ET.glassBlur,
-              opacity: ET.glassOpacity,
+              tint: technician ? TechnicianGlassStyle.tint : ET.glassTint,
+              blur: technician ? TechnicianGlassStyle.blur : ET.glassBlur,
+              opacity:
+                  technician ? TechnicianGlassStyle.opacity : ET.glassOpacity,
               borderRadius: 0,
               showBorder: false,
               child: const SizedBox.expand(),
@@ -197,11 +208,13 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
 class GlassBottomSurface extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
+  final bool technician;
 
   const GlassBottomSurface({
     super.key,
     required this.child,
     this.padding = const EdgeInsets.fromLTRB(20, 12, 20, 16),
+    this.technician = false,
   });
 
   @override
@@ -210,9 +223,9 @@ class GlassBottomSurface extends StatelessWidget {
       top: false,
       minimum: EdgeInsets.zero,
       child: GlassContainer(
-        tint: ET.glassTint,
-        blur: ET.glassBlur,
-        opacity: ET.glassOpacity,
+        tint: technician ? TechnicianGlassStyle.tint : ET.glassTint,
+        blur: technician ? TechnicianGlassStyle.blur : ET.glassBlur,
+        opacity: technician ? TechnicianGlassStyle.opacity : ET.glassOpacity,
         borderRadius: 0,
         showBorder: false,
         boxShadow: const [

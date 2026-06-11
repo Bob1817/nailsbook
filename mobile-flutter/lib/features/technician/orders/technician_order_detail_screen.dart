@@ -11,6 +11,8 @@ import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/nb_shared_components.dart';
 import 'technician_order_service.dart';
 import '../../../core/widgets/nb_toast.dart';
+import '../../shared/chat/chat_screen.dart';
+import '../../shared/chat/chat_service.dart';
 
 class TechnicianOrderDetailScreen extends StatefulWidget {
   final int orderId;
@@ -55,18 +57,6 @@ class _TechnicianOrderDetailScreenState
     if (st == 'home') return '上门美甲';
     if (st == 'shop') return '到店美甲';
     return st ?? '—';
-  }
-
-  Color _serviceTypeColor(String? st) {
-    if (st == 'home') return DT.actionOrange;
-    if (st == 'shop') return DT.actionBlue;
-    return DT.textMidGrey;
-  }
-
-  Color _serviceTypeBg(String? st) {
-    if (st == 'home') return DT.warningBg;
-    if (st == 'shop') return DT.infoBg;
-    return DT.fillGreyLight;
   }
 
   String _formatClock(String? iso) {
@@ -210,14 +200,14 @@ class _TechnicianOrderDetailScreenState
     final o = _order!;
     final status = o['status']?.toString() ?? '';
     final serviceType = o['serviceType']?.toString() ?? '';
-    final customerName = o['customerName']?.toString() ?? '客户';
-    final customerPhone = o['customerPhone']?.toString() ?? '';
-    final customerAvatar = o['customerAvatar']?.toString();
-    final serviceName = o['serviceName']?.toString() ?? '';
+    final customerName = _customerName(o);
+    final customerPhone = _customerPhone(o);
+    final customerAvatar = _customerAvatarUrl(o);
+    final serviceTitle = _serviceTitle(o);
+    final serviceImages = _serviceImages(o);
     final address = o['address']?.toString() ?? '';
     final note = o['note']?.toString() ?? '';
     final customDescription = o['customDescription']?.toString() ?? '';
-    final customImages = (o['customImages'] as List<dynamic>?) ?? [];
     final price = o['price'] as num?;
     final depositAmount = o['depositAmount'] as num?;
     final depositPaid = o['depositPaid'] as bool? ?? false;
@@ -268,13 +258,25 @@ class _TechnicianOrderDetailScreenState
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    NbToast.show(context, '联系客户: $customerPhone');
-                  },
+                  onTap: () => _openChat(o, customerName),
                   child: Container(
-                    width: 40,
-                    height: 40,
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: DT.primarySoft,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: DT.avatarBorder),
+                    ),
+                    child: const Icon(CupertinoIcons.chat_bubble,
+                        size: 18, color: DT.primary),
+                  ),
+                ),
+                const SizedBox(width: DT.sm),
+                GestureDetector(
+                  onTap: () => _callCustomer(customerPhone),
+                  child: Container(
+                    width: 44,
+                    height: 44,
                     decoration: BoxDecoration(
                       color: DT.primarySoft,
                       shape: BoxShape.circle,
@@ -295,29 +297,8 @@ class _TechnicianOrderDetailScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Status + service type row
-                Row(
-                  children: [
-                    OrderStatusBadge(status: status, fontSize: 11),
-                    const Spacer(),
-                    if (serviceType.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: DT.sm + 2, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: _serviceTypeBg(serviceType),
-                          borderRadius: BorderRadius.circular(DT.rFull),
-                        ),
-                        child: Text(_serviceTypeLabel(serviceType),
-                            style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                                color: _serviceTypeColor(serviceType))),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: DT.md),
-                _detailRow('服务内容', serviceName),
+                _statusDetailRow('预约状态', status),
+                _detailRow('服务类型', _serviceTypeLabel(serviceType)),
                 _detailRow('预约时间',
                     '${_formatDateLabel(o['startTime'])} ${_formatTimeRange(o['startTime'], o['endTime'])}'),
                 _detailRow(
@@ -327,54 +308,6 @@ class _TechnicianOrderDetailScreenState
                     serviceType == 'shop'
                         ? (o['shopName']?.toString() ?? '到店服务')
                         : address),
-                if (customDescription.isNotEmpty) ...[
-                  const SizedBox(height: DT.sm),
-                  Container(
-                    padding: const EdgeInsets.all(DT.md),
-                    decoration: BoxDecoration(
-                      color: DT.fillGrey,
-                      borderRadius: BorderRadius.circular(DT.rMd),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('需求描述',
-                            style: DT.captionLarge
-                                .copyWith(fontWeight: FontWeight.w500)),
-                        const SizedBox(height: 4),
-                        Text(customDescription,
-                            style: DT.bodySmall.copyWith(height: 1.5)),
-                      ],
-                    ),
-                  ),
-                ],
-                if (customImages.isNotEmpty) ...[
-                  const SizedBox(height: DT.sm),
-                  Text('参考图',
-                      style: DT.captionLarge
-                          .copyWith(fontWeight: FontWeight.w500)),
-                  const SizedBox(height: DT.xs),
-                  Wrap(
-                    spacing: DT.sm,
-                    runSpacing: DT.sm,
-                    children: customImages
-                        .map((url) => ClipRRect(
-                              borderRadius: BorderRadius.circular(DT.rMd),
-                              child: Image.network(url.toString(),
-                                  width: 72,
-                                  height: 72,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
-                                        width: 72,
-                                        height: 72,
-                                        color: DT.fillGreyLight,
-                                        child: const Icon(CupertinoIcons.photo,
-                                            size: 18, color: DT.iconGrey),
-                                      )),
-                            ))
-                        .toList(),
-                  ),
-                ],
                 if (note.isNotEmpty) ...[
                   const SizedBox(height: DT.sm),
                   Container(
@@ -398,6 +331,11 @@ class _TechnicianOrderDetailScreenState
                     ),
                   ),
                 ],
+                _serviceContentRow(
+                  title: serviceTitle,
+                  images: serviceImages,
+                  description: customDescription,
+                ),
               ],
             ),
           ),
@@ -488,6 +426,113 @@ class _TechnicianOrderDetailScreenState
                 style: DT.bodySmall.copyWith(
                     color: DT.textPrimary, fontWeight: FontWeight.w500),
                 textAlign: TextAlign.right),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _statusDetailRow(String label, String status) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 72,
+            child: Text(label,
+                style: DT.captionLarge.copyWith(color: DT.textMuted)),
+          ),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: OrderStatusBadge(status: status, fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _serviceContentRow({
+    required String title,
+    required List<String> images,
+    required String description,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(top: DT.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 72,
+            child: Text('服务内容',
+                style: DT.captionLarge.copyWith(color: DT.textMuted)),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  title.isEmpty ? '-' : title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                  style: DT.bodySmall.copyWith(
+                    color: DT.textPrimary,
+                    fontWeight: FontWeight.w600,
+                    height: 1.35,
+                  ),
+                ),
+                if (description.isNotEmpty) ...[
+                  const SizedBox(height: DT.xs),
+                  Text(
+                    description,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.right,
+                    style: DT.captionLarge.copyWith(
+                      color: DT.textSecondary,
+                      height: 1.45,
+                    ),
+                  ),
+                ],
+                if (images.isNotEmpty) ...[
+                  const SizedBox(height: DT.sm),
+                  Wrap(
+                    alignment: WrapAlignment.end,
+                    spacing: DT.sm,
+                    runSpacing: DT.sm,
+                    children: images.asMap().entries.map((entry) {
+                      return GestureDetector(
+                        onTap: () => _openImageViewer(images, entry.key),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(DT.rMd),
+                          child: CachedNetworkImage(
+                            imageUrl: entry.value,
+                            width: 76,
+                            height: 76,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => Container(
+                              width: 76,
+                              height: 76,
+                              color: DT.fillGreyLight,
+                            ),
+                            errorWidget: (_, __, ___) => Container(
+                              width: 76,
+                              height: 76,
+                              color: DT.fillGreyLight,
+                              child: const Icon(CupertinoIcons.photo,
+                                  size: 18, color: DT.iconGrey),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
       ),
@@ -643,6 +688,179 @@ class _TechnicianOrderDetailScreenState
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // ── Customer / Service helpers ──
+
+  String _customerName(Map<String, dynamic> order) {
+    final client = order['client'] as Map<String, dynamic>?;
+    final customer = order['customer'] as Map<String, dynamic>?;
+    final clientUser = order['clientUser'] as Map<String, dynamic>?;
+    final customerClient = customer?['client'] as Map<String, dynamic>?;
+    final customerClientUser = customer?['clientUser'] as Map<String, dynamic>?;
+    return _nameStr(order['customerName']) ??
+        _nameStr(order['clientName']) ??
+        _nameStr(clientUser?['nickname']) ??
+        _nameStr(clientUser?['name']) ??
+        _nameStr(client?['nickname']) ??
+        _nameStr(client?['name']) ??
+        _nameStr(customer?['name']) ??
+        _nameStr(customer?['nickname']) ??
+        _nameStr(customerClient?['nickname']) ??
+        _nameStr(customerClient?['name']) ??
+        _nameStr(customerClientUser?['nickname']) ??
+        _nameStr(customerClientUser?['name']) ??
+        '客户';
+  }
+
+  String _customerPhone(Map<String, dynamic> order) {
+    final client = order['client'] as Map<String, dynamic>?;
+    final customer = order['customer'] as Map<String, dynamic>?;
+    final clientUser = order['clientUser'] as Map<String, dynamic>?;
+    final customerClientUser = customer?['clientUser'] as Map<String, dynamic>?;
+    return _str(order['customerPhone']) ??
+        _str(order['clientPhone']) ??
+        _str(clientUser?['phone']) ??
+        _str(client?['phone']) ??
+        _str(customer?['phone']) ??
+        _str(customerClientUser?['phone']) ??
+        '';
+  }
+
+  String? _customerAvatarUrl(Map<String, dynamic> order) {
+    final client = order['client'] as Map<String, dynamic>?;
+    final customer = order['customer'] as Map<String, dynamic>?;
+    final clientUser = order['clientUser'] as Map<String, dynamic>?;
+    final customerClient = customer?['client'] as Map<String, dynamic>?;
+    final customerClientUser = customer?['clientUser'] as Map<String, dynamic>?;
+    return _str(order['avatarUrl']) ??
+        _str(order['customerAvatar']) ??
+        _str(order['clientAvatar']) ??
+        _str(clientUser?['avatarUrl']) ??
+        _str(client?['avatarUrl']) ??
+        _str(client?['avatar']) ??
+        _str(customer?['avatarUrl']) ??
+        _str(customer?['customerAvatar']) ??
+        _str(customerClient?['avatarUrl']) ??
+        _str(customerClientUser?['avatarUrl']);
+  }
+
+  int? _clientUserId(Map<String, dynamic> order) {
+    final client = order['client'] as Map<String, dynamic>?;
+    final customer = order['customer'] as Map<String, dynamic>?;
+    final clientUser = order['clientUser'] as Map<String, dynamic>?;
+    final customerClientUser = customer?['clientUser'] as Map<String, dynamic>?;
+    return _int(order['clientUserId']) ??
+        _int(clientUser?['id']) ??
+        _int(client?['id']) ??
+        _int(customer?['clientUserId']) ??
+        _int(customerClientUser?['id']);
+  }
+
+  String _serviceTitle(Map<String, dynamic> order) {
+    final work = order['work'] as Map<String, dynamic>?;
+    final design = order['design'] as Map<String, dynamic>?;
+    return _str(order['customTitle']) ??
+        _str(work?['title']) ??
+        _str(order['workTitle']) ??
+        _str(design?['title']) ??
+        _str(order['designTitle']) ??
+        _str(order['serviceName']) ??
+        '-';
+  }
+
+  List<String> _serviceImages(Map<String, dynamic> order) {
+    final work = order['work'] as Map<String, dynamic>?;
+    final design = order['design'] as Map<String, dynamic>?;
+    return [
+      ..._stringList(order['customImages']),
+      ..._stringList(order['imageUrls']),
+      ..._stringList(work?['imageUrls']),
+      ..._stringList(design?['imageUrls']),
+      if (_str(order['coverUrl']) != null) _str(order['coverUrl'])!,
+      if (_str(order['workCoverUrl']) != null) _str(order['workCoverUrl'])!,
+      if (_str(work?['coverUrl']) != null) _str(work?['coverUrl'])!,
+    ];
+  }
+
+  List<String> _stringList(dynamic value) {
+    if (value is List) {
+      return value.map((e) => _str(e)).whereType<String>().toList();
+    }
+    final single = _str(value);
+    return single == null ? const [] : [single];
+  }
+
+  int? _int(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
+  String? _str(dynamic value) {
+    final s = value?.toString().trim();
+    if (s == null || s.isEmpty || s == 'null') return null;
+    return s;
+  }
+
+  String? _nameStr(dynamic value) {
+    final s = _str(value);
+    if (s == null || s == '客户') return null;
+    return s;
+  }
+
+  Future<void> _openChat(Map<String, dynamic> order, String name) async {
+    final clientUserId = _clientUserId(order);
+    if (clientUserId == null) {
+      NbToast.error(context, '该客户尚未注册客户端，暂不支持在线消息');
+      return;
+    }
+    HapticFeedback.lightImpact();
+    final api = context.read<ApiClient>();
+    int? convId;
+    try {
+      final convs = await ChatService(api).conversations();
+      for (final conv in convs) {
+        if ((conv['client'] as Map<String, dynamic>?)?['id'] == clientUserId) {
+          convId = conv['id'] as int?;
+          break;
+        }
+      }
+    } catch (_) {}
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          conversationId: convId,
+          title: name,
+          otherPartyId: clientUserId,
+          clientId: clientUserId,
+        ),
+      ),
+    );
+  }
+
+  void _callCustomer(String phone) {
+    HapticFeedback.lightImpact();
+    if (phone.trim().isEmpty) {
+      NbToast.error(context, '当前客户暂无联系电话');
+      return;
+    }
+    NbToast.show(context, '联系客户: $phone');
+  }
+
+  void _openImageViewer(List<String> images, int index) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black,
+        pageBuilder: (_, __, ___) =>
+            _FullscreenImages(images: images, initialIndex: index),
       ),
     );
   }
@@ -869,4 +1087,101 @@ class _ActionButton {
   final BoxBorder? border;
   _ActionButton(this.label, this.bgColor, this.primary, this.onTap,
       {this.textColor, this.border});
+}
+
+class _FullscreenImages extends StatefulWidget {
+  final List<String> images;
+  final int initialIndex;
+
+  const _FullscreenImages({required this.images, required this.initialIndex});
+
+  @override
+  State<_FullscreenImages> createState() => _FullscreenImagesState();
+}
+
+class _FullscreenImagesState extends State<_FullscreenImages> {
+  late final PageController _controller =
+      PageController(initialPage: widget.initialIndex);
+  late int _index = widget.initialIndex;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final topPad = MediaQuery.of(context).padding.top;
+    final bottomPad = MediaQuery.of(context).padding.bottom;
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          PageView.builder(
+            controller: _controller,
+            itemCount: widget.images.length,
+            onPageChanged: (i) => setState(() => _index = i),
+            itemBuilder: (_, i) => GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: InteractiveViewer(
+                minScale: 1,
+                maxScale: 4,
+                child: Center(
+                  child: CachedNetworkImage(
+                    imageUrl: widget.images[i],
+                    fit: BoxFit.contain,
+                    errorWidget: (_, __, ___) => const Icon(
+                      CupertinoIcons.photo,
+                      color: Colors.white24,
+                      size: 48,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: DT.lg,
+            top: topPad + DT.sm,
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: 44,
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(CupertinoIcons.xmark,
+                    color: Colors.white, size: 20),
+              ),
+            ),
+          ),
+          if (widget.images.length > 1)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: bottomPad + DT.xl,
+              child: Center(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(DT.rFull),
+                  ),
+                  child: Text(
+                    '${_index + 1} / ${widget.images.length}',
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }

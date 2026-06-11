@@ -261,6 +261,7 @@ class _TechnicianWorksScreenState extends State<TechnicianWorksScreen> {
     return Scaffold(
       backgroundColor: DT.bg,
       appBar: GlassAppBar(
+        technician: true,
         title: const Text('作品管理'),
         actions: [
           IconButton(

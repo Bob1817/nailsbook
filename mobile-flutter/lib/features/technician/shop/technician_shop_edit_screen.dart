@@ -168,6 +168,7 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
     return Scaffold(
       backgroundColor: DT.bgWarm,
       appBar: GlassAppBar(
+        technician: true,
         elevation: 0,
         leading: IconButton(
           icon:

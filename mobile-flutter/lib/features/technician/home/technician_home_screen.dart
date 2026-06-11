@@ -129,9 +129,9 @@ class _TechGlassTabBar extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.fromLTRB(DT.lg, 0, DT.lg, bottomGap),
       child: GlassContainer(
-        tint: Colors.black,
-        blur: DT.glassBlurHeavy,
-        opacity: 0.48,
+        tint: TechnicianGlassHeader.glassTint,
+        blur: TechnicianGlassHeader.glassBlur,
+        opacity: TechnicianGlassHeader.glassOpacity,
         borderRadius: 28,
         showBorder: true,
         boxShadow: const [
@@ -333,8 +333,11 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
           .compareTo(b['startTime']?.toString() ?? ''));
     final next = active.isNotEmpty ? active.first : null;
 
-    final headerH =
-        TechnicianGlassHeader.estimateHeight(context, belowHeight: 56);
+    final headerH = TechnicianGlassHeader.estimateHeight(
+      context,
+      belowHeight: 56,
+      hasTitle: false,
+    );
 
     return Container(
       decoration: const BoxDecoration(gradient: DT.screenGradient),
@@ -383,7 +386,6 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
             right: 0,
             top: 0,
             child: TechnicianGlassHeader(
-              title: '首页',
               below: _header(profile, todayOrders.length, expected),
             ),
           ),
@@ -495,13 +497,13 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
       );
     }
     final isShop = o['serviceType'] == 'shop';
-    final service = o['serviceName']?.toString() ?? '预约服务';
+    final service = _serviceTitle(o);
     final addr = isShop
         ? (o['shopName']?.toString() ?? o['address']?.toString() ?? '')
         : (o['address']?.toString() ?? '');
-    final phone = o['customerPhone']?.toString() ?? '';
-    final customerName = o['customerName']?.toString() ?? '客户';
-    final customerAvatar = o['customerAvatar']?.toString();
+    final phone = _customerPhone(o);
+    final customerName = _customerName(o);
+    final customerAvatar = _customerAvatarUrl(o);
     final orderId = o['id'] as int?;
     return Container(
       width: double.infinity,
@@ -571,21 +573,32 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                                 fontWeight: FontWeight.w600))),
               ),
               SizedBox(width: DT.sm),
-              Text(customerName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: DT.bodyMedium.copyWith(
-                      color: Colors.white.withValues(alpha: 0.95),
-                      fontWeight: FontWeight.w600)),
+              Expanded(
+                child: Text(customerName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: DT.bodyMedium.copyWith(
+                        color: Colors.white.withValues(alpha: 0.95),
+                        fontWeight: FontWeight.w600)),
+              ),
+              SizedBox(width: DT.sm),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(service,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.right,
+                      style: DT.bodySmall.copyWith(
+                          color: DT.textWhite,
+                          fontWeight: FontWeight.w700,
+                          height: 1.25)),
+                ),
+              ),
             ],
           ),
-          SizedBox(height: DT.sm),
-          Text(service,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: DT.titleLarge.copyWith(color: DT.textWhite)),
           if (addr.isNotEmpty) ...[
-            SizedBox(height: DT.xs + 2),
+            SizedBox(height: DT.sm),
             Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Icon(CupertinoIcons.location_solid,
                   size: 15, color: Colors.white.withValues(alpha: 0.85)),
@@ -1136,5 +1149,82 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
           style: const TextStyle(
               fontSize: 11, color: DT.textWhite, fontWeight: FontWeight.w500)),
     );
+  }
+
+  String _customerName(Map<String, dynamic> order) {
+    final client = order['client'] as Map<String, dynamic>?;
+    final customer = order['customer'] as Map<String, dynamic>?;
+    final clientUser = order['clientUser'] as Map<String, dynamic>?;
+    final customerClient = customer?['client'] as Map<String, dynamic>?;
+    final customerClientUser = customer?['clientUser'] as Map<String, dynamic>?;
+    return _nameStr(order['customerName']) ??
+        _nameStr(order['clientName']) ??
+        _nameStr(clientUser?['nickname']) ??
+        _nameStr(clientUser?['name']) ??
+        _nameStr(client?['nickname']) ??
+        _nameStr(client?['name']) ??
+        _nameStr(customer?['name']) ??
+        _nameStr(customer?['nickname']) ??
+        _nameStr(customerClient?['nickname']) ??
+        _nameStr(customerClient?['name']) ??
+        _nameStr(customerClientUser?['nickname']) ??
+        _nameStr(customerClientUser?['name']) ??
+        '客户';
+  }
+
+  String _customerPhone(Map<String, dynamic> order) {
+    final client = order['client'] as Map<String, dynamic>?;
+    final customer = order['customer'] as Map<String, dynamic>?;
+    final clientUser = order['clientUser'] as Map<String, dynamic>?;
+    final customerClientUser = customer?['clientUser'] as Map<String, dynamic>?;
+    return _str(order['customerPhone']) ??
+        _str(order['clientPhone']) ??
+        _str(clientUser?['phone']) ??
+        _str(client?['phone']) ??
+        _str(customer?['phone']) ??
+        _str(customerClientUser?['phone']) ??
+        '';
+  }
+
+  String? _customerAvatarUrl(Map<String, dynamic> order) {
+    final client = order['client'] as Map<String, dynamic>?;
+    final customer = order['customer'] as Map<String, dynamic>?;
+    final clientUser = order['clientUser'] as Map<String, dynamic>?;
+    final customerClient = customer?['client'] as Map<String, dynamic>?;
+    final customerClientUser = customer?['clientUser'] as Map<String, dynamic>?;
+    return _str(order['avatarUrl']) ??
+        _str(order['customerAvatar']) ??
+        _str(order['clientAvatar']) ??
+        _str(clientUser?['avatarUrl']) ??
+        _str(client?['avatarUrl']) ??
+        _str(client?['avatar']) ??
+        _str(customer?['avatarUrl']) ??
+        _str(customer?['customerAvatar']) ??
+        _str(customerClient?['avatarUrl']) ??
+        _str(customerClientUser?['avatarUrl']);
+  }
+
+  String _serviceTitle(Map<String, dynamic> order) {
+    final work = order['work'] as Map<String, dynamic>?;
+    final design = order['design'] as Map<String, dynamic>?;
+    return _str(order['customTitle']) ??
+        _str(work?['title']) ??
+        _str(order['workTitle']) ??
+        _str(design?['title']) ??
+        _str(order['designTitle']) ??
+        _str(order['serviceName']) ??
+        '预约服务';
+  }
+
+  String? _str(dynamic value) {
+    final s = value?.toString().trim();
+    if (s == null || s.isEmpty || s == 'null') return null;
+    return s;
+  }
+
+  String? _nameStr(dynamic value) {
+    final s = _str(value);
+    if (s == null || s == '客户') return null;
+    return s;
   }
 }

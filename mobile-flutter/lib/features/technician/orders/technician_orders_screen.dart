@@ -9,6 +9,7 @@ import 'technician_create_booking_sheet.dart';
 import 'technician_order_detail_screen.dart';
 import '../orders/technician_order_service.dart';
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
+import 'package:nailbook_mobile/core/widgets/technician_glass_header.dart';
 
 class TechnicianOrdersScreen extends StatefulWidget {
   /// 初始状态过滤（如 'pending_confirm'）。
@@ -129,15 +130,15 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
 
   double _topPanelHeight(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
-    return topPad + 116;
+    return topPad + 130;
   }
 
   Widget _topPanel() {
     final topPad = MediaQuery.of(context).padding.top;
     return GlassContainer(
-      tint: ET.glassTint,
-      blur: ET.glassBlur,
-      opacity: ET.glassOpacity,
+      tint: TechnicianGlassHeader.glassTint,
+      blur: TechnicianGlassHeader.glassBlur,
+      opacity: TechnicianGlassHeader.glassOpacity,
       borderRadius: 0,
       showBorder: false,
       padding: EdgeInsets.fromLTRB(DT.lg, topPad + DT.sm, DT.lg, DT.md),
@@ -145,7 +146,7 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
-            height: 40,
+            height: 44,
             child: Row(
               children: [
                 GestureDetector(
@@ -155,8 +156,8 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
                     Navigator.maybePop(context);
                   },
                   child: Container(
-                    width: 36,
-                    height: 36,
+                    width: 44,
+                    height: 44,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.08),
@@ -172,7 +173,7 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
                   behavior: HitTestBehavior.opaque,
                   onTap: _showCreateBookingSheet,
                   child: Container(
-                    height: 36,
+                    height: 44,
                     alignment: Alignment.center,
                     padding: const EdgeInsets.symmetric(horizontal: DT.md),
                     decoration: BoxDecoration(
@@ -196,7 +197,7 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
 
   Widget _filterStrip() {
     return SizedBox(
-      height: 38,
+      height: 44,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.zero,
@@ -266,17 +267,19 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
   Widget _bookingCard(Map<String, dynamic> order) {
     final status = order['status']?.toString() ?? '';
     final startTime = order['startTime']?.toString() ?? '';
+    final endTime = order['endTime']?.toString() ?? '';
     final serviceType = order['serviceType']?.toString() ?? '';
     final serviceName = order['serviceName']?.toString() ??
         order['customTitle']?.toString() ??
         '预约服务';
     final address = order['address']?.toString() ?? '';
+    final quotePrice = (order['quotePrice'] as num?)?.toDouble();
     final customerName = order['customerName']?.toString() ??
         (order['client'] as Map<String, dynamic>?)?['nickname']?.toString() ??
         (order['customer'] as Map<String, dynamic>?)?['name']?.toString() ??
         '客户';
     final customerPhone = order['customerPhone']?.toString();
-    final customerAvatar = _customerAvatarUrl(order);
+    final statusColors = _statusColors(status);
 
     return GestureDetector(
       onTap: () {
@@ -290,133 +293,191 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
         ).then((_) => _loadOrders());
       },
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: DT.surface.withValues(alpha: 0.78),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          color: ET.surface,
+          borderRadius: BorderRadius.circular(DT.rCard),
+          border: Border.all(color: ET.hairline),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(
-                  width: 68,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(_fmtClock(startTime),
-                            maxLines: 1,
-                            softWrap: false,
-                            style: const TextStyle(
-                                fontSize: 19,
-                                fontWeight: FontWeight.w700,
-                                color: DT.textPrimary,
-                                letterSpacing: -0.3)),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(_dateWeekLabel(startTime),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontSize: 10.5, color: DT.textTertiary)),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 4),
-                _avatar(customerName, customerAvatar),
-                const SizedBox(width: 10),
+                _bookingPill(),
+                const Spacer(),
+                _statusBadge(_statusLabel(status), statusColors),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _dateBlock(startTime),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(customerName,
+                      Text(serviceName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                              fontSize: 15,
+                              fontSize: 17,
                               fontWeight: FontWeight.w600,
-                              color: DT.textPrimary)),
-                      const SizedBox(height: 2),
-                      Text('${_serviceTypeLabel(serviceType)} · $serviceName',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontSize: 12, color: DT.textTertiary)),
-                      const SizedBox(height: 5),
-                      _statusMeta(status),
+                              color: ET.ink)),
+                      const SizedBox(height: 6),
+                      _metaRow(CupertinoIcons.clock,
+                          '${_fmtClock(startTime)} - ${_fmtClock(endTime)}'),
+                      const SizedBox(height: 4),
+                      _metaRow(CupertinoIcons.person, customerName),
+                      const SizedBox(height: 4),
+                      _metaRow(
+                        CupertinoIcons.location_solid,
+                        address.isNotEmpty ? address : '地址待确认',
+                      ),
+                      const SizedBox(height: 10),
+                      _quoteOrHint(status, quotePrice, serviceType),
                     ],
                   ),
                 ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _iconEntry(CupertinoIcons.phone_fill,
-                        onTap: () => _callCustomer(customerPhone)),
-                    const SizedBox(width: 8),
-                    _iconEntry(CupertinoIcons.chat_bubble_fill,
-                        onTap: () => _openChat(order, customerName)),
-                  ],
-                ),
               ],
             ),
-            if (address.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  const Icon(CupertinoIcons.location_solid,
-                      size: 13, color: DT.textTertiary),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(address,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            fontSize: 12, color: DT.textTertiary)),
-                  ),
-                ],
-              ),
-            ],
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                _iconEntry(CupertinoIcons.phone_fill,
+                    onTap: () => _callCustomer(customerPhone)),
+                const SizedBox(width: 8),
+                _iconEntry(CupertinoIcons.chat_bubble_fill,
+                    onTap: () => _openChat(order, customerName)),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _statusMeta(String status) {
-    final sc = _statusColors(status);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
+  Widget _bookingPill() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(4, 4, 10, 4),
+      decoration: BoxDecoration(
+        color: ET.accentSoft,
+        borderRadius: BorderRadius.circular(DT.rFull),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
         Container(
-          width: 6,
-          height: 6,
-          decoration: BoxDecoration(
-            color: sc.$2.withValues(alpha: 0.78),
-            shape: BoxShape.circle,
-          ),
+          width: 30,
+          height: 30,
+          alignment: Alignment.center,
+          decoration:
+              const BoxDecoration(color: ET.bgElevated, shape: BoxShape.circle),
+          child: const Text('预',
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: ET.accentOnDark)),
         ),
-        const SizedBox(width: 5),
-        Text(_statusLabel(status),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+        const SizedBox(width: 6),
+        const Text('预约',
             style: TextStyle(
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: sc.$2.withValues(alpha: 0.86))),
-      ],
+                color: ET.accentOnDark)),
+      ]),
     );
+  }
+
+  Widget _statusBadge(String label, (Color, Color) colors) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: colors.$1,
+        borderRadius: BorderRadius.circular(DT.rFull),
+      ),
+      child: Text(label,
+          style: TextStyle(
+              fontSize: 12, fontWeight: FontWeight.w600, color: colors.$2)),
+    );
+  }
+
+  Widget _dateBlock(String iso) {
+    final d = DateTime.tryParse(iso)?.toLocal();
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        color: ET.accentSoft,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Text(d != null ? '${d.month}月' : '--',
+            style: const TextStyle(fontSize: 11, color: ET.accentOnDark)),
+        Text(d != null ? '${d.day}' : '--',
+            style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                height: 1.1,
+                color: ET.accentOnDark)),
+      ]),
+    );
+  }
+
+  Widget _metaRow(IconData icon, String text) {
+    return Row(children: [
+      Icon(icon, size: 14, color: ET.inkMuted),
+      const SizedBox(width: 6),
+      Expanded(
+        child: Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 13, color: ET.inkSecondary),
+        ),
+      ),
+    ]);
+  }
+
+  Widget _quoteOrHint(String status, double? quotePrice, String serviceType) {
+    if (quotePrice != null && quotePrice > 0) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: ET.accentSoft,
+          borderRadius: BorderRadius.circular(DT.rFull),
+        ),
+        child: Text('报价 ¥${quotePrice.toStringAsFixed(0)}',
+            style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: ET.accentOnDark)),
+      );
+    }
+    return Text('${_serviceTypeLabel(serviceType)} · ${_orderHint(status)}',
+        style: const TextStyle(fontSize: 12, color: ET.inkMuted));
+  }
+
+  String _orderHint(String status) {
+    switch (status) {
+      case 'pending_quote':
+        return '等待报价';
+      case 'pending_agree':
+        return '等待客户确认';
+      case 'pending_confirm':
+        return '等待美甲师确认';
+      case 'pending_home':
+        return '待上门服务';
+      case 'pending_shop':
+        return '待到店服务';
+      case 'in_progress':
+        return '服务进行中';
+      case 'completed':
+        return '查看预约详情';
+      default:
+        return '查看预约详情';
+    }
   }
 
   Widget _iconEntry(IconData icon, {required VoidCallback onTap}) {
@@ -424,14 +485,68 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
-        width: 36,
-        height: 36,
+        width: 44,
+        height: 44,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: DT.surfaceAlt.withValues(alpha: 0.86),
+          color: ET.surfaceGlass,
           shape: BoxShape.circle,
+          border: Border.all(color: ET.hairline),
         ),
-        child: Icon(icon, size: 17, color: DT.textPrimary),
+        child: Icon(icon, size: 18, color: DT.textPrimary),
+      ),
+    );
+  }
+
+  Widget _filterChip(String? value, String label) {
+    final selected = _statusFilter == value && !_unpaidDepositOnly;
+    return Padding(
+      padding: const EdgeInsets.only(right: DT.sm),
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          setState(() {
+            _statusFilter = value;
+            _unpaidDepositOnly = false;
+            _loading = true;
+          });
+          _loadOrders();
+        },
+        child: Container(
+          alignment: Alignment.center,
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: DT.md),
+          decoration: BoxDecoration(
+            color: selected ? DT.cream : DT.surface.withValues(alpha: 0.72),
+            borderRadius: BorderRadius.circular(DT.rFull),
+          ),
+          child: Text(label,
+              style: TextStyle(
+                fontSize: DT.textSm,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                color: selected ? DT.onCream : DT.textSecondary,
+              )),
+        ),
+      ),
+    );
+  }
+
+  Widget _depositChip() {
+    return Padding(
+      padding: const EdgeInsets.only(right: DT.sm),
+      child: Container(
+        alignment: Alignment.center,
+        height: 44,
+        padding: const EdgeInsets.symmetric(horizontal: DT.md),
+        decoration: BoxDecoration(
+          color: DT.cream,
+          borderRadius: BorderRadius.circular(DT.rFull),
+        ),
+        child: const Text('未支付定金',
+            style: TextStyle(
+                fontSize: DT.textSm,
+                fontWeight: FontWeight.w600,
+                color: DT.onCream)),
       ),
     );
   }
@@ -478,102 +593,6 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
     );
   }
 
-  Widget _filterChip(String? value, String label) {
-    final selected = _statusFilter == value && !_unpaidDepositOnly;
-    return Padding(
-      padding: const EdgeInsets.only(right: DT.sm),
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          setState(() {
-            _statusFilter = value;
-            _unpaidDepositOnly = false;
-            _loading = true;
-          });
-          _loadOrders();
-        },
-        child: Container(
-          alignment: Alignment.center,
-          height: 36,
-          padding: const EdgeInsets.symmetric(horizontal: DT.md),
-          decoration: BoxDecoration(
-            color: selected ? DT.cream : DT.surface.withValues(alpha: 0.72),
-            borderRadius: BorderRadius.circular(DT.rFull),
-          ),
-          child: Text(label,
-              style: TextStyle(
-                fontSize: DT.textSm,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                color: selected ? DT.onCream : DT.textSecondary,
-              )),
-        ),
-      ),
-    );
-  }
-
-  Widget _depositChip() {
-    return Padding(
-      padding: const EdgeInsets.only(right: DT.sm),
-      child: Container(
-        alignment: Alignment.center,
-        height: 36,
-        padding: const EdgeInsets.symmetric(horizontal: DT.md),
-        decoration: BoxDecoration(
-          color: DT.cream,
-          borderRadius: BorderRadius.circular(DT.rFull),
-        ),
-        child: const Text('未支付定金',
-            style: TextStyle(
-                fontSize: DT.textSm,
-                fontWeight: FontWeight.w600,
-                color: DT.onCream)),
-      ),
-    );
-  }
-
-  Widget _avatar(String name, String? url) {
-    if (url != null && url.isNotEmpty) {
-      return ClipOval(
-        child: CachedNetworkImage(
-          imageUrl: url,
-          width: 36,
-          height: 36,
-          fit: BoxFit.cover,
-          errorWidget: (_, __, ___) => _avatarFallback(name),
-        ),
-      );
-    }
-    return _avatarFallback(name);
-  }
-
-  Widget _avatarFallback(String name) {
-    return Container(
-      width: 36,
-      height: 36,
-      alignment: Alignment.center,
-      decoration:
-          const BoxDecoration(color: DT.primarySoft, shape: BoxShape.circle),
-      child: Text(name.isNotEmpty ? name.substring(0, 1) : '?',
-          style:
-              const TextStyle(color: DT.primary, fontWeight: FontWeight.w600)),
-    );
-  }
-
-  String _fmtClock(String s) {
-    final d = DateTime.tryParse(s);
-    if (d == null) return s;
-    final l = d.toLocal();
-    return '${l.hour.toString().padLeft(2, '0')}:${l.minute.toString().padLeft(2, '0')}';
-  }
-
-  String _dateWeekLabel(String s) {
-    final d = DateTime.tryParse(s);
-    if (d == null) return '';
-    final l = d.toLocal();
-    const week = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-    return '${l.month}/${l.day} ${week[l.weekday - 1]}';
-  }
-
   int? _clientUserId(Map<String, dynamic> order) {
     final client = order['client'] as Map<String, dynamic>?;
     final customer = order['customer'] as Map<String, dynamic>?;
@@ -593,28 +612,11 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
     return null;
   }
 
-  String? _customerAvatarUrl(Map<String, dynamic> order) {
-    final client = order['client'] as Map<String, dynamic>?;
-    final customer = order['customer'] as Map<String, dynamic>?;
-    final clientUser = order['clientUser'] as Map<String, dynamic>?;
-    final customerClient = customer?['client'] as Map<String, dynamic>?;
-    final customerClientUser = customer?['clientUser'] as Map<String, dynamic>?;
-    return _str(order['avatarUrl']) ??
-        _str(order['customerAvatar']) ??
-        _str(order['clientAvatar']) ??
-        _str(clientUser?['avatarUrl']) ??
-        _str(client?['avatarUrl']) ??
-        _str(client?['avatar']) ??
-        _str(customer?['avatarUrl']) ??
-        _str(customer?['customerAvatar']) ??
-        _str(customerClient?['avatarUrl']) ??
-        _str(customerClientUser?['avatarUrl']);
-  }
-
-  String? _str(dynamic value) {
-    final s = value?.toString().trim();
-    if (s == null || s.isEmpty || s == 'null') return null;
-    return s;
+  String _fmtClock(String s) {
+    final d = DateTime.tryParse(s);
+    if (d == null) return '--';
+    final l = d.toLocal();
+    return '${l.hour.toString().padLeft(2, '0')}:${l.minute.toString().padLeft(2, '0')}';
   }
 
   String _serviceTypeLabel(String s) {
@@ -649,21 +651,21 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
   (Color, Color) _statusColors(String s) {
     switch (s) {
       case 'pending_quote':
-        return (const Color(0xFFFFF6EB), const Color(0xFFB87425));
+        return (DT.statusPendingQuoteBg, DT.statusPendingQuoteText);
       case 'pending_agree':
-        return (const Color(0xFFFFF4DF), const Color(0xFFC8892F));
+        return (DT.statusPendingAgreeBg, DT.statusPendingAgreeText);
       case 'pending_confirm':
-        return (const Color(0xFFFFF6EB), const Color(0xFFB87425));
+        return (DT.statusPendingConfirmBg, DT.statusPendingConfirmText);
       case 'pending_home':
-        return (const Color(0xFFE8F5E9), const Color(0xFF2E7D32));
       case 'pending_shop':
-        return (const Color(0xFFE3F2FD), const Color(0xFF1565C0));
       case 'in_progress':
-        return (const Color(0xFF3A2F23), DT.primary);
+        return (DT.statusInProgressBg, DT.statusInProgressText);
       case 'completed':
-        return (const Color(0xFFEDF8F1), const Color(0xFF3B9460));
+        return (DT.statusCompletedBg, DT.statusCompletedText);
+      case 'cancelled':
+        return (DT.statusCancelledBg, DT.statusCancelledText);
       default:
-        return (const Color(0xFFF4F4F5), const Color(0xFF8F8F95));
+        return (ET.surface, ET.inkSecondary);
     }
   }
 }

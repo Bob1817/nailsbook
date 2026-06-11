@@ -120,6 +120,7 @@ class _TechnicianServicesScreenState extends State<TechnicianServicesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: GlassAppBar(
+        technician: true,
         title: const Text('服务管理'),
         actions: [
           IconButton(

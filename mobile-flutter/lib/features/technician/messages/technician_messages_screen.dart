@@ -55,7 +55,9 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
   bool _loading = true;
   late String _tab = widget.initialTab;
   String _search = '';
+  bool _searchOpen = false;
   final _searchCtl = TextEditingController();
+  final _searchFocus = FocusNode();
 
   @override
   void initState() {
@@ -66,6 +68,7 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
   @override
   void dispose() {
     _searchCtl.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
@@ -204,7 +207,7 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
     final headerH =
-        TechnicianGlassHeader.estimateHeight(context, belowHeight: 102);
+        TechnicianGlassHeader.estimateHeight(context, belowHeight: 44);
 
     return Scaffold(
       backgroundColor: DT.bg,
@@ -265,6 +268,14 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
                   top: 0,
                   child: _header(),
                 ),
+                if (_searchOpen)
+                  Positioned.fill(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onTap: _closeSearch,
+                    ),
+                  ),
+                if (_searchOpen) _searchPopover(topPad),
               ],
             ),
     );
@@ -274,48 +285,107 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
     final unread = _items.where((i) => i.unread).length;
     return TechnicianGlassHeader(
       title: '消息',
+      actions: [
+        _headerIconButton(
+          CupertinoIcons.search,
+          onTap: _openSearch,
+        ),
+      ],
       below: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 40,
-            decoration: BoxDecoration(
-              color: DT.surfaceAlt,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: TextField(
-              controller: _searchCtl,
-              textAlignVertical: TextAlignVertical.center,
-              style: DT.bodyMedium.copyWith(color: DT.textPrimary),
-              onChanged: (v) => setState(() => _search = v),
-              decoration: InputDecoration(
-                hintText: '搜索消息内容或客户名称',
-                hintStyle: DT.bodyMedium.copyWith(color: DT.textTertiary),
-                prefixIcon: const Icon(CupertinoIcons.search,
-                    size: 18, color: DT.textTertiary),
-                suffixIcon: _search.isNotEmpty
-                    ? GestureDetector(
-                        onTap: () {
-                          _searchCtl.clear();
-                          setState(() => _search = '');
-                        },
-                        child: const Icon(CupertinoIcons.xmark_circle_fill,
-                            size: 18, color: DT.textTertiary),
-                      )
-                    : null,
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                isCollapsed: true,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 4, vertical: 11),
-              ),
-            ),
-          ),
-          const SizedBox(height: DT.md),
           _tabs(unread),
         ],
+      ),
+    );
+  }
+
+  void _openSearch() {
+    HapticFeedback.selectionClick();
+    setState(() => _searchOpen = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _searchFocus.requestFocus();
+    });
+  }
+
+  void _closeSearch() {
+    if (!_searchOpen) return;
+    FocusScope.of(context).unfocus();
+    setState(() => _searchOpen = false);
+  }
+
+  Widget _headerIconButton(IconData icon, {required VoidCallback onTap}) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.08),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        ),
+        child: Icon(icon, size: 19, color: DT.textPrimary),
+      ),
+    );
+  }
+
+  Widget _searchPopover(double topPad) {
+    return Positioned(
+      top: topPad + DT.sm + 48,
+      left: DT.xl,
+      right: DT.xl,
+      child: GlassContainer(
+        tint: TechnicianGlassHeader.glassTint,
+        blur: TechnicianGlassHeader.glassBlur,
+        opacity: TechnicianGlassHeader.glassOpacity,
+        borderRadius: 18,
+        showBorder: true,
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x66000000),
+            blurRadius: 26,
+            offset: Offset(0, 12),
+          ),
+        ],
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: SizedBox(
+          height: 44,
+          child: TextField(
+            focusNode: _searchFocus,
+            controller: _searchCtl,
+            textAlignVertical: TextAlignVertical.center,
+            style: DT.bodyMedium.copyWith(color: DT.textPrimary),
+            onChanged: (v) => setState(() => _search = v),
+            decoration: InputDecoration(
+              hintText: '搜索消息内容或客户名称',
+              hintStyle: DT.bodyMedium.copyWith(color: DT.textTertiary),
+              prefixIcon: const Icon(CupertinoIcons.search,
+                  size: 18, color: DT.textTertiary),
+              suffixIcon: _search.isNotEmpty
+                  ? GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        _searchCtl.clear();
+                        setState(() => _search = '');
+                        _searchFocus.requestFocus();
+                      },
+                      child: const Icon(CupertinoIcons.xmark_circle_fill,
+                          size: 18, color: DT.textTertiary),
+                    )
+                  : null,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              isCollapsed: true,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 4, vertical: 13),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -330,7 +400,7 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
     ].where((t) => t.$3).toList();
 
     return SizedBox(
-      height: 34,
+      height: 44,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: tabs.length,

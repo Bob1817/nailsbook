@@ -365,6 +365,7 @@ class _TechnicianShopScreenState extends State<TechnicianShopScreen> {
 
   Widget _buildBottomBar(double bottomPad) {
     return GlassBottomSurface(
+      technician: true,
       padding: EdgeInsets.fromLTRB(DT.xl, DT.md, DT.xl, DT.md + bottomPad),
       child: GestureDetector(
         onTap: () {

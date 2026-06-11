@@ -145,6 +145,7 @@ class _TechnicianProfileSettingsScreenState
     return Scaffold(
       backgroundColor: DT.bgWarm,
       appBar: GlassAppBar(
+        technician: true,
         elevation: 0,
         leading: IconButton(
           icon:
@@ -196,8 +197,7 @@ class _TechnicianProfileSettingsScreenState
                       DT.md + MediaQuery.of(context).padding.bottom),
                   decoration: BoxDecoration(
                     color: DT.surface.withValues(alpha: 0.82),
-                    border:
-                        const Border(top: BorderSide(color: DT.divider)),
+                    border: const Border(top: BorderSide(color: DT.divider)),
                   ),
                   child: SizedBox(
                     width: double.infinity,

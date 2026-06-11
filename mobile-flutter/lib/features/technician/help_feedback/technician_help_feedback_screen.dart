@@ -44,6 +44,7 @@ class _TechnicianHelpFeedbackScreenState
     return Scaffold(
       backgroundColor: DT.bgWarm,
       appBar: GlassAppBar(
+        technician: true,
         elevation: 0,
         leading: IconButton(
           icon:
