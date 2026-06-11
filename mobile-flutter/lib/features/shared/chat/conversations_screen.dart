@@ -1,12 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../../core/api/api_client.dart';
 import '../../../core/auth/auth_session.dart';
 import '../../client/orders/client_order_detail_screen.dart';
 import 'chat_service.dart';
 import 'chat_screen.dart';
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 import '../../../core/widgets/client_glass_header.dart';
+import '../../../core/widgets/glow_field.dart';
 
 /// 消息页。
 /// 客户端：统一收件箱（会话 + 通知聚合，标签：全部/未读/预约提醒/服务提醒/系统通知）。
@@ -51,12 +49,34 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
   bool _loading = true;
   String _activeTab = 'all';
   bool _isClient = true;
+  bool _searchOpen = false;
+  String _searchQuery = '';
+  final _searchCtl = TextEditingController();
+  final _searchFocus = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _isClient = context.read<AuthSession>().isClient;
     _load();
+  }
+
+  @override
+  void dispose() {
+    _searchCtl.dispose();
+    _searchFocus.dispose();
+    super.dispose();
+  }
+
+  void _openSearch() {
+    setState(() => _searchOpen = true);
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _searchFocus.requestFocus());
+  }
+
+  void _closeSearch() {
+    _searchFocus.unfocus();
+    setState(() => _searchOpen = false);
   }
 
   Future<void> _load() async {
@@ -125,7 +145,9 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
         rt == 'booking' ||
         mt == 'quote' ||
         mt == 'order' ||
-        mt == 'booking') return _ItemType.booking;
+        mt == 'booking') {
+      return _ItemType.booking;
+    }
     return _ItemType.system;
   }
 
@@ -160,11 +182,21 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
   }
 
   List<_InboxItem> get _filtered {
-    final all = _allItems;
-    return all.where((i) {
+    final q = _searchQuery.trim().toLowerCase();
+    return _allItems.where((i) {
       if (_activeTab == 'all') return true;
       if (_activeTab == 'unread') return i.unread;
       return i.type.name == _activeTab;
+    }).where((i) {
+      if (q.isEmpty) return true;
+      final haystack = [
+        i.title,
+        i.preview,
+        _typeName(i.type),
+        _formatTime(i.time),
+        i.relatedType ?? '',
+      ].join(' ').toLowerCase();
+      return haystack.contains(q);
     }).toList();
   }
 
@@ -172,6 +204,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
   Widget build(BuildContext context) {
     final headerH = ClientGlassHeader.estimateHeight(context,
         belowHeight: _isClient ? 44 : 0);
+    final topPad = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: DT.bg,
       body: Stack(
@@ -208,10 +241,57 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
             right: 0,
             child: ClientGlassHeader(
               title: '消息',
+              actions: [
+                HeaderCircleButton(
+                  onTap: _openSearch,
+                  child: const Icon(Icons.search_rounded,
+                      size: 20, color: ET.inkSecondary),
+                ),
+              ],
               below: _isClient ? _tabs() : null,
             ),
           ),
+          if (_searchOpen) ...[
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _closeSearch,
+                child: Container(color: Colors.black.withValues(alpha: 0.4)),
+              ),
+            ),
+            Positioned(
+              top: topPad + 52,
+              left: 16,
+              right: 16,
+              child: _searchBox(),
+            ),
+          ],
         ],
+      ),
+    );
+  }
+
+  Widget _searchBox() {
+    return Material(
+      color: Colors.transparent,
+      child: GlowField(
+        controller: _searchCtl,
+        focusNode: _searchFocus,
+        hint: '搜索消息、联系人、提醒…',
+        textInputAction: TextInputAction.search,
+        onChanged: (v) => setState(() => _searchQuery = v),
+        onSubmitted: (_) => _closeSearch(),
+        prefix: const Icon(Icons.search_rounded, size: 18, color: ET.inkMuted),
+        suffix: _searchQuery.isNotEmpty
+            ? GestureDetector(
+                onTap: () => setState(() {
+                  _searchQuery = '';
+                  _searchCtl.clear();
+                }),
+                child: const Icon(Icons.close_rounded,
+                    size: 18, color: ET.inkMuted),
+              )
+            : null,
       ),
     );
   }

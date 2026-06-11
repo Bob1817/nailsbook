@@ -324,15 +324,18 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
   }
 
   // ── Hero carousel ───────────────────────────────────────
-  // 全出血：紧贴屏幕顶部与左右边，美甲图占据首屏上半部，
-  // 高度约屏高 46%，保证「我的预约」标题 + 卡片首屏可见。
+  // 全出血：紧贴屏幕顶部与左右边，美甲图占据首屏。高度=视口减去「我的预约」
+  // 区块 + 悬浮 Tab 的预留空间，使预约卡片刚好落在底部、不露出下方动态。
   Widget _heroSection() {
     final works = _heroWorks;
     final media = MediaQuery.of(context);
     // 无作品时留出状态栏高度，避免下方内容顶进刘海区
     if (works.isEmpty) return SizedBox(height: media.padding.top + 8);
     final current = works[_heroIndex.clamp(0, works.length - 1)];
-    final heroH = (media.size.height * 0.46).clamp(340.0, 480.0).toDouble();
+    // 预留：预约区块（标题 + 卡片）约 300 + 悬浮 Tab 48 + 底部安全区
+    final reserve = 348 + media.padding.bottom;
+    final heroH =
+        (media.size.height - reserve).clamp(360.0, 560.0).toDouble();
     return GestureDetector(
       onTap: () => _openHeroDetail(current),
       child: SizedBox(
