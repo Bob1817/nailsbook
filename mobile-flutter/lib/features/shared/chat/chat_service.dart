@@ -19,6 +19,18 @@ class ChatService {
     }
   }
 
+  /// 上传图片文件，返回图片 URL。
+  Future<String?> uploadImage(String filePath) async {
+    final res = await _api.uploadMultipart('/uploads/image', filePath, 'file');
+    final body = await res.stream.bytesToString();
+    try {
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      return json['url'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<List<Map<String, dynamic>>> conversations() async {
     final items = await _api.getList('/messages/conversations');
     return items.cast<Map<String, dynamic>>();

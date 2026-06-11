@@ -11,6 +11,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:gal/gal.dart';
+import 'package:any_link_preview/any_link_preview.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/auth/auth_session.dart';
@@ -307,6 +312,98 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  // ── 图片：选择发送 / 预览 / 保存 ──
+
+  Future<void> _pickAndSendImage() async {
+    final picker = ImagePicker();
+    final file = await picker.pickImage(
+        source: ImageSource.gallery, maxWidth: 1600, imageQuality: 85);
+    if (file == null) return;
+    HapticFeedback.lightImpact();
+    try {
+      final api = context.read<ApiClient>();
+      final service = ChatService(api);
+      final url = await service.uploadImage(file.path);
+      if (url == null) throw Exception('upload failed');
+      final msg = await service.sendMessage(
+        conversationId: _conversationId,
+        techId: _conversationId == null ? widget.techId : null,
+        clientId: _conversationId == null ? widget.clientId : null,
+        messageType: 'image',
+        imageUrl: url,
+      );
+      _conversationId ??=
+          (msg['conversationId'] as int?) ?? (msg['conversation_id'] as int?);
+      if (mounted) setState(() => _messages.add(msg));
+      _scrollToBottom();
+    } catch (_) {
+      if (mounted) NbToast.error(context, '图片发送失败，请重试');
+    }
+  }
+
+  void _openImageViewer(String url) {
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black,
+      builder: (dctx) => Stack(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.pop(dctx),
+            child: InteractiveViewer(
+              minScale: 1,
+              maxScale: 4,
+              child: Center(
+                child: CachedNetworkImage(imageUrl: url, fit: BoxFit.contain),
+              ),
+            ),
+          ),
+          Positioned(
+            top: MediaQuery.of(dctx).padding.top + 8,
+            right: 12,
+            child: Row(
+              children: [
+                _viewerAction(Icons.download_rounded, () => _saveImage(url)),
+                const SizedBox(width: 8),
+                _viewerAction(Icons.close_rounded, () => Navigator.pop(dctx)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _viewerAction(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
+        child: Icon(icon, color: Colors.white, size: 22),
+      ),
+    );
+  }
+
+  Future<void> _saveImage(String url) async {
+    try {
+      if (!await Gal.hasAccess()) {
+        if (!await Gal.requestAccess()) {
+          if (mounted) NbToast.error(context, '未授权保存到相册');
+          return;
+        }
+      }
+      final res = await http.get(Uri.parse(url));
+      if (res.statusCode != 200) throw Exception('download failed');
+      await Gal.putImageBytes(res.bodyBytes);
+      if (mounted) NbToast.success(context, '已保存到相册');
+    } catch (_) {
+      if (mounted) NbToast.error(context, '保存失败，请重试');
+    }
+  }
+
   Future<void> _resolveOtherPartyId() async {
     final authSession = context.read<AuthSession>();
     final isClient = authSession.isClient;
@@ -577,6 +674,21 @@ class _ChatScreenState extends State<ChatScreen> {
               if (!_voiceMode) ...[
                 const SizedBox(width: DT.sm),
                 GestureDetector(
+                  onTap: _pickAndSendImage,
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      color: DT.surfaceAlt,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(CupertinoIcons.photo,
+                        size: 20, color: DT.textPrimary),
+                  ),
+                ),
+                const SizedBox(width: DT.sm),
+                GestureDetector(
                   onTap: _sendMessage,
                   child: Container(
                     width: 40,
@@ -811,22 +923,25 @@ class _ChatScreenState extends State<ChatScreen> {
               isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
             if (hasImage)
-              Container(
-                margin: const EdgeInsets.only(bottom: 4),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: CachedNetworkImage(
-                    imageUrl: msg['imageUrl'].toString(),
-                    width: 200,
-                    fit: BoxFit.cover,
-                    placeholder: (_, __) => Container(
-                        width: 200, height: 120, color: DT.surfaceAlt),
-                    errorWidget: (_, __, ___) => Container(
+              GestureDetector(
+                onTap: () => _openImageViewer(msg['imageUrl'].toString()),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 4),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: CachedNetworkImage(
+                      imageUrl: msg['imageUrl'].toString(),
                       width: 200,
-                      height: 120,
-                      color: DT.surfaceAlt,
-                      child: const Icon(CupertinoIcons.photo,
-                          color: DT.textTertiary),
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => Container(
+                          width: 200, height: 120, color: DT.surfaceAlt),
+                      errorWidget: (_, __, ___) => Container(
+                        width: 200,
+                        height: 120,
+                        color: DT.surfaceAlt,
+                        child: const Icon(CupertinoIcons.photo,
+                            color: DT.textTertiary),
+                      ),
                     ),
                   ),
                 ),
@@ -865,8 +980,45 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ),
               ),
+            if (hasText && _firstUrl(msg['content'].toString()) != null)
+              _linkPreview(_firstUrl(msg['content'].toString())!),
           ],
         ),
+      ),
+    );
+  }
+
+  // ── 链接预览 ──
+
+  String? _firstUrl(String text) =>
+      RegExp(r'https?://[^\s]+').firstMatch(text)?.group(0);
+
+  Future<void> _openLink(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {}
+  }
+
+  Widget _linkPreview(String url) {
+    return Container(
+      margin: const EdgeInsets.only(top: 4),
+      constraints: const BoxConstraints(maxWidth: 240),
+      child: AnyLinkPreview(
+        link: url,
+        displayDirection: UIDirection.uiDirectionHorizontal,
+        backgroundColor: DT.surface,
+        borderRadius: 12,
+        removeElevation: true,
+        bodyMaxLines: 2,
+        cache: const Duration(days: 7),
+        titleStyle: const TextStyle(
+            fontSize: 13, fontWeight: FontWeight.w600, color: DT.textPrimary),
+        bodyStyle: const TextStyle(fontSize: 11, color: DT.textSecondary),
+        errorTitle: '链接',
+        errorBody: url,
+        onTap: () => _openLink(url),
       ),
     );
   }

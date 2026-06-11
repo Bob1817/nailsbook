@@ -253,9 +253,13 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
     await Future.wait([widget.onRefresh(), _loadData()]);
   }
 
+  // 行程：仅待上门 / 待到店 / 进行中（已取消、已完成不计入行程）。
+  static const _tripStatuses = {'pending_home', 'pending_shop', 'in_progress'};
+
   // ── helpers ──
   bool _isActive(Map<String, dynamic> o) =>
       _activeStatuses.contains(o['status']);
+  bool _isTrip(Map<String, dynamic> o) => _tripStatuses.contains(o['status']);
   bool _isToday(String? iso) {
     final d = DateTime.tryParse(iso ?? '');
     if (d == null) return false;
@@ -320,7 +324,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
     final profile = widget.profile;
 
     final todayOrders = _orders
-        .where((o) => _isToday(o['startTime']?.toString()) && _isActive(o))
+        .where((o) => _isToday(o['startTime']?.toString()) && _isTrip(o))
         .toList()
       ..sort((a, b) => (a['startTime']?.toString() ?? '')
           .compareTo(b['startTime']?.toString() ?? ''));
@@ -328,7 +332,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
         0, (s, o) => s + ((o['quotePrice'] as num?)?.toDouble() ?? 0));
     final active = _orders
         .where((o) =>
-            _isActive(o) && (o['startTime']?.toString().isNotEmpty ?? false))
+            _isTrip(o) && (o['startTime']?.toString().isNotEmpty ?? false))
         .toList()
       ..sort((a, b) => (a['startTime']?.toString() ?? '')
           .compareTo(b['startTime']?.toString() ?? ''));
