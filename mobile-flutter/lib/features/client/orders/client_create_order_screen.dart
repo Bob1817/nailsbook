@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/editorial_tokens.dart';
 import '../auth/client_auth_models.dart';
 import '../auth/client_auth_service.dart';
 import '../addresses/client_address_models.dart';
@@ -36,6 +37,10 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
   List<ClientAddress> _addresses = [];
   bool _loading = true;
   bool _submitting = false;
+
+  /// 分步向导当前步：0 美甲师 · 1 服务方式 · 2 预约时间 · 3 服务内容 · 4 确认。
+  int _step = 0;
+  static const _stepTitles = ['选择美甲师', '服务方式', '预约时间', '服务内容', '确认预约'];
 
   int? _selectedTechId;
   String _serviceType = '';
@@ -347,50 +352,8 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
             : Stack(
                 children: [
                   ListView(
-                    padding: EdgeInsets.fromLTRB(20, topPad + 68, 20, 120 + MediaQuery.of(context).padding.bottom),
-                    children: [
-                      _glassCard('选择美甲师', _technicians.length > 1 ? '请选择当前已开启接单的美甲师' : '当前仅有 1 位可预约的美甲师',
-                        _technicians.isEmpty
-                            ? [_emptyState('暂无可预约的美甲师', '请等待美甲师开启接单并配置可用服务后再发起预约')]
-                            : _technicians.map(_buildTechCard).toList()),
-                      const SizedBox(height: 16),
-                      _glassCard('服务类型', _selectedTech != null ? '根据当前美甲师的服务能力选择本次预约方式' : '请先选择美甲师，再继续选择服务类型',
-                        _availableServiceTypes.isEmpty
-                            ? [_emptyPlaceholder('选择美甲师后，这里会显示可预约的服务类型')]
-                            : _availableServiceTypes.map(_buildServiceTypeCard).toList()),
-                      const SizedBox(height: 16),
-                      _buildServiceContentSection(),
-                      if (_serviceType == '上门美甲') ...[
-                        const SizedBox(height: 16),
-                        _buildAddressSection(),
-                      ],
-                      if (_serviceType == '到店美甲') ...[
-                        const SizedBox(height: 16),
-                        _buildShopSection(),
-                      ],
-                      const SizedBox(height: 16),
-                      _glassCard('预约时间', '确认服务方式后，选择你方便的预约时间段', [_buildTimeSection()]),
-                      const SizedBox(height: 16),
-                      _glassCard('补充说明', '填写特殊需求，方便美甲师提前准备', [
-                        TextField(
-                          maxLines: 4,
-                          decoration: InputDecoration(
-                            hintText: '请输入你的特殊需求，如：想做粉色渐变、需要自带卸甲等...',
-                            filled: true,
-                            fillColor: const Color(0xFF211C17),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(DT.rXxl),
-                              borderSide: BorderSide.none,
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(DT.rXxl),
-                              borderSide: const BorderSide(color: DT.primary, width: 1.5),
-                            ),
-                          ),
-                          onChanged: (v) => _remark = v,
-                        ),
-                      ]),
-                    ],
+                    padding: EdgeInsets.fromLTRB(20, topPad + 96, 20, 110 + MediaQuery.of(context).padding.bottom),
+                    children: _stepContent(_step),
                   ),
                   // Sticky header（玻璃模糊仅限于头部区域，避免整页被模糊）
                   Positioned(
@@ -404,31 +367,51 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                             color: DT.surface.withOpacity(0.6),
                             border: Border(bottom: BorderSide(color: DT.surface.withOpacity(0.6), width: 0.5)),
                           ),
-                          child: Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              GestureDetector(
-                                onTap: () => Navigator.pop(context),
-                                child: Container(
-                                  width: 42, height: 42,
-                                  decoration: BoxDecoration(
-                                    color: DT.surface.withOpacity(0.8),
-                                    shape: BoxShape.circle,
-                                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 24, offset: const Offset(0, 10))],
-                                    border: Border.all(color: Colors.black.withOpacity(0.05)),
+                              Row(
+                                children: [
+                                  GestureDetector(
+                                    onTap: _back,
+                                    child: Container(
+                                      width: 42, height: 42,
+                                      decoration: const BoxDecoration(
+                                        color: ET.surface,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: ET.ink),
+                                    ),
                                   ),
-                                  child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF334155)),
-                                ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('步骤 ${_step + 1}/${_stepTitles.length}', style: const TextStyle(fontSize: 11, letterSpacing: 1.5, color: ET.inkMuted)),
+                                        const SizedBox(height: 1),
+                                        Text(_stepTitles[_step], style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: ET.ink)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('CREATE BOOKING', style: TextStyle(fontSize: 11, letterSpacing: 2.2, color: DT.textMuted)),
-                                    const SizedBox(height: 1),
-                                    const Text('创建预约', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: DT.textPrimary)),
-                                  ],
-                                ),
+                              const SizedBox(height: 10),
+                              // 进度条
+                              Row(
+                                children: List.generate(_stepTitles.length, (i) {
+                                  final done = i <= _step;
+                                  return Expanded(
+                                    child: Container(
+                                      height: 3,
+                                      margin: EdgeInsets.only(right: i < _stepTitles.length - 1 ? 5 : 0),
+                                      decoration: BoxDecoration(
+                                        color: done ? ET.accent : ET.hairline,
+                                        borderRadius: BorderRadius.circular(999),
+                                      ),
+                                    ),
+                                  );
+                                }),
                               ),
                             ],
                           ),
@@ -436,33 +419,235 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                       ),
                     ),
                   ),
-                  // Submit button
+                  // 底部导航：上一步 / 下一步（末步为提交）
                   Positioned(
                     left: 0, right: 0, bottom: 0,
                     child: Container(
-                      padding: EdgeInsets.fromLTRB(20, 14, 20, MediaQuery.of(context).padding.bottom + 14),
-                      decoration: BoxDecoration(
-                        color: DT.surface.withOpacity(0.62),
-                        border: Border(top: BorderSide(color: DT.surface.withOpacity(0.6), width: 0.5)),
+                      padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.of(context).padding.bottom + 12),
+                      decoration: const BoxDecoration(
+                        color: ET.bgElevated,
+                        border: Border(top: BorderSide(color: ET.hairline, width: 0.5)),
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(999),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: (_canSubmit && !_submitting) ? _submit : null,
-                            child: _submitting
-                                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                : Text(_isCustomService ? '提交需求等待报价' : '提交预约'),
-                          ),
-                        ),
-                      ),
+                      child: _bottomNav(),
                     ),
                   ),
                 ],
               ),
       ),
     );
+  }
+
+  // ── 分步向导 ──
+
+  List<Widget> _stepContent(int i) {
+    switch (i) {
+      case 0:
+        return [
+          _glassCard(
+              '选择美甲师',
+              _technicians.length > 1 ? '请选择当前已开启接单的美甲师' : '当前仅有 1 位可预约的美甲师',
+              _technicians.isEmpty
+                  ? [_emptyState('暂无可预约的美甲师', '请等待美甲师开启接单并配置可用服务后再发起预约')]
+                  : _technicians.map(_buildTechCard).toList()),
+        ];
+      case 1:
+        return [
+          _glassCard(
+              '服务方式',
+              _selectedTech != null ? '根据当前美甲师的服务能力选择本次预约方式' : '请先选择美甲师',
+              _availableServiceTypes.isEmpty
+                  ? [_emptyPlaceholder('选择美甲师后，这里会显示可预约的服务类型')]
+                  : _availableServiceTypes.map(_buildServiceTypeCard).toList()),
+          if (_serviceType == '到店美甲') ...[
+            const SizedBox(height: 16),
+            _buildShopSection(),
+          ],
+        ];
+      case 2:
+        return [
+          _glassCard('预约时间', '已根据美甲师与服务方式列出可约时段', [_buildTimeSection()]),
+        ];
+      case 3:
+        return [
+          _buildServiceContentSection(),
+          if (_serviceType == '上门美甲') ...[
+            const SizedBox(height: 16),
+            _buildAddressSection(),
+          ],
+        ];
+      case 4:
+        return [
+          _summaryCard(),
+          const SizedBox(height: 16),
+          _notesCard(),
+        ];
+      default:
+        return const [];
+    }
+  }
+
+  bool _stepValid(int i) {
+    switch (i) {
+      case 0:
+        return _selectedTech != null;
+      case 1:
+        return _serviceType.isNotEmpty &&
+            (_serviceType != '到店美甲' || _shopAddressName.isNotEmpty);
+      case 2:
+        return _startTime.isNotEmpty && _availableSlots.contains(_startTime);
+      case 3:
+        final contentOk = _isCustomService
+            ? _customTitle.trim().isNotEmpty
+            : _selectedServiceIds.isNotEmpty;
+        if (!contentOk) return false;
+        if (_serviceType == '上门美甲') {
+          if (_selectedAddressId == null) return false;
+          final a = _addresses
+              .cast<ClientAddress?>()
+              .firstWhere((x) => x?.id == _selectedAddressId,
+                  orElse: () => null);
+          if (a != null && !_sameCity(a)) return false;
+        }
+        return true;
+      case 4:
+        return _canSubmit;
+      default:
+        return false;
+    }
+  }
+
+  void _back() {
+    if (_step > 0) {
+      setState(() => _step--);
+    } else {
+      Navigator.pop(context);
+    }
+  }
+
+  void _next() {
+    if (!_stepValid(_step)) return;
+    FocusScope.of(context).unfocus();
+    setState(() => _step++);
+  }
+
+  Widget _bottomNav() {
+    final isLast = _step == _stepTitles.length - 1;
+    final valid = _stepValid(_step);
+    return Row(
+      children: [
+        if (_step > 0) ...[
+          SizedBox(
+            height: 50,
+            child: OutlinedButton(
+              onPressed: _back,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: ET.ink,
+                side: const BorderSide(color: ET.hairlineStrong),
+                shape: const StadiumBorder(),
+                padding: const EdgeInsets.symmetric(horizontal: 22),
+              ),
+              child: const Text('上一步'),
+            ),
+          ),
+          const SizedBox(width: 12),
+        ],
+        Expanded(
+          child: SizedBox(
+            height: 50,
+            child: ElevatedButton(
+              onPressed: !valid || _submitting
+                  ? null
+                  : (isLast ? _submit : _next),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ET.cream,
+                foregroundColor: ET.onCream,
+                disabledBackgroundColor: ET.cream.withValues(alpha: 0.35),
+                elevation: 0,
+                shape: const StadiumBorder(),
+                textStyle:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              child: _submitting
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: ET.onCream))
+                  : Text(isLast
+                      ? (_isCustomService ? '提交需求等待报价' : '提交预约')
+                      : '下一步'),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _summaryCard() {
+    final addrName = _addresses
+        .cast<ClientAddress?>()
+        .firstWhere((x) => x?.id == _selectedAddressId, orElse: () => null)
+        ?.fullAddress;
+    final content = _isCustomService
+        ? (_customTitle.trim().isEmpty ? '自定义需求' : _customTitle.trim())
+        : '已选 ${_selectedServiceIds.length} 项服务';
+    return _glassCard('确认信息', '请核对后提交预约', [
+      _summaryRow('美甲师', _selectedTech?.name ?? '—'),
+      _summaryRow('服务方式', _serviceType.isEmpty ? '—' : _serviceType),
+      _summaryRow('预约时间',
+          '$_serviceDate${_startTime.isEmpty ? '' : ' $_startTime'}'),
+      _summaryRow('服务内容', content),
+      if (_serviceType == '上门美甲')
+        _summaryRow('上门地址', addrName ?? '—'),
+      if (_serviceType == '到店美甲')
+        _summaryRow('到店门店', _shopAddressName.isEmpty ? '—' : _shopAddressName),
+    ]);
+  }
+
+  Widget _summaryRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+              width: 72,
+              child: Text(label,
+                  style: const TextStyle(fontSize: 13, color: ET.inkMuted))),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(value,
+                style: const TextStyle(
+                    fontSize: 14, fontWeight: FontWeight.w500, color: ET.ink)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _notesCard() {
+    return _glassCard('补充说明（选填）', '填写特殊需求，方便美甲师提前准备', [
+      TextField(
+        maxLines: 4,
+        cursorColor: ET.accent,
+        style: const TextStyle(color: ET.ink, fontSize: 14),
+        decoration: InputDecoration(
+          hintText: '如：想做粉色渐变、需要自带卸甲等…',
+          hintStyle: const TextStyle(color: ET.inkMuted),
+          filled: true,
+          fillColor: ET.bg,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(DT.rXxl),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(DT.rXxl),
+            borderSide: const BorderSide(color: ET.accent, width: 1.5),
+          ),
+        ),
+        onChanged: (v) => _remark = v,
+      ),
+    ]);
   }
 
   // ── Technician Card ──
