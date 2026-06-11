@@ -1,4 +1,4 @@
-import 'dart:ui' show FontFeature;
+import 'dart:ui' show FontFeature, ImageFilter;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -906,98 +906,50 @@ class _TechnicianOrderDetailScreenState
   }
 
   void _showQuoteSheet() {
-    final priceCtl = TextEditingController(
-        text: (_order!['price'] as num?)?.toInt().toString() ?? '');
-    final dateCtl = TextEditingController(
-        text: DateTime.tryParse(_order!['startTime']?.toString() ?? '')
-                ?.toString()
-                .substring(0, 10) ??
-            '');
-    final timeCtl = TextEditingController(
-        text: DateTime.tryParse(_order!['startTime']?.toString() ?? '') != null
-            ? '${DateTime.parse(_order!['startTime']).hour.toString().padLeft(2, '0')}:${DateTime.parse(_order!['startTime']).minute.toString().padLeft(2, '0')}'
-            : '14:00');
-    final durationCtl = TextEditingController(
-        text: _getDuration(_order!['startTime']?.toString(),
-                _order!['endTime']?.toString())
-            .toString());
-    final depositCtl = TextEditingController(
-        text: (_order!['depositAmount'] as num?)?.toInt().toString() ?? '0');
+    final o = _order!;
+    final start = DateTime.tryParse(o['startTime']?.toString() ?? '');
+    final initDate = start != null ? start.toIso8601String().substring(0, 10) : '';
+    final initTime = start != null
+        ? '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}'
+        : '14:00';
+    final computedDur =
+        _getDuration(o['startTime']?.toString(), o['endTime']?.toString());
+    final initDuration = computedDur > 0 ? computedDur : 90; // 修复：后端要求 ≥1
+    final priceNum = o['price'] as num?;
+    final initPrice =
+        (priceNum != null && priceNum > 0) ? priceNum.toInt().toString() : '';
+    final initDeposit = (o['depositAmount'] as num?)?.toInt().toString() ?? '0';
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: Container(
-          decoration: BoxDecoration(
-            color: DT.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(DT.rCard)),
-          ),
-          padding: const EdgeInsets.all(DT.xl),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('提交报价', style: DT.titleMedium),
-              const SizedBox(height: DT.lg),
-              _quoteInput('预约日期', dateCtl, TextInputType.datetime),
-              const SizedBox(height: DT.md),
-              _quoteInput('开始时间', timeCtl, TextInputType.datetime),
-              const SizedBox(height: DT.md),
-              _quoteInput('预估时长（分钟）', durationCtl, TextInputType.number),
-              const SizedBox(height: DT.md),
-              _quoteInput('费用（元）', priceCtl, TextInputType.number),
-              const SizedBox(height: DT.md),
-              _quoteInput('定金（元，可选）', depositCtl, TextInputType.number),
-              const SizedBox(height: DT.xl),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    Navigator.pop(ctx);
-                    setState(() => _actionLoading = true);
-                    try {
-                      final api = context.read<ApiClient>();
-                      api.setRole('technician');
-                      await TechnicianOrderService(api)
-                          .review(_order!['id'] as int, {
-                        'serviceDate': dateCtl.text,
-                        'startTime': timeCtl.text,
-                        'durationMinutes': int.tryParse(durationCtl.text) ?? 90,
-                        'price': double.tryParse(priceCtl.text) ?? 0,
-                        'depositAmount': double.tryParse(depositCtl.text) ?? 0,
-                      });
-                      await _load();
-                      if (mounted) {
-                        NbToast.show(context, '报价已发送，等待客户确认');
-                      }
-                    } catch (_) {
-                      if (mounted) {
-                        NbToast.show(context, '报价失败，请重试');
-                      }
-                    } finally {
-                      if (mounted) setState(() => _actionLoading = false);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: DT.cream,
-                    foregroundColor: DT.onCream,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(DT.rMd)),
-                    elevation: 0,
-                  ),
-                  child: Text('发送报价',
-                      style: DT.titleMedium.copyWith(color: DT.onCream)),
-                ),
-              ),
-            ],
-          ),
-        ),
+      builder: (ctx) => _QuoteSheet(
+        initDate: initDate,
+        initTime: initTime,
+        initDuration: initDuration,
+        initPrice: initPrice,
+        initDeposit: initDeposit,
+        onSubmit: (body) => _submitQuote(ctx, body),
       ),
     );
+  }
+
+  Future<void> _submitQuote(
+      BuildContext sheetCtx, Map<String, dynamic> body) async {
+    Navigator.pop(sheetCtx);
+    setState(() => _actionLoading = true);
+    try {
+      final api = context.read<ApiClient>();
+      api.setRole('technician');
+      await TechnicianOrderService(api).review(_order!['id'] as int, body);
+      await _load();
+      if (mounted) NbToast.show(context, '报价已发送，等待客户确认');
+    } catch (_) {
+      if (mounted) NbToast.show(context, '报价失败，请重试');
+    } finally {
+      if (mounted) setState(() => _actionLoading = false);
+    }
   }
 
   Widget _quoteInput(
@@ -1194,6 +1146,311 @@ class _FullscreenImagesState extends State<_FullscreenImages> {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// 提交报价底部弹窗：liquid glass 背景 + 费用必填校验 + 发送前确认。
+class _QuoteSheet extends StatefulWidget {
+  final String initDate;
+  final String initTime;
+  final int initDuration;
+  final String initPrice;
+  final String initDeposit;
+  final Future<void> Function(Map<String, dynamic> body) onSubmit;
+
+  const _QuoteSheet({
+    required this.initDate,
+    required this.initTime,
+    required this.initDuration,
+    required this.initPrice,
+    required this.initDeposit,
+    required this.onSubmit,
+  });
+
+  @override
+  State<_QuoteSheet> createState() => _QuoteSheetState();
+}
+
+class _QuoteSheetState extends State<_QuoteSheet> {
+  late final TextEditingController _dateCtl;
+  late final TextEditingController _timeCtl;
+  late final TextEditingController _durationCtl;
+  late final TextEditingController _priceCtl;
+  late final TextEditingController _depositCtl;
+  final FocusNode _priceFocus = FocusNode();
+  String? _priceError;
+
+  @override
+  void initState() {
+    super.initState();
+    _dateCtl = TextEditingController(text: widget.initDate);
+    _timeCtl = TextEditingController(text: widget.initTime);
+    _durationCtl = TextEditingController(text: widget.initDuration.toString());
+    _priceCtl = TextEditingController(text: widget.initPrice);
+    _depositCtl = TextEditingController(text: widget.initDeposit);
+    _priceCtl.addListener(_onPriceChanged);
+    _priceFocus.addListener(() {
+      if (!_priceFocus.hasFocus) _validatePrice();
+    });
+  }
+
+  @override
+  void dispose() {
+    _dateCtl.dispose();
+    _timeCtl.dispose();
+    _durationCtl.dispose();
+    _priceCtl.dispose();
+    _depositCtl.dispose();
+    _priceFocus.dispose();
+    super.dispose();
+  }
+
+  bool get _priceValid => (double.tryParse(_priceCtl.text.trim()) ?? 0) > 0;
+
+  void _onPriceChanged() {
+    // 实时刷新「发送报价」可用态；有效后清除错误
+    setState(() {
+      if (_priceValid) _priceError = null;
+    });
+  }
+
+  void _validatePrice() {
+    setState(() {
+      final t = _priceCtl.text.trim();
+      if (t.isEmpty) {
+        _priceError = '请输入费用金额';
+      } else if (!_priceValid) {
+        _priceError = '费用需大于 0';
+      } else {
+        _priceError = null;
+      }
+    });
+  }
+
+  int get _durationValue =>
+      (int.tryParse(_durationCtl.text.trim()) ?? 90).clamp(1, 100000).toInt();
+
+  Map<String, dynamic> _buildBody() => {
+        'serviceDate': _dateCtl.text.trim(),
+        'startTime': _timeCtl.text.trim(),
+        'durationMinutes': _durationValue,
+        'price': double.tryParse(_priceCtl.text.trim()) ?? 0,
+        'depositAmount': double.tryParse(_depositCtl.text.trim()) ?? 0,
+      };
+
+  Future<void> _onSendPressed() async {
+    _validatePrice();
+    if (!_priceValid) {
+      _priceFocus.requestFocus();
+      return;
+    }
+    final confirmed = await _showConfirm();
+    if (confirmed == true) await widget.onSubmit(_buildBody());
+  }
+
+  Future<bool?> _showConfirm() {
+    final deposit = double.tryParse(_depositCtl.text.trim()) ?? 0;
+    return showDialog<bool>(
+      context: context,
+      builder: (dctx) => AlertDialog(
+        backgroundColor: DT.surface,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(DT.rMd)),
+        title: const Text('确认报价信息',
+            style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: DT.textPrimary)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _confirmRow('预约日期', _dateCtl.text.trim()),
+            _confirmRow('开始时间', _timeCtl.text.trim()),
+            _confirmRow('预估时长', '$_durationValue 分钟'),
+            _confirmRow('费用', '¥${_priceCtl.text.trim()}'),
+            _confirmRow('定金', '¥${deposit.toInt()}'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dctx, false),
+            child:
+                const Text('返回修改', style: TextStyle(color: DT.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dctx, true),
+            child: const Text('确认发送',
+                style: TextStyle(
+                    color: DT.primary, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _confirmRow(String k, String v) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(k,
+              style: const TextStyle(fontSize: 14, color: DT.textSecondary)),
+          const SizedBox(width: 16),
+          Flexible(
+            child: Text(v,
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: DT.textPrimary)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: ClipRRect(
+        borderRadius:
+            const BorderRadius.vertical(top: Radius.circular(DT.rCard)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(
+              sigmaX: TechnicianGlassStyle.blur,
+              sigmaY: TechnicianGlassStyle.blur),
+          child: Container(
+            decoration: BoxDecoration(
+              color: TechnicianGlassStyle.tint
+                  .withValues(alpha: TechnicianGlassStyle.opacity),
+              border: const Border(top: BorderSide(color: DT.hairline)),
+            ),
+            padding: EdgeInsets.fromLTRB(DT.xl, DT.md, DT.xl,
+                DT.xl + MediaQuery.of(context).padding.bottom),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: DT.lg),
+                    decoration: BoxDecoration(
+                        color: DT.textMuted,
+                        borderRadius: BorderRadius.circular(999)),
+                  ),
+                ),
+                const Text('提交报价',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: DT.textPrimary)),
+                const SizedBox(height: 4),
+                const Text('确认时间与费用后发送给客户',
+                    style: TextStyle(fontSize: 13, color: DT.textSecondary)),
+                const SizedBox(height: DT.lg),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                        child: _field(
+                            '预约日期', _dateCtl, TextInputType.datetime)),
+                    const SizedBox(width: DT.md),
+                    Expanded(
+                        child: _field(
+                            '开始时间', _timeCtl, TextInputType.datetime)),
+                  ],
+                ),
+                const SizedBox(height: DT.md),
+                _field('预估时长（分钟）', _durationCtl, TextInputType.number),
+                const SizedBox(height: DT.md),
+                _field('费用（元）', _priceCtl, TextInputType.number,
+                    focusNode: _priceFocus,
+                    isRequired: true,
+                    errorText: _priceError),
+                const SizedBox(height: DT.md),
+                _field('定金（元，可选）', _depositCtl, TextInputType.number),
+                const SizedBox(height: DT.xl),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: _priceValid ? _onSendPressed : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: DT.cream,
+                      foregroundColor: DT.onCream,
+                      disabledBackgroundColor:
+                          DT.cream.withValues(alpha: 0.35),
+                      disabledForegroundColor:
+                          DT.onCream.withValues(alpha: 0.5),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(DT.rMd)),
+                      elevation: 0,
+                    ),
+                    child: const Text('发送报价',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _field(String label, TextEditingController ctl, TextInputType type,
+      {FocusNode? focusNode, bool isRequired = false, String? errorText}) {
+    final hasError = errorText != null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(label,
+                style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: DT.textSecondary)),
+            if (isRequired)
+              const Text(' *', style: TextStyle(fontSize: 12, color: DT.error)),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.22),
+            borderRadius: BorderRadius.circular(DT.rMd),
+            border: Border.all(
+                color: hasError ? DT.error : DT.border,
+                width: hasError ? 1.2 : 1),
+          ),
+          child: TextField(
+            controller: ctl,
+            focusNode: focusNode,
+            keyboardType: type,
+            style: DT.titleSmall.copyWith(color: DT.textPrimary),
+            cursorColor: DT.primary,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: DT.lg, vertical: DT.md),
+            ),
+          ),
+        ),
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 5, left: 2),
+            child: Text(errorText,
+                style: const TextStyle(fontSize: 12, color: DT.error)),
+          ),
+      ],
     );
   }
 }
