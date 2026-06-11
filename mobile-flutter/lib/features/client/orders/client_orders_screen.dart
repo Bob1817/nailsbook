@@ -105,8 +105,9 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: ET.cream,
+          color: ET.surface,
           borderRadius: BorderRadius.circular(DT.rCard),
+          border: Border.all(color: ET.hairline),
           boxShadow: ET.shadowCard,
         ),
         child: Row(
@@ -116,9 +117,9 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
               height: 52,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                  color: ET.onCream.withValues(alpha: 0.08),
+                  color: ET.accentSoft,
                   borderRadius: BorderRadius.circular(16)),
-              child: const Icon(Icons.add_rounded, color: ET.onCream, size: 28),
+              child: const Icon(Icons.add_rounded, color: ET.accent, size: 28),
             ),
             const SizedBox(width: 16),
             const Expanded(
@@ -129,15 +130,15 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                       style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
-                          color: ET.onCream)),
+                          color: ET.ink)),
                   SizedBox(height: 4),
                   Text('预约你的下一次美甲 ～',
-                      style: TextStyle(fontSize: 13, color: ET.inkFaint)),
+                      style: TextStyle(fontSize: 13, color: ET.inkSecondary)),
                 ],
               ),
             ),
             const Icon(Icons.chevron_right_rounded,
-                color: ET.onCream, size: 22),
+                color: ET.inkMuted, size: 22),
           ],
         ),
       ),
