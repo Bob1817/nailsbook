@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -103,32 +102,24 @@ class _GlassTabBar extends StatelessWidget {
     final bottomInset = MediaQuery.of(context).padding.bottom;
     // 缩小与屏幕底部的距离：只保留 home indicator 之上的小间隙
     final bottomGap = (bottomInset * 0.4).clamp(8.0, 16.0);
+    // 与美甲师端底部导航完全对齐：黑底深玻璃 + 白色描边 + 顶部高光
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 0, 16, bottomGap),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: BackdropFilter(
-          // 统一玻璃标准（发现页基准）
-          filter: ImageFilter.blur(sigmaX: ET.glassBlur, sigmaY: ET.glassBlur),
-          child: Container(
-            decoration: BoxDecoration(
-              color: ET.glassFill,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: ET.hairlineStrong),
-              boxShadow: const [
-                BoxShadow(
-                    color: Color(0x66000000),
-                    blurRadius: 28,
-                    offset: Offset(0, 10))
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: List.generate(_items.length, (i) => _tab(i)),
-              ),
-            ),
+      child: GlassContainer(
+        tint: TechnicianGlassStyle.tint,
+        blur: TechnicianGlassStyle.blur,
+        opacity: TechnicianGlassStyle.opacity,
+        borderRadius: 28,
+        showBorder: true,
+        boxShadow: const [
+          BoxShadow(
+              color: Color(0x66000000), blurRadius: 28, offset: Offset(0, 10))
+        ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(_items.length, (i) => _tab(i)),
           ),
         ),
       ),
@@ -389,8 +380,7 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
       child: GestureDetector(
-        onTap: () => Navigator.push(context,
-            MaterialPageRoute(builder: (_) => const ClientWorksScreen())),
+        onTap: () => _openHeroDetail(current),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(DT.rHero),
           child: SizedBox(
@@ -405,7 +395,7 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
                   onPageChanged: (i) => setState(() => _heroIndex = i),
                   itemBuilder: (_, i) => _heroSlide(works[i]),
                 ),
-                // 仅底部轻渐变，保证文字可读，上方照片不被压暗
+                // 顶部 + 底部轻渐变，保证分页点/文字可读
                 const IgnorePointer(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
@@ -413,17 +403,26 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
+                          Color(0x4D000000),
                           Colors.transparent,
                           Colors.transparent,
                           Color(0x73000000),
                           Color(0xB3000000),
                         ],
-                        stops: [0.0, 0.55, 0.82, 1.0],
+                        stops: [0.0, 0.18, 0.55, 0.82, 1.0],
                       ),
                     ),
                   ),
                 ),
-                // 底部轻量信息 + 分页点（弱化非图片内容）
+                // 分页点：顶部正中央
+                if (works.length > 1)
+                  Positioned(
+                    top: 14,
+                    left: 0,
+                    right: 0,
+                    child: Center(child: _heroDots(works.length)),
+                  ),
+                // 底部轻量信息（标题 + 小达人）
                 Positioned(
                   left: 16,
                   right: 16,
@@ -433,11 +432,33 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
                     children: [
                       Expanded(child: _heroCaption(current)),
                       const SizedBox(width: 12),
-                      if (works.length > 1)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 2),
-                          child: _heroDots(works.length),
+                      // 右下角「查看详情」按钮
+                      GestureDetector(
+                        onTap: () => _openHeroDetail(current),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.22)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('查看详情',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white)),
+                              SizedBox(width: 2),
+                              Icon(Icons.chevron_right_rounded,
+                                  size: 16, color: Colors.white),
+                            ],
+                          ),
                         ),
+                      ),
                     ],
                   ),
                 ),
@@ -447,6 +468,13 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
         ),
       ),
     );
+  }
+
+  void _openHeroDetail(Map<String, dynamic> w) {
+    final id = w['id'] as int?;
+    if (id == null) return;
+    Navigator.push(context,
+        MaterialPageRoute(builder: (_) => ClientWorkDetailScreen(workId: id)));
   }
 
   // 底部轻量说明：标题 + 小达人，直接叠在图片上（无玻璃卡片）
@@ -584,9 +612,8 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: ET.surface,
+          color: ET.surface.withValues(alpha: 0.72),
           borderRadius: BorderRadius.circular(DT.rCard),
-          border: Border.all(color: ET.hairline),
           boxShadow: ET.shadowTile,
         ),
         child: Column(
@@ -670,9 +697,8 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: ET.surface,
+          color: ET.surface.withValues(alpha: 0.72),
           borderRadius: BorderRadius.circular(DT.rCard),
-          border: Border.all(color: ET.hairline),
           boxShadow: ET.shadowTile,
         ),
         child: Row(
