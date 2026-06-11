@@ -385,40 +385,108 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
   Widget _heroSection() {
     final works = _heroWorks;
     if (works.isEmpty) return const SizedBox.shrink();
+    final current = works[_heroIndex.clamp(0, works.length - 1)];
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(DT.rHero),
-        child: SizedBox(
-          height: 400,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              PageView.builder(
-                controller: _pageController,
-                itemCount: works.length,
-                onPageChanged: (i) => setState(() => _heroIndex = i),
-                itemBuilder: (_, i) => _heroSlide(works[i]),
-              ),
-              const IgnorePointer(
+      child: GestureDetector(
+        onTap: () => Navigator.push(context,
+            MaterialPageRoute(builder: (_) => const ClientWorksScreen())),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(DT.rHero),
+          child: SizedBox(
+            height: 440,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // 美甲图：主角，满铺
+                PageView.builder(
+                  controller: _pageController,
+                  itemCount: works.length,
+                  onPageChanged: (i) => setState(() => _heroIndex = i),
+                  itemBuilder: (_, i) => _heroSlide(works[i]),
+                ),
+                // 仅底部轻渐变，保证文字可读，上方照片不被压暗
+                const IgnorePointer(
                   child: DecoratedBox(
-                      decoration: BoxDecoration(gradient: DT.heroOverlay))),
-              Positioned(
-                  left: 16,
-                  right: 16,
-                  top: 16,
-                  child: _heroTopRow(works.length)),
-              Positioned(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.transparent,
+                          Color(0x73000000),
+                          Color(0xB3000000),
+                        ],
+                        stops: [0.0, 0.55, 0.82, 1.0],
+                      ),
+                    ),
+                  ),
+                ),
+                // 底部轻量信息 + 分页点（弱化非图片内容）
+                Positioned(
                   left: 16,
                   right: 16,
                   bottom: 16,
-                  child: _heroBottom(
-                      works[_heroIndex.clamp(0, works.length - 1)])),
-              Positioned(left: 16, bottom: 96, child: _heroDots(works.length)),
-            ],
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(child: _heroCaption(current)),
+                      const SizedBox(width: 12),
+                      if (works.length > 1)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 2),
+                          child: _heroDots(works.length),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  // 底部轻量说明：标题 + 小达人，直接叠在图片上（无玻璃卡片）
+  Widget _heroCaption(Map<String, dynamic> w) {
+    final title = w['title']?.toString();
+    final techName = w['technicianName']?.toString() ?? '已绑定美甲师';
+    final techAvatar = w['technicianAvatarUrl']?.toString();
+    const shadow = [
+      Shadow(color: Color(0xB3000000), blurRadius: 12, offset: Offset(0, 1))
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(title?.isNotEmpty == true ? title! : '最新作品',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                shadows: shadow)),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            _heroAvatar(techName, techAvatar),
+            const SizedBox(width: 7),
+            Flexible(
+              child: Text(techName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withValues(alpha: 0.9),
+                      shadows: shadow)),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -437,142 +505,50 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
     );
   }
 
-  Widget _heroTopRow(int count) {
-    return Row(
-      children: [
-        // 原底部大标题缩小后移至顶部，替换原有的两个胶囊标签
-        GlassContainer(
-          tint: Colors.black,
-          opacity: 0.28,
-          blur: DT.glassBlurStandard,
-          borderRadius: 999,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-          child: const Text('今日推荐美甲',
-              style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.2,
-                  color: Colors.white)),
-        ),
-        const Spacer(),
-        _glassPill('${_heroIndex + 1}/$count'),
-      ],
-    );
-  }
-
-  Widget _heroBottom(Map<String, dynamic> w) {
-    final title = w['title']?.toString();
-    final techName = w['technicianName']?.toString() ?? '已绑定美甲师';
-    final techAvatar = w['technicianAvatarUrl']?.toString();
-    return GestureDetector(
-      onTap: () => Navigator.push(context,
-          MaterialPageRoute(builder: (_) => const ClientWorksScreen())),
-      child: GlassContainer(
-        tint: Colors.black,
-        opacity: 0.22,
-        blur: DT.glassBlurStandard,
-        borderRadius: 18,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 美甲师头像 + 名称（移到标题上方）
-                  Row(
-                    children: [
-                      _heroAvatar(techName, techAvatar),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(techName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.white)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(title?.isNotEmpty == true ? title! : '最新作品',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white)),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            // 简化后的引导文字，置于胶囊内部
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('查看更多',
-                    style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white.withOpacity(0.9))),
-                Icon(Icons.chevron_right_rounded,
-                    size: 18, color: Colors.white.withOpacity(0.9)),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _heroAvatar(String name, String? avatar) {
     if (avatar != null && avatar.isNotEmpty) {
-      return ClipOval(
-          child: CachedNetworkImage(
-              imageUrl: avatar, width: 24, height: 24, fit: BoxFit.cover));
+      return Container(
+        decoration: const BoxDecoration(shape: BoxShape.circle, boxShadow: [
+          BoxShadow(color: Color(0x66000000), blurRadius: 6)
+        ]),
+        child: ClipOval(
+            child: CachedNetworkImage(
+                imageUrl: avatar, width: 22, height: 22, fit: BoxFit.cover)),
+      );
     }
     return Container(
-      width: 24,
-      height: 24,
+      width: 22,
+      height: 22,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.22), shape: BoxShape.circle),
+          color: Colors.white.withValues(alpha: 0.28), shape: BoxShape.circle),
       child: Text(name.isNotEmpty ? name.substring(0, 1) : '美',
           style: const TextStyle(
               fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
     );
   }
 
+  // 精致分页点：当前页为细长胶囊，其余为小圆点
   Widget _heroDots(int count) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: List.generate(count, (i) {
         final active = i == _heroIndex;
         return AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          margin: const EdgeInsets.only(right: 6),
-          width: active ? 22 : 6,
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOut,
+          margin: const EdgeInsets.only(left: 5),
+          width: active ? 16 : 5,
           height: 5,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(active ? 1 : 0.55),
+            color: Colors.white.withValues(alpha: active ? 0.95 : 0.5),
             borderRadius: BorderRadius.circular(999),
+            boxShadow: const [
+              BoxShadow(color: Color(0x59000000), blurRadius: 4)
+            ],
           ),
         );
       }),
-    );
-  }
-
-  Widget _glassPill(String text) {
-    return GlassContainer(
-      tint: Colors.black,
-      opacity: 0.28,
-      blur: DT.glassBlurStandard,
-      borderRadius: 999,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Text(text,
-          style: const TextStyle(
-              fontSize: 11, fontWeight: FontWeight.w500, color: Colors.white)),
     );
   }
 
