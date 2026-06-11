@@ -191,7 +191,19 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
 
   Future<void> _toggleStatus() async {
     HapticFeedback.mediumImpact();
-    final newStatus = _profile?.status == 'active' ? 'inactive' : 'active';
+    final isActive = _profile?.status == 'active';
+    final newStatus = isActive ? 'inactive' : 'active';
+
+    // 从休息中切换到接单中时，检查是否至少启用了一种服务类型
+    if (!isActive) {
+      final homeService = _profile?.homeService == true;
+      final shopService = _profile?.shopService == true;
+      if (!homeService && !shopService) {
+        final result = await _showServiceTypeDialog();
+        if (result != true || !mounted) return;
+      }
+    }
+
     try {
       final updated = await TechnicianAuthService(context.read<ApiClient>())
           .updateStatus(newStatus);
@@ -199,6 +211,121 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
     } catch (_) {
       if (mounted) NbToast.error(context, '状态更新失败');
     }
+  }
+
+  /// 强制弹窗：让美甲师选择开启上门/到店服务类型
+  Future<bool?> _showServiceTypeDialog() {
+    bool home = false;
+    bool shop = false;
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: DT.surface,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(DT.rCard)),
+          title: Text('请先开启服务类型',
+              style: DT.titleMedium.copyWith(color: DT.textPrimary)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('开启接单前，请至少选择一种服务类型',
+                  style: DT.bodySmall.copyWith(color: DT.textSecondary)),
+              const SizedBox(height: DT.lg),
+              _serviceTypeRow(ctx, '上门美甲', CupertinoIcons.location_fill,
+                  home, (v) => setDialogState(() => home = v)),
+              const SizedBox(height: DT.md),
+              _serviceTypeRow(ctx, '到店美甲', CupertinoIcons.house_fill,
+                  shop, (v) => setDialogState(() => shop = v)),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text('取消',
+                  style: DT.bodyMedium.copyWith(color: DT.textSecondary)),
+            ),
+            TextButton(
+              onPressed: (!home && !shop)
+                  ? null
+                  : () async {
+                      HapticFeedback.mediumImpact();
+                      try {
+                        final api = context.read<ApiClient>()
+                          ..setRole('technician');
+                        await TechnicianAuthService(api)
+                            .updateServiceType({
+                          'homeService': home,
+                          'shopService': shop,
+                        });
+                        if (ctx.mounted) Navigator.pop(ctx, true);
+                      } catch (_) {
+                        if (ctx.mounted) {
+                          NbToast.error(ctx, '保存失败，请重试');
+                        }
+                      }
+                    },
+              child: Text('确认',
+                  style: DT.bodyMedium.copyWith(
+                      color: (!home && !shop)
+                          ? DT.textMuted
+                          : DT.primary,
+                      fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _serviceTypeRow(BuildContext ctx, String label, IconData icon,
+      bool value, ValueChanged<bool> onChanged) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onChanged(!value);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: DT.md, vertical: DT.sm),
+        decoration: BoxDecoration(
+          color: value
+              ? DT.primarySoft
+              : DT.bg.withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Icon(icon,
+                size: 20,
+                color: value ? DT.primary : DT.textMuted),
+            const SizedBox(width: DT.md),
+            Expanded(
+              child: Text(label,
+                  style: DT.titleSmall.copyWith(
+                      color: value
+                          ? DT.textPrimary
+                          : DT.textMuted)),
+            ),
+            Transform.scale(
+              scale: 0.72,
+              child: CupertinoSwitch(
+                value: value,
+                activeTrackColor: DT.primary,
+                inactiveTrackColor: DT.bgWarm,
+                thumbColor: DT.cream,
+                onChanged: (_) {
+                  HapticFeedback.selectionClick();
+                  onChanged(!value);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   // ── 头部：深色渐变 + 头像 + 姓名 + 状态卡 ──
