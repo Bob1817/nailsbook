@@ -6,6 +6,7 @@ import 'client_order_service.dart';
 import 'client_create_order_screen.dart';
 import 'client_order_detail_screen.dart';
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
+import '../../../core/widgets/client_glass_header.dart';
 
 class ClientOrdersScreen extends StatefulWidget {
   const ClientOrdersScreen({super.key});
@@ -44,40 +45,25 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final headerH = ClientGlassHeader.estimateHeight(context);
     return Scaffold(
       backgroundColor: ET.bg,
-      appBar: GlassAppBar(title: const Text('我的预约'), dark: true),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(color: ET.accent))
-          : Column(
-              children: [
-                // 固定在顶部的「发起预约」入口
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  child: _startBookingCta(),
-                ),
-                Expanded(
-                  child: RefreshIndicator(
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: _loading
+                ? const Center(
+                    child: CircularProgressIndicator(color: ET.accent))
+                : RefreshIndicator(
                     color: ET.accent,
                     backgroundColor: ET.surface,
                     onRefresh: _loadOrders,
                     child: ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                      padding: EdgeInsets.fromLTRB(16, headerH + 8, 16, 100),
                       children: [
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('预约记录', style: ET.displaySmall),
-                            SizedBox(height: 2),
-                            Text('查看你所有预约的进度',
-                                style: TextStyle(
-                                    fontSize: 12, color: ET.inkMuted)),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
                         if (_orders.isEmpty)
                           const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 40),
+                            padding: EdgeInsets.symmetric(vertical: 60),
                             child: Center(
                                 child: Text('暂无预约',
                                     style: TextStyle(
@@ -89,13 +75,22 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                       ],
                     ),
                   ),
-                ),
-              ],
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: ClientGlassHeader(
+              title: '预约',
+              actions: [_bookingCapsule()],
             ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _startBookingCta() {
+  Widget _bookingCapsule() {
     return GestureDetector(
       onTap: () => Navigator.push(
               context,
@@ -103,47 +98,20 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                   builder: (_) => const ClientCreateOrderScreen()))
           .then((_) => _loadOrders()),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
         decoration: BoxDecoration(
-          color: ET.surface,
-          borderRadius: BorderRadius.circular(DT.rCard),
-          border: Border.all(color: ET.hairline),
-          boxShadow: ET.shadowCard,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                  color: ET.accentSoft,
-                  borderRadius: BorderRadius.circular(16)),
-              child: const Icon(Icons.add_rounded, color: ET.accent, size: 28),
-            ),
-            const SizedBox(width: 16),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('发起预约',
-                      style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: ET.ink)),
-                  SizedBox(height: 4),
-                  Text('预约你的下一次美甲 ～',
-                      style: TextStyle(fontSize: 13, color: ET.inkSecondary)),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded,
-                color: ET.inkMuted, size: 22),
-          ],
-        ),
+            color: ET.cream, borderRadius: BorderRadius.circular(999)),
+        child: const Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.add_rounded, size: 18, color: ET.onCream),
+          SizedBox(width: 4),
+          Text('发起预约',
+              style: TextStyle(
+                  fontSize: 14, fontWeight: FontWeight.w600, color: ET.onCream)),
+        ]),
       ),
     );
   }
+
 
   /// 预约卡片（对齐 webapp OrderList.tsx）：预 徽章 + 日期块 + 标题 + 时间/地址 + 报价/提示。
   Widget _orderCard(ClientOrder order) {

@@ -6,6 +6,7 @@ import '../../client/orders/client_order_detail_screen.dart';
 import 'chat_service.dart';
 import 'chat_screen.dart';
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
+import '../../../core/widgets/client_glass_header.dart';
 
 /// 消息页。
 /// 客户端：统一收件箱（会话 + 通知聚合，标签：全部/未读/预约提醒/服务提醒/系统通知）。
@@ -169,33 +170,49 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final headerH = ClientGlassHeader.estimateHeight(context,
+        belowHeight: _isClient ? 44 : 0);
     return Scaffold(
       backgroundColor: DT.bg,
-      appBar: GlassAppBar(title: const Text('消息')),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(color: DT.primary))
-          : Column(
-              children: [
-                if (_isClient) _tabs(),
-                Expanded(
-                  child: _filtered.isEmpty
-                      ? const Center(
-                          child: Text('暂无消息',
-                              style: TextStyle(color: DT.textMuted)))
-                      : RefreshIndicator(
-                          color: DT.primary,
-                          onRefresh: _load,
-                          child: ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                            itemCount: _filtered.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 8),
-                            itemBuilder: (_, i) => _itemCard(_filtered[i]),
-                          ),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: _loading
+                ? const Center(
+                    child: CircularProgressIndicator(color: DT.primary))
+                : _filtered.isEmpty
+                    ? ListView(
+                        padding: EdgeInsets.only(top: headerH + 80),
+                        children: const [
+                          Center(
+                              child: Text('暂无消息',
+                                  style: TextStyle(color: DT.textMuted))),
+                        ],
+                      )
+                    : RefreshIndicator(
+                        color: DT.primary,
+                        onRefresh: _load,
+                        child: ListView.separated(
+                          padding:
+                              EdgeInsets.fromLTRB(16, headerH + 8, 16, 100),
+                          itemCount: _filtered.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 8),
+                          itemBuilder: (_, i) => _itemCard(_filtered[i]),
                         ),
-                ),
-              ],
+                      ),
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: ClientGlassHeader(
+              title: '消息',
+              below: _isClient ? _tabs() : null,
             ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -211,10 +228,10 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
     ].where((t) => t.$3).toList();
 
     return SizedBox(
-      height: 48,
+      height: 36,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: EdgeInsets.zero,
         itemCount: tabs.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (_, i) {

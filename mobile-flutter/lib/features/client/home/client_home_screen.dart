@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/editorial_tokens.dart';
+import '../../../core/widgets/client_glass_header.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../discover/client_discover_screen.dart';
 import '../../shared/chat/conversations_screen.dart';
@@ -99,18 +100,21 @@ class _GlassTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    // 缩小与屏幕底部的距离：只保留 home indicator 之上的小间隙
+    final bottomGap = (bottomInset * 0.4).clamp(8.0, 16.0);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 0, 16, bottomGap),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+          // 增强毛玻璃：更大模糊 + 更透的底色，让滚动内容透出
+          filter: ImageFilter.blur(sigmaX: 36, sigmaY: 36),
           child: Container(
             decoration: BoxDecoration(
-              color: ET.bgElevated.withValues(alpha: 0.92),
+              color: ET.bgElevated.withValues(alpha: 0.58),
               borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: ET.hairline),
+              border: Border.all(color: ET.hairlineStrong),
               boxShadow: const [
                 BoxShadow(
                     color: Color(0x66000000),
@@ -308,76 +312,45 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
   @override
   Widget build(BuildContext context) {
     _ensureHeroTimer();
-    final topPad = MediaQuery.of(context).padding.top;
-    return Container(
-      color: ET.bg,
-      child: RefreshIndicator(
-        color: ET.accent,
-        backgroundColor: ET.surface,
-        onRefresh: _refreshAll,
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            SliverToBoxAdapter(child: SizedBox(height: topPad + 8)),
-            SliverToBoxAdapter(child: _header()),
-            SliverToBoxAdapter(child: _heroSection()),
-            SliverToBoxAdapter(child: _bookingSection()),
-            SliverToBoxAdapter(child: _latestHeader()),
-            _featuredGrid(),
-            SliverToBoxAdapter(child: _footer()),
-            const SliverToBoxAdapter(child: SizedBox(height: 96)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── Header ──────────────────────────────────────────────
-  Widget _header() {
+    final headerH = ClientGlassHeader.estimateHeight(context);
     final tech = widget.homeData?['technician'] as Map<String, dynamic>?;
     final avatar = tech?['avatarUrl']?.toString();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+    return Container(
+      color: ET.bg,
+      child: Stack(
         children: [
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('NAILBOOK',
-                    style: TextStyle(
-                        fontSize: 11,
-                        letterSpacing: 2,
-                        fontWeight: FontWeight.w600,
-                        color: ET.inkMuted)),
-                SizedBox(height: 2),
-                Text('首页', style: ET.display),
+          RefreshIndicator(
+            color: ET.accent,
+            backgroundColor: ET.surface,
+            onRefresh: _refreshAll,
+            child: CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                SliverToBoxAdapter(child: SizedBox(height: headerH + 4)),
+                SliverToBoxAdapter(child: _heroSection()),
+                SliverToBoxAdapter(child: _bookingSection()),
+                SliverToBoxAdapter(child: _latestHeader()),
+                _featuredGrid(),
+                SliverToBoxAdapter(child: _footer()),
+                const SliverToBoxAdapter(child: SizedBox(height: 96)),
               ],
             ),
           ),
-          _circleBtn(
-              Icons.chat_bubble_outline_rounded, () => widget.onSelectTab(3)),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: () => widget.onSelectTab(4),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: ET.surface,
-                border: Border.all(color: ET.hairline),
-                image: (avatar != null && avatar.isNotEmpty)
-                    ? DecorationImage(
-                        image: CachedNetworkImageProvider(avatar),
-                        fit: BoxFit.cover)
-                    : null,
-              ),
-              child: (avatar == null || avatar.isEmpty)
-                  ? const Icon(Icons.person_outline_rounded,
-                      size: 20, color: ET.inkSecondary)
-                  : null,
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: ClientGlassHeader(
+              title: '首页',
+              actions: [
+                HeaderCircleButton(
+                  onTap: () => widget.onSelectTab(3),
+                  child: const Icon(Icons.chat_bubble_outline_rounded,
+                      size: 20, color: ET.inkSecondary),
+                ),
+                const SizedBox(width: 8),
+                _headerAvatar(avatar),
+              ],
             ),
           ),
         ],
@@ -385,17 +358,25 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
     );
   }
 
-  Widget _circleBtn(IconData icon, VoidCallback onTap) {
+  Widget _headerAvatar(String? avatar) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () => widget.onSelectTab(4),
       child: Container(
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: ET.surface,
-            border: Border.all(color: ET.hairline)),
-        child: Icon(icon, size: 20, color: ET.inkSecondary),
+          shape: BoxShape.circle,
+          color: ET.surface,
+          border: Border.all(color: ET.hairline),
+          image: (avatar != null && avatar.isNotEmpty)
+              ? DecorationImage(
+                  image: CachedNetworkImageProvider(avatar), fit: BoxFit.cover)
+              : null,
+        ),
+        child: (avatar == null || avatar.isEmpty)
+            ? const Icon(Icons.person_outline_rounded,
+                size: 20, color: ET.inkSecondary)
+            : null,
       ),
     );
   }

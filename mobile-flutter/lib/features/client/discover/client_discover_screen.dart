@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/editorial_tokens.dart';
+import '../../../core/widgets/client_glass_header.dart';
 import '../works/client_work_detail_screen.dart';
 import '../../../core/widgets/nb_toast.dart';
 
@@ -84,49 +85,45 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filtered;
+    final headerH = ClientGlassHeader.estimateHeight(context, belowHeight: 104);
     return Scaffold(
       backgroundColor: ET.bg,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: _loading
-                  ? const Center(
-                      child: CircularProgressIndicator(color: ET.accent))
-                  : _works.isEmpty
-                      ? _buildEmptyNoWorks()
-                      : filtered.isEmpty
-                          ? _buildEmptyCategory()
-                          : RefreshIndicator(
-                              color: ET.accent,
-                              backgroundColor: ET.surface,
-                              onRefresh: _loadWorks,
-                              child: _buildMasonry(filtered),
-                            ),
-            ),
-          ],
-        ),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: _loading
+                ? const Center(
+                    child: CircularProgressIndicator(color: ET.accent))
+                : _works.isEmpty
+                    ? _buildEmptyNoWorks(headerH)
+                    : filtered.isEmpty
+                        ? _buildEmptyCategory(headerH)
+                        : RefreshIndicator(
+                            color: ET.accent,
+                            backgroundColor: ET.surface,
+                            onRefresh: _loadWorks,
+                            child: _buildMasonry(filtered, headerH),
+                          ),
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: ClientGlassHeader(title: '发现', below: _headerBelow()),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: ET.bg,
-        border: Border(bottom: BorderSide(color: ET.hairlineFaint)),
-      ),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('发现', style: ET.display),
-          const SizedBox(height: 4),
-          const Text('刷一刷你绑定美甲师发布的最新作品', style: ET.body),
-          const SizedBox(height: 14),
-          GestureDetector(
+  Widget _headerBelow() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text('刷一刷你绑定美甲师发布的最新作品', style: ET.body),
+        const SizedBox(height: 12),
+        GestureDetector(
             onTap: () => NbToast.show(context, '搜索功能开发中'),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -177,11 +174,10 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
             ),
           ),
         ],
-      ),
-    );
+      );
   }
 
-  Widget _buildMasonry(List<Map<String, dynamic>> works) {
+  Widget _buildMasonry(List<Map<String, dynamic>> works, double topPad) {
     final left = <Widget>[];
     final right = <Widget>[];
     for (var i = 0; i < works.length; i++) {
@@ -192,7 +188,7 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
       ));
     }
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+      padding: EdgeInsets.fromLTRB(16, topPad + 8, 16, 96),
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -417,8 +413,9 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
     );
   }
 
-  Widget _buildEmptyNoWorks() {
+  Widget _buildEmptyNoWorks(double topPad) {
     return ListView(
+      padding: EdgeInsets.only(top: topPad),
       children: [
         const SizedBox(height: 80),
         Center(
@@ -450,8 +447,9 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
     );
   }
 
-  Widget _buildEmptyCategory() {
+  Widget _buildEmptyCategory(double topPad) {
     return ListView(
+      padding: EdgeInsets.only(top: topPad),
       children: const [
         SizedBox(height: 80),
         Center(

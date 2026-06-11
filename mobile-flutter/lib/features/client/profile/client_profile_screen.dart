@@ -66,7 +66,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
     final avatarUrl = client?['avatarUrl'] as String?;
 
     final topPad = MediaQuery.of(context).padding.top;
-    final headerH = topPad + 150;
+    final headerH = topPad + 116;
 
     return Scaffold(
       backgroundColor: ET.bg,
@@ -164,12 +164,13 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
             borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
                 padding: const EdgeInsets.all(2.5),
                 decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white.withOpacity(0.25), width: 2.5)),
                 child: CircleAvatar(
-                  radius: 32,
+                  radius: 30,
                   backgroundColor: Colors.white,
                   backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty) ? NetworkImage(avatarUrl) : null,
                   child: (avatarUrl == null || avatarUrl.isEmpty)
@@ -177,7 +178,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                       : null,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,27 +186,30 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                   children: [
                     Text(nickname.isNotEmpty ? nickname : '未设置昵称',
                         maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),
-                    const SizedBox(height: 4),
-                    Text(phone, style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.7))),
-                    const SizedBox(height: 12),
-                    GestureDetector(
-                      onTap: () => _push(const ClientEditProfileScreen()),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.16),
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: Colors.white.withOpacity(0.25)),
-                        ),
-                        child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(Icons.edit_outlined, size: 14, color: Colors.white),
-                          SizedBox(width: 5),
-                          Text('编辑资料', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
-                        ]),
-                      ),
-                    ),
+                        style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700, color: Colors.white)),
+                    const SizedBox(height: 5),
+                    Text(phone.isEmpty ? '未绑定手机号' : phone,
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.7))),
                   ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              // 编辑资料：移至右侧，与姓名/头像垂直居中
+              GestureDetector(
+                onTap: () => _push(const ClientEditProfileScreen()),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.16),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: Colors.white.withOpacity(0.25)),
+                  ),
+                  child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.edit_outlined, size: 14, color: Colors.white),
+                    SizedBox(width: 5),
+                    Text('编辑资料', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
+                  ]),
                 ),
               ),
             ],
