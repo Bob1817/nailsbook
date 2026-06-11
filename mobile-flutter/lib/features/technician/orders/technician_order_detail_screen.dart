@@ -610,12 +610,15 @@ class _TechnicianOrderDetailScreenState
 
     if (buttons.isEmpty) return const SizedBox.shrink();
 
+    // 对齐主页底部菜单的离底间距标准
+    final bottomGap = (bottomPad * 0.4).clamp(8.0, 16.0);
+
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
         child: Container(
           decoration: BoxDecoration(color: DT.surface.withValues(alpha: 0.78)),
-          padding: EdgeInsets.fromLTRB(DT.xl, DT.sm, DT.xl, bottomPad + DT.sm),
+          padding: EdgeInsets.fromLTRB(DT.xl, DT.sm, DT.xl, bottomGap),
           child: Row(
             children: buttons
                 .map((b) => Expanded(
