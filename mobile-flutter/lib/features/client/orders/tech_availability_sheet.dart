@@ -41,6 +41,7 @@ class _TechAvailabilitySheetState extends State<_TechAvailabilitySheet> {
   List<Map<String, dynamic>> _blocked = const [];
   bool _loading = true;
   String? _selectedDate;
+  String? _selectedTime;
 
   @override
   void initState() {
@@ -109,6 +110,7 @@ class _TechAvailabilitySheetState extends State<_TechAvailabilitySheet> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: Container(
+          width: double.infinity,
           constraints: BoxConstraints(
               maxHeight: MediaQuery.of(context).size.height * 0.8),
           decoration: BoxDecoration(
@@ -230,32 +232,37 @@ class _TechAvailabilitySheetState extends State<_TechAvailabilitySheet> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
       ],
-      // 去预约
-      SizedBox(
-        width: double.infinity,
-        height: 50,
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.pop(context);
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) =>
-                        ClientCreateOrderScreen(preselectedTechId: tech.id)));
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: ET.cream,
-            foregroundColor: ET.onCream,
-            elevation: 0,
-            shape: const StadiumBorder(),
-            textStyle:
-                const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+      // 选中可约时段后才出现「立即预约」
+      if (_selectedTime != null) ...[
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => ClientCreateOrderScreen(
+                            preselectedTechId: tech.id,
+                            preselectedDate: selected,
+                            preselectedTime: _selectedTime,
+                          )));
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ET.cream,
+              foregroundColor: ET.onCream,
+              elevation: 0,
+              shape: const StadiumBorder(),
+              textStyle:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            child: Text('立即预约 · ${selected!.substring(5)} $_selectedTime'),
           ),
-          child: const Text('去预约'),
         ),
-      ),
+      ],
     ];
   }
 
@@ -284,7 +291,12 @@ class _TechAvailabilitySheetState extends State<_TechAvailabilitySheet> {
     final now = DateTime.now();
     final isToday = d.year == now.year && d.month == now.month && d.day == now.day;
     return GestureDetector(
-      onTap: open ? () => setState(() => _selectedDate = key) : null,
+      onTap: open
+          ? () => setState(() {
+                _selectedDate = key;
+                _selectedTime = null;
+              })
+          : null,
       child: Container(
         width: 52,
         decoration: BoxDecoration(
@@ -318,19 +330,35 @@ class _TechAvailabilitySheetState extends State<_TechAvailabilitySheet> {
   }
 
   Widget _slotChip(SlotStatus s) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-      decoration: BoxDecoration(
-        color: s.occupied ? ET.surface : ET.accentSoft,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: s.occupied ? ET.hairline : ET.accent.withValues(alpha: 0.4)),
+    final selected = !s.occupied && s.time == _selectedTime;
+    return GestureDetector(
+      onTap: s.occupied
+          ? null
+          : () => setState(() => _selectedTime = s.time),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: selected
+              ? ET.cream
+              : (s.occupied ? ET.surface : ET.accentSoft),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+              color: selected
+                  ? ET.cream
+                  : (s.occupied
+                      ? ET.hairline
+                      : ET.accent.withValues(alpha: 0.4))),
+        ),
+        child: Text(s.time,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+              decoration: s.occupied ? TextDecoration.lineThrough : null,
+              color: selected
+                  ? ET.onCream
+                  : (s.occupied ? ET.inkMuted : ET.accentOnDark),
+            )),
       ),
-      child: Text(s.time,
-          style: TextStyle(
-            fontSize: 13,
-            decoration: s.occupied ? TextDecoration.lineThrough : null,
-            color: s.occupied ? ET.inkMuted : ET.accentOnDark,
-          )),
     );
   }
 }

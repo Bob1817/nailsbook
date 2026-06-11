@@ -16,7 +16,16 @@ import '../../../core/widgets/nb_toast.dart';
 
 class ClientCreateOrderScreen extends StatefulWidget {
   final int? preselectedTechId;
-  const ClientCreateOrderScreen({super.key, this.preselectedTechId});
+
+  /// 从「可约时间」弹窗带入的预选日期/时间（yyyy-MM-dd / HH:mm）。
+  final String? preselectedDate;
+  final String? preselectedTime;
+  const ClientCreateOrderScreen({
+    super.key,
+    this.preselectedTechId,
+    this.preselectedDate,
+    this.preselectedTime,
+  });
 
   @override
   State<ClientCreateOrderScreen> createState() => _ClientCreateOrderScreenState();
@@ -44,13 +53,36 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
   List<String> _customImages = [];
   bool _uploadingImage = false;
 
+  /// 待校验的代入时间（来自可约时间弹窗）。
+  String? _pendingTime;
+
   @override
   void initState() {
     super.initState();
-    final tomorrow = DateTime.now().add(const Duration(days: 1));
-    _serviceDate =
-        '${tomorrow.year}-${tomorrow.month.toString().padLeft(2, '0')}-${tomorrow.day.toString().padLeft(2, '0')}';
+    if (widget.preselectedDate != null &&
+        widget.preselectedDate!.isNotEmpty) {
+      _serviceDate = widget.preselectedDate!;
+    } else {
+      final tomorrow = DateTime.now().add(const Duration(days: 1));
+      _serviceDate =
+          '${tomorrow.year}-${tomorrow.month.toString().padLeft(2, '0')}-${tomorrow.day.toString().padLeft(2, '0')}';
+    }
+    _pendingTime = widget.preselectedTime;
     _load();
+  }
+
+  /// 代入时间校验：在可约时段确定后，若代入时间不可约（被服务类型/门店/占用导致冲突）→ 提示。
+  void _applyPendingTime() {
+    final pending = _pendingTime;
+    if (pending == null || pending.isEmpty) return;
+    _pendingTime = null;
+    if (_availableSlots.contains(pending)) {
+      _startTime = pending;
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) NbToast.show(context, '预约时间冲突，请重新选择预约时间～');
+      });
+    }
   }
 
   Future<void> _load() async {
@@ -98,9 +130,20 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
       final slots = await ClientOrderService(context.read<ApiClient>())
           .getBlockedSlots(techId)
           .timeout(const Duration(seconds: 10));
-      if (mounted) setState(() { _blockedSlots = slots; _ensureSelection(); });
+      if (mounted) {
+        setState(() {
+          _blockedSlots = slots;
+          _ensureSelection();
+          _applyPendingTime();
+        });
+      }
     } catch (_) {
-      if (mounted) setState(() => _blockedSlots = []);
+      if (mounted) {
+        setState(() {
+          _blockedSlots = [];
+          _applyPendingTime();
+        });
+      }
     }
   }
 
