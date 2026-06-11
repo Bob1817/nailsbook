@@ -377,14 +377,14 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
                 margin: const EdgeInsets.only(right: 8),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: sel ? DT.primarySoft : const Color(0xFF211C17),
+                  color: sel ? DT.cream : const Color(0xFF211C17),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: sel ? DT.primary.withOpacity(0.3) : Colors.black.withOpacity(0.06)),
+                  border: Border.all(color: sel ? DT.cream : Colors.white.withValues(alpha: 0.06)),
                 ),
                 alignment: Alignment.center,
                 child: Text(type,
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500,
-                        color: sel ? DT.primary : DT.textSecondary)),
+                    style: TextStyle(fontSize: 14, fontWeight: sel ? FontWeight.w600 : FontWeight.w500,
+                        color: sel ? DT.onCream : DT.textSecondary)),
               ),
             ),
           );
@@ -511,7 +511,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
     final base = DateTime(now.year, now.month, now.day);
     const wk = ['一', '二', '三', '四', '五', '六', '日'];
     return SizedBox(
-      height: 74,
+      height: 58,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: 45,
@@ -535,19 +535,20 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
             child: Container(
               width: 56,
               decoration: BoxDecoration(
-                gradient: selected ? DT.primaryGradient : null,
-                color: selected ? null : const Color(0xFF211C17),
+                color: selected ? DT.cream : const Color(0xFF211C17),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: selected ? Colors.transparent : Colors.black.withOpacity(0.05)),
+                border: Border.all(color: selected ? DT.cream : Colors.white.withValues(alpha: 0.06)),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(label, style: TextStyle(fontSize: 11, color: selected ? DT.onCream.withValues(alpha: 0.7) : (enabled ? DT.textMuted : DT.textTertiary.withOpacity(0.5)))),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text('${d.month}/${d.day}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: selected ? DT.onCream : (enabled ? DT.textPrimary : DT.textTertiary.withOpacity(0.45)))),
-                  const SizedBox(height: 2),
-                  Text(enabled ? '' : '休', style: TextStyle(fontSize: 9, height: 1, color: DT.textTertiary.withOpacity(0.7))),
+                  if (!enabled) ...[
+                    const SizedBox(height: 2),
+                    Text('休', style: TextStyle(fontSize: 9, height: 1, color: DT.textTertiary.withOpacity(0.7))),
+                  ],
                 ],
               ),
             ),
@@ -582,8 +583,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
           child: Container(
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              gradient: sel ? DT.primaryGradient : null,
-              color: sel ? null : (s.occupied ? const Color(0xFF2A241E) : const Color(0xFF211C17)),
+              color: sel ? DT.cream : (s.occupied ? const Color(0xFF2A241E) : const Color(0xFF211C17)),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Column(
@@ -592,7 +592,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
                 Text(s.time, style: TextStyle(
                     fontSize: 13,
                     fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
-                    color: sel ? Colors.white : (s.occupied ? DT.textTertiary : const Color(0xFF64748B)),
+                    color: sel ? DT.onCream : (s.occupied ? DT.textTertiary : DT.textSecondary),
                     decoration: s.occupied ? TextDecoration.lineThrough : null)),
                 if (s.occupied)
                   const Text('已约', style: TextStyle(fontSize: 9, height: 1.2, color: DT.textTertiary)),
