@@ -114,7 +114,16 @@ class ApiClient {
 
   Map<String, dynamic> _handleResponse(http.Response response) {
     _checkStatus(response);
-    return jsonDecode(response.body) as Map<String, dynamic>;
+    // 成功响应容错：部分动作类端点（点赞/收藏等）返回空体 / 204 / 非对象 JSON，
+    // 不应因解析失败而把成功当作失败。
+    final raw = response.body.trim();
+    if (raw.isEmpty) return const {};
+    try {
+      final decoded = jsonDecode(raw);
+      return decoded is Map<String, dynamic> ? decoded : const {};
+    } on FormatException {
+      return const {};
+    }
   }
 
   void _checkStatus(http.Response response) {

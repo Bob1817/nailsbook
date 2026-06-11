@@ -43,6 +43,8 @@ class _ChatScreenState extends State<ChatScreen> {
   final _scrollCtl = ScrollController();
   int? _otherPartyId;
   int? _conversationId;
+  String? _myAvatar;
+  String? _otherAvatar;
 
   @override
   void initState() {
@@ -58,6 +60,41 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_otherPartyId == null && _conversationId != null) {
       _resolveOtherPartyId();
     }
+    _loadAvatars();
+  }
+
+  /// 拉取会话双方真实头像（消息接口不含头像）。
+  Future<void> _loadAvatars() async {
+    try {
+      final api = context.read<ApiClient>();
+      final isClient = context.read<AuthSession>().isClient;
+      final convs = await ChatService(api).conversations();
+      Map<String, dynamic>? conv;
+      for (final c in convs) {
+        if (_conversationId != null && c['id'] == _conversationId) {
+          conv = c;
+          break;
+        }
+      }
+      if (conv == null && _otherPartyId != null) {
+        for (final c in convs) {
+          final tech = c['technician'] as Map<String, dynamic>?;
+          final client = c['client'] as Map<String, dynamic>?;
+          final other = isClient ? tech : client;
+          if (other?['id'] == _otherPartyId) {
+            conv = c;
+            break;
+          }
+        }
+      }
+      if (conv == null || !mounted) return;
+      final tech = conv['technician'] as Map<String, dynamic>?;
+      final client = conv['client'] as Map<String, dynamic>?;
+      setState(() {
+        _myAvatar = (isClient ? client : tech)?['avatarUrl']?.toString();
+        _otherAvatar = (isClient ? tech : client)?['avatarUrl']?.toString();
+      });
+    } catch (_) {}
   }
 
   @override
@@ -473,6 +510,23 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _msgAvatar(bool isMe) {
+    final url = isMe ? _myAvatar : _otherAvatar;
+    if (url != null && url.isNotEmpty) {
+      return ClipOval(
+        child: CachedNetworkImage(
+          imageUrl: url,
+          width: 36,
+          height: 36,
+          fit: BoxFit.cover,
+          placeholder: (_, __) => Container(width: 36, height: 36, color: ET.surface),
+          errorWidget: (_, __, ___) => _avatarFallback(isMe),
+        ),
+      );
+    }
+    return _avatarFallback(isMe);
+  }
+
+  Widget _avatarFallback(bool isMe) {
     final letter = isMe
         ? '我'
         : (widget.title.isNotEmpty ? widget.title.substring(0, 1) : '美');

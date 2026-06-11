@@ -12,7 +12,60 @@ import '../auth/technician_auth_service.dart';
 
 const _dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const _dayLabels = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-const _calendarWeekLabels = ['日', '一', '二', '三', '四', '五', '六'];
+
+// ────────────────────────────────────────────────────────────────────
+// 时间方案数据模型
+// ────────────────────────────────────────────────────────────────────
+
+class _Scheme {
+  final String id;
+  final String label;
+  final String startTime;
+  final String endTime;
+  final List<String> days;
+
+  const _Scheme({
+    required this.id,
+    required this.label,
+    required this.startTime,
+    required this.endTime,
+    required this.days,
+  });
+
+  _Scheme copyWith({
+    String? id,
+    String? label,
+    String? startTime,
+    String? endTime,
+    List<String>? days,
+  }) {
+    return _Scheme(
+      id: id ?? this.id,
+      label: label ?? this.label,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      days: days ?? [...this.days],
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'label': label,
+        'startTime': startTime,
+        'endTime': endTime,
+        'days': days,
+      };
+}
+
+// ════════════════════════════════════════════════════════════════════
+// 主页面：参照 iPhone 闹钟页面，进入后看到设置内容列表
+//
+// 两个分区：
+//   1. 休息日 —— 弹出日历多选，保存后同步到预约日历
+//   2. 时间方案 —— 可自定义命名、设置多个（仅一个生效）
+//      新增/编辑借鉴 iPhone 闹钟新增交互
+//      支持左滑删除或进入方案编辑页删除
+// ════════════════════════════════════════════════════════════════════
 
 class TechnicianServiceTimeScreen extends StatefulWidget {
   const TechnicianServiceTimeScreen({super.key});
@@ -26,26 +79,25 @@ class _TechnicianServiceTimeScreenState
     extends State<TechnicianServiceTimeScreen> {
   bool _loading = true;
   bool _saving = false;
-  String _startTime = '10:00';
-  String _endTime = '21:00';
-  final Set<String> _enabledDays = {..._dayKeys};
-  final List<String> _restDays = [];
-  String _schemeId = 'default';
-  String _schemeLabel = '默认服务时间';
+  List<_Scheme> _schemes = [];
+  String _activeSchemeId = '';
+  List<String> _restDays = [];
+
+  // ──── 生命周期 ────
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _loadProfile();
   }
 
-  Future<void> _load() async {
+  Future<void> _loadProfile() async {
     try {
       final api = context.read<ApiClient>()..setRole('technician');
       final profile = await TechnicianAuthService(api).getProfile();
       if (!mounted) return;
       setState(() {
-        _initSchedule(profile);
+        _parseSchedule(profile);
         _loading = false;
       });
     } catch (_) {
@@ -53,92 +105,182 @@ class _TechnicianServiceTimeScreenState
     }
   }
 
-  void _initSchedule(TechnicianProfile profile) {
+  void _parseSchedule(TechnicianProfile profile) {
     final raw = profile.serviceSchedule;
-    _enabledDays
-      ..clear()
-      ..addAll(_dayKeys);
-    _restDays.clear();
-    _startTime = '10:00';
-    _endTime = '21:00';
-    _schemeId = 'default';
-    _schemeLabel = '默认服务时间';
+    _schemes = [];
+    _restDays = [];
+    _activeSchemeId = '';
 
-    final rest = raw?['restDays'];
-    if (rest is List) {
-      _restDays
-        ..addAll(rest.map((e) => e.toString()))
-        ..sort();
-    }
-
+    // ---- 解析方案列表 ----
     final schemes = raw?['schemes'];
     if (schemes is List && schemes.isNotEmpty) {
-      final activeId = raw?['activeSchemeId']?.toString();
-      final scheme = schemes.whereType<Map<String, dynamic>>().firstWhere(
-            (item) => item['id']?.toString() == activeId,
-            orElse: () => schemes.whereType<Map<String, dynamic>>().first,
-          );
-      _schemeId = scheme['id']?.toString() ?? _schemeId;
-      _schemeLabel = scheme['label']?.toString() ?? _schemeLabel;
-      _startTime = scheme['startTime']?.toString() ?? _startTime;
-      _endTime = scheme['endTime']?.toString() ?? _endTime;
-      final days = scheme['days'];
-      if (days is List) {
-        _enabledDays
-          ..clear()
-          ..addAll(days.map((e) => e.toString()).where(_dayKeys.contains));
-      }
-      return;
-    }
-
-    final days = raw?['days'];
-    if (days is Map) {
-      _enabledDays.clear();
-      for (final key in _dayKeys) {
-        final day = days[key];
-        if (day is Map && day['enabled'] == true) {
-          _enabledDays.add(key);
-          _startTime = day['startTime']?.toString() ?? _startTime;
-          _endTime = day['endTime']?.toString() ?? _endTime;
+      _activeSchemeId = raw?['activeSchemeId']?.toString() ?? '';
+      for (final item in schemes) {
+        if (item is Map<String, dynamic>) {
+          _schemes.add(_Scheme(
+            id: item['id']?.toString() ?? '',
+            label: item['label']?.toString() ?? '方案',
+            startTime: item['startTime']?.toString() ?? '10:00',
+            endTime: item['endTime']?.toString() ?? '21:00',
+            days: (item['days'] as List?)
+                    ?.map((e) => e.toString())
+                    .where(_dayKeys.contains)
+                    .toList() ??
+                [..._dayKeys],
+          ));
         }
       }
+      if (_schemes.isNotEmpty &&
+          !_schemes.any((s) => s.id == _activeSchemeId)) {
+        _activeSchemeId = _schemes.first.id;
+      }
+    }
+
+    // ---- 旧格式兼容 ----
+    if (_schemes.isEmpty) {
+      final days = raw?['days'];
+      if (days is Map) {
+        final enabled = <String>[];
+        String start = '10:00', end = '21:00';
+        for (final key in _dayKeys) {
+          final day = days[key];
+          if (day is Map && day['enabled'] == true) {
+            enabled.add(key);
+            start = day['startTime']?.toString() ?? start;
+            end = day['endTime']?.toString() ?? end;
+          }
+        }
+        if (enabled.isNotEmpty) {
+          _schemes.add(_Scheme(
+            id: 'default',
+            label: '默认服务时间',
+            startTime: start,
+            endTime: end,
+            days: enabled,
+          ));
+          _activeSchemeId = 'default';
+        }
+      }
+    }
+
+    // 最终兜底
+    if (_schemes.isEmpty) {
+      _schemes.add(_Scheme(
+        id: 'default',
+        label: '默认服务时间',
+        startTime: '10:00',
+        endTime: '21:00',
+        days: [..._dayKeys],
+      ));
+      _activeSchemeId = 'default';
+    }
+
+    // ---- 解析休息日 ----
+    final rest = raw?['restDays'];
+    if (rest is List) {
+      _restDays = rest.map((e) => e.toString()).toList()..sort();
     }
   }
 
-  Map<String, dynamic> _buildSchedulePayload() {
+  // ──── 数据持久化 ────
+
+  Map<String, dynamic> _buildPayload() {
     return {
-      'schemes': [
-        {
-          'id': _schemeId,
-          'label': _schemeLabel,
-          'startTime': _startTime,
-          'endTime': _endTime,
-          'days': _dayKeys.where(_enabledDays.contains).toList(),
-        }
-      ],
-      'activeSchemeId': _schemeId,
+      'schemes': _schemes.map((s) => s.toJson()).toList(),
+      'activeSchemeId': _activeSchemeId,
       'restDays': [..._restDays]..sort(),
     };
   }
 
   Future<void> _save() async {
-    if (_enabledDays.isEmpty) {
-      NbToast.error(context, '请至少开启一天服务时间');
-      return;
-    }
-    HapticFeedback.mediumImpact();
+    if (_saving) return;
     setState(() => _saving = true);
     try {
       final api = context.read<ApiClient>()..setRole('technician');
       await TechnicianAuthService(api)
-          .updateProfile({'serviceSchedule': _buildSchedulePayload()});
-      if (mounted) NbToast.success(context, '服务时间已保存');
+          .updateProfile({'serviceSchedule': _buildPayload()});
     } catch (_) {
       if (mounted) NbToast.error(context, '保存失败，请重试');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
+
+  // ──── 方案操作 ────
+
+  Future<void> _onAddScheme() async {
+    HapticFeedback.lightImpact();
+    final newScheme = _Scheme(
+      id: 's_${DateTime.now().millisecondsSinceEpoch}',
+      label: '方案 ${_schemes.length + 1}',
+      startTime: '10:00',
+      endTime: '21:00',
+      days: [..._dayKeys],
+    );
+    final result = await Navigator.push<_Scheme>(
+      context,
+      MaterialPageRoute(builder: (_) => _SchemeEditScreen(scheme: newScheme)),
+    );
+    if (result != null && mounted) {
+      setState(() => _schemes.add(result));
+      _save();
+    }
+  }
+
+  void _onToggleScheme(int index) {
+    HapticFeedback.selectionClick();
+    setState(() => _activeSchemeId = _schemes[index].id);
+    _save();
+  }
+
+  Future<void> _onDeleteScheme(int index) async {
+    HapticFeedback.mediumImpact();
+    final scheme = _schemes[index];
+    setState(() {
+      _schemes.removeAt(index);
+      if (_activeSchemeId == scheme.id && _schemes.isNotEmpty) {
+        _activeSchemeId = _schemes.first.id;
+      }
+    });
+    _save();
+    if (mounted) NbToast.success(context, '已删除「${scheme.label}」');
+  }
+
+  Future<void> _onEditScheme(int index) async {
+    final result = await Navigator.push<_Scheme>(
+      context,
+      MaterialPageRoute(
+          builder: (_) => _SchemeEditScreen(scheme: _schemes[index])),
+    );
+    if (result != null && mounted) {
+      setState(() => _schemes[index] = result);
+      _save();
+    }
+  }
+
+  // ──── 休息日操作 ────
+
+  void _openRestDaySheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _RestDaySheet(
+        initialDates: _restDays.map(_parseDate).whereType<DateTime>().toList(),
+        onConfirm: (dates) {
+          setState(() {
+            _restDays = dates.map(_dateKey).toList()..sort();
+          });
+          _save();
+          NbToast.success(context, '休息日已保存');
+        },
+      ),
+    );
+  }
+
+  // ────────────────────────────────────────────────────────────────
+  // BUILD
+  // ────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -153,27 +295,20 @@ class _TechnicianServiceTimeScreenState
               children: [
                 ListView(
                   padding: EdgeInsets.fromLTRB(
-                      DT.xl, topPad + 76, DT.xl, bottomPad + 116),
+                      DT.xl, topPad + 76, DT.xl, bottomPad + DT.xxxl),
                   children: [
-                    _summaryCard(),
+                    _restDaySection(),
                     const SizedBox(height: DT.lg),
-                    _timeCard(),
-                    const SizedBox(height: DT.lg),
-                    _weekCard(),
-                    const SizedBox(height: DT.lg),
-                    _restDayCard(),
+                    _schemeSection(),
                   ],
                 ),
                 Positioned(left: 0, right: 0, top: 0, child: _header(topPad)),
-                Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: _saveSurface(bottomPad)),
               ],
             ),
     );
   }
+
+  // ──── 顶部导航栏 ────
 
   Widget _header(double topPad) {
     return GlassContainer(
@@ -210,180 +345,11 @@ class _TechnicianServiceTimeScreenState
     );
   }
 
-  Widget _summaryCard() {
-    final days = _dayKeys.where(_enabledDays.contains).length;
-    return Container(
-      padding: const EdgeInsets.all(DT.lg),
-      decoration: BoxDecoration(
-        color: DT.surface.withValues(alpha: 0.78),
-        borderRadius: BorderRadius.circular(DT.rCard),
-        boxShadow: DT.shadowTile,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: DT.primarySoft,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child:
-                const Icon(CupertinoIcons.alarm, size: 24, color: DT.primary),
-          ),
-          const SizedBox(width: DT.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('客户仅能在你开放的时间内预约',
-                    style: DT.titleSmall.copyWith(color: DT.textPrimary)),
-                const SizedBox(height: 4),
-                Text(
-                  '$days 天开放 · $_startTime - $_endTime · ${_restDays.length} 个指定休息日',
-                  style: DT.bodySmall.copyWith(color: DT.textSecondary),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // ──── 第一部分：休息日 ────
 
-  Widget _timeCard() {
-    return _section(
-      title: '服务时间',
-      trailing:
-          Text('默认方案', style: DT.captionLarge.copyWith(color: DT.textTertiary)),
-      child: Row(
-        children: [
-          Expanded(
-            child: _timeTile(
-              label: '开始',
-              value: _startTime,
-              onTap: () => _pickTime(
-                value: _startTime,
-                onChanged: (value) => setState(() => _startTime = value),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: DT.sm),
-            child:
-                Text('至', style: DT.bodySmall.copyWith(color: DT.textTertiary)),
-          ),
-          Expanded(
-            child: _timeTile(
-              label: '结束',
-              value: _endTime,
-              onTap: () => _pickTime(
-                value: _endTime,
-                onChanged: (value) => setState(() => _endTime = value),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _timeTile({
-    required String label,
-    required String value,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 74),
-        padding: const EdgeInsets.symmetric(horizontal: DT.md, vertical: DT.sm),
-        decoration: BoxDecoration(
-          color: DT.bg.withValues(alpha: 0.72),
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(label, style: DT.captionLarge.copyWith(color: DT.textMuted)),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                color: DT.textPrimary,
-                height: 1.1,
-                fontFeatures: [FontFeature.tabularFigures()],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _weekCard() {
-    return _section(
-      title: '重复',
-      trailing: Text('${_enabledDays.length}/7',
-          style: DT.captionLarge.copyWith(color: DT.textTertiary)),
-      child: Column(
-        children: [
-          for (var i = 0; i < _dayKeys.length; i++) ...[
-            _dayRow(_dayKeys[i], _dayLabels[i]),
-            if (i < _dayKeys.length - 1)
-              Divider(height: 1, color: Colors.white.withValues(alpha: 0.06)),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _dayRow(String key, String label) {
-    final enabled = _enabledDays.contains(key);
-    return Container(
-      constraints: const BoxConstraints(minHeight: 58),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(label,
-                style: DT.titleSmall
-                    .copyWith(color: enabled ? DT.textPrimary : DT.textMuted)),
-          ),
-          Text(
-            enabled ? '$_startTime - $_endTime' : '休息',
-            style: DT.bodySmall
-                .copyWith(color: enabled ? DT.textSecondary : DT.textMuted),
-          ),
-          const SizedBox(width: DT.md),
-          CupertinoSwitch(
-            value: enabled,
-            activeTrackColor: DT.primary,
-            inactiveTrackColor: DT.bgWarm,
-            thumbColor: DT.cream,
-            onChanged: (value) {
-              HapticFeedback.selectionClick();
-              setState(() {
-                if (value) {
-                  _enabledDays.add(key);
-                } else {
-                  _enabledDays.remove(key);
-                }
-              });
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _restDayCard() {
-    return _section(
-      title: '指定休息日',
+  Widget _restDaySection() {
+    return _sectionCard(
+      title: '休息日',
       trailing: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: _openRestDaySheet,
@@ -401,8 +367,13 @@ class _TechnicianServiceTimeScreenState
         ),
       ),
       child: _restDays.isEmpty
-          ? Text('暂无指定休息日',
-              style: DT.bodySmall.copyWith(color: DT.textTertiary))
+          ? SizedBox(
+              height: 52,
+              child: Center(
+                child: Text('暂无休息日，点击上方设置',
+                    style: DT.bodySmall.copyWith(color: DT.textTertiary)),
+              ),
+            )
           : Wrap(
               spacing: DT.sm,
               runSpacing: DT.sm,
@@ -411,11 +382,17 @@ class _TechnicianServiceTimeScreenState
     );
   }
 
-  Widget _restDayChip(String date) {
+  Widget _restDayChip(String dateStr) {
+    final date = _parseDate(dateStr);
+    final display = date != null
+        ? '${date.month}月${date.day}日'
+        : dateStr;
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () {
         HapticFeedback.selectionClick();
-        setState(() => _restDays.remove(date));
+        setState(() => _restDays.remove(dateStr));
+        _save();
       },
       child: Container(
         constraints: const BoxConstraints(minHeight: 36),
@@ -427,7 +404,7 @@ class _TechnicianServiceTimeScreenState
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(date,
+            Text(display,
                 style: DT.captionLarge.copyWith(color: DT.textSecondary)),
             const SizedBox(width: 6),
             const Icon(CupertinoIcons.xmark, size: 12, color: DT.textTertiary),
@@ -437,7 +414,173 @@ class _TechnicianServiceTimeScreenState
     );
   }
 
-  Widget _section({
+  // ──── 第二部分：时间方案 ────
+
+  Widget _schemeSection() {
+    final activeCount =
+        _schemes.where((s) => s.id == _activeSchemeId).length;
+    return _sectionCard(
+      title: '时间设置',
+      trailing: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _onAddScheme,
+        child: Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: DT.primarySoft,
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(CupertinoIcons.plus,
+              size: 18, color: DT.primary),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('${_schemes.length} 个方案 · $activeCount 个生效中',
+              style: DT.captionLarge.copyWith(color: DT.textTertiary)),
+          const SizedBox(height: DT.md),
+          if (_schemes.isEmpty)
+            SizedBox(
+              height: 64,
+              child: Center(
+                child: Text('暂无方案，点击右上角 + 添加',
+                    style: DT.bodySmall.copyWith(color: DT.textTertiary)),
+              ),
+            )
+          else
+            ...List.generate(_schemes.length, (i) {
+              final isLast = i == _schemes.length - 1;
+              return Column(
+                children: [
+                  _schemeTile(i),
+                  if (!isLast)
+                    Divider(
+                        height: 1,
+                        color: Colors.white.withValues(alpha: 0.06)),
+                ],
+              );
+            }),
+        ],
+      ),
+    );
+  }
+
+  Widget _schemeTile(int index) {
+    final scheme = _schemes[index];
+    final isActive = scheme.id == _activeSchemeId;
+    final dayCount = scheme.days.length;
+
+    return Dismissible(
+      key: ValueKey(scheme.id),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => CupertinoAlertDialog(
+            title: const Text('删除方案'),
+            content: Text('确定删除「${scheme.label}」吗？'),
+            actions: [
+              CupertinoDialogAction(
+                  child: const Text('取消'),
+                  onPressed: () => Navigator.pop(ctx, false)),
+              CupertinoDialogAction(
+                  isDestructiveAction: true,
+                  child: const Text('删除'),
+                  onPressed: () => Navigator.pop(ctx, true)),
+            ],
+          ),
+        );
+      },
+      onDismissed: (_) => _onDeleteScheme(index),
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: DT.xl),
+        decoration: BoxDecoration(
+          color: DT.error.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(DT.rMd),
+        ),
+        child: const Text('删除',
+            style: TextStyle(
+                color: DT.error,
+                fontWeight: FontWeight.w600,
+                fontSize: 15)),
+      ),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _onEditScheme(index),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 72),
+          padding: const EdgeInsets.symmetric(vertical: DT.md),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(scheme.label,
+                              style: DT.titleSmall.copyWith(
+                                color: isActive
+                                    ? DT.textPrimary
+                                    : DT.textMuted,
+                              ),
+                              overflow: TextOverflow.ellipsis),
+                        ),
+                        if (isActive) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: DT.primarySoft,
+                              borderRadius:
+                                  BorderRadius.circular(DT.rFull),
+                            ),
+                            child: Text('生效中',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: DT.primary,
+                                  height: 1.4,
+                                )),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${scheme.startTime} - ${scheme.endTime} · ${dayCount}天/周',
+                      style: DT.bodySmall.copyWith(
+                          color: isActive
+                              ? DT.textSecondary
+                              : DT.textMuted),
+                    ),
+                  ],
+                ),
+              ),
+              CupertinoSwitch(
+                value: isActive,
+                activeTrackColor: DT.primary,
+                inactiveTrackColor: DT.bgWarm,
+                thumbColor: DT.cream,
+                onChanged: (_) => _onToggleScheme(index),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ──── 通用 section 卡片 ────
+
+  Widget _sectionCard({
     required String title,
     required Widget child,
     Widget? trailing,
@@ -465,44 +608,347 @@ class _TechnicianServiceTimeScreenState
     );
   }
 
-  Widget _saveSurface(double bottomPad) {
-    final disabled = _saving || _enabledDays.isEmpty;
+  // ──── 日期工具 ────
+
+  static String _dateKey(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  static DateTime? _parseDate(String s) {
+    try {
+      return DateTime.parse(s);
+    } catch (_) {
+      return null;
+    }
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// 方案编辑页（借鉴 iPhone 闹钟新增交互）
+//
+// 包含：方案名称 / 时间范围 / 重复日期
+// 时间选择器已修复黄色下划线（显式指定 CupertinoTheme textTheme）
+// ════════════════════════════════════════════════════════════════════
+
+class _SchemeEditScreen extends StatefulWidget {
+  final _Scheme scheme;
+  const _SchemeEditScreen({required this.scheme});
+
+  @override
+  State<_SchemeEditScreen> createState() => _SchemeEditScreenState();
+}
+
+class _SchemeEditScreenState extends State<_SchemeEditScreen> {
+  late String _label;
+  late String _startTime;
+  late String _endTime;
+  late Set<String> _enabledDays;
+  final _nameCtl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _label = widget.scheme.label;
+    _startTime = widget.scheme.startTime;
+    _endTime = widget.scheme.endTime;
+    _enabledDays = {...widget.scheme.days};
+    _nameCtl.text = _label;
+  }
+
+  @override
+  void dispose() {
+    _nameCtl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final topPad = MediaQuery.of(context).padding.top;
+    final bottomPad = MediaQuery.of(context).padding.bottom;
+
+    return Scaffold(
+      backgroundColor: DT.bg,
+      body: Stack(
+        children: [
+          ListView(
+            padding: EdgeInsets.fromLTRB(
+                DT.xl, topPad + 76, DT.xl, bottomPad + DT.xxxl),
+            children: [
+              _nameField(),
+              const SizedBox(height: DT.lg),
+              _timeCard(),
+              const SizedBox(height: DT.lg),
+              _repeatCard(),
+            ],
+          ),
+          Positioned(
+              left: 0, right: 0, top: 0, child: _header(topPad)),
+        ],
+      ),
+    );
+  }
+
+  Widget _header(double topPad) {
     return GlassContainer(
       tint: Colors.black,
       blur: DT.glassBlurHeavy,
-      opacity: 0.48,
+      opacity: 0.52,
       borderRadius: 0,
       showBorder: false,
-      padding: EdgeInsets.fromLTRB(DT.xl, DT.md, DT.xl, bottomPad + DT.md),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: disabled ? null : _save,
-        child: Container(
-          height: 52,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: disabled ? DT.cream.withValues(alpha: 0.42) : DT.cream,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: disabled ? null : DT.shadowButton,
+      padding: EdgeInsets.fromLTRB(DT.sm, topPad + DT.xs, DT.sm, DT.sm),
+      child: Row(
+        children: [
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              HapticFeedback.lightImpact();
+              Navigator.pop(context);
+            },
+            child: Container(
+              width: 44,
+              height: 44,
+              alignment: Alignment.center,
+              child: Text('取消',
+                  style: DT.bodyMedium.copyWith(color: DT.textSecondary)),
+            ),
           ),
-          child: _saving
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: DT.onCream),
-                )
-              : Text('保存',
-                  style: DT.bodyLarge.copyWith(
-                    color: disabled
-                        ? DT.onCream.withValues(alpha: 0.42)
-                        : DT.onCream,
-                    fontWeight: FontWeight.w700,
-                  )),
+          Expanded(
+            child: Text('编辑方案',
+                textAlign: TextAlign.center, style: DT.titleMedium),
+          ),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _onSave,
+            child: Container(
+              width: 44,
+              height: 44,
+              alignment: Alignment.center,
+              child: Text('完成',
+                  style: DT.bodyMedium.copyWith(
+                      color: DT.primary, fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onSave() {
+    HapticFeedback.mediumImpact();
+    final label = _nameCtl.text.trim();
+    if (label.isEmpty) {
+      NbToast.error(context, '请输入方案名称');
+      return;
+    }
+    Navigator.pop(
+        context,
+        widget.scheme.copyWith(
+          label: label,
+          startTime: _startTime,
+          endTime: _endTime,
+          days: _dayKeys.where(_enabledDays.contains).toList(),
+        ));
+  }
+
+  // ──── 方案名称 ────
+
+  Widget _nameField() {
+    return Container(
+      padding: const EdgeInsets.all(DT.lg),
+      decoration: BoxDecoration(
+        color: DT.surface.withValues(alpha: 0.78),
+        borderRadius: BorderRadius.circular(DT.rCard),
+        boxShadow: DT.shadowTile,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('方案名称', style: DT.titleMedium),
+          const SizedBox(height: DT.md),
+          Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: DT.md, vertical: DT.sm),
+            decoration: BoxDecoration(
+              color: DT.bg.withValues(alpha: 0.72),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: TextField(
+              controller: _nameCtl,
+              style: DT.bodyLarge.copyWith(color: DT.textPrimary),
+              decoration: const InputDecoration(
+                hintText: '例如：工作日、周末班',
+                hintStyle: TextStyle(color: DT.textMuted, fontSize: 16),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ──── 时间范围 ────
+
+  Widget _timeCard() {
+    return Container(
+      padding: const EdgeInsets.all(DT.lg),
+      decoration: BoxDecoration(
+        color: DT.surface.withValues(alpha: 0.78),
+        borderRadius: BorderRadius.circular(DT.rCard),
+        boxShadow: DT.shadowTile,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('服务时间', style: DT.titleMedium),
+          const SizedBox(height: DT.md),
+          Row(
+            children: [
+              Expanded(
+                child: _timeTile(
+                  label: '开始',
+                  value: _startTime,
+                  onTap: () => _pickTime(
+                    value: _startTime,
+                    onChanged: (v) => setState(() => _startTime = v),
+                  ),
+                ),
+              ),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: DT.sm),
+                child: Text('至',
+                    style: DT.bodySmall
+                        .copyWith(color: DT.textTertiary)),
+              ),
+              Expanded(
+                child: _timeTile(
+                  label: '结束',
+                  value: _endTime,
+                  onTap: () => _pickTime(
+                    value: _endTime,
+                    onChanged: (v) => setState(() => _endTime = v),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _timeTile({
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 74),
+        padding: const EdgeInsets.symmetric(
+            horizontal: DT.md, vertical: DT.sm),
+        decoration: BoxDecoration(
+          color: DT.bg.withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(label,
+                style: DT.captionLarge.copyWith(color: DT.textMuted)),
+            const SizedBox(height: 4),
+            Text(value,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: DT.textPrimary,
+                  height: 1.1,
+                  fontFeatures: [FontFeature.tabularFigures()],
+                )),
+          ],
         ),
       ),
     );
   }
+
+  // ──── 重复日期 ────
+
+  Widget _repeatCard() {
+    return Container(
+      padding: const EdgeInsets.all(DT.lg),
+      decoration: BoxDecoration(
+        color: DT.surface.withValues(alpha: 0.78),
+        borderRadius: BorderRadius.circular(DT.rCard),
+        boxShadow: DT.shadowTile,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                  child: Text('重复', style: DT.titleMedium)),
+              Text('${_enabledDays.length}/7',
+                  style: DT.captionLarge
+                      .copyWith(color: DT.textTertiary)),
+            ],
+          ),
+          const SizedBox(height: DT.md),
+          Column(
+            children: [
+              for (var i = 0; i < _dayKeys.length; i++) ...[
+                _dayRow(_dayKeys[i], _dayLabels[i]),
+                if (i < _dayKeys.length - 1)
+                  Divider(
+                      height: 1,
+                      color:
+                          Colors.white.withValues(alpha: 0.06)),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dayRow(String key, String label) {
+    final enabled = _enabledDays.contains(key);
+    return Container(
+      constraints: const BoxConstraints(minHeight: 58),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(label,
+                style: DT.titleSmall.copyWith(
+                    color: enabled ? DT.textPrimary : DT.textMuted)),
+          ),
+          CupertinoSwitch(
+            value: enabled,
+            activeTrackColor: DT.primary,
+            inactiveTrackColor: DT.bgWarm,
+            thumbColor: DT.cream,
+            onChanged: (v) {
+              HapticFeedback.selectionClick();
+              setState(() {
+                if (v) {
+                  _enabledDays.add(key);
+                } else {
+                  _enabledDays.remove(key);
+                }
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ──── 时间选择器（已修复黄色下划线） ────
 
   Future<void> _pickTime({
     required String value,
@@ -521,14 +967,25 @@ class _TechnicianServiceTimeScreenState
           onConfirm: () => Navigator.pop(ctx, temp),
           child: SizedBox(
             height: 216,
-            child: CupertinoDatePicker(
-              mode: CupertinoDatePickerMode.time,
-              initialDateTime: DateTime(2026, 1, 1, hour, minute),
-              use24hFormat: true,
-              minuteInterval: 30,
-              onDateTimeChanged: (date) {
-                temp = TimeOfDay(hour: date.hour, minute: date.minute);
-              },
+            child: CupertinoTheme(
+              data: const CupertinoThemeData(
+                textTheme: CupertinoTextThemeData(
+                  dateTimePickerTextStyle: TextStyle(
+                    color: DT.textPrimary,
+                    fontSize: 20,
+                  ),
+                ),
+              ),
+              child: CupertinoDatePicker(
+                mode: CupertinoDatePickerMode.time,
+                initialDateTime: DateTime(2026, 1, 1, hour, minute),
+                use24hFormat: true,
+                minuteInterval: 30,
+                onDateTimeChanged: (date) {
+                  temp =
+                      TimeOfDay(hour: date.hour, minute: date.minute);
+                },
+              ),
             ),
           ),
         );
@@ -540,25 +997,11 @@ class _TechnicianServiceTimeScreenState
     HapticFeedback.selectionClick();
     onChanged(next);
   }
-
-  void _openRestDaySheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _RestDaySheet(
-        initialDates: _restDays,
-        onConfirm: (dates) {
-          setState(() {
-            _restDays
-              ..clear()
-              ..addAll(dates..sort());
-          });
-        },
-      ),
-    );
-  }
 }
+
+// ════════════════════════════════════════════════════════════════════
+// 时间选择器底栏（显式指定文字颜色，避免系统黄色下划线）
+// ════════════════════════════════════════════════════════════════════
 
 class _PickerSheet extends StatelessWidget {
   final String title;
@@ -577,7 +1020,8 @@ class _PickerSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottomPad = MediaQuery.of(context).padding.bottom;
     return Container(
-      padding: EdgeInsets.fromLTRB(DT.xl, DT.md, DT.xl, bottomPad + DT.md),
+      padding:
+          EdgeInsets.fromLTRB(DT.xl, DT.md, DT.xl, bottomPad + DT.md),
       decoration: const BoxDecoration(
         color: DT.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(DT.rCard)),
@@ -590,7 +1034,8 @@ class _PickerSheet extends StatelessWidget {
               _sheetButton('取消', onCancel, muted: true),
               Expanded(
                   child: Text(title,
-                      textAlign: TextAlign.center, style: DT.titleMedium)),
+                      textAlign: TextAlign.center,
+                      style: DT.titleMedium)),
               _sheetButton('完成', onConfirm),
             ],
           ),
@@ -600,12 +1045,14 @@ class _PickerSheet extends StatelessWidget {
     );
   }
 
-  Widget _sheetButton(String label, VoidCallback onTap, {bool muted = false}) {
+  Widget _sheetButton(String label, VoidCallback onTap,
+      {bool muted = false}) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
-        constraints: const BoxConstraints(minHeight: 44, minWidth: 56),
+        constraints:
+            const BoxConstraints(minHeight: 44, minWidth: 56),
         alignment: Alignment.center,
         child: Text(label,
             style: DT.bodyMedium.copyWith(
@@ -616,9 +1063,13 @@ class _PickerSheet extends StatelessWidget {
   }
 }
 
+// ════════════════════════════════════════════════════════════════════
+// 休息日日历多选弹窗
+// ════════════════════════════════════════════════════════════════════
+
 class _RestDaySheet extends StatefulWidget {
-  final List<String> initialDates;
-  final ValueChanged<List<String>> onConfirm;
+  final List<DateTime> initialDates;
+  final ValueChanged<List<DateTime>> onConfirm;
 
   const _RestDaySheet({
     required this.initialDates,
@@ -630,12 +1081,17 @@ class _RestDaySheet extends StatefulWidget {
 }
 
 class _RestDaySheetState extends State<_RestDaySheet> {
-  late final Set<String> _selected = {...widget.initialDates};
-  DateTime _viewMonth = DateTime(DateTime.now().year, DateTime.now().month);
+  late final Set<String> _selected =
+      widget.initialDates.map(_dateKey).toSet();
+  DateTime _viewMonth =
+      DateTime(DateTime.now().year, DateTime.now().month);
 
-  String _dateKey(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-  }
+  static const _weekLabels = ['日', '一', '二', '三', '四', '五', '六'];
+
+  String _dateKey(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  DateTime _parseKey(String s) => DateTime.parse(s);
 
   bool _isPast(DateTime date) {
     final today = DateTime.now();
@@ -665,63 +1121,111 @@ class _RestDaySheetState extends State<_RestDaySheet> {
       ),
       decoration: const BoxDecoration(
         color: DT.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(DT.rCard)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(DT.rCard)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // ---- 标题 + 已选数量 ----
           Padding(
-            padding: const EdgeInsets.fromLTRB(DT.xl, DT.md, DT.xl, DT.sm),
+            padding:
+                const EdgeInsets.fromLTRB(DT.xl, DT.lg, DT.xl, DT.sm),
+            child: Row(
+              children: [
+                Text('选择休息日', style: DT.titleMedium),
+                const SizedBox(width: DT.sm),
+                if (_selected.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: DT.primarySoft,
+                      borderRadius:
+                          BorderRadius.circular(DT.rFull),
+                    ),
+                    child: Text('${_selected.length} 天',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: DT.primary,
+                          height: 1.4,
+                        )),
+                  ),
+              ],
+            ),
+          ),
+
+          // ---- 月份导航 ----
+          Padding(
+            padding:
+                const EdgeInsets.fromLTRB(DT.xl, 0, DT.xl, DT.sm),
             child: Row(
               children: [
                 _monthButton(CupertinoIcons.chevron_left, () {
-                  setState(() => _viewMonth =
-                      DateTime(_viewMonth.year, _viewMonth.month - 1));
+                  setState(() => _viewMonth = DateTime(
+                      _viewMonth.year, _viewMonth.month - 1));
                 }),
                 Expanded(
-                  child: Text('${_viewMonth.year}年${_viewMonth.month}月',
-                      textAlign: TextAlign.center, style: DT.titleMedium),
+                  child: Text(
+                      '${_viewMonth.year}年${_viewMonth.month}月',
+                      textAlign: TextAlign.center,
+                      style: DT.titleMedium),
                 ),
                 _monthButton(CupertinoIcons.chevron_right, () {
-                  setState(() => _viewMonth =
-                      DateTime(_viewMonth.year, _viewMonth.month + 1));
+                  setState(() => _viewMonth = DateTime(
+                      _viewMonth.year, _viewMonth.month + 1));
                 }),
               ],
             ),
           ),
+
+          // ---- 星期头 ----
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: DT.xl),
+            padding:
+                const EdgeInsets.symmetric(horizontal: DT.xl),
             child: Row(
-              children: _calendarWeekLabels
+              children: _weekLabels
                   .map((label) => Expanded(
                         child: SizedBox(
                           height: 32,
                           child: Center(
                               child: Text(label,
-                                  style: DT.captionLarge
-                                      .copyWith(color: DT.textMuted))),
+                                  style: DT.captionLarge.copyWith(
+                                      color: DT.textMuted))),
                         ),
                       ))
                   .toList(),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(DT.xl, 0, DT.xl, DT.lg),
-            child: _calendarGrid(),
-          ),
+
+          // ---- 日历网格 ----
           Padding(
             padding:
-                EdgeInsets.fromLTRB(DT.xl, DT.md, DT.xl, bottomPad + DT.md),
+                const EdgeInsets.fromLTRB(DT.xl, 0, DT.xl, DT.lg),
+            child: _calendarGrid(),
+          ),
+
+          // ---- 底部操作 ----
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+                DT.xl, DT.md, DT.xl, bottomPad + DT.md),
             child: Row(
               children: [
                 Expanded(
-                  child: _sheetAction('取消', () => Navigator.pop(context),
+                  child: _actionButton(
+                      '取消', () => Navigator.pop(context),
                       muted: true),
                 ),
                 const SizedBox(width: DT.md),
                 Expanded(
-                  child: _sheetAction('设置为休息日', () {
-                    widget.onConfirm(_selected.toList());
+                  child: _actionButton('确认', () {
+                    HapticFeedback.mediumImpact();
+                    final dates = _selected
+                        .map((k) => _parseKey(k))
+                        .toList()
+                      ..sort();
+                    widget.onConfirm(dates);
                     Navigator.pop(context);
                   }),
                 ),
@@ -751,13 +1255,16 @@ class _RestDaySheetState extends State<_RestDaySheet> {
   }
 
   Widget _calendarGrid() {
-    final first = DateTime(_viewMonth.year, _viewMonth.month, 1);
-    final daysInMonth = DateTime(_viewMonth.year, _viewMonth.month + 1, 0).day;
-    final leading = first.weekday % 7;
+    final first =
+        DateTime(_viewMonth.year, _viewMonth.month, 1);
+    final daysInMonth =
+        DateTime(_viewMonth.year, _viewMonth.month + 1, 0).day;
+    final leading = first.weekday % 7; // 0=Sun .. 6=Sat
     final cells = <Widget>[
       for (var i = 0; i < leading; i++) const SizedBox(height: 44),
       for (var day = 1; day <= daysInMonth; day++)
-        _dateCell(DateTime(_viewMonth.year, _viewMonth.month, day)),
+        _dateCell(
+            DateTime(_viewMonth.year, _viewMonth.month, day)),
     ];
 
     return GridView.count(
@@ -799,7 +1306,8 @@ class _RestDaySheetState extends State<_RestDaySheet> {
     );
   }
 
-  Widget _sheetAction(String label, VoidCallback onTap, {bool muted = false}) {
+  Widget _actionButton(String label, VoidCallback onTap,
+      {bool muted = false}) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,

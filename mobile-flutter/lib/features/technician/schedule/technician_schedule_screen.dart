@@ -13,6 +13,7 @@ import '../../shared/chat/chat_screen.dart';
 import '../../shared/chat/chat_service.dart';
 import '../orders/technician_order_service.dart';
 import '../orders/technician_order_detail_screen.dart';
+import '../auth/technician_auth_service.dart';
 
 /// 美甲师「行程」页：对齐 webapp technician-frontend/src/pages/SchedulePage.tsx。
 /// 模块：标题 + 日历按钮 / 今天+横滑日期条（带预约标记）/ 当日统计卡 / 今日行程·今日预约 Tab / 列表卡。
@@ -32,6 +33,7 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
   bool _loading = true;
   String _tab = 'trips'; // 'trips' / 'all'
   final _stripCtl = ScrollController();
+  List<String> _restDays = [];
 
   @override
   void initState() {
@@ -47,13 +49,25 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
 
   Future<void> _load() async {
     try {
-      final orders =
-          await TechnicianOrderService(context.read<ApiClient>()).list();
-      if (mounted)
-        setState(() {
-          _orders = orders;
-          _loading = false;
-        });
+      final api = context.read<ApiClient>();
+      final orders = await TechnicianOrderService(api).list();
+      // 加载休息日数据
+      List<String> restDays = [];
+      try {
+        api.setRole('technician');
+        final profile = await TechnicianAuthService(api).getProfile();
+        final raw = profile.serviceSchedule;
+        final rest = raw?['restDays'];
+        if (rest is List) {
+          restDays = rest.map((e) => e.toString()).toList()..sort();
+        }
+      } catch (_) {}
+      if (!mounted) return;
+      setState(() {
+        _orders = orders;
+        _restDays = restDays;
+        _loading = false;
+      });
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
@@ -64,6 +78,8 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
 
   bool _sameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
+
+  bool get _isActiveDateRestDay => _restDays.contains(_dateKey(_activeDate));
 
   Set<String> get _orderDateKeys => _orders
       .map((o) => DateTime.tryParse(o['startTime']?.toString() ?? ''))
@@ -145,7 +161,7 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) =>
-          _CalendarSheet(initial: _activeDate, markedKeys: _orderDateKeys),
+          _CalendarSheet(initial: _activeDate, markedKeys: _orderDateKeys, restDayKeys: _restDays.toSet()),
     );
     if (picked != null && mounted) setState(() => _activeDate = picked);
   }
@@ -320,6 +336,7 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
   Widget _dateTile(DateTime d, bool active, {bool isTodayPill = false}) {
     final relative = _relativeLabel(d);
     final hasOrders = _orderDateKeys.contains(_dateKey(d));
+    final isRestDay = _restDays.contains(_dateKey(d));
     final label =
         isTodayPill ? '今天' : (relative ?? '周${_weekdayLabel(d.weekday)}');
     return GestureDetector(
@@ -333,7 +350,7 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
         width: 58,
         padding: const EdgeInsets.symmetric(vertical: 4),
         decoration: BoxDecoration(
-          color: active ? DT.cream : DT.surfaceAlt,
+          color: active ? DT.cream : (isRestDay ? DT.error.withValues(alpha: 0.06) : DT.surfaceAlt),
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
@@ -351,7 +368,7 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
                 style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: active ? DT.onCream : DT.textPrimary,
+                    color: active ? DT.onCream : (isRestDay ? DT.error.withValues(alpha: 0.65) : DT.textPrimary),
                     height: 1.1)),
             Text('${d.month}月',
                 style: TextStyle(
@@ -361,18 +378,21 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
                         ? DT.onCream.withValues(alpha: 0.75)
                         : DT.textTertiary)),
             const SizedBox(height: 2),
-            Container(
-              width: 4,
-              height: 4,
-              decoration: BoxDecoration(
-                color: active
-                    ? Colors.white
-                    : (hasOrders
-                        ? const Color(0xFF22C55E)
-                        : Colors.transparent),
-                shape: BoxShape.circle,
+            if (isRestDay && !active)
+              Text('休', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w600, color: DT.error.withValues(alpha: 0.6), height: 1))
+            else
+              Container(
+                width: 4,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: active
+                      ? Colors.white
+                      : (hasOrders
+                          ? const Color(0xFF22C55E)
+                          : Colors.transparent),
+                  shape: BoxShape.circle,
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -500,23 +520,48 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
   }
 
   Widget _emptyList() {
+    final isRestDay = _isActiveDateRestDay;
     return ListView(
       children: [
+        if (isRestDay) ...[
+          const SizedBox(height: 24),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: DT.error.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                Icon(CupertinoIcons.moon_zzz, size: 20, color: DT.error.withValues(alpha: 0.6)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('该日已设为休息日，不可预约',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: DT.error.withValues(alpha: 0.75))),
+                ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 80),
         Center(
           child: Container(
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-                color: DT.surfaceAlt, borderRadius: BorderRadius.circular(24)),
-            child: const Icon(CupertinoIcons.calendar,
-                size: 32, color: DT.textTertiary),
+                color: isRestDay ? DT.error.withValues(alpha: 0.06) : DT.surfaceAlt,
+                borderRadius: BorderRadius.circular(24)),
+            child: Icon(
+                isRestDay ? CupertinoIcons.moon_zzz : CupertinoIcons.calendar,
+                size: 32, color: isRestDay ? DT.error.withValues(alpha: 0.45) : DT.textTertiary),
           ),
         ),
         const SizedBox(height: 14),
         Center(
-            child: Text(_tab == 'trips' ? '当天暂无行程' : '当天暂无预约',
-                style: const TextStyle(fontSize: 14, color: DT.textMuted))),
+            child: Text(
+                isRestDay ? '休息日' : (_tab == 'trips' ? '当天暂无行程' : '当天暂无预约'),
+                style: TextStyle(fontSize: 14, color: isRestDay ? DT.error.withValues(alpha: 0.6) : DT.textMuted))),
       ],
     );
   }
@@ -878,7 +923,8 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
 class _CalendarSheet extends StatefulWidget {
   final DateTime initial;
   final Set<String> markedKeys;
-  const _CalendarSheet({required this.initial, required this.markedKeys});
+  final Set<String> restDayKeys;
+  const _CalendarSheet({required this.initial, required this.markedKeys, this.restDayKeys = const {}});
 
   @override
   State<_CalendarSheet> createState() => _CalendarSheetState();
@@ -987,6 +1033,7 @@ class _CalendarSheetState extends State<_CalendarSheet> {
           d.month == _selected.month &&
           d.day == _selected.day;
       final hasOrders = widget.markedKeys.contains(_key(d));
+      final isRestDay = widget.restDayKeys.contains(_key(d));
       final isToday =
           d.year == today.year && d.month == today.month && d.day == today.day;
       cells.add(GestureDetector(
@@ -995,7 +1042,7 @@ class _CalendarSheetState extends State<_CalendarSheet> {
           margin: const EdgeInsets.all(2),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: selected ? DT.cream : Colors.transparent,
+            color: selected ? DT.cream : (isRestDay ? DT.error.withValues(alpha: 0.06) : Colors.transparent),
             border: isToday && !selected
                 ? Border.all(color: DT.primary.withValues(alpha: 0.5))
                 : null,
@@ -1008,20 +1055,23 @@ class _CalendarSheetState extends State<_CalendarSheet> {
                   style: TextStyle(
                       fontSize: 14,
                       fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                      color: selected ? DT.onCream : DT.textPrimary)),
+                      color: selected ? DT.onCream : (isRestDay ? DT.error.withValues(alpha: 0.7) : DT.textPrimary))),
               const SizedBox(height: 2),
-              Container(
-                width: 4,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: selected
-                      ? DT.onCream
-                      : (hasOrders
-                          ? const Color(0xFF22C55E)
-                          : Colors.transparent),
-                  shape: BoxShape.circle,
+              if (isRestDay && !selected)
+                Text('休', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w600, color: DT.error.withValues(alpha: 0.65), height: 1))
+              else
+                Container(
+                  width: 4,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? DT.onCream
+                        : (hasOrders
+                            ? const Color(0xFF22C55E)
+                            : Colors.transparent),
+                    shape: BoxShape.circle,
+                  ),
                 ),
-              ),
             ],
           ),
         ),

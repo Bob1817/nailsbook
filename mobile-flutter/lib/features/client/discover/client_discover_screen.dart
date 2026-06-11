@@ -6,7 +6,6 @@ import '../../../core/api/api_client.dart';
 import '../../../core/theme/editorial_tokens.dart';
 import '../../../core/widgets/client_glass_header.dart';
 import '../works/client_work_detail_screen.dart';
-import '../../../core/widgets/nb_toast.dart';
 
 /// 发现页：刷一刷绑定美甲师发布的最新作品（种草核心）。
 /// 对齐 webapp client-frontend/src/pages/Discover.tsx。
@@ -25,10 +24,32 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
   bool _loading = true;
   String _activeCategory = '全部';
 
+  bool _searchOpen = false;
+  String _searchQuery = '';
+  final _searchCtl = TextEditingController();
+  final _searchFocus = FocusNode();
+
   @override
   void initState() {
     super.initState();
     _loadWorks();
+  }
+
+  @override
+  void dispose() {
+    _searchCtl.dispose();
+    _searchFocus.dispose();
+    super.dispose();
+  }
+
+  void _openSearch() {
+    setState(() => _searchOpen = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _searchFocus.requestFocus());
+  }
+
+  void _closeSearch() {
+    _searchFocus.unfocus();
+    setState(() => _searchOpen = false);
   }
 
   Future<void> _loadWorks() async {
@@ -51,13 +72,27 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
   }
 
   List<Map<String, dynamic>> get _filtered {
-    if (_activeCategory == '全部') return _works;
-    return _works.where((w) {
-      final tags =
-          (w['tags'] as List<dynamic>?)?.map((e) => e.toString()) ?? const [];
-      return tags.any(
-          (t) => t.contains(_activeCategory) || _activeCategory.contains(t));
-    }).toList();
+    var list = _works;
+    if (_activeCategory != '全部') {
+      list = list.where((w) {
+        final tags =
+            (w['tags'] as List<dynamic>?)?.map((e) => e.toString()) ?? const [];
+        return tags.any(
+            (t) => t.contains(_activeCategory) || _activeCategory.contains(t));
+      }).toList();
+    }
+    final q = _searchQuery.trim();
+    if (q.isNotEmpty) {
+      list = list.where((w) {
+        final title = (w['title']?.toString() ?? '');
+        final tech = (w['technicianName']?.toString() ?? '');
+        final tags = ((w['tags'] as List<dynamic>?) ?? const [])
+            .map((e) => e.toString())
+            .join(' ');
+        return '$title $tech $tags'.toLowerCase().contains(q.toLowerCase());
+      }).toList();
+    }
+    return list;
   }
 
   Future<void> _toggleLike(Map<String, dynamic> work) async {
@@ -85,7 +120,9 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filtered;
-    final headerH = ClientGlassHeader.estimateHeight(context, belowHeight: 104);
+    final topPad = MediaQuery.of(context).padding.top;
+    // 去掉副标题+搜索框后头部更矮，作品可视区更大
+    final headerH = ClientGlassHeader.estimateHeight(context, belowHeight: 42);
     return Scaffold(
       backgroundColor: ET.bg,
       body: Stack(
@@ -109,9 +146,82 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
             top: 0,
             left: 0,
             right: 0,
-            child: ClientGlassHeader(title: '发现', below: _headerBelow()),
+            child: ClientGlassHeader(
+              title: '发现',
+              actions: [
+                HeaderCircleButton(
+                  onTap: _openSearch,
+                  child: const Icon(Icons.search_rounded,
+                      size: 20, color: ET.inkSecondary),
+                ),
+              ],
+              below: _headerBelow(),
+            ),
           ),
+          // 搜索浮窗：点击搜索图标弹出，点击其它区域关闭
+          if (_searchOpen) ...[
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _closeSearch,
+                child: Container(color: Colors.black.withValues(alpha: 0.4)),
+              ),
+            ),
+            Positioned(
+              top: topPad + 52,
+              left: 16,
+              right: 16,
+              child: _searchBox(),
+            ),
+          ],
         ],
+      ),
+    );
+  }
+
+  Widget _searchBox() {
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+        decoration: BoxDecoration(
+          color: ET.surface,
+          borderRadius: BorderRadius.circular(ET.rChip),
+          border: Border.all(color: ET.hairlineStrong),
+          boxShadow: ET.shadowCard,
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.search_rounded, size: 18, color: ET.inkMuted),
+            const SizedBox(width: 10),
+            Expanded(
+              child: TextField(
+                controller: _searchCtl,
+                focusNode: _searchFocus,
+                cursorColor: ET.accent,
+                style: const TextStyle(color: ET.ink, fontSize: 14),
+                textInputAction: TextInputAction.search,
+                decoration: const InputDecoration(
+                  hintText: '搜索美甲风格、美甲师…',
+                  hintStyle: TextStyle(color: ET.inkMuted, fontSize: 14),
+                  border: InputBorder.none,
+                  isDense: true,
+                ),
+                onChanged: (v) => setState(() => _searchQuery = v),
+                onSubmitted: (_) => _closeSearch(),
+              ),
+            ),
+            if (_searchQuery.isNotEmpty)
+              GestureDetector(
+                onTap: () => setState(() {
+                  _searchQuery = '';
+                  _searchCtl.clear();
+                }),
+                child: const Icon(Icons.close_rounded,
+                    size: 18, color: ET.inkMuted),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -121,26 +231,6 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text('刷一刷你绑定美甲师发布的最新作品', style: ET.body),
-        const SizedBox(height: 12),
-        GestureDetector(
-            onTap: () => NbToast.show(context, '搜索功能开发中'),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: ET.surfaceGlass,
-                borderRadius: BorderRadius.circular(ET.rChip),
-                border: Border.all(color: ET.hairline),
-              ),
-              child: const Row(children: [
-                Icon(Icons.search_rounded, size: 18, color: ET.inkMuted),
-                SizedBox(width: 10),
-                Text('搜索美甲风格、美甲师…',
-                    style: TextStyle(fontSize: 13, color: ET.inkMuted)),
-              ]),
-            ),
-          ),
-          const SizedBox(height: 12),
           SizedBox(
             height: 34,
             child: ListView.separated(
