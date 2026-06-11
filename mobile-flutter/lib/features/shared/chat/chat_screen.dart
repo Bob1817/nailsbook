@@ -10,6 +10,7 @@ import '../../../core/api/api_client.dart';
 import '../../../core/auth/auth_session.dart';
 import '../../../core/socket/chat_socket.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/editorial_tokens.dart';
 import '../../../core/widgets/nb_toast.dart';
 import '../booking/chat_booking_sheet.dart';
 import 'chat_service.dart';
@@ -221,7 +222,14 @@ class _ChatScreenState extends State<ChatScreen> {
                               final isMe = isClient
                                   ? msg['senderType'] == 'client'
                                   : msg['senderType'] == 'technician';
-                              return _buildBubble(msg, isMe);
+                              final sep = _separatorText(index);
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  if (sep != null) _timeSeparator(sep),
+                                  _messageRow(msg, isMe),
+                                ],
+                              );
                             },
                           ),
               ),
@@ -244,21 +252,12 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _header(double topPad) {
     return ClipRect(
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
+        filter: ImageFilter.blur(sigmaX: ET.glassBlur, sigmaY: ET.glassBlur),
         child: Container(
-          decoration: BoxDecoration(
-            color: DT.bgWarm.withValues(alpha: 0.36),
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.white.withValues(alpha: 0.12),
-                DT.bgWarm.withValues(alpha: 0),
-              ],
-            ),
+          decoration: const BoxDecoration(
+            color: ET.glassFill,
             border: Border(
-              bottom: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.16), width: 0.5),
+              bottom: BorderSide(color: ET.hairlineFaint, width: 0.5),
             ),
           ),
           padding: EdgeInsets.fromLTRB(DT.xl, topPad + DT.sm, DT.xl, DT.md),
@@ -321,13 +320,12 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _inputBar(double bottomPad) {
     return ClipRect(
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+        filter: ImageFilter.blur(sigmaX: ET.glassBlur, sigmaY: ET.glassBlur),
         child: Container(
-          decoration: BoxDecoration(
-            color: DT.surface.withValues(alpha: 0.82),
+          decoration: const BoxDecoration(
+            color: ET.glassFill,
             border: Border(
-              top: BorderSide(
-                  color: Colors.black.withValues(alpha: 0.06), width: 0.5),
+              top: BorderSide(color: ET.hairlineFaint, width: 0.5),
             ),
           ),
           padding: EdgeInsets.fromLTRB(DT.xl, DT.sm, DT.xl, bottomPad + DT.sm),
@@ -424,6 +422,92 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  // ── 微信式消息时间分隔 ──
+
+  DateTime? _msgTime(int index) =>
+      DateTime.tryParse(_messages[index]['createdAt']?.toString() ?? '')
+          ?.toLocal();
+
+  bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  /// 返回该消息上方应显示的时间文案；不显示则返回 null。
+  /// 规则（参考微信）：首条显示日期；跨天显示日期；同日间隔 ≥5 分钟显示时间。
+  String? _separatorText(int index) {
+    final cur = _msgTime(index);
+    if (cur == null) return null;
+    final prev = index > 0 ? _msgTime(index - 1) : null;
+    final newDay = prev == null || !_sameDay(cur, prev);
+    final bigGap = prev != null && cur.difference(prev).inMinutes.abs() >= 5;
+    if (index == 0 || newDay) return _fmtSep(cur, withDate: true);
+    if (bigGap) return _fmtSep(cur, withDate: false);
+    return null;
+  }
+
+  String _fmtSep(DateTime dt, {required bool withDate}) {
+    final now = DateTime.now();
+    final hm =
+        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    if (!withDate) return hm;
+    if (_sameDay(dt, now)) return hm;
+    if (_sameDay(dt, now.subtract(const Duration(days: 1)))) return '昨天 $hm';
+    if (dt.year == now.year) return '${dt.month}月${dt.day}日 $hm';
+    return '${dt.year}年${dt.month}月${dt.day}日 $hm';
+  }
+
+  Widget _timeSeparator(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: ET.surfaceGlass,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(text,
+              style: const TextStyle(fontSize: 11, color: ET.inkMuted)),
+        ),
+      ),
+    );
+  }
+
+  Widget _msgAvatar(bool isMe) {
+    final letter = isMe
+        ? '我'
+        : (widget.title.isNotEmpty ? widget.title.substring(0, 1) : '美');
+    return Container(
+      width: 36,
+      height: 36,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isMe ? ET.accent : ET.accentSoft,
+      ),
+      child: Text(letter,
+          style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: isMe ? ET.onCream : ET.accentOnDark)),
+    );
+  }
+
+  /// 微信式一行：对方头像在左、我方头像在右，消息在头像旁。
+  Widget _messageRow(Map<String, dynamic> msg, bool isMe) {
+    final bubble = _buildBubble(msg, isMe);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment:
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: isMe
+            ? [Flexible(child: bubble), const SizedBox(width: 8), _msgAvatar(true)]
+            : [_msgAvatar(false), const SizedBox(width: 8), Flexible(child: bubble)],
+      ),
+    );
+  }
+
   Widget _buildBubble(Map<String, dynamic> msg, bool isMe) {
     final hasImage = msg['imageUrl'] != null;
     final hasText =
@@ -432,9 +516,8 @@ class _ChatScreenState extends State<ChatScreen> {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 3),
         constraints:
-            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.66),
         child: Column(
           crossAxisAlignment:
               isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,

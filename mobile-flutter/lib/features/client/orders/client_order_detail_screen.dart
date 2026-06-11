@@ -244,8 +244,9 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
 
   Widget _pinnedHeader(double topPad) {
     return GlassContainer(
-      blur: DT.glassBlurHeavy,
-      opacity: 0.64,
+      tint: ET.glassTint,
+      blur: ET.glassBlur,
+      opacity: ET.glassOpacity,
       borderRadius: 0,
       showBorder: false,
       padding: EdgeInsets.fromLTRB(DT.lg, topPad + 8, DT.lg, 10),
@@ -407,9 +408,21 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
 
   // ── Status Card ──
 
-  Widget _buildStatusCard(ClientOrder o) {
+  /// 预约状态徽章（移入服务信息卡头部，替代原独立的「当前预约状态」重卡片）。
+  Widget _statusBadge(ClientOrder o) {
     final colors = _statusColors[o.status] ??
         (const Color(0xFF2A241E), const Color(0xFF4B5563));
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration:
+          BoxDecoration(color: colors.$1, borderRadius: BorderRadius.circular(999)),
+      child: Text(_statusLabels[o.status] ?? o.status,
+          style: TextStyle(
+              fontSize: 12, fontWeight: FontWeight.w600, color: colors.$2)),
+    );
+  }
+
+  Widget _buildStatusCard(ClientOrder o) {
     final hasDeposit = (o.depositAmount ?? 0) > 0;
 
     return Container(
@@ -423,31 +436,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const Expanded(
-                child: Text('当前预约状态',
-                    style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: DT.textPrimary)),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                decoration: BoxDecoration(
-                    color: colors.$1, borderRadius: BorderRadius.circular(999)),
-                child: Text(_statusLabels[o.status] ?? o.status,
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: colors.$2)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Quote price in gradient box
+          // 报价框（状态徽章已移至服务信息卡头部）
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -574,6 +563,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
     return _glassCard(
       title: '服务信息',
       subtitle: '查看预约服务类型、时间和备注说明',
+      trailing: _statusBadge(o),
       children: [
         _infoRow('服务类型', o.serviceType ?? '美甲服务'),
         if (st != null)
@@ -587,12 +577,10 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               '${st.hour.toString().padLeft(2, '0')}:${st.minute.toString().padLeft(2, '0')} - '
                   '${et.hour.toString().padLeft(2, '0')}:${et.minute.toString().padLeft(2, '0')}'),
         if (o.customTitle != null && o.customTitle!.isNotEmpty)
-          _infoBlock('需求名称', o.customTitle!),
+          _infoRow('服务内容', o.customTitle!),
         if (o.customDescription != null && o.customDescription!.isNotEmpty)
           _infoBlock('需求描述', o.customDescription!),
         if (o.customImages != null && o.customImages!.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          Text('参考图', style: TextStyle(fontSize: 13, color: DT.textMuted)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -629,10 +617,19 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
 
   Widget _buildBottomBar(ClientOrder o, bool isClientTurn, bool isCancellable,
       bool canMarkDeposit, double bottomPad) {
-    return GlassBottomSurface(
-      padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPad + 12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    // 与主页面底部导航一致：忽略安全区、贴近屏幕底部
+    final bottomGap = (bottomPad * 0.4).clamp(8.0, 16.0);
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: ET.glassBlur, sigmaY: ET.glassBlur),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: ET.glassFill,
+            border: Border(top: BorderSide(color: ET.hairlineFaint, width: 0.5)),
+          ),
+          padding: EdgeInsets.fromLTRB(20, 12, 20, bottomGap + 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
         children: [
           if (isClientTurn)
             // 客户待确认：拒绝 / 同意 / 更多(取消、修改) —— 超过 3 个用「更多」收纳
@@ -707,6 +704,8 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               ],
             ),
         ],
+          ),
+        ),
       ),
     );
   }
