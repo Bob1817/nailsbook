@@ -570,7 +570,6 @@ class _TechnicianOrderDetailScreenState
     final status = o['status']?.toString() ?? '';
     final depositAmount = o['depositAmount'] as num?;
     final depositPaid = o['depositPaid'] as bool? ?? false;
-    final customerName = o['customerName']?.toString() ?? '客户';
 
     final buttons = <_ActionButton>[];
 
@@ -599,12 +598,14 @@ class _TechnicianOrderDetailScreenState
 
     buttons.add(_ActionButton('发给客户', DT.primarySoft, false, () {
       HapticFeedback.lightImpact();
-      NbToast.show(context, '已发送给 $customerName');
+      _forwardToClient();
     }, textColor: DT.primary));
 
-    if (status != 'completed' && status != 'cancelled') {
-      buttons.add(_ActionButton(
-          '取消预约', DT.surface, false, () => _changeStatus('cancelled'),
+    // 后端仅允许 pending_quote/pending_agree/pending_confirm 取消，
+    // 其余状态显示也会被拒绝，故仅在可取消状态展示。
+    const cancellable = ['pending_quote', 'pending_agree', 'pending_confirm'];
+    if (cancellable.contains(status)) {
+      buttons.add(_ActionButton('取消预约', DT.surface, false, _confirmCancel,
           textColor: DT.error, border: Border.all(color: DT.errorBorder)));
     }
 
@@ -869,6 +870,70 @@ class _TechnicianOrderDetailScreenState
   }
 
   // ── Actions ──
+
+  Future<void> _confirmCancel() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dctx) => AlertDialog(
+        backgroundColor: DT.surface,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(DT.rMd)),
+        title: const Text('取消预约',
+            style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: DT.textPrimary)),
+        content: const Text('确定要取消该预约吗？此操作不可撤销。',
+            style: TextStyle(fontSize: 14, color: DT.textSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dctx, false),
+            child:
+                const Text('再想想', style: TextStyle(color: DT.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dctx, true),
+            child: const Text('确定取消',
+                style:
+                    TextStyle(color: DT.error, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await _changeStatus('cancelled');
+  }
+
+  /// 发给客户：把预约转发为会话内的预约卡片，并打开与该客户的对话页。
+  Future<void> _forwardToClient() async {
+    final o = _order!;
+    final customerName = o['customerName']?.toString() ?? '客户';
+    setState(() => _actionLoading = true);
+    try {
+      final api = context.read<ApiClient>();
+      api.setRole('technician');
+      final res =
+          await TechnicianOrderService(api).forward(o['id'] as int);
+      final conversationId =
+          (res['conversationId'] as int?) ?? (res['conversation_id'] as int?);
+      if (!mounted) return;
+      setState(() => _actionLoading = false);
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            conversationId: conversationId,
+            title: customerName,
+            clientId: o['clientUserId'] as int?,
+          ),
+        ),
+      );
+    } catch (_) {
+      if (mounted) {
+        setState(() => _actionLoading = false);
+        NbToast.show(context, '发送失败，请重试');
+      }
+    }
+  }
 
   Future<void> _changeStatus(String nextStatus) async {
     setState(() => _actionLoading = true);

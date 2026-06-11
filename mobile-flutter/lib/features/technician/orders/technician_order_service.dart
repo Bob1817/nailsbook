@@ -43,4 +43,9 @@ class TechnicianOrderService {
   Future<Map<String, dynamic>> cancel(int id) async {
     return _api.patch('/orders/$id/cancel');
   }
+
+  /// 把预约转发为会话内的预约卡片，返回 { message, conversationId }。
+  Future<Map<String, dynamic>> forward(int orderId) async {
+    return _api.post('/messages/forward', body: {'orderId': orderId});
+  }
 }

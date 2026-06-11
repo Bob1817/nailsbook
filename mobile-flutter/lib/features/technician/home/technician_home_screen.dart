@@ -275,7 +275,8 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
     final d = DateTime.tryParse(iso ?? '');
     if (d == null) return '';
     final l = d.toLocal();
-    return '${l.month}月${l.day}日 ${_clock(iso)}';
+    const wk = ['一', '二', '三', '四', '五', '六', '日'];
+    return '${l.month}月${l.day}日 周${wk[l.weekday - 1]} ${_clock(iso)}';
   }
 
   void _push(Widget s) =>

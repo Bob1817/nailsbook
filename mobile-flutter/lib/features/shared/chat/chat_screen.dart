@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/cupertino.dart';
@@ -12,6 +13,8 @@ import '../../../core/socket/chat_socket.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/editorial_tokens.dart';
 import '../../../core/widgets/nb_toast.dart';
+import '../../client/orders/client_order_detail_screen.dart';
+import '../../technician/orders/technician_order_detail_screen.dart';
 import '../booking/chat_booking_sheet.dart';
 import 'chat_service.dart';
 
@@ -563,6 +566,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildBubble(Map<String, dynamic> msg, bool isMe) {
+    if (msg['messageType'] == 'order_card') return _orderCard(msg, isMe);
     final hasImage = msg['imageUrl'] != null;
     final hasText =
         msg['content'] != null && msg['content'].toString().isNotEmpty;
@@ -632,6 +636,184 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // ── 预约卡片消息（messageType == order_card）──
+
+  Widget _orderCard(Map<String, dynamic> msg, bool isMe) {
+    Map<String, dynamic> data = {};
+    try {
+      final raw = msg['content'];
+      if (raw is String && raw.isNotEmpty) {
+        data = jsonDecode(raw) as Map<String, dynamic>;
+      }
+    } catch (_) {}
+    final orderId = (msg['relatedId'] as int?) ?? (data['orderId'] as int?);
+    final start =
+        DateTime.tryParse(data['startTime']?.toString() ?? '')?.toLocal();
+    final end =
+        DateTime.tryParse(data['endTime']?.toString() ?? '')?.toLocal();
+    final isShop = data['serviceType'] == 'shop';
+    final theme = data['customTitle']?.toString();
+    final address = data['address']?.toString();
+
+    return Align(
+      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        constraints:
+            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
+        margin: const EdgeInsets.symmetric(vertical: 2),
+        decoration: BoxDecoration(
+          color: DT.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: DT.border),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.12),
+                blurRadius: 10,
+                offset: const Offset(0, 3)),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              color: DT.primarySoft.withValues(alpha: 0.5),
+              child: Row(
+                children: [
+                  const Icon(Icons.event_note_rounded,
+                      size: 16, color: DT.primary),
+                  const SizedBox(width: 6),
+                  const Text('预约详情',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: DT.primary)),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                        color: DT.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(999)),
+                    child: Text(isShop ? '到店美甲' : '上门美甲',
+                        style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: DT.primary)),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _cardRow(Icons.calendar_today_rounded, '预约日期',
+                      _cardDate(start)),
+                  _cardRow(Icons.schedule_rounded, '预约时间',
+                      _cardTime(start, end)),
+                  if (theme != null && theme.isNotEmpty)
+                    _cardRow(Icons.brush_outlined, '服务主题', theme),
+                  if (address != null && address.isNotEmpty)
+                    _cardRow(Icons.location_on_outlined,
+                        isShop ? '店铺地址' : '上门地址', address),
+                  _cardRow(Icons.payments_outlined, '服务价格',
+                      _money(data['price'])),
+                  _cardRow(Icons.account_balance_wallet_outlined, '预收定金',
+                      _money(data['depositAmount'])),
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap:
+                        orderId == null ? null : () => _openOrderDetail(orderId),
+                    child: Container(
+                      width: double.infinity,
+                      height: 38,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                          color: DT.primary,
+                          borderRadius: BorderRadius.circular(10)),
+                      child: const Text('查看详情',
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _cardRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 14, color: DT.textMuted),
+          const SizedBox(width: 8),
+          Text(label, style: const TextStyle(fontSize: 13, color: DT.textMuted)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(value,
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: DT.textPrimary)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _cardDate(DateTime? d) {
+    if (d == null) return '--';
+    const wk = ['一', '二', '三', '四', '五', '六', '日'];
+    return '${d.month}月${d.day}日 周${wk[d.weekday - 1]}';
+  }
+
+  String _cardTime(DateTime? s, DateTime? e) {
+    if (s == null) return '--';
+    String hm(DateTime t) =>
+        '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+    return e == null ? hm(s) : '${hm(s)} - ${hm(e)}';
+  }
+
+  String _money(dynamic v) {
+    final n = v is num ? v : num.tryParse(v?.toString() ?? '');
+    if (n == null || n == 0) return '¥0';
+    return '¥${n.toInt()}';
+  }
+
+  void _openOrderDetail(int orderId) {
+    final isClient = context.read<AuthSession>().isClient;
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.55),
+      builder: (dctx) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 36),
+        backgroundColor: Colors.transparent,
+        clipBehavior: Clip.antiAlias,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: SizedBox(
+          width: double.infinity,
+          height: MediaQuery.of(context).size.height * 0.85,
+          child: isClient
+              ? ClientOrderDetailScreen(orderId: orderId)
+              : TechnicianOrderDetailScreen(orderId: orderId),
         ),
       ),
     );
