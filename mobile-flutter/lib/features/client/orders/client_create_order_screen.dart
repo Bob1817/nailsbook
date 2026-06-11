@@ -544,6 +544,8 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                 foregroundColor: ET.ink,
                 side: const BorderSide(color: ET.hairlineStrong),
                 shape: const StadiumBorder(),
+                // 覆盖全局 outlinedButtonTheme 的 minimumSize: infinity，否则会撑满整行
+                minimumSize: const Size(0, 50),
                 padding: const EdgeInsets.symmetric(horizontal: 22),
               ),
               child: const Text('上一步'),
