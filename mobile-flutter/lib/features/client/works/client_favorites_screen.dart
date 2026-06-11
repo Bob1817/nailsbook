@@ -107,7 +107,8 @@ class _ClientFavoritesScreenState extends State<ClientFavoritesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('我的收藏', style: ET.displaySmall.copyWith(fontSize: 22)),
+                Text('我的收藏',
+                    style: ET.display.copyWith(fontSize: 20, height: 1.3)),
                 const SizedBox(height: 4),
                 const Text('查看你收藏的美甲作品',
                     style: TextStyle(fontSize: 13, color: ET.inkMuted)),
