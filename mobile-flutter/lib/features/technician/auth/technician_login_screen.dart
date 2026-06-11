@@ -223,9 +223,9 @@ class _TechnicianLoginScreenState extends State<TechnicianLoginScreen> {
             children: [
               _brand(),
               const SizedBox(height: 40),
-              Text(_title(), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: Color(0xFF0F1422))),
+              Text(_title(), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: DT.textPrimary)),
               const SizedBox(height: 6),
-              Text(_subtitle(), style: const TextStyle(fontSize: 13, color: Color(0xFF5A6475))),
+              Text(_subtitle(), style: const TextStyle(fontSize: 13, color: DT.textSecondary)),
               if (_error != null) ...[
                 const SizedBox(height: 16),
                 _errorBanner(_error!),
@@ -273,9 +273,9 @@ class _TechnicianLoginScreenState extends State<TechnicianLoginScreen> {
         const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('NailArt 美甲师工具', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F1422))),
+            Text('NailArt 美甲师工具', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: DT.textPrimary)),
             SizedBox(height: 2),
-            Text('更专业的服务，更高效的管理', style: TextStyle(fontSize: 12, color: Color(0xFF838998))),
+            Text('更专业的服务，更高效的管理', style: TextStyle(fontSize: 12, color: DT.textSecondary)),
           ],
         ),
       ],
@@ -344,7 +344,7 @@ class _TechnicianLoginScreenState extends State<TechnicianLoginScreen> {
       decoration: BoxDecoration(color: const Color(0xFF2A241E), borderRadius: BorderRadius.circular(12)),
       child: Row(
         children: [
-          Expanded(child: Text('手机号：${_phoneCtl.text}', style: const TextStyle(fontSize: 13, color: Color(0xFF666666)))),
+          Expanded(child: Text('手机号：${_phoneCtl.text}', style: const TextStyle(fontSize: 13, color: DT.textSecondary))),
           GestureDetector(
             onTap: () => setState(() {
               _step = _Step.phone;
@@ -365,21 +365,30 @@ class _TechnicianLoginScreenState extends State<TechnicianLoginScreen> {
       controller: ctl,
       keyboardType: keyboardType,
       inputFormatters: formatters,
+      style: const TextStyle(fontSize: 15, color: DT.textPrimary),
+      cursorColor: DT.primary,
       decoration: _inputDecoration(hint),
     );
   }
 
   Widget _passwordField(TextEditingController ctl, String hint) {
-    return TextField(controller: ctl, obscureText: true, decoration: _inputDecoration(hint));
+    return TextField(
+      controller: ctl,
+      obscureText: true,
+      style: const TextStyle(fontSize: 15, color: DT.textPrimary),
+      cursorColor: DT.primary,
+      decoration: _inputDecoration(hint),
+    );
   }
 
   InputDecoration _inputDecoration(String hint) => InputDecoration(
         hintText: hint,
+        hintStyle: const TextStyle(color: DT.textMuted, fontSize: 15),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: DT.surface,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFECE8EC))),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFECE8EC))),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: DT.border)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: DT.border)),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: DT.primary, width: 1.5)),
       );
 
