@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/auth/auth_session.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/nb_toast.dart';
 import '../auth/technician_auth_service.dart';
 import '../auth/technician_auth_models.dart';
@@ -135,32 +136,35 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
 
     final topPad = MediaQuery.of(context).padding.top;
     final bottomPad = MediaQuery.of(context).padding.bottom;
+    final headerH = topPad + 176;
 
     return Scaffold(
       backgroundColor: DT.bg,
-      body: ListView(
-        padding: EdgeInsets.only(bottom: bottomPad + 80),
+      body: Stack(
         children: [
-          _profileHeader(topPad),
-          Transform.translate(
-            offset: const Offset(0, -DT.xl),
-            child: Column(
-              children: [
-                _dataCard(),
-                const SizedBox(height: DT.lg),
-                _incomeCard(),
-                const SizedBox(height: DT.lg),
-                _appointmentsCard(),
-                const SizedBox(height: DT.lg),
-                _toolsCard(),
-                const SizedBox(height: DT.lg),
-                _inviteCard(),
-                const SizedBox(height: DT.lg),
-                _settingsCard(),
-                const SizedBox(height: DT.xl),
-                _logoutButton(),
-              ],
-            ),
+          ListView(
+            padding: EdgeInsets.fromLTRB(0, headerH + DT.lg, 0, bottomPad + 80),
+            children: [
+              _dataCard(),
+              const SizedBox(height: DT.lg),
+              _incomeCard(),
+              const SizedBox(height: DT.lg),
+              _appointmentsCard(),
+              const SizedBox(height: DT.lg),
+              _toolsCard(),
+              const SizedBox(height: DT.lg),
+              _inviteCard(),
+              const SizedBox(height: DT.lg),
+              _settingsCard(),
+              const SizedBox(height: DT.xl),
+              _logoutButton(),
+            ],
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            child: _profileHeader(topPad),
           ),
         ],
       ),
@@ -175,7 +179,7 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
         .then((_) => _loadProfile());
   }
 
-  void _openOrders([String? status]) {
+  void _openBookings([String? status]) {
     HapticFeedback.lightImpact();
     Navigator.push(
       context,
@@ -205,52 +209,56 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
     final avatarUrl = _profile?.avatarUrl;
     final active = _profile?.status == 'active';
 
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(DT.xl, topPad + DT.xl, DT.xl, DT.xxl + DT.lg),
-      decoration: const BoxDecoration(
-        gradient: DT.profileGradient,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(DT.rCard)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _avatar(avatarUrl, name),
-              const SizedBox(width: DT.lg),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text('美甲师 · ${name.isEmpty ? '小美' : name}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style:
-                                  DT.titleLarge.copyWith(color: Colors.white)),
-                        ),
-                        const SizedBox(width: DT.sm),
-                        _circleIconButton(
-                          CupertinoIcons.settings,
-                          () => _push(const TechnicianProfileSettingsScreen()),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: DT.xs),
-                    Text(phone.isEmpty ? '未绑定手机号' : phone,
-                        style: DT.bodySmall.copyWith(
-                            color: Colors.white.withValues(alpha: 0.7))),
-                  ],
+      child: GlassContainer(
+        tint: Colors.black,
+        blur: DT.glassBlurHeavy,
+        opacity: 0.5,
+        borderRadius: 0,
+        showBorder: false,
+        padding: EdgeInsets.fromLTRB(DT.xl, topPad + DT.xl, DT.xl, DT.xl),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _avatar(avatarUrl, name),
+                const SizedBox(width: DT.lg),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text('美甲师 · ${name.isEmpty ? '小美' : name}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: DT.titleLarge
+                                    .copyWith(color: Colors.white)),
+                          ),
+                          const SizedBox(width: DT.sm),
+                          _circleIconButton(
+                            CupertinoIcons.settings,
+                            () =>
+                                _push(const TechnicianProfileSettingsScreen()),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: DT.xs),
+                      Text(phone.isEmpty ? '未绑定手机号' : phone,
+                          style: DT.bodySmall.copyWith(
+                              color: Colors.white.withValues(alpha: 0.7))),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: DT.lg),
-          _statusCard(active),
-        ],
+              ],
+            ),
+            const SizedBox(height: DT.lg),
+            _statusCard(active),
+          ],
+        ),
       ),
     );
   }
@@ -262,9 +270,15 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: DT.lg, vertical: DT.md),
       decoration: BoxDecoration(
-        color: DT.surface.withValues(alpha: 0.10),
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: DT.surface.withValues(alpha: 0.14)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -299,10 +313,10 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
               ),
             ),
           ),
-          if (homeService) _serviceBadge('🚗 上门'),
+          if (homeService) _serviceBadge(CupertinoIcons.location, '上门'),
           if (shopService) ...[
             const SizedBox(width: DT.xs),
-            _serviceBadge('🏪 到店'),
+            _serviceBadge(CupertinoIcons.house, '到店'),
           ],
           const SizedBox(width: DT.sm),
           _circleIconButton(
@@ -314,16 +328,23 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
     );
   }
 
-  Widget _serviceBadge(String text) {
+  Widget _serviceBadge(IconData icon, String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: DT.sm, vertical: 3),
       decoration: BoxDecoration(
         color: DT.surface.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(DT.rFull),
       ),
-      child: Text(text,
-          style: DT.captionSmall
-              .copyWith(color: Colors.white.withValues(alpha: 0.9))),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: Colors.white.withValues(alpha: 0.9)),
+          const SizedBox(width: 3),
+          Text(text,
+              style: DT.captionSmall
+                  .copyWith(color: Colors.white.withValues(alpha: 0.9))),
+        ],
+      ),
     );
   }
 
@@ -380,15 +401,13 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
                 fontFeatures: const [FontFeature.tabularFigures()],
               )),
           const SizedBox(height: DT.xs),
-          Text(label,
-              style: DT.captionLarge.copyWith(color: DT.textTertiary)),
+          Text(label, style: DT.captionLarge.copyWith(color: DT.textTertiary)),
         ],
       ),
     );
   }
 
-  Widget _dataDivider() =>
-      Container(width: 0.5, height: 32, color: DT.divider);
+  Widget _dataDivider() => Container(width: 0.5, height: 32, color: DT.divider);
 
   // ── 收入统计卡（2x2）──
 
@@ -416,21 +435,21 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
           Row(
             children: [
               Expanded(
-                  child: _incomeTile('今日已完成收入',
-                      '¥${todayIncome.toStringAsFixed(0)}',
+                  child: _incomeTile(
+                      '今日已完成收入', '¥${todayIncome.toStringAsFixed(0)}',
                       highlight: true)),
               const SizedBox(width: DT.md),
               Expanded(
-                  child: _incomeTile('今日预计收入',
-                      '¥${expectedIncome.toStringAsFixed(0)}')),
+                  child: _incomeTile(
+                      '今日预计收入', '¥${expectedIncome.toStringAsFixed(0)}')),
             ],
           ),
           const SizedBox(height: DT.md),
           Row(
             children: [
               Expanded(
-                  child: _incomeTile('本月预约金额',
-                      '¥${monthRevenue.toStringAsFixed(0)}')),
+                  child: _incomeTile(
+                      '本月预约金额', '¥${monthRevenue.toStringAsFixed(0)}')),
               const SizedBox(width: DT.md),
               Expanded(
                   child: _incomeTile('累计完成单量', '$completedCount',
@@ -474,12 +493,20 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
   // ── 我的预约（状态宫格 5 列）──
 
   Widget _appointmentsCard() {
-    final items = <({String emoji, String label, String status})>[
-      (emoji: '💬', label: '待报价', status: 'pending_quote'),
-      (emoji: '⏳', label: '待确认', status: 'pending_confirm'),
-      (emoji: '🚗', label: '待上门', status: 'pending_home'),
-      (emoji: '🏪', label: '待到店', status: 'pending_shop'),
-      (emoji: '💅', label: '服务中', status: 'in_progress'),
+    final items = <({IconData icon, String label, String status})>[
+      (
+        icon: CupertinoIcons.chat_bubble_text,
+        label: '待报价',
+        status: 'pending_quote'
+      ),
+      (icon: CupertinoIcons.clock, label: '待确认', status: 'pending_confirm'),
+      (icon: CupertinoIcons.location, label: '待上门', status: 'pending_home'),
+      (icon: CupertinoIcons.house, label: '待到店', status: 'pending_shop'),
+      (
+        icon: CupertinoIcons.checkmark_seal,
+        label: '服务中',
+        status: 'in_progress'
+      ),
     ];
 
     return _glassCard(
@@ -487,7 +514,7 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _cardHeader('我的预约',
-              actionLabel: '全部预约', onAction: () => _openOrders()),
+              actionLabel: '全部预约', onAction: () => _openBookings()),
           const SizedBox(height: DT.md),
           Row(
             children: items.map((it) {
@@ -495,7 +522,7 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
               return Expanded(
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: () => _openOrders(it.status),
+                  onTap: () => _openBookings(it.status),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 2),
                     child: Column(
@@ -518,8 +545,7 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
                                   ),
                                 ],
                               ),
-                              child: Text(it.emoji,
-                                  style: const TextStyle(fontSize: 18)),
+                              child: Icon(it.icon, size: 19, color: DT.primary),
                             ),
                             if (count > 0)
                               Positioned(
@@ -563,14 +589,42 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
   // ── 常用工具（4 列宫格）──
 
   Widget _toolsCard() {
-    final items = <({String emoji, String label, VoidCallback onTap})>[
-      (emoji: '💅', label: '服务管理', onTap: () => _push(const TechnicianServicesScreen())),
-      (emoji: '💰', label: '价格设置', onTap: () => NbToast.info(context, '价格设置即将上线')),
-      (emoji: '🚗', label: '上门设置', onTap: () => _push(const TechnicianHomeServiceSettingsScreen())),
-      (emoji: '🏪', label: '店铺管理', onTap: () => _push(const TechnicianShopScreen())),
-      (emoji: '🖼️', label: '作品管理', onTap: () => _push(const TechnicianWorksScreen())),
-      (emoji: '🏷️', label: '标签管理', onTap: () => _push(const TechnicianTagScreen())),
-      (emoji: '⭐', label: '评价管理', onTap: () => NbToast.info(context, '评价管理即将上线')),
+    final items = <({IconData icon, String label, VoidCallback onTap})>[
+      (
+        icon: CupertinoIcons.square_grid_2x2,
+        label: '服务管理',
+        onTap: () => _push(const TechnicianServicesScreen())
+      ),
+      (
+        icon: CupertinoIcons.money_yen_circle,
+        label: '价格设置',
+        onTap: () => NbToast.info(context, '价格设置即将上线')
+      ),
+      (
+        icon: CupertinoIcons.location,
+        label: '上门设置',
+        onTap: () => _push(const TechnicianHomeServiceSettingsScreen())
+      ),
+      (
+        icon: CupertinoIcons.house,
+        label: '店铺管理',
+        onTap: () => _push(const TechnicianShopScreen())
+      ),
+      (
+        icon: CupertinoIcons.photo,
+        label: '作品管理',
+        onTap: () => _push(const TechnicianWorksScreen())
+      ),
+      (
+        icon: CupertinoIcons.tag,
+        label: '标签管理',
+        onTap: () => _push(const TechnicianTagScreen())
+      ),
+      (
+        icon: CupertinoIcons.star,
+        label: '评价管理',
+        onTap: () => NbToast.info(context, '评价管理即将上线')
+      ),
     ];
 
     return _glassCard(
@@ -578,45 +632,66 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _cardHeader('常用工具', trailing: '常用配置入口'),
-          const SizedBox(height: DT.md),
-          GridView.count(
-            crossAxisCount: 4,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: DT.md,
-            mainAxisSpacing: DT.lg,
-            childAspectRatio: 0.92,
-            children: items.map((it) {
-              return GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  it.onTap();
-                },
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: DT.primarySoft,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child:
-                          Text(it.emoji, style: const TextStyle(fontSize: 18)),
-                    ),
-                    const SizedBox(height: DT.xs),
-                    Text(it.label,
-                        style:
-                            DT.captionMedium.copyWith(color: DT.textSecondary)),
-                  ],
-                ),
+          const SizedBox(height: DT.sm),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final tileWidth = (constraints.maxWidth - DT.sm * 3) / 4;
+              return Wrap(
+                spacing: DT.sm,
+                runSpacing: 10,
+                children: items
+                    .map((it) => _toolTile(
+                          width: tileWidth,
+                          icon: it.icon,
+                          label: it.label,
+                          onTap: it.onTap,
+                        ))
+                    .toList(),
               );
-            }).toList(),
+            },
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _toolTile({
+    required double width,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      child: SizedBox(
+        width: width,
+        height: 68,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: DT.primarySoft,
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: Icon(icon, size: 19, color: DT.primary),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: DT.captionMedium.copyWith(color: DT.textSecondary),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -760,12 +835,38 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
   // ── 设置菜单 ──
 
   Widget _settingsCard() {
-    final items = <({IconData icon, String label, Color color, VoidCallback onTap})>[
-      (icon: CupertinoIcons.shield, label: '账号与安全', color: DT.actionOrange, onTap: () => _push(const TechnicianAccountSecurityScreen())),
-      (icon: CupertinoIcons.bell, label: '通知设置', color: DT.actionBlue, onTap: () => _push(const TechnicianNotificationSettingsScreen())),
-      (icon: CupertinoIcons.lock, label: '隐私设置', color: DT.actionGreen, onTap: () => _push(const TechnicianPrivacySettingsScreen())),
-      (icon: CupertinoIcons.question_circle, label: '帮助与反馈', color: DT.primary, onTap: () => _push(const TechnicianHelpFeedbackScreen())),
-      (icon: CupertinoIcons.info_circle, label: '关于我们', color: DT.secondary, onTap: () => _push(const TechnicianAboutScreen())),
+    final items =
+        <({IconData icon, String label, Color color, VoidCallback onTap})>[
+      (
+        icon: CupertinoIcons.shield,
+        label: '账号与安全',
+        color: DT.actionOrange,
+        onTap: () => _push(const TechnicianAccountSecurityScreen())
+      ),
+      (
+        icon: CupertinoIcons.bell,
+        label: '通知设置',
+        color: DT.actionBlue,
+        onTap: () => _push(const TechnicianNotificationSettingsScreen())
+      ),
+      (
+        icon: CupertinoIcons.lock,
+        label: '隐私设置',
+        color: DT.actionGreen,
+        onTap: () => _push(const TechnicianPrivacySettingsScreen())
+      ),
+      (
+        icon: CupertinoIcons.question_circle,
+        label: '帮助与反馈',
+        color: DT.primary,
+        onTap: () => _push(const TechnicianHelpFeedbackScreen())
+      ),
+      (
+        icon: CupertinoIcons.info_circle,
+        label: '关于我们',
+        color: DT.secondary,
+        onTap: () => _push(const TechnicianAboutScreen())
+      ),
     ];
 
     return Container(
@@ -794,8 +895,7 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
                   const Text('设置', style: DT.titleMedium),
                   const SizedBox(height: DT.xs),
                   Text('账号、服务类型与常用偏好入口',
-                      style:
-                          DT.captionLarge.copyWith(color: DT.textTertiary)),
+                      style: DT.captionLarge.copyWith(color: DT.textTertiary)),
                 ],
               ),
             ),
@@ -902,8 +1002,8 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
           GestureDetector(
             onTap: onAction,
             child: Text(actionLabel,
-                style: DT.captionLarge.copyWith(
-                    color: DT.primary, fontWeight: FontWeight.w600)),
+                style: DT.captionLarge
+                    .copyWith(color: DT.primary, fontWeight: FontWeight.w600)),
           )
         else if (trailing != null)
           Text(trailing,
@@ -926,12 +1026,13 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
     setState(() => _uploadingAvatar = true);
     try {
       api.setRole('technician');
-      final res = await api.uploadMultipart('/uploads/image', file.path, 'file');
+      final res =
+          await api.uploadMultipart('/uploads/image', file.path, 'file');
       final body = await res.stream.bytesToString();
       final url = _extractUrl(body);
       if (url != null && url.isNotEmpty) {
-        final updated = await TechnicianAuthService(api)
-            .updateProfile({'avatarUrl': url});
+        final updated =
+            await TechnicianAuthService(api).updateProfile({'avatarUrl': url});
         if (mounted) setState(() => _profile = updated);
         if (mounted) NbToast.success(context, '头像更新成功');
       }

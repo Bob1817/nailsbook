@@ -127,7 +127,9 @@ class _TechnicianOrderDetailScreenState
                     ),
                     // Floating header with liquid glass
                     Positioned(
-                      left: 0, right: 0, top: 0,
+                      left: 0,
+                      right: 0,
+                      top: 0,
                       child: _buildHeader(topPad),
                     ),
                   ],
@@ -146,7 +148,8 @@ class _TechnicianOrderDetailScreenState
           decoration: BoxDecoration(
             color: DT.surface.withValues(alpha: 0.72),
             border: Border(
-              bottom: BorderSide(color: Colors.black.withValues(alpha: 0.06), width: 0.5),
+              bottom: BorderSide(
+                  color: Colors.black.withValues(alpha: 0.06), width: 0.5),
             ),
           ),
           padding: EdgeInsets.fromLTRB(DT.xl, topPad + DT.sm, DT.xl, DT.md),
@@ -220,7 +223,8 @@ class _TechnicianOrderDetailScreenState
     final depositPaid = o['depositPaid'] as bool? ?? false;
 
     // Measure header height for top padding
-    final headerH = topPad + DT.sm + 44 + DT.md; // topPad + spacing + button + bottom
+    final headerH =
+        topPad + DT.sm + 44 + DT.md; // topPad + spacing + button + bottom
 
     return RefreshIndicator(
       color: DT.primary,
@@ -240,9 +244,10 @@ class _TechnicianOrderDetailScreenState
                       width: 48,
                       height: 48,
                       fit: BoxFit.cover,
-                      placeholder: (_, __) =>
-                          Container(width: 48, height: 48, color: DT.primarySoft),
-                      errorWidget: (_, __, ___) => _avatarFallback(customerName),
+                      placeholder: (_, __) => Container(
+                          width: 48, height: 48, color: DT.primarySoft),
+                      errorWidget: (_, __, ___) =>
+                          _avatarFallback(customerName),
                     ),
                   )
                 else
@@ -256,7 +261,8 @@ class _TechnicianOrderDetailScreenState
                       if (customerPhone.isNotEmpty) ...[
                         const SizedBox(height: 2),
                         Text(customerPhone,
-                            style: DT.bodySmall.copyWith(color: DT.textSecondary)),
+                            style:
+                                DT.bodySmall.copyWith(color: DT.textSecondary)),
                       ],
                     ],
                   ),
@@ -333,8 +339,8 @@ class _TechnicianOrderDetailScreenState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('需求描述',
-                            style: DT.captionLarge.copyWith(
-                                fontWeight: FontWeight.w500)),
+                            style: DT.captionLarge
+                                .copyWith(fontWeight: FontWeight.w500)),
                         const SizedBox(height: 4),
                         Text(customDescription,
                             style: DT.bodySmall.copyWith(height: 1.5)),
@@ -345,8 +351,8 @@ class _TechnicianOrderDetailScreenState
                 if (customImages.isNotEmpty) ...[
                   const SizedBox(height: DT.sm),
                   Text('参考图',
-                      style: DT.captionLarge.copyWith(
-                          fontWeight: FontWeight.w500)),
+                      style: DT.captionLarge
+                          .copyWith(fontWeight: FontWeight.w500)),
                   const SizedBox(height: DT.xs),
                   Wrap(
                     spacing: DT.sm,
@@ -406,8 +412,7 @@ class _TechnicianOrderDetailScreenState
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('预约金额',
-                        style: DT.bodySmall.copyWith(
-                            color: DT.textSecondary)),
+                        style: DT.bodySmall.copyWith(color: DT.textSecondary)),
                     Text(_formatMoney(price),
                         style: DT.titleMedium.copyWith(
                             color: DT.primary,
@@ -427,8 +432,7 @@ class _TechnicianOrderDetailScreenState
                               ? CupertinoIcons.check_mark_circled_solid
                               : CupertinoIcons.clock,
                           size: 14,
-                          color:
-                              depositPaid ? DT.successText : DT.warningText),
+                          color: depositPaid ? DT.successText : DT.warningText),
                       const SizedBox(width: DT.xs),
                       Text(depositPaid ? '定金已确认' : '待确认定金',
                           style: DT.captionLarge.copyWith(
@@ -438,9 +442,8 @@ class _TechnicianOrderDetailScreenState
                       const Spacer(),
                       Text(_formatMoney(depositAmount),
                           style: DT.bodySmall.copyWith(
-                              color: depositPaid
-                                  ? DT.successText
-                                  : DT.warningText,
+                              color:
+                                  depositPaid ? DT.successText : DT.warningText,
                               fontFeatures: const [
                                 FontFeature.tabularFigures()
                               ])),
@@ -527,34 +530,36 @@ class _TechnicianOrderDetailScreenState
     final buttons = <_ActionButton>[];
 
     if (status == 'pending_quote') {
-      buttons.add(
-          _ActionButton('提交报价', DT.primary, true, () => _showQuoteSheet()));
+      buttons.add(_ActionButton('提交报价', DT.cream, true, () => _showQuoteSheet(),
+          textColor: DT.onCream));
     }
     if (status == 'pending_confirm') {
       buttons.add(_ActionButton(
-          '确认预约', DT.success, true, () => _changeStatus('pending_confirm')));
+          '确认预约', DT.cream, true, () => _changeStatus('pending_confirm'),
+          textColor: DT.onCream));
     }
     if (status == 'pending_home' || status == 'pending_shop') {
       final label = status == 'pending_home' ? '待上门' : '待到店';
       final needsDeposit =
           depositAmount != null && depositAmount > 0 && !depositPaid;
       buttons.add(_ActionButton(
-          needsDeposit ? '等待定金' : label, DT.borderGrey, false, null,
-          textColor: DT.textLightGrey));
+          needsDeposit ? '等待定金' : label, DT.surface, false, null,
+          textColor: DT.textMuted));
     }
     if (status == 'in_progress') {
       buttons.add(_ActionButton(
-          '确认完成', DT.success, true, () => _changeStatus('completed')));
+          '确认完成', DT.cream, true, () => _changeStatus('completed'),
+          textColor: DT.onCream));
     }
 
-    buttons.add(_ActionButton('发给客户', DT.textPrimary, true, () {
+    buttons.add(_ActionButton('发给客户', DT.primarySoft, false, () {
       HapticFeedback.lightImpact();
       NbToast.show(context, '已发送给 $customerName');
-    }));
+    }, textColor: DT.primary));
 
     if (status != 'completed' && status != 'cancelled') {
       buttons.add(_ActionButton(
-          '取消预约', Colors.white, false, () => _changeStatus('cancelled'),
+          '取消预约', DT.surface, false, () => _changeStatus('cancelled'),
           textColor: DT.error, border: Border.all(color: DT.errorBorder)));
     }
 
@@ -564,13 +569,7 @@ class _TechnicianOrderDetailScreenState
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
         child: Container(
-          decoration: BoxDecoration(
-            color: DT.surface.withValues(alpha: 0.78),
-            border: Border(
-              top: BorderSide(
-                  color: Colors.black.withValues(alpha: 0.06), width: 0.5),
-            ),
-          ),
+          decoration: BoxDecoration(color: DT.surface.withValues(alpha: 0.78)),
           padding: EdgeInsets.fromLTRB(DT.xl, DT.sm, DT.xl, bottomPad + DT.sm),
           child: Row(
             children: buttons
@@ -596,10 +595,10 @@ class _TechnicianOrderDetailScreenState
               btn.onTap?.call();
             },
       child: Container(
-        height: 44,
+        height: 48,
         decoration: BoxDecoration(
           color: btn.bgColor,
-          borderRadius: BorderRadius.circular(DT.rLg),
+          borderRadius: BorderRadius.circular(DT.rFull),
           border: btn.border,
         ),
         alignment: Alignment.center,
@@ -611,7 +610,8 @@ class _TechnicianOrderDetailScreenState
                     strokeWidth: 2, color: btn.textColor ?? Colors.white))
             : Text(btn.label,
                 style: DT.bodySmall.copyWith(
-                    color: btn.textColor ?? Colors.white,
+                    color: btn.textColor ??
+                        (btn.primary ? DT.onCream : DT.textPrimary),
                     fontWeight: FontWeight.w600)),
       ),
     );
@@ -772,7 +772,7 @@ class _TechnicianOrderDetailScreenState
                     elevation: 0,
                   ),
                   child: Text('发送报价',
-                      style: DT.titleMedium.copyWith(color: Colors.white)),
+                      style: DT.titleMedium.copyWith(color: DT.onCream)),
                 ),
               ),
             ],
@@ -849,7 +849,7 @@ class _TechnicianOrderDetailScreenState
                     elevation: 0,
                   ),
                   child: Text('保存',
-                      style: DT.titleMedium.copyWith(color: Colors.white)),
+                      style: DT.titleMedium.copyWith(color: DT.onCream)),
                 ),
               ),
             ],

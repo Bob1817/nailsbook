@@ -126,13 +126,11 @@ class _TechnicianCustomerDetailScreenState
               ),
             ),
           // 顶部液态玻璃 header（透出后方滚动内容）
-          Positioned(
-              left: 0, right: 0, top: 0, child: _header(topPad)),
+          Positioned(left: 0, right: 0, top: 0, child: _header(topPad)),
           // 底部液态玻璃操作栏
           if (_customer != null)
             Positioned(
-                left: 0, right: 0, bottom: 0,
-                child: _bottomBar(bottomPad)),
+                left: 0, right: 0, bottom: 0, child: _bottomBar(bottomPad)),
         ],
       ),
     );
@@ -155,11 +153,11 @@ class _TechnicianCustomerDetailScreenState
             },
           ),
           const SizedBox(width: 12),
-          const Expanded(child: Text('客户详情', style: DT.titleMedium)),
+          const Expanded(child: Text('客户详情', style: DT.titleLarge)),
           // 右上角编辑：打开标签编辑弹窗
           if (!_loading && _customer != null)
-            _roundIconButton(CupertinoIcons.pencil,
-                () => _showTagEditor(_tags(_customer!['tags']))),
+            _headerTextButton(
+                '编辑', () => _showTagEditor(_tags(_customer!['tags']))),
         ],
       ),
     );
@@ -178,6 +176,28 @@ class _TechnicianCustomerDetailScreenState
           shape: BoxShape.circle,
         ),
         child: Icon(icon, size: 19, color: DT.textPrimary),
+      ),
+    );
+  }
+
+  Widget _headerTextButton(String label, VoidCallback onTap) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 44),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Text(
+          label,
+          style: DT.bodyMedium.copyWith(
+            color: DT.primary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }
@@ -206,8 +226,8 @@ class _TechnicianCustomerDetailScreenState
                 width: 56,
                 height: 56,
                 fit: BoxFit.cover,
-                placeholder: (_, __) => Container(
-                    width: 56, height: 56, color: _avatarBg),
+                placeholder: (_, __) =>
+                    Container(width: 56, height: 56, color: _avatarBg),
                 errorWidget: (_, __, ___) => _avatarFallback(),
               ),
             )
@@ -314,25 +334,15 @@ class _TechnicianCustomerDetailScreenState
         if (!ok && mounted) NbToast.error(context, '无法打开导航');
       },
       child: Container(
-        constraints: const BoxConstraints(minHeight: 44),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        width: 44,
+        height: 44,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: DT.infoBg,
-          borderRadius: BorderRadius.circular(DT.rFull),
+          color: DT.primarySoft,
+          shape: BoxShape.circle,
         ),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(CupertinoIcons.location, size: 14, color: DT.infoText),
-            SizedBox(width: 5),
-            Text('导航',
-                style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: DT.infoText)),
-          ],
-        ),
+        child: const Icon(CupertinoIcons.location_north_fill,
+            size: 18, color: DT.primary),
       ),
     );
   }
@@ -438,7 +448,7 @@ class _TechnicianCustomerDetailScreenState
                     ],
                   ),
                   const SizedBox(height: 5),
-                  // 服务方式 · 日期（订单编号为次要信息，不在此展示）
+                  // 服务方式 · 日期（预约编号为次要信息，不在此展示）
                   Text(
                       [
                         _serviceTypeLabel(_str(item['serviceType'])),
@@ -607,7 +617,8 @@ class _TechnicianCustomerDetailScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(label,
-                    style: const TextStyle(fontSize: 12, color: DT.textTertiary)),
+                    style:
+                        const TextStyle(fontSize: 12, color: DT.textTertiary)),
                 const SizedBox(height: 4),
                 Text(
                   value,
@@ -712,188 +723,185 @@ class _TechnicianCustomerDetailScreenState
 
             // 不用 SafeArea：弹窗底部不留空白间隔，内容直接贴底（键盘弹起时跟随 viewInsets）
             return Container(
-                padding: EdgeInsets.fromLTRB(
-                  20,
-                  8,
-                  20,
-                  MediaQuery.of(ctx).viewInsets.bottom + 16,
-                ),
-                decoration: const BoxDecoration(
-                  color: DT.surface,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-                ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Container(
-                          width: 40,
-                          height: 4,
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: DT.border,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
+              padding: EdgeInsets.fromLTRB(
+                20,
+                8,
+                20,
+                MediaQuery.of(ctx).viewInsets.bottom + 16,
+              ),
+              decoration: const BoxDecoration(
+                color: DT.surface,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: DT.border,
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                      Row(
-                        children: [
-                          const Expanded(
-                              child: Text('编辑标签', style: DT.titleMedium)),
-                          _roundSheetClose(ctx),
-                        ],
-                      ),
-                      const SizedBox(height: 18),
-                      const Text('当前标签（点击移除）',
-                          style:
-                              TextStyle(fontSize: 12, color: DT.textSecondary)),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: editingTags.isEmpty
-                            ? [
-                                const Text('暂无标签',
-                                    style: TextStyle(
-                                        fontSize: 12, color: DT.textMuted))
-                              ]
-                            : editingTags.map((tag) {
-                                final tc = _tagColor(tag);
-                                return GestureDetector(
-                                  onTap: () {
-                                    HapticFeedback.selectionClick();
-                                    setSheetState(
-                                        () => editingTags.remove(tag));
-                                  },
-                                  child: Container(
-                                    constraints:
-                                        const BoxConstraints(minHeight: 36),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: tc.bg,
-                                      borderRadius:
-                                          BorderRadius.circular(DT.rFull),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(tag,
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                                color: tc.text)),
-                                        const SizedBox(width: 5),
-                                        Icon(CupertinoIcons.xmark,
-                                            size: 12, color: tc.text),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                      ),
-                      const SizedBox(height: 18),
-                      const Text('可选标签（点击添加）',
-                          style:
-                              TextStyle(fontSize: 12, color: DT.textSecondary)),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: allTags
-                                .where((t) => !editingTags.contains(t))
-                                .isEmpty
-                            ? [
-                                const Text('所有标签已添加',
-                                    style: TextStyle(
-                                        fontSize: 12, color: DT.textMuted))
-                              ]
-                            : allTags
-                                .where((t) => !editingTags.contains(t))
-                                .map((tag) {
-                                final tc = _tagColor(tag);
-                                return GestureDetector(
-                                  onTap: () => addTag(tag),
-                                  child: Container(
-                                    constraints:
-                                        const BoxConstraints(minHeight: 36),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: tc.bg,
-                                      borderRadius:
-                                          BorderRadius.circular(DT.rFull),
-                                      border: Border.all(color: DT.divider),
-                                    ),
-                                    child: Text('+ $tag',
-                                        style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: tc.text)),
-                                  ),
-                                );
-                              }).toList(),
-                      ),
-                      const SizedBox(height: 18),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: CupertinoTextField(
-                              controller: tagCtl,
-                              placeholder: '输入新标签名称',
-                              maxLength: 10,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 13),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: DT.border),
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              onSubmitted: addTag,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: () => addTag(tagCtl.text),
-                            child: Container(
-                              height: 44,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: DT.primary,
-                                borderRadius: BorderRadius.circular(DT.rFull),
-                              ),
-                              child: const Text('添加',
+                    ),
+                    Row(
+                      children: [
+                        const Expanded(
+                            child: Text('编辑标签', style: DT.titleMedium)),
+                        _roundSheetClose(ctx),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    const Text('当前标签（点击移除）',
+                        style:
+                            TextStyle(fontSize: 12, color: DT.textSecondary)),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: editingTags.isEmpty
+                          ? [
+                              const Text('暂无标签',
                                   style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white)),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 18),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: _savingTags
-                              ? null
-                              : () async {
-                                  final navigator = Navigator.of(ctx);
-                                  await _saveTags(editingTags);
-                                  if (mounted && navigator.canPop()) {
-                                    navigator.pop();
-                                  }
+                                      fontSize: 12, color: DT.textMuted))
+                            ]
+                          : editingTags.map((tag) {
+                              final tc = _tagColor(tag);
+                              return GestureDetector(
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  setSheetState(() => editingTags.remove(tag));
                                 },
-                          child: Text(_savingTags ? '保存中...' : '保存标签'),
+                                child: Container(
+                                  constraints:
+                                      const BoxConstraints(minHeight: 36),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: tc.bg,
+                                    borderRadius:
+                                        BorderRadius.circular(DT.rFull),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(tag,
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: tc.text)),
+                                      const SizedBox(width: 5),
+                                      Icon(CupertinoIcons.xmark,
+                                          size: 12, color: tc.text),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                    ),
+                    const SizedBox(height: 18),
+                    const Text('可选标签（点击添加）',
+                        style:
+                            TextStyle(fontSize: 12, color: DT.textSecondary)),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children:
+                          allTags.where((t) => !editingTags.contains(t)).isEmpty
+                              ? [
+                                  const Text('所有标签已添加',
+                                      style: TextStyle(
+                                          fontSize: 12, color: DT.textMuted))
+                                ]
+                              : allTags
+                                  .where((t) => !editingTags.contains(t))
+                                  .map((tag) {
+                                  final tc = _tagColor(tag);
+                                  return GestureDetector(
+                                    onTap: () => addTag(tag),
+                                    child: Container(
+                                      constraints:
+                                          const BoxConstraints(minHeight: 36),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: tc.bg,
+                                        borderRadius:
+                                            BorderRadius.circular(DT.rFull),
+                                        border: Border.all(color: DT.divider),
+                                      ),
+                                      child: Text('+ $tag',
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: tc.text)),
+                                    ),
+                                  );
+                                }).toList(),
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: CupertinoTextField(
+                            controller: tagCtl,
+                            placeholder: '输入新标签名称',
+                            maxLength: 10,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 13),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: DT.border),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            onSubmitted: addTag,
+                          ),
                         ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () => addTag(tagCtl.text),
+                          child: Container(
+                            height: 44,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: DT.primary,
+                              borderRadius: BorderRadius.circular(DT.rFull),
+                            ),
+                            child: const Text('添加',
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: _savingTags
+                            ? null
+                            : () async {
+                                final navigator = Navigator.of(ctx);
+                                await _saveTags(editingTags);
+                                if (mounted && navigator.canPop()) {
+                                  navigator.pop();
+                                }
+                              },
+                        child: Text(_savingTags ? '保存中...' : '保存标签'),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
+              ),
             );
           },
         );
@@ -1086,7 +1094,7 @@ class _TechnicianCustomerDetailScreenState
     return const [];
   }
 
-  /// 历史记录标题：美甲主题 / 服务名（订单编号属次要信息，不作为标题展示）。
+  /// 历史记录标题：美甲主题 / 服务名（预约编号属次要信息，不作为标题展示）。
   String _historyLabel(Map<String, dynamic> item) {
     final label = _str(item['label']);
     // _history 映射时 label 可能落到 orderNo，此处过滤掉纯编号

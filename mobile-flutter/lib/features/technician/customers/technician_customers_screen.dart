@@ -9,6 +9,7 @@ import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/nb_toast.dart';
+import '../../../core/widgets/technician_glass_header.dart';
 import '../auth/technician_auth_service.dart';
 import 'technician_customer_service.dart';
 import 'technician_customer_detail_screen.dart';
@@ -190,9 +191,8 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final topPad = MediaQuery.of(context).padding.top;
-    // 头部预估高度（titlebar 60 + 搜索框 56 + tabs 50 + 上下留白 = 约 216）
-    const headerHeight = 216.0;
+    final headerH =
+        TechnicianGlassHeader.estimateHeight(context, belowHeight: 100);
     return Scaffold(
       backgroundColor: DT.bg,
       // 让列表滚动到顶部玻璃层背后，形成液态玻璃透视效果
@@ -202,16 +202,14 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
               ? const Center(
                   child: CircularProgressIndicator(color: DT.primary))
               : _visibleCustomers.isEmpty
-                  ? _empty(topPad + headerHeight)
+                  ? _empty(headerH)
                   : RefreshIndicator(
                       color: DT.primary,
                       onRefresh: _loadCustomers,
                       child: ListView.separated(
-                        padding: EdgeInsets.fromLTRB(
-                            20, topPad + headerHeight + 4, 20, 100),
+                        padding: EdgeInsets.fromLTRB(20, headerH + 4, 20, 100),
                         itemCount: _visibleCustomers.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: 12),
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
                         itemBuilder: (_, i) =>
                             _customerCard(_visibleCustomers[i]),
                       ),
@@ -221,19 +219,14 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
             left: 0,
             right: 0,
             top: 0,
-            child: GlassContainer(
-              blur: DT.glassBlurHeavy,
-              opacity: 0.55,
-              borderRadius: 0,
-              showBorder: false,
-              padding: EdgeInsets.only(top: topPad),
-              child: Column(
+            child: TechnicianGlassHeader(
+              title: '客户',
+              actions: [_inviteButton()],
+              below: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _header(),
                   _searchBox(),
                   _tabs(),
-                  const SizedBox(height: 10), // 与上方间距保持一致
                 ],
               ),
             ),
@@ -243,50 +236,27 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
     );
   }
 
-  Widget _header() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 14, 16, 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('客户',
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: DT.textPrimary)),
-                SizedBox(height: 4),
-                Text('管理客户档案、标签与服务记录',
-                    style: TextStyle(fontSize: 13, color: DT.textTertiary)),
-              ],
-            ),
-          ),
-          GestureDetector(
-            onTap: _invite,
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 36),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                  color: const Color(0xFF3A2F23),
-                  borderRadius: BorderRadius.circular(999)),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(CupertinoIcons.share, size: 14, color: DT.primary),
-                  SizedBox(width: 6),
-                  Text('邀请客户',
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: DT.primary)),
-                ],
-              ),
-            ),
-          ),
-        ],
+  Widget _inviteButton() {
+    return GestureDetector(
+      onTap: _invite,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 36),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+            color: const Color(0xFF3A2F23),
+            borderRadius: BorderRadius.circular(999)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(CupertinoIcons.share, size: 14, color: DT.primary),
+            SizedBox(width: 6),
+            Text('邀请客户',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: DT.primary)),
+          ],
+        ),
       ),
     );
   }
@@ -294,7 +264,7 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
   Widget _searchBox() {
     return Padding(
       // 上下间距均为 8，确保与上方标题、下方筛选间距一致
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Container(
         height: 44,
         decoration: BoxDecoration(
@@ -344,41 +314,41 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
   Widget _tabs() {
     // 上下 padding 相等，与搜索框、列表的间距一致
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+      padding: EdgeInsets.zero,
       child: SizedBox(
         height: 36,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: EdgeInsets.zero,
-        itemCount: _customerTabs.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (_, i) {
-          final t = _customerTabs[i];
-          final active = _activeTab == t;
-          return GestureDetector(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              setState(() => _activeTab = t);
-            },
-            child: Container(
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: active ? DT.cream : DT.surface,
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: active ? DT.cream : DT.border),
+          itemCount: _customerTabs.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (_, i) {
+            final t = _customerTabs[i];
+            final active = _activeTab == t;
+            return GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                setState(() => _activeTab = t);
+              },
+              child: Container(
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: active ? DT.cream : DT.surface,
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: active ? DT.cream : DT.border),
+                ),
+                child: Text(t,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                      color: active ? DT.onCream : DT.textSecondary,
+                    )),
               ),
-              child: Text(t,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-                    color: active ? DT.onCream : DT.textSecondary,
-                  )),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
-    ),
     );
   }
 
@@ -485,7 +455,8 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
                 ),
                 if (!isEditing)
                   const Positioned(
-                    right: 0, top: 0,
+                    right: 0,
+                    top: 0,
                     child: Icon(CupertinoIcons.chevron_right,
                         size: 14, color: DT.textQuaternary),
                   ),
@@ -557,7 +528,9 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
       return ClipOval(
         child: CachedNetworkImage(
           imageUrl: url,
-          width: 44, height: 44, fit: BoxFit.cover,
+          width: 44,
+          height: 44,
+          fit: BoxFit.cover,
           placeholder: (_, __) => Container(color: const Color(0xFFFCE7EE)),
           errorWidget: (_, __, ___) => _avatarFallback(name, phoneAsName),
         ),
@@ -568,10 +541,11 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
 
   Widget _avatarFallback(String name, bool phoneAsName) {
     return Container(
-      width: 44, height: 44,
+      width: 44,
+      height: 44,
       alignment: Alignment.center,
-      decoration: const BoxDecoration(
-          color: Color(0xFFFCE7EE), shape: BoxShape.circle),
+      decoration:
+          const BoxDecoration(color: Color(0xFFFCE7EE), shape: BoxShape.circle),
       child: phoneAsName
           ? const Icon(CupertinoIcons.person_fill,
               size: 22, color: Color(0xFFE86B8F))

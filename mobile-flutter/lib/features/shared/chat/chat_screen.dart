@@ -38,6 +38,7 @@ class _ChatScreenState extends State<ChatScreen> {
   List<Map<String, dynamic>> _messages = [];
   bool _loading = true;
   final _inputCtl = TextEditingController();
+  final _inputFocus = FocusNode();
   final _scrollCtl = ScrollController();
   int? _otherPartyId;
   int? _conversationId;
@@ -61,6 +62,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _inputCtl.dispose();
+    _inputFocus.dispose();
     _scrollCtl.dispose();
     super.dispose();
   }
@@ -119,6 +121,7 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() => _messages.add(msg));
       _scrollToBottom();
     } catch (_) {
+      if (!mounted) return;
       NbToast.error(context, '发送失败，请重试');
     }
   }
@@ -166,6 +169,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
     final bottomPad = MediaQuery.of(context).padding.bottom;
+    final headerH = topPad + DT.sm + 44 + DT.md;
 
     return Scaffold(
       backgroundColor: DT.bgWarm,
@@ -174,8 +178,6 @@ class _ChatScreenState extends State<ChatScreen> {
           // Main content column
           Column(
             children: [
-              // Spacer for header
-              SizedBox(height: topPad + 52),
               // Messages area
               Expanded(
                 child: _loading
@@ -210,7 +212,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             keyboardDismissBehavior:
                                 ScrollViewKeyboardDismissBehavior.onDrag,
                             padding: EdgeInsets.fromLTRB(
-                                DT.xl, DT.md, DT.xl, DT.md),
+                                DT.xl, headerH + DT.md, DT.xl, DT.md),
                             itemCount: _messages.length,
                             itemBuilder: (context, index) {
                               final authSession = context.read<AuthSession>();
@@ -245,53 +247,71 @@ class _ChatScreenState extends State<ChatScreen> {
         filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
         child: Container(
           decoration: BoxDecoration(
-            color: DT.surface.withValues(alpha: 0.72),
+            color: DT.bgWarm.withValues(alpha: 0.36),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.white.withValues(alpha: 0.12),
+                DT.bgWarm.withValues(alpha: 0),
+              ],
+            ),
             border: Border(
               bottom: BorderSide(
-                  color: Colors.black.withValues(alpha: 0.06), width: 0.5),
+                  color: Colors.white.withValues(alpha: 0.16), width: 0.5),
             ),
           ),
           padding: EdgeInsets.fromLTRB(DT.xl, topPad + DT.sm, DT.xl, DT.md),
-          child: Row(
-            children: [
-              GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  Navigator.pop(context);
-                },
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: DT.surface.withValues(alpha: 0.45),
-                    shape: BoxShape.circle,
+          child: SizedBox(
+            height: 44,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: DT.surface.withValues(alpha: 0.36),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(CupertinoIcons.back,
+                          size: 18, color: DT.textPrimary),
+                    ),
                   ),
-                  child: const Icon(CupertinoIcons.back,
-                      size: 18, color: DT.textPrimary),
                 ),
-              ),
-              const SizedBox(width: DT.md),
-              Expanded(
-                child: Text(widget.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: DT.titleMedium),
-              ),
-              GestureDetector(
-                onTap: _openBookingSheet,
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: DT.primarySoft,
-                    shape: BoxShape.circle,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 64),
+                  child: Text(widget.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: DT.titleMedium),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    onTap: _openBookingSheet,
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: DT.primarySoft.withValues(alpha: 0.86),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(CupertinoIcons.calendar_badge_plus,
+                          size: 20, color: DT.primary),
+                    ),
                   ),
-                  child: const Icon(CupertinoIcons.calendar_badge_plus,
-                      size: 20, color: DT.primary),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -310,37 +330,69 @@ class _ChatScreenState extends State<ChatScreen> {
                   color: Colors.black.withValues(alpha: 0.06), width: 0.5),
             ),
           ),
-          padding:
-              EdgeInsets.fromLTRB(DT.xl, DT.sm, DT.xl, bottomPad + DT.sm),
+          padding: EdgeInsets.fromLTRB(DT.xl, DT.sm, DT.xl, bottomPad + DT.sm),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
-                child: TextField(
-                  controller: _inputCtl,
-                  style: DT.bodyMedium.copyWith(color: DT.textPrimary),
-                  minLines: 1,
-                  maxLines: 4,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => _sendMessage(),
-                  decoration: InputDecoration(
-                    hintText: '输入消息…',
-                    hintStyle: DT.bodyMedium.copyWith(color: DT.textTertiary),
-                    filled: true,
-                    fillColor: DT.surfaceAlt,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
-                    border: OutlineInputBorder(
+                child: AnimatedBuilder(
+                  animation: _inputFocus,
+                  builder: (context, child) {
+                    final focused = _inputFocus.hasFocus;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOut,
+                      decoration: BoxDecoration(
+                        color: focused
+                            ? DT.surface.withValues(alpha: 0.84)
+                            : DT.surfaceAlt,
                         borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide.none),
-                    enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide.none),
-                    focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide:
-                            const BorderSide(color: DT.primary, width: 1.2)),
+                        boxShadow: focused
+                            ? [
+                                BoxShadow(
+                                  color: DT.primary.withValues(alpha: 0.22),
+                                  blurRadius: 18,
+                                  spreadRadius: 1,
+                                  offset: const Offset(0, 0),
+                                ),
+                                BoxShadow(
+                                  color: Colors.white.withValues(alpha: 0.28),
+                                  blurRadius: 10,
+                                  spreadRadius: -2,
+                                  offset: const Offset(0, -1),
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: child,
+                    );
+                  },
+                  child: TextField(
+                    controller: _inputCtl,
+                    focusNode: _inputFocus,
+                    style: DT.bodyMedium.copyWith(color: DT.textPrimary),
+                    minLines: 1,
+                    maxLines: 4,
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (_) => _sendMessage(),
+                    decoration: InputDecoration(
+                      hintText: '输入消息…',
+                      hintStyle: DT.bodyMedium.copyWith(color: DT.textTertiary),
+                      filled: true,
+                      fillColor: Colors.transparent,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: BorderSide.none),
+                      enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: BorderSide.none),
+                      focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: BorderSide.none),
+                    ),
                   ),
                 ),
               ),
@@ -374,7 +426,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildBubble(Map<String, dynamic> msg, bool isMe) {
     final hasImage = msg['imageUrl'] != null;
-    final hasText = msg['content'] != null && msg['content'].toString().isNotEmpty;
+    final hasText =
+        msg['content'] != null && msg['content'].toString().isNotEmpty;
 
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,

@@ -9,6 +9,8 @@ import '../../../core/maps/map_service.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/nb_toast.dart';
+import '../../shared/chat/chat_screen.dart';
+import '../../shared/chat/chat_service.dart';
 import '../orders/technician_order_service.dart';
 import '../orders/technician_order_detail_screen.dart';
 
@@ -167,74 +169,116 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
     if (!ok && mounted) NbToast.error(context, '无法发起电话');
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final today = DateTime.now();
-    return Scaffold(
-      backgroundColor: DT.bg,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            _header(),
-            _dateStrip(today),
-            _summaryCard(),
-            _tabBar(),
-            Expanded(
-              child: _loading
-                  ? const Center(
-                      child: CircularProgressIndicator(color: DT.primary))
-                  : RefreshIndicator(
-                      color: DT.primary,
-                      onRefresh: _load,
-                      child: _listOrders.isEmpty ? _emptyList() : _list(),
-                    ),
-            ),
-          ],
+  Future<void> _openChat(Map<String, dynamic> order, String name) async {
+    final clientUserId = _clientUserId(order);
+    if (clientUserId == null) {
+      NbToast.error(context, '该客户尚未注册客户端，暂不支持在线消息');
+      return;
+    }
+    HapticFeedback.lightImpact();
+    final api = context.read<ApiClient>();
+    int? convId;
+    try {
+      final convs = await ChatService(api).conversations();
+      for (final conv in convs) {
+        if ((conv['client'] as Map<String, dynamic>?)?['id'] == clientUserId) {
+          convId = conv['id'] as int?;
+          break;
+        }
+      }
+    } catch (_) {}
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          conversationId: convId,
+          title: name,
+          otherPartyId: clientUserId,
+          clientId: clientUserId,
         ),
       ),
     );
   }
 
-  Widget _header() {
-    return GlassContainer(
-      blur: DT.glassBlurHeavy,
-      opacity: 0.64,
-      borderRadius: 0,
-      showBorder: false,
-      padding: const EdgeInsets.fromLTRB(20, 16, 16, 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  @override
+  Widget build(BuildContext context) {
+    final today = DateTime.now();
+    final topPanelH = _topPanelHeight(context);
+    return Scaffold(
+      backgroundColor: DT.bg,
+      body: Stack(
         children: [
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('行程',
-                    style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.4,
-                        color: DT.textPrimary)),
-                SizedBox(height: 4),
-                Text('高效规划路线，准时上门服务',
-                    style: TextStyle(fontSize: 13, color: DT.textSecondary)),
-              ],
-            ),
+          Positioned.fill(
+            top: topPanelH,
+            child: _loading
+                ? const Center(
+                    child: CircularProgressIndicator(color: DT.primary))
+                : RefreshIndicator(
+                    color: DT.primary,
+                    onRefresh: _load,
+                    child: _listOrders.isEmpty ? _emptyList() : _list(),
+                  ),
           ),
-          GestureDetector(
-            onTap: _openCalendar,
-            child: Container(
-              width: 40,
-              height: 40,
-              alignment: Alignment.center,
-              decoration:
-                  BoxDecoration(color: DT.primarySoft, shape: BoxShape.circle),
-              child: const Icon(CupertinoIcons.calendar,
-                  size: 20, color: DT.primary),
-            ),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            child: _topPanel(today),
           ),
         ],
+      ),
+    );
+  }
+
+  double _topPanelHeight(BuildContext context) {
+    final topPad = MediaQuery.of(context).padding.top;
+    return topPad + 300;
+  }
+
+  Widget _topPanel(DateTime today) {
+    return GlassContainer(
+      tint: Colors.black,
+      blur: DT.glassBlurHeavy,
+      opacity: 0.48,
+      borderRadius: 0,
+      showBorder: false,
+      padding: EdgeInsets.zero,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _headerRow(),
+          _dateStrip(today),
+          _summaryCard(),
+          _tabBar(),
+        ],
+      ),
+    );
+  }
+
+  Widget _headerRow() {
+    final topPad = MediaQuery.of(context).padding.top;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(DT.xl, topPad + DT.sm, DT.xl, DT.md),
+      child: SizedBox(
+        height: 44,
+        child: Row(
+          children: [
+            const Expanded(child: Text('行程', style: DT.titleLarge)),
+            GestureDetector(
+              onTap: _openCalendar,
+              child: Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                    color: DT.primarySoft, shape: BoxShape.circle),
+                child: const Icon(CupertinoIcons.calendar,
+                    size: 20, color: DT.primary),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -489,8 +533,7 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
         (o['customer'] as Map<String, dynamic>?)?['name']?.toString() ??
         '客户';
     final customerPhone = o['customerPhone']?.toString();
-    final customerAvatar = o['customerAvatar']?.toString();
-    final sc = _statusColors(status);
+    final customerAvatar = _customerAvatarUrl(o);
 
     return GestureDetector(
       onTap: () => _openOrderDetail(o['id'] as int),
@@ -513,14 +556,32 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 SizedBox(
-                  width: 56,
-                  child: Text(_fmtClock(startTime),
-                      style: const TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.w700,
-                          color: DT.textPrimary,
-                          letterSpacing: -0.3)),
+                  width: 68,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(_fmtClock(startTime),
+                            maxLines: 1,
+                            softWrap: false,
+                            style: const TextStyle(
+                                fontSize: 19,
+                                fontWeight: FontWeight.w700,
+                                color: DT.textPrimary,
+                                letterSpacing: -0.3)),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(_dateWeekLabel(startTime),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 10.5, color: DT.textTertiary)),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 4),
                 _avatar(customerName, customerAvatar),
                 const SizedBox(width: 10),
                 Expanded(
@@ -540,19 +601,20 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                               fontSize: 12, color: DT.textTertiary)),
+                      const SizedBox(height: 5),
+                      _statusMeta(status),
                     ],
                   ),
                 ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                  decoration: BoxDecoration(
-                      color: sc.$1, borderRadius: BorderRadius.circular(6)),
-                  child: Text(_statusLabel(status),
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: sc.$2)),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _iconEntry(CupertinoIcons.phone_fill,
+                        onTap: () => _callCustomer(customerPhone)),
+                    const SizedBox(width: 8),
+                    _iconEntry(CupertinoIcons.chat_bubble_fill,
+                        onTap: () => _openChat(o, customerName)),
+                  ],
                 ),
               ],
             ),
@@ -560,7 +622,9 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
               const SizedBox(height: 10),
               Row(
                 children: [
-                  const Text('📍 ', style: TextStyle(fontSize: 12)),
+                  const Icon(CupertinoIcons.location_solid,
+                      size: 13, color: DT.textTertiary),
+                  const SizedBox(width: 4),
                   Expanded(
                     child: Text(address,
                         maxLines: 1,
@@ -595,6 +659,48 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
     );
   }
 
+  Widget _statusMeta(String status) {
+    final sc = _statusColors(status);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: sc.$2.withValues(alpha: 0.78),
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 5),
+        Text(_statusLabel(status),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: sc.$2.withValues(alpha: 0.86))),
+      ],
+    );
+  }
+
+  Widget _iconEntry(IconData icon, {required VoidCallback onTap}) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        width: 36,
+        height: 36,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: DT.surfaceAlt.withValues(alpha: 0.86),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 17, color: DT.textPrimary),
+      ),
+    );
+  }
+
   Widget _actionBtn(IconData icon, String label,
       {required Color bg, required Color fg, required VoidCallback onTap}) {
     return SizedBox(
@@ -620,8 +726,16 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
     if (url != null && url.isNotEmpty) {
       return ClipOval(
           child: CachedNetworkImage(
-              imageUrl: url, width: 36, height: 36, fit: BoxFit.cover));
+              imageUrl: url,
+              width: 36,
+              height: 36,
+              fit: BoxFit.cover,
+              errorWidget: (_, __, ___) => _avatarFallback(name)));
     }
+    return _avatarFallback(name);
+  }
+
+  Widget _avatarFallback(String name) {
     return Container(
       width: 36,
       height: 36,
@@ -641,6 +755,57 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
     if (d == null) return s;
     final l = d.toLocal();
     return '${l.hour.toString().padLeft(2, '0')}:${l.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _dateWeekLabel(String s) {
+    final d = DateTime.tryParse(s);
+    if (d == null) return '';
+    final l = d.toLocal();
+    const week = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+    return '${l.month}/${l.day} ${week[l.weekday - 1]}';
+  }
+
+  int? _clientUserId(Map<String, dynamic> order) {
+    final client = order['client'] as Map<String, dynamic>?;
+    final customer = order['customer'] as Map<String, dynamic>?;
+    final clientUser = order['clientUser'] as Map<String, dynamic>?;
+    final customerClientUser = customer?['clientUser'] as Map<String, dynamic>?;
+    return _int(order['clientUserId']) ??
+        _int(clientUser?['id']) ??
+        _int(client?['id']) ??
+        _int(customer?['clientUserId']) ??
+        _int(customerClientUser?['id']);
+  }
+
+  int? _int(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
+  String? _customerAvatarUrl(Map<String, dynamic> order) {
+    final client = order['client'] as Map<String, dynamic>?;
+    final customer = order['customer'] as Map<String, dynamic>?;
+    final clientUser = order['clientUser'] as Map<String, dynamic>?;
+    final customerClient = customer?['client'] as Map<String, dynamic>?;
+    final customerClientUser = customer?['clientUser'] as Map<String, dynamic>?;
+    return _str(order['avatarUrl']) ??
+        _str(order['customerAvatar']) ??
+        _str(order['clientAvatar']) ??
+        _str(clientUser?['avatarUrl']) ??
+        _str(client?['avatarUrl']) ??
+        _str(client?['avatar']) ??
+        _str(customer?['avatarUrl']) ??
+        _str(customer?['customerAvatar']) ??
+        _str(customerClient?['avatarUrl']) ??
+        _str(customerClientUser?['avatarUrl']);
+  }
+
+  String? _str(dynamic value) {
+    final s = value?.toString().trim();
+    if (s == null || s.isEmpty || s == 'null') return null;
+    return s;
   }
 
   String _weekdayLabel(int w) =>

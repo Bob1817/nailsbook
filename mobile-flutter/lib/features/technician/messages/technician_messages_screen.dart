@@ -7,11 +7,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
+import '../../../core/widgets/technician_glass_header.dart';
 import '../../shared/chat/chat_service.dart';
 import '../../shared/chat/chat_screen.dart';
 import '../orders/technician_order_detail_screen.dart';
 
-/// 美甲师「消息」统一收件箱：会话 + 订单衍生通知（待处理/服务提醒/系统通知）。
+/// 美甲师「消息」统一收件箱：会话 + 预约衍生通知（待处理/服务提醒/系统通知）。
 /// 对齐 webapp technician-frontend/src/pages/MessagesPage.tsx。
 /// 设计风格对齐客户列表页（Stack + 浮动玻璃头部 + 柔玻璃卡片）。
 class TechnicianMessagesScreen extends StatefulWidget {
@@ -156,9 +157,8 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
         type: _T.service,
         name: _custName(o),
         badge: done ? '已完成' : '待服务',
-        preview: done
-            ? '服务完成：${_svcName(o)}，记得跟进复购与评价'
-            : '服务提醒：${_svcName(o)} 即将开始',
+        preview:
+            done ? '服务完成：${_svcName(o)}，记得跟进复购与评价' : '服务提醒：${_svcName(o)} 即将开始',
         time: o['startTime']?.toString() ?? '',
         unread: !done,
         orderId: o['id'] as int,
@@ -203,9 +203,8 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
   @override
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
-    // Estimate header height: topPad + title row + search + tabs + bottom spacing
-    const headerContentH = 44.0 + 44.0 + 36.0 + 18.0; // title + search + tabs + pad
-    final headerH = topPad + headerContentH;
+    final headerH =
+        TechnicianGlassHeader.estimateHeight(context, belowHeight: 102);
 
     return Scaffold(
       backgroundColor: DT.bg,
@@ -264,90 +263,59 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
                   left: 0,
                   right: 0,
                   top: 0,
-                  child: _header(topPad),
+                  child: _header(),
                 ),
               ],
             ),
     );
   }
 
-  Widget _header(double topPad) {
+  Widget _header() {
     final unread = _items.where((i) => i.unread).length;
-    return GlassContainer(
-      blur: DT.glassBlurHeavy,
-      opacity: 0.62,
-      borderRadius: 0,
-      showBorder: false,
-      padding: EdgeInsets.only(top: topPad),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(DT.xl, DT.sm, DT.xl, DT.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Title row
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('消息',
-                          style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                              color: DT.textPrimary,
-                              letterSpacing: -0.3)),
-                      const SizedBox(height: 2),
-                      Text('与客户沟通、处理预约与通知',
-                          style: DT.bodySmall
-                              .copyWith(color: DT.textTertiary)),
-                    ],
-                  ),
-                ),
-              ],
+    return TechnicianGlassHeader(
+      title: '消息',
+      below: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 40,
+            decoration: BoxDecoration(
+              color: DT.surfaceAlt,
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(height: DT.md),
-            // Search box
-            Container(
-              height: 40,
-              decoration: BoxDecoration(
-                color: DT.surfaceAlt,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TextField(
-                controller: _searchCtl,
-                textAlignVertical: TextAlignVertical.center,
-                style: DT.bodyMedium.copyWith(color: DT.textPrimary),
-                onChanged: (v) => setState(() => _search = v),
-                decoration: InputDecoration(
-                  hintText: '搜索消息内容或客户名称',
-                  hintStyle: DT.bodyMedium.copyWith(color: DT.textTertiary),
-                  prefixIcon: const Icon(CupertinoIcons.search,
-                      size: 18, color: DT.textTertiary),
-                  suffixIcon: _search.isNotEmpty
-                      ? GestureDetector(
-                          onTap: () {
-                            _searchCtl.clear();
-                            setState(() => _search = '');
-                          },
-                          child: const Icon(CupertinoIcons.xmark_circle_fill,
-                              size: 18, color: DT.textTertiary),
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  isCollapsed: true,
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 11),
-                ),
+            child: TextField(
+              controller: _searchCtl,
+              textAlignVertical: TextAlignVertical.center,
+              style: DT.bodyMedium.copyWith(color: DT.textPrimary),
+              onChanged: (v) => setState(() => _search = v),
+              decoration: InputDecoration(
+                hintText: '搜索消息内容或客户名称',
+                hintStyle: DT.bodyMedium.copyWith(color: DT.textTertiary),
+                prefixIcon: const Icon(CupertinoIcons.search,
+                    size: 18, color: DT.textTertiary),
+                suffixIcon: _search.isNotEmpty
+                    ? GestureDetector(
+                        onTap: () {
+                          _searchCtl.clear();
+                          setState(() => _search = '');
+                        },
+                        child: const Icon(CupertinoIcons.xmark_circle_fill,
+                            size: 18, color: DT.textTertiary),
+                      )
+                    : null,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                isCollapsed: true,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 4, vertical: 11),
               ),
             ),
-            const SizedBox(height: DT.md),
-            // Filter tabs
-            _tabs(unread),
-          ],
-        ),
+          ),
+          const SizedBox(height: DT.md),
+          _tabs(unread),
+        ],
       ),
     );
   }
@@ -381,8 +349,7 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
               decoration: BoxDecoration(
                 color: active ? DT.cream : DT.surface,
                 borderRadius: BorderRadius.circular(DT.rFull),
-                border:
-                    Border.all(color: active ? DT.textPrimary : DT.border),
+                border: Border.all(color: active ? DT.textPrimary : DT.border),
               ),
               child: Text(t.$2,
                   style: TextStyle(
@@ -451,8 +418,8 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
                   Text(item.preview,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: DT.bodySmall.copyWith(
-                          color: DT.textSecondary, height: 1.4)),
+                      style: DT.bodySmall
+                          .copyWith(color: DT.textSecondary, height: 1.4)),
                 ],
               ),
             ),
@@ -460,7 +427,8 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(_fmt(item.time), style: DT.captionLarge.copyWith(color: DT.textMuted)),
+                Text(_fmt(item.time),
+                    style: DT.captionLarge.copyWith(color: DT.textMuted)),
                 if (item.unread) ...[
                   const SizedBox(height: 6),
                   Container(
@@ -530,14 +498,11 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
       width: 44,
       height: 44,
       alignment: Alignment.center,
-      decoration: const BoxDecoration(
-          color: DT.primarySoft, shape: BoxShape.circle),
-      child: Text(
-          name.isNotEmpty ? name.substring(0, 1) : '?',
+      decoration:
+          const BoxDecoration(color: DT.primarySoft, shape: BoxShape.circle),
+      child: Text(name.isNotEmpty ? name.substring(0, 1) : '?',
           style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: DT.primary)),
+              fontSize: 16, fontWeight: FontWeight.w600, color: DT.primary)),
     );
   }
 
@@ -545,12 +510,11 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
     HapticFeedback.lightImpact();
     if (item.type == _T.chat && item.conversationId != null) {
       Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => ChatScreen(
-                      conversationId: item.conversationId!,
-                      title: item.name)))
-          .then((_) => _load());
+          context,
+          MaterialPageRoute(
+              builder: (_) => ChatScreen(
+                  conversationId: item.conversationId!,
+                  title: item.name))).then((_) => _load());
     } else if (item.orderId != null) {
       Navigator.push(
               context,

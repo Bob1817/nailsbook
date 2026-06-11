@@ -13,6 +13,7 @@ import '../../../core/maps/map_service.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/nb_toast.dart';
+import '../../../core/widgets/technician_glass_header.dart';
 import '../auth/technician_auth_service.dart';
 import '../schedule/technician_schedule_screen.dart';
 import '../orders/technician_orders_screen.dart';
@@ -123,23 +124,21 @@ class _TechGlassTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      minimum: const EdgeInsets.fromLTRB(DT.lg, 0, DT.lg, DT.lg),
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    final bottomGap = (bottomInset * 0.4).clamp(8.0, 16.0);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(DT.lg, 0, DT.lg, bottomGap),
       child: GlassContainer(
-        blur: 56,
-        opacity: 0.18,
+        tint: Colors.black,
+        blur: DT.glassBlurHeavy,
+        opacity: 0.48,
         borderRadius: 28,
+        showBorder: true,
         boxShadow: const [
           BoxShadow(
-            color: Color(0x14000000),
-            blurRadius: 32,
-            offset: Offset(0, 8),
-          ),
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
+            color: Color(0x66000000),
+            blurRadius: 28,
+            offset: Offset(0, 10),
           ),
         ],
         child: Padding(
@@ -168,13 +167,13 @@ class _TechGlassTabBar extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(active ? item.$1 : item.$2,
-                  size: 23, color: active ? DT.primary : DT.textPrimary),
+                  size: 23, color: active ? DT.primary : DT.textSecondary),
               SizedBox(height: DT.xs),
               Text(item.$3,
                   style: TextStyle(
                     fontSize: DT.captionMedium.fontSize,
                     fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-                    color: active ? DT.primary : DT.textPrimary,
+                    color: active ? DT.primary : DT.textSecondary,
                   )),
               SizedBox(height: DT.xs),
               Container(
@@ -317,7 +316,6 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
           backgroundColor: DT.bg,
           body: Center(child: CircularProgressIndicator(color: DT.primary)));
     }
-    final topPad = MediaQuery.of(context).padding.top;
     final profile = widget.profile;
 
     final todayOrders = _orders
@@ -335,47 +333,61 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
           .compareTo(b['startTime']?.toString() ?? ''));
     final next = active.isNotEmpty ? active.first : null;
 
+    final headerH =
+        TechnicianGlassHeader.estimateHeight(context, belowHeight: 56);
+
     return Container(
       decoration: const BoxDecoration(gradient: DT.screenGradient),
-      child: RefreshIndicator(
-        color: DT.primary,
-        onRefresh: _refreshAll,
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(DT.xl, topPad + DT.md, DT.xl, 110),
-          children: [
-            _header(profile, todayOrders.length, expected),
-            SizedBox(height: DT.xxl),
-            _sectionTitle('下一单'),
-            SizedBox(height: DT.md),
-            _nextOrderCard(next),
-            SizedBox(height: DT.xxl),
-            _sectionTitle('待处理事项'),
-            SizedBox(height: DT.md),
-            _pendingCard(),
-            SizedBox(height: DT.xxl),
-            _sectionTitle('今日行程'),
-            SizedBox(height: DT.md),
-            _todayScheduleCard(todayOrders),
-            SizedBox(height: DT.xxl),
-            Row(
+      child: Stack(
+        children: [
+          RefreshIndicator(
+            color: DT.primary,
+            onRefresh: _refreshAll,
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(DT.xl, headerH + DT.md, DT.xl, 110),
               children: [
-                Expanded(child: _sectionTitle('今日热门作品')),
-                GestureDetector(
-                  onTap: () => _push(const TechnicianWorksScreen()),
-                  child: Text('查看全部',
-                      style: DT.bodyMedium.copyWith(
-                          color: DT.primary, fontWeight: FontWeight.w600)),
+                _sectionTitle('下一单'),
+                SizedBox(height: DT.md),
+                _nextOrderCard(next),
+                SizedBox(height: DT.xxl),
+                _sectionTitle('待处理事项'),
+                SizedBox(height: DT.md),
+                _pendingCard(),
+                SizedBox(height: DT.xxl),
+                _sectionTitle('今日行程'),
+                SizedBox(height: DT.md),
+                _todayScheduleCard(todayOrders),
+                SizedBox(height: DT.xxl),
+                Row(
+                  children: [
+                    Expanded(child: _sectionTitle('今日热门作品')),
+                    GestureDetector(
+                      onTap: () => _push(const TechnicianWorksScreen()),
+                      child: Text('查看全部',
+                          style: DT.bodyMedium.copyWith(
+                              color: DT.primary, fontWeight: FontWeight.w600)),
+                    ),
+                  ],
                 ),
+                SizedBox(height: DT.md),
+                _popularWorks(),
+                SizedBox(height: DT.xxl),
+                _sectionTitle('分享我的美甲名片'),
+                SizedBox(height: DT.md),
+                _shareCard(profile),
               ],
             ),
-            SizedBox(height: DT.md),
-            _popularWorks(),
-            SizedBox(height: DT.xxl),
-            _sectionTitle('分享我的美甲名片'),
-            SizedBox(height: DT.md),
-            _shareCard(profile),
-          ],
-        ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            child: TechnicianGlassHeader(
+              title: '首页',
+              below: _header(profile, todayOrders.length, expected),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -383,7 +395,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
   Widget _sectionTitle(String t) => Text(t, style: DT.titleMedium);
 
   BoxDecoration get _cardDeco => BoxDecoration(
-        color: DT.glassStandard,
+        color: DT.surface.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(DT.rCard),
         boxShadow: DT.shadowTile,
       );
@@ -540,8 +552,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                             height: 32,
                             alignment: Alignment.center,
                             decoration: const BoxDecoration(
-                                color: DT.primarySoft,
-                                shape: BoxShape.circle),
+                                color: DT.primarySoft, shape: BoxShape.circle),
                             child: Text(customerName.substring(0, 1),
                                 style: const TextStyle(
                                     fontSize: 13,
@@ -680,10 +691,12 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
     ];
     if (items.isEmpty) {
       return GlassContainer(
+        tint: DT.surface,
         padding: EdgeInsets.all(DT.lg),
         borderRadius: DT.rCard,
-        opacity: 0.66,
+        opacity: 0.52,
         blur: DT.glassBlurStandard,
+        showBorder: false,
         boxShadow: DT.shadowTile,
         child: Row(children: [
           const Icon(CupertinoIcons.checkmark_circle_fill,
@@ -696,9 +709,11 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
       );
     }
     return GlassContainer(
+      tint: DT.surface,
       borderRadius: DT.rCard,
-      opacity: 0.66,
+      opacity: 0.52,
       blur: DT.glassBlurStandard,
+      showBorder: false,
       boxShadow: DT.shadowTile,
       padding: EdgeInsets.all(DT.sm),
       child: Column(
@@ -707,7 +722,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
             if (i > 0) SizedBox(height: DT.sm),
             Container(
               decoration: BoxDecoration(
-                color: DT.surface.withValues(alpha: 0.58),
+                color: Colors.white.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: DT.shadowSm,
               ),
@@ -746,10 +761,12 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
   Widget _todayScheduleCard(List<Map<String, dynamic>> todayOrders) {
     if (todayOrders.isEmpty) {
       return GlassContainer(
+        tint: DT.surface,
         padding: EdgeInsets.symmetric(vertical: DT.space32, horizontal: DT.lg),
         borderRadius: DT.rCard,
-        opacity: 0.66,
+        opacity: 0.52,
         blur: DT.glassBlurStandard,
+        showBorder: false,
         boxShadow: DT.shadowTile,
         child: Center(
             child: Text('今天还没有新的预约安排',
@@ -757,9 +774,11 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
       );
     }
     return GlassContainer(
+      tint: DT.surface,
       borderRadius: DT.rCard,
-      opacity: 0.66,
+      opacity: 0.52,
       blur: DT.glassBlurStandard,
+      showBorder: false,
       boxShadow: DT.shadowTile,
       padding: EdgeInsets.all(DT.sm),
       child: Column(
@@ -793,7 +812,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
         child: Container(
           padding: EdgeInsets.all(DT.lg),
           decoration: BoxDecoration(
-            color: DT.surface.withValues(alpha: 0.58),
+            color: Colors.white.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(20),
             boxShadow: DT.shadowSm,
           ),
@@ -845,8 +864,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: DT.bodySmall.copyWith(
-                                  color: DT.textSecondary,
-                                  height: 1.4)),
+                                  color: DT.textSecondary, height: 1.4)),
                         ),
                       ],
                     ),
@@ -1054,8 +1072,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                    color: DT.surface,
-                    borderRadius: BorderRadius.circular(12)),
+                    color: DT.surface, borderRadius: BorderRadius.circular(12)),
                 child: QrImageView(
                     data: url,
                     version: QrVersions.auto,
