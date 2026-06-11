@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'api_error.dart';
 
 typedef OnUnauthorized = void Function();
@@ -96,7 +97,20 @@ class ApiClient {
     if (_token != null) {
       request.headers['Authorization'] = 'Bearer $_token';
     }
-    request.files.add(await http.MultipartFile.fromPath(fieldName, filePath));
+    // 显式声明 contentType + 文件名，确保后端按 mimetype+扩展名校验通过
+    // （image_picker 在 iOS 上返回的临时路径扩展名不稳定，自动推断常失败）。
+    final ext = filePath.split('.').last.toLowerCase();
+    final (MediaType type, String filename) = switch (ext) {
+      'png' => (MediaType('image', 'png'), 'upload.png'),
+      'webp' => (MediaType('image', 'webp'), 'upload.webp'),
+      _ => (MediaType('image', 'jpeg'), 'upload.jpg'),
+    };
+    request.files.add(await http.MultipartFile.fromPath(
+      fieldName,
+      filePath,
+      filename: filename,
+      contentType: type,
+    ));
     return request.send().timeout(_requestTimeout);
   }
 

@@ -82,7 +82,7 @@ class _ClientEditProfileScreenState extends State<ClientEditProfileScreen> {
     try {
       final api = context.read<ApiClient>();
       final resp =
-          await api.uploadMultipart('/uploads/image', file.path, 'image');
+          await api.uploadMultipart('/uploads/image', file.path, 'file');
       final body = await resp.stream.bytesToString();
       final json = jsonDecode(body) as Map<String, dynamic>;
       final url = json['url'] as String?;
