@@ -297,6 +297,8 @@ export class TechnicianAuthService {
       invitationCode: technician.invitationCode,
       homeService: technician.homeService,
       shopService: technician.shopService,
+      // 接单就绪：至少开启一种服务类型；未就绪则锁定邀请码/邀请链接
+      bookingReady: technician.homeService || technician.shopService,
       shopAddresses: this.parseShopAddresses(technician.shopAddresses),
       socialMedia: this.parseSocialMedia(technician.socialMedia),
       serviceItems: this.parseServiceItems(technician.serviceItems),
@@ -466,6 +468,8 @@ export class TechnicianAuthService {
       lastLoginAt: technician.lastLoginAt,
       homeService: technician.homeService,
       shopService: technician.shopService,
+      // 接单就绪：至少开启一种服务类型；未就绪则锁定邀请码/邀请链接
+      bookingReady: technician.homeService || technician.shopService,
       shopAddresses: this.parseShopAddresses(technician.shopAddresses),
       socialMedia: this.parseSocialMedia(technician.socialMedia),
       serviceItems: this.parseServiceItems(technician.serviceItems),
@@ -655,7 +659,7 @@ export class TechnicianAuthService {
 
   async updateServiceType(
     technicianId: number,
-    dto: { homeService: boolean; shopService: boolean; shopAddresses?: any[] },
+    dto: { homeService?: boolean; shopService?: boolean; shopAddresses?: any[] },
   ) {
     const technician = await this.prisma.technician.findUnique({
       where: { id: technicianId },
@@ -665,10 +669,14 @@ export class TechnicianAuthService {
       throw new UnauthorizedException('美甲师不存在');
     }
 
-    const updateData: any = {
-      homeService: dto.homeService,
-      shopService: dto.shopService,
-    };
+    // 局部更新：只写入本次提交的字段，未提交的保持不变
+    const updateData: any = {};
+    if (dto.homeService !== undefined) {
+      updateData.homeService = dto.homeService;
+    }
+    if (dto.shopService !== undefined) {
+      updateData.shopService = dto.shopService;
+    }
 
     if (dto.shopAddresses !== undefined) {
       updateData.shopAddresses = JSON.stringify(

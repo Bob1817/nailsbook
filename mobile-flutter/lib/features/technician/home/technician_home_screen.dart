@@ -16,6 +16,7 @@ import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/nb_toast.dart';
 import '../../../core/widgets/technician_glass_header.dart';
 import '../auth/technician_auth_service.dart';
+import '../onboarding/technician_setup_guide_screen.dart';
 import '../schedule/technician_schedule_screen.dart';
 import '../orders/technician_orders_screen.dart';
 import '../orders/technician_order_service.dart';
@@ -68,23 +69,39 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
     }
   }
 
-  /// 缺少 province/city 时强制完善（对齐 webapp ProtectedRoute 守卫）。
+  /// 首次登录强制引导：
+  /// 1) 缺少 province/city 时强制完善（对齐 webapp ProtectedRoute 守卫）；
+  /// 2) province/city 就绪后，若未开启任何服务类型，强制进入接单前配置引导。
   void _maybePromptProfileCompletion(Map<String, dynamic> data) {
     final province = (data['province'] as String?)?.trim() ?? '';
     final city = (data['city'] as String?)?.trim() ?? '';
-    if (province.isNotEmpty && city.isNotEmpty) return;
+    final needProfile = province.isEmpty || city.isEmpty;
+    final ready =
+        data['homeService'] == true || data['shopService'] == true;
+    if (!needProfile && ready) return;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      final done = await Navigator.push<bool>(
+      if (needProfile) {
+        final done = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TechnicianProfileCompletionScreen(
+              initialProvince: province.isEmpty ? null : province,
+              initialCity: city.isEmpty ? null : city,
+            ),
+          ),
+        );
+        if (done == true && mounted) _loadProfile();
+        return;
+      }
+      // province/city 就绪但未开启服务类型 → 强制接单前配置引导
+      await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => TechnicianProfileCompletionScreen(
-            initialProvince: province.isEmpty ? null : province,
-            initialCity: city.isEmpty ? null : city,
-          ),
+          builder: (_) => const TechnicianSetupGuideScreen(),
         ),
       );
-      if (done == true && mounted) _loadProfile();
+      if (mounted) _loadProfile();
     });
   }
 

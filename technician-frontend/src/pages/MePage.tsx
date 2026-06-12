@@ -294,6 +294,8 @@ export const MePage: React.FC = () => {
   const invitationCode = technician?.invitationCode;
   const clientBaseUrl = import.meta.env.VITE_CLIENT_BASE_URL || 'https://m.lunails.cn';
   const inviteLink = invitationCode ? `${clientBaseUrl}/invite?invite_code=${encodeURIComponent(invitationCode)}` : '';
+  // 接单就绪：至少开启一种服务类型；未就绪则锁定邀请码/邀请链接
+  const bookingReady = !!(technician?.homeService || technician?.shopService);
   const moduleClassName = 'mb-4 p-4';
   const moduleHeaderClassName = 'mb-4 flex items-center justify-between gap-3';
   const iconPlateClassName = 'flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#ffe9f0] text-lg ring-1 ring-black/[0.03]';
@@ -572,14 +574,22 @@ export const MePage: React.FC = () => {
               <h2 className="text-[18px] font-semibold text-gray-900">邀请码分享</h2>
               <p className="mt-1 text-xs text-gray-500">把邀请码或链接发给客户，客户可直接进入绑定流程。</p>
             </div>
-            <button
-              type="button"
-              onClick={() => invitationCode && navigator.clipboard.writeText(invitationCode).then(() => toast.success('邀请码已复制'))}
-              className="shrink-0 whitespace-nowrap rounded-full bg-[#ffe9f0] px-3.5 py-1.5 text-[12px] font-semibold text-pink-500 min-h-[32px] active:bg-[#ffd6e4]"
-            >
-              邀请客户
-            </button>
+            {bookingReady && (
+              <button
+                type="button"
+                onClick={() => invitationCode && navigator.clipboard.writeText(invitationCode).then(() => toast.success('邀请码已复制'))}
+                className="shrink-0 whitespace-nowrap rounded-full bg-[#ffe9f0] px-3.5 py-1.5 text-[12px] font-semibold text-pink-500 min-h-[32px] active:bg-[#ffd6e4]"
+              >
+                邀请客户
+              </button>
+            )}
           </div>
+          {!bookingReady ? (
+            <div className="rounded-[20px] bg-[#fff7fa] px-4 py-5 text-center">
+              <p className="text-sm font-medium text-gray-700">开启上门或到店服务后，才能生成并分享邀请链接</p>
+              <p className="mt-1 text-xs text-gray-400">请前往「服务类型」开启服务</p>
+            </div>
+          ) : (
           <div className="rounded-[20px] bg-[#fff7fa] p-3.5">
             <div className="flex items-center justify-between gap-3 rounded-[16px] bg-white px-3.5 py-3">
               <div className="min-w-0 flex-1">
@@ -627,6 +637,7 @@ export const MePage: React.FC = () => {
               )}
             </div>
           </div>
+          )}
         </Card>
 
         <Card className="mb-4 overflow-hidden p-0">

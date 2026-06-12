@@ -49,6 +49,7 @@ const ServicesPage = lazy(() => import('./pages/ServicesPage'));
 const HomeServiceSettingsPage = lazy(() => import('./pages/HomeServiceSettingsPage'));
 const ProfileSettingsPage = lazy(() => import('./pages/ProfileSettingsPage'));
 const ProfileCompletionPage = lazy(() => import('./pages/ProfileCompletionPage'));
+const SetupGuidePage = lazy(() => import('./pages/SetupGuidePage'));
 const OrderDetailPage = lazy(() => import('./pages/OrderDetailPage'));
 const SubscriptionPage = lazy(async () => {
   const module = await import('./pages/SubscriptionPage');
@@ -109,6 +110,7 @@ function App() {
                   <Route path="/home-service-settings" element={<HomeServiceSettingsPage />} />
                   <Route path="/profile-settings" element={<ProfileSettingsPage />} />
                   <Route path="/profile-completion" element={<ProfileCompletionPage />} />
+                  <Route path="/setup-guide" element={<SetupGuidePage />} />
                   <Route path="/subscription" element={<SubscriptionPage />} />
                   <Route path="/tag-management" element={<TagManagementPage />} />
                   <Route path="/orders/:id" element={<OrderDetailPage />} />

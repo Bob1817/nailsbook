@@ -175,6 +175,14 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
     return [];
   }
 
+  /// 客户端：技师未开启任何服务类型（上门/到店都关）→ 无法发起预约。
+  /// 与后端 client-orders 的就绪门控保持一致。
+  bool get _techNotServing =>
+      _isClientMode &&
+      _techData != null &&
+      _techData?['homeService'] != true &&
+      _techData?['shopService'] != true;
+
   List<Map<String, dynamic>> get _shopAddresses {
     if (!_isClientMode) return [];
     return ((_techData?['shopAddresses'] as List<dynamic>?) ?? [])
@@ -307,7 +315,9 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator(color: DT.primary))
-                : ListView(
+                : _techNotServing
+                    ? _buildNotServingView()
+                    : ListView(
                     padding: EdgeInsets.fromLTRB(20, 4, 20, bottomPad + 100),
                     children: [
                       const Text('📅 发起预约',
@@ -337,8 +347,27 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
                     ],
                   ),
           ),
-          _buildSubmitBar(bottomPad),
+          if (!_techNotServing) _buildSubmitBar(bottomPad),
         ],
+      ),
+    );
+  }
+
+  Widget _buildNotServingView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.info_outline_rounded, size: 48, color: DT.textMuted),
+            SizedBox(height: 16),
+            Text('美甲师未开启美甲服务，请联系美甲师开启服务',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 15, height: 1.5, color: DT.textSecondary)),
+          ],
+        ),
       ),
     );
   }

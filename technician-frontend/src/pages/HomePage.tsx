@@ -406,7 +406,14 @@ export const HomePage: React.FC = () => {
           <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
-              onClick={() => setShowShareSheet(true)}
+              onClick={() => {
+                // 接单就绪：至少开启一种服务类型；未就绪则锁定邀请链接
+                if (!(technician?.homeService || technician?.shopService)) {
+                  toast.warning('请先开启上门或到店服务，才能分享名片邀请链接');
+                  return;
+                }
+                setShowShareSheet(true);
+              }}
               className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-[20px] border border-white/[0.18] bg-[linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.1)_100%)] px-5 py-2.5 text-[13px] font-semibold text-white shadow-[0_16px_32px_rgba(61,27,49,0.14),inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-md transition-colors active:bg-white/[0.18]"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -107,24 +107,27 @@ class _TechnicianBusinessCardScreenState
                           style: DT.captionLarge.copyWith(color: DT.textMuted)),
                     ),
                     const SizedBox(height: 20),
-                    Row(children: [
-                      Expanded(
-                        child: _actionBtn(
-                            CupertinoIcons.doc_on_clipboard, '复制链接', false,
-                            () {
-                          Clipboard.setData(
-                              ClipboardData(text: _shareUrl(p)));
-                          NbToast.success(context, '链接已复制，发给客户即可');
-                        }),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _actionBtn(CupertinoIcons.share, '分享名片', true,
-                            () => _share(
-                                '${p.name} 的美甲主页，长按或点击预约：${_shareUrl(p)}',
-                                _shareUrl(p))),
-                      ),
-                    ]),
+                    if (!p.bookingReady)
+                      _lockedHint()
+                    else
+                      Row(children: [
+                        Expanded(
+                          child: _actionBtn(
+                              CupertinoIcons.doc_on_clipboard, '复制链接', false,
+                              () {
+                            Clipboard.setData(
+                                ClipboardData(text: _shareUrl(p)));
+                            NbToast.success(context, '链接已复制，发给客户即可');
+                          }),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _actionBtn(CupertinoIcons.share, '分享名片', true,
+                              () => _share(
+                                  '${p.name} 的美甲主页，长按或点击预约：${_shareUrl(p)}',
+                                  _shareUrl(p))),
+                        ),
+                      ]),
                   ],
                 ),
     );
@@ -253,6 +256,28 @@ class _TechnicianBusinessCardScreenState
         child: Text(t,
             style: const TextStyle(fontSize: 12, color: Colors.white)),
       );
+
+  /// 未开启任何服务类型时锁定邀请链接，引导先去开启服务。
+  Widget _lockedHint() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: DT.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: DT.border),
+      ),
+      child: Row(
+        children: [
+          const Icon(CupertinoIcons.lock_fill, size: 18, color: DT.textMuted),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text('开启上门或到店服务后，才能生成并分享邀请链接',
+                style: DT.bodySmall.copyWith(color: DT.textSecondary)),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _actionBtn(
       IconData icon, String label, bool filled, VoidCallback onTap) {

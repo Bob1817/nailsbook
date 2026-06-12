@@ -96,6 +96,11 @@ export const CustomersPage: React.FC = () => {
   });
 
   const handleInvite = async () => {
+    // 接单就绪：至少开启一种服务类型；未就绪则锁定邀请码/邀请链接
+    if (!(technician?.homeService || technician?.shopService)) {
+      toast.warning('请先开启上门或到店服务，才能邀请客户。');
+      return;
+    }
     const invitationCode = technician?.invitationCode;
     if (!invitationCode) {
       toast.warning('暂未生成邀请码，请稍后重试。');

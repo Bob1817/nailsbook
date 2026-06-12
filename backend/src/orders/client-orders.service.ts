@@ -58,6 +58,10 @@ export class ClientOrdersService {
       throw new BadRequestException('该美甲师当前未开启接单');
     }
 
+    if (!binding.technician.homeService && !binding.technician.shopService) {
+      throw new BadRequestException('美甲师未开启美甲服务，请联系美甲师开启服务');
+    }
+
     if (dto.serviceType === '上门美甲' && !binding.technician.homeService) {
       throw new BadRequestException('该美甲师暂未开启上门美甲服务');
     }
@@ -235,6 +239,10 @@ export class ClientOrdersService {
 
     if (design.technician.status !== 'active') {
       throw new BadRequestException('该美甲师当前未开启接单');
+    }
+
+    if (!design.technician.homeService && !design.technician.shopService) {
+      throw new BadRequestException('美甲师未开启美甲服务，请联系美甲师开启服务');
     }
 
     if (dto.serviceType === '上门美甲' && !design.technician.homeService) {

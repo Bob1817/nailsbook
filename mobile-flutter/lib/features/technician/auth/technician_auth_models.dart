@@ -48,6 +48,9 @@ class TechnicianProfile {
         invitationCode: json['invitationCode'] as String?,
         customTags: json['customTags'] as List<dynamic>?,
       );
+
+  /// 接单就绪：至少开启一种服务类型。未就绪则锁定邀请码/邀请链接。
+  bool get bookingReady => (homeService ?? false) || (shopService ?? false);
 }
 
 class TechnicianAuthResponse {

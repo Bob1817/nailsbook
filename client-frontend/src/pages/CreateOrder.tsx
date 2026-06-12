@@ -549,8 +549,14 @@ const CreateOrder: React.FC = () => {
           </div>
           {bookableTechnicians.length === 0 ? (
             <div className="rounded-[24px] bg-slate-50 px-5 py-8 text-center">
-              <p className="text-sm font-medium text-slate-700">当前暂无可预约的美甲师</p>
-              <p className="mt-2 text-sm leading-6 text-slate-400">请等待美甲师开启接单并配置可用服务后再发起预约</p>
+              <p className="text-sm font-medium text-slate-700">
+                {technicians.length === 1 ? '美甲师未开启美甲服务' : '当前暂无可预约的美甲师'}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                {technicians.length === 1
+                  ? '请联系美甲师开启服务'
+                  : '请等待美甲师开启接单并配置可用服务后再发起预约'}
+              </p>
             </div>
           ) : bookableTechnicians.length === 1 ? (
             <div className="flex items-center gap-3 rounded-[24px] bg-slate-50/80 p-4 ring-1 ring-black/5">

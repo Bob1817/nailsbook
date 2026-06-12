@@ -82,6 +82,7 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
   List<dynamic> _customTags = [];
   String? _invitationCode;
   String _technicianName = '美甲师';
+  bool _bookingReady = false;
   bool _loading = true;
   String _search = '';
   String _activeTab = '全部';
@@ -114,6 +115,7 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
           _customTags = p.customTags ?? const [];
           _invitationCode = p.invitationCode;
           _technicianName = p.name;
+          _bookingReady = p.bookingReady;
         });
     } catch (_) {}
   }
@@ -141,6 +143,10 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
 
   Future<void> _invite() async {
     HapticFeedback.lightImpact();
+    if (!_bookingReady) {
+      NbToast.error(context, '请先开启上门或到店服务，才能邀请客户');
+      return;
+    }
     if ((_invitationCode ?? '').isEmpty) {
       NbToast.error(context, '暂未生成邀请码，请稍后重试');
       return;
