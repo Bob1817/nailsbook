@@ -80,10 +80,15 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
       });
     }
     if (role == 'technician' && !techActivated) {
-      return setState(() {
-        _error = '该美甲师账号尚未激活，请通过「注册」设置密码';
-        _loading = false;
-      });
+      // 账号已存在但未设密码（如超管新建账号）：进入激活页设置初始密码。
+      setState(() => _loading = false);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => TechnicianFirstLoginPasswordScreen(phone: phone),
+        ),
+      );
+      return;
     }
 
     // (3) 密码校验：登录失败即视为密码错误

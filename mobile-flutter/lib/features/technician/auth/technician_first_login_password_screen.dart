@@ -4,15 +4,20 @@ import '../../../core/api/api_error.dart';
 import '../../../core/auth/auth_session.dart';
 import 'technician_auth_service.dart';
 
-/// 临时密码首次登录：强制设置新密码后才能进入。无法返回。
+/// 技师首次设置登录密码：
+/// - 临时密码模式（[accessToken] 非空）：已鉴权态 setPassword，强制不可返回；
+/// - 激活模式（[phone] 非空）：账号已存在但未设密码（如超管新建账号），
+///   用 setInitialPassword 设密并登录，可返回。
 class TechnicianFirstLoginPasswordScreen extends StatefulWidget {
-  final String accessToken;
+  final String? accessToken;
   final String? refreshToken;
+  final String? phone;
 
   const TechnicianFirstLoginPasswordScreen({
     super.key,
-    required this.accessToken,
+    this.accessToken,
     this.refreshToken,
+    this.phone,
   });
 
   @override
@@ -30,10 +35,11 @@ class _TechnicianFirstLoginPasswordScreenState
   @override
   void initState() {
     super.initState();
-    // 临时设置 token，使 setPassword 处于已鉴权态（此时尚未建立登录会话）。
     final api = context.read<ApiClient>();
     api.setRole('technician');
-    api.setToken(widget.accessToken);
+    // 临时密码模式：临时设置 token 使 setPassword 处于已鉴权态。
+    // 激活模式：setInitialPassword 无需 token。
+    if (widget.accessToken != null) api.setToken(widget.accessToken);
   }
 
   @override
@@ -62,11 +68,21 @@ class _TechnicianFirstLoginPasswordScreenState
     final api = context.read<ApiClient>();
     final auth = context.read<AuthSession>();
     try {
-      await TechnicianAuthService(api).setPassword(pwd);
-      if (!mounted) return;
-      // 设置成功，正式建立登录会话 → 路由跳转技师首页
-      await auth.loginAsTechnician(widget.accessToken,
-          refreshToken: widget.refreshToken);
+      final service = TechnicianAuthService(api);
+      if (widget.phone != null) {
+        // 激活模式：设置初始密码并登录
+        final res = await service.setInitialPassword(
+            phone: widget.phone!, newPassword: pwd);
+        if (!mounted) return;
+        await auth.loginAsTechnician(res.accessToken,
+            refreshToken: res.refreshToken);
+      } else {
+        // 临时密码模式：setPassword 后用原 token 登录
+        await service.setPassword(pwd);
+        if (!mounted) return;
+        await auth.loginAsTechnician(widget.accessToken!,
+            refreshToken: widget.refreshToken);
+      }
     } catch (e) {
       setState(() {
         _error = e is ApiError && e.message.isNotEmpty
@@ -79,14 +95,16 @@ class _TechnicianFirstLoginPasswordScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isActivation = widget.phone != null;
     return PopScope(
-      canPop: false,
+      // 激活模式可返回；临时密码模式强制不可返回。
+      canPop: isActivation,
       child: Scaffold(
         backgroundColor: ET.bg,
         appBar: GlassAppBar(
-          title: const Text('设置新密码'),
+          title: Text(isActivation ? '设置登录密码' : '设置新密码'),
           dark: true,
-          automaticallyImplyLeading: false,
+          automaticallyImplyLeading: isActivation,
         ),
         body: GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -97,14 +115,18 @@ class _TechnicianFirstLoginPasswordScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('当前为临时密码',
-                      style: TextStyle(
+                  Text(isActivation ? '设置登录密码' : '当前为临时密码',
+                      style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                           color: ET.ink)),
                   const SizedBox(height: 6),
-                  const Text('为了账号安全，请先设置新的登录密码',
-                      style: TextStyle(fontSize: 13, color: ET.inkSecondary)),
+                  Text(
+                      isActivation
+                          ? '账号已创建，请设置登录密码后进入'
+                          : '为了账号安全，请先设置新的登录密码',
+                      style: const TextStyle(
+                          fontSize: 13, color: ET.inkSecondary)),
                   if (_error != null) ...[
                     const SizedBox(height: 16),
                     Container(
