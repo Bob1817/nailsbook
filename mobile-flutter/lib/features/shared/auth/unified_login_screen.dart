@@ -205,17 +205,12 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
     );
   }
 
-  // 顶部美甲主题背景横幅
+  // 顶部美甲背景横幅（真实图片，缺失时回退到渐变占位）
   Widget _nailBanner() {
     return Container(
-      height: 158,
+      height: 210,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFEBD2B3), Color(0xFFC9A57C), Color(0xFF7C5B3D)],
-        ),
         boxShadow: [
           BoxShadow(
               color: Colors.black.withValues(alpha: 0.35),
@@ -226,23 +221,48 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: Stack(
+          fit: StackFit.expand,
           children: [
-            // 柔光高光
-            Positioned(
-              top: -30,
-              left: -20,
-              child: _dot(120, Colors.white.withValues(alpha: 0.18)),
+            Image.asset(
+              'assets/images/login_nail_bg.jpg',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _nailBannerFallback(),
             ),
-            // 指甲油色点缀
-            Positioned(
-                top: 26, right: 28, child: _dot(34, const Color(0x66FFFFFF))),
-            Positioned(
-                bottom: 22, right: 70, child: _dot(16, const Color(0x44FFFFFF))),
-            Positioned(
-                bottom: 30, left: 30, child: _dot(22, const Color(0x33FFFFFF))),
-            const Center(child: Text('💅', style: TextStyle(fontSize: 60))),
+            // 底部渐隐，与深色页面自然衔接
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.center,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Color(0xCC16120E)],
+                ),
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _nailBannerFallback() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFEBD2B3), Color(0xFFC9A57C), Color(0xFF7C5B3D)],
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+              top: -30,
+              left: -20,
+              child: _dot(120, Colors.white.withValues(alpha: 0.18))),
+          Positioned(
+              top: 26, right: 28, child: _dot(34, const Color(0x66FFFFFF))),
+          const Center(child: Text('💅', style: TextStyle(fontSize: 60))),
+        ],
       ),
     );
   }
