@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
+import '../../../core/api/api_error.dart';
+import '../../../core/auth/auth_session.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../auth/technician_auth_service.dart';
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
@@ -74,27 +76,59 @@ class _TechnicianAccountSecurityScreenState
       _showMsg('新密码需至少8位，包含字母和数字');
       return;
     }
+    if (newPwd == oldPwd) {
+      _showMsg('新密码不能与当前密码相同');
+      return;
+    }
     if (newPwd != confirmPwd) {
       _showMsg('两次输入的新密码不一致');
       return;
     }
 
     setState(() => _submitting = true);
+    final auth = context.read<AuthSession>();
     try {
       final api = context.read<ApiClient>();
       api.setRole('technician');
       await TechnicianAuthService(api).changePassword(oldPwd, newPwd);
-      if (mounted) {
-        _oldPwdCtl.clear();
-        _newPwdCtl.clear();
-        _confirmPwdCtl.clear();
-        _showMsg('密码修改成功');
-      }
+      if (mounted) await _showSuccessAndRelogin(auth);
     } catch (e) {
-      _showMsg('修改失败：${e.toString()}');
-    } finally {
-      if (mounted) setState(() => _submitting = false);
+      if (mounted) {
+        _showMsg(e is ApiError && e.message.isNotEmpty
+            ? e.message
+            : '修改失败，请稍后重试');
+        setState(() => _submitting = false);
+      }
     }
+  }
+
+  /// 修改成功后必须重新登录：提示 → 退出登录（路由自动回到角色选择/登录页）。
+  Future<void> _showSuccessAndRelogin(AuthSession auth) async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dctx) => AlertDialog(
+        backgroundColor: DT.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('密码修改成功',
+            style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: DT.textPrimary)),
+        content: const Text('新密码已生效，为了账号安全请使用新密码重新登录。',
+            style: TextStyle(
+                fontSize: 14, color: DT.textSecondary, height: 1.5)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dctx),
+            child: const Text('去登录',
+                style:
+                    TextStyle(color: DT.primary, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    auth.logout();
   }
 
   void _showMsg(String msg) {

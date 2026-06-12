@@ -2,7 +2,7 @@ import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_error.dart';
-import '../../../core/theme/design_tokens.dart';
+import '../../../core/auth/auth_session.dart';
 import '../auth/client_auth_service.dart';
 import '../../../core/widgets/nb_toast.dart';
 
@@ -36,22 +36,50 @@ class _State extends State<ClientChangePasswordScreen> {
         !RegExp(r'[0-9]').hasMatch(pwd)) {
       return _toast('新密码至少 8 位，需含字母和数字');
     }
+    if (pwd == _oldCtl.text) return _toast('新密码不能与当前密码相同');
     if (pwd != _confirmCtl.text) return _toast('两次输入的新密码不一致');
 
     setState(() => _submitting = true);
     final service = ClientAuthService(context.read<ApiClient>());
+    final auth = context.read<AuthSession>();
     try {
       await service.changePassword(_oldCtl.text, pwd);
-      if (mounted) {
-        _toast('密码修改成功');
-        Navigator.pop(context);
-      }
+      if (mounted) await _showSuccessAndRelogin(auth);
     } catch (e) {
       if (mounted) {
-        _toast(e is ApiError && e.message.isNotEmpty ? e.message : '修改失败');
+        _toast(e is ApiError && e.message.isNotEmpty
+            ? e.message
+            : '修改失败，请稍后重试');
         setState(() => _submitting = false);
       }
     }
+  }
+
+  /// 修改成功后必须重新登录：提示 → 退出登录（路由自动回到角色选择/登录页）。
+  Future<void> _showSuccessAndRelogin(AuthSession auth) async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dctx) => AlertDialog(
+        backgroundColor: ET.surface,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('密码修改成功',
+            style: TextStyle(
+                fontSize: 17, fontWeight: FontWeight.w700, color: ET.ink)),
+        content: const Text('新密码已生效，为了账号安全请使用新密码重新登录。',
+            style: TextStyle(fontSize: 14, color: ET.inkSecondary, height: 1.5)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dctx),
+            child: const Text('去登录',
+                style:
+                    TextStyle(color: ET.accent, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    auth.logout();
   }
 
   void _toast(String msg) => NbToast.show(context, msg);
