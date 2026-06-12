@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/maps/map_service.dart';
 import '../../../core/theme/design_tokens.dart';
@@ -14,6 +13,7 @@ import '../../shared/chat/chat_service.dart';
 import '../orders/technician_order_service.dart';
 import '../orders/technician_order_detail_screen.dart';
 import '../auth/technician_auth_service.dart';
+import '../widgets/technician_appointment_card.dart';
 
 /// 美甲师「行程」页：对齐 webapp technician-frontend/src/pages/SchedulePage.tsx。
 /// 模块：标题 + 日历按钮 / 今天+横滑日期条（带预约标记）/ 当日统计卡 / 今日行程·今日预约 Tab / 列表卡。
@@ -567,248 +567,22 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
   }
 
   Widget _orderCard(Map<String, dynamic> o) {
-    final status = o['status']?.toString() ?? '';
-    final startTime = o['startTime']?.toString() ?? '';
-    final serviceType = o['serviceType']?.toString() ?? '';
-    final serviceName =
-        o['serviceName']?.toString() ?? o['customTitle']?.toString() ?? '预约服务';
-    final address = o['address']?.toString() ?? '';
     final customerName = o['customerName']?.toString() ??
         (o['client'] as Map<String, dynamic>?)?['nickname']?.toString() ??
         (o['customer'] as Map<String, dynamic>?)?['name']?.toString() ??
         '客户';
     final customerPhone = o['customerPhone']?.toString();
-    final customerAvatar = _customerAvatarUrl(o);
-
-    return GestureDetector(
+    return TechnicianAppointmentCard(
+      order: o,
+      isTrip: _tab == 'trips',
       onTap: () => _openOrderDetail(o['id'] as int),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: DT.surface.withValues(alpha: 0.78),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 16,
-                offset: const Offset(0, 4)),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 68,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(_fmtClock(startTime),
-                            maxLines: 1,
-                            softWrap: false,
-                            style: const TextStyle(
-                                fontSize: 19,
-                                fontWeight: FontWeight.w700,
-                                color: DT.textPrimary,
-                                letterSpacing: -0.3)),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(_dateWeekLabel(startTime),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontSize: 10.5, color: DT.textTertiary)),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 4),
-                _avatar(customerName, customerAvatar),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(customerName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: DT.textPrimary)),
-                      const SizedBox(height: 2),
-                      Text('${_serviceTypeLabel(serviceType)} · $serviceName',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontSize: 12, color: DT.textTertiary)),
-                      const SizedBox(height: 5),
-                      _statusMeta(status),
-                    ],
-                  ),
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _iconEntry(CupertinoIcons.phone_fill,
-                        onTap: () => _callCustomer(customerPhone)),
-                    const SizedBox(width: 8),
-                    _iconEntry(CupertinoIcons.chat_bubble_fill,
-                        onTap: () => _openChat(o, customerName)),
-                  ],
-                ),
-              ],
-            ),
-            if (address.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  const Icon(CupertinoIcons.location_solid,
-                      size: 13, color: DT.textTertiary),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(address,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            fontSize: 12, color: DT.textTertiary)),
-                  ),
-                ],
-              ),
-            ],
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _actionBtn(CupertinoIcons.location_solid, '去导航',
-                      bg: DT.primary,
-                      fg: Colors.white,
-                      onTap: () => _navigateTo(address)),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _actionBtn(CupertinoIcons.phone_fill, '联系客户',
-                      bg: DT.surfaceAlt,
-                      fg: DT.textPrimary,
-                      onTap: () => _callCustomer(customerPhone)),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _statusMeta(String status) {
-    final sc = _statusColors(status);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 6,
-          height: 6,
-          decoration: BoxDecoration(
-            color: sc.$2.withValues(alpha: 0.78),
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 5),
-        Text(_statusLabel(status),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: sc.$2.withValues(alpha: 0.86))),
-      ],
-    );
-  }
-
-  Widget _iconEntry(IconData icon, {required VoidCallback onTap}) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        width: 36,
-        height: 36,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: DT.surfaceAlt.withValues(alpha: 0.86),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, size: 17, color: DT.textPrimary),
-      ),
-    );
-  }
-
-  Widget _actionBtn(IconData icon, String label,
-      {required Color bg, required Color fg, required VoidCallback onTap}) {
-    return SizedBox(
-      height: 44,
-      child: TextButton.icon(
-        onPressed: onTap,
-        icon: Icon(icon, size: 14, color: fg),
-        label: Text(label,
-            style: TextStyle(
-                fontSize: 13, fontWeight: FontWeight.w500, color: fg)),
-        style: TextButton.styleFrom(
-          backgroundColor: bg,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          minimumSize: const Size.fromHeight(44),
-        ),
-      ),
-    );
-  }
-
-  Widget _avatar(String name, String? url) {
-    if (url != null && url.isNotEmpty) {
-      return ClipOval(
-          child: CachedNetworkImage(
-              imageUrl: url,
-              width: 36,
-              height: 36,
-              fit: BoxFit.cover,
-              errorWidget: (_, __, ___) => _avatarFallback(name)));
-    }
-    return _avatarFallback(name);
-  }
-
-  Widget _avatarFallback(String name) {
-    return Container(
-      width: 36,
-      height: 36,
-      alignment: Alignment.center,
-      decoration:
-          const BoxDecoration(color: DT.primarySoft, shape: BoxShape.circle),
-      child: Text(name.isNotEmpty ? name.substring(0, 1) : '?',
-          style:
-              const TextStyle(color: DT.primary, fontWeight: FontWeight.w600)),
+      onCall: () => _callCustomer(customerPhone),
+      onMessage: () => _openChat(o, customerName),
+      onNavigate: () => _navigateTo(o['address']?.toString()),
     );
   }
 
   // ── Helpers ──
-
-  String _fmtClock(String s) {
-    final d = DateTime.tryParse(s);
-    if (d == null) return s;
-    final l = d.toLocal();
-    return '${l.hour.toString().padLeft(2, '0')}:${l.minute.toString().padLeft(2, '0')}';
-  }
-
-  String _dateWeekLabel(String s) {
-    final d = DateTime.tryParse(s);
-    if (d == null) return '';
-    final l = d.toLocal();
-    const week = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-    return '${l.month}/${l.day} ${week[l.weekday - 1]}';
-  }
 
   int? _clientUserId(Map<String, dynamic> order) {
     final client = order['client'] as Map<String, dynamic>?;
@@ -829,30 +603,6 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
     return null;
   }
 
-  String? _customerAvatarUrl(Map<String, dynamic> order) {
-    final client = order['client'] as Map<String, dynamic>?;
-    final customer = order['customer'] as Map<String, dynamic>?;
-    final clientUser = order['clientUser'] as Map<String, dynamic>?;
-    final customerClient = customer?['client'] as Map<String, dynamic>?;
-    final customerClientUser = customer?['clientUser'] as Map<String, dynamic>?;
-    return _str(order['avatarUrl']) ??
-        _str(order['customerAvatar']) ??
-        _str(order['clientAvatar']) ??
-        _str(clientUser?['avatarUrl']) ??
-        _str(client?['avatarUrl']) ??
-        _str(client?['avatar']) ??
-        _str(customer?['avatarUrl']) ??
-        _str(customer?['customerAvatar']) ??
-        _str(customerClient?['avatarUrl']) ??
-        _str(customerClientUser?['avatarUrl']);
-  }
-
-  String? _str(dynamic value) {
-    final s = value?.toString().trim();
-    if (s == null || s.isEmpty || s == 'null') return null;
-    return s;
-  }
-
   String _weekdayLabel(int w) =>
       const ['一', '二', '三', '四', '五', '六', '日'][w - 1];
 
@@ -867,55 +617,6 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
     return null;
   }
 
-  String _serviceTypeLabel(String s) {
-    if (s == 'home' || s == '上门美甲') return '上门美甲';
-    if (s == 'shop' || s == '到店美甲') return '到店美甲';
-    return s.isEmpty ? '预约服务' : s;
-  }
-
-  String _statusLabel(String s) {
-    switch (s) {
-      case 'pending_quote':
-        return '待报价';
-      case 'pending_agree':
-        return '待确认';
-      case 'pending_confirm':
-        return '待接单';
-      case 'pending_home':
-        return '待上门';
-      case 'pending_shop':
-        return '待到店';
-      case 'in_progress':
-        return '服务中';
-      case 'completed':
-        return '已完成';
-      case 'cancelled':
-        return '已取消';
-      default:
-        return s;
-    }
-  }
-
-  (Color, Color) _statusColors(String s) {
-    switch (s) {
-      case 'pending_quote':
-        return (const Color(0xFFFFF6EB), const Color(0xFFB87425));
-      case 'pending_agree':
-        return (const Color(0xFFFFF4DF), const Color(0xFFC8892F));
-      case 'pending_confirm':
-        return (const Color(0xFFFFF6EB), const Color(0xFFB87425));
-      case 'pending_home':
-        return (const Color(0xFFE8F5E9), const Color(0xFF2E7D32));
-      case 'pending_shop':
-        return (const Color(0xFFE3F2FD), const Color(0xFF1565C0));
-      case 'in_progress':
-        return (const Color(0xFF3A2F23), DT.primary);
-      case 'completed':
-        return (const Color(0xFFEDF8F1), const Color(0xFF3B9460));
-      default:
-        return (const Color(0xFFF4F4F5), const Color(0xFF8F8F95));
-    }
-  }
 }
 
 // ───────── 月历弹窗 ─────────

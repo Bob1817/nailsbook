@@ -8,6 +8,7 @@ import '../../shared/chat/chat_service.dart';
 import 'technician_create_booking_sheet.dart';
 import 'technician_order_detail_screen.dart';
 import '../orders/technician_order_service.dart';
+import '../widgets/technician_appointment_card.dart';
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 import 'package:nailbook_mobile/core/widgets/technician_glass_header.dart';
 
@@ -265,23 +266,14 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
   }
 
   Widget _bookingCard(Map<String, dynamic> order) {
-    final status = order['status']?.toString() ?? '';
-    final startTime = order['startTime']?.toString() ?? '';
-    final endTime = order['endTime']?.toString() ?? '';
-    final serviceType = order['serviceType']?.toString() ?? '';
-    final serviceName = order['serviceName']?.toString() ??
-        order['customTitle']?.toString() ??
-        '预约服务';
-    final address = order['address']?.toString() ?? '';
-    final quotePrice = (order['quotePrice'] as num?)?.toDouble();
     final customerName = order['customerName']?.toString() ??
         (order['client'] as Map<String, dynamic>?)?['nickname']?.toString() ??
         (order['customer'] as Map<String, dynamic>?)?['name']?.toString() ??
         '客户';
     final customerPhone = order['customerPhone']?.toString();
-    final statusColors = _statusColors(status);
-
-    return GestureDetector(
+    return TechnicianAppointmentCard(
+      order: order,
+      isTrip: false,
       onTap: () {
         HapticFeedback.lightImpact();
         Navigator.push(
@@ -292,210 +284,20 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
           ),
         ).then((_) => _loadOrders());
       },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: ET.surface,
-          borderRadius: BorderRadius.circular(DT.rCard),
-          border: Border.all(color: ET.hairline),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                _bookingPill(),
-                const Spacer(),
-                _statusBadge(_statusLabel(status), statusColors),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _dateBlock(startTime),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(serviceName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
-                              color: ET.ink)),
-                      const SizedBox(height: 6),
-                      _metaRow(CupertinoIcons.clock,
-                          '${_fmtClock(startTime)} - ${_fmtClock(endTime)}'),
-                      const SizedBox(height: 4),
-                      _metaRow(CupertinoIcons.person, customerName),
-                      const SizedBox(height: 4),
-                      _metaRow(
-                        CupertinoIcons.location_solid,
-                        address.isNotEmpty ? address : '地址待确认',
-                      ),
-                      const SizedBox(height: 10),
-                      _quoteOrHint(status, quotePrice, serviceType),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                _iconEntry(CupertinoIcons.phone_fill,
-                    onTap: () => _callCustomer(customerPhone)),
-                const SizedBox(width: 8),
-                _iconEntry(CupertinoIcons.chat_bubble_fill,
-                    onTap: () => _openChat(order, customerName)),
-              ],
-            ),
-          ],
-        ),
-      ),
+      onCall: () => _callCustomer(customerPhone),
+      onMessage: () => _openChat(order, customerName),
+      onNavigate: () => _navigateOrder(order),
     );
   }
 
-  Widget _bookingPill() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(4, 4, 10, 4),
-      decoration: BoxDecoration(
-        color: ET.accentSoft,
-        borderRadius: BorderRadius.circular(DT.rFull),
-      ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Container(
-          width: 30,
-          height: 30,
-          alignment: Alignment.center,
-          decoration:
-              const BoxDecoration(color: ET.bgElevated, shape: BoxShape.circle),
-          child: const Text('预',
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: ET.accentOnDark)),
-        ),
-        const SizedBox(width: 6),
-        const Text('预约',
-            style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: ET.accentOnDark)),
-      ]),
-    );
-  }
-
-  Widget _statusBadge(String label, (Color, Color) colors) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: colors.$1,
-        borderRadius: BorderRadius.circular(DT.rFull),
-      ),
-      child: Text(label,
-          style: TextStyle(
-              fontSize: 12, fontWeight: FontWeight.w600, color: colors.$2)),
-    );
-  }
-
-  Widget _dateBlock(String iso) {
-    final d = DateTime.tryParse(iso)?.toLocal();
-    return Container(
-      width: 60,
-      height: 60,
-      decoration: BoxDecoration(
-        color: ET.accentSoft,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Text(d != null ? '${d.month}月' : '--',
-            style: const TextStyle(fontSize: 11, color: ET.accentOnDark)),
-        Text(d != null ? '${d.day}' : '--',
-            style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                height: 1.1,
-                color: ET.accentOnDark)),
-      ]),
-    );
-  }
-
-  Widget _metaRow(IconData icon, String text) {
-    return Row(children: [
-      Icon(icon, size: 14, color: ET.inkMuted),
-      const SizedBox(width: 6),
-      Expanded(
-        child: Text(
-          text,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 13, color: ET.inkSecondary),
-        ),
-      ),
-    ]);
-  }
-
-  Widget _quoteOrHint(String status, double? quotePrice, String serviceType) {
-    if (quotePrice != null && quotePrice > 0) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: ET.accentSoft,
-          borderRadius: BorderRadius.circular(DT.rFull),
-        ),
-        child: Text('报价 ¥${quotePrice.toStringAsFixed(0)}',
-            style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: ET.accentOnDark)),
-      );
+  Future<void> _navigateOrder(Map<String, dynamic> order) async {
+    final address = order['address']?.toString() ?? '';
+    if (address.isEmpty) {
+      NbToast.error(context, '当前预约还没有地址信息');
+      return;
     }
-    return Text('${_serviceTypeLabel(serviceType)} · ${_orderHint(status)}',
-        style: const TextStyle(fontSize: 12, color: ET.inkMuted));
-  }
-
-  String _orderHint(String status) {
-    switch (status) {
-      case 'pending_quote':
-        return '等待报价';
-      case 'pending_agree':
-        return '等待客户确认';
-      case 'pending_confirm':
-        return '等待美甲师确认';
-      case 'pending_home':
-        return '待上门服务';
-      case 'pending_shop':
-        return '待到店服务';
-      case 'in_progress':
-        return '服务进行中';
-      case 'completed':
-        return '查看预约详情';
-      default:
-        return '查看预约详情';
-    }
-  }
-
-  Widget _iconEntry(IconData icon, {required VoidCallback onTap}) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: ET.surfaceGlass,
-          shape: BoxShape.circle,
-          border: Border.all(color: ET.hairline),
-        ),
-        child: Icon(icon, size: 18, color: DT.textPrimary),
-      ),
-    );
+    HapticFeedback.lightImpact();
+    await MapService.launchAddressNavigation(address);
   }
 
   Widget _filterChip(String? value, String label) {
@@ -612,60 +414,4 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
     return null;
   }
 
-  String _fmtClock(String s) {
-    final d = DateTime.tryParse(s);
-    if (d == null) return '--';
-    final l = d.toLocal();
-    return '${l.hour.toString().padLeft(2, '0')}:${l.minute.toString().padLeft(2, '0')}';
-  }
-
-  String _serviceTypeLabel(String s) {
-    if (s == 'home' || s == '上门美甲') return '上门美甲';
-    if (s == 'shop' || s == '到店美甲') return '到店美甲';
-    return s.isEmpty ? '预约服务' : s;
-  }
-
-  String _statusLabel(String s) {
-    switch (s) {
-      case 'pending_quote':
-        return '待报价';
-      case 'pending_agree':
-        return '待确认';
-      case 'pending_confirm':
-        return '待接单';
-      case 'pending_home':
-        return '待上门';
-      case 'pending_shop':
-        return '待到店';
-      case 'in_progress':
-        return '服务中';
-      case 'completed':
-        return '已完成';
-      case 'cancelled':
-        return '已取消';
-      default:
-        return s;
-    }
-  }
-
-  (Color, Color) _statusColors(String s) {
-    switch (s) {
-      case 'pending_quote':
-        return (DT.statusPendingQuoteBg, DT.statusPendingQuoteText);
-      case 'pending_agree':
-        return (DT.statusPendingAgreeBg, DT.statusPendingAgreeText);
-      case 'pending_confirm':
-        return (DT.statusPendingConfirmBg, DT.statusPendingConfirmText);
-      case 'pending_home':
-      case 'pending_shop':
-      case 'in_progress':
-        return (DT.statusInProgressBg, DT.statusInProgressText);
-      case 'completed':
-        return (DT.statusCompletedBg, DT.statusCompletedText);
-      case 'cancelled':
-        return (DT.statusCancelledBg, DT.statusCancelledText);
-      default:
-        return (ET.surface, ET.inkSecondary);
-    }
-  }
 }
