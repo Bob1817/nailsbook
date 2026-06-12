@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+
+import '../../../core/socket/chat_socket.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
@@ -17,7 +21,11 @@ import '../orders/technician_order_detail_screen.dart';
 /// 设计风格对齐客户列表页（Stack + 浮动玻璃头部 + 柔玻璃卡片）。
 class TechnicianMessagesScreen extends StatefulWidget {
   final String initialTab;
-  const TechnicianMessagesScreen({super.key, this.initialTab = 'all'});
+
+  /// 上报当前未读条目数（用于底部导航消息角标）。
+  final ValueChanged<int>? onUnread;
+  const TechnicianMessagesScreen(
+      {super.key, this.initialTab = 'all', this.onUnread});
 
   @override
   State<TechnicianMessagesScreen> createState() =>
@@ -58,15 +66,23 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
   bool _searchOpen = false;
   final _searchCtl = TextEditingController();
   final _searchFocus = FocusNode();
+  // 本地“已读”的提醒（基于订单状态合成、无消息记录），点击查看后置为已读。
+  final Set<String> _viewedKeys = {};
+  StreamSubscription? _msgSub;
 
   @override
   void initState() {
     super.initState();
     _load();
+    try {
+      _msgSub =
+          context.read<ChatSocket>().onMessageNew.listen((_) => _load());
+    } catch (_) {}
   }
 
   @override
   void dispose() {
+    _msgSub?.cancel();
     _searchCtl.dispose();
     _searchFocus.dispose();
     super.dispose();
@@ -87,6 +103,7 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
           _items = _build(convs, orders);
           _loading = false;
         });
+        widget.onUnread?.call(_items.where((i) => i.unread).length);
       }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
@@ -131,7 +148,7 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
         badge: '待确认',
         preview: '预约待确认：${_svcName(o)}',
         time: o['startTime']?.toString() ?? '',
-        unread: true,
+        unread: !_viewed(o['id'] as int, '待确认'),
         orderId: o['id'] as int,
       ));
     }
@@ -147,7 +164,7 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
         badge: '定金待收',
         preview: '请跟进 ${_svcName(o)} 的定金确认',
         time: o['startTime']?.toString() ?? '',
-        unread: true,
+        unread: !_viewed(o['id'] as int, '定金待收'),
         orderId: o['id'] as int,
       ));
     }
@@ -163,7 +180,7 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
         preview:
             done ? '服务完成：${_svcName(o)}，记得跟进复购与评价' : '服务提醒：${_svcName(o)} 即将开始',
         time: o['startTime']?.toString() ?? '',
-        unread: !done,
+        unread: !done && !_viewed(o['id'] as int, '待服务'),
         orderId: o['id'] as int,
       ));
     }
@@ -502,10 +519,10 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
                 if (item.unread) ...[
                   const SizedBox(height: 6),
                   Container(
-                    width: 8,
-                    height: 8,
+                    width: 9,
+                    height: 9,
                     decoration: const BoxDecoration(
-                        color: DT.primary, shape: BoxShape.circle),
+                        color: DT.error, shape: BoxShape.circle),
                   ),
                 ],
               ],
@@ -576,6 +593,9 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
     );
   }
 
+  bool _viewed(int orderId, String badge) =>
+      _viewedKeys.contains('${orderId}_$badge');
+
   void _open(_Item item) {
     HapticFeedback.lightImpact();
     if (item.type == _T.chat && item.conversationId != null) {
@@ -586,6 +606,8 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
                   conversationId: item.conversationId!,
                   title: item.name))).then((_) => _load());
     } else if (item.orderId != null) {
+      // 订单类提醒（无消息记录）：点击查看即本地标记已读，返回刷新后生效。
+      _viewedKeys.add('${item.orderId}_${item.badge}');
       Navigator.push(
               context,
               MaterialPageRoute(

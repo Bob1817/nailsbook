@@ -10,10 +10,8 @@ import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/editorial_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/nav_badge_icon.dart';
-import '../../../core/socket/chat_socket.dart';
 import '../discover/client_discover_screen.dart';
 import '../../shared/chat/conversations_screen.dart';
-import '../../shared/chat/chat_service.dart';
 import '../orders/client_create_order_screen.dart';
 import '../orders/client_orders_screen.dart';
 import '../orders/client_order_detail_screen.dart';
@@ -35,32 +33,11 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   Map<String, dynamic>? _homeData;
   bool _loading = true;
   int _unread = 0;
-  StreamSubscription? _msgSub;
 
   @override
   void initState() {
     super.initState();
     _loadHomeData();
-    _loadUnread();
-    try {
-      _msgSub =
-          context.read<ChatSocket>().onMessageNew.listen((_) => _loadUnread());
-    } catch (_) {}
-  }
-
-  @override
-  void dispose() {
-    _msgSub?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _loadUnread() async {
-    try {
-      final convs = await ChatService(context.read<ApiClient>()).conversations();
-      final n =
-          convs.fold<int>(0, (s, c) => s + ((c['unreadCount'] as int?) ?? 0));
-      if (mounted) setState(() => _unread = n);
-    } catch (_) {}
   }
 
   Future<void> _loadHomeData() async {
@@ -91,7 +68,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       ),
       const ClientOrdersScreen(),
       const ClientDiscoverScreen(),
-      const ConversationsScreen(),
+      ConversationsScreen(onUnread: (n) => setState(() => _unread = n)),
       const ClientProfileScreen(),
     ];
 
@@ -101,10 +78,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       bottomNavigationBar: _GlassTabBar(
         currentIndex: _currentIndex,
         unread: _unread,
-        onTap: (i) {
-          setState(() => _currentIndex = i);
-          _loadUnread();
-        },
+        onTap: (i) => setState(() => _currentIndex = i),
       ),
     );
   }

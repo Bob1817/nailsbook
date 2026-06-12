@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import '../../../core/auth/auth_session.dart';
+import '../../../core/socket/chat_socket.dart';
 import '../../client/orders/client_order_detail_screen.dart';
 import 'chat_service.dart';
 import 'chat_screen.dart';
@@ -11,7 +14,9 @@ import '../../../core/widgets/glow_field.dart';
 /// 美甲师端：会话列表。
 /// 对齐 webapp client-frontend/src/pages/Chat.tsx。
 class ConversationsScreen extends StatefulWidget {
-  const ConversationsScreen({super.key});
+  /// 上报当前未读条目数（用于底部导航消息角标）。
+  final ValueChanged<int>? onUnread;
+  const ConversationsScreen({super.key, this.onUnread});
 
   @override
   State<ConversationsScreen> createState() => _ConversationsScreenState();
@@ -54,18 +59,29 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
   final _searchCtl = TextEditingController();
   final _searchFocus = FocusNode();
 
+  StreamSubscription? _msgSub;
+
   @override
   void initState() {
     super.initState();
     _isClient = context.read<AuthSession>().isClient;
     _load();
+    try {
+      _msgSub =
+          context.read<ChatSocket>().onMessageNew.listen((_) => _load());
+    } catch (_) {}
   }
 
   @override
   void dispose() {
+    _msgSub?.cancel();
     _searchCtl.dispose();
     _searchFocus.dispose();
     super.dispose();
+  }
+
+  void _reportUnread() {
+    widget.onUnread?.call(_allItems.where((i) => i.unread).length);
   }
 
   void _openSearch() {
@@ -133,6 +149,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
             ..addAll(notifs);
           _loading = false;
         });
+        _reportUnread();
       }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
@@ -399,10 +416,10 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                 if (item.unread) ...[
                   const SizedBox(height: 6),
                   Container(
-                      width: 8,
-                      height: 8,
+                      width: 9,
+                      height: 9,
                       decoration: const BoxDecoration(
-                          color: DT.primary, shape: BoxShape.circle)),
+                          color: DT.error, shape: BoxShape.circle)),
                 ],
               ],
             ),

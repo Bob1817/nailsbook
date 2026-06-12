@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:ui' show FontFeature;
 
 import 'package:flutter/material.dart';
@@ -11,7 +10,6 @@ import 'package:share_plus/share_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/maps/map_service.dart';
-import '../../../core/socket/chat_socket.dart';
 import '../../../core/widgets/nav_badge_icon.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
@@ -43,32 +41,11 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
   Map<String, dynamic>? _profile;
   bool _loading = true;
   int _unread = 0;
-  StreamSubscription? _msgSub;
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
-    _loadUnread();
-    try {
-      _msgSub =
-          context.read<ChatSocket>().onMessageNew.listen((_) => _loadUnread());
-    } catch (_) {}
-  }
-
-  @override
-  void dispose() {
-    _msgSub?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _loadUnread() async {
-    try {
-      final convs = await ChatService(context.read<ApiClient>()).conversations();
-      final n =
-          convs.fold<int>(0, (s, c) => s + ((c['unreadCount'] as int?) ?? 0));
-      if (mounted) setState(() => _unread = n);
-    } catch (_) {}
   }
 
   Future<void> _loadProfile() async {
@@ -117,7 +94,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
           profile: _profile, loading: _loading, onRefresh: _loadProfile),
       const TechnicianScheduleScreen(),
       const TechnicianCustomersScreen(),
-      const TechnicianMessagesScreen(),
+      TechnicianMessagesScreen(onUnread: (n) => setState(() => _unread = n)),
       const TechnicianProfileScreen(),
     ];
 
@@ -127,10 +104,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
       bottomNavigationBar: _TechGlassTabBar(
         currentIndex: _currentIndex,
         unread: _unread,
-        onTap: (i) {
-          setState(() => _currentIndex = i);
-          _loadUnread();
-        },
+        onTap: (i) => setState(() => _currentIndex = i),
       ),
     );
   }
