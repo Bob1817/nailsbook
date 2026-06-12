@@ -9,6 +9,7 @@ import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/nb_toast.dart';
 import 'technician_work_service.dart';
 import 'technician_work_share_sheet.dart';
+import 'technician_works_screen.dart' show WorkFormSheet;
 
 /// 美甲师端作品详情 + 评论管理。
 /// 对齐 webapp WorksPage 中的「详情大图 + 标题 + 评论列表 + 评论输入」 + 评论操作（置顶/隐藏/删除/回复）。
@@ -84,6 +85,16 @@ class _TechnicianWorkDetailScreenState extends State<TechnicianWorkDetailScreen>
 
   // ── 作品级操作 ──
 
+  Future<void> _editWork() async {
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => WorkFormSheet(existing: _work),
+    );
+    if (saved == true) { _changed = true; await _refreshWork(); }
+  }
+
   Future<void> _togglePinned() async {
     try { await _service.togglePinned(_work['id'] as int); _changed = true; await _refreshWork();
       if (mounted) NbToast.success(context, (_work['isPinned'] as bool? ?? false) ? '已置顶' : '已取消置顶');
@@ -134,7 +145,8 @@ class _TechnicianWorkDetailScreenState extends State<TechnicianWorkDetailScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             _grabber(),
-            _sheetAction(ctx, CupertinoIcons.pin, pinned ? '取消置顶' : '置顶', _togglePinned),
+            _sheetAction(ctx, CupertinoIcons.pencil, '编辑作品', _editWork),
+            _sheetAction(ctx, CupertinoIcons.pin, pinned ? '取消置顶' : '置顶作品', _togglePinned),
             _sheetAction(ctx, CupertinoIcons.star, feat ? '取消推荐' : '设为推荐', _toggleFeatured),
             _sheetAction(ctx, vis ? CupertinoIcons.eye_slash : CupertinoIcons.eye, vis ? '隐藏作品' : '显示作品', _toggleVisible),
             _sheetAction(ctx, CupertinoIcons.share, '分享作品', () => TechnicianWorkShareSheet.show(context, work: _work, invitationCode: widget.invitationCode, technicianName: widget.technicianName)),

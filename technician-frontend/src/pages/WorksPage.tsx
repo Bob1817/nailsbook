@@ -354,20 +354,26 @@ const WorksPage: React.FC = () => {
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = ''; // 允许再次选择相同文件
+    if (files.length === 0) return;
 
-    if (formData.images.length >= 5) {
+    const remaining = 5 - formData.images.length;
+    if (remaining <= 0) {
       toast.warning('最多只能上传5张图片');
       return;
+    }
+    const picked = files.slice(0, remaining);
+    if (files.length > remaining) {
+      toast.warning(`最多只能上传5张图片，已选取前 ${remaining} 张`);
     }
 
     setUploading(true);
     try {
-      const result = await uploadService.uploadImage(file);
+      const results = await Promise.all(picked.map((f) => uploadService.uploadImage(f)));
       setFormData((prev) => ({
         ...prev,
-        images: [...prev.images, result.url],
+        images: [...prev.images, ...results.map((r) => r.url)].slice(0, 5),
       }));
     } catch (error) {
       console.error('Failed to upload image:', error);
@@ -1337,6 +1343,7 @@ const WorksPage: React.FC = () => {
                       <input
                         type="file"
                         accept="image/*"
+                        multiple
                         onChange={handleImageUpload}
                         disabled={uploading}
                         className="hidden"

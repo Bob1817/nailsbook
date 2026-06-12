@@ -78,7 +78,7 @@ class _TechnicianWorksScreenState extends State<TechnicianWorksScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _WorkFormSheet(existing: existing),
+      builder: (_) => WorkFormSheet(existing: existing),
     );
     if (saved == true) _loadWorks();
   }
@@ -508,15 +508,16 @@ class _TechnicianWorksScreenState extends State<TechnicianWorksScreen> {
 
 // ───────── 新建 / 编辑作品表单 ─────────
 
-class _WorkFormSheet extends StatefulWidget {
+/// 新建 / 编辑作品表单弹层。作品管理列表与作品详情页共用。
+class WorkFormSheet extends StatefulWidget {
   final Map<String, dynamic>? existing;
-  const _WorkFormSheet({this.existing});
+  const WorkFormSheet({super.key, this.existing});
 
   @override
-  State<_WorkFormSheet> createState() => _WorkFormSheetState();
+  State<WorkFormSheet> createState() => _WorkFormSheetState();
 }
 
-class _WorkFormSheetState extends State<_WorkFormSheet> {
+class _WorkFormSheetState extends State<WorkFormSheet> {
   late final _titleCtl =
       TextEditingController(text: widget.existing?['title']?.toString() ?? '');
   late final _descCtl = TextEditingController(
@@ -547,19 +548,33 @@ class _WorkFormSheetState extends State<_WorkFormSheet> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    final file = await ImagePicker().pickImage(
-        source: ImageSource.gallery, maxWidth: 1280, imageQuality: 82);
-    if (file == null) return;
+  Future<void> _pickImages() async {
+    // iOS 用 PHPicker、Android 用系统相册，均支持一次多选。
+    final files = await ImagePicker()
+        .pickMultiImage(maxWidth: 1280, imageQuality: 82);
+    if (files.isEmpty) return;
+    final remaining = 9 - _images.length;
+    if (remaining <= 0) return;
+    final picked = files.take(remaining).toList();
+    if (files.length > remaining && mounted) {
+      NbToast.info(context, '最多 9 张，已选取前 $remaining 张');
+    }
     setState(() => _uploading = true);
     try {
       final api = context.read<ApiClient>();
-      final resp =
-          await api.uploadMultipart('/uploads/image', file.path, 'file');
-      final body = await resp.stream.bytesToString();
-      if (resp.statusCode >= 400) throw Exception('upload failed');
-      final url = (jsonDecode(body) as Map<String, dynamic>)['url'] as String?;
-      if (url != null && mounted) setState(() => _images = [..._images, url]);
+      final urls = <String>[];
+      for (final file in picked) {
+        final resp =
+            await api.uploadMultipart('/uploads/image', file.path, 'file');
+        final body = await resp.stream.bytesToString();
+        if (resp.statusCode >= 400) throw Exception('upload failed');
+        final url =
+            (jsonDecode(body) as Map<String, dynamic>)['url'] as String?;
+        if (url != null) urls.add(url);
+      }
+      if (urls.isNotEmpty && mounted) {
+        setState(() => _images = [..._images, ...urls]);
+      }
     } catch (_) {
       if (mounted) NbToast.error(context, '图片上传失败');
     } finally {
@@ -785,7 +800,7 @@ class _WorkFormSheetState extends State<_WorkFormSheet> {
             )),
         if (_images.length < 9)
           GestureDetector(
-            onTap: _uploading ? null : _pickImage,
+            onTap: _uploading ? null : _pickImages,
             child: Container(
               width: 84,
               height: 84,

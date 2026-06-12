@@ -310,7 +310,9 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
       child: Row(
         children: [
-          _dateTile(today, isTodayActive, isTodayPill: true),
+          SizedBox(
+              height: 70,
+              child: _dateTile(today, isTodayActive, isTodayPill: true)),
           const SizedBox(width: 8),
           Expanded(
             child: SizedBox(
