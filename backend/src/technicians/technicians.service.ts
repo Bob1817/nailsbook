@@ -113,17 +113,21 @@ export class TechniciansService {
 
     const invitationCode = this.generateInvitationCode();
 
-    // 不设置默认密码：passwordHash 保持空（schema 默认 ""），
-    // 美甲师首次登录时会被引导设置登录密码
+    // 超管直建账号：设初始默认密码 123456，并标记首次登录强制改密
+    const passwordHash = await bcrypt.hash('123456', 10);
     const technician = await this.prisma.technician.create({
       data: {
         ...dto,
         invitationCode,
         status: 'active',
+        passwordHash,
+        mustChangePassword: true,
       },
     });
 
-    return technician;
+    // 不向响应泄露密码哈希
+    const { passwordHash: _omit, ...safe } = technician;
+    return safe;
   }
 
   async updateStatus(id: number, dto: UpdateTechnicianStatusDto) {
@@ -196,32 +200,15 @@ export class TechniciansService {
       throw new BadRequestException('该账号已删除，无法重置密码');
     }
 
-    const tempPassword = this.generateTempPassword();
+    // 重置回初始默认密码 123456，并标记首次登录强制改密
+    const tempPassword = '123456';
     const passwordHash = await bcrypt.hash(tempPassword, 10);
     await this.prisma.technician.update({
       where: { id: technicianId },
       data: { passwordHash, tokenVersion: { increment: 1 }, mustChangePassword: true },
     });
 
-    // 临时密码仅在本次响应返回一次，由管理员转交给美甲师
     return { tempPassword };
-  }
-
-  private generateTempPassword(): string {
-    // 10 位，至少含大小写字母与数字，满足强密码规则（≥8 位、含字母和数字）
-    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-    const lower = 'abcdefghijkmnpqrstuvwxyz';
-    const digits = '23456789';
-    const all = upper + lower + digits;
-    const pick = (s: string) => s[crypto.randomInt(s.length)];
-    const chars = [pick(upper), pick(lower), pick(digits), pick(digits)];
-    while (chars.length < 10) chars.push(pick(all));
-    // 洗牌
-    for (let i = chars.length - 1; i > 0; i--) {
-      const j = crypto.randomInt(i + 1);
-      [chars[i], chars[j]] = [chars[j], chars[i]];
-    }
-    return chars.join('');
   }
 
   async generateInviteKey(technicianId: number, note?: string) {

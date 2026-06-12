@@ -34,7 +34,7 @@ describe('TechniciansService', () => {
       serviceArea: 'Pudong',
     });
 
-    // 不设置默认密码：passwordHash 保持空，首次登录时引导设置
+    // 超管直建账号：初始默认密码 123456，首次登录强制改密
     expect(prisma.technician.create).toHaveBeenCalledWith({
       data: {
         name: 'Anna',
@@ -43,6 +43,8 @@ describe('TechniciansService', () => {
         serviceArea: 'Pudong',
         invitationCode: expect.stringMatching(/^[A-F0-9]{8}$/),
         status: 'active',
+        passwordHash: expect.any(String),
+        mustChangePassword: true,
       },
     });
     expect(result.invitationCode).toMatch(/^[A-F0-9]{8}$/);
