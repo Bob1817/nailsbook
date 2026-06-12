@@ -142,14 +142,16 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
                 const Text('欢迎回来',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.w800,
                         color: ET.ink)),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 const Text('输入手机号和密码登录',
+                    textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 13, color: ET.inkSecondary)),
                 if (_error != null) ...[
                   const SizedBox(height: 16),
@@ -209,12 +211,12 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
     );
   }
 
-  // 顶部美甲背景图：通栏 + 贴到屏幕最顶（含状态栏区）。品牌叠加在图片底部，
-  // 借底部渐隐与图片融合，避免 logo/名称浮在纯黑区造成割裂。
+  // 顶部美甲背景图：通栏 + 贴到屏幕最顶（含状态栏区）。品牌在左上角叠加，
+  // 上/下渐变保证状态栏、品牌可读并自然衔接页面。
   Widget _nailBanner() {
     final topInset = MediaQuery.of(context).padding.top;
     return SizedBox(
-      height: 300 + topInset,
+      height: 320 + topInset,
       width: double.infinity,
       child: Stack(
         fit: StackFit.expand,
@@ -224,30 +226,58 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => _nailBannerFallback(),
           ),
-          // 下半部渐隐到页面背景色，保证底部品牌文字可读、与页面衔接
+          // 顶部轻暗（状态栏/品牌可读）+ 底部渐隐到页面背景色
           const DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
+                  Color(0x8816120E),
                   Colors.transparent,
-                  Color(0x6616120E),
+                  Color(0x5516120E),
                   Color(0xFF16120E),
                 ],
-                stops: [0.42, 0.78, 1.0],
+                stops: [0.0, 0.28, 0.78, 1.0],
               ),
             ),
           ),
-          // 品牌叠加在背景图底部
+          // 品牌叠加在左上角（参考 EvenTum）
           Positioned(
+            top: topInset + 10,
             left: 24,
-            right: 24,
-            bottom: 18,
-            child: _brand(),
+            child: _brandTop(),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _brandTop() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+              color: ET.cream, borderRadius: BorderRadius.circular(11)),
+          child: const Text('N',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: ET.onCream)),
+        ),
+        const SizedBox(width: 10),
+        const Text('NailBook',
+            style: TextStyle(
+                fontFamily: ET.serif,
+                fontFamilyFallback: ET.serifFallback,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.white)),
+      ],
     );
   }
 
@@ -279,43 +309,6 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
         height: size,
         decoration: BoxDecoration(color: color, shape: BoxShape.circle),
       );
-
-  Widget _brand() {
-    return Row(
-      children: [
-        Container(
-          width: 52,
-          height: 52,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: ET.cream,
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: const Text('N',
-              style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: ET.onCream)),
-        ),
-        const SizedBox(width: 12),
-        const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('NailBook',
-                style: TextStyle(
-                    fontFamily: ET.serif,
-                    fontFamilyFallback: ET.serifFallback,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w600,
-                    color: ET.ink)),
-            SizedBox(height: 2),
-            Text('美甲预约，让美丽更简单',
-                style: TextStyle(fontSize: 12, color: ET.inkSecondary)),
-          ],
-        ),
-      ],
-    );
-  }
 
   Widget _field(TextEditingController ctl, String hint,
       {bool obscure = false,
