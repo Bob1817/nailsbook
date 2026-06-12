@@ -13,7 +13,7 @@ class ClientChangePasswordScreen extends StatelessWidget {
     return ChangePasswordScreen(
       title: '修改密码',
       technician: false,
-      loginRoute: '/client/login',
+      loginRoute: '/login',
       loadPhone: () async {
         final p = await ClientAuthService(context.read<ApiClient>())
             .getProfile();

@@ -20,7 +20,7 @@ class TechnicianAccountSecurityScreen extends StatelessWidget {
     return ChangePasswordScreen(
       title: '账号与安全',
       technician: true,
-      loginRoute: '/technician/login',
+      loginRoute: '/login',
       loadPhone: () async => (await _service(context).getProfile()).phone,
       submit: (oldPwd, newPwd) =>
           _service(context).changePassword(oldPwd, newPwd),

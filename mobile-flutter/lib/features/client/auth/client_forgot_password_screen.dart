@@ -109,7 +109,7 @@ class _ClientForgotPasswordScreenState
       await ClientAuthService(api).resetPassword(phone, code, newPwd);
       if (mounted) {
         NbToast.show(context, '密码重置成功，请重新登录');
-        context.go('/client/login');
+        context.go('/login');
       }
     } catch (e) {
       if (mounted) setState(() => _error = '重置失败，请重试');
