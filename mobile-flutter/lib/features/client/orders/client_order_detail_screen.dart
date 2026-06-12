@@ -4,6 +4,7 @@ import '../../shared/chat/chat_screen.dart';
 import '../../shared/chat/chat_service.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
+import '../../../core/api/api_error.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../addresses/client_address_models.dart';
@@ -121,10 +122,19 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
       final updated = await ClientOrderService(api).agree(widget.orderId);
       if (mounted) setState(() => _order = updated);
     } catch (e) {
-      if (mounted) _showError('同意报价失败');
+      if (mounted) _showError(_errMsg(e, '同意失败'));
     } finally {
       if (mounted) setState(() => _actionLoading = false);
     }
+  }
+
+  /// 暴露后端真实报错（状态码 + message），便于定位流转失败原因。
+  String _errMsg(Object e, String fallback) {
+    if (e is ApiError) {
+      final code = e.statusCode != null ? '[${e.statusCode}] ' : '';
+      return '$fallback：$code${e.message}';
+    }
+    return '$fallback：$e';
   }
 
   Future<void> _reject(String reason) async {
@@ -149,7 +159,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
           .updateStatus(widget.orderId, 'cancelled');
       if (mounted) setState(() => _order = updated);
     } catch (e) {
-      if (mounted) _showError('取消预约失败');
+      if (mounted) _showError(_errMsg(e, '取消失败'));
     } finally {
       if (mounted) setState(() => _actionLoading = false);
     }
