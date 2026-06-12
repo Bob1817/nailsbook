@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../theme/design_tokens.dart';
-import '../theme/editorial_tokens.dart';
 
 /// 底部导航图标 + 右上角未读角标。badge<=0 时不显示角标。
 class NavBadgeIcon extends StatelessWidget {
@@ -35,8 +34,6 @@ class NavBadgeIcon extends StatelessWidget {
               decoration: BoxDecoration(
                 color: DT.error,
                 borderRadius: BorderRadius.circular(999),
-                // 深色描边让角标在玻璃导航上更清晰
-                border: Border.all(color: ET.bg, width: 1.5),
               ),
               child: Text(
                 badge > 99 ? '99+' : '$badge',
