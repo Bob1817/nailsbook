@@ -1334,16 +1334,12 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(label,
-                    style: TextStyle(fontSize: 12, color: selected ? DT.onCream.withValues(alpha: 0.7) : (enabled ? DT.textMuted : DT.textTertiary.withOpacity(0.5)))),
+                  // 休息日用「休」替代星期，保持两行布局、避免溢出固定高度
+                  Text(enabled ? label : '休',
+                    style: TextStyle(fontSize: 12, height: 1.1, color: selected ? DT.onCream.withValues(alpha: 0.7) : (enabled ? DT.textMuted : DT.textTertiary.withOpacity(0.6)))),
                   const SizedBox(height: 3),
                   Text('${d.month}/${d.day}',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: selected ? DT.onCream : (enabled ? DT.textPrimary : DT.textTertiary.withOpacity(0.45)))),
-                  if (!enabled) ...[
-                    const SizedBox(height: 2),
-                    Text('休',
-                        style: TextStyle(fontSize: 9, height: 1, color: DT.textTertiary.withOpacity(0.7))),
-                  ],
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, height: 1.1, color: selected ? DT.onCream : (enabled ? DT.textPrimary : DT.textTertiary.withOpacity(0.45)))),
                 ],
               ),
             ),
