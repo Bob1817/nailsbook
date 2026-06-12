@@ -142,8 +142,7 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _brand(),
-                const SizedBox(height: 28),
+                const SizedBox(height: 4),
                 const Text('欢迎回来',
                     style: TextStyle(
                         fontSize: 26,
@@ -210,11 +209,12 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
     );
   }
 
-  // 顶部美甲背景图：通栏 + 贴到屏幕最顶（含状态栏区），底部渐隐入深色页面。
+  // 顶部美甲背景图：通栏 + 贴到屏幕最顶（含状态栏区）。品牌叠加在图片底部，
+  // 借底部渐隐与图片融合，避免 logo/名称浮在纯黑区造成割裂。
   Widget _nailBanner() {
     final topInset = MediaQuery.of(context).padding.top;
     return SizedBox(
-      height: 250 + topInset,
+      height: 300 + topInset,
       width: double.infinity,
       child: Stack(
         fit: StackFit.expand,
@@ -224,15 +224,27 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => _nailBannerFallback(),
           ),
-          // 底部渐隐到页面背景色，自然衔接
+          // 下半部渐隐到页面背景色，保证底部品牌文字可读、与页面衔接
           const DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.center,
+                begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Color(0xFF16120E)],
+                colors: [
+                  Colors.transparent,
+                  Color(0x6616120E),
+                  Color(0xFF16120E),
+                ],
+                stops: [0.42, 0.78, 1.0],
               ),
             ),
+          ),
+          // 品牌叠加在背景图底部
+          Positioned(
+            left: 24,
+            right: 24,
+            bottom: 18,
+            child: _brand(),
           ),
         ],
       ),
