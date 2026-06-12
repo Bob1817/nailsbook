@@ -424,10 +424,10 @@ class _TechnicianCreateBookingSheetState
             crossAxisSpacing: 4,
             children: cells,
           ),
-          const SizedBox(height: DT.sm),
+          const SizedBox(height: DT.xs),
           Text('灰色日期为休息日或不可预约日期', style: DT.captionMedium),
           if (_selectedDate != null) ...[
-            const SizedBox(height: DT.lg),
+            const SizedBox(height: DT.xs),
             Text('选择时间', style: DT.titleSmall),
             const SizedBox(height: DT.sm),
             _timeSlots(),
