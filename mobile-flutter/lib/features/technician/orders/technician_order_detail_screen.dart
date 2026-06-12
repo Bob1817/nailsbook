@@ -641,6 +641,9 @@ class _TechnicianOrderDetailScreenState
   }
 
   Widget _buildActionButton(_ActionButton btn) {
+    // 危险操作（取消预约，textColor=DT.error）：红色 liquid glass —— 无实线
+    // 边框，红色半透明底 + 红色柔光。
+    final isDanger = btn.textColor == DT.error;
     return GestureDetector(
       onTap: _actionLoading || btn.onTap == null
           ? null
@@ -651,9 +654,17 @@ class _TechnicianOrderDetailScreenState
       child: Container(
         height: 48,
         decoration: BoxDecoration(
-          color: btn.bgColor,
+          color: isDanger ? DT.error.withValues(alpha: 0.16) : btn.bgColor,
           borderRadius: BorderRadius.circular(DT.rFull),
-          border: btn.border,
+          border: isDanger ? null : btn.border,
+          boxShadow: isDanger
+              ? [
+                  BoxShadow(
+                      color: DT.error.withValues(alpha: 0.30),
+                      blurRadius: 16,
+                      offset: const Offset(0, 2)),
+                ]
+              : null,
         ),
         alignment: Alignment.center,
         child: _actionLoading && btn.onTap != null
