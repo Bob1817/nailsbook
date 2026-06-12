@@ -780,7 +780,9 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                 ),
               ),
             )
-          : OutlinedButton(
+          : isRed
+              ? _redGlassButton(label, onTap, loading)
+              : OutlinedButton(
               onPressed: loading ? null : onTap,
               style: OutlinedButton.styleFrom(
                 foregroundColor: isRed
@@ -806,6 +808,41 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                   style: const TextStyle(
                       fontSize: 13, fontWeight: FontWeight.w500)),
             ),
+    );
+  }
+
+  /// 取消预约：无边框的红色 liquid glass 按钮（红色半透明 + 红色柔光）。
+  Widget _redGlassButton(String label, VoidCallback onTap, bool loading) {
+    const red = Color(0xFFEF4444);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: red.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: [
+          BoxShadow(
+              color: red.withValues(alpha: 0.30),
+              blurRadius: 16,
+              offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: loading ? null : onTap,
+          borderRadius: BorderRadius.circular(999),
+          child: Center(
+            child: loading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: red))
+                : Text(label,
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w600, color: red)),
+          ),
+        ),
+      ),
     );
   }
 

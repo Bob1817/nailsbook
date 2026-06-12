@@ -1,4 +1,5 @@
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
+import 'package:nailbook_mobile/core/widgets/glow_field.dart';
 
 import '../../../core/api/api_error.dart';
 import '../../../core/auth/auth_session.dart';
@@ -132,12 +133,14 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
         onTap: () => FocusScope.of(context).unfocus(),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 56, 24, 32),
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                _nailBanner(),
+                const SizedBox(height: 24),
                 _brand(),
-                const SizedBox(height: 44),
+                const SizedBox(height: 28),
                 const Text('欢迎回来',
                     style: TextStyle(
                         fontSize: 26,
@@ -202,6 +205,54 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
     );
   }
 
+  // 顶部美甲主题背景横幅
+  Widget _nailBanner() {
+    return Container(
+      height: 158,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFEBD2B3), Color(0xFFC9A57C), Color(0xFF7C5B3D)],
+        ),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.35),
+              blurRadius: 22,
+              offset: const Offset(0, 10)),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
+            // 柔光高光
+            Positioned(
+              top: -30,
+              left: -20,
+              child: _dot(120, Colors.white.withValues(alpha: 0.18)),
+            ),
+            // 指甲油色点缀
+            Positioned(
+                top: 26, right: 28, child: _dot(34, const Color(0x66FFFFFF))),
+            Positioned(
+                bottom: 22, right: 70, child: _dot(16, const Color(0x44FFFFFF))),
+            Positioned(
+                bottom: 30, left: 30, child: _dot(22, const Color(0x33FFFFFF))),
+            const Center(child: Text('💅', style: TextStyle(fontSize: 60))),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _dot(double size, Color color) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      );
+
   Widget _brand() {
     return Row(
       children: [
@@ -245,35 +296,18 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
       List<TextInputFormatter>? formatters,
       bool error = false,
       VoidCallback? onClear}) {
-    final bc = error ? DT.error : ET.hairline;
-    return TextField(
+    return GlowField(
       controller: ctl,
+      hint: hint,
       obscureText: obscure,
       keyboardType: keyboardType,
       inputFormatters: formatters,
+      error: error,
       onChanged: (_) {
         if (error && onClear != null) onClear();
       },
-      cursorColor: ET.accent,
-      style: const TextStyle(color: ET.ink, fontSize: 15),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: ET.inkMuted, fontSize: 14),
-        filled: true,
-        fillColor: ET.surface,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: bc)),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: bc, width: error ? 1.5 : 1)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-                color: error ? DT.error : ET.accent, width: 1.5)),
-      ),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
   }
 

@@ -1,4 +1,5 @@
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
+import 'package:nailbook_mobile/core/widgets/glow_field.dart';
 
 import '../../../core/api/api_error.dart';
 import '../../../core/auth/auth_session.dart';
@@ -248,35 +249,18 @@ class _UnifiedRegisterScreenState extends State<UnifiedRegisterScreen> {
       List<TextInputFormatter>? formatters,
       bool error = false,
       VoidCallback? onClear}) {
-    final bc = error ? DT.error : ET.hairline;
-    return TextField(
+    return GlowField(
       controller: ctl,
+      hint: hint,
       obscureText: obscure,
       keyboardType: keyboardType,
       inputFormatters: formatters,
+      error: error,
       onChanged: (_) {
         if (error && onClear != null) onClear();
       },
-      cursorColor: ET.accent,
-      style: const TextStyle(color: ET.ink, fontSize: 15),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: ET.inkMuted, fontSize: 14),
-        filled: true,
-        fillColor: ET.surface,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: bc)),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: bc, width: error ? 1.5 : 1)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-                color: error ? DT.error : ET.accent, width: 1.5)),
-      ),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../theme/design_tokens.dart';
 import '../theme/editorial_tokens.dart';
 
 /// 统一输入框样式（对齐消息对话框输入框）：无边框线条，填充底 + 聚焦柔光边界。
@@ -21,6 +22,9 @@ class GlowField extends StatefulWidget {
   final EdgeInsetsGeometry contentPadding;
   final bool autofocus;
 
+  /// 错误态：红色柔光（替代描边）提醒，输入即可由外部清除。
+  final bool error;
+
   const GlowField({
     super.key,
     this.controller,
@@ -39,6 +43,7 @@ class GlowField extends StatefulWidget {
     this.contentPadding =
         const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     this.autofocus = false,
+    this.error = false,
   });
 
   @override
@@ -68,25 +73,28 @@ class _GlowFieldState extends State<GlowField> {
   @override
   Widget build(BuildContext context) {
     final focused = _focus.hasFocus;
+    final glow = widget.error ? DT.error : ET.accent;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       decoration: BoxDecoration(
         color: focused ? ET.bgElevated : ET.surface,
         borderRadius: BorderRadius.circular(18),
-        boxShadow: focused
+        boxShadow: (focused || widget.error)
             ? [
                 BoxShadow(
-                  color: ET.accent.withValues(alpha: 0.22),
-                  blurRadius: 18,
+                  // 聚焦时柔光增强；错误态用红色柔光替代描边
+                  color: glow.withValues(alpha: focused ? 0.32 : 0.24),
+                  blurRadius: focused ? 20 : 14,
                   spreadRadius: 1,
                 ),
-                BoxShadow(
-                  color: Colors.white.withValues(alpha: 0.06),
-                  blurRadius: 10,
-                  spreadRadius: -2,
-                  offset: const Offset(0, -1),
-                ),
+                if (focused)
+                  BoxShadow(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    blurRadius: 10,
+                    spreadRadius: -2,
+                    offset: const Offset(0, -1),
+                  ),
               ]
             : null,
       ),
