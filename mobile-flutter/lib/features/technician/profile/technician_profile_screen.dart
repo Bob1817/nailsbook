@@ -1146,8 +1146,11 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
     HapticFeedback.lightImpact();
     final api = context.read<ApiClient>();
     final picker = ImagePicker();
-    final file =
-        await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    final file = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 85);
     if (file == null) return;
 
     setState(() => _uploadingAvatar = true);

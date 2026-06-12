@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' show FontFeature;
 
 import 'package:flutter/material.dart';
@@ -10,6 +11,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/maps/map_service.dart';
+import '../../../core/socket/chat_socket.dart';
+import '../../../core/widgets/nav_badge_icon.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/nb_toast.dart';
@@ -39,11 +42,33 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
   int _currentIndex = 0;
   Map<String, dynamic>? _profile;
   bool _loading = true;
+  int _unread = 0;
+  StreamSubscription? _msgSub;
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _loadUnread();
+    try {
+      _msgSub =
+          context.read<ChatSocket>().onMessageNew.listen((_) => _loadUnread());
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    _msgSub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadUnread() async {
+    try {
+      final convs = await ChatService(context.read<ApiClient>()).conversations();
+      final n =
+          convs.fold<int>(0, (s, c) => s + ((c['unreadCount'] as int?) ?? 0));
+      if (mounted) setState(() => _unread = n);
+    } catch (_) {}
   }
 
   Future<void> _loadProfile() async {
@@ -101,7 +126,11 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
       body: IndexedStack(index: _currentIndex, children: pages),
       bottomNavigationBar: _TechGlassTabBar(
         currentIndex: _currentIndex,
-        onTap: (i) => setState(() => _currentIndex = i),
+        unread: _unread,
+        onTap: (i) {
+          setState(() => _currentIndex = i);
+          _loadUnread();
+        },
       ),
     );
   }
@@ -111,8 +140,10 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
 class _TechGlassTabBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final int unread;
 
-  const _TechGlassTabBar({required this.currentIndex, required this.onTap});
+  const _TechGlassTabBar(
+      {required this.currentIndex, required this.onTap, this.unread = 0});
 
   static const _items = <(IconData, IconData, String)>[
     (CupertinoIcons.house_fill, CupertinoIcons.house, '首页'),
@@ -166,8 +197,12 @@ class _TechGlassTabBar extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(active ? item.$1 : item.$2,
-                  size: 23, color: active ? DT.primary : DT.textSecondary),
+              NavBadgeIcon(
+                icon: active ? item.$1 : item.$2,
+                size: 23,
+                color: active ? DT.primary : DT.textSecondary,
+                badge: i == 3 ? unread : 0,
+              ),
               SizedBox(height: DT.xs),
               Text(item.$3,
                   style: TextStyle(

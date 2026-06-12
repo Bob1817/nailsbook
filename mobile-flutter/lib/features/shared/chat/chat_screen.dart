@@ -69,6 +69,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Timer? _recordTimer;
   String? _recordPath;
   bool _sendingVoice = false;
+  bool _sendingImage = false;
   int? _playingMsgId; // 正在播放的消息 id
 
   @override
@@ -153,6 +154,10 @@ class _ChatScreenState extends State<ChatScreen> {
         });
         _scrollToBottom();
       }
+      // 进入会话即标记该会话所有消息为已读
+      try {
+        await service.markAsRead(cid);
+      } catch (_) {}
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
@@ -317,9 +322,10 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _pickAndSendImage() async {
     final picker = ImagePicker();
     final file = await picker.pickImage(
-        source: ImageSource.gallery, maxWidth: 1600, imageQuality: 85);
+        source: ImageSource.gallery, maxWidth: 1280, imageQuality: 82);
     if (file == null) return;
     HapticFeedback.lightImpact();
+    setState(() => _sendingImage = true);
     try {
       final api = context.read<ApiClient>();
       final service = ChatService(api);
@@ -338,7 +344,36 @@ class _ChatScreenState extends State<ChatScreen> {
       _scrollToBottom();
     } catch (_) {
       if (mounted) NbToast.error(context, '图片发送失败，请重试');
+    } finally {
+      if (mounted) setState(() => _sendingImage = false);
     }
+  }
+
+  Widget _sendingImageOverlay() {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: Container(
+          color: Colors.black.withValues(alpha: 0.25),
+          alignment: Alignment.center,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+            decoration: BoxDecoration(
+              color: DT.surface.withValues(alpha: 0.96),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CupertinoActivityIndicator(radius: 14),
+                SizedBox(height: 10),
+                Text('图片发送中…',
+                    style: TextStyle(fontSize: 13, color: DT.textSecondary)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   void _openImageViewer(String url) {
@@ -522,6 +557,7 @@ class _ChatScreenState extends State<ChatScreen> {
             child: _header(topPad),
           ),
           if (_recording) _recordingOverlay(),
+          if (_sendingImage) _sendingImageOverlay(),
         ],
       ),
     );

@@ -334,7 +334,8 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
 
   Future<void> _pickAndUploadImage() async {
     final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.gallery);
+    final file = await picker.pickImage(
+        source: ImageSource.gallery, maxWidth: 1280, imageQuality: 80);
     if (file == null) return;
     setState(() => _uploadingImage = true);
     try {

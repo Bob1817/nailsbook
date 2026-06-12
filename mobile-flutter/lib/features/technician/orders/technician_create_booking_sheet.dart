@@ -384,7 +384,18 @@ class _TechnicianCreateBookingSheetState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('选择日期', style: DT.titleSmall),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text('选择日期', style: DT.titleSmall),
+              const SizedBox(width: DT.sm),
+              Expanded(
+                child: Text('灰色为休息日 / 不可预约',
+                    style: DT.captionMedium.copyWith(color: DT.textMuted)),
+              ),
+            ],
+          ),
           const SizedBox(height: DT.md),
           Row(
             children: [
@@ -424,10 +435,8 @@ class _TechnicianCreateBookingSheetState
             crossAxisSpacing: 4,
             children: cells,
           ),
-          const SizedBox(height: DT.xs),
-          Text('灰色日期为休息日或不可预约日期', style: DT.captionMedium),
           if (_selectedDate != null) ...[
-            const SizedBox(height: DT.xs),
+            const SizedBox(height: DT.md),
             Text('选择时间', style: DT.titleSmall),
             const SizedBox(height: DT.sm),
             _timeSlots(),

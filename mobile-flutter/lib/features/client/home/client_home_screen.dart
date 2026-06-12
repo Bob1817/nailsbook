@@ -9,8 +9,11 @@ import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/editorial_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
+import '../../../core/widgets/nav_badge_icon.dart';
+import '../../../core/socket/chat_socket.dart';
 import '../discover/client_discover_screen.dart';
 import '../../shared/chat/conversations_screen.dart';
+import '../../shared/chat/chat_service.dart';
 import '../orders/client_create_order_screen.dart';
 import '../orders/client_orders_screen.dart';
 import '../orders/client_order_detail_screen.dart';
@@ -31,11 +34,33 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   int _currentIndex = 0;
   Map<String, dynamic>? _homeData;
   bool _loading = true;
+  int _unread = 0;
+  StreamSubscription? _msgSub;
 
   @override
   void initState() {
     super.initState();
     _loadHomeData();
+    _loadUnread();
+    try {
+      _msgSub =
+          context.read<ChatSocket>().onMessageNew.listen((_) => _loadUnread());
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    _msgSub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadUnread() async {
+    try {
+      final convs = await ChatService(context.read<ApiClient>()).conversations();
+      final n =
+          convs.fold<int>(0, (s, c) => s + ((c['unreadCount'] as int?) ?? 0));
+      if (mounted) setState(() => _unread = n);
+    } catch (_) {}
   }
 
   Future<void> _loadHomeData() async {
@@ -75,7 +100,11 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       body: IndexedStack(index: _currentIndex, children: pages),
       bottomNavigationBar: _GlassTabBar(
         currentIndex: _currentIndex,
-        onTap: (i) => setState(() => _currentIndex = i),
+        unread: _unread,
+        onTap: (i) {
+          setState(() => _currentIndex = i);
+          _loadUnread();
+        },
       ),
     );
   }
@@ -85,8 +114,10 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
 class _GlassTabBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final int unread;
 
-  const _GlassTabBar({required this.currentIndex, required this.onTap});
+  const _GlassTabBar(
+      {required this.currentIndex, required this.onTap, this.unread = 0});
 
   static const _items = <(IconData, IconData, String)>[
     (Icons.home_rounded, Icons.home_outlined, '首页'),
@@ -137,8 +168,11 @@ class _GlassTabBar extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(active ? item.$1 : item.$2,
-                  size: 24, color: active ? ET.accent : ET.inkSecondary),
+              NavBadgeIcon(
+                icon: active ? item.$1 : item.$2,
+                color: active ? ET.accent : ET.inkSecondary,
+                badge: i == 3 ? unread : 0,
+              ),
               const SizedBox(height: 2),
               Text(
                 item.$3,

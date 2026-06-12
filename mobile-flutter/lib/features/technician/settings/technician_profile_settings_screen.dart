@@ -78,8 +78,11 @@ class _TechnicianProfileSettingsScreenState
   Future<void> _pickAvatar() async {
     HapticFeedback.lightImpact();
     final picker = ImagePicker();
-    final file =
-        await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    final file = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 85);
     if (file == null) return;
 
     setState(() => _uploading = true);

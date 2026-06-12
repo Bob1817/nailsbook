@@ -109,6 +109,10 @@ class WorkCard extends StatelessWidget {
                 CachedNetworkImage(
                   imageUrl: imageUrl,
                   fit: BoxFit.cover,
+                  // 按显示尺寸降采样解码，加快加载、降低内存、滚动更顺滑
+                  memCacheWidth: 600,
+                  maxWidthDiskCache: 900,
+                  fadeInDuration: const Duration(milliseconds: 150),
                   placeholder: (_, __) => Container(color: ET.surface),
                   errorWidget: (_, __, ___) => Container(
                     color: ET.surface,
@@ -196,7 +200,7 @@ class WorkCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (avatar != null && avatar.isNotEmpty)
-            ClipOval(child: CachedNetworkImage(imageUrl: avatar, width: 18, height: 18, fit: BoxFit.cover))
+            ClipOval(child: CachedNetworkImage(imageUrl: avatar, width: 18, height: 18, fit: BoxFit.cover, memCacheWidth: 60))
           else
             Container(
               width: 18, height: 18,

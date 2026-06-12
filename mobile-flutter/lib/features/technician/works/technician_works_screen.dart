@@ -548,8 +548,8 @@ class _WorkFormSheetState extends State<_WorkFormSheet> {
   }
 
   Future<void> _pickImage() async {
-    final file = await ImagePicker()
-        .pickImage(source: ImageSource.gallery, imageQuality: 85);
+    final file = await ImagePicker().pickImage(
+        source: ImageSource.gallery, maxWidth: 1280, imageQuality: 82);
     if (file == null) return;
     setState(() => _uploading = true);
     try {

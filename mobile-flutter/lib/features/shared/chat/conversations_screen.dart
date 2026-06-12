@@ -443,6 +443,10 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
   }
 
   void _openItem(_InboxItem item) {
+    // 点击即标记该会话消息为已读（聊天与预约/系统提醒同属会话消息）。
+    ChatService(context.read<ApiClient>())
+        .markAsRead(item.conversationId)
+        .catchError((_) {});
     if (item.type != _ItemType.chat &&
         _isClient &&
         (item.relatedType == 'order' || item.relatedType == 'booking') &&
