@@ -131,7 +131,7 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
 
   double _topPanelHeight(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
-    return topPad + 130;
+    return topPad + 122;
   }
 
   Widget _topPanel() {
@@ -174,12 +174,13 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
                   behavior: HitTestBehavior.opaque,
                   onTap: _showCreateBookingSheet,
                   child: Container(
-                    height: 44,
+                    constraints: const BoxConstraints(minHeight: 36),
                     alignment: Alignment.center,
-                    padding: const EdgeInsets.symmetric(horizontal: DT.md),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
                       color: DT.cream,
-                      borderRadius: BorderRadius.circular(DT.rFull),
+                      borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text('新建预约',
                         style: DT.captionLarge.copyWith(
@@ -198,7 +199,7 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
 
   Widget _filterStrip() {
     return SizedBox(
-      height: 44,
+      height: 36,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.zero,
@@ -316,15 +317,16 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
         },
         child: Container(
           alignment: Alignment.center,
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: DT.md),
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: selected ? DT.cream : DT.surface.withValues(alpha: 0.72),
-            borderRadius: BorderRadius.circular(DT.rFull),
+            color: selected ? DT.cream : DT.surface,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: selected ? DT.cream : DT.border),
           ),
           child: Text(label,
               style: TextStyle(
-                fontSize: DT.textSm,
+                fontSize: 13,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                 color: selected ? DT.onCream : DT.textSecondary,
               )),
@@ -338,15 +340,16 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
       padding: const EdgeInsets.only(right: DT.sm),
       child: Container(
         alignment: Alignment.center,
-        height: 44,
-        padding: const EdgeInsets.symmetric(horizontal: DT.md),
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           color: DT.cream,
-          borderRadius: BorderRadius.circular(DT.rFull),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: DT.cream),
         ),
         child: const Text('未支付定金',
             style: TextStyle(
-                fontSize: DT.textSm,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: DT.onCream)),
       ),
