@@ -113,9 +113,13 @@ const ArtistCardView: React.FC<ArtistCardViewProps> = ({
         <div className="pointer-events-none absolute right-[-12%] top-[-25%] h-44 w-44 rounded-full bg-white/15 blur-2xl" />
         {onClose && (
           <button
-            onClick={onClose}
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onClose();
+            }}
             aria-label="关闭"
-            className="absolute right-4 top-[max(1.1rem,env(safe-area-inset-top))] flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur transition-colors duration-200 active:bg-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            className="absolute right-4 top-[max(1.1rem,env(safe-area-inset-top))] z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur transition-colors duration-200 active:bg-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

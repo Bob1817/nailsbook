@@ -14,44 +14,10 @@ import { RegisterByInviteDto } from './dto/register-by-invite.dto';
 import { BindTechnicianDto } from './dto/bind-technician.dto';
 import { VerificationCodeService } from '../common/verification-code/verification-code.service';
 import { SmsService } from '../common/sms/sms.service';
+import { buildDefaultServiceItems } from '../common/default-service-items';
 
 @Injectable()
 export class ClientAuthService {
-  private static readonly DEFAULT_SERVICE_ITEMS = [
-    {
-      id: 'svc_basic_care_1',
-      name: '基础护理与修形',
-      description: '指甲修剪、修形、去死皮、护理等基础服务',
-      category: 'basic_care',
-      isActive: true,
-      sortOrder: 1,
-    },
-    {
-      id: 'svc_color_style_1',
-      name: '色彩与款式制作',
-      description: '纯色美甲、彩绘、渐变、贴纸等款式设计服务',
-      category: 'color_style',
-      isActive: true,
-      sortOrder: 2,
-    },
-    {
-      id: 'svc_extension_1',
-      name: '指甲延长与加固',
-      description: '甲片延长、光疗延长、指甲加固等服务',
-      category: 'extension_reinforcement',
-      isActive: true,
-      sortOrder: 3,
-    },
-    {
-      id: 'svc_removal_1',
-      name: '卸甲服务',
-      description: '卸除甲油胶、卸甲片等服务',
-      category: 'removal',
-      isActive: true,
-      sortOrder: 4,
-    },
-  ];
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
@@ -690,7 +656,7 @@ export class ClientAuthService {
   private parseServiceItems(serviceItems: string | null) {
     return serviceItems
       ? JSON.parse(serviceItems)
-      : ClientAuthService.DEFAULT_SERVICE_ITEMS;
+      : buildDefaultServiceItems();
   }
 
   // 解析技师工作时间方案（供客户端预约日历联动休息日/工作时段）

@@ -36,6 +36,8 @@ const Chat: React.FC = () => {
   const [activeTab, setActiveTab] = useState<MessageTab>('all');
   const [selectedNotification, setSelectedNotification] = useState<UnifiedItem | null>(null);
   const [detailOrderId, setDetailOrderId] = useState<number | null>(null);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { isOnline } = usePresence();
   const { socket } = useSocket();
 
@@ -170,6 +172,16 @@ const Chat: React.FC = () => {
   const filtered = allItems.filter((item) => {
     if (activeTab === 'unread' && !item.unread) return false;
     if (activeTab !== 'all' && activeTab !== 'unread' && item.type !== activeTab) return false;
+    const keyword = searchQuery.trim().toLowerCase();
+    if (keyword) {
+      const searchable = [
+        item.name,
+        item.preview,
+        item.techName,
+        item.badge || '',
+      ].join(' ').toLowerCase();
+      if (!searchable.includes(keyword)) return false;
+    }
     return true;
   });
 
@@ -206,9 +218,10 @@ const Chat: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-full bg-[linear-gradient(180deg,#FFFDFD_0%,#F7F3F6_48%,#F2F6FB_100%)]">
-        <div className="border-b border-white/60 bg-white/76 px-5 app-header-safe pb-5 backdrop-blur-xl">
-          <span className="text-[11px] uppercase tracking-[0.34em] text-slate-400">MESSAGES</span>
-          <h1 className="mt-0.5 text-[1.75rem] font-bold tracking-[-0.03em] text-slate-900">消息</h1>
+        <div className="border-b border-white/60 bg-white/76 px-5 app-header-safe pb-2 backdrop-blur-xl">
+          <div className="flex min-h-11 items-center justify-between">
+            <h1 className="text-[17px] font-semibold text-slate-900">消息</h1>
+          </div>
         </div>
         <div className="px-5 pb-24 pt-6">
           <div className="rounded-[32px] bg-white/86 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
@@ -221,17 +234,63 @@ const Chat: React.FC = () => {
 
   return (
     <div className="min-h-full bg-[linear-gradient(180deg,#FFFDFD_0%,#F7F3F6_48%,#F2F6FB_100%)]">
-      <div className="border-b border-white/60 bg-white/76 px-5 app-header-safe pb-5 backdrop-blur-xl">
-        <div>
-          <span className="text-[11px] uppercase tracking-[0.34em] text-slate-400">MESSAGES</span>
-          <div className="mt-0.5 flex items-center justify-between gap-4">
-            <h1 className="text-[1.75rem] font-bold tracking-[-0.03em] text-slate-900">消息</h1>
-            <div className="rounded-full bg-white/88 px-4 py-2 text-sm font-medium text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
-              {unreadCount > 0 ? `${unreadCount} 条未读` : `${conversations.length} 个会话`}
-            </div>
-          </div>
+      <div className="border-b border-white/60 bg-white/76 px-5 app-header-safe pb-2 backdrop-blur-xl">
+        <div className="flex min-h-11 items-center justify-between gap-4">
+          <h1 className="text-[17px] font-semibold text-slate-900">消息</h1>
+          <button
+            type="button"
+            onClick={() => setShowSearch(true)}
+            aria-label="搜索消息"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white/88 text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.08)] ring-1 ring-black/5 active:scale-95"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
         </div>
       </div>
+
+      {showSearch && (
+        <div
+          className="fixed inset-0 z-[120] bg-black/45 px-5 pt-[max(1.5rem,calc(env(safe-area-inset-top)+1rem))] backdrop-blur-sm"
+          onClick={() => setShowSearch(false)}
+        >
+          <div
+            className="mx-auto flex max-w-md items-center gap-2 rounded-[24px] bg-white p-2 shadow-2xl ring-1 ring-black/5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <svg className="ml-2 h-5 w-5 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              autoFocus
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="搜索消息、通知、美甲师"
+              className="h-11 min-w-0 flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                aria-label="清空搜索"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-gray-500"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowSearch(false)}
+              className="h-9 rounded-full px-3 text-sm font-medium text-[var(--color-primary)]"
+            >
+              完成
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="px-5 pb-24 pt-4">
         {/* Tabs */}

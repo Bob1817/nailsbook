@@ -162,19 +162,15 @@ const Home: React.FC = () => {
         url: work.coverUrl || work.imageUrls[0] || demoCarouselImages[0].url,
         title: work.title || '最新作品',
         technicianName: work.technicianName,
+        technicianAvatarUrl: work.technicianAvatarUrl,
+        workId: work.id,
       }))
     : demoCarouselImages.map((image) => ({
         ...image,
         technicianName: homeData?.technician?.name || '已绑定美甲师',
+        technicianAvatarUrl: homeData?.technician?.avatarUrl || null,
+        workId: null,
       }));
-
-  const uniqueTechnicianNames = Array.from(
-    new Set((homeData?.works || []).map((work) => work.technicianName).filter(Boolean)),
-  );
-  const boundTechnicianCount = Math.max(
-    uniqueTechnicianNames.length,
-    homeData?.technician?.name ? 1 : 0,
-  );
 
   // Auto-play carousel
   useEffect(() => {
@@ -188,28 +184,15 @@ const Home: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-full bg-[var(--color-bg)] pb-24">
-        <div className="sticky top-0 z-20 border-b border-white/60 bg-white/82 px-5 app-header-safe pb-3 backdrop-blur-md">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]">NailArt</p>
-            <div className="mt-0.5 flex items-center justify-between">
-              <h1 className="text-[1.75rem] font-bold tracking-[-0.03em] text-[var(--color-text)]">首页</h1>
-            <div className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-black/5">
-                <Skeleton variant="circular" width="20px" height="20px" />
-              </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-black/5">
-                <Skeleton variant="circular" width="20px" height="20px" />
-              </div>
-            </div>
-          </div>
-          </div>
-        </div>
-        <div className="px-5 pt-4 space-y-4">
-          <Skeleton variant="rectangular" className="h-[25rem] rounded-[32px]" />
+        <div className="space-y-4">
+          <Skeleton variant="rectangular" className="h-[clamp(23rem,58dvh,35rem)] rounded-none" />
+          <div className="px-5">
           <div className="grid grid-cols-2 gap-3">
             <Skeleton variant="rectangular" className="aspect-[3/4] rounded-[24px]" />
             <Skeleton variant="rectangular" className="aspect-[4/5] rounded-[24px]" />
           </div>
+          </div>
+          <div className="px-5">
           <div className="rounded-[28px] bg-white px-4 py-5 shadow-sm ring-1 ring-black/5">
             <Skeleton className="h-5 w-24 mb-4" />
             <div className="grid grid-cols-4 gap-3">
@@ -221,7 +204,10 @@ const Home: React.FC = () => {
               ))}
             </div>
           </div>
+          </div>
+          <div className="px-5">
           <TripCardSkeleton />
+          </div>
         </div>
       </div>
     );
@@ -229,47 +215,16 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-full bg-[linear-gradient(180deg,#fff8fa_0%,#f8f9fc_24%,#f5f6f8_100%)] pb-24">
-      {/* Header */}
-      <div className="sticky top-0 z-20 border-b border-white/60 bg-white/82 px-5 app-header-safe pb-3 backdrop-blur-md">
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]">NailArt</p>
-          <div className="mt-0.5 flex items-center justify-between">
-            <h1 className="text-[1.75rem] font-bold tracking-[-0.03em] text-[var(--color-text)]">首页</h1>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate('/chat')}
-              className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-black/5 active:bg-slate-50 transition-colors"
-            >
-              <svg className="w-5 h-5 text-[var(--color-text-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-            </button>
-            <button
-              onClick={() => navigate('/profile')}
-              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white shadow-sm ring-1 ring-black/5 active:bg-slate-50 transition-colors"
-            >
-              {homeData?.technician?.avatarUrl ? (
-                <img src={homeData.technician.avatarUrl} alt="profile" className="w-full h-full object-cover" />
-              ) : (
-                <svg className="w-5 h-5 text-[var(--color-text-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              )}
-            </button>
-          </div>
-          </div>
-        </div>
-      </div>
-
       {/* Hero */}
-      <div className="px-5 pt-4">
-        <div className="relative overflow-hidden rounded-[32px] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.1)] ring-1 ring-black/5">
-          <div className="relative h-[25rem] overflow-hidden">
+      <div className="relative overflow-hidden bg-white">
+        <div className="relative h-[clamp(23rem,58dvh,35rem)] overflow-hidden">
           {heroImages.map((image, index) => (
-            <div
+            <button
               key={image.id}
+              type="button"
+              onClick={() => navigate(image.workId ? `/works/${image.workId}` : '/works')}
               className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-                index === currentSlide ? 'opacity-100' : 'opacity-0'
+                index === currentSlide ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
               }`}
             >
               <img
@@ -278,53 +233,41 @@ const Home: React.FC = () => {
                 className="w-full h-full object-cover"
                 loading={index === 0 ? 'eager' : 'lazy'}
               />
-              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,10,20,0.08)_0%,rgba(7,10,20,0.18)_22%,rgba(7,10,20,0.5)_68%,rgba(7,10,20,0.82)_100%)]"></div>
-              <div className="absolute left-5 right-5 top-5 flex items-start justify-between gap-3">
-                <div className="flex flex-wrap gap-2">
-                  <span className="rounded-full bg-white/18 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md ring-1 ring-white/20">
-                    多美甲师动态
-                  </span>
-                  <span className="rounded-full bg-black/24 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md ring-1 ring-white/10">
-                    {boundTechnicianCount} 位美甲师
-                  </span>
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,10,20,0.58)_0%,rgba(7,10,20,0.05)_28%,rgba(7,10,20,0.08)_56%,rgba(7,10,20,0.78)_100%)]"></div>
+              <div className="absolute bottom-4 left-5 right-5 flex items-end gap-3 text-left">
+                <div className="min-w-0 flex-1">
+                  <h2 className="truncate text-lg font-bold text-white drop-shadow-[0_1px_10px_rgba(0,0,0,0.75)]">
+                    {image.title}
+                  </h2>
+                  <div className="mt-2 flex min-w-0 items-center gap-2">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/24 text-[11px] font-semibold text-white shadow-[0_3px_10px_rgba(0,0,0,0.24)]">
+                      {image.technicianAvatarUrl ? (
+                        <img src={image.technicianAvatarUrl} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        image.technicianName?.slice(0, 1) || '美'
+                      )}
+                    </span>
+                    <span className="truncate text-xs font-medium text-white/90 drop-shadow-[0_1px_8px_rgba(0,0,0,0.7)]">
+                      {image.technicianName}
+                    </span>
+                  </div>
                 </div>
-                <span className="rounded-full bg-black/28 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-md">
-                  {currentSlide + 1}/{heroImages.length}
+                <span className="mb-0.5 inline-flex h-9 shrink-0 items-center rounded-full border border-white/25 bg-black/36 px-3 text-xs font-semibold text-white backdrop-blur-md">
+                  查看详情
+                  <svg className="ml-0.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </span>
               </div>
-              <div className="absolute bottom-5 left-5 right-5">
-                <p className="text-[11px] tracking-[0.12em] text-white/68">已绑定美甲师正在持续发布新作品</p>
-                <h2 className="mt-2 text-[1.75rem] font-bold leading-[1.15] tracking-[-0.03em] text-white">
-                  今日值得看的美甲灵感
-                </h2>
-                <p className="mt-2 line-clamp-1 text-sm text-white/76">
-                  来自你已绑定美甲师的最新作品、风格更新与近期热门款式
-                </p>
-                <div className="mt-4 flex items-end justify-between gap-3">
-                  <div className="min-w-0 rounded-2xl bg-black/22 px-3.5 py-3 backdrop-blur-md ring-1 ring-white/10">
-                    <p className="truncate text-base font-medium text-white">{image.title}</p>
-                    <div className="mt-1 flex items-center gap-2 text-sm text-white/74">
-                      <span>{image.technicianName}</span>
-                      <span className="text-white/35">·</span>
-                      <span>最新发布</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => navigate('/works')}
-                    className="shrink-0 rounded-full bg-white px-4 py-2 text-sm font-medium text-[var(--color-text)] shadow-sm active:scale-[0.98]"
-                  >
-                    查看动态
-                  </button>
-                </div>
-              </div>
-            </div>
+            </button>
           ))}
-          </div>
+                    </div>
 
-          <div className="absolute bottom-24 left-5 flex items-center gap-2">
+          <div className="absolute left-0 right-0 top-[max(0.75rem,calc(env(safe-area-inset-top)+0.55rem))] flex items-center justify-center gap-1.5">
           {heroImages.map((_, index) => (
             <button
               key={index}
+              type="button"
               onClick={() => handleSlideChange(index)}
               className={`h-1.5 rounded-full transition-all duration-300 ${
                 index === currentSlide
@@ -335,7 +278,6 @@ const Home: React.FC = () => {
             />
           ))}
           </div>
-        </div>
       </div>
 
       {/* My Booking */}

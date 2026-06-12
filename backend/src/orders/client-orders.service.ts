@@ -9,6 +9,7 @@ import { CreateClientOrderDto } from './dto/create-client-order.dto';
 import { UpdateClientOrderDto } from './dto/update-client-order.dto';
 import { CreateOrderFromDesignDto } from './dto/create-order-from-design.dto';
 import { Prisma } from '@prisma/client';
+import { buildDefaultServiceItems } from '../common/default-service-items';
 
 import * as crypto from 'crypto';
 
@@ -1000,7 +1001,9 @@ export class ClientOrdersService {
     serviceItemsRaw: string | null,
     selectedServiceIds?: string[],
   ) {
-    const serviceItems = serviceItemsRaw ? JSON.parse(serviceItemsRaw) : [];
+    const serviceItems = serviceItemsRaw
+      ? JSON.parse(serviceItemsRaw)
+      : buildDefaultServiceItems();
 
     if (!selectedServiceIds || selectedServiceIds.length === 0) {
       throw new BadRequestException('请选择至少一项服务内容');

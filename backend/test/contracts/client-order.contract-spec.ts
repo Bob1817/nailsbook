@@ -185,6 +185,33 @@ describe('Client booking and design HTTP contract', () => {
       });
     });
 
+    it('accepts default service items when technician services are not initialized', async () => {
+      const { accessToken, technician } = await setupClientAndBinding(
+        'order-default-service',
+        { serviceItems: null },
+      );
+
+      const createRes = await request(testApp.app.getHttpServer())
+        .post('/api/client/orders')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          techId: technician.id,
+          serviceDate: '2026-06-16',
+          startTime: '14:00',
+          serviceType: '到店美甲',
+          shopAddress: { name: 'Contract Studio' },
+          selectedServiceIds: ['svc_basic_care_1'],
+        })
+        .expect(201);
+
+      expect(createRes.body).toMatchObject({
+        id: expect.any(Number),
+        status: 'pending_quote',
+        serviceType: '到店美甲',
+      });
+      ownedOrderNos.push(createRes.body.orderNo);
+    });
+
     it('updates an order with new address, date, and time', async () => {
       const { accessToken, technician } =
         await setupClientAndBinding('order-update');
@@ -525,9 +552,12 @@ describe('Client booking and design HTTP contract', () => {
     });
   });
 
-  async function setupClientAndBinding(label: string) {
+  async function setupClientAndBinding(
+    label: string,
+    technicianOverrides: Parameters<typeof createTechnician>[1] = {},
+  ) {
     const client = await createClient(label);
-    const technician = await createTechnician(label);
+    const technician = await createTechnician(label, technicianOverrides);
     await createBinding(client.id, technician.id, technician.inviteCode);
     const accessToken = testApp.signClientToken(client.id, client.phone);
     return { accessToken, client, technician };
@@ -552,6 +582,7 @@ describe('Client booking and design HTTP contract', () => {
       city?: string;
       serviceArea?: string;
       status?: string;
+      serviceItems?: string | null;
     } = {},
   ) {
     const phone = uniquePhone();
@@ -577,15 +608,18 @@ describe('Client booking and design HTTP contract', () => {
             enabled: true,
           },
         ]),
-        serviceItems: JSON.stringify([
-          {
-            id: 'contract-basic',
-            name: 'Basic Care',
-            category: 'basic_care',
-            isActive: true,
-            sortOrder: 1,
-          },
-        ]),
+        serviceItems:
+          overrides.serviceItems === undefined
+            ? JSON.stringify([
+                {
+                  id: 'contract-basic',
+                  name: 'Basic Care',
+                  category: 'basic_care',
+                  isActive: true,
+                  sortOrder: 1,
+                },
+              ])
+            : overrides.serviceItems,
       },
     });
     ownedTechnicianIds.push(technician.id);
@@ -676,6 +710,12 @@ describe('Client booking and design HTTP contract', () => {
             { technicianId: { in: ownedTechnicianIds } },
           ],
         },
+      })
+      .catch(() => {});
+
+    await testApp.prisma.blockedTimeSlot
+      .deleteMany({
+        where: { techId: { in: ownedTechnicianIds } },
       })
       .catch(() => {});
 

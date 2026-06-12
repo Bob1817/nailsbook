@@ -142,28 +142,26 @@ const Profile: React.FC = () => {
         <div className="absolute -top-16 right-0 h-64 w-64 rounded-full bg-white/12 blur-3xl"></div>
         <div className="absolute -bottom-20 left-[-3rem] h-56 w-56 rounded-full bg-white/10 blur-3xl"></div>
 
-        <div className="relative px-5 app-hero-safe pb-10 text-white">
+        <div className="relative px-5 app-hero-safe pb-7 text-white">
           <div
             onClick={() => navigate('/profile/settings')}
-            className="rounded-[32px] border border-white/18 bg-white/10 px-5 py-5 shadow-[0_24px_70px_rgba(255,107,138,0.26)] backdrop-blur-xl cursor-pointer active:scale-[0.99] transition-transform"
+            className="rounded-[28px] border border-white/18 bg-white/10 px-4 py-4 shadow-[0_18px_52px_rgba(255,107,138,0.24)] backdrop-blur-xl cursor-pointer active:scale-[0.99] transition-transform"
           >
             <div className="flex items-center gap-4">
-              <div className="flex h-[76px] w-[76px] items-center justify-center overflow-hidden rounded-full bg-white/20 ring-2 ring-white/30">
+              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-white/20 ring-2 ring-white/30">
               {user?.avatarUrl ? (
                 <img src={user.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
               ) : (
-                <svg className="w-9 h-9 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               )}
               </div>
               <div className="min-w-0 flex-1">
-                <span className="text-[11px] uppercase tracking-[0.28em] text-white/70">PROFILE</span>
-                <h1 className="mt-0.5 truncate text-[1.75rem] font-bold tracking-[-0.03em] text-white">
+                <h1 className="truncate text-[20px] font-semibold text-white">
                   {user?.nickname || user?.phone || '用户'}
                 </h1>
                 <p className="mt-1 text-sm text-white/80">{user?.phone}</p>
-                <p className="mt-1 text-xs text-white/70">点击编辑资料</p>
               </div>
               <svg className="h-5 w-5 text-white/70 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

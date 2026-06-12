@@ -42,54 +42,23 @@ const OrderList: React.FC = () => {
 
   return (
     <div className="min-h-full bg-[linear-gradient(180deg,#fff8fa_0%,#f8f9fc_24%,#f5f6f8_100%)]">
-      <div className="sticky top-0 z-10 border-b border-white/60 bg-white/82 px-5 app-header-safe pb-4 backdrop-blur-md">
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]">Orders</p>
-          <div className="mt-0.5 flex items-center justify-between">
-            <h1 className="text-[1.75rem] font-bold tracking-[-0.03em] text-[var(--color-text)]">我的预约</h1>
-            <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[var(--color-text-secondary)] shadow-sm ring-1 ring-black/5">
-              {orders.length} 条记录
-            </span>
-          </div>
+      <div className="sticky top-0 z-10 border-b border-white/60 bg-white/86 px-5 app-header-safe pb-2 backdrop-blur-md">
+        <div className="flex min-h-11 items-center justify-between">
+          <h1 className="text-[17px] font-semibold text-[var(--color-text)]">我的预约</h1>
+          <button
+            type="button"
+            onClick={() => navigate('/orders/create')}
+            aria-label="发起预约"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[var(--color-primary)] shadow-sm ring-1 ring-black/5 active:scale-95"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v14m7-7H5" />
+            </svg>
+          </button>
         </div>
       </div>
 
-      <div className="px-5 mt-4">
-        <div
-          onClick={() => navigate('/orders/create')}
-          className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#FF6B8A] via-[#FF7C98] to-[#FF8FA3] p-6 shadow-[0_18px_48px_rgba(255,107,138,0.28)] cursor-pointer active:scale-[0.99] transition-transform"
-        >
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.14),transparent_28%)]" />
-          <div className="absolute -top-10 -right-8 h-32 w-32 rounded-full bg-white/10" />
-          <div className="absolute right-8 top-10 h-20 w-20 rounded-full bg-white/12" />
-
-          <div className="relative flex items-center justify-between">
-            <div className="min-w-0">
-              <span className="inline-flex rounded-full bg-white/18 px-3 py-1 text-[11px] font-medium text-white/90 backdrop-blur-md ring-1 ring-white/20">
-                服务入口
-              </span>
-              <h2 className="mt-3 text-[1.75rem] font-bold tracking-[-0.03em] text-white">发起预约</h2>
-              <p className="mt-2 max-w-[14rem] text-sm leading-6 text-white/82">
-                选择时间、服务与地址，快速安排你的下一次上门美甲
-              </p>
-            </div>
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white/18 backdrop-blur-sm ring-1 ring-white/18">
-              <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="px-5 mt-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-heading-3 text-[var(--color-text)]">预约记录</h2>
-            <p className="mt-1 text-caption text-[var(--color-text-muted)]">查看你所有预约的进度</p>
-          </div>
-        </div>
-
+      <div className="px-5 pt-4">
         <div className="space-y-3 pb-6">
           {orders.length > 0 ? (
             orders.map((order) => {

@@ -1,11 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
-
-type ServiceCategory =
-  | 'basic_care'
-  | 'color_style'
-  | 'extension_reinforcement'
-  | 'removal';
+import {
+  buildDefaultServiceItems,
+  ServiceCategory,
+} from '../common/default-service-items';
 
 type ServiceItem = {
   id: string;
@@ -32,52 +30,6 @@ type UpdateServiceDto = {
   sortOrder?: number;
 };
 
-const buildDefaultServices = (): ServiceItem[] => {
-  const now = new Date().toISOString();
-  return [
-    {
-      id: 'svc_basic_care_1',
-      name: '基础护理与修形',
-      description: '指甲修剪、修形、去死皮、护理等基础服务',
-      category: 'basic_care',
-      isActive: true,
-      sortOrder: 1,
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: 'svc_color_style_1',
-      name: '色彩与款式制作',
-      description: '纯色美甲、彩绘、渐变、贴纸等款式设计服务',
-      category: 'color_style',
-      isActive: true,
-      sortOrder: 2,
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: 'svc_extension_1',
-      name: '指甲延长与加固',
-      description: '甲片延长、光疗延长、指甲加固等服务',
-      category: 'extension_reinforcement',
-      isActive: true,
-      sortOrder: 3,
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: 'svc_removal_1',
-      name: '卸甲服务',
-      description: '卸除甲油胶、卸甲片等服务',
-      category: 'removal',
-      isActive: true,
-      sortOrder: 4,
-      createdAt: now,
-      updatedAt: now,
-    },
-  ];
-};
-
 @Injectable()
 export class TechnicianServicesService {
   constructor(private readonly prisma: PrismaService) {}
@@ -94,7 +46,7 @@ export class TechnicianServicesService {
 
     const services = technician.serviceItems
       ? JSON.parse(technician.serviceItems)
-      : buildDefaultServices();
+      : buildDefaultServiceItems();
 
     if (!technician.serviceItems) {
       await this.saveServices(technicianId, services);

@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { worksService, type NailWork } from '../services/works';
-import { useToast } from '../components/ToastProvider';
 
 const CATEGORIES = ['全部', '法式', '渐变', '日系', 'ins风', '简约', '可爱', '水晶', '炫彩'];
 
@@ -15,10 +14,11 @@ function formatDate(dateStr: string): string {
 
 const Discover: React.FC = () => {
   const navigate = useNavigate();
-  const toast = useToast();
   const [works, setWorks] = useState<NailWork[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('全部');
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const loadWorks = useCallback(async () => {
     setLoading(true);
@@ -37,11 +37,20 @@ const Discover: React.FC = () => {
   }, [loadWorks]);
 
   const filteredWorks = useMemo(() => {
-    if (activeCategory === '全部') return works;
-    return works.filter((w) =>
-      w.tags.some((t) => t.includes(activeCategory) || activeCategory.includes(t)),
-    );
-  }, [works, activeCategory]);
+    const keyword = searchQuery.trim().toLowerCase();
+    return works.filter((w) => {
+      const categoryMatch =
+        activeCategory === '全部' ||
+        w.tags.some((t) => t.includes(activeCategory) || activeCategory.includes(t));
+      if (!categoryMatch) return false;
+      if (!keyword) return true;
+      return [
+        w.title || '',
+        w.technicianName || '',
+        ...w.tags,
+      ].some((value) => value.toLowerCase().includes(keyword));
+    });
+  }, [works, activeCategory, searchQuery]);
 
   const columns = useMemo(() => {
     const cols: NailWork[][] = [[], []];
@@ -77,24 +86,23 @@ const Discover: React.FC = () => {
 
   return (
     <div className="min-h-full bg-[linear-gradient(180deg,#fff8fa_0%,#f6f7fb_28%,#f5f6f8_100%)] pb-6">
-      {/* 头部：标题 + 搜索栏 + 分类 pills（sticky） */}
-      <div className="sticky top-0 z-10 border-b border-white/60 bg-white/88 px-5 app-header-safe pb-3 backdrop-blur-md">
-        <h1 className="text-[1.75rem] font-bold tracking-[-0.03em] text-[var(--color-text)]">发现</h1>
-        <p className="mt-1 text-sm text-[var(--color-text-muted)]">刷一刷你绑定美甲师发布的最新作品</p>
-
-        {/* 搜索栏 */}
+      <div className="sticky top-0 z-10 border-b border-white/60 bg-white/88 px-5 app-header-safe pb-2 backdrop-blur-md">
+        <div className="flex min-h-11 items-center justify-between">
+          <h1 className="text-[17px] font-semibold text-[var(--color-text)]">发现</h1>
         <button
-          onClick={() => toast.info('搜索功能开发中')}
-          className="mt-3 flex w-full items-center gap-2.5 rounded-full bg-[#f5f6fa] px-4 py-2.5 text-left active:opacity-80"
+            type="button"
+            onClick={() => setShowSearch(true)}
+            aria-label="搜索作品"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[var(--color-text-secondary)] shadow-sm ring-1 ring-black/5 active:scale-95"
         >
-          <svg className="h-4 w-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <span className="text-sm text-gray-400">搜索美甲风格、美甲师…</span>
         </button>
+        </div>
 
         {/* 分类 pills */}
-        <div className="mt-3 flex gap-2 overflow-x-auto scrollbar-hide">
+        <div className="mt-2 flex gap-2 overflow-x-auto scrollbar-hide">
           {CATEGORIES.map((cat) => {
             const active = activeCategory === cat;
             return (
@@ -113,6 +121,48 @@ const Discover: React.FC = () => {
           })}
         </div>
       </div>
+
+      {showSearch && (
+        <div
+          className="fixed inset-0 z-[120] bg-black/45 px-5 pt-[max(1.5rem,calc(env(safe-area-inset-top)+1rem))] backdrop-blur-sm"
+          onClick={() => setShowSearch(false)}
+        >
+          <div
+            className="mx-auto flex max-w-md items-center gap-2 rounded-[24px] bg-white p-2 shadow-2xl ring-1 ring-black/5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <svg className="ml-2 h-5 w-5 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              autoFocus
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="搜索美甲风格、美甲师"
+              className="h-11 min-w-0 flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                aria-label="清空搜索"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-gray-500"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowSearch(false)}
+              className="h-9 rounded-full px-3 text-sm font-medium text-[var(--color-primary)]"
+            >
+              完成
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 内容区 */}
       <div className="px-4 py-4">
