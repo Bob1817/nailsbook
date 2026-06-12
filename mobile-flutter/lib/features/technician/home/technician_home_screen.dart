@@ -27,6 +27,7 @@ import '../works/technician_works_screen.dart';
 import '../works/technician_work_service.dart';
 import '../works/technician_work_detail_screen.dart';
 import '../profile/technician_profile_screen.dart';
+import '../profile/technician_business_card_screen.dart';
 import '../profile/technician_profile_completion_screen.dart';
 
 class TechnicianHomeScreen extends StatefulWidget {
@@ -1220,44 +1221,55 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                    color: DT.surface, borderRadius: BorderRadius.circular(12)),
-                child: QrImageView(
-                    data: url,
-                    version: QrVersions.auto,
-                    size: 64,
-                    padding: EdgeInsets.zero),
-              ),
-              SizedBox(width: DT.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: DT.titleLarge.copyWith(color: DT.textWhite)),
-                    if (city.isNotEmpty) ...[
-                      SizedBox(height: 2),
-                      Text(city,
-                          style: DT.bodySmall.copyWith(
-                              color: Colors.white.withValues(alpha: 0.85))),
-                    ],
-                    SizedBox(height: DT.sm),
-                    Wrap(spacing: 6, runSpacing: 6, children: [
-                      if (home) _cardTag('🚗 上门'),
-                      if (shop) _cardTag('🏪 到店'),
-                      if (code != null && code.isNotEmpty)
-                        _cardTag('邀请码 $code'),
-                    ]),
-                  ],
+          // 点击进入名片预览
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              HapticFeedback.lightImpact();
+              _push(const TechnicianBusinessCardScreen());
+            },
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                      color: DT.surface,
+                      borderRadius: BorderRadius.circular(12)),
+                  child: QrImageView(
+                      data: url,
+                      version: QrVersions.auto,
+                      size: 64,
+                      padding: EdgeInsets.zero),
                 ),
-              ),
-            ],
+                SizedBox(width: DT.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: DT.titleLarge.copyWith(color: DT.textWhite)),
+                      if (city.isNotEmpty) ...[
+                        SizedBox(height: 2),
+                        Text(city,
+                            style: DT.bodySmall.copyWith(
+                                color: Colors.white.withValues(alpha: 0.85))),
+                      ],
+                      SizedBox(height: DT.sm),
+                      Wrap(spacing: 6, runSpacing: 6, children: [
+                        if (home) _cardTag('🚗 上门'),
+                        if (shop) _cardTag('🏪 到店'),
+                        if (code != null && code.isNotEmpty)
+                          _cardTag('邀请码 $code'),
+                      ]),
+                    ],
+                  ),
+                ),
+                const Icon(CupertinoIcons.chevron_right,
+                    size: 18, color: Colors.white70),
+              ],
+            ),
           ),
           SizedBox(height: DT.md),
           Row(children: [

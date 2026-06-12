@@ -19,6 +19,7 @@ import '../shop/technician_shop_screen.dart';
 import '../schedule/technician_service_time_screen.dart';
 import '../home_service/technician_home_service_settings_screen.dart';
 import '../settings/technician_profile_settings_screen.dart';
+import 'technician_business_card_screen.dart';
 import '../settings/technician_account_security_screen.dart';
 import '../settings/technician_notification_settings_screen.dart';
 import '../settings/technician_privacy_settings_screen.dart';
@@ -721,6 +722,11 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
         icon: CupertinoIcons.square_grid_2x2,
         label: '服务管理',
         onTap: () => _push(const TechnicianServicesScreen())
+      ),
+      (
+        icon: CupertinoIcons.person_crop_square,
+        label: '名片管理',
+        onTap: () => _push(const TechnicianBusinessCardScreen())
       ),
       (
         icon: CupertinoIcons.money_yen_circle,
