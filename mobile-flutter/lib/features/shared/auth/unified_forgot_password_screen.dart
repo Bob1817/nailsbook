@@ -27,6 +27,10 @@ class _UnifiedForgotPasswordScreenState
   bool _sending = false;
   bool _submitting = false;
   String? _error;
+  bool _phoneErr = false;
+  bool _codeErr = false;
+  bool _newErr = false;
+  bool _confirmErr = false;
 
   @override
   void dispose() {
@@ -55,10 +59,16 @@ class _UnifiedForgotPasswordScreenState
 
   Future<void> _sendCode() async {
     FocusScope.of(context).unfocus();
-    setState(() => _error = null);
+    setState(() {
+      _error = null;
+      _phoneErr = false;
+    });
     final phone = _phoneCtl.text.trim();
     if (!RegExp(r'^1\d{10}$').hasMatch(phone)) {
-      return setState(() => _error = '请输入有效手机号码');
+      return setState(() {
+        _phoneErr = true;
+        _error = '请输入有效的手机号码';
+      });
     }
     setState(() => _sending = true);
     final api = context.read<ApiClient>();
@@ -66,7 +76,8 @@ class _UnifiedForgotPasswordScreenState
       final role = await _detectRole(api, phone);
       if (role == null) {
         return setState(() {
-          _error = '该手机号未注册';
+          _phoneErr = true;
+          _error = '该手机号没有注册，请先注册';
           _sending = false;
         });
       }
@@ -103,19 +114,36 @@ class _UnifiedForgotPasswordScreenState
 
   Future<void> _submit() async {
     FocusScope.of(context).unfocus();
-    setState(() => _error = null);
+    setState(() {
+      _error = null;
+      _phoneErr = _codeErr = _newErr = _confirmErr = false;
+    });
     final phone = _phoneCtl.text.trim();
     final code = _codeCtl.text.trim();
     final newPwd = _newCtl.text;
     if (!RegExp(r'^1\d{10}$').hasMatch(phone)) {
-      return setState(() => _error = '请输入有效手机号码');
+      return setState(() {
+        _phoneErr = true;
+        _error = '请输入有效的手机号码';
+      });
     }
-    if (code.isEmpty) return setState(() => _error = '请输入验证码');
+    if (code.isEmpty) {
+      return setState(() {
+        _codeErr = true;
+        _error = '请输入验证码';
+      });
+    }
     if (!_validPwd(newPwd)) {
-      return setState(() => _error = '新密码至少 8 位，需包含字母和数字');
+      return setState(() {
+        _newErr = true;
+        _error = '新密码至少 8 位，需包含字母和数字';
+      });
     }
     if (newPwd != _confirmCtl.text) {
-      return setState(() => _error = '两次输入的新密码不一致');
+      return setState(() {
+        _confirmErr = true;
+        _error = '请保证新密码和确认密码一致';
+      });
     }
 
     setState(() => _submitting = true);
@@ -140,9 +168,11 @@ class _UnifiedForgotPasswordScreenState
       router.go('/login');
     } catch (e) {
       if (mounted) {
+        final msg =
+            e is ApiError && e.message.isNotEmpty ? e.message : '重置失败，请重试';
         setState(() {
-          _error =
-              e is ApiError && e.message.isNotEmpty ? e.message : '重置失败，请重试';
+          _error = msg;
+          if (msg.contains('验证码')) _codeErr = true;
           _submitting = false;
         });
       }
@@ -172,6 +202,8 @@ class _UnifiedForgotPasswordScreenState
                 const SizedBox(height: 20),
                 _field(_phoneCtl, '注册手机号',
                     keyboardType: TextInputType.phone,
+                    error: _phoneErr,
+                    onClear: () => setState(() => _phoneErr = false),
                     formatters: [
                       FilteringTextInputFormatter.digitsOnly,
                       LengthLimitingTextInputFormatter(11),
@@ -181,6 +213,8 @@ class _UnifiedForgotPasswordScreenState
                   Expanded(
                     child: _field(_codeCtl, '验证码',
                         keyboardType: TextInputType.number,
+                        error: _codeErr,
+                        onClear: () => setState(() => _codeErr = false),
                         formatters: [
                           FilteringTextInputFormatter.digitsOnly,
                           LengthLimitingTextInputFormatter(6),
@@ -208,9 +242,14 @@ class _UnifiedForgotPasswordScreenState
                 ]),
                 const SizedBox(height: 12),
                 _field(_newCtl, '新密码（至少 8 位，含字母和数字）',
-                    obscure: true),
+                    obscure: true,
+                    error: _newErr,
+                    onClear: () => setState(() => _newErr = false)),
                 const SizedBox(height: 12),
-                _field(_confirmCtl, '确认新密码', obscure: true),
+                _field(_confirmCtl, '确认新密码',
+                    obscure: true,
+                    error: _confirmErr,
+                    onClear: () => setState(() => _confirmErr = false)),
                 const SizedBox(height: 22),
                 SizedBox(
                   height: 50,
@@ -240,12 +279,18 @@ class _UnifiedForgotPasswordScreenState
   Widget _field(TextEditingController ctl, String hint,
       {bool obscure = false,
       TextInputType? keyboardType,
-      List<TextInputFormatter>? formatters}) {
+      List<TextInputFormatter>? formatters,
+      bool error = false,
+      VoidCallback? onClear}) {
+    final bc = error ? DT.error : ET.hairline;
     return TextField(
       controller: ctl,
       obscureText: obscure,
       keyboardType: keyboardType,
       inputFormatters: formatters,
+      onChanged: (_) {
+        if (error && onClear != null) onClear();
+      },
       cursorColor: ET.accent,
       style: const TextStyle(color: ET.ink, fontSize: 15),
       decoration: InputDecoration(
@@ -257,13 +302,14 @@ class _UnifiedForgotPasswordScreenState
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: ET.hairline)),
+            borderSide: BorderSide(color: bc)),
         enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: ET.hairline)),
+            borderSide: BorderSide(color: bc, width: error ? 1.5 : 1)),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: ET.accent, width: 1.5)),
+            borderSide: BorderSide(
+                color: error ? DT.error : ET.accent, width: 1.5)),
       ),
     );
   }
