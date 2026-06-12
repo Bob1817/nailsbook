@@ -930,7 +930,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _messageRow(Map<String, dynamic> msg, bool isMe) {
     final bubble = _buildBubble(msg, isMe);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: 7),
       child: Row(
         mainAxisAlignment:
             isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
@@ -1264,23 +1264,59 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _openOrderDetail(int orderId) {
     final isClient = context.read<AuthSession>().isClient;
-    showDialog<void>(
+    // 移动端最优：底部上滑 action sheet + 背景模糊蒙版；点击蒙版关闭。
+    showGeneralDialog<void>(
       context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.55),
-      builder: (dctx) => Dialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 36),
-        backgroundColor: Colors.transparent,
-        clipBehavior: Clip.antiAlias,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: SizedBox(
-          width: double.infinity,
-          height: MediaQuery.of(context).size.height * 0.85,
-          child: isClient
-              ? ClientOrderDetailScreen(orderId: orderId)
-              : TechnicianOrderDetailScreen(orderId: orderId),
-        ),
-      ),
+      barrierDismissible: true,
+      barrierLabel: '关闭',
+      barrierColor: Colors.black.withValues(alpha: 0.28),
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (dctx, animation, _) {
+        final h = MediaQuery.of(dctx).size.height;
+        final fade = CurvedAnimation(parent: animation, curve: Curves.easeOut);
+        final slide = Tween<Offset>(
+                begin: const Offset(0, 1), end: Offset.zero)
+            .animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
+        return Stack(
+          children: [
+            // 模糊蒙版：点击非弹窗区域即关闭
+            FadeTransition(
+              opacity: fade,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Navigator.of(dctx).pop(),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: const SizedBox.expand(),
+                ),
+              ),
+            ),
+            // 底部上滑卡片
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SlideTransition(
+                position: slide,
+                child: ClipRRect(
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(24)),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: h * 0.9,
+                    child: MediaQuery.removePadding(
+                      context: dctx,
+                      removeTop: true,
+                      child: isClient
+                          ? ClientOrderDetailScreen(orderId: orderId)
+                          : TechnicianOrderDetailScreen(orderId: orderId),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
