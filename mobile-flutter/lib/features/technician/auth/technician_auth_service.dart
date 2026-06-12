@@ -79,4 +79,17 @@ class TechnicianAuthService {
       'newPassword': newPassword,
     });
   }
+
+  Future<void> sendResetCode(String phone) async {
+    await _api.post('/auth/forgot-password/send-code', body: {'phone': phone});
+  }
+
+  Future<void> resetPassword(
+      String phone, String code, String newPassword) async {
+    await _api.post('/auth/forgot-password/reset', body: {
+      'phone': phone,
+      'code': code,
+      'newPassword': newPassword,
+    });
+  }
 }

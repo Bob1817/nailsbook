@@ -3,8 +3,9 @@ import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 import '../../../core/api/api_error.dart';
 import '../../../core/auth/auth_session.dart';
 import '../../client/auth/client_auth_service.dart';
-import '../../client/auth/client_forgot_password_screen.dart';
 import '../../technician/auth/technician_auth_service.dart';
+import '../../technician/auth/technician_first_login_password_screen.dart';
+import 'unified_forgot_password_screen.dart';
 import 'unified_register_screen.dart';
 
 /// 统一登录：手机号 + 密码同屏；根据手机号自动判定客户/美甲师并登录。
@@ -62,6 +63,21 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
         }
         final res = await TechnicianAuthService(api)
             .login(phone: phone, password: _pwdCtl.text);
+        if (!mounted) return;
+        // 临时密码：强制先改密再进入（改密成功后才正式登录）
+        if (res.mustChangePassword) {
+          setState(() => _loading = false);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => TechnicianFirstLoginPasswordScreen(
+                accessToken: res.accessToken,
+                refreshToken: res.refreshToken,
+              ),
+            ),
+          );
+          return;
+        }
         await auth.loginAsTechnician(res.accessToken,
             refreshToken: res.refreshToken);
         return;
@@ -139,7 +155,7 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
                           context,
                           MaterialPageRoute(
                               builder: (_) =>
-                                  const ClientForgotPasswordScreen())),
+                                  const UnifiedForgotPasswordScreen())),
                       child: const Text('忘记密码？',
                           style: TextStyle(
                               fontSize: 13, color: ET.inkSecondary)),
