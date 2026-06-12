@@ -94,6 +94,12 @@ class AuthSession extends ChangeNotifier {
   }
 
   void handleUnauthorized() {
+    // 仅在已登录态（会话过期）时处理。登录尝试密码错误也会返回 401，
+    // 此时若 notifyListeners 会触发路由刷新、重建登录页（输入框被清空、
+    // 错误信息丢失），因此未登录态直接忽略，让登录页自行展示错误。
+    if (_status != AuthStatus.client && _status != AuthStatus.technician) {
+      return;
+    }
     _status = AuthStatus.unauthenticated;
     _profile = null;
     _apiClient.setToken(null);
