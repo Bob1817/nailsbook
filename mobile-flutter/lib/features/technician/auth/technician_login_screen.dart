@@ -215,7 +215,10 @@ class _TechnicianLoginScreenState extends State<TechnicianLoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF16120E),
-      body: SafeArea(
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
           child: Column(
@@ -238,6 +241,7 @@ class _TechnicianLoginScreenState extends State<TechnicianLoginScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

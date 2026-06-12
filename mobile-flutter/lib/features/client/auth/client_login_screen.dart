@@ -174,7 +174,10 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ET.bg,
-      body: SafeArea(
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 48, 24, 32),
           child: Column(
@@ -196,6 +199,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }
