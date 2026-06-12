@@ -49,6 +49,18 @@ class _TechnicianBusinessCardScreenState
     return '$base/artist/${p.id}';
   }
 
+  Future<void> _share(String text, String fallbackLink) async {
+    final box = context.findRenderObject() as RenderBox?;
+    try {
+      await Share.share(text,
+          sharePositionOrigin:
+              box != null ? box.localToGlobal(Offset.zero) & box.size : null);
+    } catch (_) {
+      await Clipboard.setData(ClipboardData(text: fallbackLink));
+      if (mounted) NbToast.success(context, '链接已复制，发给客户即可');
+    }
+  }
+
   Future<void> _edit() async {
     await Navigator.push(
       context,
@@ -108,10 +120,9 @@ class _TechnicianBusinessCardScreenState
                       const SizedBox(width: 12),
                       Expanded(
                         child: _actionBtn(CupertinoIcons.share, '分享名片', true,
-                            () {
-                          Share.share(
-                              '${p.name} 的美甲主页，长按或点击预约：${_shareUrl(p)}');
-                        }),
+                            () => _share(
+                                '${p.name} 的美甲主页，长按或点击预约：${_shareUrl(p)}',
+                                _shareUrl(p))),
                       ),
                     ]),
                   ],

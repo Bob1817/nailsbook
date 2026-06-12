@@ -148,8 +148,12 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
     final link =
         '$_clientBaseUrl/invite?invite_code=${Uri.encodeComponent(_invitationCode!)}';
     final text = '$_technicianName 邀请你预约美甲服务，点击链接完成绑定：\n$link';
+    final box = context.findRenderObject() as RenderBox?;
     try {
-      await Share.share(text, subject: '邀请你预约美甲');
+      await Share.share(text,
+          subject: '邀请你预约美甲',
+          sharePositionOrigin:
+              box != null ? box.localToGlobal(Offset.zero) & box.size : null);
     } catch (_) {
       await Clipboard.setData(ClipboardData(text: link));
       if (mounted) NbToast.success(context, '邀请链接已复制');

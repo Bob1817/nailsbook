@@ -1196,6 +1196,19 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
   }
 
   // ── 分享名片 ──
+  /// 唤起系统分享；带 sharePositionOrigin（iPad 必需）；失败回退复制链接。
+  Future<void> _shareLink(String text, String fallbackLink) async {
+    final box = context.findRenderObject() as RenderBox?;
+    try {
+      await Share.share(text,
+          sharePositionOrigin:
+              box != null ? box.localToGlobal(Offset.zero) & box.size : null);
+    } catch (_) {
+      await Clipboard.setData(ClipboardData(text: fallbackLink));
+      if (mounted) NbToast.success(context, '链接已复制，发给客户即可');
+    }
+  }
+
   String _shareUrl(Map<String, dynamic>? profile) {
     const base = 'https://m.lunails.cn';
     final code = profile?['invitationCode']?.toString();
@@ -1282,9 +1295,8 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
             SizedBox(width: DT.sm + 2),
             Expanded(
                 child: _heroBtn(CupertinoIcons.share, '分享名片', filled: false,
-                    onTap: () {
-              Share.share('$name 的美甲主页，长按或点击预约：$url');
-            })),
+                    onTap: () => _shareLink(
+                        '$name 的美甲主页，长按或点击预约：$url', url))),
           ]),
         ],
       ),
