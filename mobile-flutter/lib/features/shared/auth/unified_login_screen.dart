@@ -131,15 +131,18 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => FocusScope.of(context).unfocus(),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _nailBanner(),
-                const SizedBox(height: 24),
-                _brand(),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _nailBanner(),
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                    24, 24, 24, 32 + MediaQuery.of(context).padding.bottom),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _brand(),
                 const SizedBox(height: 28),
                 const Text('欢迎回来',
                     style: TextStyle(
@@ -197,49 +200,41 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
                     ),
                   ],
                 ),
-              ],
-            ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  // 顶部美甲背景横幅（真实图片，缺失时回退到渐变占位）
+  // 顶部美甲背景图：通栏 + 贴到屏幕最顶（含状态栏区），底部渐隐入深色页面。
   Widget _nailBanner() {
-    return Container(
-      height: 210,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.35),
-              blurRadius: 22,
-              offset: const Offset(0, 10)),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.asset(
-              'assets/images/login_nail_bg.jpg',
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _nailBannerFallback(),
-            ),
-            // 底部渐隐，与深色页面自然衔接
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.center,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Color(0xCC16120E)],
-                ),
+    final topInset = MediaQuery.of(context).padding.top;
+    return SizedBox(
+      height: 250 + topInset,
+      width: double.infinity,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            'assets/images/login_nail_bg.jpg',
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _nailBannerFallback(),
+          ),
+          // 底部渐隐到页面背景色，自然衔接
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.center,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Color(0xFF16120E)],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
