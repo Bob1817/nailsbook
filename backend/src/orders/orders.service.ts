@@ -310,6 +310,13 @@ export class OrdersService {
         },
       });
 
+      // 用实际服务时间（startTime~endTime）替换默认 5 小时占用，
+      // 保持该预约的“已预约时间范围”与确认后的服务时长同步。
+      await tx.blockedTimeSlot.updateMany({
+        where: { orderId: id },
+        data: { startTime, endTime, reason: 'booking' },
+      });
+
       if (order.clientUserId) {
         const preview = '美甲师已提交报价，请查看并确认～';
         const conversation = await tx.conversation.upsert({

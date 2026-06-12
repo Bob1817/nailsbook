@@ -145,11 +145,19 @@ List<SlotStatus> getSlotStatuses({
   return base.map((time) {
     final slotDt = DateTime.parse('$dateStr $time:00');
     final isPast = dateStr == today && !slotDt.isAfter(now);
+    // 新预约默认锁定 [slot, slot+5h]（与后端一致）。只要该区间与任一已占用
+    // 时段重叠即不可选——否则会出现“可选但提交时被后端冲突拒绝”。
+    // 该 5h 前向锁定同时满足“两预约间隔需≥3h”的要求。
+    final newBlockEnd = slotDt.add(const Duration(hours: kDefaultLockHours));
     final occupied = isPast ||
-        parsed.any((p) => !slotDt.isBefore(p.$1) && slotDt.isBefore(p.$2));
+        parsed.any((p) => p.$1.isBefore(newBlockEnd) && p.$2.isAfter(slotDt));
     return SlotStatus(time, occupied);
   }).toList();
 }
+
+/// 单个预约默认占用时长（小时）。与后端 client/technician 下单时
+/// `startTime + 5h` 的冻结逻辑保持一致。
+const int kDefaultLockHours = 5;
 
 // ───────── 跨城上门限制 ─────────
 
