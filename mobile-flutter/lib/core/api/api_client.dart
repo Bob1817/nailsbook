@@ -50,7 +50,9 @@ class ApiClient {
       {Map<String, dynamic>? body}) async {
     final uri = _buildUri(path);
     final response = await http
-        .post(uri, headers: _headers, body: jsonEncode(body))
+        // 无 body 时发送 {} 而非 jsonEncode(null)（="null"），
+        // 否则后端 JSON body-parser 会以「"null" is not valid JSON」400 拒绝。
+        .post(uri, headers: _headers, body: jsonEncode(body ?? const {}))
         .timeout(_requestTimeout);
     return _handleResponse(response);
   }
@@ -59,7 +61,7 @@ class ApiClient {
       {Map<String, dynamic>? body}) async {
     final uri = _buildUri(path);
     final response = await http
-        .patch(uri, headers: _headers, body: jsonEncode(body))
+        .patch(uri, headers: _headers, body: jsonEncode(body ?? const {}))
         .timeout(_requestTimeout);
     return _handleResponse(response);
   }
