@@ -124,13 +124,17 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                     rt == 'comment' ||
                     rt == 'work_comment');
             if (!isNotif) continue;
+            // 仅“发给客户”的提醒才有未读概念；客户自己发出的消息(收件人是技师)
+            // 其 isRead 反映的是技师是否已读，不应在客户收件箱里显示为未读，
+            // 否则 markAsRead(只标记 receiverType=client) 永远无法清除。
+            final toClient = m['receiverType'] == 'client';
             final type = _categorize(mt, rt);
             notifs.add(_InboxItem(
               type: type,
               title: _typeName(type),
               preview: m['content']?.toString() ?? '系统通知',
               time: m['createdAt']?.toString() ?? '',
-              unread: !(m['isRead'] as bool? ?? false),
+              unread: toClient && !(m['isRead'] as bool? ?? false),
               conversationId: conv['id'] as int,
               relatedType: rt,
               relatedId: m['relatedId'] as int?,
