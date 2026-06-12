@@ -6,10 +6,10 @@ interface ShareModalProps {
   onClose: () => void;
   work: {
     id: number;
-    title: string;
-    description?: string;
-    price?: number;
-    coverUrl?: string;
+    title: string | null;
+    description?: string | null;
+    price?: number | null;
+    coverUrl?: string | null;
     imageUrls: string[];
     tags: string[];
     technicianName?: string;
