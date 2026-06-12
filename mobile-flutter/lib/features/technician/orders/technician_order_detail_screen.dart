@@ -603,7 +603,12 @@ class _TechnicianOrderDetailScreenState
 
     // 后端仅允许 pending_quote/pending_agree/pending_confirm 取消，
     // 其余状态显示也会被拒绝，故仅在可取消状态展示。
-    const cancellable = ['pending_quote', 'pending_agree', 'pending_confirm'];
+    const cancellable = [
+      'pending_quote',
+      'pending_agree',
+      'pending_confirm',
+      'pending_client_confirm'
+    ];
     if (cancellable.contains(status)) {
       buttons.add(_ActionButton('取消预约', DT.surface, false, _confirmCancel,
           textColor: DT.error, border: Border.all(color: DT.errorBorder)));

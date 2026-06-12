@@ -67,6 +67,7 @@ class ClientOrder {
     switch (status) {
       case 'pending_quote': return '待报价';
       case 'pending_agree': return '待确认';
+      case 'pending_client_confirm': return '待确认';
       case 'pending_confirm': return '待接单';
       case 'pending_home': return '待上门';
       case 'pending_shop': return '待到店';

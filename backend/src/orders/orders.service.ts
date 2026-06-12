@@ -573,6 +573,7 @@ export class OrdersService {
       'pending_quote',
       'pending_agree',
       'pending_confirm',
+      'pending_client_confirm',
     ];
     if (!cancellableStatuses.includes(order.status as OrderStatus)) {
       throw new BadRequestException('当前订单状态不支持取消');

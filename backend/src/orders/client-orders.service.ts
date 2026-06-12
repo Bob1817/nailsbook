@@ -470,7 +470,12 @@ export class ClientOrdersService {
       throw new NotFoundException('订单不存在');
     }
 
-    if (order.status !== 'pending_agree') {
+    // pending_agree：客户对美甲师报价的同意；
+    // pending_client_confirm：美甲师直接发起预约后，客户对该预约的确认。
+    if (
+      order.status !== 'pending_agree' &&
+      order.status !== 'pending_client_confirm'
+    ) {
       throw new BadRequestException('当前订单状态不支持确认报价');
     }
 
@@ -699,6 +704,7 @@ export class ClientOrdersService {
       'pending_quote',
       'pending_agree',
       'pending_confirm',
+      'pending_client_confirm',
     ];
     if (!cancellableStatuses.includes(order.status)) {
       throw new BadRequestException('当前订单状态不支持取消');

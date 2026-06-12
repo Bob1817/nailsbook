@@ -15,6 +15,7 @@ import '../../../core/widgets/nb_toast.dart';
 const _statusLabels = {
   'pending_quote': '待报价',
   'pending_agree': '待确认',
+  'pending_client_confirm': '待确认',
   'pending_confirm': '待确认',
   'pending_home': '待上门',
   'pending_shop': '待到店',
@@ -26,6 +27,7 @@ const _statusLabels = {
 final _statusColors = {
   'pending_quote': (DT.warningBg, DT.warningText),
   'pending_agree': (DT.infoBg, DT.infoText),
+  'pending_client_confirm': (DT.infoBg, DT.infoText),
   'pending_confirm': (DT.infoSoft, DT.infoText),
   'pending_home': (DT.successBg, DT.successText),
   'pending_shop': (DT.successBg, DT.successText),
@@ -195,14 +197,16 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
 
   Widget _buildContent(double topPad, double bottomPad) {
     final o = _order!;
+    // 与后端可取消状态保持一致（pending_home/pending_shop/in_progress 不可取消）。
     final isCancellable = [
       'pending_quote',
       'pending_agree',
       'pending_confirm',
-      'pending_home',
-      'pending_shop'
+      'pending_client_confirm',
     ].contains(o.status);
-    final isClientTurn = o.status == 'pending_agree';
+    // 客户需确认：报价待同意(pending_agree) 或 美甲师直接发起待客户确认(pending_client_confirm)。
+    final isClientTurn =
+        o.status == 'pending_agree' || o.status == 'pending_client_confirm';
     final canMarkDeposit = o.status == 'pending_confirm' &&
         (o.depositAmount ?? 0) > 0 &&
         !o.isDepositPaid;
