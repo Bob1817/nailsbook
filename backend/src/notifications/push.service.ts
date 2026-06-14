@@ -26,9 +26,10 @@ interface RegisterTokenInput {
  * 服务端推送（FCM）。客户端在登录时上报设备 token，
  * 新消息 / 新预约等事件触发离线推送。
  *
- * 凭证来源（任一）：
- *  - FIREBASE_SERVICE_ACCOUNT       service account JSON 字符串
- *  - GOOGLE_APPLICATION_CREDENTIALS service account 文件路径（firebase-admin 默认读取）
+ * 凭证来源（任一，按优先级）：
+ *  - FIREBASE_SERVICE_ACCOUNT_BASE64 service account JSON 的 base64（推荐，env_file 无引号转义问题）
+ *  - FIREBASE_SERVICE_ACCOUNT        service account JSON 字符串
+ *  - GOOGLE_APPLICATION_CREDENTIALS  service account 文件路径（firebase-admin 默认读取）
  * 未配置时静默降级：仍存 token，但不发送推送（不影响主流程）。
  */
 @Injectable()
@@ -44,7 +45,10 @@ export class PushService implements OnModuleInit {
       return;
     }
     try {
-      const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
+      const b64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
+      const raw =
+        process.env.FIREBASE_SERVICE_ACCOUNT ??
+        (b64 ? Buffer.from(b64, 'base64').toString('utf8') : undefined);
       if (raw) {
         initializeApp({ credential: cert(JSON.parse(raw)) });
         this.enabled = true;
