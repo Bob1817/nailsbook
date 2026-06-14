@@ -850,6 +850,134 @@ export class ClientOrdersService {
     return this.mapOrder(updatedOrder);
   }
 
+  // 重新发起已过期预约：仅重选预约时间，其余信息保留，恢复过期前状态。
+  async reinitiate(
+    clientUserId: number,
+    id: number,
+    dto: { serviceDate: string; startTime: string },
+  ) {
+    const order = await this.prisma.order.findFirst({
+      where: { id, clientUserId },
+      include: this.orderInclude(),
+    });
+
+    if (!order) {
+      throw new NotFoundException('订单不存在');
+    }
+
+    if (order.status !== 'expired') {
+      throw new BadRequestException('仅已过期的预约可重新发起');
+    }
+
+    const startTime = this.buildStartTime(dto.serviceDate, dto.startTime);
+    if (Number.isNaN(startTime.getTime())) {
+      throw new BadRequestException('预约时间无效');
+    }
+    if (startTime.getTime() <= Date.now()) {
+      throw new BadRequestException('请选择将来的预约时间');
+    }
+
+    const prevDuration =
+      new Date(order.endTime).getTime() - new Date(order.startTime).getTime();
+    const endTime =
+      prevDuration > 0 ? new Date(startTime.getTime() + prevDuration) : startTime;
+    const blockEnd =
+      prevDuration > 0
+        ? endTime
+        : new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
+
+    const restoreStatus = order.expiredFromStatus ?? 'pending_quote';
+
+    const updatedOrder = await this.prisma.$transaction(async (tx) => {
+      await this.assertNoBlockedConflict(
+        tx,
+        order.technicianId,
+        startTime,
+        blockEnd,
+        id,
+      );
+
+      const updated = await tx.order.update({
+        where: { id },
+        data: {
+          status: restoreStatus,
+          startTime,
+          endTime,
+          expiredAt: null,
+          expiredFromStatus: null,
+          reminderDaySent: false,
+          reminderHourSent: false,
+        },
+        include: this.orderInclude(),
+      });
+
+      await tx.blockedTimeSlot.deleteMany({ where: { orderId: id } });
+      await tx.blockedTimeSlot.create({
+        data: {
+          techId: order.technicianId,
+          orderId: id,
+          startTime,
+          endTime: blockEnd,
+          reason: 'booking',
+        },
+      });
+
+      return updated;
+    });
+
+    // 客户重新发起：仅通知美甲师，不通知操作者本人（客户）
+    void this.push.sendToTechnician(order.technicianId, {
+      title: '预约重新发起',
+      body: '客户重新发起了一个预约，请查看～',
+      data: { type: 'order', orderId: String(order.id) },
+    });
+
+    try {
+      const preview = '客户重新发起了预约，请查看～';
+      const conversation = await this.prisma.conversation.upsert({
+        where: {
+          clientId_techId: {
+            clientId: clientUserId,
+            techId: order.technicianId,
+          },
+        },
+        update: { lastMessage: preview, lastMessageAt: new Date() },
+        create: {
+          clientId: clientUserId,
+          techId: order.technicianId,
+          lastMessage: preview,
+          lastMessageAt: new Date(),
+        },
+      });
+      const message = await this.prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          senderType: 'client',
+          senderId: clientUserId,
+          receiverType: 'technician',
+          receiverId: order.technicianId,
+          messageType: 'system',
+          content: preview,
+          relatedType: 'order',
+          relatedId: order.id,
+        },
+      });
+      const updatedConversation = await this.prisma.conversation.findUnique({
+        where: { id: conversation.id },
+      });
+      this.chatGateway.server
+        .to(`conversation:${String(conversation.id)}`)
+        .emit('message:new', { message, conversation: updatedConversation });
+    } catch (e) {
+      console.error(
+        '[ClientOrdersService] Failed to push reinitiate notification:',
+        e,
+      );
+    }
+
+    return this.mapOrder(updatedOrder);
+  }
+
   private orderInclude() {
     return {
       technician: {

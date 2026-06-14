@@ -185,6 +185,32 @@ export class TechnicianOrdersController {
     return this.ordersService.complete(parseInt(id, 10));
   }
 
+  @Patch(':id/reinitiate')
+  @ApiOperation({ summary: '重新发起已过期订单' })
+  @ApiParam({ name: 'id', type: String, description: '订单ID' })
+  @ApiBody({
+    schema: {
+      properties: {
+        serviceDate: { type: 'string', description: '预约日期 YYYY-MM-DD' },
+        startTime: { type: 'string', description: '预约时间 HH:mm' },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: '重新发起成功' })
+  @ApiResponse({ status: 400, description: '当前状态不支持' })
+  @ApiResponse({ status: 404, description: '订单不存在' })
+  async reinitiate(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id') id: string,
+    @Body() body: { serviceDate: string; startTime: string },
+  ) {
+    return this.ordersService.reinitiate(
+      parseInt(id, 10),
+      request.user.technicianId,
+      body,
+    );
+  }
+
   @Patch(':id/cancel')
   @ApiOperation({ summary: '取消订单' })
   @ApiParam({ name: 'id', type: String, description: '订单ID' })

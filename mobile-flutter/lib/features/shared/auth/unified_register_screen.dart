@@ -1,9 +1,11 @@
+import 'package:flutter/gestures.dart';
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 import 'package:nailbook_mobile/core/widgets/glow_field.dart';
 
 import '../../../core/api/api_error.dart';
 import '../../../core/auth/auth_session.dart';
 import '../../client/auth/client_auth_service.dart';
+import '../../client/settings/client_legal_doc_screen.dart';
 import '../../technician/auth/technician_auth_service.dart';
 
 /// 统一注册：先选身份（我是美甲师 / 我要做美甲），再按身份显示对应字段：
@@ -24,6 +26,7 @@ class _UnifiedRegisterScreenState extends State<UnifiedRegisterScreen> {
   final _pwdCtl = TextEditingController();
   final _confirmCtl = TextEditingController();
   bool _loading = false;
+  bool _agreed = false;
   String? _error;
   bool _codeErr = false;
   bool _nameErr = false;
@@ -88,6 +91,9 @@ class _UnifiedRegisterScreenState extends State<UnifiedRegisterScreen> {
         _confirmErr = true;
         _error = '两次输入的密码不一致';
       });
+    }
+    if (!_agreed) {
+      return setState(() => _error = '请阅读并同意用户协议和隐私政策');
     }
 
     setState(() => _loading = true);
@@ -189,7 +195,9 @@ class _UnifiedRegisterScreenState extends State<UnifiedRegisterScreen> {
                     obscure: true,
                     error: _confirmErr,
                     onClear: () => setState(() => _confirmErr = false)),
-                const SizedBox(height: 22),
+                const SizedBox(height: 18),
+                _agreement(),
+                const SizedBox(height: 18),
                 SizedBox(
                   height: 50,
                   child: ElevatedButton(
@@ -261,6 +269,65 @@ class _UnifiedRegisterScreenState extends State<UnifiedRegisterScreen> {
       },
       contentPadding:
           const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    );
+  }
+
+  Widget _agreement() {
+    void openDoc(String type) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => ClientLegalDocScreen(type: type)),
+      );
+    }
+
+    return GestureDetector(
+      onTap: () => setState(() {
+        _agreed = !_agreed;
+        if (_agreed && _error == '请阅读并同意用户协议和隐私政策') _error = null;
+      }),
+      behavior: HitTestBehavior.opaque,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 1),
+            width: 18,
+            height: 18,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: _agreed ? ET.accent : Colors.transparent,
+              shape: BoxShape.circle,
+              border: Border.all(
+                  color: _agreed ? ET.accent : ET.hairlineStrong, width: 1.5),
+            ),
+            child: _agreed
+                ? const Icon(Icons.check, size: 12, color: ET.onCream)
+                : null,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text.rich(
+              TextSpan(
+                style: const TextStyle(fontSize: 12, color: ET.inkMuted),
+                children: [
+                  const TextSpan(text: '我已阅读并同意'),
+                  TextSpan(
+                      text: '《用户协议》',
+                      style: const TextStyle(color: ET.accentOnDark),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () => openDoc('terms')),
+                  const TextSpan(text: '和'),
+                  TextSpan(
+                      text: '《隐私政策》',
+                      style: const TextStyle(color: ET.accentOnDark),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () => openDoc('privacy')),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

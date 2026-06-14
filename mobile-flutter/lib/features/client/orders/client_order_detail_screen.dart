@@ -23,6 +23,7 @@ const _statusLabels = {
   'in_progress': '进行中',
   'completed': '已完成',
   'cancelled': '已取消',
+  'expired': '已过期',
 };
 
 final _statusColors = {
@@ -35,6 +36,7 @@ final _statusColors = {
   'in_progress': (DT.warningBg, DT.warningText),
   'completed': (DT.surfaceAlt, DT.textSecondary),
   'cancelled': (DT.errorBg, DT.errorText),
+  'expired': (DT.surfaceAlt, DT.textSecondary),
 };
 
 String _clientWaitingLabel(String status) {
@@ -174,6 +176,23 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
       if (mounted) setState(() => _order = updated);
     } catch (e) {
       if (mounted) _showError('确认定金失败');
+    } finally {
+      if (mounted) setState(() => _actionLoading = false);
+    }
+  }
+
+  Future<void> _reinitiate(String serviceDate, String startTime) async {
+    setState(() => _actionLoading = true);
+    try {
+      final api = context.read<ApiClient>();
+      final updated = await ClientOrderService(api)
+          .reinitiate(widget.orderId, serviceDate, startTime);
+      if (mounted) {
+        setState(() => _order = updated);
+        NbToast.show(context, '已重新发起预约');
+      }
+    } catch (e) {
+      if (mounted) _showError(_errMsg(e, '重新发起失败'));
     } finally {
       if (mounted) setState(() => _actionLoading = false);
     }
@@ -654,7 +673,12 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
         children: [
-          if (isClientTurn)
+          if (o.status == 'expired')
+            _bottomAction('重新发起预约',
+                onTap: () => _showReinitiateDialog(),
+                filled: true,
+                loading: _actionLoading)
+          else if (isClientTurn)
             // 客户待确认：拒绝 / 同意 / 更多(取消、修改) —— 超过 3 个用「更多」收纳
             Row(
               children: [
@@ -1861,6 +1885,170 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  /// 重新发起已过期预约：仅重选预约日期与时间，其余信息沿用原预约。
+  void _showReinitiateDialog() {
+    String date = '';
+    String time = '';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => _glassSheet(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('重新发起预约',
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: DT.textPrimary)),
+                        const SizedBox(height: 4),
+                        Text('仅需重新选择预约时间，其余信息将沿用原预约',
+                            style:
+                                TextStyle(fontSize: 13, color: DT.textMuted)),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(ctx),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: const BoxDecoration(
+                          color: Color(0xFF211C17), shape: BoxShape.circle),
+                      child: const Icon(Icons.close_rounded,
+                          size: 18, color: Color(0xFF64748B)),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // 预约日期
+              GestureDetector(
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: ctx,
+                    initialDate: DateTime.now().add(const Duration(days: 1)),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 90)),
+                  );
+                  if (picked != null) {
+                    setSheetState(() => date =
+                        '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}');
+                  }
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF211C17),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                        color: date.isEmpty
+                            ? const Color(0xFF3A2F23)
+                            : DT.primary.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.calendar_today_outlined,
+                          size: 18, color: DT.textMuted),
+                      const SizedBox(width: 10),
+                      Text(date.isEmpty ? '点击选择预约日期' : date,
+                          style: TextStyle(
+                              fontSize: 14,
+                              color: date.isEmpty
+                                  ? DT.textMuted
+                                  : DT.textPrimary)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                height: 150,
+                child: GridView.builder(
+                  physics: const BouncingScrollPhysics(),
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 8,
+                    childAspectRatio: 2.2,
+                  ),
+                  itemCount: _timeSlots.length,
+                  itemBuilder: (_, i) {
+                    final t = _timeSlots[i];
+                    final sel = time == t;
+                    return GestureDetector(
+                      onTap: () => setSheetState(() => time = t),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          gradient: sel ? DT.bookingGradient : null,
+                          color: sel ? null : const Color(0xFF211C17),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: sel ? DT.shadowPrimary : null,
+                        ),
+                        child: Text(t,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight:
+                                  sel ? FontWeight.w600 : FontWeight.w500,
+                              color: sel
+                                  ? Colors.white
+                                  : const Color(0xFF94A3B8),
+                            )),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: _actionLoading
+                      ? null
+                      : () {
+                          if (date.isEmpty || time.isEmpty) {
+                            NbToast.show(ctx, '请先选择预约日期和时间');
+                            return;
+                          }
+                          Navigator.pop(ctx);
+                          _reinitiate(date, time);
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: DT.cream,
+                    foregroundColor: DT.onCream,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999)),
+                    elevation: 0,
+                  ),
+                  child: const Text('确认重新发起',
+                      style: TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w600)),
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(ctx).padding.bottom + 20),
+            ],
+          ),
+        ),
       ),
     );
   }

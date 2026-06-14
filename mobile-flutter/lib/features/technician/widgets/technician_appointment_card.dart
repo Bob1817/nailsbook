@@ -234,6 +234,8 @@ class TechnicianAppointmentCard extends StatelessWidget {
         return '已完成';
       case 'cancelled':
         return '已取消';
+      case 'expired':
+        return '已过期';
       default:
         return s;
     }
@@ -255,6 +257,8 @@ class TechnicianAppointmentCard extends StatelessWidget {
         return (DT.statusCompletedBg, DT.statusCompletedText);
       case 'cancelled':
         return (DT.statusCancelledBg, DT.statusCancelledText);
+      case 'expired':
+        return (DT.surfaceAlt, DT.textSecondary);
       default:
         return (DT.surface, DT.textSecondary);
     }

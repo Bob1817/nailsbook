@@ -56,6 +56,14 @@ class ClientOrderService {
     return ClientOrder.fromJson(json);
   }
 
+  /// 重新发起已过期预约：仅重选预约时间，其余信息保留。
+  Future<ClientOrder> reinitiate(
+      int id, String serviceDate, String startTime) async {
+    final json = await _api.post('/orders/$id/reinitiate',
+        body: {'serviceDate': serviceDate, 'startTime': startTime});
+    return ClientOrder.fromJson(json);
+  }
+
   /// 美甲师被占用的时段（其他预约/手动屏蔽），用于预约时段联动。
   Future<List<Map<String, dynamic>>> getBlockedSlots(int techId) async {
     final items = await _api.getList('/orders/blocked-slots/$techId');

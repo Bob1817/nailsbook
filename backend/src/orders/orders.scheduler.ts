@@ -18,6 +18,7 @@ export class OrdersScheduler {
     const now = new Date();
     this.logger.log(`[${now.toISOString()}] 开始检查订单状态自动转换`);
 
+    await this.autoTransitionToExpired(now);
     await this.autoTransitionToInProgress(now);
     await this.autoTransitionToCompleted(now);
     await this.sendHourBeforeReminders(now);
@@ -163,6 +164,127 @@ export class OrdersScheduler {
     } catch (e) {
       this.logger.error(
         `订单 #${order.id} 提醒消息推送失败: ${(e as Error).message}`,
+      );
+    }
+  }
+
+  // 预约创建流程中（待报价/待确认等），若预约时间已过仍未进入行程
+  // （待上门/待到店），则自动置为「已过期」，并释放占用的时间段。
+  private async autoTransitionToExpired(now: Date) {
+    const orders = await this.prisma.order.findMany({
+      where: {
+        status: {
+          in: [
+            'pending_quote',
+            'pending_agree',
+            'pending_confirm',
+            'pending_client_confirm',
+          ],
+        },
+        startTime: { lt: now },
+      },
+    });
+
+    if (orders.length === 0) return;
+
+    this.logger.log(`发现 ${orders.length} 个预约需要自动置为 expired`);
+
+    for (const order of orders) {
+      try {
+        await this.prisma.$transaction(async (tx) => {
+          await tx.order.update({
+            where: { id: order.id },
+            data: {
+              status: 'expired',
+              expiredAt: now,
+              expiredFromStatus: order.status,
+            },
+          });
+          // 释放冻结时段，避免过期预约长期占用美甲师档期
+          await tx.blockedTimeSlot.deleteMany({ where: { orderId: order.id } });
+        });
+
+        // 系统自动操作（无人工操作者），客户与美甲师双方均通知
+        await this.broadcastOrderExpired(order);
+
+        this.logger.log(`预约 #${order.id} 自动从 ${order.status} 置为 expired`);
+      } catch (error) {
+        this.logger.error(
+          `预约 #${order.id} 自动置为 expired 失败: ${error.message}`,
+          error.stack,
+        );
+      }
+    }
+  }
+
+  private async broadcastOrderExpired(order: any) {
+    if (!order.clientUserId) return;
+
+    const preview = '预约已过期，可在预约详情重新发起～';
+    try {
+      let conversationId: number | null = null;
+      const messages: any[] = [];
+
+      await this.prisma.$transaction(async (tx) => {
+        const conversation = await tx.conversation.upsert({
+          where: {
+            clientId_techId: {
+              clientId: order.clientUserId,
+              techId: order.technicianId,
+            },
+          },
+          update: { lastMessage: preview, lastMessageAt: new Date() },
+          create: {
+            clientId: order.clientUserId,
+            techId: order.technicianId,
+            lastMessage: preview,
+            lastMessageAt: new Date(),
+          },
+        });
+        conversationId = conversation.id;
+
+        const msgClient = await tx.message.create({
+          data: {
+            conversationId: conversation.id,
+            senderType: 'system',
+            senderId: 0,
+            receiverType: 'client',
+            receiverId: order.clientUserId,
+            messageType: 'system',
+            content: preview,
+            relatedType: 'order',
+            relatedId: order.id,
+          },
+        });
+        const msgTech = await tx.message.create({
+          data: {
+            conversationId: conversation.id,
+            senderType: 'system',
+            senderId: 0,
+            receiverType: 'technician',
+            receiverId: order.technicianId,
+            messageType: 'system',
+            content: preview,
+            relatedType: 'order',
+            relatedId: order.id,
+          },
+        });
+        messages.push(msgClient, msgTech);
+      });
+
+      if (conversationId && messages.length > 0) {
+        const updatedConv = await this.prisma.conversation.findUnique({
+          where: { id: conversationId },
+        });
+        for (const msg of messages) {
+          this.chatGateway.server
+            .to(`conversation:${String(conversationId)}`)
+            .emit('message:new', { message: msg, conversation: updatedConv });
+        }
+      }
+    } catch (e) {
+      this.logger.error(
+        `预约 #${order.id} 过期通知推送失败: ${(e as Error).message}`,
       );
     }
   }

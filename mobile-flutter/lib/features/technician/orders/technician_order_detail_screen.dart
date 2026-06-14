@@ -595,23 +595,29 @@ class _TechnicianOrderDetailScreenState
           '确认完成', DT.cream, true, () => _changeStatus('completed'),
           textColor: DT.onCream));
     }
+    if (status == 'expired') {
+      // 已过期：仅展示「重新发起预约」（重选时间后恢复过期前状态）。
+      buttons.add(_ActionButton(
+          '重新发起预约', DT.cream, true, _reinitiateFlow,
+          textColor: DT.onCream));
+    } else {
+      buttons.add(_ActionButton('发给客户', DT.primarySoft, false, () {
+        HapticFeedback.lightImpact();
+        _forwardToClient();
+      }, textColor: DT.primary));
 
-    buttons.add(_ActionButton('发给客户', DT.primarySoft, false, () {
-      HapticFeedback.lightImpact();
-      _forwardToClient();
-    }, textColor: DT.primary));
-
-    // 后端仅允许 pending_quote/pending_agree/pending_confirm 取消，
-    // 其余状态显示也会被拒绝，故仅在可取消状态展示。
-    const cancellable = [
-      'pending_quote',
-      'pending_agree',
-      'pending_confirm',
-      'pending_client_confirm'
-    ];
-    if (cancellable.contains(status)) {
-      buttons.add(_ActionButton('取消预约', DT.surface, false, _confirmCancel,
-          textColor: DT.error, border: Border.all(color: DT.errorBorder)));
+      // 后端仅允许 pending_quote/pending_agree/pending_confirm 取消，
+      // 其余状态显示也会被拒绝，故仅在可取消状态展示。
+      const cancellable = [
+        'pending_quote',
+        'pending_agree',
+        'pending_confirm',
+        'pending_client_confirm'
+      ];
+      if (cancellable.contains(status)) {
+        buttons.add(_ActionButton('取消预约', DT.surface, false, _confirmCancel,
+            textColor: DT.error, border: Border.all(color: DT.errorBorder)));
+      }
     }
 
     if (buttons.isEmpty) return const SizedBox.shrink();
@@ -984,6 +990,41 @@ class _TechnicianOrderDetailScreenState
       if (mounted) {
         NbToast.show(context, '操作失败，请重试');
       }
+    } finally {
+      if (mounted) setState(() => _actionLoading = false);
+    }
+  }
+
+  /// 重新发起已过期预约：依次选择预约日期与时间，仅更新时间，其余信息保留。
+  Future<void> _reinitiateFlow() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 90)),
+    );
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: const TimeOfDay(hour: 14, minute: 0),
+    );
+    if (time == null || !mounted) return;
+
+    final serviceDate =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    final startTime =
+        '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+
+    setState(() => _actionLoading = true);
+    try {
+      final api = context.read<ApiClient>();
+      api.setRole('technician');
+      await TechnicianOrderService(api)
+          .reinitiate(_order!['id'] as int, serviceDate, startTime);
+      await _load();
+      if (mounted) NbToast.show(context, '已重新发起预约');
+    } catch (_) {
+      if (mounted) NbToast.show(context, '重新发起失败，请重试');
     } finally {
       if (mounted) setState(() => _actionLoading = false);
     }

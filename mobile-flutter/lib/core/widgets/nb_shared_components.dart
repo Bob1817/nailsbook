@@ -105,6 +105,8 @@ class OrderStatusBadge extends StatelessWidget {
         return (bg: DT.statusCompletedBg, text: DT.statusCompletedText);
       case 'cancelled':
         return (bg: DT.statusCancelledBg, text: DT.statusCancelledText);
+      case 'expired':
+        return (bg: DT.surfaceAlt, text: DT.textSecondary);
       default:
         return (bg: DT.surfaceAlt, text: DT.textSecondary);
     }
@@ -128,6 +130,8 @@ class OrderStatusBadge extends StatelessWidget {
         return '已完成';
       case 'cancelled':
         return '已取消';
+      case 'expired':
+        return '已过期';
       default:
         return status;
     }

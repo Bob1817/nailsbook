@@ -44,6 +44,13 @@ class TechnicianOrderService {
     return _api.patch('/orders/$id/cancel');
   }
 
+  /// 重新发起已过期预约：仅重选预约时间，其余信息保留。
+  Future<Map<String, dynamic>> reinitiate(
+      int id, String serviceDate, String startTime) async {
+    return _api.patch('/orders/$id/reinitiate',
+        body: {'serviceDate': serviceDate, 'startTime': startTime});
+  }
+
   /// 把预约转发为会话内的预约卡片，返回 { message, conversationId }。
   Future<Map<String, dynamic>> forward(int orderId) async {
     return _api.post('/messages/forward', body: {'orderId': orderId});

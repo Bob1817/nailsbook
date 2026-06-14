@@ -159,6 +159,10 @@ model Order {
   completedAt            DateTime?
   cancelledAt            DateTime?
   cancelReason           String?
+  // 自动过期：预约时间已过但仍未进入行程（待上门/待到店）时置为 expired。
+  // expiredFromStatus 记录过期前状态，便于「重新发起」时恢复原状态。
+  expiredAt              DateTime?
+  expiredFromStatus      String?
   source                 String?               @default("technician")
   createdAt              DateTime              @default(now())
   updatedAt              DateTime              @default(now()) @updatedAt

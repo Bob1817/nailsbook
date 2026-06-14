@@ -145,6 +145,32 @@ export class ClientOrdersController {
     );
   }
 
+  @Post(':id/reinitiate')
+  @ApiOperation({ summary: '重新发起已过期订单' })
+  @ApiResponse({ status: 200, description: '重新发起成功' })
+  @ApiResponse({ status: 400, description: '当前状态不支持' })
+  @ApiResponse({ status: 404, description: '订单不存在' })
+  @ApiParam({ name: 'id', type: Number, description: '订单ID' })
+  @ApiBody({
+    schema: {
+      properties: {
+        serviceDate: { type: 'string', description: '预约日期 YYYY-MM-DD' },
+        startTime: { type: 'string', description: '预约时间 HH:mm' },
+      },
+    },
+  })
+  reinitiate(
+    @Req() request: { user: { clientUserId: number } },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: { serviceDate: string; startTime: string },
+  ) {
+    return this.clientOrdersService.reinitiate(
+      request.user.clientUserId,
+      id,
+      dto,
+    );
+  }
+
   @Patch(':id/status')
   @ApiOperation({ summary: '更新订单状态' })
   @ApiResponse({ status: 200, description: '更新成功' })

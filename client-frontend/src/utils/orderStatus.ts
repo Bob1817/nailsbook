@@ -9,6 +9,7 @@ export const ORDER_STATUS_LABEL: Record<string, string> = {
   in_progress: '进行中',
   completed: '已完成',
   cancelled: '已取消',
+  expired: '已过期',
 };
 
 export const ORDER_STATUS_COLOR: Record<string, string> = {
@@ -20,6 +21,7 @@ export const ORDER_STATUS_COLOR: Record<string, string> = {
   in_progress: 'bg-orange-100 text-orange-700',
   completed: 'bg-gray-100 text-gray-600',
   cancelled: 'bg-red-100 text-red-600',
+  expired: 'bg-gray-100 text-gray-500',
 };
 
 /** 是否轮到客户操作 */

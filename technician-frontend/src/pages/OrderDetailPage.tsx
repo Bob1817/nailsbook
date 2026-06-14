@@ -43,6 +43,10 @@ const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ orderIdProp, onClose,
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
+  const [showReinit, setShowReinit] = useState(false);
+  const [reinitDate, setReinitDate] = useState('');
+  const [reinitTime, setReinitTime] = useState('');
+  const [isReinitiating, setIsReinitiating] = useState(false);
 
   // 编辑表单状态
   const [editForm, setEditForm] = useState({
@@ -173,6 +177,38 @@ const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ orderIdProp, onClose,
       setIsSubmitting(false);
     }
   };
+
+  // 重新发起已过期预约：仅重选时间，其余信息保留
+  const handleReinitiate = async () => {
+    if (!order) return;
+    if (!reinitDate || !reinitTime) {
+      toast.error('请先选择预约日期和时间');
+      return;
+    }
+    setIsReinitiating(true);
+    try {
+      const updated = await ordersService.reinitiate(order.id, {
+        serviceDate: reinitDate,
+        startTime: reinitTime,
+      });
+      setOrder(updated);
+      setShowReinit(false);
+      setReinitDate('');
+      setReinitTime('');
+      toast.success('已重新发起预约');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || '重新发起失败');
+    } finally {
+      setIsReinitiating(false);
+    }
+  };
+
+  const reinitTimeSlots = [
+    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+    '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+    '16:00', '16:30', '17:00', '17:30', '18:00', '18:30',
+    '19:00', '19:30', '20:00', '20:30',
+  ];
 
   // 保存编辑
   const handleSaveEdit = async () => {
@@ -639,6 +675,15 @@ const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ orderIdProp, onClose,
             </button>
           </div>
         ) : (
+          order.status === 'expired' ? (
+            <button
+              type="button"
+              onClick={() => setShowReinit(true)}
+              className="w-full h-12 rounded-[18px] bg-[#FF5A66] text-[15px] font-medium text-white shadow-none active:opacity-80"
+            >
+              重新发起预约
+            </button>
+          ) : (
           (() => {
             const statusBtns: React.ReactNode[] = [];
             if (allowedActions.includes('pending_agree')) {
@@ -731,8 +776,80 @@ const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ orderIdProp, onClose,
               </div>
             );
           })()
+          )
         )}
       </div>
+
+      {/* 重新发起已过期预约弹窗 */}
+      {showReinit && (
+        <div
+          className="fixed inset-0 z-[200] flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center"
+          onClick={() => !isReinitiating && setShowReinit(false)}
+        >
+          <div
+            className="w-full max-w-md max-h-[90vh] rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="shrink-0 px-6 pt-6 pb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">重新发起预约</h3>
+                <p className="mt-1 text-sm text-gray-500">仅需重新选择预约时间，其余信息将沿用原预约</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowReinit(false)}
+                disabled={isReinitiating}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 disabled:opacity-50"
+              >
+                <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-6 space-y-4 pb-4">
+              <div className="rounded-3xl bg-slate-50 p-4">
+                <label className="mb-3 block text-sm font-medium text-gray-700">预约日期</label>
+                <input
+                  type="date"
+                  value={reinitDate}
+                  min={new Date().toISOString().slice(0, 10)}
+                  onChange={(e) => setReinitDate(e.target.value)}
+                  className="w-full rounded-2xl bg-white px-4 py-3 text-gray-900 outline-none ring-1 ring-slate-200 focus:ring-[#FF5A66]/30"
+                />
+              </div>
+              <div className="rounded-3xl bg-slate-50 p-4">
+                <label className="mb-3 block text-sm font-medium text-gray-700">预约时间</label>
+                <div className="grid max-h-44 grid-cols-4 gap-2 overflow-y-auto">
+                  {reinitTimeSlots.map((time) => (
+                    <button
+                      key={time}
+                      type="button"
+                      onClick={() => setReinitTime(time)}
+                      className={`rounded-2xl py-2.5 text-sm font-medium transition ${
+                        reinitTime === time
+                          ? 'bg-[#FF5A66] text-white shadow'
+                          : 'bg-white text-slate-600'
+                      }`}
+                    >
+                      {time}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="shrink-0 px-6 pb-[max(1.5rem,env(safe-area-inset-bottom)+1rem)] pt-2">
+              <button
+                type="button"
+                onClick={handleReinitiate}
+                disabled={isReinitiating}
+                className="w-full rounded-full bg-[#FF5A66] py-4 font-medium text-white shadow disabled:opacity-50"
+              >
+                {isReinitiating ? '提交中...' : '确认重新发起'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 

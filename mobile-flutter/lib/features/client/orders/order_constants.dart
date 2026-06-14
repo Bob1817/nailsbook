@@ -9,6 +9,7 @@ const orderStatusLabels = {
   'in_progress': '服务中',
   'completed': '已完成',
   'cancelled': '已取消',
+  'expired': '已过期',
 };
 
 const orderStatusColors = {
@@ -20,6 +21,7 @@ const orderStatusColors = {
   'in_progress': (Color(0xFFFFF7ED), Color(0xFFC2410C)),
   'completed': (Color(0xFF2A241E), Color(0xFF4B5563)),
   'cancelled': (Color(0xFFFEF2F2), Color(0xFFDC2626)),
+  'expired': (Color(0xFF2A241E), Color(0xFF9CA3AF)),
 };
 
 const upcomingStatuses = {

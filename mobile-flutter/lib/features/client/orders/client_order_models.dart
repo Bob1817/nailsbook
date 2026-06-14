@@ -74,6 +74,7 @@ class ClientOrder {
       case 'in_progress': return '服务中';
       case 'completed': return '已完成';
       case 'cancelled': return '已取消';
+      case 'expired': return '已过期';
       default: return status;
     }
   }

@@ -136,6 +136,15 @@ export const orderService = {
     return response.data;
   },
 
+  /** 重新发起已过期预约：仅重选预约时间，其余信息保留 */
+  async reinitiate(
+    id: number,
+    data: { serviceDate: string; startTime: string },
+  ): Promise<Order> {
+    const response = await api.post(`/orders/${id}/reinitiate`, data);
+    return response.data;
+  },
+
   async getBlockedSlots(techId: number): Promise<{ startTime: string; endTime: string }[]> {
     const response = await api.get(`/orders/blocked-slots/${techId}`);
     return response.data;

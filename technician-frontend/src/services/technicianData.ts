@@ -6,7 +6,8 @@ export type OrderStatus =
   | 'pending_shop'
   | 'in_progress'
   | 'completed'
-  | 'cancelled';
+  | 'cancelled'
+  | 'expired';
 
 export interface TechnicianOrder {
   id: number;
@@ -105,6 +106,7 @@ export const orderStatusActions: Record<OrderStatus, OrderStatus[]> = {
   in_progress: ['completed'],
   completed: [],
   cancelled: [],
+  expired: [],
 };
 
 export const fallbackOrders: TechnicianOrder[] = [
