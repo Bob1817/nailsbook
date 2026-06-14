@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { homeService, type HomeData, type NailWork } from '../services/home';
+import { worksService } from '../services/works';
 import { orderService, type Order } from '../services/order';
 import { TripCardSkeleton, Skeleton } from '../components/Skeleton';
+import WorkCard, { splitWorksIntoColumns } from '../components/WorkCard';
 import OrderDetail from './OrderDetail';
 import dayjs from 'dayjs';
 
@@ -117,6 +119,29 @@ const Home: React.FC = () => {
   const handleSlideChange = useCallback((index: number) => {
     setCurrentSlide(index);
   }, []);
+
+  const handleToggleFeaturedLike = async (event: React.MouseEvent, work: NailWork) => {
+    event.stopPropagation();
+    const nextLiked = !work.isLiked;
+    setFeaturedWorks((prev) =>
+      prev.map((item) =>
+        item.id === work.id
+          ? { ...item, isLiked: nextLiked, likeCount: Math.max(0, item.likeCount + (nextLiked ? 1 : -1)) }
+          : item,
+      ),
+    );
+    try {
+      await worksService.likeWork(work.id);
+    } catch {
+      setFeaturedWorks((prev) =>
+        prev.map((item) =>
+          item.id === work.id
+            ? { ...item, isLiked: !nextLiked, likeCount: Math.max(0, item.likeCount + (nextLiked ? -1 : 1)) }
+            : item,
+        ),
+      );
+    }
+  };
 
   const formatDate = (value: string | null | undefined, pattern: string, fallback = '--') => {
     if (!value) {
@@ -436,7 +461,7 @@ const Home: React.FC = () => {
       <div className="px-5 mt-6">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-heading-3 text-[var(--color-text)]">最新动态</h2>
+            <h2 className="text-heading-3 text-[var(--color-text)]">热门推荐</h2>
             <p className="mt-1 text-caption text-[var(--color-text-muted)]">来自你已绑定美甲师的作品发布</p>
           </div>
           <button
@@ -452,75 +477,18 @@ const Home: React.FC = () => {
 
         {featuredWorks.length > 0 ? (
           <>
-          <div className="grid grid-cols-2 gap-3">
-            {featuredWorks.map((work, index) => (
-              <div
-                key={work.id}
-                onClick={() => navigate(`/works/${work.id}`)}
-                className={`group relative overflow-hidden rounded-[24px] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5 cursor-pointer active:scale-[0.985] transition-transform ${
-                  index % 3 === 0 ? 'aspect-[3/4]' : 'aspect-[4/5]'
-                }`}
-              >
-                {work.coverUrl ? (
-                  <img
-                    src={work.coverUrl}
-                    alt={work.title || '作品'}
-                    className="h-full w-full object-cover"
+          <div className="flex gap-3">
+            {splitWorksIntoColumns(featuredWorks).map((column, colIndex) => (
+              <div key={colIndex} className="flex flex-1 flex-col gap-3">
+                {column.map((work, workIndex) => (
+                  <WorkCard
+                    key={work.id}
+                    work={work}
+                    variantIndex={workIndex * 2 + colIndex}
+                    onOpen={(item) => navigate(`/works/${item.id}`)}
+                    onToggleLike={(event) => handleToggleFeaturedLike(event, work)}
                   />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-slate-100">
-                    <svg className="w-8 h-8 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-                <div className="absolute left-3 right-3 top-3 flex items-start justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-2 rounded-full bg-black/24 px-2 py-1.5 backdrop-blur-md ring-1 ring-white/10">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/18 text-[11px] font-semibold text-white">
-                      {work.technicianAvatarUrl ? (
-                        <img src={work.technicianAvatarUrl} alt="" className="h-full w-full rounded-full object-cover" />
-                      ) : (
-                        work.technicianName?.slice(0, 1) || '美'
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-[10px] font-medium text-white">{work.technicianName}</p>
-                      <p className="text-[9px] text-white/58">发布了新作品</p>
-                    </div>
-                  </div>
-                  <span className="rounded-full bg-black/24 px-2.5 py-1 text-[10px] text-white backdrop-blur-md">
-                    {work.commentCount || 0} 评论
-                  </span>
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 p-3">
-                  <p className="line-clamp-1 text-sm font-semibold text-white">{work.title || '未命名作品'}</p>
-                  {work.tags.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {work.tags.slice(0, 2).map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full bg-white/18 px-2 py-0.5 text-[10px] text-white/92 backdrop-blur-md"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  <div className="mt-2 flex items-center justify-between text-[11px] text-white/76">
-                    <span>来自 {work.technicianName}</span>
-                    <span className="flex items-center gap-1">
-                      <svg className={`w-3 h-3 ${work.isLiked ? 'text-[#FF6B8A]' : 'text-white'}`} fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
-                      </svg>
-                      {work.likeCount || 0}
-                    </span>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between">
-                    <span className="text-[10px] text-white/52">{formatDate(work.createdAt, 'MM/DD')}</span>
-                    <span className="text-[10px] text-white/72">查看详情</span>
-                  </div>
-                </div>
+                ))}
               </div>
             ))}
           </div>
