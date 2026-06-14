@@ -210,6 +210,12 @@ input:focus-visible {
   outline-offset: 2px;
 }
 
+.floating-search-input:focus,
+.floating-search-input:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *,

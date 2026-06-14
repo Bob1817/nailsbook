@@ -128,7 +128,7 @@ const Discover: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="搜索美甲风格、美甲师"
-              className="h-11 min-w-0 flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
+              className="floating-search-input h-11 min-w-0 flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400 focus-visible:outline-none"
             />
             {searchQuery && (
               <button

@@ -70,7 +70,7 @@ const WorkCard: React.FC<WorkCardProps> = ({ work, variantIndex, onOpen, onToggl
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/72 via-black/12 to-black/25" />
 
-      <div className="absolute left-3 right-3 top-3 flex items-start justify-between gap-2">
+      <div className="absolute left-3 right-3 top-3 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5 rounded-full bg-black/32 px-2 py-1 backdrop-blur-md">
           {work.technicianAvatarUrl ? (
             <img
@@ -91,7 +91,7 @@ const WorkCard: React.FC<WorkCardProps> = ({ work, variantIndex, onOpen, onToggl
           onClick={(event) => onToggleLike?.(event, work)}
           disabled={!onToggleLike}
           aria-label={work.isLiked ? '取消点赞' : '点赞作品'}
-          className="flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1 rounded-full bg-black/32 px-2 py-1 text-white backdrop-blur-md transition-opacity active:opacity-75 disabled:cursor-default disabled:opacity-100"
+          className="flex min-h-11 shrink-0 items-center justify-center gap-1 px-1 text-white transition-opacity active:opacity-75 disabled:cursor-default disabled:opacity-100"
         >
           <svg className={`h-3.5 w-3.5 ${work.isLiked ? 'text-[#FF6B8A]' : 'text-white'}`} fill="currentColor" viewBox="0 0 20 20">
             <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
