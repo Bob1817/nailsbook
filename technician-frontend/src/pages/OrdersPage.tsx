@@ -30,6 +30,7 @@ const orderTabs: Array<{ label: string; value: 'all' | OrderStatus }> = [
   { label: '进行中', value: 'in_progress' },
   { label: '已完成', value: 'completed' },
   { label: '已取消', value: 'cancelled' },
+  { label: '已过期', value: 'expired' },
 ];
 
 

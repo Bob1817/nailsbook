@@ -89,6 +89,7 @@ class OrderStatusBadge extends StatelessWidget {
       case 'pending_quote':
         return (bg: DT.statusPendingQuoteBg, text: DT.statusPendingQuoteText);
       case 'pending_agree':
+      case 'pending_client_confirm':
         return (bg: DT.statusPendingAgreeBg, text: DT.statusPendingAgreeText);
       case 'pending_confirm':
         return (
@@ -117,6 +118,7 @@ class OrderStatusBadge extends StatelessWidget {
       case 'pending_quote':
         return '待报价';
       case 'pending_agree':
+      case 'pending_client_confirm':
         return '待用户确认';
       case 'pending_confirm':
         return '待我确认';

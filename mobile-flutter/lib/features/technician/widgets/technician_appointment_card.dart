@@ -143,7 +143,7 @@ class TechnicianAppointmentCard extends StatelessWidget {
       );
 
   Widget _dateBlock(String iso) {
-    final d = DateTime.tryParse(iso)?.toLocal();
+    final d = DateTime.tryParse(iso);
     const wk = ['一', '二', '三', '四', '五', '六', '日'];
     return Container(
       width: 60,
@@ -200,7 +200,8 @@ class TechnicianAppointmentCard extends StatelessWidget {
       '客户';
 
   static String _clock(String s) {
-    final d = DateTime.tryParse(s)?.toLocal();
+    // 不做 toLocal：后端存储为预约的「墙上时间」，与预约详情口径一致。
+    final d = DateTime.tryParse(s);
     if (d == null) return '--';
     return '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
   }
@@ -222,6 +223,8 @@ class TechnicianAppointmentCard extends StatelessWidget {
         return '待报价';
       case 'pending_agree':
         return '待确认';
+      case 'pending_client_confirm':
+        return '待用户确认';
       case 'pending_confirm':
         return '待接单';
       case 'pending_home':
@@ -246,6 +249,7 @@ class TechnicianAppointmentCard extends StatelessWidget {
       case 'pending_quote':
         return (DT.statusPendingQuoteBg, DT.statusPendingQuoteText);
       case 'pending_agree':
+      case 'pending_client_confirm':
         return (DT.statusPendingAgreeBg, DT.statusPendingAgreeText);
       case 'pending_confirm':
         return (DT.statusPendingConfirmBg, DT.statusPendingConfirmText);

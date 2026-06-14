@@ -959,7 +959,16 @@ class _TechnicianCustomerDetailScreenState
       builder: (_) => TechnicianCreateBookingSheet(
         customers: [_customer!],
         presetCustomerId: widget.customerId,
-        onCreated: (_) => _loadCustomer(),
+        // 创建完成后跳转至「全部预约」页面（不带客户过滤）。
+        onCreated: (_) {
+          _loadCustomer();
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const TechnicianOrdersScreen(),
+            ),
+          );
+        },
       ),
     );
   }

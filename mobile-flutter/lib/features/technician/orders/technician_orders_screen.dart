@@ -214,6 +214,7 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
           _filterChip('in_progress', '进行中'),
           _filterChip('completed', '已完成'),
           _filterChip('cancelled', '已取消'),
+          _filterChip('expired', '已过期'),
         ],
       ),
     );

@@ -96,7 +96,11 @@ export class OrdersService {
           endTime: new Date(dto.endTime),
           address: dto.address,
           serviceType: dto.serviceType || null,
-          status: dto.shareToClient ? 'pending_client_confirm' : 'pending_quote',
+          // 美甲师直接发起且已填写价格的预约无需再报价，直接进入待客户确认。
+          status:
+            dto.shareToClient || (dto.price != null && dto.price > 0)
+              ? 'pending_client_confirm'
+              : 'pending_quote',
           remark: dto.note || dto.serviceName || null,
           customDescription: dto.customDescription || null,
           customImages: dto.customImages?.length

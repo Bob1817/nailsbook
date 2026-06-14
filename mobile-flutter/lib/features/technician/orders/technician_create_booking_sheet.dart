@@ -60,6 +60,22 @@ class _TechnicianCreateBookingSheetState
   bool _loading = true;
   bool _submitting = false;
 
+  // 未填项定位锚点
+  final _customerKey = GlobalKey();
+  final _serviceKey = GlobalKey();
+  final _calendarKey = GlobalKey();
+  final _durationKey = GlobalKey();
+  final _priceKey = GlobalKey();
+  final _addressKey = GlobalKey();
+
+  // 未填项高亮（红色 liquid glass）
+  bool _customerErr = false;
+  bool _serviceErr = false;
+  bool _dateErr = false;
+  bool _durationErr = false;
+  bool _priceErr = false;
+  bool _addressErr = false;
+
   @override
   void initState() {
     super.initState();
@@ -166,7 +182,11 @@ class _TechnicianCreateBookingSheetState
                           children: [
                             _customerPicker(),
                             const SizedBox(height: DT.md),
-                            _input(_serviceCtl, '服务内容'),
+                            _input(_serviceCtl, '服务内容',
+                                fieldKey: _serviceKey,
+                                error: _serviceErr,
+                                onClearError: () =>
+                                    setState(() => _serviceErr = false)),
                             const SizedBox(height: DT.md),
                             _calendar(),
                             const SizedBox(height: DT.md),
@@ -174,15 +194,27 @@ class _TechnicianCreateBookingSheetState
                               children: [
                                 Expanded(
                                     child: _input(_durationCtl, '服务时长(分钟)',
-                                        numberOnly: true)),
+                                        numberOnly: true,
+                                        fieldKey: _durationKey,
+                                        error: _durationErr,
+                                        onClearError: () => setState(
+                                            () => _durationErr = false))),
                                 const SizedBox(width: DT.sm),
                                 Expanded(
                                     child: _input(_priceCtl, '价格',
-                                        decimalOnly: true)),
+                                        decimalOnly: true,
+                                        fieldKey: _priceKey,
+                                        error: _priceErr,
+                                        onClearError: () =>
+                                            setState(() => _priceErr = false))),
                               ],
                             ),
                             const SizedBox(height: DT.md),
-                            _input(_addressCtl, '服务地址'),
+                            _input(_addressCtl, '服务地址',
+                                fieldKey: _addressKey,
+                                error: _addressErr,
+                                onClearError: () =>
+                                    setState(() => _addressErr = false)),
                             const SizedBox(height: DT.md),
                             _input(_noteCtl, '备注（可选）', maxLines: 4),
                           ],
@@ -286,14 +318,30 @@ class _TechnicianCreateBookingSheetState
     );
   }
 
+  /// 未填项的红色 liquid glass 装饰：红色半透明底 + 红色柔光，无实线边框。
+  /// 已填项为普通玻璃底（DT.surfaceAlt），同样不含实线边框。
+  BoxDecoration _fieldDecoration(bool error) {
+    return BoxDecoration(
+      color: error ? DT.error.withValues(alpha: 0.12) : DT.surfaceAlt,
+      borderRadius: BorderRadius.circular(DT.rLg),
+      boxShadow: error
+          ? [
+              BoxShadow(
+                color: DT.error.withValues(alpha: 0.28),
+                blurRadius: 16,
+                offset: const Offset(0, 2),
+              ),
+            ]
+          : null,
+    );
+  }
+
   Widget _customerPicker() {
     return Container(
+      key: _customerKey,
       height: 50,
       padding: const EdgeInsets.symmetric(horizontal: DT.lg),
-      decoration: BoxDecoration(
-        color: DT.surfaceAlt,
-        borderRadius: BorderRadius.circular(DT.rLg),
-      ),
+      decoration: _fieldDecoration(_customerErr),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int>(
           value: _selectedCustomerId,
@@ -309,7 +357,10 @@ class _TechnicianCreateBookingSheetState
           }).toList(),
           onChanged: widget.presetCustomerId == null
               ? (value) {
-                  setState(() => _selectedCustomerId = value);
+                  setState(() {
+                    _selectedCustomerId = value;
+                    _customerErr = false;
+                  });
                   _prefillAddress();
                 }
               : null,
@@ -324,43 +375,44 @@ class _TechnicianCreateBookingSheetState
     bool numberOnly = false,
     bool decimalOnly = false,
     int maxLines = 1,
+    Key? fieldKey,
+    bool error = false,
+    VoidCallback? onClearError,
   }) {
-    return TextField(
-      controller: controller,
-      maxLines: maxLines,
-      minLines: maxLines,
-      keyboardType:
-          numberOnly || decimalOnly ? TextInputType.number : TextInputType.text,
-      inputFormatters: [
-        if (numberOnly) FilteringTextInputFormatter.digitsOnly,
-        if (decimalOnly)
-          TextInputFormatter.withFunction((oldValue, newValue) {
-            final text = newValue.text;
-            final valid = text.runes.every((rune) {
-              final char = String.fromCharCode(rune);
-              return char == '.' || int.tryParse(char) != null;
-            });
-            return valid ? newValue : oldValue;
-          }),
-      ],
-      decoration: InputDecoration(
-        hintText: placeholder,
-        filled: true,
-        fillColor: DT.surfaceAlt,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(DT.rLg),
-          borderSide: BorderSide.none,
+    // liquid glass 输入框：去掉所有实线边框（选中/未选中），用玻璃底 + 红色柔光表达状态。
+    return Container(
+      key: fieldKey,
+      decoration: _fieldDecoration(error),
+      child: TextField(
+        controller: controller,
+        maxLines: maxLines,
+        minLines: maxLines,
+        onChanged:
+            (error && onClearError != null) ? (_) => onClearError() : null,
+        keyboardType: numberOnly || decimalOnly
+            ? TextInputType.number
+            : TextInputType.text,
+        inputFormatters: [
+          if (numberOnly) FilteringTextInputFormatter.digitsOnly,
+          if (decimalOnly)
+            TextInputFormatter.withFunction((oldValue, newValue) {
+              final text = newValue.text;
+              final valid = text.runes.every((rune) {
+                final char = String.fromCharCode(rune);
+                return char == '.' || int.tryParse(char) != null;
+              });
+              return valid ? newValue : oldValue;
+            }),
+        ],
+        decoration: InputDecoration(
+          hintText: placeholder,
+          filled: false,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: DT.lg, vertical: DT.lg),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(DT.rLg),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(DT.rLg),
-          borderSide: const BorderSide(color: DT.primary, width: 1.5),
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: DT.lg, vertical: DT.lg),
       ),
     );
   }
@@ -375,11 +427,22 @@ class _TechnicianCreateBookingSheetState
     ];
 
     return Container(
+      key: _calendarKey,
       padding: const EdgeInsets.all(DT.lg),
       decoration: BoxDecoration(
         color: DT.surface,
         borderRadius: BorderRadius.circular(DT.rXl),
-        border: Border.all(color: DT.hairline),
+        border: Border.all(
+            color: _dateErr ? DT.error.withValues(alpha: 0.45) : DT.hairline),
+        boxShadow: _dateErr
+            ? [
+                BoxShadow(
+                  color: DT.error.withValues(alpha: 0.25),
+                  blurRadius: 16,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -481,6 +544,7 @@ class _TechnicianCreateBookingSheetState
               setState(() {
                 _selectedDate = date;
                 _startClock = null;
+                _dateErr = false;
               });
             },
       child: Container(
@@ -533,7 +597,10 @@ class _TechnicianCreateBookingSheetState
               ? null
               : () {
                   HapticFeedback.selectionClick();
-                  setState(() => _startClock = slot);
+                  setState(() {
+                    _startClock = slot;
+                    _dateErr = false;
+                  });
                 },
           child: Container(
             alignment: Alignment.center,
@@ -595,28 +662,68 @@ class _TechnicianCreateBookingSheetState
   }
 
   Future<void> _submit() async {
-    setState(() => _error = null);
+    FocusScope.of(context).unfocus();
     final customer = _selectedCustomer;
     final selectedDate = _selectedDate;
     final duration = int.tryParse(_durationCtl.text.trim());
     final price = double.tryParse(_priceCtl.text.trim());
 
-    if (customer == null ||
-        _serviceCtl.text.trim().isEmpty ||
-        selectedDate == null ||
-        _startClock == null ||
-        _addressCtl.text.trim().isEmpty ||
-        price == null) {
-      setState(() => _error = '请填写客户、服务内容、时间、地址和价格');
-      return;
+    // 逐项精确校验：标记所有未填项，并定位到第一个未填项。
+    final customerErr = customer == null;
+    final serviceErr = _serviceCtl.text.trim().isEmpty;
+    final dateErr = selectedDate == null;
+    final timeErr = selectedDate != null && _startClock == null;
+    final durationErr = duration == null || duration <= 0;
+    final priceErr = price == null || price <= 0;
+    final addressErr = _addressCtl.text.trim().isEmpty;
+
+    GlobalKey? firstKey;
+    String? firstMsg;
+    for (final item in <(bool, GlobalKey, String)>[
+      (customerErr, _customerKey, '请选择客户'),
+      (serviceErr, _serviceKey, '请填写服务内容'),
+      (dateErr, _calendarKey, '请选择预约日期'),
+      (timeErr, _calendarKey, '请选择预约时间'),
+      (durationErr, _durationKey, '请填写有效的服务时长'),
+      (priceErr, _priceKey, '请填写价格'),
+      (addressErr, _addressKey, '请填写服务地址'),
+    ]) {
+      if (item.$1) {
+        firstKey ??= item.$2;
+        firstMsg ??= item.$3;
+      }
     }
-    if (duration == null || duration <= 0) {
-      setState(() => _error = '请检查服务时长');
+
+    if (firstMsg != null) {
+      setState(() {
+        _customerErr = customerErr;
+        _serviceErr = serviceErr;
+        _dateErr = dateErr || timeErr;
+        _durationErr = durationErr;
+        _priceErr = priceErr;
+        _addressErr = addressErr;
+        _error = firstMsg;
+      });
+      final ctx = firstKey?.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          alignment: 0.1,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
       return;
     }
 
-    final startTime = _buildDateTime(selectedDate, _startClock!);
-    final endTime = startTime.add(Duration(minutes: duration));
+    setState(() {
+      _error = null;
+      _customerErr = _serviceErr =
+          _dateErr = _durationErr = _priceErr = _addressErr = false;
+    });
+
+    final startTime = _buildDateTime(selectedDate!, _startClock!);
+    final endTime = startTime.add(Duration(minutes: duration!));
     if (_hasConflict(startTime, endTime)) {
       setState(() => _error = '该时间段已有预约，请调整开始时间或服务时长');
       return;
@@ -627,7 +734,7 @@ class _TechnicianCreateBookingSheetState
       final api = context.read<ApiClient>();
       api.setRole('technician');
       final created = await TechnicianOrderService(api).create({
-        'customerId': customer['id'],
+        'customerId': customer!['id'],
         'serviceName': _serviceCtl.text.trim(),
         'address': _addressCtl.text.trim(),
         'startTime': startTime.toIso8601String(),
@@ -637,8 +744,9 @@ class _TechnicianCreateBookingSheetState
       });
       if (!mounted) return;
       NbToast.success(context, '预约创建成功');
-      widget.onCreated?.call(created);
+      // 先关闭弹层再回调（回调可能会 push 新页面，需保证此处 pop 的是本弹层）。
       Navigator.pop(context);
+      widget.onCreated?.call(created);
     } on ApiError catch (error) {
       if (!mounted) return;
       setState(() {
