@@ -31,6 +31,7 @@ const statusPillClass: Record<OrderStatus, string> = {
   in_progress: 'bg-[#ffe9f0] text-pink-500',
   completed: 'bg-[#edf8f1] text-[#3b9460]',
   cancelled: 'bg-[#f4f4f5] text-[#8f8f95]',
+  expired: 'bg-[#f4f4f5] text-[#8f8f95]',
 };
 
 function sameCalendarDay(left: Date, right: Date) {
