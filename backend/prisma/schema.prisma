@@ -574,3 +574,18 @@ model Feedback {
   @@index([status])
   @@index([sourceType])
 }
+
+/// 设备推送 token（FCM）。一个 token 属于一个客户或一个技师。
+model DeviceToken {
+  id           Int      @id @default(autoincrement())
+  token        String   @unique
+  platform     String // 'ios' | 'android'
+  role         String // 'client' | 'technician'
+  clientUserId Int?
+  technicianId Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  @@index([clientUserId])
+  @@index([technicianId])
+}

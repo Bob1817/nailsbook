@@ -2,7 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { ClientOrdersService } from './client-orders.service';
 
 describe('ClientOrdersService helpers', () => {
-  const svc = new ClientOrdersService({} as any, {} as any) as any;
+  const svc = new ClientOrdersService({} as any, {} as any, {} as any) as any;
 
   it('assertSameCity 通过：同省同市', () => {
     expect(() =>

@@ -30,12 +30,17 @@ import { CheckPhoneDto } from '../technician-auth/dto/check-phone.dto';
 import { RefreshTokenDto } from '../common/dto/refresh-token.dto';
 import { ClientChangePasswordDto } from './dto/change-password.dto';
 import { ClientForgotSendCodeDto, ClientForgotResetDto } from './dto/forgot-password.dto';
+import { RegisterDeviceTokenDto } from '../notifications/dto/register-device-token.dto';
+import { PushService } from '../notifications/push.service';
 
 @Controller('client/auth')
 @ApiTags('客户端-认证')
 @ApiBearerAuth()
 export class ClientAuthController {
-  constructor(private readonly clientAuthService: ClientAuthService) {}
+  constructor(
+    private readonly clientAuthService: ClientAuthService,
+    private readonly pushService: PushService,
+  ) {}
 
   @Get('find-by-invite-code')
   @ApiOperation({ summary: '通过邀请码查找美甲师' })
@@ -113,6 +118,23 @@ export class ClientAuthController {
   @ApiResponse({ status: 200, description: '返回用户信息' })
   async me(@Req() request: { user: { clientUserId: number } }) {
     return this.clientAuthService.getProfile(request.user.clientUserId);
+  }
+
+  @Post('device-token')
+  @UseGuards(ClientJwtAuthGuard)
+  @ApiOperation({ summary: '上报设备推送 token' })
+  @ApiResponse({ status: 201, description: 'token 已记录' })
+  async registerDeviceToken(
+    @Req() request: { user: { clientUserId: number } },
+    @Body() dto: RegisterDeviceTokenDto,
+  ) {
+    await this.pushService.registerToken({
+      role: 'client',
+      clientUserId: request.user.clientUserId,
+      token: dto.token,
+      platform: dto.platform,
+    });
+    return { success: true };
   }
 
   @Post('bind-technician')

@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { PushService } from '../notifications/push.service';
 import { ChatGateway } from '../chat/chat.gateway';
 import { CreateClientOrderDto } from './dto/create-client-order.dto';
 import { UpdateClientOrderDto } from './dto/update-client-order.dto';
@@ -37,6 +38,7 @@ export class ClientOrdersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly chatGateway: ChatGateway,
+    private readonly push: PushService,
   ) {}
 
   async create(clientUserId: number, dto: CreateClientOrderDto) {
@@ -202,6 +204,13 @@ export class ClientOrdersService {
       });
 
       return createdOrder;
+    });
+
+    // 推送新预约给技师（best-effort，不阻塞主流程）
+    void this.push.sendToTechnician(dto.techId, {
+      title: '新的预约申请',
+      body: `${client.nickname || client.phone || '客户'} · ${dto.serviceType}`,
+      data: { type: 'order', orderId: String(order.id) },
     });
 
     return this.mapOrder(order);
@@ -376,6 +385,13 @@ export class ClientOrdersService {
       });
 
       return createdOrder;
+    });
+
+    // 推送新预约给技师（best-effort，不阻塞主流程）
+    void this.push.sendToTechnician(dto.techId, {
+      title: '新的预约申请',
+      body: `${client.nickname || client.phone || '客户'} · ${dto.serviceType}`,
+      data: { type: 'order', orderId: String(order.id) },
     });
 
     return this.mapOrder(order);

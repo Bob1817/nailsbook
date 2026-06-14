@@ -28,12 +28,17 @@ import { SetPasswordDto } from './dto/set-password.dto';
 import { SetInitialPasswordDto } from './dto/set-initial-password.dto';
 import { ForgotSendCodeDto, ForgotResetDto } from './dto/forgot-password.dto';
 import { RefreshTokenDto } from '../common/dto/refresh-token.dto';
+import { RegisterDeviceTokenDto } from '../notifications/dto/register-device-token.dto';
+import { PushService } from '../notifications/push.service';
 
 @ApiTags('美甲师-认证')
 @ApiBearerAuth()
 @Controller('technician/auth')
 export class TechnicianAuthController {
-  constructor(private readonly technicianAuthService: TechnicianAuthService) {}
+  constructor(
+    private readonly technicianAuthService: TechnicianAuthService,
+    private readonly pushService: PushService,
+  ) {}
 
   @Post('login')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
@@ -118,6 +123,24 @@ export class TechnicianAuthController {
   @ApiResponse({ status: 401, description: '未授权' })
   async me(@Req() request: { user: { technicianId: number } }) {
     return this.technicianAuthService.getProfile(request.user.technicianId);
+  }
+
+  @Post('device-token')
+  @UseGuards(TechnicianJwtAuthGuard)
+  @ApiOperation({ summary: '上报设备推送 token' })
+  @ApiResponse({ status: 201, description: 'token 已记录' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  async registerDeviceToken(
+    @Req() request: { user: { technicianId: number } },
+    @Body() dto: RegisterDeviceTokenDto,
+  ) {
+    await this.pushService.registerToken({
+      role: 'technician',
+      technicianId: request.user.technicianId,
+      token: dto.token,
+      platform: dto.platform,
+    });
+    return { success: true };
   }
 
   @Patch('status')
