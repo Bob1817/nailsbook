@@ -21,13 +21,14 @@ void main() async {
     baseUrl: apiBaseUrl,
     onUnauthorized: () {},
   );
+  final pushNotificationService = PushNotificationService();
   final authSession = AuthSession(
     tokenStore: tokenStore,
     apiClient: apiClient,
+    pushService: pushNotificationService,
   );
   final chatSocket = ChatSocket();
   final deepLinkService = DeepLinkService();
-  final pushNotificationService = PushNotificationService();
 
   apiClient.onUnauthorized = authSession.handleUnauthorized;
 

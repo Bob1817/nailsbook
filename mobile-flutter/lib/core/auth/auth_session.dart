@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import '../api/api_client.dart';
+import '../config.dart';
+import '../notifications/push_notification_service.dart';
 import 'token_store.dart';
 
 enum AuthStatus { unknown, unauthenticated, client, technician }
@@ -7,6 +11,7 @@ enum AuthStatus { unknown, unauthenticated, client, technician }
 class AuthSession extends ChangeNotifier {
   final TokenStore _tokenStore;
   final ApiClient _apiClient;
+  final PushNotificationService? _pushService;
 
   AuthStatus _status = AuthStatus.unknown;
   Map<String, dynamic>? _profile;
@@ -20,8 +25,26 @@ class AuthSession extends ChangeNotifier {
   AuthSession({
     required TokenStore tokenStore,
     required ApiClient apiClient,
+    PushNotificationService? pushService,
   })  : _tokenStore = tokenStore,
-        _apiClient = apiClient;
+        _apiClient = apiClient,
+        _pushService = pushService;
+
+  /// 登录/恢复会话后，初始化 Firebase 并把设备 token 上报后端。
+  /// best-effort：失败不影响登录流程。先 await init 再上报，确保 token 已就绪。
+  Future<void> _registerPush(String role, String accessToken) async {
+    final push = _pushService;
+    if (push == null) return;
+    try {
+      await push.init(role: role);
+      await push.registerTokenOnServer(
+        apiBaseUrl: kApiBaseUrl,
+        accessToken: accessToken,
+      );
+    } catch (_) {
+      // 推送注册失败不影响登录
+    }
+  }
 
   Future<void> restoreSession() async {
     final role = await _tokenStore.getActiveRole();
@@ -51,6 +74,7 @@ class AuthSession extends ChangeNotifier {
         _profile = me;
         _status = AuthStatus.technician;
       }
+      unawaited(_registerPush(role, token));
     } catch (_) {
       _status = AuthStatus.unauthenticated;
       _apiClient.setToken(null);
@@ -68,6 +92,7 @@ class AuthSession extends ChangeNotifier {
     _apiClient.setRole('client');
     _status = AuthStatus.client;
     notifyListeners();
+    unawaited(_registerPush('client', accessToken));
   }
 
   Future<void> loginAsTechnician(String accessToken, {String? refreshToken}) async {
@@ -79,6 +104,7 @@ class AuthSession extends ChangeNotifier {
     _apiClient.setRole('technician');
     _status = AuthStatus.technician;
     notifyListeners();
+    unawaited(_registerPush('technician', accessToken));
   }
 
   Future<void> logout() async {
