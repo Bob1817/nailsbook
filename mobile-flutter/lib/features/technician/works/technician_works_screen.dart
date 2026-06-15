@@ -5,6 +5,8 @@ import '../auth/technician_auth_service.dart';
 import 'technician_work_detail_screen.dart';
 import 'technician_work_share_sheet.dart';
 import '../works/technician_work_service.dart';
+import '../../../core/media/image_pick.dart';
+import '../../../core/media/oss_image.dart';
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
 /// 作品管理：双列瀑布流照片墙 + 卡片操作弹层 + 新建/编辑表单。
@@ -337,7 +339,7 @@ class _TechnicianWorksScreenState extends State<TechnicianWorksScreen> {
             children: [
               if (url != null)
                 CachedNetworkImage(
-                  imageUrl: url,
+                  imageUrl: ossThumb(url),
                   fit: BoxFit.cover,
                   placeholder: (_, __) =>
                       Container(color: const Color(0xFF2A241E)),
@@ -550,8 +552,7 @@ class _WorkFormSheetState extends State<WorkFormSheet> {
 
   Future<void> _pickImages() async {
     // iOS 用 PHPicker、Android 用系统相册，均支持一次多选。
-    final files = await ImagePicker()
-        .pickMultiImage(maxWidth: 1280, imageQuality: 82);
+    final files = await ImagePick.contentMulti();
     if (files.isEmpty) return;
     final remaining = 9 - _images.length;
     if (remaining <= 0) return;

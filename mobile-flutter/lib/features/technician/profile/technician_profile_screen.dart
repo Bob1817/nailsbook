@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:image_picker/image_picker.dart';
+import '../../../core/media/image_pick.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/auth/auth_session.dart';
 import '../../../core/theme/design_tokens.dart';
@@ -1171,12 +1171,7 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
     if (_uploadingAvatar) return;
     HapticFeedback.lightImpact();
     final api = context.read<ApiClient>();
-    final picker = ImagePicker();
-    final file = await picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 512,
-        maxHeight: 512,
-        imageQuality: 85);
+    final file = await ImagePick.avatar();
     if (file == null) return;
 
     setState(() => _uploadingAvatar = true);

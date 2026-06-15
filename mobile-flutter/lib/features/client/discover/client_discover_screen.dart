@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../core/media/oss_image.dart';
 import '../../../core/theme/editorial_tokens.dart';
 import '../../../core/widgets/client_glass_header.dart';
 import '../../../core/widgets/glow_field.dart';
@@ -303,7 +304,7 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
             children: [
               if (imageUrl != null)
                 CachedNetworkImage(
-                  imageUrl: imageUrl,
+                  imageUrl: ossThumb(imageUrl),
                   fit: BoxFit.cover,
                   placeholder: (_, __) => Container(color: ET.surface),
                   errorWidget: (_, __, ___) => Container(

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import '../../../core/media/image_pick.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
@@ -73,9 +73,7 @@ class _ClientEditProfileScreenState extends State<ClientEditProfileScreen> {
   }
 
   Future<void> _pickAvatar() async {
-    final picker = ImagePicker();
-    final file = await picker.pickImage(
-        source: ImageSource.gallery, maxWidth: 512, maxHeight: 512);
+    final file = await ImagePick.avatar();
     if (file == null) return;
     if (!mounted) return;
     setState(() => _uploadingAvatar = true);

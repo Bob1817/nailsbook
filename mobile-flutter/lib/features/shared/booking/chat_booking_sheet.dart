@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
+import '../../../core/media/image_pick.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/auth/auth_session.dart';
@@ -280,8 +280,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
   }
 
   Future<void> _pickImage() async {
-    final file = await ImagePicker().pickImage(
-        source: ImageSource.gallery, maxWidth: 1280, imageQuality: 80);
+    final file = await ImagePick.content();
     if (file == null) return;
     setState(() => _uploadingImage = true);
     try {

@@ -2,7 +2,7 @@ import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:image_picker/image_picker.dart';
+import '../../../core/media/image_pick.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/api/api_client.dart';
@@ -37,8 +37,7 @@ class _ClientCreateDesignScreenState extends State<ClientCreateDesignScreen> {
   Future<void> _pickImage() async {
     if (_images.length >= 9) return;
     final api = context.read<ApiClient>();
-    final file = await ImagePicker()
-        .pickImage(source: ImageSource.gallery, maxWidth: 1600);
+    final file = await ImagePick.content();
     if (file == null) return;
     setState(() => _uploading = true);
     try {

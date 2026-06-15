@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/media/oss_image.dart';
+import '../../../core/widgets/fullscreen_gallery.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/glow_field.dart';
 import '../orders/client_create_order_screen.dart';
@@ -27,7 +29,7 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
   int _likeCount = 0;
   int _imageIndex = 0;
 
-  final _scrollCtl = ScrollController();
+  final _sheetCtl = DraggableScrollableController();
   final _inputCtl = TextEditingController();
   final _inputFocus = FocusNode();
   // 正在回复的评论：{id, name}
@@ -41,10 +43,17 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
 
   @override
   void dispose() {
-    _scrollCtl.dispose();
+    _sheetCtl.dispose();
     _inputCtl.dispose();
     _inputFocus.dispose();
     super.dispose();
+  }
+
+  /// 展开评论面板（回复时把面板拉起，露出评论与输入区）。
+  void _expandSheet() {
+    if (!_sheetCtl.isAttached) return;
+    _sheetCtl.animateTo(0.94,
+        duration: const Duration(milliseconds: 260), curve: Curves.easeOut);
   }
 
   Future<void> _loadWork() async {
@@ -198,19 +207,12 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
           'id': c['id'],
           'name': (c['user'] as Map<String, dynamic>?)?['name'] ?? '用户'
         });
+    _expandSheet();
     _inputFocus.requestFocus();
   }
 
-  void _openFullscreen(List<String> images, int index) {
-    Navigator.push(
-        context,
-        PageRouteBuilder(
-          opaque: false,
-          barrierColor: Colors.black,
-          pageBuilder: (_, __, ___) =>
-              _FullscreenGallery(images: images, initialIndex: index),
-        ));
-  }
+  void _openFullscreen(List<String> images, int index) =>
+      openFullscreenGallery(context, images.map(ossFull).toList(), index);
 
   @override
   Widget build(BuildContext context) {
@@ -235,155 +237,149 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
     return Scaffold(
       backgroundColor: ET.bg,
       resizeToAvoidBottomInset: true,
-      body: Stack(
-        children: [
-          Column(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final availH = constraints.maxHeight;
+          const overlap = 24.0;
+          final double minSize =
+              ((availH - galleryH + overlap) / availH).clamp(0.3, 0.85);
+          const double maxSize = 0.94;
+          return Stack(
             children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: _scrollCtl,
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 全幅画廊（点击全屏预览）
-                      SizedBox(
-                        height: galleryH,
-                        child: images.isEmpty
-                            ? Container(color: const Color(0xFF1A1A1A))
-                            : PageView.builder(
-                                itemCount: images.length,
-                                onPageChanged: (i) =>
-                                    setState(() => _imageIndex = i),
-                                itemBuilder: (context, index) =>
-                                    GestureDetector(
-                                  onTap: () => _openFullscreen(images, index),
-                                  child: CachedNetworkImage(
-                                    imageUrl: images[index],
-                                    fit: BoxFit.cover,
-                                    placeholder: (_, __) => Container(
-                                        color: const Color(0xFF1A1A1A)),
-                                    errorWidget: (_, __, ___) => Container(
-                                        color: const Color(0xFF1A1A1A),
-                                        child: const Icon(
-                                            Icons.image_not_supported,
-                                            color: Colors.white24)),
-                                  ),
-                                ),
-                              ),
-                      ),
-                      // 信息面板
-                      Transform.translate(
-                        offset: const Offset(0, -24),
-                        child: Container(
-                          width: double.infinity,
-                          decoration: const BoxDecoration(
-                            color: ET.bgElevated,
-                            borderRadius:
-                                BorderRadius.vertical(top: Radius.circular(28)),
-                          ),
-                          padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Center(
-                                child: Container(
-                                    width: 40,
-                                    height: 4,
-                                    decoration: BoxDecoration(
-                                        color: ET.hairlineStrong,
-                                        borderRadius:
-                                            BorderRadius.circular(2))),
-                              ),
-                              const SizedBox(height: 16),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                      child: Text(title,
-                                          style: const TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.w600,
-                                              letterSpacing: -0.3,
-                                              color: ET.ink))),
-                                  _actionIcon(
-                                      _liked
-                                          ? Icons.favorite
-                                          : Icons.favorite_border,
-                                      _liked ? ET.like : ET.inkMuted,
-                                      _toggleLike,
-                                      label: '$_likeCount'),
-                                  const SizedBox(width: 4),
-                                  _actionIcon(
-                                      _favorited
-                                          ? Icons.bookmark
-                                          : Icons.bookmark_border,
-                                      _favorited ? ET.accent : ET.inkMuted,
-                                      _toggleFavorite),
-                                ],
-                              ),
-                              if (description.isNotEmpty) ...[
-                                const SizedBox(height: 10),
-                                Text(description,
-                                    style: const TextStyle(
-                                        fontSize: 14,
-                                        height: 1.6,
-                                        color: ET.inkSecondary)),
-                              ],
-                              if (tags.isNotEmpty) ...[
-                                const SizedBox(height: 14),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: tags
-                                      .map((t) => Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 10, vertical: 5),
-                                            decoration: BoxDecoration(
-                                                color: ET.surface,
-                                                borderRadius:
-                                                    BorderRadius.circular(999)),
-                                            child: Text('#${t.toString()}',
-                                                style: const TextStyle(
-                                                    fontSize: 12,
-                                                    color: ET.inkSecondary)),
-                                          ))
-                                      .toList(),
-                                ),
-                              ],
-                              const SizedBox(height: 18),
-                              _technicianRow(techName, techAvatar),
-                              const SizedBox(height: 22),
-                              Text('评论 (${_comments.length})',
-                                  style: const TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w600,
-                                      color: ET.ink)),
-                              const SizedBox(height: 10),
-                              if (_comments.isEmpty)
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 16),
-                                  child: Center(
-                                      child: Text('暂无评论，快来抢沙发！',
-                                          style: TextStyle(
-                                              fontSize: 13,
-                                              color: ET.inkMuted))),
-                                )
-                              else
-                                ..._comments.map((c) => _commentTile(c)),
-                              const SizedBox(height: 8),
-                            ],
+              // 固定底层图集（面板可上拉盖住它）
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: galleryH,
+                child: images.isEmpty
+                    ? Container(color: const Color(0xFF1A1A1A))
+                    : PageView.builder(
+                        itemCount: images.length,
+                        onPageChanged: (i) => setState(() => _imageIndex = i),
+                        itemBuilder: (context, index) => GestureDetector(
+                          onTap: () => _openFullscreen(images, index),
+                          child: CachedNetworkImage(
+                            imageUrl: ossDetail(images[index]),
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) =>
+                                Container(color: const Color(0xFF1A1A1A)),
+                            errorWidget: (_, __, ___) => Container(
+                                color: const Color(0xFF1A1A1A),
+                                child: const Icon(Icons.image_not_supported,
+                                    color: Colors.white24)),
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
               ),
-              _commentInputBar(),
-            ],
-          ),
+              // 可拖动的标题/内容/评论面板（拖动手柄上下滑动展示更多评论）
+              DraggableScrollableSheet(
+                controller: _sheetCtl,
+                initialChildSize: minSize,
+                minChildSize: minSize,
+                maxChildSize: maxSize,
+                builder: (ctx, scrollController) {
+                  return Container(
+                    decoration: const BoxDecoration(
+                      color: ET.bgElevated,
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(28)),
+                    ),
+                    child: ListView(
+                      controller: scrollController,
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 96),
+                      children: [
+                        Center(
+                          child: Container(
+                              width: 40,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                  color: ET.hairlineStrong,
+                                  borderRadius: BorderRadius.circular(2))),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                                child: Text(title,
+                                    style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: -0.3,
+                                        color: ET.ink))),
+                            _actionIcon(
+                                _liked
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                _liked ? ET.like : ET.inkMuted,
+                                _toggleLike,
+                                label: '$_likeCount'),
+                            const SizedBox(width: 4),
+                            _actionIcon(
+                                _favorited
+                                    ? Icons.bookmark
+                                    : Icons.bookmark_border,
+                                _favorited ? ET.accent : ET.inkMuted,
+                                _toggleFavorite),
+                          ],
+                        ),
+                        if (description.isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          Text(description,
+                              style: const TextStyle(
+                                  fontSize: 14,
+                                  height: 1.6,
+                                  color: ET.inkSecondary)),
+                        ],
+                        if (tags.isNotEmpty) ...[
+                          const SizedBox(height: 14),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: tags
+                                .map((t) => Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 5),
+                                      decoration: BoxDecoration(
+                                          color: ET.surface,
+                                          borderRadius:
+                                              BorderRadius.circular(999)),
+                                      child: Text('#${t.toString()}',
+                                          style: const TextStyle(
+                                              fontSize: 12,
+                                              color: ET.inkSecondary)),
+                                    ))
+                                .toList(),
+                          ),
+                        ],
+                        const SizedBox(height: 18),
+                        _technicianRow(techName, techAvatar),
+                        const SizedBox(height: 22),
+                        Text('评论 (${_comments.length})',
+                            style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w600,
+                                color: ET.ink)),
+                        const SizedBox(height: 10),
+                        if (_comments.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                                child: Text('暂无评论，快来抢沙发！',
+                                    style: TextStyle(
+                                        fontSize: 13, color: ET.inkMuted))),
+                          )
+                        else
+                          ..._comments.map((c) => _commentTile(c)),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
+                  );
+                },
+              ),
           // 顶部玻璃返回键 + 页码
           Positioned(
             left: 16,
@@ -419,7 +415,12 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
               ],
             ),
           ),
-        ],
+              // 底部固定评论输入栏
+              Positioned(
+                  left: 0, right: 0, bottom: 0, child: _commentInputBar()),
+            ],
+          );
+        },
       ),
     );
   }
@@ -693,98 +694,5 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
     final data = response['data'];
     if (data is Map<String, dynamic>) return data;
     return response;
-  }
-}
-
-/// 图片全屏预览：左右翻页 + 双指缩放 + 点击关闭。
-class _FullscreenGallery extends StatefulWidget {
-  final List<String> images;
-  final int initialIndex;
-  const _FullscreenGallery({required this.images, required this.initialIndex});
-
-  @override
-  State<_FullscreenGallery> createState() => _FullscreenGalleryState();
-}
-
-class _FullscreenGalleryState extends State<_FullscreenGallery> {
-  late final PageController _ctl =
-      PageController(initialPage: widget.initialIndex);
-  late int _index = widget.initialIndex;
-
-  @override
-  void dispose() {
-    _ctl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final topPad = MediaQuery.of(context).padding.top;
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          PageView.builder(
-            controller: _ctl,
-            itemCount: widget.images.length,
-            onPageChanged: (i) => setState(() => _index = i),
-            itemBuilder: (_, i) => GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: InteractiveViewer(
-                minScale: 1,
-                maxScale: 4,
-                child: Center(
-                  child: CachedNetworkImage(
-                    imageUrl: widget.images[i],
-                    fit: BoxFit.contain,
-                    placeholder: (_, __) => const Center(
-                        child: CircularProgressIndicator(color: Colors.white)),
-                    errorWidget: (_, __, ___) => const Icon(
-                        Icons.image_not_supported,
-                        color: Colors.white24,
-                        size: 48),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 16,
-            top: topPad + 8,
-            child: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                width: 40,
-                height: 40,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.18),
-                    shape: BoxShape.circle),
-                child: const Icon(Icons.close_rounded,
-                    color: Colors.white, size: 22),
-              ),
-            ),
-          ),
-          if (widget.images.length > 1)
-            Positioned(
-              bottom: MediaQuery.of(context).padding.bottom + 20,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.18),
-                      borderRadius: BorderRadius.circular(999)),
-                  child: Text('${_index + 1} / ${widget.images.length}',
-                      style:
-                          const TextStyle(color: Colors.white, fontSize: 13)),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
   }
 }

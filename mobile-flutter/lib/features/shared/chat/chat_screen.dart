@@ -11,7 +11,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
-import 'package:image_picker/image_picker.dart';
+import '../../../core/media/image_pick.dart';
 import 'package:gal/gal.dart';
 import 'package:any_link_preview/any_link_preview.dart';
 import 'package:http/http.dart' as http;
@@ -320,9 +320,7 @@ class _ChatScreenState extends State<ChatScreen> {
   // ── 图片：选择发送 / 预览 / 保存 ──
 
   Future<void> _pickAndSendImage() async {
-    final picker = ImagePicker();
-    final file = await picker.pickImage(
-        source: ImageSource.gallery, maxWidth: 1280, imageQuality: 82);
+    final file = await ImagePick.content();
     if (file == null) return;
     HapticFeedback.lightImpact();
     setState(() => _sendingImage = true);

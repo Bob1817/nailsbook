@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../core/media/oss_image.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/editorial_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
@@ -487,7 +488,7 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
         : (imgs.isNotEmpty ? imgs.first.toString() : null);
     if (url == null) return Container(color: ET.surface);
     return CachedNetworkImage(
-      imageUrl: url,
+      imageUrl: ossHero(url),
       fit: BoxFit.cover,
       placeholder: (_, __) => Container(color: ET.surface),
       errorWidget: (_, __, ___) => Container(color: ET.surface),
@@ -854,7 +855,7 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
           children: [
             if (url != null)
               CachedNetworkImage(
-                  imageUrl: url,
+                  imageUrl: ossThumb(url),
                   fit: BoxFit.cover,
                   placeholder: (_, __) =>
                       Container(color: ET.surface),

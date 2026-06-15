@@ -1,3 +1,4 @@
+import '../../../core/media/image_pick.dart';
 import '../../../core/widgets/glass_container.dart';
 
 class ClientFeedbackScreen extends StatefulWidget {
@@ -25,8 +26,7 @@ class _ClientFeedbackScreenState extends State<ClientFeedbackScreen> {
 
   Future<void> _pickAttachment() async {
     if (_attachmentUrls.length >= _maxAttachments || _uploading) return;
-    final file = await ImagePicker()
-        .pickImage(source: ImageSource.gallery, maxWidth: 1600);
+    final file = await ImagePick.content();
     if (file == null || !mounted) return;
     setState(() => _uploading = true);
     try {

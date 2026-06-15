@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import '../../../core/media/image_pick.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
@@ -333,9 +333,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
   }
 
   Future<void> _pickAndUploadImage() async {
-    final picker = ImagePicker();
-    final file = await picker.pickImage(
-        source: ImageSource.gallery, maxWidth: 1280, imageQuality: 80);
+    final file = await ImagePick.content();
     if (file == null) return;
     setState(() => _uploadingImage = true);
     try {

@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/media/oss_image.dart';
+import '../../../core/widgets/fullscreen_gallery.dart';
 import '../../../core/widgets/nb_toast.dart';
 import 'technician_work_service.dart';
 import 'technician_work_share_sheet.dart';
@@ -36,7 +38,7 @@ class _TechnicianWorkDetailScreenState extends State<TechnicianWorkDetailScreen>
   bool _changed = false; // 关闭时通知列表刷新
   int _imageIndex = 0;
 
-  final _scrollCtl = ScrollController();
+  final _sheetCtl = DraggableScrollableController();
   final _inputCtl = TextEditingController();
   final _inputFocus = FocusNode();
   Map<String, dynamic>? _replyTo;
@@ -52,10 +54,17 @@ class _TechnicianWorkDetailScreenState extends State<TechnicianWorkDetailScreen>
 
   @override
   void dispose() {
-    _scrollCtl.dispose();
+    _sheetCtl.dispose();
     _inputCtl.dispose();
     _inputFocus.dispose();
     super.dispose();
+  }
+
+  /// 展开评论面板（回复/评论时把面板拉起，露出评论与输入区）。
+  void _expandSheet() {
+    if (!_sheetCtl.isAttached) return;
+    _sheetCtl.animateTo(0.94,
+        duration: const Duration(milliseconds: 260), curve: Curves.easeOut);
   }
 
   Future<void> _loadComments() async {
@@ -186,6 +195,7 @@ class _TechnicianWorkDetailScreenState extends State<TechnicianWorkDetailScreen>
       'name': (c['user'] as Map<String, dynamic>?)?['name'] ?? '用户',
       'content': c['content']?.toString() ?? '',
     });
+    _expandSheet();
     _inputFocus.requestFocus();
   }
 
@@ -308,117 +318,125 @@ class _TechnicianWorkDetailScreenState extends State<TechnicianWorkDetailScreen>
       child: Scaffold(
         backgroundColor: DT.surface,
         resizeToAvoidBottomInset: true,
-        body: Stack(
-          children: [
-            Column(
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final availH = constraints.maxHeight;
+            const overlap = 28.0;
+            // 面板初始/最小高度：刚好露出整张图集（顶部盖住图片 28px 圆角）。
+            final double minSize =
+                ((availH - galleryH + overlap) / availH).clamp(0.3, 0.85);
+            const double maxSize = 0.94;
+            return Stack(
               children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    controller: _scrollCtl,
-                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 顶部图集
-                        SizedBox(
-                          height: galleryH,
-                          child: imgs.isEmpty
-                              ? Container(color: const Color(0xFF1A1A1A))
-                              : PageView.builder(
-                                  itemCount: imgs.length,
-                                  onPageChanged: (i) => setState(() => _imageIndex = i),
-                                  itemBuilder: (_, i) => CachedNetworkImage(
-                                    imageUrl: imgs[i],
-                                    fit: BoxFit.cover,
-                                    placeholder: (_, __) => Container(color: const Color(0xFF1A1A1A)),
-                                    errorWidget: (_, __, ___) => Container(color: const Color(0xFF1A1A1A), child: const Icon(Icons.image_not_supported, color: Colors.white24)),
-                                  ),
-                                ),
-                        ),
-                        // 信息面板
-                        Transform.translate(
-                          offset: const Offset(0, -28),
-                          child: Container(
-                            width: double.infinity,
-                            decoration: const BoxDecoration(color: DT.surface, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-                            padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: DT.border, borderRadius: BorderRadius.circular(2)))),
-                                const SizedBox(height: 16),
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Expanded(child: Text(title?.isNotEmpty == true ? title! : '未命名作品', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: DT.textPrimary, letterSpacing: -0.2))),
-                                    if (price > 0) Text('¥${price.toStringAsFixed(price == price.roundToDouble() ? 0 : 2)}',
-                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: DT.primary)),
-                                  ],
-                                ),
-                                if (desc.isNotEmpty) ...[
-                                  const SizedBox(height: 10),
-                                  Text(desc, style: const TextStyle(fontSize: 14, height: 1.6, color: DT.textSecondary)),
-                                ],
-                                if (tags.isNotEmpty) ...[
-                                  const SizedBox(height: 12),
-                                  Wrap(spacing: 6, runSpacing: 6, children: tags.map((t) => Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(color: DT.primarySoft, borderRadius: BorderRadius.circular(999)),
-                                    child: Text('#$t', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: DT.primary)),
-                                  )).toList()),
-                                ],
-                                const SizedBox(height: 18),
-                                _statsRow(),
-                                const SizedBox(height: 20),
-                                Row(
-                                  children: [
-                                    Text('评论 (${_comments.where((c) => c['isHidden'] != true).length})', style: DT.titleMedium),
-                                    const Spacer(),
-                                    if (_comments.any((c) => c['isHidden'] == true))
-                                      Text('${_comments.where((c) => c['isHidden'] == true).length} 条隐藏', style: const TextStyle(fontSize: 12, color: DT.textMuted)),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                if (_loading)
-                                  const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(color: DT.primary)))
-                                else if (_comments.isEmpty)
-                                  const Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 20),
-                                    child: Center(child: Text('暂无评论', style: TextStyle(fontSize: 13, color: DT.textMuted))),
-                                  )
-                                else
-                                  ..._comments.map(_commentTile),
-                                const SizedBox(height: 8),
-                              ],
+                // 固定底层图集（面板可上拉盖住它）
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: galleryH,
+                  child: imgs.isEmpty
+                      ? Container(color: const Color(0xFF1A1A1A))
+                      : PageView.builder(
+                          itemCount: imgs.length,
+                          onPageChanged: (i) => setState(() => _imageIndex = i),
+                          itemBuilder: (_, i) => GestureDetector(
+                            onTap: () => openFullscreenGallery(context, imgs.map(ossFull).toList(), i),
+                            child: CachedNetworkImage(
+                              imageUrl: ossDetail(imgs[i]),
+                              fit: BoxFit.cover,
+                              placeholder: (_, __) => Container(color: const Color(0xFF1A1A1A)),
+                              errorWidget: (_, __, ___) => Container(color: const Color(0xFF1A1A1A), child: const Icon(Icons.image_not_supported, color: Colors.white24)),
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                ),
+                // 可拖动的标题/内容/评论面板（拖动手柄上下滑动展示更多评论）
+                DraggableScrollableSheet(
+                  controller: _sheetCtl,
+                  initialChildSize: minSize,
+                  minChildSize: minSize,
+                  maxChildSize: maxSize,
+                  builder: (ctx, scrollController) {
+                    return Container(
+                      decoration: const BoxDecoration(color: DT.surface, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+                      child: ListView(
+                        controller: scrollController,
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 96),
+                        children: [
+                          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: DT.border, borderRadius: BorderRadius.circular(2)))),
+                          const SizedBox(height: 16),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Expanded(child: Text(title?.isNotEmpty == true ? title! : '未命名作品', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: DT.textPrimary, letterSpacing: -0.2))),
+                              if (price > 0) Text('¥${price.toStringAsFixed(price == price.roundToDouble() ? 0 : 2)}',
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: DT.primary)),
+                            ],
+                          ),
+                          if (desc.isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            Text(desc, style: const TextStyle(fontSize: 14, height: 1.6, color: DT.textSecondary)),
+                          ],
+                          if (tags.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            Wrap(spacing: 6, runSpacing: 6, children: tags.map((t) => Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(color: DT.primarySoft, borderRadius: BorderRadius.circular(999)),
+                              child: Text('#$t', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: DT.primary)),
+                            )).toList()),
+                          ],
+                          const SizedBox(height: 18),
+                          _statsRow(),
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              Text('评论 (${_comments.where((c) => c['isHidden'] != true).length})', style: DT.titleMedium),
+                              const Spacer(),
+                              if (_comments.any((c) => c['isHidden'] == true))
+                                Text('${_comments.where((c) => c['isHidden'] == true).length} 条隐藏', style: const TextStyle(fontSize: 12, color: DT.textMuted)),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          if (_loading)
+                            const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(color: DT.primary)))
+                          else if (_comments.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 20),
+                              child: Center(child: Text('暂无评论', style: TextStyle(fontSize: 13, color: DT.textMuted))),
+                            )
+                          else
+                            ..._comments.map(_commentTile),
+                          const SizedBox(height: 8),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                // 顶部操作栏（关闭 + 更多 + 页码）
+                Positioned(
+                  left: 16, right: 16, top: topPad + 8,
+                  child: Row(
+                    children: [
+                      _circleBtn(Icons.arrow_back_ios_new_rounded, () => Navigator.pop(context, _changed)),
+                      const Spacer(),
+                      if (imgs.length > 1)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(color: Colors.black.withOpacity(0.32), borderRadius: BorderRadius.circular(999)),
+                          child: Text('${_imageIndex + 1}/${imgs.length}', style: const TextStyle(fontSize: 12, color: Colors.white)),
+                        ),
+                      const SizedBox(width: 10),
+                      _circleBtn(Icons.more_horiz_rounded, _showWorkActions),
+                    ],
                   ),
                 ),
-                _commentInputBar(),
+                // 底部固定评论输入栏
+                Positioned(left: 0, right: 0, bottom: 0, child: _commentInputBar()),
               ],
-            ),
-            // 顶部操作栏（关闭 + 更多 + 页码）
-            Positioned(
-              left: 16, right: 16, top: topPad + 8,
-              child: Row(
-                children: [
-                  _circleBtn(Icons.arrow_back_ios_new_rounded, () => Navigator.pop(context, _changed)),
-                  const Spacer(),
-                  if (imgs.length > 1)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(color: Colors.black.withOpacity(0.32), borderRadius: BorderRadius.circular(999)),
-                      child: Text('${_imageIndex + 1}/${imgs.length}', style: const TextStyle(fontSize: 12, color: Colors.white)),
-                    ),
-                  const SizedBox(width: 10),
-                  _circleBtn(Icons.more_horiz_rounded, _showWorkActions),
-                ],
-              ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
