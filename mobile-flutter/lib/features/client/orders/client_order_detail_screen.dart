@@ -5,6 +5,7 @@ import '../../shared/chat/chat_service.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_error.dart';
+import '../../../core/maps/map_service.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../addresses/client_address_models.dart';
@@ -251,13 +252,13 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                 isTerminal ? bottomPad + DT.space24 : 160 + bottomPad),
             children: [
               _buildTechAddressCard(o),
-              const SizedBox(height: DT.space16),
-              _buildServiceInfo(o),
-              // 美甲师报价后才显示服务价格卡片
+              // 服务价格卡片置于服务信息上方，核心展示报价（美甲师报价后才显示）
               if (o.quotePrice != null && o.quotePrice! > 0) ...[
                 const SizedBox(height: DT.space16),
                 _buildStatusCard(o),
               ],
+              const SizedBox(height: DT.space16),
+              _buildServiceInfo(o),
               const SizedBox(height: DT.space24),
             ],
           ),
@@ -357,22 +358,15 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                 ],
               ),
             ),
-            if (techId != null)
-              GestureDetector(
-                onTap: () => _openDirectChat(techId, techName),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                      color: DT.primarySoft,
-                      borderRadius: BorderRadius.circular(999)),
-                  child: const Text('发消息',
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: DT.primary)),
-                ),
-              ),
+            _techActionIcon(
+                icon: Icons.phone_outlined,
+                onTap: () => _callTechnician(techPhone)),
+            if (techId != null) ...[
+              const SizedBox(width: 8),
+              _techActionIcon(
+                  icon: Icons.chat_bubble_outline_rounded,
+                  onTap: () => _openDirectChat(techId, techName)),
+            ],
           ],
         ),
         const SizedBox(height: 14),
@@ -416,6 +410,31 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
         ),
       ],
     );
+  }
+
+  /// 服务美甲师卡片右侧圆形图标按钮（电话 / 消息）。
+  Widget _techActionIcon(
+      {required IconData icon, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        alignment: Alignment.center,
+        decoration: const BoxDecoration(
+            color: DT.primarySoft, shape: BoxShape.circle),
+        child: Icon(icon, size: 18, color: DT.primary),
+      ),
+    );
+  }
+
+  Future<void> _callTechnician(String phone) async {
+    if (phone.isEmpty) {
+      _showError('暂无该美甲师的联系电话');
+      return;
+    }
+    final ok = await MapService.launchPhoneCall(phone);
+    if (!ok && mounted) _showError('无法拨打电话');
   }
 
   Future<void> _openDirectChat(int techId, String techName) async {

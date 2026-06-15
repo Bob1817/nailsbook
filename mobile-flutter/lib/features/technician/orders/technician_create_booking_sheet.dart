@@ -94,11 +94,17 @@ class _TechnicianCreateBookingSheetState
   }
 
   Future<void> _load() async {
+    final api = context.read<ApiClient>();
+    api.setRole('technician');
+    // 服务时间方案决定可约日期/时段，必须独立加载——不能与客户/订单接口耦合在
+    // 同一个 Future.wait 里，否则后者失败会丢失 _profile，导致服务时间外的时段
+    // 也被放开、可点击下单。
     try {
-      final api = context.read<ApiClient>();
-      api.setRole('technician');
+      final profile = await TechnicianAuthService(api).getProfile();
+      if (mounted) setState(() => _profile = profile);
+    } catch (_) {}
+    try {
       final results = await Future.wait([
-        TechnicianAuthService(api).getProfile(),
         widget.customers == null
             ? TechnicianCustomerService(api).list()
             : Future.value(widget.customers!),
@@ -106,15 +112,12 @@ class _TechnicianCreateBookingSheetState
       ]);
       if (!mounted) return;
       setState(() {
-        _profile = results[0] as TechnicianProfile;
-        _customers = (results[1] as List).cast<Map<String, dynamic>>();
-        _orders = (results[2] as List).cast<Map<String, dynamic>>();
-        _loading = false;
+        _customers = (results[0] as List).cast<Map<String, dynamic>>();
+        _orders = (results[1] as List).cast<Map<String, dynamic>>();
       });
       _prefillAddress();
-    } catch (_) {
-      if (mounted) setState(() => _loading = false);
-    }
+    } catch (_) {}
+    if (mounted) setState(() => _loading = false);
   }
 
   Map<String, dynamic>? get _selectedCustomer {

@@ -1079,6 +1079,29 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
 
   // ── 退出登录 ──
 
+  Future<void> _confirmLogout() async {
+    HapticFeedback.mediumImpact();
+    final ok = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (ctx) => CupertinoAlertDialog(
+        title: const Text('退出登录'),
+        content: const Text('确定要退出当前账号吗？'),
+        actions: [
+          CupertinoDialogAction(
+              child: const Text('取消'),
+              onPressed: () => Navigator.pop(ctx, false)),
+          CupertinoDialogAction(
+              isDestructiveAction: true,
+              child: const Text('退出'),
+              onPressed: () => Navigator.pop(ctx, true)),
+        ],
+      ),
+    );
+    if (ok == true && mounted) {
+      context.read<AuthSession>().logout();
+    }
+  }
+
   Widget _logoutButton() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: DT.xl),
@@ -1086,10 +1109,7 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
         width: double.infinity,
         height: 48,
         child: OutlinedButton(
-          onPressed: () {
-            HapticFeedback.mediumImpact();
-            context.read<AuthSession>().logout();
-          },
+          onPressed: _confirmLogout,
           style: OutlinedButton.styleFrom(
             foregroundColor: DT.error,
             side: const BorderSide(color: DT.border),

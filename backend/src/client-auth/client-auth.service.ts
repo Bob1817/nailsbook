@@ -417,7 +417,35 @@ export class ClientAuthService {
       throw new NotFoundException('绑定关系不存在');
     }
 
+    // 待上门/待到店/进行中：正在进行的预约，禁止解除绑定。
+    const BLOCKING_STATUSES = ['pending_home', 'pending_shop', 'in_progress'];
+    // 历史状态：解除后保留，不删除、不改动。
+    const TERMINAL_STATUSES = ['completed', 'cancelled', 'expired'];
+
+    const blockingCount = await this.prisma.order.count({
+      where: {
+        clientUserId,
+        technicianId: techId,
+        status: { in: BLOCKING_STATUSES },
+      },
+    });
+    if (blockingCount > 0) {
+      throw new BadRequestException(
+        '有正在进行的美甲预约，无法解除与该美甲师的绑定关系，请完成预约再试',
+      );
+    }
+
     const result = await this.prisma.$transaction(async (tx) => {
+      // 其余未完结的预约（待报价/待确认等）随解除一并取消；历史记录保留。
+      await tx.order.updateMany({
+        where: {
+          clientUserId,
+          technicianId: techId,
+          status: { notIn: [...BLOCKING_STATUSES, ...TERMINAL_STATUSES] },
+        },
+        data: { status: 'cancelled' },
+      });
+
       const updated = await tx.clientTechBinding.update({
         where: { id: binding.id },
         data: { status: 'inactive' },

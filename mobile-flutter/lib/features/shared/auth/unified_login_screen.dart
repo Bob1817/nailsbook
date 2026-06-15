@@ -22,6 +22,8 @@ class UnifiedLoginScreen extends StatefulWidget {
 class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
   final _phoneCtl = TextEditingController();
   final _pwdCtl = TextEditingController();
+  final _pwdFocus = FocusNode();
+  final _scrollCtl = ScrollController();
   bool _loading = false;
   bool _agreed = false;
   String? _error;
@@ -29,7 +31,30 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
   bool _pwdErr = false;
 
   @override
+  void initState() {
+    super.initState();
+    // 密码框聚焦后（键盘弹出）滚动到底部，确保登录按钮不被键盘遮挡。
+    _pwdFocus.addListener(_onPwdFocus);
+  }
+
+  void _onPwdFocus() {
+    if (!_pwdFocus.hasFocus) return;
+    // 等键盘动画后再滚动到底，露出登录按钮。
+    Future.delayed(const Duration(milliseconds: 250), () {
+      if (!mounted || !_scrollCtl.hasClients) return;
+      _scrollCtl.animateTo(
+        _scrollCtl.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  @override
   void dispose() {
+    _pwdFocus.removeListener(_onPwdFocus);
+    _pwdFocus.dispose();
+    _scrollCtl.dispose();
     _phoneCtl.dispose();
     _pwdCtl.dispose();
     super.dispose();
@@ -140,17 +165,25 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ET.bg,
+      // 自行用 viewInsets 处理键盘，避免与 Scaffold 自动缩放叠加。
+      resizeToAvoidBottomInset: false,
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => FocusScope.of(context).unfocus(),
         child: SingleChildScrollView(
+          controller: _scrollCtl,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _nailBanner(),
               Padding(
                 padding: EdgeInsets.fromLTRB(
-                    24, 24, 24, 32 + MediaQuery.of(context).padding.bottom),
+                    24,
+                    24,
+                    24,
+                    32 +
+                        MediaQuery.of(context).padding.bottom +
+                        MediaQuery.of(context).viewInsets.bottom),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -173,7 +206,13 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
                 _field(_phoneCtl, '请输入手机号',
                     keyboardType: TextInputType.phone,
                     error: _phoneErr,
+                    textInputAction: TextInputAction.next,
                     onClear: () => setState(() => _phoneErr = false),
+                    onChanged: (v) {
+                      // 输入满 11 位手机号即自动跳到密码框，无需手动点击。
+                      if (v.length == 11) _pwdFocus.requestFocus();
+                    },
+                    onSubmitted: (_) => _pwdFocus.requestFocus(),
                     formatters: [
                       FilteringTextInputFormatter.digitsOnly,
                       LengthLimitingTextInputFormatter(11),
@@ -182,6 +221,11 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
                 _field(_pwdCtl, '请输入密码',
                     obscure: true,
                     error: _pwdErr,
+                    focusNode: _pwdFocus,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) {
+                      if (!_loading) _login();
+                    },
                     onClear: () => setState(() => _pwdErr = false)),
                 const SizedBox(height: 16),
                 _agreement(),
@@ -329,17 +373,25 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
       TextInputType? keyboardType,
       List<TextInputFormatter>? formatters,
       bool error = false,
+      FocusNode? focusNode,
+      TextInputAction? textInputAction,
+      ValueChanged<String>? onChanged,
+      ValueChanged<String>? onSubmitted,
       VoidCallback? onClear}) {
     return GlowField(
       controller: ctl,
+      focusNode: focusNode,
       hint: hint,
       obscureText: obscure,
       keyboardType: keyboardType,
       inputFormatters: formatters,
+      textInputAction: textInputAction,
       error: error,
-      onChanged: (_) {
+      onChanged: (v) {
         if (error && onClear != null) onClear();
+        onChanged?.call(v);
       },
+      onSubmitted: onSubmitted,
       contentPadding:
           const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );

@@ -4,10 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/auth/auth_session.dart';
+import '../../../core/maps/map_service.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/editorial_tokens.dart';
+import '../../shared/chat/chat_screen.dart';
+import '../../shared/chat/chat_service.dart';
 import '../auth/client_auth_service.dart';
 import '../auth/client_auth_models.dart';
+import '../orders/client_order_models.dart';
+import '../orders/client_order_service.dart';
 import '../addresses/client_addresses_screen.dart';
 import '../orders/tech_availability_sheet.dart';
 import '../designs/client_designs_screen.dart';
@@ -36,6 +41,28 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
   void initState() {
     super.initState();
     _loadProfile();
+  }
+
+  Future<void> _confirmLogout() async {
+    final ok = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (ctx) => CupertinoAlertDialog(
+        title: const Text('退出登录'),
+        content: const Text('确定要退出当前账号吗？'),
+        actions: [
+          CupertinoDialogAction(
+              child: const Text('取消'),
+              onPressed: () => Navigator.pop(ctx, false)),
+          CupertinoDialogAction(
+              isDestructiveAction: true,
+              child: const Text('退出'),
+              onPressed: () => Navigator.pop(ctx, true)),
+        ],
+      ),
+    );
+    if (ok == true && mounted) {
+      context.read<AuthSession>().logout();
+    }
   }
 
   Future<void> _loadProfile() async {
@@ -84,12 +111,13 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           ListView(
             padding: EdgeInsets.only(top: headerH + 8, bottom: 96),
             children: [
-              if (_technicians != null && _technicians!.isNotEmpty) ...[
+              if (_technicians != null) ...[
                 _sectionTitle('我的美甲师'),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
                     children: [
+                      // 无绑定美甲师时仅展示下方「绑定新美甲师」入口。
                       ..._technicians!.map(_technicianCard),
                       const SizedBox(height: 4),
                       SizedBox(
@@ -140,7 +168,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                   width: double.infinity,
                   height: 50,
                   child: OutlinedButton(
-                    onPressed: () => context.read<AuthSession>().logout(),
+                    onPressed: _confirmLogout,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: DT.error,
                       side: const BorderSide(color: ET.hairline),
@@ -353,20 +381,22 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
             TextButton(
               onPressed: () => _setDefault(tech.id),
               style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap),
               child: const Text('设为默认', style: TextStyle(fontSize: 12)),
             ),
-          TextButton(
-            onPressed: () => _unbind(tech.id),
-            style: TextButton.styleFrom(
-                foregroundColor: DT.error,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-            child: const Text('解除', style: TextStyle(fontSize: 12)),
-          ),
+          _cardActionIcon(
+              icon: Icons.phone_outlined, onTap: () => _callTech(tech)),
+          const SizedBox(width: 4),
+          _cardActionIcon(
+              icon: Icons.chat_bubble_outline_rounded,
+              onTap: () => _openChatWithTech(tech)),
+          const SizedBox(width: 4),
+          _cardActionIcon(
+              icon: Icons.link_off_rounded,
+              color: DT.error,
+              onTap: () => _unbind(tech)),
         ],
       ),
     );
@@ -432,28 +462,122 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
     } catch (_) {}
   }
 
-  Future<void> _unbind(int techId) async {
-    final service = ClientAuthService(context.read<ApiClient>());
+  /// 卡片右侧圆形图标按钮（电话 / 消息 / 解除）。
+  Widget _cardActionIcon(
+      {required IconData icon, required VoidCallback onTap, Color? color}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 34,
+        height: 34,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: (color ?? ET.accent).withValues(alpha: 0.12),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 17, color: color ?? ET.accentOnDark),
+      ),
+    );
+  }
+
+  Future<void> _callTech(Technician tech) async {
+    final phone = tech.phone ?? '';
+    if (phone.isEmpty) {
+      if (mounted) _toast('暂无该美甲师的联系电话');
+      return;
+    }
+    final ok = await MapService.launchPhoneCall(phone);
+    if (!ok && mounted) _toast('无法拨打电话');
+  }
+
+  Future<void> _openChatWithTech(Technician tech) async {
+    final api = context.read<ApiClient>();
+    int? convId;
+    try {
+      final convs = await ChatService(api).conversations();
+      for (final c in convs) {
+        if ((c['technician'] as Map<String, dynamic>?)?['id'] == tech.id) {
+          convId = c['id'] as int?;
+          break;
+        }
+      }
+    } catch (_) {}
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+            conversationId: convId,
+            title: tech.name,
+            otherPartyId: tech.id,
+            techId: tech.id),
+      ),
+    );
+  }
+
+  void _toast(String msg) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  Future<void> _unbind(Technician tech) async {
+    // 拉取与该美甲师相关的预约，按状态决定解除提示。
+    const blocking = {'pending_home', 'pending_shop', 'in_progress'};
+    const terminal = {'completed', 'cancelled', 'expired'};
+    List<ClientOrder> techOrders = const [];
+    try {
+      final orders = await ClientOrderService(context.read<ApiClient>()).list();
+      techOrders = orders
+          .where((o) => (o.technician?['id']) == tech.id)
+          .toList();
+    } catch (_) {}
+    if (!mounted) return;
+
+    final hasBlocking = techOrders.any((o) => blocking.contains(o.status));
+    if (hasBlocking) {
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('无法解除绑定'),
+          content: const Text('有正在进行的美甲预约，无法解除与该美甲师的绑定关系，请完成预约再试'),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('我知道了')),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final hasOngoing = techOrders
+        .any((o) => !blocking.contains(o.status) && !terminal.contains(o.status));
+    final message = hasOngoing
+        ? '您还有进行中的预约，是否确认解除与该美甲师的绑定关系？'
+        : '确定要解除与该美甲师的绑定吗？';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('解除绑定'),
-        content: const Text('确定要解除与该美甲师的绑定吗？'),
+        content: Text(message),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
               child: const Text('取消')),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('确定')),
+              child: const Text('确定解除')),
         ],
       ),
     );
     if (confirmed != true) return;
     try {
-      await service.unbindTechnician(techId);
-      _loadProfile();
-    } catch (_) {}
+      await ClientAuthService(context.read<ApiClient>())
+          .unbindTechnician(tech.id);
+      if (mounted) _loadProfile();
+    } catch (e) {
+      if (mounted) _toast('解除失败，请稍后重试');
+    }
   }
 
   void _showBindDialog(BuildContext context) {

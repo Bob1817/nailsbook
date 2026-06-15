@@ -83,6 +83,7 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
             right: 0,
             child: ClientGlassHeader(
               title: '预约',
+              showBack: false,
               actions: [_bookingCapsule()],
             ),
           ),

@@ -124,17 +124,18 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                     rt == 'comment' ||
                     rt == 'work_comment');
             if (!isNotif) continue;
-            // 仅“发给客户”的提醒才有未读概念；客户自己发出的消息(收件人是技师)
-            // 其 isRead 反映的是技师是否已读，不应在客户收件箱里显示为未读，
-            // 否则 markAsRead(只标记 receiverType=client) 永远无法清除。
+            // 只展示“发给客户”的提醒。客户自己操作产生的系统消息(收件人是技师，
+            // 如「客户已同意报价」)是发给美甲师的回执，不应回灌到客户自己的收件箱——
+            // 自己操作的预约不向自己发系统通知。
             final toClient = m['receiverType'] == 'client';
+            if (!toClient) continue;
             final type = _categorize(mt, rt);
             notifs.add(_InboxItem(
               type: type,
               title: _typeName(type),
               preview: m['content']?.toString() ?? '系统通知',
               time: m['createdAt']?.toString() ?? '',
-              unread: toClient && !(m['isRead'] as bool? ?? false),
+              unread: !(m['isRead'] as bool? ?? false),
               conversationId: conv['id'] as int,
               relatedType: rt,
               relatedId: m['relatedId'] as int?,
@@ -262,6 +263,8 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
             right: 0,
             child: ClientGlassHeader(
               title: '消息',
+              // 客户端「消息」为一级主页面，不显示返回按钮。
+              showBack: !_isClient,
               actions: [
                 HeaderCircleButton(
                   onTap: _openSearch,

@@ -17,11 +17,16 @@ class ClientGlassHeader extends StatelessWidget {
   /// 标题行下方的附加内容（如搜索框、筛选 chip 行）。
   final Widget? below;
 
+  /// 是否显示返回按钮。一级主页面（如「预约」「消息」）应设为 false——
+  /// 即便它们在导航栈中 canPop，也不需要返回按钮。默认跟随 canPop。
+  final bool showBack;
+
   const ClientGlassHeader({
     super.key,
     required this.title,
     this.actions = const [],
     this.below,
+    this.showBack = true,
   });
 
   /// 估算头部高度（供滚动内容预留顶部 padding）。
@@ -33,7 +38,7 @@ class ClientGlassHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
-    final canPop = Navigator.of(context).canPop();
+    final canPop = showBack && Navigator.of(context).canPop();
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: ET.glassBlur, sigmaY: ET.glassBlur),
