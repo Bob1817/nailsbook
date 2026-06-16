@@ -739,6 +739,18 @@ page {
   line-height: 1.6;
 }
 
+.bind-note-input {
+  width: 100%;
+  min-height: 120rpx;
+  margin-top: 24rpx;
+  background: #f9fafb;
+  border-radius: 16rpx;
+  padding: 20rpx 28rpx;
+  font-size: 28rpx;
+  color: #1f2937;
+  box-sizing: border-box;
+}
+
 .found-tech {
   display: flex;
   align-items: center;

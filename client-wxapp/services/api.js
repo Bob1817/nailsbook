@@ -53,8 +53,8 @@ const client = {
 
     findTechByInviteCode: (code) =>
       api.get(`${C}/auth/find-by-invite-code`, { inviteCode: code }),
-    bindTechnician: (techId, inviteCode) =>
-      api.post(`${C}/auth/bind-technician`, { techId, inviteCode }),
+    bindTechnician: (techId, inviteCode, note) =>
+      api.post(`${C}/auth/bind-technician`, { techId, inviteCode, note }),
     unbindTechnician: (techId) =>
       api.del(`${C}/auth/unbind-technician/${techId}`),
     setDefaultTechnician: (techId) =>

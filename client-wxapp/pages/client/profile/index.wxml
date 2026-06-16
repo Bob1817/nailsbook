@@ -185,7 +185,7 @@
         />
         <view wx:if="{{checkingCode}}" class="code-spinner"></view>
       </view>
-      <text class="field-hint">输入美甲师提供的邀请码后，即可完成绑定</text>
+      <text class="field-hint">输入美甲师邀请码，提交绑定申请，待其通过后生效</text>
 
       <view wx:if="{{foundTech}}" class="found-tech">
         <view class="found-avatar">
@@ -197,13 +197,22 @@
           <text class="found-city">{{foundTech.city || '未知城市'}}</text>
         </view>
       </view>
+
+      <textarea
+        wx:if="{{foundTech}}"
+        class="bind-note-input"
+        value="{{bindNote}}"
+        bindinput="onBindNoteInput"
+        placeholder="给美甲师留言（可选，如：我是老顾客小红）"
+        maxlength="100"
+      />
     </view>
 
     <view
       class="modal-btn {{!foundTech || binding ? 'modal-btn-disabled' : ''}}"
       bindtap="bindTechnician"
     >
-      <text>{{binding ? '绑定中...' : '确认绑定'}}</text>
+      <text>{{binding ? '申请中...' : '申请绑定'}}</text>
     </view>
   </view>
 </view>

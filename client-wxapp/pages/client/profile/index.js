@@ -9,6 +9,7 @@ Page({
     technicians: [],
     showBindModal: false,
     inviteCode: '',
+    bindNote: '',
     foundTech: null,
     checkingCode: false,
     binding: false
@@ -94,11 +95,15 @@ Page({
 
   // 绑定美甲师
   openBindModal() {
-    this.setData({ showBindModal: true, inviteCode: '', foundTech: null });
+    this.setData({ showBindModal: true, inviteCode: '', bindNote: '', foundTech: null });
   },
 
   closeBindModal() {
-    this.setData({ showBindModal: false, inviteCode: '', foundTech: null });
+    this.setData({ showBindModal: false, inviteCode: '', bindNote: '', foundTech: null });
+  },
+
+  onBindNoteInput(e) {
+    this.setData({ bindNote: e.detail.value });
   },
 
   async onInviteCodeInput(e) {
@@ -119,17 +124,17 @@ Page({
   },
 
   async bindTechnician() {
-    const { foundTech, inviteCode, binding } = this.data;
+    const { foundTech, inviteCode, bindNote, binding } = this.data;
     if (!foundTech || binding) return;
 
     this.setData({ binding: true });
-    wx.showLoading({ title: '绑定中...' });
+    wx.showLoading({ title: '申请中...' });
 
     try {
-      await api.client.profile.bindTechnician(foundTech.id, inviteCode);
+      await api.client.profile.bindTechnician(foundTech.id, inviteCode, bindNote);
       wx.hideLoading();
-      wx.showToast({ title: '绑定成功', icon: 'success' });
-      this.setData({ showBindModal: false, inviteCode: '', foundTech: null });
+      wx.showToast({ title: '申请已提交，待通过', icon: 'none' });
+      this.setData({ showBindModal: false, inviteCode: '', bindNote: '', foundTech: null });
 
       // 刷新用户数据
       const res = await api.auth.getUserInfo('client');
