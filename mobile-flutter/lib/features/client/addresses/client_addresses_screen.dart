@@ -54,7 +54,7 @@ class _ClientAddressesScreenState extends State<ClientAddressesScreen> {
         ],
       ),
     );
-    if (ok != true) return;
+    if (ok != true || !mounted) return;
     try {
       await ClientAddressService(context.read<ApiClient>()).delete(addr.id);
       if (mounted) NbToast.success(context, '已删除');

@@ -570,7 +570,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
         ],
       ),
     );
-    if (confirmed != true) return;
+    if (confirmed != true || !mounted) return;
     try {
       await ClientAuthService(context.read<ApiClient>())
           .unbindTechnician(tech.id);

@@ -334,7 +334,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
 
   Future<void> _pickAndUploadImage() async {
     final file = await ImagePick.content();
-    if (file == null) return;
+    if (file == null || !mounted) return;
     setState(() => _uploadingImage = true);
     try {
       final api = context.read<ApiClient>();

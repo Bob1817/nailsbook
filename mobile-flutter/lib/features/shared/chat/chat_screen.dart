@@ -321,7 +321,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _pickAndSendImage() async {
     final file = await ImagePick.content();
-    if (file == null) return;
+    if (file == null || !mounted) return;
     HapticFeedback.lightImpact();
     setState(() => _sendingImage = true);
     try {

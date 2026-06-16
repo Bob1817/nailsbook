@@ -560,6 +560,7 @@ class _WorkFormSheetState extends State<WorkFormSheet> {
     if (files.length > remaining && mounted) {
       NbToast.info(context, '最多 9 张，已选取前 $remaining 张');
     }
+    if (!mounted) return;
     setState(() => _uploading = true);
     try {
       final api = context.read<ApiClient>();

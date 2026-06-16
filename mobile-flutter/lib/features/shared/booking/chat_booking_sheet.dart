@@ -281,7 +281,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
 
   Future<void> _pickImage() async {
     final file = await ImagePick.content();
-    if (file == null) return;
+    if (file == null || !mounted) return;
     setState(() => _uploadingImage = true);
     try {
       final api = context.read<ApiClient>();

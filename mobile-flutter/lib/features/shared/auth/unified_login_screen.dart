@@ -112,6 +112,7 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
       });
     }
     if (role == 'technician' && !techActivated) {
+      if (!mounted) return;
       // 账号已存在但未设密码（如超管新建账号）：进入激活页设置初始密码。
       setState(() => _loading = false);
       Navigator.push(

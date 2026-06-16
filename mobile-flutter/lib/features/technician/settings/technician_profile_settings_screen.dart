@@ -78,7 +78,7 @@ class _TechnicianProfileSettingsScreenState
   Future<void> _pickAvatar() async {
     HapticFeedback.lightImpact();
     final file = await ImagePick.avatar();
-    if (file == null) return;
+    if (file == null || !mounted) return;
 
     setState(() => _uploading = true);
     try {

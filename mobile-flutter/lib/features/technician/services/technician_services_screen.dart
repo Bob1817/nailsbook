@@ -71,7 +71,7 @@ class _TechnicianServicesScreenState extends State<TechnicianServicesScreen> {
         ],
       ),
     );
-    if (confirmed != true) return;
+    if (confirmed != true || !mounted) return;
     HapticFeedback.mediumImpact();
     try {
       final apiClient = context.read<ApiClient>();
@@ -111,12 +111,12 @@ class _TechnicianServicesScreenState extends State<TechnicianServicesScreen> {
             'description': descCtl.text,
             'price': double.tryParse(priceCtl.text) ?? 0,
           });
-          if (mounted) {
+          if (context.mounted) {
             NbToast.success(context, '服务已更新');
             _loadServices();
           }
         } catch (_) {
-          if (mounted) NbToast.error(context, '更新失败，请重试');
+          if (context.mounted) NbToast.error(context, '更新失败，请重试');
         }
       },
     );
@@ -145,12 +145,12 @@ class _TechnicianServicesScreenState extends State<TechnicianServicesScreen> {
             'description': descCtl.text,
             'price': double.tryParse(priceCtl.text) ?? 0,
           });
-          if (mounted) {
+          if (context.mounted) {
             NbToast.success(context, '服务已创建');
             _loadServices();
           }
         } catch (_) {
-          if (mounted) NbToast.error(context, '创建失败，请重试');
+          if (context.mounted) NbToast.error(context, '创建失败，请重试');
         }
       },
     );

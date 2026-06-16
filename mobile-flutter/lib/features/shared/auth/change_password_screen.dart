@@ -106,7 +106,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     // 4) 确认弹窗
     final ok = await _confirmDialog();
-    if (ok != true) return;
+    if (ok != true || !mounted) return;
 
     // 5) 提交（后端校验当前密码）
     setState(() => _submitting = true);
