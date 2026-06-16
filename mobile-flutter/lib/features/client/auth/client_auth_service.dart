@@ -49,12 +49,14 @@ class ClientAuthService {
     required int techId,
     required String inviteCode,
     bool? isDefault,
+    String? note,
   }) async {
     final body = <String, dynamic>{
       'techId': techId,
       'inviteCode': inviteCode,
     };
     if (isDefault != null) body['isDefault'] = isDefault;
+    if (note != null && note.trim().isNotEmpty) body['note'] = note.trim();
     return _api.post('/auth/bind-technician', body: body);
   }
 

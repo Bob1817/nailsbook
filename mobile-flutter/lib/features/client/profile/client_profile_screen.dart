@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
+import '../../../core/api/api_error.dart';
 import '../../../core/auth/auth_session.dart';
 import '../../../core/maps/map_service.dart';
 import '../../../core/theme/design_tokens.dart';
@@ -582,6 +583,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
 
   void _showBindDialog(BuildContext context) {
     final codeCtl = TextEditingController();
+    final noteCtl = TextEditingController();
     Technician? found;
     bool searching = false;
     bool binding = false;
@@ -627,7 +629,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                             fontWeight: FontWeight.w600,
                             color: ET.ink)),
                     const SizedBox(height: 6),
-                    const Text('输入美甲师提供的邀请码完成绑定',
+                    const Text('输入美甲师邀请码，提交绑定申请待其通过',
                         style: TextStyle(fontSize: 13, color: ET.inkMuted)),
                     const SizedBox(height: 20),
                     CupertinoTextField(
@@ -724,6 +726,22 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                               color: ET.accent, size: 22),
                         ]),
                       ),
+                      const SizedBox(height: 14),
+                      CupertinoTextField(
+                        controller: noteCtl,
+                        placeholder: '给美甲师留言（可选，如：我是老顾客小红）',
+                        maxLines: 2,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        style: const TextStyle(fontSize: 14, color: ET.ink),
+                        placeholderStyle:
+                            const TextStyle(fontSize: 14, color: ET.inkMuted),
+                        decoration: BoxDecoration(
+                          color: ET.surface,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: ET.hairline, width: 0.5),
+                        ),
+                      ),
                     ],
                     const SizedBox(height: 22),
                     SizedBox(
@@ -742,19 +760,27 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                                       .bindTechnician(
                                     techId: found!.id,
                                     inviteCode: codeCtl.text.trim(),
-                                    isDefault: _technicians?.isEmpty ?? true,
+                                    note: noteCtl.text,
                                   );
                                   if (ctx.mounted) Navigator.pop(ctx);
-                                  _loadProfile();
-                                } catch (_) {
+                                  if (mounted) {
+                                    _toast('绑定申请已提交，待美甲师通过后生效');
+                                    _loadProfile();
+                                  }
+                                } catch (e) {
                                   setDialogState(() => binding = false);
+                                  final msg = e is ApiError &&
+                                          e.message.isNotEmpty
+                                      ? e.message
+                                      : '申请失败，请重试';
+                                  if (ctx.mounted) _toast(msg);
                                 }
                               }
                             : null,
                         child: binding
                             ? const CupertinoActivityIndicator(
                                 color: ET.onCream)
-                            : const Text('确认绑定',
+                            : const Text('申请绑定',
                                 style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
