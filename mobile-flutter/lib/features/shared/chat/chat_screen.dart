@@ -18,7 +18,9 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../core/api/api_error.dart';
 import '../../../core/auth/auth_session.dart';
+import '../../client/auth/client_auth_service.dart';
 import '../../../core/socket/chat_socket.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/editorial_tokens.dart';
@@ -71,6 +73,7 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _sendingVoice = false;
   bool _sendingImage = false;
   int? _playingMsgId; // 正在播放的消息 id
+  bool _unbound = false; // 客户端：与该美甲师已解除绑定，发消息需先申请重新绑定
 
   @override
   void initState() {
@@ -87,9 +90,65 @@ class _ChatScreenState extends State<ChatScreen> {
       _resolveOtherPartyId();
     }
     _loadAvatars();
+    _checkBinding();
     _player.onPlayerComplete.listen((_) {
       if (mounted) setState(() => _playingMsgId = null);
     });
+  }
+
+  /// 客户端：检测是否仍绑定该美甲师（解除后发消息需先申请重新绑定）。
+  Future<void> _checkBinding() async {
+    final auth = context.read<AuthSession>();
+    if (!auth.isClient) return;
+    final techId = widget.techId ?? _otherPartyId;
+    if (techId == null) return;
+    try {
+      final profile =
+          await ClientAuthService(context.read<ApiClient>()).getProfile();
+      final techs = (profile['technicians'] as List<dynamic>?) ?? const [];
+      final bound = techs.any((t) => (t as Map)['id'] == techId);
+      if (mounted) setState(() => _unbound = !bound);
+    } catch (_) {
+      // 检测失败不拦截发送，避免误伤。
+    }
+  }
+
+  /// 已解除绑定时弹窗提示并提供「申请绑定」。返回 true 表示已拦截（阻止发送）。
+  bool _blockIfUnbound() {
+    if (!_unbound) return false;
+    _showRebindDialog();
+    return true;
+  }
+
+  Future<void> _showRebindDialog() async {
+    final apply = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('无法发送消息'),
+        content: const Text('已与该美甲师解除绑定，无法发送消息。是否申请再次绑定该美甲师？'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('关闭')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('申请绑定')),
+        ],
+      ),
+    );
+    if (apply != true || !mounted) return;
+    final techId = widget.techId ?? _otherPartyId;
+    if (techId == null) return;
+    try {
+      await ClientAuthService(context.read<ApiClient>()).requestRebind(techId);
+      if (mounted) NbToast.show(context, '已发送绑定申请，待美甲师通过');
+    } catch (e) {
+      if (mounted) {
+        NbToast.error(
+            context,
+            e is ApiError && e.message.isNotEmpty ? e.message : '申请失败，请重试');
+      }
+    }
   }
 
   /// 拉取会话双方真实头像（消息接口不含头像）。
@@ -177,6 +236,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendMessage() async {
     final text = _inputCtl.text.trim();
     if (text.isEmpty) return;
+    if (_blockIfUnbound()) return;
     _inputCtl.clear();
     HapticFeedback.lightImpact();
 
@@ -210,6 +270,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _startRecording() async {
     if (_recording || _sendingVoice) return;
+    if (_blockIfUnbound()) return;
     final ok = await _recorder.hasPermission();
     if (!ok) {
       if (mounted) NbToast.error(context, '请在系统设置中允许麦克风权限');
@@ -320,6 +381,7 @@ class _ChatScreenState extends State<ChatScreen> {
   // ── 图片：选择发送 / 预览 / 保存 ──
 
   Future<void> _pickAndSendImage() async {
+    if (_blockIfUnbound()) return;
     final file = await ImagePick.content();
     if (file == null || !mounted) return;
     HapticFeedback.lightImpact();

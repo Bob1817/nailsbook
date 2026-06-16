@@ -153,6 +153,21 @@ export class ClientAuthController {
     );
   }
 
+  @Post('binding-applications/request')
+  @UseGuards(ClientJwtAuthGuard)
+  @ApiOperation({ summary: '历史会话再次申请绑定（无需邀请码）' })
+  @ApiResponse({ status: 201, description: '申请已提交' })
+  async requestRebind(
+    @Req() request: { user: { clientUserId: number } },
+    @Body() body: { techId: number; note?: string },
+  ) {
+    return this.clientAuthService.requestRebind(
+      request.user.clientUserId,
+      Number(body.techId),
+      body.note,
+    );
+  }
+
   @Delete('unbind-technician/:techId')
   @UseGuards(ClientJwtAuthGuard)
   @ApiOperation({ summary: '解绑美甲师' })

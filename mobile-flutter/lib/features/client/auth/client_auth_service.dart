@@ -60,6 +60,14 @@ class ClientAuthService {
     return _api.post('/auth/bind-technician', body: body);
   }
 
+  /// 历史会话再次申请绑定（已解绑，无需重新输入邀请码）。
+  Future<Map<String, dynamic>> requestRebind(int techId, {String? note}) {
+    return _api.post('/auth/binding-applications/request', body: {
+      'techId': techId,
+      if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+    });
+  }
+
   Future<void> unbindTechnician(int techId) async {
     await _api.delete('/auth/unbind-technician/$techId');
   }
