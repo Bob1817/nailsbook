@@ -98,6 +98,7 @@ export interface BindTechnicianDto {
   techId: number;
   inviteCode: string;
   isDefault?: boolean;
+  note?: string;
 }
 
 export const authService = {
@@ -148,7 +149,8 @@ export const authService = {
     return response.data;
   },
 
-  async bindTechnician(data: BindTechnicianDto): Promise<{ id: number; technician: Technician }> {
+  // 绑定改为审批制：返回 { status: 'pending', bindingId }，等待美甲师通过。
+  async bindTechnician(data: BindTechnicianDto): Promise<{ status: string; bindingId: number }> {
     const response = await api.post('/auth/bind-technician', data);
     return response.data;
   },

@@ -16,6 +16,7 @@ const Profile: React.FC = () => {
   const [showBindModal, setShowBindModal] = useState(false);
   const [cardTech, setCardTech] = useState<Technician | null>(null);
   const [inviteCode, setInviteCode] = useState('');
+  const [bindNote, setBindNote] = useState('');
   const [foundTechnician, setFoundTechnician] = useState<{ id: number; name: string; avatarUrl?: string | null; city?: string | null; serviceArea?: string | null } | null>(null);
   const [checkingInviteCode, setCheckingInviteCode] = useState(false);
   const [bindingLoading, setBindingLoading] = useState(false);
@@ -48,12 +49,15 @@ const Profile: React.FC = () => {
     if (!foundTechnician) return;
     setBindingLoading(true);
     try {
-      await bindTechnician(foundTechnician.id, inviteCode, false);
+      await bindTechnician(foundTechnician.id, inviteCode, false, bindNote);
       setShowBindModal(false);
       setInviteCode('');
+      setBindNote('');
       setFoundTechnician(null);
-    } catch {
-      alert('绑定失败');
+      alert('绑定申请已提交，待美甲师通过后生效');
+    } catch (e) {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      alert(msg || '申请失败，请重试');
     } finally {
       setBindingLoading(false);
     }
@@ -414,30 +418,43 @@ const Profile: React.FC = () => {
                   )}
                 </div>
                 <p className="mt-2 text-caption text-[var(--color-text-muted)]">
-                  输入美甲师提供的邀请码后，即可完成绑定
+                  输入美甲师邀请码，提交绑定申请，待美甲师通过后生效
                 </p>
               </div>
 
               {foundTechnician && (
-                <div className="p-4 bg-[var(--color-primary-soft)] rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center overflow-hidden">
-                      {foundTechnician.avatarUrl ? (
-                        <img src={foundTechnician.avatarUrl} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <svg className="w-7 h-7 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-body font-medium text-[var(--color-text)]">{foundTechnician.name}</p>
-                      <p className="text-caption text-[var(--color-text-muted)]">
-                        {foundTechnician.city || '未知城市'} {foundTechnician.serviceArea ? `· ${foundTechnician.serviceArea}` : ''}
-                      </p>
+                <>
+                  <div className="p-4 bg-[var(--color-primary-soft)] rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center overflow-hidden">
+                        {foundTechnician.avatarUrl ? (
+                          <img src={foundTechnician.avatarUrl} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <svg className="w-7 h-7 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-body font-medium text-[var(--color-text)]">{foundTechnician.name}</p>
+                        <p className="text-caption text-[var(--color-text-muted)]">
+                          {foundTechnician.city || '未知城市'} {foundTechnician.serviceArea ? `· ${foundTechnician.serviceArea}` : ''}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
+
+                  <div>
+                    <label className="block text-body-sm text-[var(--color-text-secondary)] mb-2">备注（可选）</label>
+                    <textarea
+                      value={bindNote}
+                      onChange={(e) => setBindNote(e.target.value)}
+                      placeholder="给美甲师留言，如：我是老顾客小红"
+                      rows={2}
+                      className="w-full px-4 py-3 bg-gray-50 rounded-xl text-body text-[var(--color-text)] outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 resize-none"
+                    />
+                  </div>
+                </>
               )}
 
               <button
@@ -445,7 +462,7 @@ const Profile: React.FC = () => {
                 disabled={!foundTechnician || bindingLoading}
                 className="w-full py-4 bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] text-white rounded-full text-body font-medium shadow-lg shadow-pink-200 active:scale-[0.98] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {bindingLoading ? '绑定中...' : '确认绑定'}
+                {bindingLoading ? '申请中...' : '申请绑定'}
               </button>
             </div>
           </div>
