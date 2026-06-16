@@ -59,6 +59,10 @@ const TagManagementPage = lazy(async () => {
   const module = await import('./pages/TagManagementPage');
   return { default: module.TagManagementPage };
 });
+const BindingApplicationsPage = lazy(async () => {
+  const module = await import('./pages/BindingApplicationsPage');
+  return { default: module.BindingApplicationsPage };
+});
 const CustomerDetailPage = lazy(() => import('./pages/CustomerDetailPage'));
 const AccountSecurityPage = lazy(() => import('./pages/AccountSecurityPage'));
 const NotificationSettingsPage = lazy(() => import('./pages/NotificationSettingsPage'));
@@ -113,6 +117,7 @@ function App() {
                   <Route path="/setup-guide" element={<SetupGuidePage />} />
                   <Route path="/subscription" element={<SubscriptionPage />} />
                   <Route path="/tag-management" element={<TagManagementPage />} />
+                  <Route path="/binding-applications" element={<BindingApplicationsPage />} />
                   <Route path="/orders/:id" element={<OrderDetailPage />} />
                   <Route path="/account-security" element={<AccountSecurityPage />} />
                   <Route path="/notification-settings" element={<NotificationSettingsPage />} />

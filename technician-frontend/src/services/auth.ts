@@ -101,6 +101,16 @@ function normalizeShopAddresses(shopAddresses?: ShopAddress[]): ShopAddress[] {
   return (shopAddresses ?? []).map(normalizeShopAddress);
 }
 
+export interface BindingApplication {
+  id: number;
+  clientId: number;
+  name: string;
+  phone: string | null;
+  address: string;
+  note: string | null;
+  appliedAt: string;
+}
+
 export const authService = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     const response = await api.post<AuthApiResponse>('/auth/login', credentials);
@@ -376,6 +386,23 @@ export const authService = {
       localStorage.setItem('technician_token', mappedResponse.access_token);
     }
     return mappedResponse;
+  },
+
+  // ── 客户绑定申请审批 ──
+  getBindingApplications: async (): Promise<BindingApplication[]> => {
+    const response = await api.get('/auth/binding-applications');
+    return response.data;
+  },
+
+  approveBindingApplication: async (id: number): Promise<void> => {
+    await api.post(`/auth/binding-applications/${id}/approve`);
+  },
+
+  rejectBindingApplication: async (id: number, reason?: string): Promise<void> => {
+    await api.post(
+      `/auth/binding-applications/${id}/reject`,
+      reason ? { reason } : {},
+    );
   },
 
   isAuthenticated: (): boolean => {

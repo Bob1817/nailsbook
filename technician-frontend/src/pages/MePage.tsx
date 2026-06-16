@@ -270,6 +270,7 @@ const tools = [
   { icon: '🏪', label: '店铺管理', path: '/shops' },
   { icon: '🖼️', label: '作品管理', path: '/works' },
   { icon: '🏷️', label: '标签管理', path: '/tag-management' },
+  { icon: '🔗', label: '绑定申请', path: '/binding-applications' },
   { icon: '⭐', label: '评价管理' },
 ];
 
