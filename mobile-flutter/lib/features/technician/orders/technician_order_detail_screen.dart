@@ -1,16 +1,7 @@
-import 'dart:ui' show FontFeature, ImageFilter;
 
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import '../../../core/api/api_client.dart';
-import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
-import '../../../core/widgets/nb_shared_components.dart';
 import 'technician_order_service.dart';
-import '../../../core/widgets/nb_toast.dart';
 import '../../shared/chat/chat_screen.dart';
 import '../../shared/chat/chat_service.dart';
 
@@ -166,7 +157,7 @@ class _TechnicianOrderDetailScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('预约详情', style: DT.titleMedium),
+                    const Text('预约详情', style: DT.titleMedium),
                     if (o['orderNo'] != null)
                       Text(o['orderNo'].toString(), style: DT.captionLarge),
                   ],
@@ -319,7 +310,7 @@ class _TechnicianOrderDetailScreenState
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(CupertinoIcons.pencil,
+                        const Icon(CupertinoIcons.pencil,
                             size: 14, color: DT.textMuted),
                         const SizedBox(width: DT.xs),
                         Expanded(
@@ -695,7 +686,7 @@ class _TechnicianOrderDetailScreenState
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('加载失败', style: DT.bodySmall),
+          const Text('加载失败', style: DT.bodySmall),
           const SizedBox(height: DT.lg),
           GestureDetector(
             onTap: () {
@@ -1126,7 +1117,7 @@ class _TechnicianOrderDetailScreenState
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
         child: Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: DT.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(DT.rCard)),
           ),
@@ -1135,7 +1126,7 @@ class _TechnicianOrderDetailScreenState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('编辑预约', style: DT.titleMedium),
+              const Text('编辑预约', style: DT.titleMedium),
               const SizedBox(height: DT.lg),
               _quoteInput('服务内容', serviceNameCtl, TextInputType.text),
               const SizedBox(height: DT.md),

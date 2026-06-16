@@ -1,7 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:provider/provider.dart';
-import '../../../core/api/api_client.dart';
 import 'client_work_detail_screen.dart';
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
@@ -27,20 +23,23 @@ class _ClientWorksScreenState extends State<ClientWorksScreen> {
     try {
       final apiClient = context.read<ApiClient>();
       final queryParams = <String, String>{};
-      if (_selectedTechId != null)
+      if (_selectedTechId != null) {
         queryParams['techId'] = _selectedTechId.toString();
+      }
       final items = await apiClient.getList('/works',
           queryParams: queryParams.isEmpty ? null : queryParams);
-      if (mounted)
+      if (mounted) {
         setState(() {
           _works = items.cast<Map<String, dynamic>>();
           _loading = false;
         });
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loading = false;
         });
+      }
     }
   }
 
@@ -48,7 +47,7 @@ class _ClientWorksScreenState extends State<ClientWorksScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ET.bg,
-      appBar: GlassAppBar(title: const Text('作品'), dark: true),
+      appBar: const GlassAppBar(title: Text('作品'), dark: true),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: ET.accent))
           : _works.isEmpty

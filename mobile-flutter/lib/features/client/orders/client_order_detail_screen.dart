@@ -1,18 +1,12 @@
-import 'dart:ui';
-import 'package:flutter/material.dart';
 import '../../shared/chat/chat_screen.dart';
 import '../../shared/chat/chat_service.dart';
-import 'package:provider/provider.dart';
-import '../../../core/api/api_client.dart';
 import '../../../core/api/api_error.dart';
 import '../../../core/maps/map_service.dart';
-import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../addresses/client_address_models.dart';
 import '../addresses/client_address_service.dart';
 import 'client_order_models.dart';
 import 'client_order_service.dart';
-import '../../../core/widgets/nb_toast.dart';
 
 const _statusLabels = {
   'pending_quote': '待报价',
@@ -106,11 +100,12 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
     try {
       final api = context.read<ApiClient>();
       final order = await ClientOrderService(api).detail(widget.orderId);
-      if (mounted)
+      if (mounted) {
         setState(() {
           _order = order;
           _loading = false;
         });
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
@@ -321,12 +316,12 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
               ),
-              child: Icon(Icons.arrow_back_ios_new_rounded,
+              child: const Icon(Icons.arrow_back_ios_new_rounded,
                   size: 18, color: DT.textSecondary),
             ),
           ),
           const SizedBox(width: 12),
-          Text('预约详情', style: DT.titleMedium),
+          const Text('预约详情', style: DT.titleMedium),
         ],
       ),
     );
@@ -549,12 +544,12 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                   o.quotePrice != null && o.quotePrice! > 0
                       ? '当前报价金额'
                       : '美甲师确认后会展示服务报价',
-                  style: TextStyle(fontSize: 13, color: DT.textMuted),
+                  style: const TextStyle(fontSize: 13, color: DT.textMuted),
                 ),
                 if (o.quoteRemark != null && o.quoteRemark!.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(o.quoteRemark!,
-                      style: TextStyle(fontSize: 13, color: DT.textMuted)),
+                      style: const TextStyle(fontSize: 13, color: DT.textMuted)),
                 ],
                 // Deposit info
                 if (hasDeposit) ...[
@@ -573,10 +568,10 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(children: [
-                                Text('定金（线下支付）',
+                                const Text('定金（线下支付）',
                                     style: TextStyle(
                                         fontSize: 12,
-                                        color: const Color(0xFFD97706))),
+                                        color: Color(0xFFD97706))),
                                 const Spacer(),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
@@ -627,7 +622,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(o.orderNo,
-                      style: TextStyle(fontSize: 12, color: DT.textMuted)),
+                      style: const TextStyle(fontSize: 12, color: DT.textMuted)),
                 ]),
               ],
             ),
@@ -1017,7 +1012,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                             color: DT.textPrimary)),
                     const SizedBox(height: 4),
                     Text(subtitle,
-                        style: TextStyle(fontSize: 13, color: DT.textMuted)),
+                        style: const TextStyle(fontSize: 13, color: DT.textMuted)),
                   ],
                 ),
               ),
@@ -1043,7 +1038,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: TextStyle(fontSize: 13, color: DT.textMuted)),
+            Text(label, style: const TextStyle(fontSize: 13, color: DT.textMuted)),
             Flexible(
               child: Text(value,
                   style: const TextStyle(
@@ -1071,7 +1066,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: TextStyle(fontSize: 13, color: DT.textMuted)),
+            Text(label, style: const TextStyle(fontSize: 13, color: DT.textMuted)),
             const SizedBox(height: 4),
             Text(value,
                 style: const TextStyle(
@@ -1109,8 +1104,8 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                   child: Container(
                     width: 36,
                     height: 36,
-                    decoration: BoxDecoration(
-                        color: const Color(0xFF211C17), shape: BoxShape.circle),
+                    decoration: const BoxDecoration(
+                        color: Color(0xFF211C17), shape: BoxShape.circle),
                     child: const Icon(Icons.close_rounded,
                         size: 18, color: Color(0xFF64748B)),
                   ),
@@ -1118,7 +1113,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            Text('同意后将进入到美甲师确认环节。请确保你已知悉报价金额。',
+            const Text('同意后将进入到美甲师确认环节。请确保你已知悉报价金额。',
                 style: TextStyle(fontSize: 13, color: DT.textMuted)),
             const SizedBox(height: 16),
             // Details
@@ -1182,7 +1177,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: 13, color: DT.textMuted)),
+          Text(label, style: const TextStyle(fontSize: 13, color: DT.textMuted)),
           Text(value,
               style: const TextStyle(
                   fontSize: 13,
@@ -1209,16 +1204,16 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               children: [
                 Row(
                   children: [
-                    Expanded(
+                    const Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('拒绝报价',
+                          Text('拒绝报价',
                               style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600,
                                   color: DT.textPrimary)),
-                          const SizedBox(height: 4),
+                          SizedBox(height: 4),
                           Text('告诉美甲师你为什么拒绝该报价',
                               style:
                                   TextStyle(fontSize: 13, color: DT.textMuted)),
@@ -1230,8 +1225,8 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                       child: Container(
                         width: 36,
                         height: 36,
-                        decoration: BoxDecoration(
-                            color: const Color(0xFF211C17),
+                        decoration: const BoxDecoration(
+                            color: Color(0xFF211C17),
                             shape: BoxShape.circle),
                         child: const Icon(Icons.close_rounded,
                             size: 18, color: Color(0xFF64748B)),
@@ -1250,11 +1245,11 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                     controller: reasonCtl,
                     maxLines: 4,
                     style: const TextStyle(fontSize: 14, color: DT.textPrimary),
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: '请输入拒绝原因（选填）',
                       hintStyle: TextStyle(color: DT.textMuted),
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.all(16),
+                      contentPadding: EdgeInsets.all(16),
                     ),
                   ),
                 ),
@@ -1331,16 +1326,16 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
           children: [
             Row(
               children: [
-                Expanded(
+                const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('取消预约',
+                      Text('取消预约',
                           style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
                               color: DT.textPrimary)),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text('取消后预约将无法恢复，是否确认取消？',
                           style: TextStyle(fontSize: 13, color: DT.textMuted)),
                     ],
@@ -1351,8 +1346,8 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                   child: Container(
                     width: 36,
                     height: 36,
-                    decoration: BoxDecoration(
-                        color: const Color(0xFF211C17), shape: BoxShape.circle),
+                    decoration: const BoxDecoration(
+                        color: Color(0xFF211C17), shape: BoxShape.circle),
                     child: const Icon(Icons.close_rounded,
                         size: 18, color: Color(0xFF64748B)),
                   ),
@@ -1442,8 +1437,8 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                   child: Container(
                     width: 36,
                     height: 36,
-                    decoration: BoxDecoration(
-                        color: const Color(0xFF211C17), shape: BoxShape.circle),
+                    decoration: const BoxDecoration(
+                        color: Color(0xFF211C17), shape: BoxShape.circle),
                     child: const Icon(Icons.close_rounded,
                         size: 18, color: Color(0xFF64748B)),
                   ),
@@ -1451,7 +1446,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            Text('请确认你已通过线下方式向美甲师支付了定金',
+            const Text('请确认你已通过线下方式向美甲师支付了定金',
                 style: TextStyle(fontSize: 13, color: DT.textMuted)),
             const SizedBox(height: 16),
             Container(
@@ -1465,9 +1460,9 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('定金金额',
+                  const Text('定金金额',
                       style: TextStyle(
-                          fontSize: 12, color: const Color(0xFFD97706))),
+                          fontSize: 12, color: Color(0xFFD97706))),
                   const SizedBox(height: 4),
                   Text('¥${o.depositAmount!.toStringAsFixed(0)}',
                       style: const TextStyle(
@@ -1564,11 +1559,12 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
           if (loadingAddresses) {
             final api = context.read<ApiClient>();
             ClientAddressService(api).list().then((addrs) {
-              if (ctx.mounted)
+              if (ctx.mounted) {
                 setSheetState(() {
                   addresses = addrs;
                   loadingAddresses = false;
                 });
+              }
             }).catchError((_) {
               if (ctx.mounted) setSheetState(() => loadingAddresses = false);
             });
@@ -1595,16 +1591,16 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                       padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
                       child: Row(
                         children: [
-                          Expanded(
+                          const Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('修改预约',
+                                Text('修改预约',
                                     style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w600,
                                         color: DT.textPrimary)),
-                                const SizedBox(height: 4),
+                                SizedBox(height: 4),
                                 Text('仅支持调整预约时间和服务地址',
                                     style: TextStyle(
                                         fontSize: 13, color: DT.textMuted)),
@@ -1616,8 +1612,8 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                             child: Container(
                               width: 36,
                               height: 36,
-                              decoration: BoxDecoration(
-                                  color: const Color(0xFF211C17),
+                              decoration: const BoxDecoration(
+                                  color: Color(0xFF211C17),
                                   shape: BoxShape.circle),
                               child: const Icon(Icons.close_rounded,
                                   size: 18, color: Color(0xFF64748B)),
@@ -1777,7 +1773,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                                         strokeWidth: 2),
                                   ))
                                 else if (addresses.isEmpty)
-                                  Text('暂无地址',
+                                  const Text('暂无地址',
                                       style: TextStyle(
                                           fontSize: 13, color: DT.textMuted))
                                 else
@@ -1853,7 +1849,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                                                         null) ...[
                                                       const SizedBox(width: 8),
                                                       Text(addr.contactPhone!,
-                                                          style: TextStyle(
+                                                          style: const TextStyle(
                                                               fontSize: 13,
                                                               color: DT
                                                                   .textMuted)),
@@ -1861,7 +1857,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                                                   ]),
                                                   const SizedBox(height: 4),
                                                   Text(addr.fullAddress,
-                                                      style: TextStyle(
+                                                      style: const TextStyle(
                                                           fontSize: 13,
                                                           color:
                                                               DT.textSecondary,
@@ -1948,16 +1944,16 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
             children: [
               Row(
                 children: [
-                  Expanded(
+                  const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('重新发起预约',
+                        Text('重新发起预约',
                             style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
                                 color: DT.textPrimary)),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text('仅需重新选择预约时间，其余信息将沿用原预约',
                             style:
                                 TextStyle(fontSize: 13, color: DT.textMuted)),
@@ -2105,8 +2101,8 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
           Container(
               width: 44,
               height: 44,
-              decoration: BoxDecoration(
-                  color: const Color(0xFF2A241E), shape: BoxShape.circle)),
+              decoration: const BoxDecoration(
+                  color: Color(0xFF2A241E), shape: BoxShape.circle)),
           const SizedBox(width: 14),
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Container(

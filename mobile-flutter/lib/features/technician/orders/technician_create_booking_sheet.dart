@@ -1,15 +1,7 @@
-import 'dart:ui' show ImageFilter;
 
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 
-import '../../../core/api/api_client.dart';
 import '../../../core/api/api_error.dart';
-import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
-import '../../../core/widgets/nb_toast.dart';
 import '../auth/technician_auth_models.dart';
 import '../auth/technician_auth_service.dart';
 import '../customers/technician_customer_service.dart';
@@ -177,7 +169,7 @@ class _TechnicianCreateBookingSheetState
                     ? const Center(
                         child: CupertinoActivityIndicator(radius: 14))
                     : SingleChildScrollView(
-                        padding: EdgeInsets.fromLTRB(
+                        padding: const EdgeInsets.fromLTRB(
                           DT.xl, DT.lg, DT.xl, DT.lg,
                         ),
                         child: Column(
@@ -286,12 +278,12 @@ class _TechnicianCreateBookingSheetState
           ),
           Row(
             children: [
-              Expanded(
+              const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('新建预约', style: DT.titleMedium),
-                    const SizedBox(height: DT.xs),
+                    SizedBox(height: DT.xs),
                     Text(
                       '创建后同步到预约、行程和客户记录',
                       style: DT.captionLarge,
@@ -306,7 +298,7 @@ class _TechnicianCreateBookingSheetState
                   width: 44,
                   height: 44,
                   alignment: Alignment.center,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: DT.surfaceAlt,
                     shape: BoxShape.circle,
                   ),
@@ -349,7 +341,7 @@ class _TechnicianCreateBookingSheetState
         child: DropdownButton<int>(
           value: _selectedCustomerId,
           isExpanded: true,
-          hint: Text('选择客户', style: DT.bodySmall),
+          hint: const Text('选择客户', style: DT.bodySmall),
           dropdownColor: DT.surface,
           borderRadius: BorderRadius.circular(DT.rMd),
           items: _customers.map((customer) {
@@ -454,7 +446,7 @@ class _TechnicianCreateBookingSheetState
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text('选择日期', style: DT.titleSmall),
+              const Text('选择日期', style: DT.titleSmall),
               const SizedBox(width: DT.sm),
               Expanded(
                 child: Text('灰色为休息日 / 不可预约',
@@ -503,7 +495,7 @@ class _TechnicianCreateBookingSheetState
           ),
           if (_selectedDate != null) ...[
             const SizedBox(height: DT.md),
-            Text('选择时间', style: DT.titleSmall),
+            const Text('选择时间', style: DT.titleSmall),
             const SizedBox(height: DT.sm),
             _timeSlots(),
           ],
@@ -523,7 +515,7 @@ class _TechnicianCreateBookingSheetState
         width: 44,
         height: 44,
         alignment: Alignment.center,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: DT.surfaceAlt,
           shape: BoxShape.circle,
         ),
@@ -580,8 +572,8 @@ class _TechnicianCreateBookingSheetState
   Widget _timeSlots() {
     final slots = _availableSlots();
     if (slots.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: DT.sm),
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: DT.sm),
         child: Text('该日期休息中', style: DT.bodySmall),
       );
     }
@@ -635,7 +627,7 @@ class _TechnicianCreateBookingSheetState
                   ),
                 ),
                 if (occupied)
-                  Text('已预约', style: DT.captionSmall),
+                  const Text('已预约', style: DT.captionSmall),
               ],
             ),
           ),

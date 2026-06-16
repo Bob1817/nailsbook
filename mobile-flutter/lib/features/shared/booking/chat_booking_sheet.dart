@@ -353,12 +353,12 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
   }
 
   Widget _buildNotServingView() {
-    return Center(
+    return const Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             Icon(Icons.info_outline_rounded, size: 48, color: DT.textMuted),
             SizedBox(height: 16),
             Text('美甲师未开启美甲服务，请联系美甲师开启服务',
@@ -483,7 +483,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
             color: const Color(0xFF211C17), borderRadius: BorderRadius.circular(12),
             border: Border.all(color: DT.primary.withValues(alpha: 0.2)),
           ),
-          child: Row(children: const [
+          child: const Row(children: [
             Icon(Icons.add_location_alt_rounded, color: DT.primary, size: 18),
             SizedBox(width: 8),
             Text('添加上门地址', style: TextStyle(color: DT.primary, fontSize: 14, fontWeight: FontWeight.w500)),
@@ -510,7 +510,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
         const SizedBox(height: 8),
         GestureDetector(
           onTap: () => setState(() { _showInlineAddressForm = true; _selectedAddressId = null; }),
-          child: Row(children: const [
+          child: const Row(children: [
             Icon(Icons.add_circle_outline, color: DT.primary, size: 16),
             SizedBox(width: 4),
             Text('+ 新增地址', style: TextStyle(fontSize: 13, color: DT.primary)),
@@ -698,7 +698,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
                   borderRadius: BorderRadius.circular(8)),
               child: _uploadingImage
                   ? const Center(child: CircularProgressIndicator(strokeWidth: 2, color: DT.primary))
-                  : Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  : const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Icon(Icons.add_photo_alternate_outlined, color: DT.textTertiary, size: 20),
                 Text('添加', style: TextStyle(fontSize: 10, color: DT.textTertiary)),
               ]),

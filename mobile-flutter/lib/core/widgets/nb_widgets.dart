@@ -1,6 +1,3 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import '../theme/design_tokens.dart';
 import 'glass_container.dart';
 
 /// ── Glass Container ──
@@ -207,7 +204,7 @@ class NBMenuRow extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [DT.primarySoft, DT.bgWarm],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -316,7 +313,7 @@ class NBQuickActionItem extends StatelessWidget {
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
+              gradient: const LinearGradient(
                 colors: [DT.primary, DT.primaryLight],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,

@@ -89,11 +89,11 @@ class _ClientWelcomeScreenState extends State<ClientWelcomeScreen> {
               const Text('欢迎使用 NailArt',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: ET.ink)),
               const SizedBox(height: 8),
-              Text('让我们更好地了解您',
+              const Text('让我们更好地了解您',
                 style: TextStyle(fontSize: 15, color: ET.inkMuted)),
               const SizedBox(height: 48),
               // Nickname input
-              Align(
+              const Align(
                 alignment: Alignment.centerLeft,
                 child: Text('您希望如何被称呼？',
                   style: TextStyle(fontSize: 14, color: ET.inkSecondary)),
@@ -105,17 +105,17 @@ class _ClientWelcomeScreenState extends State<ClientWelcomeScreen> {
                 style: const TextStyle(fontSize: 16, color: ET.ink),
                 decoration: InputDecoration(
                   hintText: '请输入您的昵称',
-                  hintStyle: TextStyle(fontSize: 15, color: ET.inkMuted),
+                  hintStyle: const TextStyle(fontSize: 15, color: ET.inkMuted),
                   filled: true,
                   fillColor: ET.surface,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: ET.hairline),
+                    borderSide: const BorderSide(color: ET.hairline),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: ET.hairline),
+                    borderSide: const BorderSide(color: ET.hairline),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -145,7 +145,7 @@ class _ClientWelcomeScreenState extends State<ClientWelcomeScreen> {
               // Skip button
               GestureDetector(
                 onTap: _loading ? null : _skip,
-                child: Text('暂时跳过',
+                child: const Text('暂时跳过',
                   style: TextStyle(fontSize: 14, color: ET.inkMuted)),
               ),
             ],

@@ -1,17 +1,7 @@
-import 'dart:convert';
 
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:provider/provider.dart';
 
-import '../../../core/api/api_client.dart';
 import '../../../core/maps/map_service.dart';
-import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
-import '../../../core/widgets/nb_shared_components.dart';
-import '../../../core/widgets/nb_toast.dart';
 import '../../shared/chat/chat_screen.dart';
 import '../../shared/chat/chat_service.dart';
 import '../auth/technician_auth_service.dart';
@@ -337,7 +327,7 @@ class _TechnicianCustomerDetailScreenState
         width: 44,
         height: 44,
         alignment: Alignment.center,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: DT.primarySoft,
           shape: BoxShape.circle,
         ),

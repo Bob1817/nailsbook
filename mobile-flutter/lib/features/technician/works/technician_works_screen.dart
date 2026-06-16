@@ -1,6 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../../core/api/api_client.dart';
 import '../auth/technician_auth_service.dart';
 import 'technician_work_detail_screen.dart';
 import 'technician_work_share_sheet.dart';
@@ -37,11 +34,12 @@ class _TechnicianWorksScreenState extends State<TechnicianWorksScreen> {
     try {
       final profile =
           await TechnicianAuthService(context.read<ApiClient>()).getProfile();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _invitationCode = profile.invitationCode;
           _technicianName = profile.name;
         });
+      }
     } catch (_) {}
   }
 
@@ -49,11 +47,12 @@ class _TechnicianWorksScreenState extends State<TechnicianWorksScreen> {
     try {
       final works =
           await TechnicianWorkService(context.read<ApiClient>()).list();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _works = works;
           _loading = false;
         });
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
@@ -864,10 +863,10 @@ class _WorkFormSheetState extends State<WorkFormSheet> {
       behavior: HitTestBehavior.opaque,
       child: Row(
         children: [
-          Expanded(
+          const Expanded(
             child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text('客户端可见',
                       style: TextStyle(
                           fontSize: 14,

@@ -1,7 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import '../../../core/api/api_client.dart';
 import 'client_order_models.dart';
 import 'client_order_service.dart';
 import 'client_create_order_screen.dart';
@@ -31,16 +27,18 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
       final apiClient = context.read<ApiClient>();
       final service = ClientOrderService(apiClient);
       final orders = await service.list();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _orders = orders;
           _loading = false;
         });
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loading = false;
         });
+      }
     }
   }
 

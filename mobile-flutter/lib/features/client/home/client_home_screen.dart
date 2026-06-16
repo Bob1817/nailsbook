@@ -1,14 +1,8 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../core/api/api_client.dart';
 import '../../../core/media/oss_image.dart';
-import '../../../core/theme/design_tokens.dart';
-import '../../../core/theme/editorial_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/nav_badge_icon.dart';
 import '../discover/client_discover_screen.dart';
@@ -45,16 +39,18 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     try {
       final apiClient = context.read<ApiClient>();
       final data = await apiClient.get('/home');
-      if (mounted)
+      if (mounted) {
         setState(() {
           _homeData = data;
           _loading = false;
         });
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loading = false;
         });
+      }
     }
   }
 
@@ -281,11 +277,12 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
         });
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _featHasMore = false;
           _featLoading = false;
         });
+      }
     }
   }
 
@@ -298,8 +295,9 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
               (o.startTime?.isNotEmpty ?? false))
           .toList()
         ..sort((a, b) => (a.startTime ?? '').compareTo(b.startTime ?? ''));
-      if (mounted)
+      if (mounted) {
         setState(() => _upcoming = upcoming.isEmpty ? null : upcoming.first);
+      }
     } catch (_) {/* 静默 */}
   }
 

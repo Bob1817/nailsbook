@@ -1,6 +1,5 @@
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
-import '../../../core/theme/design_tokens.dart';
 
 /// 法律文档（用户协议 / 隐私政策）。静态内容，对齐 webapp LegalDoc.tsx。
 class ClientLegalDocScreen extends StatelessWidget {

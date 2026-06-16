@@ -1,19 +1,10 @@
-import 'dart:ui' show FontFeature;
 
-import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import '../../../core/api/api_client.dart';
 import '../../../core/maps/map_service.dart';
 import '../../../core/widgets/nav_badge_icon.dart';
-import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
-import '../../../core/widgets/nb_toast.dart';
 import '../../../core/widgets/technician_glass_header.dart';
 import '../auth/technician_auth_service.dart';
 import '../onboarding/technician_setup_guide_screen.dart';
@@ -66,10 +57,11 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
         _maybePromptPendingActions(data);
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loading = false;
         });
+      }
     }
   }
 
@@ -213,14 +205,14 @@ class _TechGlassTabBar extends StatelessWidget {
                 color: active ? DT.primary : DT.textSecondary,
                 badge: i == 3 ? unread : 0,
               ),
-              SizedBox(height: DT.xs),
+              const SizedBox(height: DT.xs),
               Text(item.$3,
                   style: TextStyle(
                     fontSize: DT.captionMedium.fontSize,
                     fontWeight: active ? FontWeight.w600 : FontWeight.w500,
                     color: active ? DT.primary : DT.textSecondary,
                   )),
-              SizedBox(height: DT.xs),
+              const SizedBox(height: DT.xs),
               Container(
                 width: 4,
                 height: 4,
@@ -283,12 +275,13 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
       final works = (results[2] as List).cast<Map<String, dynamic>>();
       final unread =
           convs.fold<int>(0, (s, c) => s + ((c['unreadCount'] as int?) ?? 0));
-      if (mounted)
+      if (mounted) {
         setState(() {
           _orders = orders;
           _works = works;
           _unread = unread;
         });
+      }
     } catch (_) {
       // 保持空态，下拉可重试
     }
@@ -400,17 +393,17 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
               padding: EdgeInsets.fromLTRB(DT.xl, headerH + DT.md, DT.xl, 110),
               children: [
                 _sectionTitle('下一单'),
-                SizedBox(height: DT.md),
+                const SizedBox(height: DT.md),
                 _nextOrderCard(next),
-                SizedBox(height: DT.xxl),
+                const SizedBox(height: DT.xxl),
                 _sectionTitle('待处理事项'),
-                SizedBox(height: DT.md),
+                const SizedBox(height: DT.md),
                 _pendingCard(),
-                SizedBox(height: DT.xxl),
+                const SizedBox(height: DT.xxl),
                 _sectionTitle('今日行程'),
-                SizedBox(height: DT.md),
+                const SizedBox(height: DT.md),
                 _todayScheduleCard(todayOrders),
-                SizedBox(height: DT.xxl),
+                const SizedBox(height: DT.xxl),
                 Row(
                   children: [
                     Expanded(child: _sectionTitle('今日热门作品')),
@@ -422,11 +415,11 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                     ),
                   ],
                 ),
-                SizedBox(height: DT.md),
+                const SizedBox(height: DT.md),
                 _popularWorks(),
-                SizedBox(height: DT.xxl),
+                const SizedBox(height: DT.xxl),
                 _sectionTitle('分享我的美甲名片'),
-                SizedBox(height: DT.md),
+                const SizedBox(height: DT.md),
                 _shareCard(profile),
               ],
             ),
@@ -471,7 +464,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                   style: const TextStyle(fontSize: 22, color: DT.primary))
               : null,
         ),
-        SizedBox(width: DT.md),
+        const SizedBox(width: DT.md),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -480,7 +473,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: DT.titleLarge),
-              SizedBox(height: 2),
+              const SizedBox(height: 2),
               Text('今日 $todayCount 单 · 预估 ¥${expected.toStringAsFixed(0)}',
                   style: DT.bodySmall.copyWith(color: DT.textMuted)),
             ],
@@ -489,7 +482,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
         GestureDetector(
           onTap: _toggleStatus,
           child: Container(
-            padding: EdgeInsets.symmetric(
+            padding: const EdgeInsets.symmetric(
                 horizontal: DT.sm + 2, vertical: DT.xs + 1),
             decoration: BoxDecoration(
               color: isActive ? DT.successBg : DT.surfaceAlt,
@@ -504,7 +497,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                   decoration: BoxDecoration(
                       color: isActive ? DT.success : DT.textMuted,
                       shape: BoxShape.circle)),
-              SizedBox(width: DT.xs + 1),
+              const SizedBox(width: DT.xs + 1),
               Text(isActive ? '接单中' : '休息中',
                   style: TextStyle(
                       fontSize: DT.captionLarge.fontSize,
@@ -659,13 +652,13 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
     if (o == null) {
       return Container(
         width: double.infinity,
-        padding: EdgeInsets.all(DT.lg),
+        padding: const EdgeInsets.all(DT.lg),
         decoration: _cardDeco,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('暂无行程安排', style: DT.titleSmall),
-            SizedBox(height: DT.xs),
+            const Text('暂无行程安排', style: DT.titleSmall),
+            const SizedBox(height: DT.xs),
             Text('当前没有待上门、待到店或服务中的预约，可以安排新预约。',
                 style: DT.bodySmall.copyWith(color: DT.textMuted, height: 1.5)),
           ],
@@ -683,7 +676,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
     final orderId = o['id'] as int?;
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(DT.lg),
+      padding: const EdgeInsets.all(DT.lg),
       decoration: BoxDecoration(
         gradient: DT.primaryGradient,
         borderRadius: BorderRadius.circular(DT.rCard),
@@ -700,7 +693,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                           color: Colors.white.withValues(alpha: 0.9),
                           fontWeight: FontWeight.w600))),
               Container(
-                padding: EdgeInsets.symmetric(
+                padding: const EdgeInsets.symmetric(
                     horizontal: DT.sm + 2, vertical: DT.xs),
                 decoration: BoxDecoration(
                     color: DT.surface.withValues(alpha: 0.22),
@@ -713,7 +706,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
               ),
             ],
           ),
-          SizedBox(height: DT.md),
+          const SizedBox(height: DT.md),
           Row(
             children: [
               ClipOval(
@@ -748,7 +741,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                                 color: DT.primary,
                                 fontWeight: FontWeight.w600))),
               ),
-              SizedBox(width: DT.sm),
+              const SizedBox(width: DT.sm),
               Expanded(
                 child: Text(customerName,
                     maxLines: 1,
@@ -757,7 +750,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                         color: Colors.white.withValues(alpha: 0.95),
                         fontWeight: FontWeight.w600)),
               ),
-              SizedBox(width: DT.sm),
+              const SizedBox(width: DT.sm),
               Expanded(
                 child: Align(
                   alignment: Alignment.centerRight,
@@ -774,11 +767,11 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
             ],
           ),
           if (addr.isNotEmpty) ...[
-            SizedBox(height: DT.sm),
+            const SizedBox(height: DT.sm),
             Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Icon(CupertinoIcons.location_solid,
                   size: 15, color: Colors.white.withValues(alpha: 0.85)),
-              SizedBox(width: DT.xs + 1),
+              const SizedBox(width: DT.xs + 1),
               Expanded(
                   child: Text(addr,
                       maxLines: 2,
@@ -788,17 +781,17 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                           height: 1.4))),
             ]),
           ],
-          SizedBox(height: DT.lg),
+          const SizedBox(height: DT.lg),
           Row(children: [
             Expanded(
                 child: _heroBtn(CupertinoIcons.location_north_line_fill, '开始导航',
                     filled: true, onTap: () => _navigate(o))),
-            SizedBox(width: DT.sm + 2),
+            const SizedBox(width: DT.sm + 2),
             Expanded(
                 child: _heroBtn(CupertinoIcons.phone_fill, '联系客户',
                     filled: false, onTap: () => _call(phone))),
             if (orderId != null) ...[
-              SizedBox(width: DT.sm + 2),
+              const SizedBox(width: DT.sm + 2),
               GestureDetector(
                 onTap: () =>
                     _push(TechnicianOrderDetailScreen(orderId: orderId)),
@@ -833,7 +826,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(icon, size: 16, color: filled ? DT.primary : DT.textWhite),
-          SizedBox(width: DT.xs + 1),
+          const SizedBox(width: DT.xs + 1),
           Text(label,
               style: TextStyle(
                   fontSize: DT.bodyMedium.fontSize,
@@ -881,7 +874,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
     if (items.isEmpty) {
       return GlassContainer(
         tint: DT.surface,
-        padding: EdgeInsets.all(DT.lg),
+        padding: const EdgeInsets.all(DT.lg),
         borderRadius: DT.rCard,
         opacity: 0.52,
         blur: DT.glassBlurStandard,
@@ -890,7 +883,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
         child: Row(children: [
           const Icon(CupertinoIcons.checkmark_circle_fill,
               size: 20, color: DT.success),
-          SizedBox(width: DT.sm),
+          const SizedBox(width: DT.sm),
           Expanded(
               child: Text('今日待办已清空，可以专心服务客户。',
                   style: DT.bodyMedium.copyWith(color: DT.textSecondary))),
@@ -904,11 +897,11 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
       blur: DT.glassBlurStandard,
       showBorder: false,
       boxShadow: DT.shadowTile,
-      padding: EdgeInsets.all(DT.sm),
+      padding: const EdgeInsets.all(DT.sm),
       child: Column(
         children: [
           for (var i = 0; i < items.length; i++) ...[
-            if (i > 0) SizedBox(height: DT.sm),
+            if (i > 0) const SizedBox(height: DT.sm),
             Container(
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.06),
@@ -932,7 +925,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                   title: Row(children: [
                     Text('${items[i].$2}',
                         style: DT.titleSmall.copyWith(color: DT.primary)),
-                    SizedBox(width: DT.xs),
+                    const SizedBox(width: DT.xs),
                     Expanded(child: Text(items[i].$3, style: DT.bodyMedium)),
                   ]),
                   trailing: const Icon(CupertinoIcons.chevron_right,
@@ -951,7 +944,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
     if (todayOrders.isEmpty) {
       return GlassContainer(
         tint: DT.surface,
-        padding: EdgeInsets.symmetric(vertical: DT.space32, horizontal: DT.lg),
+        padding: const EdgeInsets.symmetric(vertical: DT.space32, horizontal: DT.lg),
         borderRadius: DT.rCard,
         opacity: 0.52,
         blur: DT.glassBlurStandard,
@@ -969,11 +962,11 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
       blur: DT.glassBlurStandard,
       showBorder: false,
       boxShadow: DT.shadowTile,
-      padding: EdgeInsets.all(DT.sm),
+      padding: const EdgeInsets.all(DT.sm),
       child: Column(
         children: [
           for (var i = 0; i < todayOrders.length; i++) ...[
-            if (i > 0) SizedBox(height: DT.sm),
+            if (i > 0) const SizedBox(height: DT.sm),
             _scheduleRow(todayOrders[i]),
           ],
         ],
@@ -999,7 +992,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
             : null,
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          padding: EdgeInsets.all(DT.lg),
+          padding: const EdgeInsets.all(DT.lg),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(20),
@@ -1021,16 +1014,16 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                                 FontFeature.tabularFigures()
                               ],
                             )),
-                        SizedBox(width: DT.sm),
+                        const SizedBox(width: DT.sm),
                         _scheduleAvatar(customer, customerAvatar),
-                        SizedBox(width: DT.xs),
+                        const SizedBox(width: DT.xs),
                         Flexible(
                           child: Text(customer,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: DT.titleSmall),
                         ),
-                        SizedBox(width: DT.xs),
+                        const SizedBox(width: DT.xs),
                         Flexible(
                           child: Text(service,
                               maxLines: 1,
@@ -1040,14 +1033,14 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                         ),
                       ],
                     ),
-                    SizedBox(height: DT.sm),
+                    const SizedBox(height: DT.sm),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(CupertinoIcons.location_solid,
                             size: 15,
                             color: isShop ? DT.primary : DT.warningText),
-                        SizedBox(width: DT.xs + 1),
+                        const SizedBox(width: DT.xs + 1),
                         Expanded(
                           child: Text(address,
                               maxLines: 2,
@@ -1057,9 +1050,9 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                         ),
                       ],
                     ),
-                    SizedBox(height: DT.sm),
+                    const SizedBox(height: DT.sm),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                           color: isShop ? DT.primarySoft : DT.warningBg,
                           borderRadius: BorderRadius.circular(DT.rFull)),
@@ -1072,7 +1065,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                   ],
                 ),
               ),
-              SizedBox(width: DT.md),
+              const SizedBox(width: DT.md),
               GestureDetector(
                 onTap: () => _call(phone),
                 child: Container(
@@ -1136,7 +1129,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
     if (top.isEmpty) {
       return Container(
         width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: DT.space32, horizontal: DT.lg),
+        padding: const EdgeInsets.symmetric(vertical: DT.space32, horizontal: DT.lg),
         decoration: _cardDeco,
         child: Center(
             child: Text('还没有推荐作品，去作品管理设置好看的款式吧。',
@@ -1149,7 +1142,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: top.length,
-        separatorBuilder: (_, __) => SizedBox(width: DT.md),
+        separatorBuilder: (_, __) => const SizedBox(width: DT.md),
         itemBuilder: (_, i) => _workCard(top[i]),
       ),
     );
@@ -1247,8 +1240,9 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
   String _shareUrl(Map<String, dynamic>? profile) {
     const base = 'https://m.lunails.cn';
     final code = profile?['invitationCode']?.toString();
-    if (code != null && code.isNotEmpty)
+    if (code != null && code.isNotEmpty) {
       return '$base/artist/${Uri.encodeComponent(code)}';
+    }
     return '$base/artist/${profile?['id']}';
   }
 
@@ -1260,7 +1254,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
     final shop = profile?['shopService'] == true;
     final url = _shareUrl(profile);
     return Container(
-      padding: EdgeInsets.all(DT.lg),
+      padding: const EdgeInsets.all(DT.lg),
       decoration: BoxDecoration(
         gradient: DT.primaryGradient,
         borderRadius: BorderRadius.circular(DT.rCard),
@@ -1289,7 +1283,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                       size: 64,
                       padding: EdgeInsets.zero),
                 ),
-                SizedBox(width: DT.md),
+                const SizedBox(width: DT.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1299,12 +1293,12 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
                           overflow: TextOverflow.ellipsis,
                           style: DT.titleLarge.copyWith(color: DT.textWhite)),
                       if (city.isNotEmpty) ...[
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(city,
                             style: DT.bodySmall.copyWith(
                                 color: Colors.white.withValues(alpha: 0.85))),
                       ],
-                      SizedBox(height: DT.sm),
+                      const SizedBox(height: DT.sm),
                       Wrap(spacing: 6, runSpacing: 6, children: [
                         if (home) _cardTag('🚗 上门'),
                         if (shop) _cardTag('🏪 到店'),
@@ -1319,7 +1313,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
               ],
             ),
           ),
-          SizedBox(height: DT.md),
+          const SizedBox(height: DT.md),
           Row(children: [
             Expanded(
                 child: _heroBtn(CupertinoIcons.doc_on_clipboard, '复制链接',
@@ -1327,7 +1321,7 @@ class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
               Clipboard.setData(ClipboardData(text: url));
               NbToast.success(context, '链接已复制，发给客户即可');
             })),
-            SizedBox(width: DT.sm + 2),
+            const SizedBox(width: DT.sm + 2),
             Expanded(
                 child: _heroBtn(CupertinoIcons.share, '分享名片', filled: false,
                     onTap: () => _shareLink(

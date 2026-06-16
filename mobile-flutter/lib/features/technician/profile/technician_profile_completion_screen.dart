@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
@@ -70,7 +69,7 @@ class _State extends State<TechnicianProfileCompletionScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('完善服务城市', style: DT.titleLarge),
+                  const Text('完善服务城市', style: DT.titleLarge),
                   const SizedBox(height: DT.sm),
                   Text('请先完善你的服务省/市，用于同城上门预约与将来的定位推荐。',
                       style: DT.bodySmall.copyWith(height: 1.5)),

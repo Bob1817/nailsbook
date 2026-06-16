@@ -35,10 +35,12 @@ class _TechnicianSetupGuideScreenState
     try {
       final api = context.read<ApiClient>()..setRole('technician');
       final p = await TechnicianAuthService(api).getProfile();
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _profile = p;
         _loading = false;
       });
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
@@ -67,8 +69,8 @@ class _TechnicianSetupGuideScreenState
       canPop: _ready,
       child: Scaffold(
         backgroundColor: ET.bg,
-        appBar: GlassAppBar(
-          title: const Text('开启接单前配置'),
+        appBar: const GlassAppBar(
+          title: Text('开启接单前配置'),
           dark: true,
           automaticallyImplyLeading: false,
         ),

@@ -78,7 +78,7 @@ class _TechnicianSubscriptionScreenState extends State<TechnicianSubscriptionScr
                 _buildHeader(topPad),
                 Expanded(
                   child: ListView(
-                    padding: EdgeInsets.fromLTRB(DT.xl, 0, DT.xl, DT.xxl),
+                    padding: const EdgeInsets.fromLTRB(DT.xl, 0, DT.xl, DT.xxl),
                     children: [
                       _buildCurrentStatus(),
                       const SizedBox(height: DT.xl),
@@ -269,7 +269,7 @@ class _TechnicianSubscriptionScreenState extends State<TechnicianSubscriptionScr
                         foregroundColor: isPopular ? Colors.white : DT.primary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(DT.lg),
-                          side: isPopular ? BorderSide.none : BorderSide(color: DT.avatarBorder),
+                          side: isPopular ? BorderSide.none : const BorderSide(color: DT.avatarBorder),
                         ),
                         elevation: 0,
                         shadowColor: isPopular ? DT.primary.withValues(alpha: 0.25) : null,

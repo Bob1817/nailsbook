@@ -390,11 +390,11 @@ class _TechnicianServicesScreenState extends State<TechnicianServicesScreen> {
                   ),
                   child: Text(
                     '¥${(price is num) ? price.toStringAsFixed(price.truncateToDouble() == price ? 0 : 2) : price}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: DT.primary,
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                      fontFeatures: [FontFeature.tabularFigures()],
                       height: 1.4,
                     ),
                   ),
@@ -601,13 +601,13 @@ class _GlassFormSheet extends StatelessWidget {
             style: DT.titleSmall.copyWith(color: DT.textSecondary)),
         const SizedBox(height: DT.sm),
         Container(
-          padding: EdgeInsets.fromLTRB(
+          padding: const EdgeInsets.fromLTRB(
             DT.md,
             DT.sm,
             DT.md,
             DT.sm,
           ),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             border: Border(
               bottom: BorderSide(color: DT.border, width: 0.5),
             ),

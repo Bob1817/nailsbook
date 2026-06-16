@@ -458,7 +458,7 @@ class _TechnicianWorkDetailScreenState extends State<TechnicianWorkDetailScreen>
   }
 
   Widget _statsRow() {
-    final stat = (IconData i, String label, int n) => Row(mainAxisSize: MainAxisSize.min, children: [
+    Row stat(IconData i, String label, int n) => Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(i, size: 15, color: DT.textTertiary), const SizedBox(width: 4),
           Text('$n $label', style: const TextStyle(fontSize: 12, color: DT.textSecondary)),
         ]);

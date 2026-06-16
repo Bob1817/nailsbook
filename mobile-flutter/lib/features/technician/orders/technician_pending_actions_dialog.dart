@@ -167,7 +167,7 @@ class _TechnicianPendingActionsDialogState
                     color: DT.primarySoft,
                     borderRadius: BorderRadius.circular(999)),
                 child: Text(isQuote ? '待报价' : '待确认接单',
-                    style: TextStyle(
+                    style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: DT.primary)),
@@ -229,7 +229,7 @@ class _TechnicianPendingActionsDialogState
   String _timeLabel(Map<String, dynamic> order) {
     final dt = DateTime.tryParse(order['startTime']?.toString() ?? '');
     if (dt == null) return '时间待定';
-    final two = (int n) => n.toString().padLeft(2, '0');
+    String two(int n) => n.toString().padLeft(2, '0');
     return '${dt.month}月${dt.day}日 ${two(dt.hour)}:${two(dt.minute)}';
   }
 }

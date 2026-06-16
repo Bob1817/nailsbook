@@ -1,6 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../../core/api/api_client.dart';
 import 'client_create_design_screen.dart';
 import 'client_design_detail_screen.dart';
 import 'client_design_models.dart';
@@ -29,16 +26,18 @@ class _ClientDesignsScreenState extends State<ClientDesignsScreen> {
       final apiClient = context.read<ApiClient>();
       final service = ClientDesignService(apiClient);
       final designs = await service.list();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _designs = designs;
           _loading = false;
         });
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loading = false;
         });
+      }
     }
   }
 

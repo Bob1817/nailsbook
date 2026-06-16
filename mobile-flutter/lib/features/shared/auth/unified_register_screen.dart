@@ -141,7 +141,7 @@ class _UnifiedRegisterScreenState extends State<UnifiedRegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ET.bg,
-      appBar: GlassAppBar(title: const Text('注册账号'), dark: true),
+      appBar: const GlassAppBar(title: Text('注册账号'), dark: true),
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => FocusScope.of(context).unfocus(),

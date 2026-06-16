@@ -1,6 +1,5 @@
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
-import '../auth/technician_auth_models.dart';
 import '../auth/technician_auth_service.dart';
 
 // ════════════════════════════════════════════════════════════════════
@@ -554,12 +553,12 @@ class _TechnicianHomeServiceSettingsScreenState
           color: DT.primarySoft,
           borderRadius: BorderRadius.circular(DT.rFull),
         ),
-        child: Row(
+        child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(CupertinoIcons.pencil,
+            Icon(CupertinoIcons.pencil,
                 size: 13, color: DT.primary),
-            const SizedBox(width: 4),
+            SizedBox(width: 4),
             Text('编辑',
                 style: TextStyle(
                   fontSize: 12,
@@ -700,7 +699,7 @@ class _TechnicianHomeServiceSettingsScreenState
           contentPadding: const EdgeInsets.symmetric(horizontal: 10),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: DT.border),
+            borderSide: const BorderSide(color: DT.border),
           ),
           isDense: true,
         ),

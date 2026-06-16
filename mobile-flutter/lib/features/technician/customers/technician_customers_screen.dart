@@ -1,14 +1,5 @@
-import 'dart:convert';
-import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
-import '../../../core/api/api_client.dart';
-import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
-import '../../../core/widgets/nb_toast.dart';
 import '../../../core/widgets/technician_glass_header.dart';
 import '../auth/technician_auth_service.dart';
 import 'technician_customer_service.dart';
@@ -58,17 +49,19 @@ Color _parseHex(String s) {
 
 List<String> _parseTags(dynamic raw) {
   if (raw == null) return const [];
-  if (raw is List)
+  if (raw is List) {
     return raw.map((e) => e.toString()).where((s) => s.isNotEmpty).toList();
+  }
   final s = raw.toString().trim();
   if (s.isEmpty) return const [];
   try {
     final decoded = jsonDecode(s);
-    if (decoded is List)
+    if (decoded is List) {
       return decoded
           .map((e) => e.toString())
           .where((t) => t.isNotEmpty)
           .toList();
+    }
   } catch (_) {}
   return s
       .split(RegExp(r'[,，;]'))
@@ -110,13 +103,14 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
     try {
       final p =
           await TechnicianAuthService(context.read<ApiClient>()).getProfile();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _customTags = p.customTags ?? const [];
           _invitationCode = p.invitationCode;
           _technicianName = p.name;
           _bookingReady = p.bookingReady;
         });
+      }
     } catch (_) {}
   }
 
@@ -124,11 +118,12 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
     try {
       final svc = TechnicianCustomerService(context.read<ApiClient>());
       final items = await svc.list(search: _search.isEmpty ? null : _search);
-      if (mounted)
+      if (mounted) {
         setState(() {
           _customers = items;
           _loading = false;
         });
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
@@ -255,9 +250,9 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
         decoration: BoxDecoration(
             color: const Color(0xFF3A2F23),
             borderRadius: BorderRadius.circular(999)),
-        child: Row(
+        child: const Row(
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             Icon(CupertinoIcons.share, size: 14, color: DT.primary),
             SizedBox(width: 6),
             Text('邀请客户',

@@ -184,7 +184,7 @@ class _UnifiedForgotPasswordScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ET.bg,
-      appBar: GlassAppBar(title: const Text('找回密码'), dark: true),
+      appBar: const GlassAppBar(title: Text('找回密码'), dark: true),
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => FocusScope.of(context).unfocus(),

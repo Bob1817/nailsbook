@@ -366,7 +366,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
           ),
         ),
         child: _loading
-            ? Center(child: CircularProgressIndicator(color: DT.primary))
+            ? const Center(child: CircularProgressIndicator(color: DT.primary))
             : Stack(
                 children: [
                   ListView(
@@ -932,10 +932,10 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
           children: [
             _CheckboxDot(selected: _isCustomService),
             const SizedBox(width: 10),
-            Expanded(
+            const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text('自定义服务', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: DT.textPrimary)),
                   SizedBox(height: 3),
                   Text('描述你的需求，上传参考图片或选择美甲师作品，等待报价', style: TextStyle(fontSize: 13, height: 1.5, color: DT.textMuted)),
@@ -965,8 +965,8 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
             decoration: InputDecoration(
               hintText: '例如：法式渐变美甲',
               filled: true, fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(DT.rXxl), borderSide: BorderSide(color: DT.border)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DT.rXxl), borderSide: BorderSide(color: DT.border)),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(DT.rXxl), borderSide: const BorderSide(color: DT.border)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DT.rXxl), borderSide: const BorderSide(color: DT.border)),
               focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DT.rXxl), borderSide: const BorderSide(color: DT.primary)),
             ),
             onChanged: (v) => setState(() => _customTitle = v),
@@ -979,8 +979,8 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
             decoration: InputDecoration(
               hintText: '描述你的具体需求，如颜色、款式、特殊要求等...',
               filled: true, fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(DT.rXxl), borderSide: BorderSide(color: DT.border)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DT.rXxl), borderSide: BorderSide(color: DT.border)),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(DT.rXxl), borderSide: const BorderSide(color: DT.border)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DT.rXxl), borderSide: const BorderSide(color: DT.border)),
               focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DT.rXxl), borderSide: const BorderSide(color: DT.primary)),
             ),
             onChanged: (v) => setState(() => _customDescription = v),
@@ -1021,7 +1021,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                     ),
                     child: _uploadingImage
                         ? const Center(child: CircularProgressIndicator(strokeWidth: 2, color: DT.primary))
-                        : Column(
+                        : const Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.add_photo_alternate_outlined, color: DT.textTertiary, size: 22),
@@ -1033,7 +1033,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
             ],
           ),
           const SizedBox(height: 4),
-          Text('最多可上传3张图片', style: TextStyle(fontSize: 11, color: DT.textTertiary)),
+          const Text('最多可上传3张图片', style: TextStyle(fontSize: 11, color: DT.textTertiary)),
         ],
       ),
     );
@@ -1328,7 +1328,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                 color: selected ? null : const Color(0xFF211C17),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: selected ? Colors.transparent : Colors.black.withValues(alpha: 0.05)),
-                boxShadow: selected ? [BoxShadow(color: const Color(0x4DC4627A), blurRadius: 12, offset: const Offset(0, 4))] : null,
+                boxShadow: selected ? [const BoxShadow(color: Color(0x4DC4627A), blurRadius: 12, offset: Offset(0, 4))] : null,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1370,7 +1370,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
               gradient: selected ? DT.primaryGradient : null,
               color: selected ? null : (s.occupied ? const Color(0xFF2A241E) : const Color(0xFF211C17)),
               borderRadius: BorderRadius.circular(DT.rXxl),
-              boxShadow: selected ? [BoxShadow(color: const Color(0x4DC4627A), blurRadius: 12, offset: const Offset(0, 4))] : null,
+              boxShadow: selected ? [const BoxShadow(color: Color(0x4DC4627A), blurRadius: 12, offset: Offset(0, 4))] : null,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,

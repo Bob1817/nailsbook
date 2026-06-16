@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-import '../../../core/theme/design_tokens.dart';
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
 class TechnicianAboutScreen extends StatefulWidget {
@@ -36,7 +34,7 @@ class _TechnicianAboutScreenState extends State<TechnicianAboutScreen> {
               const Icon(CupertinoIcons.back, size: 20, color: DT.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('关于我们', style: DT.titleMedium),
+        title: const Text('关于我们', style: DT.titleMedium),
         centerTitle: true,
       ),
       body: ListView(
@@ -60,11 +58,11 @@ class _TechnicianAboutScreenState extends State<TechnicianAboutScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    boxShadow: [
+                    boxShadow: const [
                       BoxShadow(
-                          color: const Color(0x40FF5F86),
+                          color: Color(0x40FF5F86),
                           blurRadius: 32,
-                          offset: const Offset(0, DT.lg))
+                          offset: Offset(0, DT.lg))
                     ],
                   ),
                   alignment: Alignment.center,
@@ -72,9 +70,9 @@ class _TechnicianAboutScreenState extends State<TechnicianAboutScreen> {
                       const Text('\u{1F485}', style: TextStyle(fontSize: 36)),
                 ),
                 const SizedBox(height: DT.md),
-                Text('美甲师 Studio', style: DT.titleLarge),
+                const Text('美甲师 Studio', style: DT.titleLarge),
                 const SizedBox(height: DT.xs),
-                Text('版本 1.0.0', style: DT.captionLarge),
+                const Text('版本 1.0.0', style: DT.captionLarge),
               ],
             ),
           ),
@@ -118,7 +116,7 @@ class _TechnicianAboutScreenState extends State<TechnicianAboutScreen> {
                             AnimatedRotation(
                               turns: isOpen ? 0.5 : 0,
                               duration: const Duration(milliseconds: 200),
-                              child: Icon(CupertinoIcons.chevron_down,
+                              child: const Icon(CupertinoIcons.chevron_down,
                                   size: 22, color: DT.textMuted),
                             ),
                           ],
@@ -144,7 +142,7 @@ class _TechnicianAboutScreenState extends State<TechnicianAboutScreen> {
           ),
           const SizedBox(height: DT.xxxl),
           // Copyright
-          Center(
+          const Center(
             child: Text('\u00A9 2026 美甲师 Studio \u00B7 保留所有权利',
                 style: DT.captionLarge),
           ),

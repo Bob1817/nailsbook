@@ -1,9 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../../core/api/api_client.dart';
-import '../../../core/theme/design_tokens.dart';
 import '../auth/technician_auth_service.dart';
-import '../auth/technician_auth_models.dart';
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
 class TechnicianShopEditScreen extends StatefulWidget {
@@ -250,7 +245,7 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
                       DT.md + MediaQuery.of(context).padding.bottom),
                   decoration: BoxDecoration(
                     color: DT.surface.withValues(alpha: 0.95),
-                    border: Border(top: BorderSide(color: DT.dividerWarm)),
+                    border: const Border(top: BorderSide(color: DT.dividerWarm)),
                   ),
                   child: GestureDetector(
                     onTap: _saving
@@ -356,7 +351,7 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
                           color: DT.fillGrey,
                           borderRadius: BorderRadius.circular(DT.rFull),
                         ),
-                        child: Text('休息',
+                        child: const Text('休息',
                             style:
                                 TextStyle(fontSize: 11, color: DT.textMuted)),
                       ),
@@ -365,8 +360,8 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
                         child: _timeDropdown(_dayStart[i],
                             (v) => setState(() => _dayStart[i] = v)),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: DT.sm),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: DT.sm),
                         child: Text('至',
                             style:
                                 TextStyle(fontSize: 13, color: DT.textMuted)),
@@ -389,9 +384,9 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
                 ),
               ),
               if (!isLast)
-                Padding(
+                const Padding(
                   padding: EdgeInsets.symmetric(horizontal: DT.xl - 2),
-                  child: const Divider(height: 1, color: DT.dividerWarm),
+                  child: Divider(height: 1, color: DT.dividerWarm),
                 ),
             ],
           );
@@ -447,7 +442,7 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
       children: [
         Text(title, style: DT.titleMedium),
         const SizedBox(height: 2),
-        Text(subtitle, style: TextStyle(fontSize: 12, color: DT.textMuted)),
+        Text(subtitle, style: const TextStyle(fontSize: 12, color: DT.textMuted)),
       ],
     );
   }
@@ -484,7 +479,7 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
                 style: const TextStyle(fontSize: 15, color: DT.textPrimary),
                 decoration: InputDecoration(
                   hintText: hint,
-                  hintStyle: TextStyle(fontSize: 14, color: DT.textMuted),
+                  hintStyle: const TextStyle(fontSize: 14, color: DT.textMuted),
                   filled: true,
                   fillColor: DT.fillWarm,
                   contentPadding: const EdgeInsets.symmetric(
@@ -508,9 +503,9 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
         ),
         const SizedBox(height: DT.md),
         if (!isLast)
-          Padding(
+          const Padding(
             padding: EdgeInsets.symmetric(horizontal: DT.xl - 2),
-            child: const Divider(height: 1, color: DT.dividerWarm),
+            child: Divider(height: 1, color: DT.dividerWarm),
           ),
       ],
     );
@@ -522,7 +517,7 @@ class _TechnicianShopEditScreenState extends State<TechnicianShopEditScreen> {
       style: const TextStyle(fontSize: 14, color: DT.textPrimary),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(fontSize: 13, color: DT.textMuted),
+        hintStyle: const TextStyle(fontSize: 13, color: DT.textMuted),
         isDense: true,
         filled: true,
         fillColor: DT.fillWarm,

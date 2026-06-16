@@ -1,6 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../../core/theme/design_tokens.dart';
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
 class TechnicianPrivacySettingsScreen extends StatefulWidget {
@@ -55,7 +52,7 @@ class _TechnicianPrivacySettingsScreenState
               const Icon(CupertinoIcons.back, size: 20, color: DT.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('隐私设置', style: DT.titleMedium),
+        title: const Text('隐私设置', style: DT.titleMedium),
         centerTitle: true,
       ),
       body: _loading
@@ -104,7 +101,7 @@ class _TechnicianPrivacySettingsScreenState
                   ),
                 ),
                 const SizedBox(height: DT.lg),
-                Text('隐私设置保存在本地，卸载后需要重新配置', style: DT.captionLarge),
+                const Text('隐私设置保存在本地，卸载后需要重新配置', style: DT.captionLarge),
               ],
             ),
     );

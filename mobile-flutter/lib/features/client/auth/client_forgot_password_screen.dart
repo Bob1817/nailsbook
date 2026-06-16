@@ -1,9 +1,5 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import '../../../core/api/api_client.dart';
-import '../../../core/theme/design_tokens.dart';
 import 'client_auth_service.dart';
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
@@ -141,7 +137,7 @@ class _ClientForgotPasswordScreenState
                   fontWeight: FontWeight.bold,
                   color: ET.ink)),
           const SizedBox(height: 8),
-          Text('通过注册手机号验证后重置登录密码',
+          const Text('通过注册手机号验证后重置登录密码',
               style: TextStyle(fontSize: 14, color: ET.inkMuted)),
           const SizedBox(height: 32),
           // Phone
@@ -245,18 +241,18 @@ class _ClientForgotPasswordScreenState
           style: const TextStyle(fontSize: 15, color: ET.ink),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(fontSize: 14, color: ET.inkMuted),
+            hintStyle: const TextStyle(fontSize: 14, color: ET.inkMuted),
             filled: true,
             fillColor: ET.surface,
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: ET.hairline),
+              borderSide: const BorderSide(color: ET.hairline),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: ET.hairline),
+              borderSide: const BorderSide(color: ET.hairline),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),

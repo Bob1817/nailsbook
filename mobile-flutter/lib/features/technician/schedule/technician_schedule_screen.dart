@@ -1,13 +1,5 @@
-import 'dart:ui';
-import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import '../../../core/api/api_client.dart';
 import '../../../core/maps/map_service.dart';
-import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
-import '../../../core/widgets/nb_toast.dart';
 import '../../shared/chat/chat_screen.dart';
 import '../../shared/chat/chat_service.dart';
 import '../orders/technician_order_service.dart';
@@ -142,9 +134,10 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
   void _resetToToday() {
     HapticFeedback.selectionClick();
     setState(() => _activeDate = DateTime.now());
-    if (_stripCtl.hasClients)
+    if (_stripCtl.hasClients) {
       _stripCtl.animateTo(0,
           duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+    }
   }
 
   Future<void> _openOrderDetail(int orderId) async {
@@ -287,7 +280,7 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
                 width: 40,
                 height: 40,
                 alignment: Alignment.center,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                     color: DT.primarySoft, shape: BoxShape.circle),
                 child: const Icon(CupertinoIcons.calendar,
                     size: 20, color: DT.primary),
@@ -690,7 +683,7 @@ class _CalendarSheetState extends State<_CalendarSheet> {
                     .map((w) => Expanded(
                         child: Center(
                             child: Text(w,
-                                style: TextStyle(
+                                style: const TextStyle(
                                     fontSize: 11, color: DT.textTertiary)))))
                     .toList(),
               ),

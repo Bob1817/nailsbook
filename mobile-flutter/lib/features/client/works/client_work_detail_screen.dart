@@ -1,15 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:provider/provider.dart';
 
-import '../../../core/api/api_client.dart';
-import '../../../core/theme/design_tokens.dart';
 import '../../../core/media/oss_image.dart';
 import '../../../core/widgets/fullscreen_gallery.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/glow_field.dart';
 import '../orders/client_create_order_screen.dart';
-import '../../../core/widgets/nb_toast.dart';
 
 class ClientWorkDetailScreen extends StatefulWidget {
   final int workId;
@@ -84,10 +78,11 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
     try {
       final api = context.read<ApiClient>()..setRole('client');
       final data = await api.get('/works/${widget.workId}');
-      if (mounted)
+      if (mounted) {
         setState(() => _comments = (data['comments'] as List<dynamic>?)
                 ?.cast<Map<String, dynamic>>() ??
             []);
+      }
     } catch (_) {}
   }
 
@@ -108,11 +103,12 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
             fallback: _likeCount);
       });
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _liked = !next;
           _likeCount = (_likeCount + (next ? -1 : 1)).clamp(0, 1 << 31);
         });
+      }
     }
   }
 

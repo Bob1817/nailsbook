@@ -1,9 +1,4 @@
-import 'dart:convert';
-import 'package:flutter/material.dart';
 import '../../../core/media/image_pick.dart';
-import 'package:provider/provider.dart';
-import '../../../core/api/api_client.dart';
-import '../../../core/theme/design_tokens.dart';
 import '../auth/technician_auth_service.dart';
 import '../auth/technician_auth_models.dart';
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
@@ -150,7 +145,7 @@ class _TechnicianProfileSettingsScreenState
               const Icon(CupertinoIcons.back, size: 20, color: DT.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('个人设置', style: DT.titleMedium),
+        title: const Text('个人设置', style: DT.titleMedium),
         centerTitle: true,
       ),
       body: _loading
@@ -271,7 +266,7 @@ class _TechnicianProfileSettingsScreenState
             ),
           ),
           const SizedBox(height: DT.sm),
-          Text('更换头像', style: DT.captionLarge),
+          const Text('更换头像', style: DT.captionLarge),
         ],
       ),
     );

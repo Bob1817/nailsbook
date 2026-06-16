@@ -1,14 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/media/image_pick.dart';
-import '../../../core/api/api_client.dart';
 import '../../../core/auth/auth_session.dart';
-import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
-import '../../../core/widgets/nb_toast.dart';
 import '../auth/technician_auth_service.dart';
 import '../auth/technician_auth_models.dart';
 import '../works/technician_works_screen.dart';

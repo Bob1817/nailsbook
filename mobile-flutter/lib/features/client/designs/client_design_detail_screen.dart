@@ -1,11 +1,8 @@
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
-import '../../../core/api/api_client.dart';
-import '../../../core/theme/design_tokens.dart';
 import '../orders/client_create_order_screen.dart';
 import 'client_design_models.dart';
 import 'client_design_service.dart';
-import '../../../core/widgets/nb_toast.dart';
 
 /// 设计需求详情：图片 + 描述 + 状态 + 报价 + 美甲师；可发起预约 / 编辑 / 删除。
 /// 对齐 webapp client-frontend/src/pages/DesignDetail.tsx（按后端真实接口裁剪）。
@@ -40,11 +37,12 @@ class _ClientDesignDetailScreenState extends State<ClientDesignDetailScreen> {
     try {
       final design = await ClientDesignService(context.read<ApiClient>())
           .detail(widget.designId);
-      if (mounted)
+      if (mounted) {
         setState(() {
           _design = design;
           _loading = false;
         });
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }

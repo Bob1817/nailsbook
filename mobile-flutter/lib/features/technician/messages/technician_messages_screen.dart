@@ -1,15 +1,8 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../core/socket/chat_socket.dart';
 
-import '../../../core/api/api_client.dart';
-import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/technician_glass_header.dart';
 import '../../shared/chat/chat_service.dart';

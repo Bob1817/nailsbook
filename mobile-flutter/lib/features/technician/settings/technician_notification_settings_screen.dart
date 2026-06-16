@@ -1,6 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../../core/theme/design_tokens.dart';
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
 class TechnicianNotificationSettingsScreen extends StatefulWidget {
@@ -57,7 +54,7 @@ class _TechnicianNotificationSettingsScreenState
               const Icon(CupertinoIcons.back, size: 20, color: DT.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('通知设置', style: DT.titleMedium),
+        title: const Text('通知设置', style: DT.titleMedium),
         centerTitle: true,
       ),
       body: _loading
@@ -104,7 +101,7 @@ class _TechnicianNotificationSettingsScreenState
                   ),
                 ),
                 const SizedBox(height: DT.lg),
-                Text('消息推送能力上线后将按此设置生效', style: DT.captionLarge),
+                const Text('消息推送能力上线后将按此设置生效', style: DT.captionLarge),
               ],
             ),
     );

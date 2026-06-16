@@ -1,6 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import '../../../core/theme/design_tokens.dart';
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
 class TechnicianHelpFeedbackScreen extends StatefulWidget {
@@ -51,14 +48,14 @@ class _TechnicianHelpFeedbackScreenState
               const Icon(CupertinoIcons.back, size: 20, color: DT.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('帮助与反馈', style: DT.titleMedium),
+        title: const Text('帮助与反馈', style: DT.titleMedium),
         centerTitle: true,
       ),
       body: ListView(
         padding: const EdgeInsets.all(DT.xl),
         children: [
           // FAQ
-          Text('常见问题', style: DT.titleMedium),
+          const Text('常见问题', style: DT.titleMedium),
           const SizedBox(height: DT.md),
           Container(
             decoration: BoxDecoration(
@@ -91,7 +88,7 @@ class _TechnicianHelpFeedbackScreenState
                             AnimatedRotation(
                               turns: isOpen ? 0.5 : 0,
                               duration: const Duration(milliseconds: 200),
-                              child: Icon(CupertinoIcons.chevron_down,
+                              child: const Icon(CupertinoIcons.chevron_down,
                                   size: 22, color: DT.textMuted),
                             ),
                           ],
@@ -117,7 +114,7 @@ class _TechnicianHelpFeedbackScreenState
           ),
           const SizedBox(height: DT.xxl),
           // Contact
-          Text('联系客服', style: DT.titleMedium),
+          const Text('联系客服', style: DT.titleMedium),
           const SizedBox(height: DT.md),
           Container(
             decoration: BoxDecoration(
@@ -156,7 +153,7 @@ class _TechnicianHelpFeedbackScreenState
             ),
           ),
           const SizedBox(height: DT.lg),
-          Center(
+          const Center(
             child: Text('客服工作时间：每日 9:00 - 21:00', style: DT.captionLarge),
           ),
         ],

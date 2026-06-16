@@ -1,14 +1,8 @@
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
-import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/media/image_pick.dart';
-import 'package:provider/provider.dart';
 
-import '../../../core/api/api_client.dart';
-import '../../../core/theme/design_tokens.dart';
 import 'client_design_service.dart';
-import '../../../core/widgets/nb_toast.dart';
 
 /// 上传/定制设计需求：标题 + 参考图（最多9张）+ 描述。
 /// 对齐 webapp client-frontend/src/pages/CreateDesign.tsx。
@@ -85,7 +79,7 @@ class _ClientCreateDesignScreenState extends State<ClientCreateDesignScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ET.bg,
-      appBar: GlassAppBar(title: const Text('上传设计'), dark: true),
+      appBar: const GlassAppBar(title: Text('上传设计'), dark: true),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

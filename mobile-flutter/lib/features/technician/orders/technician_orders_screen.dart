@@ -1,6 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../../core/api/api_client.dart';
 import '../../../core/maps/map_service.dart';
 import '../customers/technician_customer_service.dart';
 import '../../shared/chat/chat_screen.dart';

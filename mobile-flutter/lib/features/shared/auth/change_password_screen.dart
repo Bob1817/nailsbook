@@ -2,9 +2,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api/api_error.dart';
 import '../../../core/auth/auth_session.dart';
-import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
-import '../../../core/widgets/nb_toast.dart';
 
 /// 客户端 / 美甲师端通用「修改密码」页（UI 与美甲师端「账号与安全」一致）。
 ///
@@ -222,7 +220,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       const SizedBox(height: 6),
                       Text(_maskedPhone ?? '未绑定', style: DT.titleMedium),
                       const SizedBox(height: 6),
-                      Text('如需更换手机号，请联系平台客服处理。',
+                      const Text('如需更换手机号，请联系平台客服处理。',
                           style: DT.captionLarge),
                     ],
                   )),
@@ -230,9 +228,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   _card(Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('修改密码', style: DT.titleMedium),
+                      const Text('修改密码', style: DT.titleMedium),
                       const SizedBox(height: DT.xs),
-                      Text('密码至少 8 位，需同时包含字母和数字',
+                      const Text('密码至少 8 位，需同时包含字母和数字',
                           style: DT.captionLarge),
                       const SizedBox(height: DT.lg),
                       _pwdField('当前密码', _oldCtl, _oldErr,

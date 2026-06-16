@@ -1,6 +1,5 @@
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
-import '../../../core/api/api_client.dart';
 import '../../shared/auth/change_password_screen.dart';
 import '../auth/client_auth_service.dart';
 

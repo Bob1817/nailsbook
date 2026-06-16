@@ -96,9 +96,9 @@ class _TechnicianWorkShareSheetState extends State<TechnicianWorkShareSheet> {
     return SafeArea(
       top: false,
       child: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: DT.bg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(DT.xl)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(DT.xl)),
         ),
         padding: const EdgeInsets.fromLTRB(DT.lg, DT.md, DT.lg, DT.lg),
         child: Column(

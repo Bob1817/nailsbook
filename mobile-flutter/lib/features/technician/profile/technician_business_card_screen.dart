@@ -31,10 +31,12 @@ class _TechnicianBusinessCardScreenState
       final api = context.read<ApiClient>();
       api.setRole('technician');
       final p = await TechnicianAuthService(api).getProfile();
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _profile = p;
         _loading = false;
       });
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }

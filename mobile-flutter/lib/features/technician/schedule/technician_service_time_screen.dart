@@ -1,12 +1,5 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 
-import '../../../core/api/api_client.dart';
-import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
-import '../../../core/widgets/nb_toast.dart';
 import '../auth/technician_auth_models.dart';
 import '../auth/technician_auth_service.dart';
 
@@ -172,7 +165,7 @@ class _TechnicianServiceTimeScreenState
 
     // 最终兜底
     if (_schemes.isEmpty) {
-      _schemes.add(_Scheme(
+      _schemes.add(const _Scheme(
         id: 'default',
         label: '默认服务时间',
         startTime: '10:00',
@@ -447,7 +440,7 @@ class _TechnicianServiceTimeScreenState
           width: 36,
           height: 36,
           alignment: Alignment.center,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: DT.primarySoft,
             shape: BoxShape.circle,
           ),
@@ -561,7 +554,7 @@ class _TechnicianServiceTimeScreenState
                               borderRadius:
                                   BorderRadius.circular(DT.rFull),
                             ),
-                            child: Text('生效中',
+                            child: const Text('生效中',
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
@@ -574,7 +567,7 @@ class _TechnicianServiceTimeScreenState
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${scheme.startTime} - ${scheme.endTime} · ${dayCount}天/周',
+                      '${scheme.startTime} - ${scheme.endTime} · $dayCount天/周',
                       style: DT.bodySmall.copyWith(
                           color: isActive
                               ? DT.textSecondary
@@ -730,7 +723,7 @@ class _SchemeEditScreenState extends State<_SchemeEditScreen> {
                   style: DT.bodyMedium.copyWith(color: DT.textSecondary)),
             ),
           ),
-          Expanded(
+          const Expanded(
             child: Text('编辑方案',
                 textAlign: TextAlign.center, style: DT.titleMedium),
           ),
@@ -781,7 +774,7 @@ class _SchemeEditScreenState extends State<_SchemeEditScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('方案名称', style: DT.titleMedium),
+          const Text('方案名称', style: DT.titleMedium),
           const SizedBox(height: DT.md),
           Container(
             padding: const EdgeInsets.symmetric(
@@ -820,7 +813,7 @@ class _SchemeEditScreenState extends State<_SchemeEditScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('服务时间', style: DT.titleMedium),
+          const Text('服务时间', style: DT.titleMedium),
           const SizedBox(height: DT.md),
           Row(
             children: [
@@ -910,7 +903,7 @@ class _SchemeEditScreenState extends State<_SchemeEditScreen> {
         children: [
           Row(
             children: [
-              Expanded(
+              const Expanded(
                   child: Text('重复', style: DT.titleMedium)),
               Text('${_enabledDays.length}/7',
                   style: DT.captionLarge
@@ -1152,7 +1145,7 @@ class _RestDaySheetState extends State<_RestDaySheet> {
                 const EdgeInsets.fromLTRB(DT.xl, DT.lg, DT.xl, DT.sm),
             child: Row(
               children: [
-                Text('选择休息日', style: DT.titleMedium),
+                const Text('选择休息日', style: DT.titleMedium),
                 const SizedBox(width: DT.sm),
                 if (_selected.isNotEmpty)
                   Container(
@@ -1164,7 +1157,7 @@ class _RestDaySheetState extends State<_RestDaySheet> {
                           BorderRadius.circular(DT.rFull),
                     ),
                     child: Text('${_selected.length} 天',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: DT.primary,

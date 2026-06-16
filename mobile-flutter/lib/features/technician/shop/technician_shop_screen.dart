@@ -1,13 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import '../../../core/api/api_client.dart';
-import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../auth/technician_auth_service.dart';
 import '../auth/technician_auth_models.dart';
-import '../../../core/widgets/nb_toast.dart';
 
 class TechnicianShopScreen extends StatefulWidget {
   const TechnicianShopScreen({super.key});
@@ -35,11 +28,12 @@ class _TechnicianShopScreenState extends State<TechnicianShopScreen> {
       final api = context.read<ApiClient>();
       api.setRole('technician');
       final p = await TechnicianAuthService(api).getProfile();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _profile = p;
           _loading = false;
         });
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
@@ -280,7 +274,7 @@ class _TechnicianShopScreenState extends State<TechnicianShopScreen> {
             Container(
               margin: const EdgeInsets.only(top: DT.md),
               padding: const EdgeInsets.only(top: DT.md),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 border: Border(top: BorderSide(color: DT.borderLight)),
               ),
               child: Row(
@@ -543,7 +537,7 @@ class _TechnicianShopScreenState extends State<TechnicianShopScreen> {
                               ),
                               Padding(
                                 padding:
-                                    EdgeInsets.symmetric(horizontal: DT.xs),
+                                    const EdgeInsets.symmetric(horizontal: DT.xs),
                                 child: Text(' - ',
                                     style: DT.bodySmall
                                         .copyWith(color: DT.textLightGrey)),
@@ -577,7 +571,7 @@ class _TechnicianShopScreenState extends State<TechnicianShopScreen> {
                               ),
                             ] else
                               Padding(
-                                padding: EdgeInsets.only(left: DT.sm),
+                                padding: const EdgeInsets.only(left: DT.sm),
                                 child: Text('休息',
                                     style: DT.bodySmall
                                         .copyWith(color: DT.textLightGrey)),

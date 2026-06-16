@@ -407,7 +407,7 @@ class _TechnicianTagScreenState extends State<TechnicianTagScreen> {
             const Text('暂无标签',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: DT.textDarkGrey)),
             const SizedBox(height: DT.xs),
-            Text('点击右上角创建标签',
+            const Text('点击右上角创建标签',
               style: TextStyle(fontSize: 14, color: DT.textMuted)),
           ],
         ),

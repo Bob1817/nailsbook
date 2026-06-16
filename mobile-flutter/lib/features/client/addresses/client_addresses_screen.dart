@@ -1,6 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../../core/api/api_client.dart';
 import 'client_address_models.dart';
 import 'client_address_service.dart';
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
@@ -26,11 +23,12 @@ class _ClientAddressesScreenState extends State<ClientAddressesScreen> {
     try {
       final service = ClientAddressService(context.read<ApiClient>());
       final addresses = await service.list();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _addresses = addresses;
           _loading = false;
         });
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
@@ -88,7 +86,7 @@ class _ClientAddressesScreenState extends State<ClientAddressesScreen> {
   Widget build(BuildContext context) {
     final bottomPad = MediaQuery.of(context).padding.bottom;
     return Scaffold(
-      appBar: GlassAppBar(title: const Text('我的地址'), dark: true),
+      appBar: const GlassAppBar(title: Text('我的地址'), dark: true),
       backgroundColor: ET.bg,
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: ET.accent))
@@ -279,7 +277,7 @@ class _ClientAddressesScreenState extends State<ClientAddressesScreen> {
   Widget _bottomCta(double bottomPad) {
     return Container(
       padding: EdgeInsets.fromLTRB(16, 10, 16, bottomPad + 12),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: ET.surface,
         border: Border(top: BorderSide(color: ET.hairlineFaint, width: 0.5)),
       ),
@@ -578,10 +576,10 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
       behavior: HitTestBehavior.opaque,
       child: Row(
         children: [
-          Expanded(
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text('设为默认地址',
                     style: TextStyle(
                         fontSize: 14,

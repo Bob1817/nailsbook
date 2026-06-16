@@ -403,8 +403,8 @@ class _TechnicianLoginScreenState extends State<TechnicianLoginScreen> {
       child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(colors: [
-            Color(0xFFFF636E).withValues(alpha: dim ? 0.5 : 1),
-            Color(0xFFD58197).withValues(alpha: dim ? 0.5 : 1),
+            const Color(0xFFFF636E).withValues(alpha: dim ? 0.5 : 1),
+            const Color(0xFFD58197).withValues(alpha: dim ? 0.5 : 1),
           ]),
           borderRadius: BorderRadius.circular(12),
         ),
