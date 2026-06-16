@@ -92,4 +92,21 @@ class TechnicianAuthService {
       'newPassword': newPassword,
     });
   }
+
+  // ── 客户绑定申请审批 ──
+
+  /// 待审批的客户绑定申请列表（含姓名/手机/地址/备注/申请时间）。
+  Future<List<Map<String, dynamic>>> bindingApplications() async {
+    final items = await _api.getList('/auth/binding-applications');
+    return items.cast<Map<String, dynamic>>();
+  }
+
+  Future<void> approveBinding(int id) async {
+    await _api.post('/auth/binding-applications/$id/approve');
+  }
+
+  Future<void> rejectBinding(int id, {String? reason}) async {
+    await _api.post('/auth/binding-applications/$id/reject',
+        body: {if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim()});
+  }
 }

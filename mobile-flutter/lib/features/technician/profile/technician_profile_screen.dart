@@ -6,6 +6,7 @@ import '../auth/technician_auth_models.dart';
 import '../works/technician_works_screen.dart';
 import '../services/technician_services_screen.dart';
 import '../customers/technician_tag_screen.dart';
+import '../customers/technician_binding_applications_screen.dart';
 import '../orders/technician_orders_screen.dart';
 import '../shop/technician_shop_screen.dart';
 import '../schedule/technician_service_time_screen.dart';
@@ -719,6 +720,11 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
         icon: CupertinoIcons.person_crop_square,
         label: '名片管理',
         onTap: () => _push(const TechnicianBusinessCardScreen())
+      ),
+      (
+        icon: CupertinoIcons.person_badge_plus,
+        label: '绑定申请',
+        onTap: () => _push(const TechnicianBindingApplicationsScreen())
       ),
       (
         icon: CupertinoIcons.time,
