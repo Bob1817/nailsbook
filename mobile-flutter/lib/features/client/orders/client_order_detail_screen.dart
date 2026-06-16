@@ -199,6 +199,28 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
     }
   }
 
+  /// 改约：修改预约时间与服务地址（后端 PATCH /orders/:id）。
+  Future<void> _rescheduleOrder(
+      String serviceDate, String startTime, int addressId) async {
+    setState(() => _actionLoading = true);
+    try {
+      final api = context.read<ApiClient>();
+      final updated = await ClientOrderService(api).update(widget.orderId, {
+        'addressId': addressId,
+        'serviceDate': serviceDate,
+        'startTime': startTime,
+      });
+      if (mounted) {
+        setState(() => _order = updated);
+        NbToast.show(context, '预约已修改');
+      }
+    } catch (e) {
+      if (mounted) _showError(_errMsg(e, '修改失败'));
+    } finally {
+      if (mounted) setState(() => _actionLoading = false);
+    }
+  }
+
   void _showError(String msg) {
     NbToast.show(context, msg);
   }
@@ -1876,7 +1898,8 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                                     return;
                                   }
                                   Navigator.pop(ctx);
-                                  // TODO: call update API
+                                  _rescheduleOrder(
+                                      editDate, editTime, editAddressId!);
                                 },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: DT.cream,

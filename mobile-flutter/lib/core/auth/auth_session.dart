@@ -28,7 +28,37 @@ class AuthSession extends ChangeNotifier {
     PushNotificationService? pushService,
   })  : _tokenStore = tokenStore,
         _apiClient = apiClient,
-        _pushService = pushService;
+        _pushService = pushService {
+    // 注入 401 静默续期能力。
+    _apiClient.onRefreshToken = _refreshSession;
+  }
+
+  /// 用 refreshToken 静默换取新 access token；成功则更新存储/ApiClient 并返回 true。
+  Future<bool> _refreshSession() async {
+    final role = await _tokenStore.getActiveRole();
+    if (role != 'client' && role != 'technician') return false;
+    final refreshToken = role == 'client'
+        ? await _tokenStore.getClientRefreshToken()
+        : await _tokenStore.getTechnicianRefreshToken();
+    if (refreshToken == null || refreshToken.isEmpty) return false;
+    try {
+      final res = await _apiClient.refreshTokens(role!, refreshToken);
+      final newAccess = res['accessToken'] as String?;
+      final newRefresh = res['refreshToken'] as String?;
+      if (newAccess == null || newAccess.isEmpty) return false;
+      if (role == 'client') {
+        await _tokenStore.saveClientTokens(
+            accessToken: newAccess, refreshToken: newRefresh);
+      } else {
+        await _tokenStore.saveTechnicianTokens(
+            accessToken: newAccess, refreshToken: newRefresh);
+      }
+      _apiClient.setToken(newAccess);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 
   /// 登录/恢复会话后，初始化 Firebase 并把设备 token 上报后端。
   /// best-effort：失败不影响登录流程。先 await init 再上报，确保 token 已就绪。

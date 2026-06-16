@@ -11,8 +11,13 @@ class ApiClient {
   final String baseUrl;
   OnUnauthorized? onUnauthorized;
 
+  /// 401 时尝试用 refreshToken 静默续期；返回是否成功（成功后须已更新 token）。
+  Future<bool> Function()? onRefreshToken;
+
   String? _token;
   String _rolePrefix = '';
+  // 单飞：并发 401 只触发一次刷新。
+  Future<bool>? _refreshing;
 
   ApiClient({
     required this.baseUrl,
@@ -41,43 +46,38 @@ class ApiClient {
   Future<Map<String, dynamic>> get(String path,
       {Map<String, String>? queryParams}) async {
     final uri = _buildUri(path, queryParams);
-    final response =
-        await http.get(uri, headers: _headers).timeout(_requestTimeout);
+    final response = await _send(() => http.get(uri, headers: _headers));
     return _handleResponse(response);
   }
 
   Future<Map<String, dynamic>> post(String path,
       {Map<String, dynamic>? body}) async {
     final uri = _buildUri(path);
-    final response = await http
-        // 无 body 时发送 {} 而非 jsonEncode(null)（="null"），
-        // 否则后端 JSON body-parser 会以「"null" is not valid JSON」400 拒绝。
-        .post(uri, headers: _headers, body: jsonEncode(body ?? const {}))
-        .timeout(_requestTimeout);
+    // 无 body 时发送 {} 而非 jsonEncode(null)（="null"），
+    // 否则后端 JSON body-parser 会以「"null" is not valid JSON」400 拒绝。
+    final response = await _send(
+        () => http.post(uri, headers: _headers, body: jsonEncode(body ?? const {})));
     return _handleResponse(response);
   }
 
   Future<Map<String, dynamic>> patch(String path,
       {Map<String, dynamic>? body}) async {
     final uri = _buildUri(path);
-    final response = await http
-        .patch(uri, headers: _headers, body: jsonEncode(body ?? const {}))
-        .timeout(_requestTimeout);
+    final response = await _send(
+        () => http.patch(uri, headers: _headers, body: jsonEncode(body ?? const {})));
     return _handleResponse(response);
   }
 
   Future<Map<String, dynamic>> delete(String path) async {
     final uri = _buildUri(path);
-    final response =
-        await http.delete(uri, headers: _headers).timeout(_requestTimeout);
+    final response = await _send(() => http.delete(uri, headers: _headers));
     return _handleResponse(response);
   }
 
   Future<List<dynamic>> getList(String path,
       {Map<String, String>? queryParams}) async {
     final uri = _buildUri(path, queryParams);
-    final response =
-        await http.get(uri, headers: _headers).timeout(_requestTimeout);
+    final response = await _send(() => http.get(uri, headers: _headers));
     _checkStatus(response);
     final decoded = jsonDecode(response.body);
     if (decoded is List) return decoded;
@@ -120,6 +120,46 @@ class ApiClient {
     return request.send().timeout(_requestTimeout);
   }
 
+  /// 统一发送：401 时先尝试静默续期并重放一次；仍 401 则触发登出。
+  Future<http.Response> _send(
+      Future<http.Response> Function() doRequest) async {
+    var response = await doRequest().timeout(_requestTimeout);
+    if (response.statusCode == 401 && await _tryRefresh()) {
+      response = await doRequest().timeout(_requestTimeout);
+    }
+    if (response.statusCode == 401) {
+      onUnauthorized?.call();
+    }
+    return response;
+  }
+
+  Future<bool> _tryRefresh() {
+    final refresher = onRefreshToken;
+    if (refresher == null) return Future.value(false);
+    return _refreshing ??=
+        refresher().whenComplete(() => _refreshing = null);
+  }
+
+  /// 直接调用刷新端点（不经拦截器，避免递归触发刷新/登出）。
+  Future<Map<String, dynamic>> refreshTokens(
+      String role, String refreshToken) async {
+    final prefix = role == 'client' ? '/api/client' : '/api/technician';
+    final uri = Uri.parse('$baseUrl$prefix/auth/refresh');
+    final response = await http
+        .post(uri,
+            headers: const {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({'refreshToken': refreshToken}))
+        .timeout(_requestTimeout);
+    if (response.statusCode >= 400) {
+      throw ApiError('refresh failed', statusCode: response.statusCode);
+    }
+    final decoded = jsonDecode(response.body);
+    return decoded is Map<String, dynamic> ? decoded : const {};
+  }
+
   Uri _buildUri(String path, [Map<String, String>? queryParams]) {
     final fullPath = '$_rolePrefix$path';
     return Uri.parse('$baseUrl$fullPath').replace(queryParameters: queryParams);
@@ -152,7 +192,7 @@ class ApiClient {
 
   void _checkStatus(http.Response response) {
     if (response.statusCode == 401) {
-      onUnauthorized?.call();
+      // onUnauthorized 已在 _send 内（续期失败后）触发，这里只抛错。
       throw ApiError('Unauthorized', statusCode: 401);
     }
     if (response.statusCode >= 400) {
