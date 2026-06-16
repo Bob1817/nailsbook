@@ -82,6 +82,8 @@ class _TechnicianServiceTimeScreenState
   List<_Scheme> _schemes = [];
   String _activeSchemeId = '';
   List<String> _restDays = [];
+  // 解析时若剔除了过期休息日，则置位，加载后持久化清理结果。
+  bool _prunedRestDays = false;
 
   // ──── 生命周期 ────
 
@@ -100,6 +102,11 @@ class _TechnicianServiceTimeScreenState
         _parseSchedule(profile);
         _loading = false;
       });
+      // 过期休息日已在解析时剔除，若确有变化则同步到后端。
+      if (_prunedRestDays) {
+        _prunedRestDays = false;
+        _save();
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
@@ -178,8 +185,20 @@ class _TechnicianServiceTimeScreenState
     // ---- 解析休息日 ----
     final rest = raw?['restDays'];
     if (rest is List) {
-      _restDays = rest.map((e) => e.toString()).toList()..sort();
+      final all = rest.map((e) => e.toString()).toList();
+      // 过期（早于今天）的休息日自动移除，不再展示。
+      _restDays = all.where(_notExpiredRestDay).toList()..sort();
+      if (_restDays.length != all.length) _prunedRestDays = true;
     }
+  }
+
+  /// 休息日是否未过期（今天或将来）。非法日期视为过期一并清除。
+  static bool _notExpiredRestDay(String dateStr) {
+    final d = DateTime.tryParse(dateStr);
+    if (d == null) return false;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return !DateTime(d.year, d.month, d.day).isBefore(today);
   }
 
   // ──── 数据持久化 ────

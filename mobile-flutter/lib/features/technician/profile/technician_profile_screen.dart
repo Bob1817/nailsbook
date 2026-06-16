@@ -729,9 +729,9 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
         onTap: () => _push(const TechnicianBusinessCardScreen())
       ),
       (
-        icon: CupertinoIcons.money_yen_circle,
-        label: '价格设置',
-        onTap: () => NbToast.info(context, '价格设置即将上线')
+        icon: CupertinoIcons.time,
+        label: '服务时间',
+        onTap: () => _push(const TechnicianServiceTimeScreen())
       ),
       (
         icon: CupertinoIcons.location,

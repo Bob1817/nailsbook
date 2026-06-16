@@ -20,6 +20,7 @@ import '../onboarding/technician_setup_guide_screen.dart';
 import '../schedule/technician_schedule_screen.dart';
 import '../orders/technician_orders_screen.dart';
 import '../orders/technician_order_service.dart';
+import '../orders/technician_pending_actions_dialog.dart';
 import '../orders/technician_order_detail_screen.dart';
 import '../customers/technician_customers_screen.dart';
 import '../../shared/chat/chat_service.dart';
@@ -43,6 +44,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
   Map<String, dynamic>? _profile;
   bool _loading = true;
   int _unread = 0;
+  // 待办预约提醒每次进入 app 仅弹一次。
+  bool _promptedActions = false;
 
   @override
   void initState() {
@@ -60,6 +63,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
           _loading = false;
         });
         _maybePromptProfileCompletion(data);
+        _maybePromptPendingActions(data);
       }
     } catch (_) {
       if (mounted)
@@ -102,6 +106,20 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
         ),
       );
       if (mounted) _loadProfile();
+    });
+  }
+
+  /// 进入 app 后弹出待办预约提醒（仅一次）。仅在已完成接单前配置时弹，
+  /// 避免与首次登录引导流程冲突。
+  void _maybePromptPendingActions(Map<String, dynamic> data) {
+    if (_promptedActions) return;
+    final province = (data['province'] as String?)?.trim() ?? '';
+    final city = (data['city'] as String?)?.trim() ?? '';
+    final ready = data['homeService'] == true || data['shopService'] == true;
+    if (province.isEmpty || city.isEmpty || !ready) return;
+    _promptedActions = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) TechnicianPendingActionsDialog.maybeShow(context);
     });
   }
 
