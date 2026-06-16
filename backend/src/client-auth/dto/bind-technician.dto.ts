@@ -23,4 +23,9 @@ export class BindTechnicianDto {
   @IsOptional()
   @IsBoolean()
   isDefault?: boolean;
+
+  @ApiPropertyOptional({ description: '申请绑定备注', example: '我是老顾客小红' })
+  @IsOptional()
+  @IsString()
+  note?: string;
 }

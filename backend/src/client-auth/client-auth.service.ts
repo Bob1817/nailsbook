@@ -15,6 +15,7 @@ import { BindTechnicianDto } from './dto/bind-technician.dto';
 import { VerificationCodeService } from '../common/verification-code/verification-code.service';
 import { SmsService } from '../common/sms/sms.service';
 import { buildDefaultServiceItems } from '../common/default-service-items';
+import { ChatGateway } from '../chat/chat.gateway';
 
 @Injectable()
 export class ClientAuthService {
@@ -24,6 +25,7 @@ export class ClientAuthService {
     private readonly configService: ConfigService,
     private readonly verificationCode: VerificationCodeService,
     private readonly sms: SmsService,
+    private readonly chatGateway: ChatGateway,
   ) {}
 
   // 忘记密码：发送验证码（防枚举，统一返回；仅已注册账号真正发送）
@@ -313,19 +315,18 @@ export class ClientAuthService {
     };
   }
 
+  /// 申请绑定美甲师（改为审批制）：校验邀请码后创建/复用 pending 绑定申请，
+  /// 并向美甲师发送含客户姓名/手机/地址/时间/备注的系统消息，等待美甲师审批。
   async bindTechnician(clientUserId: number, dto: BindTechnicianDto) {
     const technician = await this.prisma.technician.findUnique({
       where: { id: dto.techId },
     });
-
     if (!technician) {
       throw new NotFoundException('美甲师不存在');
     }
-
     if (technician.status !== 'active') {
       throw new UnauthorizedException('美甲师账号已被禁用');
     }
-
     if (
       !technician.invitationCode ||
       technician.invitationCode !== dto.inviteCode
@@ -333,74 +334,256 @@ export class ClientAuthService {
       throw new UnauthorizedException('邀请码无效');
     }
 
-    const existingBinding = await this.prisma.clientTechBinding.findUnique({
+    const existing = await this.prisma.clientTechBinding.findUnique({
       where: {
-        clientId_techId: {
-          clientId: clientUserId,
-          techId: dto.techId,
-        },
+        clientId_techId: { clientId: clientUserId, techId: dto.techId },
       },
     });
-
-    if (existingBinding && existingBinding.status === 'active') {
+    if (existing?.status === 'active') {
       throw new ConflictException('您已绑定该美甲师');
     }
+    if (existing?.status === 'pending') {
+      throw new ConflictException('绑定申请审核中，请等待美甲师通过');
+    }
 
-    return await this.prisma.$transaction(async (tx) => {
-      // If set as default, unset other defaults
-      if (dto.isDefault) {
-        await tx.clientTechBinding.updateMany({
-          where: { clientId: clientUserId },
-          data: { isDefault: false },
-        });
-      }
-
-      let result;
-      if (existingBinding) {
-        result = await tx.clientTechBinding.update({
-          where: { id: existingBinding.id },
+    const note = dto.note?.trim() || null;
+    const binding = existing
+      ? await this.prisma.clientTechBinding.update({
+          where: { id: existing.id },
           data: {
-            status: 'active',
-            isDefault: dto.isDefault,
+            status: 'pending',
             inviteCode: dto.inviteCode,
+            bindSource: 'manual',
+            note,
           },
           include: { technician: true },
-        });
-      } else {
-        result = await tx.clientTechBinding.create({
+        })
+      : await this.prisma.clientTechBinding.create({
           data: {
             clientId: clientUserId,
             techId: dto.techId,
             inviteCode: dto.inviteCode,
             bindSource: 'manual',
-            isDefault: dto.isDefault,
+            status: 'pending',
+            note,
           },
           include: { technician: true },
         });
-      }
 
-      // 确保该美甲师的客户列表里有这个客户
-      const clientUser = await tx.clientUser.findUnique({
-        where: { id: clientUserId },
+    const client = await this.prisma.clientUser.findUnique({
+      where: { id: clientUserId },
+    });
+    const addr = await this.prisma.clientAddress.findFirst({
+      where: { clientId: clientUserId },
+      orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+    });
+    const lines = [
+      '【绑定申请】有客户申请绑定您',
+      `客户：${client?.nickname || client?.phone || '客户'}`,
+      `手机：${client?.phone || '未填写'}`,
+      `地址：${this.formatClientAddress(addr)}`,
+      `申请时间：${this.formatDateTime(new Date())}`,
+    ];
+    if (note) lines.push(`备注：${note}`);
+    await this.sendBindingSystemMessage({
+      clientId: clientUserId,
+      techId: dto.techId,
+      senderType: 'client',
+      senderId: clientUserId,
+      receiverType: 'technician',
+      receiverId: dto.techId,
+      content: lines.join('\n'),
+      relatedId: binding.id,
+    });
+
+    return { status: 'pending', bindingId: binding.id };
+  }
+
+  /// 美甲师查看待审批的绑定申请。
+  async listPendingBindingApplications(technicianId: number) {
+    const apps = await this.prisma.clientTechBinding.findMany({
+      where: { techId: technicianId, status: 'pending' },
+      orderBy: { createdAt: 'desc' },
+    });
+    const results = await Promise.all(
+      apps.map(async (b) => {
+        const client = await this.prisma.clientUser.findUnique({
+          where: { id: b.clientId },
+        });
+        const addr = await this.prisma.clientAddress.findFirst({
+          where: { clientId: b.clientId },
+          orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+        });
+        return {
+          id: b.id,
+          clientId: b.clientId,
+          name: client?.nickname || client?.phone || '客户',
+          phone: client?.phone || null,
+          address: this.formatClientAddress(addr),
+          note: b.note,
+          appliedAt: b.createdAt,
+        };
+      }),
+    );
+    return results;
+  }
+
+  /// 美甲师通过绑定申请：置为 active、补建客户记录、回执通知客户。
+  async approveBindingApplication(technicianId: number, bindingId: number) {
+    const binding = await this.prisma.clientTechBinding.findFirst({
+      where: { id: bindingId, techId: technicianId },
+    });
+    if (!binding) throw new NotFoundException('绑定申请不存在');
+    if (binding.status !== 'pending') {
+      throw new BadRequestException('该申请已处理');
+    }
+
+    const hasDefault = await this.prisma.clientTechBinding.findFirst({
+      where: { clientId: binding.clientId, status: 'active', isDefault: true },
+    });
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.clientTechBinding.update({
+        where: { id: binding.id },
+        data: { status: 'active', isDefault: !hasDefault },
+      });
+      const client = await tx.clientUser.findUnique({
+        where: { id: binding.clientId },
       });
       await tx.customer.upsert({
         where: {
           technicianId_clientUserId: {
-            technicianId: dto.techId,
-            clientUserId,
+            technicianId,
+            clientUserId: binding.clientId,
           },
         },
         update: {},
         create: {
-          technicianId: dto.techId,
-          clientUserId,
-          name: clientUser?.nickname || clientUser?.phone || '客户',
-          phone: clientUser?.phone || null,
+          technicianId,
+          clientUserId: binding.clientId,
+          name: client?.nickname || client?.phone || '客户',
+          phone: client?.phone || null,
         },
       });
-
-      return result;
     });
+
+    await this.sendBindingSystemMessage({
+      clientId: binding.clientId,
+      techId: technicianId,
+      senderType: 'technician',
+      senderId: technicianId,
+      receiverType: 'client',
+      receiverId: binding.clientId,
+      content: '美甲师已通过您的绑定申请，现在可以预约和沟通啦～',
+      relatedId: binding.id,
+    });
+    return { status: 'active' };
+  }
+
+  /// 美甲师拒绝绑定申请：置为 rejected 并通知客户。
+  async rejectBindingApplication(
+    technicianId: number,
+    bindingId: number,
+    reason?: string,
+  ) {
+    const binding = await this.prisma.clientTechBinding.findFirst({
+      where: { id: bindingId, techId: technicianId },
+    });
+    if (!binding) throw new NotFoundException('绑定申请不存在');
+    if (binding.status !== 'pending') {
+      throw new BadRequestException('该申请已处理');
+    }
+    await this.prisma.clientTechBinding.update({
+      where: { id: binding.id },
+      data: { status: 'rejected' },
+    });
+    const tail = reason?.trim() ? `：${reason.trim()}` : '';
+    await this.sendBindingSystemMessage({
+      clientId: binding.clientId,
+      techId: technicianId,
+      senderType: 'technician',
+      senderId: technicianId,
+      receiverType: 'client',
+      receiverId: binding.clientId,
+      content: `美甲师暂时拒绝了您的绑定申请${tail}`,
+      relatedId: binding.id,
+    });
+    return { status: 'rejected' };
+  }
+
+  // ── 绑定相关：系统消息 + 格式化辅助 ──
+
+  private formatClientAddress(addr: {
+    province?: string | null;
+    city?: string | null;
+    district?: string | null;
+    detailAddress?: string | null;
+  } | null): string {
+    if (!addr) return '未填写';
+    const s = [addr.province, addr.city, addr.district, addr.detailAddress]
+      .filter((x) => x && x.trim())
+      .join('');
+    return s || '未填写';
+  }
+
+  private formatDateTime(d: Date): string {
+    const p = (n: number) => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+
+  private async sendBindingSystemMessage(params: {
+    clientId: number;
+    techId: number;
+    senderType: string;
+    senderId: number;
+    receiverType: string;
+    receiverId: number;
+    content: string;
+    relatedId: number;
+  }) {
+    const preview = params.content.split('\n')[0];
+    let conversationId: number | null = null;
+    let message: any = null;
+    await this.prisma.$transaction(async (tx) => {
+      const conv = await tx.conversation.upsert({
+        where: {
+          clientId_techId: { clientId: params.clientId, techId: params.techId },
+        },
+        update: { lastMessage: preview, lastMessageAt: new Date() },
+        create: {
+          clientId: params.clientId,
+          techId: params.techId,
+          lastMessage: preview,
+          lastMessageAt: new Date(),
+        },
+      });
+      conversationId = conv.id;
+      message = await tx.message.create({
+        data: {
+          conversationId: conv.id,
+          senderType: params.senderType,
+          senderId: params.senderId,
+          receiverType: params.receiverType,
+          receiverId: params.receiverId,
+          messageType: 'system',
+          content: params.content,
+          relatedType: 'binding',
+          relatedId: params.relatedId,
+        },
+      });
+    });
+    if (message && conversationId) {
+      try {
+        const conv = await this.prisma.conversation.findUnique({
+          where: { id: conversationId },
+        });
+        this.chatGateway.server
+          .to(`conversation:${String(conversationId)}`)
+          .emit('message:new', { message, conversation: conv });
+      } catch (e) {
+        console.error('[ClientAuthService] 绑定系统消息 WS 推送失败:', e);
+      }
+    }
   }
 
   async unbindTechnician(clientUserId: number, techId: number) {

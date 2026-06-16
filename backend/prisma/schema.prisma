@@ -213,7 +213,9 @@ model ClientTechBinding {
   inviteCode String?
   bindSource String
   isDefault  Boolean    @default(false)
+  // pending（待美甲师审批）| active（已绑定）| inactive（已解除）| rejected（被拒绝）
   status     String     @default("active")
+  note       String?    // 客户申请绑定时填写的备注
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @default(now()) @updatedAt
   client     ClientUser @relation(fields: [clientId], references: [id])

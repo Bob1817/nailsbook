@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { PrismaModule } from '../common/prisma/prisma.module';
+import { ChatModule } from '../chat/chat.module';
 import { getClientJwtSecret } from './client-auth.config';
 import { ClientAuthController } from './client-auth.controller';
 import { ClientAuthService } from './client-auth.service';
@@ -22,6 +23,7 @@ import { ClientJwtStrategy } from './client-jwt.strategy';
       }),
     }),
     PrismaModule,
+    ChatModule,
   ],
   controllers: [ClientAuthController],
   providers: [ClientAuthService, ClientJwtStrategy],

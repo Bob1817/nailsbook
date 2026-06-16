@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  ParseIntPipe,
   Patch,
   Post,
   Req,
@@ -30,6 +32,7 @@ import { ForgotSendCodeDto, ForgotResetDto } from './dto/forgot-password.dto';
 import { RefreshTokenDto } from '../common/dto/refresh-token.dto';
 import { RegisterDeviceTokenDto } from '../notifications/dto/register-device-token.dto';
 import { PushService } from '../notifications/push.service';
+import { ClientAuthService } from '../client-auth/client-auth.service';
 
 @ApiTags('美甲师-认证')
 @ApiBearerAuth()
@@ -38,6 +41,7 @@ export class TechnicianAuthController {
   constructor(
     private readonly technicianAuthService: TechnicianAuthService,
     private readonly pushService: PushService,
+    private readonly clientAuthService: ClientAuthService,
   ) {}
 
   @Post('login')
@@ -226,6 +230,50 @@ export class TechnicianAuthController {
     return this.technicianAuthService.updateServiceType(
       request.user.technicianId,
       body,
+    );
+  }
+
+  // ── 客户绑定申请审批 ──
+
+  @Get('binding-applications')
+  @UseGuards(TechnicianJwtAuthGuard)
+  @ApiOperation({ summary: '待审批的客户绑定申请列表' })
+  @ApiResponse({ status: 200, description: '返回待审批申请' })
+  async listBindingApplications(
+    @Req() request: { user: { technicianId: number } },
+  ) {
+    return this.clientAuthService.listPendingBindingApplications(
+      request.user.technicianId,
+    );
+  }
+
+  @Post('binding-applications/:id/approve')
+  @UseGuards(TechnicianJwtAuthGuard)
+  @ApiOperation({ summary: '通过绑定申请' })
+  @ApiResponse({ status: 201, description: '已通过' })
+  async approveBindingApplication(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.clientAuthService.approveBindingApplication(
+      request.user.technicianId,
+      id,
+    );
+  }
+
+  @Post('binding-applications/:id/reject')
+  @UseGuards(TechnicianJwtAuthGuard)
+  @ApiOperation({ summary: '拒绝绑定申请' })
+  @ApiResponse({ status: 201, description: '已拒绝' })
+  async rejectBindingApplication(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { reason?: string },
+  ) {
+    return this.clientAuthService.rejectBindingApplication(
+      request.user.technicianId,
+      id,
+      body?.reason,
     );
   }
 }
