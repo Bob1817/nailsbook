@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
@@ -252,7 +254,9 @@ class _TechnicianSubscriptionScreenState extends State<TechnicianSubscriptionScr
                 )),
                 const SizedBox(height: DT.sm),
                 // Action button
-                if (!isCurrent)
+                // iOS 合规（App Store 3.1.1）：不在 app 内提供导向外部网页支付的订阅入口。
+                // 审核前隐藏购买按钮；订阅仅在网页端运营。
+                if (!isCurrent && !Platform.isIOS)
                   SizedBox(
                     width: double.infinity, height: 48,
                     child: ElevatedButton(
