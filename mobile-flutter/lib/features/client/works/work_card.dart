@@ -162,10 +162,10 @@ class WorkCard extends StatelessWidget {
                         children: tags.take(2).map((t) => Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.16),
+                            color: Colors.white.withValues(alpha: 0.16),
                             borderRadius: BorderRadius.circular(999),
                           ),
-                          child: Text('#$t', style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.92))),
+                          child: Text('#$t', style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.92))),
                         )).toList(),
                       ),
                     ],
@@ -174,11 +174,11 @@ class WorkCard extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(formatWorkDate(work['createdAt']?.toString()),
-                            style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.52))),
+                            style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.52))),
                         Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(Icons.check_circle, size: 12, color: Colors.white.withOpacity(0.78)),
+                          Icon(Icons.check_circle, size: 12, color: Colors.white.withValues(alpha: 0.78)),
                           const SizedBox(width: 4),
-                          Text('查看详情', style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.78))),
+                          Text('查看详情', style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.78))),
                         ]),
                       ],
                     ),
@@ -195,7 +195,7 @@ class WorkCard extends StatelessWidget {
   Widget _techPill(String name, String? avatar) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: Colors.black.withOpacity(0.32), borderRadius: BorderRadius.circular(999)),
+      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.32), borderRadius: BorderRadius.circular(999)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -205,7 +205,7 @@ class WorkCard extends StatelessWidget {
             Container(
               width: 18, height: 18,
               alignment: Alignment.center,
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
               child: Text(name.isNotEmpty ? name.substring(0, 1) : '美',
                   style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white)),
             ),
@@ -226,7 +226,7 @@ class WorkCard extends StatelessWidget {
       onTap: onToggleLike,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(color: Colors.black.withOpacity(0.32), borderRadius: BorderRadius.circular(999)),
+        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.32), borderRadius: BorderRadius.circular(999)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(liked ? Icons.favorite : Icons.favorite_border, size: 14, color: liked ? ET.like : Colors.white),
           const SizedBox(width: 4),

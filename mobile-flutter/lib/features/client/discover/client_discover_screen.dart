@@ -377,14 +377,14 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.16),
+                                    color: Colors.white.withValues(alpha: 0.16),
                                     borderRadius: BorderRadius.circular(999),
                                   ),
                                   child: Text('#$t',
                                       style: TextStyle(
                                           fontSize: 10,
                                           color:
-                                              Colors.white.withOpacity(0.92))),
+                                              Colors.white.withValues(alpha: 0.92))),
                                 ))
                             .toList(),
                       ),
@@ -396,15 +396,15 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
                         Text(_formatDate(work['createdAt']?.toString()),
                             style: TextStyle(
                                 fontSize: 10,
-                                color: Colors.white.withOpacity(0.52))),
+                                color: Colors.white.withValues(alpha: 0.52))),
                         Row(mainAxisSize: MainAxisSize.min, children: [
                           Icon(Icons.check_circle,
-                              size: 12, color: Colors.white.withOpacity(0.78)),
+                              size: 12, color: Colors.white.withValues(alpha: 0.78)),
                           const SizedBox(width: 4),
                           Text('查看详情',
                               style: TextStyle(
                                   fontSize: 10,
-                                  color: Colors.white.withOpacity(0.78))),
+                                  color: Colors.white.withValues(alpha: 0.78))),
                         ]),
                       ],
                     ),
@@ -422,7 +422,7 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.32),
+        color: Colors.black.withValues(alpha: 0.32),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
@@ -439,7 +439,7 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
               height: 18,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                  color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
               child: Text(name.isNotEmpty ? name.substring(0, 1) : '美',
                   style: const TextStyle(
                       fontSize: 10,
@@ -467,7 +467,7 @@ class _ClientDiscoverScreenState extends State<ClientDiscoverScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.32),
+          color: Colors.black.withValues(alpha: 0.32),
           borderRadius: BorderRadius.circular(999),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [

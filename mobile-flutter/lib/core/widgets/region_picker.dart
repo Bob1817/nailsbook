@@ -97,9 +97,9 @@ class _RegionPickerSheetState extends State<_RegionPickerSheet> {
         child: Container(
           height: h * 0.62,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.92),
+            color: Colors.white.withValues(alpha: 0.92),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border(top: BorderSide(color: Colors.white.withOpacity(0.6), width: 0.5)),
+            border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.6), width: 0.5)),
           ),
           child: Column(
             children: [

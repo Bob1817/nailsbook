@@ -481,7 +481,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: const Color(0xFF211C17), borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: DT.primary.withOpacity(0.2)),
+            border: Border.all(color: DT.primary.withValues(alpha: 0.2)),
           ),
           child: Row(children: const [
             Icon(Icons.add_location_alt_rounded, color: DT.primary, size: 18),
@@ -571,12 +571,12 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(label, style: TextStyle(fontSize: 11, color: selected ? DT.onCream.withValues(alpha: 0.7) : (enabled ? DT.textMuted : DT.textTertiary.withOpacity(0.5)))),
+                  Text(label, style: TextStyle(fontSize: 11, color: selected ? DT.onCream.withValues(alpha: 0.7) : (enabled ? DT.textMuted : DT.textTertiary.withValues(alpha: 0.5)))),
                   const SizedBox(height: 3),
-                  Text('${d.month}/${d.day}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: selected ? DT.onCream : (enabled ? DT.textPrimary : DT.textTertiary.withOpacity(0.45)))),
+                  Text('${d.month}/${d.day}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: selected ? DT.onCream : (enabled ? DT.textPrimary : DT.textTertiary.withValues(alpha: 0.45)))),
                   if (!enabled) ...[
                     const SizedBox(height: 2),
-                    Text('休', style: TextStyle(fontSize: 9, height: 1, color: DT.textTertiary.withOpacity(0.7))),
+                    Text('休', style: TextStyle(fontSize: 9, height: 1, color: DT.textTertiary.withValues(alpha: 0.7))),
                   ],
                 ],
               ),
@@ -717,7 +717,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
           color: _shareToClient ? DT.primarySoft : const Color(0xFF211C17),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-              color: _shareToClient ? DT.primary.withOpacity(0.3) : Colors.black.withOpacity(0.06)),
+              color: _shareToClient ? DT.primary.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.06)),
         ),
         child: Row(children: [
           Icon(_shareToClient ? Icons.check_circle_rounded : Icons.circle_outlined,
@@ -740,7 +740,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
       padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPad + 12),
       decoration: BoxDecoration(
         color: DT.surface,
-        border: Border(top: BorderSide(color: Colors.black.withOpacity(0.06))),
+        border: Border(top: BorderSide(color: Colors.black.withValues(alpha: 0.06))),
       ),
       child: SizedBox(
         width: double.infinity,
@@ -780,7 +780,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
                 color: const Color(0xFF211C17), borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: DT.primary.withOpacity(0.2))),
+                border: Border.all(color: DT.primary.withValues(alpha: 0.2))),
             child: Row(children: [
               Expanded(
                   child: Text(_confirmUrl!,

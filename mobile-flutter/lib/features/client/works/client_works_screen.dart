@@ -130,7 +130,7 @@ class _ClientWorksScreenState extends State<ClientWorksScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.28),
+                    color: Colors.black.withValues(alpha: 0.28),
                     borderRadius: BorderRadius.circular(999)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.favorite, color: Colors.white, size: 11),
@@ -163,7 +163,7 @@ class _ClientWorksScreenState extends State<ClientWorksScreen> {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                             fontSize: 11,
-                            color: Colors.white.withOpacity(0.8))),
+                            color: Colors.white.withValues(alpha: 0.8))),
                   ],
                 ],
               ),

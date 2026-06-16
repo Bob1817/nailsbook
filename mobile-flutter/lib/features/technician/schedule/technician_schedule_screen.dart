@@ -649,7 +649,7 @@ class _CalendarSheetState extends State<_CalendarSheet> {
         filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: Container(
           decoration: BoxDecoration(
-              color: DT.surface.withOpacity(0.94),
+              color: DT.surface.withValues(alpha: 0.94),
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(24))),
           padding: EdgeInsets.fromLTRB(16, 10, 16, bottomPad + 16),

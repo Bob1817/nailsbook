@@ -945,12 +945,12 @@ class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 7, vertical: 2),
                                 decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.16),
+                                    color: Colors.white.withValues(alpha: 0.16),
                                     borderRadius: BorderRadius.circular(999)),
                                 child: Text('#$t',
                                     style: TextStyle(
                                         fontSize: 9,
-                                        color: Colors.white.withOpacity(0.92))),
+                                        color: Colors.white.withValues(alpha: 0.92))),
                               ))
                           .toList(),
                     ),

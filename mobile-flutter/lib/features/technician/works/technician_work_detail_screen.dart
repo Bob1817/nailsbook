@@ -263,7 +263,7 @@ class _TechnicianWorkDetailScreenState extends State<TechnicianWorkDetailScreen>
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: Container(
-          decoration: BoxDecoration(color: DT.surface.withOpacity(0.92), borderRadius: BorderRadius.vertical(top: Radius.circular(radius))),
+          decoration: BoxDecoration(color: DT.surface.withValues(alpha: 0.92), borderRadius: BorderRadius.vertical(top: Radius.circular(radius))),
           child: SafeArea(top: false, child: child),
         ),
       ),
@@ -313,8 +313,11 @@ class _TechnicianWorkDetailScreenState extends State<TechnicianWorkDetailScreen>
     final tags = ((_work['tags'] as List<dynamic>?) ?? const []).map((e) => e.toString()).toList();
     final price = (_work['price'] as num?)?.toDouble() ?? 0;
 
-    return WillPopScope(
-      onWillPop: () async { Navigator.pop(context, _changed); return false; },
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) Navigator.pop(context, _changed);
+      },
       child: Scaffold(
         backgroundColor: DT.surface,
         resizeToAvoidBottomInset: true,
@@ -424,7 +427,7 @@ class _TechnicianWorkDetailScreenState extends State<TechnicianWorkDetailScreen>
                       if (imgs.length > 1)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(color: Colors.black.withOpacity(0.32), borderRadius: BorderRadius.circular(999)),
+                          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.32), borderRadius: BorderRadius.circular(999)),
                           child: Text('${_imageIndex + 1}/${imgs.length}', style: const TextStyle(fontSize: 12, color: Colors.white)),
                         ),
                       const SizedBox(width: 10),
@@ -448,7 +451,7 @@ class _TechnicianWorkDetailScreenState extends State<TechnicianWorkDetailScreen>
       child: Container(
         width: 38, height: 38,
         alignment: Alignment.center,
-        decoration: BoxDecoration(color: Colors.black.withOpacity(0.4), shape: BoxShape.circle),
+        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.4), shape: BoxShape.circle),
         child: Icon(icon, size: 18, color: Colors.white),
       ),
     );
@@ -477,7 +480,7 @@ class _TechnicianWorkDetailScreenState extends State<TechnicianWorkDetailScreen>
 
   Widget _badge(String t, Color c) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(color: c.withOpacity(0.12), borderRadius: BorderRadius.circular(999)),
+        decoration: BoxDecoration(color: c.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(999)),
         child: Text(t, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: c)),
       );
 

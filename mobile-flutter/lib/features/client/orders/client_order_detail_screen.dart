@@ -317,9 +317,9 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: DT.surface.withOpacity(0.9),
+                color: DT.surface.withValues(alpha: 0.9),
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.black.withOpacity(0.05)),
+                border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
               ),
               child: Icon(Icons.arrow_back_ios_new_rounded,
                   size: 18, color: DT.textSecondary),
@@ -505,10 +505,10 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: DT.surface.withOpacity(0.62),
+        color: DT.surface.withValues(alpha: 0.62),
         borderRadius: BorderRadius.circular(32),
         boxShadow: DT.shadowMd,
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -618,9 +618,9 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: DT.surface.withOpacity(0.9),
+                      color: DT.surface.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: Colors.black.withOpacity(0.05)),
+                      border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
                     ),
                     child: const Text('预约编号',
                         style: TextStyle(fontSize: 11, color: DT.textMuted)),
@@ -818,7 +818,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                 boxShadow: isAmber
                     ? [
                         BoxShadow(
-                            color: const Color(0xFFFBBF24).withOpacity(0.3),
+                            color: const Color(0xFFFBBF24).withValues(alpha: 0.3),
                             blurRadius: 12,
                             offset: const Offset(0, 4))
                       ]
@@ -857,9 +857,9 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                         : const Color(0xFF475569),
                 side: BorderSide(
                     color: isRed
-                        ? const Color(0xFFEF4444).withOpacity(0.3)
+                        ? const Color(0xFFEF4444).withValues(alpha: 0.3)
                         : isOrange
-                            ? const Color(0xFFF97316).withOpacity(0.3)
+                            ? const Color(0xFFF97316).withValues(alpha: 0.3)
                             : const Color(0xFF3A2F23)),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(999)),
@@ -973,11 +973,11 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: DT.surface.withOpacity(0.78),
+            color: DT.surface.withValues(alpha: 0.78),
             borderRadius: BorderRadius.vertical(top: Radius.circular(radius)),
             border: Border(
                 top: BorderSide(
-                    color: Colors.white.withOpacity(0.6), width: 0.5)),
+                    color: Colors.white.withValues(alpha: 0.6), width: 0.5)),
           ),
           child: child,
         ),
@@ -995,10 +995,10 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: DT.surface.withOpacity(0.62),
+        color: DT.surface.withValues(alpha: 0.62),
         borderRadius: BorderRadius.circular(28),
         boxShadow: DT.shadowMd,
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1037,7 +1037,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFF211C17).withOpacity(0.8),
+          color: const Color(0xFF211C17).withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -1065,7 +1065,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFF211C17).withOpacity(0.8),
+          color: const Color(0xFF211C17).withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -1242,7 +1242,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                 const SizedBox(height: 16),
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFF211C17).withOpacity(0.8),
+                    color: const Color(0xFF211C17).withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: const Color(0xFF3A2F23)),
                   ),
@@ -1478,7 +1478,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                   Text('确认后将通知美甲师，美甲师确认收到后将接单',
                       style: TextStyle(
                           fontSize: 11,
-                          color: const Color(0xFFD97706).withOpacity(0.7))),
+                          color: const Color(0xFFD97706).withValues(alpha: 0.7))),
                 ],
               ),
             ),
@@ -1581,12 +1581,12 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               child: Container(
                 height: MediaQuery.of(ctx).size.height * 0.75,
                 decoration: BoxDecoration(
-                  color: DT.surface.withOpacity(0.82),
+                  color: DT.surface.withValues(alpha: 0.82),
                   borderRadius:
                       const BorderRadius.vertical(top: Radius.circular(32)),
                   border: Border(
                       top: BorderSide(
-                          color: Colors.white.withOpacity(0.6), width: 0.5)),
+                          color: Colors.white.withValues(alpha: 0.6), width: 0.5)),
                 ),
                 child: Column(
                   children: [
@@ -1636,7 +1636,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF211C17).withOpacity(0.8),
+                              color: const Color(0xFF211C17).withValues(alpha: 0.8),
                               borderRadius: BorderRadius.circular(24),
                             ),
                             child: Column(
@@ -1672,7 +1672,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                                       border: Border.all(
                                           color: editDate.isEmpty
                                               ? const Color(0xFF3A2F23)
-                                              : DT.primary.withOpacity(0.3)),
+                                              : DT.primary.withValues(alpha: 0.3)),
                                     ),
                                     child: Text(
                                         editDate.isEmpty ? '点击选择日期' : editDate,
@@ -1691,7 +1691,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF211C17).withOpacity(0.8),
+                              color: const Color(0xFF211C17).withValues(alpha: 0.8),
                               borderRadius: BorderRadius.circular(24),
                             ),
                             child: Column(
@@ -1757,7 +1757,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF211C17).withOpacity(0.8),
+                              color: const Color(0xFF211C17).withValues(alpha: 0.8),
                               borderRadius: BorderRadius.circular(24),
                             ),
                             child: Column(
@@ -1805,9 +1805,9 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                                               BorderRadius.circular(18),
                                           border: Border.all(
                                               color: selected
-                                                  ? DT.primary.withOpacity(0.25)
+                                                  ? DT.primary.withValues(alpha: 0.25)
                                                   : Colors.black
-                                                      .withOpacity(0.05)),
+                                                      .withValues(alpha: 0.05)),
                                         ),
                                         child: Row(
                                           children: [
@@ -2002,7 +2002,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                     border: Border.all(
                         color: date.isEmpty
                             ? const Color(0xFF3A2F23)
-                            : DT.primary.withOpacity(0.3)),
+                            : DT.primary.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
@@ -2163,11 +2163,11 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: DT.surface.withOpacity(0.8),
+                color: DT.surface.withValues(alpha: 0.8),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                       blurRadius: 24,
                       offset: const Offset(0, 10))
                 ],

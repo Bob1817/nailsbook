@@ -792,7 +792,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
               : null,
           color: selected ? null : const Color(0xFF211C17),
           borderRadius: BorderRadius.circular(DT.rXxl),
-          border: Border.all(color: selected ? DT.primary.withOpacity(0.25) : Colors.black.withOpacity(0.05)),
+          border: Border.all(color: selected ? DT.primary.withValues(alpha: 0.25) : Colors.black.withValues(alpha: 0.05)),
         ),
         child: Row(
           children: [
@@ -862,7 +862,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
               : null,
           color: selected ? null : const Color(0xFF211C17),
           borderRadius: BorderRadius.circular(DT.rXxl),
-          border: Border.all(color: selected ? DT.primary.withOpacity(0.25) : Colors.black.withOpacity(0.05)),
+          border: Border.all(color: selected ? DT.primary.withValues(alpha: 0.25) : Colors.black.withValues(alpha: 0.05)),
         ),
         child: Row(
           children: [
@@ -926,7 +926,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
               : null,
           color: _isCustomService ? null : const Color(0xFF211C17),
           borderRadius: BorderRadius.circular(DT.rXxl),
-          border: Border.all(color: _isCustomService ? DT.primary.withOpacity(0.25) : Colors.black.withOpacity(0.05)),
+          border: Border.all(color: _isCustomService ? DT.primary.withValues(alpha: 0.25) : Colors.black.withValues(alpha: 0.05)),
         ),
         child: Row(
           children: [
@@ -953,7 +953,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF211C17).withOpacity(0.8),
+        color: const Color(0xFF211C17).withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(DT.rXxl),
       ),
       child: Column(
@@ -1059,7 +1059,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
               : null,
           color: selected ? null : const Color(0xFF211C17),
           borderRadius: BorderRadius.circular(DT.rXxl),
-          border: Border.all(color: selected ? DT.primary.withOpacity(0.25) : Colors.black.withOpacity(0.05)),
+          border: Border.all(color: selected ? DT.primary.withValues(alpha: 0.25) : Colors.black.withValues(alpha: 0.05)),
         ),
         child: Row(
           children: [
@@ -1128,7 +1128,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                     : null,
                 color: selected ? null : const Color(0xFF211C17),
                 borderRadius: BorderRadius.circular(DT.rXxl),
-                border: Border.all(color: selected ? DT.primary.withOpacity(0.25) : Colors.black.withOpacity(0.05)),
+                border: Border.all(color: selected ? DT.primary.withValues(alpha: 0.25) : Colors.black.withValues(alpha: 0.05)),
               ),
               child: Row(
                 children: [
@@ -1242,7 +1242,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                   : null,
               color: selected ? null : const Color(0xFF211C17),
               borderRadius: BorderRadius.circular(DT.rXxl),
-              border: Border.all(color: selected ? DT.primary.withOpacity(0.25) : Colors.black.withOpacity(0.05)),
+              border: Border.all(color: selected ? DT.primary.withValues(alpha: 0.25) : Colors.black.withValues(alpha: 0.05)),
             ),
             child: Row(
               children: [
@@ -1327,7 +1327,7 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                 gradient: selected ? DT.primaryGradient : null,
                 color: selected ? null : const Color(0xFF211C17),
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: selected ? Colors.transparent : Colors.black.withOpacity(0.05)),
+                border: Border.all(color: selected ? Colors.transparent : Colors.black.withValues(alpha: 0.05)),
                 boxShadow: selected ? [BoxShadow(color: const Color(0x4DC4627A), blurRadius: 12, offset: const Offset(0, 4))] : null,
               ),
               child: Column(
@@ -1335,10 +1335,10 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
                 children: [
                   // 休息日用「休」替代星期，保持两行布局、避免溢出固定高度
                   Text(enabled ? label : '休',
-                    style: TextStyle(fontSize: 12, height: 1.1, color: selected ? DT.onCream.withValues(alpha: 0.7) : (enabled ? DT.textMuted : DT.textTertiary.withOpacity(0.6)))),
+                    style: TextStyle(fontSize: 12, height: 1.1, color: selected ? DT.onCream.withValues(alpha: 0.7) : (enabled ? DT.textMuted : DT.textTertiary.withValues(alpha: 0.6)))),
                   const SizedBox(height: 3),
                   Text('${d.month}/${d.day}',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, height: 1.1, color: selected ? DT.onCream : (enabled ? DT.textPrimary : DT.textTertiary.withOpacity(0.45)))),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, height: 1.1, color: selected ? DT.onCream : (enabled ? DT.textPrimary : DT.textTertiary.withValues(alpha: 0.45)))),
                 ],
               ),
             ),
@@ -1405,10 +1405,10 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: DT.surface.withOpacity(0.62),
+        color: DT.surface.withValues(alpha: 0.62),
         borderRadius: BorderRadius.circular(DT.rCard),
         boxShadow: DT.shadowMd,
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1473,9 +1473,9 @@ class _ClientCreateOrderScreenState extends State<ClientCreateOrderScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: DT.surface.withOpacity(0.8),
+        color: DT.surface.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
       ),
       child: Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF475569))),
     );
