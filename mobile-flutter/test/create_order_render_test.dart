@@ -21,8 +21,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
     }
 
-    // Should show the create-booking content, not a blank/crashed tree.
-    expect(find.text('创建预约'), findsOneWidget);
-    expect(find.text('选择美甲师'), findsOneWidget);
+    // 渲染不应抛异常；加载失败后落到第一步「选择美甲师」并展示空态。
+    expect(tester.takeException(), isNull);
+    expect(find.text('选择美甲师'), findsWidgets); // 头部步骤标题 + 卡片标题
+    expect(find.text('暂无可预约的美甲师'), findsOneWidget);
   });
 }

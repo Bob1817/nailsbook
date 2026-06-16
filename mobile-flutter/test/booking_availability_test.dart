@@ -43,9 +43,8 @@ void main() {
       expect(slots.map((s) => s.time).toList(), ['10:00', '10:30', '11:00', '11:30']);
     });
 
-    test('blocked slot marks occupied', () {
+    test('blocked slot occupies overlapping 5h-lock window (backend-aligned)', () {
       final r = scheduleRange(sched);
-      // block 10:30-11:00 local — express as +08:00 to match a CST device-ish offset
       final slots = getSlotStatuses(
         dateStr: '2026-06-08',
         range: r,
@@ -54,9 +53,11 @@ void main() {
         ],
       );
       final byTime = {for (final s in slots) s.time: s.occupied};
-      expect(byTime['10:00'], false);
-      expect(byTime['10:30'], true);
-      expect(byTime['11:00'], false);
+      // 新预约锁定 [slot, slot+5h]，与已占用 10:30-11:00 重叠者不可选（与后端一致）。
+      expect(byTime['10:00'], true); // [10:00,15:00) 覆盖 10:30
+      expect(byTime['10:30'], true); // [10:30,15:30) 覆盖 10:30
+      expect(byTime['11:00'], false); // [11:00,16:00) 不与 (10:30,11:00) 重叠
+      expect(byTime['11:30'], false);
     });
   });
 
