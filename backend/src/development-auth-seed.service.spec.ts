@@ -98,11 +98,13 @@ describe('DevelopmentAuthSeedService', () => {
       }),
     });
     expect(prisma.clientUser.create).toHaveBeenCalledWith({
-      data: {
+      data: expect.objectContaining({
         phone: '13800138001',
         nickname: '王小美',
         status: 'active',
-      },
+        // 开发 fixture 现在带初始密码（bcrypt 哈希，非确定值）
+        passwordHash: expect.any(String),
+      }),
     });
     expect(prisma.clientTechBinding.create).toHaveBeenCalledWith({
       data: {

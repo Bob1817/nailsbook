@@ -19,10 +19,14 @@ class ApiClient {
   // 单飞：并发 401 只触发一次刷新。
   Future<bool>? _refreshing;
 
+  // 可注入的 http client（测试用 MockClient；默认走真实网络）。
+  final http.Client _http;
+
   ApiClient({
     required this.baseUrl,
     this.onUnauthorized,
-  });
+    http.Client? httpClient,
+  }) : _http = httpClient ?? http.Client();
 
   void setToken(String? token) {
     _token = token;
@@ -46,7 +50,7 @@ class ApiClient {
   Future<Map<String, dynamic>> get(String path,
       {Map<String, String>? queryParams}) async {
     final uri = _buildUri(path, queryParams);
-    final response = await _send(() => http.get(uri, headers: _headers));
+    final response = await _send(() => _http.get(uri, headers: _headers));
     return _handleResponse(response);
   }
 
@@ -56,7 +60,7 @@ class ApiClient {
     // 无 body 时发送 {} 而非 jsonEncode(null)（="null"），
     // 否则后端 JSON body-parser 会以「"null" is not valid JSON」400 拒绝。
     final response = await _send(
-        () => http.post(uri, headers: _headers, body: jsonEncode(body ?? const {})));
+        () => _http.post(uri, headers: _headers, body: jsonEncode(body ?? const {})));
     return _handleResponse(response);
   }
 
@@ -64,20 +68,20 @@ class ApiClient {
       {Map<String, dynamic>? body}) async {
     final uri = _buildUri(path);
     final response = await _send(
-        () => http.patch(uri, headers: _headers, body: jsonEncode(body ?? const {})));
+        () => _http.patch(uri, headers: _headers, body: jsonEncode(body ?? const {})));
     return _handleResponse(response);
   }
 
   Future<Map<String, dynamic>> delete(String path) async {
     final uri = _buildUri(path);
-    final response = await _send(() => http.delete(uri, headers: _headers));
+    final response = await _send(() => _http.delete(uri, headers: _headers));
     return _handleResponse(response);
   }
 
   Future<List<dynamic>> getList(String path,
       {Map<String, String>? queryParams}) async {
     final uri = _buildUri(path, queryParams);
-    final response = await _send(() => http.get(uri, headers: _headers));
+    final response = await _send(() => _http.get(uri, headers: _headers));
     _checkStatus(response);
     final decoded = jsonDecode(response.body);
     if (decoded is List) return decoded;
@@ -145,7 +149,7 @@ class ApiClient {
       String role, String refreshToken) async {
     final prefix = role == 'client' ? '/api/client' : '/api/technician';
     final uri = Uri.parse('$baseUrl$prefix/auth/refresh');
-    final response = await http
+    final response = await _http
         .post(uri,
             headers: const {
               'Content-Type': 'application/json',
