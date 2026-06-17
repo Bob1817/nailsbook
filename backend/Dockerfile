@@ -13,7 +13,7 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-RUN apk add --no-cache dumb-init openssl
+RUN sed -i "s|dl-cdn.alpinelinux.org|mirrors.aliyun.com|g" /etc/apk/repositories && apk add --no-cache dumb-init openssl
 
 COPY package*.json ./
 RUN npm ci --omit=dev
