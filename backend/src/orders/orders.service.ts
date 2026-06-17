@@ -10,7 +10,7 @@ import * as crypto from 'crypto';
 import { CreateTechnicianOrderDto } from './dto/create-technician-order.dto';
 import { ReviewOrderDto } from './dto/review-order.dto';
 
-type OrderStatus =
+export type OrderStatus =
   | 'pending_quote'
   | 'pending_agree'
   | 'pending_confirm'
@@ -22,7 +22,7 @@ type OrderStatus =
   | 'cancelled'
   | 'expired';
 
-const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+export const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   pending_quote: ['pending_agree', 'cancelled', 'expired'],
   pending_agree: ['pending_confirm', 'pending_quote', 'cancelled', 'expired'],
   pending_confirm: ['pending_home', 'pending_shop', 'cancelled', 'expired'],
@@ -36,7 +36,7 @@ const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   expired: ['pending_quote', 'pending_agree', 'pending_confirm', 'pending_client_confirm'],
 };
 
-function canTransition(from: OrderStatus, to: OrderStatus): boolean {
+export function canTransition(from: OrderStatus, to: OrderStatus): boolean {
   return STATUS_TRANSITIONS[from]?.includes(to) ?? false;
 }
 
