@@ -4,7 +4,6 @@ import { Link, useLocation } from 'react-router-dom'
 import { useLang } from '../i18n/LanguageContext'
 
 const navLinkKeys = ['audience', 'features', 'works', 'flow'] as const
-const LOGIN_URL = 'https://tech.lunails.cn'
 
 export default function NavBar() {
   const { t, toggleLang, isZh } = useLang()
@@ -24,10 +23,6 @@ export default function NavBar() {
   }, [])
 
   const isHomePage = location.pathname === '/'
-  
-  const handleLogin = () => {
-    window.location.href = LOGIN_URL
-  }
 
   return (
     <>
@@ -44,7 +39,7 @@ export default function NavBar() {
         <Link
           to="/"
           className="flex min-h-9 items-center gap-2 rounded-full px-1 transition active:scale-[0.98] sm:min-h-11 sm:gap-2.5"
-          aria-label="NailBook home"
+          aria-label="贝美甲 home"
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-accent-warm text-white font-bold text-base select-none shadow-md shadow-pink-200/50 sm:h-10 sm:w-10 sm:text-lg" aria-hidden="true">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -52,7 +47,7 @@ export default function NavBar() {
             </svg>
           </div>
           <div className="hidden sm:block">
-            <div className="text-base font-black tracking-[0.15em] text-ink">NAILBOOK</div>
+            <div className="text-base font-black tracking-[0.15em] text-ink">贝美甲</div>
             <div className="text-[11px] font-medium tracking-[0.06em] text-ink-soft">{t.nav.subtitle}</div>
           </div>
         </Link>
@@ -94,15 +89,6 @@ export default function NavBar() {
             title={isZh ? 'Switch to English' : '切换到中文'}
           >
             <Globe className="h-4 w-4" aria-hidden="true" />
-          </button>
-
-          {/* CTA button - hidden on very small screens */}
-          <button
-            type="button"
-            onClick={handleLogin}
-            className="hidden min-h-9 items-center rounded-full bg-gradient-to-r from-brand to-brand-deep px-4 py-2 text-xs font-bold text-white shadow-lg shadow-pink-200/60 transition hover:-translate-y-0.5 hover:shadow-xl active:scale-[0.98] sm:inline-flex sm:min-h-11 sm:px-5 sm:py-2.5 sm:text-sm sm:font-bold"
-          >
-            {t.nav.cta}
           </button>
 
           {/* Mobile hamburger */}
@@ -157,18 +143,6 @@ export default function NavBar() {
               </Link>
             </li>
           </ul>
-          <div className="mt-4 border-t border-line pt-4">
-            <button
-              type="button"
-              onClick={() => {
-                setMenuOpen(false)
-                handleLogin()
-              }}
-              className="flex min-h-12 w-full items-center justify-center rounded-full bg-gradient-to-r from-brand to-brand-deep text-sm font-bold text-white shadow-lg shadow-pink-200/60 transition active:scale-[0.98]"
-            >
-              {t.nav.cta}
-            </button>
-          </div>
         </div>
       )}
     </>

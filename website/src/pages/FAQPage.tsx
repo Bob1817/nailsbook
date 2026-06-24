@@ -12,18 +12,18 @@ interface FAQItem {
 const faqData: FAQItem[] = [
   {
     q: {
-      zh: 'NailBook 是什么？',
-      en: 'What is NailBook?',
+      zh: '贝美甲是什么？',
+      en: 'What is BeiMeiJia?',
     },
     a: {
-      zh: 'NailBook 是一款专门为独立上门美甲师设计的客户预约与私域经营工具。它帮助你管理预约、作品展示、客户档案等，让你更专注于服务本身。',
-      en: 'NailBook is a client booking and private domain management tool designed specifically for independent home service nail artists. It helps you manage bookings, showcase your work, and keep client records, allowing you to focus on your services.',
+      zh: '贝美甲是一款专门为独立上门美甲师设计的客户预约与私域经营工具。它帮助你管理预约、作品展示、客户档案等，让你更专注于服务本身。',
+      en: 'BeiMeiJia is a client booking and private domain management tool designed specifically for independent home service nail artists. It helps you manage bookings, showcase your work, and keep client records, allowing you to focus on your services.',
     },
   },
   {
     q: {
-      zh: '如何申请成为 NailBook 美甲师？',
-      en: 'How do I become a NailBook artist?',
+      zh: '如何申请成为贝美甲美甲师？',
+      en: 'How do I become a BeiMeiJia artist?',
     },
     a: {
       zh: '你可以通过首页的「申请账号」按钮提交申请，我们会在 1-2 个工作日内审核并通过微信发送激活码。',
@@ -32,12 +32,12 @@ const faqData: FAQItem[] = [
   },
   {
     q: {
-      zh: 'NailBook 如何收费？',
-      en: 'How much does NailBook cost?',
+      zh: '贝美甲如何收费？',
+      en: 'How much does BeiMeiJia cost?',
     },
     a: {
-      zh: 'NailBook 采用订阅制收费模式，不抽取任何交易佣金。具体价格方案将在产品正式发布时公布。',
-      en: 'NailBook uses a subscription model and does not charge any transaction fees. Detailed pricing will be announced when the product officially launches.',
+      zh: '贝美甲采用订阅制收费模式，不抽取任何交易佣金。具体价格方案将在产品正式发布时公布。',
+      en: 'BeiMeiJia uses a subscription model and does not charge any transaction fees. Detailed pricing will be announced when the product officially launches.',
     },
   },
   {

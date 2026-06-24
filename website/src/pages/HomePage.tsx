@@ -11,8 +11,8 @@ import {
   Navigation,
   Calculator,
   Sparkles,
-  ArrowRight,
   Smartphone,
+  QrCode,
 } from 'lucide-react'
 import NavBar from '../components/NavBar'
 import AppPreview from '../components/AppPreview'
@@ -20,17 +20,14 @@ import FeaturedWorksSection from '../components/FeaturedWorksSection'
 import { Meta } from '../components/Meta'
 import { useLang } from '../i18n/LanguageContext'
 
-const LOGIN_URL = 'https://tech.lunails.cn'
+const H5_URL = 'https://tech.lunails.cn'
+const QR_CODE_URL = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(H5_URL)}`
 
 const featureIcons = [Calendar, MessageSquare, MapPin, Users, TrendingUp, Palette]
 const painIcons = [MessageCircle, Clock, FileText, Navigation, Calculator]
 
 export default function HomePage() {
   const { t, isZh } = useLang()
-  
-  const handleLogin = () => {
-    window.location.href = LOGIN_URL
-  }
 
   return (
     <>
@@ -70,23 +67,27 @@ export default function HomePage() {
               {t.hero.desc}
             </p>
 
-            {/* CTA buttons */}
-            <div className="mt-8 flex flex-wrap items-center gap-3 sm:gap-4">
-        <button
-          type="button"
-          onClick={handleLogin}
-          className="group inline-flex min-h-11 items-center gap-2 rounded-full bg-ink px-5 py-3 text-[14px] font-bold text-white shadow-xl shadow-ink/15 transition hover:-translate-y-0.5 active:scale-[0.98] sm:min-h-12 sm:px-7 sm:py-4 sm:text-[15px]"
-        >
-          {t.hero.ctaPrimary}
-          <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" aria-hidden="true" />
-        </button>
-              <a
-                href="#works"
-                className="inline-flex min-h-11 items-center rounded-full border border-line bg-surface/80 px-5 py-3 text-[14px] font-bold text-ink backdrop-blur-sm transition hover:border-brand/40 active:scale-[0.98] sm:min-h-12 sm:px-7 sm:py-4 sm:text-[15px]"
-              >
-                {t.hero.ctaSecondary}
-              </a>
+            {/* QR Code CTA */}
+            <div className="mt-8 inline-flex items-center gap-4 rounded-2xl border border-line bg-surface/80 p-4 backdrop-blur-sm sm:p-5">
+              <img
+                src={QR_CODE_URL}
+                alt={t.footer.scanQr}
+                width={100}
+                height={100}
+                className="rounded-lg"
+                loading="lazy"
+              />
+              <div>
+                <p className="text-[14px] font-bold text-ink sm:text-[15px]">{t.footer.scanQr}</p>
+                <p className="mt-1 text-[12px] text-ink-muted sm:text-[13px]">{t.footer.scanHint}</p>
+              </div>
             </div>
+            <a
+              href="#works"
+              className="mt-3 inline-flex min-h-11 items-center rounded-full border border-line bg-surface/80 px-5 py-3 text-[14px] font-bold text-ink backdrop-blur-sm transition hover:border-brand/40 active:scale-[0.98] sm:mt-4 sm:min-h-12 sm:px-7 sm:py-4 sm:text-[15px]"
+            >
+              {t.hero.ctaSecondary}
+            </a>
 
             {/* Trust chips */}
             <div className="mt-6 flex flex-wrap gap-2 sm:mt-9 sm:gap-3">
@@ -244,13 +245,19 @@ export default function HomePage() {
               {t.finalCta.title}
             </h2>
           </div>
-          <button
-            type="button"
-            onClick={handleLogin}
-            className="inline-flex min-h-11 shrink-0 items-center rounded-full bg-white px-6 py-3 text-[14px] font-black text-brand shadow-lg transition hover:-translate-y-0.5 active:scale-[0.98] sm:min-h-12 sm:px-8 sm:py-4 sm:text-[15px]"
-          >
-            {t.finalCta.button}
-          </button>
+          <div className="flex shrink-0 flex-col items-center gap-3">
+            <div className="rounded-2xl bg-white p-3 shadow-lg">
+              <img
+                src={QR_CODE_URL}
+                alt={t.footer.scanQr}
+                width={120}
+                height={120}
+                className="rounded-lg"
+                loading="lazy"
+              />
+            </div>
+            <p className="text-[13px] font-medium opacity-90">{t.footer.scanHint}</p>
+          </div>
         </div>
       </section>
 
@@ -259,17 +266,25 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl">
           <div className="flex items-center justify-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-accent-warm text-white select-none">
-              <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <path d="M10 2L12.09 7.26L18 8.27L14 12.14L14.18 18L10 15.77L5.82 18L6 12.14L2 8.27L7.91 7.26L10 2Z" fill="currentColor" />
-              </svg>
+              <QrCode className="h-4 w-4" aria-hidden="true" />
             </div>
-            <span className="text-sm font-black tracking-[0.12em] text-ink">NAILBOOK</span>
+            <span className="text-sm font-black tracking-[0.12em] text-ink">贝美甲</span>
           </div>
           <p className="mt-4 text-[13px] text-ink-soft">
             {t.footer.copyright}
           </p>
           <p className="mt-1.5 text-[12px] text-ink-soft/70">
             {t.footer.tagline}
+          </p>
+          <p className="mt-4 text-[12px] text-ink-soft/60">
+            <a
+              href="https://beian.miit.gov.cn/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition hover:text-brand"
+            >
+              {t.footer.icp}
+            </a>
           </p>
         </div>
       </footer>

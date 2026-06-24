@@ -23,7 +23,7 @@ const translations = {
       headline2: '客户预约',
       headline3: '与私域经营系统',
       desc: '从作品展示、客户预约、设计沟通、报价确认，到上门行程与收入统计，帮你把微信里的零散客户沉淀成长期客户资产。',
-      ctaPrimary: '创建我的美甲师名片',
+      ctaPrimary: '扫码打开贝美甲',
       ctaSecondary: '查看作品案例',
       trust: ['预约不漏单', '报价有记录', '客户可复购'],
     },
@@ -38,9 +38,9 @@ const translations = {
     },
     // ─── Why Section ───
     why: {
-      tag: 'why nailbook',
+      tag: 'why 贝美甲',
       title: '不是再做一个平台，而是帮美甲师管理自己的客户。',
-      desc: '独立美甲师日常运营的痛点集中在这几件事——没有工具整合，只能靠微信群和备忘录硬撑。NailBook 把这些碎片统一处理。',
+      desc: '独立美甲师日常运营的痛点集中在这几件事——没有工具整合，只能靠微信群和备忘录硬撑。贝美甲把这些碎片统一处理。',
       pains: [
         { label: '微信聊天太散' },
         { label: '预约时间易冲突' },
@@ -101,12 +101,15 @@ const translations = {
     finalCta: {
       subtitle: 'WebApp 优先，手机端体验优先',
       title: '现在开始，把客户经营变简单。',
-      button: '立即创建名片',
+      button: '扫码打开贝美甲',
     },
     // ─── Footer ───
     footer: {
-      copyright: '© 2025 NailBook · 给独立上门美甲师的经营系统',
+      copyright: '© 2025 贝美甲 · 给独立上门美甲师的经营系统',
       tagline: '不抽成 · 订阅制 · 数据属于美甲师自己',
+      icp: '浙ICP备2026038278号-1',
+      scanQr: '扫码打开贝美甲',
+      scanHint: '微信扫码，在手机上使用贝美甲',
     },
     // ─── Application Page ───
     apply: {
@@ -151,7 +154,7 @@ const translations = {
     // ─── Gallery Page ───
     gallery: {
       title: '美甲作品精选',
-      subtitle: '来自 NailBook 美甲师的真实作品集',
+      subtitle: '来自贝美甲美甲师的真实作品集',
       backHome: '返回首页',
       loading: '加载中...',
       empty: '暂无作品',
@@ -188,7 +191,7 @@ const translations = {
       backHome: '返回首页',
     },
     meta: {
-      siteTitle: 'NailBook - 独立美甲师工具',
+      siteTitle: '贝美甲 - 独立美甲师工具',
       description: '给独立上门美甲师的客户预约与私域经营系统',
     },
   },
@@ -212,7 +215,7 @@ const translations = {
       headline2: 'for Independent',
       headline3: 'Nail Artists',
       desc: 'From portfolio showcase, client booking, design consultation, and quoting, to home service routing and income tracking — turn your scattered WeChat clients into long-term customer assets.',
-      ctaPrimary: 'Create My Nail Artist Card',
+      ctaPrimary: 'Scan to Open BeiMeiJia',
       ctaSecondary: 'View Work Gallery',
       trust: ['No Missed Bookings', 'Quote History', 'Client Retention'],
     },
@@ -225,9 +228,9 @@ const translations = {
       ],
     },
     why: {
-      tag: 'why nailbook',
+      tag: 'why beimeijia',
       title: 'Not another platform — a tool to help nail artists manage their own clients.',
-      desc: 'Independent nail artists face the same daily challenges — no unified tool, relying on WeChat groups and sticky notes. NailBook brings all the pieces together.',
+      desc: 'Independent nail artists face the same daily challenges — no unified tool, relying on WeChat groups and sticky notes. BeiMeiJia brings all the pieces together.',
       pains: [
         { label: 'Scattered Chat' },
         { label: 'Booking Conflicts' },
@@ -283,11 +286,14 @@ const translations = {
     finalCta: {
       subtitle: 'WebApp-first, Mobile-first Experience',
       title: 'Start Now. Make Client Management Simple.',
-      button: 'Create My Card Now',
+      button: 'Scan to Open BeiMeiJia',
     },
     footer: {
-      copyright: '© 2025 NailBook · Business System for Independent Nail Artists',
+      copyright: '© 2025 BeiMeiJia · Business System for Independent Nail Artists',
       tagline: 'No Commission · Subscription · Your Data is Yours',
+      icp: 'Zhejiang ICP No. 2026038278-1',
+      scanQr: 'Scan to Open BeiMeiJia',
+      scanHint: 'Scan with WeChat to use BeiMeiJia on mobile',
     },
     apply: {
       title: 'Apply for Nail Artist Account',
@@ -329,7 +335,7 @@ const translations = {
     },
     gallery: {
       title: 'Nail Art Gallery',
-      subtitle: 'Real works from NailBook nail artists',
+      subtitle: 'Real works from BeiMeiJia nail artists',
       backHome: 'Back to Home',
       loading: 'Loading...',
       empty: 'No works yet',
@@ -366,7 +372,7 @@ const translations = {
       backHome: 'Back to Home',
     },
     meta: {
-      siteTitle: 'NailBook - Tool for Independent Nail Artists',
+      siteTitle: 'BeiMeiJia - Tool for Independent Nail Artists',
       description: 'Client booking and private domain management system for independent home service nail artists',
     },
   },

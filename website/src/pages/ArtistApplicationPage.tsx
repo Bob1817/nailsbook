@@ -132,8 +132,10 @@ export default function ArtistApplicationPage() {
             </p>
             {phoneStatus === 'approved' && (
               <a
-                href="/login"
+                href="https://tech.lunails.cn"
                 className="mt-3 inline-block text-[13px] font-bold text-brand underline hover:text-brand-deep sm:mt-4 sm:text-sm"
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 {t.apply.clickToLogin}
               </a>
