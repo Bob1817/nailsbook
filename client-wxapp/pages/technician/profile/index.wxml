@@ -373,4 +373,112 @@
   bindclose="closeRestDayCalendar"
 />
 
+<!-- ========== 服务类型引导弹窗（仅工作时间设置时触发） ========== -->
+<view wx:if="{{showServiceTypeModal}}" class="st-overlay" bindtap="closeServiceTypeModal">
+  <view class="st-sheet" catchtap="preventBubble">
+    <!-- Header -->
+    <view class="st-header">
+      <view class="st-header-info">
+        <text class="st-title">开启服务类型</text>
+        <text class="st-subtitle">需要先开启上门或到店服务，才能设置工作时间</text>
+      </view>
+      <view class="st-close" bindtap="closeServiceTypeModal">
+        <text class="st-close-icon">✕</text>
+      </view>
+    </view>
+
+    <!-- Tab 切换 -->
+    <view class="st-tabs">
+      <view class="st-tab {{serviceTypeTab === 'home' ? 'st-tab-active' : ''}}" bindtap="switchServiceTypeTab" data-tab="home">
+        <text class="st-tab-icon">🚗</text>
+        <text class="st-tab-text">上门服务</text>
+        <view wx:if="{{homeServiceOn}}" class="st-tab-dot"></view>
+      </view>
+      <view class="st-tab {{serviceTypeTab === 'shop' ? 'st-tab-active' : ''}}" bindtap="switchServiceTypeTab" data-tab="shop">
+        <text class="st-tab-icon">🏪</text>
+        <text class="st-tab-text">到店服务</text>
+        <view wx:if="{{shopServiceOn}}" class="st-tab-dot"></view>
+      </view>
+    </view>
+
+    <scroll-view scroll-y class="st-body" enhanced show-scrollbar="{{false}}">
+      <!-- 上门服务配置 -->
+      <view wx:if="{{serviceTypeTab === 'home'}}">
+        <!-- 开关 -->
+        <view class="st-switch-row">
+          <view class="st-switch-info">
+            <text class="st-switch-label">开启上门服务</text>
+            <text class="st-switch-desc">允许客户预约上门美甲服务</text>
+          </view>
+          <switch checked="{{homeServiceEnabled}}" bindchange="toggleHomeService" color="#FF6B8A" />
+        </view>
+
+        <!-- 保存按钮 -->
+        <view class="st-save-btn {{homeSaving ? 'st-save-disabled' : ''}}" bindtap="saveHomeService">
+          <text>{{homeSaving ? '保存中...' : '保存上门设置'}}</text>
+        </view>
+      </view>
+
+      <!-- 到店服务配置 -->
+      <view wx:if="{{serviceTypeTab === 'shop'}}">
+        <view wx:if="{{shopLoading}}" class="st-loading">
+          <view class="loading-spinner"></view>
+        </view>
+        <view wx:else>
+          <!-- 店铺列表 -->
+          <view wx:if="{{shopList.length > 0}}" class="st-shop-list">
+            <view wx:for="{{shopList}}" wx:key="name" class="st-shop-card">
+              <view class="st-shop-info">
+                <text class="st-shop-name">{{item.name}}</text>
+                <text class="st-shop-address">{{item.detailAddress || item.address}}</text>
+                <text wx:if="{{item.phone}}" class="st-shop-phone">📞 {{item.phone}}</text>
+              </view>
+              <view class="st-shop-actions">
+                <view class="st-shop-edit" bindtap="openShopForm" data-shop="{{item}}">编辑</view>
+                <view class="st-shop-delete" bindtap="deleteShop" data-name="{{item.name}}" data-address="{{item.detailAddress || item.address}}">删除</view>
+              </view>
+            </view>
+          </view>
+
+          <!-- 空状态 -->
+          <view wx:if="{{shopList.length === 0 && !showShopForm}}" class="st-empty">
+            <text class="st-empty-icon">🏪</text>
+            <text class="st-empty-text">还没有店铺</text>
+            <text class="st-empty-sub">添加店铺信息，方便客户到店</text>
+          </view>
+
+          <!-- 添加店铺按钮 -->
+          <view wx:if="{{!showShopForm}}" class="st-add-shop-btn" bindtap="openShopForm">
+            <text class="st-add-icon">+</text>
+            <text>{{shopList.length > 0 ? '添加更多店铺' : '添加第一个店铺'}}</text>
+          </view>
+
+          <!-- 店铺表单 -->
+          <view wx:if="{{showShopForm}}" class="st-shop-form">
+            <view class="st-form-header">
+              <text class="st-form-title">{{editingShop ? '编辑店铺' : '添加店铺'}}</text>
+              <view class="st-form-close" bindtap="closeShopForm">✕</view>
+            </view>
+            <view class="st-field">
+              <text class="st-field-label">店铺名称 *</text>
+              <input class="st-field-input" value="{{shopName}}" bindinput="onShopNameInput" placeholder="请输入店铺名称" />
+            </view>
+            <view class="st-field">
+              <text class="st-field-label">详细地址 *</text>
+              <input class="st-field-input" value="{{shopAddress}}" bindinput="onShopAddressInput" placeholder="请输入地址" />
+            </view>
+            <view class="st-field">
+              <text class="st-field-label">联系电话（选填）</text>
+              <input class="st-field-input" type="number" value="{{shopPhone}}" bindinput="onShopPhoneInput" placeholder="选填" />
+            </view>
+            <view class="st-save-btn {{shopSaving ? 'st-save-disabled' : ''}}" bindtap="saveShop">
+              <text>{{shopSaving ? '保存中...' : '保存店铺'}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+</view>
+
 <tab-bar selected="profile" />

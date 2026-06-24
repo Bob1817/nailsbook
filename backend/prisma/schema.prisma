@@ -80,6 +80,12 @@ model Technician {
   shopService           Boolean                 @default(false)
   shopAddresses         String? // JSON array of shop addresses
   serviceItems          String? // JSON array of technician service items
+  // Home service configuration
+  homeServiceRadius     Float?                  // Service radius in km
+  homeServicePricing    String?                 // JSON: tiered pricing [{minKm, maxKm, price}]
+  nightServiceFee       Float?                  // Night service surcharge
+  holidayServiceFee     Float?                  // Holiday service surcharge
+  minOrderAmount        Float?                  // Minimum order amount (guaranteed consumption)
   // Social media accounts
   socialMedia           String? // JSON object of social media accounts
   // Service schedule (JSON: weekly availability + time ranges)

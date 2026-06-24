@@ -197,15 +197,32 @@ const technician = {
   },
 
   shops: {
-    list: () => Promise.resolve([]),
-    create: () => Promise.reject({ message: '功能开发中' }),
-    update: () => Promise.reject({ message: '功能开发中' }),
-    delete: () => Promise.reject({ message: '功能开发中' })
+    list: () => api.get(`${T}/auth/me`).then((res) => ({
+      list: res.shopAddresses || [],
+      data: res.shopAddresses || []
+    })),
+    create: (data) => api.get(`${T}/auth/me`).then((res) => {
+      const shops = res.shopAddresses || [];
+      shops.push(data);
+      return api.patch(`${T}/auth/service-type`, { shopAddresses: shops });
+    }),
+    update: (id, data) => api.get(`${T}/auth/me`).then((res) => {
+      const shops = res.shopAddresses || [];
+      const idx = shops.findIndex((s) => s.id === id);
+      if (idx >= 0) shops[idx] = { ...shops[idx], ...data };
+      return api.patch(`${T}/auth/service-type`, { shopAddresses: shops });
+    }),
+    delete: (id) => api.get(`${T}/auth/me`).then((res) => {
+      const shops = (res.shopAddresses || []).filter((s) => s.id !== id);
+      return api.patch(`${T}/auth/service-type`, { shopAddresses: shops });
+    })
   },
 
   homeService: {
-    get: () => Promise.resolve({ enabled: false }),
-    update: () => Promise.reject({ message: '功能开发中' })
+    get: () => api.get(`${T}/auth/me`).then((res) => ({
+      enabled: !!res.homeService
+    })),
+    update: (data) => api.patch(`${T}/auth/service-type`, { homeService: !!data.enabled })
   },
 
   tagTemplates: {

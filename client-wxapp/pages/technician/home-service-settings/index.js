@@ -1,68 +1,88 @@
 const api = require('../../../services/api');
 
-const DEFAULTS = {
-  radius: '10',
-  extraFee: '0',
-  minOrderAmount: '0',
-  notes: ''
-};
-
 Page({
   data: {
     enabled: false,
     radius: '',
-    extraFee: '',
+    pricing: [{ minKm: 0, maxKm: 5, price: 0 }],
+    nightFee: '',
+    holidayFee: '',
     minOrderAmount: '',
-    notes: '',
     loading: true,
     saving: false,
-    fromSetup: false,       // 从引导卡进入时显示不同文案
-    _defaultFilled: false
+    fromSetup: false
   },
 
-  async onLoad(options) {
+  onLoad(options) {
     const fromSetup = options.from === 'setup';
+    this.loadConfig();
+    this.setData({ fromSetup });
+  },
+
+  async loadConfig() {
+    this.setData({ loading: true });
     try {
-      const res = await api.technician.homeService.get();
+      const userInfo = await api.technician.auth.getUserInfo();
+      const pricing = userInfo.homeServicePricing || [{ minKm: 0, maxKm: 5, price: 0 }];
       this.setData({
-        enabled: res.enabled || false,
-        radius: res.radius ? String(res.radius) : '',
-        extraFee: res.extraFee != null ? String(res.extraFee) : '',
-        minOrderAmount: res.minOrderAmount != null ? String(res.minOrderAmount) : '',
-        notes: res.notes || '',
-        loading: false,
-        fromSetup
+        enabled: !!userInfo.homeService,
+        radius: userInfo.homeServiceRadius ? String(userInfo.homeServiceRadius) : '',
+        pricing: Array.isArray(pricing) ? pricing : JSON.parse(pricing),
+        nightFee: userInfo.nightServiceFee != null ? String(userInfo.nightServiceFee) : '',
+        holidayFee: userInfo.holidayServiceFee != null ? String(userInfo.holidayServiceFee) : '',
+        minOrderAmount: userInfo.minOrderAmount != null ? String(userInfo.minOrderAmount) : '',
+        loading: false
       });
-    } catch {
-      this.setData({ loading: false, fromSetup });
+    } catch (err) {
+      this.setData({ loading: false });
+      wx.showToast({ title: '加载失败', icon: 'none' });
     }
   },
 
-  // 手动拨 toggle：开启时若字段全空则自动填入默认值
   toggleEnabled(e) {
-    const enabled = e.detail.value;
-    if (enabled && this._isConfigEmpty()) {
-      this.setData({ enabled, ...DEFAULTS, _defaultFilled: true });
-    } else {
-      this.setData({ enabled, _defaultFilled: false });
-    }
+    this.setData({ enabled: e.detail.value });
   },
 
-  // 快速开启：填入默认值 + 立即保存
-  async quickEnable() {
-    this.setData({ enabled: true, ...DEFAULTS, _defaultFilled: true });
-    await this.save();
+  onRadiusInput(e) { this.setData({ radius: e.detail.value }); },
+  onNightFeeInput(e) { this.setData({ nightFee: e.detail.value }); },
+  onHolidayFeeInput(e) { this.setData({ holidayFee: e.detail.value }); },
+  onMinAmountInput(e) { this.setData({ minOrderAmount: e.detail.value }); },
+
+  // 阶梯报价相关
+  onPricingMinKmInput(e) {
+    const idx = e.currentTarget.dataset.idx;
+    const pricing = [...this.data.pricing];
+    pricing[idx].minKm = parseFloat(e.detail.value) || 0;
+    this.setData({ pricing });
   },
 
-  _isConfigEmpty() {
-    const d = this.data;
-    return !d.radius && !d.extraFee && !d.minOrderAmount;
+  onPricingMaxKmInput(e) {
+    const idx = e.currentTarget.dataset.idx;
+    const pricing = [...this.data.pricing];
+    pricing[idx].maxKm = parseFloat(e.detail.value) || 0;
+    this.setData({ pricing });
   },
 
-  onRadiusInput(e) { this.setData({ radius: e.detail.value, _defaultFilled: false }); },
-  onExtraFeeInput(e) { this.setData({ extraFee: e.detail.value, _defaultFilled: false }); },
-  onMinAmountInput(e) { this.setData({ minOrderAmount: e.detail.value, _defaultFilled: false }); },
-  onNotesInput(e) { this.setData({ notes: e.detail.value }); },
+  onPricingPriceInput(e) {
+    const idx = e.currentTarget.dataset.idx;
+    const pricing = [...this.data.pricing];
+    pricing[idx].price = parseFloat(e.detail.value) || 0;
+    this.setData({ pricing });
+  },
+
+  addPricingTier() {
+    const pricing = [...this.data.pricing];
+    const last = pricing[pricing.length - 1];
+    pricing.push({ minKm: last.maxKm, maxKm: last.maxKm + 5, price: last.price + 10 });
+    this.setData({ pricing });
+  },
+
+  removePricingTier(e) {
+    const idx = e.currentTarget.dataset.idx;
+    if (this.data.pricing.length <= 1) return;
+    const pricing = this.data.pricing.filter((_, i) => i !== idx);
+    this.setData({ pricing });
+  },
 
   async save() {
     if (this.data.saving) return;
@@ -70,25 +90,25 @@ Page({
     wx.showLoading({ title: '保存中...' });
 
     try {
-      await api.technician.homeService.update({
-        enabled: this.data.enabled,
-        radius: this.data.radius ? Number(this.data.radius) : null,
-        extraFee: this.data.extraFee !== '' ? Number(this.data.extraFee) : null,
-        minOrderAmount: this.data.minOrderAmount !== '' ? Number(this.data.minOrderAmount) : null,
-        notes: this.data.notes
+      await api.technician.auth.updateServiceType({
+        homeService: this.data.enabled,
+        homeServiceRadius: this.data.radius ? parseFloat(this.data.radius) : null,
+        homeServicePricing: JSON.stringify(this.data.pricing),
+        nightServiceFee: this.data.nightFee ? parseFloat(this.data.nightFee) : null,
+        holidayServiceFee: this.data.holidayFee ? parseFloat(this.data.holidayFee) : null,
+        minOrderAmount: this.data.minOrderAmount ? parseFloat(this.data.minOrderAmount) : null
       });
-      wx.hideLoading();
-      this.setData({ _defaultFilled: false });
 
-      // 更新本地 userInfo 缓存，让 profile 页回来后状态点立即刷新
+      // 更新本地缓存
+      const res = await api.technician.auth.getUserInfo();
       const userInfo = wx.getStorageSync('userInfo') || {};
-      userInfo.homeService = this.data.enabled || null;
+      Object.assign(userInfo, res);
       wx.setStorageSync('userInfo', userInfo);
+      wx.setStorageSync('technician_userInfo', userInfo);
 
-      const toastTitle = this.data.enabled ? '上门服务已开启' : '设置已保存';
-      wx.showToast({ title: toastTitle, icon: 'success' });
+      wx.hideLoading();
+      wx.showToast({ title: '保存成功', icon: 'success' });
 
-      // 从引导卡进入且已成功开启 → 延迟返回，引导卡会自动消失
       if (this.data.fromSetup && this.data.enabled) {
         setTimeout(() => wx.navigateBack(), 1500);
       }

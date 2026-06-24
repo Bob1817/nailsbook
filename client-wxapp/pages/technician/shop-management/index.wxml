@@ -1,7 +1,6 @@
 <nav-bar title="店铺管理" showBack/>
 <view class="container">
 
-
   <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
 
   <view wx:else>
@@ -15,19 +14,25 @@
 
     <!-- 店铺列表 -->
     <view wx:else class="list">
-      <view wx:for="{{shops}}" wx:key="id" class="shop-card">
+      <view wx:for="{{shops}}" wx:key="name" class="shop-card {{item.enabled ? 'shop-card-active' : 'shop-card-disabled'}}">
         <view class="card-top">
           <view class="card-title-area">
-            <text class="shop-name">{{item.name}}</text>
-            <text class="shop-address">{{item.address}}</text>
+            <view class="shop-name-row">
+              <text class="shop-name">{{item.name}}</text>
+              <view class="shop-status {{item.enabled ? 'status-on' : 'status-off'}}">
+                <text>{{item.enabled ? '营业中' : '已关闭'}}</text>
+              </view>
+            </view>
+            <text class="shop-address">{{item.province}}{{item.city}}{{item.district}}{{item.detailAddress}}</text>
             <text wx:if="{{item.phone}}" class="shop-phone">📞 {{item.phone}}</text>
           </view>
+          <switch checked="{{item.enabled}}" bindchange="toggleShopEnabled" data-name="{{item.name}}" data-address="{{item.detailAddress}}" color="#FF6B8A" class="shop-switch"/>
         </view>
         <view class="card-actions">
           <view class="action-btn action-edit" bindtap="openEdit" data-shop="{{item}}">
             <text>编辑</text>
           </view>
-          <view class="action-btn action-delete" bindtap="deleteShop" data-id="{{item.id}}" data-name="{{item.name}}">
+          <view class="action-btn action-delete" bindtap="deleteShop" data-name="{{item.name}}" data-address="{{item.detailAddress}}">
             <text>删除</text>
           </view>
         </view>
@@ -50,23 +55,72 @@
       </view>
     </view>
 
-    <view class="form-item">
-      <text class="label">店铺名称 *</text>
-      <input class="input" value="{{name}}" bindinput="onNameInput" placeholder="请输入店铺名称" placeholder-class="ph" />
-    </view>
+    <scroll-view scroll-y class="form-scroll">
+      <!-- 店铺名称 -->
+      <view class="form-item">
+        <text class="label">店铺名称 *</text>
+        <input class="input" value="{{name}}" bindinput="onNameInput" placeholder="请输入店铺名称" placeholder-class="ph" />
+      </view>
 
-    <view class="form-item">
-      <text class="label">详细地址 *</text>
-      <input class="input" value="{{address}}" bindinput="onAddressInput" placeholder="请输入地址" placeholder-class="ph" />
-    </view>
+      <!-- 省市区选择 -->
+      <view class="form-item">
+        <text class="label">所在地区 *</text>
+        <picker mode="region" value="{{region}}" bindchange="onRegionChange">
+          <view class="input picker-input {{regionText ? '' : 'placeholder'}}">
+            {{regionText || '请选择省市区'}}
+          </view>
+        </picker>
+      </view>
 
-    <view class="form-item">
-      <text class="label">联系电话（选填）</text>
-      <input class="input" type="number" value="{{phone}}" bindinput="onPhoneInput" placeholder="选填" placeholder-class="ph" />
-    </view>
+      <!-- 详细地址 -->
+      <view class="form-item">
+        <text class="label">详细地址 *</text>
+        <input class="input" value="{{detailAddress}}" bindinput="onDetailAddressInput" placeholder="请输入街道、楼栋、门牌号" placeholder-class="ph" />
+      </view>
+
+      <!-- 联系电话 -->
+      <view class="form-item">
+        <text class="label">联系电话（选填）</text>
+        <input class="input" type="number" value="{{phone}}" bindinput="onPhoneInput" placeholder="选填" placeholder-class="ph" />
+      </view>
+
+      <!-- 启用状态 -->
+      <view class="form-item form-item-switch">
+        <text class="label">启用店铺</text>
+        <switch checked="{{enabled}}" bindchange="toggleEnabled" color="#FF6B8A"/>
+      </view>
+
+      <!-- 营业时间 -->
+      <view class="form-item">
+        <view class="label-row" bindtap="toggleBusinessHours">
+          <text class="label">营业时间</text>
+          <text class="label-link">{{showBusinessHours ? '收起' : '展开设置'}}</text>
+        </view>
+        <view wx:if="{{showBusinessHours}}" class="business-hours-list">
+          <view wx:for="{{businessHours}}" wx:key="weekday" class="bh-item">
+            <view class="bh-day">
+              <text class="bh-weekday">{{weekdayNames[item.weekday]}}</text>
+              <switch checked="{{!item.closed}}" bindchange="toggleDayClosed" data-idx="{{index}}" color="#FF6B8A" class="bh-switch"/>
+            </view>
+            <view wx:if="{{!item.closed}}" class="bh-time">
+              <picker mode="selector" range="{{timeOptions}}" value="{{timeOptions.indexOf(item.start)}}" bindchange="onStartTimeChange" data-idx="{{index}}">
+                <view class="bh-time-btn">{{item.start}}</view>
+              </picker>
+              <text class="bh-time-sep">至</text>
+              <picker mode="selector" range="{{timeOptions}}" value="{{timeOptions.indexOf(item.end)}}" bindchange="onEndTimeChange" data-idx="{{index}}">
+                <view class="bh-time-btn">{{item.end}}</view>
+              </picker>
+            </view>
+            <view wx:else class="bh-closed">
+              <text>休息</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
 
     <button class="btn-save" bindtap="save" disabled="{{saving}}">
-      {{saving ? '保存中...' : '保存'}}
+      <text>{{saving ? '保存中...' : '保存'}}</text>
     </button>
   </view>
 </view>

@@ -39,11 +39,6 @@ function getRestDays(tech) {
   if (!tech || !tech.serviceSchedule) return [];
   var sched = tech.serviceSchedule;
   if (sched.restDays && sched.restDays.length > 0) return sched.restDays;
-  var schemes = sched.schemes;
-  if (schemes && schemes.length > 0) {
-    var active = schemes.find(function(s) { return s.id === sched.activeSchemeId; }) || schemes[0];
-    if (active && active.restDays) return active.restDays;
-  }
   return [];
 }
 
@@ -254,12 +249,27 @@ Page({
 
   updateCalendarRestDays: function (tech) {
     var restDays = getRestDays(tech);
+    var schedule = tech.serviceSchedule;
     var days = buildCalendar(this.data.calendarYear, this.data.calendarMonth, this.data.serviceDate);
-    if (restDays.length > 0) {
+    if (days.length > 0) {
       days.forEach(function (d) {
         if (d.empty) return;
-        var wd = new Date(d.dateStr + 'T00:00:00').getDay();
-        if (restDays.indexOf(wd) >= 0) d.isRest = true;
+        // Check if date is in restDays (date string array)
+        if (restDays.indexOf(d.dateStr) >= 0) {
+          d.isRest = true;
+          return;
+        }
+        // Check if weekday is not in work schedule
+        if (schedule && schedule.schemes) {
+          var active = schedule.schemes.find(function (s) { return s.id === schedule.activeSchemeId; }) || schedule.schemes[0];
+          if (active && active.days && active.days.length > 0) {
+            var wd = new Date(d.dateStr + 'T00:00:00').getDay();
+            var dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            if (active.days.indexOf(dayKeys[wd]) < 0) {
+              d.isRest = true;
+            }
+          }
+        }
       });
     }
     this.setData({ calendarDays: days });
@@ -406,14 +416,38 @@ Page({
     var shopAddresses = this.data.shopAddresses;
     var serviceDate = this.data.serviceDate;
     var blockedSlots = this.data.blockedSlots || [];
+    var selectedTech = this.data.selectedTech;
     var slots = TIME_SLOTS.slice();
+
+    // Filter by technician work schedule
+    if (selectedTech && selectedTech.serviceSchedule) {
+      var schedule = selectedTech.serviceSchedule;
+      var schemes = schedule.schemes || [];
+      var active = schemes.find(function (s) { return s.id === schedule.activeSchemeId; }) || schemes[0];
+      if (active && active.days && active.days.length > 0) {
+        var weekday = new Date(serviceDate + 'T00:00:00').getDay();
+        var dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+        var todayKey = dayKeys[weekday];
+        // Check if today is a work day
+        if (active.days.indexOf(todayKey) < 0) {
+          this.setData({ timeSlotStatuses: [], startTime: '' });
+          return;
+        }
+        // Filter by work time range
+        if (active.startTime && active.endTime) {
+          var workStart = timeToMin(active.startTime);
+          var workEnd = timeToMin(active.endTime);
+          slots = slots.filter(function (t) { var m = timeToMin(t); return m >= workStart && m < workEnd; });
+        }
+      }
+    }
 
     // Filter by shop business hours if applicable
     if (serviceType === '到店美甲' && selectedShopName) {
       var shop = shopAddresses.find(function (s) { return s.name === selectedShopName; });
       if (shop && shop.businessHours) {
-        var weekday = new Date(serviceDate + 'T00:00:00').getDay();
-        var hours = shop.businessHours.find(function (h) { return h.weekday === weekday; });
+        var wd = new Date(serviceDate + 'T00:00:00').getDay();
+        var hours = shop.businessHours.find(function (h) { return h.weekday === wd; });
         if (!hours || hours.closed) {
           this.setData({ timeSlotStatuses: [], startTime: '' });
           return;

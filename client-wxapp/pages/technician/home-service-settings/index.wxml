@@ -28,14 +28,7 @@
       <view class="quick-banner-body">
         <view class="quick-banner-text">
           <text class="quick-banner-title">{{fromSetup ? '🎉 快速完成设置' : '⚡ 一键开启'}}</text>
-          <text class="quick-banner-desc">使用推荐默认配置立即开启，后续随时调整</text>
-        </view>
-        <view class="quick-banner-defaults">
-          <text class="quick-default-item">服务范围 10 公里</text>
-          <text class="quick-default-sep">·</text>
-          <text class="quick-default-item">无附加费</text>
-          <text class="quick-default-sep">·</text>
-          <text class="quick-default-item">无最低消费</text>
+          <text class="quick-banner-desc">开启后客户可预约上门美甲服务</text>
         </view>
       </view>
       <view class="quick-btn {{saving ? 'quick-btn-disabled' : ''}}" bindtap="quickEnable">
@@ -43,21 +36,14 @@
       </view>
     </view>
 
-    <!-- ===== 参数配置（仅开启时显示）===== -->
+    <!-- ===== 服务配置（开启后显示）===== -->
     <view wx:if="{{enabled}}" class="config-card">
       <view class="config-card-header">
         <text class="config-card-title">服务配置</text>
-        <text wx:if="{{_defaultFilled}}" class="config-card-tip">已填入推荐默认值</text>
       </view>
 
-      <!-- 默认值提示条 -->
-      <view wx:if="{{_defaultFilled}}" class="tip-bar">
-        <text class="tip-dot"></text>
-        <text class="tip-text">以下为推荐默认配置，可按需调整后保存</text>
-      </view>
-
+      <!-- 服务范围 -->
       <view class="field-group">
-        <!-- 服务范围 -->
         <view class="field-row">
           <view class="field-label-wrap">
             <text class="field-label">服务范围</text>
@@ -74,27 +60,44 @@
         </view>
         <view class="field-sep"></view>
 
-        <!-- 上门附加费 -->
+        <!-- 夜间服务费 -->
         <view class="field-row">
           <view class="field-label-wrap">
-            <text class="field-label">上门附加费</text>
+            <text class="field-label">夜间服务费</text>
             <text class="field-unit">元</text>
           </view>
           <input
             class="field-input"
             type="digit"
-            value="{{extraFee}}"
-            bindinput="onExtraFeeInput"
-            placeholder="如：20"
+            value="{{nightFee}}"
+            bindinput="onNightFeeInput"
+            placeholder="如：30"
             placeholder-class="ph"
           />
         </view>
         <view class="field-sep"></view>
 
-        <!-- 最低消费 -->
+        <!-- 节假日服务费 -->
         <view class="field-row">
           <view class="field-label-wrap">
-            <text class="field-label">最低消费</text>
+            <text class="field-label">节假日服务费</text>
+            <text class="field-unit">元</text>
+          </view>
+          <input
+            class="field-input"
+            type="digit"
+            value="{{holidayFee}}"
+            bindinput="onHolidayFeeInput"
+            placeholder="如：50"
+            placeholder-class="ph"
+          />
+        </view>
+        <view class="field-sep"></view>
+
+        <!-- 保底消费 -->
+        <view class="field-row">
+          <view class="field-label-wrap">
+            <text class="field-label">保底消费</text>
             <text class="field-unit">元</text>
           </view>
           <input
@@ -102,24 +105,43 @@
             type="digit"
             value="{{minOrderAmount}}"
             bindinput="onMinAmountInput"
-            placeholder="如：150"
+            placeholder="如：100"
             placeholder-class="ph"
           />
         </view>
-        <view class="field-sep"></view>
+      </view>
+    </view>
 
-        <!-- 备注说明 -->
-        <view class="field-row field-row-textarea">
-          <text class="field-label">备注说明</text>
-          <textarea
-            class="field-textarea"
-            value="{{notes}}"
-            bindinput="onNotesInput"
-            placeholder="如：地铁3公里内，服务时间9-21点"
-            placeholder-class="ph"
-            auto-height
-          />
+    <!-- ===== 阶梯报价（开启后显示）===== -->
+    <view wx:if="{{enabled}}" class="config-card">
+      <view class="config-card-header">
+        <text class="config-card-title">阶梯报价</text>
+        <text class="config-card-tip">按距离设置上门附加费</text>
+      </view>
+
+      <view class="pricing-list">
+        <view wx:for="{{pricing}}" wx:key="idx" class="pricing-item">
+          <view class="pricing-row">
+            <text class="pricing-label">距离</text>
+            <input class="pricing-input" type="digit" value="{{item.minKm}}" bindinput="onPricingMinKmInput" data-idx="{{index}}" placeholder="0" />
+            <text class="pricing-dash">-</text>
+            <input class="pricing-input" type="digit" value="{{item.maxKm}}" bindinput="onPricingMaxKmInput" data-idx="{{index}}" placeholder="5" />
+            <text class="pricing-unit">公里</text>
+          </view>
+          <view class="pricing-row">
+            <text class="pricing-label">附加费</text>
+            <input class="pricing-input" type="digit" value="{{item.price}}" bindinput="onPricingPriceInput" data-idx="{{index}}" placeholder="0" />
+            <text class="pricing-unit">元</text>
+            <view wx:if="{{pricing.length > 1}}" class="pricing-remove" bindtap="removePricingTier" data-idx="{{index}}">
+              <text>删除</text>
+            </view>
+          </view>
         </view>
+      </view>
+
+      <view class="add-pricing-btn" bindtap="addPricingTier">
+        <text class="add-icon">+</text>
+        <text>添加阶梯</text>
       </view>
     </view>
 
