@@ -219,6 +219,93 @@
 }
 .ph { color: #d1d5db; }
 
+/* ===== 阶梯报价 ===== */
+.pricing-list {
+  padding: 0 32rpx 16rpx;
+}
+.pricing-item {
+  background: #f9fafb;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  margin-bottom: 16rpx;
+}
+.pricing-item:last-child {
+  margin-bottom: 0;
+}
+.pricing-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+.pricing-row + .pricing-row {
+  margin-top: 16rpx;
+}
+.pricing-label {
+  font-size: 26rpx;
+  color: #6b7280;
+  width: 80rpx;
+  flex-shrink: 0;
+}
+.pricing-input {
+  flex: 1;
+  height: 72rpx;
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 0 16rpx;
+  font-size: 28rpx;
+  color: #1f2937;
+  text-align: center;
+  box-sizing: border-box;
+  border: 1rpx solid #e5e7eb;
+}
+.pricing-input:focus {
+  border-color: #ff6b8a;
+}
+.pricing-dash {
+  font-size: 26rpx;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+.pricing-unit {
+  font-size: 24rpx;
+  color: #9ca3af;
+  flex-shrink: 0;
+  width: 60rpx;
+}
+.pricing-remove {
+  padding: 8rpx 20rpx;
+  background: #fef2f2;
+  border-radius: 8rpx;
+  flex-shrink: 0;
+}
+.pricing-remove text {
+  font-size: 24rpx;
+  color: #ef4444;
+}
+.add-pricing-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  height: 80rpx;
+  margin: 0 32rpx 24rpx;
+  background: #fff;
+  border: 2rpx dashed #e5e7eb;
+  border-radius: 16rpx;
+}
+.add-pricing-btn:active {
+  background: #f9fafb;
+}
+.add-icon {
+  font-size: 32rpx;
+  color: #ff6b8a;
+  font-weight: 600;
+}
+.add-pricing-btn text {
+  font-size: 26rpx;
+  color: #6b7280;
+}
+
 /* ===== 保存按钮 ===== */
 .btn-save {
   margin: 0 24rpx 16rpx;
