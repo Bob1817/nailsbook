@@ -68,7 +68,7 @@ export default function HomePage() {
             </p>
 
             {/* QR Code CTA */}
-            <div className="mt-8 inline-flex items-center gap-4 rounded-2xl border border-line bg-surface/80 p-4 backdrop-blur-sm sm:p-5">
+            <div className="mt-8 flex max-w-[500px] items-center gap-4 rounded-2xl border border-line bg-surface/80 p-4 backdrop-blur-sm sm:p-5">
               <img
                 src={QR_CODE_URL}
                 alt={t.footer.scanQr}
@@ -82,12 +82,6 @@ export default function HomePage() {
                 <p className="mt-1 text-[12px] text-ink-muted sm:text-[13px]">{t.footer.scanHint}</p>
               </div>
             </div>
-            <a
-              href="#works"
-              className="mt-3 inline-flex min-h-11 items-center rounded-full border border-line bg-surface/80 px-5 py-3 text-[14px] font-bold text-ink backdrop-blur-sm transition hover:border-brand/40 active:scale-[0.98] sm:mt-4 sm:min-h-12 sm:px-7 sm:py-4 sm:text-[15px]"
-            >
-              {t.hero.ctaSecondary}
-            </a>
 
             {/* Trust chips */}
             <div className="mt-6 flex flex-wrap gap-2 sm:mt-9 sm:gap-3">
@@ -149,11 +143,11 @@ export default function HomePage() {
             {t.why.pains.map((pain, i) => {
               const Icon = painIcons[i] || MessageCircle
               return (
-                <div key={pain.label} className="rounded-2xl border border-line bg-brand-bg p-4 transition hover:-translate-y-0.5 hover:shadow-md sm:p-5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-soft-pink to-brand-mist sm:h-10 sm:w-10" aria-hidden="true">
+                <div key={pain.label} className="flex items-center gap-3 rounded-2xl border border-line bg-brand-bg p-4 transition hover:-translate-y-0.5 hover:shadow-md sm:p-5">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-soft-pink to-brand-mist sm:h-10 sm:w-10" aria-hidden="true">
                     <Icon className="h-4 w-4 text-brand sm:h-5 sm:w-5" />
                   </div>
-                  <p className="mt-3 text-[14px] font-bold text-ink sm:mt-4 sm:text-[15px]">{pain.label}</p>
+                  <p className="text-[14px] font-bold text-ink sm:text-[15px]">{pain.label}</p>
                 </div>
               )
             })}
@@ -188,11 +182,13 @@ export default function HomePage() {
                   key={feature.title}
                   className="group rounded-[20px] border border-line bg-surface p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:shadow-pink-100/30 sm:rounded-[24px] sm:p-7"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-soft-pink to-brand-mist transition group-hover:from-brand/20 group-hover:to-accent-warm/15 sm:h-12 sm:w-12" aria-hidden="true">
-                    <Icon className="h-4 w-4 text-brand sm:h-5 sm:w-5" />
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-soft-pink to-brand-mist transition group-hover:from-brand/20 group-hover:to-accent-warm/15 sm:h-12 sm:w-12" aria-hidden="true">
+                      <Icon className="h-4 w-4 text-brand sm:h-5 sm:w-5" />
+                    </div>
+                    <h3 className="text-base font-black tracking-tight text-ink sm:text-lg">{feature.title}</h3>
                   </div>
-                  <h3 className="mt-5 text-base font-black tracking-tight text-ink sm:mt-6 sm:text-lg">{feature.title}</h3>
-                  <p className="mt-2 text-[13px] leading-[1.7] text-ink-muted sm:mt-3 sm:text-[14px]">{feature.desc}</p>
+                  <p className="mt-3 text-[13px] leading-[1.7] text-ink-muted sm:mt-4 sm:text-[14px]">{feature.desc}</p>
                 </article>
               )
             })}
