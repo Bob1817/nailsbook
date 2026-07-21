@@ -1,4 +1,11 @@
-import { Controller, Get, NotFoundException, Param, ParseIntPipe, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  ParseIntPipe,
+  Query,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { PrismaService } from '../common/prisma/prisma.service';
 
@@ -9,7 +16,10 @@ function toAbsoluteUrl(url: string | null): string | null {
   return url.startsWith('http') ? url : `${UPLOAD_BASE_URL}${url}`;
 }
 
-function parseImageUrls(images: string | null, coverUrl: string | null): string[] {
+function parseImageUrls(
+  images: string | null,
+  coverUrl: string | null,
+): string[] {
   if (!images) return coverUrl ? [coverUrl] : [];
   try {
     const parsed = JSON.parse(images);
@@ -17,7 +27,10 @@ function parseImageUrls(images: string | null, coverUrl: string | null): string[
       return parsed.filter((item): item is string => typeof item === 'string');
     }
   } catch {
-    return images.split(',').map((i) => i.trim()).filter(Boolean);
+    return images
+      .split(',')
+      .map((i) => i.trim())
+      .filter(Boolean);
   }
   return coverUrl ? [coverUrl] : [];
 }
@@ -35,6 +48,7 @@ export class PublicWorksController {
       where: {
         isFeatured: true,
         isVisible: true,
+        visibilityScope: 'public',
       },
       include: {
         technician: {
@@ -70,6 +84,7 @@ export class PublicWorksController {
       where: {
         isHomepageFeatured: true,
         isVisible: true,
+        visibilityScope: 'public',
       },
       include: {
         technician: { select: { name: true, avatarUrl: true } },
@@ -89,7 +104,12 @@ export class PublicWorksController {
         title: work.title,
         coverUrl: toAbsoluteUrl(work.coverUrl) ?? imageUrls[0] ?? null,
         imageUrls,
-        tags: work.tags ? work.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
+        tags: work.tags
+          ? work.tags
+              .split(',')
+              .map((t) => t.trim())
+              .filter(Boolean)
+          : [],
         technicianName: work.technician?.name ?? '',
         technicianAvatarUrl: toAbsoluteUrl(work.technician?.avatarUrl ?? null),
         likeCount: work._count.likes,
@@ -103,8 +123,40 @@ export class PublicWorksController {
   @ApiResponse({ status: 200, description: '返回作品详情' })
   @ApiResponse({ status: 404, description: '作品不存在' })
   async getDetail(@Param('id', ParseIntPipe) id: number) {
+    return this.getMappedDetail({
+      id,
+      isVisible: true,
+      visibilityScope: 'public',
+    });
+  }
+
+  @Get('shared/:token')
+  @ApiOperation({ summary: '通过限时分享授权查看作品' })
+  async getSharedDetail(@Param('token') token: string) {
+    const grant = await this.prisma.nailWorkShareGrant.findFirst({
+      where: {
+        token,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+        access: { canView: true, canShare: true },
+      },
+      select: { id: true, workId: true },
+    });
+    if (!grant) throw new NotFoundException('分享已失效或授权已撤销');
+    await this.prisma.nailWorkShareEvent.create({
+      data: {
+        workId: grant.workId,
+        shareGrantId: grant.id,
+        eventType: 'open',
+        channel: 'wechat',
+      },
+    });
+    return this.getMappedDetail({ id: grant.workId, isVisible: true });
+  }
+
+  private async getMappedDetail(where: any) {
     const work = await this.prisma.nailWork.findFirst({
-      where: { id, isVisible: true },
+      where,
       include: {
         likes: true,
         comments: {
@@ -116,13 +168,24 @@ export class PublicWorksController {
             replies: {
               orderBy: { createdAt: 'asc' },
               include: {
-                client: { select: { id: true, nickname: true, avatarUrl: true } },
-                technician: { select: { id: true, name: true, avatarUrl: true } },
+                client: {
+                  select: { id: true, nickname: true, avatarUrl: true },
+                },
+                technician: {
+                  select: { id: true, name: true, avatarUrl: true },
+                },
               },
             },
           },
         },
-        technician: { select: { id: true, name: true, avatarUrl: true, invitationCode: true } },
+        technician: {
+          select: {
+            id: true,
+            name: true,
+            avatarUrl: true,
+            invitationCode: true,
+          },
+        },
       },
     });
 
@@ -136,10 +199,25 @@ export class PublicWorksController {
 
     const mapComment = (c: any): any => {
       const user = c.technician
-        ? { id: c.technician.id, name: c.technician.name, avatarUrl: toAbsoluteUrl(c.technician.avatarUrl), role: 'technician' as const }
+        ? {
+            id: c.technician.id,
+            name: c.technician.name,
+            avatarUrl: toAbsoluteUrl(c.technician.avatarUrl),
+            role: 'technician' as const,
+          }
         : c.client
-          ? { id: c.client.id, name: c.client.nickname || '客户', avatarUrl: toAbsoluteUrl(c.client.avatarUrl), role: 'client' as const }
-          : { id: 0, name: '已删除用户', avatarUrl: null, role: 'unknown' as const };
+          ? {
+              id: c.client.id,
+              name: c.client.nickname || '客户',
+              avatarUrl: toAbsoluteUrl(c.client.avatarUrl),
+              role: 'client' as const,
+            }
+          : {
+              id: 0,
+              name: '已删除用户',
+              avatarUrl: null,
+              role: 'unknown' as const,
+            };
       return {
         id: c.id,
         content: c.content,
@@ -154,7 +232,15 @@ export class PublicWorksController {
       id: work.id,
       title: work.title,
       description: work.description ?? null,
-      tags: work.tags ? work.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
+      designIdea: work.designIdea ?? null,
+      suitableScene: work.suitableScene ?? null,
+      recommendationScore: work.recommendationScore ?? null,
+      tags: work.tags
+        ? work.tags
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [],
       coverUrl: toAbsoluteUrl(work.coverUrl) ?? imageUrls[0] ?? null,
       imageUrls,
       likeCount: work.likes?.length ?? 0,

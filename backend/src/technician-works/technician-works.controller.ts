@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Put,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -21,6 +22,7 @@ import {
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
 import { TechnicianWorksService } from './technician-works.service';
 import { CreateWorkDto, UpdateWorkDto } from './dto/create-work.dto';
+import { UpdateWorkAccessDto } from './dto/work-access.dto';
 
 @ApiTags('美甲师-作品')
 @ApiBearerAuth()
@@ -37,6 +39,12 @@ export class TechnicianWorksController {
   @ApiResponse({ status: 401, description: '未授权' })
   findAll(@Req() request: { user: { technicianId: number } }) {
     return this.technicianWorksService.findAll(request.user.technicianId);
+  }
+
+  @Get('access-options')
+  @ApiOperation({ summary: '获取可关联到作品的客户与订单' })
+  getAccessOptions(@Req() request: { user: { technicianId: number } }) {
+    return this.technicianWorksService.getAccessOptions(request.user.technicianId);
   }
 
   @Get(':id')
@@ -82,6 +90,16 @@ export class TechnicianWorksController {
       id,
       dto,
     );
+  }
+
+  @Put(':id/access')
+  @ApiOperation({ summary: '更新作品客户关联与授权' })
+  updateAccess(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateWorkAccessDto,
+  ) {
+    return this.technicianWorksService.updateAccess(request.user.technicianId, id, dto);
   }
 
   @Delete(':id')

@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CreateWorkDto, UpdateWorkDto } from './dto/create-work.dto';
+import { UpdateWorkAccessDto } from './dto/work-access.dto';
 
 // Configurable base URL for uploads
 const UPLOAD_BASE_URL = process.env.UPLOAD_BASE_URL || 'http://localhost:3000';
@@ -28,6 +29,20 @@ export class TechnicianWorksService {
         technician: {
           select: { name: true },
         },
+        clientAccesses: {
+          include: {
+            customer: { select: { id: true, name: true, avatarUrl: true } },
+            order: {
+              select: {
+                id: true,
+                orderNo: true,
+                startTime: true,
+                serviceType: true,
+              },
+            },
+          },
+        },
+        _count: { select: { shareEvents: true } },
       },
     });
 
@@ -43,6 +58,20 @@ export class TechnicianWorksService {
         comments: {
           orderBy: { createdAt: 'desc' },
         },
+        clientAccesses: {
+          include: {
+            customer: { select: { id: true, name: true, avatarUrl: true } },
+            order: {
+              select: {
+                id: true,
+                orderNo: true,
+                startTime: true,
+                serviceType: true,
+              },
+            },
+          },
+        },
+        _count: { select: { shareEvents: true } },
       },
     });
 
@@ -61,6 +90,9 @@ export class TechnicianWorksService {
         coverUrl: dto.coverUrl ?? null,
         images: dto.images ?? null,
         description: dto.description ?? null,
+        designIdea: dto.designIdea ?? null,
+        suitableScene: dto.suitableScene ?? null,
+        recommendationScore: dto.recommendationScore ?? null,
         tags: dto.tags ?? null,
         price: dto.price ?? null,
         isVisible: dto.isVisible ?? true,
@@ -74,6 +106,105 @@ export class TechnicianWorksService {
     });
 
     return this.mapWork(work, technicianId);
+  }
+
+  async getAccessOptions(technicianId: number) {
+    const customers = await this.prisma.customer.findMany({
+      where: { technicianId },
+      orderBy: { updatedAt: 'desc' },
+      include: {
+        orders: {
+          where: { technicianId },
+          orderBy: { startTime: 'desc' },
+          select: {
+            id: true,
+            orderNo: true,
+            startTime: true,
+            serviceType: true,
+            status: true,
+          },
+        },
+      },
+    });
+    return customers.map((customer) => ({
+      id: customer.id,
+      name: customer.name,
+      avatarUrl: customer.avatarUrl,
+      clientUserId: customer.clientUserId,
+      canAuthorize: Boolean(customer.clientUserId),
+      orders: customer.orders,
+    }));
+  }
+
+  async updateAccess(
+    technicianId: number,
+    workId: number,
+    dto: UpdateWorkAccessDto,
+  ) {
+    const work = await this.prisma.nailWork.findFirst({
+      where: { id: workId, techId: technicianId },
+    });
+    if (!work) throw new NotFoundException('作品不存在');
+
+    const customerIds = dto.grants.map((grant) => grant.customerId);
+    if (new Set(customerIds).size !== customerIds.length) {
+      throw new BadRequestException('同一客户不能重复授权');
+    }
+
+    const customers = await this.prisma.customer.findMany({
+      where: { id: { in: customerIds }, technicianId },
+      select: { id: true, clientUserId: true },
+    });
+    if (customers.length !== customerIds.length)
+      throw new BadRequestException('包含无效客户');
+    const customerById = new Map(customers.map((item) => [item.id, item]));
+
+    for (const grant of dto.grants) {
+      const customer = customerById.get(grant.customerId)!;
+      if (!customer.clientUserId)
+        throw new BadRequestException('客户尚未绑定客户端账号，不能授权');
+      if (grant.orderId) {
+        const order = await this.prisma.order.findFirst({
+          where: {
+            id: grant.orderId,
+            technicianId,
+            customerId: grant.customerId,
+          },
+          select: { id: true },
+        });
+        if (!order) throw new BadRequestException('关联订单不属于所选客户');
+      }
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.nailWorkShareGrant.updateMany({
+        where: { workId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      await tx.nailWorkClientAccess.deleteMany({ where: { workId } });
+      for (const grant of dto.grants) {
+        const customer = customerById.get(grant.customerId)!;
+        await tx.nailWorkClientAccess.create({
+          data: {
+            workId,
+            customerId: grant.customerId,
+            clientUserId: customer.clientUserId,
+            orderId: grant.orderId,
+            canView: grant.canView,
+            canShare: grant.canShare,
+            canFavorite: grant.canFavorite,
+            canLike: grant.canLike,
+            canComment: grant.canComment,
+          },
+        });
+      }
+      await tx.nailWork.update({
+        where: { id: workId },
+        data: { visibilityScope: dto.visibilityScope },
+      });
+    });
+
+    return this.findOne(technicianId, workId);
   }
 
   async update(technicianId: number, id: number, dto: UpdateWorkDto) {
@@ -92,6 +223,13 @@ export class TechnicianWorksService {
         ...(dto.coverUrl !== undefined && { coverUrl: dto.coverUrl }),
         ...(dto.images !== undefined && { images: dto.images }),
         ...(dto.description !== undefined && { description: dto.description }),
+        ...(dto.designIdea !== undefined && { designIdea: dto.designIdea }),
+        ...(dto.suitableScene !== undefined && {
+          suitableScene: dto.suitableScene,
+        }),
+        ...(dto.recommendationScore !== undefined && {
+          recommendationScore: dto.recommendationScore,
+        }),
         ...(dto.tags !== undefined && { tags: dto.tags }),
         ...(dto.price !== undefined && { price: dto.price }),
         ...(dto.isVisible !== undefined && { isVisible: dto.isVisible }),
@@ -277,12 +415,12 @@ export class TechnicianWorksService {
     });
 
     // Map comments with user info
-    const mapped = comments.map(c => this.mapComment(c, currentTechnicianId));
+    const mapped = comments.map((c) => this.mapComment(c, currentTechnicianId));
 
     // Separate pinned and non-pinned, hidden go to bottom
-    const pinned = mapped.filter(c => c.isPinned);
-    const normal = mapped.filter(c => !c.isPinned && !c.isHidden);
-    const hidden = mapped.filter(c => c.isHidden && !c.isPinned);
+    const pinned = mapped.filter((c) => c.isPinned);
+    const normal = mapped.filter((c) => !c.isPinned && !c.isHidden);
+    const hidden = mapped.filter((c) => c.isHidden && !c.isPinned);
 
     return [...pinned, ...normal, ...hidden];
   }
@@ -359,7 +497,6 @@ export class TechnicianWorksService {
 
     return { success: true };
   }
-
 
   async pinComment(commentId: number, technicianId: number) {
     const comment = await this.prisma.nailWorkComment.findFirst({
@@ -488,10 +625,25 @@ export class TechnicianWorksService {
   private mapComment(comment: any, currentTechnicianId?: number) {
     const isAuthor = comment.technicianId === currentTechnicianId;
     const user = comment.technician
-      ? { id: comment.technician.id, name: comment.technician.name, avatarUrl: this.toAbsoluteUrl(comment.technician.avatarUrl), role: 'technician' as const }
+      ? {
+          id: comment.technician.id,
+          name: comment.technician.name,
+          avatarUrl: this.toAbsoluteUrl(comment.technician.avatarUrl),
+          role: 'technician' as const,
+        }
       : comment.client
-        ? { id: comment.client.id, name: comment.client.nickname || '客户', avatarUrl: this.toAbsoluteUrl(comment.client.avatarUrl), role: 'client' as const }
-        : { id: 0, name: '已删除用户', avatarUrl: null, role: 'unknown' as const };
+        ? {
+            id: comment.client.id,
+            name: comment.client.nickname || '客户',
+            avatarUrl: this.toAbsoluteUrl(comment.client.avatarUrl),
+            role: 'client' as const,
+          }
+        : {
+            id: 0,
+            name: '已删除用户',
+            avatarUrl: null,
+            role: 'unknown' as const,
+          };
 
     return {
       id: comment.id,
@@ -503,7 +655,9 @@ export class TechnicianWorksService {
       isRead: comment.isRead ?? false,
       isAuthor,
       user,
-      replies: (comment.replies || []).map((r: any) => this.mapComment(r, currentTechnicianId)),
+      replies: (comment.replies || []).map((r: any) =>
+        this.mapComment(r, currentTechnicianId),
+      ),
       createdAt: comment.createdAt,
       updatedAt: comment.updatedAt,
     };
@@ -516,6 +670,9 @@ export class TechnicianWorksService {
       coverUrl: string | null;
       images: string | null;
       description: string | null;
+      designIdea?: string | null;
+      suitableScene?: string | null;
+      recommendationScore?: number | null;
       tags: string | null;
       isVisible: boolean;
       isPinned?: boolean;
@@ -539,6 +696,9 @@ export class TechnicianWorksService {
       }[];
       comments?: { id: number; isRead?: boolean }[];
       technician?: { name: string | null };
+      visibilityScope?: string;
+      clientAccesses?: any[];
+      _count?: { shareEvents?: number };
     },
     currentTechnicianId?: number,
   ) {
@@ -564,7 +724,8 @@ export class TechnicianWorksService {
     const unreadComments = work.comments?.filter((c) => !c.isRead).length ?? 0;
     // Count unread likes and favorites
     const unreadLikes = work.likes?.filter((l) => !l.isRead).length ?? 0;
-    const unreadFavorites = work.favorites?.filter((f) => !f.isRead).length ?? 0;
+    const unreadFavorites =
+      work.favorites?.filter((f) => !f.isRead).length ?? 0;
 
     return {
       id: work.id,
@@ -572,11 +733,17 @@ export class TechnicianWorksService {
       coverUrl,
       imageUrls,
       description: work.description ?? null,
+      designIdea: work.designIdea ?? null,
+      suitableScene: work.suitableScene ?? null,
+      recommendationScore: work.recommendationScore ?? null,
       tags: this.parseTags(work.tags ?? null),
       price: work.price ?? null,
       isVisible: work.isVisible,
       isPinned: work.isPinned ?? false,
       isFeatured: work.isFeatured ?? false,
+      visibilityScope: work.visibilityScope ?? 'public',
+      clientAccesses: work.clientAccesses ?? [],
+      shareEventCount: work._count?.shareEvents ?? 0,
       sortOrder: work.sortOrder,
       viewCount: work.viewCount ?? 0,
       likeCount: work.likes?.length ?? 0,

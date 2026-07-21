@@ -67,13 +67,20 @@ export class CreateClientOrderDto {
   @IsString({ each: true })
   customImages?: string[];
 
+  @ApiPropertyOptional({ description: '预约同款的来源作品 ID' })
+  @IsOptional()
+  @IsInt()
+  sourceWorkId?: number;
+
   @ApiPropertyOptional({ description: '店铺地址（到店服务时使用）' })
   @IsOptional()
   @ValidateNested()
   @Type(() => ShopAddressDto)
   shopAddress?: ShopAddressDto;
 
-  @ApiPropertyOptional({ description: '从聊天发起的预约，跳过服务内容必填校验' })
+  @ApiPropertyOptional({
+    description: '从聊天发起的预约，跳过服务内容必填校验',
+  })
   @IsOptional()
   @IsBoolean()
   chatMode?: boolean;

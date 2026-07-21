@@ -36,8 +36,16 @@ export class ClientHomeController {
     return this.clientHomeService.getHome(request.user.clientUserId);
   }
 
+  @Get('beauty-archive')
+  @ApiOperation({ summary: '获取当前客户的私人美甲档案' })
+  getBeautyArchive(@Req() request: { user: { clientUserId: number } }) {
+    return this.clientHomeService.getBeautyArchive(request.user.clientUserId);
+  }
+
   @Get('featured-works')
-  @ApiOperation({ summary: '获取已绑定美甲师的推荐作品（分页，首页最新动态用）' })
+  @ApiOperation({
+    summary: '获取已绑定美甲师的推荐作品（分页，首页最新动态用）',
+  })
   @ApiResponse({ status: 200, description: '返回 { works, hasMore }' })
   @ApiQuery({ name: 'page', type: Number, required: false })
   @ApiQuery({ name: 'limit', type: Number, required: false })
@@ -56,8 +64,17 @@ export class ClientHomeController {
   @Get('works')
   @ApiOperation({ summary: '获取作品列表' })
   @ApiResponse({ status: 200, description: '返回作品列表' })
-  @ApiQuery({ name: 'techId', type: Number, required: false, description: '指定美甲师ID（需已绑定）' })
-  @ApiQuery({ name: 'sortBy', required: false, description: 'latest|likes|comments|favorites' })
+  @ApiQuery({
+    name: 'techId',
+    type: Number,
+    required: false,
+    description: '指定美甲师ID（需已绑定）',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    description: 'latest|likes|comments|favorites',
+  })
   @ApiQuery({ name: 'sortDir', required: false, description: 'asc|desc' })
   getWorks(
     @Req() request: { user: { clientUserId: number } },
@@ -124,6 +141,32 @@ export class ClientHomeController {
     @Param('id', ParseIntPipe) id: number,
   ) {
     return this.clientHomeService.favoriteWork(request.user.clientUserId, id);
+  }
+
+  @Post('works/:id/share-grant')
+  @ApiOperation({ summary: '创建作品分享授权' })
+  createShareGrant(
+    @Req() request: { user: { clientUserId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.clientHomeService.createShareGrant(
+      request.user.clientUserId,
+      id,
+    );
+  }
+
+  @Post('works/:id/share-event')
+  @ApiOperation({ summary: '记录客户实际发起作品分享' })
+  recordShare(
+    @Req() request: { user: { clientUserId: number } },
+    @Param('id', ParseIntPipe) id: number,
+    @Body('channel') channel?: string,
+  ) {
+    return this.clientHomeService.recordShare(
+      request.user.clientUserId,
+      id,
+      channel || 'wechat_friend',
+    );
   }
 
   @Get('works/:id/comments')

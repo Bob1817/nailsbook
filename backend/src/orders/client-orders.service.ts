@@ -11,6 +11,7 @@ import { UpdateClientOrderDto } from './dto/update-client-order.dto';
 import { CreateOrderFromDesignDto } from './dto/create-order-from-design.dto';
 import { Prisma } from '@prisma/client';
 import { buildDefaultServiceItems } from '../common/default-service-items';
+import { ServiceReviewDto } from './dto/service-review.dto';
 
 import * as crypto from 'crypto';
 
@@ -61,8 +62,32 @@ export class ClientOrdersService {
       throw new BadRequestException('该美甲师当前未开启接单');
     }
 
+    if (dto.sourceWorkId) {
+      const sourceWork = await this.prisma.nailWork.findFirst({
+        where: {
+          id: dto.sourceWorkId,
+          techId: dto.techId,
+          isVisible: true,
+          OR: [
+            { visibilityScope: 'public' },
+            {
+              clientAccesses: {
+                some: { clientUserId, canView: true },
+              },
+            },
+          ],
+        },
+        select: { id: true },
+      });
+      if (!sourceWork) {
+        throw new NotFoundException('来源作品不存在或查看授权已失效');
+      }
+    }
+
     if (!binding.technician.homeService && !binding.technician.shopService) {
-      throw new BadRequestException('美甲师未开启美甲服务，请联系美甲师开启服务');
+      throw new BadRequestException(
+        '美甲师未开启美甲服务，请联系美甲师开启服务',
+      );
     }
 
     if (dto.serviceType === '上门美甲' && !binding.technician.homeService) {
@@ -75,10 +100,16 @@ export class ClientOrdersService {
 
     const isCustom =
       (!dto.selectedServiceIds || dto.selectedServiceIds.length === 0) &&
-      (dto.customTitle || dto.customDescription || (dto.customImages && dto.customImages.length > 0));
+      (dto.customTitle ||
+        dto.customDescription ||
+        (dto.customImages && dto.customImages.length > 0));
 
     // chatMode: booking initiated from chat; service details agreed verbally, no content required
-    if (!dto.chatMode && !isCustom && (!dto.selectedServiceIds || dto.selectedServiceIds.length === 0)) {
+    if (
+      !dto.chatMode &&
+      !isCustom &&
+      (!dto.selectedServiceIds || dto.selectedServiceIds.length === 0)
+    ) {
       throw new BadRequestException('请选择至少一项服务内容或填写自定义需求');
     }
 
@@ -144,6 +175,7 @@ export class ClientOrdersService {
             dto.customImages && dto.customImages.length > 0
               ? JSON.stringify(dto.customImages)
               : null,
+          sourceWorkId: dto.sourceWorkId ?? null,
           quotePrice: 0,
           status: 'pending_quote',
           source: 'client_webapp',
@@ -152,7 +184,7 @@ export class ClientOrdersService {
       });
 
       const previewContent = isCustom
-        ? (dto.customTitle || '自定义美甲需求')
+        ? dto.customTitle || '自定义美甲需求'
         : selectedServiceNames.length > 0
           ? selectedServiceNames.join('、')
           : '到店/上门预约';
@@ -192,7 +224,12 @@ export class ClientOrdersService {
 
       // Freeze time slot: booking time + 5 hours
       const blockEndTime = new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
-      await this.assertNoBlockedConflict(tx, dto.techId, startTime, blockEndTime);
+      await this.assertNoBlockedConflict(
+        tx,
+        dto.techId,
+        startTime,
+        blockEndTime,
+      );
       await tx.blockedTimeSlot.create({
         data: {
           techId: dto.techId,
@@ -252,7 +289,9 @@ export class ClientOrdersService {
     }
 
     if (!design.technician.homeService && !design.technician.shopService) {
-      throw new BadRequestException('美甲师未开启美甲服务，请联系美甲师开启服务');
+      throw new BadRequestException(
+        '美甲师未开启美甲服务，请联系美甲师开启服务',
+      );
     }
 
     if (dto.serviceType === '上门美甲' && !design.technician.homeService) {
@@ -353,7 +392,12 @@ export class ClientOrdersService {
 
       // Freeze time slot: booking time + 5 hours
       const blockEndTime = new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
-      await this.assertNoBlockedConflict(tx, dto.techId, startTime, blockEndTime);
+      await this.assertNoBlockedConflict(
+        tx,
+        dto.techId,
+        startTime,
+        blockEndTime,
+      );
 
       const createdOrder = await tx.order.create({
         data: {
@@ -421,6 +465,77 @@ export class ClientOrdersService {
     }
 
     return this.mapOrder(order);
+  }
+
+  async saveReview(
+    clientUserId: number,
+    orderId: number,
+    dto: ServiceReviewDto,
+  ) {
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, clientUserId },
+      select: { id: true, status: true, technicianId: true },
+    });
+    if (!order) throw new NotFoundException('订单不存在');
+    if (order.status !== 'completed')
+      throw new BadRequestException('服务完成后才能评价');
+
+    const existing = await this.prisma.serviceReview.findUnique({
+      where: { orderId },
+    });
+    const authorizedAt = dto.photoUseAuthorized
+      ? existing?.photoUseAuthorizedAt || new Date()
+      : null;
+    const review = await this.prisma.serviceReview.upsert({
+      where: { orderId },
+      create: {
+        orderId,
+        clientUserId,
+        technicianId: order.technicianId,
+        rating: dto.rating,
+        content: dto.content?.trim() || null,
+        photos: dto.photos.length
+          ? JSON.stringify(dto.photos.slice(0, 6))
+          : null,
+        photoUseAuthorized: dto.photoUseAuthorized,
+        photoUseAuthorizedAt: authorizedAt,
+      },
+      update: {
+        rating: dto.rating,
+        content: dto.content?.trim() || null,
+        photos: dto.photos.length
+          ? JSON.stringify(dto.photos.slice(0, 6))
+          : null,
+        photoUseAuthorized: dto.photoUseAuthorized,
+        photoUseAuthorizedAt: authorizedAt,
+      },
+    });
+    return this.mapReview(review);
+  }
+
+  async saveClientPhotos(
+    clientUserId: number,
+    orderId: number,
+    photos: string[],
+  ) {
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, clientUserId },
+      select: { id: true, status: true },
+    });
+    if (!order) throw new NotFoundException('订单不存在');
+    if (order.status !== 'completed') {
+      throw new BadRequestException('服务完成后才能添加美甲记录照片');
+    }
+    const normalized = Array.from(
+      new Set(photos.map((photo) => photo.trim()).filter(Boolean)),
+    ).slice(0, 9);
+    await this.prisma.order.update({
+      where: { id: orderId },
+      data: {
+        clientPhotos: normalized.length ? JSON.stringify(normalized) : null,
+      },
+    });
+    return { orderId, photos: normalized };
   }
 
   async findTrips(clientUserId: number) {
@@ -797,7 +912,10 @@ export class ClientOrdersService {
             techId: order.technicianId,
           },
         },
-        update: { lastMessage: '客户已确认支付定金', lastMessageAt: new Date() },
+        update: {
+          lastMessage: '客户已确认支付定金',
+          lastMessageAt: new Date(),
+        },
         create: {
           clientId: clientUserId,
           techId: order.technicianId,
@@ -880,7 +998,9 @@ export class ClientOrdersService {
     const prevDuration =
       new Date(order.endTime).getTime() - new Date(order.startTime).getTime();
     const endTime =
-      prevDuration > 0 ? new Date(startTime.getTime() + prevDuration) : startTime;
+      prevDuration > 0
+        ? new Date(startTime.getTime() + prevDuration)
+        : startTime;
     const blockEnd =
       prevDuration > 0
         ? endTime
@@ -981,7 +1101,13 @@ export class ClientOrdersService {
   private orderInclude() {
     return {
       technician: {
-        select: { id: true, name: true, phone: true, avatarUrl: true },
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          avatarUrl: true,
+          shopAddresses: true,
+        },
       },
       customer: { select: { id: true, name: true, phone: true } },
       clientAddress: {
@@ -996,10 +1122,32 @@ export class ClientOrdersService {
           doorInfo: true,
         },
       },
+      review: true,
+      sourceWork: {
+        select: { id: true, title: true, coverUrl: true },
+      },
     };
   }
 
   private mapOrder(order: any) {
+    const matchedShopAddress =
+      order.serviceType === '到店美甲'
+        ? (this.normalizeShopAddresses(
+            order.technician?.shopAddresses ?? null,
+          ).find(
+            (item) =>
+              [
+                item.province,
+                item.city,
+                item.district,
+                item.detailAddress,
+                item.doorInfo,
+              ]
+                .filter(Boolean)
+                .join(' ') === order.address,
+          ) ?? null)
+        : null;
+
     return {
       id: order.id,
       orderNo: order.orderNo,
@@ -1019,15 +1167,74 @@ export class ClientOrdersService {
       customDescription: order.customDescription ?? null,
       customImages: order.customImages
         ? (() => {
-            try { return JSON.parse(order.customImages); } catch { return []; }
+            try {
+              return JSON.parse(order.customImages);
+            } catch {
+              return [];
+            }
           })()
         : [],
-      technician: order.technician ?? null,
+      clientPhotos: this.parsePhotoList(order.clientPhotos),
+      technician: order.technician
+        ? {
+            id: order.technician.id,
+            name: order.technician.name,
+            phone: order.technician.phone,
+            avatarUrl: order.technician.avatarUrl,
+          }
+        : null,
+      shopAddress: matchedShopAddress
+        ? {
+            name: matchedShopAddress.name,
+            phone: matchedShopAddress.phone,
+            province: matchedShopAddress.province,
+            city: matchedShopAddress.city,
+            district: matchedShopAddress.district,
+            detailAddress: matchedShopAddress.detailAddress,
+            doorInfo: matchedShopAddress.doorInfo,
+          }
+        : null,
       customer: order.customer ?? null,
       clientAddress: order.clientAddress ?? null,
+      review: order.review ? this.mapReview(order.review) : null,
+      sourceWork: order.sourceWork ?? null,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
     };
+  }
+
+  private mapReview(review: any) {
+    let photos: string[] = [];
+    if (review.photos) {
+      try {
+        photos = JSON.parse(review.photos);
+      } catch {
+        photos = [];
+      }
+    }
+    return {
+      id: review.id,
+      orderId: review.orderId,
+      rating: review.rating,
+      content: review.content ?? '',
+      photos,
+      photoUseAuthorized: Boolean(review.photoUseAuthorized),
+      photoUseAuthorizedAt: review.photoUseAuthorizedAt ?? null,
+      createdAt: review.createdAt,
+      updatedAt: review.updatedAt,
+    };
+  }
+
+  private parsePhotoList(value?: string | null): string[] {
+    if (!value) return [];
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed)
+        ? parsed.filter((item): item is string => typeof item === 'string')
+        : [];
+    } catch {
+      return [];
+    }
   }
 
   private canUpdateOrder(order: any) {
@@ -1209,7 +1416,9 @@ export class ClientOrdersService {
       select: { id: true },
     });
     if (conflict) {
-      throw new BadRequestException('该时间段已经被其他用户预约，请重新选择预约时间');
+      throw new BadRequestException(
+        '该时间段已经被其他用户预约，请重新选择预约时间',
+      );
     }
   }
 
@@ -1221,7 +1430,8 @@ export class ClientOrdersService {
     addr: { province?: string | null; city?: string | null },
   ) {
     if (!tech.city) return;
-    const cityOk = this.normalizeCity(addr.city) === this.normalizeCity(tech.city);
+    const cityOk =
+      this.normalizeCity(addr.city) === this.normalizeCity(tech.city);
     if (!cityOk) {
       throw new BadRequestException('跨城美甲无法预约');
     }

@@ -112,6 +112,16 @@ export class CustomersService {
           },
           orderBy: { recognizedAt: 'desc' },
         },
+        workAccesses: {
+          where: { canView: true },
+          orderBy: { updatedAt: 'desc' },
+          include: {
+            work: {
+              include: { technician: { select: { id: true, name: true } } },
+            },
+            order: { select: { id: true, orderNo: true, startTime: true } },
+          },
+        },
       },
     });
 
@@ -121,12 +131,39 @@ export class CustomersService {
 
     return {
       ...customer,
+      relatedWorks: customer.workAccesses
+        .filter((access) => access.work.isVisible)
+        .map((access) => ({
+          id: access.work.id,
+          title: access.work.title,
+          coverUrl: this.absoluteUrl(access.work.coverUrl),
+          tags: this.parseTags(access.work.tags),
+          visibilityScope: access.work.visibilityScope,
+          orderId: access.orderId,
+          orderNo: access.order?.orderNo ?? null,
+          serviceDate: access.order?.startTime ?? access.work.createdAt,
+          permissions: {
+            canShare: access.canShare,
+            canFavorite: access.canFavorite,
+            canLike: access.canLike,
+            canComment: access.canComment,
+          },
+        })),
       // 地址回退：客户地址 → 最近一笔有地址的订单
       address:
         customer.address ||
         customer.orders.find((order) => order.address)?.address ||
         null,
     };
+  }
+
+  private absoluteUrl(url: string | null) {
+    if (!url || url.startsWith('http')) return url;
+    return `${process.env.UPLOAD_BASE_URL || 'http://localhost:3000'}${url}`;
+  }
+
+  private parseTags(tags: string | null) {
+    return tags ? tags.split(/[,，]/).map((tag) => tag.trim()).filter(Boolean) : [];
   }
 
   async findOneForTechnician(id: number, technicianId: number) {

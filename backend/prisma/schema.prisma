@@ -81,11 +81,11 @@ model Technician {
   shopAddresses         String? // JSON array of shop addresses
   serviceItems          String? // JSON array of technician service items
   // Home service configuration
-  homeServiceRadius     Float?                  // Service radius in km
-  homeServicePricing    String?                 // JSON: tiered pricing [{minKm, maxKm, price}]
-  nightServiceFee       Float?                  // Night service surcharge
-  holidayServiceFee     Float?                  // Holiday service surcharge
-  minOrderAmount        Float?                  // Minimum order amount (guaranteed consumption)
+  homeServiceRadius     Float? // Service radius in km
+  homeServicePricing    String? // JSON: tiered pricing [{minKm, maxKm, price}]
+  nightServiceFee       Float? // Night service surcharge
+  holidayServiceFee     Float? // Holiday service surcharge
+  minOrderAmount        Float? // Minimum order amount (guaranteed consumption)
   // Social media accounts
   socialMedia           String? // JSON object of social media accounts
   // Service schedule (JSON: weekly availability + time ranges)
@@ -101,12 +101,13 @@ model Technician {
   designRequests        ClientDesignRequest[]
   conversations         Conversation[]
   customServiceRequests CustomServiceRequest[]
-  workComments  NailWorkComment[]
-  blockedTimeSlots BlockedTimeSlot[]
+  workComments          NailWorkComment[]
+  blockedTimeSlots      BlockedTimeSlot[]
+  serviceReviews        ServiceReview[]
 }
 
 model Customer {
-  id           Int         @id @default(autoincrement())
+  id           Int                    @id @default(autoincrement())
   technicianId Int
   clientUserId Int?
   name         String
@@ -117,12 +118,13 @@ model Customer {
   address      String?
   tags         String?
   notes        String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @default(now()) @updatedAt
-  technician   Technician  @relation(fields: [technicianId], references: [id])
-  clientUser   ClientUser? @relation(fields: [clientUserId], references: [id])
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @default(now()) @updatedAt
+  technician   Technician             @relation(fields: [technicianId], references: [id])
+  clientUser   ClientUser?            @relation(fields: [clientUserId], references: [id])
   orders       Order[]
   revenues     Revenue[]
+  workAccesses NailWorkClientAccess[]
 
   @@unique([technicianId, clientUserId])
   @@index([technicianId])
@@ -131,14 +133,15 @@ model Customer {
 }
 
 model Order {
-  id                     Int                   @id @default(autoincrement())
-  orderNo                String                @unique
+  id                     Int                    @id @default(autoincrement())
+  orderNo                String                 @unique
   technicianId           Int
   customerId             Int
   clientUserId           Int?
   addressId              Int?
   designRequestId        Int?
   customServiceRequestId Int?
+  sourceWorkId           Int?
   startTime              DateTime
   endTime                DateTime
   address                String?
@@ -148,18 +151,19 @@ model Order {
   customTitle            String?
   customDescription      String?
   customImages           String? // JSON array of image URLs
-  reminderDaySent        Boolean              @default(false)
-  reminderHourSent       Boolean              @default(false)
+  clientPhotos           String? // JSON array uploaded by the client after completion
+  reminderDaySent        Boolean                @default(false)
+  reminderHourSent       Boolean                @default(false)
   quotePrice             Float?
   quoteRemark            String?
   quotedAt               DateTime?
-  confirmToken          String?   @unique
-  confirmTokenExpiresAt DateTime?
-  confirmTokenUsedAt    DateTime?
-  status                 String                @default("pending_quote")
-  isDepositPaid          Boolean               @default(false)
-  depositAmount          Float?                @default(0)
-  depositStatus          String?               @default("pending")
+  confirmToken           String?                @unique
+  confirmTokenExpiresAt  DateTime?
+  confirmTokenUsedAt     DateTime?
+  status                 String                 @default("pending_quote")
+  isDepositPaid          Boolean                @default(false)
+  depositAmount          Float?                 @default(0)
+  depositStatus          String?                @default("pending")
   depositConfirmedAt     DateTime?
   confirmedAt            DateTime?
   completedAt            DateTime?
@@ -169,16 +173,19 @@ model Order {
   // expiredFromStatus 记录过期前状态，便于「重新发起」时恢复原状态。
   expiredAt              DateTime?
   expiredFromStatus      String?
-  source                 String?               @default("technician")
-  createdAt              DateTime              @default(now())
-  updatedAt              DateTime              @default(now()) @updatedAt
-  technician             Technician            @relation(fields: [technicianId], references: [id])
-  customer               Customer              @relation(fields: [customerId], references: [id])
-  clientUser             ClientUser?           @relation(fields: [clientUserId], references: [id])
-  clientAddress          ClientAddress?        @relation(fields: [addressId], references: [id])
-  designRequest          ClientDesignRequest?  @relation(fields: [designRequestId], references: [id])
-  customServiceRequest   CustomServiceRequest? @relation(fields: [customServiceRequestId], references: [id])
+  source                 String?                @default("technician")
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @default(now()) @updatedAt
+  technician             Technician             @relation(fields: [technicianId], references: [id])
+  customer               Customer               @relation(fields: [customerId], references: [id])
+  clientUser             ClientUser?            @relation(fields: [clientUserId], references: [id])
+  clientAddress          ClientAddress?         @relation(fields: [addressId], references: [id])
+  designRequest          ClientDesignRequest?   @relation(fields: [designRequestId], references: [id])
+  customServiceRequest   CustomServiceRequest?  @relation(fields: [customServiceRequestId], references: [id])
+  sourceWork             NailWork?              @relation(fields: [sourceWorkId], references: [id], onDelete: SetNull)
   revenue                Revenue?
+  workAccesses           NailWorkClientAccess[]
+  review                 ServiceReview?
 
   @@index([technicianId])
   @@index([customerId])
@@ -186,6 +193,7 @@ model Order {
   @@index([addressId])
   @@index([designRequestId])
   @@index([customServiceRequestId])
+  @@index([sourceWorkId])
   @@index([status])
   @@index([startTime])
 }
@@ -210,6 +218,10 @@ model ClientUser {
   conversations         Conversation[]
   customServiceRequests CustomServiceRequest[]
   workComments          NailWorkComment[]
+  workAccesses          NailWorkClientAccess[]
+  workShareGrants       NailWorkShareGrant[]
+  serviceReviews        ServiceReview[]
+  workShareEvents       NailWorkShareEvent[]
 }
 
 model ClientTechBinding {
@@ -221,7 +233,7 @@ model ClientTechBinding {
   isDefault  Boolean    @default(false)
   // pending（待美甲师审批）| active（已绑定）| inactive（已解除）| rejected（被拒绝）
   status     String     @default("active")
-  note       String?    // 客户申请绑定时填写的备注
+  note       String? // 客户申请绑定时填写的备注
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @default(now()) @updatedAt
   client     ClientUser @relation(fields: [clientId], references: [id])
@@ -255,30 +267,120 @@ model ClientAddress {
 }
 
 model NailWork {
-  id          Int                @id @default(autoincrement())
-  techId      Int
-  title       String?
-  coverUrl    String?
-  images      String?
-  description String?
-  tags        String?
-  isVisible   Boolean            @default(true)
-  isPinned    Boolean            @default(false)
-  isFeatured  Boolean            @default(false)
-  sortOrder   Int                @default(0)
-  price       Float?
-  viewCount   Int                @default(0)
-  isHomepageFeatured Boolean     @default(false)
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @default(now()) @updatedAt
-  technician  Technician         @relation(fields: [techId], references: [id])
-  likes       NailWorkLike[]
-  favorites   NailWorkFavorite[]
-  comments    NailWorkComment[]
+  id                  Int                    @id @default(autoincrement())
+  techId              Int
+  title               String?
+  coverUrl            String?
+  images              String?
+  description         String?
+  designIdea          String?
+  suitableScene       String?
+  recommendationScore Int?
+  tags                String?
+  isVisible           Boolean                @default(true)
+  isPinned            Boolean                @default(false)
+  isFeatured          Boolean                @default(false)
+  sortOrder           Int                    @default(0)
+  price               Float?
+  viewCount           Int                    @default(0)
+  isHomepageFeatured  Boolean                @default(false)
+  // public: 已绑定客户均可见；authorized_clients: 仅授权客户可见
+  visibilityScope     String                 @default("public")
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @default(now()) @updatedAt
+  technician          Technician             @relation(fields: [techId], references: [id])
+  likes               NailWorkLike[]
+  favorites           NailWorkFavorite[]
+  comments            NailWorkComment[]
+  clientAccesses      NailWorkClientAccess[]
+  shareGrants         NailWorkShareGrant[]
+  shareEvents         NailWorkShareEvent[]
+  sourceOrders        Order[]
 
   @@index([techId])
   @@index([isVisible])
   @@index([isHomepageFeatured])
+}
+
+model NailWorkClientAccess {
+  id           Int                  @id @default(autoincrement())
+  workId       Int
+  customerId   Int
+  clientUserId Int?
+  orderId      Int?
+  canView      Boolean              @default(true)
+  canShare     Boolean              @default(false)
+  canFavorite  Boolean              @default(true)
+  canLike      Boolean              @default(true)
+  canComment   Boolean              @default(true)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @default(now()) @updatedAt
+  work         NailWork             @relation(fields: [workId], references: [id], onDelete: Cascade)
+  customer     Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  clientUser   ClientUser?          @relation(fields: [clientUserId], references: [id], onDelete: SetNull)
+  order        Order?               @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  shareGrants  NailWorkShareGrant[]
+
+  @@unique([workId, customerId])
+  @@index([clientUserId, canView])
+  @@index([orderId])
+}
+
+model NailWorkShareGrant {
+  id           Int                  @id @default(autoincrement())
+  token        String               @unique
+  workId       Int
+  accessId     Int
+  clientUserId Int
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime             @default(now())
+  work         NailWork             @relation(fields: [workId], references: [id], onDelete: Cascade)
+  access       NailWorkClientAccess @relation(fields: [accessId], references: [id], onDelete: Cascade)
+  clientUser   ClientUser           @relation(fields: [clientUserId], references: [id], onDelete: Cascade)
+  events       NailWorkShareEvent[]
+
+  @@index([workId])
+  @@index([accessId, revokedAt])
+  @@index([expiresAt])
+}
+
+model NailWorkShareEvent {
+  id           Int                 @id @default(autoincrement())
+  workId       Int
+  clientUserId Int?
+  shareGrantId Int?
+  eventType    String
+  channel      String?
+  createdAt    DateTime            @default(now())
+  work         NailWork            @relation(fields: [workId], references: [id], onDelete: Cascade)
+  clientUser   ClientUser?         @relation(fields: [clientUserId], references: [id], onDelete: SetNull)
+  shareGrant   NailWorkShareGrant? @relation(fields: [shareGrantId], references: [id], onDelete: SetNull)
+
+  @@index([workId, eventType])
+  @@index([clientUserId])
+  @@index([shareGrantId])
+  @@index([createdAt])
+}
+
+model ServiceReview {
+  id                   Int        @id @default(autoincrement())
+  orderId              Int        @unique
+  clientUserId         Int
+  technicianId         Int
+  rating               Int
+  content              String?
+  photos               String?
+  photoUseAuthorized   Boolean    @default(false)
+  photoUseAuthorizedAt DateTime?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @default(now()) @updatedAt
+  order                Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  clientUser           ClientUser @relation(fields: [clientUserId], references: [id], onDelete: Cascade)
+  technician           Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([clientUserId])
+  @@index([technicianId, rating])
 }
 
 model NailWorkLike {
@@ -308,21 +410,21 @@ model NailWorkFavorite {
 }
 
 model NailWorkComment {
-  id           Int              @id @default(autoincrement())
+  id           Int               @id @default(autoincrement())
   workId       Int
   clientId     Int?
   technicianId Int?
   parentId     Int?
   content      String
-  isRead       Boolean          @default(false)
-  isPinned     Boolean          @default(false)
-  isHidden     Boolean          @default(false)
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @default(now()) @updatedAt
-  work         NailWork         @relation(fields: [workId], references: [id], onDelete: Cascade)
-  client       ClientUser?      @relation(fields: [clientId], references: [id])
-  technician   Technician?      @relation(fields: [technicianId], references: [id])
-  parent       NailWorkComment? @relation("CommentReplies", fields: [parentId], references: [id])
+  isRead       Boolean           @default(false)
+  isPinned     Boolean           @default(false)
+  isHidden     Boolean           @default(false)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @default(now()) @updatedAt
+  work         NailWork          @relation(fields: [workId], references: [id], onDelete: Cascade)
+  client       ClientUser?       @relation(fields: [clientId], references: [id])
+  technician   Technician?       @relation(fields: [technicianId], references: [id])
+  parent       NailWorkComment?  @relation("CommentReplies", fields: [parentId], references: [id])
   replies      NailWorkComment[] @relation("CommentReplies")
   reports      NailWorkReport[]
 
@@ -539,14 +641,14 @@ model TechnicianInviteKey {
 }
 
 model BlockedTimeSlot {
-  id           Int        @id @default(autoincrement())
-  techId       Int
-  orderId      Int?
-  startTime    DateTime
-  endTime      DateTime
-  reason       String?
-  createdAt    DateTime   @default(now())
-  technician   Technician @relation(fields: [techId], references: [id])
+  id         Int        @id @default(autoincrement())
+  techId     Int
+  orderId    Int?
+  startTime  DateTime
+  endTime    DateTime
+  reason     String?
+  createdAt  DateTime   @default(now())
+  technician Technician @relation(fields: [techId], references: [id])
 
   @@index([techId])
   @@index([startTime])

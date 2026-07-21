@@ -19,6 +19,7 @@ describe('ClientOrdersService.create 下单校验', () => {
     prisma = {
       clientTechBinding: { findFirst: jest.fn() },
       clientUser: { findUnique: jest.fn() },
+      nailWork: { findFirst: jest.fn() },
     };
     service = new ClientOrdersService(prisma, {} as never, {} as never);
   });
@@ -86,5 +87,33 @@ describe('ClientOrdersService.create 下单校验', () => {
     await expect(service.create(11, baseDto)).rejects.toBeInstanceOf(
       NotFoundException,
     );
+  });
+
+  it('预约同款在提交时重新校验来源作品归属与查看权', async () => {
+    prisma.clientTechBinding.findFirst.mockResolvedValue({
+      technician: tech(),
+    });
+    prisma.nailWork.findFirst.mockResolvedValue(null);
+
+    await expect(
+      service.create(11, { ...baseDto, sourceWorkId: 88 }),
+    ).rejects.toThrow('来源作品不存在或查看授权已失效');
+    expect(prisma.nailWork.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: 88,
+        techId: 7,
+        isVisible: true,
+        OR: [
+          { visibilityScope: 'public' },
+          {
+            clientAccesses: {
+              some: { clientUserId: 11, canView: true },
+            },
+          },
+        ],
+      },
+      select: { id: true },
+    });
+    expect(prisma.clientUser.findUnique).not.toHaveBeenCalled();
   });
 });

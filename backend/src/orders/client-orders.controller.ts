@@ -24,6 +24,8 @@ import { UpdateClientOrderDto } from './dto/update-client-order.dto';
 import { CreateOrderFromDesignDto } from './dto/create-order-from-design.dto';
 import { UpdateClientOrderStatusDto } from './dto/update-client-order-status.dto';
 import { RejectQuoteDto } from './dto/reject-quote.dto';
+import { ServiceReviewDto } from './dto/service-review.dto';
+import { ClientOrderPhotosDto } from './dto/client-order-photos.dto';
 
 @Controller('client/orders')
 @UseGuards(ClientJwtAuthGuard)
@@ -83,6 +85,34 @@ export class ClientOrdersController {
     @Param('id', ParseIntPipe) id: number,
   ) {
     return this.clientOrdersService.findOne(request.user.clientUserId, id);
+  }
+
+  @Patch(':id/review')
+  @ApiOperation({ summary: '创建或更新已完成服务的评价与照片授权' })
+  review(
+    @Req() request: { user: { clientUserId: number } },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ServiceReviewDto,
+  ) {
+    return this.clientOrdersService.saveReview(
+      request.user.clientUserId,
+      id,
+      dto,
+    );
+  }
+
+  @Patch(':id/client-photos')
+  @ApiOperation({ summary: '保存客户在已完成预约中上传的美甲照片' })
+  saveClientPhotos(
+    @Req() request: { user: { clientUserId: number } },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ClientOrderPhotosDto,
+  ) {
+    return this.clientOrdersService.saveClientPhotos(
+      request.user.clientUserId,
+      id,
+      dto.photos,
+    );
   }
 
   @Patch(':id')
@@ -194,9 +224,7 @@ export class ClientOrdersController {
   @ApiOperation({ summary: '获取美甲师的冻结时间段' })
   @ApiResponse({ status: 200, description: '返回冻结时间段列表' })
   @ApiParam({ name: 'techId', type: Number, description: '美甲师ID' })
-  getBlockedSlots(
-    @Param('techId', ParseIntPipe) techId: number,
-  ) {
+  getBlockedSlots(@Param('techId', ParseIntPipe) techId: number) {
     return this.clientOrdersService.getBlockedSlots(techId);
   }
 }
