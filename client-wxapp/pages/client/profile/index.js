@@ -12,7 +12,8 @@ Page({
     bindNote: '',
     foundTech: null,
     checkingCode: false,
-    binding: false
+    binding: false,
+    activeTechMenuId: null
   },
 
   onLoad() {
@@ -39,6 +40,7 @@ Page({
           city: b.technician?.city || b.city || '',
           status: b.technician?.status || b.status || 'active',
           homeService: b.technician?.homeService || b.homeService || false,
+          shopService: b.technician?.shopService || b.shopService || false,
           isDefault: b.isDefault || false
         }))
       });
@@ -88,9 +90,25 @@ Page({
     wx.navigateTo({ url: '/pages/role-select/index' });
   },
 
-  viewTechCard(e) {
+  toggleTechMenu(e) {
+    const id = Number(e.currentTarget.dataset.id);
+    this.setData({ activeTechMenuId: this.data.activeTechMenuId === id ? null : id });
+  },
+
+  closeTechMenu() {
+    if (this.data.activeTechMenuId !== null) this.setData({ activeTechMenuId: null });
+  },
+
+  viewTechInfo(e) {
     const { id } = e.currentTarget.dataset;
+    this.setData({ activeTechMenuId: null });
     wx.navigateTo({ url: `/pages/client/works/index?techId=${id}` });
+  },
+
+  messageTechnician(e) {
+    const { id, name } = e.currentTarget.dataset;
+    this.setData({ activeTechMenuId: null });
+    wx.navigateTo({ url: `/pages/client/chat-detail/index?techId=${id}&techName=${encodeURIComponent(name || '美甲师')}` });
   },
 
   // 绑定美甲师
@@ -152,6 +170,7 @@ Page({
 
   async unbindTechnician(e) {
     const { id, name } = e.currentTarget.dataset;
+    this.setData({ activeTechMenuId: null });
     wx.showModal({
       title: '解除绑定',
       content: `确定要解除与"${name}"的绑定吗？`,

@@ -12,7 +12,7 @@
         class="tech-card {{selectedTechId === item.id ? 'tech-card-active' : ''}}"
         bindtap="selectTech" data-id="{{item.id}}">
         <view class="tech-avatar">
-          <image wx:if="{{item.avatarUrl}}" src="{{item.avatarUrl}}" mode="aspectFill" class="tech-avatar-img" />
+          <image wx:if="{{item.avatarUrl}}" src="{{item.avatarUrl}}" mode="aspectFill" class="tech-avatar-img" lazy-load aria-label="{{item.name || '美甲师'}}的头像" />
           <text wx:else class="tech-avatar-text">{{item.name[0]}}</text>
         </view>
         <view class="tech-info">
@@ -101,13 +101,13 @@
       </view>
       <view class="form-field">
         <text class="form-label">详细描述</text>
-        <textarea class="form-textarea" value="{{customDesc}}" bindinput="onCustomDescInput" placeholder="描述你的具体需求..." />
+        <textarea class="form-textarea" value="{{customDesc}}" bindinput="onCustomDescInput" placeholder="描述你的具体需求..." adjust-position cursor-spacing="120" />
       </view>
       <view class="form-field">
         <text class="form-label">参考图片（可选，最多3张）</text>
         <view class="image-grid">
           <view wx:for="{{customImages}}" wx:key="*this" class="image-item">
-            <image src="{{item}}" mode="aspectFill" class="preview-img" />
+            <image src="{{item}}" mode="aspectFill" class="preview-img" aria-label="预约参考图" />
             <view class="remove-btn" bindtap="removeImage" data-index="{{index}}">✕</view>
           </view>
           <view wx:if="{{customImages.length < 3}}" class="add-image" bindtap="chooseImage">
@@ -125,7 +125,7 @@
         </view>
         <view wx:if="{{selectedWorkIds.length > 0}}" class="selected-works">
           <view wx:for="{{techWorks}}" wx:key="id" wx:if="{{selectedWorkIds.indexOf(item.id) >= 0}}" class="selected-work-item">
-            <image src="{{item.coverUrl}}" mode="aspectFill" class="work-thumb" />
+            <image src="{{item.coverUrl}}" mode="aspectFill" class="work-thumb" lazy-load aria-label="{{item.title || '美甲作品'}}" />
             <view class="remove-btn" bindtap="removeWork" data-id="{{item.id}}">✕</view>
           </view>
         </view>
@@ -133,7 +133,7 @@
           <view wx:for="{{techWorks}}" wx:key="id"
             class="work-option {{selectedWorkIds.indexOf(item.id) >= 0 ? 'work-option-active' : ''}}"
             bindtap="toggleWork" data-id="{{item.id}}">
-            <image src="{{item.coverUrl}}" mode="aspectFill" class="work-option-img" />
+            <image src="{{item.coverUrl}}" mode="aspectFill" class="work-option-img" lazy-load aria-label="{{item.title || '美甲作品'}}" />
             <view wx:if="{{selectedWorkIds.indexOf(item.id) >= 0}}" class="work-check">✓</view>
           </view>
         </view>
@@ -247,7 +247,7 @@
     <view class="section-head">
       <text class="section-title">补充说明</text>
     </view>
-    <textarea class="remark-input" value="{{remark}}" bindinput="onRemarkInput" placeholder="请输入特殊需求..." />
+    <textarea class="remark-input" value="{{remark}}" bindinput="onRemarkInput" placeholder="请输入特殊需求..." adjust-position cursor-spacing="120" />
   </view>
 
   <!-- 提交按钮 -->

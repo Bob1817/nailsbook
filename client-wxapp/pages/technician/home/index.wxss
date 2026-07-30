@@ -179,6 +179,10 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
   font-size: 22rpx; color: #6b7280;
 }
 .card-more {
+  min-height: 88rpx;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
   font-size: 24rpx; color: #6b7280; font-weight: 600;
   padding: 10rpx 40rpx;
   border-radius: 999rpx;
@@ -191,7 +195,7 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
   border-radius: 28rpx;
   padding: 56rpx 40rpx;
   text-align: center;
-  font-size: 26rpx; color: #9ca3af;
+  font-size: 26rpx; color: #6b7280;
 }
 
 /* ========== 下一单 ========== */
@@ -211,7 +215,7 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
   display: flex; align-items: flex-start; gap: 24rpx;
 }
 .time-col { flex-shrink: 0; }
-.next-date { display: block; font-size: 24rpx; font-weight: 500; color: #9ca3af; }
+.next-date { display: block; font-size: 24rpx; font-weight: 500; color: #6b7280; }
 .next-time {
   display: block; margin-top: 4rpx;
   font-size: 64rpx; font-weight: 700; color: #1f2937;
@@ -233,7 +237,27 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
   margin-top: 20rpx;
   display: flex; align-items: flex-start; gap: 12rpx;
 }
-.addr-icon { font-size: 26rpx; line-height: 1.5; }
+.addr-icon {
+  position: relative;
+  width: 24rpx;
+  height: 24rpx;
+  margin: 4rpx 4rpx 0 2rpx;
+  border: 4rpx solid #a57d90;
+  border-radius: 50% 50% 50% 0;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  transform: rotate(-45deg);
+}
+.addr-icon::after {
+  content: '';
+  position: absolute;
+  left: 6rpx;
+  top: 6rpx;
+  width: 5rpx;
+  height: 5rpx;
+  border-radius: 50%;
+  background: #a57d90;
+}
 .addr-text {
   flex: 1;
   font-size: 24rpx; line-height: 1.5; color: #6b7280;
@@ -249,7 +273,7 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
   border: 2rpx solid #F4E6EC;
   background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%);
 }
-.stat-mini-cap { display: block; font-size: 20rpx; color: #9ca3af; }
+.stat-mini-cap { display: block; font-size: 20rpx; color: #6b7280; }
 .stat-mini-val {
   display: block; margin-top: 6rpx;
   font-size: 26rpx; font-weight: 600; color: #1f2937;
@@ -295,6 +319,29 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
   border: 2rpx solid #F2D5DE;
 }
 .btn-ico { font-size: 28rpx; }
+.btn-ico-nav {
+  position: relative;
+  width: 28rpx;
+  height: 28rpx;
+  border: 4rpx solid currentColor;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.btn-ico-nav::before {
+  content: '';
+  position: absolute;
+  left: 7rpx;
+  top: 3rpx;
+  width: 0;
+  height: 0;
+  border-left: 6rpx solid transparent;
+  border-right: 6rpx solid transparent;
+  border-bottom: 16rpx solid currentColor;
+  transform: rotate(40deg);
+}
+.btn-ico-phone { position:relative; width:28rpx; height:28rpx; border:4rpx solid currentColor; border-top-color:transparent; border-right-color:transparent; border-radius:7rpx 7rpx 7rpx 15rpx; transform:rotate(-42deg); box-sizing:border-box; }
+.btn-ico-phone::before,.btn-ico-phone::after { content:''; position:absolute; width:11rpx; height:6rpx; border-radius:4rpx; background:currentColor; }
+.btn-ico-phone::before { left:-6rpx; top:-2rpx; }.btn-ico-phone::after { right:-6rpx; bottom:-2rpx; }
 
 .next-empty { padding: 24rpx 0 8rpx; }
 .next-empty-title {
@@ -346,7 +393,7 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 .todo-count.tone-orange { background: #fff0ea; color: #f06f4b; }
 .todo-count.tone-blue   { background: #edf3ff; color: #4f7ddb; }
 .todo-label { font-size: 26rpx; font-weight: 500; color: #3c3440; }
-.todo-arrow { font-size: 36rpx; color: #9ca3af; }
+.todo-arrow { font-size: 36rpx; color: #6b7280; }
 
 /* ========== 今日行程 ========== */
 .skeleton-list { display: flex; flex-direction: column; gap: 16rpx; }

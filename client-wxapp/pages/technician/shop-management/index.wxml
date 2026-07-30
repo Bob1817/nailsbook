@@ -3,10 +3,17 @@
 
   <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
 
+  <view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+    <view class="load-error-mark">!</view>
+    <text class="empty-text">店铺信息加载失败</text>
+    <text class="empty-sub">请检查网络后重试</text>
+    <button class="retry-btn" bindtap="loadShops">重新加载</button>
+  </view>
+
   <view wx:else>
     <!-- 空状态 -->
     <view wx:if="{{shops.length === 0}}" class="empty">
-      <text class="empty-icon">🏪</text>
+      <view class="shop-empty-mark"><view class="shop-awning"></view><view class="shop-door"></view></view>
       <text class="empty-text">还没有店铺</text>
       <text class="empty-sub">添加你的店铺信息，方便客户到店</text>
       <button class="btn-add-first" bindtap="openAdd">添加第一个店铺</button>
@@ -24,7 +31,7 @@
               </view>
             </view>
             <text class="shop-address">{{item.province}}{{item.city}}{{item.district}}{{item.detailAddress}}</text>
-            <text wx:if="{{item.phone}}" class="shop-phone">📞 {{item.phone}}</text>
+            <text wx:if="{{item.phone}}" class="shop-phone">电话：{{item.phone}}</text>
           </view>
           <switch checked="{{item.enabled}}" bindchange="toggleShopEnabled" data-name="{{item.name}}" data-address="{{item.detailAddress}}" color="#FF6B8A" class="shop-switch"/>
         </view>
@@ -41,7 +48,7 @@
   </view>
 
   <!-- FAB 添加按钮 -->
-  <view wx:if="{{shops.length > 0}}" class="fab" bindtap="openAdd">
+  <view wx:if="{{shops.length > 0 && !loadFailed}}" class="fab" bindtap="openAdd">
     <text class="fab-icon">+</text>
   </view>
 

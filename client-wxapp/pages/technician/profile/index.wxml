@@ -4,7 +4,7 @@
   <view class="header">
     <view class="header-row">
       <view class="avatar-wrap" bindtap="editProfile">
-        <image wx:if="{{userInfo.avatarUrl}}" src="{{userInfo.avatarUrl}}" mode="aspectFill" class="avatar" />
+        <image wx:if="{{userInfo.avatarUrl}}" src="{{userInfo.avatarUrl}}" mode="aspectFill" class="avatar" aria-label="{{userInfo.name || '美甲师'}}的头像" />
         <view wx:else class="avatar-placeholder">
           <text class="avatar-char">{{userInfo.name ? userInfo.name[0] : '美'}}</text>
         </view>
@@ -44,6 +44,34 @@
         <view class="stat-item" bindtap="goStatsPending">
           <text class="stat-value {{stats.pendingTotal > 0 ? 'stat-value-alert' : ''}}">{{stats.pendingTotal}}</text>
           <text class="stat-label">待处理</text>
+        </view>
+      </view>
+
+      <view class="stats-h-divider"></view>
+
+      <view class="stats-row business-row">
+        <view class="stat-item">
+          <text class="stat-value business-value">{{stats.monthlyRevenue}}</text>
+          <text class="stat-label">本月已完成收入</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-value business-value">{{stats.rating}}</text>
+          <text class="stat-label">客户评分</text>
+        </view>
+      </view>
+
+      <view class="stats-h-divider"></view>
+
+      <view class="stats-row business-row">
+        <view class="stat-item">
+          <text class="stat-value business-value">{{stats.averageTicket || '待积累'}}</text>
+          <text class="stat-label">平均客单价</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-value business-value">{{stats.repeatRate || '待积累'}}</text>
+          <text class="stat-label">客户复购率</text>
         </view>
       </view>
 
@@ -182,19 +210,19 @@
     <text class="card-title">设置</text>
     <view class="menu-list">
       <view class="menu-item" bindtap="editProfile">
-        <text class="menu-icon">⚙️</text><text class="menu-label">个人设置</text><text class="menu-arrow">›</text>
+        <view class="menu-icon icon-settings"></view><text class="menu-label">个人设置</text><text class="menu-arrow">›</text>
       </view>
       <view class="menu-item" bindtap="navigateToAccountSecurity">
-        <text class="menu-icon">🔐</text><text class="menu-label">账号与安全</text><text class="menu-arrow">›</text>
+        <view class="menu-icon icon-lock"></view><text class="menu-label">账号与安全</text><text class="menu-arrow">›</text>
       </view>
       <view class="menu-item" bindtap="navigateToHelp">
-        <text class="menu-icon">❓</text><text class="menu-label">帮助与反馈</text><text class="menu-arrow">›</text>
+        <view class="menu-icon icon-help"></view><text class="menu-label">帮助与反馈</text><text class="menu-arrow">›</text>
       </view>
       <view class="menu-item" bindtap="navigateToAbout">
-        <text class="menu-icon">ℹ️</text><text class="menu-label">关于我们</text><text class="menu-arrow">›</text>
+        <view class="menu-icon icon-about"></view><text class="menu-label">关于我们</text><text class="menu-arrow">›</text>
       </view>
       <view class="menu-item" bindtap="switchRole">
-        <text class="menu-icon">🔄</text><text class="menu-label">切换身份</text><text class="menu-arrow">›</text>
+        <view class="menu-icon icon-switch"></view><text class="menu-label">切换身份</text><text class="menu-arrow">›</text>
       </view>
     </view>
   </view>
@@ -390,12 +418,12 @@
     <!-- Tab 切换 -->
     <view class="st-tabs">
       <view class="st-tab {{serviceTypeTab === 'home' ? 'st-tab-active' : ''}}" bindtap="switchServiceTypeTab" data-tab="home">
-        <text class="st-tab-icon">🚗</text>
+        <view class="st-tab-icon st-tab-icon-home"></view>
         <text class="st-tab-text">上门服务</text>
         <view wx:if="{{homeServiceOn}}" class="st-tab-dot"></view>
       </view>
       <view class="st-tab {{serviceTypeTab === 'shop' ? 'st-tab-active' : ''}}" bindtap="switchServiceTypeTab" data-tab="shop">
-        <text class="st-tab-icon">🏪</text>
+        <view class="st-tab-icon st-tab-icon-shop"></view>
         <text class="st-tab-text">到店服务</text>
         <view wx:if="{{shopServiceOn}}" class="st-tab-dot"></view>
       </view>
@@ -431,7 +459,7 @@
               <view class="st-shop-info">
                 <text class="st-shop-name">{{item.name}}</text>
                 <text class="st-shop-address">{{item.detailAddress || item.address}}</text>
-                <text wx:if="{{item.phone}}" class="st-shop-phone">📞 {{item.phone}}</text>
+                <text wx:if="{{item.phone}}" class="st-shop-phone">电话：{{item.phone}}</text>
               </view>
               <view class="st-shop-actions">
                 <view class="st-shop-edit" bindtap="openShopForm" data-shop="{{item}}">编辑</view>
@@ -442,7 +470,7 @@
 
           <!-- 空状态 -->
           <view wx:if="{{shopList.length === 0 && !showShopForm}}" class="st-empty">
-            <text class="st-empty-icon">🏪</text>
+            <view class="st-empty-icon st-empty-shop-icon"></view>
             <text class="st-empty-text">还没有店铺</text>
             <text class="st-empty-sub">添加店铺信息，方便客户到店</text>
           </view>

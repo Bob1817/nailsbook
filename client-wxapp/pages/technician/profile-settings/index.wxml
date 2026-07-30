@@ -2,8 +2,8 @@
 <view class="container">
   <view class="avatar-section" bindtap="chooseAvatar">
     <view class="avatar-wrap">
-      <image wx:if="{{avatarUrl}}" src="{{avatarUrl}}" mode="aspectFill" class="avatar" />
-      <view wx:else class="avatar-placeholder"><text class="avatar-icon">👤</text></view>
+      <image wx:if="{{avatarUrl}}" src="{{avatarUrl}}" mode="aspectFill" class="avatar" aria-label="当前头像" />
+      <view wx:else class="avatar-placeholder"><view class="profile-avatar-mark"></view></view>
       <view wx:if="{{uploading}}" class="avatar-uploading"><view class="upload-spinner"></view></view>
     </view>
     <text class="avatar-hint">点击更换头像</text>
@@ -13,7 +13,7 @@
     <!-- 姓名 -->
     <view class="field">
       <text class="label">姓名</text>
-      <input class="input" value="{{name}}" bindinput="onNameInput" placeholder="请输入姓名" placeholder-class="ph" />
+      <input class="input" value="{{name}}" bindinput="onNameInput" placeholder="请输入姓名" placeholder-class="ph" confirm-type="done" cursor-spacing="24" />
     </view>
 
     <!-- 城市：省市二级联动选择 -->
@@ -45,7 +45,7 @@
     <!-- 个人简介 -->
     <view class="field field-textarea">
       <text class="label">个人简介</text>
-      <textarea class="textarea" value="{{bio}}" bindinput="onBioInput" placeholder="介绍一下自己吧" placeholder-class="ph" maxlength="200" />
+      <textarea class="textarea" value="{{bio}}" bindinput="onBioInput" placeholder="介绍一下自己吧" placeholder-class="ph" maxlength="200" adjust-position cursor-spacing="120" />
     </view>
   </view>
 

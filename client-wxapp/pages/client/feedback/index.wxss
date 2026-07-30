@@ -32,7 +32,7 @@ page {
 .intro-sub {
   display: block;
   font-size: 26rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 /* 卡片 */
@@ -59,10 +59,16 @@ page {
 
 .field-input {
   width: 100%;
-  height: 56rpx;
+  height: 88rpx;
+  padding:0 18rpx;
+  border:2rpx solid transparent;
+  border-radius:14rpx;
+  background:#f9fafb;
+  box-sizing:border-box;
   font-size: 30rpx;
   color: #1f2937;
 }
+.field-input:focus,.field-area:focus { border-color:#ff6b8a; background:#fff; }
 
 .ph { color: #c4c9d4; }
 
@@ -78,10 +84,13 @@ page {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 56rpx;
+  min-height: 88rpx;
+  padding:0 18rpx;
+  border-radius:14rpx;
+  background:#f9fafb;
 }
 .picker-value { font-size: 30rpx; color: #1f2937; }
-.picker-arrow { font-size: 36rpx; color: #d1d5db; transform: rotate(90deg); }
+.picker-arrow { font-size: 36rpx; color: #767b84; transform: rotate(90deg); }
 
 .field-textarea .field-count {
   position: static;
@@ -96,6 +105,11 @@ page {
   font-size: 30rpx;
   color: #1f2937;
   line-height: 1.6;
+  padding:18rpx;
+  border:2rpx solid transparent;
+  border-radius:14rpx;
+  background:#f9fafb;
+  box-sizing:border-box;
 }
 
 /* 底部提交 */

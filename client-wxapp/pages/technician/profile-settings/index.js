@@ -20,6 +20,7 @@ Page({
   },
 
   onLoad() {
+    this._pageActive = true;
     const userInfo = wx.getStorageSync('userInfo') || wx.getStorageSync('technician_userInfo') || {};
     this.setData({
       name: userInfo.name || '',
@@ -31,6 +32,20 @@ Page({
       serviceAreaDisplay: userInfo.serviceArea || '',
       serviceAreaRegion: userInfo.serviceAreaRegion || []
     });
+  },
+
+  onShow() {
+    this._pageActive = true;
+    if (this._uploadFinishedWhileHidden || this._saveFinishedWhileHidden) {
+      this.setData({ uploading: false, saving: false });
+      this._uploadFinishedWhileHidden = false;
+      this._saveFinishedWhileHidden = false;
+    }
+  },
+  onHide() { this._pageActive = false; },
+  onUnload() {
+    this._pageActive = false;
+    if (this._navTimer) clearTimeout(this._navTimer);
   },
 
   onNameInput(e) { this.setData({ name: e.detail.value }); },
@@ -60,8 +75,10 @@ Page({
         this.setData({ uploading: true });
         try {
           const uploadRes = await api.upload.image(res.tempFiles[0].tempFilePath, 'technician');
+          if (!this._pageActive) { this._uploadFinishedWhileHidden = true; return; }
           this.setData({ avatarUrl: uploadRes.url, uploading: false });
         } catch {
+          if (!this._pageActive) { this._uploadFinishedWhileHidden = true; return; }
           this.setData({ uploading: false });
           wx.showToast({ title: '上传失败', icon: 'none' });
         }
@@ -87,6 +104,8 @@ Page({
         serviceArea: serviceAreaDisplay,
         bio
       });
+      wx.hideLoading();
+      if (!this._pageActive) return;
 
       const userInfo = wx.getStorageSync('userInfo') || {};
       Object.assign(userInfo, {
@@ -98,14 +117,17 @@ Page({
       wx.setStorageSync('userInfo', userInfo);
       wx.setStorageSync('technician_userInfo', userInfo);
 
-      wx.hideLoading();
       wx.showToast({ title: '保存成功', icon: 'success' });
-      setTimeout(() => wx.navigateBack(), 1200);
+      this._navTimer = setTimeout(() => {
+        if (this._pageActive) wx.navigateBack();
+      }, 1200);
     } catch (err) {
       wx.hideLoading();
+      if (!this._pageActive) return;
       wx.showToast({ title: err.message || '保存失败', icon: 'none' });
     } finally {
-      this.setData({ saving: false });
+      if (this._pageActive) this.setData({ saving: false });
+      else this._saveFinishedWhileHidden = true;
     }
   }
 });

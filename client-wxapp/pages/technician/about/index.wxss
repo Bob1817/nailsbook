@@ -1,11 +1,12 @@
 .container { min-height: 100vh; background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%); padding: 60rpx 40rpx; }
 .logo-section { display: flex; flex-direction: column; align-items: center; margin-bottom: 60rpx; }
-.logo { font-size: 120rpx; margin-bottom: 20rpx; }
+.logo { width:120rpx; height:120rpx; margin-bottom:20rpx; display:flex; align-items:center; justify-content:center; border-radius:32rpx; background:linear-gradient(135deg,#ffcedd,#dfd2ff); }.logo-mark { width:42rpx; height:70rpx; border:6rpx solid #a75679; border-radius:24rpx 24rpx 14rpx 14rpx; transform:rotate(18deg); box-sizing:border-box; }
 .app-name { font-size: 48rpx; font-weight: 700; color: #1f2937; margin-bottom: 10rpx; }
-.version { font-size: 26rpx; color: #9ca3af; }
+.version { font-size: 26rpx; color: #6b7280; }
 .info-card { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%); border-radius: 24rpx; overflow: hidden; margin-bottom: 40rpx; }
 .info-item { padding: 28rpx 40rpx; }
 .info-item-border { border-top: 1rpx solid #f5f5f5; border-bottom: 1rpx solid #f5f5f5; }
-.info-label { display: block; font-size: 26rpx; color: #9ca3af; margin-bottom: 8rpx; }
+.info-label { display: block; font-size: 26rpx; color: #6b7280; margin-bottom: 8rpx; }
 .info-value { display: block; font-size: 28rpx; color: #1f2937; line-height: 1.5; }
-.copyright { display: block; text-align: center; font-size: 24rpx; color: #9ca3af; }
+.copyright { display: block; text-align: center; font-size: 24rpx; color: #6b7280; }
+.agreement-row { display:flex; min-height:88rpx; padding:0 40rpx; align-items:center; justify-content:space-between; border-top:1rpx solid #f0e7eb; color:#4d3a43; font-size:26rpx; }

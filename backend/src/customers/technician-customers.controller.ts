@@ -1,7 +1,9 @@
 import {
   Controller,
+  Delete,
   Get,
   Patch,
+  Post,
   Body,
   Param,
   Query,
@@ -63,6 +65,36 @@ export class TechnicianCustomersController {
   @ApiResponse({ status: 401, description: '未授权' })
   getTags(@Req() request: { user: { technicianId: number } }) {
     return this.customersService.getDistinctTags(request.user.technicianId);
+  }
+
+  @Get('tag-templates')
+  @ApiOperation({ summary: '获取客户标签模板' })
+  getTagTemplates(@Req() request: { user: { technicianId: number } }) {
+    return this.customersService.getTagTemplates(request.user.technicianId);
+  }
+
+  @Post('tag-templates')
+  @ApiOperation({ summary: '新增客户标签模板' })
+  createTagTemplate(
+    @Req() request: { user: { technicianId: number } },
+    @Body() body: { name: string },
+  ) {
+    return this.customersService.createTagTemplate(
+      request.user.technicianId,
+      body.name,
+    );
+  }
+
+  @Delete('tag-templates/:templateId')
+  @ApiOperation({ summary: '删除客户标签模板' })
+  deleteTagTemplate(
+    @Req() request: { user: { technicianId: number } },
+    @Param('templateId') templateId: string,
+  ) {
+    return this.customersService.deleteTagTemplate(
+      request.user.technicianId,
+      templateId,
+    );
   }
 
   @Get(':id')

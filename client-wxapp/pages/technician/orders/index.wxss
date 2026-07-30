@@ -59,6 +59,8 @@ page {
   align-items: center;
   gap: 6rpx;
   position: relative;
+  min-height: 88rpx;
+  box-sizing: border-box;
 }
 .today-cell { justify-content: center; flex-shrink: 0; }
 .date-week { font-size: 22rpx; color: #6b7280; }
@@ -119,7 +121,7 @@ page {
 
 .sum-label {
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
   font-weight: 500;
 }
 
@@ -148,6 +150,10 @@ page {
   font-size: 28rpx;
   color: #6b7280;
   font-weight: 500;
+  min-height: 88rpx;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
 }
 .tab-active { color: #1f2937; font-weight: 600; }
 .tab-line {
@@ -234,6 +240,7 @@ page {
 .list-area {
   padding: 16rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
 }
+.conflict-alert { margin-bottom:16rpx; padding:20rpx 24rpx; border:1rpx solid #f3c4c9; border-radius:16rpx; background:#fff3f4; color:#a93f4b; font-size:22rpx; line-height:1.55; }
 
 .skeleton-list { display: flex; flex-direction: column; gap: 16rpx; }
 .skel-card {
@@ -257,7 +264,7 @@ page {
   box-shadow: 0 10rpx 26rpx rgba(15, 23, 42, 0.05);
 }
 .empty-title { font-size: 28rpx; font-weight: 600; color: #1f2937; }
-.empty-sub { font-size: 24rpx; color: #9ca3af; text-align: center; }
+.empty-sub { font-size: 24rpx; color: #6b7280; text-align: center; }
 
 /* ===== 行程卡 ===== */
 .trip-list { display: flex; flex-direction: column; gap: 16rpx; }
@@ -269,6 +276,7 @@ page {
   box-shadow: 0 10rpx 26rpx rgba(15, 23, 42, 0.05);
 }
 .trip-card:active { background: #fef7f9; }
+.trip-conflict { margin-top:14rpx; padding:14rpx 18rpx; border-radius:12rpx; background:#fff0f1; color:#b13e4a; font-size:21rpx; font-weight:600; }
 
 .trip-top {
   display: flex;
@@ -421,7 +429,7 @@ page {
   flex: 1;
   text-align: center;
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
   font-weight: 500;
 }
 
@@ -448,7 +456,7 @@ page {
 }
 
 .calendar-other-month .calendar-day-num {
-  color: #d1d5db;
+  color: #767b84;
 }
 
 .calendar-today .calendar-day-num {

@@ -8,6 +8,7 @@
 - `20260610090000_create_feedback_compat`：补齐历史缺失的 `Feedback` 基线；已有表的数据库执行时为无操作。
 - `20260721150000` 至 `20260721190000`：本轮作品授权、审美字段、评价/分享、来源作品和客户美甲照片增量迁移。
 - `20260721185000_reconcile_historical_schema`：仅供全新数据库补齐过去由 `db push` 创建的结构。历史运行库不得直接执行该 SQL。
+- `20260721220000_add_order_client_record_note`：增加客户在已完成美甲记录中的独立备注。
 
 ## A. 全新数据库部署
 
@@ -26,7 +27,7 @@ sqlite3 "$deployment_db" "PRAGMA foreign_key_check;"
 
 验收结果应为：
 
-- 25 个迁移全部完成；
+- 26 个迁移全部完成；
 - `migrate diff` 输出 `No difference detected.`；
 - `foreign_key_check` 无输出。
 

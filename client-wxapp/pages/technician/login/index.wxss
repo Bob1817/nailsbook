@@ -164,7 +164,7 @@
   display: block;
   margin-top: 10rpx;
   font-size: 23rpx;
-  color: #9ca3af;
+  color: #6b7280;
   line-height: 1.35;
 }
 
@@ -263,7 +263,7 @@
 
 .link-sep {
   font-size: 24rpx;
-  color: #d1d5db;
+  color: #767b84;
 }
 
 .register-links {
@@ -281,7 +281,7 @@
 
 .back-link {
   font-size: 26rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 .input-error  {

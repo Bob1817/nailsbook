@@ -1,33 +1,23 @@
-<nav-bar title="我的预约"/>
+<nav-bar title="预约"/>
+
+<view class="filter-bar">
+  <scroll-view scroll-x class="status-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="status-list">
+      <view
+        wx:for="{{tabs}}"
+        wx:key="value"
+        class="status-tab {{currentStatus === item.value ? 'status-tab-active' : ''}}"
+        bindtap="switchStatus"
+        data-status="{{item.value}}"
+      >{{item.label}}</view>
+    </view>
+  </scroll-view>
+  <view class="filter-create" bindtap="createOrder" role="button" aria-label="发起预约">
+    <view class="filter-create-plus"></view>
+  </view>
+</view>
+
 <view class="page">
-
-  <!-- ===== 顶部 Hero ===== -->
-  <view class="page-hero">
-    <view class="hero-left">
-      <text class="hero-count">{{orderCount}}</text>
-      <text class="hero-unit">条预约</text>
-    </view>
-    <view class="hero-cta" bindtap="createOrder">
-      <text class="hero-cta-plus">＋</text>
-      <text class="hero-cta-text">发起预约</text>
-    </view>
-  </view>
-
-  <!-- ===== 吸顶 Tabs（满屏宽，超出横向滚动）===== -->
-  <view class="tabs-bar" style="top: {{navBarHeight}}px;">
-    <scroll-view scroll-x class="tab-scroll" enhanced show-scrollbar="{{false}}">
-      <view class="tab-list">
-        <view
-          wx:for="{{tabs}}"
-          wx:key="value"
-          class="tab-item {{currentStatus === item.value ? 'tab-active' : ''}}"
-          bindtap="switchStatus"
-          data-status="{{item.value}}"
-        >{{item.label}}</view>
-      </view>
-    </scroll-view>
-  </view>
-
   <!-- ===== 列表区（原生页面滚动）===== -->
   <view class="list-area">
 
@@ -42,9 +32,9 @@
         <view class="empty-ring"></view>
         <view class="empty-dot"></view>
       </view>
-      <text class="empty-ttl">{{currentStatus ? '该状态下暂无预约' : '还没有预约记录'}}</text>
-      <text class="empty-sub">和你的美甲师约一次，让指尖绽放美丽</text>
-      <view wx:if="{{!currentStatus}}" class="empty-cta" bindtap="createOrder">发起第一个预约</view>
+      <text class="empty-ttl">{{emptyTitle}}</text>
+      <text class="empty-sub">{{emptyCopy}}</text>
+      <view class="empty-cta" bindtap="createOrder">立即预约</view>
     </view>
 
     <!-- 预约卡片列表（与首页「我的预约」卡片统一）-->
@@ -56,53 +46,51 @@
         bindtap="viewOrder"
         data-id="{{item.id}}"
       >
-        <view class="order-accent"></view>
         <view class="order-card-content">
-          <!-- 顶部：美甲师 + 状态 -->
-          <view class="order-card-top">
-            <view class="otc-tech">
-              <view wx:if="{{item.techAvatar}}" class="otc-avatar-wrap">
-                <image src="{{item.techAvatar}}" mode="aspectFill" class="otc-avatar"/>
-              </view>
-              <view wx:else class="otc-avatar-ph">
-                <text class="otc-avatar-char">{{item.techName ? item.techName[0] : '美'}}</text>
-              </view>
-              <text class="otc-name">{{item.techName || '美甲师'}}</text>
-            </view>
-            <view class="status-badge {{item._statusClass}}">{{item.statusText}}</view>
-          </view>
-
           <!-- 内容：日期 + 详情 -->
           <view class="order-card-body">
             <view class="order-date-box">
-              <text class="order-date-day">{{item._dayText}}</text>
               <text class="order-date-sub">{{item._monthText}}</text>
+              <text class="order-date-day">{{item._dayText}}</text>
+              <text class="order-date-weekday">{{item._weekdayText}}</text>
             </view>
             <view class="order-details">
-              <text class="order-service-name">{{item._titleText}}</text>
+              <view class="order-title-row">
+                <text class="order-service-name">{{item._titleText}}</text>
+                <view class="status-badge {{item._statusClass}}">{{item.statusText}}</view>
+              </view>
+              <text wx:if="{{item.quotePrice}}" class="price-line">报价 ¥{{item._priceText}}</text>
+              <text wx:else class="price-pending">{{item._quoteText}}</text>
+              <view class="service-mode-row">
+                <text class="service-mode-badge">{{item._serviceModeText}}</text>
+              </view>
               <view wx:if="{{item._timeRangeText}}" class="order-detail-row">
                 <view class="info-icon info-icon-time"></view>
                 <text class="order-detail-text">{{item._timeRangeText}}</text>
               </view>
+              <view wx:if="{{item._isShopService}}" class="order-detail-row">
+                <view class="info-icon info-icon-shop"></view>
+                <text class="order-detail-label">店铺</text>
+                <text class="order-detail-text order-detail-truncate">{{item._shopNameText}}</text>
+              </view>
               <view class="order-detail-row">
                 <view class="info-icon info-icon-loc"></view>
+                <text class="order-detail-label">{{item._isShopService ? '店址' : '上门地址'}}</text>
                 <text class="order-detail-text order-detail-truncate">{{item._addressText}}</text>
               </view>
             </view>
           </view>
 
-          <!-- 底部：价格 / 报价操作 -->
-          <view class="order-card-foot">
-            <view class="foot-left">
-              <text wx:if="{{item.quotePrice}}" class="price-tag">¥{{item._priceText}}</text>
-              <text wx:elif="{{item.status === 'pending_quote'}}" class="foot-hint">等待美甲师报价中…</text>
-              <text wx:elif="{{item.status === 'pending_confirm' || item.status === 'pending_agree'}}" class="foot-hint">等待美甲师确认中…</text>
+          <view wx:if="{{item._isTerminal}}" class="order-footer order-footer-detail" catchtap="viewOrder" data-id="{{item.id}}">
+            <text>查看预约详细信息</text>
+            <view class="footer-chevron"></view>
+          </view>
+          <view wx:else class="order-footer order-footer-countdown">
+            <view class="countdown-info">
+              <view class="footer-clock"></view>
+              <view><text class="countdown-main">{{item._countdownText}}</text><text class="countdown-next">{{item._nextStepText}}</text></view>
             </view>
-            <view wx:if="{{item.status === 'quoted'}}" class="foot-actions" catchtap="noop">
-              <view class="act-btn act-reject" catchtap="rejectQuote" data-id="{{item.id}}">拒绝</view>
-              <view class="act-btn act-accept" catchtap="acceptQuote" data-id="{{item.id}}">接受报价</view>
-            </view>
-            <text wx:else class="foot-arrow">›</text>
+            <view class="footer-chevron"></view>
           </view>
         </view>
       </view>

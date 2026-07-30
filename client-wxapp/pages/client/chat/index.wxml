@@ -32,6 +32,13 @@
         </view>
       </view>
 
+      <view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+        <view class="load-error-mark">!</view>
+        <text class="empty-title">消息加载失败</text>
+        <text class="empty-sub">请检查网络后重试</text>
+        <button class="retry-btn" bindtap="loadInbox">重新加载</button>
+      </view>
+
       <block wx:else>
         <!-- 消息列表 -->
         <view wx:if="{{filteredItems.length > 0}}" class="msg-list">
@@ -43,7 +50,7 @@
             data-index="{{index}}"
           >
             <view class="msg-avatar-wrap">
-              <image wx:if="{{item.techAvatar && item.type === 'chat'}}" src="{{item.techAvatar}}" mode="aspectFill" class="msg-avatar-img" />
+              <image wx:if="{{item.techAvatar && item.type === 'chat'}}" src="{{item.techAvatar}}" mode="aspectFill" class="msg-avatar-img" lazy-load aria-label="{{item.name}}的头像" />
               <view wx:else class="msg-avatar-placeholder">
                 <text class="msg-avatar-char">{{item._avatarChar}}</text>
               </view>
@@ -87,7 +94,7 @@
       <view class="modal-type-badge {{selectedNotification._badgeClass}}">
         <text class="msg-type-badge-text">{{selectedNotification.badge}}</text>
       </view>
-      <view class="modal-close" bindtap="closeNotification">
+      <view class="modal-close" bindtap="closeNotification" aria-label="关闭消息详情">
         <text class="modal-close-icon"></text>
       </view>
     </view>

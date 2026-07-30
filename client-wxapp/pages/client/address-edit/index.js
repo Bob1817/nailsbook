@@ -17,6 +17,7 @@ Page({
   },
 
   onLoad(options) {
+    this._pageActive = true;
     if (options.id) {
       this.setData({ isEdit: true, addressId: options.id });
       this.loadAddress(options.id);
@@ -26,12 +27,26 @@ Page({
     }
   },
 
+  onShow() {
+    this._pageActive = true;
+    if (this._submitFinishedWhileHidden) {
+      this.setData({ submitting: false });
+      this._submitFinishedWhileHidden = false;
+    }
+  },
+  onHide() { this._pageActive = false; },
+  onUnload() {
+    this._pageActive = false;
+    if (this._navTimer) clearTimeout(this._navTimer);
+  },
+
   async loadAddress(id) {
     wx.showLoading({ title: '加载中...' });
     try {
       const addr = await api.client.addresses.detail(id);
+      wx.hideLoading();
+      if (!this._pageActive) return;
       if (!addr) {
-        wx.hideLoading();
         wx.showToast({ title: '地址不存在', icon: 'none' });
         return;
       }
@@ -47,9 +62,9 @@ Page({
         // 正在编辑当前默认地址：必须保留一个默认，开关锁定为开
         lockDefault: addr.isDefault || false
       });
-      wx.hideLoading();
     } catch (err) {
       wx.hideLoading();
+      if (!this._pageActive) return;
       wx.showToast({ title: '加载失败', icon: 'none' });
     }
   },
@@ -122,10 +137,14 @@ Page({
         await api.client.addresses.create(payload);
       }
       wx.hideLoading();
+      if (!this._pageActive) { this._submitFinishedWhileHidden = true; return; }
       wx.showToast({ title: '保存成功', icon: 'success' });
-      setTimeout(() => wx.navigateBack(), 800);
+      this._navTimer = setTimeout(() => {
+        if (this._pageActive) wx.navigateBack();
+      }, 800);
     } catch (err) {
       wx.hideLoading();
+      if (!this._pageActive) { this._submitFinishedWhileHidden = true; return; }
       this.setData({ submitting: false });
       wx.showToast({ title: err.message || '保存失败', icon: 'none' });
     }

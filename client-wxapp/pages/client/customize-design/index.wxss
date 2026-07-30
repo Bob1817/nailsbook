@@ -62,7 +62,7 @@
 
 .step-num {
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
   font-weight: 500;
 }
 
@@ -77,7 +77,7 @@
 
 .step-name {
   font-size: 22rpx;
-  color: #d1d5db;
+  color: #767b84;
 }
 
 .step-item.active .step-name {
@@ -135,7 +135,7 @@
 
 .panel-subtitle {
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 /* 基础款式网格 */
@@ -209,7 +209,7 @@
 
 .upload-hint {
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
   margin-bottom: 16rpx;
   display: block;
 }
@@ -285,7 +285,7 @@
 
 .upload-text {
   font-size: 26rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 /* 甲型网格 */
@@ -334,7 +334,7 @@
 
 .shape-desc {
   font-size: 22rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 /* 颜色网格 */
@@ -415,7 +415,16 @@
 }
 
 .element-icon {
-  font-size: 40rpx;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fff1f5, #f3e8ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #a14d72;
 }
 
 .element-name {
@@ -478,7 +487,7 @@
 
 .form-label {
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
   margin-bottom: 8rpx;
   display: block;
 }
@@ -506,7 +515,7 @@
 }
 
 .placeholder {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 .preview-tags {

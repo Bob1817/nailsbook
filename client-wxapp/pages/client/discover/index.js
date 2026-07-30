@@ -1,6 +1,7 @@
 var api = require('../../../services/api');
 
 var CATEGORIES = ['全部', '法式', '渐变', '日系', 'ins风', '简约', '可爱', '水晶', '炫彩'];
+var PAGE_SIZE = 10;
 
 // 宽高比循环分配，左右列各自错开
 var ASPECTS_LEFT  = ['aspect-4-5', 'aspect-3-4', 'aspect-5-6', 'aspect-2-3'];
@@ -23,6 +24,9 @@ Page({
     loading: true,
     loadingMore: false,
     hasMore: false,
+    keyword: '',
+    loadedCount: PAGE_SIZE,
+    resultCount: 0,
     categories: CATEGORIES,
     activeCategory: '全部',
     navBarHeight: 88  // 默认值，onLoad 里用实际计算值覆盖
@@ -52,7 +56,7 @@ Page({
     var self = this;
     self.setData({ loading: true });
 
-    Promise.all([
+    return Promise.all([
       api.client.works.list({ sortBy: 'latest', sortDir: 'desc' }),
       api.client.likes.list().catch(function () { return []; })
     ]).then(function (results) {
@@ -89,7 +93,7 @@ Page({
         };
       });
 
-      self.setData({ works: works, loading: false });
+      self.setData({ works: works, loading: false, loadedCount: PAGE_SIZE });
       self.applyFilter();
     }).catch(function (err) {
       console.error('discover loadWorks error:', err);
@@ -115,18 +119,23 @@ Page({
 
   applyFilter: function () {
     var cat = this.data.activeCategory;
+    var keyword = this.data.keyword.trim().toLowerCase();
     var all = this.data.works;
 
-    var filtered = cat === '全部'
-      ? all
-      : all.filter(function (w) {
-          return w.tags.some(function (t) {
-            return t.indexOf(cat) !== -1 || cat.indexOf(t) !== -1;
-          });
-        });
+    var filtered = all.filter(function (w) {
+      var categoryMatched = cat === '全部' || w.tags.some(function (t) {
+        return t.indexOf(cat) !== -1 || cat.indexOf(t) !== -1;
+      });
+      if (!categoryMatched) return false;
+      if (!keyword) return true;
+      var searchable = [w.title, w.technicianName].concat(w.tags).join(' ').toLowerCase();
+      return searchable.indexOf(keyword) !== -1;
+    });
+
+    var visible = filtered.slice(0, this.data.loadedCount);
 
     var leftCol = [], rightCol = [];
-    filtered.forEach(function (w, i) {
+    visible.forEach(function (w, i) {
       var isLeft = i % 2 === 0;
       var rowIdx = Math.floor(i / 2);
       if (isLeft) {
@@ -138,18 +147,35 @@ Page({
       }
     });
 
-    this.setData({ filteredWorks: filtered, leftCol: leftCol, rightCol: rightCol });
+    this.setData({
+      filteredWorks: filtered,
+      leftCol: leftCol,
+      rightCol: rightCol,
+      resultCount: filtered.length,
+      hasMore: visible.length < filtered.length,
+      loadingMore: false
+    });
   },
 
   switchCategory: function (e) {
     var cat = e.currentTarget.dataset.cat;
     if (cat === this.data.activeCategory) return;
-    this.setData({ activeCategory: cat });
+    this.setData({ activeCategory: cat, loadedCount: PAGE_SIZE });
     this.applyFilter();
   },
 
-  onSearchTap: function () {
-    wx.showToast({ title: '搜索功能开发中', icon: 'none' });
+  onSearchInput: function (e) {
+    this.setData({ keyword: e.detail.value, loadedCount: PAGE_SIZE });
+    this.applyFilter();
+  },
+
+  onSearchConfirm: function () {
+    this.applyFilter();
+  },
+
+  clearSearch: function () {
+    this.setData({ keyword: '', loadedCount: PAGE_SIZE });
+    this.applyFilter();
   },
 
   toggleLike: function (e) {
@@ -205,11 +231,15 @@ Page({
   },
 
   onReachBottom: function () {
-    // 原生页面滚动触底，预留分页占位
+    if (!this.data.hasMore || this.data.loadingMore) return;
+    this.setData({ loadingMore: true });
+    setTimeout(function () {
+      this.setData({ loadedCount: this.data.loadedCount + PAGE_SIZE });
+      this.applyFilter();
+    }.bind(this), 120);
   },
 
   onPullDownRefresh: function () {
-    this.loadWorks();
-    wx.stopPullDownRefresh();
+    this.loadWorks().finally(function () { wx.stopPullDownRefresh(); });
   }
 });

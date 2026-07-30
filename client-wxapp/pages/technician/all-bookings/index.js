@@ -14,7 +14,8 @@ Page({
     filterTabs: ORDER_TABS,
     allOrders: [],
     filteredOrders: [],
-    loading: false
+    loading: false,
+    loadFailed: false
   },
 
   onLoad(options) {
@@ -25,7 +26,7 @@ Page({
   },
 
   async loadOrders() {
-    this.setData({ loading: true });
+    this.setData({ loading: true, loadFailed: false });
     try {
       const res = await api.technician.orders.list({});
       const raw = Array.isArray(res) ? res : (res.list || res.data || []);
@@ -47,7 +48,7 @@ Page({
       this.setData({ allOrders });
       this.applyFilter(this.data.activeFilter);
     } catch (err) {
-      wx.showToast({ title: err.message || '加载失败', icon: 'none' });
+      this.setData({ loadFailed: true });
     } finally {
       this.setData({ loading: false });
     }

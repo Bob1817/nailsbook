@@ -37,7 +37,7 @@
           bindtap="selectBase"
           data-id="{{item.id}}"
         >
-          <image src="{{item.image}}" mode="aspectFill" class="style-img" />
+          <image src="{{item.image}}" mode="aspectFill" class="style-img" lazy-load aria-label="{{item.name}}美甲参考图" />
           <view class="style-overlay">
             <text class="style-name">{{item.name}}</text>
           </view>
@@ -52,7 +52,7 @@
       <view class="upload-section">
         <text class="upload-hint">或者上传你喜欢的参考图片</text>
         <view wx:if="{{customImage}}" class="preview-wrap">
-          <image src="{{customImage}}" mode="aspectFill" class="preview-img" />
+          <image src="{{customImage}}" mode="aspectFill" class="preview-img" aria-label="已上传的美甲参考图" />
           <view class="preview-remove" bindtap="removeCustomImage">
             <text class="remove-icon">×</text>
           </view>
@@ -130,7 +130,7 @@
           bindtap="toggleElement"
           data-id="{{item.id}}"
         >
-          <text class="element-icon">{{item.icon}}</text>
+          <text class="element-icon">{{item.name[0]}}</text>
           <text class="element-name">{{item.name}}</text>
         </view>
       </view>
@@ -149,6 +149,7 @@
             src="{{previewImage}}"
             mode="aspectFill"
             class="preview-main-img"
+            aria-label="定制美甲设计预览图"
           />
           <view wx:else class="preview-placeholder">
             <view class="placeholder-icon"></view>

@@ -4,17 +4,19 @@
   padding-bottom: 140rpx;
 }
 
-/* ===== 空状态 ===== */
-.empty {
+/* ===== 加载与空状态 ===== */
+.loading-wrap { display:flex; justify-content:center; padding:200rpx 0; }
+.loading-spinner { width:60rpx; height:60rpx; border:4rpx solid #ffd0de; border-top-color:#ff6b8a; border-radius:50%; animation:spin .8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.empty, .load-error {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 160rpx 40rpx 80rpx;
 }
-.empty-icon {
-  font-size: 80rpx;
-  margin-bottom: 32rpx;
-}
+.service-empty-mark { width:88rpx; height:88rpx; box-sizing:border-box; padding:18rpx 16rpx; margin-bottom:32rpx; border:4rpx solid #d9a0b9; border-radius:14rpx; }
+.service-empty-mark view { height:4rpx; margin-bottom:12rpx; border-radius:4rpx; background:#d9a0b9; }
+.load-error-mark { width:88rpx; height:88rpx; margin-bottom:32rpx; border-radius:50%; background:#fff0f4; color:#c75b83; font-size:44rpx; line-height:88rpx; text-align:center; }
 .empty-text {
   font-size: 32rpx;
   color: #374151;
@@ -22,7 +24,7 @@
 }
 .empty-sub {
   font-size: 26rpx;
-  color: #9ca3af;
+  color: #6b7280;
   margin-bottom: 56rpx;
 }
 .btn-add-first {
@@ -36,6 +38,8 @@
   border: none;
   line-height: 88rpx;
 }
+.retry-btn { min-height:88rpx; margin:0; padding:0 56rpx; border:0; border-radius:44rpx; background:#1f2937; color:#fff; font-size:28rpx; line-height:88rpx; }
+.retry-btn::after { border:0; }
 
 /* ===== 服务列表 ===== */
 .list {
@@ -72,7 +76,7 @@
 .svc-category {
   display: block;
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
   line-height: 1.4;
 }
 
@@ -93,7 +97,7 @@
 }
 .badge-inactive {
   background: #f3f4f6;
-  color: #9ca3af;
+  color: #6b7280;
 }
 .badge-dot {
   width: 12rpx;
@@ -117,6 +121,7 @@
   padding-bottom: 24rpx;
   border-bottom: 1rpx solid #f3f4f6;
 }
+.svc-meta { display:flex; gap:24rpx; margin-bottom:20rpx; color:#9d4f73; font-size:24rpx; font-weight:600; }
 
 /* ===== 操作按钮 ===== */
 .card-actions {
@@ -127,12 +132,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 64rpx;
+  min-height: 88rpx;
   padding: 0 28rpx;
   border-radius: 32rpx;
   font-size: 26rpx;
   font-weight: 500;
 }
+.form-pair { display:flex; gap:16rpx; }.form-half { min-width:0; flex:1; }
 .action-btn:active {
   opacity: 0.65;
 }
@@ -153,7 +159,7 @@
 .fab {
   position: fixed;
   right: 40rpx;
-  bottom: 80rpx;
+  bottom: calc(80rpx + env(safe-area-inset-bottom));
   width: 108rpx;
   height: 108rpx;
   background: linear-gradient(135deg, #ff6b8a, #a855f7);
@@ -250,7 +256,7 @@
 }
 .picker-arrow {
   font-size: 36rpx;
-  color: #d1d5db;
+  color: #767b84;
 }
 .textarea {
   width: 100%;

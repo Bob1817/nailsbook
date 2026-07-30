@@ -4,11 +4,11 @@
   <view class="section">
     <view class="form-item">
       <text class="label">联系人</text>
-      <input class="input" placeholder="姓名" value="{{contactName}}" data-field="contactName" bindinput="onInput"/>
+      <input class="input" placeholder="姓名" value="{{contactName}}" data-field="contactName" bindinput="onInput" confirm-type="next" cursor-spacing="24"/>
     </view>
     <view class="form-item">
       <text class="label">手机号</text>
-      <input class="input" type="number" maxlength="11" placeholder="手机号" value="{{contactPhone}}" data-field="contactPhone" bindinput="onInput"/>
+      <input class="input" type="number" maxlength="11" placeholder="手机号" value="{{contactPhone}}" data-field="contactPhone" bindinput="onInput" confirm-type="next" cursor-spacing="24"/>
     </view>
   </view>
 
@@ -38,7 +38,7 @@
     </view>
     <view class="form-item">
       <text class="label">门牌号</text>
-      <input class="input" placeholder="例：A栋1203（选填）" value="{{doorInfo}}" data-field="doorInfo" bindinput="onInput"/>
+      <input class="input" placeholder="例：A栋1203（选填）" value="{{doorInfo}}" data-field="doorInfo" bindinput="onInput" confirm-type="done" cursor-spacing="120"/>
     </view>
   </view>
 

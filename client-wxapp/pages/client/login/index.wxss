@@ -52,7 +52,10 @@
   font-size: 28rpx;
   color: #1f2937;
   box-sizing: border-box;
+  border: 2rpx solid transparent;
+  transition: border-color 180ms ease, background-color 180ms ease;
 }
+.input:focus { border-color:#ff6b8a; background:#fff; }
 
 .readonly {
   width: 100%;
@@ -61,7 +64,7 @@
   border-radius: 14rpx;
   padding: 0 32rpx;
   font-size: 30rpx;
-  color: #9ca3af;
+  color: #6b7280;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -107,10 +110,13 @@
   margin-top: 48rpx;
 }
 .btn-primary[disabled] {
-  background-color: #9ca3af;
+  background-color: #6b7280;
 }
 
 .link {
+  display:inline-flex;
+  min-height:88rpx;
+  align-items:center;
   font-size: 26rpx;
   color: #ff6b8a;
 }
@@ -125,5 +131,5 @@
 
 .link-sep {
   font-size: 24rpx;
-  color: #d1d5db;
+  color: #767b84;
 }

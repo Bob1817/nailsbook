@@ -14,7 +14,8 @@ Page({
     uploadingImage: false,
     savingEdit: false,
     deleting: false,
-    requestingQuote: false
+    requestingQuote: false,
+    processingQuote: false
   },
 
   onLoad(options) {
@@ -28,6 +29,10 @@ Page({
     if (this.designId) {
       this.loadDesign();
     }
+  },
+
+  goBack() {
+    wx.navigateBack({ fail: () => wx.reLaunch({ url: '/pages/client/designs/index' }) });
   },
 
   async loadDesign() {
@@ -119,13 +124,33 @@ Page({
 
   // 接受报价
   async acceptQuote() {
+    if (this.data.processingQuote) return;
+    this.setData({ processingQuote: true });
     try {
       await api.client.designs.acceptQuote(this.designId);
       await this.loadDesign();
       wx.showToast({ title: '已接受报价', icon: 'success' });
     } catch (err) {
       console.error('Accept quote failed:', err);
-      wx.showToast({ title: '操作失败', icon: 'none' });
+      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+    } finally {
+      this.setData({ processingQuote: false });
+    }
+  },
+
+  async rejectQuote() {
+    if (this.data.processingQuote) return;
+    const result = await wx.showModal({ title: '拒绝报价', content: '拒绝后美甲师可以根据沟通结果重新报价。', confirmText: '确认拒绝', confirmColor: '#DC4C58' });
+    if (!result.confirm) return;
+    this.setData({ processingQuote: true });
+    try {
+      await api.client.designs.rejectQuote(this.designId, '客户拒绝报价');
+      await this.loadDesign();
+      wx.showToast({ title: '已拒绝报价', icon: 'success' });
+    } catch (err) {
+      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+    } finally {
+      this.setData({ processingQuote: false });
     }
   },
 
@@ -207,6 +232,7 @@ Page({
 
   // 保存编辑
   async saveEdit() {
+    if (this.data.savingEdit) return;
     this.setData({ savingEdit: true });
     try {
       await api.client.designs.update(this.designId, {
@@ -237,9 +263,10 @@ Page({
 
   // 删除设计
   async deleteDesign() {
+    if (this.data.deleting) return;
     this.setData({ deleting: true });
     try {
-      await api.client.designs.update(this.designId, { status: 'cancelled' });
+      await api.client.designs.delete(this.designId);
       wx.showToast({ title: '删除成功', icon: 'success' });
       setTimeout(() => {
         wx.navigateBack();

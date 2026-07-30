@@ -152,6 +152,7 @@ model Order {
   customDescription      String?
   customImages           String? // JSON array of image URLs
   clientPhotos           String? // JSON array uploaded by the client after completion
+  clientRecordNote       String? // Client-authored note shown in the completed beauty record
   reminderDaySent        Boolean                @default(false)
   reminderHourSent       Boolean                @default(false)
   quotePrice             Float?

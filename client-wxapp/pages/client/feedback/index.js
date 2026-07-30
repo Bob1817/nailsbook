@@ -15,6 +15,17 @@ Page({
     submitting: false
   },
 
+  onLoad() { this._pageActive = true; },
+  onShow() {
+    this._pageActive = true;
+    if (this._submitFinishedWhileHidden) {
+      this.setData({ submitting: false });
+      this._submitFinishedWhileHidden = false;
+    }
+  },
+  onHide() { this._pageActive = false; },
+  onUnload() { this._pageActive = false; },
+
   onTitleInput(e) {
     this.setData({ title: e.detail.value });
   },
@@ -43,10 +54,17 @@ Page({
         content: content
       });
       wx.hideLoading();
-      wx.showToast({ title: '提交成功', icon: 'success' });
-      setTimeout(function () { wx.navigateBack(); }, 800);
+      if (!this._pageActive) { this._submitFinishedWhileHidden = true; return; }
+      await wx.showModal({
+        title: '反馈已提交',
+        content: '我们已经收到你的反馈。平台会结合问题影响范围进行处理，暂不承诺固定回复时间。',
+        showCancel: false,
+        confirmText: '知道了'
+      });
+      wx.navigateBack();
     } catch (err) {
       wx.hideLoading();
+      if (!this._pageActive) { this._submitFinishedWhileHidden = true; return; }
       this.setData({ submitting: false });
       wx.showToast({ title: (err && err.message) || '提交失败', icon: 'none' });
     }

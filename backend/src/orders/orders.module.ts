@@ -7,11 +7,21 @@ import { PublicOrdersController } from './public-orders.controller';
 import { OrdersScheduler } from './orders.scheduler';
 import { PrismaModule } from '../common/prisma/prisma.module';
 import { ChatModule } from '../chat/chat.module';
+import { BookingMutexService } from './booking-mutex.service';
 
 @Module({
   imports: [PrismaModule, ChatModule],
-  controllers: [TechnicianOrdersController, ClientOrdersController, PublicOrdersController],
-  providers: [OrdersService, ClientOrdersService, OrdersScheduler],
+  controllers: [
+    TechnicianOrdersController,
+    ClientOrdersController,
+    PublicOrdersController,
+  ],
+  providers: [
+    OrdersService,
+    ClientOrdersService,
+    OrdersScheduler,
+    BookingMutexService,
+  ],
   exports: [OrdersService, ClientOrdersService],
 })
 export class OrdersModule {}

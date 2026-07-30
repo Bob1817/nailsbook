@@ -15,7 +15,7 @@
 
 .section-head { margin-bottom: 24rpx; }
 .section-title { display: block; font-size: 30rpx; font-weight: 600; color: #1f2937; }
-.section-sub { display: block; font-size: 24rpx; color: #9ca3af; margin-top: 6rpx; }
+.section-sub { display: block; font-size: 24rpx; color: #6b7280; margin-top: 6rpx; }
 
 /* ===== Tech Cards ===== */
 .tech-list { display: flex; flex-direction: column; gap: 16rpx; }
@@ -43,7 +43,7 @@
 .tech-info { flex: 1; min-width: 0; }
 .tech-name-row { display: flex; align-items: center; gap: 12rpx; }
 .tech-name { font-size: 28rpx; font-weight: 600; color: #1f2937; }
-.tech-city { font-size: 24rpx; color: #9ca3af; margin-top: 4rpx; display: block; }
+.tech-city { font-size: 24rpx; color: #6b7280; margin-top: 4rpx; display: block; }
 
 .tech-tags { display: flex; gap: 10rpx; margin-top: 10rpx; }
 .tag {
@@ -90,7 +90,7 @@
 
 .single-type-label { font-size: 28rpx; font-weight: 500; color: #1f2937; }
 .single-type-badge {
-  font-size: 20rpx; color: #9ca3af; background: #f1f5f9;
+  font-size: 20rpx; color: #6b7280; background: #f1f5f9;
   padding: 4rpx 16rpx; border-radius: 14rpx;
 }
 
@@ -111,7 +111,7 @@
 .addr-info { flex: 1; min-width: 0; }
 .addr-name-row { display: flex; align-items: center; gap: 12rpx; }
 .addr-name { font-size: 28rpx; font-weight: 500; color: #1f2937; }
-.addr-phone { font-size: 24rpx; color: #9ca3af; }
+.addr-phone { font-size: 24rpx; color: #6b7280; }
 .addr-detail { font-size: 24rpx; color: #374151; margin-top: 8rpx; display: block; line-height: 1.5; }
 
 /* ===== Service Cards ===== */
@@ -130,7 +130,7 @@
 
 .type-info { flex: 1; min-width: 0; }
 .type-label { font-size: 28rpx; font-weight: 500; color: #1f2937; display: block; }
-.type-desc { font-size: 24rpx; color: #9ca3af; margin-top: 4rpx; display: block; }
+.type-desc { font-size: 24rpx; color: #6b7280; margin-top: 4rpx; display: block; }
 
 /* ===== Calendar ===== */
 .calendar { margin-top: 8rpx; }
@@ -156,7 +156,7 @@
 }
 
 .weekday-cell {
-  text-align: center; font-size: 22rpx; color: #9ca3af;
+  text-align: center; font-size: 22rpx; color: #6b7280;
   font-weight: 500; padding: 8rpx 0;
 }
 
@@ -178,7 +178,7 @@
 .day-empty { background: transparent; }
 
 .day-disabled { opacity: 0.3; }
-.day-disabled .day-text { color: #9ca3af; }
+.day-disabled .day-text { color: #6b7280; }
 
 .day-selected { background: #ff6b8a; }
 .day-text-selected { color: #fff !important; font-weight: 600; }
@@ -250,7 +250,7 @@
 .add-image {
   width: 160rpx; height: 160rpx; border-radius: 16rpx;
   border: 2rpx dashed #d1d5db; display: flex; align-items: center; justify-content: center;
-  font-size: 48rpx; color: #9ca3af; background: #f9fafb;
+  font-size: 48rpx; color: #6b7280; background: #f9fafb;
 }
 
 .selected-works { display: flex; gap: 12rpx; flex-wrap: wrap; margin-bottom: 16rpx; }
@@ -279,7 +279,7 @@
 }
 
 /* ===== Empty & Misc ===== */
-.empty-hint { text-align: center; padding: 32rpx; color: #9ca3af; font-size: 26rpx; }
+.empty-hint { text-align: center; padding: 32rpx; color: #6b7280; font-size: 26rpx; }
 
 .add-addr-btn {
   margin-top: 16rpx; display: inline-block; background: linear-gradient(135deg, #FF6B8A 0%, #A78BFA 100%); color: #fff;

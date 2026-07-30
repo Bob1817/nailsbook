@@ -5,6 +5,7 @@ Page({
     tags: [],
     newTag: '',
     loading: true,
+    loadFailed: false,
     adding: false
   },
 
@@ -13,12 +14,12 @@ Page({
   },
 
   async loadTags() {
-    this.setData({ loading: true });
+    this.setData({ loading: true, loadFailed: false });
     try {
       const res = await api.technician.tagTemplates.list();
-      this.setData({ tags: res.list || res.data || res || [], loading: false });
+      this.setData({ tags: res.list || res.data || res || [], loading: false, loadFailed: false });
     } catch {
-      this.setData({ loading: false });
+      this.setData({ loading: false, loadFailed: true });
     }
   },
 

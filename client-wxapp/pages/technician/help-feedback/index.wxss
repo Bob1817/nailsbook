@@ -6,8 +6,9 @@
 .faq-border { border-bottom: 1rpx solid #f5f5f5; }
 .faq-header { display: flex; align-items: center; justify-content: space-between; padding: 28rpx 0; gap: 20rpx; }
 .faq-q { flex: 1; font-size: 28rpx; color: #1f2937; line-height: 1.5; }
-.faq-arrow { font-size: 36rpx; color: #9ca3af; display: inline-block; transition: transform 0.2s; }
+.faq-arrow { font-size: 36rpx; color: #6b7280; display: inline-block; transition: transform 0.2s; }
 .arrow-open { transform: rotate(90deg); }
 .faq-answer { padding-bottom: 28rpx; }
 .faq-a { font-size: 26rpx; color: #374151; line-height: 1.7; }
-.tip { display: block; font-size: 24rpx; color: #9ca3af; line-height: 1.6; }
+.tip { display: block; font-size: 24rpx; color: #6b7280; line-height: 1.6; }
+.support-btn { display:flex; min-height:88rpx; margin:0 0 20rpx; align-items:center; justify-content:center; border:0; border-radius:44rpx; background:linear-gradient(135deg,#ff6b8a,#a855f7); color:#fff; font-size:27rpx; font-weight:600; line-height:1; }.support-btn::after { border:0; }

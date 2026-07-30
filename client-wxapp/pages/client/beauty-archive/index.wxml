@@ -1,0 +1,120 @@
+<nav-bar title="我的美甲记录" showBack/>
+<view class="page">
+  <view class="record-header">
+    <view>
+      <text class="record-header-title">我的美甲记录</text>
+      <text class="record-header-copy">按时间收藏每一次完成的美甲</text>
+    </view>
+    <view class="record-count"><text class="record-count-value">{{matchedRecords.length}}</text><text class="record-count-label">次记录</text></view>
+  </view>
+
+  <view wx:if="{{loading}}" class="state-text">正在整理你的美甲记录…</view>
+
+  <view wx:elif="{{loadFailed}}" class="empty-card error-card" aria-live="polite">
+    <text class="empty-title">美甲记录加载失败</text>
+    <text class="empty-copy">请检查网络后重新加载</text>
+    <view class="primary-btn retry-btn" bindtap="loadRecords" role="button">重新加载</view>
+  </view>
+
+  <view wx:elif="{{allRecords.length}}" class="filter-card">
+    <picker mode="selector" range="{{yearOptions}}" value="{{selectedYearIndex}}" bindchange="onRecordFilterChange" data-field="selectedYearIndex"><view class="filter-chip">{{yearOptions[selectedYearIndex]}}<text>⌄</text></view></picker>
+    <picker mode="selector" range="{{styleOptions}}" value="{{selectedStyleIndex}}" bindchange="onRecordFilterChange" data-field="selectedStyleIndex"><view class="filter-chip">{{styleOptions[selectedStyleIndex]}}<text>⌄</text></view></picker>
+    <picker mode="selector" range="{{technicianOptions}}" value="{{selectedTechnicianIndex}}" bindchange="onRecordFilterChange" data-field="selectedTechnicianIndex"><view class="filter-chip">{{technicianOptions[selectedTechnicianIndex]}}<text>⌄</text></view></picker>
+    <view wx:if="{{selectedYearIndex || selectedStyleIndex || selectedTechnicianIndex}}" class="filter-reset" bindtap="resetRecordFilters">重置</view>
+  </view>
+
+  <view wx:if="{{!loading && !loadFailed && records.length}}" class="timeline">
+    <view wx:for="{{records}}" wx:key="id" class="timeline-item">
+      <view class="timeline-rail">
+        <view class="timeline-dot"></view>
+        <view wx:if="{{index < records.length - 1}}" class="timeline-line"></view>
+      </view>
+      <view class="moment-card">
+        <view class="moment-head" bindtap="viewRecord" data-type="{{item.targetType}}" data-id="{{item.targetId}}">
+          <view class="moment-date-block"><text class="moment-day">{{item.dayText}}</text><text class="moment-month">{{item.monthText}}</text></view>
+          <view class="moment-meta">
+            <text class="moment-title">{{item.title}}</text>
+            <text class="moment-tech">{{item.technicianName}} · {{item.yearText}}</text>
+          </view>
+          <text class="moment-arrow">›</text>
+        </view>
+
+        <view wx:if="{{item.imageUrls.length}}" class="moment-gallery gallery-{{item.imageUrls.length > 2 ? 'grid' : 'wide'}}">
+          <image wx:for="{{item.imageUrls}}" wx:for-item="photo" wx:key="*this" wx:if="{{index < 9}}" class="moment-photo" src="{{photo}}" mode="aspectFill" catchtap="previewRecordImage" data-record-id="{{item.id}}" data-url="{{photo}}" lazy-load role="button" aria-label="{{item.dateText}}的美甲照片，点击查看和创作"/>
+        </view>
+        <view wx:else class="moment-empty">
+          <text class="moment-empty-title">这次美甲还没有照片</text>
+          <text class="moment-empty-copy">你可以上传实拍图，或等待美甲师关联作品</text>
+        </view>
+        <text wx:if="{{item.clientPhotos.length}}" class="photo-manage-hint">轻触照片可查看、创作；你上传的照片还可移除</text>
+
+        <view wx:if="{{item.linkedWorkPhotoCount}}" class="sync-note">已同步美甲师作品图片</view>
+        <view wx:if="{{item.orderId}}" class="record-note" catchtap="editRecordNote" data-record-id="{{item.id}}">
+          <view class="record-note-content">
+            <text class="record-note-label">我的备注</text>
+            <text class="record-note-text">{{item.clientRecordNote || '记录这次的配色、手感或下次想调整的地方'}}</text>
+          </view>
+          <text class="record-note-action">{{item.clientRecordNote ? '编辑' : '添加'}}</text>
+        </view>
+        <view class="moment-tags"><text wx:for="{{item.tags}}" wx:key="*this" class="moment-tag">#{{item}}</text></view>
+
+        <view class="moment-actions">
+          <view wx:if="{{item.orderId}}" class="moment-action" catchtap="addRecordPhotos" data-order-id="{{item.orderId}}">
+            {{uploadingOrderId === item.orderId ? '上传中…' : (item.clientPhotos.length ? '继续添加照片' : '上传美甲照片')}}
+          </view>
+          <view wx:if="{{item.imageUrls.length}}" class="moment-action moment-action-primary" catchtap="createPhoto" data-url="{{item.imageUrls[0]}}">生成朋友圈分享图</view>
+        </view>
+        <view class="book-again" catchtap="bookAgain" data-tech-id="{{item.technicianId}}">再次预约 {{item.technicianName}}<text>›</text></view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{editingRecordId}}" class="note-mask" bindtap="closeNoteEditor">
+    <view class="note-sheet" catchtap="noop">
+      <text class="note-sheet-title">编辑美甲记录</text>
+      <text class="note-field-label">我的备注</text>
+      <textarea class="note-textarea" value="{{noteDraft}}" maxlength="300" auto-height="{{false}}" adjust-position placeholder="例如：这次裸粉色很显白，下次想把长度稍微缩短" bindinput="onNoteInput"/>
+      <text class="note-counter">{{noteDraft.length}} / 300</text>
+      <view class="note-actions">
+        <button class="note-button note-cancel" disabled="{{savingNote}}" bindtap="closeNoteEditor">取消</button>
+        <button class="note-button note-save" disabled="{{savingNote}}" bindtap="saveRecordNote">{{savingNote ? '保存中…' : '保存备注'}}</button>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{!loadFailed && records.length && records.length < matchedRecords.length}}" class="load-more">继续下滑加载更多记录</view>
+
+  <view wx:if="{{!loading && !loadFailed && !allRecords.length}}" class="empty-card">
+    <view class="empty-mark"></view>
+    <text class="empty-title">还没有美甲记录</text>
+    <text class="empty-copy">完成预约后，可以上传自己的照片；美甲师关联的作品也会自动同步到这里。</text>
+    <view class="primary-btn" bindtap="discoverWorks">寻找下一款美甲</view>
+  </view>
+
+  <view wx:if="{{!loading && !loadFailed && allRecords.length && !records.length}}" class="empty-card filter-empty">
+    <text class="empty-title">没有符合筛选条件的记录</text>
+    <text class="empty-copy">换一个年份、风格或美甲师看看</text>
+    <view class="primary-btn" bindtap="resetRecordFilters">清除筛选</view>
+  </view>
+
+  <view wx:if="{{!loadFailed && styleTags.length}}" class="portrait-card">
+    <text class="section-title">我常做的风格</text>
+    <view class="tag-row"><text wx:for="{{styleTags}}" wx:key="*this" class="tag">#{{item}}</text></view>
+    <text class="portrait-copy">目前偏爱「{{favoriteStyle}}」，常用场景是「{{favoriteScene}}」。</text>
+  </view>
+
+  <view wx:if="{{!loadFailed && recommendations.length}}" class="recommend-section">
+    <view class="section-head"><view><text class="section-title">下一次可以试试</text><text class="recommend-sub">根据你的记录与收藏推荐</text></view></view>
+    <scroll-view scroll-x enhanced show-scrollbar="{{false}}" class="recommend-scroll">
+      <view class="recommend-row">
+        <view wx:for="{{recommendations}}" wx:key="id" class="recommend-card" bindtap="viewWork" data-id="{{item.id}}">
+          <image wx:if="{{item.coverUrl}}" class="recommend-image" src="{{item.coverUrl}}" mode="aspectFill" lazy-load aria-label="{{item.title}}作品预览"/>
+          <view wx:else class="recommend-image placeholder"></view>
+          <text class="recommend-title">{{item.title}}</text>
+          <text class="recommend-tags">{{item.tagText}}</text>
+          <text class="recommend-reason">{{item.recommendationReason}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+</view>

@@ -54,13 +54,13 @@
 .empty-title {
   font-size: 32rpx;
   font-weight: 600;
-  color: #9ca3af;
+  color: #6b7280;
   margin-bottom: 12rpx;
 }
 
 .empty-sub {
   font-size: 26rpx;
-  color: #d1d5db;
+  color: #767b84;
   margin-bottom: 48rpx;
   text-align: center;
 }

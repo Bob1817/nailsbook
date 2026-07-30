@@ -152,6 +152,7 @@ export class ClientHomeService {
         imageUrls,
         clientPhotos: clientPhotos.map((url) => this.absoluteUrl(url)),
         clientPhotoCount: clientPhotos.length,
+        clientRecordNote: order.clientRecordNote ?? null,
         linkedWorkPhotoCount: linkedWorkPhotos.length,
         tags: this.parseTags(work?.tags ?? null),
         technicianId: order.technician.id,

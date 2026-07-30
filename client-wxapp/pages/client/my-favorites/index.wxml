@@ -5,11 +5,17 @@
     <view class="loading-spinner"></view>
   </view>
 
+  <view wx:elif="{{loadFailed}}" class="empty-wrap">
+    <text class="empty-title">收藏加载失败</text>
+    <text class="empty-desc">请检查网络后重新加载</text>
+    <view class="go-btn" bindtap="loadFavorites">重新加载</view>
+  </view>
+
   <view wx:elif="{{works.length === 0}}" class="empty-wrap">
     <view class="empty-icon"><view class="empty-bookmark"></view></view>
     <text class="empty-title">暂无收藏作品</text>
     <text class="empty-desc">去浏览并收藏你喜欢的作品吧</text>
-    <view class="go-btn" bindtap="goHome">去逛逛</view>
+    <view class="go-btn" bindtap="goWorks">发现作品</view>
   </view>
 
   <view wx:else class="waterfall-wrap">
@@ -28,5 +34,6 @@
       </view>
     </view>
   </view>
+  <view wx:if="{{hasMore}}" class="page-hint">继续下滑加载更多</view>
 
 </view>

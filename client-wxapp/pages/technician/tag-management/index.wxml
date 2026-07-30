@@ -4,7 +4,7 @@
 
   <!-- 添加标签 -->
   <view class="add-card">
-    <input class="tag-input" value="{{newTag}}" bindinput="onNewTagInput" placeholder="输入标签名" placeholder-class="ph" confirm-type="done" bindconfirm="addTag" />
+    <input class="tag-input" value="{{newTag}}" bindinput="onNewTagInput" placeholder="输入标签名（最多12字）" maxlength="12" placeholder-class="ph" confirm-type="done" bindconfirm="addTag" />
     <view class="add-btn {{adding ? 'btn-disabled' : ''}}" bindtap="addTag">
       <text>{{adding ? '添加中' : '添加'}}</text>
     </view>
@@ -12,9 +12,16 @@
 
   <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
 
+  <view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+    <view class="load-error-mark">!</view>
+    <text class="empty-text">标签加载失败</text>
+    <text class="empty-sub">请检查网络后重试</text>
+    <button class="retry-btn" bindtap="loadTags">重新加载</button>
+  </view>
+
   <!-- 空状态 -->
   <view wx:elif="{{tags.length === 0}}" class="empty">
-    <text class="empty-icon">🏷️</text>
+    <view class="empty-icon"><view class="tag-outline"></view></view>
     <text class="empty-text">还没有标签</text>
     <text class="empty-sub">在上方输入框添加标签，用于客户分类</text>
   </view>
@@ -28,4 +35,5 @@
       </view>
     </view>
   </view>
+  <text wx:if="{{tags.length}}" class="tag-note">删除模板不会移除已经添加到客户资料中的标签。</text>
 </view>

@@ -81,6 +81,7 @@ Page({
   },
 
   onLoad: function (options) {
+    this._pageActive = true;
     var today = new Date();
     var tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -95,7 +96,8 @@ Page({
       calendarDays: buildCalendar(tomorrow.getFullYear(), tomorrow.getMonth(), defaultDate)
     });
     // 从聊天「快速发起预约」进入：锁定美甲师为对话对象
-    if (options.techId) this._presetTechId = parseInt(options.techId);
+    var presetTechId = options.techId || options.tech_id;
+    if (presetTechId) this._presetTechId = parseInt(presetTechId);
     this.loadTechnicians();
     this.loadAddresses();
     if (options.design_id) this.loadDesign(options.design_id);
@@ -103,7 +105,28 @@ Page({
     if (options.workId) this.loadWork(parseInt(options.workId));
   },
 
-  onShow: function () { this.loadAddresses(); },
+  onShow: function () {
+    this._pageActive = true;
+    if (this._submittedWhileHidden) {
+      this._submittedWhileHidden = false;
+      wx.reLaunch({ url: '/pages/client/orders/index' });
+      return;
+    }
+    if (this._submitFinishedWhileHidden) {
+      this.setData({ submitting: false });
+      this._submitFinishedWhileHidden = false;
+    }
+    if (this._uploadFinishedWhileHidden) {
+      this.setData({ uploading: false });
+      this._uploadFinishedWhileHidden = false;
+    }
+    this.loadAddresses();
+  },
+  onHide: function () { this._pageActive = false; },
+  onUnload: function () {
+    this._pageActive = false;
+    if (this._navTimer) clearTimeout(this._navTimer);
+  },
 
   // ── 数据加载 ─────────────────────────────
 
@@ -146,6 +169,7 @@ Page({
   loadDesign: function (designId) {
     var self = this;
     api.client.designs.detail(designId).then(function (d) {
+      self._sourceDesign = { id: Number(designId), status: d.status };
       self.setData({
         isCustomService: true,
         customTitle: d.title || '设计作品',
@@ -166,6 +190,7 @@ Page({
         ? w.imageUrls.slice(0, 9)
         : (w.coverUrl ? [w.coverUrl] : []);
       self._pendingWorkPrefill = {
+        sourceWorkId: w.id,
         techId: techId,
         customTitle: w.title || '同款美甲',
         customDesc: w.description || '',
@@ -174,7 +199,10 @@ Page({
       if (techId) self._presetTechId = techId;
       // 美甲师已加载则立即应用，否则等 loadTechnicians 完成后应用
       if (self.data.technicians.length > 0) self.applyWorkPrefill();
-    }).catch(function (e) { console.error('loadWork', e); });
+    }).catch(function (e) {
+      console.error('loadWork', e);
+      wx.showToast({ title: e.message || '请先绑定该美甲师后预约同款', icon: 'none' });
+    });
   },
 
   applyWorkPrefill: function () {
@@ -190,6 +218,7 @@ Page({
       customDesc: pf.customDesc,
       customImages: pf.customImages
     });
+    this.sourceWorkId = pf.sourceWorkId;
     this._pendingWorkPrefill = null;
   },
 
@@ -224,6 +253,7 @@ Page({
     var id = e.currentTarget.dataset.id;
     var tech = this.data.technicians.find(function (t) { return t.id === id; });
     if (!tech) return;
+    this.sourceWorkId = null;
     var shopAddrs = tech.shopAddresses || [];
     var hasHome = tech.homeService;
     var hasShop = tech.shopService && shopAddrs.length > 0;
@@ -296,6 +326,7 @@ Page({
 
   switchContentMode: function (e) {
     var mode = e.currentTarget.dataset.mode;
+    if (mode === 'standard') this.sourceWorkId = null;
     this.setData({ isCustomService: mode === 'custom', selectedServiceIds: [] });
   },
 
@@ -312,6 +343,7 @@ Page({
 
   chooseImage: function () {
     var self = this;
+    if (self.data.uploading) return;
     var remaining = 3 - self.data.customImages.length;
     if (remaining <= 0) return;
     wx.chooseMedia({
@@ -320,9 +352,13 @@ Page({
         self.setData({ uploading: true });
         Promise.all(res.tempFiles.map(function (f) { return api.upload.image(f.tempFilePath); }))
           .then(function (results) {
+            if (!self._pageActive) { self._uploadFinishedWhileHidden = true; return; }
             self.setData({ customImages: self.data.customImages.concat(results.map(function (r) { return r.url; })), uploading: false });
           })
-          .catch(function () { wx.showToast({ title: '上传失败', icon: 'none' }); self.setData({ uploading: false }); });
+          .catch(function () {
+            if (!self._pageActive) { self._uploadFinishedWhileHidden = true; return; }
+            wx.showToast({ title: '上传失败', icon: 'none' }); self.setData({ uploading: false });
+          });
       }
     });
   },
@@ -554,6 +590,7 @@ Page({
       serviceType: d.serviceType,
       remark: d.remark || undefined
     };
+    if (self.sourceWorkId) payload.sourceWorkId = self.sourceWorkId;
     if (d.serviceType === '上门美甲') payload.addressId = d.selectedAddressId;
     if (d.serviceType === '到店美甲') {
       var shop = d.shopAddresses.find(function (s) { return s.name === d.selectedShopName; });
@@ -567,15 +604,29 @@ Page({
       payload.selectedServiceIds = d.selectedServiceIds;
     }
 
-    api.client.orders.create(payload).then(function () {
+    var request = self._sourceDesign && self._sourceDesign.status === 'accepted'
+      ? api.client.orders.createFromDesign({
+          designId: self._sourceDesign.id,
+          techId: payload.techId,
+          serviceDate: payload.serviceDate,
+          startTime: payload.startTime,
+          serviceType: payload.serviceType,
+          addressId: payload.addressId,
+          shopAddress: payload.shopAddress
+        })
+      : api.client.orders.create(payload);
+    request.then(function () {
       wx.hideLoading();
+      if (!self._pageActive) { self._submittedWhileHidden = true; return; }
       wx.showToast({ title: '预约成功', icon: 'success' });
-      setTimeout(function () { wx.reLaunch({ url: '/pages/client/orders/index' }); }, 1200);
+      self._navTimer = setTimeout(function () { if (self._pageActive) wx.reLaunch({ url: '/pages/client/orders/index' }); }, 1200);
     }).catch(function (err) {
       wx.hideLoading();
+      if (!self._pageActive) { self._submitFinishedWhileHidden = true; return; }
       wx.showToast({ title: err.message || '提交失败', icon: 'none' });
     }).finally(function () {
-      self.setData({ submitting: false });
+      if (self._pageActive) self.setData({ submitting: false });
+      else if (!self._submittedWhileHidden) self._submitFinishedWhileHidden = true;
     });
   }
 });

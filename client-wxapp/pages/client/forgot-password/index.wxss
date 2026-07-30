@@ -5,7 +5,7 @@
 }
 .header { margin-bottom: 48rpx; }
 .title { display: block; font-size: 48rpx; font-weight: 700; color: #1f2937; margin-bottom: 12rpx; }
-.subtitle { display: block; font-size: 28rpx; color: #9ca3af; }
+.subtitle { display: block; font-size: 28rpx; color: #6b7280; }
 .form {
   background: #f8f9fc;
   border-radius: 24rpx;
@@ -15,8 +15,9 @@
 .field { padding: 28rpx 40rpx; border-bottom: 1rpx solid #f5f5f5; }
 .field:last-child { border-bottom: none; }
 .label { display: block; font-size: 26rpx; color: #374151; margin-bottom: 12rpx; }
-.input  { width: 100%; font-size: 28rpx; color: #1f2937; height: 88rpx;  background: #f9fafb; border-radius: 14rpx;}
-.placeholder { color: #9ca3af; }
+.input  { width: 100%; font-size: 28rpx; color: #1f2937; height: 88rpx; padding:0 20rpx; background: #f9fafb; border:2rpx solid transparent; border-radius: 14rpx; box-sizing:border-box;}
+.input:focus { border-color:#ff6b8a; background:#fff; }
+.placeholder { color: #6b7280; }
 .code-row { display: flex; align-items: center; gap: 16rpx; }
 .code-input  { flex: 1;  background: #f9fafb; border-radius: 14rpx;}
 .code-btn {

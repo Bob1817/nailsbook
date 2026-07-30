@@ -1,17 +1,17 @@
 const CLIENT_TABS = [
-  { key: 'home',     icon: '🏠', label: '首页',  path: '/pages/client/home/index' },
-  { key: 'orders',   icon: '📅', label: '预约',  path: '/pages/client/orders/index' },
-  { key: 'discover', icon: '✨', label: '发现',  path: '/pages/client/discover/index' },
-  { key: 'chat',     icon: '💬', label: '消息',  path: '/pages/client/chat/index' },
-  { key: 'profile',  icon: '👤', label: '我的',  path: '/pages/client/profile/index' }
+  { key: 'home',     icon: 'home', label: '首页',  path: '/pages/client/home/index' },
+  { key: 'orders',   icon: 'calendar', label: '预约',  path: '/pages/client/orders/index' },
+  { key: 'discover', icon: 'compass', label: '发现',  path: '/pages/client/discover/index' },
+  { key: 'chat',     icon: 'chat', label: '消息',  path: '/pages/client/chat/index' },
+  { key: 'profile',  icon: 'profile', label: '我的',  path: '/pages/client/profile/index' }
 ];
 
 const TECHNICIAN_TABS = [
-  { key: 'home',      icon: '🏠', label: '首页',  path: '/pages/technician/home/index' },
-  { key: 'orders',    icon: '📅', label: '行程',  path: '/pages/technician/orders/index' },
-  { key: 'customers', icon: '👥', label: '客户',  path: '/pages/technician/customers/index' },
-  { key: 'chat',      icon: '💬', label: '消息',  path: '/pages/technician/chat/index' },
-  { key: 'profile',   icon: '👤', label: '我的',  path: '/pages/technician/profile/index' }
+  { key: 'home',      icon: 'home', label: '首页',  path: '/pages/technician/home/index' },
+  { key: 'orders',    icon: 'calendar', label: '行程',  path: '/pages/technician/orders/index' },
+  { key: 'customers', icon: 'customers', label: '客户',  path: '/pages/technician/customers/index' },
+  { key: 'chat',      icon: 'chat', label: '消息',  path: '/pages/technician/chat/index' },
+  { key: 'profile',   icon: 'profile', label: '我的',  path: '/pages/technician/profile/index' }
 ];
 
 Component({

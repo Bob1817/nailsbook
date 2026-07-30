@@ -4,8 +4,11 @@
   <text class="loading-text">加载中...</text>
 </view>
 
-<view wx:elif="{{!order}}" class="loading-page">
-  <text class="loading-text">预约不存在</text>
+<view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+  <view class="load-error-mark">!</view>
+  <text class="load-error-title">{{loadErrorText}}</text>
+  <text wx:if="{{orderId}}" class="load-error-desc">请检查网络后重试</text>
+  <button wx:if="{{orderId}}" class="retry-btn" bindtap="loadOrder">重新加载</button>
 </view>
 
 <view wx:else class="page">
@@ -23,7 +26,7 @@
   <view class="card customer-card card-overlap">
     <view class="customer-row">
       <view class="cu-avatar">
-        <image wx:if="{{order.customerAvatar}}" src="{{order.customerAvatar}}" mode="aspectFill" class="cu-avatar-img" />
+        <image wx:if="{{order.customerAvatar}}" src="{{order.customerAvatar}}" mode="aspectFill" class="cu-avatar-img" aria-label="{{order.customerName}}的头像" />
         <text wx:else class="cu-avatar-char">{{order.customerName[0]}}</text>
       </view>
       <view class="cu-info">
@@ -31,7 +34,7 @@
         <text class="cu-phone">{{order._customerPhoneMasked}}</text>
       </view>
       <view class="cu-actions">
-        <view wx:if="{{order.customerPhone}}" class="round-btn" catchtap="callCustomer">📞</view>
+        <view wx:if="{{order.customerPhone}}" class="round-btn" catchtap="callCustomer" role="button" aria-label="拨打客户电话"><view class="btn-icon-phone"></view></view>
       </view>
     </view>
   </view>
@@ -54,7 +57,7 @@
       <text class="info-label">服务地址</text>
       <view class="info-value-block">
         <text class="addr-text">{{order.address}}</text>
-        <view wx:if="{{order.address}}" class="copy-link" catchtap="copyAddress">复制</view>
+        <view wx:if="{{order.address}}" class="copy-link" catchtap="copyAddress" role="button" aria-label="复制服务地址">复制</view>
       </view>
     </view>
 

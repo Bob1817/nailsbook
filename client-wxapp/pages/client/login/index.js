@@ -9,6 +9,10 @@ Page({
     loading: false
   },
 
+  onLoad(options) {
+    this.redirect = options.redirect ? decodeURIComponent(options.redirect) : '';
+  },
+
   onInput(e) {
     this.setData({ [e.currentTarget.dataset.field]: e.detail.value });
   },
@@ -40,7 +44,8 @@ Page({
         this.setData({ step: 'login' });
       } else {
         // 跳转到注册页面
-        wx.navigateTo({ url: `/pages/client/register/index?phone=${phone}` });
+        const redirect = this.redirect ? `&redirect=${encodeURIComponent(this.redirect)}` : '';
+        wx.navigateTo({ url: `/pages/client/register/index?phone=${phone}${redirect}` });
       }
     } catch (err) {
       wx.hideLoading();
@@ -79,6 +84,6 @@ Page({
       wx.setStorageSync('defaultTechId', res.technician.id);
     }
     wx.hideLoading();
-    wx.reLaunch({ url: '/pages/client/home/index' });
+    wx.reLaunch({ url: this.redirect || '/pages/client/home/index' });
   }
 });

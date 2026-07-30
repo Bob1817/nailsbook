@@ -12,6 +12,12 @@
         <view wx:for="{{[1,2]}}" wx:key="*this" class="skel-card"></view>
       </view>
 
+      <view wx:elif="{{loadFailed}}" class="empty-card" aria-live="polite">
+        <text class="empty-title">行程列表加载失败</text>
+        <text class="empty-sub">请检查网络后重试</text>
+        <view class="retry-btn" bindtap="loadOrders" role="button">重新加载</view>
+      </view>
+
       <view wx:elif="{{orders.length === 0}}" class="empty-card">
         <text class="empty-title">暂无行程记录</text>
         <text class="empty-sub">已确认排期的预约会显示在这里</text>
@@ -28,7 +34,7 @@
           <view class="trip-top">
             <text class="trip-time">{{item._clock}}</text>
             <view class="trip-avatar">
-              <image wx:if="{{item.customerAvatar}}" src="{{item.customerAvatar}}" mode="aspectFill" class="trip-avatar-img" />
+              <image wx:if="{{item.customerAvatar}}" src="{{item.customerAvatar}}" mode="aspectFill" class="trip-avatar-img" lazy-load aria-label="{{item.customerName || '客户'}}的头像" />
               <text wx:else class="trip-avatar-char">{{item._avatarChar}}</text>
             </view>
             <view class="trip-info">

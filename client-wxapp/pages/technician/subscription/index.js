@@ -4,26 +4,29 @@ Page({
   data: {
     currentPlan: null,
     plans: [],
-    loading: true
+    loading: true,
+    loadFailed: false
   },
 
-  async onLoad() {
+  onLoad() {
+    this.loadSubscription();
+  },
+
+  async loadSubscription() {
+    this.setData({ loading: true, loadFailed: false });
     try {
       const [sub, plans] = await Promise.all([
-        api.technician.subscription.get().catch(() => null),
-        api.technician.subscription.plans().catch(() => [])
+        api.technician.subscription.current().catch(() => null),
+        api.technician.subscription.plans()
       ]);
       this.setData({
         currentPlan: sub,
         plans: plans.list || plans.data || plans || [],
-        loading: false
+        loading: false,
+        loadFailed: false
       });
     } catch {
-      this.setData({ loading: false });
+      this.setData({ loading: false, loadFailed: true });
     }
-  },
-
-  contactSupport() {
-    wx.showToast({ title: '请联系平台客服升级套餐', icon: 'none', duration: 3000 });
   }
 });

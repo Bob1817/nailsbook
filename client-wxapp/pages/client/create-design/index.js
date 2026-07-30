@@ -9,7 +9,19 @@ Page({
     submitting: false
   },
 
-  onLoad() {},
+  onLoad() { this._pageActive = true; },
+  onShow() {
+    this._pageActive = true;
+    if (this._asyncFinishedWhileHidden) {
+      this.setData({ uploading: false, submitting: false });
+      this._asyncFinishedWhileHidden = false;
+    }
+  },
+  onHide() { this._pageActive = false; },
+  onUnload() {
+    this._pageActive = false;
+    if (this._navTimer) clearTimeout(this._navTimer);
+  },
 
   onTitleInput(e) {
     this.setData({ title: e.detail.value });
@@ -20,6 +32,7 @@ Page({
   },
 
   chooseImage() {
+    if (this.data.uploading) return;
     const remaining = 9 - this.data.images.length;
     if (remaining <= 0) {
       wx.showToast({ title: '最多上传9张图片', icon: 'none' });
@@ -36,6 +49,7 @@ Page({
         
         Promise.all(uploadPromises)
           .then(results => {
+            if (!this._pageActive) { this._asyncFinishedWhileHidden = true; return; }
             const newImages = results.map(r => r.url);
             this.setData({
               images: [...this.data.images, ...newImages],
@@ -44,6 +58,7 @@ Page({
           })
           .catch(err => {
             console.error('Upload failed:', err);
+            if (!this._pageActive) { this._asyncFinishedWhileHidden = true; return; }
             wx.showToast({ title: '图片上传失败', icon: 'none' });
             this.setData({ uploading: false });
           });
@@ -67,6 +82,7 @@ Page({
   },
 
   async handleSubmit() {
+    if (this.data.submitting || this.data.uploading) return;
     if (this.data.images.length === 0) {
       wx.showToast({ title: '请至少上传一张图片', icon: 'none' });
       return;
@@ -79,16 +95,18 @@ Page({
         imageUrls: this.data.images,
         description: this.data.description.trim() || undefined
       });
-
+      if (!this._pageActive) { this._asyncFinishedWhileHidden = true; return; }
       wx.showToast({ title: '提交成功', icon: 'success' });
-      setTimeout(() => {
-        wx.navigateBack();
+      this._navTimer = setTimeout(() => {
+        if (this._pageActive) wx.navigateBack();
       }, 1500);
     } catch (err) {
       console.error('Submit failed:', err);
+      if (!this._pageActive) { this._asyncFinishedWhileHidden = true; return; }
       wx.showToast({ title: '提交失败，请重试', icon: 'none' });
     } finally {
-      this.setData({ submitting: false });
+      if (this._pageActive) this.setData({ submitting: false });
+      else this._asyncFinishedWhileHidden = true;
     }
   }
 });

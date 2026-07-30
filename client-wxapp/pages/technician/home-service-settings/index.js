@@ -9,6 +9,7 @@ Page({
     holidayFee: '',
     minOrderAmount: '',
     loading: true,
+    loadFailed: false,
     saving: false,
     fromSetup: false
   },
@@ -20,7 +21,7 @@ Page({
   },
 
   async loadConfig() {
-    this.setData({ loading: true });
+    this.setData({ loading: true, loadFailed: false });
     try {
       const userInfo = await api.technician.auth.getUserInfo();
       const pricing = userInfo.homeServicePricing || [{ minKm: 0, maxKm: 5, price: 0 }];
@@ -31,16 +32,21 @@ Page({
         nightFee: userInfo.nightServiceFee != null ? String(userInfo.nightServiceFee) : '',
         holidayFee: userInfo.holidayServiceFee != null ? String(userInfo.holidayServiceFee) : '',
         minOrderAmount: userInfo.minOrderAmount != null ? String(userInfo.minOrderAmount) : '',
-        loading: false
+        loading: false,
+        loadFailed: false
       });
     } catch (err) {
-      this.setData({ loading: false });
-      wx.showToast({ title: '加载失败', icon: 'none' });
+      this.setData({ loading: false, loadFailed: true });
     }
   },
 
   toggleEnabled(e) {
     this.setData({ enabled: e.detail.value });
+  },
+
+  quickEnable() {
+    if (this.data.saving) return;
+    this.setData({ enabled: true }, () => this.save());
   },
 
   onRadiusInput(e) { this.setData({ radius: e.detail.value }); },

@@ -80,8 +80,8 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 }
 
 .status-schedule-btn {
-  width: 56rpx;
-  height: 56rpx;
+  width: 88rpx;
+  height: 88rpx;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.18);
   display: flex;
@@ -129,8 +129,9 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 .stat-item:active { opacity: 0.6; }
 .stat-value { font-size: 36rpx; font-weight: 700; color: #1f2937; line-height: 1.1; }
 .stat-value-alert { color: #ff6b8a; }
-.stat-label { font-size: 20rpx; color: #9ca3af; }
+.stat-label { font-size: 20rpx; color: #6b7280; }
 .stat-divider { width: 1rpx; height: 44rpx; background: #f0eaed; flex-shrink: 0; }
+.business-row { min-height:88rpx; }.business-value { font-size:30rpx; }
 
 /* ===== 卡片 ===== */
 .card {
@@ -155,7 +156,15 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
   font-size: 30rpx; font-weight: 600; color: #1f2937;
   margin-bottom: 24rpx;
 }
-.card-more { font-size: 24rpx; color: #ff6b8a; font-weight: 500; }
+.card-more {
+  min-height: 88rpx;
+  padding: 0 12rpx;
+  display: flex;
+  align-items: center;
+  font-size: 24rpx;
+  color: #ff6b8a;
+  font-weight: 500;
+}
 
 /* ===== 我的预约 ===== */
 .order-grid {
@@ -238,7 +247,7 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
   border: 1rpx dashed #f2cdd9;
 }
 .invite-code-block { display: flex; flex-direction: column; gap: 6rpx; }
-.invite-code-cap { font-size: 20rpx; color: #9ca3af; }
+.invite-code-cap { font-size: 20rpx; color: #6b7280; }
 .invite-code {
   font-size: 36rpx; font-weight: 700; color: #ff6b8a;
   letter-spacing: 3rpx;
@@ -324,7 +333,7 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 }
 .setup-guide-desc {
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
   line-height: 1.5;
 }
 
@@ -383,7 +392,7 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 .setup-step-hint {
   display: block;
   font-size: 22rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 .setup-step-action {
   display: flex;
@@ -413,9 +422,18 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 }
 .menu-item:last-child { border-bottom: none; }
 .menu-item:active { opacity: 0.6; }
-.menu-icon { font-size: 36rpx; margin-right: 20rpx; }
+.menu-icon { position:relative; width:40rpx; height:40rpx; margin-right:20rpx; flex-shrink:0; color:#9d5274; box-sizing:border-box; }
+.icon-settings { border:4rpx solid currentColor; border-radius:50%; box-shadow:inset 0 0 0 7rpx #fff; background:currentColor; }
+.icon-settings::before,.icon-settings::after { content:''; position:absolute; left:14rpx; top:-7rpx; width:4rpx; height:46rpx; border-radius:3rpx; background:currentColor; transform-origin:center; }
+.icon-settings::after { transform:rotate(90deg); }
+.icon-lock { top:10rpx; height:28rpx; border:4rpx solid currentColor; border-radius:7rpx; }
+.icon-lock::before { content:''; position:absolute; left:7rpx; top:-18rpx; width:18rpx; height:18rpx; border:4rpx solid currentColor; border-bottom:0; border-radius:12rpx 12rpx 0 0; box-sizing:border-box; }
+.icon-help,.icon-about { display:flex; align-items:center; justify-content:center; border:4rpx solid currentColor; border-radius:50%; font-size:25rpx; font-weight:800; }
+.icon-help::before { content:'?'; }.icon-about::before { content:'i'; }
+.icon-switch::before,.icon-switch::after { content:''; position:absolute; left:3rpx; width:30rpx; height:12rpx; border-top:4rpx solid currentColor; border-right:4rpx solid currentColor; }
+.icon-switch::before { top:7rpx; transform:skewX(35deg); }.icon-switch::after { bottom:5rpx; transform:rotate(180deg) skewX(35deg); }
 .menu-label { flex: 1; font-size: 28rpx; color: #1f2937; }
-.menu-arrow { font-size: 34rpx; color: #9ca3af; }
+.menu-arrow { font-size: 34rpx; color: #6b7280; }
 
 /* ===== 退出 ===== */
 .logout-btn {
@@ -438,7 +456,7 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
   margin-top: 24rpx;
   text-align: center;
   font-size: 22rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 /* ===== 我的预约：per-status 背景色 ===== */
@@ -536,8 +554,8 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 }
 
 .ws-close {
-  width: 64rpx;
-  height: 64rpx;
+  width: 88rpx;
+  height: 88rpx;
   border-radius: 50%;
   background: #f3f4f6;
   display: flex;
@@ -630,8 +648,8 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 
 /* 开关 */
 .ws-switch {
-  width: 96rpx;
-  height: 56rpx;
+  width: 112rpx;
+  height: 88rpx;
   border-radius: 999rpx;
   background: #ddd8de;
   position: relative;
@@ -645,8 +663,8 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 
 .ws-switch-knob {
   position: absolute;
-  top: 4rpx;
-  left: 4rpx;
+  top: 20rpx;
+  left: 8rpx;
   width: 48rpx;
   height: 48rpx;
   border-radius: 50%;
@@ -656,7 +674,7 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 }
 
 .ws-switch-on .ws-switch-knob {
-  left: 44rpx;
+  left: 56rpx;
 }
 
 /* 休息日设置 */
@@ -712,7 +730,7 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 
 .ws-rest-tag-x {
   font-size: 28rpx;
-  color: #9ca3af;
+  color: #6b7280;
   line-height: 1;
   padding: 0 4rpx;
 }
@@ -720,7 +738,7 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 
 .ws-rest-empty {
   font-size: 26rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 /* 保存按钮 */
@@ -813,7 +831,7 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 .se-time-sublabel {
   display: block;
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
   margin-bottom: 8rpx;
 }
 
@@ -838,12 +856,12 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 
 .se-time-arrow {
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 .se-time-dash {
   font-size: 28rpx;
-  color: #9ca3af;
+  color: #6b7280;
   padding-bottom: 20rpx;
 }
 
@@ -902,7 +920,7 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 }
 
 .se-delete-btn {
-  height: 80rpx;
+  height: 88rpx;
   padding: 0 32rpx;
   border-radius: 14rpx;
   background: #ffe5e6;
@@ -919,7 +937,7 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 }
 
 .se-cancel-btn {
-  height: 80rpx;
+  height: 88rpx;
   padding: 0 40rpx;
   border-radius: 14rpx;
   background: #f3f4f6;
@@ -931,7 +949,7 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 .se-cancel-text { font-size: 26rpx; font-weight: 500; color: #374151; }
 
 .se-save-btn {
-  height: 80rpx;
+  height: 88rpx;
   padding: 0 40rpx;
   border-radius: 14rpx;
   background: linear-gradient(135deg, #ff6b8a, #8b5cf6);
@@ -990,13 +1008,13 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 .st-subtitle {
   display: block;
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
   line-height: 1.5;
 }
 
 .st-close {
-  width: 64rpx;
-  height: 64rpx;
+  width: 88rpx;
+  height: 88rpx;
   border-radius: 50%;
   background: #f3f4f6;
   display: flex;
@@ -1033,7 +1051,52 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 }
 
 .st-tab-icon {
-  font-size: 32rpx;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+.st-tab-active .st-tab-icon {
+  color: #ff6b8a;
+}
+.st-tab-icon-home {
+  position: relative;
+  width: 34rpx;
+  height: 28rpx;
+  margin-top: 6rpx;
+  border: 3rpx solid currentColor;
+  border-radius: 5rpx;
+  box-sizing: border-box;
+}
+.st-tab-icon-home::before {
+  content: '';
+  position: absolute;
+  left: 5rpx;
+  top: -11rpx;
+  width: 18rpx;
+  height: 18rpx;
+  border-left: 3rpx solid currentColor;
+  border-top: 3rpx solid currentColor;
+  background: inherit;
+  transform: rotate(45deg);
+}
+.st-tab-icon-shop {
+  position: relative;
+  width: 36rpx;
+  height: 30rpx;
+  margin-top: 4rpx;
+  border: 3rpx solid currentColor;
+  border-radius: 4rpx;
+  box-sizing: border-box;
+}
+.st-tab-icon-shop::before {
+  content: '';
+  position: absolute;
+  left: -3rpx;
+  top: -8rpx;
+  width: 36rpx;
+  height: 8rpx;
+  border: 3rpx solid currentColor;
+  border-radius: 5rpx 5rpx 2rpx 2rpx;
+  box-sizing: border-box;
 }
 
 .st-tab-text {
@@ -1099,7 +1162,7 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 .st-switch-desc {
   display: block;
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 /* 表单 */
@@ -1135,7 +1198,7 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 
 .st-field-input {
   flex: 1;
-  height: 80rpx;
+  height: 88rpx;
   padding: 0 24rpx;
   background: #f9fafb;
   border: 2rpx solid transparent;
@@ -1233,7 +1296,7 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 .st-shop-phone {
   display: block;
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 .st-shop-actions {
@@ -1274,8 +1337,26 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 }
 
 .st-empty-icon {
-  font-size: 64rpx;
   margin-bottom: 16rpx;
+}
+.st-empty-shop-icon {
+  position: relative;
+  width: 88rpx;
+  height: 70rpx;
+  border: 4rpx solid #d9a0b9;
+  border-radius: 12rpx;
+  box-sizing: border-box;
+}
+.st-empty-shop-icon::before {
+  content: '';
+  position: absolute;
+  left: -4rpx;
+  top: -18rpx;
+  width: 88rpx;
+  height: 20rpx;
+  border: 4rpx solid #d9a0b9;
+  border-radius: 10rpx 10rpx 4rpx 4rpx;
+  box-sizing: border-box;
 }
 
 .st-empty-text {
@@ -1287,7 +1368,7 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 
 .st-empty-sub {
   font-size: 26rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 /* 添加店铺按钮 */
@@ -1337,8 +1418,8 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
 }
 
 .st-form-close {
-  width: 48rpx;
-  height: 48rpx;
+  width: 88rpx;
+  height: 88rpx;
   border-radius: 50%;
   background: #f3f4f6;
   display: flex;

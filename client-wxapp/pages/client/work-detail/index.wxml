@@ -3,6 +3,14 @@
   <view class="loading-spinner"></view>
 </view>
 
+<view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+  <view class="load-error-mark">!</view>
+  <text class="load-error-title">{{loadErrorText}}</text>
+  <text wx:if="{{canRetryLoad}}" class="load-error-desc">请检查网络后重试</text>
+  <button wx:if="{{canRetryLoad}}" class="retry-btn" bindtap="loadWork">重新加载</button>
+  <button class="back-btn-error" bindtap="goBack">返回</button>
+</view>
+
 <view wx:elif="{{work.id}}" class="page">
   <!-- 左上角玻璃胶囊，与微信胶囊水平对齐 -->
   <view class="header">
@@ -24,7 +32,7 @@
     <view class="image-area">
       <swiper class="image-swiper" current="{{currentImageIndex}}" bindchange="onImageSwiperChange" circular="{{imageUrls.length > 1}}">
         <swiper-item wx:for="{{imageUrls}}" wx:key="index">
-          <image src="{{item}}" mode="aspectFill" class="slide-image" bindtap="openViewer" data-index="{{index}}" />
+          <image src="{{item}}" mode="aspectFill" class="slide-image" bindtap="openViewer" data-index="{{index}}" aria-label="{{work.title || '美甲作品'}}第{{index + 1}}张图片" />
         </swiper-item>
       </swiper>
       <view wx:if="{{imageUrls.length > 1}}" class="image-dots">
@@ -41,6 +49,21 @@
         <view wx:if="{{work.tags.length > 0}}" class="tags-row">
           <text wx:for="{{work.tags}}" wx:key="*this" class="tag">#{{item}}</text>
         </view>
+        <view class="aesthetic-meta">
+          <view class="aesthetic-item">
+            <text class="aesthetic-label">设计理念</text>
+            <text class="aesthetic-value">{{work.designIdea || work.description || '以质感与日常搭配为核心，呈现专属于你的审美表达。'}}</text>
+          </view>
+          <view wx:if="{{work.recommendationScore}}" class="aesthetic-item recommendation-row">
+            <text class="aesthetic-label">推荐指数</text>
+            <text class="recommendation-value">{{work.recommendationScore}} / 5</text>
+          </view>
+          <view class="aesthetic-item">
+            <text class="aesthetic-label">适合场景</text>
+            <text class="aesthetic-value">{{work.scene || work.suitableScene || '约会 · 日常 · 重要时刻'}}</text>
+          </view>
+        </view>
+        <view wx:if="{{work.visibilityScope === 'authorized_clients'}}" class="private-badge">你的专属作品 · 权限由美甲师授权</view>
       </view>
 
       <!-- 评论区 -->
@@ -51,10 +74,12 @@
           <text class="comments-count">{{comments.length}} 条</text>
         </view>
 
-        <view wx:if="{{comments.length > 0}}" class="comments-list">
+        <view wx:if="{{commentsLoading}}" class="comments-empty"><text class="empty-text">评论加载中…</text></view>
+        <view wx:elif="{{commentsFailed}}" class="comments-empty"><text class="empty-text">评论加载失败</text><view class="comment-retry" bindtap="loadComments">重新加载</view></view>
+        <view wx:elif="{{comments.length > 0}}" class="comments-list">
           <view wx:for="{{comments}}" wx:key="id" class="comment-item" bindtap="onTapComment" data-item="{{item}}">
             <view class="comment-avatar-wrap">
-              <image wx:if="{{item.userAvatar}}" src="{{item.userAvatar}}" mode="aspectFill" class="comment-avatar" />
+              <image wx:if="{{item.userAvatar}}" src="{{item.userAvatar}}" mode="aspectFill" class="comment-avatar" lazy-load aria-label="{{item.userName || '用户'}}的头像" />
               <view wx:else class="comment-avatar-placeholder {{item.userRole === 'technician' ? 'comment-avatar-tech' : ''}}">
                 <text class="avatar-text">{{item.userName[0] || '用'}}</text>
               </view>
@@ -71,7 +96,7 @@
               <view wx:if="{{item.replies.length > 0}}" class="replies-list">
                 <view wx:for="{{item.replies}}" wx:for-item="reply" wx:key="id" class="comment-item">
                   <view class="reply-avatar-wrap">
-                    <image wx:if="{{reply.userAvatar}}" src="{{reply.userAvatar}}" mode="aspectFill" class="reply-avatar" />
+                    <image wx:if="{{reply.userAvatar}}" src="{{reply.userAvatar}}" mode="aspectFill" class="reply-avatar" lazy-load aria-label="{{reply.userName || '用户'}}的头像" />
                     <view wx:else class="reply-avatar-placeholder">
                       <text class="avatar-text">{{reply.userName[0] || '用'}}</text>
                     </view>
@@ -108,7 +133,7 @@
         </view>
       </view>
       <view class="input-row">
-        <input
+        <input wx:if="{{permissions.canComment}}"
           class="comment-input"
           placeholder="{{replyingTo ? '回复 @' + replyingTo.name + '...' : '说点什么...'}}"
           value="{{commentText}}"
@@ -116,19 +141,20 @@
           bindconfirm="submitComment"
           confirm-type="send"
         />
+        <view wx:else class="comment-disabled">此作品未开放评论</view>
         <!-- 发送（有文字时替换图标） -->
-        <view wx:if="{{commentText}}" class="send-btn" bindtap="submitComment">
-          <text class="send-text">发送</text>
+        <view wx:if="{{commentText}}" class="send-btn {{submittingComment ? 'is-disabled' : ''}}" bindtap="submitComment">
+          <text class="send-text">{{submittingComment ? '发送中' : '发送'}}</text>
         </view>
         <block wx:else>
           <!-- 爱心 + 数字 -->
-          <view class="bar-btn bar-first" bindtap="toggleLike">
+          <view wx:if="{{permissions.canLike}}" class="bar-btn bar-first" bindtap="toggleLike">
             <image wx:if="{{work.isLiked}}" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2VmNDQ0NCIgZD0iTTEyIDIxLjZsLTEuNS0xLjM3QzUuMSAxNS4zNiAyIDEyLjUzIDIgOS4wNiAyIDYuMyA0LjE2IDQuMTQgNi45MiA0LjE0YzEuNTYgMCAzLjA2LjczIDQuMDQgMS44OGwxLjA0IDEuMjIgMS4wNC0xLjIyYTUuMzMgNS4zMyAwIDAgMSA0LjA0LTEuODhDMTkuODQgNC4xNCAyMiA2LjMgMjIgOS4wNmMwIDMuNDctMy4xIDYuMy04LjUgMTEuMThMMTIgMjEuNnoiLz48L3N2Zz4=" class="bar-icon-img" />
             <image wx:else src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWNhM2FmIiBzdHJva2Utd2lkdGg9IjEuOCIgZD0iTTEyIDIxLjZsLTEuNS0xLjM3QzUuMSAxNS4zNiAyIDEyLjUzIDIgOS4wNiAyIDYuMyA0LjE2IDQuMTQgNi45MiA0LjE0YzEuNTYgMCAzLjA2LjczIDQuMDQgMS44OGwxLjA0IDEuMjIgMS4wNC0xLjIyYTUuMzMgNS4zMyAwIDAgMSA0LjA0LTEuODhDMTkuODQgNC4xNCAyMiA2LjMgMjIgOS4wNmMwIDMuNDctMy4xIDYuMy04LjUgMTEuMThMMTIgMjEuNnoiLz48L3N2Zz4=" class="bar-icon-img" />
             <text class="bar-num {{work.isLiked ? 'bar-num-liked' : ''}}">{{work.likeCount || 0}}</text>
           </view>
           <!-- 收藏 + 数字 -->
-          <view class="bar-btn" bindtap="toggleFavorite">
+          <view wx:if="{{permissions.canFavorite}}" class="bar-btn" bindtap="toggleFavorite">
             <image wx:if="{{work.isFavorited}}" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2Y1OWUwYiIgZD0iTTEyIDIuNmwyLjcgNS44NiA2LjMuNjYtNC43IDQuMjcgMS4zIDYuMjJMMTIgMTYuOTZsLTUuNiAzLjY1IDEuMy02LjIyLTQuNy00LjI3IDYuMy0uNjZ6Ii8+PC9zdmc+" class="bar-icon-img" />
             <image wx:else src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWNhM2FmIiBzdHJva2Utd2lkdGg9IjEuOCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTEyIDIuNmwyLjcgNS44NiA2LjMuNjYtNC43IDQuMjcgMS4zIDYuMjJMMTIgMTYuOTZsLTUuNiAzLjY1IDEuMy02LjIyLTQuNy00LjI3IDYuMy0uNjZ6Ii8+PC9zdmc+" class="bar-icon-img" />
             <text class="bar-num {{work.isFavorited ? 'bar-num-star' : ''}}">{{work.favoriteCount || 0}}</text>
@@ -137,6 +163,9 @@
           <view class="bar-btn" bindtap="contactTech">
             <image src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWNhM2FmIiBzdHJva2Utd2lkdGg9IjEuOCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTIxIDExLjRjMCA0LTMuOSA3LjItOC43IDcuMi0xIDAtMi0uMTQtMi45LS40TDQgMjBsMS4zLTMuN0M0LjIgMTUuMSAzLjYgMTMuMyAzLjYgMTEuNCAzLjYgNy40IDcuNSA0LjIgMTIuMyA0LjJTMjEgNy40IDIxIDExLjR6Ii8+PC9zdmc+" class="bar-icon-img" />
           </view>
+          <button wx:if="{{permissions.canShare && sharePath}}" class="bar-btn share-bar-btn" open-type="share" aria-label="分享作品">
+            <view class="share-icon"></view>
+          </button>
           <!-- 预约同款 -->
           <view class="bar-book-btn" bindtap="bookSameStyle">
             <text class="bar-book-text">预约同款</text>
@@ -158,7 +187,7 @@
     </cover-view>
     <swiper class="viewer-swiper" current="{{viewerIndex}}" bindchange="onViewerSwiperChange" circular="{{false}}">
       <swiper-item wx:for="{{imageUrls}}" wx:key="index">
-        <image src="{{item}}" mode="aspectFit" class="viewer-image" bindtap="closeViewer" />
+      <image src="{{item}}" mode="aspectFit" class="viewer-image" bindtap="closeViewer" aria-label="{{work.title || '美甲作品'}}大图" />
       </swiper-item>
     </swiper>
     <cover-view wx:if="{{imageUrls.length > 1}}" class="viewer-dots">

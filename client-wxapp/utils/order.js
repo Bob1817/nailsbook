@@ -7,11 +7,16 @@ const ORDER_STATUS_LABELS = {
   pending_quote:   '待报价',
   pending_agree:   '待用户确认',
   pending_confirm: '待我确认',
+  pending_client_confirm: '待客户确认',
+  quoted:         '已报价',
+  confirmed:      '已确认',
   pending_home:    '待上门',
   pending_shop:    '待到店',
   in_progress:     '进行中',
   completed:       '已完成',
-  cancelled:       '已取消'
+  cancelled:       '已取消',
+  rejected:        '已拒绝',
+  expired:         '已过期'
 };
 
 // CSS 类名（在 wxss 里定义对应配色）
@@ -19,11 +24,16 @@ const ORDER_STATUS_TONES = {
   pending_quote:   'tone-orange',
   pending_agree:   'tone-purple',
   pending_confirm: 'tone-yellow',
+  pending_client_confirm: 'tone-purple',
+  quoted:          'tone-sky',
+  confirmed:       'tone-purple',
   pending_home:    'tone-emerald',
   pending_shop:    'tone-teal',
   in_progress:     'tone-sky',
   completed:       'tone-gray',
-  cancelled:       'tone-red'
+  cancelled:       'tone-red',
+  rejected:        'tone-red',
+  expired:         'tone-gray'
 };
 
 // 状态 tab（首项 all 用于"全部"）
@@ -40,7 +50,7 @@ const ORDER_TABS = [
 ];
 
 function getStatusLabel(status) {
-  return ORDER_STATUS_LABELS[status] || status || '';
+  return ORDER_STATUS_LABELS[status] || '状态待确认';
 }
 function getStatusTone(status) {
   return ORDER_STATUS_TONES[status] || 'tone-gray';

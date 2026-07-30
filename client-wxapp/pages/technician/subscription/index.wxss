@@ -46,6 +46,7 @@
   font-size: 24rpx;
   color: rgba(255, 255, 255, 0.8);
 }
+.current-mode { display: block; margin-top: 18rpx; color: rgba(255,255,255,.86); font-size: 22rpx; line-height: 1.55; }
 
 /* ===== 区块标题 ===== */
 .section-header {
@@ -91,7 +92,7 @@
 .plan-cycle {
   font-size: 24rpx;
   font-weight: normal;
-  color: #9ca3af;
+  color: #6b7280;
 }
 .plan-desc {
   display: block;
@@ -100,7 +101,7 @@
   line-height: 1.5;
 }
 .plan-btn {
-  height: 64rpx;
+  min-height: 88rpx;
   padding: 0 32rpx;
   background: rgba(255, 107, 138, 0.08);
   color: #ff6b8a;
@@ -111,22 +112,35 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  margin: 0;
+  line-height: 1;
 }
+.plan-btn::after, .contact-btn::after { border: 0; }
 .plan-btn:active {
   opacity: 0.65;
 }
 
 /* ===== 空状态 ===== */
-.empty {
+.empty, .load-error {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 160rpx 40rpx 80rpx;
 }
+.load-error-mark { width:88rpx; height:88rpx; margin-bottom:32rpx; border-radius:50%; background:#fff0f4; color:#c75b83; font-size:44rpx; line-height:88rpx; text-align:center; }
+.retry-btn { min-height:88rpx; margin:0; padding:0 56rpx; border:0; border-radius:44rpx; background:#1f2937; color:#fff; font-size:28rpx; line-height:88rpx; }
+.retry-btn::after { border:0; }
 .empty-icon {
-  font-size: 80rpx;
+  width: 112rpx;
+  height: 112rpx;
   margin-bottom: 32rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFE2EA, #EDE9FE);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+.empty-icon-ring { width: 42rpx; height: 42rpx; border: 6rpx solid #ff6b8a; border-radius: 50%; box-sizing: border-box; }
 .empty-text {
   font-size: 32rpx;
   color: #374151;
@@ -134,11 +148,11 @@
 }
 .empty-sub {
   font-size: 26rpx;
-  color: #9ca3af;
+  color: #6b7280;
   margin-bottom: 56rpx;
 }
 .contact-btn {
-  height: 88rpx;
+  min-height: 88rpx;
   padding: 0 72rpx;
   background: linear-gradient(135deg, #ff6b8a, #a855f7);
   color: #fff;
@@ -148,6 +162,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  margin: 0;
+  line-height: 1;
 }
 .contact-btn:active {
   opacity: 0.85;

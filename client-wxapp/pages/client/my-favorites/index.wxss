@@ -62,12 +62,12 @@ page { background: #f0f0f4; }
 }
 .empty-desc {
   font-size: 26rpx;
-  color: #9ca3af;
+  color: #6b7280;
   margin-bottom: 36rpx;
   text-align: center;
 }
 .go-btn {
-  height: 84rpx;
+  min-height: 88rpx;
   padding: 0 56rpx;
   border-radius: 999rpx;
   background: linear-gradient(135deg, #FF6B8A 0%, #A78BFA 100%);
@@ -112,3 +112,4 @@ page { background: #f0f0f4; }
 .aspect-3-4 { padding-bottom: 133.33%; }
 .aspect-4-5 { padding-bottom: 125%; }
 .aspect-5-6 { padding-bottom: 120%; }
+.page-hint { padding:28rpx 0 40rpx; color:#81717a; font-size:22rpx; text-align:center; }

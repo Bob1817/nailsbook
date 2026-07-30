@@ -5,13 +5,20 @@
     <view class="loading-spinner"></view>
   </view>
 
+  <view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+    <view class="load-error-mark">!</view>
+    <text class="load-error-title">上门设置加载失败</text>
+    <text class="load-error-desc">请检查网络后重试</text>
+    <button class="retry-btn" bindtap="loadConfig">重新加载</button>
+  </view>
+
   <view wx:else>
 
     <!-- ===== 状态 Hero 卡 ===== -->
     <view class="hero-card {{enabled ? 'hero-on' : 'hero-off'}}">
       <view class="hero-left">
         <view class="hero-icon-wrap">
-          <text class="hero-icon">🚗</text>
+          <view class="hero-icon"><view class="car-body"></view><view class="car-wheel wheel-left"></view><view class="car-wheel wheel-right"></view></view>
         </view>
         <view class="hero-text">
           <text class="hero-title">上门服务</text>
@@ -27,7 +34,7 @@
     <view wx:if="{{!enabled}}" class="quick-banner">
       <view class="quick-banner-body">
         <view class="quick-banner-text">
-          <text class="quick-banner-title">{{fromSetup ? '🎉 快速完成设置' : '⚡ 一键开启'}}</text>
+          <text class="quick-banner-title">{{fromSetup ? '快速完成设置' : '一键开启'}}</text>
           <text class="quick-banner-desc">开启后客户可预约上门美甲服务</text>
         </view>
       </view>

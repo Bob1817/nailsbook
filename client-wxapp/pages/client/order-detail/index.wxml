@@ -4,8 +4,11 @@
   <text class="loading-text">加载中...</text>
 </view>
 
-<view wx:elif="{{!order}}" class="loading-page">
-  <text class="loading-text">预约不存在</text>
+<view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+  <view class="load-error-mark">!</view>
+  <text class="load-error-title">{{loadErrorText}}</text>
+  <text wx:if="{{orderId}}" class="load-error-desc">请检查网络后重试</text>
+  <button wx:if="{{orderId}}" class="retry-btn" bindtap="loadOrder">重新加载</button>
 </view>
 
 <view wx:else class="page">
@@ -23,7 +26,7 @@
   <view class="card tech-card card-overlap">
     <view class="tech-row">
       <view class="tech-avatar">
-        <image wx:if="{{order.techAvatar}}" src="{{order.techAvatar}}" mode="aspectFill" class="tech-avatar-img" />
+        <image wx:if="{{order.techAvatar}}" src="{{order.techAvatar}}" mode="aspectFill" class="tech-avatar-img" aria-label="{{order.techName}}的头像" />
         <text wx:else class="tech-avatar-char">{{order.techName[0]}}</text>
       </view>
       <view class="tech-info">
@@ -31,10 +34,10 @@
         <text class="tech-label">服务美甲师</text>
       </view>
       <view class="tech-actions">
-        <view wx:if="{{order.techPhone}}" class="round-btn" catchtap="callTech">
+        <view wx:if="{{order.techPhone}}" class="round-btn" catchtap="callTech" role="button" aria-label="拨打美甲师电话">
           <view class="btn-icon-phone"></view>
         </view>
-        <view class="round-btn round-chat" catchtap="goChat">
+        <view class="round-btn round-chat" catchtap="goChat" role="button" aria-label="联系美甲师">
           <view class="btn-icon-chat"></view>
         </view>
       </view>
@@ -59,7 +62,7 @@
       <text class="info-label">{{order._isShop ? '到店地址' : '上门地址'}}</text>
       <view class="info-value-block">
         <text class="addr-text">{{order.address}}</text>
-        <view class="copy-link" catchtap="copyAddress">复制</view>
+        <view class="copy-link" catchtap="copyAddress" role="button" aria-label="复制服务地址">复制</view>
       </view>
     </view>
 
@@ -98,9 +101,40 @@
   </view>
 
   <!-- ============ 备注 ============ -->
+  <view wx:if="{{order.sourceWork}}" class="card source-work-card" bindtap="viewSourceWork">
+        <image wx:if="{{order.sourceWork.coverUrl}}" class="source-work-cover" src="{{order.sourceWork.coverUrl}}" mode="aspectFill" aria-label="{{order.sourceWork.title || '预约来源作品'}}"/>
+    <view class="source-work-copy">
+      <text class="source-work-label">预约同款来源</text>
+      <text class="source-work-title">{{order.sourceWork.title || '美甲作品'}}</text>
+    </view>
+    <text class="source-work-arrow">›</text>
+  </view>
+
   <view wx:if="{{order.remark}}" class="card">
     <text class="card-title">备注</text>
     <text class="remark-text">{{order.remark}}</text>
+  </view>
+
+  <view wx:if="{{order.status === 'completed'}}" class="card review-card">
+    <text class="card-title">{{order.review ? '我的服务评价' : '评价这次服务'}}</text>
+    <text class="review-hint">你的反馈只用于改善服务；照片默认不会被公开使用。</text>
+    <view class="rating-row">
+      <view wx:for="{{[1,2,3,4,5]}}" wx:key="*this" class="rating-btn {{reviewRating === item ? 'rating-active' : ''}}" bindtap="selectReviewRating" data-rating="{{item}}">{{item}}</view>
+    </view>
+    <text class="rating-caption">{{reviewRating === 5 ? '非常满意' : (reviewRating === 4 ? '满意' : (reviewRating === 3 ? '一般' : (reviewRating === 2 ? '有待改善' : '不满意')))}}</text>
+    <textarea class="review-input" value="{{reviewContent}}" bindinput="onReviewInput" maxlength="500" placeholder="写下你对设计、服务或体验的感受（选填）"/>
+    <view class="review-photos">
+      <view wx:for="{{reviewPhotos}}" wx:key="*this" class="review-photo-wrap">
+          <image src="{{item}}" mode="aspectFill" class="review-photo" lazy-load aria-label="本次服务评价照片"/>
+        <view class="review-photo-remove" bindtap="removeReviewPhoto" data-index="{{index}}"></view>
+      </view>
+      <view wx:if="{{reviewPhotos.length < 6}}" class="review-photo-add" bindtap="chooseReviewPhotos"><text class="review-photo-plus">+</text><text>添加照片</text></view>
+    </view>
+    <view wx:if="{{reviewPhotos.length}}" class="photo-consent">
+      <view class="consent-copy"><text class="consent-title">授权美甲师用于作品展示</text><text class="consent-desc">开启后，美甲师可将这些照片用于作品集；关闭即可撤销后续使用授权。</text></view>
+      <switch checked="{{photoUseAuthorized}}" bindchange="onPhotoAuthorizationChange" color="#ec4899"/>
+    </view>
+    <view class="review-save {{savingReview ? 'is-disabled' : ''}}" bindtap="saveReview">{{savingReview ? '保存中...' : (order.review ? '更新评价' : '提交评价')}}</view>
   </view>
 
   <!-- ============ 底部操作栏 ============ -->
@@ -108,11 +142,11 @@
     <view
       wx:for="{{order._actions}}"
       wx:key="key"
-      class="action-btn {{item.style}}"
+      class="action-btn {{item.style}} {{actionSubmitting ? 'is-disabled' : ''}}"
       bindtap="onAction"
       data-key="{{item.key}}"
     >
-      {{item.label}}
+      {{actionSubmitting === item.key ? '处理中...' : item.label}}
     </view>
   </view>
 </view>

@@ -1,12 +1,12 @@
 <view class="wc-root">
-  <image wx:if="{{work.coverUrl}}" src="{{work.coverUrl}}" mode="aspectFill" class="wc-img" lazy-load/>
+  <image wx:if="{{work.coverUrl}}" src="{{work.coverUrl}}" mode="aspectFill" class="wc-img" lazy-load aria-label="{{work.title || '美甲作品'}}"/>
   <view wx:else class="wc-img wc-img-empty"></view>
   <view class="wc-gradient"></view>
 
   <!-- 顶部：美甲师 + 点赞 -->
   <view class="wc-top">
     <view class="wc-tech-pill">
-      <image wx:if="{{work.technicianAvatarUrl}}" src="{{work.technicianAvatarUrl}}" mode="aspectFill" class="wc-tech-av"/>
+      <image wx:if="{{work.technicianAvatarUrl}}" src="{{work.technicianAvatarUrl}}" mode="aspectFill" class="wc-tech-av" lazy-load aria-label="{{work.technicianName || '美甲师'}}的头像"/>
       <view wx:else class="wc-tech-av-ph"><text class="wc-tech-av-char">{{work.techInitial}}</text></view>
       <text class="wc-tech-name">{{work.technicianName}}</text>
     </view>

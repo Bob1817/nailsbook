@@ -57,10 +57,14 @@ Page({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     this._today = today;
-    this._activeDate = today;
+    const saved = wx.getStorageSync('technician_schedule_view') || {};
+    const savedDate = saved.activeKey ? new Date(`${saved.activeKey}T00:00:00`) : null;
+    this._activeDate = savedDate && !isNaN(savedDate.getTime()) ? savedDate : today;
 
     // 支持 tab 参数：all → 当日预约，trips → 今日行程
-    const scheduleTab = (options && options.tab === 'all') ? 'all' : 'trips';
+    const scheduleTab = options && options.tab
+      ? (options.tab === 'all' ? 'all' : 'trips')
+      : (saved.scheduleTab === 'all' ? 'all' : 'trips');
 
     // 未来 20 天日期条
     const strip = Array.from({ length: 20 }, (_, i) => {
@@ -71,7 +75,7 @@ Page({
     this.setData({
       scheduleTab,
       todayKey: dateKey(today),
-      activeKey: dateKey(today),
+      activeKey: dateKey(this._activeDate),
       dateStrip: strip
     });
     this.loadOrders();
@@ -136,7 +140,9 @@ Page({
 
     const tripOrders = dayOrders.filter((o) => TRIP_STATUSES.indexOf(o.status) >= 0);
 
-    const listOrders = this.data.scheduleTab === 'trips' ? tripOrders : dayOrders;
+    const decoratedDayOrders = markScheduleConflicts(dayOrders);
+    const decoratedTripOrders = decoratedDayOrders.filter((o) => TRIP_STATUSES.indexOf(o.status) >= 0);
+    const listOrders = this.data.scheduleTab === 'trips' ? decoratedTripOrders : decoratedDayOrders;
 
     // 汇总（基于行程单）
     const distance = tripOrders.reduce((s, o) => s + estimateRouteDistance(o), 0);
@@ -153,7 +159,8 @@ Page({
         count: tripOrders.length,
         distance: Math.round(distance * 10) / 10,
         amount,
-        completed
+        completed,
+        conflicts: decoratedDayOrders.filter(order => order._hasConflict).length
       },
       activeKey: dateKey(active),
       activeIsToday: isSameDay(active, this._today),
@@ -167,6 +174,7 @@ Page({
     if (tab === this.data.scheduleTab) return;
     this.setData({ scheduleTab: tab });
     this._recompute();
+    this.saveViewState();
   },
 
   toggleMoreMenu() {
@@ -188,11 +196,13 @@ Page({
     const [y, m, d] = key.split('-').map(Number);
     this._activeDate = new Date(y, m - 1, d);
     this._recompute();
+    this.saveViewState();
   },
 
   resetToday() {
     this._activeDate = this._today;
     this._recompute();
+    this.saveViewState();
   },
 
   // 日历选择（原生 date picker）
@@ -200,6 +210,7 @@ Page({
     const [y, m, d] = e.detail.value.split('-').map(Number);
     this._activeDate = new Date(y, m - 1, d);
     this._recompute();
+    this.saveViewState();
   },
 
   // 日历弹窗
@@ -304,6 +315,14 @@ Page({
     this._activeDate = new Date(y, m - 1, d);
     this.setData({ showCalendar: false });
     this._recompute();
+    this.saveViewState();
+  },
+
+  saveViewState() {
+    wx.setStorageSync('technician_schedule_view', {
+      scheduleTab: this.data.scheduleTab,
+      activeKey: dateKey(this._activeDate)
+    });
   },
 
   viewOrder(e) {
@@ -338,3 +357,22 @@ Page({
     wx.makePhoneCall({ phoneNumber: String(phone) });
   }
 });
+
+function markScheduleConflicts(orders) {
+  const active = orders.filter(order => order.status !== 'cancelled' && order.status !== 'completed');
+  const conflictIds = new Set();
+  active.forEach((order, index) => {
+    const start = parseDate(order.startTime);
+    const end = parseDate(order.endTime);
+    if (!start || !end) return;
+    active.slice(index + 1).forEach(other => {
+      const otherStart = parseDate(other.startTime);
+      const otherEnd = parseDate(other.endTime);
+      if (otherStart && otherEnd && start < otherEnd && otherStart < end) {
+        conflictIds.add(order.id);
+        conflictIds.add(other.id);
+      }
+    });
+  });
+  return orders.map(order => ({ ...order, _hasConflict: conflictIds.has(order.id) }));
+}

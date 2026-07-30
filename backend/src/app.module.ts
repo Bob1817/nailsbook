@@ -44,6 +44,7 @@ import { PrismaModule } from './common/prisma/prisma.module';
 import { DevelopmentAuthSeedService } from './development-auth-seed.service';
 import { DevelopmentDemoSeedService } from './development-demo-seed.service';
 import { ProductionSeedService } from './production-seed.service';
+import { TechnicianInsightsModule } from './technician-insights/technician-insights.module';
 
 @Module({
   imports: [
@@ -94,6 +95,7 @@ import { ProductionSeedService } from './production-seed.service';
     ClientReportsModule,
     FeedbackModule,
     PushModule,
+    TechnicianInsightsModule,
   ],
   controllers: [AppController],
   providers: [

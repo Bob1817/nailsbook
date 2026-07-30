@@ -4,6 +4,14 @@
     <view class="loading-spinner"></view>
   </view>
 
+  <view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+    <view class="load-error-mark">!</view>
+    <text class="load-error-title">{{loadErrorText}}</text>
+    <text wx:if="{{canRetryLoad}}" class="load-error-desc">请检查网络后重试</text>
+    <button wx:if="{{canRetryLoad}}" class="retry-btn" bindtap="loadWork">重新加载</button>
+    <button class="back-btn-error" bindtap="goBack">返回</button>
+  </view>
+
   <view wx:elif="{{work.id}}" class="detail-container">
     <!-- 固定关闭按钮（左上角） -->
     <view class="header-fixed">
@@ -31,7 +39,7 @@
             bindtap="openViewer"
             data-index="{{index}}"
           >
-            <image src="{{item}}" mode="aspectFill" class="slide-image" />
+            <image src="{{item}}" mode="aspectFill" class="slide-image" aria-label="{{work.title || '美甲作品'}}第{{index + 1}}张图片" />
           </view>
         </view>
       </scroll-view>
@@ -53,9 +61,20 @@
           <text class="work-title">{{work.title || '未命名作品'}}</text>
           <text wx:if="{{work.price}}" class="work-price">¥{{work.price}}</text>
         </view>
+        <text wx:if="{{work.shareEventCount}}" class="share-stat">分享传播 {{work.shareEventCount}} 次</text>
         <text wx:if="{{work.description}}" class="work-desc">{{work.description}}</text>
+        <view wx:if="{{work.designIdea || work.suitableScene || work.recommendationScore}}" class="work-aesthetic">
+          <text wx:if="{{work.designIdea}}" class="work-aesthetic-line">设计理念 · {{work.designIdea}}</text>
+          <text wx:if="{{work.suitableScene}}" class="work-aesthetic-line">适合场景 · {{work.suitableScene}}</text>
+          <text wx:if="{{work.recommendationScore}}" class="work-aesthetic-line">推荐指数 · {{work.recommendationScore}} / 5</text>
+        </view>
         <view wx:if="{{work.tags && work.tags.length > 0}}" class="tags-row">
           <text wx:for="{{work.tags}}" wx:key="*this" class="tag">#{{item}}</text>
+        </view>
+        <view wx:if="{{work.visibilityScope === 'authorized_clients' && work.clientAccesses.length}}" class="access-summary">
+          <text class="access-summary-label">客户专属作品</text>
+          <text class="access-summary-name">已关联 {{work.clientAccesses[0].customer.name}}</text>
+          <text class="access-summary-permissions">{{work.clientAccesses[0].canShare ? '可分享' : '不可分享'}} · {{work.clientAccesses[0].canFavorite ? '可收藏' : '不可收藏'}} · {{work.clientAccesses[0].canComment ? '可评论' : '不可评论'}}</text>
         </view>
       </view>
 
@@ -69,7 +88,7 @@
         <view wx:if="{{visibleComments.length > 0}}" class="comments-list">
           <view wx:for="{{visibleComments}}" wx:key="id" class="comment-item">
             <view class="comment-avatar-wrap">
-              <image wx:if="{{item.user.avatarUrl}}" src="{{item.user.avatarUrl}}" class="comment-avatar" />
+              <image wx:if="{{item.user.avatarUrl}}" src="{{item.user.avatarUrl}}" class="comment-avatar" lazy-load aria-label="{{item.user.name || '用户'}}的头像" />
               <view wx:else class="comment-avatar-placeholder {{item.user.role === 'technician' ? 'avatar-tech' : ''}}">
                 <text class="avatar-text">{{item.user.name[0]}}</text>
               </view>
@@ -88,7 +107,7 @@
               <view wx:if="{{item.replies && item.replies.length > 0}}" class="replies-list">
                 <view wx:for="{{item.replies}}" wx:for-item="reply" wx:key="id" class="reply-item">
                   <view class="comment-avatar-wrap reply-avatar-wrap">
-                    <image wx:if="{{reply.user.avatarUrl}}" src="{{reply.user.avatarUrl}}" class="comment-avatar reply-avatar" />
+                    <image wx:if="{{reply.user.avatarUrl}}" src="{{reply.user.avatarUrl}}" class="comment-avatar reply-avatar" lazy-load aria-label="{{reply.user.name || '用户'}}的头像" />
                     <view wx:else class="comment-avatar-placeholder reply-avatar-placeholder {{reply.user.role === 'technician' ? 'avatar-tech' : ''}}">
                       <text class="avatar-text">{{reply.user.name[0]}}</text>
                     </view>
@@ -121,7 +140,7 @@
           <view wx:if="{{showHidden}}" class="comments-list">
             <view wx:for="{{hiddenComments}}" wx:key="id" class="comment-item comment-hidden">
               <view class="comment-avatar-wrap">
-                <image wx:if="{{item.user.avatarUrl}}" src="{{item.user.avatarUrl}}" class="comment-avatar" />
+          <image wx:if="{{item.user.avatarUrl}}" src="{{item.user.avatarUrl}}" class="comment-avatar" lazy-load aria-label="{{item.user.nickname || '用户'}}的头像" />
                 <view wx:else class="comment-avatar-placeholder">
                   <text class="avatar-text">{{item.user.name[0]}}</text>
                 </view>
@@ -186,7 +205,7 @@
       circular="{{false}}"
     >
       <swiper-item wx:for="{{imageUrls}}" wx:key="index">
-        <image src="{{item}}" mode="aspectFit" class="viewer-image" bindtap="closeViewer" />
+      <image src="{{item}}" mode="aspectFit" class="viewer-image" bindtap="closeViewer" aria-label="{{work.title || '美甲作品'}}大图" />
       </swiper-item>
     </swiper>
     <cover-view wx:if="{{imageUrls.length > 1}}" class="viewer-dots">

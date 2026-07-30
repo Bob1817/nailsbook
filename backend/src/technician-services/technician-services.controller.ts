@@ -54,6 +54,8 @@ export class TechnicianServicesController {
           ],
           description: '服务分类',
         },
+        price: { type: 'number', description: '参考价格' },
+        durationMinutes: { type: 'number', description: '预计服务时长（分钟）' },
       },
       required: ['name', 'category'],
     },
@@ -72,6 +74,8 @@ export class TechnicianServicesController {
         | 'color_style'
         | 'extension_reinforcement'
         | 'removal';
+      price?: number;
+      durationMinutes?: number;
     },
   ) {
     return this.technicianServicesService.create(
@@ -100,6 +104,8 @@ export class TechnicianServicesController {
         },
         isActive: { type: 'boolean', description: '是否启用' },
         sortOrder: { type: 'number', description: '排序顺序' },
+        price: { type: 'number', description: '参考价格' },
+        durationMinutes: { type: 'number', description: '预计服务时长（分钟）' },
       },
     },
   })
@@ -120,6 +126,8 @@ export class TechnicianServicesController {
         | 'removal';
       isActive?: boolean;
       sortOrder?: number;
+      price?: number;
+      durationMinutes?: number;
     },
   ) {
     return this.technicianServicesService.update(

@@ -1,8 +1,8 @@
 <nav-bar title="关于" showBack/>
 <view class="container">
   <view class="logo-section">
-    <view class="logo">💅</view>
-    <text class="app-name">NailBook</text>
+    <view class="logo"><view class="logo-mark"></view></view>
+    <text class="app-name">LunaNails</text>
     <text class="version">版本 {{version}}</text>
   </view>
 
@@ -19,7 +19,13 @@
       <text class="info-label">服务对象</text>
       <text class="info-value">独立美甲师及其私域客户</text>
     </view>
+    <view class="info-item info-item-border">
+      <text class="info-label">运营主体</text>
+      <text class="info-value">本小程序运营者，以微信小程序备案及认证主体信息为准</text>
+    </view>
+    <view class="agreement-row" bindtap="openAgreement" data-type="user">用户服务协议<text>›</text></view>
+    <view class="agreement-row" bindtap="openAgreement" data-type="privacy">隐私政策<text>›</text></view>
   </view>
 
-  <text class="copyright">© 2024 NailBook. All rights reserved.</text>
+  <text class="copyright">© {{currentYear}} LunaNails</text>
 </view>

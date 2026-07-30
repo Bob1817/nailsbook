@@ -24,8 +24,8 @@ page {
   gap: 14rpx;
   background: #f5f6fa;
   border-radius: 44rpx;
-  height: 72rpx;
-  padding: 0 28rpx;
+  min-height: 88rpx;
+  padding: 0 12rpx 0 28rpx;
   margin-bottom: 16rpx;
 }
 
@@ -52,11 +52,24 @@ page {
   transform: rotate(45deg);
 }
 
-.search-hint {
+.search-input {
   font-size: 26rpx;
-  color: #c4c9d4;
   flex: 1;
+  min-height: 88rpx;
+  color: #343038;
 }
+
+.search-hint { color: #a4a8b1; }
+
+.search-clear {
+  position: relative;
+  width: 72rpx;
+  min-height: 88rpx;
+  flex-shrink: 0;
+}
+
+.clear-line { position:absolute; left:25rpx; top:43rpx; width:24rpx; height:2rpx; border-radius:2rpx; background:#77717b; }
+.clear-a { transform:rotate(45deg); }.clear-b { transform:rotate(-45deg); }
 
 /* 分类 pills */
 .cats-scroll { white-space: nowrap; }
@@ -70,7 +83,7 @@ page {
 .cat-pill {
   display: inline-flex;
   align-items: center;
-  height: 56rpx;
+  min-height: 88rpx;
   padding: 0 28rpx;
   border-radius: 28rpx;
   font-size: 26rpx;
@@ -383,7 +396,7 @@ page {
 
 .empty-sub {
   font-size: 26rpx;
-  color: #9ca3af;
+  color: #6b7280;
   text-align: center;
   line-height: 1.7;
 }
@@ -404,6 +417,9 @@ page {
 }
 
 .empty-cta:active { opacity: 0.85; }
+.empty-cta.secondary { background:#fff; color:#8b526d; border:1rpx solid #dfcbd4; box-shadow:none; }
+
+.result-summary { padding:8rpx 8rpx 18rpx; color:#756b73; font-size:22rpx; }
 
 /* ===== 底部加载 ===== */
 .bottom-loader {
@@ -431,5 +447,5 @@ page {
 
 .bottom-end-text {
   font-size: 24rpx;
-  color: #d1d5db;
+  color: #767b84;
 }

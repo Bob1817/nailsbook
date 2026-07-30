@@ -52,24 +52,43 @@ function request(options) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(res.data);
         } else if (res.statusCode === 401) {
-          handleUnauthorized();
-          reject({ code: 401, message: '未授权，请重新登录' });
+          if (needAuth) {
+            handleUnauthorized();
+          }
+          reject(normalizeResponseError(res, '登录已过期，请重新登录'));
         } else {
-          reject(res.data || { code: res.statusCode, message: '请求失败' });
+          const fallback = res.statusCode >= 500
+            ? '服务暂时不可用，请稍后重试'
+            : '请求失败，请重试';
+          reject(normalizeResponseError(res, fallback));
         }
       },
       fail: (err) => {
+        const isTimeout = String(err && err.errMsg || '').toLowerCase().includes('timeout');
+        const message = isTimeout ? '请求超时，请重试' : '网络错误，请检查网络连接';
         if (!silent) {
           console.error('Request failed:', err);
           wx.showToast({
-            title: '网络错误，请检查网络连接',
+            title: message,
             icon: 'none'
           });
         }
-        reject({ code: -1, message: '网络错误' });
+        reject({ code: isTimeout ? -2 : -1, message });
       }
     });
   });
+}
+
+function normalizeResponseError(res, fallbackMessage) {
+  const data = res && res.data;
+  if (data && typeof data === 'object') {
+    return {
+      ...data,
+      code: data.code || res.statusCode,
+      message: data.message || data.error || fallbackMessage
+    };
+  }
+  return { code: res.statusCode, message: fallbackMessage };
 }
 
 function handleUnauthorized() {

@@ -22,6 +22,7 @@ Page({
   _resizeHandler: null,
 
   onLoad(options) {
+    this._pageActive = true;
     this.calcNavHeight();
     const { conversationId, clientName, clientId } = options;
     this.setData({
@@ -45,9 +46,18 @@ Page({
     wx.onWindowResize(this._resizeHandler);
   },
 
-  onShow() { this.startPolling(); },
-  onHide() { this.stopPolling(); },
+  onShow() {
+    this._pageActive = true;
+    if (this._sendFinishedWhileHidden) {
+      this.setData({ sending: false, inputText: this._failedDraft || this.data.inputText });
+      this._sendFinishedWhileHidden = false;
+      this._failedDraft = '';
+    }
+    this.startPolling();
+  },
+  onHide() { this._pageActive = false; this.stopPolling(); },
   onUnload() {
+    this._pageActive = false;
     this.stopPolling();
     if (this._resizeHandler) wx.offWindowResize(this._resizeHandler);
   },
@@ -173,6 +183,7 @@ Page({
       if (this.data.conversationId) payload.conversationId = this.data.conversationId;
       else payload.clientId = this.data.clientId;
       var res = await api.chat.sendMessage(payload, 'technician');
+      if (!this._pageActive) { this._sendFinishedWhileHidden = true; return; }
       if (res.conversationId && !this.data.conversationId) this.setData({ conversationId: res.conversationId });
       if (res.message) {
         var msgs = [...this.data.messages, {
@@ -187,10 +198,12 @@ Page({
         this.scrollToBottom(true);
       }
     } catch (err) {
+      if (!this._pageActive) { this._failedDraft = text; this._sendFinishedWhileHidden = true; return; }
       wx.showToast({ title: err.message || '发送失败', icon: 'none' });
       this.setData({ inputText: text });
     } finally {
-      this.setData({ sending: false });
+      if (this._pageActive) this.setData({ sending: false });
+      else this._sendFinishedWhileHidden = true;
     }
   },
 
@@ -207,6 +220,7 @@ Page({
           if (this.data.conversationId) payload.conversationId = this.data.conversationId;
           else payload.clientId = this.data.clientId;
           var msgRes = await api.chat.sendMessage(payload, 'technician');
+          if (!this._pageActive) { this._sendFinishedWhileHidden = true; return; }
           if (msgRes.conversationId && !this.data.conversationId) this.setData({ conversationId: msgRes.conversationId });
           if (msgRes.message) {
             var msgs = [...this.data.messages, {
@@ -221,9 +235,11 @@ Page({
             this.scrollToBottom(true);
           }
         } catch {
-          wx.showToast({ title: '图片发送失败', icon: 'none' });
+          if (this._pageActive) wx.showToast({ title: '图片发送失败', icon: 'none' });
+          else this._sendFinishedWhileHidden = true;
         } finally {
-          this.setData({ sending: false });
+          if (this._pageActive) this.setData({ sending: false });
+          else this._sendFinishedWhileHidden = true;
         }
       }
     });

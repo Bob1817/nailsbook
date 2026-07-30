@@ -23,7 +23,11 @@ page { background: #f8f9fc; }
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.loading-text { font-size: 26rpx; color: #9ca3af; }
+.loading-text { font-size: 26rpx; color: #6b7280; }
+.load-error { min-height:100vh; box-sizing:border-box; padding:120rpx 48rpx; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#f7f5f6; text-align:center; }
+.load-error-mark { width:88rpx; height:88rpx; margin-bottom:28rpx; border-radius:50%; background:#fff0f4; color:#c75b83; font-size:44rpx; line-height:88rpx; }
+.load-error-title { color:#382a31; font-size:32rpx; font-weight:600; }.load-error-desc { margin-top:12rpx; color:#796872; font-size:25rpx; }
+.retry-btn { min-height:88rpx; margin:44rpx 0 0; padding:0 56rpx; border:0; border-radius:44rpx; background:#1f2937; color:#fff; font-size:28rpx; line-height:88rpx; }.retry-btn::after { border:0; }
 
 /* ===== 状态头 ===== */
 .status-hero {
@@ -78,12 +82,39 @@ page { background: #f8f9fc; }
   box-shadow: 0 4rpx 24rpx rgba(15, 23, 42, 0.06), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
 }
 .card-overlap { margin-top: -28rpx; }
+.source-work-card { min-height: 112rpx; display: flex; align-items: center; gap: 20rpx; }
+.source-work-cover { width: 88rpx; height: 88rpx; flex-shrink: 0; border-radius: 16rpx; background: #f5f0f3; }
+.source-work-copy { flex: 1; min-width: 0; }
+.source-work-label, .source-work-title { display: block; }
+.source-work-label { color: #9a8790; font-size: 21rpx; }
+.source-work-title { margin-top: 6rpx; overflow: hidden; color: #33282d; font-size: 26rpx; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.source-work-arrow { color: #ad9ca4; font-size: 40rpx; }
 
 .card-title {
   display: block;
   font-size: 28rpx; font-weight: 600; color: #1f2937;
   margin-bottom: 20rpx;
 }
+.review-hint { display: block; color: #84727b; font-size: 22rpx; line-height: 1.6; }
+.rating-row { display: flex; gap: 14rpx; margin-top: 24rpx; }
+.rating-btn { width: 88rpx; height: 88rpx; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #75636c; background: #f5f1f3; font-size: 25rpx; font-weight: 700; }
+.rating-active { color: #fff; background: #ec4899; }
+.rating-caption { display: block; margin-top: 12rpx; color: #a04b72; font-size: 22rpx; font-weight: 600; }
+.review-input { width: 100%; height: 190rpx; margin-top: 22rpx; padding: 22rpx; border-radius: 18rpx; background: #f8f6f7; font-size: 24rpx; line-height: 1.6; box-sizing: border-box; }
+.review-photos { display: flex; flex-wrap: wrap; gap: 14rpx; margin-top: 22rpx; }
+.review-photo-wrap, .review-photo-add { width: 150rpx; height: 150rpx; border-radius: 16rpx; }
+.review-photo-wrap { position: relative; }
+.review-photo { width: 100%; height: 100%; border-radius: 16rpx; }
+.review-photo-remove { position: absolute; top: -22rpx; right: -22rpx; width: 88rpx; height: 88rpx; display: flex; align-items: center; justify-content: center; }
+.review-photo-remove::after { content: '×'; width: 44rpx; height: 44rpx; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; background: rgba(38, 27, 33, .76); font-size: 25rpx; }
+.review-photo-add { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9a8790; background: #faf5f7; border: 1rpx dashed #d8c7cf; font-size: 20rpx; }
+.review-photo-plus { font-size: 40rpx; line-height: 1; margin-bottom: 8rpx; }
+.photo-consent { min-height: 112rpx; margin-top: 24rpx; padding: 20rpx; border-radius: 18rpx; display: flex; align-items: center; gap: 20rpx; background: #fff5f8; }
+.consent-copy { flex: 1; min-width: 0; }
+.consent-title, .consent-desc { display: block; }
+.consent-title { color: #4b3741; font-size: 24rpx; font-weight: 700; }
+.consent-desc { margin-top: 7rpx; color: #8d7a84; font-size: 20rpx; line-height: 1.5; }
+.review-save { min-height: 88rpx; margin-top: 24rpx; border-radius: 44rpx; display: flex; align-items: center; justify-content: center; color: #fff; background: #ec4899; font-size: 26rpx; font-weight: 700; }
 
 /* ===== 美甲师卡 ===== */
 .tech-card { padding: 24rpx 40rpx; }
@@ -191,7 +222,7 @@ page { background: #f8f9fc; }
   color: #1f2937;
   line-height: 1.5;
 }
-.copy-link { min-height: 44rpx;
+.copy-link { min-height: 88rpx;
   flex-shrink: 0;
   padding: 4rpx 40rpx;
   border-radius: 14rpx;
@@ -396,4 +427,4 @@ page { background: #f8f9fc; }
 .addr-select-item { padding: 16rpx 40rpx; border-radius: 14rpx; background: #f8f9fa; border: 2rpx solid transparent; }
 .addr-select-active { background: #fff0f3; border-color: rgba(255,107,138,0.25); }
 .addr-select-name { font-size: 26rpx; font-weight: 500; color: #1f2937; display: block; }
-.addr-select-detail { font-size: 22rpx; color: #9ca3af; display: block; margin-top: 4rpx; }
+.addr-select-detail { font-size: 22rpx; color: #6b7280; display: block; margin-top: 4rpx; }

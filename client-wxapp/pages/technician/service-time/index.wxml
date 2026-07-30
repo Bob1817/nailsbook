@@ -2,6 +2,13 @@
 <view class="container">
   <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
 
+  <view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+    <view class="load-error-mark">!</view>
+    <text class="load-error-title">服务时间加载失败</text>
+    <text class="load-error-desc">为避免覆盖已有设置，请重新加载后再编辑</text>
+    <button class="retry-btn" bindtap="loadSchedule">重新加载</button>
+  </view>
+
   <view wx:else>
     <view class="card">
       <view wx:for="{{schedule}}" wx:key="day" class="day-item {{index < schedule.length - 1 ? 'item-border' : ''}}">

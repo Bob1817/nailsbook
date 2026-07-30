@@ -1,4 +1,5 @@
 const api = require('../../../services/api');
+const PAGE_SIZE = 10;
 
 var ASPECTS_LEFT = ['aspect-4-5', 'aspect-3-4', 'aspect-5-6', 'aspect-3-4'];
 var ASPECTS_RIGHT = ['aspect-3-4', 'aspect-5-6', 'aspect-4-5', 'aspect-3-4'];
@@ -35,11 +36,9 @@ Page({
     works: [],
     leftCol: [],
     rightCol: [],
-    loading: true
-  },
-
-  onLoad() {
-    this.loadLikes();
+    loading: true,
+    loadFailed: false,
+    hasMore: false
   },
 
   onShow() {
@@ -47,16 +46,25 @@ Page({
   },
 
   async loadLikes() {
-    this.setData({ loading: true });
+    this.setData({ loading: true, loadFailed: false });
     try {
       const res = await api.client.likes.list();
       const works = (res.list || res.data || res || []).map(mapWork);
-      this.setData({ works, loading: false });
-      this.applyWaterfall(works);
+      this._allWorks = works;
+      const visible = works.slice(0, PAGE_SIZE);
+      this.setData({ works: visible, loading: false, hasMore: visible.length < works.length });
+      this.applyWaterfall(visible);
     } catch (err) {
       console.error('Load likes error:', err);
-      this.setData({ loading: false });
+      this.setData({ loading: false, loadFailed: true });
     }
+  },
+
+  onReachBottom() {
+    if (this.data.loading || !this.data.hasMore) return;
+    const visible = (this._allWorks || []).slice(0, this.data.works.length + PAGE_SIZE);
+    this.setData({ works: visible, hasMore: visible.length < this._allWorks.length });
+    this.applyWaterfall(visible);
   },
 
   applyWaterfall(list) {

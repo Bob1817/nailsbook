@@ -79,13 +79,13 @@
 }
 
 .placeholder {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 .form-hint {
   display: block;
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
   margin-top: 12rpx;
 }
 

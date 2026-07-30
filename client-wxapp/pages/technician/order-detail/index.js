@@ -64,7 +64,10 @@ function todayISO() {
 Page({
   data: {
     order: null,
+    orderId: '',
     loading: true,
+    loadFailed: false,
+    loadErrorText: '',
 
     todayDate: todayISO(),
 
@@ -88,8 +91,10 @@ Page({
 
   onLoad(options) {
     this.orderId = options.id;
+    this.setData({ orderId: this.orderId || '' });
     this.pendingAction = options.action || ''; // 来自列表传参，例如 quote
-    this.loadOrder();
+    if (this.orderId) this.loadOrder();
+    else this.setData({ loading: false, loadFailed: true, loadErrorText: '预约参数无效' });
   },
 
   onShow() {
@@ -103,6 +108,9 @@ Page({
 
   // ---------- 数据加载 ----------
   async loadOrder() {
+    if (this._loadingOrder || !this.orderId) return;
+    this._loadingOrder = true;
+    this.setData({ loading: true, loadFailed: false, loadErrorText: '' });
     try {
       const raw = await api.technician.orders.detail(this.orderId);
       const o = normalizeOrder(raw);
@@ -145,6 +153,7 @@ Page({
       this.setData({
         order: decorated,
         loading: false,
+        loadFailed: false,
         quotePrice: o.price ? String(o.price) : '',
         quoteDate: sd,
         quoteTime: st,
@@ -159,8 +168,9 @@ Page({
         setTimeout(() => this.openQuote(), 100);
       }
     } catch (err) {
-      this.setData({ loading: false });
-      wx.showToast({ title: err.message || '加载失败', icon: 'none' });
+      this.setData({ loading: false, loadFailed: true, loadErrorText: '预约暂时无法加载' });
+    } finally {
+      this._loadingOrder = false;
     }
   },
 

@@ -8,7 +8,7 @@
     <view class="header-top">
       <view class="user-block">
         <view class="avatar-wrap">
-          <image wx:if="{{avatar}}" src="{{avatar}}" mode="aspectFill" class="avatar" />
+          <image wx:if="{{avatar}}" src="{{avatar}}" mode="aspectFill" class="avatar" aria-label="{{name || '美甲师'}}的头像" />
           <view wx:else class="avatar-placeholder">
             <text class="avatar-char">{{name[0] || '美'}}</text>
           </view>
@@ -55,7 +55,7 @@
       </view>
 
       <view class="next-addr">
-        <text class="addr-icon">📍</text>
+        <view class="addr-icon"></view>
         <text class="addr-text">{{nextOrder._fullAddress}}</text>
       </view>
 
@@ -77,11 +77,11 @@
 
       <view class="next-actions">
         <view class="btn btn-primary" catchtap="navigateToAddress" data-order-id="{{nextOrder.id}}">
-          <text class="btn-ico">🧭</text>
+          <view class="btn-ico btn-ico-nav"></view>
           <text>开始导航</text>
         </view>
         <view class="btn btn-ghost" catchtap="contactCustomer" data-phone="{{nextOrder.customerPhone}}">
-          <text class="btn-ico">📞</text>
+          <view class="btn-ico btn-ico-phone"></view>
           <text>联系客户</text>
         </view>
       </view>
@@ -136,7 +136,7 @@
       <view class="hw-col">
         <view wx:for="{{worksLeft}}" wx:key="id" class="hw-card" bindtap="navigateToWorkDetail" data-id="{{item.id}}">
           <view class="hw-img-wrap">
-            <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="hw-img" />
+            <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="hw-img" lazy-load aria-label="{{item.title || '美甲作品'}}" />
             <view wx:else class="hw-img hw-img-empty"></view>
             <view class="hw-gradient"></view>
             <view class="hw-tags-top">
@@ -160,7 +160,7 @@
       <view class="hw-col">
         <view wx:for="{{worksRight}}" wx:key="id" class="hw-card" bindtap="navigateToWorkDetail" data-id="{{item.id}}">
           <view class="hw-img-wrap">
-            <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="hw-img" />
+            <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="hw-img" lazy-load aria-label="{{item.title || '美甲作品'}}" />
             <view wx:else class="hw-img hw-img-empty"></view>
             <view class="hw-gradient"></view>
             <view class="hw-tags-top">

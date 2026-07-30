@@ -1,15 +1,24 @@
 <nav-bar title="地址管理" showBack/>
 <view class="container">
 
+  <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
+
+  <view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+    <view class="load-error-mark">!</view>
+    <text class="empty-text">地址加载失败</text>
+    <text class="empty-sub">请检查网络后重试</text>
+    <button class="retry-btn" bindtap="loadAddresses">重新加载</button>
+  </view>
+
   <!-- 空状态 -->
-  <view wx:if="{{!loading && addresses.length === 0}}" class="empty">
+  <view wx:elif="{{addresses.length === 0}}" class="empty">
     <view class="empty-icon"><view class="empty-pin"></view></view>
     <text class="empty-text">还没有地址</text>
     <text class="empty-sub">添加常用上门地址，方便快速预约</text>
   </view>
 
   <!-- 地址卡片列表 -->
-  <view class="list" wx:else>
+  <view wx:else class="list">
     <view
       class="addr-card {{item.isDefault ? 'is-default' : ''}}"
       wx:for="{{addresses}}"

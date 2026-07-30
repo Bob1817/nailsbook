@@ -46,6 +46,13 @@
         </view>
       </view>
 
+      <view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+        <view class="load-error-mark">!</view>
+        <text class="empty-title">消息加载失败</text>
+        <text class="empty-sub">请检查网络后重试</text>
+        <button class="retry-btn" bindtap="loadInbox">重新加载</button>
+      </view>
+
       <block wx:else>
         <!-- 消息列表 -->
         <view wx:if="{{filteredItems.length > 0}}" class="msg-list">
@@ -57,7 +64,7 @@
             data-index="{{index}}"
           >
             <view class="msg-avatar-wrap">
-              <image wx:if="{{item.clientAvatar && item.type === 'chat'}}" src="{{item.clientAvatar}}" mode="aspectFill" class="msg-avatar-img" />
+              <image wx:if="{{item.clientAvatar && item.type === 'chat'}}" src="{{item.clientAvatar}}" mode="aspectFill" class="msg-avatar-img" lazy-load aria-label="{{item.name}}的头像" />
               <view wx:else class="msg-avatar-placeholder {{item._avatarBgClass}}">
                 <text class="msg-avatar-char">{{item._avatarChar}}</text>
               </view>
@@ -102,7 +109,7 @@
       <view class="modal-type-badge {{selectedNotification._badgeClass}}">
         <text class="msg-type-badge-text">{{selectedNotification.badge}}</text>
       </view>
-      <view class="modal-close" bindtap="closeNotification">
+      <view class="modal-close" bindtap="closeNotification" aria-label="关闭消息详情">
         <text class="modal-close-icon">X</text>
       </view>
     </view>
@@ -141,7 +148,7 @@
         <text class="modal-name">选择客户发起对话</text>
         <text class="modal-subtitle">选择一个客户开始聊天</text>
       </view>
-      <view class="modal-close" bindtap="closeNewChat">
+      <view class="modal-close" bindtap="closeNewChat" aria-label="关闭客户选择">
         <text class="modal-close-icon">X</text>
       </view>
     </view>
@@ -151,7 +158,14 @@
         value="{{customerSearch}}" bindinput="onCustomerSearch" confirm-type="search"/>
     </view>
     <scroll-view scroll-y class="customer-list-scroll">
-      <view wx:if="{{filteredCustomers.length === 0}}" class="customer-empty">
+      <view wx:if="{{customerLoading}}" class="customer-empty" aria-live="polite">
+        <text class="customer-empty-text">正在加载客户…</text>
+      </view>
+      <view wx:elif="{{customerLoadFailed}}" class="customer-empty" aria-live="polite">
+        <text class="customer-empty-text">客户列表加载失败</text>
+        <button class="retry-btn customer-retry" bindtap="loadCustomers">重新加载</button>
+      </view>
+      <view wx:elif="{{filteredCustomers.length === 0}}" class="customer-empty">
         <text class="customer-empty-text">暂无客户</text>
       </view>
       <view wx:else>

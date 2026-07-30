@@ -6,22 +6,23 @@ Page({
     leftCol: [],
     rightCol: [],
     loading: false,
+    loadFailed: false,
     selectedWorkId: null
   },
 
-  onLoad() { this.loadWorks(); },
+  onLoad() {},
   onShow() { this.loadWorks(); },
   onPullDownRefresh() { this.loadWorks().finally(() => wx.stopPullDownRefresh()); },
 
   async loadWorks() {
-    this.setData({ loading: true });
+    this.setData({ loading: true, loadFailed: false });
     try {
       const res = await api.technician.works.list({});
       const works = Array.isArray(res) ? res : (res.data || []);
       this.setData({ works });
       this.splitIntoColumns(works);
     } catch (err) {
-      wx.showToast({ title: '加载失败', icon: 'none' });
+      this.setData({ loadFailed: true });
     } finally {
       this.setData({ loading: false });
     }

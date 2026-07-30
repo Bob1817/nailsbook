@@ -75,6 +75,32 @@ export class ClientDesignsController {
     return this.clientDesignsService.update(request.user.clientUserId, id, dto);
   }
 
+  @Post(':id/accept-quote')
+  @ApiOperation({ summary: '客户接受设计报价' })
+  @ApiResponse({ status: 200, description: '接受成功' })
+  acceptQuote(
+    @Req() request: { user: { clientUserId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.clientDesignsService.acceptQuote(
+      request.user.clientUserId,
+      id,
+    );
+  }
+
+  @Post(':id/reject-quote')
+  @ApiOperation({ summary: '客户拒绝设计报价' })
+  @ApiResponse({ status: 200, description: '拒绝成功' })
+  rejectQuote(
+    @Req() request: { user: { clientUserId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.clientDesignsService.rejectQuote(
+      request.user.clientUserId,
+      id,
+    );
+  }
+
   @Patch(':id/switch-technician')
   @ApiOperation({ summary: '切换设计关联的美甲师' })
   @ApiResponse({ status: 200, description: '切换成功' })

@@ -34,7 +34,7 @@ page {
 .doc-updated {
   display: block;
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
   margin-bottom: 28rpx;
 }
 

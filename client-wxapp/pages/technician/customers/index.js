@@ -77,6 +77,7 @@ Page({
     customers: [],
     visibleCustomers: [],
     loading: true,
+    loadFailed: false,
     tagPopoverId: null,
     showEditName: false,
     editingCustomerId: null,
@@ -98,7 +99,7 @@ Page({
   },
 
   async loadCustomers() {
-    this.setData({ loading: true });
+    this.setData({ loading: true, loadFailed: false });
     const params = {};
     if (this.data.keyword) params.search = this.data.keyword;
 
@@ -106,11 +107,16 @@ Page({
       const res = await api.technician.customers.list(params);
       const rawList = Array.isArray(res) ? res : (res.data || res.list || []);
       const customers = rawList.map(decorateCustomer);
-      this.setData({ customers, loading: false });
+      const dynamicTags = customers.reduce((all, customer) => {
+        customer._tags.forEach(tag => { if (all.indexOf(tag.name) < 0) all.push(tag.name); });
+        return all;
+      }, []);
+      const tabs = ['全部'].concat(dynamicTags);
+      const activeTab = tabs.indexOf(this.data.activeTab) >= 0 ? this.data.activeTab : '全部';
+      this.setData({ customers, tabs, activeTab, loading: false });
       this.filterCustomers();
     } catch (err) {
-      this.setData({ loading: false });
-      wx.showToast({ title: err.message || '加载失败', icon: 'none' });
+      this.setData({ loading: false, loadFailed: true });
     }
   },
 
@@ -120,7 +126,7 @@ Page({
     if (activeTab === '全部') {
       visibleCustomers = customers;
     } else {
-      visibleCustomers = customers.filter(c => c.tags && c.tags.includes(activeTab));
+      visibleCustomers = customers.filter(c => c._tags.some(tag => tag.name === activeTab));
     }
     this.setData({ visibleCustomers });
   },
@@ -149,6 +155,16 @@ Page({
   clearKeyword() {
     this.setData({ keyword: '' });
     this.loadCustomers();
+  },
+
+  resetFilters() {
+    if (this._searchTimer) clearTimeout(this._searchTimer);
+    this.setData({ keyword: '', activeTab: '全部' });
+    this.loadCustomers();
+  },
+
+  onUnload() {
+    if (this._searchTimer) clearTimeout(this._searchTimer);
   },
 
   viewCustomer(e) {

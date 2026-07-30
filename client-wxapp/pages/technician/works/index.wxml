@@ -6,6 +6,12 @@
     <view class="spinner"></view>
   </view>
 
+  <view wx:elif="{{loadFailed}}" class="empty" aria-live="polite">
+    <text class="empty-title">作品列表加载失败</text>
+    <text class="empty-sub">请检查网络后重试</text>
+    <button class="btn-add-first" bindtap="loadWorks">重新加载</button>
+  </view>
+
   <!-- 空状态 -->
   <view wx:elif="{{works.length === 0}}" class="empty">
     <view class="empty-icon-wrap">
@@ -23,7 +29,7 @@
     <!-- 左列 -->
     <view class="col">
       <view wx:for="{{leftCol}}" wx:key="id" class="card-img-wrap" bindtap="goDetail" data-id="{{item.id}}">
-        <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="card-img" lazy-load />
+        <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="card-img" lazy-load aria-label="{{item.title || '美甲作品'}}" />
         <view wx:else class="card-img card-img-empty"></view>
         <view class="card-gradient"></view>
         <!-- 隐藏状态遮罩 -->
@@ -64,7 +70,7 @@
     <!-- 右列 -->
     <view class="col">
       <view wx:for="{{rightCol}}" wx:key="id" class="card-img-wrap" bindtap="goDetail" data-id="{{item.id}}">
-        <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="card-img" lazy-load />
+        <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="card-img" lazy-load aria-label="{{item.title || '美甲作品'}}" />
         <view wx:else class="card-img card-img-empty"></view>
         <view class="card-gradient"></view>
         <view wx:if="{{!item.isVisible}}" class="hidden-mask">

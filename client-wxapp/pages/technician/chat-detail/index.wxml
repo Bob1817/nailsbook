@@ -57,7 +57,7 @@
 
           <!-- 图片消息 -->
           <view wx:elif="{{item.messageType === 'image' && item.imageUrl}}" class="bubble bubble-{{item.isMe ? 'right' : 'left'}} bubble-img" bindtap="previewImage" data-url="{{item.imageUrl}}">
-            <image src="{{item.imageUrl}}" mode="widthFix" class="msg-image" />
+            <image src="{{item.imageUrl}}" mode="widthFix" class="msg-image" lazy-load aria-label="聊天图片" />
           </view>
 
           <!-- 文字消息 -->
@@ -91,6 +91,7 @@
         confirm-type="send"
         bindconfirm="sendText"
         bindfocus="onInputFocus"
+        cursor-spacing="16"
         bindkeyboardheightchange="onKeyboardChange"
         adjust-position="{{false}}"
       />

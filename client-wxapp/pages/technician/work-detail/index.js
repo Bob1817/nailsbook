@@ -30,6 +30,9 @@ Page({
     visibleComments: [],
     hiddenComments: [],
     loading: false,
+    loadFailed: false,
+    loadErrorText: '',
+    canRetryLoad: false,
     currentImageIndex: 0,
     viewerOpen: false,
     viewerIndex: 0,
@@ -48,6 +51,8 @@ Page({
     if (options.id) {
       this.workId = parseInt(options.id);
       this.loadWork();
+    } else {
+      this.setData({ loadFailed: true, loadErrorText: '作品参数无效', canRetryLoad: false });
     }
   },
 
@@ -58,18 +63,21 @@ Page({
   },
 
   async loadWork() {
-    this.setData({ loading: true });
+    if (this._loadingWork || !this.workId) return;
+    this._loadingWork = true;
+    this.setData({ loading: true, loadFailed: false, loadErrorText: '', canRetryLoad: false });
     try {
       const work = await api.technician.works.detail(this.workId);
       work.tags = work.tags ? (typeof work.tags === 'string' ? JSON.parse(work.tags) : work.tags) : [];
       const imageUrls = work.images ? (typeof work.images === 'string' ? JSON.parse(work.images) : work.images) : [];
       if (imageUrls.length === 0 && work.coverUrl) imageUrls.push(work.coverUrl);
 
-      this.setData({ work, imageUrls, loading: false });
+      this.setData({ work, imageUrls, loading: false, loadFailed: false });
       this.loadComments();
     } catch (err) {
-      this.setData({ loading: false });
-      wx.showToast({ title: '加载失败', icon: 'none' });
+      this.setData({ loading: false, loadFailed: true, loadErrorText: '作品暂时无法加载', canRetryLoad: true });
+    } finally {
+      this._loadingWork = false;
     }
   },
 

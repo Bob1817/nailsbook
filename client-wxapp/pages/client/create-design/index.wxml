@@ -9,6 +9,8 @@
       bindinput="onTitleInput"
       placeholder="给你的设计起个名字..."
       placeholder-class="placeholder"
+      confirm-type="next"
+      cursor-spacing="24"
     />
   </view>
 
@@ -31,6 +33,7 @@
           class="image-thumb"
           bindtap="previewImage"
           data-url="{{item}}"
+          aria-label="私人设计参考图"
         />
         <view class="image-remove" catchtap="removeImage" data-index="{{index}}">
           <text class="remove-icon">×</text>
@@ -63,6 +66,8 @@
       placeholder="描述您想要的美甲款式，如：想做类似图片的猫眼款式..."
       placeholder-class="placeholder"
       maxlength="500"
+      adjust-position
+      cursor-spacing="120"
     />
   </view>
 

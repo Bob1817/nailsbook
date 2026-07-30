@@ -12,10 +12,16 @@ Page({
       endTime: '21:00'
     })),
     loading: true,
+    loadFailed: false,
     saving: false
   },
 
-  async onLoad() {
+  onLoad() {
+    this.loadSchedule();
+  },
+
+  async loadSchedule() {
+    this.setData({ loading: true, loadFailed: false });
     try {
       const res = await api.technician.schedule.get();
       if (res && res.length > 0) {
@@ -31,8 +37,10 @@ Page({
         });
         this.setData({ schedule });
       }
-    } catch {}
-    this.setData({ loading: false });
+      this.setData({ loading: false, loadFailed: false });
+    } catch (err) {
+      this.setData({ loading: false, loadFailed: true });
+    }
   },
 
   toggleDay(e) {

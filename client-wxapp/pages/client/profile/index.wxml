@@ -5,7 +5,7 @@
   <view class="page-hero" bindtap="editProfile">
     <view class="hero-left">
       <view class="hero-avatar-wrap">
-        <image wx:if="{{avatar}}" src="{{avatar}}" mode="aspectFill" class="hero-avatar"/>
+        <image wx:if="{{avatar}}" src="{{avatar}}" mode="aspectFill" class="hero-avatar" aria-label="我的头像"/>
         <view wx:else class="hero-avatar-ph">
           <text class="hero-avatar-char">{{nickname[0] || '我'}}</text>
         </view>
@@ -25,9 +25,10 @@
   <!-- ===== 可滚动内容 ===== -->
   <scroll-view class="content-scroll" scroll-y enhanced show-scrollbar="{{false}}">
     <view class="content-area">
+      <view wx:if="{{activeTechMenuId !== null}}" class="tech-menu-mask" bindtap="closeTechMenu"></view>
 
       <!-- 我的美甲师 -->
-      <view class="section-card">
+      <view class="section-card tech-section-card">
         <view class="tech-section-head">
           <view class="tech-head-titles">
             <view class="tech-head-title-row">
@@ -36,7 +37,7 @@
             </view>
             <text class="section-sub">查看已绑定的专属美甲师并管理服务对象</text>
           </view>
-          <view class="bind-btn" bindtap="openBindModal">+ 绑定</view>
+          <view class="bind-btn" bindtap="openBindModal">+ 绑定新美甲师</view>
         </view>
         <view class="tech-body">
           <view wx:if="{{technicians.length === 0}}" class="no-tech">
@@ -49,35 +50,48 @@
             wx:key="id"
             class="tech-card {{item.isDefault ? 'tech-card-default' : ''}}"
           >
-            <view class="tech-main">
-              <view class="tech-avatar-wrap">
-                <image wx:if="{{item.avatar}}" src="{{item.avatar}}" mode="aspectFill" class="tech-avatar"/>
-                <view wx:else class="tech-avatar-placeholder">
-                  <text>{{item.name[0]}}</text>
+            <view class="tech-card-primary">
+              <view class="tech-main">
+                <view class="tech-avatar-wrap">
+                  <image wx:if="{{item.avatar}}" src="{{item.avatar}}" mode="aspectFill" class="tech-avatar" aria-label="{{item.name || '美甲师'}}的头像"/>
+                  <view wx:else class="tech-avatar-placeholder"><text>{{item.name[0]}}</text></view>
                 </view>
-              </view>
-              <view class="tech-info">
-                <view class="tech-name-row">
-                  <text class="tech-name">{{item.name}}</text>
-                  <view wx:if="{{item.isDefault}}" class="default-badge">默认</view>
-                </view>
-                <view wx:if="{{item.city}}" class="tech-city">
-                  <view class="city-icon"></view>
-                  <text>{{item.city}}</text>
-                </view>
-                <view class="tech-tags">
-                  <text wx:if="{{item.homeService}}" class="tech-tag tech-tag-pink">可上门</text>
-                  <view class="tech-tag {{item.status === 'active' ? 'tech-tag-active' : 'tech-tag-rest'}}">
-                    <view class="status-dot {{item.status === 'active' ? 'status-dot-active' : 'status-dot-rest'}}"></view>
-                    <text>{{item.status === 'active' ? '接单中' : '休息中'}}</text>
+                <view class="tech-info">
+                  <view class="tech-name-row">
+                    <text class="tech-name">{{item.name}}</text>
+                    <view wx:if="{{item.isDefault}}" class="default-badge">默认美甲师</view>
+                  </view>
+                  <view wx:if="{{item.city}}" class="tech-city">
+                    <view class="city-icon"></view>
+                    <text>服务城市 · {{item.city}}</text>
+                  </view>
+                  <view class="tech-tags">
+                    <text wx:if="{{item.homeService}}" class="tech-tag tech-tag-pink">上门美甲</text>
+                    <text wx:if="{{item.shopService}}" class="tech-tag tech-tag-shop">到店美甲</text>
+                    <view class="tech-tag {{item.status === 'active' ? 'tech-tag-active' : 'tech-tag-rest'}}">
+                      <view class="status-dot {{item.status === 'active' ? 'status-dot-active' : 'status-dot-rest'}}"></view>
+                      <text>{{item.status === 'active' ? '接单中' : '休息中'}}</text>
+                    </view>
                   </view>
                 </view>
               </view>
+              <view class="tech-more-btn" catchtap="toggleTechMenu" data-id="{{item.id}}" role="button" aria-label="更多操作">
+                <view class="tech-more-dot"></view>
+                <view class="tech-more-dot"></view>
+                <view class="tech-more-dot"></view>
+              </view>
             </view>
-            <view class="tech-actions">
-              <view class="tech-eye-btn" bindtap="viewTechCard" data-id="{{item.id}}"></view>
-              <view wx:if="{{!item.isDefault}}" class="tech-action-btn" bindtap="setDefaultTech" data-id="{{item.id}}">设为默认</view>
-              <view class="tech-action-btn tech-action-unbind" bindtap="unbindTechnician" data-id="{{item.id}}" data-name="{{item.name}}">解除</view>
+            <view wx:if="{{activeTechMenuId === item.id}}" class="tech-more-menu">
+              <view class="tech-menu-item" catchtap="viewTechInfo" data-id="{{item.id}}">
+                <view class="tech-menu-icon tech-menu-icon-info"></view><text>查看信息</text>
+              </view>
+              <view class="tech-menu-item" catchtap="messageTechnician" data-id="{{item.id}}" data-name="{{item.name}}">
+                <view class="tech-menu-icon tech-menu-icon-message"></view><text>发送消息</text>
+              </view>
+              <view class="tech-menu-divider"></view>
+              <view class="tech-menu-item tech-menu-danger" catchtap="unbindTechnician" data-id="{{item.id}}" data-name="{{item.name}}">
+                <view class="tech-menu-icon tech-menu-icon-unbind"></view><text>解除绑定</text>
+              </view>
             </view>
           </view>
         </view>
@@ -189,7 +203,7 @@
 
       <view wx:if="{{foundTech}}" class="found-tech">
         <view class="found-avatar">
-          <image wx:if="{{foundTech.avatarUrl}}" src="{{foundTech.avatarUrl}}" mode="aspectFill" class="found-avatar-img"/>
+          <image wx:if="{{foundTech.avatarUrl}}" src="{{foundTech.avatarUrl}}" mode="aspectFill" class="found-avatar-img" aria-label="{{foundTech.name || '美甲师'}}的头像"/>
           <text wx:else class="found-avatar-char">{{foundTech.name[0]}}</text>
         </view>
         <view class="found-info">

@@ -74,7 +74,7 @@ page {
 
 .search-icon {
   font-size: 28rpx;
-  color: #9ca3af;
+  color: #6b7280;
   flex-shrink: 0;
 }
 
@@ -113,7 +113,7 @@ page {
   display: inline-flex;
   align-items: center;
   gap: 10rpx;
-  min-height: 72rpx;
+  min-height: 88rpx;
   padding: 0 32rpx;
   border-radius: 40rpx;
   border: 2rpx solid rgba(255, 107, 138, 0.08);
@@ -276,7 +276,7 @@ page {
 
 .msg-time {
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 .msg-action {
@@ -322,6 +322,11 @@ page {
   border: 2rpx solid rgba(255, 107, 138, 0.08);
   box-shadow: 0 10rpx 26rpx rgba(15, 23, 42, 0.05);
 }
+.load-error { margin:80rpx 0; padding:72rpx 48rpx; border:2rpx solid rgba(255,107,138,.08); border-radius:24rpx; background:#fff; box-shadow:0 10rpx 26rpx rgba(15,23,42,.05); display:flex; flex-direction:column; align-items:center; gap:16rpx; text-align:center; }
+.load-error-mark { width:88rpx; height:88rpx; margin-bottom:12rpx; border-radius:50%; background:#fff0f4; color:#c75b83; font-size:44rpx; line-height:88rpx; text-align:center; }
+.retry-btn { min-height:88rpx; margin:28rpx 0 0; padding:0 56rpx; border:0; border-radius:44rpx; background:#1f2937; color:#fff; font-size:28rpx; line-height:88rpx; }
+.retry-btn::after { border:0; }
+.customer-retry { margin-top:24rpx; }
 
 .empty-icon-wrap {
   width: 112rpx;
@@ -443,13 +448,13 @@ page {
 .modal-subtitle {
   display: block;
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
   margin-top: 4rpx;
 }
 
 .modal-close {
-  width: 64rpx;
-  height: 64rpx;
+  width: 88rpx;
+  height: 88rpx;
   border-radius: 50%;
   background: #f3f4f6;
   display: flex;
@@ -492,12 +497,12 @@ page {
 
 .modal-meta-text {
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 .modal-meta-dot {
   font-size: 24rpx;
-  color: #d1d5db;
+  color: #767b84;
 }
 
 .modal-actions {
@@ -589,7 +594,7 @@ page {
 .customer-phone {
   display: block;
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
   margin-top: 4rpx;
 }
 
@@ -612,5 +617,5 @@ page {
 
 .customer-empty-text {
   font-size: 28rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }

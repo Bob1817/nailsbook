@@ -111,7 +111,7 @@
 
 .arrow {
   font-size: 42rpx;
-  color: #d1d5db;
+  color: #767b84;
   margin-left: 18rpx;
 }
 
@@ -122,7 +122,7 @@
 
 .footer-text {
   font-size: 22rpx;
-  color: #9ca3af;
+  color: #6b7280;
   display: block;
   line-height: 1.45;
 }

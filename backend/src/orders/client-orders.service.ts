@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { PushService } from '../notifications/push.service';
@@ -12,6 +13,7 @@ import { CreateOrderFromDesignDto } from './dto/create-order-from-design.dto';
 import { Prisma } from '@prisma/client';
 import { buildDefaultServiceItems } from '../common/default-service-items';
 import { ServiceReviewDto } from './dto/service-review.dto';
+import { BookingMutexService } from './booking-mutex.service';
 
 import * as crypto from 'crypto';
 
@@ -40,6 +42,7 @@ export class ClientOrdersService {
     private readonly prisma: PrismaService,
     private readonly chatGateway: ChatGateway,
     private readonly push: PushService,
+    @Optional() private readonly bookingMutex?: BookingMutexService,
   ) {}
 
   async create(clientUserId: number, dto: CreateClientOrderDto) {
@@ -139,109 +142,113 @@ export class ClientOrdersService {
     const startTime = this.buildStartTime(dto.serviceDate, dto.startTime);
     const endTime = new Date(startTime);
 
-    const order = await this.prisma.$transaction(async (tx) => {
-      const customer = await tx.customer.upsert({
-        where: {
-          technicianId_clientUserId: {
+    const createOrder = () =>
+      this.prisma.$transaction(async (tx) => {
+        const customer = await tx.customer.upsert({
+          where: {
+            technicianId_clientUserId: {
+              technicianId: dto.techId,
+              clientUserId,
+            },
+          },
+          update: orderAddress ? { address: orderAddress } : {},
+          create: {
             technicianId: dto.techId,
             clientUserId,
+            name: customerName,
+            phone: client.phone,
+            address: orderAddress,
           },
-        },
-        update: orderAddress ? { address: orderAddress } : {},
-        create: {
-          technicianId: dto.techId,
-          clientUserId,
-          name: customerName,
-          phone: client.phone,
-          address: orderAddress,
-        },
-      });
+        });
 
-      const createdOrder = await tx.order.create({
-        data: {
-          orderNo: this.generateOrderNo(),
-          technicianId: dto.techId,
-          customerId: customer.id,
-          clientUserId,
-          addressId,
-          startTime,
-          endTime,
-          address: orderAddress,
-          serviceType: dto.serviceType,
-          remark: dto.remark ?? null,
-          customTitle: dto.customTitle ?? null,
-          customDescription: dto.customDescription ?? null,
-          customImages:
-            dto.customImages && dto.customImages.length > 0
-              ? JSON.stringify(dto.customImages)
-              : null,
-          sourceWorkId: dto.sourceWorkId ?? null,
-          quotePrice: 0,
-          status: 'pending_quote',
-          source: 'client_webapp',
-        },
-        include: this.orderInclude(),
-      });
+        const createdOrder = await tx.order.create({
+          data: {
+            orderNo: this.generateOrderNo(),
+            technicianId: dto.techId,
+            customerId: customer.id,
+            clientUserId,
+            addressId,
+            startTime,
+            endTime,
+            address: orderAddress,
+            serviceType: dto.serviceType,
+            remark: dto.remark ?? null,
+            customTitle: dto.customTitle ?? null,
+            customDescription: dto.customDescription ?? null,
+            customImages:
+              dto.customImages && dto.customImages.length > 0
+                ? JSON.stringify(dto.customImages)
+                : null,
+            sourceWorkId: dto.sourceWorkId ?? null,
+            quotePrice: 0,
+            status: 'pending_quote',
+            source: 'client_webapp',
+          },
+          include: this.orderInclude(),
+        });
 
-      const previewContent = isCustom
-        ? dto.customTitle || '自定义美甲需求'
-        : selectedServiceNames.length > 0
-          ? selectedServiceNames.join('、')
-          : '到店/上门预约';
-      const preview = `新的预约申请：${previewContent} · ${dto.serviceType}`;
-      const conversation = await tx.conversation.upsert({
-        where: {
-          clientId_techId: {
+        const previewContent = isCustom
+          ? dto.customTitle || '自定义美甲需求'
+          : selectedServiceNames.length > 0
+            ? selectedServiceNames.join('、')
+            : '到店/上门预约';
+        const preview = `新的预约申请：${previewContent} · ${dto.serviceType}`;
+        const conversation = await tx.conversation.upsert({
+          where: {
+            clientId_techId: {
+              clientId: clientUserId,
+              techId: dto.techId,
+            },
+          },
+          update: {
+            lastMessage: preview,
+            lastMessageAt: new Date(),
+          },
+          create: {
             clientId: clientUserId,
             techId: dto.techId,
+            lastMessage: preview,
+            lastMessageAt: new Date(),
           },
-        },
-        update: {
-          lastMessage: preview,
-          lastMessageAt: new Date(),
-        },
-        create: {
-          clientId: clientUserId,
-          techId: dto.techId,
-          lastMessage: preview,
-          lastMessageAt: new Date(),
-        },
-      });
+        });
 
-      await tx.message.create({
-        data: {
-          conversationId: conversation.id,
-          senderType: 'client',
-          senderId: clientUserId,
-          receiverType: 'technician',
-          receiverId: dto.techId,
-          messageType: 'order',
-          content: preview,
-          relatedType: 'order',
-          relatedId: createdOrder.id,
-        },
-      });
+        await tx.message.create({
+          data: {
+            conversationId: conversation.id,
+            senderType: 'client',
+            senderId: clientUserId,
+            receiverType: 'technician',
+            receiverId: dto.techId,
+            messageType: 'order',
+            content: preview,
+            relatedType: 'order',
+            relatedId: createdOrder.id,
+          },
+        });
 
-      // Freeze time slot: booking time + 5 hours
-      const blockEndTime = new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
-      await this.assertNoBlockedConflict(
-        tx,
-        dto.techId,
-        startTime,
-        blockEndTime,
-      );
-      await tx.blockedTimeSlot.create({
-        data: {
-          techId: dto.techId,
-          orderId: createdOrder.id,
+        // Freeze time slot: booking time + 5 hours
+        const blockEndTime = new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
+        await this.assertNoBlockedConflict(
+          tx,
+          dto.techId,
           startTime,
-          endTime: blockEndTime,
-          reason: 'booking',
-        },
-      });
+          blockEndTime,
+        );
+        await tx.blockedTimeSlot.create({
+          data: {
+            techId: dto.techId,
+            orderId: createdOrder.id,
+            startTime,
+            endTime: blockEndTime,
+            reason: 'booking',
+          },
+        });
 
-      return createdOrder;
-    });
+        return createdOrder;
+      });
+    const order = this.bookingMutex
+      ? await this.bookingMutex.runExclusive(dto.techId, createOrder)
+      : await createOrder();
 
     // 推送新预约给技师（best-effort，不阻塞主流程）
     void this.push.sendToTechnician(dto.techId, {
@@ -367,69 +374,73 @@ export class ClientOrdersService {
     const startTime = this.buildStartTime(dto.serviceDate, dto.startTime);
     const endTime = new Date(startTime);
 
-    const order = await this.prisma.$transaction(async (tx) => {
-      const customer = await tx.customer.upsert({
-        where: {
-          technicianId_clientUserId: {
+    const createOrder = () =>
+      this.prisma.$transaction(async (tx) => {
+        const customer = await tx.customer.upsert({
+          where: {
+            technicianId_clientUserId: {
+              technicianId: dto.techId,
+              clientUserId,
+            },
+          },
+          update: orderAddress ? { address: orderAddress } : {},
+          create: {
             technicianId: dto.techId,
             clientUserId,
+            name: customerName,
+            phone: client.phone,
+            address: orderAddress,
           },
-        },
-        update: orderAddress ? { address: orderAddress } : {},
-        create: {
-          technicianId: dto.techId,
-          clientUserId,
-          name: customerName,
-          phone: client.phone,
-          address: orderAddress,
-        },
-      });
+        });
 
-      await tx.clientDesignRequest.update({
-        where: { id: dto.designId },
-        data: { status: 'converted' },
-      });
+        await tx.clientDesignRequest.update({
+          where: { id: dto.designId },
+          data: { status: 'converted' },
+        });
 
-      // Freeze time slot: booking time + 5 hours
-      const blockEndTime = new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
-      await this.assertNoBlockedConflict(
-        tx,
-        dto.techId,
-        startTime,
-        blockEndTime,
-      );
-
-      const createdOrder = await tx.order.create({
-        data: {
-          orderNo: this.generateOrderNo(),
-          technicianId: dto.techId,
-          customerId: customer.id,
-          clientUserId,
-          designRequestId: design.id,
-          addressId,
+        // Freeze time slot: booking time + 5 hours
+        const blockEndTime = new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
+        await this.assertNoBlockedConflict(
+          tx,
+          dto.techId,
           startTime,
-          endTime,
-          address: orderAddress,
-          serviceType: dto.serviceType,
-          quotePrice: design.quotePrice ?? 0,
-          status: 'pending_quote',
-          source: 'client_webapp',
-        },
-        include: this.orderInclude(),
-      });
+          blockEndTime,
+        );
 
-      await tx.blockedTimeSlot.create({
-        data: {
-          techId: dto.techId,
-          orderId: createdOrder.id,
-          startTime,
-          endTime: blockEndTime,
-          reason: 'booking',
-        },
-      });
+        const createdOrder = await tx.order.create({
+          data: {
+            orderNo: this.generateOrderNo(),
+            technicianId: dto.techId,
+            customerId: customer.id,
+            clientUserId,
+            designRequestId: design.id,
+            addressId,
+            startTime,
+            endTime,
+            address: orderAddress,
+            serviceType: dto.serviceType,
+            quotePrice: design.quotePrice ?? 0,
+            status: 'pending_quote',
+            source: 'client_webapp',
+          },
+          include: this.orderInclude(),
+        });
 
-      return createdOrder;
-    });
+        await tx.blockedTimeSlot.create({
+          data: {
+            techId: dto.techId,
+            orderId: createdOrder.id,
+            startTime,
+            endTime: blockEndTime,
+            reason: 'booking',
+          },
+        });
+
+        return createdOrder;
+      });
+    const order = this.bookingMutex
+      ? await this.bookingMutex.runExclusive(design.techId, createOrder)
+      : await createOrder();
 
     // 推送新预约给技师（best-effort，不阻塞主流程）
     void this.push.sendToTechnician(dto.techId, {
@@ -538,6 +549,27 @@ export class ClientOrdersService {
     return { orderId, photos: normalized };
   }
 
+  async saveClientRecordNote(
+    clientUserId: number,
+    orderId: number,
+    note?: string,
+  ) {
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, clientUserId },
+      select: { id: true, status: true },
+    });
+    if (!order) throw new NotFoundException('订单不存在');
+    if (order.status !== 'completed') {
+      throw new BadRequestException('服务完成后才能编辑美甲记录备注');
+    }
+    const normalized = note?.trim().slice(0, 300) || null;
+    await this.prisma.order.update({
+      where: { id: orderId },
+      data: { clientRecordNote: normalized },
+    });
+    return { orderId, note: normalized };
+  }
+
   async findTrips(clientUserId: number) {
     const orders = await this.prisma.order.findMany({
       where: {
@@ -580,18 +612,56 @@ export class ClientOrdersService {
     }
 
     const startTime = this.buildStartTime(dto.serviceDate, dto.startTime);
-    const endTime = new Date(startTime);
+    if (Number.isNaN(startTime.getTime())) {
+      throw new BadRequestException('预约时间无效');
+    }
+
+    const previousDuration =
+      new Date(order.endTime).getTime() - new Date(order.startTime).getTime();
+    const endTime =
+      previousDuration > 0
+        ? new Date(startTime.getTime() + previousDuration)
+        : new Date(startTime);
+    const blockEnd =
+      previousDuration > 0
+        ? endTime
+        : new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
     const orderAddress = this.formatAddress(address);
 
-    const updatedOrder = await this.prisma.order.update({
-      where: { id },
-      data: {
-        addressId: address.id,
+    const updatedOrder = await this.prisma.$transaction(async (tx) => {
+      await this.assertNoBlockedConflict(
+        tx,
+        order.technicianId,
         startTime,
-        endTime,
-        address: orderAddress,
-      },
-      include: this.orderInclude(),
+        blockEnd,
+        id,
+      );
+
+      const updated = await tx.order.update({
+        where: { id },
+        data: {
+          addressId: address.id,
+          startTime,
+          endTime,
+          address: orderAddress,
+          reminderDaySent: false,
+          reminderHourSent: false,
+        },
+        include: this.orderInclude(),
+      });
+
+      await tx.blockedTimeSlot.deleteMany({ where: { orderId: id } });
+      await tx.blockedTimeSlot.create({
+        data: {
+          techId: order.technicianId,
+          orderId: id,
+          startTime,
+          endTime: blockEnd,
+          reason: 'booking',
+        },
+      });
+
+      return updated;
     });
 
     return this.mapOrder(updatedOrder);
@@ -811,10 +881,17 @@ export class ClientOrdersService {
       }
 
       const updatedOrder = await this.prisma.$transaction(async (tx) => {
+        const claimed = await tx.order.updateMany({
+          where: { id, clientUserId, status: 'in_progress' },
+          data: { status: 'completed' },
+        });
+        if (claimed.count !== 1) {
+          throw new BadRequestException('该订单已完成，无需重复处理');
+        }
+
         await tx.order.update({
           where: { id },
           data: {
-            status: 'completed',
             completedAt: new Date(),
           },
         });
@@ -851,6 +928,14 @@ export class ClientOrdersService {
     }
 
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
+      const claimed = await tx.order.updateMany({
+        where: { id, clientUserId, status: { in: cancellableStatuses } },
+        data: { status: 'cancelled' },
+      });
+      if (claimed.count !== 1) {
+        throw new BadRequestException('该订单已取消，无需重复处理');
+      }
+
       // Release blocked time slot
       await tx.blockedTimeSlot.deleteMany({
         where: { orderId: id },
@@ -859,7 +944,6 @@ export class ClientOrdersService {
       return tx.order.update({
         where: { id },
         data: {
-          status: 'cancelled',
           cancelledAt: new Date(),
         },
         include: this.orderInclude(),

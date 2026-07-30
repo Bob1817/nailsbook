@@ -24,19 +24,27 @@ Page({
     leftCol: [],
     rightCol: [],
     loading: true,
+    loadFailed: false,
     sortBy: 'latest',
     sortDirs: { latest: 'desc', likes: 'desc', comments: 'desc', favorites: 'desc' },
     sortTabs: SORT_TABS,
     selectedTech: '全部',
     techFilters: ['全部'],
-    totalCount: 0
+    totalCount: 0,
+    keyword: ''
   },
 
-  onLoad: function () { this.loadWorks(); },
+  onLoad: function (options) {
+    this.setData({
+      keyword: options.keyword ? decodeURIComponent(options.keyword) : '',
+      targetTechId: options.techId ? String(options.techId) : ''
+    });
+    this.loadWorks();
+  },
 
   loadWorks: function () {
     var self = this;
-    self.setData({ loading: true });
+    self.setData({ loading: true, loadFailed: false });
     Promise.all([
       api.client.works.list({ sortBy: self.data.sortBy, sortDir: self.data.sortDirs[self.data.sortBy] }),
       api.client.likes.list().catch(function () { return []; })
@@ -59,6 +67,7 @@ Page({
             title: w.title || '未命名作品',
             tags: w.tags || [],
             technicianName: name,
+            technicianId: w.technicianId || (w.technician && w.technician.id) || '',
             technicianAvatarUrl: w.technicianAvatarUrl || (w.technician ? w.technician.avatarUrl : '') || '',
             techInitial: name.charAt(0) || '美',
             likeCount: w.likeCount || 0,
@@ -83,20 +92,32 @@ Page({
         works.forEach(function (w) { if (w.technicianName) techSet[w.technicianName] = true; });
         var techFilters = ['全部'].concat(Object.keys(techSet));
 
-        self.setData({ works: works, techFilters: techFilters, totalCount: works.length, loading: false });
+        var targetWork = self.data.targetTechId
+          ? works.find(function (w) { return String(w.technicianId) === self.data.targetTechId; })
+          : null;
+        self.setData({ works: works, techFilters: techFilters, totalCount: works.length, loading: false, loadFailed: false, selectedTech: targetWork ? targetWork.technicianName : self.data.selectedTech });
         self.applyFilter();
       })
       .catch(function (err) {
         console.error('loadWorks error:', err);
-        self.setData({ loading: false, works: [], filteredWorks: [], leftCol: [], rightCol: [] });
+        self.setData({ loading: false, loadFailed: true, works: [], filteredWorks: [], leftCol: [], rightCol: [] });
       });
   },
 
   applyFilter: function () {
     var selected = this.data.selectedTech;
-    var filtered = selected === '全部'
-      ? this.data.works
-      : this.data.works.filter(function (w) { return w.technicianName === selected; });
+    var keyword = this.data.keyword;
+    var targetTechId = this.data.targetTechId;
+    var filtered = targetTechId
+      ? this.data.works.filter(function (w) { return String(w.technicianId) === targetTechId; })
+      : (selected === '全部'
+        ? this.data.works
+        : this.data.works.filter(function (w) { return w.technicianName === selected; }));
+    if (keyword) {
+      filtered = filtered.filter(function (w) {
+        return w.title.indexOf(keyword) >= 0 || (w.tags || []).some(function (tag) { return String(tag).indexOf(keyword) >= 0; });
+      });
+    }
 
     var leftCol = [], rightCol = [];
     filtered.forEach(function (w, i) {
@@ -139,7 +160,7 @@ Page({
 
   switchTech: function (e) {
     var name = e.currentTarget.dataset.name;
-    this.setData({ selectedTech: name });
+    this.setData({ selectedTech: name, targetTechId: '' });
     this.applyFilter();
   },
 

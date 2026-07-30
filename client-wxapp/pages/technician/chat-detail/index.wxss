@@ -51,7 +51,7 @@ page {
 
 .date-label {
   font-size: 22rpx;
-  color: #9ca3af;
+  color: #6b7280;
   background: rgba(255, 255, 255, 0.8);
   padding: 6rpx 24rpx;
   border-radius: 20rpx;
@@ -101,7 +101,7 @@ page {
 
 .empty-desc {
   font-size: 26rpx;
-  color: #9ca3af;
+  color: #6b7280;
   text-align: center;
   line-height: 1.5;
 }
@@ -230,7 +230,7 @@ page {
 }
 
 .time-left {
-  color: #9ca3af;
+  color: #6b7280;
   text-align: left;
 }
 
@@ -247,7 +247,7 @@ page {
 
 .system-text {
   font-size: 22rpx;
-  color: #9ca3af;
+  color: #6b7280;
   background: rgba(255, 255, 255, 0.7);
   padding: 8rpx 32rpx;
   border-radius: 20rpx;
@@ -340,7 +340,7 @@ page {
   background: transparent;
 }
 
-.input-placeholder { color: #9ca3af; font-size: 28rpx; }
+.input-placeholder { color: #6b7280; font-size: 28rpx; }
 
 .send-btn {
   flex-shrink: 0;

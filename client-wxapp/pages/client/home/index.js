@@ -31,7 +31,8 @@ Page({
     orderAddress: '',
     worksPage: 1,
     worksHasMore: true,
-    worksLoading: false
+    worksLoading: false,
+    popularStyles: ['法式', '极简', '新中式', '婚礼', '职场', '艺术风']
   },
 
   onLoad() {
@@ -184,6 +185,12 @@ Page({
   },
 
   navigateToWorks() { wx.navigateTo({ url: '/pages/client/works/index' }); },
+  navigateToArchive() { wx.navigateTo({ url: '/pages/client/beauty-archive/index' }); },
+  navigateToAiPhoto() { wx.navigateTo({ url: '/pages/client/ai-photo/index' }); },
+  viewStyle(e) {
+    var style = e.currentTarget.dataset.style;
+    wx.navigateTo({ url: '/pages/client/works/index?keyword=' + encodeURIComponent(style) });
+  },
   navigateToBooking() { wx.navigateTo({ url: '/pages/client/create-order/index' }); },
   navigateToOrders() { wx.navigateTo({ url: '/pages/client/orders/index' }); },
   navigateToChat() { wx.navigateTo({ url: '/pages/client/chat/index' }); },

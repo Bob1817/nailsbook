@@ -5,23 +5,24 @@ const api = require('../utils/request');
 
 const C = '/api/client';
 const T = '/api/technician';
+const P = '/api/public';
 
 // ========== 鉴权 ==========
 const auth = {
   checkPhone: (phone, role = 'client') => {
     const base = role === 'technician' ? T : C;
-    return api.post(`${base}/auth/check-phone`, { phone });
+    return api.post(`${base}/auth/check-phone`, { phone }, { needAuth: false });
   },
 
   registerClient: (phone, password, inviteCode) =>
-    api.post(`${C}/auth/register-by-invite`, { phone, password, inviteCode }),
+    api.post(`${C}/auth/register-by-invite`, { phone, password, inviteCode }, { needAuth: false }),
 
   registerTechnician: (inviteKey, name, phone, password) =>
-    api.post(`${T}/auth/register`, { inviteKey, name, phone, password }),
+    api.post(`${T}/auth/register`, { inviteKey, name, phone, password }, { needAuth: false }),
 
   login: (phone, password, role = 'client') => {
     const base = role === 'technician' ? T : C;
-    return api.post(`${base}/auth/login`, { phone, password });
+    return api.post(`${base}/auth/login`, { phone, password }, { needAuth: false });
   },
 
   getUserInfo: (role = 'client') => {
@@ -32,18 +33,19 @@ const auth = {
   // 后端：POST /forgot-password/reset
   resetPassword: (phone, code, newPassword, role = 'client') => {
     const base = role === 'technician' ? T : C;
-    return api.post(`${base}/auth/forgot-password/reset`, { phone, code, newPassword });
+    return api.post(`${base}/auth/forgot-password/reset`, { phone, code, newPassword }, { needAuth: false });
   },
 
   sendResetCode: (phone, role = 'client') => {
     const base = role === 'technician' ? T : C;
-    return api.post(`${base}/auth/forgot-password/send-code`, { phone });
+    return api.post(`${base}/auth/forgot-password/send-code`, { phone }, { needAuth: false });
   }
 };
 
 // ========== 客户端 ==========
 const client = {
   home: () => api.get(`${C}/home`),
+  beautyArchive: () => api.get(`${C}/beauty-archive`),
 
   // 后端：PUT /auth/me 更新资料；PATCH /auth/password 改密
   profile: {
@@ -67,7 +69,9 @@ const client = {
     like: (id) => api.post(`${C}/works/${id}/like`),
     favorite: (id) => api.post(`${C}/works/${id}/favorite`),
     comments: (id, params) => api.get(`${C}/works/${id}/comments`, params),
-    addComment: (id, data) => api.post(`${C}/works/${id}/comments`, data)
+    addComment: (id, data) => api.post(`${C}/works/${id}/comments`, data),
+    createShareGrant: (id) => api.post(`${C}/works/${id}/share-grant`, {}),
+    recordShare: (id, channel) => api.post(`${C}/works/${id}/share-event`, { channel })
   },
 
   favorites: { list: () => api.get(`${C}/favorites`) },
@@ -77,11 +81,15 @@ const client = {
     list: (params) => api.get(`${C}/orders`, params),
     detail: (id) => api.get(`${C}/orders/${id}`),
     create: (data) => api.post(`${C}/orders`, data),
+    createFromDesign: (data) => api.post(`${C}/orders/from-design`, data),
     update: (id, data) => api.patch(`${C}/orders/${id}`, data),
     acceptQuote: (id) => api.post(`${C}/orders/${id}/agree`),
     rejectQuote: (id, reason) => api.post(`${C}/orders/${id}/reject-quote`, { reason }),
     cancel: (id) => api.patch(`${C}/orders/${id}/status`, { status: 'cancelled' }),
     markDepositPaid: (id) => api.post(`${C}/orders/${id}/mark-deposit-paid`),
+    saveReview: (id, data) => api.patch(`${C}/orders/${id}/review`, data),
+    saveClientPhotos: (id, photos) => api.patch(`${C}/orders/${id}/client-photos`, { photos }),
+    saveClientRecordNote: (id, note) => api.patch(`${C}/orders/${id}/client-record-note`, { note }),
     blockedSlots: (techId) => api.get(`${C}/orders/blocked-slots/${techId}`)
   },
 
@@ -103,6 +111,7 @@ const client = {
     detail: (id) => api.get(`${C}/designs/${id}`),
     create: (data) => api.post(`${C}/designs`, data),
     update: (id, data) => api.patch(`${C}/designs/${id}`, data),
+    delete: (id) => api.del(`${C}/designs/${id}`),
     acceptQuote: (id) => api.post(`${C}/designs/${id}/accept-quote`),
     rejectQuote: (id, reason) => api.post(`${C}/designs/${id}/reject-quote`, { reason }),
     createOrder: (id, data) => api.post(`${C}/designs/${id}/create-order`, data)
@@ -121,6 +130,10 @@ const client = {
 
 // ========== 技师端 ==========
 const technician = {
+  insights: {
+    overview: () => api.get(`${T}/insights/overview`)
+  },
+
   auth: {
     login: (phone, password) => auth.login(phone, password, 'technician'),
     getUserInfo: () => auth.getUserInfo('technician'),
@@ -149,6 +162,7 @@ const technician = {
     list: (params) => api.get(`${T}/customers`, params),
     detail: (id) => api.get(`${T}/customers/${id}`),
     tags: () => api.get(`${T}/customers/tags`),
+    updateName: (id, name) => api.patch(`${T}/customers/${id}/name`, { name }),
     updateTags: (id, tags) => api.patch(`${T}/customers/${id}/tags`, { tags })
   },
 
@@ -167,7 +181,9 @@ const technician = {
     addComment: (workId, data) => api.post(`${T}/works/${workId}/comments`, data),
     deleteComment: (workId, commentId) => api.del(`${T}/works/${workId}/comments/${commentId}`),
     pinComment: (workId, commentId) => api.post(`${T}/works/${workId}/comments/${commentId}/pin`),
-    hideComment: (workId, commentId) => api.post(`${T}/works/${workId}/comments/${commentId}/hide`)
+    hideComment: (workId, commentId) => api.post(`${T}/works/${workId}/comments/${commentId}/hide`),
+    accessOptions: () => api.get(`${T}/works/access-options`),
+    updateAccess: (id, data) => api.put(`${T}/works/${id}/access`, data)
   },
 
   services: {
@@ -178,9 +194,14 @@ const technician = {
     toggle: (id) => api.patch(`${T}/services/${id}/toggle`, {})
   },
 
+  designs: {
+    list: () => api.get(`${T}/designs`),
+    quote: (id, data) => api.post(`${T}/designs/${id}/quote`, data)
+  },
+
   subscription: {
     plans: () => api.get(`${T}/subscriptions/plans`),
-    current: () => api.get(`${T}/subscriptions`),
+    current: () => api.get(`${T}/auth/me`).then((res) => res.subscription || null),
     detail: (id) => api.get(`${T}/subscriptions/${id}`),
     create: (data) => api.post(`${T}/subscriptions`, data)
   },
@@ -226,9 +247,9 @@ const technician = {
   },
 
   tagTemplates: {
-    list: () => Promise.resolve([]),
-    create: () => Promise.reject({ message: '功能开发中' }),
-    delete: () => Promise.reject({ message: '功能开发中' })
+    list: () => api.get(`${T}/customers/tag-templates`),
+    create: (data) => api.post(`${T}/customers/tag-templates`, data),
+    delete: (id) => api.del(`${T}/customers/tag-templates/${id}`)
   }
 };
 
@@ -294,16 +315,30 @@ const upload = {
             if (res.statusCode >= 200 && res.statusCode < 300 && data.url) {
               resolve(data);
             } else {
-              reject(data);
+              reject({
+                ...data,
+                code: data.code || res.statusCode,
+                message: data.message || (res.statusCode >= 500 ? '上传服务暂时不可用' : '图片上传失败')
+              });
             }
           } catch (e) {
             reject({ message: '上传响应解析失败' });
           }
         },
-        fail: reject
+        fail: (err) => {
+          const isTimeout = String(err && err.errMsg || '').toLowerCase().includes('timeout');
+          reject({ code: isTimeout ? -2 : -1, message: isTimeout ? '上传超时，请重试' : '网络错误，图片上传失败' });
+        }
       });
     });
   }
 };
 
-module.exports = { auth, client, technician, chat, upload };
+const publicApi = {
+  works: {
+    detail: (id) => api.get(`${P}/works/${id}`, null, { needAuth: false }),
+    shared: (token) => api.get(`${P}/works/shared/${token}`, null, { needAuth: false })
+  }
+};
+
+module.exports = { auth, client, technician, chat, upload, public: publicApi };

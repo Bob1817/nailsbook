@@ -24,23 +24,32 @@ function actionsForStatus(order) {
   const s = order.status;
   if (s === 'pending_agree') list.push({ key:'reject', label:'拒绝报价', style:'action-ghost' }, { key:'agree', label:'同意报价', style:'action-primary' });
   if (s === 'pending_confirm' && order.depositAmount > 0 && !order.depositPaid) list.push({ key:'deposit', label:'已付定金', style:'action-primary' });
-  if (CANCELLABLE.indexOf(s) >= 0) list.push({ key:'cancel', label:'取消预约', style:'action-danger' });
-  if (EDITABLE.indexOf(s) >= 0) list.push({ key:'edit', label:'修改预约', style:'action-ghost' });
+  if (CANCELLABLE.indexOf(s) >= 0 || EDITABLE.indexOf(s) >= 0) list.unshift({ key:'more', label:'更多操作', style:'action-ghost' });
   return list;
 }
 
 Page({
   data: {
-    order: null, loading: true,
+    order: null, orderId: '', loading: true, loadFailed: false, loadErrorText: '',
     showReject: false, rejectReason: '', rejectReasons: REJECT_REASONS, submitting: false,
-    showEdit: false, editDate: '', editTime: '', editAddresses: [], editAddressId: null, editTimeSlots: TIME_SLOTS, savingEdit: false
+    showEdit: false, editDate: '', editTime: '', editAddresses: [], editAddressId: null, editTimeSlots: TIME_SLOTS, savingEdit: false,
+    reviewRating: 5, reviewContent: '', reviewPhotos: [], photoUseAuthorized: false, savingReview: false,
+    actionSubmitting: ''
   },
 
-  onLoad(options) { this.orderId = options.id; this.loadOrder(); },
+  onLoad(options) {
+    this.orderId = options.id;
+    this.setData({ orderId: this.orderId || '' });
+    if (this.orderId) this.loadOrder();
+    else this.setData({ loading: false, loadFailed: true, loadErrorText: '预约参数无效' });
+  },
   onShow() { if (this.orderId && !this.data.loading) this.loadOrder(); },
   onPullDownRefresh() { this.loadOrder().finally(() => wx.stopPullDownRefresh()); },
 
   async loadOrder() {
+    if (this._loadingOrder || !this.orderId) return;
+    this._loadingOrder = true;
+    this.setData({ loading: true, loadFailed: false, loadErrorText: '' });
     try {
       const raw = await api.client.orders.detail(this.orderId);
       const isShop = raw.serviceType === 'shop' || raw.serviceType === '到店美甲';
@@ -66,23 +75,50 @@ Page({
         _dateLabel: formatBookingDate(raw.startTime),
         _timeRange: start && end ? `${formatClock(raw.startTime)} - ${formatClock(raw.endTime)}` : formatClock(raw.startTime),
         _priceText: price ? formatMoney(price) : '待报价',
-        _showPriceCard: price > 0 || depositAmount > 0, _actions: null
+        _showPriceCard: price > 0 || depositAmount > 0, _actions: null,
+        review: raw.review || null,
+        sourceWork: raw.sourceWork || null
       };
       order._actions = actionsForStatus(order);
-      this.setData({ order, loading: false });
+      this.setData({
+        order, loading: false, loadFailed: false,
+        reviewRating: raw.review ? raw.review.rating : 5,
+        reviewContent: raw.review ? raw.review.content : '',
+        reviewPhotos: raw.review ? (raw.review.photos || []) : [],
+        photoUseAuthorized: raw.review ? !!raw.review.photoUseAuthorized : false
+      });
     } catch (err) {
-      this.setData({ loading: false });
-      wx.showToast({ title: err.message || '加载失败', icon: 'none' });
+      this.setData({ loading: false, loadFailed: true, loadErrorText: '预约暂时无法加载' });
+    } finally {
+      this._loadingOrder = false;
     }
   },
 
   onAction(e) {
+    if (this.data.actionSubmitting) return;
     const key = e.currentTarget.dataset.key;
     if (key === 'agree') return this.agreeQuote();
     if (key === 'reject') return this.openReject();
     if (key === 'deposit') return this.markDepositPaid();
     if (key === 'cancel') return this.cancelOrder();
     if (key === 'edit') return this.openEdit();
+    if (key === 'more') return this.showMoreActions();
+  },
+
+  showMoreActions() {
+    const status = this.data.order.status;
+    const actions = [];
+    if (EDITABLE.indexOf(status) >= 0) actions.push({ key: 'edit', label: '修改预约' });
+    if (CANCELLABLE.indexOf(status) >= 0) actions.push({ key: 'cancel', label: '取消预约' });
+    if (!actions.length) return;
+    wx.showActionSheet({
+      itemList: actions.map(item => item.label),
+      success: result => {
+        const action = actions[result.tapIndex];
+        if (action && action.key === 'edit') this.openEdit();
+        if (action && action.key === 'cancel') this.cancelOrder();
+      }
+    });
   },
 
   callTech() {
@@ -102,16 +138,66 @@ Page({
     if (addr) wx.setClipboardData({ data: addr, success: () => wx.showToast({ title: '已复制', icon: 'success' }) });
   },
 
+  viewSourceWork() {
+    const sourceWork = this.data.order?.sourceWork;
+    if (!sourceWork?.id) return;
+    wx.navigateTo({ url: `/pages/client/work-detail/index?id=${sourceWork.id}` });
+  },
+
+  selectReviewRating(e) { this.setData({ reviewRating: Number(e.currentTarget.dataset.rating) }); },
+  onReviewInput(e) { this.setData({ reviewContent: e.detail.value }); },
+  onPhotoAuthorizationChange(e) { this.setData({ photoUseAuthorized: e.detail.value }); },
+  chooseReviewPhotos() {
+    const remaining = 6 - this.data.reviewPhotos.length;
+    if (remaining <= 0) return wx.showToast({ title: '最多上传6张照片', icon: 'none' });
+    wx.chooseMedia({
+      count: remaining, mediaType: ['image'], sourceType: ['album', 'camera'],
+      success: async (res) => {
+        wx.showLoading({ title: '上传中...' });
+        try {
+          const urls = [];
+          for (const file of res.tempFiles) {
+            const uploaded = await api.upload.image(file.tempFilePath, 'client');
+            urls.push(uploaded.url);
+          }
+          this.setData({ reviewPhotos: this.data.reviewPhotos.concat(urls) });
+        } catch (err) { wx.showToast({ title: '照片上传失败', icon: 'none' }); }
+        finally { wx.hideLoading(); }
+      }
+    });
+  },
+  removeReviewPhoto(e) {
+    const index = Number(e.currentTarget.dataset.index);
+    this.setData({ reviewPhotos: this.data.reviewPhotos.filter((_, i) => i !== index) });
+  },
+  async saveReview() {
+    if (this.data.savingReview) return;
+    this.setData({ savingReview: true });
+    try {
+      await api.client.orders.saveReview(this.orderId, {
+        rating: this.data.reviewRating,
+        content: this.data.reviewContent.trim(),
+        photos: this.data.reviewPhotos,
+        photoUseAuthorized: this.data.photoUseAuthorized
+      });
+      wx.showToast({ title: this.data.order.review ? '评价已更新' : '感谢你的评价', icon: 'success' });
+      this.loadOrder();
+    } catch (err) { wx.showToast({ title: err.message || '评价保存失败', icon: 'none' }); }
+    finally { this.setData({ savingReview: false }); }
+  },
+
   // ---- 同意报价 ----
   async agreeQuote() {
     const r = await wx.showModal({ title: '同意报价', content: `报价金额 ${this.data.order._priceText}，同意后将进入美甲师确认环节。`, confirmText: '同意' });
     if (!r.confirm) return;
+    this.setData({ actionSubmitting: 'agree' });
     try {
       wx.showLoading({ title: '处理中...' });
       await api.client.orders.acceptQuote(this.orderId);
       wx.hideLoading(); wx.showToast({ title: '已同意报价', icon: 'success' });
       this.loadOrder();
     } catch (err) { wx.hideLoading(); wx.showToast({ title: err.message || '操作失败', icon: 'none' }); }
+    finally { this.setData({ actionSubmitting: '' }); }
   },
 
   // ---- 拒绝报价 ----
@@ -133,22 +219,26 @@ Page({
   async markDepositPaid() {
     const r = await wx.showModal({ title: '确认已支付定金', content: `请确认你已通过线下方式向美甲师支付定金 ¥${this.data.order.depositAmount}`, confirmText: '已支付' });
     if (!r.confirm) return;
+    this.setData({ actionSubmitting: 'deposit' });
     try {
       wx.showLoading({ title: '处理中...' });
       await api.client.orders.markDepositPaid(this.orderId);
       wx.hideLoading(); wx.showToast({ title: '已确认定金', icon: 'success' }); this.loadOrder();
     } catch (err) { wx.hideLoading(); wx.showToast({ title: err.message || '操作失败', icon: 'none' }); }
+    finally { this.setData({ actionSubmitting: '' }); }
   },
 
   // ---- 取消 ----
   async cancelOrder() {
     const r = await wx.showModal({ title: '取消预约', content: '确定要取消这个预约吗？', confirmText: '取消预约', confirmColor: '#DC4C58' });
     if (!r.confirm) return;
+    this.setData({ actionSubmitting: 'cancel' });
     try {
       wx.showLoading({ title: '处理中...' });
       await api.client.orders.cancel(this.orderId);
       wx.hideLoading(); wx.showToast({ title: '预约已取消', icon: 'success' }); this.loadOrder();
     } catch (err) { wx.hideLoading(); wx.showToast({ title: err.message || '操作失败', icon: 'none' }); }
+    finally { this.setData({ actionSubmitting: '' }); }
   },
 
   // ---- 编辑预约 ----

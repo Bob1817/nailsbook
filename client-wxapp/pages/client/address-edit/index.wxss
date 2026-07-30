@@ -30,7 +30,8 @@
   height: 96rpx;
   font-size: 28rpx;
   color: #1f2937;
- background: #f9fafb; border-radius: 14rpx;}
+ padding:0 18rpx; background: #f9fafb; border:2rpx solid transparent; border-radius: 14rpx; box-sizing:border-box;}
+.input:focus { border-color:#ff6b8a; background:#fff; }
 
 .location-row {
   display: flex;
@@ -61,7 +62,7 @@
 }
 .default-hint {
   font-size: 22rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 .footer {

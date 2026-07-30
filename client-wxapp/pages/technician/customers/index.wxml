@@ -5,7 +5,7 @@
     <!-- 搜索框 + 邀请按钮 -->
     <view class="search-row">
       <view class="search-bar">
-        <text class="search-icon">🔍</text>
+        <view class="search-icon"></view>
         <input
           class="search-input"
           placeholder="搜索客户姓名或联系方式"
@@ -14,7 +14,7 @@
           bindinput="onKeywordInput"
           bindconfirm="onSearchConfirm"
         />
-        <view wx:if="{{keyword}}" class="search-clear" bindtap="clearKeyword">✕</view>
+        <view wx:if="{{keyword}}" class="search-clear" bindtap="clearKeyword"><view class="clear-line"></view></view>
       </view>
       <view class="btn-invite" bindtap="handleInvite">
         <text class="invite-icon">+</text>
@@ -44,11 +44,18 @@
       <view wx:for="{{[1,2,3]}}" wx:key="*this" class="skel-card"></view>
     </view>
 
+    <view wx:elif="{{loadFailed}}" class="empty-card" aria-live="polite">
+      <text class="empty-title">客户列表加载失败</text>
+      <text class="empty-sub">请检查网络后重试</text>
+      <view class="empty-reset" bindtap="loadCustomers" role="button">重新加载</view>
+    </view>
+
     <!-- 空状态 -->
     <view wx:elif="{{!loading && visibleCustomers.length === 0}}" class="empty-card">
-      <text class="empty-icon">👥</text>
+      <view class="empty-icon"><view class="empty-avatar-mark"></view></view>
       <text class="empty-title">{{keyword || activeTab !== '全部' ? '没有找到匹配的客户' : '还没有客户'}}</text>
       <text class="empty-sub">{{keyword || activeTab !== '全部' ? '换个关键词或标签试试' : '客户预约后会自动出现在这里'}}</text>
+      <view wx:if="{{keyword || activeTab !== '全部'}}" class="empty-reset" bindtap="resetFilters">清除筛选</view>
     </view>
 
     <!-- 客户卡片列表 -->
@@ -64,7 +71,7 @@
           <!-- 头像 -->
           <view class="avatar-wrap">
             <view class="avatar" bindtap="toggleTagPopover" data-id="{{item.id}}">
-              <image wx:if="{{item.avatarUrl}}" src="{{item.avatarUrl}}" mode="aspectFill" class="avatar-img" />
+              <image wx:if="{{item.avatarUrl}}" src="{{item.avatarUrl}}" mode="aspectFill" class="avatar-img" lazy-load aria-label="{{item.name || item.nickname || '客户'}}的头像" />
               <text wx:else class="avatar-char">{{item._initial}}</text>
             </view>
             <!-- 标签弹出层 -->
@@ -82,7 +89,7 @@
               <view class="name-row">
                 <text class="customer-name">{{item._displayName}}</text>
                 <view class="edit-name-btn" catchtap="startEditName" data-id="{{item.id}}" data-name="{{item.name}}">
-                  <text class="edit-icon">✏️</text>
+                  <view class="edit-icon"></view>
                 </view>
                 <text class="arrow-icon">›</text>
               </view>

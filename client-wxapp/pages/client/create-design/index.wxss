@@ -54,7 +54,7 @@
 
 .form-count {
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 .form-input  {
@@ -80,7 +80,7 @@
 }
 
 .placeholder {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 /* 图片网格 */
@@ -165,13 +165,13 @@
 
 .add-icon {
   font-size: 48rpx;
-  color: #9ca3af;
+  color: #6b7280;
   line-height: 1;
 }
 
 .add-text {
   font-size: 22rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 /* 提示卡片 */

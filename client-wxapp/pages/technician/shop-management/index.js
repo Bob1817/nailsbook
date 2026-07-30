@@ -22,6 +22,7 @@ Page({
   data: {
     shops: [],
     loading: true,
+    loadFailed: false,
     showAddModal: false,
     editShop: null,
     // 表单字段
@@ -45,15 +46,20 @@ Page({
     this.loadShops();
   },
 
-  loadShops() {
-    this.setData({ loading: true });
-    const userInfo = wx.getStorageSync('userInfo') || wx.getStorageSync('technician_userInfo') || {};
-    const shops = (userInfo.shopAddresses || []).map(shop => ({
-      ...shop,
-      enabled: shop.enabled !== false,
-      businessHours: shop.businessHours || DEFAULT_BUSINESS_HOURS
-    }));
-    this.setData({ shops, loading: false });
+  async loadShops() {
+    this.setData({ loading: true, loadFailed: false });
+    try {
+      const userInfo = await api.technician.auth.getUserInfo();
+      const shops = (userInfo.shopAddresses || []).map(shop => ({
+        ...shop,
+        enabled: shop.enabled !== false,
+        businessHours: shop.businessHours || JSON.parse(JSON.stringify(DEFAULT_BUSINESS_HOURS))
+      }));
+      wx.setStorageSync('technician_userInfo', userInfo);
+      this.setData({ shops, loading: false, loadFailed: false });
+    } catch (err) {
+      this.setData({ loading: false, loadFailed: true });
+    }
   },
 
   openAdd() {

@@ -18,6 +18,12 @@
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+.load-error { display:flex; flex-direction:column; align-items:center; padding:160rpx 40rpx 80rpx; }
+.load-error-mark { width:88rpx; height:88rpx; margin-bottom:32rpx; border-radius:50%; background:#fff0f4; color:#c75b83; font-size:44rpx; line-height:88rpx; text-align:center; }
+.load-error-title { margin-bottom:12rpx; color:#374151; font-size:32rpx; }
+.load-error-desc { margin-bottom:56rpx; color:#6b7280; font-size:26rpx; }
+.retry-btn { min-height:88rpx; margin:0; padding:0 56rpx; border:0; border-radius:44rpx; background:#1f2937; color:#fff; font-size:28rpx; line-height:88rpx; }
+.retry-btn::after { border:0; }
 
 /* ===== Hero 状态卡 ===== */
 .hero-card {
@@ -47,7 +53,11 @@
   background: rgba(255, 107, 138, 0.1);
   display: flex; align-items: center; justify-content: center;
 }
-.hero-icon { font-size: 42rpx; }
+.hero-icon { position:relative; width:54rpx; height:40rpx; }
+.car-body { position:absolute; left:4rpx; right:4rpx; top:10rpx; height:22rpx; border:4rpx solid #d77b9f; border-radius:10rpx 12rpx 6rpx 6rpx; box-sizing:border-box; }
+.car-body::before { content:''; position:absolute; left:10rpx; top:-12rpx; width:24rpx; height:12rpx; border:4rpx solid #d77b9f; border-bottom:0; border-radius:8rpx 8rpx 0 0; box-sizing:border-box; }
+.car-wheel { position:absolute; bottom:2rpx; width:10rpx; height:10rpx; border-radius:50%; background:#d77b9f; }
+.wheel-left { left:10rpx; } .wheel-right { right:10rpx; }
 .hero-text {
   display: flex;
   flex-direction: column;
@@ -65,7 +75,7 @@
   border-radius: 999rpx;
 }
 .label-on  { background: #dcfce7; color: #16a34a; }
-.label-off { background: #f3f4f6; color: #9ca3af; }
+.label-off { background: #f3f4f6; color: #6b7280; }
 
 /* ===== 快速开启横幅 ===== */
 .quick-banner {
@@ -197,7 +207,7 @@
 }
 .field-unit {
   font-size: 22rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 .field-input {
   flex: 1;
@@ -217,7 +227,7 @@
   text-align: right;
   padding: 0 0 0 16rpx;
 }
-.ph { color: #d1d5db; }
+.ph { color: #767b84; }
 
 /* ===== 阶梯报价 ===== */
 .pricing-list {
@@ -248,7 +258,7 @@
 }
 .pricing-input {
   flex: 1;
-  height: 72rpx;
+  height: 88rpx;
   background: #fff;
   border-radius: 12rpx;
   padding: 0 16rpx;
@@ -263,12 +273,12 @@
 }
 .pricing-dash {
   font-size: 26rpx;
-  color: #9ca3af;
+  color: #6b7280;
   flex-shrink: 0;
 }
 .pricing-unit {
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
   flex-shrink: 0;
   width: 60rpx;
 }

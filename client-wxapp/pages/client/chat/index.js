@@ -48,6 +48,7 @@ Page({
     tabs: [],
     unreadCount: 0,
     loading: true,
+    loadFailed: false,
     selectedNotification: null
   },
 
@@ -70,7 +71,7 @@ Page({
 
   loadInbox: function() {
     var self = this;
-    self.setData({ loading: true });
+    self.setData({ loading: true, loadFailed: false });
     self._loaded = true;
 
     return api.chat.conversations('client', { timeout: 15000, silent: true }).then(function(conversations) {
@@ -144,13 +145,13 @@ Page({
         allItems: chatItems,
         tabs: tabs,
         unreadCount: unreadCount,
-        loading: false
+        loading: false,
+        loadFailed: false
       });
       self._applyFilter();
     }).catch(function(err) {
       console.error('Load inbox error:', err);
-      self.setData({ loading: false });
-      wx.showToast({ title: '加载失败', icon: 'none' });
+      self.setData({ loading: false, loadFailed: true });
     });
   },
 

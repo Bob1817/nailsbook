@@ -2,9 +2,18 @@
 <view class="container">
 
 
+  <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
+
+  <view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+    <view class="load-error-mark">!</view>
+    <text class="empty-text">服务项目加载失败</text>
+    <text class="empty-sub">请检查网络后重试</text>
+    <button class="retry-btn" bindtap="loadServices">重新加载</button>
+  </view>
+
   <!-- 空状态 -->
-  <view wx:if="{{services.length === 0 && !loading}}" class="empty">
-    <text class="empty-icon">📋</text>
+  <view wx:elif="{{services.length === 0}}" class="empty">
+    <view class="service-empty-mark"><view></view><view></view><view></view></view>
     <text class="empty-text">还没有服务项目</text>
     <text class="empty-sub">添加你提供的美甲服务，方便客户下单</text>
     <button class="btn-add-first" bindtap="openCreate">添加第一个服务</button>
@@ -31,6 +40,7 @@
 
       <!-- 描述 -->
       <text wx:if="{{item.description}}" class="svc-desc">{{item.description}}</text>
+      <view class="svc-meta"><text>¥{{item.price != null ? item.price : '待设置'}}</text><text>{{item.durationMinutes || '待设置'}} 分钟</text></view>
 
       <!-- 操作按钮 -->
       <view class="card-actions">
@@ -48,7 +58,7 @@
   </view>
 
   <!-- FAB 添加按钮 -->
-  <view wx:if="{{services.length > 0}}" class="fab" bindtap="openCreate">
+  <view wx:if="{{services.length > 0 && !loadFailed}}" class="fab" bindtap="openCreate">
     <text class="fab-icon">+</text>
   </view>
 
@@ -75,6 +85,11 @@
           <text class="picker-arrow">›</text>
         </view>
       </picker>
+    </view>
+
+    <view class="form-pair">
+      <view class="form-item form-half"><text class="label">参考价格 *</text><input class="input" type="digit" placeholder="0" value="{{form.price}}" data-field="price" bindinput="onFormInput"/></view>
+      <view class="form-item form-half"><text class="label">预计时长（分钟）*</text><input class="input" type="number" placeholder="60" value="{{form.durationMinutes}}" data-field="durationMinutes" bindinput="onFormInput"/></view>
     </view>
 
     <view class="form-item">

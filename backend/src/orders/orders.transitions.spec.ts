@@ -11,8 +11,13 @@ describe('OrdersService 流转成功路径', () => {
     emit = jest.fn();
     const chatGateway = { server: { to: jest.fn().mockReturnValue({ emit }) } };
     prisma = {
-      $transaction: jest.fn(async (cb: (tx: any) => Promise<unknown>) => cb(prisma)),
-      order: { update: jest.fn().mockResolvedValue({ id: 1 }) },
+      $transaction: jest.fn(async (cb: (tx: any) => Promise<unknown>) =>
+        cb(prisma),
+      ),
+      order: {
+        update: jest.fn().mockResolvedValue({ id: 1 }),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
       conversation: {
         upsert: jest.fn().mockResolvedValue({ id: 5 }),
         findUnique: jest.fn().mockResolvedValue({ id: 5 }),
@@ -28,8 +33,13 @@ describe('OrdersService 流转成功路径', () => {
 
   it('confirm 上门：pending_confirm → pending_home，并给客户发系统消息+推送', async () => {
     jest.spyOn(service, 'findOne').mockResolvedValue({
-      id: 1, status: 'pending_confirm', serviceType: '上门美甲',
-      clientUserId: 11, technicianId: 7, depositAmount: 0, isDepositPaid: false,
+      id: 1,
+      status: 'pending_confirm',
+      serviceType: '上门美甲',
+      clientUserId: 11,
+      technicianId: 7,
+      depositAmount: 0,
+      isDepositPaid: false,
     } as never);
 
     await service.confirm(1);
@@ -47,8 +57,12 @@ describe('OrdersService 流转成功路径', () => {
 
   it('confirm 到店：pending_confirm → pending_shop', async () => {
     jest.spyOn(service, 'findOne').mockResolvedValue({
-      id: 1, status: 'pending_confirm', serviceType: '到店美甲',
-      clientUserId: 11, technicianId: 7, depositAmount: 0,
+      id: 1,
+      status: 'pending_confirm',
+      serviceType: '到店美甲',
+      clientUserId: 11,
+      technicianId: 7,
+      depositAmount: 0,
     } as never);
 
     await service.confirm(1);
@@ -62,43 +76,80 @@ describe('OrdersService 流转成功路径', () => {
 
   it('confirm 带定金 + depositConfirmed=true：标记定金已付', async () => {
     jest.spyOn(service, 'findOne').mockResolvedValue({
-      id: 1, status: 'pending_confirm', serviceType: '上门美甲',
-      clientUserId: 11, technicianId: 7, depositAmount: 50, isDepositPaid: false,
+      id: 1,
+      status: 'pending_confirm',
+      serviceType: '上门美甲',
+      clientUserId: 11,
+      technicianId: 7,
+      depositAmount: 50,
+      isDepositPaid: false,
     } as never);
 
     await service.confirm(1, true);
 
     expect(prisma.order.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ isDepositPaid: true, depositStatus: 'paid' }),
+        data: expect.objectContaining({
+          isDepositPaid: true,
+          depositStatus: 'paid',
+        }),
       }),
     );
   });
 
   it('complete：in_progress → completed，并生成收入记录', async () => {
     jest.spyOn(service, 'findOne').mockResolvedValue({
-      id: 1, status: 'in_progress', clientUserId: 11, technicianId: 7,
-      customerId: 3, quotePrice: 200,
+      id: 1,
+      status: 'in_progress',
+      clientUserId: 11,
+      technicianId: 7,
+      customerId: 3,
+      quotePrice: 200,
     } as never);
 
     const res = await service.complete(1);
 
-    expect(prisma.order.update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ status: 'completed' }) }),
+    expect(prisma.order.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 1, status: 'in_progress' },
+        data: expect.objectContaining({ status: 'completed' }),
+      }),
     );
     expect(prisma.revenue.create).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ amount: 200, orderId: 1 }) }),
+      expect.objectContaining({
+        data: expect.objectContaining({ amount: 200, orderId: 1 }),
+      }),
     );
     expect(res).toEqual({ id: 9, amount: 200 });
   });
 
   it('complete：已有收入记录 → BadRequest（防重复入账）', async () => {
     jest.spyOn(service, 'findOne').mockResolvedValue({
-      id: 1, status: 'in_progress', technicianId: 7,
+      id: 1,
+      status: 'in_progress',
+      technicianId: 7,
     } as never);
     prisma.revenue.findUnique.mockResolvedValue({ id: 9 });
 
-    await expect(service.complete(1)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.complete(1)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
     expect(prisma.order.update).not.toHaveBeenCalled();
+  });
+
+  it('complete：并发请求未取得状态流转权时不生成收入', async () => {
+    jest.spyOn(service, 'findOne').mockResolvedValue({
+      id: 1,
+      status: 'in_progress',
+      technicianId: 7,
+      customerId: 3,
+      quotePrice: 200,
+    } as never);
+    prisma.order.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(service.complete(1)).rejects.toThrow(
+      '该订单已完成，无需重复处理',
+    );
+    expect(prisma.revenue.create).not.toHaveBeenCalled();
   });
 });

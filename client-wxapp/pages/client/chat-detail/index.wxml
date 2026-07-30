@@ -25,7 +25,7 @@
       <view wx:for="{{group.messages}}" wx:key="id" wx:for-item="item" id="msg-{{item.id}}" class="msg-row {{item.isClient ? 'row-right' : 'row-left'}}">
         <!-- 对方头像 -->
         <view wx:if="{{!item.isClient}}" class="msg-avatar">
-          <image wx:if="{{techAvatar}}" src="{{techAvatar}}" mode="aspectFill" class="avatar-img" />
+          <image wx:if="{{techAvatar}}" src="{{techAvatar}}" mode="aspectFill" class="avatar-img" aria-label="{{techName || '美甲师'}}的头像" />
           <view wx:else class="avatar-placeholder"><text>{{techName[0] || '师'}}</text></view>
         </view>
 
@@ -49,7 +49,7 @@
 
           <!-- 图片消息 -->
           <view wx:elif="{{item.messageType === 'image' && item.imageUrl}}" class="bubble bubble-{{item.isClient ? 'right' : 'left'}} bubble-img" bindtap="previewImage" data-url="{{item.imageUrl}}">
-            <image src="{{item.imageUrl}}" mode="widthFix" class="msg-image" />
+            <image src="{{item.imageUrl}}" mode="widthFix" class="msg-image" lazy-load aria-label="聊天图片" />
           </view>
 
           <!-- 文字消息 -->
@@ -79,7 +79,7 @@
       <view class="field-add-btn {{showAddMenu ? 'field-add-active' : ''}}" catchtap="toggleAddMenu">
         <view class="icon-add"></view>
       </view>
-      <input class="input-field" type="text" value="{{inputText}}" bindinput="onInputChange" placeholder="发消息..." placeholder-class="input-placeholder" confirm-type="send" bindconfirm="sendText" />
+      <input class="input-field" type="text" value="{{inputText}}" bindinput="onInputChange" placeholder="发消息..." placeholder-class="input-placeholder" confirm-type="send" bindconfirm="sendText" cursor-spacing="16" />
     </view>
     <!-- 发送按钮：紧邻输入框 -->
     <view class="send-btn {{inputText.length > 0 ? 'send-btn-active' : ''}}" bindtap="sendText">

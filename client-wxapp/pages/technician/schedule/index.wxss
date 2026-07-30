@@ -18,6 +18,8 @@
   padding: 12rpx 0;
   border-radius: 12rpx;
   margin: 0 4rpx;
+  min-height: 88rpx;
+  box-sizing: border-box;
 }
 .day-cell.selected {
   background: #ff6b9d;
@@ -46,10 +48,22 @@
 
 .empty {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   padding: 120rpx 0;
 }
 .empty-text { font-size: 30rpx; color: #999; }
+.retry-button {
+  display: flex;
+  min-height: 88rpx;
+  margin-top: 24rpx;
+  padding: 0 40rpx;
+  align-items: center;
+  border-radius: 44rpx;
+  background: #fff0f5;
+  color: #a34f75;
+}
 
 .order-list { padding: 0 16rpx; }
 
@@ -97,6 +111,11 @@
   background: #f5f5f5;
   color: #999;
 }
-.order-status.confirmed { background: #e6f7ff; color: #1890ff; }
-.order-status.quoted { background: #fff7e6; color: #fa8c16; }
-.order-status.completed { background: #f6ffed; color: #52c41a; }
+.order-status.tone-orange,
+.order-status.tone-yellow { background: #fff7e6; color: #a45100; }
+.order-status.tone-purple { background: #f5efff; color: #6f45a8; }
+.order-status.tone-sky { background: #e8f6ff; color: #176ca4; }
+.order-status.tone-emerald,
+.order-status.tone-teal { background: #eaf8f1; color: #267558; }
+.order-status.tone-gray { background: #f5f5f5; color: #696969; }
+.order-status.tone-red { background: #fff0f0; color: #a53c3c; }

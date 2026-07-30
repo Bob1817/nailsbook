@@ -40,6 +40,8 @@
             class="gallery-img"
             bindtap="previewImage"
             data-url="{{item}}"
+            lazy-load
+            aria-label="私人设计参考图"
           />
         </view>
       </view>
@@ -66,7 +68,7 @@
       <view wx:if="{{design.quotePrice || design.status === 'quoted' || design.status === 'accepted' || design.status === 'converted'}}" class="quote-section">
         <view wx:if="{{design.technician}}" class="tech-info">
           <view class="tech-avatar-wrap">
-            <image wx:if="{{design.technician.avatarUrl}}" src="{{design.technician.avatarUrl}}" mode="aspectFill" class="tech-avatar" />
+            <image wx:if="{{design.technician.avatarUrl}}" src="{{design.technician.avatarUrl}}" mode="aspectFill" class="tech-avatar" aria-label="{{design.technician.name || '美甲师'}}的头像" />
             <text wx:else class="tech-avatar-text">{{design.technician.name[0]}}</text>
           </view>
           <view class="tech-detail">
@@ -98,8 +100,8 @@
 
     <!-- 已报价状态 -->
     <view wx:if="{{design.status === 'quoted'}}" class="btn-group">
-      <button class="btn-book" bindtap="goToCreateOrder">发起预约</button>
-      <button class="btn-quote" bindtap="acceptQuote">接受报价</button>
+      <button class="btn-book" disabled="{{processingQuote}}" bindtap="rejectQuote">拒绝报价</button>
+      <button class="btn-quote" disabled="{{processingQuote}}" bindtap="acceptQuote">{{processingQuote ? '处理中...' : '接受报价'}}</button>
     </view>
 
     <!-- 已接受状态 -->
@@ -126,7 +128,7 @@
 
       <view wx:if="{{design.technician}}" class="modal-tech">
         <view class="modal-tech-avatar-wrap">
-          <image wx:if="{{design.technician.avatarUrl}}" src="{{design.technician.avatarUrl}}" mode="aspectFill" class="modal-tech-avatar" />
+          <image wx:if="{{design.technician.avatarUrl}}" src="{{design.technician.avatarUrl}}" mode="aspectFill" class="modal-tech-avatar" aria-label="{{design.technician.name || '美甲师'}}的头像" />
           <text wx:else class="modal-tech-avatar-text">{{design.technician.name[0]}}</text>
         </view>
         <view class="modal-tech-info">
@@ -187,7 +189,7 @@
               wx:key="*this"
               class="edit-img-item"
             >
-              <image src="{{item}}" mode="aspectFill" class="edit-img" />
+              <image src="{{item}}" mode="aspectFill" class="edit-img" aria-label="待提交的私人设计参考图" />
               <view class="edit-img-remove" bindtap="removeEditImage" data-index="{{index}}">
                 <text class="remove-icon">×</text>
               </view>

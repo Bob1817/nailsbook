@@ -3,7 +3,8 @@ const api = require('../../../services/api');
 Page({
   data: {
     addresses: [],
-    loading: true
+    loading: true,
+    loadFailed: false
   },
 
   onShow() {
@@ -12,6 +13,7 @@ Page({
 
   // skipNormalize: 归一化补选默认后再次拉取时传 true，避免重复
   async loadAddresses(skipNormalize) {
+    this.setData({ loading: true, loadFailed: false });
     try {
       const res = await api.client.addresses.list();
       const list = res.list || res.data || res || [];
@@ -19,7 +21,7 @@ Page({
       // 约束：有地址时必须有且仅有一个默认地址。
       // 覆盖「单个地址即默认」「删除默认后补位」「历史无默认数据」三种情况。
       // 补选失败时不阻断列表渲染。
-      if (!skipNormalize && list.length > 0 && !list.some(a => a.isDefault)) {
+      if (skipNormalize !== true && list.length > 0 && !list.some(a => a.isDefault)) {
         try {
           await api.client.addresses.setDefault(list[0].id);
           return this.loadAddresses(true);
@@ -28,10 +30,9 @@ Page({
         }
       }
 
-      this.setData({ addresses: list, loading: false });
+      this.setData({ addresses: list, loading: false, loadFailed: false });
     } catch (err) {
-      this.setData({ loading: false });
-      wx.showToast({ title: '加载失败', icon: 'none' });
+      this.setData({ loading: false, loadFailed: true });
     }
   },
 

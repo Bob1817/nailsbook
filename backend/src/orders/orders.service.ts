@@ -3,12 +3,14 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { ChatGateway } from '../chat/chat.gateway';
 import * as crypto from 'crypto';
 import { CreateTechnicianOrderDto } from './dto/create-technician-order.dto';
 import { ReviewOrderDto } from './dto/review-order.dto';
+import { BookingMutexService } from './booking-mutex.service';
 
 export type OrderStatus =
   | 'pending_quote'
@@ -33,7 +35,12 @@ export const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   completed: [],
   cancelled: [],
   // 过期后可「重新发起」恢复到过期前的创建流程状态
-  expired: ['pending_quote', 'pending_agree', 'pending_confirm', 'pending_client_confirm'],
+  expired: [
+    'pending_quote',
+    'pending_agree',
+    'pending_confirm',
+    'pending_client_confirm',
+  ],
 };
 
 export function canTransition(from: OrderStatus, to: OrderStatus): boolean {
@@ -47,6 +54,7 @@ export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private chatGateway: ChatGateway,
+    @Optional() private readonly bookingMutex?: BookingMutexService,
   ) {}
 
   async createForTechnician(
@@ -85,67 +93,73 @@ export class OrdersService {
       ? new Date(Date.now() + CONFIRM_TOKEN_TTL_MS)
       : null;
 
-    const order = await this.prisma.$transaction(async (tx) => {
-      const order = await tx.order.create({
-        data: {
-          orderNo: this.generateOrderNo(),
-          technicianId,
-          customerId,
-          clientUserId: dto.clientUserId ?? resolvedClientUserId ?? null,
-          startTime: new Date(dto.startTime),
-          endTime: new Date(dto.endTime),
-          address: dto.address,
-          serviceType: dto.serviceType || null,
-          // 美甲师直接发起且已填写价格的预约无需再报价，直接进入待客户确认。
-          status:
-            dto.shareToClient || (dto.price != null && dto.price > 0)
-              ? 'pending_client_confirm'
-              : 'pending_quote',
-          remark: dto.note || dto.serviceName || null,
-          customDescription: dto.customDescription || null,
-          customImages: dto.customImages?.length
-            ? JSON.stringify(dto.customImages)
-            : null,
-          quotePrice: dto.price ?? 0,
-          confirmToken,
-          confirmTokenExpiresAt,
-        },
-        include: {
-          technician: { select: { id: true, name: true, phone: true } },
-          customer: {
-            select: { id: true, name: true, phone: true, avatarUrl: true },
+    const createOrder = () =>
+      this.prisma.$transaction(async (tx) => {
+        const order = await tx.order.create({
+          data: {
+            orderNo: this.generateOrderNo(),
+            technicianId,
+            customerId,
+            clientUserId: dto.clientUserId ?? resolvedClientUserId ?? null,
+            startTime: new Date(dto.startTime),
+            endTime: new Date(dto.endTime),
+            address: dto.address,
+            serviceType: dto.serviceType || null,
+            // 美甲师直接发起且已填写价格的预约无需再报价，直接进入待客户确认。
+            status:
+              dto.shareToClient || (dto.price != null && dto.price > 0)
+                ? 'pending_client_confirm'
+                : 'pending_quote',
+            remark: dto.note || dto.serviceName || null,
+            customDescription: dto.customDescription || null,
+            customImages: dto.customImages?.length
+              ? JSON.stringify(dto.customImages)
+              : null,
+            quotePrice: dto.price ?? 0,
+            confirmToken,
+            confirmTokenExpiresAt,
           },
-        },
-      });
+          include: {
+            technician: { select: { id: true, name: true, phone: true } },
+            customer: {
+              select: { id: true, name: true, phone: true, avatarUrl: true },
+            },
+            review: { select: { rating: true } },
+            revenue: { select: { amount: true, recognizedAt: true } },
+          },
+        });
 
-      // Freeze time slot: booking time + 5 hours
-      const startTime = new Date(dto.startTime);
-      const blockEndTime = new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
-      const conflict = await tx.blockedTimeSlot.findFirst({
-        where: {
-          techId: technicianId,
-          startTime: { lt: blockEndTime },
-          endTime: { gt: startTime },
-        },
-        select: { id: true },
-      });
-      if (conflict) {
-        throw new BadRequestException(
-          '该时间段已经被其他用户预约，请重新选择预约时间',
-        );
-      }
-      await tx.blockedTimeSlot.create({
-        data: {
-          techId: technicianId,
-          orderId: order.id,
-          startTime,
-          endTime: blockEndTime,
-          reason: 'booking',
-        },
-      });
+        // Freeze time slot: booking time + 5 hours
+        const startTime = new Date(dto.startTime);
+        const blockEndTime = new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
+        const conflict = await tx.blockedTimeSlot.findFirst({
+          where: {
+            techId: technicianId,
+            startTime: { lt: blockEndTime },
+            endTime: { gt: startTime },
+          },
+          select: { id: true },
+        });
+        if (conflict) {
+          throw new BadRequestException(
+            '该时间段已经被其他用户预约，请重新选择预约时间',
+          );
+        }
+        await tx.blockedTimeSlot.create({
+          data: {
+            techId: technicianId,
+            orderId: order.id,
+            startTime,
+            endTime: blockEndTime,
+            reason: 'booking',
+          },
+        });
 
-      return order;
-    });
+        return order;
+      });
+    const order = this.bookingMutex
+      ? await this.bookingMutex.runExclusive(technicianId, createOrder)
+      : await createOrder();
 
     const result: Record<string, unknown> = { ...order };
     if (confirmToken) {
@@ -247,28 +261,98 @@ export class OrdersService {
     return order;
   }
 
-  async updateForTechnician(id: number, technicianId: number, dto: {
-    serviceType?: string;
-    startTime?: string;
-    endTime?: string;
-    price?: number;
-    note?: string;
-    depositAmount?: number;
-  }) {
+  async updateForTechnician(
+    id: number,
+    technicianId: number,
+    dto: {
+      serviceType?: string;
+      startTime?: string;
+      endTime?: string;
+      price?: number;
+      note?: string;
+      depositAmount?: number;
+    },
+  ) {
     const order = await this.findOneForTechnician(id, technicianId);
 
     const updateData: any = {};
+    const timeChanged =
+      dto.startTime !== undefined || dto.endTime !== undefined;
 
     if (dto.serviceType !== undefined) updateData.serviceType = dto.serviceType;
-    if (dto.startTime !== undefined) updateData.startTime = new Date(dto.startTime);
-    if (dto.endTime !== undefined) updateData.endTime = new Date(dto.endTime);
     if (dto.price !== undefined) updateData.quotePrice = dto.price;
     if (dto.note !== undefined) updateData.remark = dto.note;
-    if (dto.depositAmount !== undefined) updateData.depositAmount = dto.depositAmount;
+    if (dto.depositAmount !== undefined)
+      updateData.depositAmount = dto.depositAmount;
 
-    return this.prisma.order.update({
-      where: { id },
-      data: updateData,
+    if (!timeChanged) {
+      return this.prisma.order.update({
+        where: { id },
+        data: updateData,
+      });
+    }
+
+    const currentStart = new Date(order.startTime);
+    const currentEnd = new Date(order.endTime);
+    const currentDuration = currentEnd.getTime() - currentStart.getTime();
+    const startTime = dto.startTime ? new Date(dto.startTime) : currentStart;
+    const endTime = dto.endTime
+      ? new Date(dto.endTime)
+      : currentDuration > 0
+        ? new Date(startTime.getTime() + currentDuration)
+        : new Date(startTime);
+
+    if (
+      Number.isNaN(startTime.getTime()) ||
+      Number.isNaN(endTime.getTime()) ||
+      endTime.getTime() < startTime.getTime()
+    ) {
+      throw new BadRequestException('预约时间无效');
+    }
+
+    const blockEnd =
+      endTime.getTime() > startTime.getTime()
+        ? endTime
+        : new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
+
+    updateData.startTime = startTime;
+    updateData.endTime = endTime;
+    updateData.reminderDaySent = false;
+    updateData.reminderHourSent = false;
+
+    return this.prisma.$transaction(async (tx) => {
+      const conflict = await tx.blockedTimeSlot.findFirst({
+        where: {
+          techId: technicianId,
+          NOT: { orderId: id },
+          startTime: { lt: blockEnd },
+          endTime: { gt: startTime },
+        },
+        select: { id: true },
+      });
+      if (conflict) {
+        throw new BadRequestException(
+          '该时间段已经被其他用户预约，请重新选择预约时间',
+        );
+      }
+
+      const updated = await tx.order.update({
+        where: { id },
+        data: updateData,
+      });
+
+      await tx.blockedTimeSlot.deleteMany({ where: { orderId: id } });
+      await tx.blockedTimeSlot.create({
+        data: {
+          techId: technicianId,
+          orderId: id,
+          startTime,
+          endTime: blockEnd,
+          reason: 'booking',
+        },
+      });
+
+      return updated;
     });
   }
 
@@ -394,7 +478,11 @@ export class OrdersService {
       throw new BadRequestException('当前订单状态不支持确认');
     }
 
-    if ((order.depositAmount ?? 0) > 0 && !order.isDepositPaid && !depositConfirmed) {
+    if (
+      (order.depositAmount ?? 0) > 0 &&
+      !order.isDepositPaid &&
+      !depositConfirmed
+    ) {
       throw new BadRequestException('请先确认用户已缴纳定金');
     }
 
@@ -500,10 +588,17 @@ export class OrdersService {
     let conversationId: number | null = null;
 
     const revenue = await this.prisma.$transaction(async (tx) => {
+      const claimed = await tx.order.updateMany({
+        where: { id, status: 'in_progress' },
+        data: { status: 'completed' },
+      });
+      if (claimed.count !== 1) {
+        throw new BadRequestException('该订单已完成，无需重复处理');
+      }
+
       await tx.order.update({
         where: { id },
         data: {
-          status: 'completed',
           completedAt: new Date(),
         },
       });
@@ -597,6 +692,14 @@ export class OrdersService {
     let conversationId: number | null = null;
 
     const updated = await this.prisma.$transaction(async (tx) => {
+      const claimed = await tx.order.updateMany({
+        where: { id, status: { in: cancellableStatuses } },
+        data: { status: 'cancelled' },
+      });
+      if (claimed.count !== 1) {
+        throw new BadRequestException('该订单已取消，无需重复处理');
+      }
+
       // Release blocked time slot
       await tx.blockedTimeSlot.deleteMany({
         where: { orderId: id },
@@ -605,7 +708,6 @@ export class OrdersService {
       const updated = await tx.order.update({
         where: { id },
         data: {
-          status: 'cancelled',
           cancelledAt: new Date(),
           cancelReason: cancelReason ?? order.cancelReason ?? null,
         },
@@ -700,9 +802,13 @@ export class OrdersService {
     const prevDuration =
       new Date(order.endTime).getTime() - new Date(order.startTime).getTime();
     const endTime =
-      prevDuration > 0 ? new Date(startTime.getTime() + prevDuration) : startTime;
+      prevDuration > 0
+        ? new Date(startTime.getTime() + prevDuration)
+        : startTime;
     const blockEnd =
-      prevDuration > 0 ? endTime : new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
+      prevDuration > 0
+        ? endTime
+        : new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
 
     const restoreStatus = order.expiredFromStatus ?? 'pending_quote';
 
@@ -717,7 +823,9 @@ export class OrdersService {
         select: { id: true },
       });
       if (conflict) {
-        throw new BadRequestException('该时间段已经被其他用户预约，请重新选择预约时间');
+        throw new BadRequestException(
+          '该时间段已经被其他用户预约，请重新选择预约时间',
+        );
       }
 
       const updated = await tx.order.update({

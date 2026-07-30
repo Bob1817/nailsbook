@@ -5,7 +5,10 @@
     class="tab-item {{item.key === selected ? 'tab-item-active' : ''}}"
     bindtap="onTabTap"
     data-key="{{item.key}}"
+    role="button"
+    aria-label="{{item.label}}"
   >
+    <view class="tab-icon icon-{{item.icon}}"></view>
     <text class="tab-label">{{item.label}}</text>
   </view>
 </view>

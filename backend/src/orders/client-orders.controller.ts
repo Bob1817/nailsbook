@@ -26,6 +26,7 @@ import { UpdateClientOrderStatusDto } from './dto/update-client-order-status.dto
 import { RejectQuoteDto } from './dto/reject-quote.dto';
 import { ServiceReviewDto } from './dto/service-review.dto';
 import { ClientOrderPhotosDto } from './dto/client-order-photos.dto';
+import { ClientOrderRecordNoteDto } from './dto/client-order-record-note.dto';
 
 @Controller('client/orders')
 @UseGuards(ClientJwtAuthGuard)
@@ -112,6 +113,20 @@ export class ClientOrdersController {
       request.user.clientUserId,
       id,
       dto.photos,
+    );
+  }
+
+  @Patch(':id/client-record-note')
+  @ApiOperation({ summary: '保存客户的已完成美甲记录备注' })
+  saveClientRecordNote(
+    @Req() request: { user: { clientUserId: number } },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ClientOrderRecordNoteDto,
+  ) {
+    return this.clientOrdersService.saveClientRecordNote(
+      request.user.clientUserId,
+      id,
+      dto.note,
     );
   }
 

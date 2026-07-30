@@ -22,6 +22,7 @@ Page({
   },
 
   onLoad(options) {
+    this.redirect = options.redirect ? decodeURIComponent(options.redirect) : '';
     if (options.phone) {
       this.setData({ phone: options.phone });
     }
@@ -111,7 +112,7 @@ Page({
       wx.setStorageSync('defaultTechId', res.technician.id);
     }
     wx.hideLoading();
-    wx.reLaunch({ url: '/pages/client/home/index' });
+    wx.reLaunch({ url: this.redirect || '/pages/client/home/index' });
   },
 
   goBack() {

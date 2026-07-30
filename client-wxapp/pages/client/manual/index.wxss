@@ -33,7 +33,7 @@ page {
 }
 .block-sub {
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 /* 使用指引 */
@@ -105,7 +105,7 @@ page {
 .faq-chevron {
   flex-shrink: 0;
   font-size: 36rpx;
-  color: #d1d5db;
+  color: #767b84;
   transform: rotate(90deg);
   transition: transform 0.2s;
 }
@@ -132,7 +132,7 @@ page {
 }
 .more-text {
   font-size: 26rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 .more-btn {
   height: 80rpx;

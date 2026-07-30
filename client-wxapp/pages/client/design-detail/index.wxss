@@ -41,7 +41,7 @@
 
 .error-text {
   font-size: 28rpx;
-  color: #9ca3af;
+  color: #6b7280;
   margin-bottom: 24rpx;
 }
 
@@ -93,7 +93,7 @@
 
 .design-date {
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
   margin-top: 4rpx;
   display: block;
 }
@@ -104,8 +104,8 @@
 }
 
 .action-btn {
-  width: 56rpx;
-  height: 56rpx;
+  width: 88rpx;
+  height: 88rpx;
   border-radius: 50%;
   background: #f1f5f9;
   display: flex;
@@ -250,7 +250,7 @@
 
 .status-label {
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
   display: block;
 }
 
@@ -331,7 +331,7 @@
 
 .tech-label {
   font-size: 22rpx;
-  color: #9ca3af;
+  color: #6b7280;
   display: block;
 }
 
@@ -364,7 +364,7 @@
 
 .remark-label {
   font-size: 22rpx;
-  color: #9ca3af;
+  color: #6b7280;
   display: block;
   margin-bottom: 8rpx;
 }
@@ -522,7 +522,7 @@
 
 .modal-desc {
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 /* 弹窗中的美甲师信息 */
@@ -573,7 +573,7 @@
 
 .modal-tech-label {
   font-size: 22rpx;
-  color: #9ca3af;
+  color: #6b7280;
   display: block;
 }
 
@@ -586,7 +586,7 @@
 
 .btn-cancel {
   flex: 1;
-  height: 80rpx;
+  height: 88rpx;
   background: #f1f5f9;
   color: #1f2937;
   font-size: 30rpx;
@@ -604,7 +604,7 @@
 
 .btn-confirm {
   flex: 1;
-  height: 80rpx;
+  height: 88rpx;
   background: linear-gradient(135deg, #FF6B8A 0%, #A78BFA 100%);
   color: #fff;
   font-size: 30rpx;
@@ -626,7 +626,7 @@
 
 .btn-danger {
   flex: 1;
-  height: 80rpx;
+  height: 88rpx;
   background: #fef2f2;
   color: #dc2626;
   border: 1rpx solid #fecaca;
@@ -686,12 +686,12 @@
 }
 
 .placeholder {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 .form-hint {
   font-size: 22rpx;
-  color: #9ca3af;
+  color: #6b7280;
   margin-top: 8rpx;
   display: block;
 }
@@ -751,5 +751,5 @@
 
 .add-icon {
   font-size: 40rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }

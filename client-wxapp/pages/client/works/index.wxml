@@ -8,6 +8,13 @@
       <view class="spinner"></view>
     </view>
 
+    <view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+      <view class="load-error-mark">!</view>
+      <text class="empty-title">作品加载失败</text>
+      <text class="empty-sub">请检查网络后重试</text>
+      <button class="retry-btn" bindtap="loadWorks">重新加载</button>
+    </view>
+
     <!-- 空状态 -->
     <view wx:elif="{{works.length === 0}}" class="empty-card">
       <view class="empty-icon-wrap">
@@ -24,8 +31,8 @@
       <!-- 区域标题 -->
       <view class="section-head">
         <view class="section-titles">
-          <text class="section-title">最新动态</text>
-          <text class="section-sub">来自你已绑定美甲师的作品发布</text>
+          <text class="section-title">{{keyword ? keyword + '灵感' : '精选作品'}}</text>
+          <text class="section-sub">{{keyword ? '为你筛选相关风格作品' : '来自你已绑定美甲师的作品画册'}}</text>
         </view>
         <view wx:if="{{totalCount > 0}}" class="count-badge">
           <text class="count-text">{{totalCount}} 条动态</text>
@@ -69,12 +76,12 @@
         <!-- 左列 -->
         <view class="col">
           <view wx:for="{{leftCol}}" wx:key="id" class="card-img-wrap {{item.aspect}}" bindtap="viewWork" data-id="{{item.id}}">
-            <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="card-img" lazy-load />
+            <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="card-img" lazy-load aria-label="{{item.title}}" />
             <view wx:else class="card-img card-img-empty"></view>
             <view class="card-gradient"></view>
             <view class="card-top">
               <view class="card-tech-pill">
-                <image wx:if="{{item.technicianAvatarUrl}}" src="{{item.technicianAvatarUrl}}" mode="aspectFill" class="card-tech-av" binderror="onAvatarError" data-id="{{item.id}}" />
+                <image wx:if="{{item.technicianAvatarUrl}}" src="{{item.technicianAvatarUrl}}" mode="aspectFill" class="card-tech-av" binderror="onAvatarError" data-id="{{item.id}}" lazy-load aria-label="{{item.technicianName}}的头像" />
                 <view wx:else class="card-tech-av-fallback">
                   <text class="card-tech-av-char">{{item.techInitial}}</text>
                 </view>
@@ -110,12 +117,12 @@
         <!-- 右列 -->
         <view class="col">
           <view wx:for="{{rightCol}}" wx:key="id" class="card-img-wrap {{item.aspect}}" bindtap="viewWork" data-id="{{item.id}}">
-            <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="card-img" lazy-load />
+            <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="card-img" lazy-load aria-label="{{item.title}}" />
             <view wx:else class="card-img card-img-empty"></view>
             <view class="card-gradient"></view>
             <view class="card-top">
               <view class="card-tech-pill">
-                <image wx:if="{{item.technicianAvatarUrl}}" src="{{item.technicianAvatarUrl}}" mode="aspectFill" class="card-tech-av" binderror="onAvatarError" data-id="{{item.id}}" />
+                <image wx:if="{{item.technicianAvatarUrl}}" src="{{item.technicianAvatarUrl}}" mode="aspectFill" class="card-tech-av" binderror="onAvatarError" data-id="{{item.id}}" lazy-load aria-label="{{item.technicianName}}的头像" />
                 <view wx:else class="card-tech-av-fallback">
                   <text class="card-tech-av-char">{{item.techInitial}}</text>
                 </view>

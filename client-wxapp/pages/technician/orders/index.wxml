@@ -100,6 +100,7 @@
     show-scrollbar="{{false}}"
   >
     <view class="list-area">
+      <view wx:if="{{summary.conflicts}}" class="conflict-alert">检测到 {{summary.conflicts}} 个时间重叠的预约，请逐一核对并调整。</view>
       <view wx:if="{{loading}}" class="skeleton-list">
         <view wx:for="{{[1,2]}}" wx:key="*this" class="skel-card"></view>
       </view>
@@ -120,7 +121,7 @@
           <view class="trip-top">
             <text class="trip-time">{{item._clock}}</text>
             <view class="trip-avatar">
-              <image wx:if="{{item.customerAvatar}}" src="{{item.customerAvatar}}" mode="aspectFill" class="trip-avatar-img" />
+              <image wx:if="{{item.customerAvatar}}" src="{{item.customerAvatar}}" mode="aspectFill" class="trip-avatar-img" lazy-load aria-label="{{item.customerName || '客户'}}的头像" />
               <text wx:else class="trip-avatar-char">{{item._avatarChar}}</text>
             </view>
             <view class="trip-info">
@@ -131,6 +132,7 @@
           </view>
 
           <view wx:if="{{item.address}}" class="trip-addr">{{item.address}}</view>
+          <view wx:if="{{item._hasConflict}}" class="trip-conflict">与当日其他预约时间重叠</view>
 
           <view class="trip-actions">
             <view class="trip-btn trip-primary" catchtap="navigateToAddress" data-id="{{item.id}}">

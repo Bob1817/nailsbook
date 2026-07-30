@@ -4,11 +4,8 @@ Page({
   data: {
     designs: [],
     loading: true,
+    loadFailed: false,
     refreshing: false
-  },
-
-  onLoad() {
-    this.loadDesigns();
   },
 
   onShow() {
@@ -24,6 +21,7 @@ Page({
   },
 
   async loadDesigns() {
+    this.setData({ loading: true, loadFailed: false });
     try {
       const designs = await api.client.designs.list();
       this.setData({
@@ -33,11 +31,12 @@ Page({
           statusClass: this.getStatusClass(d.status),
           dateStr: this.formatDate(d.createdAt)
         })),
-        loading: false
+        loading: false,
+        loadFailed: false
       });
     } catch (err) {
       console.error('Failed to load designs:', err);
-      this.setData({ loading: false });
+      this.setData({ loading: false, loadFailed: true });
     }
   },
 

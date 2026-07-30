@@ -30,8 +30,8 @@
 }
 
 .nav-btn {
-  width: 64rpx;
-  height: 64rpx;
+  width: 88rpx;
+  height: 88rpx;
   border-radius: 50%;
   background: #f9fafb;
   display: flex;
@@ -61,7 +61,7 @@
   flex: 1;
   text-align: center;
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
   font-weight: 500;
 }
 
@@ -96,7 +96,7 @@
 }
 
 .day-past .day-num {
-  color: #d1d5db;
+  color: #767b84;
 }
 .day-past:active { background: transparent; }
 

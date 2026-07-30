@@ -1,0 +1,128 @@
+<nav-bar title="美照工作台" showBack/>
+<view class="page">
+  <view class="intro">
+    <text class="intro-kicker">MY NAIL MOMENTS</text>
+    <text class="intro-title">把你的美甲记录，创作成分享美照</text>
+    <text class="intro-copy">从已完成的预约中选取美甲师作品和你的照片，也可以从相册补充素材。</text>
+  </view>
+
+  <view class="section">
+    <view class="section-head">
+      <view><text class="step">01</text><text class="section-title">选择预约</text></view>
+      <view wx:if="{{appointments.length}}" class="text-action" bindtap="selectAllAppointments">{{selectedAppointmentIds.length === appointments.length ? '取消全选' : '全部选择'}}</view>
+    </view>
+    <text class="section-help">支持多选，照片会汇入下方作品库</text>
+    <view wx:if="{{loading}}" class="state-card">正在读取你的美甲记录…</view>
+    <scroll-view wx:elif="{{appointments.length}}" class="appointment-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+      <view class="appointment-row">
+        <view wx:for="{{appointments}}" wx:key="orderId" class="appointment-card {{item.selected ? 'selected' : ''}}" bindtap="toggleAppointment" data-id="{{item.orderId}}">
+          <image wx:if="{{item.coverUrl}}" class="appointment-cover" src="{{item.coverUrl}}" mode="aspectFill" lazy-load aria-label="{{item.title || '预约美甲'}}照片" />
+          <view wx:else class="appointment-cover empty-cover">NAIL</view>
+          <view class="appointment-info">
+            <text class="appointment-date">{{item.dateText}} · {{item.technicianName}}</text>
+            <text class="appointment-title">{{item.title}}</text>
+            <text class="appointment-count">{{item.photoCount}} 张关联照片</text>
+          </view>
+          <view class="select-mark">{{item.selected ? '✓' : ''}}</view>
+        </view>
+      </view>
+    </scroll-view>
+    <view wx:else class="state-card">
+      <text class="state-title">还没有可创作的预约</text>
+      <text class="state-copy">预约完成后，美甲师作品和你上传的照片会出现在这里；你也可以直接添加本地照片。</text>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-head">
+      <view><text class="step">02</text><text class="section-title">选择作品照片</text></view>
+      <text class="selection-count">已选 {{selectedPhotoIds.length}}/{{6}}</text>
+    </view>
+    <text class="section-help">轻触选择，长按图片可查看大图</text>
+    <view class="photo-grid">
+      <view class="add-photo" bindtap="choosePhoto">
+        <text class="add-icon">＋</text><text class="add-title">本地照片</text>
+      </view>
+      <view wx:for="{{libraryPhotos}}" wx:key="id" class="photo-cell {{item.selected ? 'selected' : ''}}" bindtap="togglePhoto" bindlongpress="previewPhoto" data-id="{{item.id}}" data-url="{{item.url}}">
+        <image class="photo-image" src="{{item.url}}" mode="aspectFill" lazy-load aria-label="可用于创作的美甲照片" />
+        <text class="source-badge">{{item.source}}</text>
+        <view class="photo-check">{{item.selected ? item.selectionIndex : ''}}</view>
+      </view>
+    </view>
+    <view wx:if="{{!libraryPhotos.length}}" class="library-tip">选择上方预约，或添加你手机里的美甲照片</view>
+    <view wx:if="{{selectedPhotos.length}}" class="selected-order">
+      <text class="selected-order-title">成片顺序</text>
+      <view wx:for="{{selectedPhotos}}" wx:key="id" class="selected-order-item">
+        <view class="selected-order-preview" catchtap="editPhotoCrop" data-id="{{item.id}}"><image class="selected-order-image" src="{{item.url}}" mode="aspectFill" style="{{item._previewStyle}}" aria-label="已选择的美甲照片"/></view>
+        <text class="selected-order-index">{{index + 1}}</text>
+        <view wx:if="{{selectedPhotos.length > 1}}" class="order-move {{index === 0 ? 'disabled' : ''}}" catchtap="movePhoto" data-id="{{item.id}}" data-direction="-1">前移</view>
+        <view wx:if="{{selectedPhotos.length > 1}}" class="order-move {{index === selectedPhotos.length - 1 ? 'disabled' : ''}}" catchtap="movePhoto" data-id="{{item.id}}" data-direction="1">后移</view>
+        <view class="order-move" catchtap="editPhotoCrop" data-id="{{item.id}}">裁剪</view>
+      </view>
+    </view>
+    <view wx:if="{{editingPhotoId}}" class="crop-editor">
+      <view class="crop-editor-head"><text>调整当前照片</text><view class="crop-reset" bindtap="resetPhotoTransform">恢复默认</view></view>
+      <view class="crop-control"><view class="crop-label"><text>缩放</text><text>{{editingTransform.scale}}%</text></view><slider value="{{editingTransform.scale}}" min="100" max="180" data-field="scale" bindchanging="changePhotoTransform" bindchange="changePhotoTransform" activeColor="#b95082"/></view>
+      <view class="crop-control"><view class="crop-label"><text>水平位置</text><text>{{editingTransform.offsetX}}</text></view><slider value="{{editingTransform.offsetX}}" min="-50" max="50" data-field="offsetX" bindchanging="changePhotoTransform" bindchange="changePhotoTransform" activeColor="#b95082"/></view>
+      <view class="crop-control"><view class="crop-label"><text>垂直位置</text><text>{{editingTransform.offsetY}}</text></view><slider value="{{editingTransform.offsetY}}" min="-50" max="50" data-field="offsetY" bindchanging="changePhotoTransform" bindchange="changePhotoTransform" activeColor="#b95082"/></view>
+      <view class="crop-done" bindtap="finishPhotoTransform">完成调整</view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-head"><view><text class="step">03</text><text class="section-title">画面风格</text></view></view>
+    <scroll-view class="option-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+      <view class="option-row">
+        <view wx:for="{{templates}}" wx:key="id" class="template-card {{selectedTemplate === item.id ? 'selected' : ''}}" bindtap="selectTemplate" data-id="{{item.id}}">
+          <view class="template-swatch swatch-{{item.id}}"><view class="swatch-frame"></view></view>
+          <text class="option-name">{{item.name}}</text><text class="option-sub">{{item.subtitle}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <view class="section compact">
+    <view class="section-head"><view><text class="step">04</text><text class="section-title">色彩滤镜</text></view></view>
+    <scroll-view class="option-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+      <view class="filter-row">
+        <view wx:for="{{filters}}" wx:key="id" class="filter-item {{selectedFilter === item.id ? 'selected' : ''}}" bindtap="selectFilter" data-id="{{item.id}}">
+          <view class="filter-dot" style="background:{{item.color}}"></view><text>{{item.name}}</text>
+        </view>
+      </view>
+    </scroll-view>
+    <view wx:if="{{selectedFilter !== 'original'}}" class="intensity-control">
+      <view class="intensity-head"><text>滤镜强度</text><text>{{filterIntensity}}%</text></view>
+      <slider value="{{filterIntensity}}" min="0" max="100" activeColor="#b95082" backgroundColor="#eadfe4" block-size="22" bindchange="changeFilterIntensity"/>
+    </view>
+  </view>
+
+  <view class="section compact">
+    <view class="section-head"><view><text class="step">05</text><text class="section-title">分享标题</text></view></view>
+    <input class="poster-title-input" value="{{posterTitle}}" maxlength="16" placeholder="输入成片标题" bindinput="changePosterTitle"/>
+    <picker mode="date" value="{{posterDate}}" bindchange="changePosterDate"><view class="poster-date-picker"><text>记录日期</text><text>{{posterDate}} ›</text></view></picker>
+    <textarea class="share-copy-input" value="{{customShareCopy}}" maxlength="120" auto-height placeholder="可选：输入自己的朋友圈文案" bindinput="changeShareCopy"/>
+    <text class="section-help">标题会显示在生成的分享美照中</text>
+  </view>
+
+  <view wx:if="{{generatedPath}}" class="result-section">
+    <text class="result-kicker">CREATED FOR YOU</text><text class="result-title">你的分享美照</text>
+    <image class="result-image" src="{{generatedPath}}" mode="widthFix" aria-label="生成的分享美照" />
+    <view class="continue-edit" bindtap="continueEditing">返回继续编辑</view>
+    <view class="share-row">
+      <view class="secondary-btn" bindtap="saveForMoments">保存并发朋友圈</view>
+      <button class="secondary-btn share-btn" open-type="share">分享给好友</button>
+    </view>
+    <view class="copy-card">
+      <view class="copy-head"><text class="copy-label">朋友圈文案</text><view class="copy-btn" bindtap="copyShareText" data-type="moments">复制</view></view>
+      <text class="copy-content">{{customShareCopy || shareCopies.moments}}</text>
+    </view>
+  </view>
+
+  <view class="privacy-note">照片仅在本机完成排版与滤镜处理，不上传至生成式 AI 服务。</view>
+  <view class="action-space"></view>
+  <view class="bottom-action">
+    <view class="action-summary"><text>已选 {{selectedPhotoIds.length}} 张</text><text class="action-sub">最多 6 张</text></view>
+    <view class="generate-btn {{!selectedPhotoIds.length || generating ? 'disabled' : ''}}" bindtap="generatePhoto">{{generating ? '正在生成…' : generatedPath ? '重新生成' : '生成分享美照'}}</view>
+  </view>
+  <canvas canvas-id="posterCanvas" class="poster-canvas"></canvas>
+</view>

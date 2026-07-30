@@ -1,4 +1,6 @@
 import {
+  BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -209,12 +211,15 @@ export class CustomersService {
   }
 
   async getDistinctTags(technicianId: number) {
-    const customers = await this.prisma.customer.findMany({
-      where: { technicianId, tags: { not: null } },
-      select: { tags: true },
-    });
+    const [customers, templates] = await Promise.all([
+      this.prisma.customer.findMany({
+        where: { technicianId, tags: { not: null } },
+        select: { tags: true },
+      }),
+      this.getTagTemplates(technicianId),
+    ]);
 
-    const tagSet = new Set<string>();
+    const tagSet = new Set<string>(templates.map((item) => item.name));
     for (const c of customers) {
       if (c.tags) {
         c.tags
@@ -225,5 +230,68 @@ export class CustomersService {
       }
     }
     return [...tagSet].sort();
+  }
+
+  async getTagTemplates(technicianId: number) {
+    const technician = await this.prisma.technician.findUnique({
+      where: { id: technicianId },
+      select: { customTags: true },
+    });
+    if (!technician) throw new NotFoundException('美甲师不存在');
+    return this.parseTagTemplates(technician.customTags);
+  }
+
+  async createTagTemplate(technicianId: number, rawName: string) {
+    const name = (rawName || '').trim();
+    if (!name) throw new BadRequestException('标签名称不能为空');
+    if (name.length > 12) throw new BadRequestException('标签名称最多12个字');
+    const templates = await this.getTagTemplates(technicianId);
+    if (templates.some((item) => item.name === name)) {
+      throw new ConflictException('标签已存在');
+    }
+    if (templates.length >= 30) throw new BadRequestException('最多创建30个标签');
+    const created = {
+      id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+      name,
+    };
+    await this.saveTagTemplates(technicianId, templates.concat(created));
+    return created;
+  }
+
+  async deleteTagTemplate(technicianId: number, templateId: string) {
+    const templates = await this.getTagTemplates(technicianId);
+    const next = templates.filter((item) => item.id !== templateId);
+    if (next.length === templates.length) throw new NotFoundException('标签不存在');
+    await this.saveTagTemplates(technicianId, next);
+    return { success: true };
+  }
+
+  private parseTagTemplates(value: string | null): Array<{ id: string; name: string; color?: string }> {
+    if (!value) return [];
+    try {
+      const parsed = JSON.parse(value);
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .map((item, index) => typeof item === 'string'
+          ? { id: `legacy-${index}`, name: item.trim() }
+          : {
+              id: String(item.id || `legacy-${index}`),
+              name: String(item.name || '').trim(),
+              ...(item.color ? { color: String(item.color) } : {}),
+            })
+        .filter((item) => item.name);
+    } catch {
+      return [];
+    }
+  }
+
+  private async saveTagTemplates(
+    technicianId: number,
+    templates: Array<{ id: string; name: string; color?: string }>,
+  ) {
+    await this.prisma.technician.update({
+      where: { id: technicianId },
+      data: { customTags: JSON.stringify(templates) },
+    });
   }
 }

@@ -7,7 +7,9 @@
 
   <!-- 错误状态 -->
   <view wx:elif="{{error}}" class="error-wrap">
-    <text class="error-text">作品不存在或已下架</text>
+    <text class="error-text">{{errorMessage}}</text>
+    <text wx:if="{{canRetry}}" class="error-sub">请检查网络后重新加载</text>
+    <button wx:if="{{canRetry}}" class="btn-retry" bindtap="loadWork">重新加载</button>
     <button class="btn-back" bindtap="goBack">返回</button>
   </view>
 
@@ -28,7 +30,7 @@
           bindtap="previewImage"
           data-url="{{item}}"
         >
-          <image src="{{item}}" mode="aspectFill" class="work-image" />
+          <image src="{{item}}" mode="aspectFill" class="work-image" aria-label="{{work.title || '美甲作品'}}第{{index + 1}}张图片" />
         </swiper-item>
       </swiper>
 
@@ -64,7 +66,7 @@
       <!-- 美甲师信息 -->
       <view wx:if="{{work.technician}}" class="tech-section" bindtap="goToArtist">
         <view class="tech-avatar-wrap">
-          <image wx:if="{{work.technician.avatarUrl}}" src="{{work.technician.avatarUrl}}" mode="aspectFill" class="tech-avatar" />
+        <image wx:if="{{work.technician.avatarUrl}}" src="{{work.technician.avatarUrl}}" mode="aspectFill" class="tech-avatar" aria-label="{{work.technician.name || '美甲师'}}的头像" />
           <text wx:else class="tech-avatar-text">{{work.technician.name[0]}}</text>
         </view>
         <view class="tech-info">
@@ -105,7 +107,7 @@
             class="comment-item"
           >
             <view class="comment-avatar-wrap">
-              <image wx:if="{{item.user.avatarUrl}}" src="{{item.user.avatarUrl}}" mode="aspectFill" class="comment-avatar" />
+          <image wx:if="{{item.user.avatarUrl}}" src="{{item.user.avatarUrl}}" mode="aspectFill" class="comment-avatar" lazy-load aria-label="{{item.user.nickname || '用户'}}的头像" />
               <text wx:else class="comment-avatar-text">{{item.user.name[0]}}</text>
             </view>
             <view class="comment-content">
@@ -129,7 +131,7 @@
       <button class="comment-input" bindtap="goToLogin">
         <text class="input-placeholder">添加评论…</text>
       </button>
-      <view class="book-same-btn" bindtap="goToLogin">
+      <view class="book-same-btn" bindtap="bookSameStyle">
         <text class="book-same-text">预约同款</text>
       </view>
     </view>

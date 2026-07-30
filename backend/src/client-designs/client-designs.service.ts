@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CreateClientDesignDto } from './dto/create-client-design.dto';
 import { UpdateClientDesignDto } from './dto/update-client-design.dto';
@@ -9,7 +13,7 @@ export class ClientDesignsService {
 
   async create(clientUserId: number, dto: CreateClientDesignDto) {
     // Get default binding for creation
-    const binding = await this.prisma.clientTechBinding.findFirst({
+    let binding = await this.prisma.clientTechBinding.findFirst({
       where: {
         clientId: clientUserId,
         status: 'active',
@@ -19,13 +23,13 @@ export class ClientDesignsService {
 
     if (!binding) {
       // Fallback to any active binding
-      const anyBinding = await this.prisma.clientTechBinding.findFirst({
+      binding = await this.prisma.clientTechBinding.findFirst({
         where: {
           clientId: clientUserId,
           status: 'active',
         },
       });
-      if (!anyBinding) {
+      if (!binding) {
         throw new NotFoundException('客户未绑定美甲师');
       }
     }
@@ -121,6 +125,9 @@ export class ClientDesignsService {
       data: {
         title: dto.title ?? design.title,
         description: dto.description ?? design.description,
+        images: dto.imageUrls
+          ? JSON.stringify(dto.imageUrls.slice(0, 5))
+          : design.images,
       },
       include: {
         technician: {
@@ -161,6 +168,93 @@ export class ClientDesignsService {
     });
 
     return { success: true };
+  }
+
+  async acceptQuote(clientUserId: number, id: number) {
+    const design = await this.prisma.clientDesignRequest.findFirst({
+      where: { id, clientId: clientUserId },
+    });
+    if (!design) throw new NotFoundException('设计需求不存在');
+    if (design.status !== 'quoted' || !design.quotePrice) {
+      throw new BadRequestException('当前设计尚未形成有效报价');
+    }
+    const updated = await this.prisma.clientDesignRequest.update({
+      where: { id },
+      data: { status: 'accepted' },
+      include: {
+        technician: {
+          select: {
+            id: true,
+            name: true,
+            avatarUrl: true,
+            homeService: true,
+            shopService: true,
+            shopAddresses: true,
+          },
+        },
+      },
+    });
+    return this.mapDesign(updated);
+  }
+
+  async rejectQuote(clientUserId: number, id: number) {
+    const design = await this.prisma.clientDesignRequest.findFirst({
+      where: { id, clientId: clientUserId },
+    });
+    if (!design) throw new NotFoundException('设计需求不存在');
+    if (design.status !== 'quoted') {
+      throw new BadRequestException('当前设计没有可拒绝的报价');
+    }
+    return this.mapDesign(
+      await this.prisma.clientDesignRequest.update({
+        where: { id },
+        data: { status: 'rejected' },
+      }),
+    );
+  }
+
+  async findForTechnician(technicianId: number) {
+    const designs = await this.prisma.clientDesignRequest.findMany({
+      where: { techId: technicianId },
+      include: {
+        client: {
+          select: { id: true, nickname: true, phone: true, avatarUrl: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return designs.map((design) => ({
+      ...this.mapDesign(design),
+      client: design.client,
+    }));
+  }
+
+  async quoteForTechnician(
+    technicianId: number,
+    id: number,
+    price: number,
+    remark?: string,
+  ) {
+    const design = await this.prisma.clientDesignRequest.findFirst({
+      where: { id, techId: technicianId },
+    });
+    if (!design) throw new NotFoundException('设计需求不存在');
+    if (!['pending_quote', 'rejected', 'quoted'].includes(design.status)) {
+      throw new BadRequestException('当前状态不能重新报价');
+    }
+    if (!Number.isFinite(price) || price <= 0) {
+      throw new BadRequestException('请输入有效报价');
+    }
+    return this.mapDesign(
+      await this.prisma.clientDesignRequest.update({
+        where: { id },
+        data: {
+          quotePrice: price,
+          quoteRemark: remark?.trim() || null,
+          status: 'quoted',
+        },
+      }),
+    );
   }
 
   async switchTechnician(clientUserId: number, id: number, techId: number) {

@@ -4,13 +4,19 @@
   padding: 24rpx 32rpx calc(180rpx + env(safe-area-inset-bottom));
 }
 
-/* ===== 空状态 ===== */
-.empty {
+/* ===== 加载、错误与空状态 ===== */
+.loading-wrap { display:flex; justify-content:center; padding:200rpx 0; }
+.loading-spinner { width:60rpx; height:60rpx; border:4rpx solid #ffd0de; border-top-color:#ff6b8a; border-radius:50%; animation:spin .8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.empty, .load-error {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 180rpx 0;
 }
+.load-error-mark { width:88rpx; height:88rpx; margin-bottom:28rpx; border-radius:50%; background:#fff0f4; color:#c75b83; font-size:44rpx; line-height:88rpx; text-align:center; }
+.retry-btn { min-height:88rpx; margin:48rpx 0 0; padding:0 56rpx; border:0; border-radius:44rpx; background:#1f2937; color:#fff; font-size:28rpx; line-height:88rpx; }
+.retry-btn::after { border:0; }
 .empty-icon {
   width: 140rpx;
   height: 140rpx;
@@ -47,7 +53,7 @@
 }
 .empty-sub {
   font-size: 26rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 /* ===== 卡片列表 ===== */
@@ -117,7 +123,8 @@
   display: flex;
   align-items: center;
   gap: 12rpx;
-  padding: 6rpx 8rpx 6rpx 0;
+  min-height: 88rpx;
+  padding: 0 8rpx 0 0;
 }
 .radio-row:active { opacity: 0.7; }
 .radio {
@@ -153,7 +160,8 @@
   gap: 8rpx;
   font-size: 26rpx;
   color: #374151;
-  padding: 10rpx 24rpx;
+  min-height: 88rpx;
+  padding: 0 24rpx;
   border-radius: 999rpx;
   background: #f3f4f6;
 }

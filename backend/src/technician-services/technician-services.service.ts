@@ -10,6 +10,8 @@ type ServiceItem = {
   name: string;
   description?: string;
   category: ServiceCategory;
+  price?: number;
+  durationMinutes?: number;
   isActive: boolean;
   sortOrder: number;
   createdAt: string;
@@ -20,12 +22,16 @@ type CreateServiceDto = {
   name: string;
   description?: string;
   category: ServiceCategory;
+  price?: number;
+  durationMinutes?: number;
 };
 
 type UpdateServiceDto = {
   name?: string;
   description?: string;
   category?: ServiceCategory;
+  price?: number;
+  durationMinutes?: number;
   isActive?: boolean;
   sortOrder?: number;
 };
@@ -64,6 +70,8 @@ export class TechnicianServicesService {
       name: dto.name,
       description: dto.description,
       category: dto.category,
+      price: dto.price,
+      durationMinutes: dto.durationMinutes,
       isActive: true,
       sortOrder: services.length + 1,
       createdAt: new Date().toISOString(),

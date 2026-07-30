@@ -5,27 +5,29 @@ const { normalizeSchedule, genId, daysSummary, DAY_KEYS, TIME_OPTIONS } = requir
 
 // 我的预约 - 状态快捷入口
 const ORDER_SHORTCUTS = [
-  { status: 'pending_quote',   label: '待报价', icon: '💬' },
-  { status: 'pending_confirm', label: '待确认', icon: '⏳' },
-  { status: 'pending_home',    label: '待上门', icon: '🚗' },
-  { status: 'pending_shop',    label: '待到店', icon: '🏪' },
-  { status: 'in_progress',     label: '服务中', icon: '💅' }
+  { status: 'pending_quote',   label: '待报价' },
+  { status: 'pending_confirm', label: '待确认' },
+  { status: 'pending_home',    label: '待上门' },
+  { status: 'pending_shop',    label: '待到店' },
+  { status: 'in_progress',     label: '服务中' }
 ];
 
 // 工具入口（仅保留有对应页面的）
 const TOOLS = [
-  { key: 'services',    label: '服务管理', icon: '💅' },
-  { key: 'works',       label: '作品管理', icon: '🖼️' },
-  { key: 'homeService', label: '上门设置', icon: '🚗' },
-  { key: 'serviceTime', label: '服务时间', icon: '⏰' },
-  { key: 'shops',       label: '店铺管理', icon: '🏪' },
-  { key: 'tags',        label: '标签管理', icon: '🏷️' },
-  { key: 'subscription',label: '订阅套餐', icon: '⭐' }
+  { key: 'services',    label: '服务管理' },
+  { key: 'works',       label: '作品管理' },
+  { key: 'designs',     label: '设计需求' },
+  { key: 'homeService', label: '上门设置' },
+  { key: 'serviceTime', label: '服务时间' },
+  { key: 'shops',       label: '店铺管理' },
+  { key: 'tags',        label: '标签管理' },
+  { key: 'subscription',label: '订阅套餐' }
 ];
 
 const TOOL_ROUTES = {
   services:     '/pages/technician/services/index',
   works:        '/pages/technician/works/index',
+  designs:      '/pages/technician/design-requests/index',
   homeService:  '/pages/technician/home-service-settings/index',
   serviceTime:  '/pages/technician/service-time/index',
   shops:        '/pages/technician/shop-management/index',
@@ -38,7 +40,7 @@ Page({
     userInfo: {},
     isAccepting: false,
     canAcceptOrders: false,  // 是否满足接单前置条件（已开启上门或到店服务）
-    stats: { todayOrders: 0, monthOrders: 0, pendingTotal: 0, customers: 0, newCustomers: 0, works: 0 },
+    stats: { todayOrders: 0, monthOrders: 0, pendingTotal: 0, customers: 0, newCustomers: 0, works: 0, monthlyRevenue: '¥0', rating: '待积累' },
     orderShortcuts: ORDER_SHORTCUTS.map((s) => ({ ...s, count: 0 })),
     tools: TOOLS,
 
@@ -160,6 +162,36 @@ Page({
     if (this._statsLoading) return;
     this._statsLoading = true;
     try {
+      const overview = await api.technician.insights.overview().catch(() => null);
+      if (overview) {
+        const byStatus = overview.bookings.byStatus || {};
+        this.setData({
+          stats: {
+            todayOrders: overview.bookings.today || 0,
+            monthOrders: overview.bookings.monthCompleted || 0,
+            pendingTotal: overview.bookings.pending || 0,
+            customers: overview.customers.total || 0,
+            newCustomers: overview.customers.newThisMonth || 0,
+            works: overview.works.total || 0,
+            monthlyRevenue: `¥${Number(overview.revenue.monthConfirmed || 0).toFixed(0)}`,
+            averageTicket: overview.revenue.averageTicket == null
+              ? '待积累'
+              : `¥${Number(overview.revenue.averageTicket).toFixed(0)}`,
+            repeatRate: overview.customers.repeatRate == null
+              ? '待积累'
+              : `${(Number(overview.customers.repeatRate) * 100).toFixed(0)}%`,
+            rating: overview.rating.average == null
+              ? '待积累'
+              : Number(overview.rating.average).toFixed(1)
+          },
+          orderShortcuts: ORDER_SHORTCUTS.map((item) => ({
+            ...item,
+            count: byStatus[item.status] || 0
+          }))
+        });
+        return;
+      }
+
       const [ordersRes, customersRes, worksRes] = await Promise.all([
         api.technician.orders.list({}).catch(() => []),
         api.technician.customers.list({}).catch(() => []),
@@ -175,6 +207,8 @@ Page({
 
       let todayOrders = 0;
       let monthOrders = 0;
+      let monthlyRevenue = 0;
+      const ratings = [];
       const counts = {};
 
       orders.forEach((o) => {
@@ -182,7 +216,11 @@ Page({
         const t = parseDate(o.startTime);
         if (!t || o.status === 'cancelled') return;
         if (isSameDay(t, now)) todayOrders += 1;
-        if (t >= monthStart) monthOrders += 1;
+        if (t >= monthStart) {
+          monthOrders += 1;
+          if (o.status === 'completed') monthlyRevenue += Number(o.revenue?.amount ?? o.quotePrice ?? 0);
+        }
+        if (o.review && Number(o.review.rating) > 0) ratings.push(Number(o.review.rating));
       });
 
       // 待处理：待报价 + 待我确认
@@ -206,7 +244,9 @@ Page({
           pendingTotal,
           customers: customers.length,
           newCustomers,
-          works: works.length
+          works: works.length,
+          monthlyRevenue: `¥${monthlyRevenue.toFixed(0)}`,
+          rating: ratings.length ? (ratings.reduce((sum, value) => sum + value, 0) / ratings.length).toFixed(1) : '待积累'
         },
         orderShortcuts
       });

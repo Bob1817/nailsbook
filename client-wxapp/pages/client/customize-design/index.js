@@ -2,12 +2,12 @@ const api = require('../../../services/api');
 
 // 基础款式选项
 const baseStyles = [
-  { id: 'french', name: '法式', icon: '🇫🇷', image: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=400&q=80' },
-  { id: 'gradient', name: '渐变', icon: '🌸', image: 'https://images.unsplash.com/photo-1519014816548-bf5fe059798b?w=400&q=80' },
-  { id: 'cat-eye', name: '猫眼', icon: '✨', image: 'https://images.unsplash.com/photo-1632345031435-8727f6897d53?w=400&q=80' },
-  { id: 'nude', name: '裸色', icon: '🤎', image: 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=400&q=80' },
-  { id: 'geometric', name: '几何', icon: '🔷', image: 'https://images.unsplash.com/photo-1610992015732-2449b76344bc?w=400&q=80' },
-  { id: 'floral', name: '花卉', icon: '🌺', image: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=400&q=80' }
+  { id: 'french', name: '法式', image: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=400&q=80' },
+  { id: 'gradient', name: '渐变', image: 'https://images.unsplash.com/photo-1519014816548-bf5fe059798b?w=400&q=80' },
+  { id: 'cat-eye', name: '猫眼', image: 'https://images.unsplash.com/photo-1632345031435-8727f6897d53?w=400&q=80' },
+  { id: 'nude', name: '裸色', image: 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=400&q=80' },
+  { id: 'geometric', name: '几何', image: 'https://images.unsplash.com/photo-1610992015732-2449b76344bc?w=400&q=80' },
+  { id: 'floral', name: '花卉', image: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=400&q=80' }
 ];
 
 // 甲型选项
@@ -36,14 +36,14 @@ const colorOptions = [
 
 // 元素/配饰选项
 const elementOptions = [
-  { id: 'rhinestone', name: '水钻', icon: '💎' },
-  { id: 'pearl', name: '珍珠', icon: '⚪' },
-  { id: 'glitter', name: '闪粉', icon: '✨' },
-  { id: 'foil', name: '金箔', icon: '🥇' },
-  { id: 'sticker', name: '贴纸', icon: '🏷️' },
-  { id: 'line', name: '线条', icon: '📏' },
-  { id: 'dot', name: '波点', icon: '🔘' },
-  { id: 'marble', name: '大理石', icon: '🪨' }
+  { id: 'rhinestone', name: '水钻' },
+  { id: 'pearl', name: '珍珠' },
+  { id: 'glitter', name: '闪粉' },
+  { id: 'foil', name: '金箔' },
+  { id: 'sticker', name: '贴纸' },
+  { id: 'line', name: '线条' },
+  { id: 'dot', name: '波点' },
+  { id: 'marble', name: '大理石' }
 ];
 
 Page({

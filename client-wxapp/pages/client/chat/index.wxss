@@ -46,7 +46,8 @@ page {
   display: inline-flex;
   align-items: center;
   gap: 10rpx;
-  padding: 16rpx 32rpx;
+  min-height: 88rpx;
+  padding: 0 32rpx;
   border-radius: 40rpx;
   border: 2rpx solid #efe4e8;
   background: #ffffff;
@@ -222,7 +223,7 @@ page {
 
 .msg-time {
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
   font-weight: 400;
 }
 
@@ -259,6 +260,10 @@ page {
   border: 1rpx solid rgba(0, 0, 0, 0.03);
   box-shadow: 0 20rpx 60rpx rgba(15, 23, 42, 0.08), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
 }
+.load-error { margin:80rpx 0; padding:72rpx 48rpx; border:1rpx solid rgba(0,0,0,.03); border-radius:32rpx; background:rgba(255,255,255,.86); box-shadow:0 20rpx 60rpx rgba(15,23,42,.08); display:flex; flex-direction:column; align-items:center; gap:16rpx; text-align:center; }
+.load-error-mark { width:88rpx; height:88rpx; margin-bottom:12rpx; border-radius:50%; background:#fff0f4; color:#c75b83; font-size:44rpx; line-height:88rpx; text-align:center; }
+.retry-btn { min-height:88rpx; margin:28rpx 0 0; padding:0 56rpx; border:0; border-radius:44rpx; background:#1f2937; color:#fff; font-size:28rpx; line-height:88rpx; }
+.retry-btn::after { border:0; }
 
 .empty-icon-wrap {
   width: 128rpx;
@@ -376,8 +381,8 @@ page {
 }
 
 .modal-close {
-  width: 64rpx;
-  height: 64rpx;
+  width: 88rpx;
+  height: 88rpx;
   border-radius: 50%;
   background: #f3f4f6;
   display: flex;
@@ -442,12 +447,12 @@ page {
 
 .modal-meta-text {
   font-size: 24rpx;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 .modal-meta-dot {
   font-size: 24rpx;
-  color: #d1d5db;
+  color: #767b84;
 }
 
 .modal-actions {

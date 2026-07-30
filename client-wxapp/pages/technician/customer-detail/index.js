@@ -29,7 +29,10 @@ function genderText(g) {
 Page({
   data: {
     customer: null,
+    customerId: '',
     loading: true,
+    loadFailed: false,
+    loadErrorText: '',
 
     allTags: [],          // 该技师所有 distinct 标签
 
@@ -43,8 +46,10 @@ Page({
 
   onLoad(options) {
     this.customerId = options.id;
+    this.setData({ customerId: this.customerId || '' });
     this.loadAllTags();
-    this.loadCustomer();
+    if (this.customerId) this.loadCustomer();
+    else this.setData({ loading: false, loadFailed: true, loadErrorText: '客户参数无效' });
   },
 
   onShow() {
@@ -65,7 +70,9 @@ Page({
 
   // ---------- 详情 ----------
   async loadCustomer() {
-    this.setData({ loading: true });
+    if (this._loadingCustomer || !this.customerId) return;
+    this._loadingCustomer = true;
+    this.setData({ loading: true, loadFailed: false, loadErrorText: '' });
     try {
       const raw = await api.technician.customers.detail(this.customerId);
 
@@ -96,6 +103,15 @@ Page({
       const customer = {
         ...raw,
         orders,
+        relatedWorks: (raw.relatedWorks || []).map(work => ({
+          ...work,
+          _dateText: work.serviceDate ? formatBookingDate(work.serviceDate) : '',
+          _permissionText: [
+            work.permissions && work.permissions.canShare ? '分享' : '',
+            work.permissions && work.permissions.canFavorite ? '收藏' : '',
+            work.permissions && work.permissions.canComment ? '评论' : ''
+          ].filter(Boolean).join(' · ') || '仅查看'
+        })),
         _tags: tags,
         _displayName: phoneLike ? '未设置名称' : (raw.name || '未设置名称'),
         _initial: phoneLike ? '客' : ((raw.name && raw.name[0]) || '客'),
@@ -109,10 +125,11 @@ Page({
           : '暂无'
       };
 
-      this.setData({ customer, loading: false });
+      this.setData({ customer, loading: false, loadFailed: false });
     } catch (err) {
-      this.setData({ loading: false });
-      wx.showToast({ title: err.message || '加载失败', icon: 'none' });
+      this.setData({ loading: false, loadFailed: true, loadErrorText: '客户资料暂时无法加载' });
+    } finally {
+      this._loadingCustomer = false;
     }
   },
 
@@ -137,9 +154,18 @@ Page({
     wx.navigateTo({ url: `/pages/technician/order-detail/index?id=${id}` });
   },
 
+  goWorkDetail(e) {
+    wx.navigateTo({ url: `/pages/technician/work-detail/index?id=${e.currentTarget.dataset.id}` });
+  },
+
+  createExclusiveWork() {
+    wx.navigateTo({ url: `/pages/technician/work-edit/index?customerId=${this.customerId}` });
+  },
+
   newOrder() {
+    const customer = this.data.customer;
     wx.navigateTo({
-      url: `/pages/technician/orders/index?action=new&customerId=${this.customerId}`
+      url: `/pages/technician/chat-detail/index?clientId=${this.customerId}&clientName=${encodeURIComponent(customer._displayName)}`
     });
   },
 

@@ -55,12 +55,15 @@ Page({
     tabs: [],
     unreadCount: 0,
     loading: true,
+    loadFailed: false,
     searchText: '',
     selectedNotification: null,
     showNewChat: false,
     customers: [],
     filteredCustomers: [],
-    customerSearch: ''
+    customerSearch: '',
+    customerLoading: true,
+    customerLoadFailed: false
   },
 
   onLoad: function() {
@@ -83,7 +86,7 @@ Page({
 
   loadInbox: function() {
     var self = this;
-    self.setData({ loading: true });
+    self.setData({ loading: true, loadFailed: false });
     self._loaded = true;
 
     return api.chat.conversations('technician', { timeout: 15000, silent: true }).then(function(conversations) {
@@ -235,14 +238,14 @@ Page({
           tabs: tabs,
           unreadCount: unreadCount,
           loading: false,
+          loadFailed: false,
           activeTab: activeTab
         });
         self._applyFilter();
       });
     }).catch(function(err) {
       console.error('Load inbox error:', err);
-      self.setData({ loading: false });
-      wx.showToast({ title: '加载失败', icon: 'none' });
+      self.setData({ loading: false, loadFailed: true });
     });
   },
 
@@ -353,6 +356,7 @@ Page({
   // ---- 新建对话 ----
   loadCustomers: function() {
     var self = this;
+    self.setData({ customerLoading: true, customerLoadFailed: false });
     api.technician.customers.list().then(function(res) {
       var list = [];
       if (Array.isArray(res)) list = res;
@@ -371,8 +375,10 @@ Page({
           hasConversation: false
         });
       }
-      self.setData({ customers: customers, filteredCustomers: customers });
-    }).catch(function() {});
+      self.setData({ customers: customers, filteredCustomers: customers, customerLoading: false, customerLoadFailed: false });
+    }).catch(function() {
+      self.setData({ customerLoading: false, customerLoadFailed: true });
+    });
   },
 
   openNewChat: function() {

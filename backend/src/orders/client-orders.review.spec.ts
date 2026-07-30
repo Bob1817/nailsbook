@@ -127,4 +127,24 @@ describe('ClientOrdersService 服务评价', () => {
       data: { clientPhotos: '["/a.jpg","/b.jpg"]' },
     });
   });
+
+  it('仅允许客户为自己的已完成订单保存记录备注', async () => {
+    prisma.order.findFirst.mockResolvedValueOnce(null);
+    await expect(
+      service.saveClientRecordNote(11, 99, '喜欢这次配色'),
+    ).rejects.toBeInstanceOf(NotFoundException);
+
+    prisma.order.findFirst.mockResolvedValueOnce({
+      id: 41,
+      status: 'completed',
+    });
+    prisma.order.update.mockResolvedValueOnce({ id: 41 });
+    await expect(
+      service.saveClientRecordNote(11, 41, '  喜欢这次配色  '),
+    ).resolves.toEqual({ orderId: 41, note: '喜欢这次配色' });
+    expect(prisma.order.update).toHaveBeenCalledWith({
+      where: { id: 41 },
+      data: { clientRecordNote: '喜欢这次配色' },
+    });
+  });
 });

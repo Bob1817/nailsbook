@@ -46,6 +46,13 @@
       <view class="loading-spinner"></view>
     </view>
 
+    <view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+      <view class="load-error-mark">!</view>
+      <text class="empty-title">设计记录加载失败</text>
+      <text class="empty-desc">请检查网络后重试</text>
+      <button class="retry-btn" bindtap="loadDesigns">重新加载</button>
+    </view>
+
     <!-- 空状态 -->
     <view wx:elif="{{designs.length === 0}}" class="empty-wrap">
       <view class="empty-icon-wrap">
@@ -70,6 +77,8 @@
           src="{{item.imageUrls[0]}}"
           mode="aspectFill"
           class="design-img"
+          lazy-load
+          aria-label="{{item.title || '美甲设计'}}"
         />
         <view wx:else class="design-img-empty">
           <view class="empty-img-icon-dot"></view>
