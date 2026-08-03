@@ -6,6 +6,7 @@ import {
   Body,
   Param,
   Query,
+  Req,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -39,6 +40,14 @@ export class TechnicianSubscriptionsPublicController {
   @ApiResponse({ status: 200, description: '返回套餐列表' })
   findPlans() {
     return this.subscriptionsService.findPlans();
+  }
+
+  @Get('current')
+  @ApiOperation({ summary: '获取当前美甲师订阅、权益、用量和额度状态' })
+  current(@Req() request: { user: { technicianId: number } }) {
+    return this.subscriptionsService.getCurrentForTechnician(
+      request.user.technicianId,
+    );
   }
 }
 

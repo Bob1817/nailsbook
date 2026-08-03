@@ -1,0 +1,37 @@
+<nav-bar title="邀请基金" showBack/>
+<view class="page">
+  <view wx:if="{{loading}}" class="state-card">加载中...</view>
+  <view wx:elif="{{loadFailed}}" class="state-card">
+    <text>活动配置暂时无法加载</text>
+    <view class="retry-btn" bindtap="loadCampaign">重新加载</view>
+  </view>
+  <block wx:else>
+    <view class="notice-card notice-active">
+      <text class="notice-title">邀请奖励规则</text>
+      <text class="notice-text">{{rewardNotice}}</text>
+    </view>
+
+    <view class="rule-card">
+      <text class="rule-title">计算口径</text>
+      <text class="rule-text">有效实付金额为订单报价减去该订单使用的美甲基金。奖励在被邀请客户首个有效订单完成后发放，同一客户在同一美甲师下只奖励一次。</text>
+    </view>
+
+    <view class="card">
+      <text class="rule-title">推荐状态（{{relations.length}}）</text>
+      <text wx:if="{{!relations.length}}" class="rule-text">还没有直接推荐记录</text>
+      <view wx:for="{{relations}}" wx:key="id" class="relation-row">
+        <text>{{item.referrer.nickname || '客户'}} → {{item.referred.nickname || '新客户'}}</text>
+        <text class="relation-status">{{item.status === 'pending_first_order' ? '待完成首单' : item.status === 'qualified' ? '已满足奖励资格' : item.status}}</text>
+      </view>
+    </view>
+
+    <view class="card">
+      <text class="rule-title">基金成本</text>
+      <text class="fund-cost">累计发放 ¥{{issuedCost}}</text>
+      <view class="fund-summary">
+        <text>当前可用 ¥{{fundTotals.available}}</text>
+        <text>已使用 ¥{{fundTotals.used}}</text>
+      </view>
+    </view>
+  </block>
+</view>

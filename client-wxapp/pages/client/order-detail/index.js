@@ -19,11 +19,12 @@ const EDITABLE = ['pending_quote','pending_agree','pending_confirm'];
 const REJECT_REASONS = ['价格超出预算','时间不合适','想换个款式','其他'];
 const TIME_SLOTS = ['09:00','09:30','10:00','10:30','11:00','11:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30','20:00','20:30'];
 
-function actionsForStatus(order) {
+function actionsForStatus(order, wechatPayAvailable) {
   const list = [];
   const s = order.status;
   if (s === 'pending_agree') list.push({ key:'reject', label:'拒绝报价', style:'action-ghost' }, { key:'agree', label:'同意报价', style:'action-primary' });
-  if (s === 'pending_confirm' && order.depositAmount > 0 && !order.depositPaid) list.push({ key:'deposit', label:'已付定金', style:'action-primary' });
+  if (wechatPayAvailable && s === 'pending_confirm' && order.depositAmount > 0 && !order.depositPaid) list.push({ key:'payDeposit', label:'支付定金', style:'action-primary' });
+  if (wechatPayAvailable && (s === 'in_progress' || s === 'completed') && order.remainingAmount > 0) list.push({ key:'payFinal', label:'支付尾款', style:'action-primary' });
   if (CANCELLABLE.indexOf(s) >= 0 || EDITABLE.indexOf(s) >= 0) list.unshift({ key:'more', label:'更多操作', style:'action-ghost' });
   return list;
 }
@@ -34,14 +35,19 @@ Page({
     showReject: false, rejectReason: '', rejectReasons: REJECT_REASONS, submitting: false,
     showEdit: false, editDate: '', editTime: '', editAddresses: [], editAddressId: null, editTimeSlots: TIME_SLOTS, savingEdit: false,
     reviewRating: 5, reviewContent: '', reviewPhotos: [], photoUseAuthorized: false, savingReview: false,
-    actionSubmitting: ''
+    actionSubmitting: '', availableFund: 0, fundAmount: 0, payments: [], wechatPayAvailable: false
   },
 
   onLoad(options) {
     this.orderId = options.id;
     this.setData({ orderId: this.orderId || '' });
-    if (this.orderId) this.loadOrder();
+    if (this.orderId) this.prepareAndLoad();
     else this.setData({ loading: false, loadFailed: true, loadErrorText: '预约参数无效' });
+  },
+  async prepareAndLoad() {
+    const capabilities = await getApp().loadCapabilities();
+    this.setData({ wechatPayAvailable: !!capabilities.wechatPay });
+    return this.loadOrder();
   },
   onShow() { if (this.orderId && !this.data.loading) this.loadOrder(); },
   onPullDownRefresh() { this.loadOrder().finally(() => wx.stopPullDownRefresh()); },
@@ -51,7 +57,12 @@ Page({
     this._loadingOrder = true;
     this.setData({ loading: true, loadFailed: false, loadErrorText: '' });
     try {
-      const raw = await api.client.orders.detail(this.orderId);
+      const results = await Promise.all([
+        api.client.orders.detail(this.orderId),
+        api.client.payments.listOrder(this.orderId).catch(() => [])
+      ]);
+      const raw = results[0];
+      const payments = results[1] || [];
       const isShop = raw.serviceType === 'shop' || raw.serviceType === '到店美甲';
       let address = '';
       if (typeof raw.address === 'string') address = raw.address;
@@ -63,10 +74,15 @@ Page({
       const depositAmount = raw.depositAmount || 0;
       const depositPaid = !!raw.isDepositPaid;
       const pres = resolveOrderPresentation({ serviceType: isShop ? 'shop' : 'home', address });
+      const paidAmount = Number(raw.paidAmount || payments.filter(item => item.status === 'paid').reduce((sum, item) => sum + Number(item.amount || 0), 0));
+      const totalPayable = Math.max(0, price - Number(raw.fundDiscountAmount || 0));
       const order = {
         id: raw.id, orderNo: raw.orderNo, status: raw.status, address,
         serviceName: raw.customTitle || raw.customServiceRequest?.title || raw.designRequest?.title || '预约服务',
         remark: raw.remark || raw.note || '', durationMinutes, price, depositAmount, depositPaid,
+        fundDiscountAmount: Number(raw.fundDiscountAmount || 0),
+        paymentStatus: raw.paymentStatus || 'unpaid', paidAmount,
+        totalPayable, remainingAmount: Math.max(0, totalPayable - paidAmount),
         techName: raw.technician?.name || '美甲师', techAvatar: raw.technician?.avatarUrl || '',
         techPhone: raw.technician?.phone || '', techId: raw.technician?.id || raw.technicianId,
         startTime: raw.startTime, endTime: raw.endTime,
@@ -79,9 +95,21 @@ Page({
         review: raw.review || null,
         sourceWork: raw.sourceWork || null
       };
-      order._actions = actionsForStatus(order);
+      order._actions = actionsForStatus(order, this.data.wechatPayAvailable);
+      let availableFund = 0;
+      try {
+        const funds = await api.client.referrals.funds();
+        const account = (funds.accounts || []).find(item =>
+          String(item.technician.id) === String(order.techId)
+        );
+        availableFund = account ? Number(account.totals.available || 0) : 0;
+      } catch (e) {
+        availableFund = 0;
+      }
       this.setData({
-        order, loading: false, loadFailed: false,
+        order, payments, loading: false, loadFailed: false,
+        availableFund,
+        fundAmount: Math.min(Number(raw.fundDiscountAmount || 0), availableFund, price),
         reviewRating: raw.review ? raw.review.rating : 5,
         reviewContent: raw.review ? raw.review.content : '',
         reviewPhotos: raw.review ? (raw.review.photos || []) : [],
@@ -94,15 +122,60 @@ Page({
     }
   },
 
+  onFundAmountInput(e) {
+    const value = Number(e.detail.value || 0);
+    const maximum = Math.min(this.data.availableFund, this.data.order.price);
+    this.setData({ fundAmount: Math.max(0, Math.min(value, maximum)) });
+  },
+
+  useMaximumFund() {
+    this.setData({
+      fundAmount: Math.min(this.data.availableFund, this.data.order.price)
+    });
+  },
+
   onAction(e) {
     if (this.data.actionSubmitting) return;
     const key = e.currentTarget.dataset.key;
     if (key === 'agree') return this.agreeQuote();
     if (key === 'reject') return this.openReject();
-    if (key === 'deposit') return this.markDepositPaid();
+    if (key === 'payDeposit') return this.startPayment('deposit');
+    if (key === 'payFinal') return this.startPayment('final');
     if (key === 'cancel') return this.cancelOrder();
     if (key === 'edit') return this.openEdit();
     if (key === 'more') return this.showMoreActions();
+  },
+
+  async startPayment(paymentType) {
+    if (this.data.actionSubmitting) return;
+    this.setData({ actionSubmitting: paymentType });
+    try {
+      const key = `${this.orderId}-${paymentType}-${Date.now()}`;
+      const payment = await api.client.payments.createOrder(this.orderId, paymentType, key);
+      if (!payment.channelReady) {
+        await wx.showModal({
+          title: '微信支付待开通',
+          content: payment.unavailableReason || '企业资质完成后即可使用微信支付。支付单已保存，不会重复扣款。',
+          showCancel: false,
+          confirmText: '知道了'
+        });
+        await this.loadOrder();
+        return;
+      }
+      const payload = payment.providerPayload || {};
+      if (!payload.timeStamp || !payload.nonceStr || !payload.package || !payload.paySign) {
+        wx.showToast({ title: '支付渠道正在联调，请稍后再试', icon: 'none' });
+        return;
+      }
+      await wx.requestPayment(payload);
+      wx.showToast({ title: '支付成功', icon: 'success' });
+      await this.loadOrder();
+    } catch (err) {
+      const cancelled = String(err && err.errMsg || '').indexOf('cancel') >= 0;
+      wx.showToast({ title: cancelled ? '已取消支付' : (err.message || '支付发起失败'), icon: 'none' });
+    } finally {
+      this.setData({ actionSubmitting: '' });
+    }
   },
 
   showMoreActions() {
@@ -188,12 +261,13 @@ Page({
 
   // ---- 同意报价 ----
   async agreeQuote() {
-    const r = await wx.showModal({ title: '同意报价', content: `报价金额 ${this.data.order._priceText}，同意后将进入美甲师确认环节。`, confirmText: '同意' });
+    const payable = Math.max(0, this.data.order.price - this.data.fundAmount);
+    const r = await wx.showModal({ title: '同意报价', content: `报价 ${this.data.order._priceText}，基金抵扣 ¥${this.data.fundAmount}，预计支付 ¥${payable}。`, confirmText: '同意' });
     if (!r.confirm) return;
     this.setData({ actionSubmitting: 'agree' });
     try {
       wx.showLoading({ title: '处理中...' });
-      await api.client.orders.acceptQuote(this.orderId);
+      await api.client.orders.acceptQuote(this.orderId, this.data.fundAmount);
       wx.hideLoading(); wx.showToast({ title: '已同意报价', icon: 'success' });
       this.loadOrder();
     } catch (err) { wx.hideLoading(); wx.showToast({ title: err.message || '操作失败', icon: 'none' }); }

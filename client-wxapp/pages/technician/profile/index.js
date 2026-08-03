@@ -21,6 +21,7 @@ const TOOLS = [
   { key: 'serviceTime', label: '服务时间' },
   { key: 'shops',       label: '店铺管理' },
   { key: 'tags',        label: '标签管理' },
+  { key: 'referrals',   label: '邀请基金' },
   { key: 'subscription',label: '订阅套餐' }
 ];
 
@@ -32,6 +33,7 @@ const TOOL_ROUTES = {
   serviceTime:  '/pages/technician/service-time/index',
   shops:        '/pages/technician/shop-management/index',
   tags:         '/pages/technician/tag-management/index',
+  referrals:    '/pages/technician/referral-campaign/index',
   subscription: '/pages/technician/subscription/index'
 };
 
@@ -293,7 +295,7 @@ Page({
     const code = u.invitationCode || '';
     return {
       title: `美甲师 ${u.name || '小美'} 的名片`,
-      path: code ? `/pages/client/login/index?invite=${code}` : '/pages/role-select/index',
+      path: u.id ? `/pages/client/works/index?techId=${u.id}&source=card` : (code ? `/pages/client/login/index?invite=${code}` : '/pages/role-select/index'),
       imageUrl: u.avatarUrl || ''
     };
   },

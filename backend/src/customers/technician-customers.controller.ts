@@ -21,6 +21,7 @@ import {
 } from '@nestjs/swagger';
 import { CustomersService } from './customers.service';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
+import { CreateCustomerFollowUpDto } from './dto/create-customer-follow-up.dto';
 
 @ApiTags('美甲师-客户')
 @ApiBearerAuth()
@@ -97,6 +98,16 @@ export class TechnicianCustomersController {
     );
   }
 
+  @Get('follow-ups/today')
+  @ApiOperation({ summary: '获取今日待跟进客户' })
+  getTodayFollowUps(
+    @Req() request: { user: { technicianId: number } },
+  ) {
+    return this.customersService.getTodayFollowUps(
+      request.user.technicianId,
+    );
+  }
+
   @Get(':id')
   @ApiOperation({ summary: '获取客户详情' })
   @ApiParam({ name: 'id', type: String, description: '客户ID' })
@@ -109,6 +120,35 @@ export class TechnicianCustomersController {
   ) {
     return this.customersService.findOneForTechnician(
       parseInt(id, 10),
+      request.user.technicianId,
+    );
+  }
+
+  @Post(':id/follow-ups')
+  @ApiOperation({ summary: '创建客户跟进记录' })
+  createFollowUp(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id') id: string,
+    @Body() body: CreateCustomerFollowUpDto,
+  ) {
+    return this.customersService.createFollowUp(
+      parseInt(id, 10),
+      request.user.technicianId,
+      body.content,
+      body.plannedAt,
+    );
+  }
+
+  @Patch(':id/follow-ups/:followUpId/complete')
+  @ApiOperation({ summary: '完成客户跟进记录' })
+  completeFollowUp(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id') id: string,
+    @Param('followUpId') followUpId: string,
+  ) {
+    return this.customersService.completeFollowUp(
+      parseInt(id, 10),
+      parseInt(followUpId, 10),
       request.user.technicianId,
     );
   }

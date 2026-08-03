@@ -4,11 +4,15 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { RewardFundService } from '../referrals/reward-fund.service';
 
 @ApiTags('公开-预约确认')
 @Controller('orders/confirm')
 export class PublicOrdersController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly rewardFunds: RewardFundService,
+  ) {}
 
   @Get(':token')
   @ApiOperation({ summary: '查询待确认预约详情（无需登录）' })
@@ -85,14 +89,20 @@ export class PublicOrdersController {
       throw new BadRequestException('链接已过期，请联系美甲师重新发送');
     }
 
-    const result = await this.prisma.order.updateMany({
-      where: { id: order.id, confirmTokenUsedAt: null },
-      data: {
-        status: 'cancelled',
-        confirmTokenUsedAt: new Date(),
-        cancelledAt: new Date(),
-        cancelReason: '客户通过链接取消',
-      },
+    const result = await this.prisma.$transaction(async (tx) => {
+      const claimed = await tx.order.updateMany({
+        where: { id: order.id, confirmTokenUsedAt: null },
+        data: {
+          status: 'cancelled',
+          confirmTokenUsedAt: new Date(),
+          cancelledAt: new Date(),
+          cancelReason: '客户通过链接取消',
+        },
+      });
+      if (claimed.count > 0) {
+        await this.rewardFunds.reverseOrderRedemption(tx, order.id);
+      }
+      return claimed;
     });
     if (result.count === 0) throw new BadRequestException('该链接已使用');
     return { success: true, message: '预约已取消' };

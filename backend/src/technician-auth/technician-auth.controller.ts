@@ -98,15 +98,25 @@ export class TechnicianAuthController {
 
   @Post('set-initial-password')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
-  @ApiOperation({ summary: '首次登录设置密码（账号未设置密码时，凭手机号设置并自动登录）' })
+  @ApiOperation({ summary: '首次登录设置密码（短信验证后设置并自动登录）' })
   @ApiBody({ type: SetInitialPasswordDto })
   @ApiResponse({ status: 201, description: '密码设置成功，返回 token（自动登录）' })
   @ApiResponse({ status: 400, description: '手机号未注册或账号已设置密码' })
   async setInitialPassword(@Body() body: SetInitialPasswordDto) {
     return this.technicianAuthService.setInitialPassword(
       body.phone,
+      body.code,
       body.newPassword,
     );
+  }
+
+  @Post('set-initial-password/send-code')
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
+  @ApiOperation({ summary: '首次登录设置密码：发送短信验证码' })
+  @ApiBody({ type: ForgotSendCodeDto })
+  @ApiResponse({ status: 200, description: '已发送（统一响应）' })
+  async sendInitialPasswordCode(@Body() body: ForgotSendCodeDto) {
+    return this.technicianAuthService.sendInitialPasswordCode(body.phone);
   }
 
   @Post('register')

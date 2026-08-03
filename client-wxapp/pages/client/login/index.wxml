@@ -6,8 +6,27 @@
     <text class="title">客户登录</text>
   </view>
 
+  <view wx:if="{{wechatFeatureVisible}}" class="login-tabs">
+    <view class="login-tab {{loginMethod === 'wechat' ? 'login-tab-active' : ''}}" data-method="wechat" bindtap="selectLoginMethod">微信授权登录</view>
+    <view class="login-tab {{loginMethod === 'phone' ? 'login-tab-active' : ''}}" data-method="phone" bindtap="selectLoginMethod">手机号登录</view>
+  </view>
+
+  <view wx:if="{{wechatFeatureVisible && loginMethod === 'wechat'}}" class="form">
+    <text class="wechat-hint">微信登录不会自动获取手机号；仅在首次绑定时由您主动授权。</text>
+    <button wx:if="{{wechatLinked}}" class="btn-primary" bindtap="handleWechatLogin" disabled="{{loading || wechatChecking}}">
+      {{loading ? '登录中...' : '微信授权登录'}}
+    </button>
+    <button wx:elif="{{wechatReady}}" class="btn-primary" open-type="getPhoneNumber" bindgetphonenumber="handleWechatPhone" disabled="{{loading}}">
+      授权手机号并登录
+    </button>
+    <button wx:else class="btn-primary" bindtap="handleWechatLogin" disabled="{{wechatChecking}}">
+      {{wechatChecking ? '正在检查微信登录...' : '重新获取微信登录状态'}}
+    </button>
+    <view class="link-row"><text class="link" data-method="phone" bindtap="selectLoginMethod">改用手机号登录</text></view>
+  </view>
+
   <!-- Step 1: 输入手机号 -->
-  <view wx:if="{{step === 'phone'}}" class="form">
+  <view wx:elif="{{step === 'phone'}}" class="form">
     <view class="form-item">
       <text class="label">手机号</text>
       <input class="input" type="number" maxlength="11" placeholder="请输入手机号" confirm-type="next" cursor-spacing="24"
@@ -20,7 +39,7 @@
   </view>
 
   <!-- Step 2: 登录（已注册） -->
-  <view wx:else class="form">
+  <view wx:elif="{{loginMethod === 'phone'}}" class="form">
     <view class="form-item">
       <text class="label">手机号</text>
       <view class="readonly">

@@ -428,3 +428,12 @@ page { background: #f8f9fc; }
 .addr-select-active { background: #fff0f3; border-color: rgba(255,107,138,0.25); }
 .addr-select-name { font-size: 26rpx; font-weight: 500; color: #1f2937; display: block; }
 .addr-select-detail { font-size: 22rpx; color: #6b7280; display: block; margin-top: 4rpx; }
+.fund-discount-box { margin-top:24rpx; padding:24rpx; border-radius:20rpx; background:#fff5f8; }
+.fund-discount-head,.fund-input-row { min-height:88rpx; display:flex; align-items:center; justify-content:space-between; gap:20rpx; }
+.fund-max { color:#c53f70; }
+.fund-input-row input { min-height:88rpx; flex:1; text-align:right; }
+.fund-payable { display:block; text-align:right; color:#665861; font-size:24rpx; }
+.price-discount { color:#c53f70; }
+.payment-summary { margin-top:24rpx; padding-top:20rpx; border-top:1rpx solid #f0e8ec; }
+.payment-remaining { font-weight:700; color:#b8325b; }
+.payment-count { display:block; margin-top:12rpx; color:#6b7280; font-size:22rpx; }

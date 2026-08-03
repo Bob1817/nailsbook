@@ -101,6 +101,9 @@ page {
 .tab-scroll {
   white-space: nowrap;
 }
+.filter-label { display:block; margin:0 0 8rpx 4rpx; color:#8b7b84; font-size:21rpx; font-weight:600; }
+.lifecycle-scroll { margin-bottom: 12rpx; }
+.lifecycle-tab { background:#faf5f7; }
 
 .tab-list {
   display: inline-flex;
@@ -303,6 +306,12 @@ page {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.lifecycle-badge { flex-shrink:0; padding:6rpx 14rpx; border-radius:999rpx; font-size:20rpx; font-weight:600; }
+.lifecycle-new { background:#ebf4ff; color:#3b82f6; }
+.lifecycle-active { background:#e8f7ee; color:#238b57; }
+.lifecycle-due { background:#fff2dc; color:#b56f12; }
+.lifecycle-dormant { background:#f2f0f3; color:#756b70; }
+.lifecycle-reason { margin:0 0 16rpx; color:#8b7b84; font-size:21rpx; line-height:1.5; }
 
 .edit-name-btn {
   flex-shrink: 0;

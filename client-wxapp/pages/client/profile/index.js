@@ -69,6 +69,10 @@ Page({
     wx.navigateTo({ url: '/pages/client/my-likes/index' });
   },
 
+  navigateToReferrals() {
+    wx.navigateTo({ url: '/pages/client/referrals/index' });
+  },
+
   navigateToFeedback() {
     wx.navigateTo({ url: '/pages/client/feedback/index' });
   },

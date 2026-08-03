@@ -34,7 +34,7 @@
       </view>
       <view class="stat-divider"></view>
       <view class="stat-item">
-        <text class="stat-value">{{customer._totalOrders}}</text>
+        <text class="stat-value">{{customer._completedServices}}</text>
         <text class="stat-label">服务次数</text>
       </view>
       <view class="stat-divider"></view>
@@ -43,6 +43,40 @@
         <text class="stat-label">最近服务</text>
       </view>
     </view>
+  </view>
+
+  <!-- ============ 经营摘要 ============ -->
+  <view class="card business-card">
+    <view class="card-head">
+      <text class="card-title">经营摘要</text>
+      <text class="lifecycle-summary">{{customer._lifecycleLabel}}</text>
+    </view>
+    <view class="summary-grid">
+      <view class="summary-item">
+        <text class="summary-label">首次服务</text>
+        <text class="summary-value">{{customer._firstServiceText}}</text>
+      </view>
+      <view class="summary-item">
+        <text class="summary-label">最近服务</text>
+        <text class="summary-value">{{customer._lastServiceText}}</text>
+      </view>
+      <view class="summary-item">
+        <text class="summary-label">平均客单价</text>
+        <text class="summary-value">{{customer._averageTicketText}}</text>
+      </view>
+      <view class="summary-item">
+        <text class="summary-label">服务周期</text>
+        <text class="summary-value">{{customer._serviceCycleText}}</text>
+      </view>
+    </view>
+    <view class="next-service-row">
+      <view>
+        <text class="summary-label">预计下次服务</text>
+        <text class="next-service-value">{{customer._expectedNextServiceText}}</text>
+      </view>
+      <text class="cycle-hint">{{customer._serviceCycleHint}}</text>
+    </view>
+    <text class="lifecycle-explanation">{{customer._lifecycleReason}}。仅统计已完成服务与确认收入。</text>
   </view>
 
   <!-- ============ 标签 ============ -->
@@ -82,6 +116,45 @@
       <text class="info-label">备注</text>
       <text class="info-value">{{customer.notes || '暂无备注'}}</text>
     </view>
+    <view class="info-row">
+      <text class="info-label">客户来源</text>
+      <text class="info-value">{{customer._sourceLabel}}</text>
+    </view>
+  </view>
+
+  <!-- ============ 客户跟进 ============ -->
+  <view class="card">
+    <text class="card-title">客户跟进</text>
+    <textarea
+      class="follow-input"
+      maxlength="500"
+      placeholder="记录本次要沟通的内容"
+      value="{{followUpContent}}"
+      bindinput="onFollowUpInput"
+    />
+    <view class="follow-plan-row">
+      <picker mode="date" value="{{followUpDate}}" bindchange="onFollowUpDateChange">
+        <view class="follow-date">计划日期：{{followUpDate}}</view>
+      </picker>
+      <view class="follow-add {{savingFollowUp ? 'is-disabled' : ''}}" bindtap="createFollowUp">
+        {{savingFollowUp ? '创建中' : '添加跟进'}}
+      </view>
+    </view>
+    <view wx:if="{{customer._followUps.length > 0}}" class="follow-list">
+      <view wx:for="{{customer._followUps}}" wx:key="id" class="follow-item">
+        <view class="follow-main">
+          <text class="follow-content">{{item.content}}</text>
+          <text class="follow-meta">{{item._plannedText}} · {{item._statusText}}</text>
+        </view>
+        <view
+          wx:if="{{item.status === 'pending'}}"
+          class="follow-complete"
+          bindtap="completeFollowUp"
+          data-id="{{item.id}}"
+        >完成</view>
+      </view>
+    </view>
+    <text wx:else class="muted">暂无跟进记录</text>
   </view>
 
   <!-- ============ 预约记录 ============ -->

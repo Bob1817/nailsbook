@@ -18,6 +18,7 @@ describe('修改预约时间的冲突保护', () => {
         create: jest.fn(),
       },
       order: { update: jest.fn() },
+      orderReminder: { updateMany: jest.fn() },
     };
     const prisma = {
       order: {
@@ -73,6 +74,7 @@ describe('修改预约时间的冲突保护', () => {
         create: jest.fn().mockResolvedValue({ id: 10 }),
       },
       order: { update: jest.fn().mockResolvedValue(updatedOrder) },
+      orderReminder: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
     };
     const prisma = {
       order: {
@@ -138,6 +140,7 @@ describe('修改预约时间的冲突保护', () => {
         create: jest.fn().mockResolvedValue({ id: 12 }),
       },
       order: { update: jest.fn().mockImplementation(({ data }) => data) },
+      orderReminder: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
     };
     const prisma = {
       $transaction: jest.fn((callback) => callback(tx)),

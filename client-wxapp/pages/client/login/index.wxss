@@ -32,6 +32,11 @@
   color: #1f2937;
 }
 
+.login-tabs { display: flex; padding: 8rpx; margin-bottom: 32rpx; border-radius: 18rpx; background: #eef0f4; }
+.login-tab { flex: 1; min-height: 88rpx; display: flex; align-items: center; justify-content: center; border-radius: 14rpx; color: #6b7280; font-size: 27rpx; }
+.login-tab-active { color: #1f2937; background: #fff; font-weight: 600; box-shadow: 0 4rpx 14rpx rgba(31, 41, 55, 0.08); }
+.wechat-hint { display: block; color: #6b7280; font-size: 25rpx; line-height: 1.6; text-align: center; }
+
 .form-item {
   margin-bottom: 32rpx;
 }

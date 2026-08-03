@@ -16,9 +16,15 @@ import { VerificationCodeService } from '../common/verification-code/verificatio
 import { SmsService } from '../common/sms/sms.service';
 import { buildDefaultServiceItems } from '../common/default-service-items';
 import { ChatGateway } from '../chat/chat.gateway';
+import type { Prisma } from '@prisma/client';
+
+type ClientWithBindings = Prisma.ClientUserGetPayload<{
+  include: { bindings: { include: { technician: true } } };
+}>;
 
 @Injectable()
 export class ClientAuthService {
+  private static readonly RESET_PASSWORD_CODE_PURPOSE = 'client:reset-password';
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
@@ -32,8 +38,11 @@ export class ClientAuthService {
   async sendResetCode(phone: string) {
     try {
       const client = await this.prisma.clientUser.findUnique({ where: { phone } });
-      if (client && client.passwordHash) {
-        const code = this.verificationCode.generate(phone);
+      if (client) {
+        const code = await this.verificationCode.generate(
+          phone,
+          ClientAuthService.RESET_PASSWORD_CODE_PURPOSE,
+        );
         // 后台发送（带重试），不阻塞响应，也消除"是否注册"的响应耗时差异
         void this.sms.sendVerificationCode(phone, code, '重置密码').catch(() => {});
       }
@@ -45,9 +54,13 @@ export class ClientAuthService {
 
   // 忘记密码：校验验证码并重置密码
   async resetPasswordByCode(phone: string, code: string, newPassword: string) {
-    this.verificationCode.validate(phone, code);
+    await this.verificationCode.validate(
+      phone,
+      code,
+      ClientAuthService.RESET_PASSWORD_CODE_PURPOSE,
+    );
     const client = await this.prisma.clientUser.findUnique({ where: { phone } });
-    if (!client || !client.passwordHash) {
+    if (!client) {
       throw new BadRequestException('该手机号未注册');
     }
     const passwordHash = await bcrypt.hash(newPassword, 10);
@@ -65,7 +78,10 @@ export class ClientAuthService {
     return { exists: !!client };
   }
 
-  async registerByInvite(dto: RegisterByInviteDto) {
+  async registerByInvite(
+    dto: RegisterByInviteDto,
+    wechatIdentity?: { appId: string; openId: string; unionId?: string },
+  ) {
     const technician = await this.findActiveTechnicianByInviteCode(
       dto.inviteCode,
       '该邀请码无效，请跟您的美甲师确认后再注册',
@@ -79,6 +95,7 @@ export class ClientAuthService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
+    const registrationSource = dto.source || 'invite';
 
     const client = await this.prisma.$transaction(async (tx) => {
       const created = await tx.clientUser.create({
@@ -94,7 +111,7 @@ export class ClientAuthService {
           clientId: created.id,
           techId: technician.id,
           inviteCode: dto.inviteCode,
-          bindSource: 'invite',
+          bindSource: registrationSource,
           isDefault: true,
         },
       });
@@ -106,8 +123,16 @@ export class ClientAuthService {
           clientUserId: created.id,
           name: dto.nickname || dto.phone,
           phone: dto.phone,
+          sourceType: registrationSource,
+          sourceRef: dto.inviteCode,
         },
       });
+
+      if (wechatIdentity) {
+        await tx.wechatIdentity.create({
+          data: { ...wechatIdentity, clientUserId: created.id },
+        });
+      }
 
       return created;
     });
@@ -127,7 +152,7 @@ export class ClientAuthService {
         : [],
       serviceItems: this.parseServiceItems(technician.serviceItems),
       isDefault: true,
-      bindSource: 'invite',
+      bindSource: registrationSource,
     };
 
     return {
@@ -185,6 +210,31 @@ export class ClientAuthService {
         '该账号尚未绑定美甲师，请先通过邀请码注册/绑定',
       );
     }
+
+    return this.buildLoginResult(client);
+  }
+
+  async loginByWechat(clientUserId: number) {
+    const client = await this.prisma.clientUser.findUnique({
+      where: { id: clientUserId },
+      include: {
+        bindings: {
+          where: { status: 'active' },
+          include: { technician: true },
+          orderBy: { isDefault: 'desc' },
+        },
+      },
+    });
+    if (!client || client.status !== 'active') {
+      throw new UnauthorizedException('用户不存在或已被禁用');
+    }
+    if (client.bindings.length === 0) {
+      throw new UnauthorizedException('该账号尚未绑定美甲师');
+    }
+    return this.buildLoginResult(client);
+  }
+
+  private buildLoginResult(client: ClientWithBindings) {
 
     const defaultBinding =
       client.bindings.find((b) => b.isDefault) || client.bindings[0];
@@ -337,6 +387,7 @@ export class ClientAuthService {
       dto.techId,
       dto.inviteCode,
       dto.note?.trim() || null,
+      dto.source || 'manual',
     );
   }
 
@@ -368,6 +419,7 @@ export class ClientAuthService {
     techId: number,
     inviteCode: string | null,
     note: string | null,
+    bindSource = 'manual',
   ) {
     const existing = await this.prisma.clientTechBinding.findUnique({
       where: { clientId_techId: { clientId: clientUserId, techId } },
@@ -382,14 +434,14 @@ export class ClientAuthService {
     const binding = existing
       ? await this.prisma.clientTechBinding.update({
           where: { id: existing.id },
-          data: { status: 'pending', inviteCode, bindSource: 'manual', note },
+          data: { status: 'pending', inviteCode, bindSource, note },
         })
       : await this.prisma.clientTechBinding.create({
           data: {
             clientId: clientUserId,
             techId,
             inviteCode,
-            bindSource: 'manual',
+            bindSource,
             status: 'pending',
             note,
           },
@@ -488,6 +540,8 @@ export class ClientAuthService {
           clientUserId: binding.clientId,
           name: client?.nickname || client?.phone || '客户',
           phone: client?.phone || null,
+          sourceType: 'binding',
+          sourceRef: String(binding.id),
         },
       });
     });

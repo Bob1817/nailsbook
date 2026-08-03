@@ -149,11 +149,26 @@ describe('Technician operation HTTP contract', () => {
         .expect(201);
       expect(check1.body).toEqual({ exists: true, activated: false });
 
-      // 2. set-initial-password：设置成功并返回 token（自动登录）
+      // 2. 先向预留手机号发送验证码，再设置密码。
+      const previousNodeEnv = process.env.NODE_ENV;
+      const previousDevCode = process.env.ALLOW_DEV_MVP_VERIFICATION_CODE;
+      process.env.NODE_ENV = 'development';
+      process.env.ALLOW_DEV_MVP_VERIFICATION_CODE = 'true';
+      await request(testApp.app.getHttpServer())
+        .post('/api/technician/auth/set-initial-password/send-code')
+        .send({ phone })
+        .expect(201);
+
       const setRes = await request(testApp.app.getHttpServer())
         .post('/api/technician/auth/set-initial-password')
-        .send({ phone, newPassword: 'abcd1234' })
+        .send({ phone, code: '123456', newPassword: 'abcd1234' })
         .expect(201);
+      process.env.NODE_ENV = previousNodeEnv;
+      if (previousDevCode === undefined) {
+        delete process.env.ALLOW_DEV_MVP_VERIFICATION_CODE;
+      } else {
+        process.env.ALLOW_DEV_MVP_VERIFICATION_CODE = previousDevCode;
+      }
       expect(setRes.body.accessToken).toEqual(expect.any(String));
       expect(setRes.body.technician).toMatchObject({ id: technician.id, phone });
 
@@ -167,7 +182,7 @@ describe('Technician operation HTTP contract', () => {
       // 4. 再次 set-initial-password：已设置密码，拒绝
       await request(testApp.app.getHttpServer())
         .post('/api/technician/auth/set-initial-password')
-        .send({ phone, newPassword: 'efgh5678' })
+        .send({ phone, code: '123456', newPassword: 'efgh5678' })
         .expect(400);
 
       // 5. 用新密码可正常登录
@@ -193,8 +208,8 @@ describe('Technician operation HTTP contract', () => {
         .send({
           customerId: customer.id,
           serviceName: 'Basic Care',
-          startTime: '2026-06-15T14:00:00.000Z',
-          endTime: '2026-06-15T16:00:00.000Z',
+          startTime: '2026-06-15T14:00:00+08:00',
+          endTime: '2026-06-15T16:00:00+08:00',
           address: '88 Test Road',
           serviceType: '上门服务',
         })

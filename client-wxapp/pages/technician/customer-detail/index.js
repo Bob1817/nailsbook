@@ -2,6 +2,28 @@ const api = require('../../../services/api');
 const { formatMoney, formatBookingDate, parseDate } = require('../../../utils/format');
 const { getStatusLabel, getStatusTone } = require('../../../utils/order');
 
+const LIFECYCLE_LABELS = {
+  new: '新客',
+  active: '活跃',
+  due: '待复购',
+  dormant: '沉睡'
+};
+const SOURCE_LABELS = {
+  historical: '历史客户',
+  invite: '邀请码注册',
+  binding: '绑定申请',
+  booking: '首次预约',
+  custom_request: '私人设计需求'
+};
+
+function todayDateValue() {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function parseTags(raw) {
   if (!raw) return [];
   if (Array.isArray(raw)) return raw.filter(Boolean);
@@ -41,7 +63,10 @@ Page({
     editTags: [],
     availableTags: [],
     newTag: '',
-    savingTags: false
+    savingTags: false,
+    followUpContent: '',
+    followUpDate: todayDateValue(),
+    savingFollowUp: false
   },
 
   onLoad(options) {
@@ -91,7 +116,9 @@ Page({
       }));
 
       const revenues = raw.revenues || [];
-      const totalSpent = revenues.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+      const summary = raw.businessSummary || {};
+      const totalSpent = Number(summary.confirmedSpend)
+        || revenues.reduce((s, r) => s + (Number(r.amount) || 0), 0);
 
       // 最近服务：orders 已按 startTime desc 排序
       const recent = orders.length ? (orders[0].startTime || orders[0].createdAt) : null;
@@ -120,7 +147,39 @@ Page({
         _birthdayText: raw.birthday ? String(raw.birthday).slice(0, 10) : '',
         _totalSpentText: totalSpent > 0 ? formatMoney(totalSpent) : '¥0',
         _totalOrders: orders.length,
-        _recentLabel: recentDate
+        _completedServices: Number(summary.completedServiceCount) || 0,
+        _averageTicketText: summary.averageTicket != null
+          ? formatMoney(summary.averageTicket)
+          : '暂无',
+        _firstServiceText: summary.firstServiceAt
+          ? formatBookingDate(summary.firstServiceAt)
+          : '暂无',
+        _lastServiceText: summary.lastServiceAt
+          ? formatBookingDate(summary.lastServiceAt)
+          : '暂无',
+        _serviceCycleText: summary.serviceCycleDays
+          ? `${summary.serviceCycleDays} 天`
+          : '暂无',
+        _serviceCycleHint: summary.serviceCycleSource === 'personal'
+          ? '根据历史服务间隔计算'
+          : `数据不足，采用 ${summary.defaultServiceCycleDays || 28} 天默认周期`,
+        _expectedNextServiceText: summary.expectedNextServiceAt
+          ? formatBookingDate(summary.expectedNextServiceAt)
+          : '完成首次服务后生成',
+        _lifecycleLabel: LIFECYCLE_LABELS[raw.lifecycle && raw.lifecycle.status] || '新客',
+        _lifecycleReason: (raw.lifecycle && raw.lifecycle.reason) || '尚未完成首次服务',
+        _sourceLabel: SOURCE_LABELS[raw.sourceType] || '其他来源',
+        _followUps: (raw.followUps || []).map(item => ({
+          ...item,
+          _plannedText: formatBookingDate(item.plannedAt),
+          _statusText: item.status === 'completed' ? '已完成' : '待跟进'
+        })),
+        _recentLabel: summary.lastServiceAt
+          ? (() => {
+              const date = parseDate(summary.lastServiceAt);
+              return date ? `${date.getMonth() + 1}/${date.getDate()}` : '暂无';
+            })()
+          : recentDate
           ? `${recentDate.getMonth() + 1}/${recentDate.getDate()}`
           : '暂无'
       };
@@ -167,6 +226,48 @@ Page({
     wx.navigateTo({
       url: `/pages/technician/chat-detail/index?clientId=${this.customerId}&clientName=${encodeURIComponent(customer._displayName)}`
     });
+  },
+
+  onFollowUpInput(e) {
+    this.setData({ followUpContent: e.detail.value });
+  },
+
+  onFollowUpDateChange(e) {
+    this.setData({ followUpDate: e.detail.value });
+  },
+
+  async createFollowUp() {
+    const content = (this.data.followUpContent || '').trim();
+    if (!content) {
+      wx.showToast({ title: '请输入跟进内容', icon: 'none' });
+      return;
+    }
+    if (this.data.savingFollowUp) return;
+    this.setData({ savingFollowUp: true });
+    try {
+      await api.technician.customers.createFollowUp(this.customerId, {
+        content,
+        plannedAt: `${this.data.followUpDate}T09:00:00+08:00`
+      });
+      this.setData({ followUpContent: '', savingFollowUp: false });
+      wx.showToast({ title: '跟进计划已创建', icon: 'success' });
+      this.loadCustomer();
+    } catch (err) {
+      this.setData({ savingFollowUp: false });
+      wx.showToast({ title: err.message || '创建失败', icon: 'none' });
+    }
+  },
+
+  async completeFollowUp(e) {
+    const id = e.currentTarget.dataset.id;
+    if (!id) return;
+    try {
+      await api.technician.customers.completeFollowUp(this.customerId, id);
+      wx.showToast({ title: '已完成跟进', icon: 'success' });
+      this.loadCustomer();
+    } catch (err) {
+      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+    }
   },
 
   // ---------- 标签编辑 ----------

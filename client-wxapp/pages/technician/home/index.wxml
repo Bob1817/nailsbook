@@ -35,6 +35,81 @@
     </view>
   </view>
 
+  <view wx:if="{{businessOverview}}" class="card business-card">
+    <view class="card-head">
+      <view>
+        <text class="card-title">经营总览</text>
+        <text class="card-sub">本月确认收入按已完成订单实付金额统计</text>
+      </view>
+    </view>
+
+    <view class="business-grid">
+      <view class="business-metric" bindtap="openBusinessDetail" data-target="orders">
+        <text class="business-value">{{businessOverview.revenue}}</text>
+        <text class="business-label">本月确认收入</text>
+        <text class="business-definition">已完成且确认入账的订单</text>
+      </view>
+      <view class="business-metric" bindtap="openBusinessDetail" data-target="orders">
+        <text class="business-value">{{businessOverview.averageTicket}}</text>
+        <text class="business-label">平均客单价</text>
+        <text class="business-definition">确认收入 ÷ 完成订单数</text>
+      </view>
+      <view class="business-metric" bindtap="openBusinessDetail" data-target="customers">
+        <text class="business-value">{{businessOverview.totalCustomers}}</text>
+        <text class="business-label">总客户 · 新客 {{businessOverview.newCustomers}}</text>
+        <text class="business-definition">当前客户档案与本月新增</text>
+      </view>
+      <view class="business-metric" bindtap="openBusinessDetail" data-target="customers">
+        <text class="business-value">{{businessOverview.repeatRate}}</text>
+        <text class="business-label">复购率</text>
+        <text class="business-definition">复购客户 ÷ 完成客户 {{businessOverview.completedCustomers}}</text>
+      </view>
+    </view>
+
+    <view class="business-link" bindtap="openBusinessDetail" data-target="due">
+      <view><text class="business-link-title">待复购客户 {{businessOverview.dueCustomers}}</text><text class="business-link-sub">已达到预计复购日期，进入客户明细</text></view><text>›</text>
+    </view>
+    <view class="business-link" bindtap="openBusinessDetail" data-target="referrals">
+      <view><text class="business-link-title">推荐 {{businessOverview.referrals}} · 有效 {{businessOverview.qualifiedReferrals}}</text><text class="business-link-sub">有效推荐首单实付 {{businessOverview.referralRevenue}}</text></view><text>›</text>
+    </view>
+    <view class="business-link" bindtap="openBusinessDetail" data-target="referrals">
+      <view><text class="business-link-title">基金发放 {{businessOverview.fundsIssued}}</text><text class="business-link-sub">累计抵扣 {{businessOverview.fundsRedeemed}}，余额与明细可追溯</text></view><text>›</text>
+    </view>
+
+    <view class="insight-section">
+      <text class="insight-title">近 7 日趋势</text>
+      <view wx:if="{{businessOverview.dailyTrend.length}}" class="trend-list">
+        <view wx:for="{{businessOverview.dailyTrend}}" wx:key="period" class="trend-row">
+          <text>{{item.label}}</text><text>{{item.orders}} 单 · +{{item.newCustomers}} 客</text><text>{{item.revenueText}}</text>
+        </view>
+      </view>
+      <text wx:else class="insight-empty">最近 7 日暂无确认收入</text>
+      <text class="insight-title insight-title-gap">近 4 周趋势</text>
+      <view wx:if="{{businessOverview.weeklyTrend.length}}" class="trend-list">
+        <view wx:for="{{businessOverview.weeklyTrend}}" wx:key="period" class="trend-row">
+          <text>{{item.label}}</text><text>{{item.orders}} 单 · +{{item.newCustomers}} 客</text><text>{{item.revenueText}}</text>
+        </view>
+      </view>
+      <text wx:else class="insight-empty">最近 4 周暂无确认收入</text>
+    </view>
+
+    <view class="insight-section">
+      <text class="insight-title">服务与时段表现</text>
+      <block wx:if="{{businessOverview.performanceReady}}">
+        <view class="performance-row"><text>收入最高服务</text><text>{{businessOverview.topService.name}} · {{businessOverview.topService.revenueText}}</text></view>
+        <view class="performance-row"><text>收入最高时段</text><text>{{businessOverview.topTimeSlot.name}} · {{businessOverview.topTimeSlot.revenueText}}</text></view>
+      </block>
+      <text wx:else class="insight-empty">至少需要 {{businessOverview.performanceMinimum}} 笔完成订单后生成表现结论</text>
+    </view>
+
+    <view wx:if="{{businessOverview.reminders.length}}" class="insight-section">
+      <text class="insight-title">经营提醒</text>
+      <view wx:for="{{businessOverview.reminders}}" wx:key="key" class="reminder-row" bindtap="openInsightCustomer" data-id="{{item.customerId}}">
+        <view><text class="reminder-name">{{item.typeText}} · {{item.customerName}}</text><text class="reminder-reason">{{item.reason}}</text></view><text>›</text>
+      </view>
+    </view>
+  </view>
+
   <!-- ===== 下一单 ===== -->
   <view class="card next-card" bindtap="openOrderDetail" data-id="{{nextOrder.id}}">
     <text class="next-title">下一单</text>
@@ -120,6 +195,24 @@
     </view>
 
     <view wx:else class="empty-soft">今日待办已清空，可以专心服务客户。</view>
+
+    <view wx:if="{{todayFollowUps.length > 0}}" class="followup-today">
+      <text class="followup-title">今日客户跟进</text>
+      <view
+        wx:for="{{todayFollowUps}}"
+        wx:key="id"
+        class="followup-row"
+        bindtap="openFollowUpCustomer"
+        data-id="{{item.customer.id}}"
+      >
+        <view class="followup-time">{{item._clock}}</view>
+        <view class="followup-info">
+          <text class="followup-name">{{item._customerName}}</text>
+          <text class="followup-content">{{item.content}}</text>
+        </view>
+        <text class="todo-arrow">›</text>
+      </view>
+    </view>
   </view>
 
   <!-- ===== 热门作品 ===== -->

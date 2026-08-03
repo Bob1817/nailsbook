@@ -117,6 +117,8 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
   box-shadow: 0 12rpx 24rpx rgba(36, 27, 41, 0.05);
 }
 .card-gap { margin-top: 84rpx; }
+.business-card { margin-top: 84rpx; }
+.business-card + .card-gap { margin-top: 20rpx; }
 
 .card-head {
   display: flex;
@@ -139,6 +141,16 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
   border-radius: 999rpx;
   background: #FFF1F6;
 }
+.lifecycle-summary { padding:7rpx 18rpx; border-radius:999rpx; background:#fff0f5; color:#b43e6f; font-size:21rpx; font-weight:700; }
+.summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:16rpx; }
+.summary-item { padding:20rpx; border-radius:20rpx; background:#faf5f7; }
+.summary-label,.summary-value,.next-service-value,.cycle-hint { display:block; }
+.summary-label { color:#8b7b84; font-size:22rpx; }
+.summary-value { margin-top:8rpx; color:#33252d; font-size:26rpx; font-weight:700; }
+.next-service-row { margin-top:18rpx; padding:22rpx; border-radius:20rpx; background:#fff0f5; display:flex; align-items:center; justify-content:space-between; gap:20rpx; }
+.next-service-value { margin-top:8rpx; color:#b43e6f; font-size:28rpx; font-weight:700; }
+.cycle-hint { max-width:260rpx; color:#8b6879; font-size:20rpx; line-height:1.45; text-align:right; }
+.lifecycle-explanation { display:block; margin-top:18rpx; color:#8b7b84; font-size:21rpx; line-height:1.55; }
 
 .muted {
   font-size: 24rpx;
@@ -210,6 +222,18 @@ page { background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%
   color: #ff6b8a;
   font-size: 22rpx; font-weight: 600;
 }
+.follow-input { width:100%; min-height:176rpx; padding:22rpx; border-radius:20rpx; box-sizing:border-box; background:#faf5f7; color:#33252d; font-size:26rpx; line-height:1.55; }
+.follow-plan-row { margin-top:16rpx; display:flex; align-items:center; justify-content:space-between; gap:16rpx; }
+.follow-date,.follow-add,.follow-complete { min-height:88rpx; display:flex; align-items:center; justify-content:center; border-radius:22rpx; font-size:24rpx; }
+.follow-date { padding:0 24rpx; background:#f5f1f3; color:#6b5d65; }
+.follow-add { padding:0 30rpx; background:#fff0f5; color:#b43e6f; font-weight:700; }
+.follow-list { margin-top:24rpx; display:flex; flex-direction:column; gap:14rpx; }
+.follow-item { display:flex; align-items:center; gap:16rpx; padding:20rpx; border-radius:20rpx; background:#faf7f8; }
+.follow-main { flex:1; min-width:0; }
+.follow-content,.follow-meta { display:block; }
+.follow-content { color:#33252d; font-size:25rpx; line-height:1.5; }
+.follow-meta { margin-top:7rpx; color:#94838c; font-size:20rpx; }
+.follow-complete { flex-shrink:0; min-width:112rpx; padding:0 20rpx; background:#e8f7ee; color:#238b57; font-weight:700; }
 
 /* 预约记录 */
 .order-list { display: flex; flex-direction: column; gap: 16rpx; }

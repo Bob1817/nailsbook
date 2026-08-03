@@ -20,7 +20,14 @@ Page({
         api.technician.subscription.plans()
       ]);
       this.setData({
-        currentPlan: sub,
+        currentPlan: sub ? {
+          ...sub,
+          displayName: sub.plan ? sub.plan.name : '免费版',
+          featureText: sub.plan && sub.plan.features ? sub.plan.features.map(code => ({
+            customer_management: '客户管理', booking: '预约管理', works: '作品管理',
+            referral_5_percent: '客户邀请与5%美甲基金', insights: '经营分析', branding: '高级主页展示'
+          }[code] || code)).join('、') : '基础经营功能'
+        } : null,
         plans: plans.list || plans.data || plans || [],
         loading: false,
         loadFailed: false

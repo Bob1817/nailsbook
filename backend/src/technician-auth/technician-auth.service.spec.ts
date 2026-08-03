@@ -10,6 +10,7 @@ describe('TechnicianAuthService.setInitialPassword', () => {
     };
   };
   let jwtService: { sign: jest.Mock };
+  let verificationCode: { validate: jest.Mock };
 
   const baseTechnician = {
     id: 7,
@@ -38,10 +39,11 @@ describe('TechnicianAuthService.setInitialPassword', () => {
       },
     };
     jwtService = { sign: jest.fn().mockReturnValue('signed.jwt.token') };
+    verificationCode = { validate: jest.fn() };
     service = new TechnicianAuthService(
       prisma as never,
       jwtService as never,
-      {} as never,
+      verificationCode as never,
       {} as never,
     );
   });
@@ -49,7 +51,17 @@ describe('TechnicianAuthService.setInitialPassword', () => {
   it('sets the password and issues tokens when the account has no password', async () => {
     prisma.technician.findUnique.mockResolvedValue({ ...baseTechnician });
 
-    const result = await service.setInitialPassword('13800138000', 'abcd1234');
+    const result = await service.setInitialPassword(
+      '13800138000',
+      '123456',
+      'abcd1234',
+    );
+
+    expect(verificationCode.validate).toHaveBeenCalledWith(
+      '13800138000',
+      '123456',
+      'technician:initial-password',
+    );
 
     // 写入了密码且清除 mustChangePassword
     expect(prisma.technician.update).toHaveBeenCalledWith(
@@ -72,7 +84,7 @@ describe('TechnicianAuthService.setInitialPassword', () => {
     });
 
     await expect(
-      service.setInitialPassword('13800138000', 'abcd1234'),
+      service.setInitialPassword('13800138000', '123456', 'abcd1234'),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(prisma.technician.update).not.toHaveBeenCalled();
   });
@@ -81,7 +93,7 @@ describe('TechnicianAuthService.setInitialPassword', () => {
     prisma.technician.findUnique.mockResolvedValue(null);
 
     await expect(
-      service.setInitialPassword('13800138000', 'abcd1234'),
+      service.setInitialPassword('13800138000', '123456', 'abcd1234'),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 });

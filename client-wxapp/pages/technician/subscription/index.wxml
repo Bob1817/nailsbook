@@ -15,9 +15,14 @@
     <!-- 当前套餐 -->
     <view class="card current-card">
       <text class="current-label">当前套餐</text>
-      <text class="current-name">{{currentPlan ? currentPlan.planName || '基础版' : '免费试用'}}</text>
-      <text wx:if="{{currentPlan && currentPlan.expiresAt}}" class="current-expire">到期时间：{{currentPlan.expiresAt}}</text>
-      <text class="current-mode">当前版本暂不支持小程序内付款，升级请联系平台客服确认套餐。</text>
+      <text class="current-name">{{currentPlan ? currentPlan.displayName : '免费版'}}</text>
+      <text wx:if="{{currentPlan && currentPlan.expiredAt}}" class="current-expire">到期时间：{{currentPlan.expiredAt}}</text>
+      <text wx:if="{{currentPlan}}" class="current-mode">{{currentPlan.featureText}}</text>
+      <view wx:if="{{currentPlan}}" class="usage-row">
+        <text>客户 {{currentPlan.usage.customerCount}}{{currentPlan.plan.maxCustomers !== null ? '/' + currentPlan.plan.maxCustomers : ''}}</text>
+        <text>本月预约 {{currentPlan.usage.monthlyBookings}}{{currentPlan.plan.maxMonthlyBookings !== null ? '/' + currentPlan.plan.maxMonthlyBookings : ''}}</text>
+      </view>
+      <text class="current-mode">订阅支付与订单微信支付共用支付能力；商户资质完成前，升级由平台人工确认。</text>
     </view>
 
     <!-- 可选套餐 -->

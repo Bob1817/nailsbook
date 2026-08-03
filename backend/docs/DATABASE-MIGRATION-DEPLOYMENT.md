@@ -9,6 +9,17 @@
 - `20260721150000` 至 `20260721190000`：本轮作品授权、审美字段、评价/分享、来源作品和客户美甲照片增量迁移。
 - `20260721185000_reconcile_historical_schema`：仅供全新数据库补齐过去由 `db push` 创建的结构。历史运行库不得直接执行该 SQL。
 - `20260721220000_add_order_client_record_note`：增加客户在已完成美甲记录中的独立备注。
+- `20260731090000_add_customer_source_and_follow_up`：增加客户来源字段和客户跟进记录。
+- `20260731110000_add_order_reminder_delivery`：增加预约提醒发送状态、尝试次数、失败原因和取消记录。
+- `20260731140000_add_referral_campaign`：增加美甲师推荐活动配置。
+- `20260731160000_add_direct_referrals`：增加随机推荐链接和单层直接推荐关系，并限制同一美甲师下重复归因。
+- `20260731180000_add_referral_qualification`：快照推荐活动门槛与奖励，并记录首个有效完成订单的推荐资格。
+- `20260731200000_add_reward_fund_ledger`：增加客户分美甲师基金账户和具有唯一业务来源的不可变账本。
+- `20260731220000_add_order_fund_discount`：记录订单使用的基金抵扣金额，完成收入按抵扣后金额确认。
+- `20260803160000_add_payment_orders`：增加定金、尾款和订阅统一支付单。
+- `20260803170000_add_wechat_identity`：增加微信 OpenID 与客户、美甲师双角色绑定。
+- `20260803180000_add_auth_verification_codes`：增加持久化验证码和限流状态。
+- `20260803190000_add_wechat_platform_config`：增加后台维护的微信登录、支付加密配置及校验状态。
 
 ## A. 全新数据库部署
 
@@ -27,7 +38,7 @@ sqlite3 "$deployment_db" "PRAGMA foreign_key_check;"
 
 验收结果应为：
 
-- 26 个迁移全部完成；
+- 37 个迁移全部完成；
 - `migrate diff` 输出 `No difference detected.`；
 - `foreign_key_check` 无输出。
 

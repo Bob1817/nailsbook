@@ -1,6 +1,19 @@
 const api = require('../../../services/api');
 
-const TABS = ['全部', '常客', '新客', '高频'];
+const LIFECYCLE_TABS = [
+  { key: 'all', label: '全部' },
+  { key: 'new', label: '新客' },
+  { key: 'active', label: '活跃' },
+  { key: 'due', label: '待复购' },
+  { key: 'dormant', label: '沉睡' }
+];
+
+const LIFECYCLE_LABELS = {
+  new: '新客',
+  active: '活跃',
+  due: '待复购',
+  dormant: '沉睡'
+};
 
 const TAG_COLORS = {
   '常客': { bg: '#FFE9F0', text: '#FF5E93' },
@@ -65,13 +78,21 @@ function decorateCustomer(c) {
     _displayName: displayName,
     _initial: initial,
     _totalSpentText: formatMoney(c.totalSpent),
-    _recentServiceText: formatDateLabel(c.recentServiceAt)
+    _recentServiceText: formatDateLabel(c.recentServiceAt),
+    _lifecycleLabel: LIFECYCLE_LABELS[c.lifecycle && c.lifecycle.status] || '新客',
+    _lifecycleClass: `lifecycle-${(c.lifecycle && c.lifecycle.status) || 'new'}`,
+    _lifecycleReason: (c.lifecycle && c.lifecycle.reason) || '尚未完成首次服务',
+    _expectedServiceText: c.lifecycle && c.lifecycle.expectedNextServiceAt
+      ? formatDateLabel(c.lifecycle.expectedNextServiceAt)
+      : ''
   };
 }
 
 Page({
   data: {
-    tabs: TABS,
+    lifecycleTabs: LIFECYCLE_TABS,
+    activeLifecycle: 'all',
+    tabs: ['全部'],
     activeTab: '全部',
     keyword: '',
     customers: [],
@@ -84,7 +105,11 @@ Page({
     editingName: ''
   },
 
-  onLoad() {
+  onLoad(options) {
+    const lifecycle = options && options.lifecycle;
+    if (LIFECYCLE_TABS.some(item => item.key === lifecycle)) {
+      this.setData({ activeLifecycle: lifecycle });
+    }
     this.loadCustomers();
   },
 
@@ -121,14 +146,26 @@ Page({
   },
 
   filterCustomers() {
-    const { customers, activeTab } = this.data;
-    let visibleCustomers;
-    if (activeTab === '全部') {
-      visibleCustomers = customers;
-    } else {
-      visibleCustomers = customers.filter(c => c._tags.some(tag => tag.name === activeTab));
+    const { customers, activeTab, activeLifecycle } = this.data;
+    let visibleCustomers = customers;
+    if (activeLifecycle !== 'all') {
+      visibleCustomers = visibleCustomers.filter(
+        c => c.lifecycle && c.lifecycle.status === activeLifecycle
+      );
+    }
+    if (activeTab !== '全部') {
+      visibleCustomers = visibleCustomers.filter(
+        c => c._tags.some(tag => tag.name === activeTab)
+      );
     }
     this.setData({ visibleCustomers });
+  },
+
+  onLifecycleChange(e) {
+    const lifecycle = e.currentTarget.dataset.lifecycle;
+    if (lifecycle === this.data.activeLifecycle) return;
+    this.setData({ activeLifecycle: lifecycle });
+    this.filterCustomers();
   },
 
   onTabChange(e) {
@@ -159,7 +196,7 @@ Page({
 
   resetFilters() {
     if (this._searchTimer) clearTimeout(this._searchTimer);
-    this.setData({ keyword: '', activeTab: '全部' });
+    this.setData({ keyword: '', activeTab: '全部', activeLifecycle: 'all' });
     this.loadCustomers();
   },
 

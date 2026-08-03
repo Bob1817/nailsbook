@@ -21,6 +21,7 @@ import Comments from './pages/Comments';
 import Reports from './pages/Reports';
 import Feedback from './pages/Feedback';
 import ArtistApplications from './pages/ArtistApplications';
+import WechatConfig from './pages/WechatConfig';
 
 const App: React.FC = () => {
   return (
@@ -50,6 +51,7 @@ const App: React.FC = () => {
               <Route path="subscriptions" element={<ProtectedRoute permission="subscription:view"><Subscriptions /></ProtectedRoute>} />
               <Route path="logs" element={<ProtectedRoute permission="log:view"><OperationLogs /></ProtectedRoute>} />
               <Route path="feature-flags" element={<ProtectedRoute permission="feature_flag:view"><FeatureFlags /></ProtectedRoute>} />
+              <Route path="wechat-config" element={<ProtectedRoute permission="feature_flag:view"><WechatConfig /></ProtectedRoute>} />
               <Route path="roles" element={<ProtectedRoute permission="role:view"><Roles /></ProtectedRoute>} />
               <Route path="invite-keys" element={<InviteKeys />} />
             </Route>

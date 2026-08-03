@@ -34,6 +34,8 @@ Page({
 
     todoItems: [],
     todoTotal: 0,
+    todayFollowUps: [],
+    businessOverview: null,
 
     featuredWorks: [],
     worksLeft: [],
@@ -81,15 +83,25 @@ Page({
     this.setData({ loading: true });
 
     try {
-      const [tripsResult, convResult, worksResult] = await Promise.all([
+      const [tripsResult, convResult, worksResult, followUpsResult, insights] = await Promise.all([
         api.technician.orders.trips().catch(() => []),
         api.chat.conversations('technician').catch(() => []),
-        api.technician.works.list().catch(() => [])
+        api.technician.works.list().catch(() => []),
+        api.technician.customers.todayFollowUps().catch(() => []),
+        api.technician.insights.overview().catch(() => null)
       ]);
 
       const tripsRaw = Array.isArray(tripsResult) ? tripsResult : (tripsResult.data || []);
       const convs = Array.isArray(convResult) ? convResult : (convResult.data || []);
       const worksRaw = Array.isArray(worksResult) ? worksResult : (worksResult.data || []);
+      const followUpsRaw = Array.isArray(followUpsResult)
+        ? followUpsResult
+        : (followUpsResult.data || []);
+      const todayFollowUps = followUpsRaw.map(item => ({
+        ...item,
+        _clock: formatClock(item.plannedAt),
+        _customerName: (item.customer && item.customer.name) || '客户'
+      }));
 
       const orders = tripsRaw.map(normalizeOrder).filter(Boolean);
       const summary = buildDashboardSummary(orders, new Date());
@@ -175,6 +187,46 @@ Page({
       // 副标题预估收入
       const todayCount = summary.todayOrders.length;
       const expectedIncomeText = formatMoney(summary.expectedIncome);
+      const businessOverview = insights ? {
+        revenue: formatMoney(insights.revenue.monthConfirmed || 0),
+        averageTicket: insights.revenue.averageTicket == null
+          ? '暂无'
+          : formatMoney(insights.revenue.averageTicket),
+        totalCustomers: insights.customers.total || 0,
+        newCustomers: insights.customers.newThisMonth || 0,
+        completedCustomers: insights.customers.completed || 0,
+        repeatRate: insights.customers.repeatRate == null
+          ? '暂无'
+          : `${Math.round(insights.customers.repeatRate * 100)}%`,
+        dueCustomers: insights.customers.dueForRepurchase || 0,
+        referrals: insights.referrals.total || 0,
+        qualifiedReferrals: insights.referrals.qualified || 0,
+        referralRevenue: formatMoney(insights.referrals.qualifiedRevenue || 0),
+        fundsIssued: formatMoney(insights.funds.issued || 0),
+        fundsRedeemed: formatMoney(insights.funds.redeemed || 0),
+        dailyTrend: (insights.trends.daily || []).slice(-7).map(item => ({
+          ...item,
+          label: item.period.slice(5),
+          revenueText: formatMoney(item.revenue)
+        })),
+        weeklyTrend: (insights.trends.weekly || []).slice(-4).map(item => ({
+          ...item,
+          label: `${item.period.slice(5)} 周`,
+          revenueText: formatMoney(item.revenue)
+        })),
+        performanceReady: !!insights.performance.sufficientData,
+        performanceMinimum: insights.performance.minimumSampleSize || 5,
+        topService: insights.performance.services && insights.performance.services[0]
+          ? { ...insights.performance.services[0], revenueText: formatMoney(insights.performance.services[0].revenue) }
+          : null,
+        topTimeSlot: insights.performance.timeSlots && insights.performance.timeSlots[0]
+          ? { ...insights.performance.timeSlots[0], revenueText: formatMoney(insights.performance.timeSlots[0].revenue) }
+          : null,
+        reminders: (insights.reminders || []).map(item => ({
+          ...item,
+          typeText: { due: '待复购', dormant: '沉睡', high_value: '高价值' }[item.type] || '经营提醒'
+        }))
+      } : null;
 
       this.setData({
         loading: false,
@@ -183,6 +235,8 @@ Page({
         todayOrders: summary.todayOrders.map(decorate),
         todoItems,
         todoTotal,
+        todayFollowUps,
+        businessOverview,
         featuredWorks,
         worksLeft,
         worksRight,
@@ -258,6 +312,17 @@ Page({
     wx.navigateTo({ url: '/pages/technician/works/index' });
   },
 
+  openBusinessDetail(e) {
+    const target = e.currentTarget.dataset.target;
+    const routes = {
+      orders: '/pages/technician/orders/index?filter=completed',
+      customers: '/pages/technician/customers/index',
+      due: '/pages/technician/customers/index?lifecycle=due',
+      referrals: '/pages/technician/referral-campaign/index'
+    };
+    if (routes[target]) wx.navigateTo({ url: routes[target] });
+  },
+
   navigateToWorkDetail(e) {
     const id = e.currentTarget.dataset.id;
     if (id) wx.navigateTo({ url: `/pages/technician/work-detail/index?id=${id}` });
@@ -280,14 +345,26 @@ Page({
     }
   },
 
+  openFollowUpCustomer(e) {
+    const id = e.currentTarget.dataset.id;
+    if (id) wx.navigateTo({ url: `/pages/technician/customer-detail/index?id=${id}` });
+  },
+
+  openInsightCustomer(e) {
+    const id = e.currentTarget.dataset.id;
+    if (id) wx.navigateTo({ url: `/pages/technician/customer-detail/index?id=${id}` });
+  },
+
   // ---------- 分享 ----------
   onShareAppMessage() {
     const u = wx.getStorageSync('userInfo') || {};
     const inviteCode = u.invitationCode || '';
     return {
       title: `美甲师 ${u.name || '小美'} 的名片`,
-      path: inviteCode
-        ? `/pages/client/login/index?invite=${inviteCode}`
+      path: u.id
+        ? `/pages/client/works/index?techId=${u.id}&source=card`
+        : inviteCode
+          ? `/pages/client/login/index?invite=${inviteCode}`
         : '/pages/role-select/index',
       imageUrl: u.avatarUrl || ''
     };

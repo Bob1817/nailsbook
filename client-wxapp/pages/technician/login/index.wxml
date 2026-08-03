@@ -1,13 +1,32 @@
 <nav-bar title="美甲师端" subtitle="" transparent/>
-<view class="container {{step === 'register' ? 'register-container' : ''}}">
-  <view class="header {{step === 'register' ? 'header-compact' : ''}}">
-    <view wx:if="{{step !== 'register'}}" class="logo-circle">N</view>
-    <text class="title">{{step === 'register' ? '邀请注册' : '登录'}}</text>
-    <text wx:if="{{step === 'register'}}" class="subtitle">该手机号尚未注册，需要有效邀请密钥</text>
+<view class="container {{loginMethod === 'phone' && step === 'register' ? 'register-container' : ''}}">
+  <view class="header {{loginMethod === 'phone' && step === 'register' ? 'header-compact' : ''}}">
+    <view wx:if="{{loginMethod !== 'phone' || step !== 'register'}}" class="logo-circle">N</view>
+    <text class="title">{{loginMethod === 'phone' && step === 'register' ? '邀请注册' : '登录'}}</text>
+    <text wx:if="{{loginMethod === 'phone' && step === 'register'}}" class="subtitle">该手机号尚未注册，需要有效邀请密钥</text>
+  </view>
+
+  <view wx:if="{{wechatFeatureVisible}}" class="login-tabs">
+    <view class="login-tab {{loginMethod === 'wechat' ? 'login-tab-active' : ''}}" data-method="wechat" bindtap="selectLoginMethod">微信授权登录</view>
+    <view class="login-tab {{loginMethod === 'phone' ? 'login-tab-active' : ''}}" data-method="phone" bindtap="selectLoginMethod">手机号登录</view>
+  </view>
+
+  <view wx:if="{{wechatFeatureVisible && loginMethod === 'wechat'}}" class="form">
+    <text class="wechat-hint">微信仅用于识别登录身份；首次绑定时需主动授权手机号，美甲师入驻仍需邀请码。</text>
+    <button wx:if="{{wechatLinked}}" class="btn-primary" bindtap="handleWechatLogin" disabled="{{loading || wechatChecking}}">
+      {{loading ? '登录中...' : '微信授权登录'}}
+    </button>
+    <button wx:elif="{{wechatReady}}" class="btn-primary" open-type="getPhoneNumber" bindgetphonenumber="handleWechatPhone" disabled="{{loading}}">
+      授权手机号并登录
+    </button>
+    <button wx:else class="btn-primary" bindtap="handleWechatLogin" disabled="{{wechatChecking}}">
+      {{wechatChecking ? '正在检查微信登录...' : '重新获取微信登录状态'}}
+    </button>
+    <view class="link-row"><text class="link" data-method="phone" bindtap="selectLoginMethod">改用手机号登录</text></view>
   </view>
 
   <!-- Step 1: 输入手机号 -->
-  <view wx:if="{{step === 'phone'}}" class="form">
+  <view wx:elif="{{loginMethod === 'phone' && step === 'phone'}}" class="form">
     <view class="form-item">
       <text class="label">手机号</text>
       <input class="input {{phoneError ? 'input-error' : ''}}" type="number" maxlength="11" placeholder="请输入手机号"
@@ -23,7 +42,7 @@
   </view>
 
   <!-- Step 2: 登录（已注册已设密码） -->
-  <view wx:elif="{{step === 'login'}}" class="form">
+  <view wx:elif="{{loginMethod === 'phone' && step === 'login'}}" class="form">
     <view class="form-item">
       <text class="label">手机号</text>
       <view class="readonly">
@@ -47,7 +66,7 @@
   </view>
 
   <!-- Step 3: 注册（未注册） -->
-  <view wx:else class="form register-form">
+  <view wx:elif="{{loginMethod === 'phone' && step === 'register'}}" class="form register-form">
     <view class="invite-callout">
       <text class="invite-callout-title">仅限受邀注册</text>
       <text class="invite-callout-text">请输入平台提供的 16 位邀请密钥</text>
@@ -82,6 +101,9 @@
     </view>
     <button class="btn-primary" bindtap="handleRegister" disabled="{{loading}}">
       {{loading ? '注册中...' : '注册并登录'}}
+    </button>
+    <button wx:if="{{wechatReady}}" class="btn-secondary" open-type="getPhoneNumber" bindgetphonenumber="handleWechatPhone" disabled="{{loading}}">
+      授权微信手机号并注册
     </button>
     <view class="register-links">
       <navigator url="/pages/role-select/index" class="back-link">返回选择身份</navigator>

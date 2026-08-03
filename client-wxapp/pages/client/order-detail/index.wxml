@@ -86,17 +86,41 @@
       <text class="price-main">{{order._priceText}}</text>
     </view>
 
+    <view wx:if="{{order.status === 'pending_agree' && availableFund > 0}}" class="fund-discount-box">
+      <view class="fund-discount-head">
+        <text>可用美甲基金 ¥{{availableFund}}</text>
+        <text class="fund-max" bindtap="useMaximumFund">全部使用</text>
+      </view>
+      <view class="fund-input-row">
+        <text>抵扣 ¥</text>
+        <input type="digit" value="{{fundAmount}}" bindinput="onFundAmountInput" aria-label="基金抵扣金额"/>
+      </view>
+      <text class="fund-payable">抵扣后预计支付 ¥{{order.price - fundAmount}}</text>
+    </view>
+
+    <view wx:if="{{order.fundDiscountAmount > 0}}" class="price-row">
+      <text class="price-label">基金抵扣</text>
+      <text class="price-discount">-¥{{order.fundDiscountAmount}}</text>
+    </view>
+
     <view wx:if="{{order.depositAmount > 0}}" class="deposit-box">
       <view class="deposit-top">
-        <text class="deposit-cap">定金（线下支付）</text>
+        <text class="deposit-cap">预约定金</text>
         <text class="deposit-state {{order.depositPaid ? 'deposit-paid' : 'deposit-unpaid'}}">
           {{order.depositPaid ? '已支付' : '待支付'}}
         </text>
       </view>
       <text class="deposit-amount">¥{{order.depositAmount}}</text>
       <text class="deposit-hint">
-        {{order.depositPaid ? '美甲师已确认收到定金' : '请线下支付定金后，点击下方按钮确认'}}
+        {{order.depositPaid ? '定金支付已确认' : '确认报价后可通过订单支付单支付定金'}}
       </text>
+    </view>
+
+    <view class="payment-summary">
+      <view class="price-row"><text class="price-label">订单应付</text><text>¥{{order.totalPayable}}</text></view>
+      <view class="price-row"><text class="price-label">已支付</text><text>¥{{order.paidAmount}}</text></view>
+      <view class="price-row payment-remaining"><text class="price-label">待支付</text><text>¥{{order.remainingAmount}}</text></view>
+      <text wx:if="{{payments.length}}" class="payment-count">已生成 {{payments.length}} 笔支付记录</text>
     </view>
   </view>
 

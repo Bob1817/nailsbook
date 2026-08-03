@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
+import { IsIn, IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsStrongPassword } from '../../common/validators/password.validator';
 
@@ -22,4 +22,9 @@ export class RegisterByInviteDto {
   @IsOptional()
   @IsString()
   nickname?: string;
+
+  @ApiPropertyOptional({ description: '注册来源', enum: ['invite', 'card'] })
+  @IsOptional()
+  @IsIn(['invite', 'card'])
+  source?: 'invite' | 'card';
 }

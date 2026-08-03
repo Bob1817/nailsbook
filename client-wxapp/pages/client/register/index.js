@@ -21,10 +21,36 @@ Page({
     confirmPasswordError: ''
   },
 
-  onLoad(options) {
+  async onLoad(options) {
     this.redirect = options.redirect ? decodeURIComponent(options.redirect) : '';
+    this.registrationSource = options.source === 'card' ? 'card' : 'invite';
     if (options.phone) {
       this.setData({ phone: options.phone });
+    }
+    if (options.invite) {
+      const inviteCode = decodeURIComponent(options.invite);
+      try {
+        const card = await api.public.artists.card(inviteCode);
+        this.setData({ inviteCode, foundTech: card.artist || null });
+      } catch (err) {
+        this.setData({ inviteCode, inviteCodeError: '邀请码已失效，请联系美甲师' });
+      }
+    }
+    if (options.referral) {
+      this.referralToken = options.referral;
+      wx.setStorageSync('pending_referral_token', options.referral);
+      try {
+        const referral = await api.public.referrals.resolve(options.referral);
+        const inviteCode = referral.technician && referral.technician.invitationCode;
+        if (inviteCode) {
+          this.setData({
+            inviteCode,
+            foundTech: referral.technician
+          });
+        }
+      } catch (err) {
+        wx.showToast({ title: err.message || '推荐链接已失效', icon: 'none' });
+      }
     }
   },
 
@@ -92,8 +118,8 @@ Page({
     wx.showLoading({ title: '注册中...' });
 
     try {
-      const res = await api.auth.registerClient(phone, password, inviteCode.trim());
-      this._afterAuth(res);
+      const res = await api.auth.registerClient(phone, password, inviteCode.trim(), this.registrationSource);
+      await this._afterAuth(res);
     } catch (err) {
       wx.hideLoading();
       this.setData({ loading: false });
@@ -101,7 +127,7 @@ Page({
     }
   },
 
-  _afterAuth(res) {
+  async _afterAuth(res) {
     const app = getApp();
     app.setLogin('client', res.accessToken, res.client);
     if (res.refreshToken) {
@@ -110,6 +136,15 @@ Page({
     if (res.technician) {
       wx.setStorageSync('client_bindings', res.technicians || [res.technician]);
       wx.setStorageSync('defaultTechId', res.technician.id);
+    }
+    const referralToken = this.referralToken || wx.getStorageSync('pending_referral_token');
+    if (referralToken) {
+      try {
+        await api.client.referrals.claim(referralToken);
+        wx.removeStorageSync('pending_referral_token');
+      } catch (err) {
+        wx.showToast({ title: err.message || '推荐关系暂未记录', icon: 'none' });
+      }
     }
     wx.hideLoading();
     wx.reLaunch({ url: this.redirect || '/pages/client/home/index' });

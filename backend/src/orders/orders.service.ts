@@ -11,6 +11,10 @@ import * as crypto from 'crypto';
 import { CreateTechnicianOrderDto } from './dto/create-technician-order.dto';
 import { ReviewOrderDto } from './dto/review-order.dto';
 import { BookingMutexService } from './booking-mutex.service';
+import { ReferralQualificationService } from '../referrals/referral-qualification.service';
+import { RewardFundService } from '../referrals/reward-fund.service';
+import { assertWithinServiceSchedule } from './order-work-schedule';
+import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 
 export type OrderStatus =
   | 'pending_quote'
@@ -29,8 +33,8 @@ export const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   pending_agree: ['pending_confirm', 'pending_quote', 'cancelled', 'expired'],
   pending_confirm: ['pending_home', 'pending_shop', 'cancelled', 'expired'],
   pending_client_confirm: ['pending_confirm', 'cancelled', 'expired'],
-  pending_home: ['in_progress'],
-  pending_shop: ['in_progress'],
+  pending_home: ['in_progress', 'cancelled'],
+  pending_shop: ['in_progress', 'cancelled'],
   in_progress: ['completed'],
   completed: [],
   cancelled: [],
@@ -55,12 +59,19 @@ export class OrdersService {
     private prisma: PrismaService,
     private chatGateway: ChatGateway,
     @Optional() private readonly bookingMutex?: BookingMutexService,
+    @Optional()
+    private readonly referralQualification?: ReferralQualificationService,
+    @Optional() private readonly rewardFunds?: RewardFundService,
+    @Optional() private readonly subscriptions?: SubscriptionsService,
   ) {}
 
   async createForTechnician(
     technicianId: number,
     dto: CreateTechnicianOrderDto,
   ) {
+    if (this.subscriptions) {
+      await this.subscriptions.assertCanCreateBooking(technicianId);
+    }
     // Resolve Customer record: accept either customerId or clientUserId
     let customerId: number;
     let resolvedClientUserId: number | null = null;
@@ -87,6 +98,16 @@ export class OrdersService {
     if (dto.shareToClient && dto.price == null) {
       throw new BadRequestException('生成微信确认链接时，价格为必填项');
     }
+    const initialStart = new Date(dto.startTime);
+    const initialEnd = new Date(dto.endTime);
+    if (
+      Number.isNaN(initialStart.getTime()) ||
+      Number.isNaN(initialEnd.getTime()) ||
+      initialEnd <= initialStart
+    ) {
+      throw new BadRequestException('预约时间无效');
+    }
+    await this.assertTechnicianWorkSchedule(technicianId, initialStart, initialEnd);
 
     const confirmToken = dto.shareToClient ? crypto.randomUUID() : null;
     const confirmTokenExpiresAt = confirmToken
@@ -129,9 +150,8 @@ export class OrdersService {
           },
         });
 
-        // Freeze time slot: booking time + 5 hours
         const startTime = new Date(dto.startTime);
-        const blockEndTime = new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
+        const blockEndTime = new Date(dto.endTime);
         const conflict = await tx.blockedTimeSlot.findFirst({
           where: {
             techId: technicianId,
@@ -313,7 +333,8 @@ export class OrdersService {
     const blockEnd =
       endTime.getTime() > startTime.getTime()
         ? endTime
-        : new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
+        : new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
+    await this.assertTechnicianWorkSchedule(technicianId, startTime, blockEnd);
 
     updateData.startTime = startTime;
     updateData.endTime = endTime;
@@ -339,6 +360,16 @@ export class OrdersService {
       const updated = await tx.order.update({
         where: { id },
         data: updateData,
+      });
+      await tx.orderReminder.updateMany({
+        where: { orderId: id, status: { not: 'cancelled' } },
+        data: {
+          status: 'pending',
+          attempts: 0,
+          sentAt: null,
+          cancelledAt: null,
+          lastError: null,
+        },
       });
 
       await tx.blockedTimeSlot.deleteMany({ where: { orderId: id } });
@@ -375,6 +406,7 @@ export class OrdersService {
     ) {
       throw new BadRequestException('预约时间或预估时长无效');
     }
+    await this.assertTechnicianWorkSchedule(technicianId, startTime, endTime);
 
     await this.assertOrderConflict(technicianId, startTime, endTime, order.id);
 
@@ -401,7 +433,7 @@ export class OrdersService {
         },
       });
 
-      // 用实际服务时间（startTime~endTime）替换默认 5 小时占用，
+      // 用实际服务时间（startTime~endTime）替换创建时的预估占用，
       // 保持该预约的“已预约时间范围”与确认后的服务时长同步。
       await tx.blockedTimeSlot.updateMany({
         where: { orderId: id },
@@ -609,11 +641,18 @@ export class OrdersService {
           orderId: id,
           technicianId: order.technicianId,
           customerId: order.customerId,
-          amount: order.quotePrice ?? 0,
+          amount: Math.max(
+            0,
+            (order.quotePrice ?? 0) - (order.fundDiscountAmount ?? 0),
+          ),
           recognizedAt: new Date(),
           status: 'confirmed',
         },
       });
+
+      if (this.referralQualification) {
+        await this.referralQualification.qualifyCompletedOrder(tx, order);
+      }
 
       if (order.clientUserId) {
         const preview = '服务已完成，感谢使用～';
@@ -683,6 +722,8 @@ export class OrdersService {
       'pending_agree',
       'pending_confirm',
       'pending_client_confirm',
+      'pending_home',
+      'pending_shop',
     ];
     if (!cancellableStatuses.includes(order.status as OrderStatus)) {
       throw new BadRequestException('当前订单状态不支持取消');
@@ -699,11 +740,19 @@ export class OrdersService {
       if (claimed.count !== 1) {
         throw new BadRequestException('该订单已取消，无需重复处理');
       }
+      await tx.orderReminder.updateMany({
+        where: { orderId: id, status: { not: 'sent' } },
+        data: { status: 'cancelled', cancelledAt: new Date() },
+      });
 
       // Release blocked time slot
       await tx.blockedTimeSlot.deleteMany({
         where: { orderId: id },
       });
+
+      if (this.rewardFunds) {
+        await this.rewardFunds.reverseOrderRedemption(tx, id);
+      }
 
       const updated = await tx.order.update({
         where: { id },
@@ -712,7 +761,6 @@ export class OrdersService {
           cancelReason: cancelReason ?? order.cancelReason ?? null,
         },
       });
-
       if (order.clientUserId) {
         const preview = '订单已取消';
         const conversation = await tx.conversation.upsert({
@@ -798,7 +846,7 @@ export class OrdersService {
       throw new BadRequestException('请选择将来的预约时间');
     }
 
-    // 保留原服务时长；若无有效时长则按冻结 5 小时处理
+    // 保留原服务时长；历史无有效时长时按两小时处理。
     const prevDuration =
       new Date(order.endTime).getTime() - new Date(order.startTime).getTime();
     const endTime =
@@ -808,7 +856,8 @@ export class OrdersService {
     const blockEnd =
       prevDuration > 0
         ? endTime
-        : new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
+        : new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
+    await this.assertTechnicianWorkSchedule(technicianId, startTime, blockEnd);
 
     const restoreStatus = order.expiredFromStatus ?? 'pending_quote';
 
@@ -838,6 +887,16 @@ export class OrdersService {
           expiredFromStatus: null,
           reminderDaySent: false,
           reminderHourSent: false,
+        },
+      });
+      await tx.orderReminder.updateMany({
+        where: { orderId: id },
+        data: {
+          status: 'pending',
+          attempts: 0,
+          sentAt: null,
+          cancelledAt: null,
+          lastError: null,
         },
       });
 
@@ -906,6 +965,34 @@ export class OrdersService {
 
   private generateOrderNo(): string {
     return `OD${Date.now()}${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+  }
+
+  private async assertTechnicianWorkSchedule(
+    technicianId: number,
+    startTime: Date,
+    endTime: Date,
+  ) {
+    const technician = this.prisma.technician?.findUnique
+      ? await this.prisma.technician.findUnique({
+          where: { id: technicianId },
+          select: { serviceSchedule: true },
+        })
+      : { serviceSchedule: null };
+    if (!technician) throw new NotFoundException('美甲师不存在');
+    const year = startTime.getFullYear();
+    const month = String(startTime.getMonth() + 1).padStart(2, '0');
+    const day = String(startTime.getDate()).padStart(2, '0');
+    const hour = String(startTime.getHours()).padStart(2, '0');
+    const minute = String(startTime.getMinutes()).padStart(2, '0');
+    const durationMinutes = Math.ceil(
+      (endTime.getTime() - startTime.getTime()) / 60000,
+    );
+    assertWithinServiceSchedule(
+      technician.serviceSchedule,
+      `${year}-${month}-${day}`,
+      `${hour}:${minute}`,
+      durationMinutes,
+    );
   }
 
   private generateRevenueNo(): string {

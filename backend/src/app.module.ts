@@ -45,6 +45,10 @@ import { DevelopmentAuthSeedService } from './development-auth-seed.service';
 import { DevelopmentDemoSeedService } from './development-demo-seed.service';
 import { ProductionSeedService } from './production-seed.service';
 import { TechnicianInsightsModule } from './technician-insights/technician-insights.module';
+import { ReferralsModule } from './referrals/referrals.module';
+import { PaymentsModule } from './payments/payments.module';
+import { WechatAuthModule } from './wechat-auth/wechat-auth.module';
+import { WechatPlatformConfigModule } from './wechat-platform-config/wechat-platform-config.module';
 
 @Module({
   imports: [
@@ -96,6 +100,10 @@ import { TechnicianInsightsModule } from './technician-insights/technician-insig
     FeedbackModule,
     PushModule,
     TechnicianInsightsModule,
+    ReferralsModule,
+    PaymentsModule,
+    WechatAuthModule,
+    WechatPlatformConfigModule,
   ],
   controllers: [AppController],
   providers: [

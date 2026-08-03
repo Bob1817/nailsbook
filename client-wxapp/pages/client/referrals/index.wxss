@@ -1,0 +1,24 @@
+page { background: #f7f7f7; }
+.page { padding: 32rpx; }
+.card, .fund-card, .relation { background: #fff; border-radius: 24rpx; padding: 32rpx; }
+.title { display: block; font-size: 34rpx; font-weight: 600; color: #222; }
+.notice { display: block; margin: 16rpx 0 28rpx; color: #777; font-size: 26rpx; }
+.primary { min-height: 88rpx; border-radius: 44rpx; background: #ff6685; color: #fff; font-size: 30rpx; }
+.section-title { margin: 40rpx 0 20rpx; font-weight: 600; color: #333; }
+.list { display: flex; flex-direction: column; gap: 16rpx; }
+.relation { display: flex; align-items: center; justify-content: space-between; min-height: 88rpx; }
+.name, .tech { display: block; }
+.name { color: #222; }
+.tech, .status, .empty { color: #888; font-size: 26rpx; }
+.empty { padding: 48rpx 0; text-align: center; }
+.fund-card { margin-top: 24rpx; }
+.fund-label { display:block; color:#777; font-size:25rpx; }
+.fund-balance { display:block; margin-top:8rpx; color:#222; font-size:52rpx; font-weight:700; }
+.fund-summary,.fund-account { min-height:88rpx; display:flex; align-items:center; justify-content:space-between; color:#777; font-size:25rpx; }
+.fund-account { border-top:1rpx solid #f2edef; color:#444; }
+.ledger-row { min-height:100rpx; display:flex; align-items:center; justify-content:space-between; border-top:1rpx solid #f2edef; }
+.ledger-source,.ledger-date,.ledger-amount,.ledger-status { display:block; }
+.ledger-source { color:#333; font-size:25rpx; }
+.ledger-date,.ledger-status { margin-top:6rpx; color:#999; font-size:21rpx; }
+.ledger-amount-wrap { text-align:right; }
+.ledger-amount { color:#ff6685; font-weight:600; }

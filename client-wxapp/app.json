@@ -24,6 +24,7 @@
     "pages/client/chat/index",
     "pages/client/chat-detail/index",
     "pages/client/profile/index",
+    "pages/client/referrals/index",
     "pages/client/settings/index",
     "pages/client/my-favorites/index",
     "pages/client/my-likes/index",
@@ -56,6 +57,7 @@
     "pages/technician/service-time/index",
     "pages/technician/shop-management/index",
     "pages/technician/subscription/index",
+    "pages/technician/referral-campaign/index",
     "pages/technician/tag-management/index",
     "pages/technician/help-feedback/index",
     "pages/technician/about/index"

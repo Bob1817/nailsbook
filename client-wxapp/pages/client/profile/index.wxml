@@ -124,6 +124,11 @@
             <text class="menu-label">我的点赞</text>
             <text class="menu-arrow">›</text>
           </view>
+          <view class="menu-item" bindtap="navigateToReferrals">
+            <view class="menu-icon-wrap menu-icon-pink"><view class="m-icon m-icon-heart"></view></view>
+            <text class="menu-label">推荐好友</text>
+            <text class="menu-arrow">›</text>
+          </view>
           <view class="menu-item" bindtap="navigateToFeedback">
             <view class="menu-icon-wrap menu-icon-pink"><view class="m-icon m-icon-chat"></view></view>
             <text class="menu-label">问题反馈</text>

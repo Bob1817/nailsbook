@@ -152,8 +152,13 @@ export class ClientOrdersController {
   agree(
     @Req() request: { user: { clientUserId: number } },
     @Param('id', ParseIntPipe) id: number,
+    @Body() body: { fundAmount?: number } = {},
   ) {
-    return this.clientOrdersService.agree(request.user.clientUserId, id);
+    return this.clientOrdersService.agree(
+      request.user.clientUserId,
+      id,
+      Number(body.fundAmount ?? 0),
+    );
   }
 
   @Post(':id/reject-quote')

@@ -8,9 +8,11 @@ import { OrdersScheduler } from './orders.scheduler';
 import { PrismaModule } from '../common/prisma/prisma.module';
 import { ChatModule } from '../chat/chat.module';
 import { BookingMutexService } from './booking-mutex.service';
+import { ReferralsModule } from '../referrals/referrals.module';
+import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 
 @Module({
-  imports: [PrismaModule, ChatModule],
+  imports: [PrismaModule, ChatModule, ReferralsModule, SubscriptionsModule],
   controllers: [
     TechnicianOrdersController,
     ClientOrdersController,

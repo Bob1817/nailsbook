@@ -1,4 +1,5 @@
 let app = null;
+let refreshPromise = null;
 
 function getAppInstance() {
   if (!app) {
@@ -20,7 +21,8 @@ function request(options) {
     needAuth = true,
     baseUrl,
     timeout,
-    silent
+    silent,
+    _retried = false
   } = options;
 
   const appInstance = getAppInstance();
@@ -52,6 +54,16 @@ function request(options) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(res.data);
         } else if (res.statusCode === 401) {
+          if (needAuth && !_retried) {
+            refreshAccessToken(apiBase)
+              .then(() => request({ ...options, _retried: true }))
+              .then(resolve)
+              .catch((error) => {
+                handleUnauthorized();
+                reject(error);
+              });
+            return;
+          }
           if (needAuth) {
             handleUnauthorized();
           }
@@ -77,6 +89,48 @@ function request(options) {
       }
     });
   });
+}
+
+function refreshAccessToken(apiBase) {
+  if (refreshPromise) return refreshPromise;
+
+  const appInstance = getAppInstance();
+  const role = appInstance?.globalData?.role || wx.getStorageSync('role');
+  const refreshToken = role && wx.getStorageSync(`${role}_refreshToken`);
+  if (!role || !refreshToken) {
+    return Promise.reject({ code: 401, message: '登录已过期，请重新登录' });
+  }
+
+  const path = role === 'technician'
+    ? '/api/technician/auth/refresh'
+    : '/api/client/auth/refresh';
+
+  refreshPromise = new Promise((resolve, reject) => {
+    wx.request({
+      url: `${apiBase}${path}`,
+      method: 'POST',
+      data: { refreshToken },
+      header: { 'Content-Type': 'application/json' },
+      timeout: 30000,
+      success: (res) => {
+        if (res.statusCode < 200 || res.statusCode >= 300 || !res.data?.accessToken) {
+          reject(normalizeResponseError(res, '登录已过期，请重新登录'));
+          return;
+        }
+        const currentUser = appInstance?.globalData?.userInfo || wx.getStorageSync(`${role}_userInfo`);
+        appInstance.setLogin(role, res.data.accessToken, res.data.user || res.data.technician || currentUser);
+        if (res.data.refreshToken) {
+          wx.setStorageSync(`${role}_refreshToken`, res.data.refreshToken);
+        }
+        resolve(res.data.accessToken);
+      },
+      fail: () => reject({ code: -1, message: '网络错误，请检查网络连接' }),
+    });
+  }).finally(() => {
+    refreshPromise = null;
+  });
+
+  return refreshPromise;
 }
 
 function normalizeResponseError(res, fallbackMessage) {

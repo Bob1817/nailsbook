@@ -1,0 +1,1 @@
+ALTER TABLE "Order" ADD COLUMN "fundDiscountAmount" REAL NOT NULL DEFAULT 0;

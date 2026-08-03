@@ -14,6 +14,10 @@ import { Prisma } from '@prisma/client';
 import { buildDefaultServiceItems } from '../common/default-service-items';
 import { ServiceReviewDto } from './dto/service-review.dto';
 import { BookingMutexService } from './booking-mutex.service';
+import { ReferralQualificationService } from '../referrals/referral-qualification.service';
+import { RewardFundService } from '../referrals/reward-fund.service';
+import { assertWithinServiceSchedule } from './order-work-schedule';
+import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 
 import * as crypto from 'crypto';
 
@@ -43,6 +47,10 @@ export class ClientOrdersService {
     private readonly chatGateway: ChatGateway,
     private readonly push: PushService,
     @Optional() private readonly bookingMutex?: BookingMutexService,
+    @Optional()
+    private readonly referralQualification?: ReferralQualificationService,
+    @Optional() private readonly rewardFunds?: RewardFundService,
+    @Optional() private readonly subscriptions?: SubscriptionsService,
   ) {}
 
   async create(clientUserId: number, dto: CreateClientOrderDto) {
@@ -63,6 +71,9 @@ export class ClientOrdersService {
 
     if (binding.technician.status !== 'active') {
       throw new BadRequestException('该美甲师当前未开启接单');
+    }
+    if (this.subscriptions) {
+      await this.subscriptions.assertCanCreateBooking(dto.techId);
     }
 
     if (dto.sourceWorkId) {
@@ -123,6 +134,12 @@ export class ClientOrdersService {
             binding.technician.serviceItems,
             dto.selectedServiceIds,
           );
+    assertWithinServiceSchedule(
+      binding.technician.serviceSchedule,
+      dto.serviceDate,
+      dto.startTime,
+      120,
+    );
 
     const client = await this.prisma.clientUser.findUnique({
       where: { id: clientUserId },
@@ -140,7 +157,7 @@ export class ClientOrdersService {
         dto,
       );
     const startTime = this.buildStartTime(dto.serviceDate, dto.startTime);
-    const endTime = new Date(startTime);
+    const endTime = new Date(startTime.getTime() + 120 * 60 * 1000);
 
     const createOrder = () =>
       this.prisma.$transaction(async (tx) => {
@@ -158,6 +175,7 @@ export class ClientOrdersService {
             name: customerName,
             phone: client.phone,
             address: orderAddress,
+            sourceType: 'booking',
           },
         });
 
@@ -226,8 +244,7 @@ export class ClientOrdersService {
           },
         });
 
-        // Freeze time slot: booking time + 5 hours
-        const blockEndTime = new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
+        const blockEndTime = endTime;
         await this.assertNoBlockedConflict(
           tx,
           dto.techId,
@@ -293,6 +310,9 @@ export class ClientOrdersService {
 
     if (design.technician.status !== 'active') {
       throw new BadRequestException('该美甲师当前未开启接单');
+    }
+    if (this.subscriptions) {
+      await this.subscriptions.assertCanCreateBooking(dto.techId);
     }
 
     if (!design.technician.homeService && !design.technician.shopService) {
@@ -371,8 +391,14 @@ export class ClientOrdersService {
     }
 
     const customerName = client.nickname || client.phone;
+    assertWithinServiceSchedule(
+      design.technician.serviceSchedule,
+      dto.serviceDate,
+      dto.startTime,
+      120,
+    );
     const startTime = this.buildStartTime(dto.serviceDate, dto.startTime);
-    const endTime = new Date(startTime);
+    const endTime = new Date(startTime.getTime() + 120 * 60 * 1000);
 
     const createOrder = () =>
       this.prisma.$transaction(async (tx) => {
@@ -390,6 +416,7 @@ export class ClientOrdersService {
             name: customerName,
             phone: client.phone,
             address: orderAddress,
+            sourceType: 'booking',
           },
         });
 
@@ -398,8 +425,7 @@ export class ClientOrdersService {
           data: { status: 'converted' },
         });
 
-        // Freeze time slot: booking time + 5 hours
-        const blockEndTime = new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
+        const blockEndTime = endTime;
         await this.assertNoBlockedConflict(
           tx,
           dto.techId,
@@ -615,9 +641,14 @@ export class ClientOrdersService {
     if (Number.isNaN(startTime.getTime())) {
       throw new BadRequestException('预约时间无效');
     }
-
     const previousDuration =
       new Date(order.endTime).getTime() - new Date(order.startTime).getTime();
+    assertWithinServiceSchedule(
+      order.technician?.serviceSchedule ?? null,
+      dto.serviceDate,
+      dto.startTime,
+      previousDuration > 0 ? Math.ceil(previousDuration / 60000) : 120,
+    );
     const endTime =
       previousDuration > 0
         ? new Date(startTime.getTime() + previousDuration)
@@ -625,7 +656,7 @@ export class ClientOrdersService {
     const blockEnd =
       previousDuration > 0
         ? endTime
-        : new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
+        : new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
     const orderAddress = this.formatAddress(address);
 
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
@@ -649,6 +680,16 @@ export class ClientOrdersService {
         },
         include: this.orderInclude(),
       });
+      await tx.orderReminder.updateMany({
+        where: { orderId: id },
+        data: {
+          status: 'pending',
+          attempts: 0,
+          sentAt: null,
+          cancelledAt: null,
+          lastError: null,
+        },
+      });
 
       await tx.blockedTimeSlot.deleteMany({ where: { orderId: id } });
       await tx.blockedTimeSlot.create({
@@ -667,7 +708,7 @@ export class ClientOrdersService {
     return this.mapOrder(updatedOrder);
   }
 
-  async agree(clientUserId: number, id: number) {
+  async agree(clientUserId: number, id: number, fundAmount: number = 0) {
     const order = await this.prisma.order.findFirst({
       where: {
         id,
@@ -693,11 +734,23 @@ export class ClientOrdersService {
     let conversationId: number | null = null;
 
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
+      if (this.rewardFunds) {
+        await this.rewardFunds.redeemForOrder(tx, {
+          orderId: id,
+          technicianId: order.technicianId,
+          clientUserId,
+          quotePrice: order.quotePrice ?? 0,
+          amount: fundAmount,
+        });
+      } else if (fundAmount > 0) {
+        throw new BadRequestException('美甲基金服务暂不可用');
+      }
       const updated = await tx.order.update({
         where: { id },
         data: {
           status: 'pending_confirm',
           confirmedAt: new Date(),
+          fundDiscountAmount: fundAmount,
         },
         include: this.orderInclude(),
       });
@@ -902,11 +955,18 @@ export class ClientOrdersService {
             orderId: id,
             technicianId: order.technicianId,
             customerId: order.customerId,
-            amount: order.quotePrice ?? 0,
+            amount: Math.max(
+              0,
+              (order.quotePrice ?? 0) - (order.fundDiscountAmount ?? 0),
+            ),
             recognizedAt: new Date(),
             status: 'confirmed',
           },
         });
+
+        if (this.referralQualification) {
+          await this.referralQualification.qualifyCompletedOrder(tx, order);
+        }
 
         return tx.order.findUniqueOrThrow({
           where: { id },
@@ -922,6 +982,8 @@ export class ClientOrdersService {
       'pending_agree',
       'pending_confirm',
       'pending_client_confirm',
+      'pending_home',
+      'pending_shop',
     ];
     if (!cancellableStatuses.includes(order.status)) {
       throw new BadRequestException('当前订单状态不支持取消');
@@ -935,11 +997,19 @@ export class ClientOrdersService {
       if (claimed.count !== 1) {
         throw new BadRequestException('该订单已取消，无需重复处理');
       }
+      await tx.orderReminder.updateMany({
+        where: { orderId: id, status: { not: 'sent' } },
+        data: { status: 'cancelled', cancelledAt: new Date() },
+      });
 
       // Release blocked time slot
       await tx.blockedTimeSlot.deleteMany({
         where: { orderId: id },
       });
+
+      if (this.rewardFunds) {
+        await this.rewardFunds.reverseOrderRedemption(tx, id);
+      }
 
       return tx.order.update({
         where: { id },
@@ -1081,6 +1151,12 @@ export class ClientOrdersService {
 
     const prevDuration =
       new Date(order.endTime).getTime() - new Date(order.startTime).getTime();
+    assertWithinServiceSchedule(
+      order.technician?.serviceSchedule ?? null,
+      dto.serviceDate,
+      dto.startTime,
+      prevDuration > 0 ? Math.ceil(prevDuration / 60000) : 120,
+    );
     const endTime =
       prevDuration > 0
         ? new Date(startTime.getTime() + prevDuration)
@@ -1088,7 +1164,7 @@ export class ClientOrdersService {
     const blockEnd =
       prevDuration > 0
         ? endTime
-        : new Date(startTime.getTime() + 5 * 60 * 60 * 1000);
+        : new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
 
     const restoreStatus = order.expiredFromStatus ?? 'pending_quote';
 
@@ -1113,6 +1189,16 @@ export class ClientOrdersService {
           reminderHourSent: false,
         },
         include: this.orderInclude(),
+      });
+      await tx.orderReminder.updateMany({
+        where: { orderId: id },
+        data: {
+          status: 'pending',
+          attempts: 0,
+          sentAt: null,
+          cancelledAt: null,
+          lastError: null,
+        },
       });
 
       await tx.blockedTimeSlot.deleteMany({ where: { orderId: id } });
@@ -1191,6 +1277,7 @@ export class ClientOrdersService {
           phone: true,
           avatarUrl: true,
           shopAddresses: true,
+          serviceSchedule: true,
         },
       },
       customer: { select: { id: true, name: true, phone: true } },
@@ -1243,6 +1330,10 @@ export class ClientOrdersService {
       remark: order.remark ?? null,
       address: order.address ?? null,
       quotePrice: order.quotePrice ?? null,
+      fundDiscountAmount: order.fundDiscountAmount ?? 0,
+      paymentStatus: order.paymentStatus ?? 'unpaid',
+      paidAmount: order.paidAmount ?? 0,
+      paidAt: order.paidAt ?? null,
       quoteRemark: order.quoteRemark ?? null,
       quotedAt: order.quotedAt ?? null,
       isDepositPaid: order.isDepositPaid,

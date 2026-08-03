@@ -15,6 +15,10 @@ import { buildDefaultServiceItems } from '../common/default-service-items';
 @Injectable()
 export class TechnicianAuthService {
   private static readonly EDITABLE_STATUSES = ['active', 'inactive'] as const;
+  private static readonly RESET_PASSWORD_CODE_PURPOSE =
+    'technician:reset-password';
+  private static readonly INITIAL_PASSWORD_CODE_PURPOSE =
+    'technician:initial-password';
 
   constructor(
     private readonly prisma: PrismaService,
@@ -28,7 +32,10 @@ export class TechnicianAuthService {
     try {
       const technician = await this.findTechnicianByPhone(phone);
       if (technician && technician.passwordHash) {
-        const code = this.verificationCode.generate(phone);
+        const code = await this.verificationCode.generate(
+          phone,
+          TechnicianAuthService.RESET_PASSWORD_CODE_PURPOSE,
+        );
         // 后台发送（带重试），不阻塞响应，也消除"是否注册"的响应耗时差异
         void this.sms.sendVerificationCode(phone, code, '重置密码').catch(() => {});
       }
@@ -40,7 +47,11 @@ export class TechnicianAuthService {
 
   // 忘记密码：校验验证码并重置密码
   async resetPasswordByCode(phone: string, code: string, newPassword: string) {
-    this.verificationCode.validate(phone, code); // 校验失败抛 BadRequestException
+    await this.verificationCode.validate(
+      phone,
+      code,
+      TechnicianAuthService.RESET_PASSWORD_CODE_PURPOSE,
+    );
     const technician = await this.findTechnicianByPhone(phone);
     if (!technician || !technician.passwordHash) {
       throw new BadRequestException('该手机号未注册');
@@ -70,12 +81,15 @@ export class TechnicianAuthService {
     };
   }
 
-  async register(dto: {
-    inviteKey: string;
-    name: string;
-    phone: string;
-    password: string;
-  }) {
+  async register(
+    dto: {
+      inviteKey: string;
+      name: string;
+      phone: string;
+      password: string;
+    },
+    wechatIdentity?: { appId: string; openId: string; unionId?: string },
+  ) {
     const keyRecord = await this.prisma.technicianInviteKey.findUnique({
       where: { key: dto.inviteKey },
       include: { technician: true },
@@ -120,6 +134,11 @@ export class TechnicianAuthService {
           where: { id: keyRecord.id },
           data: { usedAt: new Date() },
         });
+        if (wechatIdentity) {
+          await tx.wechatIdentity.create({
+            data: { ...wechatIdentity, technicianId: t.id },
+          });
+        }
         return t;
       });
 
@@ -151,6 +170,12 @@ export class TechnicianAuthService {
           usedAt: new Date(),
         },
       });
+
+      if (wechatIdentity) {
+        await tx.wechatIdentity.create({
+          data: { ...wechatIdentity, technicianId: created.id },
+        });
+      }
 
       return created;
     });
@@ -312,6 +337,19 @@ export class TechnicianAuthService {
     };
   }
 
+  async loginByWechat(technicianId: number) {
+    const technician = await this.prisma.technician.findUnique({
+      where: { id: technicianId },
+    });
+    if (!technician || technician.status === 'deleted') {
+      throw new UnauthorizedException('美甲师不存在');
+    }
+    if (technician.status === 'suspended') {
+      throw new UnauthorizedException('账号已被禁用');
+    }
+    return this.issueTokens(technician.id, technician.phone);
+  }
+
   async changePassword(
     technicianId: number,
     oldPassword: string,
@@ -373,8 +411,31 @@ export class TechnicianAuthService {
     return this.issueTokens(technician.id, technician.phone);
   }
 
-  // 首次登录设置密码：账号未设置密码时，凭手机号设置并自动登录
-  async setInitialPassword(phone: string, newPassword: string) {
+  async sendInitialPasswordCode(phone: string) {
+    try {
+      const technician = await this.findTechnicianByPhone(phone);
+      if (technician && !technician.passwordHash) {
+        const code = await this.verificationCode.generate(
+          phone,
+          TechnicianAuthService.INITIAL_PASSWORD_CODE_PURPOSE,
+        );
+        void this.sms
+          .sendVerificationCode(phone, code, '首次设置密码')
+          .catch(() => {});
+      }
+    } catch {
+      // 与找回密码一致，统一响应，避免枚举美甲师手机号。
+    }
+    return { sent: true, devCode: this.verificationCode.getDevCode() };
+  }
+
+  // 首次登录设置密码：必须校验发送到预留手机号的短信验证码。
+  async setInitialPassword(phone: string, code: string, newPassword: string) {
+    await this.verificationCode.validate(
+      phone,
+      code,
+      TechnicianAuthService.INITIAL_PASSWORD_CODE_PURPOSE,
+    );
     const technician = await this.findTechnicianByPhone(phone);
 
     if (!technician) {

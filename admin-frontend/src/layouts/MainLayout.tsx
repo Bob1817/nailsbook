@@ -18,6 +18,7 @@ import {
   WarningOutlined,
   FormOutlined,
   NotificationOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -101,6 +102,12 @@ const MainLayout: React.FC = () => {
       key: '/feature-flags',
       icon: <FlagOutlined />,
       label: '功能开关',
+      permission: 'feature_flag:view',
+    },
+    {
+      key: '/wechat-config',
+      icon: <SettingOutlined />,
+      label: '微信能力配置',
       permission: 'feature_flag:view',
     },
     {

@@ -1,5 +1,6 @@
 const api = require('../../../services/api');
 const { validatePhone } = require('../../../utils/util');
+const { silentWechatLogin } = require('../../../utils/wechat-auth');
 
 function validatePassword(pwd) {
   if (!pwd || pwd.length < 8) return '密码至少 8 位';
@@ -16,7 +17,110 @@ Page({
     confirmPassword: '',
     inviteKey: '',
     loading: false,
-    phoneError: ''
+    phoneError: '',
+    loginMethod: 'phone',
+    wechatReady: false,
+    wechatLinked: false,
+    wechatChecking: true,
+    wechatFeatureVisible: false
+  },
+
+  onLoad() {
+    this.prepareLoginMethods();
+  },
+
+  async prepareLoginMethods() {
+    const capabilities = await getApp().loadCapabilities();
+    if (!capabilities.wechatLogin) {
+      this.setData({
+        loginMethod: 'phone',
+        wechatFeatureVisible: false,
+        wechatChecking: false
+      });
+      return;
+    }
+    this.setData({ wechatFeatureVisible: true, loginMethod: 'wechat' });
+    this.tryWechatLogin();
+  },
+
+  async tryWechatLogin() {
+    try {
+      const res = await silentWechatLogin();
+      this.wechatAuthResult = res;
+      this.setData({
+        wechatLinked: Array.isArray(res.roles) && res.roles.includes('technician'),
+        wechatReady: !!res.wechatSessionToken,
+        wechatChecking: false
+      });
+    } catch (err) {
+      // 微信未配置、无绑定或网络异常时保留手机号密码登录入口。
+      console.info('Silent WeChat login unavailable:', err.message || err);
+      this.setData({ wechatChecking: false });
+    }
+  },
+
+  selectLoginMethod(e) {
+    this.setData({ loginMethod: e.currentTarget.dataset.method });
+  },
+
+  async handleWechatLogin() {
+    if (this.data.loading || this.data.wechatChecking) return;
+    this.setData({ loading: true });
+    wx.showLoading({ title: '微信登录中...' });
+    try {
+      const res = await silentWechatLogin('technician');
+      if (!res.authenticated) throw new Error('该微信尚未绑定美甲师账号');
+      this._afterAuth(res);
+    } catch (err) {
+      wx.hideLoading();
+      this.setData({ loading: false });
+      wx.showToast({ title: err.message || '微信登录失败', icon: 'none' });
+    }
+  },
+
+  async handleWechatPhone(e) {
+    const phoneCode = e.detail && e.detail.code;
+    if (!phoneCode || this.data.loading) {
+      if (!phoneCode) wx.showToast({ title: '需要授权手机号才能继续', icon: 'none' });
+      return;
+    }
+    const wechatSessionToken = wx.getStorageSync('wechat_session_token');
+    if (!wechatSessionToken) {
+      await this.tryWechatLogin();
+      wx.showToast({ title: '请再次点击微信手机号登录', icon: 'none' });
+      return;
+    }
+    const { step, inviteKey, name, password } = this.data;
+    if (step === 'register') {
+      if (!/^[A-Z0-9]{16}$/.test(inviteKey.trim().toUpperCase())) {
+        wx.showToast({ title: '请输入有效的16位邀请密钥', icon: 'none' }); return;
+      }
+      if (!name.trim()) {
+        wx.showToast({ title: '请输入姓名', icon: 'none' }); return;
+      }
+      const passwordError = validatePassword(password);
+      if (passwordError) {
+        wx.showToast({ title: passwordError, icon: 'none' }); return;
+      }
+      if (password !== this.data.confirmPassword) {
+        wx.showToast({ title: '两次密码不一致', icon: 'none' }); return;
+      }
+    }
+    this.setData({ loading: true });
+    wx.showLoading({ title: '微信登录中...' });
+    try {
+      const res = await api.auth.completeWechatTechnician({
+        wechatSessionToken,
+        phoneCode,
+        inviteKey: step === 'register' ? inviteKey.trim().toUpperCase() : undefined,
+        name: step === 'register' ? name.trim() : undefined,
+        password: step === 'register' ? password : undefined
+      });
+      this._afterAuth(res);
+    } catch (err) {
+      wx.hideLoading();
+      this.setData({ loading: false, phoneError: err.message || '微信登录失败' });
+    }
   },
 
   onInput(e) {
@@ -129,6 +233,7 @@ Page({
     const app = getApp();
     app.setLogin('technician', res.accessToken, res.technician);
     if (res.refreshToken) wx.setStorageSync('technician_refreshToken', res.refreshToken);
+    wx.removeStorageSync('wechat_session_token');
     wx.hideLoading();
     wx.reLaunch({ url: '/pages/technician/home/index' });
   }

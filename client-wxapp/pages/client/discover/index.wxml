@@ -40,7 +40,7 @@
       <view class="empty-ring-inner"></view>
     </view>
     <text class="empty-ttl">还没有作品可以刷</text>
-    <text class="empty-sub">绑定你的专属美甲师，即可在这里刷她发布的最新美甲作品，种草、预约一步到位</text>
+    <text class="empty-sub">绑定常用美甲师后，即可浏览她发布的最新作品，并从个人经营主页发起预约</text>
     <view class="empty-cta" bindtap="goBindTech">绑定美甲师</view>
   </view>
 

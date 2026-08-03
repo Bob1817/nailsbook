@@ -9,13 +9,20 @@ const P = '/api/public';
 
 // ========== 鉴权 ==========
 const auth = {
+  wechatLogin: (code, role) =>
+    api.post('/api/wechat/auth/login', { code, role }, { needAuth: false, silent: true }),
+  completeWechatClient: (data) =>
+    api.post('/api/wechat/auth/client/complete', data, { needAuth: false }),
+  completeWechatTechnician: (data) =>
+    api.post('/api/wechat/auth/technician/complete', data, { needAuth: false }),
+
   checkPhone: (phone, role = 'client') => {
     const base = role === 'technician' ? T : C;
     return api.post(`${base}/auth/check-phone`, { phone }, { needAuth: false });
   },
 
-  registerClient: (phone, password, inviteCode) =>
-    api.post(`${C}/auth/register-by-invite`, { phone, password, inviteCode }, { needAuth: false }),
+  registerClient: (phone, password, inviteCode, source) =>
+    api.post(`${C}/auth/register-by-invite`, { phone, password, inviteCode, source }, { needAuth: false }),
 
   registerTechnician: (inviteKey, name, phone, password) =>
     api.post(`${T}/auth/register`, { inviteKey, name, phone, password }, { needAuth: false }),
@@ -55,8 +62,8 @@ const client = {
 
     findTechByInviteCode: (code) =>
       api.get(`${C}/auth/find-by-invite-code`, { inviteCode: code }),
-    bindTechnician: (techId, inviteCode, note) =>
-      api.post(`${C}/auth/bind-technician`, { techId, inviteCode, note }),
+    bindTechnician: (techId, inviteCode, note, source) =>
+      api.post(`${C}/auth/bind-technician`, { techId, inviteCode, note, source }),
     unbindTechnician: (techId) =>
       api.del(`${C}/auth/unbind-technician/${techId}`),
     setDefaultTechnician: (techId) =>
@@ -83,7 +90,7 @@ const client = {
     create: (data) => api.post(`${C}/orders`, data),
     createFromDesign: (data) => api.post(`${C}/orders/from-design`, data),
     update: (id, data) => api.patch(`${C}/orders/${id}`, data),
-    acceptQuote: (id) => api.post(`${C}/orders/${id}/agree`),
+    acceptQuote: (id, fundAmount = 0) => api.post(`${C}/orders/${id}/agree`, { fundAmount }),
     rejectQuote: (id, reason) => api.post(`${C}/orders/${id}/reject-quote`, { reason }),
     cancel: (id) => api.patch(`${C}/orders/${id}/status`, { status: 'cancelled' }),
     markDepositPaid: (id) => api.post(`${C}/orders/${id}/mark-deposit-paid`),
@@ -91,6 +98,12 @@ const client = {
     saveClientPhotos: (id, photos) => api.patch(`${C}/orders/${id}/client-photos`, { photos }),
     saveClientRecordNote: (id, note) => api.patch(`${C}/orders/${id}/client-record-note`, { note }),
     blockedSlots: (techId) => api.get(`${C}/orders/blocked-slots/${techId}`)
+  },
+
+  payments: {
+    createOrder: (orderId, paymentType, idempotencyKey) =>
+      api.post(`${C}/payments/orders/${orderId}`, { paymentType, idempotencyKey }),
+    listOrder: (orderId) => api.get(`${C}/payments/orders/${orderId}`)
   },
 
   addresses: {
@@ -125,6 +138,13 @@ const client = {
 
   feedback: {
     create: (data) => api.post(`${C}/feedback`, data)
+  },
+
+  referrals: {
+    list: () => api.get(`${C}/referrals`),
+    createLink: (technicianId) => api.post(`${C}/referrals/link`, { technicianId }),
+    claim: (token) => api.post(`${C}/referrals/claim`, { token }),
+    funds: () => api.get(`${C}/reward-funds`)
   }
 };
 
@@ -142,7 +162,8 @@ const technician = {
     changePassword: (oldPassword, newPassword) =>
       api.patch(`${T}/auth/password`, { oldPassword, newPassword }),
     updateServiceType: (data) => api.patch(`${T}/auth/service-type`, data),
-    setInitialPassword: (phone, newPassword) => api.post(`${T}/auth/set-initial-password`, { phone, newPassword }),
+    sendInitialPasswordCode: (phone) => api.post(`${T}/auth/set-initial-password/send-code`, { phone }, { needAuth: false }),
+    setInitialPassword: (phone, code, newPassword) => api.post(`${T}/auth/set-initial-password`, { phone, code, newPassword }, { needAuth: false }),
     setPassword: (newPassword) => api.post(`${T}/auth/set-password`, { newPassword })
   },
 
@@ -162,6 +183,9 @@ const technician = {
     list: (params) => api.get(`${T}/customers`, params),
     detail: (id) => api.get(`${T}/customers/${id}`),
     tags: () => api.get(`${T}/customers/tags`),
+    todayFollowUps: () => api.get(`${T}/customers/follow-ups/today`),
+    createFollowUp: (id, data) => api.post(`${T}/customers/${id}/follow-ups`, data),
+    completeFollowUp: (id, followUpId) => api.patch(`${T}/customers/${id}/follow-ups/${followUpId}/complete`, {}),
     updateName: (id, name) => api.patch(`${T}/customers/${id}/name`, { name }),
     updateTags: (id, tags) => api.patch(`${T}/customers/${id}/tags`, { tags })
   },
@@ -201,9 +225,16 @@ const technician = {
 
   subscription: {
     plans: () => api.get(`${T}/subscriptions/plans`),
-    current: () => api.get(`${T}/auth/me`).then((res) => res.subscription || null),
+    current: () => api.get(`${T}/subscriptions/current`),
     detail: (id) => api.get(`${T}/subscriptions/${id}`),
     create: (data) => api.post(`${T}/subscriptions`, data)
+  },
+
+  referralCampaign: {
+    get: () => api.get(`${T}/referral-campaign`),
+    save: (data) => api.put(`${T}/referral-campaign`, data),
+    relations: () => api.get(`${T}/referrals`),
+    fundSummary: () => api.get(`${T}/reward-funds/summary`)
   },
 
   // 以下端点后端暂未实现，返回兜底数据避免页面崩溃
@@ -335,6 +366,14 @@ const upload = {
 };
 
 const publicApi = {
+  capabilities: () => api.get(`${P}/capabilities`, null, { needAuth: false, silent: true }),
+  artists: {
+    detail: (id) => api.get(`${P}/artist/id/${id}`, null, { needAuth: false }),
+    card: (code) => api.get(`${P}/artist/${code}`, null, { needAuth: false })
+  },
+  referrals: {
+    resolve: (token) => api.get(`${P}/referrals/${token}`, null, { needAuth: false })
+  },
   works: {
     detail: (id) => api.get(`${P}/works/${id}`, null, { needAuth: false }),
     shared: (token) => api.get(`${P}/works/shared/${token}`, null, { needAuth: false })

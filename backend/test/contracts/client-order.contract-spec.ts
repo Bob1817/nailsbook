@@ -806,6 +806,9 @@ describe('Client booking and design HTTP contract', () => {
     await testApp.prisma.clientUser.deleteMany({
       where: { id: { in: ownedClientIds } },
     });
+    await testApp.prisma.technicianSubscription.deleteMany({
+      where: { technicianId: { in: ownedTechnicianIds } },
+    });
     await testApp.prisma.technician.deleteMany({
       where: { id: { in: ownedTechnicianIds } },
     });

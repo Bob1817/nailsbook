@@ -22,7 +22,22 @@
       </view>
     </view>
 
-    <!-- 分类标签 -->
+    <!-- 系统生命周期 -->
+    <text class="filter-label">客户阶段</text>
+    <scroll-view scroll-x class="tab-scroll lifecycle-scroll" enhanced show-scrollbar="{{false}}">
+      <view class="tab-list">
+        <view
+          wx:for="{{lifecycleTabs}}"
+          wx:key="key"
+          class="tab-item lifecycle-tab {{activeLifecycle === item.key ? 'tab-active' : ''}}"
+          bindtap="onLifecycleChange"
+          data-lifecycle="{{item.key}}"
+        >{{item.label}}</view>
+      </view>
+    </scroll-view>
+
+    <!-- 人工标签 -->
+    <text class="filter-label">人工标签</text>
     <scroll-view scroll-x class="tab-scroll" enhanced show-scrollbar="{{false}}">
       <view class="tab-list">
         <view
@@ -53,9 +68,9 @@
     <!-- 空状态 -->
     <view wx:elif="{{!loading && visibleCustomers.length === 0}}" class="empty-card">
       <view class="empty-icon"><view class="empty-avatar-mark"></view></view>
-      <text class="empty-title">{{keyword || activeTab !== '全部' ? '没有找到匹配的客户' : '还没有客户'}}</text>
-      <text class="empty-sub">{{keyword || activeTab !== '全部' ? '换个关键词或标签试试' : '客户预约后会自动出现在这里'}}</text>
-      <view wx:if="{{keyword || activeTab !== '全部'}}" class="empty-reset" bindtap="resetFilters">清除筛选</view>
+      <text class="empty-title">{{keyword || activeTab !== '全部' || activeLifecycle !== 'all' ? '没有找到匹配的客户' : '还没有客户'}}</text>
+      <text class="empty-sub">{{keyword || activeTab !== '全部' || activeLifecycle !== 'all' ? '换个关键词、生命周期或标签试试' : '客户预约后会自动出现在这里'}}</text>
+      <view wx:if="{{keyword || activeTab !== '全部' || activeLifecycle !== 'all'}}" class="empty-reset" bindtap="resetFilters">清除筛选</view>
     </view>
 
     <!-- 客户卡片列表 -->
@@ -88,12 +103,18 @@
             <view class="info-top">
               <view class="name-row">
                 <text class="customer-name">{{item._displayName}}</text>
+                <text class="lifecycle-badge {{item._lifecycleClass}}">{{item._lifecycleLabel}}</text>
                 <view class="edit-name-btn" catchtap="startEditName" data-id="{{item.id}}" data-name="{{item.name}}">
                   <view class="edit-icon"></view>
                 </view>
                 <text class="arrow-icon">›</text>
               </view>
               <text class="customer-addr">{{item.address || '暂无地址'}}</text>
+            </view>
+
+            <view class="lifecycle-reason">
+              <text>{{item._lifecycleReason}}</text>
+              <text wx:if="{{item._expectedServiceText}}"> · 预计 {{item._expectedServiceText}}</text>
             </view>
 
             <!-- 标签 -->

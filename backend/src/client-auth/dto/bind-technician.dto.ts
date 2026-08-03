@@ -4,6 +4,7 @@ import {
   IsInt,
   IsOptional,
   IsBoolean,
+  IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -28,4 +29,9 @@ export class BindTechnicianDto {
   @IsOptional()
   @IsString()
   note?: string;
+
+  @ApiPropertyOptional({ description: '绑定来源', enum: ['manual', 'card'] })
+  @IsOptional()
+  @IsIn(['manual', 'card'])
+  source?: 'manual' | 'card';
 }

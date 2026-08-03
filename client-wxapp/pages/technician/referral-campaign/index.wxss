@@ -1,0 +1,28 @@
+page { background:#f8f6f7; }
+.page { min-height:100vh; padding:28rpx 36rpx calc(48rpx + env(safe-area-inset-bottom)); box-sizing:border-box; }
+.state-card,.notice-card,.card,.rule-card { margin-bottom:24rpx; padding:30rpx; border-radius:28rpx; background:#fff; box-shadow:0 10rpx 28rpx rgba(54,31,43,.05); }
+.state-card { min-height:180rpx; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20rpx; color:#756b70; }
+.retry-btn { min-height:88rpx; padding:0 36rpx; display:flex; align-items:center; border-radius:44rpx; background:#fff0f5; color:#b43e6f; }
+.notice-card { background:#f4f1f3; }
+.notice-active { background:#fff0f5; }
+.notice-title,.notice-text,.form-label,.form-hint,.field-label,.rule-title,.rule-text { display:block; }
+.notice-title { color:#33252d; font-size:30rpx; font-weight:700; }
+.notice-text { margin-top:10rpx; color:#786872; font-size:24rpx; line-height:1.55; }
+.form-row { min-height:96rpx; display:flex; align-items:center; justify-content:space-between; gap:24rpx; }
+.form-label { color:#33252d; font-size:28rpx; font-weight:700; }
+.form-hint { margin-top:6rpx; color:#94838c; font-size:21rpx; }
+.field-label { margin:26rpx 0 12rpx; color:#665861; font-size:24rpx; font-weight:600; }
+.field-input,.date-field { min-height:88rpx; padding:0 24rpx; display:flex; align-items:center; box-sizing:border-box; border-radius:20rpx; background:#faf6f8; color:#33252d; font-size:27rpx; }
+.date-row { display:flex; align-items:center; gap:12rpx; }
+.date-row picker { flex:1; }
+.date-field { justify-content:center; padding:0 14rpx; }
+.date-separator { flex-shrink:0; color:#94838c; font-size:22rpx; }
+.rule-title { color:#33252d; font-size:27rpx; font-weight:700; }
+.rule-text { margin-top:12rpx; color:#786872; font-size:23rpx; line-height:1.7; }
+.save-btn { min-height:96rpx; display:flex; align-items:center; justify-content:center; border-radius:48rpx; background:linear-gradient(135deg,#ff6b8a,#8b5cf6); color:#fff; font-size:29rpx; font-weight:700; }
+.save-btn:active { opacity:.86; }
+.is-disabled { opacity:.55; }
+.relation-row { min-height:88rpx; display:flex; align-items:center; justify-content:space-between; gap:20rpx; border-bottom:1rpx solid #f1eaee; color:#4c4147; font-size:25rpx; }
+.relation-status { color:#b43e6f; flex-shrink:0; }
+.fund-cost { display:block; margin-top:14rpx; color:#33252d; font-size:40rpx; font-weight:700; }
+.fund-summary { min-height:88rpx; display:flex; align-items:center; justify-content:space-between; color:#786872; font-size:24rpx; }

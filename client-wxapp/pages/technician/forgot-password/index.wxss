@@ -7,6 +7,9 @@
 .field:last-child { border-bottom: none; }
 .label { display: block; font-size: 26rpx; color: #374151; margin-bottom: 12rpx; }
 .input  { width: 100%; font-size: 28rpx; color: #1f2937; height: 88rpx;  background: #f9fafb; border-radius: 14rpx;}
+.code-row { display: flex; gap: 16rpx; align-items: center; }
+.code-input { flex: 1; min-width: 0; }
+.code-btn { width: 220rpx; min-height: 88rpx; border-radius: 14rpx; color: #ff6b8a; background: #fff1f5; font-size: 26rpx; display: flex; align-items: center; justify-content: center; }
 .ph { color: #6b7280; }
 .submit-btn { background: linear-gradient(135deg, #ff6b8a, #8b5cf6); color: #fff; font-size: 30rpx; font-weight: 600; text-align: center; padding: 28rpx; border-radius: 48rpx; box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.3); }
 .submit-btn:active { opacity: 0.85; }

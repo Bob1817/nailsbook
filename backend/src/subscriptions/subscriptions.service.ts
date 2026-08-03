@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 
@@ -49,6 +50,94 @@ export class SubscriptionsService {
     return this.prisma.subscriptionPlan.findMany({
       orderBy: { price: 'asc' },
     });
+  }
+
+  async getCurrentForTechnician(technicianId: number) {
+    const freePlan = await this.ensureFreePlan();
+    let subscription = await this.prisma.technicianSubscription.findUnique({
+      where: { technicianId },
+      include: { plan: true },
+    });
+    const now = new Date();
+    const expired = Boolean(
+      subscription?.expiredAt && subscription.expiredAt < now,
+    );
+    if (!subscription || expired || subscription.status !== 'active') {
+      subscription = await this.prisma.technicianSubscription.upsert({
+        where: { technicianId },
+        create: {
+          technicianId,
+          planId: freePlan.id,
+          status: 'active',
+          startedAt: now,
+          expiredAt: null,
+        },
+        update: {
+          planId: freePlan.id,
+          status: 'active',
+          startedAt: now,
+          expiredAt: null,
+          cancelledAt: expired ? now : subscription?.cancelledAt,
+        },
+        include: { plan: true },
+      });
+    }
+    const [customerCount, monthlyBookings] = await Promise.all([
+      this.prisma.customer.count({ where: { technicianId } }),
+      this.prisma.order.count({
+        where: {
+          technicianId,
+          createdAt: {
+            gte: new Date(now.getFullYear(), now.getMonth(), 1),
+          },
+          status: { not: 'cancelled' },
+        },
+      }),
+    ]);
+    const features = this.parseFeatures(subscription.plan.features);
+    return {
+      id: subscription.id,
+      status: subscription.status,
+      startedAt: subscription.startedAt,
+      expiredAt: subscription.expiredAt,
+      plan: {
+        id: subscription.plan.id,
+        code: subscription.plan.code,
+        name: subscription.plan.name,
+        price: subscription.plan.price,
+        billingCycle: subscription.plan.billingCycle,
+        features,
+        maxCustomers: subscription.plan.maxCustomers,
+        maxMonthlyBookings: subscription.plan.maxMonthlyBookings,
+      },
+      usage: { customerCount, monthlyBookings },
+      limits: {
+        customersReached:
+          subscription.plan.maxCustomers != null &&
+          customerCount >= subscription.plan.maxCustomers,
+        monthlyBookingsReached:
+          subscription.plan.maxMonthlyBookings != null &&
+          monthlyBookings >= subscription.plan.maxMonthlyBookings,
+      },
+      paymentReady: false,
+      upgradeMode: 'contact_admin',
+    };
+  }
+
+  async assertFeature(technicianId: number, feature: string) {
+    const current = await this.getCurrentForTechnician(technicianId);
+    if (!current.plan.features.includes(feature)) {
+      throw new ForbiddenException('当前套餐不包含此功能');
+    }
+    return current;
+  }
+
+  async assertCanCreateBooking(technicianId: number) {
+    const current = await this.getCurrentForTechnician(technicianId);
+    if (current.limits.monthlyBookingsReached) {
+      throw new ForbiddenException('当前套餐本月预约额度已用完，请升级套餐');
+    }
+    return current;
   }
 
   async findPlanById(id: number) {
@@ -155,5 +244,39 @@ export class SubscriptionsService {
             : null,
       },
     });
+  }
+
+  private async ensureFreePlan() {
+    return this.prisma.subscriptionPlan.upsert({
+      where: { code: 'free' },
+      create: {
+        name: '免费版',
+        code: 'free',
+        price: 0,
+        billingCycle: 'free',
+        maxCustomers: 100,
+        maxMonthlyBookings: 100,
+        features: JSON.stringify([
+          'customer_management',
+          'booking',
+          'works',
+          'referral_5_percent',
+        ]),
+        status: 'active',
+      },
+      update: {},
+    });
+  }
+
+  private parseFeatures(value?: string | null): string[] {
+    if (!value) return [];
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed)
+        ? parsed.filter((item): item is string => typeof item === 'string')
+        : [];
+    } catch {
+      return [];
+    }
   }
 }

@@ -1,4 +1,10 @@
-import { Controller, Get, NotFoundException, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { PrismaService } from '../common/prisma/prisma.service';
 
@@ -16,6 +22,16 @@ function parseJsonObject(value: string | null): Record<string, unknown> | null {
     return parsed && typeof parsed === 'object' ? parsed : null;
   } catch {
     return null;
+  }
+}
+
+function parseJsonArray(value: string | null): unknown[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
   }
 }
 
@@ -40,14 +56,24 @@ function parseImageUrls(images: string | null, coverUrl: string | null): string[
 export class PublicArtistController {
   constructor(private readonly prisma: PrismaService) {}
 
+  @Get('id/:id')
+  @ApiOperation({ summary: '通过 ID 获取美甲师公开经营主页' })
+  async getBusinessPage(@Param('id', ParseIntPipe) id: number) {
+    return this.getPublicCard({ id });
+  }
+
   @Get(':code')
   @ApiOperation({ summary: '通过邀请码获取美甲师公开名片（含作品）' })
   @ApiParam({ name: 'code', type: String, description: '美甲师邀请码' })
   @ApiResponse({ status: 200, description: '返回名片信息与作品列表' })
   @ApiResponse({ status: 404, description: '美甲师不存在或未启用' })
   async getCard(@Param('code') code: string) {
+    return this.getPublicCard({ invitationCode: code });
+  }
+
+  private async getPublicCard(where: { id?: number; invitationCode?: string }) {
     const technician = await this.prisma.technician.findFirst({
-      where: { invitationCode: code, status: 'active' },
+      where: { ...where, status: 'active' },
     });
 
     if (!technician) {
@@ -55,7 +81,11 @@ export class PublicArtistController {
     }
 
     const rawWorks = await this.prisma.nailWork.findMany({
-      where: { techId: technician.id, isVisible: true },
+      where: {
+        techId: technician.id,
+        isVisible: true,
+        visibilityScope: 'public',
+      },
       orderBy: [{ isPinned: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'desc' }],
       take: 30,
     });
@@ -81,8 +111,14 @@ export class PublicArtistController {
         serviceArea: technician.serviceArea,
         homeService: technician.homeService,
         shopService: technician.shopService,
-        status: technician.status,
         invitationCode: technician.invitationCode,
+        serviceItems: parseJsonArray(technician.serviceItems).filter(
+          (item: any) => item && item.isActive !== false,
+        ),
+        shopAddresses: parseJsonArray(technician.shopAddresses).filter(
+          (item: any) => item && item.enabled !== false,
+        ),
+        serviceSchedule: parseJsonObject(technician.serviceSchedule),
         socialMedia: parseJsonObject(technician.socialMedia),
       },
       works,
