@@ -15,6 +15,10 @@ import { ReferralQualificationService } from '../referrals/referral-qualificatio
 import { RewardFundService } from '../referrals/reward-fund.service';
 import { assertWithinServiceSchedule } from './order-work-schedule';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
+import {
+  getBusinessDateTimeParts,
+  parseBusinessDateTime,
+} from './business-time';
 
 export type OrderStatus =
   | 'pending_quote'
@@ -394,7 +398,7 @@ export class OrdersService {
       throw new BadRequestException('当前订单状态不支持报价');
     }
 
-    const startTime = new Date(`${dto.serviceDate}T${dto.startTime}:00`);
+    const startTime = parseBusinessDateTime(dto.serviceDate, dto.startTime);
     const endTime = new Date(
       startTime.getTime() + Number(dto.durationMinutes) * 60000,
     );
@@ -838,7 +842,7 @@ export class OrdersService {
       throw new BadRequestException('仅已过期的预约可重新发起');
     }
 
-    const startTime = new Date(`${dto.serviceDate}T${dto.startTime}:00`);
+    const startTime = parseBusinessDateTime(dto.serviceDate, dto.startTime);
     if (Number.isNaN(startTime.getTime())) {
       throw new BadRequestException('预约时间无效');
     }
@@ -979,18 +983,14 @@ export class OrdersService {
         })
       : { serviceSchedule: null };
     if (!technician) throw new NotFoundException('美甲师不存在');
-    const year = startTime.getFullYear();
-    const month = String(startTime.getMonth() + 1).padStart(2, '0');
-    const day = String(startTime.getDate()).padStart(2, '0');
-    const hour = String(startTime.getHours()).padStart(2, '0');
-    const minute = String(startTime.getMinutes()).padStart(2, '0');
+    const parts = getBusinessDateTimeParts(startTime);
     const durationMinutes = Math.ceil(
       (endTime.getTime() - startTime.getTime()) / 60000,
     );
     assertWithinServiceSchedule(
       technician.serviceSchedule,
-      `${year}-${month}-${day}`,
-      `${hour}:${minute}`,
+      `${parts.year}-${parts.month}-${parts.day}`,
+      `${parts.hour}:${parts.minute}`,
       durationMinutes,
     );
   }

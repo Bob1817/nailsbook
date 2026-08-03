@@ -4,7 +4,11 @@
 
 整理日期：2026-08-03
 
-状态：候选范围已整理，待冻结提交、CI、双账号及真机验收
+状态：候选已冻结并完成生产部署，待 CI 复核、体验版、双账号及真机验收
+
+冻结提交：`8f3a009 feat: freeze luanails mvp rc2`
+
+部署流程修正：`6b35e1a fix(deploy): use migrations and external admin image`
 
 ## 1. 候选目标
 
@@ -44,7 +48,7 @@ RC2 在 RC1 的预约、作品和客户管理基线上，补齐一期 MVP 的非
 - Prisma schema：通过。
 - 全新 SQLite 数据库顺序执行 37 个迁移：通过。
 - SQLite 外键检查：无异常；完整性检查：`ok`。
-- Backend：47 个测试套件、210 项测试通过；生产构建通过。
+- Backend：47 个测试套件、210 项测试在 UTC 环境通过；生产构建通过。预约工作时间统一按 `Asia/Shanghai` 业务时区解析，不再依赖运行主机时区。
 - Admin Frontend：生产构建通过。
 - 微信小程序：61 个页面静态检查通过；全部 JavaScript 语法检查通过。
 - `git diff --check`：通过。
@@ -54,8 +58,8 @@ RC2 在 RC1 的预约、作品和客户管理基线上，补齐一期 MVP 的非
 ## 5. 部署前人工门槛
 
 - [ ] GitHub Actions Backend 检查通过。
-- [ ] Cloudflare `lunails` 和 `nailsbook` 构建通过或确认不属于本候选部署目标。
-- [ ] 在生产数据库副本完成 37 个迁移和恢复演练。
+- [x] Cloudflare `lunails` 和 `nailsbook` 已确认不属于仅包含 Backend、Admin Frontend 和微信小程序的 RC2 候选范围。
+- [x] 生产数据库已备份并通过 `prisma migrate deploy` 完成 37 个迁移；外键检查无异常，完整性检查为 `ok`。
 - [ ] 客户、美甲师和管理员账号完成注册、登录、刷新及找回密码验收。
 - [ ] 完成美甲师绑定、客户邀请、预约、报价、基金抵扣、订单完成和奖励发放闭环。
 - [ ] 验证重叠预约、重复请求和订单取消冲正。
@@ -75,5 +79,7 @@ RC2 在 RC1 的预约、作品和客户管理基线上，补齐一期 MVP 的非
 ## 7. 部署与回滚
 
 部署顺序：停止写入 → 完整备份 → 执行迁移 → 部署 Backend → 只读冒烟 → 部署 Admin Frontend → 上传小程序体验版 → 双账号真机验收 → 发布。
+
+截至 2026-08-03，完整备份、迁移、Backend 和 Admin Frontend 部署及只读 HTTP 冒烟已完成；下一发布门槛从“小程序体验版上传”继续。
 
 完整数据库步骤以 [DATABASE-MIGRATION-DEPLOYMENT.md](../../backend/docs/DATABASE-MIGRATION-DEPLOYMENT.md) 为准。SQLite 不执行未验证的逆向 SQL；迁移失败时停止服务并恢复升级前完整备份。当前档期互斥只支持单 Backend 实例，多实例部署前必须更换为具备数据库级并发约束的方案。

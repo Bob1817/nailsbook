@@ -154,7 +154,10 @@ describe('修改预约时间的冲突保护', () => {
       endTime: new Date('2026-07-01T12:00:00'),
     } as never);
 
-    const newStart = new Date(Date.now() + 8 * 24 * 60 * 60 * 1000);
+    const future = new Date(Date.now() + 8 * 24 * 60 * 60 * 1000);
+    const newStart = new Date(
+      `${future.toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' })}T14:00:00+08:00`,
+    );
     await service.updateForTechnician(5, 7, {
       startTime: newStart.toISOString(),
     });

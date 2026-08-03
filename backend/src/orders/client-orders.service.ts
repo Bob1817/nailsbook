@@ -17,6 +17,7 @@ import { BookingMutexService } from './booking-mutex.service';
 import { ReferralQualificationService } from '../referrals/referral-qualification.service';
 import { RewardFundService } from '../referrals/reward-fund.service';
 import { assertWithinServiceSchedule } from './order-work-schedule';
+import { parseBusinessDateTime } from './business-time';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 
 import * as crypto from 'crypto';
@@ -1419,7 +1420,7 @@ export class ClientOrdersService {
   }
 
   private buildStartTime(serviceDate: string, startTime: string) {
-    return new Date(`${serviceDate}T${startTime}:00`);
+    return parseBusinessDateTime(serviceDate, startTime);
   }
 
   private buildDefaultBusinessHours(): ShopBusinessHour[] {
