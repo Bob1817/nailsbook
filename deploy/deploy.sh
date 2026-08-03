@@ -82,12 +82,18 @@ SERVICES=$(echo "$SERVICES" | tr ' ' '\n' | sort -u | tr '\n' ' ' | xargs)
 
 log "变更服务: $SERVICES"
 
-# ---------- 3. 逐个构建（避免 OOM）----------
+# ---------- 3. 拉取外部构建镜像并逐个构建其余服务（避免 OOM）----------
 NEED_NGINX_RESTART=false
 
 for SVC in $SERVICES; do
     if [ "$SVC" = "nginx-restart" ]; then
         NEED_NGINX_RESTART=true
+        continue
+    fi
+    if [ "$SVC" = "admin-web" ]; then
+        log "拉取外部构建的 $SVC 镜像 ..."
+        docker compose pull "$SVC" 2>&1 || err "$SVC 镜像拉取失败"
+        log "$SVC 镜像拉取完成 ✓"
         continue
     fi
     log "构建 $SVC ..."

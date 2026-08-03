@@ -62,6 +62,22 @@ sed -i 's/api.lunails.cn/api.你的域名.com/g' deploy/nginx/conf.d/nailbook.co
 
 ## 第五步：启动所有服务
 
+管理后台镜像由 GitHub Actions 构建并推送到 GHCR，生产服务器不再构建
+`admin-frontend`。私有镜像首次部署前，需要使用具备 `read:packages` 权限的
+GitHub PAT 登录：
+
+```bash
+echo "$GHCR_PAT" | docker login ghcr.io -u Bob1817 --password-stdin
+docker compose pull admin-web
+```
+
+默认拉取 `ghcr.io/bob1817/nailsbook-admin-web:latest`。生产发布建议在仓库根目录
+`.env` 中固定已通过 CI 的提交镜像，避免 `latest` 漂移：
+
+```bash
+ADMIN_WEB_IMAGE=ghcr.io/bob1817/nailsbook-admin-web:sha-<完整提交 SHA>
+```
+
 ```bash
 docker compose up -d --build
 docker compose logs -f backend   # 观察启动日志
@@ -160,8 +176,17 @@ cd /opt/nailbook
 git pull
 docker compose up -d --build backend       # 仅后端更新
 docker compose up -d --build client-web     # 仅用户端更新
-# 两者都更新：docker compose up -d --build
+docker compose pull admin-web               # 拉取 CI 构建的管理端镜像
+docker compose up -d admin-web               # 仅重建管理端容器
 ```
+
+也可以使用 `./deploy/deploy.sh admin-web`。该命令只拉取管理端镜像并重建容器，
+不会在生产服务器执行 `npm ci` 或前端构建。执行前应确认目标提交的
+`admin-image` GitHub Actions 任务已经成功。
+
+后端容器启动时执行 `prisma migrate deploy`。迁移失败时应用不会继续启动，
+禁止使用 `prisma db push` 代替生产迁移；详细预检和备份流程见
+`backend/docs/DATABASE-MIGRATION-DEPLOYMENT.md`。
 
 ---
 
