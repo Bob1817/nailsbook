@@ -10,6 +10,8 @@
 
 部署流程修正：`6b35e1a fix(deploy): use migrations and external admin image`
 
+预约时区生产修复：`25114af fix(orders): make booking validation timezone-safe`
+
 ## 1. 候选目标
 
 RC2 在 RC1 的预约、作品和客户管理基线上，补齐一期 MVP 的非微信支付业务闭环，并为微信登录和微信支付提供可安全降级的配置基础。
@@ -80,6 +82,6 @@ RC2 在 RC1 的预约、作品和客户管理基线上，补齐一期 MVP 的非
 
 部署顺序：停止写入 → 完整备份 → 执行迁移 → 部署 Backend → 只读冒烟 → 部署 Admin Frontend → 上传小程序体验版 → 双账号真机验收 → 发布。
 
-截至 2026-08-03，完整备份、迁移、Backend 和 Admin Frontend 部署及只读 HTTP 冒烟已完成；下一发布门槛从“小程序体验版上传”继续。
+截至 2026-08-03，完整备份、迁移、Backend 和 Admin Frontend 部署及只读 HTTP 冒烟已完成；预约时区修复也已部署，37 个迁移无待执行项，公网健康及微信能力接口均为 200，数据库完整性为 `ok`、外键异常为 0。下一发布门槛从“小程序体验版上传”继续。
 
 完整数据库步骤以 [DATABASE-MIGRATION-DEPLOYMENT.md](../../backend/docs/DATABASE-MIGRATION-DEPLOYMENT.md) 为准。SQLite 不执行未验证的逆向 SQL；迁移失败时停止服务并恢复升级前完整备份。当前档期互斥只支持单 Backend 实例，多实例部署前必须更换为具备数据库级并发约束的方案。
