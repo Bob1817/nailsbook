@@ -4,7 +4,7 @@
 
 整理日期：2026-08-03
 
-状态：候选已冻结并完成生产部署，待 CI 复核、体验版、双账号及真机验收
+状态：候选已冻结、完成生产部署并通过 CI，待体验版、双账号及真机验收
 
 冻结提交：`8f3a009 feat: freeze luanails mvp rc2`
 
@@ -57,7 +57,7 @@ RC2 在 RC1 的预约、作品和客户管理基线上，补齐一期 MVP 的非
 
 ## 5. 部署前人工门槛
 
-- [ ] GitHub Actions Backend 检查通过。
+- [x] GitHub Actions Backend 检查通过（47 个测试套件、210 项测试及生产构建）。
 - [x] Cloudflare `lunails` 和 `nailsbook` 已确认不属于仅包含 Backend、Admin Frontend 和微信小程序的 RC2 候选范围。
 - [x] 生产数据库已备份并通过 `prisma migrate deploy` 完成 37 个迁移；外键检查无异常，完整性检查为 `ok`。
 - [ ] 客户、美甲师和管理员账号完成注册、登录、刷新及找回密码验收。
