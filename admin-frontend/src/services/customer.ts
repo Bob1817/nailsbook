@@ -14,6 +14,11 @@ export interface Customer {
   notes?: string;
   createdAt: string;
   updatedAt: string;
+  account: {
+    linked: boolean;
+    passwordConfigured: boolean;
+    status: string | null;
+  };
   technician?: {
     id: number;
     name: string;
@@ -35,6 +40,11 @@ export const customerService = {
 
   getById: async (id: number): Promise<Customer> => {
     const response = await api.get(`/customers/${id}`);
+    return response.data;
+  },
+
+  resetPassword: async (id: number): Promise<{ tempPassword: string }> => {
+    const response = await api.post(`/customers/${id}/reset-password`);
     return response.data;
   },
 };

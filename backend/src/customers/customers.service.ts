@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { calculateCustomerLifecycle } from './customer-lifecycle';
+import * as bcrypt from 'bcryptjs';
+import { generateRandomPassword } from '../common/auth/random-password';
 
 @Injectable()
 export class CustomersService {
@@ -49,6 +51,9 @@ export class CustomersService {
               phone: true,
             },
           },
+          clientUser: {
+            select: { passwordHash: true, status: true },
+          },
           _count: { select: { orders: true } },
           orders: {
             orderBy: { startTime: 'desc' },
@@ -73,6 +78,7 @@ export class CustomersService {
 
     return {
       data: customers.map((customer) => {
+        const { clientUser, ...safeCustomer } = customer;
         const completedServiceDates = customer.orders
           .filter((order) => order.status === 'completed')
           .map((order) => order.completedAt || order.startTime);
@@ -81,11 +87,19 @@ export class CustomersService {
           (sum, revenue) => sum + revenue.amount,
           0,
         );
-        const recentServiceAt = completedServiceDates
-          .sort((a, b) => b.getTime() - a.getTime())[0] ?? null;
+        const recentServiceAt =
+          completedServiceDates.sort((a, b) => b.getTime() - a.getTime())[0] ??
+          null;
 
         return {
-          ...customer,
+          ...safeCustomer,
+          account: customer.clientUserId
+            ? {
+                linked: true,
+                passwordConfigured: Boolean(clientUser?.passwordHash),
+                status: clientUser?.status ?? 'unknown',
+              }
+            : { linked: false, passwordConfigured: false, status: null },
           orders: undefined,
           revenues: undefined,
           address:
@@ -106,6 +120,32 @@ export class CustomersService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  async resetPassword(customerId: number) {
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+      select: {
+        clientUserId: true,
+        clientUser: { select: { status: true } },
+      },
+    });
+    if (!customer) throw new NotFoundException('客户不存在');
+    if (!customer.clientUserId || !customer.clientUser) {
+      throw new BadRequestException('该客户尚未关联登录账号，无法重置密码');
+    }
+    if (customer.clientUser.status !== 'active') {
+      throw new BadRequestException('该客户账号未启用，无法重置密码');
+    }
+
+    const tempPassword = generateRandomPassword();
+    const passwordHash = await bcrypt.hash(tempPassword, 10);
+    await this.prisma.clientUser.update({
+      where: { id: customer.clientUserId },
+      data: { passwordHash, tokenVersion: { increment: 1 } },
+    });
+
+    return { tempPassword };
   }
 
   async findOne(id: number) {
@@ -212,7 +252,12 @@ export class CustomersService {
   }
 
   private parseTags(tags: string | null) {
-    return tags ? tags.split(/[,，]/).map((tag) => tag.trim()).filter(Boolean) : [];
+    return tags
+      ? tags
+          .split(/[,，]/)
+          .map((tag) => tag.trim())
+          .filter(Boolean)
+      : [];
   }
 
   private buildBusinessSummary(
@@ -243,9 +288,7 @@ export class CustomersService {
       0,
     );
     const averageTicket =
-      completedServiceCount > 0
-        ? confirmedSpend / completedServiceCount
-        : null;
+      completedServiceCount > 0 ? confirmedSpend / completedServiceCount : null;
 
     let averageServiceCycleDays: number | null = null;
     if (completedServiceCount >= 2) {
@@ -259,16 +302,14 @@ export class CustomersService {
               86_400_000
           );
         }, 0);
-      averageServiceCycleDays = Math.round(
-        (totalIntervalDays / (completedServiceCount - 1)) * 10,
-      ) / 10;
+      averageServiceCycleDays =
+        Math.round((totalIntervalDays / (completedServiceCount - 1)) * 10) / 10;
     }
 
     const firstServiceAt = completedOrders[0]?.serviceAt ?? null;
     const lastServiceAt =
       completedOrders[completedServiceCount - 1]?.serviceAt ?? null;
-    const serviceCycleDays =
-      averageServiceCycleDays ?? defaultServiceCycleDays;
+    const serviceCycleDays = averageServiceCycleDays ?? defaultServiceCycleDays;
     const expectedNextServiceAt = lastServiceAt
       ? new Date(lastServiceAt.getTime() + serviceCycleDays * 86_400_000)
       : null;
@@ -459,7 +500,8 @@ export class CustomersService {
     if (templates.some((item) => item.name === name)) {
       throw new ConflictException('标签已存在');
     }
-    if (templates.length >= 30) throw new BadRequestException('最多创建30个标签');
+    if (templates.length >= 30)
+      throw new BadRequestException('最多创建30个标签');
     const created = {
       id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
       name,
@@ -471,24 +513,29 @@ export class CustomersService {
   async deleteTagTemplate(technicianId: number, templateId: string) {
     const templates = await this.getTagTemplates(technicianId);
     const next = templates.filter((item) => item.id !== templateId);
-    if (next.length === templates.length) throw new NotFoundException('标签不存在');
+    if (next.length === templates.length)
+      throw new NotFoundException('标签不存在');
     await this.saveTagTemplates(technicianId, next);
     return { success: true };
   }
 
-  private parseTagTemplates(value: string | null): Array<{ id: string; name: string; color?: string }> {
+  private parseTagTemplates(
+    value: string | null,
+  ): Array<{ id: string; name: string; color?: string }> {
     if (!value) return [];
     try {
       const parsed = JSON.parse(value);
       if (!Array.isArray(parsed)) return [];
       return parsed
-        .map((item, index) => typeof item === 'string'
-          ? { id: `legacy-${index}`, name: item.trim() }
-          : {
-              id: String(item.id || `legacy-${index}`),
-              name: String(item.name || '').trim(),
-              ...(item.color ? { color: String(item.color) } : {}),
-            })
+        .map((item, index) =>
+          typeof item === 'string'
+            ? { id: `legacy-${index}`, name: item.trim() }
+            : {
+                id: String(item.id || `legacy-${index}`),
+                name: String(item.name || '').trim(),
+                ...(item.color ? { color: String(item.color) } : {}),
+              },
+        )
         .filter((item) => item.name);
     } catch {
       return [];

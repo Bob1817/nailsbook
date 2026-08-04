@@ -10,6 +10,7 @@ import { UpdateTechnicianDto } from './dto/update-technician.dto';
 import { UpdateTechnicianStatusDto } from './dto/update-technician-status.dto';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
+import { generateRandomPassword } from '../common/auth/random-password';
 
 @Injectable()
 export class TechniciansService {
@@ -28,11 +29,13 @@ export class TechniciansService {
     }
   }
 
-  private mapTechnician<T extends { socialMedia?: string | null }>(
-    technician: T,
-  ) {
+  private mapTechnician<
+    T extends { socialMedia?: string | null; passwordHash?: string | null },
+  >(technician: T) {
+    const { passwordHash, ...safe } = technician;
     return {
-      ...technician,
+      ...safe,
+      passwordConfigured: Boolean(passwordHash),
       socialMedia: this.parseSocialMedia(technician.socialMedia),
     };
   }
@@ -125,40 +128,46 @@ export class TechniciansService {
       },
     });
 
-    // 不向响应泄露密码哈希
-    const { passwordHash: _omit, ...safe } = technician;
-    return safe;
+    return this.mapTechnician(technician);
   }
 
   async updateStatus(id: number, dto: UpdateTechnicianStatusDto) {
-    return this.prisma.technician.update({
+    const technician = await this.prisma.technician.update({
       where: { id },
       data: {
         status: dto.status,
       },
     });
+    return this.mapTechnician(technician);
   }
 
   async deleteTechnician(id: number) {
-    const technician = await this.prisma.technician.findUnique({ where: { id } });
+    const technician = await this.prisma.technician.findUnique({
+      where: { id },
+    });
     if (!technician) throw new NotFoundException('美甲师不存在');
-    if (technician.status === 'deleted') return technician;
+    if (technician.status === 'deleted') return this.mapTechnician(technician);
 
-    return this.prisma.technician.update({
+    const deleted = await this.prisma.technician.update({
       where: { id },
       data: { status: 'deleted' },
     });
+    return this.mapTechnician(deleted);
   }
 
   async disableTechnician(id: number) {
-    const technician = await this.prisma.technician.findUnique({ where: { id } });
+    const technician = await this.prisma.technician.findUnique({
+      where: { id },
+    });
     if (!technician) throw new NotFoundException('美甲师不存在');
-    if (technician.status === 'suspended') return technician;
+    if (technician.status === 'suspended')
+      return this.mapTechnician(technician);
 
-    return this.prisma.technician.update({
+    const disabled = await this.prisma.technician.update({
       where: { id },
       data: { status: 'suspended' },
     });
+    return this.mapTechnician(disabled);
   }
 
   async update(id: number, dto: UpdateTechnicianDto) {
@@ -179,7 +188,8 @@ export class TechniciansService {
     if (dto.phone !== undefined) data.phone = dto.phone;
     if (dto.avatarUrl !== undefined) data.avatarUrl = dto.avatarUrl || null;
     if (dto.city !== undefined) data.city = dto.city || null;
-    if (dto.serviceArea !== undefined) data.serviceArea = dto.serviceArea || null;
+    if (dto.serviceArea !== undefined)
+      data.serviceArea = dto.serviceArea || null;
     if (dto.status !== undefined) data.status = dto.status;
 
     const updated = await this.prisma.technician.update({
@@ -200,12 +210,15 @@ export class TechniciansService {
       throw new BadRequestException('该账号已删除，无法重置密码');
     }
 
-    // 重置回初始默认密码 123456，并标记首次登录强制改密
-    const tempPassword = '123456';
+    const tempPassword = generateRandomPassword();
     const passwordHash = await bcrypt.hash(tempPassword, 10);
     await this.prisma.technician.update({
       where: { id: technicianId },
-      data: { passwordHash, tokenVersion: { increment: 1 }, mustChangePassword: true },
+      data: {
+        passwordHash,
+        tokenVersion: { increment: 1 },
+        mustChangePassword: true,
+      },
     });
 
     return { tempPassword };
@@ -233,7 +246,8 @@ export class TechniciansService {
     let attempt = 0;
     do {
       key = '';
-      for (let i = 0; i < 16; i++) key += chars[Math.floor(Math.random() * chars.length)];
+      for (let i = 0; i < 16; i++)
+        key += chars[Math.floor(Math.random() * chars.length)];
       attempt++;
     } while (
       (await this.prisma.technicianInviteKey.findUnique({ where: { key } })) &&
@@ -243,7 +257,9 @@ export class TechniciansService {
     return this.prisma.technicianInviteKey.create({
       data: {
         key,
-        note: note?.trim() || `美甲师 ${technician.name} (${technician.phone}) 激活密钥`,
+        note:
+          note?.trim() ||
+          `美甲师 ${technician.name} (${technician.phone}) 激活密钥`,
         usedByTechnicianId: technicianId,
         // usedAt 不设，留作"已分配未使用"状态
       },

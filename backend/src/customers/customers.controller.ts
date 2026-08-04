@@ -1,4 +1,12 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -10,6 +18,8 @@ import {
 import { CustomersService } from './customers.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Permissions } from '../auth/permission.decorator';
+import { OperationLog } from '../auth/operation-log.decorator';
+import { OperationLogInterceptor } from '../auth/operation-log.interceptor';
 
 @ApiTags('管理员-客户')
 @ApiBearerAuth()
@@ -76,5 +86,25 @@ export class CustomersController {
   @ApiResponse({ status: 404, description: '客户不存在' })
   findOne(@Param('id') id: string) {
     return this.customersService.findOne(parseInt(id, 10));
+  }
+
+  @Post(':id/reset-password')
+  @Permissions('account:reset-password')
+  @UseInterceptors(OperationLogInterceptor)
+  @OperationLog({
+    module: 'customer',
+    action: 'reset_password',
+    targetType: 'customer',
+  })
+  @ApiOperation({ summary: '重置客户登录密码（生成一次性临时密码）' })
+  @ApiParam({ name: 'id', type: String, description: '客户ID' })
+  @ApiResponse({
+    status: 201,
+    description: '重置成功，返回仅显示一次的临时密码',
+  })
+  @ApiResponse({ status: 400, description: '客户未关联登录账号或账号未启用' })
+  @ApiResponse({ status: 404, description: '客户不存在' })
+  resetPassword(@Param('id') id: string) {
+    return this.customersService.resetPassword(parseInt(id, 10));
   }
 }

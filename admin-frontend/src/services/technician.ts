@@ -14,6 +14,7 @@ export interface Technician {
   lastLoginAt?: string;
   createdAt: string;
   updatedAt: string;
+  passwordConfigured: boolean;
   subscription?: {
     id: number;
     planId: number;

@@ -38,6 +38,12 @@ export class ProductionSeedService implements OnModuleInit {
       { name: '美甲师禁用', code: 'technician:disable', module: 'technician', action: 'disable' },
       { name: '美甲师删除', code: 'technician:delete', module: 'technician', action: 'delete' },
       { name: '客户查看', code: 'customer:view', module: 'customer', action: 'view' },
+      {
+        name: '账号密码重置',
+        code: 'account:reset-password',
+        module: 'account',
+        action: 'reset-password',
+      },
       { name: '报价查看', code: 'quote:view', module: 'quote', action: 'view' },
       { name: '报价取消', code: 'quote:cancel', module: 'quote', action: 'cancel' },
       { name: '预约查看', code: 'booking:view', module: 'booking', action: 'view' },

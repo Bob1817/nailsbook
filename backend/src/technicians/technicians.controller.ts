@@ -134,7 +134,10 @@ export class TechniciansController {
     @Param('id') id: string,
     @Body() body: { note?: string } = {},
   ) {
-    return this.techniciansService.generateInviteKey(parseInt(id, 10), body.note);
+    return this.techniciansService.generateInviteKey(
+      parseInt(id, 10),
+      body.note,
+    );
   }
 
   @Patch(':id/status')
@@ -158,7 +161,7 @@ export class TechniciansController {
   }
 
   @Post(':id/reset-password')
-  @Permissions('technician:update')
+  @Permissions('account:reset-password')
   @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'technician',
@@ -167,7 +170,10 @@ export class TechniciansController {
   })
   @ApiOperation({ summary: '重置美甲师密码（生成一次性临时密码）' })
   @ApiParam({ name: 'id', type: String, description: '美甲师ID' })
-  @ApiResponse({ status: 201, description: '重置成功，返回临时密码（仅此次显示）' })
+  @ApiResponse({
+    status: 201,
+    description: '重置成功，返回临时密码（仅此次显示）',
+  })
   @ApiResponse({ status: 400, description: '账号未激活' })
   @ApiResponse({ status: 404, description: '美甲师不存在' })
   resetPassword(@Param('id') id: string) {

@@ -3,10 +3,13 @@ import { Table, Button, Space, Modal, Form, Input, Select, Tag, message, Popconf
 import { PlusOutlined, SearchOutlined, EditOutlined, KeyOutlined, CopyOutlined } from '@ant-design/icons';
 import { technicianService } from '../services/technician';
 import type { Technician, PaginatedResponse } from '../services/technician';
+import { useAuth } from '../contexts/AuthContext';
 
 const { Text } = Typography;
 
 const Technicians: React.FC = () => {
+  const { hasPermission } = useAuth();
+  const canResetPassword = hasPermission('account:reset-password');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<PaginatedResponse<Technician> | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -135,7 +138,12 @@ const Technicians: React.FC = () => {
         title: '密码重置成功',
         content: (
           <div>
-            <p>临时密码：<code style={{ fontSize: 16, letterSpacing: 1 }}>{result.tempPassword}</code></p>
+            <p>
+              临时密码：
+              <Text code copyable={{ text: result.tempPassword }} style={{ fontSize: 16, letterSpacing: 1 }}>
+                {result.tempPassword}
+              </Text>
+            </p>
             <p style={{ color: '#999', fontSize: 12, marginTop: 8 }}>请将此密码发送给美甲师，美甲师下次登录时需重新设置密码。</p>
           </div>
         ),
@@ -209,6 +217,14 @@ const Technicians: React.FC = () => {
     },
     { title: '邀请码', dataIndex: 'invitationCode', key: 'invitationCode' },
     {
+      title: '账号密码',
+      dataIndex: 'passwordConfigured',
+      key: 'passwordConfigured',
+      render: (configured: boolean) => configured
+        ? <Tag color="green">已设置（不可查看）</Tag>
+        : <Tag>未设置</Tag>,
+    },
+    {
       title: '创建时间',
       dataIndex: 'createdAt',
       key: 'createdAt',
@@ -232,9 +248,11 @@ const Technicians: React.FC = () => {
               <Popconfirm title="确定要禁用该美甲师吗？" description="禁用后该账号将无法登录。" onConfirm={() => handleDisable(record.id)}>
                 <Button type="link" size="small" danger>禁用</Button>
               </Popconfirm>
-              <Popconfirm title="确定要重置该美甲师的密码？" description="重置后美甲师需要在下次登录时重新设置密码。" onConfirm={() => handleResetFromList(record.id)}>
-                <Button type="link" size="small">重置密码</Button>
-              </Popconfirm>
+              {canResetPassword && (
+                <Popconfirm title="确定要重置该美甲师的密码？" description="重置后原密码立即失效，并强制当前登录状态失效。" onConfirm={() => handleResetFromList(record.id)}>
+                  <Button type="link" style={{ minHeight: 44 }}>重置密码</Button>
+                </Popconfirm>
+              )}
             </>
           )}
           {record.status === 'suspended' && (
@@ -397,7 +415,7 @@ const Technicians: React.FC = () => {
           </Form.Item>
         </Form>
 
-        {selectedTechnician && selectedTechnician.status !== 'deleted' && (
+        {canResetPassword && selectedTechnician && selectedTechnician.status !== 'deleted' && (
           <div style={{ marginTop: 16, padding: 16, background: '#fff1f0', borderRadius: 8 }}>
             <div style={{ marginBottom: 8, color: '#cf1322', fontSize: 13 }}>
               美甲师忘记密码时，可在此重置。系统将生成一个一次性临时密码，请转交给美甲师并提醒其登录后尽快修改。
