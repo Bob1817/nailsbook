@@ -167,6 +167,7 @@ export class TechniciansController {
     module: 'technician',
     action: 'reset_password',
     targetType: 'technician',
+    logResponse: false,
   })
   @ApiOperation({ summary: '重置美甲师密码（生成一次性临时密码）' })
   @ApiParam({ name: 'id', type: String, description: '美甲师ID' })
@@ -178,6 +179,20 @@ export class TechniciansController {
   @ApiResponse({ status: 404, description: '美甲师不存在' })
   resetPassword(@Param('id') id: string) {
     return this.techniciansService.resetPassword(parseInt(id, 10));
+  }
+
+  @Get(':id/managed-password')
+  @Permissions('account:reset-password')
+  @UseInterceptors(OperationLogInterceptor)
+  @OperationLog({
+    module: 'technician',
+    action: 'view_password',
+    targetType: 'technician',
+    logResponse: false,
+  })
+  @ApiOperation({ summary: '查看超管受管的美甲师当前密码' })
+  getManagedPassword(@Param('id') id: string) {
+    return this.techniciansService.getManagedPassword(parseInt(id, 10));
   }
 
   @Delete(':id')

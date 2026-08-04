@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Table, Button, Space, Modal, Form, Input, Select, Tag, message, Popconfirm, Card, Typography } from 'antd';
-import { PlusOutlined, SearchOutlined, EditOutlined, KeyOutlined, CopyOutlined } from '@ant-design/icons';
+import { PlusOutlined, SearchOutlined, EditOutlined, KeyOutlined, CopyOutlined, EyeOutlined } from '@ant-design/icons';
 import { technicianService } from '../services/technician';
 import type { Technician, PaginatedResponse } from '../services/technician';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,6 +21,7 @@ const Technicians: React.FC = () => {
   const [filters, setFilters] = useState({ page: 1, limit: 10, status: '', search: '' });
   const [resetPwd, setResetPwd] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<number, string>>({});
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -134,6 +135,7 @@ const Technicians: React.FC = () => {
   const handleResetFromList = async (id: number) => {
     try {
       const result = await technicianService.resetPassword(id);
+      setVisiblePasswords((current) => ({ ...current, [id]: result.tempPassword }));
       Modal.success({
         title: '密码重置成功',
         content: (
@@ -151,6 +153,16 @@ const Technicians: React.FC = () => {
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       message.error(err.response?.data?.message || '重置失败');
+    }
+  };
+
+  const revealPassword = async (id: number) => {
+    try {
+      const result = await technicianService.getManagedPassword(id);
+      setVisiblePasswords((current) => ({ ...current, [id]: result.password }));
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || '密码读取失败');
     }
   };
 
@@ -220,9 +232,22 @@ const Technicians: React.FC = () => {
       title: '账号密码',
       dataIndex: 'passwordConfigured',
       key: 'passwordConfigured',
-      render: (configured: boolean) => configured
-        ? <Tag color="green">已设置（不可查看）</Tag>
-        : <Tag>未设置</Tag>,
+      render: (_: boolean, record: Technician) => {
+        if (!record.passwordConfigured) return <Tag>未设置</Tag>;
+        if (!record.managedPasswordAvailable) return <Tag color="orange">用户已修改，需重置</Tag>;
+        if (!canResetPassword) return <Text code>••••••••••••</Text>;
+        const password = visiblePasswords[record.id];
+        return (
+          <Space>
+            <Text code>{password || '••••••••••••'}</Text>
+            {password ? (
+              <Button type="text" icon={<CopyOutlined />} style={{ minHeight: 44 }} onClick={() => navigator.clipboard.writeText(password).then(() => message.success('已复制'))}>复制</Button>
+            ) : (
+              <Button type="text" icon={<EyeOutlined />} style={{ minHeight: 44 }} onClick={() => revealPassword(record.id)}>查看</Button>
+            )}
+          </Space>
+        );
+      },
     },
     {
       title: '创建时间',

@@ -11,6 +11,10 @@ import { UpdateTechnicianStatusDto } from './dto/update-technician-status.dto';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import { generateRandomPassword } from '../common/auth/random-password';
+import {
+  decryptManagedPassword,
+  encryptManagedPassword,
+} from '../common/auth/managed-password';
 
 @Injectable()
 export class TechniciansService {
@@ -30,12 +34,17 @@ export class TechniciansService {
   }
 
   private mapTechnician<
-    T extends { socialMedia?: string | null; passwordHash?: string | null },
+    T extends {
+      socialMedia?: string | null;
+      passwordHash?: string | null;
+      managedPasswordCiphertext?: string | null;
+    },
   >(technician: T) {
-    const { passwordHash, ...safe } = technician;
+    const { passwordHash, managedPasswordCiphertext, ...safe } = technician;
     return {
       ...safe,
       passwordConfigured: Boolean(passwordHash),
+      managedPasswordAvailable: Boolean(managedPasswordCiphertext),
       socialMedia: this.parseSocialMedia(technician.socialMedia),
     };
   }
@@ -124,6 +133,7 @@ export class TechniciansService {
         invitationCode,
         status: 'active',
         passwordHash,
+        managedPasswordCiphertext: encryptManagedPassword('123456'),
         mustChangePassword: true,
       },
     });
@@ -216,12 +226,26 @@ export class TechniciansService {
       where: { id: technicianId },
       data: {
         passwordHash,
+        managedPasswordCiphertext: encryptManagedPassword(tempPassword),
         tokenVersion: { increment: 1 },
         mustChangePassword: true,
       },
     });
 
     return { tempPassword };
+  }
+
+  async getManagedPassword(technicianId: number) {
+    const technician = await this.prisma.technician.findUnique({
+      where: { id: technicianId },
+    });
+    if (!technician) throw new NotFoundException('美甲师不存在');
+    if (!technician.managedPasswordCiphertext) {
+      throw new BadRequestException('当前密码由用户自行设置，需重置后方可查看');
+    }
+    return {
+      password: decryptManagedPassword(technician.managedPasswordCiphertext),
+    };
   }
 
   async generateInviteKey(technicianId: number, note?: string) {

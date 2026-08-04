@@ -95,6 +95,7 @@ export class CustomersController {
     module: 'customer',
     action: 'reset_password',
     targetType: 'customer',
+    logResponse: false,
   })
   @ApiOperation({ summary: '重置客户登录密码（生成一次性临时密码）' })
   @ApiParam({ name: 'id', type: String, description: '客户ID' })
@@ -106,5 +107,19 @@ export class CustomersController {
   @ApiResponse({ status: 404, description: '客户不存在' })
   resetPassword(@Param('id') id: string) {
     return this.customersService.resetPassword(parseInt(id, 10));
+  }
+
+  @Get(':id/managed-password')
+  @Permissions('account:reset-password')
+  @UseInterceptors(OperationLogInterceptor)
+  @OperationLog({
+    module: 'customer',
+    action: 'view_password',
+    targetType: 'customer',
+    logResponse: false,
+  })
+  @ApiOperation({ summary: '查看超管受管的客户当前密码' })
+  getManagedPassword(@Param('id') id: string) {
+    return this.customersService.getManagedPassword(parseInt(id, 10));
   }
 }

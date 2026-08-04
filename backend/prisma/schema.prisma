@@ -62,6 +62,7 @@ model Technician {
   name                  String
   phone                 String                  @unique
   passwordHash          String                  @default("")
+  managedPasswordCiphertext String?
   tokenVersion          Int                     @default(0)
   mustChangePassword    Boolean                 @default(false)
   avatarUrl             String?
@@ -359,6 +360,7 @@ model ClientUser {
   nickname              String?
   phone                 String                 @unique
   passwordHash          String                 @default("")
+  managedPasswordCiphertext String?
   tokenVersion          Int                    @default(0)
   avatarUrl             String?
   city                  String?

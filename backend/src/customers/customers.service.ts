@@ -9,6 +9,10 @@ import { PrismaService } from '../common/prisma/prisma.service';
 import { calculateCustomerLifecycle } from './customer-lifecycle';
 import * as bcrypt from 'bcryptjs';
 import { generateRandomPassword } from '../common/auth/random-password';
+import {
+  decryptManagedPassword,
+  encryptManagedPassword,
+} from '../common/auth/managed-password';
 
 @Injectable()
 export class CustomersService {
@@ -52,7 +56,11 @@ export class CustomersService {
             },
           },
           clientUser: {
-            select: { passwordHash: true, status: true },
+            select: {
+              passwordHash: true,
+              managedPasswordCiphertext: true,
+              status: true,
+            },
           },
           _count: { select: { orders: true } },
           orders: {
@@ -97,9 +105,17 @@ export class CustomersService {
             ? {
                 linked: true,
                 passwordConfigured: Boolean(clientUser?.passwordHash),
+                managedPasswordAvailable: Boolean(
+                  clientUser?.managedPasswordCiphertext,
+                ),
                 status: clientUser?.status ?? 'unknown',
               }
-            : { linked: false, passwordConfigured: false, status: null },
+            : {
+                linked: false,
+                passwordConfigured: false,
+                managedPasswordAvailable: false,
+                status: null,
+              },
           orders: undefined,
           revenues: undefined,
           address:
@@ -142,10 +158,30 @@ export class CustomersService {
     const passwordHash = await bcrypt.hash(tempPassword, 10);
     await this.prisma.clientUser.update({
       where: { id: customer.clientUserId },
-      data: { passwordHash, tokenVersion: { increment: 1 } },
+      data: {
+        passwordHash,
+        managedPasswordCiphertext: encryptManagedPassword(tempPassword),
+        tokenVersion: { increment: 1 },
+      },
     });
 
     return { tempPassword };
+  }
+
+  async getManagedPassword(customerId: number) {
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { clientUser: { select: { managedPasswordCiphertext: true } } },
+    });
+    if (!customer) throw new NotFoundException('客户不存在');
+    if (!customer.clientUser?.managedPasswordCiphertext) {
+      throw new BadRequestException('当前密码由用户自行设置，需重置后方可查看');
+    }
+    return {
+      password: decryptManagedPassword(
+        customer.clientUser.managedPasswordCiphertext,
+      ),
+    };
   }
 
   async findOne(id: number) {

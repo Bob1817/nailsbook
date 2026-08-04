@@ -37,14 +37,18 @@ export class ClientAuthService {
   // 忘记密码：发送验证码（防枚举，统一返回；仅已注册账号真正发送）
   async sendResetCode(phone: string) {
     try {
-      const client = await this.prisma.clientUser.findUnique({ where: { phone } });
+      const client = await this.prisma.clientUser.findUnique({
+        where: { phone },
+      });
       if (client) {
         const code = await this.verificationCode.generate(
           phone,
           ClientAuthService.RESET_PASSWORD_CODE_PURPOSE,
         );
         // 后台发送（带重试），不阻塞响应，也消除"是否注册"的响应耗时差异
-        void this.sms.sendVerificationCode(phone, code, '重置密码').catch(() => {});
+        void this.sms
+          .sendVerificationCode(phone, code, '重置密码')
+          .catch(() => {});
       }
     } catch {
       // 频率限制等错误静默，避免暴露手机号是否注册
@@ -59,14 +63,20 @@ export class ClientAuthService {
       code,
       ClientAuthService.RESET_PASSWORD_CODE_PURPOSE,
     );
-    const client = await this.prisma.clientUser.findUnique({ where: { phone } });
+    const client = await this.prisma.clientUser.findUnique({
+      where: { phone },
+    });
     if (!client) {
       throw new BadRequestException('该手机号未注册');
     }
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.prisma.clientUser.update({
       where: { id: client.id },
-      data: { passwordHash, tokenVersion: { increment: 1 } },
+      data: {
+        passwordHash,
+        managedPasswordCiphertext: null,
+        tokenVersion: { increment: 1 },
+      },
     });
     return { success: true };
   }
@@ -157,7 +167,11 @@ export class ClientAuthService {
 
     return {
       accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
-      refreshToken: this.signRefreshToken(client.id, client.phone, client.tokenVersion),
+      refreshToken: this.signRefreshToken(
+        client.id,
+        client.phone,
+        client.tokenVersion,
+      ),
       client: {
         id: client.id,
         nickname: client.nickname,
@@ -235,13 +249,16 @@ export class ClientAuthService {
   }
 
   private buildLoginResult(client: ClientWithBindings) {
-
     const defaultBinding =
       client.bindings.find((b) => b.isDefault) || client.bindings[0];
 
     return {
       accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
-      refreshToken: this.signRefreshToken(client.id, client.phone, client.tokenVersion),
+      refreshToken: this.signRefreshToken(
+        client.id,
+        client.phone,
+        client.tokenVersion,
+      ),
       client: {
         id: client.id,
         nickname: client.nickname,
@@ -283,7 +300,9 @@ export class ClientAuthService {
           ? JSON.parse(b.technician.shopAddresses)
           : [],
         serviceItems: this.parseServiceItems(b.technician.serviceItems),
-        serviceSchedule: this.parseServiceSchedule(b.technician.serviceSchedule),
+        serviceSchedule: this.parseServiceSchedule(
+          b.technician.serviceSchedule,
+        ),
         isDefault: b.isDefault,
         bindSource: b.bindSource,
       })),
@@ -357,7 +376,9 @@ export class ClientAuthService {
           ? JSON.parse(b.technician.shopAddresses)
           : [],
         serviceItems: this.parseServiceItems(b.technician.serviceItems),
-        serviceSchedule: this.parseServiceSchedule(b.technician.serviceSchedule),
+        serviceSchedule: this.parseServiceSchedule(
+          b.technician.serviceSchedule,
+        ),
         isDefault: b.isDefault,
         bindSource: b.bindSource,
         bindId: b.id,
@@ -592,12 +613,14 @@ export class ClientAuthService {
 
   // ── 绑定相关：系统消息 + 格式化辅助 ──
 
-  private formatClientAddress(addr: {
-    province?: string | null;
-    city?: string | null;
-    district?: string | null;
-    detailAddress?: string | null;
-  } | null): string {
+  private formatClientAddress(
+    addr: {
+      province?: string | null;
+      city?: string | null;
+      district?: string | null;
+      detailAddress?: string | null;
+    } | null,
+  ): string {
     if (!addr) return '未填写';
     const s = [addr.province, addr.city, addr.district, addr.detailAddress]
       .filter((x) => x && x.trim())
@@ -842,7 +865,11 @@ export class ClientAuthService {
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.prisma.clientUser.update({
       where: { id: clientUserId },
-      data: { passwordHash, tokenVersion: { increment: 1 } },
+      data: {
+        passwordHash,
+        managedPasswordCiphertext: null,
+        tokenVersion: { increment: 1 },
+      },
     });
     return { success: true };
   }
@@ -939,14 +966,16 @@ export class ClientAuthService {
 
     return {
       accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
-      refreshToken: this.signRefreshToken(client.id, client.phone, client.tokenVersion),
+      refreshToken: this.signRefreshToken(
+        client.id,
+        client.phone,
+        client.tokenVersion,
+      ),
     };
   }
 
   private parseServiceItems(serviceItems: string | null) {
-    return serviceItems
-      ? JSON.parse(serviceItems)
-      : buildDefaultServiceItems();
+    return serviceItems ? JSON.parse(serviceItems) : buildDefaultServiceItems();
   }
 
   // 解析技师工作时间方案（供客户端预约日历联动休息日/工作时段）

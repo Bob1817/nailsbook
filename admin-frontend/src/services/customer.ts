@@ -17,6 +17,7 @@ export interface Customer {
   account: {
     linked: boolean;
     passwordConfigured: boolean;
+    managedPasswordAvailable: boolean;
     status: string | null;
   };
   technician?: {
@@ -45,6 +46,11 @@ export const customerService = {
 
   resetPassword: async (id: number): Promise<{ tempPassword: string }> => {
     const response = await api.post(`/customers/${id}/reset-password`);
+    return response.data;
+  },
+
+  getManagedPassword: async (id: number): Promise<{ password: string }> => {
+    const response = await api.get(`/customers/${id}/managed-password`);
     return response.data;
   },
 };

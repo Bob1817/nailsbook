@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Table, Button, Space, Input, Select, Tag, message, Card, Modal, Descriptions, Typography } from 'antd';
-import { KeyOutlined, SearchOutlined } from '@ant-design/icons';
+import { CopyOutlined, EyeOutlined, KeyOutlined, SearchOutlined } from '@ant-design/icons';
 import { customerService } from '../services/customer';
 import type { Customer } from '../services/customer';
 import type { PaginatedResponse } from '../services/technician';
@@ -19,6 +19,7 @@ const Customers: React.FC = () => {
   const [detailVisible, setDetailVisible] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [filters, setFilters] = useState({ page: 1, limit: 10, technicianId: undefined as number | undefined, search: '' });
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<number, string>>({});
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -64,6 +65,7 @@ const Customers: React.FC = () => {
       async onOk() {
         try {
           const result = await customerService.resetPassword(customer.id);
+          setVisiblePasswords((current) => ({ ...current, [customer.id]: result.tempPassword }));
           Modal.success({
             title: '密码重置成功',
             content: (
@@ -90,6 +92,16 @@ const Customers: React.FC = () => {
     });
   };
 
+  const revealPassword = async (id: number) => {
+    try {
+      const result = await customerService.getManagedPassword(id);
+      setVisiblePasswords((current) => ({ ...current, [id]: result.password }));
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || '密码读取失败');
+    }
+  };
+
   const columns = [
     { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },
     { title: '姓名', dataIndex: 'name', key: 'name' },
@@ -107,11 +119,22 @@ const Customers: React.FC = () => {
       title: '账号密码',
       dataIndex: 'account',
       key: 'account',
-      render: (account: Customer['account']) => {
+      render: (account: Customer['account'], record: Customer) => {
         if (!account?.linked) return <Tag>未关联账号</Tag>;
-        return account.passwordConfigured
-          ? <Tag color="green">已设置（不可查看）</Tag>
-          : <Tag color="orange">未设置</Tag>;
+        if (!account.passwordConfigured) return <Tag color="orange">未设置</Tag>;
+        if (!account.managedPasswordAvailable) return <Tag color="orange">用户已修改，需重置</Tag>;
+        if (!canResetPassword) return <Text code>••••••••••••</Text>;
+        const password = visiblePasswords[record.id];
+        return (
+          <Space>
+            <Text code>{password || '••••••••••••'}</Text>
+            {password ? (
+              <Button type="text" icon={<CopyOutlined />} style={{ minHeight: 44 }} onClick={() => navigator.clipboard.writeText(password).then(() => message.success('已复制'))}>复制</Button>
+            ) : (
+              <Button type="text" icon={<EyeOutlined />} style={{ minHeight: 44 }} onClick={() => revealPassword(record.id)}>查看</Button>
+            )}
+          </Space>
+        );
       },
     },
     {
@@ -199,7 +222,9 @@ const Customers: React.FC = () => {
               {!selectedCustomer.account?.linked
                 ? '未关联登录账号'
                 : selectedCustomer.account.passwordConfigured
-                  ? '已设置（原密码不可查看）'
+                  ? selectedCustomer.account.managedPasswordAvailable
+                    ? '受管密码可查看'
+                    : '用户已修改，需重置后查看'
                   : '未设置'}
             </Descriptions.Item>
             <Descriptions.Item label="创建时间">{new Date(selectedCustomer.createdAt).toLocaleString('zh-CN')}</Descriptions.Item>

@@ -37,7 +37,9 @@ export class TechnicianAuthService {
           TechnicianAuthService.RESET_PASSWORD_CODE_PURPOSE,
         );
         // 后台发送（带重试），不阻塞响应，也消除"是否注册"的响应耗时差异
-        void this.sms.sendVerificationCode(phone, code, '重置密码').catch(() => {});
+        void this.sms
+          .sendVerificationCode(phone, code, '重置密码')
+          .catch(() => {});
       }
     } catch {
       // 频率限制等错误也静默，避免暴露手机号是否注册
@@ -59,7 +61,11 @@ export class TechnicianAuthService {
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.prisma.technician.update({
       where: { id: technician.id },
-      data: { passwordHash, tokenVersion: { increment: 1 } },
+      data: {
+        passwordHash,
+        managedPasswordCiphertext: null,
+        tokenVersion: { increment: 1 },
+      },
     });
     return { success: true };
   }
@@ -187,7 +193,9 @@ export class TechnicianAuthService {
     tx: Prisma.TransactionClient,
   ): Promise<string> {
     let code = this.generateInvitationCode();
-    while (await tx.technician.findUnique({ where: { invitationCode: code } })) {
+    while (
+      await tx.technician.findUnique({ where: { invitationCode: code } })
+    ) {
       code = this.generateInvitationCode();
     }
     return code;
@@ -383,7 +391,11 @@ export class TechnicianAuthService {
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.prisma.technician.update({
       where: { id: technicianId },
-      data: { passwordHash, tokenVersion: { increment: 1 } },
+      data: {
+        passwordHash,
+        managedPasswordCiphertext: null,
+        tokenVersion: { increment: 1 },
+      },
     });
 
     return { success: true };
@@ -405,7 +417,12 @@ export class TechnicianAuthService {
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.prisma.technician.update({
       where: { id: technicianId },
-      data: { passwordHash, tokenVersion: { increment: 1 }, mustChangePassword: false },
+      data: {
+        passwordHash,
+        managedPasswordCiphertext: null,
+        tokenVersion: { increment: 1 },
+        mustChangePassword: false,
+      },
     });
 
     return this.issueTokens(technician.id, technician.phone);
@@ -459,6 +476,7 @@ export class TechnicianAuthService {
       where: { id: technician.id },
       data: {
         passwordHash,
+        managedPasswordCiphertext: null,
         mustChangePassword: false,
         tokenVersion: { increment: 1 },
       },
@@ -687,7 +705,11 @@ export class TechnicianAuthService {
 
   async updateServiceType(
     technicianId: number,
-    dto: { homeService?: boolean; shopService?: boolean; shopAddresses?: any[] },
+    dto: {
+      homeService?: boolean;
+      shopService?: boolean;
+      shopAddresses?: any[];
+    },
   ) {
     const technician = await this.prisma.technician.findUnique({
       where: { id: technicianId },
@@ -796,8 +818,6 @@ export class TechnicianAuthService {
   }
 
   private parseServiceItems(serviceItems: string | null) {
-    return serviceItems
-      ? JSON.parse(serviceItems)
-      : buildDefaultServiceItems();
+    return serviceItems ? JSON.parse(serviceItems) : buildDefaultServiceItems();
   }
 }

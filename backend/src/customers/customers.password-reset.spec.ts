@@ -1,6 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { CustomersService } from './customers.service';
+import { decryptManagedPassword } from '../common/auth/managed-password';
 
 describe('CustomersService password reset', () => {
   let service: CustomersService;
@@ -30,6 +31,9 @@ describe('CustomersService password reset', () => {
     const update = prisma.clientUser.update.mock.calls[0][0];
     expect(update.where).toEqual({ id: 23 });
     expect(update.data.tokenVersion).toEqual({ increment: 1 });
+    expect(decryptManagedPassword(update.data.managedPasswordCiphertext)).toBe(
+      result.tempPassword,
+    );
     await expect(
       bcrypt.compare(result.tempPassword, update.data.passwordHash),
     ).resolves.toBe(true);

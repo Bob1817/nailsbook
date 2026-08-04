@@ -15,6 +15,7 @@ export interface Technician {
   createdAt: string;
   updatedAt: string;
   passwordConfigured: boolean;
+  managedPasswordAvailable: boolean;
   subscription?: {
     id: number;
     planId: number;
@@ -91,6 +92,11 @@ export const technicianService = {
 
   resetPassword: async (id: number): Promise<{ tempPassword: string }> => {
     const response = await api.post(`/technicians/${id}/reset-password`);
+    return response.data;
+  },
+
+  getManagedPassword: async (id: number): Promise<{ password: string }> => {
+    const response = await api.get(`/technicians/${id}/managed-password`);
     return response.data;
   },
 

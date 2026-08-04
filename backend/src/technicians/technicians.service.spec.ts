@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
+import { decryptManagedPassword } from '../common/auth/managed-password';
 import { TechniciansService } from './technicians.service';
 
 describe('TechniciansService', () => {
@@ -47,6 +48,7 @@ describe('TechniciansService', () => {
         invitationCode: expect.stringMatching(/^[A-F0-9]{8}$/),
         status: 'active',
         passwordHash: expect.any(String),
+        managedPasswordCiphertext: expect.any(String),
         mustChangePassword: true,
       },
     });
@@ -85,6 +87,9 @@ describe('TechniciansService', () => {
     expect(update.where).toEqual({ id: 7 });
     expect(update.data.tokenVersion).toEqual({ increment: 1 });
     expect(update.data.mustChangePassword).toBe(true);
+    expect(decryptManagedPassword(update.data.managedPasswordCiphertext)).toBe(
+      result.tempPassword,
+    );
     await expect(
       bcrypt.compare(result.tempPassword, update.data.passwordHash),
     ).resolves.toBe(true);
