@@ -11,6 +11,8 @@ import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { ClientLoginDto } from './dto/client-login.dto';
 import { RegisterByInviteDto } from './dto/register-by-invite.dto';
+import { RegisterBySmsDto } from './dto/register-by-sms.dto';
+import { LoginBySmsDto } from './dto/login-by-sms.dto';
 import { BindTechnicianDto } from './dto/bind-technician.dto';
 import { VerificationCodeService } from '../common/verification-code/verification-code.service';
 import { SmsService } from '../common/sms/sms.service';
@@ -25,6 +27,8 @@ type ClientWithBindings = Prisma.ClientUserGetPayload<{
 @Injectable()
 export class ClientAuthService {
   private static readonly RESET_PASSWORD_CODE_PURPOSE = 'client:reset-password';
+  private static readonly SMS_LOGIN_CODE_PURPOSE = 'client:sms-login';
+  private static readonly SMS_REGISTER_CODE_PURPOSE = 'client:sms-register';
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
@@ -86,6 +90,325 @@ export class ClientAuthService {
       where: { phone },
     });
     return { exists: !!client };
+  }
+
+  // ── SMS 验证码登录 / 注册（免邀请码） ──
+
+  /** 手机号 + 短信验证码 → 注册客户（无需邀请码，无需密码） */
+  async registerBySms(dto: RegisterBySmsDto) {
+    // 1. 校验短信验证码
+    await this.verificationCode.validate(
+      dto.phone,
+      dto.smsCode,
+      ClientAuthService.SMS_REGISTER_CODE_PURPOSE,
+    );
+
+    // 2. 检查手机号是否已注册
+    const existing = await this.prisma.clientUser.findUnique({
+      where: { phone: dto.phone },
+    });
+    if (existing) {
+      throw new ConflictException('该手机号已被注册');
+    }
+
+    // 3. 创建用户（无密码，后续可在 app 内设置）
+    const managedPassword = this.generateManagedPassword();
+    const passwordHash = await bcrypt.hash(managedPassword, 10);
+
+    const client = await this.prisma.clientUser.create({
+      data: {
+        phone: dto.phone,
+        passwordHash,
+        managedPasswordCiphertext: managedPassword, // 托管密码，供后续 SMS 登录使用
+        nickname: dto.nickname || null,
+        status: 'active',
+      },
+    });
+
+    return {
+      accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
+      refreshToken: this.signRefreshToken(client.id, client.phone, client.tokenVersion),
+      client: {
+        id: client.id,
+        nickname: client.nickname,
+        phone: client.phone,
+        avatarUrl: client.avatarUrl,
+        city: client.city,
+        bio: client.bio,
+        status: client.status,
+      },
+      roles: ['client'],
+      needsOnboarding: true, // 新用户需要选择"绑定美甲师"或"我是美甲师"
+    };
+  }
+
+  /** 手机号 + 短信验证码 → 登录（无需密码，无需绑定美甲师） */
+  async loginBySms(dto: LoginBySmsDto) {
+    // 1. 校验短信验证码
+    await this.verificationCode.validate(
+      dto.phone,
+      dto.smsCode,
+      ClientAuthService.SMS_LOGIN_CODE_PURPOSE,
+    );
+
+    // 2. 查找用户
+    const client = await this.prisma.clientUser.findUnique({
+      where: { phone: dto.phone },
+      include: {
+        bindings: {
+          where: { status: 'active' },
+          include: { technician: true },
+          orderBy: { isDefault: 'desc' },
+        },
+      },
+    });
+
+    if (!client) {
+      throw new UnauthorizedException('该手机号未注册');
+    }
+    if (client.status !== 'active') {
+      throw new UnauthorizedException('账号已被禁用');
+    }
+
+    // 3. 收集角色信息
+    const roles: string[] = ['client'];
+    const hasTechnicianAccount = await this.prisma.technician.findUnique({
+      where: { phone: dto.phone },
+      select: { id: true, status: true },
+    });
+    if (hasTechnicianAccount && hasTechnicianAccount.status === 'active') {
+      roles.push('technician');
+    }
+
+    const needsOnboarding = client.bindings.length === 0 && !hasTechnicianAccount;
+
+    // 4. 构建返回数据
+    if (client.bindings.length > 0) {
+      return {
+        ...this.buildLoginResult(client),
+        roles,
+        needsOnboarding,
+      };
+    }
+
+    // 没有绑定的纯客户登录
+    return {
+      accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
+      refreshToken: this.signRefreshToken(client.id, client.phone, client.tokenVersion),
+      client: {
+        id: client.id,
+        nickname: client.nickname,
+        phone: client.phone,
+        avatarUrl: client.avatarUrl,
+        city: client.city,
+        bio: client.bio,
+        status: client.status,
+      },
+      technicians: [],
+      roles,
+      needsOnboarding,
+    };
+  }
+
+  /** 发送 SMS 登录验证码（防枚举） */
+  async sendSmsCodeForLogin(phone: string) {
+    try {
+      const client = await this.prisma.clientUser.findUnique({
+        where: { phone },
+      });
+      if (client) {
+        const code = await this.verificationCode.generate(
+          phone,
+          ClientAuthService.SMS_LOGIN_CODE_PURPOSE,
+        );
+        void this.sms.sendVerificationCode(phone, code, '登录').catch(() => {});
+      }
+    } catch {
+      // 静默处理
+    }
+    return { sent: true, devCode: this.verificationCode.getDevCode() };
+  }
+
+  /** 发送 SMS 注册验证码（防枚举，仅未注册手机号真正发送） */
+  async sendSmsCodeForRegister(phone: string) {
+    try {
+      const existing = await this.prisma.clientUser.findUnique({
+        where: { phone },
+      });
+      if (!existing) {
+        const code = await this.verificationCode.generate(
+          phone,
+          ClientAuthService.SMS_REGISTER_CODE_PURPOSE,
+        );
+        void this.sms.sendVerificationCode(phone, code, '注册').catch(() => {});
+      }
+    } catch {
+      // 静默处理
+    }
+    return { sent: true, devCode: this.verificationCode.getDevCode() };
+  }
+
+  /** 已登录客户 → 激活美甲师身份（使用超管后台生成的激活密钥） */
+  async activateTechnician(clientUserId: number, activationKey: string) {
+    const client = await this.prisma.clientUser.findUnique({
+      where: { id: clientUserId },
+    });
+    if (!client) {
+      throw new UnauthorizedException('用户不存在');
+    }
+
+    // 检查是否已是美甲师
+    const existingTech = await this.prisma.technician.findUnique({
+      where: { phone: client.phone },
+    });
+    if (existingTech && existingTech.passwordHash) {
+      throw new ConflictException('该手机号已是美甲师，请直接切换身份');
+    }
+
+    // 查找激活密钥
+    const keyRecord = await this.prisma.technicianInviteKey.findUnique({
+      where: { key: activationKey },
+      include: { technician: true },
+    });
+
+    if (!keyRecord) {
+      throw new BadRequestException('激活密钥无效');
+    }
+    if (keyRecord.usedAt) {
+      throw new BadRequestException('该密钥已被使用');
+    }
+
+    // 生成随机密码
+    const managedPassword = this.generateManagedPassword();
+    const passwordHash = await bcrypt.hash(managedPassword, 10);
+
+    const technician = await this.prisma.$transaction(async (tx) => {
+      // 情况 A：密钥预绑定到美甲师 → 激活该账号
+      if (keyRecord.usedByTechnicianId && keyRecord.technician) {
+        const target = keyRecord.technician;
+        if (target.passwordHash) {
+          throw new BadRequestException('该美甲师账号已激活');
+        }
+        if (target.phone !== client.phone) {
+          throw new BadRequestException(
+            `该密钥绑定到手机号 ${target.phone}，与当前账户不匹配`,
+          );
+        }
+
+        const t = await tx.technician.update({
+          where: { id: target.id },
+          data: {
+            passwordHash,
+            managedPasswordCiphertext: managedPassword,
+            name: client.nickname || target.name || client.phone,
+            status: 'active',
+            invitationCode:
+              target.invitationCode || (await this.allocateInvitationCodeInTx(tx)),
+          },
+        });
+        await tx.technicianInviteKey.update({
+          where: { id: keyRecord.id },
+          data: { usedAt: new Date() },
+        });
+        return t;
+      }
+
+      // 情况 B：创建新美甲师
+      if (existingTech && !existingTech.passwordHash) {
+        // 更新已有的未激活美甲师
+        const t = await tx.technician.update({
+          where: { id: existingTech.id },
+          data: {
+            passwordHash,
+            managedPasswordCiphertext: managedPassword,
+            name: client.nickname || existingTech.name || client.phone,
+            status: 'active',
+            invitationCode:
+              existingTech.invitationCode ||
+              (await this.allocateInvitationCodeInTx(tx)),
+          },
+        });
+        await tx.technicianInviteKey.update({
+          where: { id: keyRecord.id },
+          data: { usedByTechnicianId: t.id, usedAt: new Date() },
+        });
+        return t;
+      }
+
+      // 全新创建
+      const invitationCode = await this.allocateInvitationCodeInTx(tx);
+      const created = await tx.technician.create({
+        data: {
+          name: client.nickname || client.phone,
+          phone: client.phone,
+          passwordHash,
+          managedPasswordCiphertext: managedPassword,
+          invitationCode,
+          status: 'active',
+        },
+      });
+      await tx.technicianInviteKey.update({
+        where: { id: keyRecord.id },
+        data: { usedByTechnicianId: created.id, usedAt: new Date() },
+      });
+      return created;
+    });
+
+    // 签发美甲师 token
+    const techPayload = {
+      sub: technician.id,
+      phone: technician.phone,
+      userType: 'technician' as const,
+      tv: technician.tokenVersion,
+    };
+
+    return {
+      accessToken: this.jwtService.sign(techPayload),
+      refreshToken: this.jwtService.sign(
+        { ...techPayload, tokenType: 'refresh' },
+        { expiresIn: '30d' },
+      ),
+      technician: {
+        id: technician.id,
+        name: technician.name,
+        phone: technician.phone,
+        status: technician.status,
+        invitationCode: technician.invitationCode,
+      },
+      roles: ['client', 'technician'],
+    };
+  }
+
+  // ── 辅助方法 ──
+
+  /** 生成随机托管密码 */
+  private generateManagedPassword(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$';
+    let pwd = '';
+    for (let i = 0; i < 16; i++) {
+      pwd += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return pwd;
+  }
+
+  /** 在事务中分配唯一邀请码 */
+  private async allocateInvitationCodeInTx(
+    tx: any,
+  ): Promise<string> {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) {
+      code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    while (
+      await tx.technician.findUnique({ where: { invitationCode: code } })
+    ) {
+      code = '';
+      for (let i = 0; i < 8; i++) {
+        code += chars[Math.floor(Math.random() * chars.length)];
+      }
+    }
+    return code;
   }
 
   async registerByInvite(
@@ -211,7 +534,7 @@ export class ClientAuthService {
     }
 
     if (!client.passwordHash) {
-      throw new UnauthorizedException('账号未设置密码，请重新注册');
+      throw new UnauthorizedException('账号未设置密码，请通过忘记密码设置');
     }
 
     const valid = await bcrypt.compare(dto.password, client.passwordHash);
@@ -219,13 +542,44 @@ export class ClientAuthService {
       throw new UnauthorizedException('手机号或密码错误');
     }
 
-    if (client.bindings.length === 0) {
-      throw new UnauthorizedException(
-        '该账号尚未绑定美甲师，请先通过邀请码注册/绑定',
-      );
+    // 收集角色信息（与 loginBySms 一致）
+    const roles: string[] = ['client'];
+    const hasTechnicianAccount = await this.prisma.technician.findUnique({
+      where: { phone: dto.phone },
+      select: { id: true, status: true },
+    });
+    if (hasTechnicianAccount && hasTechnicianAccount.status === 'active') {
+      roles.push('technician');
     }
 
-    return this.buildLoginResult(client);
+    const needsOnboarding = client.bindings.length === 0 && !hasTechnicianAccount;
+
+    // 构建返回数据（与 loginBySms 一致）
+    if (client.bindings.length > 0) {
+      return {
+        ...this.buildLoginResult(client),
+        roles,
+        needsOnboarding,
+      };
+    }
+
+    // 没有绑定的客户登录，返回 needsOnboarding 让前端引导
+    return {
+      accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
+      refreshToken: this.signRefreshToken(client.id, client.phone, client.tokenVersion),
+      client: {
+        id: client.id,
+        nickname: client.nickname,
+        phone: client.phone,
+        avatarUrl: client.avatarUrl,
+        city: client.city,
+        bio: client.bio,
+        status: client.status,
+      },
+      technicians: [],
+      roles,
+      needsOnboarding,
+    };
   }
 
   async loginByWechat(clientUserId: number) {
@@ -242,10 +596,39 @@ export class ClientAuthService {
     if (!client || client.status !== 'active') {
       throw new UnauthorizedException('用户不存在或已被禁用');
     }
-    if (client.bindings.length === 0) {
-      throw new UnauthorizedException('该账号尚未绑定美甲师');
+
+    // 收集角色信息
+    const roles: string[] = ['client'];
+    const hasTechnicianAccount = await this.prisma.technician.findUnique({
+      where: { phone: client.phone },
+      select: { id: true, status: true },
+    });
+    if (hasTechnicianAccount && hasTechnicianAccount.status === 'active') {
+      roles.push('technician');
     }
-    return this.buildLoginResult(client);
+
+    const needsOnboarding = client.bindings.length === 0 && !hasTechnicianAccount;
+
+    if (client.bindings.length > 0) {
+      return { ...this.buildLoginResult(client), roles, needsOnboarding };
+    }
+
+    return {
+      accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
+      refreshToken: this.signRefreshToken(client.id, client.phone, client.tokenVersion),
+      client: {
+        id: client.id,
+        nickname: client.nickname,
+        phone: client.phone,
+        avatarUrl: client.avatarUrl,
+        city: client.city,
+        bio: client.bio,
+        status: client.status,
+      },
+      technicians: [],
+      roles,
+      needsOnboarding,
+    };
   }
 
   private buildLoginResult(client: ClientWithBindings) {

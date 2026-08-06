@@ -57,7 +57,6 @@ export class WechatAuthService {
       return {
         authenticated: true,
         role: 'client' as const,
-        roles,
         ...(await this.clientAuth.loginByWechat(identity.clientUserId)),
       };
     }
