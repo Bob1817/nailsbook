@@ -1,6 +1,6 @@
 .container {
   min-height: 100vh;
-  background: #f8f9fc;
+  background: var(--bg-page);
   padding-bottom: 160rpx;
 }
 
@@ -14,8 +14,8 @@
 .spinner {
   width: 48rpx;
   height: 48rpx;
-  border: 4rpx solid rgba(255, 107, 138, 0.3);
-  border-top-color: #FF6B8A;
+  border: 4rpx solid rgba(255,107,138,0.3) /* brand-primary-alpha */;
+  border-top-color: var(--brand-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -38,7 +38,7 @@
   width: 120rpx;
   height: 120rpx;
   border-radius: 50%;
-  background: rgba(255,107,138,0.12);
+  background: rgba(255,107,138,0.12) /* brand-primary-alpha */;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -48,19 +48,19 @@
   width: 52rpx;
   height: 52rpx;
   border-radius: 50%;
-  background: rgba(255,107,138,0.3);
+  background: rgba(255,107,138,0.3) /* brand-primary-alpha */;
 }
 
 .empty-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #6b7280;
+  font-size: var(--font-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
   margin-bottom: 12rpx;
 }
 
 .empty-sub {
-  font-size: 26rpx;
-  color: #767b84;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
   margin-bottom: 48rpx;
   text-align: center;
 }
@@ -68,15 +68,15 @@
 .btn-add-first {
   height: 88rpx;
   padding: 0 64rpx;
-  background: linear-gradient(135deg, #ff6b8a, #8b5cf6);
-  color: #fff;
-  border-radius: 48rpx;
-  font-size: 30rpx;
-  font-weight: 600;
+  background: var(--brand-gradient);
+  color: var(--text-inverse);
+  border-radius: var(--btn-radius);
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 24rpx rgba(255, 107, 138, 0.3);
+  box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.3) /* brand-primary-alpha */;
   border: none;
 }
 
@@ -104,11 +104,17 @@
   height: 0;
   padding-bottom: 133.33%;
   overflow: hidden;
-  border-radius: 24rpx;
-  box-shadow: 0 4rpx 24rpx rgba(15, 23, 42, 0.06), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
   border: 1rpx solid rgba(0, 0, 0, 0.04);
   box-sizing: border-box;
 }
+.col:first-child .card-img-wrap:nth-child(3n + 1) { padding-bottom: 146%; }
+.col:first-child .card-img-wrap:nth-child(3n + 2) { padding-bottom: 106%; }
+.col:first-child .card-img-wrap:nth-child(3n) { padding-bottom: 128%; }
+.col:last-child .card-img-wrap:nth-child(3n + 1) { padding-bottom: 114%; }
+.col:last-child .card-img-wrap:nth-child(3n + 2) { padding-bottom: 148%; }
+.col:last-child .card-img-wrap:nth-child(3n) { padding-bottom: 102%; }
 
 .card-img-wrap:active { transform: scale(0.985); opacity: 0.95; }
 
@@ -136,7 +142,7 @@
 .hidden-mask {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--bg-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -145,12 +151,12 @@
 }
 
 .hidden-label {
-  font-size: 28rpx;
-  color: #fff;
-  font-weight: 600;
+  font-size: var(--font-md);
+  color: var(--text-inverse);
+  font-weight: var(--weight-semibold);
   background: rgba(0, 0, 0, 0.3);
   padding: 8rpx 40rpx;
-  border-radius: 14rpx;
+  border-radius: var(--radius-sm);
 }
 
 /* 左上角标签 */
@@ -164,21 +170,21 @@
 }
 
 .tag-pill {
-  font-size: 20rpx;
-  font-weight: 600;
+  font-size: var(--font-xs);
+  font-weight: var(--weight-semibold);
   padding: 4rpx 16rpx;
-  border-radius: 20rpx;
+  border-radius: var(--radius-md);
   backdrop-filter: blur(8px);
 }
 
 .tag-pin {
-  background: rgba(255, 107, 138, 0.85);
-  color: #fff;
+  background: rgba(255,107,138,0.85) /* brand-primary-alpha */;
+  color: var(--text-inverse);
 }
 
 .tag-feat {
   background: rgba(167, 139, 250, 0.85);
-  color: #fff;
+  color: var(--text-inverse);
 }
 
 /* 右上角更多操作 */
@@ -197,11 +203,11 @@
   z-index: 2;
 }
 
-.card-more-btn:active { background: rgba(0, 0, 0, 0.5); }
+.card-more-btn:active { background: var(--bg-overlay); }
 
 .card-more-icon {
-  font-size: 28rpx;
-  color: #fff;
+  font-size: var(--font-md);
+  color: var(--text-inverse);
   font-weight: bold;
   letter-spacing: 2rpx;
 }
@@ -216,9 +222,9 @@
 
 .card-title {
   display: block;
-  font-size: 26rpx;
-  font-weight: 600;
-  color: #fff;
+  font-size: var(--font-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-inverse);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -227,8 +233,8 @@
 
 .card-price {
   display: block;
-  font-size: 24rpx;
-  font-weight: 700;
+  font-size: var(--font-sm);
+  font-weight: var(--weight-bold);
   color: rgba(255, 255, 255, 0.92);
   margin-top: 4rpx;
 }
@@ -247,14 +253,14 @@
 }
 
 .stat-icon {
-  font-size: 20rpx;
+  font-size: var(--font-xs);
   color: rgba(255, 255, 255, 0.7);
 }
 
 .stat-num {
-  font-size: 20rpx;
+  font-size: var(--font-xs);
   color: rgba(255, 255, 255, 0.82);
-  font-weight: 500;
+  font-weight: var(--weight-medium);
 }
 
 /* 固定底部发布按钮 */
@@ -272,15 +278,15 @@
 .btn-publish {
   width: 100%;
   height: 88rpx;
-  background: linear-gradient(135deg, #ff6b8a, #8b5cf6);
-  color: #fff;
-  font-size: 30rpx;
-  font-weight: 600;
-  border-radius: 48rpx;
+  background: var(--brand-gradient);
+  color: var(--text-inverse);
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
+  border-radius: var(--btn-radius);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 24rpx rgba(255, 107, 138, 0.3);
+  box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.3) /* brand-primary-alpha */;
   border: none;
 }
 

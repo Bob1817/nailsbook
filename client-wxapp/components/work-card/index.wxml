@@ -1,16 +1,16 @@
-<view class="wc-root">
+<view class="wc-root {{aspectClass}}" bindtap="onTap" role="button" aria-label="查看{{work.title || '美甲作品'}}详情">
   <image wx:if="{{work.coverUrl}}" src="{{work.coverUrl}}" mode="aspectFill" class="wc-img" lazy-load aria-label="{{work.title || '美甲作品'}}"/>
   <view wx:else class="wc-img wc-img-empty"></view>
   <view class="wc-gradient"></view>
 
   <!-- 顶部：美甲师 + 点赞 -->
   <view class="wc-top">
-    <view class="wc-tech-pill">
+    <view class="wc-tech-pill" catchtap="onArtistTap">
       <image wx:if="{{work.technicianAvatarUrl}}" src="{{work.technicianAvatarUrl}}" mode="aspectFill" class="wc-tech-av" lazy-load aria-label="{{work.technicianName || '美甲师'}}的头像"/>
       <view wx:else class="wc-tech-av-ph"><text class="wc-tech-av-char">{{work.techInitial}}</text></view>
       <text class="wc-tech-name">{{work.technicianName}}</text>
     </view>
-    <view class="wc-like-pill">
+    <view class="wc-like-pill" catchtap="onLikeTap">
       <image wx:if="{{work.isLiked}}" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAUElEQVR4nGNgQAP/3cP/o2NS5PEqJBVT1TAUQ6lqIDUNG6kG0iSWqZ4OqWEo1txCjsF4DaKZgcQaSrRhxBhKsmH4DCXbMGyGUmwYsqHEqAMAvy56MytYoCsAAAAASUVORK5CYII=" class="wc-heart"/>
       <image wx:else src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAS0lEQVR4nOXTMQ4AIAgDQP7/aV3RkKbFMtmV5hYg4soqosxhUY0VO1Ar6MR+BUe2bL9DB1p+SweG0BjIojTGoDKG0DZWoc9YRpneBsE8yGLtxtorAAAAAElFTkSuQmCC" class="wc-heart"/>
       <text class="wc-like-num">{{work.likeCount}}</text>

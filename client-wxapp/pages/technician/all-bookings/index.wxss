@@ -1,5 +1,5 @@
 page {
-  background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%);
+  background: var(--bg-gradient-entry);
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -33,17 +33,17 @@ page {
   align-items: center;
   justify-content: center;
   padding: 12rpx 28rpx;
-  border-radius: 32rpx;
-  font-size: 24rpx;
-  color: #6b7280;
-  background: #f3f4f6;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  background: var(--bg-input);
   white-space: nowrap;
   flex-shrink: 0;
 }
 .filter-tab.active {
-  background: linear-gradient(135deg, #ff6b8a, #8b5cf6);
-  color: #fff;
-  font-weight: 500;
+  background: var(--brand-gradient);
+  color: var(--text-inverse);
+  font-weight: var(--weight-medium);
 }
 
 /* ===== 页面头部 ===== */
@@ -51,7 +51,7 @@ page {
   flex-shrink: 0;
   padding: 16rpx 40rpx 8rpx;
 }
-.page-count { font-size: 24rpx; color: #6b7280; }
+.page-count { font-size: var(--font-sm); color: var(--text-muted); }
 
 /* ===== 列表 ===== */
 .list-scroll { flex: 1; min-height: 0; }
@@ -61,8 +61,8 @@ page {
 .skeleton-list { display: flex; flex-direction: column; gap: 16rpx; }
 .skel-card {
   height: 200rpx;
-  border-radius: 18rpx;
-  background: #f3f4f6;
+  border-radius: var(--card-radius);
+  background: var(--bg-input);
   animation: skel 1.4s linear infinite;
 }
 @keyframes skel { 0%{opacity:1;} 50%{opacity:0.5;} 100%{opacity:1;} }
@@ -70,27 +70,27 @@ page {
 .empty-card {
   margin: 80rpx 0;
   padding: 60rpx 40rpx;
-  background: #fff;
-  border-radius: 18rpx;
+  background: var(--bg-card);
+  border-radius: var(--card-radius);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12rpx;
-  border: 2rpx solid rgba(255, 107, 138, 0.08);
-  box-shadow: 0 10rpx 26rpx rgba(15, 23, 42, 0.05);
+  border: 2rpx solid rgba(255,107,138,0.08) /* brand-primary-alpha */;
+  box-shadow: var(--shadow-lg);
 }
-.empty-title { font-size: 28rpx; font-weight: 600; color: #1f2937; }
-.empty-sub { font-size: 24rpx; color: #6b7280; text-align: center; }
-.retry-btn { display:flex; min-height:88rpx; margin-top:22rpx; padding:0 38rpx; align-items:center; justify-content:center; border-radius:44rpx; background:#fff0f5; color:#9e496f; font-size:24rpx; font-weight:600; }
+.empty-title { font-size: var(--font-md); font-weight: var(--weight-semibold); color: var(--text-primary); }
+.empty-sub { font-size: var(--font-sm); color: var(--text-muted); text-align: center; }
+.retry-btn { display:flex; min-height:88rpx; margin-top:22rpx; padding:0 38rpx; align-items:center; justify-content:center; border-radius: var(--radius-xl); background: var(--bg-tag); color:#9e496f; font-size: var(--font-sm); font-weight: var(--weight-semibold); }
 
 /* ===== 行程卡片 ===== */
 .trip-list { display: flex; flex-direction: column; gap: 16rpx; }
 .trip-card {
-  background: #fff;
-  border-radius: 18rpx;
-  padding: 24rpx;
-  border: 2rpx solid rgba(255, 107, 138, 0.08);
-  box-shadow: 0 10rpx 26rpx rgba(15, 23, 42, 0.05);
+  background: var(--bg-card);
+  border-radius: var(--card-radius);
+  padding: var(--space-md);
+  border: 2rpx solid rgba(255,107,138,0.08) /* brand-primary-alpha */;
+  box-shadow: var(--shadow-lg);
 }
 .trip-card:active { background: #fef7f9; }
 
@@ -102,28 +102,28 @@ page {
 .trip-time {
   width: 88rpx;
   flex-shrink: 0;
-  font-size: 32rpx;
-  font-weight: 700;
-  color: #1f2937;
+  font-size: var(--font-lg);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
 }
 .trip-avatar {
   width: 64rpx; height: 64rpx;
   border-radius: 50%;
-  background: #f7f7f7;
+  background: var(--bg-page);
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
   flex-shrink: 0;
 }
 .trip-avatar-img { width: 100%; height: 100%; }
-.trip-avatar-char { font-size: 26rpx; font-weight: 600; color: #6b7280; }
+.trip-avatar-char { font-size: var(--font-sm); font-weight: var(--weight-semibold); color: var(--text-muted); }
 
 .trip-info { flex: 1; min-width: 0; }
-.trip-name { display: block; font-size: 28rpx; font-weight: 600; color: #1f2937; }
+.trip-name { display: block; font-size: var(--font-md); font-weight: var(--weight-semibold); color: var(--text-primary); }
 .trip-svc {
   display: block;
   margin-top: 4rpx;
-  font-size: 22rpx;
-  color: #6b7280;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -133,8 +133,8 @@ page {
   flex-shrink: 0;
   padding: 6rpx 16rpx;
   border-radius: 8rpx;
-  font-size: 20rpx;
-  font-weight: 500;
+  font-size: var(--font-xs);
+  font-weight: var(--weight-medium);
 }
 .tone-orange  { background: #fff2dc; color: #c97f1a; }
 .tone-purple  { background: #f0e9ff; color: #7c5dd4; }
@@ -146,38 +146,38 @@ page {
 .tone-red     { background: #ffe5e6; color: #c5333d; }
 
 .trip-addr {
-  margin-top: 16rpx;
+  margin-top: var(--space-sm);
   padding: 12rpx 16rpx;
-  background: #f9fafb;
-  border-radius: 12rpx;
-  font-size: 22rpx;
-  line-height: 1.5;
-  color: #6b7280;
+  background: var(--bg-input);
+  border-radius: var(--radius-xs);
+  font-size: var(--font-xs);
+  line-height: var(--leading-normal);
+  color: var(--text-muted);
 }
 
 .trip-actions {
-  margin-top: 16rpx;
+  margin-top: var(--space-sm);
   display: flex;
   gap: 12rpx;
 }
 .trip-btn {
   flex: 1;
   min-height: 72rpx;
-  border-radius: 14rpx;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8rpx;
-  font-size: 24rpx;
-  font-weight: 500;
+  font-size: var(--font-sm);
+  font-weight: var(--weight-medium);
 }
 .trip-btn:active { opacity: 0.85; }
 .trip-primary {
-  background: linear-gradient(135deg, #ff6b8a, #8b5cf6);
-  color: #fff;
+  background: var(--brand-gradient);
+  color: var(--text-inverse);
 }
 .trip-ghost {
-  background: #fff;
-  color: #374151;
-  border: 2rpx solid rgba(255, 107, 138, 0.15);
+  background: var(--bg-card);
+  color: var(--text-body);
+  border: 2rpx solid rgba(255,107,138,0.15) /* brand-primary-alpha */;
 }

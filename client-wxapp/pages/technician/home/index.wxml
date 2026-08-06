@@ -1,113 +1,26 @@
 <nav-bar title="首页"/>
 <view class="page">
-  <!-- ===== 顶部 Header ===== -->
-  <view class="header">
-    <view class="header-bg-blur b1"></view>
-    <view class="header-bg-blur b2"></view>
-
-    <view class="header-top">
-      <view class="user-block">
-        <view class="avatar-wrap">
-          <image wx:if="{{avatar}}" src="{{avatar}}" mode="aspectFill" class="avatar" aria-label="{{name || '美甲师'}}的头像" />
-          <view wx:else class="avatar-placeholder">
-            <text class="avatar-char">{{name[0] || '美'}}</text>
-          </view>
-        </view>
-        <view class="name-block">
-          <view class="name-row">
-            <text class="name">{{name || '美甲师'}}</text>
-            <view class="status-pill {{status === 'active' ? 'status-on' : 'status-off'}}">
-              <view class="status-pill-dot"></view>
-              <text>{{status === 'active' ? '接单中' : '已暂停'}}</text>
-            </view>
-          </view>
-          <text class="subline">今日 {{summary.todayCount}} 单 · 预估 {{summary.expectedIncomeText}}</text>
-        </view>
-      </view>
-
-      <view class="share-wrap">
-        <view class="share-inner">
-          <view class="share-icon-svg"></view>
-          <text class="share-label">分享名片</text>
-        </view>
-        <button class="share-cover" open-type="share"></button>
-      </view>
-    </view>
-  </view>
-
-  <view wx:if="{{businessOverview}}" class="card business-card">
-    <view class="card-head">
+  <!-- ===== 经营信息 ===== -->
+  <view class="business-hero" bindtap="openBusinessDetail" role="button" aria-label="查看经营数据详情">
+    <view class="hero-orb hero-orb-left"></view>
+    <view class="hero-orb hero-orb-right"></view>
+    <view class="business-hero-head">
       <view>
-        <text class="card-title">经营总览</text>
-        <text class="card-sub">本月确认收入按已完成订单实付金额统计</text>
+        <text class="business-hero-kicker">本月经营信息</text>
+        <text class="business-hero-caption">数据更新至今日</text>
+      </view>
+      <view class="business-hero-more">详情 <text>›</text></view>
+    </view>
+    <view wx:if="{{businessOverview}}" class="business-hero-content">
+      <view class="business-hero-primary"><text class="business-hero-value">{{businessOverview.revenue}}</text><text class="business-hero-label">已完成确定收入</text></view>
+      <view class="business-hero-grid">
+        <view class="business-hero-metric business-hero-estimated"><text class="business-hero-number">{{businessOverview.estimatedRevenue}}</text><text class="business-hero-label">预计收入</text></view>
+        <view class="business-hero-metric"><text class="business-hero-number">{{businessOverview.monthCompleted}}</text><text class="business-hero-label">完成订单</text></view>
+        <view class="business-hero-metric"><text class="business-hero-number">{{businessOverview.monthBookings}}</text><text class="business-hero-label">本月预约</text></view>
+        <view class="business-hero-metric"><text class="business-hero-number">{{businessOverview.newCustomers}}</text><text class="business-hero-label">本月新增</text></view>
       </view>
     </view>
-
-    <view class="business-grid">
-      <view class="business-metric" bindtap="openBusinessDetail" data-target="orders">
-        <text class="business-value">{{businessOverview.revenue}}</text>
-        <text class="business-label">本月确认收入</text>
-        <text class="business-definition">已完成且确认入账的订单</text>
-      </view>
-      <view class="business-metric" bindtap="openBusinessDetail" data-target="orders">
-        <text class="business-value">{{businessOverview.averageTicket}}</text>
-        <text class="business-label">平均客单价</text>
-        <text class="business-definition">确认收入 ÷ 完成订单数</text>
-      </view>
-      <view class="business-metric" bindtap="openBusinessDetail" data-target="customers">
-        <text class="business-value">{{businessOverview.totalCustomers}}</text>
-        <text class="business-label">总客户 · 新客 {{businessOverview.newCustomers}}</text>
-        <text class="business-definition">当前客户档案与本月新增</text>
-      </view>
-      <view class="business-metric" bindtap="openBusinessDetail" data-target="customers">
-        <text class="business-value">{{businessOverview.repeatRate}}</text>
-        <text class="business-label">复购率</text>
-        <text class="business-definition">复购客户 ÷ 完成客户 {{businessOverview.completedCustomers}}</text>
-      </view>
-    </view>
-
-    <view class="business-link" bindtap="openBusinessDetail" data-target="due">
-      <view><text class="business-link-title">待复购客户 {{businessOverview.dueCustomers}}</text><text class="business-link-sub">已达到预计复购日期，进入客户明细</text></view><text>›</text>
-    </view>
-    <view class="business-link" bindtap="openBusinessDetail" data-target="referrals">
-      <view><text class="business-link-title">推荐 {{businessOverview.referrals}} · 有效 {{businessOverview.qualifiedReferrals}}</text><text class="business-link-sub">有效推荐首单实付 {{businessOverview.referralRevenue}}</text></view><text>›</text>
-    </view>
-    <view class="business-link" bindtap="openBusinessDetail" data-target="referrals">
-      <view><text class="business-link-title">基金发放 {{businessOverview.fundsIssued}}</text><text class="business-link-sub">累计抵扣 {{businessOverview.fundsRedeemed}}，余额与明细可追溯</text></view><text>›</text>
-    </view>
-
-    <view class="insight-section">
-      <text class="insight-title">近 7 日趋势</text>
-      <view wx:if="{{businessOverview.dailyTrend.length}}" class="trend-list">
-        <view wx:for="{{businessOverview.dailyTrend}}" wx:key="period" class="trend-row">
-          <text>{{item.label}}</text><text>{{item.orders}} 单 · +{{item.newCustomers}} 客</text><text>{{item.revenueText}}</text>
-        </view>
-      </view>
-      <text wx:else class="insight-empty">最近 7 日暂无确认收入</text>
-      <text class="insight-title insight-title-gap">近 4 周趋势</text>
-      <view wx:if="{{businessOverview.weeklyTrend.length}}" class="trend-list">
-        <view wx:for="{{businessOverview.weeklyTrend}}" wx:key="period" class="trend-row">
-          <text>{{item.label}}</text><text>{{item.orders}} 单 · +{{item.newCustomers}} 客</text><text>{{item.revenueText}}</text>
-        </view>
-      </view>
-      <text wx:else class="insight-empty">最近 4 周暂无确认收入</text>
-    </view>
-
-    <view class="insight-section">
-      <text class="insight-title">服务与时段表现</text>
-      <block wx:if="{{businessOverview.performanceReady}}">
-        <view class="performance-row"><text>收入最高服务</text><text>{{businessOverview.topService.name}} · {{businessOverview.topService.revenueText}}</text></view>
-        <view class="performance-row"><text>收入最高时段</text><text>{{businessOverview.topTimeSlot.name}} · {{businessOverview.topTimeSlot.revenueText}}</text></view>
-      </block>
-      <text wx:else class="insight-empty">至少需要 {{businessOverview.performanceMinimum}} 笔完成订单后生成表现结论</text>
-    </view>
-
-    <view wx:if="{{businessOverview.reminders.length}}" class="insight-section">
-      <text class="insight-title">经营提醒</text>
-      <view wx:for="{{businessOverview.reminders}}" wx:key="key" class="reminder-row" bindtap="openInsightCustomer" data-id="{{item.customerId}}">
-        <view><text class="reminder-name">{{item.typeText}} · {{item.customerName}}</text><text class="reminder-reason">{{item.reason}}</text></view><text>›</text>
-      </view>
-    </view>
+    <view wx:else class="business-hero-empty">经营数据正在生成</view>
   </view>
 
   <!-- ===== 下一单 ===== -->
@@ -215,11 +128,33 @@
     </view>
   </view>
 
+  <!-- ===== 今日行程 ===== -->
+  <view class="card schedule-card">
+    <view class="card-head">
+      <view><text class="card-title">今日行程</text><text class="card-sub">{{todayLabel}}</text></view>
+      <view class="card-more" bindtap="navigateToOrders">查看全部</view>
+    </view>
+    <view wx:if="{{loading}}" class="skeleton-list"><view class="skeleton-row"></view><view class="skeleton-row"></view></view>
+    <view wx:elif="{{todayOrders.length}}" class="schedule-list">
+      <view wx:for="{{todayOrders}}" wx:key="id" class="schedule-item" bindtap="openOrderDetail" data-id="{{item.id}}">
+        <view class="sch-time-col"><text class="sch-time">{{item._clock}}</text><text class="sch-state {{item._stateTone}}">{{item._stateLabel}}</text></view>
+        <view class="sch-customer"><image wx:if="{{item.customerAvatar}}" src="{{item.customerAvatar}}" mode="aspectFill" class="sch-avatar sch-avatar-img" /><view wx:else class="sch-avatar"><text class="sch-avatar-char">{{item.customerName[0] || '客'}}</text></view></view>
+        <view class="sch-info">
+          <view class="sch-info-top"><text class="sch-name">{{item.customerName}}</text><text class="tag {{item._typeClass}}">{{item._typeLabel}}</text></view>
+          <text class="sch-svc">{{item.serviceName || '预约服务'}}</text><text class="sch-addr">{{item._fullAddress}}</text>
+          <view class="sch-actions"><view class="mini-btn mini-primary" catchtap="navigateToAddress" data-order-id="{{item.id}}">去导航</view><view class="mini-btn mini-ghost" catchtap="contactCustomer" data-phone="{{item.customerPhone}}">联系客户</view></view>
+        </view>
+        <text class="sch-price">{{item._priceText}}</text>
+      </view>
+    </view>
+    <view wx:else class="empty-soft">今天还没有新的预约安排</view>
+  </view>
+
   <!-- ===== 热门作品 ===== -->
   <view class="card works-card">
     <view class="card-head">
       <view>
-        <text class="card-title">今日热门作品</text>
+        <text class="card-title">今日热门</text>
         <text class="card-sub">最近受欢迎的款式和客户收藏</text>
       </view>
       <view class="card-more pink" bindtap="navigateToWorks">更多</view>

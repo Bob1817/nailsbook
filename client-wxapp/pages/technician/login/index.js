@@ -138,7 +138,7 @@ Page({
   },
 
   goRoleSelect() {
-    wx.reLaunch({ url: '/pages/role-select/index' });
+    wx.reLaunch({ url: '/pages/login/index' });
   },
 
   async handlePhoneNext() {

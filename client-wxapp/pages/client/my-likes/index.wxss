@@ -1,4 +1,4 @@
-page { background: #f0f0f4; }
+page { background: var(--bg-page-alt); }
 
 .page {
   min-height: 100vh;
@@ -14,8 +14,8 @@ page { background: #f0f0f4; }
 .loading-spinner {
   width: 48rpx;
   height: 48rpx;
-  border: 4rpx solid rgba(255, 107, 138, 0.2);
-  border-top-color: #FF6B8A;
+  border: 4rpx solid rgba(255,107,138,0.2) /* brand-primary-alpha */;
+  border-top-color: var(--brand-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -42,7 +42,7 @@ page { background: #f0f0f4; }
   width: 40rpx;
   height: 40rpx;
   transform: rotate(-45deg);
-  background: #FF6B8A;
+  background: var(--brand-primary);
   position: relative;
 }
 .empty-heart::before,
@@ -52,19 +52,19 @@ page { background: #f0f0f4; }
   width: 40rpx;
   height: 40rpx;
   border-radius: 50%;
-  background: #FF6B8A;
+  background: var(--brand-primary);
 }
 .empty-heart::before { top: -20rpx; left: 0; }
 .empty-heart::after { left: 20rpx; top: 0; }
 .empty-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: var(--font-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
   margin-bottom: 12rpx;
 }
 .empty-desc {
-  font-size: 26rpx;
-  color: #6b7280;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
   margin-bottom: 36rpx;
   text-align: center;
 }
@@ -72,14 +72,14 @@ page { background: #f0f0f4; }
   min-height: 88rpx;
   padding: 0 56rpx;
   border-radius: 999rpx;
-  background: linear-gradient(135deg, #FF6B8A 0%, #A78BFA 100%);
-  color: #fff;
-  font-size: 28rpx;
-  font-weight: 600;
+  background: var(--brand-gradient);
+  color: var(--text-inverse);
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 24rpx rgba(255, 107, 138, 0.28);
+  box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.28) /* brand-primary-alpha */;
 }
 .go-btn:active { opacity: 0.85; }
 
@@ -105,7 +105,7 @@ page { background: #f0f0f4; }
   width: 100%;
   height: 0;
   overflow: hidden;
-  border-radius: 20rpx;
+  border-radius: var(--radius-md);
   box-sizing: border-box;
   box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.08), 0 1rpx 4rpx rgba(15, 23, 42, 0.04);
 }
@@ -114,4 +114,4 @@ page { background: #f0f0f4; }
 .aspect-3-4 { padding-bottom: 133.33%; }
 .aspect-4-5 { padding-bottom: 125%; }
 .aspect-5-6 { padding-bottom: 120%; }
-.page-hint { padding:28rpx 0 40rpx; color:#81717a; font-size:22rpx; text-align:center; }
+.page-hint { padding:28rpx 0 40rpx; color:#81717a; font-size: var(--font-xs); text-align:center; }

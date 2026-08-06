@@ -21,6 +21,7 @@ function request(options) {
     needAuth = true,
     baseUrl,
     timeout,
+    responseType,
     silent,
     _retried = false
   } = options;
@@ -50,6 +51,7 @@ function request(options) {
       data,
       header: headers,
       timeout: timeout || 30000,
+      ...(responseType ? { responseType } : {}),
       success: (res) => {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(res.data);

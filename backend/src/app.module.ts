@@ -47,6 +47,7 @@ import { ProductionSeedService } from './production-seed.service';
 import { TechnicianInsightsModule } from './technician-insights/technician-insights.module';
 import { ReferralsModule } from './referrals/referrals.module';
 import { PaymentsModule } from './payments/payments.module';
+import { MarketingMaterialsModule } from './marketing-materials/marketing-materials.module';
 import { WechatAuthModule } from './wechat-auth/wechat-auth.module';
 import { WechatPlatformConfigModule } from './wechat-platform-config/wechat-platform-config.module';
 
@@ -102,6 +103,7 @@ import { WechatPlatformConfigModule } from './wechat-platform-config/wechat-plat
     TechnicianInsightsModule,
     ReferralsModule,
     PaymentsModule,
+    MarketingMaterialsModule,
     WechatAuthModule,
     WechatPlatformConfigModule,
   ],

@@ -251,12 +251,25 @@ export class CustomersService {
         .filter((order) => order.status === 'completed')
         .map((order) => order.completedAt || order.startTime),
     );
+    const activeSince = new Date();
+    activeSince.setFullYear(activeSince.getFullYear() - 1);
+    const workAccesses = customer.workAccesses ?? [];
+    const interactionDates = [
+      ...(customer.orders ?? []).map((item) => item.createdAt),
+      ...(customer.revenues ?? []).map((item) => item.recognizedAt),
+      ...(customer.followUps ?? []).map((item) => item.createdAt),
+      ...(customer.workAccesses ?? []).map((item) => item.createdAt),
+    ];
+    const archiveEligible =
+      !customer.archivedAt &&
+      interactionDates.every((date) => new Date(date) < activeSince);
 
     return {
       ...customer,
       businessSummary,
       lifecycle,
-      relatedWorks: customer.workAccesses
+      archiveEligible,
+      relatedWorks: workAccesses
         .filter((access) => access.work.isVisible)
         .map((access) => ({
           id: access.work.id,
@@ -375,6 +388,32 @@ export class CustomersService {
     }
 
     return customer;
+  }
+
+  async archiveCustomer(customerId: number, technicianId: number) {
+    await this.assertTechnicianCustomer(customerId, technicianId);
+    const activeSince = new Date();
+    activeSince.setFullYear(activeSince.getFullYear() - 1);
+    const recentInteraction = await this.prisma.customer.findFirst({
+      where: {
+        id: customerId,
+        technicianId,
+        OR: [
+          { orders: { some: { createdAt: { gte: activeSince } } } },
+          { revenues: { some: { createdAt: { gte: activeSince } } } },
+          { followUps: { some: { createdAt: { gte: activeSince } } } },
+          { workAccesses: { some: { createdAt: { gte: activeSince } } } },
+        ],
+      },
+      select: { id: true },
+    });
+    if (recentInteraction) {
+      throw new BadRequestException('仅可归档最近 12 个月无有效互动的客户');
+    }
+    return this.prisma.customer.update({
+      where: { id: customerId },
+      data: { archivedAt: new Date() },
+    });
   }
 
   async createFollowUp(

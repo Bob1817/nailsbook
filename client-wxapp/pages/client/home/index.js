@@ -22,6 +22,8 @@ Page({
     upcomingOrder: null,
     recentWorks: [],
     featuredWorks: [],
+    featuredLeftCol: [],
+    featuredRightCol: [],
     loading: true,
     swiperIndex: 0,
     technicianCount: 1,
@@ -165,6 +167,7 @@ Page({
         worksHasMore: newWorks.length >= 10,
         worksLoading: false
       });
+      this.splitFeaturedWorks();
     } catch (err) {
       console.error('loadMoreWorks error:', err);
       this.setData({ worksLoading: false, worksHasMore: false });
@@ -195,22 +198,51 @@ Page({
   navigateToOrders() { wx.navigateTo({ url: '/pages/client/orders/index' }); },
   navigateToChat() { wx.navigateTo({ url: '/pages/client/chat/index' }); },
 
-  viewWork(e) {
-    var id = e.currentTarget.dataset.id;
-    wx.navigateTo({ url: '/pages/client/work-detail/index?id=' + id });
+  // === work-card 组件事件 ===
+  onWorkCardTap(e) {
+    var id = e.detail && e.detail.id;
+    if (id) wx.navigateTo({ url: '/pages/client/work-detail/index?id=' + id });
   },
 
-  onWorkAvatarError(e) {
-    var id = e.currentTarget.dataset.id;
-    var heroWorks = this.data.recentWorks.map(function (w) {
-      if (String(w.id) === String(id)) w.technicianAvatarUrl = '';
+  onArtistTap(e) {
+    var id = e.detail && e.detail.id;
+    if (id) wx.navigateTo({ url: '/pages/client/artist-home/index?id=' + id });
+  },
+
+  onLikeTap(e) {
+    var id = e.detail && e.detail.id;
+    if (!id) return;
+    var self = this;
+    var featuredWorks = self.data.featuredWorks.map(function (w) {
+      if (String(w.id) === String(id)) {
+        return Object.assign({}, w, {
+          isLiked: !w.isLiked,
+          likeCount: w.isLiked ? Math.max(0, w.likeCount - 1) : w.likeCount + 1
+        });
+      }
       return w;
     });
-    var featuredWorks = this.data.featuredWorks.map(function (w) {
-      if (String(w.id) === String(id)) w.technicianAvatarUrl = '';
-      return w;
+    self.setData({ featuredWorks: featuredWorks });
+    self.splitFeaturedWorks();
+    api.client.works.like(id).catch(function () { self.loadFeaturedWorks(true); });
+  },
+
+  /** 将 featuredWorks 拆分为左右两列，并分配宽高比 */
+  splitFeaturedWorks() {
+    var works = this.data.featuredWorks;
+    var left = [], right = [];
+    works.forEach(function (w, i) {
+      var isLeft = i % 2 === 0;
+      // 交错分配宽高比
+      if (isLeft) {
+        w.aspectClass = i % 4 === 0 ? 'aspect-4-5' : 'aspect-3-4';
+        left.push(w);
+      } else {
+        w.aspectClass = i % 4 === 1 ? 'aspect-3-4' : 'aspect-5-6';
+        right.push(w);
+      }
     });
-    this.setData({ recentWorks: heroWorks, featuredWorks: featuredWorks });
+    this.setData({ featuredLeftCol: left, featuredRightCol: right });
   },
 
   viewUpcomingOrder() {

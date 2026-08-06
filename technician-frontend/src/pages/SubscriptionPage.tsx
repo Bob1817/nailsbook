@@ -1,14 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Card } from '../components/base/Card';
 import {
-  PLAN_DEFINITIONS,
   getCurrentPlan,
-  isTrialActive,
-  getTrialDaysRemaining,
   getSubscriptionStatusLabel,
-  TRIAL_DURATION_DAYS,
+  subscriptionService,
   type PlanDefinition,
 } from '../services/subscription';
 
@@ -26,7 +23,7 @@ function PlanCard({
   isCurrent: boolean;
   onSelect: () => void;
 }) {
-  const isPopular = plan.code === 'pro';
+  const isPopular = plan.code === 'starter';
 
   return (
     <div
@@ -107,12 +104,15 @@ export const SubscriptionPage: React.FC = () => {
   const { technician } = useAuth();
   const [showContactModal, setShowContactModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PlanDefinition | null>(null);
+  const [plans, setPlans] = useState<PlanDefinition[]>([]);
 
   const subscription = technician?.subscription;
   const currentPlan = getCurrentPlan(subscription);
-  const trialActive = isTrialActive(subscription);
-  const trialDaysLeft = getTrialDaysRemaining(subscription);
   const statusLabel = getSubscriptionStatusLabel(subscription);
+
+  useEffect(() => {
+    subscriptionService.getPlans().then(setPlans).catch(() => setPlans([]));
+  }, []);
 
   function handleSelectPlan(plan: PlanDefinition) {
     setSelectedPlan(plan);
@@ -145,49 +145,25 @@ export const SubscriptionPage: React.FC = () => {
               </div>
               <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-white/15 backdrop-blur">
                 <span className="text-[26px]">
-                  {currentPlan.code === 'studio_plus' ? '👑' : currentPlan.code === 'pro' ? '💎' : '✨'}
+                  {currentPlan.code === 'ultimate' ? '团队' : currentPlan.code === 'advanced' ? '高阶' : currentPlan.code === 'starter' ? '入门' : '免费'}
                 </span>
               </div>
             </div>
             <div className="mt-3 flex items-center gap-3">
               <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold ${
-                trialActive
-                  ? 'bg-white/20 text-white'
-                  : currentPlan.code === 'free'
+                currentPlan.code === 'free'
                     ? 'bg-white/15 text-white/80'
                     : 'bg-white/20 text-white'
               }`}>
                 <span className={`h-1.5 w-1.5 rounded-full ${
-                  trialActive ? 'bg-[#FFE066]' : currentPlan.code !== 'free' ? 'bg-[#7DFFB3]' : 'bg-white/60'
+                  currentPlan.code !== 'free' ? 'bg-[#7DFFB3]' : 'bg-white/60'
                 }`} />
                 {statusLabel}
               </span>
             </div>
           </div>
 
-          {trialActive && (
-            <div className="px-5 py-3.5 bg-[#FFF8E6] border-t border-[#FFE8B3]">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[13px] font-medium text-[#8B6914]">免费试用期</p>
-                  <p className="text-[12px] text-[#A08030] mt-0.5">
-                    试用期 {TRIAL_DURATION_DAYS} 天，到期后自动降级为免费版
-                  </p>
-                </div>
-                <span className="text-[20px] font-bold text-[#C9860A]">
-                  {trialDaysLeft}<span className="text-[12px] font-medium ml-0.5">天</span>
-                </span>
-              </div>
-              <div className="mt-2.5 h-1.5 rounded-full bg-[#FFE8B3] overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#FFB84D] to-[#FF9500]"
-                  style={{ width: `${Math.max(5, ((TRIAL_DURATION_DAYS - trialDaysLeft) / TRIAL_DURATION_DAYS) * 100)}%` }}
-                />
-              </div>
-            </div>
-          )}
-
-          {!trialActive && subscription?.expiredAt && currentPlan.code !== 'free' && (
+          {subscription?.expiredAt && currentPlan.code !== 'free' && (
             <div className="px-5 py-3 bg-[#FFF1F6] border-t border-[#FFD9E6]">
               <div className="flex items-center gap-2">
                 <span className="text-[14px]">📅</span>
@@ -225,7 +201,7 @@ export const SubscriptionPage: React.FC = () => {
         <div>
           <h2 className="text-[16px] font-semibold text-[#1f2230] mb-3">套餐对比</h2>
           <div className="space-y-4">
-            {PLAN_DEFINITIONS.map((plan) => (
+            {plans.map((plan) => (
               <PlanCard
                 key={plan.code}
                 plan={plan}
@@ -242,13 +218,13 @@ export const SubscriptionPage: React.FC = () => {
           <div className="space-y-3">
             <details className="group">
               <summary className="flex cursor-pointer items-center justify-between py-2 text-[13px] font-medium text-[#3c3440]">
-                新用户有免费试用吗？
+                免费版可以完成完整经营流程吗？
                 <svg className="h-4 w-4 text-[#a09aa2] transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </summary>
               <p className="pb-2 text-[12px] text-[#7f7681] leading-relaxed">
-                是的，每位新注册的美甲师自动获得 {TRIAL_DURATION_DAYS} 天 Studio Plus 免费试用期，享受最高套餐全部功能。试用到期后自动降级为免费版。
+                可以。免费版支持客户、服务价格、排期、预约、作品和基础经营数据，通过经营规模额度控制成本。
               </p>
             </details>
             <details className="group">

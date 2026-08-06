@@ -6,13 +6,19 @@ import {
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CreateWorkDto, UpdateWorkDto } from './dto/create-work.dto';
 import { UpdateWorkAccessDto } from './dto/work-access.dto';
+import { SubscriptionsService } from '../subscriptions/subscriptions.service';
+import { StorageService } from '../common/storage/storage.service';
 
 // Configurable base URL for uploads
 const UPLOAD_BASE_URL = process.env.UPLOAD_BASE_URL || 'http://localhost:3000';
 
 @Injectable()
 export class TechnicianWorksService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly subscriptions: SubscriptionsService,
+    private readonly storage: StorageService,
+  ) {}
 
   async findAll(technicianId: number) {
     const works = await this.prisma.nailWork.findMany({
@@ -83,6 +89,8 @@ export class TechnicianWorksService {
   }
 
   async create(technicianId: number, dto: CreateWorkDto) {
+    await this.subscriptions.assertCanCreateWork(technicianId);
+    this.assertImageLimit(dto.images);
     const work = await this.prisma.nailWork.create({
       data: {
         techId: technicianId,
@@ -208,6 +216,7 @@ export class TechnicianWorksService {
   }
 
   async update(technicianId: number, id: number, dto: UpdateWorkDto) {
+    this.assertImageLimit(dto.images);
     const existing = await this.prisma.nailWork.findFirst({
       where: { id, techId: technicianId },
     });
@@ -245,6 +254,20 @@ export class TechnicianWorksService {
     return this.mapWork(work, technicianId);
   }
 
+  private assertImageLimit(images?: string) {
+    if (!images) return;
+    try {
+      const parsed = JSON.parse(images);
+      if (!Array.isArray(parsed)) throw new Error('not array');
+      if (parsed.length > 9) {
+        throw new BadRequestException('每个作品最多上传 9 张图片');
+      }
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      throw new BadRequestException('作品图片列表格式无效');
+    }
+  }
+
   async remove(technicianId: number, id: number) {
     const existing = await this.prisma.nailWork.findFirst({
       where: { id, techId: technicianId },
@@ -254,11 +277,57 @@ export class TechnicianWorksService {
       throw new NotFoundException('作品不存在');
     }
 
+    const imageUrls = [
+      existing.coverUrl,
+      ...this.parseStoredImageUrls(existing.images),
+    ].filter((url): url is string => Boolean(url));
+    const assets = imageUrls.length
+      ? await this.prisma.uploadedAsset.findMany({
+          where: {
+            technicianId,
+            deletedAt: null,
+            url: { in: imageUrls },
+          },
+        })
+      : [];
+
     await this.prisma.nailWork.delete({
       where: { id },
     });
+    let cleanupPending = 0;
+    for (const asset of assets) {
+      try {
+        await this.storage.deleteImageVariants([
+          asset.highUrl,
+          asset.mediumUrl,
+          asset.thumbnailUrl,
+        ]);
+        await this.prisma.uploadedAsset.update({
+          where: { id: asset.id },
+          data: { deletedAt: new Date() },
+        });
+        await this.subscriptions.releaseStorageUsage(
+          technicianId,
+          asset.bytesStored,
+        );
+      } catch {
+        cleanupPending += 1;
+      }
+    }
 
-    return { success: true };
+    return { success: true, cleanupPending };
+  }
+
+  private parseStoredImageUrls(images?: string | null) {
+    if (!images) return [];
+    try {
+      const parsed = JSON.parse(images);
+      return Array.isArray(parsed)
+        ? parsed.filter((item): item is string => typeof item === 'string')
+        : [];
+    } catch {
+      return [];
+    }
   }
 
   async toggleVisible(technicianId: number, id: number) {

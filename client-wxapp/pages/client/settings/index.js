@@ -97,7 +97,7 @@ Page({
       success: (res) => {
         if (res.confirm) {
           getApp().logout();
-          wx.redirectTo({ url: '/pages/role-select/index' });
+          wx.redirectTo({ url: '/pages/login/index' });
         }
       }
     });

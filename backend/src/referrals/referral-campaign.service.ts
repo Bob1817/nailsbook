@@ -16,9 +16,9 @@ export class ReferralCampaignService {
     });
     const rewardPromised = Boolean(
       campaign &&
-        campaign.status === 'active' &&
-        campaign.validFrom <= now &&
-        campaign.validUntil >= now,
+      campaign.status === 'active' &&
+      campaign.validFrom <= now &&
+      campaign.validUntil >= now,
     );
     return {
       configured: Boolean(campaign),
@@ -63,11 +63,10 @@ export class ReferralCampaignService {
   }
 
   private async assertProfessionalPlan(technicianId: number) {
-    const subscription =
-      await this.prisma.technicianSubscription.findUnique({
-        where: { technicianId },
-        include: { plan: true },
-      });
+    const subscription = await this.prisma.technicianSubscription.findUnique({
+      where: { technicianId },
+      include: { plan: true },
+    });
     const now = new Date();
     const active =
       subscription?.status === 'active' &&
@@ -82,7 +81,9 @@ export class ReferralCampaignService {
     }
     const entitled =
       active &&
-      (['pro', 'premium'].includes(subscription!.plan.code) ||
+      (['starter', 'advanced', 'ultimate', 'pro', 'premium'].includes(
+        subscription!.plan.code,
+      ) ||
         features.includes('referral_campaign'));
     if (!entitled) {
       throw new ForbiddenException('推荐活动配置仅限专业版使用');

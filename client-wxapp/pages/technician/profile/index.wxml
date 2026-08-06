@@ -13,7 +13,7 @@
         <text class="name">{{userInfo.name || '美甲师'}}</text>
         <text class="phone">{{userInfo.phoneDisplay}}</text>
       </view>
-      <text class="edit-arrow" bindtap="editProfile">›</text>
+      <button class="profile-share-btn" open-type="share" aria-label="分享名片"><view class="profile-share-icon"></view><text>分享名片</text></button>
     </view>
 
     <!-- 接单状态 -->
@@ -127,7 +127,6 @@
         <text class="card-title">邀请码分享</text>
         <text class="invite-sub">发给客户，绑定到你的账号</text>
       </view>
-      <button class="invite-share-btn" open-type="share">分享名片</button>
     </view>
     <view class="invite-code-row">
       <view class="invite-code-block">
@@ -270,11 +269,13 @@
               <text class="ws-scheme-summary">{{item._summary}}</text>
             </view>
             <view
-              class="ws-switch {{item.id === schedule.activeSchemeId ? 'ws-switch-on' : ''}}"
+              class="ws-switch"
               catchtap="toggleSchemeActive"
               data-id="{{item.id}}"
             >
-              <view class="ws-switch-knob"></view>
+              <view class="ws-switch-track {{item.id === schedule.activeSchemeId ? 'ws-switch-on' : ''}}">
+                <view class="ws-switch-knob"></view>
+              </view>
             </view>
           </view>
         </view>

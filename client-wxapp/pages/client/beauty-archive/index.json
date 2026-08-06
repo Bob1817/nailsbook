@@ -1,4 +1,7 @@
 {
-  "navigationBarTitleText": "私人美甲档案",
-  "enablePullDownRefresh": true
+  "navigationStyle": "custom",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "nav-bar": "/components/nav-bar/index"
+  }
 }

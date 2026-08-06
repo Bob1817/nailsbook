@@ -17,10 +17,19 @@
       <text class="current-label">当前套餐</text>
       <text class="current-name">{{currentPlan ? currentPlan.displayName : '免费版'}}</text>
       <text wx:if="{{currentPlan && currentPlan.expiredAt}}" class="current-expire">到期时间：{{currentPlan.expiredAt}}</text>
+      <text wx:if="{{currentPlan && currentPlan.pendingChange}}" class="current-expire">已预约变更：{{currentPlan.pendingChange.planCode}}（{{currentPlan.pendingChange.effectiveAt}} 生效）</text>
       <text wx:if="{{currentPlan}}" class="current-mode">{{currentPlan.featureText}}</text>
-      <view wx:if="{{currentPlan}}" class="usage-row">
-        <text>客户 {{currentPlan.usage.customerCount}}{{currentPlan.plan.maxCustomers !== null ? '/' + currentPlan.plan.maxCustomers : ''}}</text>
-        <text>本月预约 {{currentPlan.usage.monthlyBookings}}{{currentPlan.plan.maxMonthlyBookings !== null ? '/' + currentPlan.plan.maxMonthlyBookings : ''}}</text>
+      <view wx:if="{{currentPlan}}" class="usage-list">
+        <view wx:for="{{currentPlan.usageItems}}" wx:key="label" class="usage-item usage-item--{{item.level}}">
+          <view class="usage-heading">
+            <text>{{item.label}}</text>
+            <text>{{item.usedText}} / {{item.limitText}}</text>
+          </view>
+          <view class="usage-track" aria-label="{{item.label}}已使用{{item.percent}}%">
+            <view class="usage-progress" style="width: {{item.percent}}%;"></view>
+          </view>
+          <text wx:if="{{item.hint}}" class="usage-hint">{{item.hint}}</text>
+        </view>
       </view>
       <text class="current-mode">订阅支付与订单微信支付共用支付能力；商户资质完成前，升级由平台人工确认。</text>
     </view>
@@ -35,10 +44,15 @@
           <text class="plan-name">{{item.name}}</text>
           <text class="plan-price">¥{{item.price}}<text class="plan-cycle">/{{item.cycle || '月'}}</text></text>
           <text wx:if="{{item.description}}" class="plan-desc">{{item.description}}</text>
+          <text wx:if="{{item.targetStage}}" class="plan-stage">适合：{{item.targetStage}}</text>
+          <text class="plan-quota">{{item.quotaText}}</text>
         </view>
-        <button class="plan-btn" open-type="contact" show-message-card="true" send-message-title="咨询{{item.name}}套餐">
-          <text>了解升级</text>
-        </button>
+        <view class="plan-actions">
+          <button class="impact-btn" data-id="{{item.id}}" bindtap="previewPlanChange">变更影响</button>
+          <button class="plan-btn" open-type="contact" show-message-card="true" send-message-title="咨询{{item.name}}套餐">
+            <text>了解升级</text>
+          </button>
+        </view>
       </view>
     </view>
 

@@ -1,128 +1,95 @@
+@import '../../styles/tokens.wxss';
+
 .container {
   min-height: 100vh;
-  background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%);
-  padding: 36rpx 40rpx 48rpx;
+  background: var(--bg-gradient-entry);
+  padding: 36rpx var(--space-xl) var(--space-2xl);
   box-sizing: border-box;
 }
 
 .hero-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: flex; flex-direction: column; align-items: center;
   margin-bottom: 56rpx;
 }
 
 .logo-circle {
-  width: 104rpx;
-  height: 104rpx;
-  background: linear-gradient(135deg, #ff6b8a, #8b5cf6);
+  width: 104rpx; height: 104rpx;
+  background: var(--brand-gradient);
   border-radius: 52rpx;
-  color: #fff;
-  font-size: 48rpx;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 24rpx;
+  color: var(--text-inverse);
+  font-size: var(--font-2xl);
+  font-weight: var(--weight-bold);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: var(--space-md);
   box-shadow: 0 12rpx 30rpx rgba(139, 92, 246, 0.22);
 }
 
 .page-title {
-  font-size: 38rpx;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 8rpx;
-  line-height: 1.25;
+  font-size: var(--font-lg); font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-xs);
+  line-height: var(--leading-tight);
 }
 
 .app-desc {
-  font-size: 24rpx;
-  color: #6b7280;
-  line-height: 1.45;
+  font-size: var(--font-sm); color: var(--text-muted);
+  line-height: var(--leading-normal);
 }
 
-.role-section {
-  margin-bottom: 48rpx;
-}
+.role-section { margin-bottom: var(--space-2xl); }
 
 .section-title {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 20rpx;
+  font-size: var(--font-md); font-weight: var(--weight-semibold);
+  color: var(--text-body); margin-bottom: 20rpx;
   display: block;
 }
 
 .role-card {
-  display: flex;
-  align-items: center;
+  display: flex; align-items: center;
   min-height: 136rpx;
-  background: #ffffff;
-  border: 2rpx solid rgba(255, 107, 138, 0.08);
-  border-radius: 14rpx;
-  padding: 24rpx 40rpx;
+  background: var(--bg-card);
+  border: 2rpx solid var(--border-light);
+  border-radius: var(--card-radius);
+  padding: var(--space-md) var(--space-xl);
   margin-bottom: 18rpx;
-  box-shadow: 0 10rpx 26rpx rgba(15, 23, 42, 0.05);
+  box-shadow: var(--shadow-lg);
   box-sizing: border-box;
 }
 
 .role-icon {
-  width: 76rpx;
-  height: 76rpx;
-  border-radius: 38rpx;
-  font-size: 30rpx;
-  font-weight: 700;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 24rpx;
+  width: 76rpx; height: 76rpx; border-radius: 38rpx;
+  font-size: var(--font-md); font-weight: var(--weight-bold);
+  color: var(--text-inverse);
+  display: flex; align-items: center; justify-content: center;
+  margin-right: var(--space-md);
   flex-shrink: 0;
 }
 
-.client-icon {
-  background: linear-gradient(135deg, #ff6b8a, #8b5cf6);
-}
+.client-icon { background: var(--brand-gradient); }
+.tech-icon { background: linear-gradient(135deg, var(--brand-accent), var(--brand-blue)); }
 
-.tech-icon {
-  background: linear-gradient(135deg, #8b5cf6, #667eea);
-}
-
-.role-info {
-  flex: 1;
-  min-width: 0;
-}
+.role-info { flex: 1; min-width: 0; }
 
 .role-title {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 6rpx;
-  display: block;
-  line-height: 1.35;
+  font-size: var(--font-md); font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: 6rpx; display: block;
+  line-height: var(--leading-tight);
 }
 
 .role-desc {
-  font-size: 23rpx;
-  color: #6b7280;
-  display: block;
-  line-height: 1.35;
+  font-size: var(--font-sm); color: var(--text-muted);
+  display: block; line-height: var(--leading-tight);
 }
 
 .arrow {
-  font-size: 42rpx;
-  color: #767b84;
+  font-size: 42rpx; color: var(--text-muted);
   margin-left: 18rpx;
 }
 
-.footer {
-  text-align: center;
-  padding: 0 16rpx;
-}
+.footer { text-align: center; padding: 0 var(--space-sm); }
 
 .footer-text {
-  font-size: 22rpx;
-  color: #6b7280;
-  display: block;
-  line-height: 1.45;
+  font-size: var(--font-xs); color: var(--text-muted);
+  display: block; line-height: var(--leading-normal);
 }

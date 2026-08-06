@@ -1,0 +1,124 @@
+/**
+ * NailBook 设计令牌体系
+ * 
+ * 本文件定义所有设计变量，所有页面 .wxss 必须引用这些令牌，
+ * 禁止在页面级硬编码颜色、字号、圆角、间距等样式值。
+ *
+ * 对齐：docs/UI-DESIGN-GUIDELINES.md
+ *
+ * == 图标色规则（必读）==
+ * - 浅色/白色背景 → 图标用 --text-muted（#6b7280，非纯黑），激活态用 --brand-primary
+ * - 深色/彩色背景 → 图标用 --text-inverse（#fff），保持通体白色减轻视觉压力
+ * - 禁止在任何背景上用纯黑(#000/#1a1a1a)作为图标色
+ */
+
+page {
+  /* ===== 品牌色 ===== */
+  --brand-primary: #ff6b8a;
+  --brand-primary-light: #ff8fa3;
+  --brand-accent: #8b5cf6;
+  --brand-accent-light: #a78bfa;
+  --brand-blue: #667eea;
+  --brand-gradient: linear-gradient(135deg, #ff6b8a 0%, #8b5cf6 100%);
+  --brand-gradient-light: linear-gradient(135deg, #ff8fa3 0%, #a78bfa 100%);
+
+  /* ===== 文本色 ===== */
+  --text-primary: #1f2937;
+  --text-body: #374151;
+  --text-muted: #6b7280;
+  --text-faint: #9ca3af;
+  --text-error: #dc2626;
+  --text-inverse: #ffffff;
+
+  /* ===== 背景色 ===== */
+  --bg-page: #f8f9fc;
+  --bg-page-alt: #f0f0f4;
+  --bg-card: #ffffff;
+  --bg-input: #f9fafb;
+  --bg-input-focus: #ffffff;
+  --bg-tag: #fff0f5;
+  --bg-overlay: rgba(0, 0, 0, 0.45);
+
+  /* ===== 品牌背景渐变（入口页专用） ===== */
+  --bg-gradient-entry: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%);
+
+  /* ===== 边框色 ===== */
+  --border-default: #e5e7eb;
+  --border-light: rgba(255, 107, 138, 0.08);
+  --border-focus: #ff6b8a;
+  --border-error: #dc2626;
+  --border-card: rgba(0, 0, 0, 0.06);
+
+  /* ===== 圆角 ===== */
+  --radius-xs: 8rpx;
+  --radius-sm: 14rpx;
+  --radius-md: 20rpx;
+  --radius-lg: 28rpx;
+  --radius-xl: 44rpx;
+  --radius-pill: 48rpx;
+  --radius-full: 9999rpx;
+
+  /* ===== 阴影 ===== */
+  --shadow-sm: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4rpx 24rpx rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 10rpx 26rpx rgba(15, 23, 42, 0.05);
+  --shadow-elevated: 0 12rpx 32rpx rgba(15, 23, 42, 0.08);
+
+  /* ===== 字号（基于 750rpx 设计稿） ===== */
+  --font-xs: 22rpx;
+  --font-sm: 24rpx;
+  --font-md: 28rpx;
+  --font-lg: 32rpx;
+  --font-xl: 40rpx;
+  --font-2xl: 48rpx;
+  --font-3xl: 64rpx;
+
+  /* ===== 行高 ===== */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+
+  /* ===== 字重 ===== */
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* ===== 间距 ===== */
+  --space-xs: 8rpx;
+  --space-sm: 16rpx;
+  --space-md: 24rpx;
+  --space-lg: 32rpx;
+  --space-xl: 40rpx;
+  --space-2xl: 48rpx;
+  --space-3xl: 64rpx;
+
+  /* ===== 触控尺寸 ===== */
+  --touch-min: 88rpx;
+  --touch-tap: 44rpx;
+
+  /* ===== 卡片 ===== */
+  --card-radius: 18rpx;
+  --card-padding: 24rpx;
+  --card-gap: 24rpx;
+
+  /* ===== 按钮 ===== */
+  --btn-height: 88rpx;
+  --btn-radius: 48rpx;
+  --btn-font-size: 30rpx;
+  --btn-font-weight: 500;
+
+  /* ===== 输入框 ===== */
+  --input-height: 88rpx;
+  --input-radius: 14rpx;
+  --input-padding-h: 26rpx;
+
+  /* ===== 页面边距 ===== */
+  --page-padding-h: 32rpx;
+  --page-padding-v: 24rpx;
+
+  /* ===== 过渡 ===== */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+  --transition-slow: 0.35s ease;
+}

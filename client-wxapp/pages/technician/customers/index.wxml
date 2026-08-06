@@ -8,7 +8,7 @@
         <view class="search-icon"></view>
         <input
           class="search-input"
-          placeholder="搜索客户姓名或联系方式"
+        placeholder="搜索姓名或联系方式"
           confirm-type="search"
           value="{{keyword}}"
           bindinput="onKeywordInput"
@@ -18,37 +18,40 @@
       </view>
       <view class="btn-invite" bindtap="handleInvite">
         <text class="invite-icon">+</text>
-        <text class="invite-text">邀请客户</text>
+        <text class="invite-text">邀请</text>
       </view>
     </view>
 
     <!-- 系统生命周期 -->
-    <text class="filter-label">客户阶段</text>
-    <scroll-view scroll-x class="tab-scroll lifecycle-scroll" enhanced show-scrollbar="{{false}}">
-      <view class="tab-list">
-        <view
-          wx:for="{{lifecycleTabs}}"
-          wx:key="key"
-          class="tab-item lifecycle-tab {{activeLifecycle === item.key ? 'tab-active' : ''}}"
-          bindtap="onLifecycleChange"
-          data-lifecycle="{{item.key}}"
-        >{{item.label}}</view>
-      </view>
-    </scroll-view>
+    <view class="filter-row filter-row-stage">
+      <scroll-view scroll-x class="tab-scroll" enhanced show-scrollbar="{{false}}">
+        <view class="tab-list">
+          <view
+            wx:for="{{lifecycleTabs}}"
+            wx:key="key"
+            class="tab-item {{activeLifecycle === item.key ? 'tab-active' : ''}}"
+            bindtap="onLifecycleChange"
+            data-lifecycle="{{item.key}}"
+          >{{item.label}}</view>
+        </view>
+      </scroll-view>
+    </view>
 
     <!-- 人工标签 -->
-    <text class="filter-label">人工标签</text>
-    <scroll-view scroll-x class="tab-scroll" enhanced show-scrollbar="{{false}}">
-      <view class="tab-list">
-        <view
-          wx:for="{{tabs}}"
-          wx:key="*this"
-          class="tab-item {{activeTab === item ? 'tab-active' : ''}}"
-          bindtap="onTabChange"
-          data-tab="{{item}}"
-        >{{item}}</view>
-      </view>
-    </scroll-view>
+    <view wx:if="{{tabs.length > 1}}" class="filter-row">
+      <text class="filter-label">标签</text>
+      <scroll-view scroll-x class="tab-scroll" enhanced show-scrollbar="{{false}}">
+        <view class="tab-list">
+          <view
+            wx:for="{{tabs}}"
+            wx:key="*this"
+            class="tab-item {{activeTab === item ? 'tab-active' : ''}}"
+            bindtap="onTabChange"
+            data-tab="{{item}}"
+          >{{item}}</view>
+        </view>
+      </scroll-view>
+    </view>
   </view>
 
   <!-- 可滚动客户列表 -->

@@ -25,6 +25,23 @@
   <!-- ===== 可滚动内容 ===== -->
   <scroll-view class="content-scroll" scroll-y enhanced show-scrollbar="{{false}}">
     <view class="content-area">
+
+      <!-- ★ 身份切换卡片（动态角色） -->
+      <view class="role-card" bindtap="showRoleSheet">
+        <view class="role-card-left">
+          <view class="role-card-badge">
+            <image class="role-card-badge-icon" src="/static/icons/{{currentRole === 'technician' ? 'role-technician' : 'role-client'}}.svg" mode="aspectFit" />
+          </view>
+          <view class="role-card-info">
+            <text class="role-card-title">{{roleCardTitle}}</text>
+            <text class="role-card-sub" wx:if="{{roleCardSub}}">{{roleCardSub}}</text>
+          </view>
+        </view>
+        <view class="role-card-switch-btn">
+          <text>{{roleSwitchLabel}}</text>
+        </view>
+      </view>
+
       <view wx:if="{{activeTechMenuId !== null}}" class="tech-menu-mask" bindtap="closeTechMenu"></view>
 
       <!-- 我的美甲师 -->
@@ -49,6 +66,8 @@
             wx:for="{{technicians}}"
             wx:key="id"
             class="tech-card {{item.isDefault ? 'tech-card-default' : ''}}"
+            bindtap="viewTechnicianHome"
+            data-id="{{item.id}}"
           >
             <view class="tech-card-primary">
               <view class="tech-main">
@@ -82,8 +101,8 @@
               </view>
             </view>
             <view wx:if="{{activeTechMenuId === item.id}}" class="tech-more-menu">
-              <view class="tech-menu-item" catchtap="viewTechInfo" data-id="{{item.id}}">
-                <view class="tech-menu-icon tech-menu-icon-info"></view><text>查看信息</text>
+              <view class="tech-menu-item" catchtap="viewTechnicianHome" data-id="{{item.id}}">
+                <view class="tech-menu-icon tech-menu-icon-info"></view><text>查看主页</text>
               </view>
               <view class="tech-menu-item" catchtap="messageTechnician" data-id="{{item.id}}" data-name="{{item.name}}">
                 <view class="tech-menu-icon tech-menu-icon-message"></view><text>发送消息</text>
@@ -237,3 +256,44 @@
 </view>
 
 <tab-bar selected="profile"/>
+
+<!-- 身份切换底部面板 -->
+<view wx:if="{{showRoleSheet}}" class="role-sheet-mask" bindtap="hideRoleSheet">
+  <view class="role-sheet" catchtap="">
+    <view class="role-sheet-handle"></view>
+    <text class="role-sheet-title">切换身份</text>
+    <text class="role-sheet-sub">选择您要使用的身份模式</text>
+
+    <!-- 客户模式（当前或可选） -->
+    <view class="role-sheet-option {{currentRole === 'client' ? 'role-sheet-option-active' : ''}}" bindtap="{{currentRole === 'technician' ? 'switchToTechnician' : ''}}">
+      <view class="role-sheet-option-icon role-sheet-option-icon-client">
+        <image src="/static/icons/role-client.svg" mode="aspectFit" class="role-sheet-option-icon-img" />
+      </view>
+      <view class="role-sheet-option-info">
+        <text class="role-sheet-option-title">客户模式</text>
+        <text class="role-sheet-option-desc">浏览作品 · 预约美甲 · 管理订单</text>
+      </view>
+      <view wx:if="{{currentRole === 'client'}}" class="role-sheet-check">
+        <image src="/static/icons/check-circle.svg" mode="aspectFit" class="role-sheet-check-img" />
+      </view>
+      <text wx:else class="role-sheet-arrow">›</text>
+    </view>
+
+    <!-- 美甲师模式（当前或可选） -->
+    <view class="role-sheet-option {{currentRole === 'technician' ? 'role-sheet-option-active' : ''}}" bindtap="{{currentRole === 'client' ? 'switchToTechnician' : ''}}">
+      <view class="role-sheet-option-icon role-sheet-option-icon-tech">
+        <image src="/static/icons/role-technician.svg" mode="aspectFit" class="role-sheet-option-icon-img" />
+      </view>
+      <view class="role-sheet-option-info">
+        <text class="role-sheet-option-title">美甲师模式</text>
+        <text class="role-sheet-option-desc">{{canSwitchToTech ? '管理预约 · 服务客户 · 展示作品' : '使用激活密钥开通美甲师账户'}}</text>
+      </view>
+      <view wx:if="{{currentRole === 'technician'}}" class="role-sheet-check">
+        <image src="/static/icons/check-circle.svg" mode="aspectFit" class="role-sheet-check-img" />
+      </view>
+      <text wx:else class="role-sheet-arrow">›</text>
+    </view>
+
+    <view class="role-sheet-cancel" bindtap="hideRoleSheet">取消</view>
+  </view>
+</view>

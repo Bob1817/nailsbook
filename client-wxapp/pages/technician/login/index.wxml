@@ -106,7 +106,7 @@
       授权微信手机号并注册
     </button>
     <view class="register-links">
-      <navigator url="/pages/role-select/index" class="back-link">返回选择身份</navigator>
+      <navigator url="/pages/login/index" class="back-link">返回选择身份</navigator>
     </view>
   </view>
 

@@ -178,8 +178,20 @@ Page({
     this.applyFilter();
   },
 
-  toggleLike: function (e) {
-    var id = e.currentTarget.dataset.id;
+  // === work-card 组件事件 ===
+  onWorkCardTap: function (e) {
+    var id = e.detail && e.detail.id;
+    if (id) wx.navigateTo({ url: '/pages/client/work-detail/index?id=' + id });
+  },
+
+  onArtistTap: function (e) {
+    var id = e.detail && e.detail.id;
+    if (id) wx.navigateTo({ url: '/pages/client/artist-home/index?id=' + id });
+  },
+
+  onLikeTap: function (e) {
+    var id = e.detail && e.detail.id;
+    if (!id) return;
     var self = this;
     var works = self.data.works.map(function (w) {
       if (String(w.id) === String(id)) {
@@ -194,7 +206,6 @@ Page({
     self.applyFilter();
 
     api.client.works.like(id).catch(function () {
-      // 回滚
       var reverted = self.data.works.map(function (w) {
         if (String(w.id) === String(id)) {
           return Object.assign({}, w, {
@@ -209,25 +220,8 @@ Page({
     });
   },
 
-  viewWork: function (e) {
-    var id = e.currentTarget.dataset.id;
-    wx.navigateTo({ url: '/pages/client/work-detail/index?id=' + id });
-  },
-
   goBindTech: function () {
     wx.reLaunch({ url: '/pages/client/profile/index' });
-  },
-
-  onAvatarError: function (e) {
-    var id = e.currentTarget.dataset.id;
-    var works = this.data.works.map(function (w) {
-      if (String(w.id) === String(id)) {
-        return Object.assign({}, w, { technicianAvatarUrl: '' });
-      }
-      return w;
-    });
-    this.setData({ works: works });
-    this.applyFilter();
   },
 
   onReachBottom: function () {

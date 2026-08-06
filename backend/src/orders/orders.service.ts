@@ -244,6 +244,31 @@ export class OrdersService {
     });
   }
 
+  async findIncomeCalendar(technicianId: number) {
+    const [technician, orders] = await Promise.all([
+      this.prisma.technician.findUnique({
+        where: { id: technicianId },
+        select: { createdAt: true },
+      }),
+      this.prisma.order.findMany({
+        where: { technicianId },
+        select: {
+          startTime: true,
+          status: true,
+          quotePrice: true,
+        },
+        orderBy: { startTime: 'asc' },
+      }),
+    ]);
+
+    if (!technician) throw new NotFoundException('美甲师不存在');
+
+    return {
+      registeredAt: technician.createdAt,
+      orders,
+    };
+  }
+
   async findOne(id: number) {
     const order = await this.prisma.order.findUnique({
       where: { id },

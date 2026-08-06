@@ -36,21 +36,21 @@
 }
 
 .error-text {
-  font-size: 28rpx;
-  color: #6b7280;
-  margin-bottom: 24rpx;
+  font-size: var(--font-md);
+  color: var(--text-muted);
+  margin-bottom: var(--space-md);
 }
-.error-sub { margin-bottom:32rpx; color:#6b7280; font-size:26rpx; }
-.btn-retry { min-height:88rpx; margin:0 0 20rpx; padding:0 56rpx; border:0; border-radius:44rpx; background:#1f2937; color:#fff; font-size:28rpx; line-height:88rpx; }
+.error-sub { margin-bottom:32rpx; color: var(--text-muted); font-size: var(--font-sm); }
+.btn-retry { min-height:88rpx; margin:0 0 20rpx; padding:0 56rpx; border:0; border-radius: var(--radius-xl); background:#1f2937; color: var(--text-inverse); font-size: var(--font-md); line-height:88rpx; }
 .btn-retry::after { border:0; }
 
 .btn-back {
   min-height: 88rpx;
-  background: #FF6B8A;
-  color: #fff;
-  font-size: 28rpx;
+  background: var(--brand-primary);
+  color: var(--text-inverse);
+  font-size: var(--font-md);
   padding: 16rpx 48rpx;
-  border-radius: 40rpx;
+  border-radius: var(--radius-xl);
   border: none;
 }
 
@@ -71,7 +71,7 @@
   left: 0;
   right: 0;
   z-index: 10;
-  padding: 24rpx;
+  padding: var(--space-md);
   padding-top: calc(24rpx + env(safe-area-inset-top));
 }
 
@@ -86,8 +86,8 @@
 }
 
 .back-icon {
-  font-size: 32rpx;
-  color: #fff;
+  font-size: var(--font-lg);
+  color: var(--text-inverse);
 }
 
 /* 图片轮播 */
@@ -125,7 +125,7 @@
 }
 
 .dot.active {
-  background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%);
+  background: var(--bg-gradient-entry);
   width: 32rpx;
   border-radius: 6rpx;
 }
@@ -134,8 +134,8 @@
 .info-panel {
   position: relative;
   margin-top: -48rpx;
-  background: #fff;
-  border-radius: 24rpx 24rpx 0 0;
+  background: var(--bg-card);
+  border-radius: var(--radius-md) 24rpx 0 0;
   padding: 32rpx;
   padding-bottom: 200rpx;
   box-shadow: 0 -4rpx 24rpx rgba(15, 23, 42, 0.06);
@@ -143,21 +143,21 @@
 
 /* 标题和描述 */
 .title-section {
-  margin-bottom: 24rpx;
+  margin-bottom: var(--space-md);
 }
 
 .work-title {
   display: block;
-  font-size: 36rpx;
-  font-weight: 700;
-  color: #1f2937;
+  font-size: var(--font-lg);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
   margin-bottom: 12rpx;
 }
 
 .work-desc {
   display: block;
-  font-size: 28rpx;
-  color: #6b7280;
+  font-size: var(--font-md);
+  color: var(--text-muted);
   line-height: 1.6;
 }
 
@@ -166,19 +166,19 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12rpx;
-  margin-bottom: 24rpx;
+  margin-bottom: var(--space-md);
 }
 
 .tag {
   padding: 8rpx 40rpx;
   background: #fff1f5;
-  border-radius: 14rpx;
+  border-radius: var(--radius-sm);
 }
 
 .tag-text {
-  font-size: 22rpx;
-  color: #FF6B8A;
-  font-weight: 500;
+  font-size: var(--font-xs);
+  color: var(--brand-primary);
+  font-weight: var(--weight-medium);
 }
 
 /* 美甲师信息 */
@@ -189,7 +189,7 @@
   padding: 20rpx 0;
   border-top: 1rpx solid #f3f4f6;
   border-bottom: 1rpx solid #f3f4f6;
-  margin-bottom: 24rpx;
+  margin-bottom: var(--space-md);
 }
 
 .tech-avatar-wrap {
@@ -211,9 +211,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28rpx;
-  color: #FF6B8A;
-  font-weight: 600;
+  font-size: var(--font-md);
+  color: var(--brand-primary);
+  font-weight: var(--weight-semibold);
 }
 
 .tech-info {
@@ -222,20 +222,20 @@
 
 .tech-name {
   display: block;
-  font-size: 28rpx;
-  font-weight: 500;
-  color: #1f2937;
+  font-size: var(--font-md);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
 }
 
 .tech-label {
   display: block;
-  font-size: 22rpx;
-  color: #6b7280;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
 }
 
 .tech-arrow {
-  font-size: 36rpx;
-  color: #767b84;
+  font-size: var(--font-lg);
+  color: var(--text-muted);
 }
 
 /* 操作按钮 */
@@ -252,8 +252,8 @@
   justify-content: center;
   gap: 8rpx;
   padding: 20rpx;
-  background: #f9fafb;
-  border-radius: 24rpx;
+  background: var(--bg-input);
+  border-radius: var(--radius-md);
   border: none;
 }
 
@@ -262,18 +262,18 @@
 }
 
 .action-icon {
-  font-size: 28rpx;
+  font-size: var(--font-md);
 }
 
 .action-text {
-  font-size: 26rpx;
-  color: #4b5563;
-  font-weight: 500;
+  font-size: var(--font-sm);
+  color: var(--text-body);
+  font-weight: var(--weight-medium);
 }
 
 .action-count {
-  font-size: 22rpx;
-  color: #6b7280;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
 }
 
 /* 评论区 */
@@ -289,14 +289,14 @@
 }
 
 .comments-title {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
 }
 
 .comments-count {
-  font-size: 24rpx;
-  color: #6b7280;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
 }
 
 .comments-list {
@@ -314,7 +314,7 @@
   width: 56rpx;
   height: 56rpx;
   border-radius: 50%;
-  background: #f1f5f9;
+  background: var(--bg-input);
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -330,15 +330,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24rpx;
-  color: #6b7280;
-  font-weight: 600;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  font-weight: var(--weight-semibold);
 }
 
 .comment-content {
   flex: 1;
-  background: #f9fafb;
-  border-radius: 14rpx;
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
   padding: 16rpx 40rpx;
 }
 
@@ -350,35 +350,35 @@
 }
 
 .comment-name {
-  font-size: 24rpx;
-  font-weight: 500;
-  color: #374151;
+  font-size: var(--font-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-body);
 }
 
 .comment-badge {
-  font-size: 20rpx;
-  color: #FF6B8A;
+  font-size: var(--font-xs);
+  color: var(--brand-primary);
   background: #fff1f5;
   padding: 2rpx 40rpx;
   border-radius: 10rpx;
 }
 
 .comment-text {
-  font-size: 26rpx;
-  color: #4b5563;
-  line-height: 1.5;
+  font-size: var(--font-sm);
+  color: var(--text-body);
+  line-height: var(--leading-normal);
 }
 
 .comments-empty {
   padding: 40rpx;
   text-align: center;
-  background: #f9fafb;
-  border-radius: 14rpx;
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
 }
 
 .empty-text {
-  font-size: 26rpx;
-  color: #6b7280;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
 }
 
 /* 底部评论输入框 */
@@ -389,7 +389,7 @@
   right: 0;
   padding: 16rpx 40rpx;
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
-  background: #f8f9fc;
+  background: var(--bg-page);
   border-top: 1rpx solid #f3f4f6;
   display: flex;
   align-items: center;
@@ -400,8 +400,8 @@
   flex: 1;
   min-width: 0;
   height: 88rpx;
-  background: #f9fafb;
-  border-radius: 24rpx;
+  background: var(--bg-input);
+  border-radius: var(--radius-md);
   padding: 0 32rpx;
   display: flex;
   align-items: center;
@@ -412,18 +412,18 @@
   flex-shrink: 0;
   height: 88rpx;
   padding: 0 36rpx;
-  border-radius: 24rpx;
-  background: linear-gradient(135deg, #FF6B8A 0%, #A78BFA 100%);
+  border-radius: var(--radius-md);
+  background: var(--brand-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6rpx 18rpx rgba(255, 107, 138, 0.3);
+  box-shadow: 0 6rpx 18rpx rgba(255,107,138,0.3) /* brand-primary-alpha */;
 }
 .book-same-btn:active { opacity: 0.85; }
 .book-same-text {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #fff;
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
+  color: var(--text-inverse);
   white-space: nowrap;
 }
 
@@ -432,8 +432,8 @@
 }
 
 .input-placeholder  {
-  font-size: 28rpx;
-  color: #6b7280;
+  font-size: var(--font-md);
+  color: var(--text-muted);
 }
 
 /* CSS Icons */
@@ -454,8 +454,8 @@
   position: absolute;
   width: 12rpx;
   height: 18rpx;
-  background: #FF6B8A;
-  border-radius: 12rpx 12rpx 0 0;
+  background: var(--brand-primary);
+  border-radius: var(--radius-xs) 12rpx 0 0;
   top: 0;
 }
 .icon-heart::before {
@@ -480,7 +480,7 @@
   left: 0;
   right: 0;
   bottom: 6rpx;
-  background: #FF6B8A;
+  background: var(--brand-primary);
   border-radius: 2rpx 2rpx 0 0;
 }
 .icon-bookmark::after {
@@ -490,8 +490,8 @@
   left: 0;
   width: 0;
   height: 0;
-  border-left: 8rpx solid #FF6B8A;
-  border-right: 8rpx solid #FF6B8A;
+  border-left: 8rpx solid var(--brand-primary);
+  border-right: 8rpx solid var(--brand-primary);
   border-bottom: 6rpx solid transparent;
 }
 .icon-share {

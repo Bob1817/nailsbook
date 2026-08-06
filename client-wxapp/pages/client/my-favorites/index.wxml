@@ -22,14 +22,14 @@
     <view class="waterfall">
       <!-- 左列 -->
       <view class="col">
-        <view wx:for="{{leftCol}}" wx:key="id" class="w-card {{item.aspect}}" bindtap="viewWork" data-id="{{item.id}}">
-          <work-card work="{{item}}"/>
+        <view wx:for="{{leftCol}}" wx:key="id" class="w-card {{item.aspect}}">
+          <work-card work="{{item}}" bind:cardtap="viewWork"/>
         </view>
       </view>
       <!-- 右列 -->
       <view class="col">
-        <view wx:for="{{rightCol}}" wx:key="id" class="w-card {{item.aspect}}" bindtap="viewWork" data-id="{{item.id}}">
-          <work-card work="{{item}}"/>
+        <view wx:for="{{rightCol}}" wx:key="id" class="w-card {{item.aspect}}">
+          <work-card work="{{item}}" bind:cardtap="viewWork"/>
         </view>
       </view>
     </view>

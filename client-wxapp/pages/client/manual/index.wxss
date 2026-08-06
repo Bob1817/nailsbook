@@ -1,5 +1,5 @@
 page {
-  background: #f5f6fa;
+  background: var(--bg-page);
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -17,7 +17,7 @@ page {
 .scroll { flex: 1; min-height: 0; }
 
 .content {
-  padding: 24rpx 32rpx calc(48rpx + env(safe-area-inset-bottom));
+  padding: var(--space-md) 32rpx calc(48rpx + env(safe-area-inset-bottom));
 }
 
 /* 区块标题 */
@@ -26,28 +26,28 @@ page {
   margin-top: 8rpx;
 }
 .block-title {
-  font-size: 32rpx;
-  font-weight: 700;
-  color: #1f2937;
+  font-size: var(--font-lg);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
   margin-right: 16rpx;
 }
 .block-sub {
-  font-size: 24rpx;
-  color: #6b7280;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
 }
 
 /* 使用指引 */
 .guides {
-  background: #fff;
-  border-radius: 24rpx;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
   padding: 12rpx 28rpx;
   box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 .guide {
   display: flex;
   gap: 20rpx;
-  padding: 24rpx 0;
-  border-bottom: 1rpx solid #f0f1f4;
+  padding: var(--space-md) 0;
+  border-bottom: 1rpx solid var(--border-card);
 }
 .guide:last-child { border-bottom: none; }
 .guide-num {
@@ -55,10 +55,10 @@ page {
   width: 48rpx;
   height: 48rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #FF6B8A 0%, #A78BFA 100%);
-  color: #fff;
-  font-size: 26rpx;
-  font-weight: 700;
+  background: var(--brand-gradient);
+  color: var(--text-inverse);
+  font-size: var(--font-sm);
+  font-weight: var(--weight-bold);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -66,28 +66,28 @@ page {
 .guide-body { flex: 1; min-width: 0; }
 .guide-t {
   display: block;
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
   margin-bottom: 8rpx;
 }
 .guide-d {
   display: block;
-  font-size: 26rpx;
-  color: #6b7280;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
   line-height: 1.7;
 }
 
 /* 常见问题 */
 .faqs {
-  background: #fff;
-  border-radius: 24rpx;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
   padding: 4rpx 28rpx;
   box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 .faq {
   padding: 28rpx 0;
-  border-bottom: 1rpx solid #f0f1f4;
+  border-bottom: 1rpx solid var(--border-card);
 }
 .faq:last-child { border-bottom: none; }
 .faq-q-row {
@@ -98,27 +98,27 @@ page {
 }
 .faq-q {
   flex: 1;
-  font-size: 28rpx;
-  font-weight: 500;
-  color: #1f2937;
+  font-size: var(--font-md);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
 }
 .faq-chevron {
   flex-shrink: 0;
-  font-size: 36rpx;
-  color: #767b84;
+  font-size: var(--font-lg);
+  color: var(--text-muted);
   transform: rotate(90deg);
   transition: transform 0.2s;
 }
 .faq-open .faq-chevron { transform: rotate(-90deg); }
 .faq-a-wrap {
-  margin-top: 16rpx;
+  margin-top: var(--space-sm);
   padding: 20rpx 24rpx;
-  background: #f9fafb;
-  border-radius: 16rpx;
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
 }
 .faq-a {
-  font-size: 26rpx;
-  color: #4b5563;
+  font-size: var(--font-sm);
+  color: var(--text-body);
   line-height: 1.75;
 }
 
@@ -131,17 +131,17 @@ page {
   padding: 56rpx 0 16rpx;
 }
 .more-text {
-  font-size: 26rpx;
-  color: #6b7280;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
 }
 .more-btn {
   height: 80rpx;
   padding: 0 56rpx;
   border-radius: 999rpx;
   background: #fff1f5;
-  color: #FF6B8A;
-  font-size: 28rpx;
-  font-weight: 600;
+  color: var(--brand-primary);
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
   display: flex;
   align-items: center;
   justify-content: center;

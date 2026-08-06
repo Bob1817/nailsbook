@@ -19,15 +19,7 @@ const {
 
 Page({
   data: {
-    avatar: '',
-    name: '',
-    status: 'active',
-    homeService: false,
-    shopService: false,
-
     loading: true,
-
-    summary: { todayCount: 0, expectedIncomeText: '¥0' },
     nextOrder: null,
     todayOrders: [],
     todayLabel: '',
@@ -47,33 +39,19 @@ Page({
   onLoad() {
     const role = wx.getStorageSync('role');
     if (role !== 'technician') {
-      wx.reLaunch({ url: '/pages/role-select/index' });
+      wx.reLaunch({ url: '/pages/login/index' });
       return;
     }
     this.setData({ todayLabel: formatToday() });
-    this.applyUserInfo();
   },
 
   onShow() {
     if (wx.getStorageSync('role') !== 'technician') return;
-    this.applyUserInfo();
     this.loadDashboard();
   },
 
   onPullDownRefresh() {
     this.loadDashboard().finally(() => wx.stopPullDownRefresh());
-  },
-
-  // ---------- 用户信息回填 ----------
-  applyUserInfo() {
-    const u = wx.getStorageSync('userInfo') || {};
-    this.setData({
-      avatar: u.avatarUrl || '',
-      name: u.name || '美甲师',
-      status: u.status || 'active',
-      homeService: !!u.homeService,
-      shopService: !!u.shopService
-    });
   },
 
   // ---------- 主数据加载 ----------
@@ -83,12 +61,13 @@ Page({
     this.setData({ loading: true });
 
     try {
-      const [tripsResult, convResult, worksResult, followUpsResult, insights] = await Promise.all([
+      const [tripsResult, convResult, worksResult, followUpsResult, insights, incomeCalendar] = await Promise.all([
         api.technician.orders.trips().catch(() => []),
         api.chat.conversations('technician').catch(() => []),
         api.technician.works.list().catch(() => []),
         api.technician.customers.todayFollowUps().catch(() => []),
-        api.technician.insights.overview().catch(() => null)
+        api.technician.insights.overview().catch(() => null),
+        api.technician.orders.incomeCalendar().catch(() => null)
       ]);
 
       const tripsRaw = Array.isArray(tripsResult) ? tripsResult : (tripsResult.data || []);
@@ -184,53 +163,25 @@ Page({
       const worksLeft = featuredWorks.filter((_, i) => i % 2 === 0);
       const worksRight = featuredWorks.filter((_, i) => i % 2 === 1);
 
-      // 副标题预估收入
-      const todayCount = summary.todayOrders.length;
-      const expectedIncomeText = formatMoney(summary.expectedIncome);
+      const now = new Date();
+      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const monthBookings = ((incomeCalendar && incomeCalendar.orders) || []).filter((order) => {
+        const startTime = parseDate(order.startTime);
+        if (!startTime || ['cancelled', 'expired'].includes(order.status)) return false;
+        const month = `${startTime.getFullYear()}-${String(startTime.getMonth() + 1).padStart(2, '0')}`;
+        return month === currentMonth;
+      });
+
       const businessOverview = insights ? {
         revenue: formatMoney(insights.revenue.monthConfirmed || 0),
-        averageTicket: insights.revenue.averageTicket == null
-          ? '暂无'
-          : formatMoney(insights.revenue.averageTicket),
-        totalCustomers: insights.customers.total || 0,
-        newCustomers: insights.customers.newThisMonth || 0,
-        completedCustomers: insights.customers.completed || 0,
-        repeatRate: insights.customers.repeatRate == null
-          ? '暂无'
-          : `${Math.round(insights.customers.repeatRate * 100)}%`,
-        dueCustomers: insights.customers.dueForRepurchase || 0,
-        referrals: insights.referrals.total || 0,
-        qualifiedReferrals: insights.referrals.qualified || 0,
-        referralRevenue: formatMoney(insights.referrals.qualifiedRevenue || 0),
-        fundsIssued: formatMoney(insights.funds.issued || 0),
-        fundsRedeemed: formatMoney(insights.funds.redeemed || 0),
-        dailyTrend: (insights.trends.daily || []).slice(-7).map(item => ({
-          ...item,
-          label: item.period.slice(5),
-          revenueText: formatMoney(item.revenue)
-        })),
-        weeklyTrend: (insights.trends.weekly || []).slice(-4).map(item => ({
-          ...item,
-          label: `${item.period.slice(5)} 周`,
-          revenueText: formatMoney(item.revenue)
-        })),
-        performanceReady: !!insights.performance.sufficientData,
-        performanceMinimum: insights.performance.minimumSampleSize || 5,
-        topService: insights.performance.services && insights.performance.services[0]
-          ? { ...insights.performance.services[0], revenueText: formatMoney(insights.performance.services[0].revenue) }
-          : null,
-        topTimeSlot: insights.performance.timeSlots && insights.performance.timeSlots[0]
-          ? { ...insights.performance.timeSlots[0], revenueText: formatMoney(insights.performance.timeSlots[0].revenue) }
-          : null,
-        reminders: (insights.reminders || []).map(item => ({
-          ...item,
-          typeText: { due: '待复购', dormant: '沉睡', high_value: '高价值' }[item.type] || '经营提醒'
-        }))
+        estimatedRevenue: formatMoney(monthBookings.reduce((sum, order) => sum + (Number(order.quotePrice) || 0), 0)),
+        monthCompleted: insights.bookings.monthCompleted || 0,
+        monthBookings: monthBookings.length,
+        newCustomers: insights.customers.newThisMonth || 0
       } : null;
 
       this.setData({
         loading: false,
-        summary: { todayCount, expectedIncomeText },
         nextOrder,
         todayOrders: summary.todayOrders.map(decorate),
         todoItems,
@@ -312,15 +263,8 @@ Page({
     wx.navigateTo({ url: '/pages/technician/works/index' });
   },
 
-  openBusinessDetail(e) {
-    const target = e.currentTarget.dataset.target;
-    const routes = {
-      orders: '/pages/technician/orders/index?filter=completed',
-      customers: '/pages/technician/customers/index',
-      due: '/pages/technician/customers/index?lifecycle=due',
-      referrals: '/pages/technician/referral-campaign/index'
-    };
-    if (routes[target]) wx.navigateTo({ url: routes[target] });
+  openBusinessDetail() {
+    wx.navigateTo({ url: '/pages/technician/business-data/index' });
   },
 
   navigateToWorkDetail(e) {
@@ -348,25 +292,5 @@ Page({
   openFollowUpCustomer(e) {
     const id = e.currentTarget.dataset.id;
     if (id) wx.navigateTo({ url: `/pages/technician/customer-detail/index?id=${id}` });
-  },
-
-  openInsightCustomer(e) {
-    const id = e.currentTarget.dataset.id;
-    if (id) wx.navigateTo({ url: `/pages/technician/customer-detail/index?id=${id}` });
-  },
-
-  // ---------- 分享 ----------
-  onShareAppMessage() {
-    const u = wx.getStorageSync('userInfo') || {};
-    const inviteCode = u.invitationCode || '';
-    return {
-      title: `美甲师 ${u.name || '小美'} 的名片`,
-      path: u.id
-        ? `/pages/client/works/index?techId=${u.id}&source=card`
-        : inviteCode
-          ? `/pages/client/login/index?invite=${inviteCode}`
-        : '/pages/role-select/index',
-      imageUrl: u.avatarUrl || ''
-    };
   }
 });

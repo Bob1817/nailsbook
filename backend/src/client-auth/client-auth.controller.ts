@@ -25,6 +25,10 @@ import { ClientAuthService } from './client-auth.service';
 import { ClientJwtAuthGuard } from './client-jwt-auth.guard';
 import { ClientLoginDto } from './dto/client-login.dto';
 import { RegisterByInviteDto } from './dto/register-by-invite.dto';
+import { RegisterBySmsDto } from './dto/register-by-sms.dto';
+import { LoginBySmsDto } from './dto/login-by-sms.dto';
+import { SendSmsLoginDto } from './dto/send-sms-login.dto';
+import { ActivateTechnicianDto } from './dto/activate-technician.dto';
 import { BindTechnicianDto } from './dto/bind-technician.dto';
 import { CheckPhoneDto } from '../technician-auth/dto/check-phone.dto';
 import { RefreshTokenDto } from '../common/dto/refresh-token.dto';
@@ -67,6 +71,64 @@ export class ClientAuthController {
   @ApiBody({ type: RegisterByInviteDto })
   async registerByInvite(@Body() body: RegisterByInviteDto) {
     return this.clientAuthService.registerByInvite(body);
+  }
+
+  // ── SMS 验证码登录 / 注册（免邀请码） ──
+
+  @Post('send-sms-login')
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
+  @ApiOperation({ summary: '发送登录短信验证码（仅已注册手机号真实发送）' })
+  @ApiBody({ type: SendSmsLoginDto })
+  @ApiResponse({ status: 200, description: '已发送（防枚举，统一返回）' })
+  async sendSmsCodeForLogin(@Body() body: SendSmsLoginDto) {
+    return this.clientAuthService.sendSmsCodeForLogin(body.phone);
+  }
+
+  @Post('send-sms-register')
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
+  @ApiOperation({ summary: '发送注册短信验证码（仅未注册手机号真实发送）' })
+  @ApiBody({ type: SendSmsLoginDto })
+  @ApiResponse({ status: 200, description: '已发送（防枚举，统一返回）' })
+  async sendSmsCodeForRegister(@Body() body: SendSmsLoginDto) {
+    return this.clientAuthService.sendSmsCodeForRegister(body.phone);
+  }
+
+  @Post('register-by-sms')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @ApiOperation({ summary: '手机号 + 短信验证码注册（免邀请码）' })
+  @ApiBody({ type: RegisterBySmsDto })
+  @ApiResponse({ status: 200, description: '注册成功，返回 token + needsOnboarding' })
+  @ApiResponse({ status: 400, description: '验证码错误或手机号已注册' })
+  async registerBySms(@Body() body: RegisterBySmsDto) {
+    return this.clientAuthService.registerBySms(body);
+  }
+
+  @Post('login-by-sms')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @ApiOperation({ summary: '手机号 + 短信验证码登录（免密码，免绑定）' })
+  @ApiBody({ type: LoginBySmsDto })
+  @ApiResponse({ status: 200, description: '登录成功，返回 token + roles' })
+  @ApiResponse({ status: 401, description: '验证码错误或账号不存在' })
+  async loginBySms(@Body() body: LoginBySmsDto) {
+    return this.clientAuthService.loginBySms(body);
+  }
+
+  @Post('activate-technician')
+  @UseGuards(ClientJwtAuthGuard)
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
+  @ApiOperation({ summary: '激活美甲师身份（需先登录为客户，使用超管后台生成的激活密钥）' })
+  @ApiBody({ type: ActivateTechnicianDto })
+  @ApiResponse({ status: 201, description: '激活成功，返回美甲师 token' })
+  @ApiResponse({ status: 400, description: '密钥无效或已被使用' })
+  @ApiResponse({ status: 409, description: '该手机号已是美甲师' })
+  async activateTechnician(
+    @Req() request: { user: { clientUserId: number } },
+    @Body() body: ActivateTechnicianDto,
+  ) {
+    return this.clientAuthService.activateTechnician(
+      request.user.clientUserId,
+      body.activationKey,
+    );
   }
 
   @Post('login')

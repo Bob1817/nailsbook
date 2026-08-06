@@ -85,6 +85,16 @@ export class TechnicianOrdersController {
     return this.ordersService.findTrips(request.user.technicianId);
   }
 
+  @Get('income-calendar')
+  @ApiOperation({ summary: '获取注册以来的收入日历数据' })
+  @ApiResponse({ status: 200, description: '返回注册时间与轻量订单收入字段' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  findIncomeCalendar(
+    @Req() request: { user: { technicianId: number } },
+  ) {
+    return this.ordersService.findIncomeCalendar(request.user.technicianId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: '获取订单详情' })
   @ApiParam({ name: 'id', type: String, description: '订单ID' })

@@ -534,11 +534,23 @@ export class ClientAuthService {
     }
 
     if (!client.passwordHash) {
+      // SMS 注册用户无用户自设密码，引导使用短信验证码登录
+      if (client.managedPasswordCiphertext) {
+        throw new UnauthorizedException(
+          '该账号通过短信验证码注册，请使用短信验证码登录',
+        );
+      }
       throw new UnauthorizedException('账号未设置密码，请通过忘记密码设置');
     }
 
     const valid = await bcrypt.compare(dto.password, client.passwordHash);
     if (!valid) {
+      // SMS 注册用户输错密码 → 引导使用短信登录
+      if (client.managedPasswordCiphertext) {
+        throw new UnauthorizedException(
+          '该账号通过短信验证码注册，请使用短信验证码登录',
+        );
+      }
       throw new UnauthorizedException('手机号或密码错误');
     }
 

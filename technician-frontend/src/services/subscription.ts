@@ -1,7 +1,7 @@
 import api from './api';
 import type { TechnicianSubscription } from '../contexts/authTypes';
 
-export type PlanCode = 'free' | 'pro' | 'studio_plus';
+export type PlanCode = 'free' | 'starter' | 'advanced' | 'ultimate';
 
 export interface PlanFeature {
   code: string;
@@ -10,130 +10,22 @@ export interface PlanFeature {
 }
 
 export interface PlanDefinition {
+  id?: number;
   code: PlanCode;
   name: string;
   price: number;
   billingCycle: string;
   maxCustomers: number | null;
   maxMonthlyBookings: number | null;
+  maxWorks?: number | null;
+  maxStorageBytes?: number | null;
+  maxMarketingExports?: number | null;
+  maxMonthlySms?: number | null;
+  maxEmployees?: number | null;
+  targetStage?: string | null;
+  description?: string | null;
   features: PlanFeature[];
   highlights: string[];
-}
-
-export const TRIAL_DURATION_DAYS = 7;
-
-export const PLAN_DEFINITIONS: PlanDefinition[] = [
-  {
-    code: 'free',
-    name: '免费版',
-    price: 0,
-    billingCycle: 'free',
-    maxCustomers: 20,
-    maxMonthlyBookings: 40,
-    features: [
-      { code: 'basic_profile', name: '基础主页', description: '展示基本资料和服务项目' },
-      { code: 'design_request', name: '设计咨询', description: '接收客户设计需求（限量）' },
-    ],
-    highlights: ['最多 20 位客户', '每月 40 单预约上限', '基础功能使用'],
-  },
-  {
-    code: 'pro',
-    name: 'Pro 版',
-    price: 29,
-    billingCycle: 'monthly',
-    maxCustomers: null,
-    maxMonthlyBookings: null,
-    features: [
-      { code: 'basic_profile', name: '基础主页', description: '展示基本资料和服务项目' },
-      { code: 'design_request', name: '设计咨询', description: '接收客户设计需求' },
-      { code: 'customer_tags', name: '客户标签', description: '自定义客户标签和分组管理' },
-      { code: 'analytics', name: '数据统计', description: '收入趋势、客户分析等数据看板' },
-      { code: 'unlimited_bookings', name: '无限预约', description: '不限客户数和预约数量' },
-      { code: 'home_service', name: '上门服务', description: '开启上门美甲服务模式' },
-    ],
-    highlights: ['不限客户数和预约量', '上门服务功能', '数据统计分析', '客户标签管理'],
-  },
-  {
-    code: 'studio_plus',
-    name: 'Studio Plus',
-    price: 99,
-    billingCycle: 'monthly',
-    maxCustomers: null,
-    maxMonthlyBookings: null,
-    features: [
-      { code: 'basic_profile', name: '基础主页', description: '展示基本资料和服务项目' },
-      { code: 'design_request', name: '设计咨询', description: '接收客户设计需求' },
-      { code: 'customer_tags', name: '客户标签', description: '自定义客户标签和分组管理' },
-      { code: 'analytics', name: '数据统计', description: '收入趋势、客户分析等数据看板' },
-      { code: 'unlimited_bookings', name: '无限预约', description: '不限客户数和预约数量' },
-      { code: 'home_service', name: '上门服务', description: '开启上门美甲服务模式' },
-      { code: 'advanced_analytics', name: '高级分析', description: '深度客户画像和收入预测' },
-      { code: 'priority_support', name: '优先客服', description: '专属客服通道优先响应' },
-    ],
-    highlights: ['Pro 版全部功能', '高级数据分析', '优先客服支持', '专属功能抢先体验'],
-  },
-];
-
-const PLAN_ORDER: PlanCode[] = ['free', 'pro', 'studio_plus'];
-
-export function getPlanByCode(code: string): PlanDefinition | undefined {
-  return PLAN_DEFINITIONS.find((plan) => plan.code === code);
-}
-
-export function getCurrentPlan(subscription?: TechnicianSubscription | null): PlanDefinition {
-  if (!subscription || subscription.status !== 'active') {
-    return PLAN_DEFINITIONS[0];
-  }
-  return getPlanByCode(subscription.planCode) ?? PLAN_DEFINITIONS[0];
-}
-
-export function isTrialActive(subscription?: TechnicianSubscription | null): boolean {
-  if (!subscription) return false;
-  return subscription.planCode === 'studio_plus' && subscription.status === 'active';
-}
-
-export function isTrialPlan(subscription?: TechnicianSubscription | null): boolean {
-  return isTrialActive(subscription);
-}
-
-export function getTrialDaysRemaining(subscription?: TechnicianSubscription | null): number {
-  if (!subscription?.expiredAt) return 0;
-  const expiry = new Date(subscription.expiredAt);
-  const now = new Date();
-  const diff = expiry.getTime() - now.getTime();
-  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-}
-
-export function getSubscriptionStatusLabel(subscription?: TechnicianSubscription | null): string {
-  if (!subscription) return '免费版';
-  if (subscription.status === 'cancelled') return '已过期';
-  if (subscription.status === 'expired') return '已过期';
-  if (isTrialActive(subscription)) {
-    const days = getTrialDaysRemaining(subscription);
-    return days > 0 ? `试用中 · 剩余 ${days} 天` : '试用已到期';
-  }
-  const plan = getPlanByCode(subscription.planCode);
-  return plan?.name ?? '免费版';
-}
-
-export function getPlanLevel(code: string): number {
-  return PLAN_ORDER.indexOf(code as PlanCode);
-}
-
-export function hasFeatureAccess(
-  subscription: TechnicianSubscription | null | undefined,
-  featureCode: string,
-): boolean {
-  const plan = getCurrentPlan(subscription);
-  return plan.features.some((f) => f.code === featureCode);
-}
-
-export function hasPlanOrHigher(
-  subscription: TechnicianSubscription | null | undefined,
-  requiredCode: PlanCode,
-): boolean {
-  const current = getCurrentPlan(subscription);
-  return getPlanLevel(current.code) >= getPlanLevel(requiredCode);
 }
 
 export interface SubscriptionPlanApiItem {
@@ -144,13 +36,108 @@ export interface SubscriptionPlanApiItem {
   billingCycle: string;
   maxCustomers: number | null;
   maxMonthlyBookings: number | null;
-  features: string | null;
+  maxWorks: number | null;
+  maxStorageBytes: number | null;
+  maxMarketingExports: number | null;
+  maxMonthlySms: number | null;
+  maxEmployees: number | null;
+  targetStage: string | null;
+  description: string | null;
+  features: string | string[] | null;
   status: string;
 }
 
+const PLAN_ORDER: PlanCode[] = ['free', 'starter', 'advanced', 'ultimate'];
+const PLAN_NAMES: Record<PlanCode, string> = {
+  free: '免费版',
+  starter: '入门版',
+  advanced: '高阶版',
+  ultimate: '终极版',
+};
+
+const FEATURE_NAMES: Record<string, string> = {
+  customer_management: '客户管理',
+  booking: '预约管理',
+  works: '作品管理',
+  branding: '品牌定制',
+  basic_insights: '基础经营数据',
+  monthly_insights: '月度经营统计',
+  insights: '高级经营分析',
+  smart_repurchase: '智能复购提醒',
+  customer_segmentation: '客户分层',
+  team_management: '团队管理',
+  team_branding: '团队品牌',
+  team_insights: '团队报表',
+  automation: '自动化运营',
+};
+
+function parseFeatures(value: SubscriptionPlanApiItem['features']): string[] {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter((item) => typeof item === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function mapPlan(plan: SubscriptionPlanApiItem): PlanDefinition {
+  const features = parseFeatures(plan.features).map((code) => ({
+    code,
+    name: FEATURE_NAMES[code] || code,
+    description: '',
+  }));
+  const highlights = [
+    plan.maxCustomers == null ? '活跃客户不限' : `${plan.maxCustomers} 名活跃客户`,
+    plan.maxMonthlyBookings == null ? '每月预约不限' : `每月 ${plan.maxMonthlyBookings} 次预约`,
+    plan.maxWorks == null ? '作品高额度' : `${plan.maxWorks} 个作品`,
+    plan.maxEmployees && plan.maxEmployees > 1 ? `最多 ${plan.maxEmployees} 人协作` : '',
+  ].filter(Boolean);
+  return {
+    ...plan,
+    code: PLAN_ORDER.includes(plan.code as PlanCode)
+      ? (plan.code as PlanCode)
+      : 'free',
+    features,
+    highlights,
+  };
+}
+
+export function getCurrentPlan(
+  subscription?: TechnicianSubscription | null,
+): PlanDefinition {
+  const code =
+    subscription?.status === 'active' &&
+    PLAN_ORDER.includes(subscription.planCode as PlanCode)
+      ? (subscription.planCode as PlanCode)
+      : 'free';
+  return {
+    code,
+    name: PLAN_NAMES[code],
+    price: 0,
+    billingCycle: code === 'free' ? 'free' : 'monthly',
+    maxCustomers: null,
+    maxMonthlyBookings: null,
+    features: [],
+    highlights: [],
+  };
+}
+
+export function getSubscriptionStatusLabel(
+  subscription?: TechnicianSubscription | null,
+): string {
+  if (!subscription) return PLAN_NAMES.free;
+  if (['cancelled', 'expired'].includes(subscription.status)) return '已过期';
+  const code = PLAN_ORDER.includes(subscription.planCode as PlanCode)
+    ? (subscription.planCode as PlanCode)
+    : 'free';
+  return PLAN_NAMES[code];
+}
+
 export const subscriptionService = {
-  async getPlans(): Promise<SubscriptionPlanApiItem[]> {
+  async getPlans(): Promise<PlanDefinition[]> {
     const response = await api.get<SubscriptionPlanApiItem[]>('/subscriptions/plans');
-    return response.data;
+    return response.data.map(mapPlan);
   },
 };

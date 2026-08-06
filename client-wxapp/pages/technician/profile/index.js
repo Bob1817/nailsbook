@@ -14,8 +14,10 @@ const ORDER_SHORTCUTS = [
 
 // 工具入口（仅保留有对应页面的）
 const TOOLS = [
+  { key: 'homepage',    label: '我的主页' },
   { key: 'services',    label: '服务管理' },
   { key: 'works',       label: '作品管理' },
+  { key: 'marketing',   label: '宣传物料' },
   { key: 'designs',     label: '设计需求' },
   { key: 'homeService', label: '上门设置' },
   { key: 'serviceTime', label: '服务时间' },
@@ -26,8 +28,10 @@ const TOOLS = [
 ];
 
 const TOOL_ROUTES = {
+  homepage:     '/pages/technician/homepage-settings/index',
   services:     '/pages/technician/services/index',
   works:        '/pages/technician/works/index',
+  marketing:    '/pages/technician/marketing-materials/index',
   designs:      '/pages/technician/design-requests/index',
   homeService:  '/pages/technician/home-service-settings/index',
   serviceTime:  '/pages/technician/service-time/index',
@@ -295,7 +299,7 @@ Page({
     const code = u.invitationCode || '';
     return {
       title: `美甲师 ${u.name || '小美'} 的名片`,
-      path: u.id ? `/pages/client/works/index?techId=${u.id}&source=card` : (code ? `/pages/client/login/index?invite=${code}` : '/pages/role-select/index'),
+      path: u.id ? `/pages/client/works/index?techId=${u.id}&source=card` : (code ? `/pages/client/login/index?invite=${code}` : '/pages/login/index'),
       imageUrl: u.avatarUrl || ''
     };
   },
@@ -708,7 +712,7 @@ Page({
   navigateToAbout() { wx.navigateTo({ url: '/pages/technician/about/index' }); },
 
   switchRole() {
-    wx.reLaunch({ url: '/pages/role-select/index' });
+    wx.reLaunch({ url: '/pages/login/index' });
   },
 
   logout() {
@@ -718,7 +722,7 @@ Page({
       success: (res) => {
         if (!res.confirm) return;
         getApp().logout();
-        wx.reLaunch({ url: '/pages/role-select/index' });
+        wx.reLaunch({ url: '/pages/login/index' });
       }
     });
   }

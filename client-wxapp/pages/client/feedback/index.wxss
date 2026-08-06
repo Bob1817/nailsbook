@@ -1,5 +1,5 @@
 page {
-  background: #f5f6fa;
+  background: var(--bg-page);
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -17,28 +17,28 @@ page {
 .content {
   flex: 1;
   min-height: 0;
-  padding: 24rpx 32rpx;
+  padding: var(--space-md) 32rpx;
 }
 
 /* 引导 */
 .intro { padding: 8rpx 8rpx 24rpx; }
 .intro-title {
   display: block;
-  font-size: 36rpx;
-  font-weight: 700;
-  color: #1f2937;
+  font-size: var(--font-lg);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
   margin-bottom: 8rpx;
 }
 .intro-sub {
   display: block;
-  font-size: 26rpx;
-  color: #6b7280;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
 }
 
 /* 卡片 */
 .card {
-  background: #fff;
-  border-radius: 24rpx;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
   padding: 8rpx 28rpx;
   box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
@@ -46,15 +46,15 @@ page {
 .field {
   position: relative;
   padding: 26rpx 0;
-  border-bottom: 1rpx solid #f0f1f4;
+  border-bottom: 1rpx solid var(--border-card);
 }
 .field:last-child { border-bottom: none; }
 
 .field-label {
   display: block;
-  font-size: 26rpx;
-  color: #6b7280;
-  margin-bottom: 16rpx;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  margin-bottom: var(--space-sm);
 }
 
 .field-input {
@@ -62,13 +62,13 @@ page {
   height: 88rpx;
   padding:0 18rpx;
   border:2rpx solid transparent;
-  border-radius:14rpx;
-  background:#f9fafb;
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
   box-sizing:border-box;
-  font-size: 30rpx;
-  color: #1f2937;
+  font-size: var(--font-md);
+  color: var(--text-primary);
 }
-.field-input:focus,.field-area:focus { border-color:#ff6b8a; background:#fff; }
+.field-input:focus,.field-area:focus { border-color: var(--brand-primary); background: var(--bg-card); }
 
 .ph { color: #c4c9d4; }
 
@@ -76,7 +76,7 @@ page {
   position: absolute;
   right: 0;
   top: 26rpx;
-  font-size: 22rpx;
+  font-size: var(--font-xs);
   color: #c4c9d4;
 }
 
@@ -86,11 +86,11 @@ page {
   justify-content: space-between;
   min-height: 88rpx;
   padding:0 18rpx;
-  border-radius:14rpx;
-  background:#f9fafb;
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
 }
-.picker-value { font-size: 30rpx; color: #1f2937; }
-.picker-arrow { font-size: 36rpx; color: #767b84; transform: rotate(90deg); }
+.picker-value { font-size: var(--font-md); color: var(--text-primary); }
+.picker-arrow { font-size: var(--font-lg); color: var(--text-muted); transform: rotate(90deg); }
 
 .field-textarea .field-count {
   position: static;
@@ -102,13 +102,13 @@ page {
 .field-area {
   width: 100%;
   min-height: 200rpx;
-  font-size: 30rpx;
-  color: #1f2937;
+  font-size: var(--font-md);
+  color: var(--text-primary);
   line-height: 1.6;
   padding:18rpx;
   border:2rpx solid transparent;
-  border-radius:14rpx;
-  background:#f9fafb;
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
   box-sizing:border-box;
 }
 
@@ -117,17 +117,17 @@ page {
   flex-shrink: 0;
   padding: 20rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
-  background: #f5f6fa;
+  background: var(--bg-page);
 }
 .submit-btn {
   width: 100%;
   height: 92rpx;
   line-height: 92rpx;
-  background: linear-gradient(135deg, #FF6B8A 0%, #A78BFA 100%);
-  color: #fff;
-  border-radius: 24rpx;
-  font-size: 30rpx;
-  font-weight: 600;
+  background: var(--brand-gradient);
+  color: var(--text-inverse);
+  border-radius: var(--radius-md);
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
 }
 .submit-btn::after { border: none; }
 .submit-btn.disabled { opacity: 0.6; }

@@ -1,11 +1,8 @@
-<nav-bar title="我的美甲记录" showBack/>
+<nav-bar title="美甲记录" show-back="{{true}}" title-center="{{true}}"/>
 <view class="page">
   <view class="record-header">
-    <view>
-      <text class="record-header-title">我的美甲记录</text>
-      <text class="record-header-copy">按时间收藏每一次完成的美甲</text>
-    </view>
-    <view class="record-count"><text class="record-count-value">{{matchedRecords.length}}</text><text class="record-count-label">次记录</text></view>
+    <text class="record-header-copy">按时间记录每一次完成的美甲</text>
+    <text class="record-count"><text class="record-count-value">{{matchedRecords.length}}</text> 次记录</text>
   </view>
 
   <view wx:if="{{loading}}" class="state-text">正在整理你的美甲记录…</view>
@@ -25,16 +22,12 @@
 
   <view wx:if="{{!loading && !loadFailed && records.length}}" class="timeline">
     <view wx:for="{{records}}" wx:key="id" class="timeline-item">
-      <view class="timeline-rail">
-        <view class="timeline-dot"></view>
-        <view wx:if="{{index < records.length - 1}}" class="timeline-line"></view>
-      </view>
+      <view class="moment-date-block"><text class="moment-day">{{item.dayText}}</text><text class="moment-month">{{item.monthText}}</text></view>
       <view class="moment-card">
         <view class="moment-head" bindtap="viewRecord" data-type="{{item.targetType}}" data-id="{{item.targetId}}">
-          <view class="moment-date-block"><text class="moment-day">{{item.dayText}}</text><text class="moment-month">{{item.monthText}}</text></view>
           <view class="moment-meta">
             <text class="moment-title">{{item.title}}</text>
-            <text class="moment-tech">{{item.technicianName}} · {{item.yearText}}</text>
+            <text class="moment-tech">{{item.technicianName}} · {{item.yearText}}年</text>
           </view>
           <text class="moment-arrow">›</text>
         </view>
@@ -42,9 +35,9 @@
         <view wx:if="{{item.imageUrls.length}}" class="moment-gallery gallery-{{item.imageUrls.length > 2 ? 'grid' : 'wide'}}">
           <image wx:for="{{item.imageUrls}}" wx:for-item="photo" wx:key="*this" wx:if="{{index < 9}}" class="moment-photo" src="{{photo}}" mode="aspectFill" catchtap="previewRecordImage" data-record-id="{{item.id}}" data-url="{{photo}}" lazy-load role="button" aria-label="{{item.dateText}}的美甲照片，点击查看和创作"/>
         </view>
-        <view wx:else class="moment-empty">
-          <text class="moment-empty-title">这次美甲还没有照片</text>
-          <text class="moment-empty-copy">你可以上传实拍图，或等待美甲师关联作品</text>
+        <view wx:else class="moment-empty" catchtap="addRecordPhotos" data-order-id="{{item.orderId}}">
+          <text class="moment-empty-title">添加这次的美甲照片</text>
+          <text class="moment-empty-copy">记录颜色、款式和当时的心情</text>
         </view>
         <text wx:if="{{item.clientPhotos.length}}" class="photo-manage-hint">轻触照片可查看、创作；你上传的照片还可移除</text>
 
@@ -62,9 +55,9 @@
           <view wx:if="{{item.orderId}}" class="moment-action" catchtap="addRecordPhotos" data-order-id="{{item.orderId}}">
             {{uploadingOrderId === item.orderId ? '上传中…' : (item.clientPhotos.length ? '继续添加照片' : '上传美甲照片')}}
           </view>
-          <view wx:if="{{item.imageUrls.length}}" class="moment-action moment-action-primary" catchtap="createPhoto" data-url="{{item.imageUrls[0]}}">生成朋友圈分享图</view>
+          <view wx:if="{{item.imageUrls.length}}" class="moment-action" catchtap="createPhoto" data-url="{{item.imageUrls[0]}}">生成分享图</view>
+          <view class="moment-action" catchtap="bookAgain" data-tech-id="{{item.technicianId}}">再次预约</view>
         </view>
-        <view class="book-again" catchtap="bookAgain" data-tech-id="{{item.technicianId}}">再次预约 {{item.technicianName}}<text>›</text></view>
       </view>
     </view>
   </view>

@@ -91,9 +91,17 @@ for SVC in $SERVICES; do
         continue
     fi
     if [ "$SVC" = "admin-web" ]; then
-        log "拉取外部构建的 $SVC 镜像 ..."
-        docker compose pull "$SVC" 2>&1 || err "$SVC 镜像拉取失败"
-        log "$SVC 镜像拉取完成 ✓"
+        log "构建 $SVC ..."
+        docker compose build "$SVC" 2>&1 || err "$SVC 构建失败"
+        # 用 commit hash 打 tag，写入 .env 精确锁定版本
+        COMMIT_SHORT=$(git rev-parse --short=7 HEAD)
+        docker tag "nailbook-admin-web:latest" "nailbook-admin-web:$COMMIT_SHORT" 2>/dev/null || true
+        if [ -f .env ] && grep -q "^ADMIN_WEB_IMAGE=" .env; then
+            sed -i "s|^ADMIN_WEB_IMAGE=.*|ADMIN_WEB_IMAGE=nailbook-admin-web:$COMMIT_SHORT|" .env
+        else
+            echo "ADMIN_WEB_IMAGE=nailbook-admin-web:$COMMIT_SHORT" >> .env
+        fi
+        log "$SVC 构建完成 ✓ (tag: $COMMIT_SHORT)"
         continue
     fi
     log "构建 $SVC ..."

@@ -1,37 +1,41 @@
-<nav-bar title="邀请基金" showBack/>
+<nav-bar title="邀请基金" show-back="{{true}}" title-center="{{true}}"/>
 <view class="page">
-  <view wx:if="{{loading}}" class="state-card">加载中...</view>
+  <view wx:if="{{loading}}" class="state-card">正在加载基金账户…</view>
   <view wx:elif="{{loadFailed}}" class="state-card">
-    <text>活动配置暂时无法加载</text>
+    <text>基金账户暂时无法加载</text>
     <view class="retry-btn" bindtap="loadCampaign">重新加载</view>
   </view>
+
   <block wx:else>
-    <view class="notice-card notice-active">
-      <text class="notice-title">邀请奖励规则</text>
-      <text class="notice-text">{{rewardNotice}}</text>
-    </view>
-
-    <view class="rule-card">
-      <text class="rule-title">计算口径</text>
-      <text class="rule-text">有效实付金额为订单报价减去该订单使用的美甲基金。奖励在被邀请客户首个有效订单完成后发放，同一客户在同一美甲师下只奖励一次。</text>
-    </view>
-
-    <view class="card">
-      <text class="rule-title">推荐状态（{{relations.length}}）</text>
-      <text wx:if="{{!relations.length}}" class="rule-text">还没有直接推荐记录</text>
-      <view wx:for="{{relations}}" wx:key="id" class="relation-row">
-        <text>{{item.referrer.nickname || '客户'}} → {{item.referred.nickname || '新客户'}}</text>
-        <text class="relation-status">{{item.status === 'pending_first_order' ? '待完成首单' : item.status === 'qualified' ? '已满足奖励资格' : item.status}}</text>
+    <view class="balance-card">
+      <text class="balance-label">当前可用基金</text>
+      <view class="balance-row"><text class="currency">¥</text><text class="balance-value">{{fundTotals.available}}</text></view>
+      <view class="balance-meta">
+        <view class="meta-item"><text class="meta-label">待生效</text><text class="meta-value">¥{{fundTotals.pending}}</text></view>
+        <view class="meta-divider"></view>
+        <view class="meta-item"><text class="meta-label">累计使用</text><text class="meta-value">¥{{fundTotals.used}}</text></view>
       </view>
     </view>
 
-    <view class="card">
-      <text class="rule-title">基金成本</text>
-      <text class="fund-cost">累计发放 ¥{{issuedCost}}</text>
-      <view class="fund-summary">
-        <text>当前可用 ¥{{fundTotals.available}}</text>
-        <text>已使用 ¥{{fundTotals.used}}</text>
+    <view class="section-head">
+      <text class="section-title">基金明细</text>
+      <view class="legend"><text class="legend-income">新增</text><text class="legend-expense">消耗</text></view>
+    </view>
+
+    <view wx:if="{{transactions.length}}" class="ledger-card">
+      <view wx:for="{{transactions}}" wx:key="id" class="ledger-row">
+        <view class="ledger-icon ledger-icon-{{item.type}}"><text>{{item.type === 'income' ? '+' : '−'}}</text></view>
+        <view class="ledger-main">
+          <text class="ledger-title">{{item.title}}</text>
+          <text class="ledger-detail">{{item.date}} · {{item.clientName}} · {{item.statusText}}</text>
+        </view>
+        <text class="ledger-amount ledger-amount-{{item.type}}">{{item.amountText}}</text>
       </view>
+    </view>
+    <view wx:else class="empty-card">
+      <view class="empty-wallet"></view>
+      <text class="empty-title">暂无基金明细</text>
+      <text class="empty-copy">邀请奖励入账或基金抵扣后会显示在这里</text>
     </view>
   </block>
 </view>

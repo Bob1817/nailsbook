@@ -39,13 +39,33 @@ export class TechnicianSubscriptionsPublicController {
   @ApiOperation({ summary: '获取订阅套餐列表' })
   @ApiResponse({ status: 200, description: '返回套餐列表' })
   findPlans() {
-    return this.subscriptionsService.findPlans();
+    return this.subscriptionsService.findPlans(true);
   }
 
   @Get('current')
   @ApiOperation({ summary: '获取当前美甲师订阅、权益、用量和额度状态' })
   current(@Req() request: { user: { technicianId: number } }) {
     return this.subscriptionsService.getCurrentForTechnician(
+      request.user.technicianId,
+    );
+  }
+
+  @Get('change-preview/:planId')
+  @ApiOperation({ summary: '预览套餐变更后的额度和只读影响' })
+  previewChange(
+    @Req() request: { user: { technicianId: number } },
+    @Param('planId') planId: string,
+  ) {
+    return this.subscriptionsService.previewPlanChange(
+      request.user.technicianId,
+      parseInt(planId, 10),
+    );
+  }
+
+  @Get('changes')
+  @ApiOperation({ summary: '获取当前美甲师套餐变更记录' })
+  changes(@Req() request: { user: { technicianId: number } }) {
+    return this.subscriptionsService.findSubscriptionChanges(
       request.user.technicianId,
     );
   }
@@ -143,6 +163,25 @@ export class TechnicianSubscriptionsController {
     return this.subscriptionsService.findTechnicianSubscriptions(
       technicianId ? parseInt(technicianId, 10) : undefined,
       status,
+    );
+  }
+
+  @Get('metrics/overview')
+  @Permissions('subscription:view')
+  @ApiOperation({ summary: '获取订阅升级触发和套餐变更指标' })
+  metrics(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.subscriptionsService.getSubscriptionMetrics(startDate, endDate);
+  }
+
+  @Get('technicians/:technicianId/changes')
+  @Permissions('subscription:view')
+  @ApiOperation({ summary: '获取美甲师套餐变更审计记录' })
+  changes(@Param('technicianId') technicianId: string) {
+    return this.subscriptionsService.findSubscriptionChanges(
+      parseInt(technicianId, 10),
     );
   }
 

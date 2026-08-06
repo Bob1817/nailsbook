@@ -122,7 +122,7 @@
             <view wx:else class="card-img card-img-empty"></view>
             <view class="card-gradient"></view>
             <view class="card-top">
-              <view class="card-tech-pill">
+              <view class="card-tech-pill" catchtap="viewArtist" data-id="{{item.technicianId}}">
                 <image wx:if="{{item.technicianAvatarUrl}}" src="{{item.technicianAvatarUrl}}" mode="aspectFill" class="card-tech-av" binderror="onAvatarError" data-id="{{item.id}}" lazy-load aria-label="{{item.technicianName}}的头像" />
                 <view wx:else class="card-tech-av-fallback">
                   <text class="card-tech-av-char">{{item.techInitial}}</text>
@@ -163,7 +163,7 @@
             <view wx:else class="card-img card-img-empty"></view>
             <view class="card-gradient"></view>
             <view class="card-top">
-              <view class="card-tech-pill">
+              <view class="card-tech-pill" catchtap="viewArtist" data-id="{{item.technicianId}}">
                 <image wx:if="{{item.technicianAvatarUrl}}" src="{{item.technicianAvatarUrl}}" mode="aspectFill" class="card-tech-av" binderror="onAvatarError" data-id="{{item.id}}" lazy-load aria-label="{{item.technicianName}}的头像" />
                 <view wx:else class="card-tech-av-fallback">
                   <text class="card-tech-av-char">{{item.techInitial}}</text>

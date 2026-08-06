@@ -83,7 +83,8 @@ Page({
   },
 
   viewWork(e) {
-    const id = e.currentTarget.dataset.id;
+    const id = e.detail && e.detail.id;
+    if (!id) return;
     wx.navigateTo({ url: `/pages/client/work-detail/index?id=${id}` });
   },
 

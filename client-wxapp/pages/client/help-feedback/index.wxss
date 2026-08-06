@@ -1,6 +1,6 @@
 .container {
   min-height: 100vh;
-  background: #f8f9fc;
+  background: var(--bg-page);
   padding: 32rpx;
 }
 
@@ -10,16 +10,16 @@
 
 .section-title {
   display: block;
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 16rpx;
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-sm);
   padding: 0 4rpx;
 }
 
 .faq-card {
-  background: #f8f9fc;
-  border-radius: 24rpx;
+  background: var(--bg-page);
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -28,7 +28,7 @@
 }
 
 .faq-border {
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid var(--border-card);
 }
 
 .faq-header {
@@ -41,14 +41,14 @@
 
 .faq-q {
   flex: 1;
-  font-size: 28rpx;
-  color: #1f2937;
-  line-height: 1.5;
+  font-size: var(--font-md);
+  color: var(--text-primary);
+  line-height: var(--leading-normal);
 }
 
 .faq-arrow {
-  font-size: 36rpx;
-  color: #6b7280;
+  font-size: var(--font-lg);
+  color: var(--text-muted);
   transition: transform 0.2s;
   display: inline-block;
 }
@@ -62,34 +62,34 @@
 }
 
 .faq-a {
-  font-size: 26rpx;
-  color: #374151;
+  font-size: var(--font-sm);
+  color: var(--text-body);
   line-height: 1.7;
 }
 
 .contact-card {
   display: flex;
   align-items: center;
-  background: #f8f9fc;
-  border-radius: 24rpx;
+  background: var(--bg-page);
+  border-radius: var(--radius-md);
   padding: 28rpx 40rpx;
   gap: 24rpx;
-  margin-bottom: 16rpx;
+  margin-bottom: var(--space-sm);
 }
 .contact-card:active { opacity: 0.7; }
 
 .contact-icon-wrap {
   width: 80rpx;
   height: 80rpx;
-  border-radius: 14rpx;
-  background: #fff0f5;
+  border-radius: var(--radius-sm);
+  background: var(--bg-tag);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.contact-icon { font-size: 40rpx; }
+.contact-icon { font-size: var(--font-xl); }
 
 /* CSS Icon: Chat Bubble */
 .menu-icon {
@@ -111,7 +111,7 @@
   right: 0;
   height: 18rpx;
   border-radius: 6rpx;
-  background: #ff6b8a;
+  background: var(--brand-primary);
 }
 .icon-chat::after {
   content: '';
@@ -122,7 +122,7 @@
   height: 0;
   border-left: 5rpx solid transparent;
   border-right: 5rpx solid transparent;
-  border-top: 7rpx solid #ff6b8a;
+  border-top: 7rpx solid var(--brand-primary);
 }
 
 .contact-info {
@@ -131,26 +131,26 @@
 
 .contact-title {
   display: block;
-  font-size: 30rpx;
-  color: #1f2937;
+  font-size: var(--font-md);
+  color: var(--text-primary);
   margin-bottom: 6rpx;
 }
 
 .contact-desc {
   display: block;
-  font-size: 24rpx;
-  color: #6b7280;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
 }
 
 .arrow {
-  font-size: 40rpx;
-  color: #6b7280;
+  font-size: var(--font-xl);
+  color: var(--text-muted);
 }
 
 .contact-tip {
   display: block;
-  font-size: 24rpx;
-  color: #6b7280;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
   line-height: 1.6;
   padding: 0 4rpx;
 }

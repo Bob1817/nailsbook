@@ -11,7 +11,7 @@
   <button wx:if="{{customerId}}" class="retry-btn" bindtap="loadCustomer">重新加载</button>
 </view>
 
-<view wx:else class="page">
+<view wx:else class="page {{customer.archiveEligible ? 'page-with-archive' : ''}}">
   <!-- ============ Header ============ -->
   <view class="header">
     <view class="header-row">
@@ -207,6 +207,7 @@
   <!-- ============ 底部操作 ============ -->
   <view class="bottom-actions">
     <view class="action-btn action-primary" bindtap="newOrder">联系客户发起预约</view>
+    <view wx:if="{{customer.archiveEligible}}" class="archive-btn" bindtap="archiveCustomer">归档长期未互动客户</view>
   </view>
 </view>
 

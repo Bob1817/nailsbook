@@ -228,6 +228,24 @@ Page({
     });
   },
 
+  archiveCustomer() {
+    wx.showModal({
+      title: '归档客户',
+      content: '归档后客户资料和历史记录仍会保留；客户再次预约时会自动恢复。',
+      confirmText: '确认归档',
+      success: async (result) => {
+        if (!result.confirm) return;
+        try {
+          await api.technician.customers.archive(this.customerId);
+          wx.showToast({ title: '客户已归档', icon: 'success' });
+          setTimeout(() => wx.navigateBack(), 600);
+        } catch (err) {
+          wx.showToast({ title: err.message || '归档失败', icon: 'none' });
+        }
+      }
+    });
+  },
+
   onFollowUpInput(e) {
     this.setData({ followUpContent: e.detail.value });
   },

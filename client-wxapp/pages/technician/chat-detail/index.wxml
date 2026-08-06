@@ -45,13 +45,17 @@
 
           <!-- 预约/预约卡片消息 -->
           <view wx:elif="{{item.isOrderCard}}" class="order-card-msg {{item.isMe ? 'card-right' : 'card-left'}}" bindtap="viewOrder" data-id="{{item.relatedId}}">
-            <view class="card-accent"></view>
             <view class="card-inner">
               <view class="card-header">
-                <text class="card-label">预约卡片</text>
+                <view class="card-calendar-icon"><view class="card-calendar-line"></view></view>
+                <text class="card-label">预约通知</text>
+                <text class="card-kind">预约</text>
               </view>
               <text class="card-content">{{item.content}}</text>
-              <text class="card-action">查看详情 ›</text>
+              <view class="card-footer">
+                <text class="card-action">查看预约详情</text>
+                <text class="card-chevron">›</text>
+              </view>
             </view>
           </view>
 

@@ -11,6 +11,9 @@ const P = '/api/public';
 const auth = {
   wechatLogin: (code, role) =>
     api.post('/api/wechat/auth/login', { code, role }, { needAuth: false, silent: true }),
+  /** 获取微信 session token（登录页 _getWechatSession 使用） */
+  wechatSession: (code) =>
+    api.post('/api/wechat/auth/login', { code }, { needAuth: false, silent: true }),
   completeWechatClient: (data) =>
     api.post('/api/wechat/auth/client/complete', data, { needAuth: false }),
   completeWechatTechnician: (data) =>
@@ -23,6 +26,26 @@ const auth = {
 
   registerClient: (phone, password, inviteCode, source) =>
     api.post(`${C}/auth/register-by-invite`, { phone, password, inviteCode, source }, { needAuth: false }),
+
+  /** 新流程：SMS 免邀请码注册 */
+  registerBySms: (phone, smsCode) =>
+    api.post(`${C}/auth/register-by-sms`, { phone, smsCode }, { needAuth: false }),
+
+  /** 新流程：SMS 验证码直接登录 */
+  loginBySms: (phone, code) =>
+    api.post(`${C}/auth/login-by-sms`, { phone, code }, { needAuth: false }),
+
+  /** 新流程：使用激活密钥激活美甲师身份（需要客户 JWT） */
+  activateTechnician: (activationKey) =>
+    api.post(`${C}/auth/activate-technician`, { activationKey }, { needAuth: true }),
+
+  /** 发送 SMS 登录验证码 */
+  sendSmsCodeForLogin: (phone) =>
+    api.post(`${C}/auth/send-sms-login`, { phone }, { needAuth: false }),
+
+  /** 发送 SMS 注册验证码 */
+  sendSmsCodeForRegister: (phone) =>
+    api.post(`${C}/auth/send-sms-register`, { phone }, { needAuth: false }),
 
   registerTechnician: (inviteKey, name, phone, password) =>
     api.post(`${T}/auth/register`, { inviteKey, name, phone, password }, { needAuth: false }),
@@ -170,6 +193,7 @@ const technician = {
   orders: {
     list: (params) => api.get(`${T}/orders`, params),
     trips: () => api.get(`${T}/orders/trips`),
+    incomeCalendar: () => api.get(`${T}/orders/income-calendar`),
     detail: (id) => api.get(`${T}/orders/${id}`),
     create: (data) => api.post(`${T}/orders`, data),
     update: (id, data) => api.patch(`${T}/orders/${id}`, data),
@@ -187,6 +211,7 @@ const technician = {
     createFollowUp: (id, data) => api.post(`${T}/customers/${id}/follow-ups`, data),
     completeFollowUp: (id, followUpId) => api.patch(`${T}/customers/${id}/follow-ups/${followUpId}/complete`, {}),
     updateName: (id, name) => api.patch(`${T}/customers/${id}/name`, { name }),
+    archive: (id) => api.patch(`${T}/customers/${id}/archive`, {}),
     updateTags: (id, tags) => api.patch(`${T}/customers/${id}/tags`, { tags })
   },
 
@@ -226,8 +251,23 @@ const technician = {
   subscription: {
     plans: () => api.get(`${T}/subscriptions/plans`),
     current: () => api.get(`${T}/subscriptions/current`),
+    changePreview: (planId) => api.get(`${T}/subscriptions/change-preview/${planId}`),
+    changes: () => api.get(`${T}/subscriptions/changes`),
     detail: (id) => api.get(`${T}/subscriptions/${id}`),
     create: (data) => api.post(`${T}/subscriptions`, data)
+  },
+
+  marketingMaterials: {
+    list: () => api.get(`${T}/marketing-materials`),
+    create: (data) => api.post(`${T}/marketing-materials`, data),
+    update: (id, data) => api.patch(`${T}/marketing-materials/${id}`, data),
+    preview: (id) => api.post(`${T}/marketing-materials/${id}/preview`, {}),
+    export: (id, idempotencyKey) => api.post(`${T}/marketing-materials/${id}/export`, { idempotencyKey })
+  },
+
+  revenues: {
+    exportCsv: (params) => api.get(`${T}/revenues/export`, params, { responseType: 'arraybuffer' }),
+    exportFull: (params) => api.get(`${T}/revenues/export/full`, params, { responseType: 'arraybuffer' })
   },
 
   referralCampaign: {

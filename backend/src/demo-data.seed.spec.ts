@@ -4,8 +4,9 @@ describe('ensureDemoData', () => {
   it('upserts a stable demo dataset for the primary technician, five clients, and platform-side records', async () => {
     const planIds = new Map<string, number>([
       ['free', 1],
-      ['pro', 2],
-      ['studio_plus', 3],
+      ['starter', 2],
+      ['advanced', 3],
+      ['ultimate', 4],
     ]);
     const technicianIds = new Map<string, number>();
     const clientIds = new Map<string, number>();
@@ -235,7 +236,7 @@ describe('ensureDemoData', () => {
 
     expect(prisma.subscriptionPlan.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { code: 'pro' },
+        where: { code: 'starter' },
       }),
     );
     expect(prisma.technician.upsert).toHaveBeenCalledWith(

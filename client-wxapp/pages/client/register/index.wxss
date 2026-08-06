@@ -1,6 +1,6 @@
 .container {
   min-height: 100vh;
-  background: #f8f9fc;
+  background: var(--bg-page);
   padding: 0 40rpx;
   padding-top: 40rpx;
 }
@@ -20,7 +20,7 @@
   width: 12rpx;
   height: 12rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #FF6B8A, #A78BFA);
+  background: var(--brand-gradient);
 }
 
 /* 头部 */
@@ -32,38 +32,39 @@
 .logo-circle {
   width: 100rpx;
   height: 100rpx;
-  border-radius: 24rpx;
-  background: linear-gradient(135deg, #FF6B8A 0%, #A78BFA 100%);
+  border-radius: var(--radius-md);
+  background: var(--brand-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 24rpx;
-  font-size: 48rpx;
-  font-weight: 700;
-  color: #fff;
-  box-shadow: 0 4rpx 24rpx rgba(15, 23, 42, 0.06), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
+  font-size: var(--font-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
 }
 
 .title {
   display: block;
-  font-size: 40rpx;
-  font-weight: 700;
-  color: #1f2937;
+  font-size: var(--font-xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
   margin-bottom: 8rpx;
 }
 
 .subtitle {
   display: block;
-  font-size: 28rpx;
-  color: #6b7280;
+  font-size: var(--font-md);
+  color: var(--text-muted);
 }
 
 /* 表单 */
 .form {
-  background: #f8f9fc;
-  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.92);
+  border: 2rpx solid #ebe6e9;
+  border-radius: var(--radius-md);
   padding: 32rpx;
-  box-shadow: 0 4rpx 24rpx rgba(15, 23, 42, 0.06), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
+  box-shadow: 0 8rpx 28rpx rgba(54, 43, 49, 0.045);
 }
 
 /* 提示横幅 */
@@ -72,32 +73,32 @@
   align-items: center;
   gap: 12rpx;
   background: #fff7ed;
-  border-radius: 14rpx;
+  border-radius: var(--radius-sm);
   padding: 20rpx;
-  margin-bottom: 24rpx;
+  margin-bottom: var(--space-md);
 }
 
 .hint-icon {
-  font-size: 28rpx;
+  font-size: var(--font-md);
   flex-shrink: 0;
 }
 
 .hint-text {
-  font-size: 26rpx;
+  font-size: var(--font-sm);
   color: #92400e;
   line-height: 1.4;
 }
 
 /* 表单项 */
 .form-item {
-  margin-bottom: 24rpx;
+  margin-bottom: var(--space-md);
 }
 
 .label {
   display: block;
-  font-size: 26rpx;
-  font-weight: 500;
-  color: #374151;
+  font-size: var(--font-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-body);
   margin-bottom: 12rpx;
 }
 
@@ -108,36 +109,39 @@
 .input  {
   width: 100%;
   height: 88rpx;
-  background: #f9fafb;
-  border-radius: 14rpx;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
   padding: 0 24rpx;
-  font-size: 28rpx;
-  color: #1f2937;
+  font-size: var(--font-md);
+  color: var(--text-primary);
   box-sizing: border-box;
-  border: 2rpx solid transparent;
-  transition: all 0.2s;
+  border: 2rpx solid #ddd8dc;
+  box-shadow: 0 2rpx 8rpx rgba(54, 43, 49, 0.035);
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
 }
 
 .input:focus  {
-  border-color: #FF6B8A;
-  background: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%);
+  border-color: #bd587d;
+  background: var(--bg-card);
+  box-shadow: 0 0 0 6rpx rgba(189, 88, 125, 0.08);
 }
 
 .input-error  {
-  border-color: #dc2626;
+  border-color: var(--text-error);
 }
 
 .readonly {
   width: 100%;
   height: 88rpx;
-  background: #f3f4f6;
-  border-radius: 14rpx;
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
   padding: 0 24rpx;
-  font-size: 28rpx;
-  color: #6b7280;
+  font-size: var(--font-md);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   box-sizing: border-box;
+  border: 2rpx solid #e5e1e4;
 }
 
 .spinner {
@@ -147,8 +151,8 @@
   transform: translateY(-50%);
   width: 32rpx;
   height: 32rpx;
-  border: 3rpx solid rgba(255, 107, 138, 0.3);
-  border-top-color: #FF6B8A;
+  border: 3rpx solid rgba(255,107,138,0.3) /* brand-primary-alpha */;
+  border-top-color: var(--brand-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -160,8 +164,8 @@
 /* 错误和成功提示 */
 .error-text {
   display: block;
-  font-size: 24rpx;
-  color: #dc2626;
+  font-size: var(--font-sm);
+  color: var(--text-error);
   margin-top: 8rpx;
 }
 
@@ -169,29 +173,29 @@
   display: flex;
   align-items: center;
   gap: 8rpx;
-  font-size: 24rpx;
+  font-size: var(--font-sm);
   color: #10b981;
   margin-top: 8rpx;
 }
 
 .success-icon {
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }
 
 /* 按钮 */
 .btn-primary {
   width: 100%;
   height: 96rpx;
-  background: linear-gradient(135deg, #FF6B8A 0%, #A78BFA 100%);
-  color: #fff;
-  font-size: 30rpx;
-  font-weight: 600;
-  border-radius: 24rpx;
+  background: var(--brand-gradient);
+  color: var(--text-inverse);
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   margin-top: 32rpx;
-  box-shadow: 0 4rpx 24rpx rgba(15, 23, 42, 0.06), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
+  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
   border: none;
 }
 
@@ -206,11 +210,11 @@
 /* 底部链接 */
 .footer-links {
   text-align: center;
-  margin-top: 24rpx;
+  margin-top: var(--space-md);
 }
 
 .link {
-  font-size: 28rpx;
-  color: #FF6B8A;
-  font-weight: 500;
+  font-size: var(--font-md);
+  color: var(--brand-primary);
+  font-weight: var(--weight-medium);
 }

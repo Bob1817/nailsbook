@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NailBook · 小程序设计预览</title>
+<style>
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  background: #e8ecf1; display: flex; justify-content: center; align-items: center;
+  min-height: 100vh; padding: 20px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== Design Tokens (1rpx = 0.5px on 375px screen) ===== */
+:root {
+  --brand-primary: #ff6b8a;
+  --brand-primary-light: #ff8fa3;
+  --brand-accent: #8b5cf6;
+  --brand-accent-light: #a78bfa;
+  --brand-gradient: linear-gradient(135deg, #ff6b8a 0%, #8b5cf6 100%);
+
+  --text-primary: #1f2937;
+  --text-body: #374151;
+  --text-muted: #6b7280;
+  --text-faint: #9ca3af;
+  --text-inverse: #ffffff;
+
+  --bg-page: #f8f9fc;
+  --bg-page-alt: #f0f0f4;
+  --bg-card: #ffffff;
+  --bg-input: #f9fafb;
+  --bg-tag: #fff0f5;
+
+  --border-default: #e5e7eb;
+  --border-light: rgba(255,107,138,0.08);
+
+  --radius-xs: 4px;
+  --radius-sm: 7px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 22px;
+  --radius-pill: 24px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 6px rgba(0,0,0,0.05);
+  --shadow-md: 0 2px 12px rgba(15,23,42,0.06);
+  --shadow-lg: 0 5px 13px rgba(15,23,42,0.05);
+  --shadow-elevated: 0 6px 16px rgba(15,23,42,0.08);
+
+  --font-xs: 11px;
+  --font-sm: 12px;
+  --font-md: 14px;
+  --font-lg: 16px;
+  --font-xl: 20px;
+  --font-2xl: 24px;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+
+  --touch-min: 44px;
+  --btn-height: 44px;
+  --btn-radius: 24px;
+  --btn-font-size: 15px;
+}
+
+/* ===== Phone Frame ===== */
+.phone-frame {
+  width: 375px; height: 812px;
+  background: #000; border-radius: 44px;
+  padding: 12px; position: relative;
+  box-shadow:
+    0 0 0 2px #1a1a1a,
+    0 0 0 4px #333,
+    0 20px 60px rgba(0,0,0,0.35);
+}
+.phone-notch {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  width: 150px; height: 28px; background: #000;
+  border-radius: 0 0 18px 18px; z-index: 100;
+}
+.phone-screen {
+  width: 100%; height: 100%; background: var(--bg-page);
+  border-radius: 34px; overflow: hidden;
+  position: relative; display: flex; flex-direction: column;
+}
+
+/* ===== Status Bar ===== */
+.status-bar {
+  height: 48px; background: #fff;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  padding: 0 24px 6px; font-size: 12px; font-weight: 600;
+  color: #000; flex-shrink: 0;
+}
+.status-time { font-size: 14px; font-weight: 700; }
+.status-icons { display: flex; gap: 6px; align-items: center; }
+.status-icons span { font-size: 11px; }
+
+/* ===== Nav Bar ===== */
+.nav-bar {
+  height: 44px; background: #fff; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; border-bottom: 0.5px solid rgba(0,0,0,0.06);
+}
+.nav-bar-title { font-size: var(--font-lg); font-weight: 700; color: var(--text-primary); }
+.nav-bar-back {
+  position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+  font-size: 18px; color: var(--text-primary); cursor: pointer;
+  width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+}
+
+/* ===== Page Content ===== */
+.page-content {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+.page-content::-webkit-scrollbar { display: none; }
+
+/* ===== Home Page ===== */
+.home-page { display: none; flex-direction: column; }
+.home-page.active { display: flex; }
+
+/* Hero Swiper */
+.hero-section {
+  margin: var(--space-lg) var(--space-xl) 0;
+  position: relative; border-radius: var(--radius-md);
+  overflow: hidden; background: var(--bg-card);
+  box-shadow: var(--shadow-md);
+}
+.hero-swiper-wrap { position: relative; width: 100%; height: 310px; overflow: hidden; }
+.hero-slide {
+  position: absolute; inset: 0; opacity: 0; transition: opacity 0.5s;
+  background-size: cover; background-position: center;
+}
+.hero-slide:nth-child(1) { background: linear-gradient(135deg, #fce4ec, #f3e5f5); }
+.hero-slide:nth-child(2) { background: linear-gradient(135deg, #e8eaf6, #fce4ec); }
+.hero-slide:nth-child(3) { background: linear-gradient(135deg, #fff3e0, #f3e5f5); }
+.hero-slide.active { opacity: 1; }
+.hero-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(7,10,20,0.24) 0%, rgba(7,10,20,0.02) 30%, rgba(7,10,20,0.08) 58%, rgba(7,10,20,0.76) 100%);
+  padding: var(--space-lg); display: flex; flex-direction: column; justify-content: flex-end;
+}
+.hero-bottom-row { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-sm); }
+.hero-info { flex: 1; min-width: 0; }
+.hero-info-title {
+  font-size: 17px; font-weight: 700; color: #fff;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
+}
+.hero-info-meta {
+  display: flex; align-items: center; gap: var(--space-xs);
+  margin-top: 5px; font-size: var(--font-sm); color: rgba(255,255,255,0.88);
+}
+.hero-cta-btn {
+  flex-shrink: 0; min-height: var(--touch-min);
+  background: rgba(0,0,0,0.34); color: #fff;
+  font-size: var(--font-sm); font-weight: 600;
+  padding: 0 var(--space-md); border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.25);
+  display: flex; align-items: center; gap: 2px; cursor: pointer;
+}
+.hero-cta-arrow { font-size: 17px; line-height: 1; }
+.hero-dots {
+  position: absolute; z-index: 2; top: 11px; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.hero-dot {
+  height: 3px; width: 3px; border-radius: 1.5px;
+  background: rgba(255,255,255,0.58); transition: width 0.3s; cursor: pointer;
+}
+.hero-dot.active { width: 12px; background: #fff; }
+
+/* Section */
+.section { margin: var(--space-2xl) var(--space-xl) 0; position: relative; }
+.section-header { display: flex; align-items: center; justify-content: space-between; }
+.section-title { font-size: 17px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.25px; }
+.section-sub { display: block; font-size: var(--font-sm); color: var(--text-muted); margin-top: 3px; margin-bottom: var(--space-md); }
+.section-more { font-size: 13px; color: var(--brand-primary); flex-shrink: 0; font-weight: 500; cursor: pointer; }
+
+/* Order Card */
+.order-card {
+  display: flex; position: relative; border-radius: var(--radius-xl);
+  overflow: hidden; cursor: pointer;
+  background: linear-gradient(135deg, #FF6B8A 0%, #FF7C98 52%, #FF8FA3 100%);
+  box-shadow: 0 9px 24px rgba(255,107,138,0.24);
+}
+.order-card-content { flex: 1; min-width: 0; padding: var(--space-xl); }
+.order-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-md); }
+.order-status-badge {
+  display: inline-flex; align-items: center;
+  padding: var(--space-xs) 11px; border-radius: var(--radius-md);
+  background: rgba(255,255,255,0.20); font-size: var(--font-xs); font-weight: 500;
+  color: #fff; border: 1px solid rgba(255,255,255,0.25);
+}
+.order-countdown {
+  display: flex; align-items: center; padding: var(--space-xs) 10px;
+  border-radius: 11px; font-size: var(--font-xs);
+  background: rgba(0,0,0,0.20); color: #fff; font-weight: 500;
+}
+.order-card-body { display: flex; align-items: flex-start; gap: var(--space-lg); margin-bottom: var(--space-lg); }
+.order-date-box {
+  width: 80px; height: 80px; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.20); border: 1px solid rgba(255,255,255,0.25);
+  border-radius: var(--space-lg);
+}
+.order-date-month, .order-date-weekday { font-size: var(--font-xs); color: rgba(255,255,255,0.78); font-weight: 500; }
+.order-date-day { font-size: 28px; font-weight: 700; color: #fff; line-height: 1; margin: 3px 0; }
+.order-details { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; padding-top: 1px; }
+.order-service-name {
+  display: block; font-size: 18px; font-weight: 600; color: #fff;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  letter-spacing: -0.25px; margin-bottom: 1px;
+}
+.order-detail-row { display: flex; align-items: flex-start; gap: var(--space-xs); line-height: 1.5; }
+.order-detail-text { font-size: 13px; color: rgba(255,255,255,0.84); }
+.order-detail-address {
+  font-size: 13px; color: rgba(255,255,255,0.80);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.order-card-actions { display: flex; gap: 6px; padding-top: var(--space-lg); border-top: 1px solid rgba(255,255,255,0.18); }
+.order-action-btn {
+  flex: 1; min-height: 40px; display: flex; align-items: center; justify-content: center; gap: 3px;
+  background: rgba(255,255,255,0.18); color: #fff; border-radius: var(--space-xl);
+  font-size: 13px; font-weight: 500; border: 1px solid rgba(255,255,255,0.20); cursor: pointer;
+}
+.order-action-primary { background: #fff; color: var(--brand-primary); font-weight: 600; border: none; }
+
+/* No Order */
+.no-order-card {
+  display: flex; border-radius: var(--radius-lg); overflow: hidden;
+  background: var(--bg-card); box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-light); cursor: pointer;
+}
+.no-order-content {
+  flex: 1; min-width: 0; min-height: 68px;
+  padding: var(--space-md) var(--space-lg);
+  display: flex; align-items: center; gap: 10px;
+}
+.no-order-copy { flex: 1; min-width: 0; }
+.no-order-title { display: block; font-size: 15px; font-weight: 600; color: var(--text-primary); }
+.no-order-sub { display: block; font-size: var(--font-xs); color: var(--text-muted); line-height: 1.5; margin-top: var(--space-xs); }
+.book-btn {
+  display: flex; align-items: center; flex-shrink: 0; min-height: var(--touch-min);
+  padding: 0 10px 0 var(--space-md); gap: var(--space-xs);
+  background: var(--bg-tag); color: var(--brand-primary);
+  font-size: var(--font-sm); font-weight: 600; border-radius: var(--radius-xl); cursor: pointer;
+}
+.book-btn-arrow { font-size: var(--font-lg); line-height: 1; }
+
+/* Asset Grid */
+.asset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 11px; }
+.asset-card {
+  min-height: 135px; padding: var(--space-lg);
+  border-radius: var(--radius-lg); display: flex; flex-direction: column; cursor: pointer;
+}
+.archive-card { background: linear-gradient(150deg, #3c2732, #6f4357); color: #fff; }
+.ai-card { background: linear-gradient(150deg, #fff1f7, #eee8ff); color: #492f40; }
+.asset-eyebrow { font-size: var(--font-xs); letter-spacing: 1px; opacity: 0.7; font-weight: 700; }
+.asset-title { margin-top: 10px; font-size: 15px; line-height: 1.25; font-weight: 700; }
+.asset-desc { margin-top: 6px; font-size: var(--font-xs); line-height: 1.75; opacity: 0.75; }
+.asset-link { margin-top: auto; padding-top: 11px; font-size: 11.5px; font-weight: 600; }
+
+/* Style Chips */
+.style-scroll { width: 100%; margin-top: 11px; white-space: nowrap; overflow-x: auto; }
+.style-scroll::-webkit-scrollbar { display: none; }
+.style-row { display: inline-flex; gap: 7px; padding: 1px 1px 4px; }
+.style-chip {
+  display: flex; align-items: center; justify-content: center;
+  min-height: var(--touch-min); padding: 0 var(--space-lg);
+  border-radius: var(--radius-xl); background: var(--bg-card);
+  border: 0.5px solid var(--border-default); color: var(--text-body);
+  font-size: 12.5px; font-weight: 600;
+  box-shadow: var(--shadow-sm); cursor: pointer; white-space: nowrap;
+}
+.style-chip:active { background: var(--bg-tag); border-color: var(--brand-primary-light); }
+
+/* Works Grid */
+.home-works-grid { column-count: 2; column-gap: var(--space-sm); }
+.home-work-card { break-inside: avoid; margin-bottom: var(--space-sm); cursor: pointer; }
+.home-work-img-wrap {
+  position: relative; width: 100%; overflow: hidden;
+  border-radius: var(--radius-md); box-shadow: var(--shadow-md);
+  border: 1px solid rgba(0,0,0,0.04);
+}
+.home-work-tall { padding-bottom: 133.33%; }
+.home-work-short { padding-bottom: 125%; }
+.home-work-img-placeholder {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, #fce4ec, #f3e5f5);
+}
+.home-work-gradient {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.18) 40%, rgba(0,0,0,0.78) 100%);
+}
+.home-work-top {
+  position: absolute; top: 0; left: 0; right: 0;
+  padding: var(--space-sm); display: flex; align-items: flex-start;
+  justify-content: space-between; z-index: 1;
+}
+.home-work-tech-pill {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(0,0,0,0.20); padding: var(--space-xs) 7px;
+  border-radius: var(--radius-lg); border: 1px solid rgba(255,255,255,0.1); max-width: 65%;
+}
+.home-work-tech-av {
+  width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+  background: rgba(255,255,255,0.18); display: flex;
+  align-items: center; justify-content: center;
+}
+.home-work-tech-av-char { font-size: 10px; font-weight: 600; color: #fff; }
+.home-work-tech-name { font-size: var(--font-xs); font-weight: 500; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-work-like-pill {
+  display: flex; align-items: center; gap: 3px;
+  background: rgba(0,0,0,0.20); padding: var(--space-xs) 7px;
+  border-radius: var(--radius-lg); flex-shrink: 0;
+}
+.home-work-like-num { font-size: var(--font-xs); color: #fff; font-weight: 500; }
+.home-work-bottom { position: absolute; bottom: 0; left: 0; right: 0; padding: var(--space-sm); z-index: 1; }
+.home-work-title { display: block; font-size: 13px; font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.25; }
+.home-work-tags { display: flex; gap: var(--space-xs); margin-top: 5px; }
+.home-work-tag {
+  font-size: var(--font-xs); color: rgba(255,255,255,0.92);
+  background: rgba(255,255,255,0.18); padding: 2px 7px; border-radius: var(--radius-md);
+}
+.home-work-foot-row { display: flex; align-items: center; justify-content: space-between; margin-top: 5px; }
+.home-work-date { font-size: var(--font-xs); color: rgba(255,255,255,0.52); }
+.home-work-cta { display: flex; align-items: center; gap: 3px; }
+.home-work-cta-text { font-size: var(--font-xs); color: rgba(255,255,255,0.78); }
+
+/* ===== Discover Page ===== */
+.discover-page { display: none; flex-direction: column; }
+.discover-page.active { display: flex; }
+
+.discover-head {
+  position: sticky; top: 0; z-index: 10; background: #fff;
+  padding: var(--space-sm) var(--space-md) 0;
+  border-bottom: 0.5px solid rgba(0,0,0,0.04);
+}
+.search-bar {
+  display: flex; align-items: center; gap: 7px;
+  background: #f5f6fa; border-radius: var(--radius-xl);
+  min-height: var(--touch-min); padding: 0 6px 0 var(--space-lg);
+  margin-bottom: var(--space-sm);
+}
+.search-icon {
+  width: var(--space-lg); height: var(--space-lg); flex-shrink: 0;
+  opacity: 0.45;
+}
+.search-input {
+  flex: 1; border: none; background: none; outline: none;
+  font-size: 13px; color: var(--text-body);
+  min-height: var(--touch-min);
+}
+.search-input::placeholder { color: var(--text-faint); }
+
+.cats-scroll { white-space: nowrap; overflow-x: auto; }
+.cats-scroll::-webkit-scrollbar { display: none; }
+.cats-bar { display: inline-flex; gap: 6px; padding-bottom: var(--space-sm); }
+.cat-pill {
+  display: inline-flex; align-items: center; min-height: var(--touch-min);
+  padding: 0 var(--space-lg); border-radius: var(--radius-lg);
+  font-size: 13px; font-weight: 500; color: var(--text-muted);
+  background: #f5f6fa; flex-shrink: 0; cursor: pointer;
+  transition: all 0.15s;
+}
+.cat-pill.active {
+  background: var(--brand-gradient); color: #fff;
+  box-shadow: 0 2px 8px rgba(255,107,138,0.28);
+}
+
+/* Waterfall */
+.waterfall-wrap { padding: var(--space-sm) var(--space-sm) 0; }
+.waterfall { display: flex; gap: var(--space-sm); align-items: flex-start; }
+.col { flex: 1; display: flex; flex-direction: column; gap: var(--space-sm); }
+
+.wcard {
+  position: relative; width: 100%;
+  overflow: hidden; border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md), 0 0.5px 2px rgba(15,23,42,0.04); cursor: pointer;
+}
+.wcard-tall { padding-bottom: 133.33%; }
+.wcard-mid { padding-bottom: 125%; }
+.wcard-short { padding-bottom: 100%; }
+.wcard-img-placeholder {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, #f1e8f0, #e8eaf6);
+}
+.wcard-gradient {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.25) 0%, transparent 35%, transparent 50%, rgba(0,0,0,0.72) 100%);
+}
+.wcard-top {
+  position: absolute; top: 0; left: 0; right: 0;
+  padding: 7px 7px 0; display: flex; align-items: center;
+  justify-content: space-between; z-index: 2;
+}
+.wcard-tech-pill {
+  display: flex; align-items: center; gap: var(--space-xs);
+  background: rgba(0,0,0,0.32); backdrop-filter: blur(3px);
+  padding: 3.5px 7px 3.5px 3.5px; border-radius: var(--radius-lg); max-width: 62%;
+}
+.wcard-tech-av {
+  width: 17px; height: 17px; border-radius: 50%; flex-shrink: 0;
+  background: rgba(255,255,255,0.2); display: flex;
+  align-items: center; justify-content: center;
+}
+.wcard-tech-av-char { font-size: 10px; font-weight: 700; color: #fff; }
+.wcard-tech-name {
+  font-size: var(--font-xs); font-weight: 500; color: #fff;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.wcard-like-pill {
+  display: flex; align-items: center; gap: 3px;
+  background: rgba(0,0,0,0.32); backdrop-filter: blur(3px);
+  padding: 3.5px 7px; border-radius: var(--radius-lg); flex-shrink: 0;
+}
+.wcard-like-num { font-size: var(--font-xs); color: #fff; font-weight: 500; line-height: 1; }
+.wcard-bottom { position: absolute; bottom: 0; left: 0; right: 0; padding: 7px; z-index: 2; }
+.wcard-title { display: block; font-size: var(--font-sm); font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.25; margin-bottom: var(--space-xs); }
+.wcard-tags { display: flex; gap: 3px; margin-bottom: 5px; flex-wrap: nowrap; overflow: hidden; }
+.wcard-tag { font-size: var(--font-xs); color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.16); padding: 1.5px 6px; border-radius: var(--radius-sm); white-space: nowrap; }
+.wcard-foot { display: flex; align-items: center; justify-content: space-between; }
+.wcard-date { font-size: var(--font-xs); color: rgba(255,255,255,0.5); }
+.wcard-cta { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
+.wcard-cta-text { font-size: var(--font-xs); color: rgba(255,255,255,0.78); }
+
+/* Empty State */
+.empty-wrap {
+  padding: 40px 30px; display: flex; flex-direction: column;
+  align-items: center; gap: 10px;
+}
+.empty-art {
+  position: relative; width: 80px; height: 80px; margin-bottom: var(--space-xs);
+}
+.empty-ring-outer {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: linear-gradient(135deg, #FFE2EA, #EDE9FE);
+}
+.empty-ring-inner {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--brand-gradient); opacity: 0.6;
+}
+.empty-ttl { font-size: var(--font-lg); font-weight: 700; color: var(--text-primary); }
+.empty-sub { font-size: 13px; color: var(--text-muted); text-align: center; line-height: 1.75; }
+.empty-cta {
+  margin-top: var(--space-xs); height: var(--btn-height); padding: 0 32px;
+  border-radius: var(--radius-full); background: var(--brand-gradient);
+  color: #fff; font-size: var(--btn-font-size); font-weight: 600;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  box-shadow: 0 4px 12px rgba(255,107,138,0.30);
+}
+
+/* Bottom End */
+.bottom-end { display: flex; justify-content: center; padding: var(--space-lg) 0; }
+.bottom-end-text { font-size: var(--font-sm); color: var(--text-muted); }
+
+/* SVG Icons */
+.svg-icon { width: 11px; height: 10px; flex-shrink: 0; display: inline-block; }
+.svg-icon-sm { width: 9px; height: 8px; }
+
+/* ===== Tab Bar ===== */
+.tab-bar {
+  height: 80px; background: #fff; flex-shrink: 0;
+  display: flex; align-items: flex-start;
+  padding: 6px 10px 24px;
+  border-top: 0.5px solid rgba(0,0,0,0.06);
+}
+.tab-item {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px;
+  cursor: pointer; position: relative;
+}
+.tab-icon {
+  width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted);
+  opacity: 0.65;
+  transition: color 0.16s, opacity 0.16s;
+}
+.tab-item.active .tab-icon { color: var(--brand-primary); opacity: 1; }
+.tab-label { font-size: 11px; color: var(--text-muted); font-weight: 500; transition: color 0.16s; }
+.tab-item.active .tab-label { color: var(--brand-primary); font-weight: 600; }
+
+/* ===== Info Panel ===== */
+.info-panel {
+  margin-top: 20px; width: 375px;
+  background: #fff; border-radius: 16px; padding: 20px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+}
+.info-panel h3 { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; }
+.info-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 13px; color: var(--text-body); }
+.info-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.info-dot.green { background: #10b981; }
+.info-dot.amber { background: #f59e0b; }
+.info-dot.blue { background: #3b82f6; }
+</style>
+</head>
+<body>
+<div style="display:flex;gap:30px;align-items:flex-start;flex-wrap:wrap;justify-content:center;">
+
+<!-- Phone Frame -->
+<div class="phone-frame">
+  <div class="phone-notch"></div>
+  <div class="phone-screen">
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span class="status-time">9:41</span>
+      <div class="status-icons">
+        <span>5G</span>
+        <span style="font-size:14px;">▮▮▮▮</span>
+        <span style="font-size:14px;">🔋</span>
+      </div>
+    </div>
+
+    <!-- Nav Bar -->
+    <div class="nav-bar" id="navBar">
+      <span class="nav-bar-back" id="navBack" style="display:none;">‹</span>
+      <span class="nav-bar-title" id="navTitle">NailBook</span>
+    </div>
+
+    <!-- Page Content -->
+    <div class="page-content" id="pageContent">
+
+      <!-- ===== HOME PAGE ===== -->
+      <div class="home-page active" id="homePage">
+        <!-- Hero -->
+        <div class="hero-section">
+          <div class="hero-swiper-wrap" id="heroSwiper">
+            <div class="hero-slide active" style="background: linear-gradient(135deg, #fce4ec 0%, #ede7f6 100%);">
+              <div class="hero-overlay">
+                <div class="hero-bottom-row">
+                  <div class="hero-info">
+                    <span class="hero-info-title">法式渐变 · 温柔奶茶色</span>
+                    <div class="hero-info-meta"><span>Linda 老师</span></div>
+                  </div>
+                  <div class="hero-cta-btn"><span>查看详情</span><span class="hero-cta-arrow">›</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="hero-slide" style="background: linear-gradient(135deg, #e8eaf6 0%, #fce4ec 100%);">
+              <div class="hero-overlay">
+                <div class="hero-bottom-row">
+                  <div class="hero-info">
+                    <span class="hero-info-title">猫眼石光 · 星空蓝</span>
+                    <div class="hero-info-meta"><span>小美 老师</span></div>
+                  </div>
+                  <div class="hero-cta-btn"><span>查看详情</span><span class="hero-cta-arrow">›</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="hero-slide" style="background: linear-gradient(135deg, #f3e5f5 0%, #fff3e0 100%);">
+              <div class="hero-overlay">
+                <div class="hero-bottom-row">
+                  <div class="hero-info">
+                    <span class="hero-info-title">夏日果冻 · 蜜桃粉</span>
+                    <div class="hero-info-meta"><span>Cici 老师</span></div>
+                  </div>
+                  <div class="hero-cta-btn"><span>查看详情</span><span class="hero-cta-arrow">›</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="hero-dots">
+            <div class="hero-dot active" data-idx="0"></div>
+            <div class="hero-dot" data-idx="1"></div>
+            <div class="hero-dot" data-idx="2"></div>
+          </div>
+        </div>
+
+        <!-- Booking -->
+        <div class="section">
+          <div class="section-header">
+            <span class="section-title">我的预约</span>
+            <span class="section-more">查看全部 ›</span>
+          </div>
+          <span class="section-sub">距离最近的一次预约</span>
+          <div class="order-card">
+            <div class="order-card-content">
+              <div class="order-card-top">
+                <div class="order-status-badge">已确认</div>
+                <div class="order-countdown">3天后</div>
+              </div>
+              <div class="order-card-body">
+                <div class="order-date-box">
+                  <span class="order-date-month">8月</span>
+                  <span class="order-date-day">09</span>
+                  <span class="order-date-weekday">周六</span>
+                </div>
+                <div class="order-details">
+                  <span class="order-service-name">法式渐变美甲</span>
+                  <div class="order-detail-row"><span style="font-size:11px;margin-right:3px;">🕐</span><span class="order-detail-text">14:30 - 16:00</span></div>
+                  <div class="order-detail-row"><span style="font-size:11px;margin-right:3px;">👤</span><span class="order-detail-text">Linda 老师</span></div>
+                  <div class="order-detail-row"><span style="font-size:11px;margin-right:3px;">📍</span><span class="order-detail-address">朝阳区建国路88号 SOHO现代城A座</span></div>
+                </div>
+              </div>
+              <div class="order-card-actions">
+                <div class="order-action-btn">💬 发消息</div>
+                <div class="order-action-btn">📞 打电话</div>
+                <div class="order-action-btn order-action-primary">查看详情</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Archive -->
+        <div class="section">
+          <div class="section-header">
+            <span class="section-title">我的美甲记录</span>
+            <span class="section-more">查看全部 ›</span>
+          </div>
+          <span class="section-sub">按时间记录每一次完成的美甲和照片</span>
+          <div class="asset-grid">
+            <div class="asset-card archive-card">
+              <span class="asset-eyebrow">NAIL MOMENTS</span>
+              <span class="asset-title">我的美甲记录</span>
+              <span class="asset-desc">上传照片，也会同步美甲师关联的作品</span>
+              <span class="asset-link">查看时间记录 →</span>
+            </div>
+            <div class="asset-card ai-card">
+              <span class="asset-eyebrow">SHARE PHOTO</span>
+              <span class="asset-title">生成朋友圈分享图</span>
+              <span class="asset-desc">从记录中选图，生成适合分享的画面</span>
+              <span class="asset-link">选择照片 →</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Styles -->
+        <div class="section">
+          <div class="section-header">
+            <span class="section-title">热门风格</span>
+            <span class="section-more">查看全部 ›</span>
+          </div>
+          <span class="section-sub">按你的场景，快速找到下一款灵感</span>
+          <div class="style-scroll">
+            <div class="style-row">
+              <span class="style-chip">法式渐变</span>
+              <span class="style-chip">猫眼石</span>
+              <span class="style-chip">果冻色</span>
+              <span class="style-chip">极简纯色</span>
+              <span class="style-chip">跳色设计</span>
+              <span class="style-chip">大理石纹</span>
+              <span class="style-chip">碎钻点缀</span>
+              <span class="style-chip">手绘花卉</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Featured Works -->
+        <div class="section" style="padding-bottom:20px;">
+          <div class="section-header">
+            <span class="section-title">精选作品</span>
+            <span class="section-more">查看全部 ›</span>
+          </div>
+          <span class="section-sub">设计能力、审美理念与适合你的场景</span>
+          <div class="home-works-grid">
+            <div class="home-work-card"><div class="home-work-img-wrap home-work-tall"><div class="home-work-img-placeholder" style="background:linear-gradient(135deg,#f8bbd0,#ce93d8);"></div><div class="home-work-gradient"></div><div class="home-work-top"><div class="home-work-tech-pill"><div class="home-work-tech-av"><span class="home-work-tech-av-char">L</span></div><span class="home-work-tech-name">Linda</span></div><div class="home-work-like-pill"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="home-work-like-num">128</span></div></div><div class="home-work-bottom"><span class="home-work-title">法式渐变·温柔奶茶</span><div class="home-work-tags"><span class="home-work-tag">#法式</span><span class="home-work-tag">#渐变</span></div><div class="home-work-foot-row"><span class="home-work-date">8月5日</span><div class="home-work-cta"><span class="home-work-cta-text">查看详情</span></div></div></div></div></div>
+            <div class="home-work-card"><div class="home-work-img-wrap home-work-short"><div class="home-work-img-placeholder" style="background:linear-gradient(135deg,#b39ddb,#80cbc4);"></div><div class="home-work-gradient"></div><div class="home-work-top"><div class="home-work-tech-pill"><div class="home-work-tech-av"><span class="home-work-tech-av-char">C</span></div><span class="home-work-tech-name">Cici</span></div><div class="home-work-like-pill"><svg class="svg-icon" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="home-work-like-num">96</span></div></div><div class="home-work-bottom"><span class="home-work-title">猫眼石光·星空</span><div class="home-work-tags"><span class="home-work-tag">#猫眼</span></div><div class="home-work-foot-row"><span class="home-work-date">8月4日</span><div class="home-work-cta"><span class="home-work-cta-text">查看详情</span></div></div></div></div></div>
+            <div class="home-work-card"><div class="home-work-img-wrap home-work-short"><div class="home-work-img-placeholder" style="background:linear-gradient(135deg,#ffccbc,#f48fb1);"></div><div class="home-work-gradient"></div><div class="home-work-top"><div class="home-work-tech-pill"><div class="home-work-tech-av"><span class="home-work-tech-av-char">M</span></div><span class="home-work-tech-name">小美</span></div><div class="home-work-like-pill"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="home-work-like-num">203</span></div></div><div class="home-work-bottom"><span class="home-work-title">夏日果冻·蜜桃</span><div class="home-work-tags"><span class="home-work-tag">#果冻色</span><span class="home-work-tag">#夏日</span></div><div class="home-work-foot-row"><span class="home-work-date">8月3日</span><div class="home-work-cta"><span class="home-work-cta-text">查看详情</span></div></div></div></div></div>
+            <div class="home-work-card"><div class="home-work-img-wrap home-work-tall"><div class="home-work-img-placeholder" style="background:linear-gradient(135deg,#e0e0e0,#b0bec5);"></div><div class="home-work-gradient"></div><div class="home-work-top"><div class="home-work-tech-pill"><div class="home-work-tech-av"><span class="home-work-tech-av-char">L</span></div><span class="home-work-tech-name">Linda</span></div><div class="home-work-like-pill"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="home-work-like-num">67</span></div></div><div class="home-work-bottom"><span class="home-work-title">大理石纹·高级灰</span><div class="home-work-tags"><span class="home-work-tag">#大理石</span></div><div class="home-work-foot-row"><span class="home-work-date">8月2日</span><div class="home-work-cta"><span class="home-work-cta-text">查看详情</span></div></div></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== DISCOVER PAGE ===== -->
+      <div class="discover-page" id="discoverPage">
+        <div class="discover-head" style="top:0;">
+          <div class="search-bar">
+            <svg class="search-icon" viewBox="0 0 48 48" fill="none"><circle cx="22" cy="22" r="10" stroke="currentColor" stroke-width="4"/><path d="M29 29L40 40" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>
+            <input class="search-input" placeholder="搜索作品、风格或美甲师" />
+          </div>
+          <div class="cats-scroll">
+            <div class="cats-bar" id="catBar">
+              <span class="cat-pill active" data-cat="全部">全部</span>
+              <span class="cat-pill" data-cat="法式">法式</span>
+              <span class="cat-pill" data-cat="猫眼">猫眼</span>
+              <span class="cat-pill" data-cat="渐变">渐变</span>
+              <span class="cat-pill" data-cat="手绘">手绘</span>
+              <span class="cat-pill" data-cat="钻饰">钻饰</span>
+              <span class="cat-pill" data-cat="纯色">纯色</span>
+              <span class="cat-pill" data-cat="果冻">果冻</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="waterfall-wrap">
+          <div class="waterfall">
+            <div class="col">
+              <div class="wcard wcard-tall"><div class="wcard-img-placeholder" style="background:linear-gradient(135deg,#f8bbd0,#e1bee7);"></div><div class="wcard-gradient"></div><div class="wcard-top"><div class="wcard-tech-pill"><div class="wcard-tech-av"><span class="wcard-tech-av-char">L</span></div><span class="wcard-tech-name">Linda</span></div><div class="wcard-like-pill"><svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="wcard-like-num">156</span></div></div><div class="wcard-bottom"><span class="wcard-title">樱花粉渐变·春日限定</span><div class="wcard-tags"><span class="wcard-tag">#法式</span><span class="wcard-tag">#渐变</span></div><div class="wcard-foot"><span class="wcard-date">8月5日</span><div class="wcard-cta"><span class="wcard-cta-text">查看详情</span></div></div></div></div>
+              <div class="wcard wcard-short"><div class="wcard-img-placeholder" style="background:linear-gradient(135deg,#80cbc4,#a5d6a7);"></div><div class="wcard-gradient"></div><div class="wcard-top"><div class="wcard-tech-pill"><div class="wcard-tech-av"><span class="wcard-tech-av-char">M</span></div><span class="wcard-tech-name">小美</span></div><div class="wcard-like-pill"><svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="wcard-like-num">89</span></div></div><div class="wcard-bottom"><span class="wcard-title">极简纯白·裸感设计</span><div class="wcard-tags"><span class="wcard-tag">#纯色</span></div><div class="wcard-foot"><span class="wcard-date">8月4日</span><div class="wcard-cta"><span class="wcard-cta-text">查看详情</span></div></div></div></div>
+              <div class="wcard wcard-mid"><div class="wcard-img-placeholder" style="background:linear-gradient(135deg,#ffcc80,#ffab91);"></div><div class="wcard-gradient"></div><div class="wcard-top"><div class="wcard-tech-pill"><div class="wcard-tech-av"><span class="wcard-tech-av-char">C</span></div><span class="wcard-tech-name">Cici</span></div><div class="wcard-like-pill"><svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="wcard-like-num">312</span></div></div><div class="wcard-bottom"><span class="wcard-title">落日橘·秋日暖阳</span><div class="wcard-tags"><span class="wcard-tag">#渐变</span><span class="wcard-tag">#秋日</span></div><div class="wcard-foot"><span class="wcard-date">8月3日</span><div class="wcard-cta"><span class="wcard-cta-text">查看详情</span></div></div></div></div>
+            </div>
+            <div class="col">
+              <div class="wcard wcard-mid"><div class="wcard-img-placeholder" style="background:linear-gradient(135deg,#b39ddb,#90caf9);"></div><div class="wcard-gradient"></div><div class="wcard-top"><div class="wcard-tech-pill"><div class="wcard-tech-av"><span class="wcard-tech-av-char">L</span></div><span class="wcard-tech-name">Linda</span></div><div class="wcard-like-pill"><svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="wcard-like-num">245</span></div></div><div class="wcard-bottom"><span class="wcard-title">薰衣草紫·梦幻渐变</span><div class="wcard-tags"><span class="wcard-tag">#手绘</span><span class="wcard-tag">#花卉</span></div><div class="wcard-foot"><span class="wcard-date">8月5日</span><div class="wcard-cta"><span class="wcard-cta-text">查看详情</span></div></div></div></div>
+              <div class="wcard wcard-tall"><div class="wcard-img-placeholder" style="background:linear-gradient(135deg,#ef9a9a,#f48fb1);"></div><div class="wcard-gradient"></div><div class="wcard-top"><div class="wcard-tech-pill"><div class="wcard-tech-av"><span class="wcard-tech-av-char">M</span></div><span class="wcard-tech-name">小美</span></div><div class="wcard-like-pill"><svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="wcard-like-num">178</span></div></div><div class="wcard-bottom"><span class="wcard-title">碎钻星河·奢华派对</span><div class="wcard-tags"><span class="wcard-tag">#钻饰</span><span class="wcard-tag">#派对</span></div><div class="wcard-foot"><span class="wcard-date">8月4日</span><div class="wcard-cta"><span class="wcard-cta-text">查看详情</span></div></div></div></div>
+              <div class="wcard wcard-short"><div class="wcard-img-placeholder" style="background:linear-gradient(135deg,#a5d6a7,#c5e1a5);"></div><div class="wcard-gradient"></div><div class="wcard-top"><div class="wcard-tech-pill"><div class="wcard-tech-av"><span class="wcard-tech-av-char">C</span></div><span class="wcard-tech-name">Cici</span></div><div class="wcard-like-pill"><svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="wcard-like-num">134</span></div></div><div class="wcard-bottom"><span class="wcard-title">薄荷绿·清新夏日</span><div class="wcard-tags"><span class="wcard-tag">#果冻</span></div><div class="wcard-foot"><span class="wcard-date">8月2日</span><div class="wcard-cta"><span class="wcard-cta-text">查看详情</span></div></div></div></div>
+            </div>
+          </div>
+          <div class="bottom-end"><span class="bottom-end-text">— 已经到底了 —</span></div>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+
+    <!-- Tab Bar -->
+    <div class="tab-bar" id="tabBar">
+      <div class="tab-item active" data-page="home">
+        <div class="tab-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <span class="tab-label">首页</span>
+      </div>
+      <div class="tab-item" data-page="discover">
+        <div class="tab-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <span class="tab-label">发现</span>
+      </div>
+      <div class="tab-item" data-page="booking">
+        <div class="tab-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <span class="tab-label">预约</span>
+      </div>
+      <div class="tab-item" data-page="messages">
+        <div class="tab-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <span class="tab-label">消息</span>
+      </div>
+      <div class="tab-item" data-page="profile">
+        <div class="tab-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <span class="tab-label">我的</span>
+      </div>
+    </div>
+  </div><!-- /phone-screen -->
+</div><!-- /phone-frame -->
+
+<!-- Info Panel -->
+<div class="info-panel">
+  <h3>📱 NailBook 设计预览</h3>
+  <div class="info-row"><span class="info-dot green"></span> 设计令牌已全部应用（颜色/圆角/字号/阴影/间距）</div>
+  <div class="info-row"><span class="info-dot green"></span> 1rpx = 0.5px（375px 宽手机，基于 750rpx 设计稿）</div>
+  <div class="info-row"><span class="info-dot green"></span> 触控最小高度 44px（88rpx）</div>
+  <div class="info-row"><span class="info-dot blue"></span> 首页：轮播 Hero + 预约卡片 + 记录入口 + 风格标签 + 瀑布流</div>
+  <div class="info-row"><span class="info-dot blue"></span> 发现页：搜索 + 分类 pill + 双列瀑布流 + 骨架屏占位</div>
+  <div class="info-row"><span class="info-dot amber"></span> 点击底部 Tab 切换首页 / 发现页</div>
+  <div class="info-row" style="margin-top:8px;color:var(--text-muted);font-size:12px;">
+    提示：此预览仅展示设计令牌优化后的视觉效果，不包含微信小程序原生 API（地图、支付、扫码等）。
+    <br>可在 <code>client-wxapp/preview/index.html</code> 中直接打开使用。
+  </div>
+</div>
+
+</div>
+
+<script>
+// Tab switching
+const tabItems = document.querySelectorAll('.tab-item');
+const homePage = document.getElementById('homePage');
+const discoverPage = document.getElementById('discoverPage');
+const navTitle = document.getElementById('navTitle');
+
+tabItems.forEach(item => {
+  item.addEventListener('click', () => {
+    tabItems.forEach(t => t.classList.remove('active'));
+    item.classList.add('active');
+    const page = item.dataset.page;
+
+    if (page === 'home') {
+      homePage.classList.add('active');
+      discoverPage.classList.remove('active');
+      navTitle.textContent = 'NailBook';
+      document.getElementById('pageContent').scrollTop = 0;
+    } else if (page === 'discover') {
+      homePage.classList.remove('active');
+      discoverPage.classList.add('active');
+      navTitle.textContent = '发现';
+      document.getElementById('pageContent').scrollTop = 0;
+    } else {
+      navTitle.textContent = item.querySelector('.tab-label').textContent;
+      homePage.classList.remove('active');
+      discoverPage.classList.remove('active');
+    }
+  });
+});
+
+// Hero swiper auto-play
+let currentSlide = 0;
+const slides = document.querySelectorAll('.hero-slide');
+const dots = document.querySelectorAll('.hero-dot');
+
+function showSlide(idx) {
+  slides.forEach(s => s.classList.remove('active'));
+  dots.forEach(d => d.classList.remove('active'));
+  slides[idx].classList.add('active');
+  dots[idx].classList.add('active');
+  currentSlide = idx;
+}
+
+dots.forEach(dot => {
+  dot.addEventListener('click', () => showSlide(parseInt(dot.dataset.idx)));
+});
+
+setInterval(() => {
+  showSlide((currentSlide + 1) % slides.length);
+}, 4000);
+
+// Category pills on discover page
+document.querySelectorAll('.cat-pill').forEach(pill => {
+  pill.addEventListener('click', function() {
+    document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

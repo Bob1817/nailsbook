@@ -100,12 +100,8 @@ export class TechnicianCustomersController {
 
   @Get('follow-ups/today')
   @ApiOperation({ summary: '获取今日待跟进客户' })
-  getTodayFollowUps(
-    @Req() request: { user: { technicianId: number } },
-  ) {
-    return this.customersService.getTodayFollowUps(
-      request.user.technicianId,
-    );
+  getTodayFollowUps(@Req() request: { user: { technicianId: number } }) {
+    return this.customersService.getTodayFollowUps(request.user.technicianId);
   }
 
   @Get(':id')
@@ -196,6 +192,18 @@ export class TechnicianCustomersController {
       parseInt(id, 10),
       request.user.technicianId,
       body.name,
+    );
+  }
+
+  @Patch(':id/archive')
+  @ApiOperation({ summary: '归档长期未互动客户' })
+  archive(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id') id: string,
+  ) {
+    return this.customersService.archiveCustomer(
+      parseInt(id, 10),
+      request.user.technicianId,
     );
   }
 }

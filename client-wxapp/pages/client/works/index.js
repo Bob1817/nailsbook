@@ -251,6 +251,11 @@ Page({
     wx.navigateTo({ url: path + id });
   },
 
+  viewArtist: function (e) {
+    var id = e.currentTarget.dataset.id;
+    if (id) wx.navigateTo({ url: '/pages/client/artist-home/index?id=' + id });
+  },
+
   bookArtist: function () {
     var artist = this.data.artist;
     if (!artist) return;

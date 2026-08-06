@@ -62,7 +62,7 @@ Component({
 
   methods: {
     onBack() {
-      wx.navigateBack();
+      this.triggerEvent('back');
     }
   }
 });

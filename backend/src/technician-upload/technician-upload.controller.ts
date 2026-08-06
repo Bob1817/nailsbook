@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Controller,
   Post,
+  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -35,12 +36,18 @@ export class TechnicianUploadController {
   @ApiResponse({ status: 200, description: '图片上传成功' })
   @ApiResponse({ status: 400, description: '请选择图片文件' })
   @ApiResponse({ status: 401, description: '未授权' })
-  uploadImage(@UploadedFile() file: Express.Multer.File | undefined) {
+  uploadImage(
+    @Req() request: { user: { technicianId: number } },
+    @UploadedFile() file: Express.Multer.File | undefined,
+  ) {
     if (!file) {
       throw new BadRequestException('请选择图片文件');
     }
 
-    return this.technicianUploadService.uploadImage(file);
+    return this.technicianUploadService.uploadImage(
+      request.user.technicianId,
+      file,
+    );
   }
 
   @Post('audio')
@@ -49,11 +56,17 @@ export class TechnicianUploadController {
   @ApiResponse({ status: 200, description: '语音上传成功' })
   @ApiResponse({ status: 400, description: '请选择音频文件' })
   @ApiResponse({ status: 401, description: '未授权' })
-  uploadAudio(@UploadedFile() file: Express.Multer.File | undefined) {
+  uploadAudio(
+    @Req() request: { user: { technicianId: number } },
+    @UploadedFile() file: Express.Multer.File | undefined,
+  ) {
     if (!file) {
       throw new BadRequestException('请选择音频文件');
     }
 
-    return this.technicianUploadService.uploadAudio(file);
+    return this.technicianUploadService.uploadAudio(
+      request.user.technicianId,
+      file,
+    );
   }
 }

@@ -58,60 +58,67 @@ model AdminRolePermission {
 }
 
 model Technician {
-  id                    Int                     @id @default(autoincrement())
-  name                  String
-  phone                 String                  @unique
-  passwordHash          String                  @default("")
+  id                        Int                         @id @default(autoincrement())
+  name                      String
+  phone                     String                      @unique
+  passwordHash              String                      @default("")
   managedPasswordCiphertext String?
-  tokenVersion          Int                     @default(0)
-  mustChangePassword    Boolean                 @default(false)
-  avatarUrl             String?
-  city                  String?
-  province              String?
-  serviceArea           String?
-  status                String                  @default("inactive")
-  invitationCode        String?                 @unique
-  invitedAt             DateTime?
-  lastLoginAt           DateTime?
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @default(now()) @updatedAt
-  inviteKey             TechnicianInviteKey?
+  tokenVersion              Int                         @default(0)
+  mustChangePassword        Boolean                     @default(false)
+  avatarUrl                 String?
+  city                      String?
+  province                  String?
+  serviceArea               String?
+  status                    String                      @default("inactive")
+  invitationCode            String?                     @unique
+  invitedAt                 DateTime?
+  lastLoginAt               DateTime?
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime                    @default(now()) @updatedAt
+  inviteKey                 TechnicianInviteKey?
   // Service type settings
-  homeService           Boolean                 @default(false)
-  shopService           Boolean                 @default(false)
-  shopAddresses         String? // JSON array of shop addresses
-  serviceItems          String? // JSON array of technician service items
+  homeService               Boolean                     @default(false)
+  shopService               Boolean                     @default(false)
+  shopAddresses             String? // JSON array of shop addresses
+  serviceItems              String? // JSON array of technician service items
   // Home service configuration
-  homeServiceRadius     Float? // Service radius in km
-  homeServicePricing    String? // JSON: tiered pricing [{minKm, maxKm, price}]
-  nightServiceFee       Float? // Night service surcharge
-  holidayServiceFee     Float? // Holiday service surcharge
-  minOrderAmount        Float? // Minimum order amount (guaranteed consumption)
+  homeServiceRadius         Float? // Service radius in km
+  homeServicePricing        String? // JSON: tiered pricing [{minKm, maxKm, price}]
+  nightServiceFee           Float? // Night service surcharge
+  holidayServiceFee         Float? // Holiday service surcharge
+  minOrderAmount            Float? // Minimum order amount (guaranteed consumption)
   // Social media accounts
-  socialMedia           String? // JSON object of social media accounts
+  socialMedia               String? // JSON object of social media accounts
   // Service schedule (JSON: weekly availability + time ranges)
-  serviceSchedule       String?
+  serviceSchedule           String?
   // Custom tags (JSON array of {id, name, color})
-  customTags            String?
-  customers             Customer[]
-  orders                Order[]
-  revenues              Revenue[]
-  subscription          TechnicianSubscription?
-  clientBindings        ClientTechBinding[]
-  nailWorks             NailWork[]
-  designRequests        ClientDesignRequest[]
-  conversations         Conversation[]
-  customServiceRequests CustomServiceRequest[]
-  workComments          NailWorkComment[]
-  blockedTimeSlots      BlockedTimeSlot[]
-  serviceReviews        ServiceReview[]
-  customerFollowUps     CustomerFollowUp[]
-  referralCampaign      ReferralCampaign?
-  referralLinks         ReferralLink[]
-  referralRelations     ReferralRelation[]
-  rewardAccounts        RewardAccount[]
-  paymentOrders         PaymentOrder[]
-  wechatIdentity        WechatIdentity?
+  customTags                String?
+  customers                 Customer[]
+  orders                    Order[]
+  revenues                  Revenue[]
+  subscription              TechnicianSubscription?
+  clientBindings            ClientTechBinding[]
+  nailWorks                 NailWork[]
+  designRequests            ClientDesignRequest[]
+  conversations             Conversation[]
+  customServiceRequests     CustomServiceRequest[]
+  workComments              NailWorkComment[]
+  blockedTimeSlots          BlockedTimeSlot[]
+  serviceReviews            ServiceReview[]
+  customerFollowUps         CustomerFollowUp[]
+  referralCampaign          ReferralCampaign?
+  referralLinks             ReferralLink[]
+  referralRelations         ReferralRelation[]
+  rewardAccounts            RewardAccount[]
+  paymentOrders             PaymentOrder[]
+  wechatIdentity            WechatIdentity?
+  subscriptionUsages        SubscriptionResourceUsage[]
+  subscriptionChanges       SubscriptionChange[]
+  subscriptionUsageEvents   SubscriptionUsageEvent[]
+  marketingMaterials        MarketingMaterial[]
+  dataExportAudits          DataExportAudit[]
+  uploadedAssets            UploadedAsset[]
+  subscriptionMetricEvents  SubscriptionMetricEvent[]
 }
 
 model ReferralCampaign {
@@ -232,6 +239,7 @@ model Customer {
   sourceRef    String?
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @default(now()) @updatedAt
+  archivedAt   DateTime?
   technician   Technician             @relation(fields: [technicianId], references: [id])
   clientUser   ClientUser?            @relation(fields: [clientUserId], references: [id])
   orders       Order[]
@@ -241,6 +249,7 @@ model Customer {
 
   @@unique([technicianId, clientUserId])
   @@index([technicianId])
+  @@index([technicianId, archivedAt])
   @@index([clientUserId])
   @@index([phone])
 }
@@ -356,36 +365,36 @@ model OrderReminder {
 }
 
 model ClientUser {
-  id                    Int                    @id @default(autoincrement())
-  nickname              String?
-  phone                 String                 @unique
-  passwordHash          String                 @default("")
+  id                        Int                    @id @default(autoincrement())
+  nickname                  String?
+  phone                     String                 @unique
+  passwordHash              String                 @default("")
   managedPasswordCiphertext String?
-  tokenVersion          Int                    @default(0)
-  avatarUrl             String?
-  city                  String?
-  bio                   String?
-  status                String                 @default("active")
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @default(now()) @updatedAt
-  bindings              ClientTechBinding[]
-  addresses             ClientAddress[]
-  orders                Order[]
-  customers             Customer[]
-  designRequests        ClientDesignRequest[]
-  conversations         Conversation[]
-  customServiceRequests CustomServiceRequest[]
-  workComments          NailWorkComment[]
-  workAccesses          NailWorkClientAccess[]
-  workShareGrants       NailWorkShareGrant[]
-  serviceReviews        ServiceReview[]
-  workShareEvents       NailWorkShareEvent[]
-  referralLinks         ReferralLink[]
-  referralsMade         ReferralRelation[]     @relation("ReferralReferrer")
-  referralAttributions  ReferralRelation[]     @relation("ReferralReferred")
-  rewardAccounts        RewardAccount[]
-  paymentOrders         PaymentOrder[]
-  wechatIdentity        WechatIdentity?
+  tokenVersion              Int                    @default(0)
+  avatarUrl                 String?
+  city                      String?
+  bio                       String?
+  status                    String                 @default("active")
+  createdAt                 DateTime               @default(now())
+  updatedAt                 DateTime               @default(now()) @updatedAt
+  bindings                  ClientTechBinding[]
+  addresses                 ClientAddress[]
+  orders                    Order[]
+  customers                 Customer[]
+  designRequests            ClientDesignRequest[]
+  conversations             Conversation[]
+  customServiceRequests     CustomServiceRequest[]
+  workComments              NailWorkComment[]
+  workAccesses              NailWorkClientAccess[]
+  workShareGrants           NailWorkShareGrant[]
+  serviceReviews            ServiceReview[]
+  workShareEvents           NailWorkShareEvent[]
+  referralLinks             ReferralLink[]
+  referralsMade             ReferralRelation[]     @relation("ReferralReferrer")
+  referralAttributions      ReferralRelation[]     @relation("ReferralReferred")
+  rewardAccounts            RewardAccount[]
+  paymentOrders             PaymentOrder[]
+  wechatIdentity            WechatIdentity?
 }
 
 model WechatIdentity {
@@ -764,18 +773,26 @@ model Revenue {
 }
 
 model SubscriptionPlan {
-  id                 Int                      @id @default(autoincrement())
-  name               String
-  code               String                   @unique
-  price              Float
-  billingCycle       String
-  maxCustomers       Int?
-  maxMonthlyBookings Int?
-  features           String?
-  status             String                   @default("active")
-  createdAt          DateTime                 @default(now())
-  updatedAt          DateTime                 @default(now()) @updatedAt
-  subscriptions      TechnicianSubscription[]
+  id                  Int                      @id @default(autoincrement())
+  name                String
+  code                String                   @unique
+  price               Float
+  billingCycle        String
+  maxCustomers        Int?
+  maxMonthlyBookings  Int?
+  maxWorks            Int?
+  maxStorageBytes     Float?
+  maxMarketingExports Int?
+  maxMonthlySms       Int?
+  maxEmployees        Int?
+  maxBookingPages     Int?
+  targetStage         String?
+  description         String?
+  features            String?
+  status              String                   @default("active")
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @default(now()) @updatedAt
+  subscriptions       TechnicianSubscription[]
 }
 
 model PaymentOrder {
@@ -810,21 +827,129 @@ model PaymentOrder {
 }
 
 model TechnicianSubscription {
-  id            Int              @id @default(autoincrement())
-  technicianId  Int              @unique
-  planId        Int
-  status        String           @default("active")
-  startedAt     DateTime
-  expiredAt     DateTime?
-  cancelledAt   DateTime?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @default(now()) @updatedAt
-  technician    Technician       @relation(fields: [technicianId], references: [id])
-  plan          SubscriptionPlan @relation(fields: [planId], references: [id])
-  paymentOrders PaymentOrder[]
+  id                Int              @id @default(autoincrement())
+  technicianId      Int              @unique
+  planId            Int
+  status            String           @default("active")
+  startedAt         DateTime
+  expiredAt         DateTime?
+  cancelledAt       DateTime?
+  pendingPlanCode   String?
+  changeEffectiveAt DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @default(now()) @updatedAt
+  technician        Technician       @relation(fields: [technicianId], references: [id])
+  plan              SubscriptionPlan @relation(fields: [planId], references: [id])
+  paymentOrders     PaymentOrder[]
 
   @@index([status])
   @@index([expiredAt])
+}
+
+model SubscriptionResourceUsage {
+  id               Int        @id @default(autoincrement())
+  technicianId     Int
+  period           String
+  marketingExports Int        @default(0)
+  smsSent          Int        @default(0)
+  storageBytes     Float      @default(0)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @default(now()) @updatedAt
+  technician       Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@unique([technicianId, period])
+  @@index([period])
+}
+
+model SubscriptionChange {
+  id           Int        @id @default(autoincrement())
+  technicianId Int
+  fromPlanCode String?
+  toPlanCode   String
+  reason       String
+  effectiveAt  DateTime
+  metadata     String?
+  createdAt    DateTime   @default(now())
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([technicianId, createdAt])
+  @@index([effectiveAt])
+}
+
+model SubscriptionUsageEvent {
+  id             Int        @id @default(autoincrement())
+  technicianId   Int
+  resourceType   String
+  idempotencyKey String
+  amount         Int        @default(1)
+  period         String
+  metadata       String?
+  createdAt      DateTime   @default(now())
+  technician     Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@unique([technicianId, resourceType, idempotencyKey])
+  @@index([technicianId, resourceType, period])
+}
+
+model MarketingMaterial {
+  id                Int        @id @default(autoincrement())
+  technicianId      Int
+  type              String
+  title             String
+  content           String
+  status            String     @default("draft")
+  revision          Int        @default(1)
+  exportCount       Int        @default(0)
+  freeReexportCount Int        @default(0)
+  lastExportedAt    DateTime?
+  lastChargedAt     DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @default(now()) @updatedAt
+  technician        Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([technicianId, updatedAt])
+}
+
+model DataExportAudit {
+  id           Int        @id @default(autoincrement())
+  technicianId Int
+  exportType   String
+  format       String
+  rowCount     Int
+  filters      String?
+  createdAt    DateTime   @default(now())
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([technicianId, createdAt])
+}
+
+model UploadedAsset {
+  id           Int        @id @default(autoincrement())
+  technicianId Int
+  url          String     @unique
+  highUrl      String
+  mediumUrl    String
+  thumbnailUrl String
+  bytesStored  Int
+  deletedAt    DateTime?
+  createdAt    DateTime   @default(now())
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([technicianId, deletedAt])
+}
+
+model SubscriptionMetricEvent {
+  id           Int        @id @default(autoincrement())
+  technicianId Int
+  eventType    String
+  source       String
+  planCode     String?
+  metadata     String?
+  createdAt    DateTime   @default(now())
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([eventType, createdAt])
+  @@index([technicianId, createdAt])
 }
 
 model FeatureFlag {

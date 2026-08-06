@@ -1,12 +1,12 @@
 .container {
   min-height: 100vh;
-  background: #f8f9fc;
+  background: var(--bg-page);
   padding-bottom: 160rpx;
 }
 
 .section {
-  background: #f8f9fc;
-  margin-bottom: 16rpx;
+  background: var(--bg-page);
+  margin-bottom: var(--space-sm);
   padding: 0 32rpx;
 }
 
@@ -14,24 +14,24 @@
   display: flex;
   align-items: center;
   min-height: 96rpx;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid var(--border-card);
 }
 .form-item:last-child { border-bottom: none; }
 
 .label {
   width: 160rpx;
-  font-size: 28rpx;
-  color: #1f2937;
+  font-size: var(--font-md);
+  color: var(--text-primary);
   flex-shrink: 0;
 }
 
 .input  {
   flex: 1;
   height: 96rpx;
-  font-size: 28rpx;
-  color: #1f2937;
- padding:0 18rpx; background: #f9fafb; border:2rpx solid transparent; border-radius: 14rpx; box-sizing:border-box;}
-.input:focus { border-color:#ff6b8a; background:#fff; }
+  font-size: var(--font-md);
+  color: var(--text-primary);
+ padding:0 18rpx; background: var(--bg-input); border:2rpx solid transparent; border-radius: var(--radius-sm); box-sizing:border-box;}
+.input:focus { border-color: var(--brand-primary); background: var(--bg-card); }
 
 .location-row {
   display: flex;
@@ -40,12 +40,12 @@
   min-height: 96rpx;
 }
 .location-label {
-  font-size: 28rpx;
-  color: #1f2937;
+  font-size: var(--font-md);
+  color: var(--text-primary);
 }
 .location-hint {
-  font-size: 26rpx;
-  color: #ff6b8a;
+  font-size: var(--font-sm);
+  color: var(--brand-primary);
 }
 
 .default-row {
@@ -61,26 +61,26 @@
   gap: 6rpx;
 }
 .default-hint {
-  font-size: 22rpx;
-  color: #6b7280;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
 }
 
 .footer {
   position: fixed;
   bottom: 0; left: 0; right: 0;
-  background: #f8f9fc;
-  padding: 24rpx 40rpx;
+  background: var(--bg-page);
+  padding: var(--space-md) 40rpx;
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
   box-shadow: 0 -2rpx 16rpx rgba(0,0,0,0.06);
 }
 .btn-save {
   width: 100%;
   height: 96rpx;
-  background: linear-gradient(135deg, #FF6B8A 0%, #A78BFA 100%);
-  color: #fff;
-  border-radius: 24rpx;
-  font-size: 30rpx;
-  font-weight: 500;
+  background: var(--brand-gradient);
+  color: var(--text-inverse);
+  border-radius: var(--radius-md);
+  font-size: var(--font-md);
+  font-weight: var(--weight-medium);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -105,7 +105,7 @@
   width: 16rpx;
   height: 16rpx;
   border-radius: 50%;
-  border: 2.5rpx solid #ff6b8a;
+  border: 2.5rpx solid var(--brand-primary);
   top: 0;
   left: 50%;
   transform: translateX(-50%);
@@ -118,7 +118,7 @@
   height: 0;
   border-left: 5rpx solid transparent;
   border-right: 5rpx solid transparent;
-  border-top: 8rpx solid #ff6b8a;
+  border-top: 8rpx solid var(--brand-primary);
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);

@@ -1,5 +1,5 @@
 page {
-  background: #f5f6fa;
+  background: var(--bg-page);
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -20,46 +20,46 @@ page {
 }
 
 .doc {
-  padding: 24rpx 36rpx calc(48rpx + env(safe-area-inset-bottom));
+  padding: var(--space-md) 36rpx calc(48rpx + env(safe-area-inset-bottom));
 }
 
 .doc-title {
   display: block;
-  font-size: 40rpx;
-  font-weight: 700;
-  color: #1f2937;
+  font-size: var(--font-xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
   margin-bottom: 10rpx;
 }
 
 .doc-updated {
   display: block;
-  font-size: 24rpx;
-  color: #6b7280;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
   margin-bottom: 28rpx;
 }
 
 .doc-intro {
   display: block;
-  font-size: 28rpx;
-  color: #374151;
+  font-size: var(--font-md);
+  color: var(--text-body);
   line-height: 1.8;
-  margin-bottom: 16rpx;
+  margin-bottom: var(--space-sm);
 }
 
 .sec { margin-top: 28rpx; }
 
 .sec-h {
   display: block;
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
   margin-bottom: 12rpx;
 }
 
 .sec-p {
   display: block;
-  font-size: 28rpx;
-  color: #4b5563;
+  font-size: var(--font-md);
+  color: var(--text-body);
   line-height: 1.85;
   margin-bottom: 8rpx;
 }
@@ -71,6 +71,6 @@ page {
 }
 
 .doc-foot-text {
-  font-size: 24rpx;
+  font-size: var(--font-sm);
   color: #c4c9d4;
 }

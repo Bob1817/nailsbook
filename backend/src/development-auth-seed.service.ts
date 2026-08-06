@@ -236,17 +236,17 @@ export class DevelopmentAuthSeedService implements OnModuleInit {
     }
 
     let plan = await this.prisma.subscriptionPlan.findUnique({
-      where: { code: 'pro' },
+      where: { code: 'starter' },
     });
     if (!plan) {
       plan = await this.prisma.subscriptionPlan.create({
         data: {
-          name: 'Pro版',
-          code: 'pro',
+          name: '入门版',
+          code: 'starter',
           price: 29,
           billingCycle: 'monthly',
-          maxCustomers: null,
-          maxMonthlyBookings: null,
+          maxCustomers: 150,
+          maxMonthlyBookings: 150,
           features: JSON.stringify([
             'customer_tags',
             'analytics',

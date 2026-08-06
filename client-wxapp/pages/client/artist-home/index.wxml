@@ -1,0 +1,51 @@
+<nav-bar title="美甲师主页" showBack/>
+<view class="page">
+  <view wx:if="{{loading}}" class="state">正在加载主页...</view>
+  <view wx:elif="{{loadFailed}}" class="state">
+    <text class="state-title">主页加载失败</text>
+    <view class="retry" bindtap="loadHome">重新加载</view>
+  </view>
+  <block wx:else>
+    <view class="profile-head">
+      <image wx:if="{{artist.avatarUrl}}" class="avatar" src="{{artist.avatarUrl}}" mode="aspectFill" aria-label="{{artist.name}}的头像"/>
+      <view wx:else class="avatar avatar-fallback">{{artist.initial}}</view>
+      <view class="identity">
+        <text class="name">{{artist.name}}</text>
+        <text class="location">{{artist.city || '本地美甲师'}}{{artist.serviceArea ? ' · 服务 ' + artist.serviceArea : ''}}</text>
+      </view>
+      <view class="book-btn" bindtap="bookArtist">预约</view>
+    </view>
+
+    <text class="bio">{{artist.bio || '专注每一次细节，为你完成适合日常与重要时刻的美甲设计。'}}</text>
+    <view class="tags">
+      <text wx:if="{{artist.homeService}}" class="tag">上门服务</text>
+      <text wx:if="{{artist.shopService}}" class="tag">到店服务</text>
+      <text class="tag tag-muted">{{artist.status === 'inactive' ? '暂不接单' : '可预约'}}</text>
+    </view>
+
+    <view class="stats">
+      <view class="stat"><text class="stat-value">{{works.length}}</text><text class="stat-label">作品</text></view>
+      <view class="stat"><text class="stat-value">{{artist.rating || '—'}}</text><text class="stat-label">评分</text></view>
+      <view class="stat"><text class="stat-value">{{serviceCount}}</text><text class="stat-label">服务</text></view>
+    </view>
+
+    <view class="section-head"><text class="section-title">作品</text><text class="section-count">{{works.length}} 篇</text></view>
+    <view wx:if="{{works.length === 0}}" class="empty">暂时还没有公开作品</view>
+    <view wx:else class="waterfall">
+      <view class="column">
+        <view wx:for="{{leftCol}}" wx:key="id" class="work-card" bindtap="viewWork" data-id="{{item.id}}">
+          <image class="work-image {{item.aspect}}" src="{{item.coverUrl}}" mode="aspectFill" lazy-load aria-label="{{item.title}}"/>
+          <text class="work-title">{{item.title}}</text>
+          <text wx:if="{{item.tagsText}}" class="work-tags">{{item.tagsText}}</text>
+        </view>
+      </view>
+      <view class="column">
+        <view wx:for="{{rightCol}}" wx:key="id" class="work-card" bindtap="viewWork" data-id="{{item.id}}">
+          <image class="work-image {{item.aspect}}" src="{{item.coverUrl}}" mode="aspectFill" lazy-load aria-label="{{item.title}}"/>
+          <text class="work-title">{{item.title}}</text>
+          <text wx:if="{{item.tagsText}}" class="work-tags">{{item.tagsText}}</text>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

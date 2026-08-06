@@ -4,9 +4,9 @@ import { Skeleton, SkeletonCard } from './Skeleton'
 
 describe('Skeleton', () => {
   it('renders correctly with default props', () => {
-    render(<Skeleton />)
-    const skeleton = screen.getByRole('generic')
-    expect(skeleton).toBeInTheDocument()
+    const { container } = render(<Skeleton />)
+    expect(container.firstChild).toBeInTheDocument()
+    expect(container.firstChild).toHaveClass('animate-pulse', 'bg-gray-200', 'rounded')
   })
 
   it('renders circle variant', () => {

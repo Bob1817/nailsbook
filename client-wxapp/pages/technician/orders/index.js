@@ -2,21 +2,20 @@ const api = require('../../../services/api');
 const {
   parseDate,
   formatClock,
-  formatMoney,
   isSameDay
 } = require('../../../utils/format');
 const {
   normalizeOrder,
   resolveOrderPresentation,
   getStatusLabel,
-  getStatusTone,
-  estimateRouteDistance
+  getStatusTone
 } = require('../../../utils/order');
 
 // 行程状态：已确认排期 / 进行中（完成预约但未做完美甲）
 const TRIP_STATUSES = ['pending_home', 'pending_shop', 'in_progress'];
 const WEEK = ['日', '一', '二', '三', '四', '五', '六'];
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
+const INVALID_INCOME_STATUSES = ['cancelled', 'expired', 'rejected'];
 
 function dateKey(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -27,6 +26,18 @@ function addDays(base, n) {
   d.setHours(0, 0, 0, 0);
   return d;
 }
+function compactMoney(amount) {
+  const value = Number(amount) || 0;
+  return `¥${Number.isInteger(value) ? value : value.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')}`;
+}
+function periodTotals(relation, totals) {
+  const showActual = relation <= 0 && totals.actual > 0;
+  const showEstimated = relation >= 0 && totals.estimated > 0;
+  return {
+    actualText: showActual ? compactMoney(totals.actual) : '',
+    estimatedText: showEstimated ? compactMoney(totals.estimated) : ''
+  };
+}
 
 Page({
   data: {
@@ -34,6 +45,8 @@ Page({
     showMoreMenu: false,
 
     todayKey: '',
+    todayDay: 0,
+    todayIncome: {},
     activeKey: '',                  // 选中日期 key
     activeIsToday: true,
     activeLabel: '',                // "6月3日 周二"
@@ -41,16 +54,15 @@ Page({
     markedKeys: {},                 // 有预约的日期 { key: true }
 
     listOrders: [],
-    summary: { count: 0, distance: 0, amount: 0, completed: 0 },
+    summary: { conflicts: 0 },
 
     loading: true,
 
     // 日历弹窗
     showCalendar: false,
     weekdays: WEEKDAYS,
-    calendarYear: 0,
-    calendarMonth: 0,
-    calendarDays: []
+    calendarYears: [],
+    calendarScrollTarget: ''
   },
 
   onLoad(options) {
@@ -66,17 +78,12 @@ Page({
       ? (options.tab === 'all' ? 'all' : 'trips')
       : (saved.scheduleTab === 'all' ? 'all' : 'trips');
 
-    // 未来 20 天日期条
-    const strip = Array.from({ length: 20 }, (_, i) => {
-      const d = addDays(today, i + 1);
-      return { key: dateKey(d), day: d.getDate(), week: WEEK[d.getDay()] };
-    });
-
     this.setData({
       scheduleTab,
       todayKey: dateKey(today),
+      todayDay: today.getDate(),
       activeKey: dateKey(this._activeDate),
-      dateStrip: strip
+      dateStrip: this._buildDateStrip(today)
     });
     this.loadOrders();
   },
@@ -94,18 +101,51 @@ Page({
   async loadOrders() {
     this.setData({ loading: true });
     try {
-      const res = await api.technician.orders.list({});
+      const [res, calendarResult] = await Promise.all([
+        api.technician.orders.list({}),
+        api.technician.orders.incomeCalendar().catch(() => null)
+      ]);
       const raw = Array.isArray(res) ? res : (res.list || res.data || []);
       this._allOrders = raw.map(normalizeOrder).filter(Boolean).map(this._decorate);
 
-      // 标记有预约的日期
+      // 标记有效预约并按日期聚合预计 / 实际收入
       const marked = {};
-      this._allOrders.forEach((o) => {
-        const t = parseDate(o.startTime);
-        if (t) marked[dateKey(t)] = true;
-      });
+      this._incomeByDate = {};
+      const incomeOrders = calendarResult && Array.isArray(calendarResult.orders)
+        ? calendarResult.orders.map(order => ({
+          startTime: order.startTime,
+          status: order.status,
+          price: order.quotePrice || 0
+        }))
+        : this._allOrders;
+      const registeredAt = parseDate(calendarResult && calendarResult.registeredAt);
+      const earliestOrder = incomeOrders
+        .map(order => parseDate(order.startTime))
+        .filter(Boolean)
+        .sort((a, b) => a - b)[0];
+      this._registeredAt = registeredAt || earliestOrder || this._today;
+      this._calendarEndDate = this._today;
 
-      this.setData({ markedKeys: marked, loading: false });
+      incomeOrders.forEach((o) => {
+        const t = parseDate(o.startTime);
+        if (t && t > this._calendarEndDate) this._calendarEndDate = t;
+        if (!t || INVALID_INCOME_STATUSES.includes(o.status)) return;
+        const key = dateKey(t);
+        const income = this._incomeByDate[key] || { estimated: 0, actual: 0 };
+        income.estimated += Number(o.price) || 0;
+        if (o.status === 'completed') income.actual += Number(o.price) || 0;
+        this._incomeByDate[key] = income;
+        marked[key] = true;
+      });
+      this._markedKeys = marked;
+
+      this.setData({
+        markedKeys: marked,
+        dateStrip: this._buildDateStrip(this._today),
+        todayIncome: this._incomeMeta(this.data.todayKey),
+        calendarYears: this._buildIncomeTimeline(),
+        loading: false
+      });
       this._recompute();
     } catch (err) {
       this.setData({ loading: false });
@@ -126,6 +166,35 @@ Page({
     };
   },
 
+  _buildDateStrip(today) {
+    const strip = Array.from({ length: 20 }, (_, i) => {
+      const d = addDays(today, i + 1);
+      const key = dateKey(d);
+      return { key, day: d.getDate(), week: WEEK[d.getDay()], income: this._incomeMeta(key) };
+    });
+    const active = this._activeDate;
+    const activeKey = active && dateKey(active);
+    if (activeKey && activeKey !== dateKey(today) && !strip.some(item => item.key === activeKey)) {
+      strip.unshift({
+        key: activeKey,
+        day: active.getDate(),
+        week: WEEK[active.getDay()],
+        income: this._incomeMeta(activeKey)
+      });
+      strip.pop();
+    }
+    return strip;
+  },
+
+  _incomeMeta(key) {
+    const income = (this._incomeByDate && this._incomeByDate[key]) || { estimated: 0, actual: 0 };
+    const isPast = key < dateKey(this._today || new Date());
+    const amount = isPast ? income.actual : income.estimated;
+    return amount > 0
+      ? { type: isPast ? 'actual' : 'estimated', text: compactMoney(amount) }
+      : { type: isPast ? 'actual' : 'estimated', text: '' };
+  },
+
   // ---------- 重算当前视图 ----------
   _recompute() {
     const active = this._activeDate;
@@ -138,16 +207,9 @@ Page({
       })
       .sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
 
-    const tripOrders = dayOrders.filter((o) => TRIP_STATUSES.indexOf(o.status) >= 0);
-
     const decoratedDayOrders = markScheduleConflicts(dayOrders);
     const decoratedTripOrders = decoratedDayOrders.filter((o) => TRIP_STATUSES.indexOf(o.status) >= 0);
     const listOrders = this.data.scheduleTab === 'trips' ? decoratedTripOrders : decoratedDayOrders;
-
-    // 汇总（基于行程单）
-    const distance = tripOrders.reduce((s, o) => s + estimateRouteDistance(o), 0);
-    const amount = tripOrders.reduce((s, o) => s + (Number(o.price) || 0), 0);
-    const completed = tripOrders.filter((o) => o.status === 'in_progress').length;
 
     const m = active.getMonth() + 1;
     const d = active.getDate();
@@ -156,15 +218,12 @@ Page({
     this.setData({
       listOrders,
       summary: {
-        count: tripOrders.length,
-        distance: Math.round(distance * 10) / 10,
-        amount,
-        completed,
         conflicts: decoratedDayOrders.filter(order => order._hasConflict).length
       },
       activeKey: dateKey(active),
       activeIsToday: isSameDay(active, this._today),
-      activeLabel: label
+      activeLabel: label,
+      dateStrip: this._buildDateStrip(this._today)
     });
   },
 
@@ -215,13 +274,12 @@ Page({
 
   // 日历弹窗
   openCalendar() {
-    const active = this._activeDate;
+    const currentMonthId = `month-${this._today.getFullYear()}-${String(this._today.getMonth() + 1).padStart(2, '0')}`;
     this.setData({
       showCalendar: true,
-      calendarYear: active.getFullYear(),
-      calendarMonth: active.getMonth()
+      calendarYears: this._buildIncomeTimeline(),
+      calendarScrollTarget: currentMonthId
     });
-    this._buildCalendarDays();
   },
 
   closeCalendar() {
@@ -230,87 +288,94 @@ Page({
 
   noop() {},
 
-  prevMonth() {
-    let { calendarYear, calendarMonth } = this.data;
-    calendarMonth--;
-    if (calendarMonth < 0) {
-      calendarMonth = 11;
-      calendarYear--;
+  _buildIncomeTimeline() {
+    const start = new Date(this._registeredAt || this._today);
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(this._calendarEndDate || this._today);
+    end.setDate(1);
+    end.setHours(0, 0, 0, 0);
+    const years = [];
+    const cursor = new Date(start);
+
+    while (cursor <= end) {
+      const year = cursor.getFullYear();
+      let yearItem = years[years.length - 1];
+      if (!yearItem || yearItem.year !== year) {
+        yearItem = { year, months: [], expanded: year === this._activeDate.getFullYear() };
+        years.push(yearItem);
+      }
+      yearItem.months.push(this._buildTimelineMonth(year, cursor.getMonth()));
+      cursor.setMonth(cursor.getMonth() + 1);
     }
-    this.setData({ calendarYear, calendarMonth });
-    this._buildCalendarDays();
+
+    years.forEach(yearItem => {
+      const totals = yearItem.months.reduce((sum, month) => ({
+        actual: sum.actual + month.rawActual,
+        estimated: sum.estimated + month.rawEstimated
+      }), { actual: 0, estimated: 0 });
+      yearItem.totals = periodTotals(yearItem.year - this._today.getFullYear(), totals);
+    });
+    return years;
   },
 
-  nextMonth() {
-    let { calendarYear, calendarMonth } = this.data;
-    calendarMonth++;
-    if (calendarMonth > 11) {
-      calendarMonth = 0;
-      calendarYear++;
+  _buildTimelineMonth(year, month) {
+    const first = new Date(year, month, 1);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const days = Array.from({ length: first.getDay() }, (_, index) => ({ empty: true, key: `empty-${index}` }));
+    let rawActual = 0;
+    let rawEstimated = 0;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const key = dateKey(date);
+      const income = this._incomeByDate[key] || { actual: 0, estimated: 0 };
+      rawActual += income.actual;
+      rawEstimated += income.estimated;
+      days.push({
+        key,
+        date: key,
+        day,
+        isToday: key === this.data.todayKey,
+        isSelected: key === this.data.activeKey,
+        isBeforeRegistration: date < new Date(this._registeredAt.getFullYear(), this._registeredAt.getMonth(), this._registeredAt.getDate()),
+        hasOrder: !!this._markedKeys[key],
+        income: this._incomeMeta(key)
+      });
     }
-    this.setData({ calendarYear, calendarMonth });
-    this._buildCalendarDays();
+
+    const currentMonthIndex = this._today.getFullYear() * 12 + this._today.getMonth();
+    const monthIndex = year * 12 + month;
+    return {
+      id: `month-${year}-${String(month + 1).padStart(2, '0')}`,
+      month: month + 1,
+      days,
+      rawActual,
+      rawEstimated,
+      expanded: year === this._activeDate.getFullYear() && month === this._activeDate.getMonth(),
+      totals: periodTotals(monthIndex - currentMonthIndex, { actual: rawActual, estimated: rawEstimated })
+    };
   },
 
-  _buildCalendarDays() {
-    const { calendarYear, calendarMonth, markedKeys, activeKey, todayKey } = this.data;
-    const firstDay = new Date(calendarYear, calendarMonth, 1);
-    const lastDay = new Date(calendarYear, calendarMonth + 1, 0);
-    const startWeekday = firstDay.getDay();
-    const daysInMonth = lastDay.getDate();
+  toggleCalendarYear(e) {
+    const yearIndex = Number(e.currentTarget.dataset.yearIndex);
+    const year = this.data.calendarYears[yearIndex];
+    if (!year) return;
+    this.setData({ [`calendarYears[${yearIndex}].expanded`]: !year.expanded });
+  },
 
-    const days = [];
-
-    // 上个月的日期
-    const prevMonthLastDay = new Date(calendarYear, calendarMonth, 0).getDate();
-    for (let i = startWeekday - 1; i >= 0; i--) {
-      const d = prevMonthLastDay - i;
-      const date = new Date(calendarYear, calendarMonth - 1, d);
-      const key = dateKey(date);
-      days.push({
-        date: key,
-        day: d,
-        isCurrentMonth: false,
-        isToday: key === todayKey,
-        isSelected: key === activeKey,
-        hasOrder: !!markedKeys[key]
-      });
-    }
-
-    // 本月的日期
-    for (let d = 1; d <= daysInMonth; d++) {
-      const date = new Date(calendarYear, calendarMonth, d);
-      const key = dateKey(date);
-      days.push({
-        date: key,
-        day: d,
-        isCurrentMonth: true,
-        isToday: key === todayKey,
-        isSelected: key === activeKey,
-        hasOrder: !!markedKeys[key]
-      });
-    }
-
-    // 下个月的日期（补齐到 42 个）
-    const remaining = 42 - days.length;
-    for (let d = 1; d <= remaining; d++) {
-      const date = new Date(calendarYear, calendarMonth + 1, d);
-      const key = dateKey(date);
-      days.push({
-        date: key,
-        day: d,
-        isCurrentMonth: false,
-        isToday: key === todayKey,
-        isSelected: key === activeKey,
-        hasOrder: !!markedKeys[key]
-      });
-    }
-
-    this.setData({ calendarDays: days });
+  toggleCalendarMonth(e) {
+    const yearIndex = Number(e.currentTarget.dataset.yearIndex);
+    const monthIndex = Number(e.currentTarget.dataset.monthIndex);
+    const year = this.data.calendarYears[yearIndex];
+    const month = year && year.months[monthIndex];
+    if (!month) return;
+    this.setData({ [`calendarYears[${yearIndex}].months[${monthIndex}].expanded`]: !month.expanded });
   },
 
   onCalendarDayTap(e) {
     const dateStr = e.currentTarget.dataset.date;
+    if (!dateStr) return;
     const [y, m, d] = dateStr.split('-').map(Number);
     this._activeDate = new Date(y, m - 1, d);
     this.setData({ showCalendar: false });

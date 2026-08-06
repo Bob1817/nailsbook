@@ -5,13 +5,13 @@
     <!-- 搜索栏 + 新建对话 -->
     <view class="search-row">
       <view class="search-bar">
-        <text class="search-icon">S</text>
-        <input class="search-input" placeholder="搜索消息、客户或提醒内容"
+        <view class="search-icon"></view>
+        <input class="search-input" placeholder="搜索对话或提醒"
           value="{{searchText}}" bindinput="onSearchInput" confirm-type="search"/>
       </view>
       <view class="header-btn" bindtap="openNewChat">
         <text class="header-btn-icon">+</text>
-        <text class="header-btn-text">发起对话</text>
+        <text class="header-btn-text">对话</text>
       </view>
     </view>
   </view>
@@ -153,7 +153,7 @@
       </view>
     </view>
     <view class="search-bar modal-search">
-      <text class="search-icon">S</text>
+      <view class="search-icon"></view>
       <input class="search-input" placeholder="搜索客户姓名或手机号"
         value="{{customerSearch}}" bindinput="onCustomerSearch" confirm-type="search"/>
     </view>

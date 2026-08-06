@@ -6,6 +6,13 @@ Page({
     avatar: '',
     nickname: '',
     phone: '',
+    currentRole: 'client',
+    currentRoleLabel: '客户',
+    canSwitchToTech: false,
+    canSwitchToClient: true,
+    roleCardTitle: '当前身份：客户',
+    roleCardSub: '',
+    roleSwitchLabel: '切换身份',
     technicians: [],
     showBindModal: false,
     inviteCode: '',
@@ -13,7 +20,8 @@ Page({
     foundTech: null,
     checkingCode: false,
     binding: false,
-    activeTechMenuId: null
+    activeTechMenuId: null,
+    showRoleSheet: false
   },
 
   onLoad() {
@@ -28,11 +36,25 @@ Page({
     try {
       const userInfo = wx.getStorageSync('userInfo') || wx.getStorageSync('client_userInfo');
       const bindings = wx.getStorageSync('client_bindings') || [];
+      const currentRole = wx.getStorageSync('role') || 'client';
+      const roles = wx.getStorageSync('roles') || ['client'];
 
       this.setData({
         avatar: userInfo?.avatarUrl || '',
         nickname: userInfo?.nickname || userInfo?.phone || '用户',
         phone: userInfo?.phone ? phoneMask(userInfo.phone) : '',
+        currentRole: currentRole,
+        currentRoleLabel: currentRole === 'technician' ? '美甲师' : '客户',
+        // 是否可切换为另一端
+        canSwitchToTech: roles.includes('technician'),
+        canSwitchToClient: roles.includes('client'),
+        // 身份卡片文案
+        roleCardTitle: currentRole === 'technician' ? '当前身份：美甲师' : '当前身份：客户',
+        roleCardSub: (() => {
+          if (currentRole === 'technician') return roles.includes('client') ? '可切换为客户模式' : '';
+          return roles.includes('technician') ? '可切换为美甲师模式' : '注册成为美甲师';
+        })(),
+        roleSwitchLabel: currentRole === 'technician' ? '切换为客户' : '切换身份',
         technicians: bindings.map(b => ({
           id: b.technician?.id || b.id,
           name: b.technician?.name || b.name || '美甲师',
@@ -91,7 +113,47 @@ Page({
   },
 
   switchRole() {
-    wx.navigateTo({ url: '/pages/role-select/index' });
+    // 改为弹出底部面板
+    this.setData({ showRoleSheet: true });
+  },
+
+  showRoleSheet() {
+    this.setData({ showRoleSheet: true });
+  },
+
+  hideRoleSheet() {
+    this.setData({ showRoleSheet: false });
+  },
+
+  switchToTechnician() {
+    const app = getApp();
+    const currentRole = wx.getStorageSync('role') || 'client';
+    const roles = wx.getStorageSync('roles') || ['client'];
+
+    this.setData({ showRoleSheet: false });
+
+    if (currentRole === 'technician') {
+      // 当前是美甲师 → 切换回客户
+      if (app.switchRole('client')) {
+        wx.reLaunch({ url: '/pages/client/home/index' });
+      } else {
+        wx.showToast({ title: '切换失败', icon: 'none' });
+      }
+      return;
+    }
+
+    // 当前是客户 → 尝试切换美甲师
+    if (roles.includes('technician')) {
+      // 已有美甲师 token → 直接切换
+      if (app.switchRole('technician')) {
+        wx.reLaunch({ url: '/pages/technician/home/index' });
+      } else {
+        wx.showToast({ title: '切换失败，请重试', icon: 'none' });
+      }
+    } else {
+      // 未注册美甲师 → 引导到引导页
+      wx.navigateTo({ url: '/pages/onboarding/index' });
+    }
   },
 
   toggleTechMenu(e) {
@@ -103,10 +165,10 @@ Page({
     if (this.data.activeTechMenuId !== null) this.setData({ activeTechMenuId: null });
   },
 
-  viewTechInfo(e) {
+  viewTechnicianHome(e) {
     const { id } = e.currentTarget.dataset;
     this.setData({ activeTechMenuId: null });
-    wx.navigateTo({ url: `/pages/client/works/index?techId=${id}` });
+    if (id) wx.navigateTo({ url: `/pages/client/artist-home/index?id=${id}` });
   },
 
   messageTechnician(e) {
@@ -218,7 +280,7 @@ Page({
       success: (res) => {
         if (res.confirm) {
           getApp().logout();
-          wx.redirectTo({ url: '/pages/role-select/index' });
+          wx.reLaunch({ url: '/pages/login/index' });
         }
       }
     });

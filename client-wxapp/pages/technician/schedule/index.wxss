@@ -1,11 +1,11 @@
 .container {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: var(--bg-page);
 }
 
 .week-strip {
   display: flex;
-  background: #fff;
+  background: var(--bg-card);
   padding: 16rpx 0 20rpx;
   box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
 }
@@ -16,7 +16,7 @@
   flex-direction: column;
   align-items: center;
   padding: 12rpx 0;
-  border-radius: 12rpx;
+  border-radius: var(--radius-xs);
   margin: 0 4rpx;
   min-height: 88rpx;
   box-sizing: border-box;
@@ -25,26 +25,26 @@
   background: #ff6b9d;
 }
 .day-dow {
-  font-size: 22rpx;
-  color: #999;
+  font-size: var(--font-xs);
+  color: var(--text-faint);
   margin-bottom: 8rpx;
 }
 .day-cell.selected .day-dow { color: rgba(255,255,255,0.8); }
 .day-num {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #333;
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
 }
-.day-cell.selected .day-num { color: #fff; }
+.day-cell.selected .day-num { color: var(--text-inverse); }
 
 .date-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24rpx 32rpx 16rpx;
+  padding: var(--space-md) 32rpx 16rpx;
 }
-.date-text { font-size: 28rpx; font-weight: 600; color: #333; }
-.count-text { font-size: 24rpx; color: #999; }
+.date-text { font-size: var(--font-md); font-weight: var(--weight-semibold); color: var(--text-primary); }
+.count-text { font-size: var(--font-sm); color: var(--text-faint); }
 
 .empty {
   display: flex;
@@ -53,15 +53,15 @@
   justify-content: center;
   padding: 120rpx 0;
 }
-.empty-text { font-size: 30rpx; color: #999; }
+.empty-text { font-size: var(--font-md); color: var(--text-faint); }
 .retry-button {
   display: flex;
   min-height: 88rpx;
-  margin-top: 24rpx;
+  margin-top: var(--space-md);
   padding: 0 40rpx;
   align-items: center;
-  border-radius: 44rpx;
-  background: #fff0f5;
+  border-radius: var(--radius-xl);
+  background: var(--bg-tag);
   color: #a34f75;
 }
 
@@ -69,9 +69,9 @@
 
 .order-card {
   display: flex;
-  background: #fff;
-  border-radius: 16rpx;
-  margin-bottom: 16rpx;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-sm);
   padding: 28rpx 24rpx;
   align-items: center;
 }
@@ -82,8 +82,8 @@
   text-align: center;
 }
 .order-time {
-  font-size: 32rpx;
-  font-weight: 600;
+  font-size: var(--font-lg);
+  font-weight: var(--weight-semibold);
   color: #ff6b9d;
 }
 
@@ -92,24 +92,24 @@
   margin-left: 24rpx;
 }
 .order-client {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #333;
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
   display: block;
   margin-bottom: 8rpx;
 }
 .order-services {
-  font-size: 24rpx;
-  color: #666;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
   display: block;
   margin-bottom: 8rpx;
 }
 .order-status {
-  font-size: 22rpx;
+  font-size: var(--font-xs);
   border-radius: 8rpx;
   padding: 4rpx 12rpx;
-  background: #f5f5f5;
-  color: #999;
+  background: var(--bg-page);
+  color: var(--text-faint);
 }
 .order-status.tone-orange,
 .order-status.tone-yellow { background: #fff7e6; color: #a45100; }
@@ -117,5 +117,5 @@
 .order-status.tone-sky { background: #e8f6ff; color: #176ca4; }
 .order-status.tone-emerald,
 .order-status.tone-teal { background: #eaf8f1; color: #267558; }
-.order-status.tone-gray { background: #f5f5f5; color: #696969; }
+.order-status.tone-gray { background: var(--bg-page); color: var(--text-muted); }
 .order-status.tone-red { background: #fff0f0; color: #a53c3c; }

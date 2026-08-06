@@ -5,7 +5,7 @@
   <view class="discover-head" style="top: {{navBarHeight}}px;">
     <!-- 搜索栏 -->
     <view class="search-bar">
-      <view class="search-icon"></view>
+      <image class="search-icon" src="/static/icons/search.svg" mode="aspectFit" />
       <input class="search-input" value="{{keyword}}" placeholder="搜索作品、风格或美甲师" placeholder-class="search-hint" confirm-type="search" bindinput="onSearchInput" bindconfirm="onSearchConfirm" />
       <view wx:if="{{keyword}}" class="search-clear" bindtap="clearSearch" aria-label="清除搜索"><view class="clear-line clear-a"></view><view class="clear-line clear-b"></view></view>
     </view>
@@ -57,81 +57,27 @@
     <view class="waterfall">
       <!-- 左列 -->
       <view class="col">
-        <view
-          wx:for="{{leftCol}}"
-          wx:key="id"
-          class="card {{item.aspect}}"
-          bindtap="viewWork"
-          data-id="{{item.id}}"
-        >
-          <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="card-img" lazy-load aria-label="{{item.title || '美甲作品'}}"/>
-          <view wx:else class="card-img card-img-empty"></view>
-          <view class="card-gradient"></view>
-          <view class="card-top">
-            <view class="card-tech-pill">
-              <image wx:if="{{item.technicianAvatarUrl}}" src="{{item.technicianAvatarUrl}}" mode="aspectFill" class="card-tech-av" binderror="onAvatarError" data-id="{{item.id}}" lazy-load aria-label="{{item.technicianName || '美甲师'}}的头像"/>
-              <view wx:else class="card-tech-av-ph"><text class="card-tech-av-char">{{item.techInitial}}</text></view>
-              <text class="card-tech-name">{{item.technicianName}}</text>
-            </view>
-            <view class="card-like-pill" catchtap="toggleLike" data-id="{{item.id}}">
-              <image wx:if="{{item.isLiked}}" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAUElEQVR4nGNgQAP/3cP/o2NS5PEqJBVT1TAUQ6lqIDUNG6kG0iSWqZ4OqWEo1txCjsF4DaKZgcQaSrRhxBhKsmH4DCXbMGyGUmwYsqHEqAMAvy56MytYoCsAAAAASUVORK5CYII=" class="heart-icon" />
-              <image wx:else src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAS0lEQVR4nOXTMQ4AIAgDQP7/aV3RkKbFMtmV5hYg4soqosxhUY0VO1Ar6MR+BUe2bL9DB1p+SweG0BjIojTGoDKG0DZWoc9YRpneBsE8yGLtxtorAAAAAElFTkSuQmCC" class="heart-icon" />
-              <text class="card-like-num">{{item.likeCount}}</text>
-            </view>
-          </view>
-          <view class="card-bottom">
-            <text class="card-title">{{item.title}}</text>
-            <view wx:if="{{item.tags.length > 0}}" class="card-tags">
-              <text wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this" wx:if="{{index < 2}}" class="card-tag">#{{tag}}</text>
-            </view>
-            <view class="card-foot">
-              <text class="card-date">{{item.dateStr}}</text>
-              <view class="card-cta">
-                <view class="icon icon-check-circle"></view>
-                <text class="card-cta-text">查看详情</text>
-              </view>
-            </view>
-          </view>
+        <view wx:for="{{leftCol}}" wx:key="id" class="work-card">
+          <work-card
+            work="{{item}}"
+            aspectClass="{{item.aspect}}"
+            bind:cardtap="onWorkCardTap"
+            bind:artisttap="onArtistTap"
+            bind:liketap="onLikeTap"
+          />
         </view>
       </view>
 
       <!-- 右列 -->
       <view class="col">
-        <view
-          wx:for="{{rightCol}}"
-          wx:key="id"
-          class="card {{item.aspect}}"
-          bindtap="viewWork"
-          data-id="{{item.id}}"
-        >
-          <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="card-img" lazy-load aria-label="{{item.title || '美甲作品'}}"/>
-          <view wx:else class="card-img card-img-empty"></view>
-          <view class="card-gradient"></view>
-          <view class="card-top">
-            <view class="card-tech-pill">
-              <image wx:if="{{item.technicianAvatarUrl}}" src="{{item.technicianAvatarUrl}}" mode="aspectFill" class="card-tech-av" binderror="onAvatarError" data-id="{{item.id}}" lazy-load aria-label="{{item.technicianName || '美甲师'}}的头像"/>
-              <view wx:else class="card-tech-av-ph"><text class="card-tech-av-char">{{item.techInitial}}</text></view>
-              <text class="card-tech-name">{{item.technicianName}}</text>
-            </view>
-            <view class="card-like-pill" catchtap="toggleLike" data-id="{{item.id}}">
-              <image wx:if="{{item.isLiked}}" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAUElEQVR4nGNgQAP/3cP/o2NS5PEqJBVT1TAUQ6lqIDUNG6kG0iSWqZ4OqWEo1txCjsF4DaKZgcQaSrRhxBhKsmH4DCXbMGyGUmwYsqHEqAMAvy56MytYoCsAAAAASUVORK5CYII=" class="heart-icon" />
-              <image wx:else src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAS0lEQVR4nOXTMQ4AIAgDQP7/aV3RkKbFMtmV5hYg4soqosxhUY0VO1Ar6MR+BUe2bL9DB1p+SweG0BjIojTGoDKG0DZWoc9YRpneBsE8yGLtxtorAAAAAElFTkSuQmCC" class="heart-icon" />
-              <text class="card-like-num">{{item.likeCount}}</text>
-            </view>
-          </view>
-          <view class="card-bottom">
-            <text class="card-title">{{item.title}}</text>
-            <view wx:if="{{item.tags.length > 0}}" class="card-tags">
-              <text wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this" wx:if="{{index < 2}}" class="card-tag">#{{tag}}</text>
-            </view>
-            <view class="card-foot">
-              <text class="card-date">{{item.dateStr}}</text>
-              <view class="card-cta">
-                <view class="icon icon-check-circle"></view>
-                <text class="card-cta-text">查看详情</text>
-              </view>
-            </view>
-          </view>
+        <view wx:for="{{rightCol}}" wx:key="id" class="work-card">
+          <work-card
+            work="{{item}}"
+            aspectClass="{{item.aspect}}"
+            bind:cardtap="onWorkCardTap"
+            bind:artisttap="onArtistTap"
+            bind:liketap="onLikeTap"
+          />
         </view>
       </view>
     </view>

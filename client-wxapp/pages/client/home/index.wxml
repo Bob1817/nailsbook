@@ -80,9 +80,8 @@
 
     <view wx:else class="no-order-card" bindtap="navigateToBooking">
       <view class="no-order-content">
-        <view class="no-order-icon-wrap"><view class="no-order-plus"></view></view>
-        <view class="no-order-copy"><text class="no-order-title">还没有预约美甲</text><text class="no-order-sub">预约你的下一次美甲</text></view>
-        <view class="book-btn"><text>立即预约</text></view>
+        <view class="no-order-copy"><text class="no-order-title">当前暂无预约</text><text class="no-order-sub">挑选喜欢的款式，快速预约美甲师</text></view>
+        <view class="book-btn"><text>去预约</text><text class="book-btn-arrow">›</text></view>
       </view>
     </view>
   </view>
@@ -131,51 +130,14 @@
     <text class="section-sub">设计能力、审美理念与适合你的场景</text>
 
     <view wx:if="{{featuredWorks.length > 0}}" class="home-works-grid">
-      <view
-        wx:for="{{featuredWorks}}"
-        wx:key="id"
-        class="home-work-card"
-        bindtap="viewWork"
-        data-id="{{item.id}}"
-      >
-        <view class="home-work-img-wrap {{index % 3 === 0 ? 'home-work-tall' : 'home-work-short'}}">
-          <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="home-work-img" lazy-load aria-label="{{item.title || '美甲作品'}}" />
-          <view wx:else class="home-work-img-empty"></view>
-          <view class="home-work-gradient"></view>
-          <!-- 顶部：美甲师头像 + 点赞 -->
-          <view class="home-work-top">
-            <view class="home-work-tech-pill">
-              <image wx:if="{{item.technicianAvatarUrl}}" src="{{item.technicianAvatarUrl}}" mode="aspectFill" class="home-work-tech-av" binderror="onWorkAvatarError" data-id="{{item.id}}" lazy-load aria-label="{{item.technicianName || '美甲师'}}的头像" />
-              <view wx:else class="home-work-tech-av-fb">
-                <text class="home-work-tech-av-char">{{item.techInitial}}</text>
-              </view>
-              <view class="home-work-tech-info">
-                <text class="home-work-tech-name">{{item.technicianName}}</text>
-
-              </view>
-            </view>
-            <view class="home-work-like-pill">
-              <image wx:if="{{item.isLiked}}" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAUElEQVR4nGNgQAP/3cP/o2NS5PEqJBVT1TAUQ6lqIDUNG6kG0iSWqZ4OqWEo1txCjsF4DaKZgcQaSrRhxBhKsmH4DCXbMGyGUmwYsqHEqAMAvy56MytYoCsAAAAASUVORK5CYII=" class="heart-icon" />
-              <image wx:else src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAS0lEQVR4nOXTMQ4AIAgDQP7/aV3RkKbFMtmV5hYg4soqosxhUY0VO1Ar6MR+BUe2bL9DB1p+SweG0BjIojTGoDKG0DZWoc9YRpneBsE8yGLtxtorAAAAAElFTkSuQmCC" class="heart-icon" />
-              <text class="home-work-like-num">{{item.likeCount}}</text>
-            </view>
-          </view>
-          <!-- 底部：详情 -->
-          <view class="home-work-bottom">
-            <text class="home-work-title">{{item.title}}</text>
-            <view wx:if="{{item.tags.length > 0}}" class="home-work-tags">
-              <block wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">
-                <text wx:if="{{index < 2}}" class="home-work-tag">#{{tag}}</text>
-              </block>
-            </view>
-            <view class="home-work-foot-row">
-              <text class="home-work-date">{{item.createdAt}}</text>
-              <view class="home-work-cta">
-                <view class="icon icon-check-circle"></view>
-                <text class="home-work-cta-text">查看详情</text>
-              </view>
-            </view>
-          </view>
+      <view class="home-works-col">
+        <view wx:for="{{featuredLeftCol}}" wx:key="id" class="work-card">
+          <work-card work="{{item}}" aspectClass="{{item.aspectClass}}" bind:cardtap="onWorkCardTap" bind:artisttap="onArtistTap" bind:liketap="onLikeTap" />
+        </view>
+      </view>
+      <view class="home-works-col">
+        <view wx:for="{{featuredRightCol}}" wx:key="id" class="work-card">
+          <work-card work="{{item}}" aspectClass="{{item.aspectClass}}" bind:cardtap="onWorkCardTap" bind:artisttap="onArtistTap" bind:liketap="onLikeTap" />
         </view>
       </view>
     </view>

@@ -24,8 +24,8 @@ page {
 .loading-spinner, .sending-spinner {
   width: 40rpx;
   height: 40rpx;
-  border: 4rpx solid rgba(255, 107, 138, 0.25);
-  border-top-color: #FF6B8A;
+  border: 4rpx solid rgba(255,107,138,0.25) /* brand-primary-alpha */;
+  border-top-color: var(--brand-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -35,7 +35,7 @@ page {
   height: 28rpx;
   border-width: 3rpx;
   border-color: rgba(255, 255, 255, 0.4);
-  border-top-color: #fff;
+  border-top-color: var(--text-inverse);
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -48,11 +48,11 @@ page {
 }
 
 .date-label {
-  font-size: 22rpx;
-  color: #6b7280;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
   background: rgba(255, 255, 255, 0.8);
   padding: 6rpx 24rpx;
-  border-radius: 20rpx;
+  border-radius: var(--radius-md);
   border: 1rpx solid rgba(0, 0, 0, 0.03);
   box-shadow: 0 4rpx 12rpx rgba(15, 23, 42, 0.04);
 }
@@ -79,29 +79,29 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 24rpx;
+  margin-bottom: var(--space-md);
 }
 
 .empty-icon-dot {
   width: 52rpx;
   height: 52rpx;
-  border-radius: 14rpx;
-  background: linear-gradient(135deg, #FF6B8A 0%, #A78BFA 100%);
+  border-radius: var(--radius-sm);
+  background: var(--brand-gradient);
   opacity: 0.5;
 }
 
 .empty-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: var(--font-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
   margin-bottom: 12rpx;
 }
 
 .empty-desc {
-  font-size: 26rpx;
-  color: #6b7280;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
   text-align: center;
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 
 .msg-row {
@@ -138,19 +138,19 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24rpx;
-  font-weight: 600;
+  font-size: var(--font-sm);
+  font-weight: var(--weight-semibold);
   border: 1rpx solid rgba(0, 0, 0, 0.03);
 }
 
 .avatar-placeholder {
   background: linear-gradient(135deg, #FFE0EA, #F4F7FB);
-  color: #FF6B8A;
+  color: var(--brand-primary);
 }
 
 .avatar-self {
-  background: linear-gradient(135deg, #FF6B8A 0%, #A78BFA 100%);
-  color: #fff;
+  background: var(--brand-gradient);
+  color: var(--text-inverse);
 }
 
 .msg-content-wrap {
@@ -169,7 +169,7 @@ page {
 
 /* ===== 消息气泡 ===== */
 .bubble {
-  border-radius: 24rpx;
+  border-radius: var(--radius-md);
   padding: 16rpx 24rpx;
   word-break: break-word;
   max-width: 100%;
@@ -177,9 +177,9 @@ page {
 }
 
 .bubble-right {
-  background: linear-gradient(135deg, #FF6B8A 0%, #FF8FA3 100%);
+  background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-light) 100%);
   border-bottom-right-radius: 8rpx;
-  box-shadow: 0 8rpx 24rpx rgba(255, 107, 138, 0.15), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
+  box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.15) /* brand-primary-alpha */, 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
 }
 
 .bubble-left {
@@ -196,28 +196,28 @@ page {
 }
 
 .msg-text {
-  font-size: 28rpx;
+  font-size: var(--font-md);
   line-height: 1.55;
 }
 
 .bubble-right .msg-text {
-  color: #fff;
+  color: var(--text-inverse);
 }
 
 .bubble-left .msg-text {
-  color: #1f2937;
+  color: var(--text-primary);
 }
 
 .msg-image {
   max-width: 360rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-sm);
   display: block;
 }
 
 /* 时间戳（内嵌在气泡内） */
 .msg-time-inline {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--font-xs);
   margin-top: 8rpx;
   opacity: 0.6;
 }
@@ -228,7 +228,7 @@ page {
 }
 
 .time-left {
-  color: #6b7280;
+  color: var(--text-muted);
   text-align: left;
 }
 
@@ -244,68 +244,70 @@ page {
 }
 
 .system-text {
-  font-size: 22rpx;
-  color: #6b7280;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
   background: rgba(255, 255, 255, 0.7);
   padding: 8rpx 32rpx;
-  border-radius: 20rpx;
+  border-radius: var(--radius-md);
   border: 1rpx solid rgba(0, 0, 0, 0.03);
 }
 
 /* ===== 预约卡片消息 ===== */
 .order-card-msg {
-  display: flex;
-  border-radius: 20rpx;
+  border-radius: var(--radius-md);
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, 0.06), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
-  border: 1rpx solid rgba(0, 0, 0, 0.04);
-  width: 480rpx;
+  background: linear-gradient(180deg, #ffffff 0%, #fcfafb 100%);
+  box-shadow: 0 8rpx 22rpx rgba(47, 34, 42, 0.055);
+  border: 1rpx solid #eee8eb;
+  width: 500rpx;
 }
 
-.card-right {
-  border: 1rpx solid rgba(255, 107, 138, 0.15);
-}
-
-.card-accent {
-  width: 6rpx;
-  flex-shrink: 0;
-  background: linear-gradient(180deg, #FF6B8A 0%, #A78BFA 100%);
-}
+.order-card-msg:active { background:#faf6f8; }
+.card-right { border-color:#eadfe4; }
 
 .card-inner {
-  flex: 1;
-  padding: 24rpx;
+  padding: var(--space-md) 26rpx 0;
 }
 
 .card-header {
   display: flex;
   align-items: center;
-  gap: 8rpx;
-  margin-bottom: 12rpx;
+  gap: 12rpx;
+  margin-bottom: 18rpx;
 }
 
+.card-calendar-icon {
+  position:relative;
+  width:36rpx;
+  height:36rpx;
+  border:3rpx solid #81757b;
+  border-radius:8rpx;
+  box-sizing:border-box;
+  flex-shrink:0;
+}
+.card-calendar-icon::before,.card-calendar-icon::after { content:''; position:absolute; top:-7rpx; width:3rpx; height:10rpx; border-radius:2rpx; background:#81757b; }
+.card-calendar-icon::before { left:7rpx; }.card-calendar-icon::after { right:7rpx; }
+.card-calendar-line { position:absolute; left:0; right:0; top:9rpx; height:3rpx; background:#81757b; }
+
+.card-kind { margin-left:auto; padding:4rpx 12rpx; border-radius:999rpx; background:#f4eff2; color:#8b7d85; font-size: var(--font-xs); line-height:1.4; }
+
 .card-label {
-  font-size: 24rpx;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: var(--font-sm);
+  font-weight: var(--weight-bold);
+  color: #332d31;
 }
 
 .card-content {
-  font-size: 24rpx;
-  color: #374151;
-  line-height: 1.6;
+  font-size: var(--font-sm);
+  color: #625961;
+  line-height: 1.65;
   display: block;
   white-space: pre-line;
 }
 
-.card-action {
-  font-size: 24rpx;
-  color: #FF6B8A;
-  font-weight: 500;
-  margin-top: 12rpx;
-  display: block;
-}
+.card-footer { min-height:88rpx; margin-top:18rpx; border-top:1rpx solid #f0ebed; display:flex; align-items:center; justify-content:space-between; }
+.card-action { font-size: var(--font-sm); color:#7b6d75; font-weight: var(--weight-semibold); }
+.card-chevron { color:#a89da3; font-size: var(--font-lg); line-height:1; }
 
 /* ===== 底部输入栏 ===== */
 .input-bar {
@@ -335,8 +337,8 @@ page {
   bottom: 100%;
   margin-bottom: 14rpx;
   z-index: 30;
-  background: #ffffff;
-  border-radius: 20rpx;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
   padding: 8rpx 0;
   min-width: 248rpx;
   box-shadow: 0 12rpx 36rpx rgba(15, 23, 42, 0.16), 0 2rpx 8rpx rgba(15, 23, 42, 0.06);
@@ -352,9 +354,9 @@ page {
   display: flex;
   align-items: center;
   gap: 18rpx;
-  padding: 24rpx 28rpx;
+  padding: var(--space-md) 28rpx;
 }
-.add-menu-item:active { background: #f5f6fa; }
+.add-menu-item:active { background: var(--bg-page); }
 
 .add-menu-divider {
   height: 1rpx;
@@ -363,9 +365,9 @@ page {
 }
 
 .add-menu-text {
-  font-size: 28rpx;
-  color: #1f2937;
-  font-weight: 500;
+  font-size: var(--font-md);
+  color: var(--text-primary);
+  font-weight: var(--weight-medium);
 }
 
 /* 菜单底部小箭头，指向 + 按钮 */
@@ -375,7 +377,7 @@ page {
   bottom: -12rpx;
   width: 24rpx;
   height: 24rpx;
-  background: #ffffff;
+  background: var(--bg-card);
   transform: rotate(45deg);
   border-radius: 0 0 6rpx 0;
   box-shadow: 4rpx 4rpx 10rpx rgba(15, 23, 42, 0.06);
@@ -411,7 +413,7 @@ page {
 
 /* 预约图标：日历 */
 .menu-icon-booking {
-  border: 3rpx solid #FF6B8A;
+  border: 3rpx solid var(--brand-primary);
   border-radius: 6rpx;
   box-sizing: border-box;
   overflow: hidden;
@@ -421,7 +423,7 @@ page {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 11rpx;
-  background: #FF6B8A;
+  background: var(--brand-primary);
 }
 .menu-icon-booking::after {
   content: '';
@@ -430,7 +432,7 @@ page {
   transform: translateX(-50%);
   width: 8rpx; height: 8rpx;
   border-radius: 1rpx;
-  background: #FF6B8A;
+  background: var(--brand-primary);
 }
 
 /* ===== 输入框（左侧内置 + 号上传图片）===== */
@@ -438,7 +440,7 @@ page {
   flex: 1;
   min-width: 0;
   height: 72rpx;
-  background: #f3f4f6;
+  background: var(--bg-input);
   border-radius: 36rpx;
   display: flex;
   align-items: center;
@@ -490,14 +492,14 @@ page {
   flex: 1;
   min-width: 0;
   height: 72rpx;
-  font-size: 28rpx;
-  color: #1f2937;
+  font-size: var(--font-md);
+  color: var(--text-primary);
   background: transparent;
 }
 
 .input-placeholder {
-  color: #6b7280;
-  font-size: 28rpx;
+  color: var(--text-muted);
+  font-size: var(--font-md);
 }
 
 /* ===== 发送按钮 ===== */
@@ -520,8 +522,8 @@ page {
 .send-btn:active { opacity: 0.85; }
 
 .send-btn-active {
-  background: linear-gradient(135deg, #FF6B8A 0%, #FF8FA3 100%);
-  box-shadow: 0 8rpx 24rpx rgba(255, 107, 138, 0.3);
+  background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-light) 100%);
+  box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.3) /* brand-primary-alpha */;
 }
 
 /* 发送图标：向上箭头（直观表达「发送」）*/
@@ -556,8 +558,8 @@ page {
   border-radius: 0 0 3rpx 3rpx;
 }
 
-.send-btn-active .icon-send::before { border-bottom-color: #ffffff; }
-.send-btn-active .icon-send::after { background: #ffffff; }
+.send-btn-active .icon-send::before { border-bottom-color: var(--text-inverse); }
+.send-btn-active .icon-send::after { background: var(--bg-card); }
 
 /* ===== 预约快捷入口 ===== */
 .booking-btn {
@@ -578,7 +580,7 @@ page {
   position: relative;
   width: 36rpx;
   height: 34rpx;
-  border: 3rpx solid #FF6B8A;
+  border: 3rpx solid var(--brand-primary);
   border-radius: 6rpx;
   box-sizing: border-box;
   overflow: hidden;
@@ -591,7 +593,7 @@ page {
   left: 0;
   right: 0;
   height: 9rpx;
-  background: #FF6B8A;
+  background: var(--brand-primary);
 }
 
 .icon-calendar::after {
@@ -603,7 +605,7 @@ page {
   width: 7rpx;
   height: 7rpx;
   border-radius: 1rpx;
-  background: #FF6B8A;
+  background: var(--brand-primary);
 }
 
 /* ===== 预约卡片弹层 ===== */
@@ -622,8 +624,8 @@ page {
   left: 0;
   right: 0;
   bottom: 0;
-  background: #ffffff;
-  border-radius: 32rpx 32rpx 0 0;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg) 32rpx 0 0;
   z-index: 1501;
   transform: translateY(100%);
   transition: transform 0.3s ease;
@@ -655,9 +657,9 @@ page {
 }
 
 .sheet-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: var(--font-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
 }
 
 .sheet-close {
@@ -667,7 +669,7 @@ page {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #f3f4f6;
+  background: var(--bg-input);
 }
 
 .sheet-close:active { background: #e5e7eb; }
@@ -699,7 +701,7 @@ page {
 }
 
 .sheet-body {
-  padding: 24rpx 40rpx;
+  padding: var(--space-md) 40rpx;
   overflow-y: auto;
   max-height: 50vh;
 }
@@ -714,8 +716,8 @@ page {
   display: flex;
   align-items: center;
   padding: 4rpx;
-  background: #f8f9fc;
-  border-radius: 20rpx;
+  background: var(--bg-page);
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -736,23 +738,23 @@ page {
 }
 
 .order-select-name {
-  font-size: 28rpx;
-  font-weight: 500;
-  color: #1f2937;
+  font-size: var(--font-md);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
   display: block;
 }
 
 .order-select-detail {
-  font-size: 24rpx;
-  color: #6b7280;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
   margin-top: 4rpx;
   display: block;
 }
 
 .order-select-send {
-  font-size: 26rpx;
-  color: #FF6B8A;
-  font-weight: 600;
+  font-size: var(--font-sm);
+  color: var(--brand-primary);
+  font-weight: var(--weight-semibold);
   flex-shrink: 0;
   padding: 0 24rpx;
 }
@@ -775,17 +777,17 @@ page {
 }
 
 .empty-orders-text {
-  font-size: 26rpx;
-  color: #6b7280;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
 }
 
 .go-booking-btn {
   display: inline-block;
-  background: linear-gradient(135deg, #FF6B8A 0%, #A78BFA 100%);
-  color: #fff;
-  font-size: 28rpx;
-  font-weight: 500;
+  background: var(--brand-gradient);
+  color: var(--text-inverse);
+  font-size: var(--font-md);
+  font-weight: var(--weight-medium);
   padding: 16rpx 48rpx;
-  border-radius: 40rpx;
-  box-shadow: 0 8rpx 24rpx rgba(255, 107, 138, 0.25);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.25) /* brand-primary-alpha */;
 }

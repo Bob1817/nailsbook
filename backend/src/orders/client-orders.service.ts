@@ -75,6 +75,10 @@ export class ClientOrdersService {
     }
     if (this.subscriptions) {
       await this.subscriptions.assertCanCreateBooking(dto.techId);
+      await this.subscriptions.assertCanActivateCustomer(
+        dto.techId,
+        clientUserId,
+      );
     }
 
     if (dto.sourceWorkId) {
@@ -169,7 +173,10 @@ export class ClientOrdersService {
               clientUserId,
             },
           },
-          update: orderAddress ? { address: orderAddress } : {},
+          update: {
+            ...(orderAddress ? { address: orderAddress } : {}),
+            archivedAt: null,
+          },
           create: {
             technicianId: dto.techId,
             clientUserId,
@@ -314,6 +321,10 @@ export class ClientOrdersService {
     }
     if (this.subscriptions) {
       await this.subscriptions.assertCanCreateBooking(dto.techId);
+      await this.subscriptions.assertCanActivateCustomer(
+        dto.techId,
+        clientUserId,
+      );
     }
 
     if (!design.technician.homeService && !design.technician.shopService) {
@@ -410,7 +421,10 @@ export class ClientOrdersService {
               clientUserId,
             },
           },
-          update: orderAddress ? { address: orderAddress } : {},
+          update: {
+            ...(orderAddress ? { address: orderAddress } : {}),
+            archivedAt: null,
+          },
           create: {
             technicianId: dto.techId,
             clientUserId,

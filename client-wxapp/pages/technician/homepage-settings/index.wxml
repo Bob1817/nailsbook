@@ -1,0 +1,18 @@
+<nav-bar title="我的主页" showBack/>
+<view class="page">
+  <view class="preview">
+    <image wx:if="{{avatarUrl}}" class="avatar" src="{{avatarUrl}}" mode="aspectFill" aria-label="主页头像"/>
+    <view wx:else class="avatar avatar-fallback">{{name[0] || '美'}}</view>
+    <view class="preview-copy"><text class="preview-name">{{name || '美甲师'}}</text><text class="preview-area">{{city || '城市待完善'}}{{serviceArea ? ' · ' + serviceArea : ''}}</text></view>
+    <view class="change-avatar" bindtap="chooseAvatar">更换头像</view>
+  </view>
+  <view class="form">
+    <view class="field"><text class="label">主页名称</text><input class="input" value="{{name}}" bindinput="onInput" data-field="name" maxlength="20" placeholder="输入展示名称"/></view>
+    <view class="field"><view class="label-row"><text class="label">个人简介</text><text class="counter">{{bio.length}}/200</text></view><textarea class="textarea" value="{{bio}}" bindinput="onInput" data-field="bio" maxlength="200" placeholder="介绍你的风格、经验和擅长方向"/></view>
+    <view class="field"><text class="label">所在城市</text><picker mode="region" bindchange="onCityChange"><view class="picker">{{city || '选择城市'}}<text>›</text></view></picker></view>
+    <view class="field"><text class="label">服务区域</text><picker mode="region" bindchange="onServiceAreaChange"><view class="picker">{{serviceArea || '选择服务区域'}}<text>›</text></view></picker></view>
+  </view>
+  <text class="hint">主页作品将自动同步“作品管理”中的公开作品。</text>
+  <view class="works-entry" bindtap="goWorks"><text>管理主页作品</text><text>›</text></view>
+  <view class="save {{saving ? 'disabled' : ''}}" bindtap="save">{{saving ? '保存中...' : '保存主页'}}</view>
+</view>

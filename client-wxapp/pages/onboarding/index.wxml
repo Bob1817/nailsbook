@@ -1,0 +1,156 @@
+<!--
+  NailBook 新用户引导页
+  注册完成后选择：绑定美甲师 / 我是美甲师 / 稍后再说
+-->
+<nav-bar title="选择你的身份" showBack="{{false}}"/>
+
+<view class="wrap">
+  <!-- ★ 头部问候 -->
+  <view class="hero">
+    <view class="hero-icon-wrap">
+      <image class="hero-icon" src="/static/icons/role-client.svg" mode="aspectFit" />
+    </view>
+    <text class="hero-title">欢迎加入 NailBook</text>
+    <text class="hero-sub">完成这一步，开启你的美甲之旅</text>
+  </view>
+
+  <!-- ★ 方式一：绑定美甲师 -->
+  <view class="option-card option-card-pink"
+    bindtap="showBindFlow"
+    hover-class="option-card-hover"
+    role="button"
+    aria-label="选择绑定美甲师"
+  >
+    <view class="option-icon option-icon-pink">
+      <image src="/static/icons/role-client.svg" mode="aspectFit" class="option-icon-img" />
+    </view>
+    <view class="option-info">
+      <text class="option-title">绑定美甲师</text>
+      <text class="option-desc">输入邀请码或粘贴邀请链接，绑定你的专属美甲师</text>
+    </view>
+    <text class="option-arrow">›</text>
+  </view>
+
+  <!-- ★ 方式二：我是美甲师 -->
+  <view class="option-card option-card-purple"
+    bindtap="showTechFlow"
+    hover-class="option-card-hover"
+    role="button"
+    aria-label="选择我是美甲师"
+  >
+    <view class="option-icon option-icon-purple">
+      <image src="/static/icons/role-technician.svg" mode="aspectFit" class="option-icon-img" />
+    </view>
+    <view class="option-info">
+      <text class="option-title">我是美甲师</text>
+      <text class="option-desc">使用超管分配的激活密钥，开通美甲师账户</text>
+    </view>
+    <text class="option-arrow">›</text>
+  </view>
+
+  <!-- ★ 稍后再说 -->
+  <view class="skip-row" bindtap="skipOnboarding">
+    <text class="skip-text">稍后再说，先去逛逛</text>
+  </view>
+</view>
+
+<!-- ===== 子面板：绑定美甲师 ===== -->
+<view wx:if="{{showBindFlow}}" class="flow-mask" bindtap="closeFlows">
+  <view class="flow-panel" catchtap="">
+    <view class="flow-handle"></view>
+    <text class="flow-title">绑定美甲师</text>
+    <text class="flow-sub">输入美甲师的邀请码或粘贴邀请链接</text>
+
+    <!-- 邀请码 / 链接输入 -->
+    <view class="flow-input-wrap {{checkingCode ? 'flow-input-loading' : ''}}">
+      <input
+        class="flow-input {{foundTech ? 'flow-input-success' : ''}} {{bindError ? 'flow-input-error' : ''}}"
+        value="{{inviteCode}}"
+        bindinput="onInviteInput"
+        placeholder="邀请码 或 邀请链接"
+        placeholder-class="flow-placeholder"
+        confirm-type="search"
+        cursor-spacing="16"
+        adjust-position="{{true}}"
+      />
+      <view wx:if="{{checkingCode}}" class="flow-spinner"></view>
+      <view wx:if="{{foundTech && !checkingCode}}" class="flow-check">✓</view>
+    </view>
+
+    <!-- 找到美甲师 -->
+    <view wx:if="{{foundTech}}" class="found-card">
+      <view class="found-card-av">
+        <image wx:if="{{foundTech.avatarUrl}}" src="{{foundTech.avatarUrl}}" mode="aspectFill" class="found-av-img" />
+        <text wx:else class="found-av-char">{{foundTech.name ? foundTech.name[0] : '?'}}</text>
+      </view>
+      <view class="found-card-info">
+        <text class="found-card-name">{{foundTech.name}}</text>
+        <text wx:if="{{foundTech.city}}" class="found-card-city">{{foundTech.city}}</text>
+      </view>
+    </view>
+
+    <!-- 留言 -->
+    <textarea
+      wx:if="{{foundTech}}"
+      class="flow-textarea"
+      value="{{bindNote}}"
+      bindinput="onBindNoteInput"
+      placeholder="给美甲师留言（可选，如：我是老顾客小红）"
+      placeholder-class="flow-placeholder"
+      maxlength="100"
+      auto-height
+    />
+
+    <view class="flow-error" wx:if="{{bindError}}">{{bindError}}</view>
+
+    <view
+      class="flow-btn {{!foundTech || binding ? 'flow-btn-disabled' : ''}}"
+      bindtap="submitBind"
+    >
+      <text>{{binding ? '绑定中...' : (foundTech ? '确认绑定' : '输入邀请码后自动查找')}}</text>
+    </view>
+
+    <view class="flow-cancel" bindtap="closeFlows">返回</view>
+  </view>
+</view>
+
+<!-- ===== 子面板：我是美甲师 ===== -->
+<view wx:if="{{showTechFlow}}" class="flow-mask" bindtap="closeFlows">
+  <view class="flow-panel" catchtap="">
+    <view class="flow-handle"></view>
+    <text class="flow-title">开通美甲师账户</text>
+    <text class="flow-sub">输入超管分配的激活密钥</text>
+
+    <view class="flow-input-wrap {{activating ? 'flow-input-loading' : ''}}">
+      <input
+        class="flow-input {{activateError ? 'flow-input-error' : ''}}"
+        value="{{activateKey}}"
+        bindinput="onActivateKeyInput"
+        placeholder="请输入激活密钥"
+        placeholder-class="flow-placeholder"
+        password="{{!showActivateKey}}"
+        confirm-type="done"
+        cursor-spacing="16"
+        adjust-position="{{true}}"
+      />
+      <view class="flow-eye" bindtap="toggleActivateKeyVisibility">
+        <text>{{showActivateKey ? '隐藏' : '显示'}}</text>
+      </view>
+    </view>
+
+    <view class="flow-error" wx:if="{{activateError}}">{{activateError}}</view>
+    <view class="flow-hint">
+      <view class="flow-hint-icon">ℹ</view>
+      <text>密钥是超管后台生成的唯一凭证，一个密钥仅可使用一次。请联系你的管理员获取。</text>
+    </view>
+
+    <view
+      class="flow-btn {{!activateKey.trim() || activating ? 'flow-btn-disabled' : ''}}"
+      bindtap="submitActivate"
+    >
+      <text>{{activating ? '激活中...' : '激活美甲师账户'}}</text>
+    </view>
+
+    <view class="flow-cancel" bindtap="closeFlows">返回</view>
+  </view>
+</view>
