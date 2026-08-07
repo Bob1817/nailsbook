@@ -76,7 +76,18 @@ Page({
         source: this.registrationSource
       });
 
-      // ★ 新用户 → 引导页
+      // ★ 需要设置密码 → 跳转设置密码页
+      if (res.needsSetupPassword) {
+        wx.hideLoading();
+        this.setData({ wechatLoading: false });
+        wx.redirectTo({
+          url: '/pages/setup-password/index?token=' + encodeURIComponent(res.passwordSetupToken) +
+               '&phone=' + encodeURIComponent(res.phone || '')
+        });
+        return;
+      }
+
+      // ★ 新用户 → 引导页（理论上 WeChat 登录不再走这里，防御保留）
       if (res.isNewUser) {
         const app = getApp();
         app.setLogin('client', res.accessToken || res.token, res.client || res.userInfo);

@@ -66,6 +66,10 @@ const auth = {
     return api.post(`${base}/auth/forgot-password/reset`, { phone, code, newPassword }, { needAuth: false });
   },
 
+  /** 微信注册/首次登录 → 设置密码 */
+  setupPassword: (passwordSetupToken, password) =>
+    api.post(`${C}/auth/setup-password`, { passwordSetupToken, password }, { needAuth: false }),
+
   sendResetCode: (phone, role = 'client') => {
     const base = role === 'technician' ? T : C;
     return api.post(`${base}/auth/forgot-password/send-code`, { phone }, { needAuth: false });

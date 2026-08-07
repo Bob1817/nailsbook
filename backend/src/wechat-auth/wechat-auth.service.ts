@@ -5,7 +5,6 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { randomBytes } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../common/prisma/prisma.service';
@@ -108,25 +107,37 @@ export class WechatAuthService {
     const isNewClient = !client;
 
     if (!client) {
-      if (!dto.inviteCode) {
-        throw new BadRequestException('新客户需要通过美甲师邀请入口注册');
-      }
-      const registered = await this.clientAuth.registerByInvite(
-        {
+      // 微信授权注册：创建客户账号（无需邀请码）
+      client = await this.prisma.clientUser.create({
+        data: {
           phone,
-          password: randomBytes(32).toString('hex'),
-          inviteCode: dto.inviteCode,
-          source: dto.source === 'card' ? 'card' : 'invite',
+          passwordHash: '', // 待用户设置密码
+          managedPasswordCiphertext: null,
+          status: 'active',
         },
-        session,
-      );
-      client = await this.prisma.clientUser.findUnique({
-        where: { id: registered.client.id },
+      });
+      // 新用户同步创建 wechatIdentity
+      await this.prisma.wechatIdentity.create({
+        data: { appId: session.appId, openId: session.openId, unionId: session.unionId, clientUserId: client.id },
       });
     }
+
     if (!client) throw new BadRequestException('客户账号创建失败');
 
+    // 已有账号但未绑定微信 → 关联身份
     if (!isNewClient) await this.linkIdentity(session, 'client', client.id);
+
+    // 检查是否已设置密码
+    if (!client.passwordHash) {
+      return {
+        authenticated: false,
+        needsSetupPassword: true,
+        passwordSetupToken: this.clientAuth.createPasswordSetupToken(client.id),
+        phone: client.phone,
+        message: '请设置登录密码',
+      };
+    }
+
     return {
       authenticated: true,
       role: 'client' as const,

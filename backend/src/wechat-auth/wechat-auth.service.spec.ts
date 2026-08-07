@@ -35,13 +35,18 @@ describe('WechatAuthService', () => {
         findUnique: jest.fn(),
         findFirst: jest.fn(),
         upsert: jest.fn(),
+        create: jest.fn(),
       },
-      clientUser: { findUnique: jest.fn() },
+      clientUser: {
+        findUnique: jest.fn(),
+        create: jest.fn(),
+      },
       technician: { findUnique: jest.fn() },
     };
     clientAuth = {
       loginByWechat: jest.fn().mockResolvedValue({ accessToken: 'client-jwt' }),
       registerByInvite: jest.fn(),
+      createPasswordSetupToken: jest.fn().mockReturnValue('setup-token'),
     };
     technicianAuth = {
       loginByWechat: jest.fn(),
@@ -92,7 +97,7 @@ describe('WechatAuthService', () => {
     expect(clientAuth.loginByWechat).toHaveBeenCalledWith(9);
   });
 
-  it('links a verified phone to an existing client account', async () => {
+  it('links a verified phone to an existing client with password → direct login', async () => {
     global.fetch = jest
       .fn()
       .mockResolvedValueOnce({
@@ -111,6 +116,7 @@ describe('WechatAuthService', () => {
     prisma.clientUser.findUnique.mockResolvedValue({
       id: 5,
       phone: '13800138000',
+      passwordHash: '$2b$10$hashedpassword', // 已设置密码
     });
     prisma.wechatIdentity.findUnique.mockResolvedValue(null);
     prisma.wechatIdentity.findFirst.mockResolvedValue(null);
@@ -129,7 +135,45 @@ describe('WechatAuthService', () => {
     );
   });
 
-  it('creates a new invited client with the WeChat identity in registration', async () => {
+  it('returns needsSetupPassword for existing client without password', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () =>
+          Promise.resolve({ access_token: 'access', expires_in: 7200 }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            errcode: 0,
+            phone_info: { purePhoneNumber: '13800138000' },
+          }),
+      }) as never;
+    prisma.clientUser.findUnique.mockResolvedValue({
+      id: 5,
+      phone: '13800138000',
+      passwordHash: '', // 未设置密码
+    });
+    prisma.wechatIdentity.findUnique.mockResolvedValue(null);
+    prisma.wechatIdentity.findFirst.mockResolvedValue(null);
+    prisma.wechatIdentity.upsert.mockResolvedValue({});
+
+    await expect(
+      service.completeClient({
+        wechatSessionToken: 'session',
+        phoneCode: 'phone-code',
+      }),
+    ).resolves.toMatchObject({
+      authenticated: false,
+      needsSetupPassword: true,
+      passwordSetupToken: 'setup-token',
+      phone: '13800138000',
+    });
+  });
+
+  it('creates new client via WeChat and returns needsSetupPassword', async () => {
     global.fetch = jest
       .fn()
       .mockResolvedValueOnce({
@@ -145,26 +189,33 @@ describe('WechatAuthService', () => {
             phone_info: { purePhoneNumber: '13900139000' },
           }),
       }) as never;
-    prisma.clientUser.findUnique
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ id: 12, phone: '13900139000' });
-    clientAuth.registerByInvite.mockResolvedValue({ client: { id: 12 } });
+    prisma.clientUser.findUnique.mockResolvedValue(null);
+    prisma.clientUser.create.mockResolvedValue({
+      id: 12,
+      phone: '13900139000',
+      passwordHash: '',
+    });
+    prisma.wechatIdentity.create.mockResolvedValue({});
 
-    await service.completeClient({
-      wechatSessionToken: 'session',
-      phoneCode: 'phone-code',
-      inviteCode: 'INVITE01',
-      source: 'card',
+    await expect(
+      service.completeClient({
+        wechatSessionToken: 'session',
+        phoneCode: 'phone-code',
+      }),
+    ).resolves.toMatchObject({
+      authenticated: false,
+      needsSetupPassword: true,
+      passwordSetupToken: 'setup-token',
     });
 
-    expect(clientAuth.registerByInvite).toHaveBeenCalledWith(
+    // 验证新用户通过 prisma.clientUser.create 创建（而非 registerByInvite）
+    expect(prisma.clientUser.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        phone: '13900139000',
-        inviteCode: 'INVITE01',
-        source: 'card',
+        data: expect.objectContaining({
+          phone: '13900139000',
+          passwordHash: '',
+        }),
       }),
-      expect.objectContaining({ appId: 'wx-test', openId: 'openid-1' }),
     );
-    expect(prisma.wechatIdentity.upsert).not.toHaveBeenCalled();
   });
 });

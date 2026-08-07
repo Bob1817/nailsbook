@@ -34,6 +34,7 @@ import { CheckPhoneDto } from '../technician-auth/dto/check-phone.dto';
 import { RefreshTokenDto } from '../common/dto/refresh-token.dto';
 import { ClientChangePasswordDto } from './dto/change-password.dto';
 import { ClientForgotSendCodeDto, ClientForgotResetDto } from './dto/forgot-password.dto';
+import { SetupPasswordDto } from './dto/setup-password.dto';
 import { RegisterDeviceTokenDto } from '../notifications/dto/register-device-token.dto';
 import { PushService } from '../notifications/push.service';
 
@@ -162,6 +163,16 @@ export class ClientAuthController {
       body.code,
       body.newPassword,
     );
+  }
+
+  @Post('setup-password')
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
+  @ApiOperation({ summary: '微信注册后首次设置登录密码' })
+  @ApiBody({ type: SetupPasswordDto })
+  @ApiResponse({ status: 200, description: '密码设置成功并返回登录凭证' })
+  @ApiResponse({ status: 401, description: '密码设置凭证无效或已过期' })
+  async setupPassword(@Body() body: SetupPasswordDto) {
+    return this.clientAuthService.setupPassword(body);
   }
 
   @Post('refresh')

@@ -13,6 +13,7 @@ import { ClientLoginDto } from './dto/client-login.dto';
 import { RegisterByInviteDto } from './dto/register-by-invite.dto';
 import { RegisterBySmsDto } from './dto/register-by-sms.dto';
 import { LoginBySmsDto } from './dto/login-by-sms.dto';
+import { SetupPasswordDto } from './dto/setup-password.dto';
 import { BindTechnicianDto } from './dto/bind-technician.dto';
 import { VerificationCodeService } from '../common/verification-code/verification-code.service';
 import { SmsService } from '../common/sms/sms.service';
@@ -534,23 +535,11 @@ export class ClientAuthService {
     }
 
     if (!client.passwordHash) {
-      // SMS 注册用户无用户自设密码，引导使用短信验证码登录
-      if (client.managedPasswordCiphertext) {
-        throw new UnauthorizedException(
-          '该账号通过短信验证码注册，请使用短信验证码登录',
-        );
-      }
-      throw new UnauthorizedException('账号未设置密码，请通过忘记密码设置');
+      throw new UnauthorizedException('账号未设置密码，请通过微信登录设置密码');
     }
 
     const valid = await bcrypt.compare(dto.password, client.passwordHash);
     if (!valid) {
-      // SMS 注册用户输错密码 → 引导使用短信登录
-      if (client.managedPasswordCiphertext) {
-        throw new UnauthorizedException(
-          '该账号通过短信验证码注册，请使用短信验证码登录',
-        );
-      }
       throw new UnauthorizedException('手机号或密码错误');
     }
 
@@ -592,6 +581,57 @@ export class ClientAuthService {
       roles,
       needsOnboarding,
     };
+  }
+
+  /** 签发密码设置短期 token（供 wechat-auth completeClient 调用） */
+  createPasswordSetupToken(clientId: number): string {
+    return this.jwtService.sign(
+      { clientId, sub: clientId.toString(), tokenType: 'password-setup' },
+      { expiresIn: '10m' },
+    );
+  }
+
+  /** 微信注册/首次登录后设置密码 */
+  async setupPassword(dto: SetupPasswordDto) {
+    // 1. 验证 password-setup JWT
+    let payload: { clientId: number; tokenType: string };
+    try {
+      payload = this.jwtService.verify(dto.passwordSetupToken);
+    } catch {
+      throw new UnauthorizedException('密码设置凭证已过期，请重新登录');
+    }
+    if (payload.tokenType !== 'password-setup' || !payload.clientId) {
+      throw new UnauthorizedException('无效的密码设置凭证');
+    }
+
+    // 2. 查找用户
+    const client = await this.prisma.clientUser.findUnique({
+      where: { id: payload.clientId },
+    });
+    if (!client) {
+      throw new UnauthorizedException('用户不存在');
+    }
+    if (client.status !== 'active') {
+      throw new UnauthorizedException('账号已被禁用');
+    }
+
+    // 3. 幂等：密码已存在则直接登录
+    if (client.passwordHash) {
+      return this.loginByWechat(client.id);
+    }
+
+    // 4. 哈希并保存密码
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+    await this.prisma.clientUser.update({
+      where: { id: client.id },
+      data: {
+        passwordHash,
+        managedPasswordCiphertext: null, // 用户自设密码后清除托管密码
+      },
+    });
+
+    // 5. 登录
+    return this.loginByWechat(client.id);
   }
 
   async loginByWechat(clientUserId: number) {
