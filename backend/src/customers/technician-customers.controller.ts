@@ -21,12 +21,13 @@ import {
 } from '@nestjs/swagger';
 import { CustomersService } from './customers.service';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
+import { TouristGuard } from '../technician-auth/tourist.guard';
 import { CreateCustomerFollowUpDto } from './dto/create-customer-follow-up.dto';
 
 @ApiTags('美甲师-客户')
 @ApiBearerAuth()
 @Controller('technician/customers')
-@UseGuards(TechnicianJwtAuthGuard)
+@UseGuards(TechnicianJwtAuthGuard, TouristGuard)
 export class TechnicianCustomersController {
   constructor(private readonly customersService: CustomersService) {}
 

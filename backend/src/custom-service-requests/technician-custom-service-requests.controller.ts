@@ -18,12 +18,13 @@ import {
 } from '@nestjs/swagger';
 import { CustomServiceRequestsService } from './custom-service-requests.service';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
+import { TouristGuard } from '../technician-auth/tourist.guard';
 import { QuoteCustomServiceRequestDto } from './dto/quote-custom-service-request.dto';
 
 @ApiTags('美甲师-定制服务')
 @ApiBearerAuth()
 @Controller('technician/custom-service-requests')
-@UseGuards(TechnicianJwtAuthGuard)
+@UseGuards(TechnicianJwtAuthGuard, TouristGuard)
 export class TechnicianCustomServiceRequestsController {
   constructor(
     private readonly customServiceRequestsService: CustomServiceRequestsService,

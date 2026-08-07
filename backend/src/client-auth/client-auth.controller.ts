@@ -35,6 +35,7 @@ import { RefreshTokenDto } from '../common/dto/refresh-token.dto';
 import { ClientChangePasswordDto } from './dto/change-password.dto';
 import { ClientForgotSendCodeDto, ClientForgotResetDto } from './dto/forgot-password.dto';
 import { SetupPasswordDto } from './dto/setup-password.dto';
+import { SelectRoleDto } from './dto/select-role.dto';
 import { RegisterDeviceTokenDto } from '../notifications/dto/register-device-token.dto';
 import { PushService } from '../notifications/push.service';
 
@@ -173,6 +174,20 @@ export class ClientAuthController {
   @ApiResponse({ status: 401, description: '密码设置凭证无效或已过期' })
   async setupPassword(@Body() body: SetupPasswordDto) {
     return this.clientAuthService.setupPassword(body);
+  }
+
+  @Post('select-role')
+  @UseGuards(ClientJwtAuthGuard)
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @ApiOperation({ summary: '注册后选择角色（客户/美甲师），可跳过绑定/激活' })
+  @ApiBody({ type: SelectRoleDto })
+  @ApiResponse({ status: 200, description: '返回对应角色的登录凭证' })
+  @ApiResponse({ status: 400, description: '参数错误或密钥无效' })
+  async selectRole(
+    @Req() request: { user: { clientUserId: number } },
+    @Body() body: SelectRoleDto,
+  ) {
+    return this.clientAuthService.selectRole(request.user.clientUserId, body);
   }
 
   @Post('refresh')

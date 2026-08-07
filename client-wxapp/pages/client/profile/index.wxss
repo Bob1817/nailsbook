@@ -690,6 +690,12 @@ page {
   min-width: 0;
 }
 
+.role-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
 .role-card-title {
   display: block;
   font-size: var(--font-md);
@@ -715,6 +721,48 @@ page {
 }
 
 .role-card-switch-btn:active { opacity: 0.82; }
+
+/* 游客标签 */
+.role-card-tourist-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4rpx 16rpx;
+  background: #FFF7ED;
+  border: 1rpx solid #FDBA74;
+  border-radius: var(--radius-xs);
+  font-size: var(--font-xs);
+  color: #C2410C;
+  font-weight: var(--weight-medium);
+  flex-shrink: 0;
+  margin-bottom: 4rpx;
+}
+
+.role-card-badge-tourist {
+  background: #FFF7ED;
+}
+
+/* 角色切换底部面板 - 游客 */
+.role-sheet-option-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.role-sheet-tourist-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4rpx 16rpx;
+  background: #FFF7ED;
+  border: 1rpx solid #FDBA74;
+  border-radius: var(--radius-xs);
+  font-size: var(--font-xs);
+  color: #C2410C;
+  font-weight: var(--weight-medium);
+}
+
+.role-sheet-option-icon-tourist {
+  background: #FFF7ED;
+}
 
 /* ===== 身份切换底部面板 ===== */
 .role-sheet-mask {

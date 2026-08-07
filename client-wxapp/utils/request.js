@@ -120,7 +120,9 @@ function refreshAccessToken(apiBase) {
           return;
         }
         const currentUser = appInstance?.globalData?.userInfo || wx.getStorageSync(`${role}_userInfo`);
-        appInstance.setLogin(role, res.data.accessToken, res.data.user || res.data.technician || currentUser);
+        const currentRoles = appInstance?.globalData?.roles || wx.getStorageSync('roles') || [role];
+        const currentIsTourist = appInstance?.globalData?.isTourist ?? wx.getStorageSync('isTourist') || false;
+        appInstance.setLogin(role, res.data.accessToken, res.data.user || res.data.technician || currentUser, currentRoles, currentIsTourist);
         if (res.data.refreshToken) {
           wx.setStorageSync(`${role}_refreshToken`, res.data.refreshToken);
         }

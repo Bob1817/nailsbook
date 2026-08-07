@@ -20,6 +20,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
+import { TouristGuard } from '../technician-auth/tourist.guard';
 import { TechnicianWorksService } from './technician-works.service';
 import { CreateWorkDto, UpdateWorkDto } from './dto/create-work.dto';
 import { UpdateWorkAccessDto } from './dto/work-access.dto';
@@ -27,7 +28,7 @@ import { UpdateWorkAccessDto } from './dto/work-access.dto';
 @ApiTags('美甲师-作品')
 @ApiBearerAuth()
 @Controller('technician/works')
-@UseGuards(TechnicianJwtAuthGuard)
+@UseGuards(TechnicianJwtAuthGuard, TouristGuard)
 export class TechnicianWorksController {
   constructor(
     private readonly technicianWorksService: TechnicianWorksService,

@@ -1,10 +1,11 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
+import { TouristGuard } from '../technician-auth/tourist.guard';
 import { ClientDesignsService } from './client-designs.service';
 
 @Controller('technician/designs')
-@UseGuards(TechnicianJwtAuthGuard)
+@UseGuards(TechnicianJwtAuthGuard, TouristGuard)
 @ApiTags('美甲师-私人设计')
 @ApiBearerAuth()
 export class TechnicianDesignsController {

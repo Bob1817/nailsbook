@@ -2,6 +2,7 @@ import { Controller, Get, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ClientJwtAuthGuard } from '../client-auth/client-jwt-auth.guard';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
+import { TouristGuard } from '../technician-auth/tourist.guard';
 import { RewardFundService } from './reward-fund.service';
 
 @ApiTags('客户端-美甲基金')
@@ -20,7 +21,7 @@ export class ClientRewardFundController {
 @ApiTags('美甲师-美甲基金')
 @ApiBearerAuth()
 @Controller('technician/reward-funds')
-@UseGuards(TechnicianJwtAuthGuard)
+@UseGuards(TechnicianJwtAuthGuard, TouristGuard)
 export class TechnicianRewardFundController {
   constructor(private readonly service: RewardFundService) {}
 

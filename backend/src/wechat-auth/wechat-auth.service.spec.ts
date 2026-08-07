@@ -204,8 +204,7 @@ describe('WechatAuthService', () => {
       }),
     ).resolves.toMatchObject({
       authenticated: false,
-      needsSetupPassword: true,
-      passwordSetupToken: 'setup-token',
+      needsRoleSelection: true,
     });
 
     // 验证新用户通过 prisma.clientUser.create 创建（而非 registerByInvite）

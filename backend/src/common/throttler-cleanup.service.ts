@@ -1,5 +1,5 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { ThrottlerStorageService } from '@nestjs/throttler';
 
 /**
@@ -18,8 +18,8 @@ export class ThrottlerCleanupService {
     @Optional() private readonly storage: ThrottlerStorageService,
   ) {}
 
-  /** 每 5 分钟清理过期记录 */
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  /** 每 2 分钟清理过期记录（2GB 服务器：更频繁释放内存） */
+  @Cron('0 */2 * * * *')
   handleCleanup() {
     if (!this.storage) return;
     const map = (this.storage as any)._storage as Map<

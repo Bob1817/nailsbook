@@ -1,5 +1,16 @@
 <nav-bar title="首页"/>
 <view class="page">
+
+  <!-- ===== 游客模式提示 ===== -->
+  <view wx:if="{{isTourist}}" class="tourist-banner" bindtap="goActivate">
+    <view class="tourist-banner-icon">⚠️</view>
+    <view class="tourist-banner-body">
+      <text class="tourist-banner-title">游客模式 · 功能受限</text>
+      <text class="tourist-banner-desc">您当前为游客身份，可浏览页面但无法发布作品、接单或管理客户。设置密码后即可激活完整功能。</text>
+    </view>
+    <view class="tourist-banner-action">去激活 ›</view>
+  </view>
+
   <!-- ===== 经营信息 ===== -->
   <view class="business-hero" bindtap="openBusinessDetail" role="button" aria-label="查看经营数据详情">
     <view class="hero-orb hero-orb-left"></view>

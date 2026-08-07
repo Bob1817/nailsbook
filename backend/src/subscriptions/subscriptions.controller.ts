@@ -26,12 +26,13 @@ import {
 } from './subscriptions.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
+import { TouristGuard } from '../technician-auth/tourist.guard';
 import { Permissions } from '../auth/permission.decorator';
 import { OperationLog } from '../auth/operation-log.decorator';
 import { OperationLogInterceptor } from '../auth/operation-log.interceptor';
 
 @Controller('technician/subscriptions')
-@UseGuards(TechnicianJwtAuthGuard)
+@UseGuards(TechnicianJwtAuthGuard, TouristGuard)
 export class TechnicianSubscriptionsPublicController {
   constructor(private readonly subscriptionsService: SubscriptionsService) {}
 

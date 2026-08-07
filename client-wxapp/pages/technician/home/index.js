@@ -1,4 +1,5 @@
 const api = require('../../../services/api');
+const { isTouristTechnician } = require('../../../utils/permission');
 const {
   parseDate,
   formatClock,
@@ -20,6 +21,7 @@ const {
 Page({
   data: {
     loading: true,
+    isTourist: false,
     nextOrder: null,
     todayOrders: [],
     todayLabel: '',
@@ -47,11 +49,16 @@ Page({
 
   onShow() {
     if (wx.getStorageSync('role') !== 'technician') return;
+    this.setData({ isTourist: isTouristTechnician() });
     this.loadDashboard();
   },
 
   onPullDownRefresh() {
     this.loadDashboard().finally(() => wx.stopPullDownRefresh());
+  },
+
+  goActivate() {
+    wx.navigateTo({ url: '/pages/technician/set-password/index' });
   },
 
   // ---------- 主数据加载 ----------

@@ -76,6 +76,25 @@ Page({
         source: this.registrationSource
       });
 
+      // ★ 需要选择角色 → 跳转角色选择页
+      if (res.needsRoleSelection) {
+        wx.hideLoading();
+        this.setData({ wechatLoading: false });
+        // 保存临时 token，role-select 的 selectRole 需要 JWT 认证
+        if (res.accessToken) {
+          const app = getApp();
+          app.globalData.token = res.accessToken;
+          wx.setStorageSync('token', res.accessToken);
+          wx.setStorageSync('role', 'client');
+          if (res.refreshToken) wx.setStorageSync('client_refreshToken', res.refreshToken);
+        }
+        wx.redirectTo({
+          url: '/pages/role-select/index?wechatSessionToken=' + encodeURIComponent(res.wechatSessionToken || '') +
+               '&phone=' + encodeURIComponent(res.phone || '')
+        });
+        return;
+      }
+
       // ★ 需要设置密码 → 跳转设置密码页
       if (res.needsSetupPassword) {
         wx.hideLoading();
@@ -84,16 +103,6 @@ Page({
           url: '/pages/setup-password/index?token=' + encodeURIComponent(res.passwordSetupToken) +
                '&phone=' + encodeURIComponent(res.phone || '')
         });
-        return;
-      }
-
-      // ★ 新用户 → 引导页（理论上 WeChat 登录不再走这里，防御保留）
-      if (res.isNewUser) {
-        const app = getApp();
-        app.setLogin('client', res.accessToken || res.token, res.client || res.userInfo);
-        if (res.refreshToken) wx.setStorageSync('client_refreshToken', res.refreshToken);
-        wx.hideLoading();
-        wx.redirectTo({ url: '/pages/onboarding/index' });
         return;
       }
 

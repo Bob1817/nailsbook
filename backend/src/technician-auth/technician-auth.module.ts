@@ -7,6 +7,7 @@ import { ClientAuthModule } from '../client-auth/client-auth.module';
 import { TechnicianAuthController } from './technician-auth.controller';
 import { TechnicianAuthService } from './technician-auth.service';
 import { TechnicianJwtStrategy } from './technician-jwt.strategy';
+import { TouristGuard } from './tourist.guard';
 
 @Module({
   imports: [
@@ -35,7 +36,7 @@ import { TechnicianJwtStrategy } from './technician-jwt.strategy';
     ClientAuthModule,
   ],
   controllers: [TechnicianAuthController],
-  providers: [TechnicianAuthService, TechnicianJwtStrategy],
-  exports: [TechnicianAuthService],
+  providers: [TechnicianAuthService, TechnicianJwtStrategy, TouristGuard],
+  exports: [TechnicianAuthService, TouristGuard],
 })
 export class TechnicianAuthModule {}

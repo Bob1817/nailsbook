@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/comm
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ClientJwtAuthGuard } from '../client-auth/client-jwt-auth.guard';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
+import { TouristGuard } from '../technician-auth/tourist.guard';
 import { ReferralRelationService } from './referral-relation.service';
 
 @ApiTags('公开-推荐关系')
@@ -48,7 +49,7 @@ export class ClientReferralController {
 @ApiTags('美甲师-推荐关系')
 @ApiBearerAuth()
 @Controller('technician/referrals')
-@UseGuards(TechnicianJwtAuthGuard)
+@UseGuards(TechnicianJwtAuthGuard, TouristGuard)
 export class TechnicianReferralController {
   constructor(private readonly service: ReferralRelationService) {}
 

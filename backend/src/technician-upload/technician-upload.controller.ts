@@ -15,6 +15,7 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
+import { TouristGuard } from '../technician-auth/tourist.guard';
 import {
   technicianUploadMulterOptions,
   technicianUploadAudioMulterOptions,
@@ -24,7 +25,7 @@ import { TechnicianUploadService } from './technician-upload.service';
 @ApiTags('美甲师-上传')
 @ApiBearerAuth()
 @Controller('technician/uploads')
-@UseGuards(TechnicianJwtAuthGuard)
+@UseGuards(TechnicianJwtAuthGuard, TouristGuard)
 export class TechnicianUploadController {
   constructor(
     private readonly technicianUploadService: TechnicianUploadService,

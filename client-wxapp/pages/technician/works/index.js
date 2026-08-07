@@ -1,4 +1,5 @@
 const api = require('../../../services/api');
+const { guardTourist } = require('../../../utils/permission');
 
 Page({
   data: {
@@ -65,7 +66,10 @@ Page({
     });
   },
 
-  goCreate() { wx.navigateTo({ url: '/pages/technician/work-edit/index' }); },
+  goCreate() {
+    if (guardTourist('发布作品')) return;
+    wx.navigateTo({ url: '/pages/technician/work-edit/index' });
+  },
   goDetail(e) { wx.navigateTo({ url: '/pages/technician/work-detail/index?id=' + e.currentTarget.dataset.id }); },
   goEditById(id) { wx.navigateTo({ url: '/pages/technician/work-edit/index?id=' + id }); },
 

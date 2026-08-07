@@ -412,6 +412,96 @@ export class ClientAuthService {
     return code;
   }
 
+  /** 微信授权 + 邀请码注册：创建客户并自动绑定美甲师（active） */
+  async registerClientByWechatInvite(
+    dto: {
+      phone: string;
+      inviteCode: string;
+      source?: 'invite' | 'card';
+    },
+    wechatIdentity?: { appId: string; openId: string; unionId?: string },
+  ) {
+    const technician = await this.findActiveTechnicianByInviteCode(
+      dto.inviteCode,
+      '该邀请码无效，请跟您的美甲师确认后再注册',
+    );
+
+    const existing = await this.prisma.clientUser.findUnique({
+      where: { phone: dto.phone },
+    });
+    if (existing) {
+      throw new ConflictException('该手机号已被注册');
+    }
+
+    const registrationSource = dto.source || 'invite';
+
+    const client = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.clientUser.create({
+        data: {
+          phone: dto.phone,
+          passwordHash: '', // 待设置密码
+          managedPasswordCiphertext: null,
+          status: 'active',
+        },
+      });
+
+      await tx.clientTechBinding.create({
+        data: {
+          clientId: created.id,
+          techId: technician.id,
+          inviteCode: dto.inviteCode,
+          bindSource: registrationSource,
+          isDefault: true,
+        },
+      });
+
+      await tx.customer.create({
+        data: {
+          technicianId: technician.id,
+          clientUserId: created.id,
+          name: created.nickname || dto.phone,
+          phone: dto.phone,
+          sourceType: registrationSource,
+          sourceRef: dto.inviteCode,
+        },
+      });
+
+      return created;
+    });
+
+    const technicianPayload = {
+      id: technician.id,
+      name: technician.name,
+      phone: technician.phone,
+      avatarUrl: technician.avatarUrl,
+      city: technician.city,
+      serviceArea: technician.serviceArea,
+      status: technician.status,
+      homeService: technician.homeService,
+      shopService: technician.shopService,
+      shopAddresses: technician.shopAddresses
+        ? JSON.parse(technician.shopAddresses)
+        : [],
+      serviceItems: this.parseServiceItems(technician.serviceItems),
+      isDefault: true,
+      bindSource: registrationSource,
+    };
+
+    return {
+      client: {
+        id: client.id,
+        nickname: client.nickname,
+        phone: client.phone,
+        avatarUrl: client.avatarUrl,
+        city: client.city,
+        bio: client.bio,
+        status: client.status,
+      },
+      technician: technicianPayload,
+      technicians: [technicianPayload],
+    };
+  }
+
   async registerByInvite(
     dto: RegisterByInviteDto,
     wechatIdentity?: { appId: string; openId: string; unionId?: string },
@@ -634,6 +724,182 @@ export class ClientAuthService {
     return this.loginByWechat(client.id);
   }
 
+  /** 注册后选择角色（客户/美甲师），可跳过绑定/激活 */
+  async selectRole(
+    clientUserId: number,
+    dto: {
+      role: 'client' | 'technician';
+      inviteCode?: string;
+      activationKey?: string;
+    },
+  ) {
+    const client = await this.prisma.clientUser.findUnique({
+      where: { id: clientUserId },
+    });
+    if (!client) {
+      throw new UnauthorizedException('用户不存在');
+    }
+
+    // 选择客户：可选绑定美甲师
+    if (dto.role === 'client') {
+      if (dto.inviteCode) {
+        const technician = await this.findActiveTechnicianByInviteCode(
+          dto.inviteCode,
+          '邀请码无效或美甲师不存在',
+        );
+        await this.ensureActiveBinding(
+          client.id,
+          technician.id,
+          dto.inviteCode,
+          'manual',
+        );
+      }
+
+      // 如果还没设置密码，返回设置密码 token
+      if (!client.passwordHash) {
+        return {
+          authenticated: false,
+          role: 'client' as const,
+          needsSetupPassword: true,
+          passwordSetupToken: this.createPasswordSetupToken(client.id),
+          phone: client.phone,
+        };
+      }
+
+      return {
+        authenticated: true,
+        role: 'client' as const,
+        ...(await this.loginByWechat(client.id)),
+      };
+    }
+
+    // 选择美甲师
+    if (dto.role === 'technician') {
+      let technician = await this.prisma.technician.findUnique({
+        where: { phone: client.phone },
+      });
+
+      if (dto.activationKey) {
+        // 使用激活密钥激活美甲师
+        const activated = await this.activateTechnician(
+          client.id,
+          dto.activationKey,
+        );
+        return {
+          authenticated: true,
+          role: 'technician' as const,
+          ...activated,
+        };
+      }
+
+      // 无激活密钥 → 创建/复用游客美甲师
+      if (!technician) {
+        technician = await this.prisma.technician.create({
+          data: {
+            name: client.nickname || client.phone,
+            phone: client.phone,
+            passwordHash: '',
+            managedPasswordCiphertext: null,
+            status: 'inactive',
+          },
+        });
+      }
+
+      // 同步微信身份已在 completeClient 中完成 client 绑定，
+      // 这里需要额外把同一微信绑定到 technician 账号，便于后续微信登录
+      // 但一个微信只能绑定一个账号，所以这里仅更新 technician 的微信身份记录
+      // （复用同一个 unionId/openId 的 wechatIdentity 行不可行，因为 clientUserId 已占用）
+      // 暂时不在游客模式绑定微信身份，后续微信登录仍走 client 身份再切换
+
+      const techPayload = {
+        sub: technician.id,
+        phone: technician.phone,
+        userType: 'technician' as const,
+        tv: technician.tokenVersion,
+      };
+
+      return {
+        authenticated: true,
+        role: 'technician' as const,
+        accessToken: this.jwtService.sign(techPayload),
+        refreshToken: this.jwtService.sign(
+          { ...techPayload, tokenType: 'refresh' },
+          { expiresIn: '30d' },
+        ),
+        technician: {
+          id: technician.id,
+          name: technician.name,
+          phone: technician.phone,
+          avatarUrl: technician.avatarUrl,
+          city: technician.city,
+          status: technician.status,
+          homeService: technician.homeService,
+          shopService: technician.shopService,
+          isTourist: !technician.passwordHash,
+        },
+        roles: ['technician'],
+        isTourist: true,
+      };
+    }
+
+    throw new BadRequestException('无效的角色选择');
+  }
+
+  /** 确保客户与美甲师之间存在 active 绑定（注册/选择角色时用） */
+  private async ensureActiveBinding(
+    clientId: number,
+    techId: number,
+    inviteCode: string,
+    bindSource: string,
+  ) {
+    const client = await this.prisma.clientUser.findUnique({
+      where: { id: clientId },
+    });
+    if (!client) throw new UnauthorizedException('用户不存在');
+
+    const existing = await this.prisma.clientTechBinding.findUnique({
+      where: { clientId_techId: { clientId, techId } },
+    });
+
+    if (existing?.status === 'active') return;
+
+    await this.prisma.$transaction(async (tx) => {
+      if (existing) {
+        await tx.clientTechBinding.update({
+          where: { id: existing.id },
+          data: { status: 'active', inviteCode, bindSource },
+        });
+      } else {
+        await tx.clientTechBinding.create({
+          data: {
+            clientId,
+            techId,
+            inviteCode,
+            bindSource,
+            status: 'active',
+            isDefault: true,
+          },
+        });
+      }
+
+      const customer = await tx.customer.findFirst({
+        where: { technicianId: techId, clientUserId: clientId },
+      });
+      if (!customer) {
+        await tx.customer.create({
+          data: {
+            technicianId: techId,
+            clientUserId: clientId,
+            name: client.nickname || client.phone,
+            phone: client.phone,
+            sourceType: bindSource,
+            sourceRef: inviteCode,
+          },
+        });
+      }
+    });
+  }
+
   async loginByWechat(clientUserId: number) {
     const client = await this.prisma.clientUser.findUnique({
       where: { id: clientUserId },
@@ -764,6 +1030,12 @@ export class ClientAuthService {
 
     const defaultBinding = client.bindings.find((b) => b.isDefault);
 
+    // 检查是否同时是美甲师
+    const technicianAccount = await this.prisma.technician.findUnique({
+      where: { phone: client.phone },
+      select: { id: true, status: true, passwordHash: true, invitationCode: true },
+    });
+
     return {
       id: client.id,
       nickname: client.nickname,
@@ -772,6 +1044,12 @@ export class ClientAuthService {
       city: client.city,
       bio: client.bio,
       status: client.status,
+      capabilities: {
+        hasBoundTechnician: client.bindings.length > 0,
+        isTechnician: !!technicianAccount,
+        isTechnicianActivated:
+          !!technicianAccount && !!technicianAccount.passwordHash,
+      },
       binding: defaultBinding
         ? {
             techId: defaultBinding.techId,

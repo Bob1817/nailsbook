@@ -3,6 +3,7 @@ App({
     userInfo: null,
     token: null,
     role: null,
+    isTourist: false,
     apiBaseUrl: 'https://api.lunails.cn',
     capabilities: { wechatLogin: false, wechatPay: false }
   },
@@ -10,6 +11,9 @@ App({
   onLaunch() {
     console.log('App launched');
     this.loadCapabilities();
+
+    // 恢复游客状态
+    this.globalData.isTourist = !!wx.getStorageSync('isTourist');
 
     // 检查登录态 → 自动跳转
     const token = wx.getStorageSync('token');
@@ -57,16 +61,18 @@ App({
     return this._capabilitiesPromise;
   },
 
-  setLogin(role, token, userInfo, roles) {
+  setLogin(role, token, userInfo, roles, isTourist) {
     this.globalData.role = role;
     this.globalData.token = token;
     this.globalData.userInfo = userInfo;
+    this.globalData.isTourist = !!isTourist;
 
     wx.setStorageSync('role', role);
     wx.setStorageSync('token', token);
     wx.setStorageSync(`${role}_token`, token);
     wx.setStorageSync('userInfo', userInfo);
     wx.setStorageSync(`${role}_userInfo`, userInfo);
+    wx.setStorageSync('isTourist', !!isTourist);
 
     // 保存用户所有可用角色
     if (roles && roles.length > 0) {
@@ -83,10 +89,12 @@ App({
     this.globalData.role = null;
     this.globalData.token = null;
     this.globalData.userInfo = null;
+    this.globalData.isTourist = false;
 
     wx.removeStorageSync('role');
     wx.removeStorageSync('token');
     wx.removeStorageSync('userInfo');
+    wx.removeStorageSync('isTourist');
     wx.removeStorageSync('defaultTechId');
     if (role) {
       wx.removeStorageSync(`${role}_token`);
@@ -98,11 +106,13 @@ App({
   switchRole(role) {
     const token = wx.getStorageSync(`${role}_token`);
     const userInfo = wx.getStorageSync(`${role}_userInfo`);
+    const isTourist = wx.getStorageSync('isTourist') || false;
 
     if (token) {
       this.globalData.role = role;
       this.globalData.token = token;
       this.globalData.userInfo = userInfo;
+      this.globalData.isTourist = !!isTourist;
 
       wx.setStorageSync('role', role);
       wx.setStorageSync('token', token);
@@ -111,5 +121,17 @@ App({
       return true;
     }
     return false;
+  },
+
+  /**
+   * 获取当前是否为游客模式
+   */
+  getIsTourist() {
+    if (this.globalData.isTourist !== undefined) {
+      return this.globalData.isTourist;
+    }
+    const stored = wx.getStorageSync('isTourist');
+    this.globalData.isTourist = !!stored;
+    return this.globalData.isTourist;
   }
 });

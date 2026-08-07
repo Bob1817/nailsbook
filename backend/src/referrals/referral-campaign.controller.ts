@@ -1,13 +1,14 @@
 import { Body, Controller, Get, Put, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
+import { TouristGuard } from '../technician-auth/tourist.guard';
 import { UpsertReferralCampaignDto } from './dto/upsert-referral-campaign.dto';
 import { ReferralCampaignService } from './referral-campaign.service';
 
 @ApiTags('美甲师-推荐活动')
 @ApiBearerAuth()
 @Controller('technician/referral-campaign')
-@UseGuards(TechnicianJwtAuthGuard)
+@UseGuards(TechnicianJwtAuthGuard, TouristGuard)
 export class ReferralCampaignController {
   constructor(private readonly service: ReferralCampaignService) {}
 

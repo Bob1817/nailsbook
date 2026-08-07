@@ -297,6 +297,9 @@ export class TechnicianAuthService {
       invitationCode: technician.invitationCode,
       homeService: technician.homeService,
       shopService: technician.shopService,
+      // 是否已通过激活密钥认证（游客模式为 false）
+      isActivated: !!technician.passwordHash,
+      isTourist: !technician.passwordHash,
       // 接单就绪：至少开启一种服务类型；未就绪则锁定邀请码/邀请链接
       bookingReady: technician.homeService || technician.shopService,
       shopAddresses: this.parseShopAddresses(technician.shopAddresses),
@@ -514,6 +517,9 @@ export class TechnicianAuthService {
       lastLoginAt: technician.lastLoginAt,
       homeService: technician.homeService,
       shopService: technician.shopService,
+      // 是否已通过激活密钥认证（游客模式为 false）
+      isActivated: !!technician.passwordHash,
+      isTourist: !technician.passwordHash,
       // 接单就绪：至少开启一种服务类型；未就绪则锁定邀请码/邀请链接
       bookingReady: technician.homeService || technician.shopService,
       shopAddresses: this.parseShopAddresses(technician.shopAddresses),

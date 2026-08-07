@@ -107,25 +107,58 @@ export class WechatAuthService {
     const isNewClient = !client;
 
     if (!client) {
-      // 微信授权注册：创建客户账号（无需邀请码）
-      client = await this.prisma.clientUser.create({
-        data: {
-          phone,
-          passwordHash: '', // 待用户设置密码
-          managedPasswordCiphertext: null,
-          status: 'active',
-        },
-      });
-      // 新用户同步创建 wechatIdentity
+      if (dto.inviteCode) {
+        // 通过邀请码注册：自动创建客户并绑定美甲师
+        const registered = await this.clientAuth.registerClientByWechatInvite(
+          {
+            phone,
+            inviteCode: dto.inviteCode,
+            source: dto.source === 'card' ? 'card' : 'invite',
+          },
+          session,
+        );
+        client = await this.prisma.clientUser.findUnique({
+          where: { id: registered.client.id },
+        });
+      } else {
+        // 微信授权注册：创建客户账号（无需邀请码）
+        client = await this.prisma.clientUser.create({
+          data: {
+            phone,
+            passwordHash: '', // 待用户设置密码
+            managedPasswordCiphertext: null,
+            status: 'active',
+          },
+        });
+      }
+    }
+
+    if (!client) throw new BadRequestException('客户账号创建失败');
+
+    // 新用户同步创建 wechatIdentity
+    if (isNewClient) {
       await this.prisma.wechatIdentity.create({
         data: { appId: session.appId, openId: session.openId, unionId: session.unionId, clientUserId: client.id },
       });
     }
 
-    if (!client) throw new BadRequestException('客户账号创建失败');
-
     // 已有账号但未绑定微信 → 关联身份
     if (!isNewClient) await this.linkIdentity(session, 'client', client.id);
+
+    // 新用户且无邀请码 → 需要选择角色
+    if (isNewClient && !dto.inviteCode) {
+      // 签发临时客户端 JWT，以便前端 role-select 页面调用 selectRole API
+      const loginResult = await this.clientAuth.loginByWechat(client.id);
+      return {
+        authenticated: false,
+        needsRoleSelection: true,
+        wechatSessionToken: dto.wechatSessionToken,
+        accessToken: loginResult.accessToken,
+        refreshToken: loginResult.refreshToken,
+        phone: client.phone,
+        message: '请选择您要使用的身份',
+      };
+    }
 
     // 检查是否已设置密码
     if (!client.passwordHash) {

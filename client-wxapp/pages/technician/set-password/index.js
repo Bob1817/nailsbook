@@ -78,7 +78,7 @@ Page({
 
       // 自动登录
       const app = getApp();
-      app.setLogin('technician', res.accessToken, res.technician);
+      app.setLogin('technician', res.accessToken, res.technician, undefined, false);
       if (res.refreshToken) wx.setStorageSync('technician_refreshToken', res.refreshToken);
 
       wx.showToast({ title: '密码设置成功', icon: 'success' });

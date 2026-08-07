@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile
     restart: always
     env_file: ./backend/.env.production
+    mem_limit: 512m
+    memswap_limit: 512m  # 禁止 swap，避免磁盘颠簸
     volumes:
       - backend_db:/app/data
       - ./backend/uploads:/app/uploads  # bind mount，rsync 同步后容器立即可见；迁移 OSS 完成后可移除
@@ -21,6 +23,8 @@ services:
       context: ./client-frontend
       dockerfile: Dockerfile
     restart: always
+    mem_limit: 48m
+    memswap_limit: 48m
     expose:
       - "80"
     networks:
@@ -31,6 +35,8 @@ services:
     # 镜像由 GitHub Actions 构建；生产机只拉取，不在 ECS 上执行 npm ci/build。
     image: ${ADMIN_WEB_IMAGE:-ghcr.io/bob1817/nailsbook-admin-web:latest}
     restart: always
+    mem_limit: 48m
+    memswap_limit: 48m
     expose:
       - "80"
     networks:
@@ -42,6 +48,8 @@ services:
       context: ./technician-frontend
       dockerfile: Dockerfile
     restart: always
+    mem_limit: 48m
+    memswap_limit: 48m
     expose:
       - "80"
     networks:
@@ -53,6 +61,8 @@ services:
       context: ./website
       dockerfile: Dockerfile
     restart: always
+    mem_limit: 48m
+    memswap_limit: 48m
     expose:
       - "80"
     networks:
@@ -61,6 +71,8 @@ services:
   nginx:
     image: nginx:alpine
     restart: always
+    mem_limit: 64m
+    memswap_limit: 64m
     ports:
       - "80:80"
       - "443:443"
@@ -79,6 +91,8 @@ services:
 
   certbot:
     image: certbot/certbot
+    mem_limit: 16m
+    memswap_limit: 16m
     volumes:
       - certbot_www:/var/www/certbot
       - certbot_certs:/etc/letsencrypt

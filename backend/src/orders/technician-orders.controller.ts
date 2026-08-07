@@ -20,6 +20,7 @@ import {
 } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
+import { TouristGuard } from '../technician-auth/tourist.guard';
 import { CreateTechnicianOrderDto } from './dto/create-technician-order.dto';
 import { ReviewOrderDto } from './dto/review-order.dto';
 import { UpdateTechnicianOrderDto } from './dto/update-technician-order.dto';
@@ -27,7 +28,7 @@ import { UpdateTechnicianOrderDto } from './dto/update-technician-order.dto';
 @ApiTags('美甲师-订单')
 @ApiBearerAuth()
 @Controller('technician/orders')
-@UseGuards(TechnicianJwtAuthGuard)
+@UseGuards(TechnicianJwtAuthGuard, TouristGuard)
 export class TechnicianOrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 

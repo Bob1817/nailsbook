@@ -29,16 +29,19 @@
       <!-- ★ 身份切换卡片（动态角色） -->
       <view class="role-card" bindtap="showRoleSheet">
         <view class="role-card-left">
-          <view class="role-card-badge">
+          <view class="role-card-badge {{isTourist ? 'role-card-badge-tourist' : ''}}">
             <image class="role-card-badge-icon" src="/static/icons/{{currentRole === 'technician' ? 'role-technician' : 'role-client'}}.svg" mode="aspectFit" />
           </view>
           <view class="role-card-info">
-            <text class="role-card-title">{{roleCardTitle}}</text>
+            <view class="role-card-title-row">
+              <text class="role-card-title">{{roleCardTitle}}</text>
+              <view wx:if="{{isTourist}}" class="role-card-tourist-tag">游客</view>
+            </view>
             <text class="role-card-sub" wx:if="{{roleCardSub}}">{{roleCardSub}}</text>
           </view>
         </view>
         <view class="role-card-switch-btn">
-          <text>{{roleSwitchLabel}}</text>
+          <text>{{isTourist ? '去激活' : roleSwitchLabel}}</text>
         </view>
       </view>
 
@@ -281,12 +284,15 @@
 
     <!-- 美甲师模式（当前或可选） -->
     <view class="role-sheet-option {{currentRole === 'technician' ? 'role-sheet-option-active' : ''}}" bindtap="{{currentRole === 'client' ? 'switchToTechnician' : ''}}">
-      <view class="role-sheet-option-icon role-sheet-option-icon-tech">
+      <view class="role-sheet-option-icon role-sheet-option-icon-tech {{isTourist ? 'role-sheet-option-icon-tourist' : ''}}">
         <image src="/static/icons/role-technician.svg" mode="aspectFit" class="role-sheet-option-icon-img" />
       </view>
       <view class="role-sheet-option-info">
-        <text class="role-sheet-option-title">美甲师模式</text>
-        <text class="role-sheet-option-desc">{{canSwitchToTech ? '管理预约 · 服务客户 · 展示作品' : '使用激活密钥开通美甲师账户'}}</text>
+        <view class="role-sheet-option-title-row">
+          <text class="role-sheet-option-title">美甲师模式</text>
+          <view wx:if="{{isTourist}}" class="role-sheet-tourist-tag">游客</view>
+        </view>
+        <text class="role-sheet-option-desc">{{canSwitchToTech ? (isTourist ? '设置密码后 · 管理预约 · 服务客户 · 展示作品' : '管理预约 · 服务客户 · 展示作品') : '使用激活密钥开通美甲师账户'}}</text>
       </view>
       <view wx:if="{{currentRole === 'technician'}}" class="role-sheet-check">
         <image src="/static/icons/check-circle.svg" mode="aspectFit" class="role-sheet-check-img" />

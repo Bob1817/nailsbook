@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
+import { TouristGuard } from '../technician-auth/tourist.guard';
 import {
   CreateMarketingMaterialDto,
   ExportMarketingMaterialDto,
@@ -18,7 +19,7 @@ import {
 import { MarketingMaterialsService } from './marketing-materials.service';
 
 @Controller('technician/marketing-materials')
-@UseGuards(TechnicianJwtAuthGuard)
+@UseGuards(TechnicianJwtAuthGuard, TouristGuard)
 export class MarketingMaterialsController {
   constructor(private readonly materials: MarketingMaterialsService) {}
 

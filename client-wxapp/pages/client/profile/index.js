@@ -10,6 +10,8 @@ Page({
     currentRoleLabel: '客户',
     canSwitchToTech: false,
     canSwitchToClient: true,
+    isTourist: false,
+    isTouristLabel: '',
     roleCardTitle: '当前身份：客户',
     roleCardSub: '',
     roleSwitchLabel: '切换身份',
@@ -38,19 +40,27 @@ Page({
       const bindings = wx.getStorageSync('client_bindings') || [];
       const currentRole = wx.getStorageSync('role') || 'client';
       const roles = wx.getStorageSync('roles') || ['client'];
+      const isTourist = getApp().getIsTourist();
+
+      // 技师是否已激活（非游客）
+      const isTechActivated = currentRole === 'technician' && !isTourist;
+      const isTechTourist = currentRole === 'technician' && isTourist;
 
       this.setData({
         avatar: userInfo?.avatarUrl || '',
         nickname: userInfo?.nickname || userInfo?.phone || '用户',
         phone: userInfo?.phone ? phoneMask(userInfo.phone) : '',
         currentRole: currentRole,
-        currentRoleLabel: currentRole === 'technician' ? '美甲师' : '客户',
+        currentRoleLabel: isTechTourist ? '游客' : (currentRole === 'technician' ? '美甲师' : '客户'),
+        isTourist: isTourist,
+        isTouristLabel: isTechTourist ? '游客模式' : '',
         // 是否可切换为另一端
         canSwitchToTech: roles.includes('technician'),
         canSwitchToClient: roles.includes('client'),
         // 身份卡片文案
-        roleCardTitle: currentRole === 'technician' ? '当前身份：美甲师' : '当前身份：客户',
+        roleCardTitle: isTechTourist ? '当前身份：游客（美甲师）' : (currentRole === 'technician' ? '当前身份：美甲师' : '当前身份：客户'),
         roleCardSub: (() => {
+          if (isTechTourist) return '设置密码后可发布作品、管理订单';
           if (currentRole === 'technician') return roles.includes('client') ? '可切换为客户模式' : '';
           return roles.includes('technician') ? '可切换为美甲师模式' : '注册成为美甲师';
         })(),
@@ -129,11 +139,12 @@ Page({
     const app = getApp();
     const currentRole = wx.getStorageSync('role') || 'client';
     const roles = wx.getStorageSync('roles') || ['client'];
+    const isTourist = app.getIsTourist();
 
     this.setData({ showRoleSheet: false });
 
     if (currentRole === 'technician') {
-      // 当前是美甲师 → 切换回客户
+      // 当前是美甲师（含游客） → 切换回客户
       if (app.switchRole('client')) {
         wx.reLaunch({ url: '/pages/client/home/index' });
       } else {

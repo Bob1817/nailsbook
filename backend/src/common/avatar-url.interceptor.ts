@@ -7,11 +7,16 @@ import {
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-function normalizeAvatarUrls(value: unknown, origin: string): unknown {
+/** 递归最大深度，超出后直接返回原值，防止深层嵌套对象导致性能问题 */
+const MAX_DEPTH = 5;
+
+function normalizeAvatarUrls(value: unknown, origin: string, depth = 0): unknown {
+  if (depth > MAX_DEPTH) return value;
+
   if (Array.isArray(value)) {
     let changed = false;
     const result = value.map((item) => {
-      const normalized = normalizeAvatarUrls(item, origin);
+      const normalized = normalizeAvatarUrls(item, origin, depth + 1);
       if (normalized !== item) changed = true;
       return normalized;
     });
@@ -41,7 +46,7 @@ function normalizeAvatarUrls(value: unknown, origin: string): unknown {
       continue;
     }
 
-    const child = normalizeAvatarUrls(currentValue, origin);
+    const child = normalizeAvatarUrls(currentValue, origin, depth + 1);
     if (child !== currentValue) changed = true;
     normalized[key] = child;
   }

@@ -70,6 +70,10 @@ const auth = {
   setupPassword: (passwordSetupToken, password) =>
     api.post(`${C}/auth/setup-password`, { passwordSetupToken, password }, { needAuth: false }),
 
+  /** 注册后选择角色（客户/美甲师），可跳过绑定/激活 */
+  selectRole: (role, { inviteCode, activationKey } = {}) =>
+    api.post(`${C}/auth/select-role`, { role, inviteCode, activationKey }, { needAuth: true }),
+
   sendResetCode: (phone, role = 'client') => {
     const base = role === 'technician' ? T : C;
     return api.post(`${base}/auth/forgot-password/send-code`, { phone }, { needAuth: false });

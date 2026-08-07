@@ -8,6 +8,49 @@ page { background: var(--bg-gradient-entry); }
   padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
 }
 
+/* ========== 游客模式横幅 ========== */
+.tourist-banner {
+  margin: 0 var(--space-xl) var(--space-md);
+  padding: 24rpx 28rpx;
+  background: linear-gradient(135deg, #FFF7ED 0%, #FFFBEB 100%);
+  border: 1rpx solid #FDBA74;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+}
+.tourist-banner:active { opacity: 0.88; }
+.tourist-banner-icon {
+  font-size: 36rpx;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+.tourist-banner-body {
+  flex: 1;
+  min-width: 0;
+}
+.tourist-banner-title {
+  display: block;
+  font-size: var(--font-md);
+  font-weight: var(--weight-bold);
+  color: #C2410C;
+  margin-bottom: 6rpx;
+}
+.tourist-banner-desc {
+  display: block;
+  font-size: var(--font-xs);
+  color: #9A3412;
+  line-height: 1.6;
+}
+.tourist-banner-action {
+  flex-shrink: 0;
+  align-self: center;
+  font-size: var(--font-sm);
+  font-weight: var(--weight-semibold);
+  color: #C2410C;
+  white-space: nowrap;
+}
+
 /* ========== 经营信息 Hero ========== */
 .business-hero {
   position: relative; overflow: hidden;

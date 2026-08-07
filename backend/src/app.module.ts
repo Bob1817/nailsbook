@@ -61,7 +61,7 @@ import { ThrottlerCleanupService } from './common/throttler-cleanup.service';
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
-        limit: 120,
+        limit: 60,  // 2GB 服务器：降低限流阈值减少内存 Map 大小
       },
     ]),
     VerificationCodeModule,

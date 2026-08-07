@@ -18,12 +18,13 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
+import { TouristGuard } from '../technician-auth/tourist.guard';
 import { TechnicianServicesService } from './technician-services.service';
 
 @ApiTags('美甲师-服务')
 @ApiBearerAuth()
 @Controller('technician/services')
-@UseGuards(TechnicianJwtAuthGuard)
+@UseGuards(TechnicianJwtAuthGuard, TouristGuard)
 export class TechnicianServicesController {
   constructor(
     private readonly technicianServicesService: TechnicianServicesService,

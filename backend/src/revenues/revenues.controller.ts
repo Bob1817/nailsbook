@@ -20,6 +20,7 @@ import { RevenuesService } from './revenues.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Permissions } from '../auth/permission.decorator';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
+import { TouristGuard } from '../technician-auth/tourist.guard';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 
 @ApiTags('管理员-收入')
@@ -181,7 +182,7 @@ export class RevenuesController {
 @ApiTags('美甲师-数据导出')
 @ApiBearerAuth()
 @Controller('technician/revenues')
-@UseGuards(TechnicianJwtAuthGuard)
+@UseGuards(TechnicianJwtAuthGuard, TouristGuard)
 export class TechnicianRevenuesController {
   constructor(
     private readonly revenuesService: RevenuesService,
