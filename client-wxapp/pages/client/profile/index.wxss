@@ -1181,3 +1181,33 @@ page {
 
 .modal-btn:active { opacity: 0.85; }
 .modal-btn-disabled { opacity: 0.45; }
+
+.modal-btn-group {
+  display: flex;
+  gap: 24rpx;
+}
+
+.modal-btn-group .modal-btn {
+  flex: 1;
+}
+
+.modal-btn-group-vertical {
+  flex-direction: column;
+}
+
+.modal-btn-secondary {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  box-shadow: none;
+}
+
+.modal-btn-secondary:active { opacity: 0.75; }
+
+.confirm-text {
+  display: block;
+  font-size: var(--font-md);
+  color: var(--text-primary);
+  line-height: 1.7;
+  text-align: center;
+  padding: 24rpx 12rpx;
+}

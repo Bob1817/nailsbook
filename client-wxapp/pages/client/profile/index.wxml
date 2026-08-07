@@ -27,7 +27,7 @@
     <view class="content-area">
 
       <!-- ★ 身份切换卡片（动态角色） -->
-      <view class="role-card" bindtap="showRoleSheet">
+      <view class="role-card" bindtap="switchRole">
         <view class="role-card-left">
           <view class="role-card-badge {{isTourist ? 'role-card-badge-tourist' : ''}}">
             <image class="role-card-badge-icon" src="/static/icons/{{currentRole === 'technician' ? 'role-technician' : 'role-client'}}.svg" mode="aspectFit" />
@@ -41,7 +41,7 @@
           </view>
         </view>
         <view class="role-card-switch-btn">
-          <text>{{isTourist ? '去激活' : roleSwitchLabel}}</text>
+          <text>{{roleSwitchLabel}}</text>
         </view>
       </view>
 
@@ -260,46 +260,92 @@
 
 <tab-bar selected="profile"/>
 
-<!-- 身份切换底部面板 -->
-<view wx:if="{{showRoleSheet}}" class="role-sheet-mask" bindtap="hideRoleSheet">
-  <view class="role-sheet" catchtap="">
-    <view class="role-sheet-handle"></view>
-    <text class="role-sheet-title">切换身份</text>
-    <text class="role-sheet-sub">选择您要使用的身份模式</text>
-
-    <!-- 客户模式（当前或可选） -->
-    <view class="role-sheet-option {{currentRole === 'client' ? 'role-sheet-option-active' : ''}}" bindtap="{{currentRole === 'technician' ? 'switchToTechnician' : ''}}">
-      <view class="role-sheet-option-icon role-sheet-option-icon-client">
-        <image src="/static/icons/role-client.svg" mode="aspectFit" class="role-sheet-option-icon-img" />
-      </view>
-      <view class="role-sheet-option-info">
-        <text class="role-sheet-option-title">客户模式</text>
-        <text class="role-sheet-option-desc">浏览作品 · 预约美甲 · 管理订单</text>
-      </view>
-      <view wx:if="{{currentRole === 'client'}}" class="role-sheet-check">
-        <image src="/static/icons/check-circle.svg" mode="aspectFit" class="role-sheet-check-img" />
-      </view>
-      <text wx:else class="role-sheet-arrow">›</text>
+<!-- 客户 → 美甲师：确认切换弹窗 -->
+<view wx:if="{{showSwitchConfirmModal}}" class="modal-mask" bindtap="closeSwitchConfirmModal">
+  <view class="modal-content" catchtap="">
+    <view class="modal-header">
+      <text class="modal-title">切换身份</text>
+      <view class="modal-close" bindtap="closeSwitchConfirmModal">&#x2715;</view>
     </view>
-
-    <!-- 美甲师模式（当前或可选） -->
-    <view class="role-sheet-option {{currentRole === 'technician' ? 'role-sheet-option-active' : ''}}" bindtap="{{currentRole === 'client' ? 'switchToTechnician' : ''}}">
-      <view class="role-sheet-option-icon role-sheet-option-icon-tech {{isTourist ? 'role-sheet-option-icon-tourist' : ''}}">
-        <image src="/static/icons/role-technician.svg" mode="aspectFit" class="role-sheet-option-icon-img" />
+    <view class="modal-body">
+      <text class="confirm-text">检测到该手机号已开通美甲师账户，是否切换到美甲师身份？</text>
+    </view>
+    <view class="modal-btn-group">
+      <view class="modal-btn modal-btn-secondary" bindtap="closeSwitchConfirmModal">取消</view>
+      <view class="modal-btn" bindtap="confirmSwitchToTechnician">
+        <text>{{switchLoading ? '切换中...' : '确认切换'}}</text>
       </view>
-      <view class="role-sheet-option-info">
-        <view class="role-sheet-option-title-row">
-          <text class="role-sheet-option-title">美甲师模式</text>
-          <view wx:if="{{isTourist}}" class="role-sheet-tourist-tag">游客</view>
+    </view>
+  </view>
+</view>
+
+<!-- 客户 → 美甲师：激活密钥弹窗 -->
+<view wx:if="{{showActivateModal}}" class="modal-mask" bindtap="closeActivateModal">
+  <view class="modal-content" catchtap="">
+    <view class="modal-header">
+      <text class="modal-title">开通美甲师账户</text>
+      <view class="modal-close" bindtap="closeActivateModal">&#x2715;</view>
+    </view>
+    <view class="modal-body">
+      <text class="field-label">激活密钥</text>
+      <view class="code-input-wrap">
+        <input
+          class="code-input"
+          value="{{activationKey}}"
+          bindinput="onActivationKeyInput"
+          placeholder="请输入超管分配的激活密钥"
+          placeholder-class="code-placeholder"
+        />
+      </view>
+      <text class="field-hint">输入激活密钥后即可开通美甲师账户，开通后可管理预约、服务客户并展示作品。</text>
+    </view>
+    <view class="modal-btn {{!activationKey || activating ? 'modal-btn-disabled' : ''}}" bindtap="activateTechnicianAccount">
+      <text>{{activating ? '开通中...' : '立即开通'}}</text>
+    </view>
+  </view>
+</view>
+
+<!-- 美甲师 → 绑定/切换弹窗 -->
+<view wx:if="{{showTechSwitchModal}}" class="modal-mask" bindtap="closeTechSwitchModal">
+  <view class="modal-content" catchtap="">
+    <view class="modal-header">
+      <text class="modal-title">绑定美甲师或切换客户</text>
+      <view class="modal-close" bindtap="closeTechSwitchModal">&#x2715;</view>
+    </view>
+    <view class="modal-body">
+      <text class="field-label">邀请码 / 邀请链接</text>
+      <view class="code-input-wrap">
+        <input
+          class="code-input"
+          value="{{techSwitchInviteCode}}"
+          bindinput="onTechSwitchInviteInput"
+          placeholder="输入邀请码绑定美甲师"
+          placeholder-class="code-placeholder"
+        />
+        <view wx:if="{{techSwitchCheckingCode}}" class="code-spinner"></view>
+      </view>
+      <text class="field-hint">输入美甲师邀请码，提交绑定申请，待其通过后即可将其设为专属美甲师。</text>
+
+      <view wx:if="{{techSwitchFoundTech}}" class="found-tech">
+        <view class="found-avatar">
+          <image wx:if="{{techSwitchFoundTech.avatarUrl}}" src="{{techSwitchFoundTech.avatarUrl}}" mode="aspectFill" class="found-avatar-img" aria-label="{{techSwitchFoundTech.name || '美甲师'}}的头像"/>
+          <text wx:else class="found-avatar-char">{{techSwitchFoundTech.name[0]}}</text>
         </view>
-        <text class="role-sheet-option-desc">{{canSwitchToTech ? (isTourist ? '设置密码后 · 管理预约 · 服务客户 · 展示作品' : '管理预约 · 服务客户 · 展示作品') : '使用激活密钥开通美甲师账户'}}</text>
+        <view class="found-info">
+          <text class="found-name">{{techSwitchFoundTech.name}}</text>
+          <text class="found-city">{{techSwitchFoundTech.city || '未知城市'}}</text>
+        </view>
       </view>
-      <view wx:if="{{currentRole === 'technician'}}" class="role-sheet-check">
-        <image src="/static/icons/check-circle.svg" mode="aspectFit" class="role-sheet-check-img" />
-      </view>
-      <text wx:else class="role-sheet-arrow">›</text>
     </view>
 
-    <view class="role-sheet-cancel" bindtap="hideRoleSheet">取消</view>
+    <view class="modal-btn-group modal-btn-group-vertical">
+      <view
+        class="modal-btn {{!techSwitchFoundTech || techSwitchBinding ? 'modal-btn-disabled' : ''}}"
+        bindtap="bindTechnicianFromTechSwitch"
+      >
+        <text>{{techSwitchBinding ? '申请中...' : '申请绑定'}}</text>
+      </view>
+      <view class="modal-btn modal-btn-secondary" bindtap="skipToClient">跳过，进入客户账户</view>
+    </view>
   </view>
 </view>

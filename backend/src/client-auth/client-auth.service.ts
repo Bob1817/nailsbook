@@ -792,7 +792,7 @@ export class ClientAuthService {
         };
       }
 
-      // 无激活密钥 → 创建/复用游客美甲师
+      // 无激活密钥 → 创建/复用美甲师账号
       if (!technician) {
         technician = await this.prisma.technician.create({
           data: {
@@ -811,6 +811,7 @@ export class ClientAuthService {
       // （复用同一个 unionId/openId 的 wechatIdentity 行不可行，因为 clientUserId 已占用）
       // 暂时不在游客模式绑定微信身份，后续微信登录仍走 client 身份再切换
 
+      const isTourist = !technician.passwordHash;
       const techPayload = {
         sub: technician.id,
         phone: technician.phone,
@@ -835,10 +836,10 @@ export class ClientAuthService {
           status: technician.status,
           homeService: technician.homeService,
           shopService: technician.shopService,
-          isTourist: !technician.passwordHash,
+          isTourist,
         },
-        roles: ['technician'],
-        isTourist: true,
+        roles: isTourist ? ['technician'] : ['client', 'technician'],
+        isTourist,
       };
     }
 
