@@ -191,6 +191,25 @@ Page({
     } catch (err) {
       wx.hideLoading();
       this.setData({ phoneLoading: false });
+
+      // 微信注册用户未设置密码 → 引导选择登录方式
+      if (err.message && err.message.includes('未设置密码')) {
+        wx.showModal({
+          title: '账号未设置密码',
+          content: '该手机号通过微信注册，尚未设置登录密码。您可以使用微信登录，或通过短信验证设置密码。',
+          confirmText: '微信登录',
+          cancelText: '短信设置密码',
+          success: (modalRes) => {
+            if (modalRes.confirm) {
+              this.goBackToWechat();
+            } else if (modalRes.cancel) {
+              this.goForgotPassword();
+            }
+          }
+        });
+        return;
+      }
+
       wx.showToast({ title: err.message || '登录失败', icon: 'none' });
     }
   },
