@@ -15,24 +15,75 @@ App({
     // 恢复游客状态
     this.globalData.isTourist = !!wx.getStorageSync('isTourist');
 
-    // 检查登录态 → 自动跳转
+    // 检查登录态 → 校验 token 有效性 → 自动跳转
     const token = wx.getStorageSync('token');
     const role = wx.getStorageSync('role') || 'client';
 
     if (token) {
-      // 已登录 → 根据角色跳转对应首页
+      this.globalData.token = token;
+      this.globalData.role = role;
+
       const homePages = {
         client: '/pages/client/home/index',
         technician: '/pages/technician/home/index'
       };
       const homePage = homePages[role] || homePages.client;
 
-      // 延时跳转，避免与冷启动冲突
-      setTimeout(() => {
-        wx.reLaunch({ url: homePage });
-      }, 300);
+      // 先校验 token 是否有效，避免带失效 token 跳首页导致 401
+      this.verifyToken(token, role)
+        .then((valid) => {
+          if (valid) {
+            setTimeout(() => wx.reLaunch({ url: homePage }), 300);
+          }
+        })
+        .catch(() => {
+          // 网络错误等，保守起见仍跳转（home 接口已改为公开）
+          setTimeout(() => wx.reLaunch({ url: homePage }), 300);
+        });
     }
     // 无 token → 不跳转，由 app.json 首页（统一登录页）接管
+  },
+
+  /** 用一次轻量请求校验 token 是否仍有效 */
+  verifyToken(token, role) {
+    const mePath = role === 'technician'
+      ? `${this.globalData.apiBaseUrl}/api/technician/insights/overview`  // 技师端轻量接口
+      : `${this.globalData.apiBaseUrl}/api/client/home`;                   // 客户端公开接口（不抛 401）
+    return new Promise((resolve) => {
+      wx.request({
+        url: mePath,
+        method: 'GET',
+        header: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        timeout: 5000,
+        success: (res) => {
+          // 200/非401 = token 有效（或接口已公开不要求认证）
+          if (res.statusCode !== 401) {
+            resolve(true);
+          } else {
+            // 401 = token 已失效，清除登录态
+            console.warn('[App] token 已失效，清除登录态');
+            this.clearInvalidAuth();
+            resolve(false);
+          }
+        },
+        fail: () => {
+          // 网络不通时不清除 token，下次再试
+          resolve(true);
+        }
+      });
+    });
+  },
+
+  /** 清除失效的登录态 */
+  clearInvalidAuth() {
+    const role = this.globalData.role || wx.getStorageSync('role') || 'client';
+    this.globalData.role = null;
+    this.globalData.token = null;
+    this.globalData.userInfo = null;
+    this.globalData.isTourist = false;
+    ['token', 'role', 'userInfo', 'isTourist', 'roles', 'technician_token', 'client_token',
+     `${role}_token`, `${role}_userInfo`, `${role}_refreshToken`]
+      .forEach(key => wx.removeStorageSync(key));
   },
 
   loadCapabilities(force = false) {

@@ -19,6 +19,22 @@ export class ClientHomeService {
     };
   }
 
+  /** 公开首页：无需登录，返回精品作品（无个性化数据） */
+  async getHomePublic() {
+    const works = await this.prisma.nailWork.findMany({
+      where: { isVisible: true, isFeatured: true, visibilityScope: 'public' },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+      take: 6,
+      include: {
+        likes: true,
+        comments: true,
+        technician: { select: { name: true, id: true, avatarUrl: true } },
+      },
+    });
+
+    return { works: works.map((w) => this.mapWork(w)), latestOrder: null };
+  }
+
   async getHome(clientUserId: number) {
     const binding = await this.getDefaultBinding(clientUserId);
     const [works, latestBooking] = await Promise.all([
@@ -675,6 +691,99 @@ export class ClientHomeService {
     if (/职场|极简|裸色/.test(text)) return '职场';
     if (/旅行|度假/.test(text)) return '旅行';
     return tags.length ? '精致日常' : '待探索';
+  }
+
+  // ===== 公开方法（无需登录）=====
+
+  async getFeaturedWorksPublic(page = 1, limit = 10) {
+    const where = { isVisible: true, isFeatured: true, visibilityScope: 'public' as const };
+    const [works, total] = await Promise.all([
+      this.prisma.nailWork.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' }],
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          likes: true,
+          comments: true,
+          favorites: true,
+          technician: { select: { name: true, id: true, avatarUrl: true } },
+        },
+      }),
+      this.prisma.nailWork.count({ where }),
+    ]);
+    return {
+      works: works.map((w) => this.mapWork(w)),
+      hasMore: page * limit < total,
+    };
+  }
+
+  async getWorksPublic(techId?: number) {
+    const where: any = { isVisible: true, visibilityScope: 'public' };
+    if (techId) where.techId = techId;
+    const works = await this.prisma.nailWork.findMany({
+      where,
+      orderBy: [{ isPinned: 'desc' as const }, { sortOrder: 'asc' as const }, { createdAt: 'desc' as const }],
+      include: {
+        likes: true,
+        comments: true,
+        favorites: true,
+        technician: { select: { name: true, id: true, avatarUrl: true } },
+      },
+    });
+    return works.map((w) => this.mapWork(w));
+  }
+
+  async getWorkPublic(id: number) {
+    const work = await this.prisma.nailWork.findFirst({
+      where: { id, isVisible: true, visibilityScope: 'public' },
+      include: {
+        likes: true,
+        favorites: true,
+        comments: {
+          where: { parentId: null },
+          orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
+          include: {
+            client: { select: { id: true, nickname: true, avatarUrl: true } },
+            technician: { select: { id: true, name: true, avatarUrl: true } },
+            replies: {
+              orderBy: { createdAt: 'asc' },
+              include: {
+                client: { select: { id: true, nickname: true, avatarUrl: true } },
+                technician: { select: { id: true, name: true, avatarUrl: true } },
+              },
+            },
+          },
+        },
+        technician: { select: { name: true, avatarUrl: true, id: true } },
+      },
+    });
+    if (!work) throw new NotFoundException('作品不存在');
+    return { ...this.mapWork(work), isLiked: false, isFavorited: false, comments: [] };
+  }
+
+  async getCommentsPublic(workId: number) {
+    const work = await this.prisma.nailWork.findFirst({
+      where: { id: workId, isVisible: true, visibilityScope: 'public' },
+      select: { id: true },
+    });
+    if (!work) throw new NotFoundException('作品不存在');
+    const comments = await this.prisma.nailWorkComment.findMany({
+      where: { workId, parentId: null },
+      orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
+      include: {
+        client: { select: { id: true, nickname: true, avatarUrl: true } },
+        technician: { select: { id: true, name: true, avatarUrl: true } },
+        replies: {
+          orderBy: { createdAt: 'asc' },
+          include: {
+            client: { select: { id: true, nickname: true, avatarUrl: true } },
+            technician: { select: { id: true, name: true, avatarUrl: true } },
+          },
+        },
+      },
+    });
+    return comments.map((c) => this.mapComment(c, 0));
   }
 
   // Like functionality
