@@ -18,6 +18,9 @@ export class OrdersScheduler {
     private readonly referralQualification?: ReferralQualificationService,
   ) {}
 
+  // 批处理大小，避免单次 findMany 全表扫描导致 CPU 飙高
+  private static readonly BATCH_SIZE = 100;
+
   @Cron(CronExpression.EVERY_5_MINUTES)
   async handleOrderStatusTransitions() {
     const now = new Date();
@@ -26,7 +29,8 @@ export class OrdersScheduler {
     await this.autoTransitionToExpired(now);
     await this.autoTransitionToInProgress(now);
     await this.autoTransitionToCompleted(now);
-    await this.sendDayBeforeReminders(now);
+    // sendDayBeforeReminders 有独立的 @Cron('0 20 * * *') 每天 20 点执行，
+    // 不应在这个每 5 分钟的任务中重复调用（导致每天 289 次而非预期的 1 次）
     await this.sendHourBeforeReminders(now);
 
     this.logger.log(`[${now.toISOString()}] 订单状态自动转换检查完成`);
@@ -50,6 +54,8 @@ export class OrdersScheduler {
         startTime: { gte: tomorrowStart, lte: tomorrowEnd },
         reminderDaySent: false,
       },
+      take: OrdersScheduler.BATCH_SIZE,
+      orderBy: { id: 'asc' },
     });
 
     if (orders.length === 0) {
@@ -82,6 +88,8 @@ export class OrdersScheduler {
         startTime: { gte: lower, lte: upper },
         reminderHourSent: false,
       },
+      take: OrdersScheduler.BATCH_SIZE,
+      orderBy: { id: 'asc' },
     });
 
     if (orders.length === 0) return;
@@ -283,6 +291,8 @@ export class OrdersScheduler {
         },
         startTime: { lt: now },
       },
+      take: OrdersScheduler.BATCH_SIZE,
+      orderBy: { id: 'asc' },
     });
 
     if (orders.length === 0) return;
@@ -397,6 +407,8 @@ export class OrdersScheduler {
         status: { in: ['pending_home', 'pending_shop'] },
         startTime: { lte: thirtyMinLater },
       },
+      take: OrdersScheduler.BATCH_SIZE,
+      orderBy: { id: 'asc' },
     });
 
     if (orders.length === 0) return;
@@ -508,6 +520,8 @@ export class OrdersScheduler {
         status: 'in_progress',
         endTime: { lte: twentyFourHoursAgo },
       },
+      take: OrdersScheduler.BATCH_SIZE,
+      orderBy: { id: 'asc' },
     });
 
     if (orders.length === 0) return;

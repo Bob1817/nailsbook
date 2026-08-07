@@ -9,7 +9,13 @@ import { map } from 'rxjs/operators';
 
 function normalizeAvatarUrls(value: unknown, origin: string): unknown {
   if (Array.isArray(value)) {
-    return value.map((item) => normalizeAvatarUrls(item, origin));
+    let changed = false;
+    const result = value.map((item) => {
+      const normalized = normalizeAvatarUrls(item, origin);
+      if (normalized !== item) changed = true;
+      return normalized;
+    });
+    return changed ? result : value;
   }
 
   if (value instanceof Date) {
@@ -21,6 +27,7 @@ function normalizeAvatarUrls(value: unknown, origin: string): unknown {
   }
 
   const record = value as Record<string, unknown>;
+  let changed = false;
   const normalized: Record<string, unknown> = {};
 
   for (const [key, currentValue] of Object.entries(record)) {
@@ -30,13 +37,17 @@ function normalizeAvatarUrls(value: unknown, origin: string): unknown {
       currentValue.startsWith('/')
     ) {
       normalized[key] = `${origin}${currentValue}`;
+      changed = true;
       continue;
     }
 
-    normalized[key] = normalizeAvatarUrls(currentValue, origin);
+    const child = normalizeAvatarUrls(currentValue, origin);
+    if (child !== currentValue) changed = true;
+    normalized[key] = child;
   }
 
-  return normalized;
+  // 无任何 avatarUrl 需转换时返回原对象，避免不必要的深拷贝
+  return changed ? normalized : value;
 }
 
 @Injectable()

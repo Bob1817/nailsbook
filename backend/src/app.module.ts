@@ -50,6 +50,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { MarketingMaterialsModule } from './marketing-materials/marketing-materials.module';
 import { WechatAuthModule } from './wechat-auth/wechat-auth.module';
 import { WechatPlatformConfigModule } from './wechat-platform-config/wechat-platform-config.module';
+import { ThrottlerCleanupService } from './common/throttler-cleanup.service';
 
 @Module({
   imports: [
@@ -114,6 +115,7 @@ import { WechatPlatformConfigModule } from './wechat-platform-config/wechat-plat
     DevelopmentAuthSeedService,
     DevelopmentDemoSeedService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    ThrottlerCleanupService,
   ],
 })
 export class AppModule {}
