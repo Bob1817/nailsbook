@@ -99,9 +99,10 @@
       </view>
     </view>
 
-    <!-- 忘记密码 -->
+    <!-- 忘记密码 & 注册 -->
     <view class="forgot-row">
       <text class="forgot-link" bindtap="goForgotPassword">忘记密码？</text>
+      <text class="forgot-link" bindtap="goRegister">注册账号</text>
     </view>
 
     <!-- 登录按钮 -->

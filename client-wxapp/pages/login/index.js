@@ -165,6 +165,13 @@ Page({
     });
   },
 
+  /** 注册账号 — 跳转到注册页 */
+  goRegister() {
+    wx.navigateTo({
+      url: '/pages/client/register/index?phone=' + (this.data.phoneValid ? this.data.phone : '')
+    });
+  },
+
   /** 手机号 + 密码登录 */
   async doLogin() {
     const { phone, phoneValid, password, phoneLoading } = this.data;

@@ -238,6 +238,7 @@ page {
   height: 36rpx;
   flex-shrink: 0;
   opacity: 0.45;
+  margin-right: 24rpx;
 }
 
 /* 区号与号码之间的分隔线 */
@@ -283,10 +284,10 @@ page {
   opacity: 0.35;
 }
 
-/* ===== 忘记密码 ===== */
+/* ===== 忘记密码 & 注册 ===== */
 .forgot-row {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   margin-bottom: var(--space-xl);
   margin-top: calc(-1 * var(--space-xs));
 }
