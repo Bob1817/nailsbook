@@ -13,10 +13,10 @@ export class RegisterByInviteDto {
   @IsStrongPassword()
   password: string;
 
-  @ApiProperty({ description: '美甲师邀请码', example: 'A3F9K2M7' })
+  @ApiPropertyOptional({ description: '美甲师邀请码（选填）', example: 'A3F9K2M7' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty({ message: '邀请码不能为空' })
-  inviteCode: string;
+  inviteCode?: string;
 
   @ApiPropertyOptional({ description: '用户昵称', example: '小美' })
   @IsOptional()

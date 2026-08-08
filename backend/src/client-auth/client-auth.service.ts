@@ -506,11 +506,6 @@ export class ClientAuthService {
     dto: RegisterByInviteDto,
     wechatIdentity?: { appId: string; openId: string; unionId?: string },
   ) {
-    const technician = await this.findActiveTechnicianByInviteCode(
-      dto.inviteCode,
-      '该邀请码无效，请跟您的美甲师确认后再注册',
-    );
-
     const existing = await this.prisma.clientUser.findUnique({
       where: { phone: dto.phone },
     });
@@ -521,6 +516,15 @@ export class ClientAuthService {
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const registrationSource = dto.source || 'invite';
 
+    // 有邀请码时查找对应的美甲师
+    let technician = null;
+    if (dto.inviteCode) {
+      technician = await this.findActiveTechnicianByInviteCode(
+        dto.inviteCode,
+        '该邀请码无效，请跟您的美甲师确认后再注册',
+      );
+    }
+
     const client = await this.prisma.$transaction(async (tx) => {
       const created = await tx.clientUser.create({
         data: {
@@ -530,27 +534,29 @@ export class ClientAuthService {
         },
       });
 
-      await tx.clientTechBinding.create({
-        data: {
-          clientId: created.id,
-          techId: technician.id,
-          inviteCode: dto.inviteCode,
-          bindSource: registrationSource,
-          isDefault: true,
-        },
-      });
+      // 有邀请码时创建绑定关系
+      if (technician && dto.inviteCode) {
+        await tx.clientTechBinding.create({
+          data: {
+            clientId: created.id,
+            techId: technician.id,
+            inviteCode: dto.inviteCode,
+            bindSource: registrationSource,
+            isDefault: true,
+          },
+        });
 
-      // 同时在该美甲师的客户列表里创建一条记录
-      await tx.customer.create({
-        data: {
-          technicianId: technician.id,
-          clientUserId: created.id,
-          name: dto.nickname || dto.phone,
-          phone: dto.phone,
-          sourceType: registrationSource,
-          sourceRef: dto.inviteCode,
-        },
-      });
+        await tx.customer.create({
+          data: {
+            technicianId: technician.id,
+            clientUserId: created.id,
+            name: dto.nickname || dto.phone,
+            phone: dto.phone,
+            sourceType: registrationSource,
+            sourceRef: dto.inviteCode,
+          },
+        });
+      }
 
       if (wechatIdentity) {
         await tx.wechatIdentity.create({
@@ -561,25 +567,8 @@ export class ClientAuthService {
       return created;
     });
 
-    const technicianPayload = {
-      id: technician.id,
-      name: technician.name,
-      phone: technician.phone,
-      avatarUrl: technician.avatarUrl,
-      city: technician.city,
-      serviceArea: technician.serviceArea,
-      status: technician.status,
-      homeService: technician.homeService,
-      shopService: technician.shopService,
-      shopAddresses: technician.shopAddresses
-        ? JSON.parse(technician.shopAddresses)
-        : [],
-      serviceItems: this.parseServiceItems(technician.serviceItems),
-      isDefault: true,
-      bindSource: registrationSource,
-    };
-
-    return {
+    // 构建返回数据
+    const result: any = {
       accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
       refreshToken: this.signRefreshToken(
         client.id,
@@ -595,9 +584,36 @@ export class ClientAuthService {
         bio: client.bio,
         status: client.status,
       },
-      technician: technicianPayload,
-      technicians: [technicianPayload],
+      roles: ['client'],
     };
+
+    // 有绑定美甲师时返回绑定信息
+    if (technician) {
+      const technicianPayload = {
+        id: technician.id,
+        name: technician.name,
+        phone: technician.phone,
+        avatarUrl: technician.avatarUrl,
+        city: technician.city,
+        serviceArea: technician.serviceArea,
+        status: technician.status,
+        homeService: technician.homeService,
+        shopService: technician.shopService,
+        shopAddresses: technician.shopAddresses
+          ? JSON.parse(technician.shopAddresses)
+          : [],
+        serviceItems: this.parseServiceItems(technician.serviceItems),
+        isDefault: true,
+        bindSource: registrationSource,
+      };
+      result.technician = technicianPayload;
+      result.technicians = [technicianPayload];
+    } else {
+      // 无绑定美甲师时标记需要引导
+      result.needsOnboarding = true;
+    }
+
+    return result;
   }
 
   async login(dto: ClientLoginDto) {

@@ -168,11 +168,11 @@ Page({
   /** 注册账号 — 跳转到注册页 */
   goRegister() {
     wx.navigateTo({
-      url: '/pages/client/register/index?phone=' + (this.data.phoneValid ? this.data.phone : '')
+      url: '/pages/register/index?phone=' + (this.data.phoneValid ? this.data.phone : '')
     });
   },
 
-  /** 手机号 + 密码登录 */
+  /** 手机号 + 密码登录（统一入口：优先客户端，失败后尝试美甲师端） */
   async doLogin() {
     const { phone, phoneValid, password, phoneLoading } = this.data;
     if (!phoneValid || !password || password.length < 6 || phoneLoading) return;
@@ -181,20 +181,33 @@ Page({
     wx.showLoading({ title: '登录中...', mask: true });
 
     try {
-      const res = await api.auth.login(phone, password, 'client');
-
-      // ★ 新用户 → 引导页（理论上不会走这里，但做防御）
-      if (res.needsOnboarding) {
-        const app = getApp();
-        app.setLogin('client', res.accessToken || res.token, res.client || res.userInfo);
-        if (res.refreshToken) wx.setStorageSync('client_refreshToken', res.refreshToken);
-        wx.hideLoading();
-        this.setData({ phoneLoading: false });
-        wx.redirectTo({ url: '/pages/onboarding/index' });
-        return;
+      // 1. 先尝试客户端登录
+      let res;
+      let loginRole = 'client';
+      try {
+        res = await api.auth.login(phone, password, 'client');
+      } catch (clientErr) {
+        // 客户端登录失败，尝试美甲师端登录
+        const isNotFound = clientErr.statusCode === 401 || clientErr.code === 401;
+        if (isNotFound) {
+          try {
+            res = await api.auth.login(phone, password, 'technician');
+            loginRole = 'technician';
+          } catch (techErr) {
+            // 两端都失败，抛出客户端的错误（更通用的提示）
+            throw clientErr;
+          }
+        } else {
+          throw clientErr;
+        }
       }
 
-      await this._afterAuth(res);
+      // 2. 根据 roles 判断优先跳转美甲师端
+      const roles = res.roles || [loginRole];
+      const hasTechnicianRole = roles.includes('technician');
+      const finalRole = hasTechnicianRole ? 'technician' : loginRole;
+
+      await this._afterAuth(res, finalRole);
     } catch (err) {
       wx.hideLoading();
       this.setData({ phoneLoading: false });
@@ -223,17 +236,24 @@ Page({
 
   // ========== 登录后处理 ==========
 
-  async _afterAuth(res) {
+  async _afterAuth(res, role) {
     const app = getApp();
-    const roles = res.roles || ['client'];
-    app.setLogin('client', res.accessToken || res.token, res.client || res.userInfo, roles);
+    const roles = res.roles || [role || 'client'];
+    const activeRole = role || (roles.includes('technician') ? 'technician' : 'client');
 
+    // 根据角色选择对应的 token 和 userInfo
+    const token = res.accessToken || res.token;
+    const userInfo = activeRole === 'technician' ? (res.technician || res.userInfo) : (res.client || res.userInfo);
+
+    app.setLogin(activeRole, token, userInfo, roles);
+
+    // 存储对应角色的 refreshToken
     if (res.refreshToken) {
-      wx.setStorageSync('client_refreshToken', res.refreshToken);
+      wx.setStorageSync(activeRole + '_refreshToken', res.refreshToken);
     }
 
-    // 处理美甲师绑定信息
-    if (res.technician) {
+    // 处理美甲师绑定信息（客户端角色时）
+    if (activeRole === 'client' && res.technician) {
       wx.setStorageSync('client_bindings', res.technicians || [res.technician]);
       wx.setStorageSync('defaultTechId', res.technician.id);
     }
@@ -251,6 +271,11 @@ Page({
 
     wx.hideLoading();
     this.setData({ phoneLoading: false });
-    wx.reLaunch({ url: this.redirect || '/pages/client/home/index' });
+
+    // 根据角色跳转到对应首页
+    const homePage = activeRole === 'technician'
+      ? '/pages/technician/home/index'
+      : '/pages/client/home/index';
+    wx.reLaunch({ url: this.redirect || homePage });
   }
 });
