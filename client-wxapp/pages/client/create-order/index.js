@@ -77,7 +77,13 @@ Page({
     uploading: false,
     submitting: false,
     minDate: '',
-    showShopConfirm: false
+    showShopConfirm: false,
+    // 绑定美甲师弹窗
+    showBindTech: false,
+    bindInviteCode: '',
+    bindChecking: false,
+    bindTechName: '',
+    bindError: ''
   },
 
   onLoad: function (options) {
@@ -146,6 +152,13 @@ Page({
         };
       }).filter(function (t) { return t.status === 'active'; });
       self.setData({ technicians: techs });
+
+      // 无绑定美甲师 → 强制弹出绑定弹窗
+      if (techs.length === 0) {
+        self.setData({ showBindTech: true });
+        return;
+      }
+
       // 优先锁定快速预约带入的美甲师；否则仅一个时默认选中
       if (self._presetTechId && techs.some(function (t) { return t.id === self._presetTechId; })) {
         self.selectTechById(self._presetTechId);
@@ -628,5 +641,73 @@ Page({
       if (self._pageActive) self.setData({ submitting: false });
       else if (!self._submittedWhileHidden) self._submitFinishedWhileHidden = true;
     });
+  },
+
+  // ── 绑定美甲师弹窗 ─────────────────────────────
+
+  onBindInviteInput: function (e) {
+    var raw = (e.detail.value || '').trim();
+    this.setData({ bindInviteCode: raw, bindError: '', bindTechName: '' });
+    // 自动解析邀请链接
+    var code = raw;
+    if (/^https?:\/\//i.test(raw)) {
+      var match = raw.match(/[?&/](?:invite|code|referral)[=/#]([A-Za-z0-9_-]+)/i);
+      if (match) code = match[1];
+      else { var parts = raw.replace(/\/+$/, '').split('/'); code = parts[parts.length - 1]; }
+      this.setData({ bindInviteCode: code });
+    }
+    if (code.length >= 4) this._debounceCheckBindTech(code);
+  },
+
+  _bindCheckTimer: null,
+  _debounceCheckBindTech: function (code) {
+    var self = this;
+    if (self._bindCheckTimer) clearTimeout(self._bindCheckTimer);
+    self._bindCheckTimer = setTimeout(function () { self._checkBindTech(code); }, 500);
+  },
+
+  _checkBindTech: function (code) {
+    var self = this;
+    self.setData({ bindChecking: true, bindError: '' });
+    api.client.profile.findTechByInviteCode(code).then(function (tech) {
+      if (tech && tech.name) {
+        self.setData({ bindTechName: tech.name, bindChecking: false });
+      } else {
+        self.setData({ bindTechName: '', bindChecking: false, bindError: '该邀请码无效，请联系美甲师重新获取' });
+      }
+    }).catch(function (err) {
+      var msg = err.message || '';
+      if (msg.includes('异常') || msg.includes('禁用') || msg.includes('inactive')) {
+        self.setData({ bindTechName: '', bindChecking: false, bindError: '该邀请码对应的美甲师账户异常，无法进行关联' });
+      } else {
+        self.setData({ bindTechName: '', bindChecking: false, bindError: '该邀请码无效，请联系美甲师重新获取' });
+      }
+    });
+  },
+
+  confirmBindTech: function () {
+    var self = this;
+    var code = self.data.bindInviteCode.trim();
+    if (!code) {
+      self.setData({ bindError: '请输入邀请码或邀请链接' });
+      return;
+    }
+    if (!self.data.bindTechName) {
+      self.setData({ bindError: '请先输入有效的邀请码' });
+      return;
+    }
+    self.setData({ bindChecking: true });
+    api.client.profile.bindTechnician(code).then(function () {
+      wx.showToast({ title: '绑定成功', icon: 'success' });
+      self.setData({ showBindTech: false, bindInviteCode: '', bindTechName: '', bindError: '', bindChecking: false });
+      self.loadTechnicians();
+    }).catch(function (err) {
+      self.setData({ bindChecking: false, bindError: err.message || '绑定失败，请重试' });
+    });
+  },
+
+  cancelBindTech: function () {
+    this.setData({ showBindTech: false, bindInviteCode: '', bindTechName: '', bindError: '', bindChecking: false });
+    wx.navigateBack();
   }
 });

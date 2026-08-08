@@ -277,3 +277,35 @@
     </view>
   </view>
 </view>
+
+<!-- 绑定美甲师弹窗 -->
+<view wx:if="{{showBindTech}}" class="modal-overlay" bindtap="cancelBindTech">
+  <view class="modal-panel" catchtap="">
+    <view class="modal-handle"></view>
+    <text class="modal-title">绑定美甲师</text>
+    <text class="bind-hint">您还未绑定美甲师，无法预约服务。请输入美甲师邀请码或邀请链接进行绑定。</text>
+    <view class="bind-input-row">
+      <input
+        class="bind-input"
+        placeholder="输入邀请码或邀请链接"
+        value="{{bindInviteCode}}"
+        bindinput="onBindInviteInput"
+        disabled="{{bindChecking}}"
+      />
+    </view>
+    <!-- 验证状态 -->
+    <view wx:if="{{bindChecking}}" class="bind-status checking">
+      <text>验证中...</text>
+    </view>
+    <view wx:elif="{{bindTechName}}" class="bind-status valid">
+      <text>✓ 邀请码有效，美甲师：{{bindTechName}}</text>
+    </view>
+    <view wx:elif="{{bindError}}" class="bind-status error">
+      <text>✕ {{bindError}}</text>
+    </view>
+    <view class="modal-btns">
+      <view class="modal-btn modal-btn-cancel" bindtap="cancelBindTech">返回</view>
+      <view class="modal-btn modal-btn-confirm {{bindTechName ? '' : 'modal-btn-disabled'}}" bindtap="confirmBindTech">绑定</view>
+    </view>
+  </view>
+</view>

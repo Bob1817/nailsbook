@@ -352,5 +352,29 @@
   background: var(--brand-gradient); color: var(--text-inverse);
   box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
 }
+.modal-btn-disabled {
+  background: var(--bg-input) !important; color: var(--text-muted) !important;
+  box-shadow: none !important; opacity: 0.6;
+}
 
 .modal-btn:active { opacity: 0.85; }
+
+/* 绑定美甲师弹窗 */
+.bind-hint {
+  font-size: 26rpx; color: var(--text-muted); line-height: 1.6;
+  margin-bottom: 24rpx;
+}
+.bind-input-row {
+  margin-bottom: 16rpx;
+}
+.bind-input {
+  width: 100%; height: 80rpx; background: var(--bg-input);
+  border-radius: 12rpx; padding: 0 24rpx; font-size: 28rpx;
+  box-sizing: border-box;
+}
+.bind-status {
+  font-size: 24rpx; margin-bottom: 16rpx;
+}
+.bind-status.checking { color: var(--text-muted); }
+.bind-status.valid { color: #07C160; }
+.bind-status.error { color: #e64340; }

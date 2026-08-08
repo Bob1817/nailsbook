@@ -341,6 +341,25 @@ export class TechnicianAuthService {
       throw new UnauthorizedException('手机号或密码错误');
     }
 
+    // 密码同步：如果客户端密码与美甲师密码不同，用美甲师密码覆盖客户端密码
+    const clientUser = await this.prisma.clientUser.findUnique({
+      where: { phone },
+      select: { id: true, passwordHash: true },
+    });
+    if (
+      clientUser &&
+      clientUser.passwordHash &&
+      clientUser.passwordHash !== technician.passwordHash
+    ) {
+      await this.prisma.clientUser.update({
+        where: { id: clientUser.id },
+        data: {
+          passwordHash: technician.passwordHash,
+          managedPasswordCiphertext: null,
+        },
+      });
+    }
+
     const result = await this.issueTokens(technician.id, technician.phone);
     return {
       ...result,

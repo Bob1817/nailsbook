@@ -279,9 +279,19 @@ export class ClientAuthService {
       throw new BadRequestException('该密钥已被使用');
     }
 
-    // 生成随机密码
-    const managedPassword = this.generateManagedPassword();
-    const passwordHash = await bcrypt.hash(managedPassword, 10);
+    // 密码同步：优先使用客户端密码作为美甲师密码
+    let passwordHash: string;
+    let managedPassword: string | null = null;
+
+    if (client.passwordHash) {
+      // 客户端有密码 → 直接复用（用户记住一套密码）
+      passwordHash = client.passwordHash;
+      managedPassword = null;
+    } else {
+      // 客户端无密码（微信注册未设密码）→ 生成随机密码
+      managedPassword = this.generateManagedPassword();
+      passwordHash = await bcrypt.hash(managedPassword, 10);
+    }
 
     const technician = await this.prisma.$transaction(async (tx) => {
       // 情况 A：密钥预绑定到美甲师 → 激活该账号
@@ -653,10 +663,24 @@ export class ClientAuthService {
     const roles: string[] = ['client'];
     const hasTechnicianAccount = await this.prisma.technician.findUnique({
       where: { phone: dto.phone },
-      select: { id: true, status: true },
+      select: { id: true, status: true, passwordHash: true },
     });
     if (hasTechnicianAccount && hasTechnicianAccount.status === 'active') {
       roles.push('technician');
+
+      // 密码同步：如果美甲师密码与客户端密码不同，用美甲师密码覆盖客户端密码
+      if (
+        hasTechnicianAccount.passwordHash &&
+        hasTechnicianAccount.passwordHash !== client.passwordHash
+      ) {
+        await this.prisma.clientUser.update({
+          where: { id: client.id },
+          data: {
+            passwordHash: hasTechnicianAccount.passwordHash,
+            managedPasswordCiphertext: null,
+          },
+        });
+      }
     }
 
     const needsOnboarding = client.bindings.length === 0 && !hasTechnicianAccount;
