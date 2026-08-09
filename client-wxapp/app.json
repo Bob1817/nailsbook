@@ -1,5 +1,6 @@
 {
   "pages": [
+    "pages/client/discover/index",
     "pages/login/index",
     "pages/register/index",
     "pages/setup-password/index",
@@ -18,7 +19,6 @@
     "pages/client/public-work/index",
     "pages/client/create-order/index",
     "pages/client/orders/index",
-    "pages/client/discover/index",
     "pages/client/order-detail/index",
     "pages/client/designs/index",
     "pages/client/create-design/index",

@@ -37,6 +37,13 @@ Component({
       const tab = this.data.tabs.find(t => t.key === key);
       if (!tab || key === this.data.selected) return;
 
+      const app = getApp();
+      const token = app.globalData.token || wx.getStorageSync('client_token');
+      if (!token && key !== 'discover') {
+        wx.navigateTo({ url: '/pages/login/index?redirect=' + encodeURIComponent(tab.path) });
+        return;
+      }
+
       wx.reLaunch({ url: tab.path });
     }
   }

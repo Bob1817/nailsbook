@@ -137,6 +137,10 @@ Page({
     this.setData({ step: 'phone', phone: '', password: '', phoneValid: false, showPassword: false });
   },
 
+  browseAsGuest() {
+    wx.reLaunch({ url: '/pages/client/discover/index' });
+  },
+
   goBackToWechat() {
     this.setData({ step: 'wechat', password: '', showPassword: false });
   },

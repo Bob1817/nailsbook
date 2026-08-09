@@ -12,7 +12,20 @@
     <view class="field"><text class="label">所在城市</text><picker mode="region" bindchange="onCityChange"><view class="picker">{{city || '选择城市'}}<text>›</text></view></picker></view>
     <view class="field"><text class="label">服务区域</text><picker mode="region" bindchange="onServiceAreaChange"><view class="picker">{{serviceArea || '选择服务区域'}}<text>›</text></view></picker></view>
   </view>
-  <text class="hint">主页作品将自动同步“作品管理”中的公开作品。</text>
-  <view class="works-entry" bindtap="goWorks"><text>管理主页作品</text><text>›</text></view>
+  <view class="works-section">
+    <view class="works-head"><view><text class="works-title">主页精选作品</text><text class="works-sub">从公开作品中选择，最多 6 个</text></view></view>
+    <view wx:if="{{worksLoading}}" class="works-state">正在加载作品...</view>
+    <view wx:elif="{{works.length === 0}}" class="works-state">暂无公开作品，先去上传作品</view>
+    <scroll-view wx:else scroll-x class="works-scroll" enhanced show-scrollbar="{{false}}">
+      <view class="works-row">
+        <view wx:for="{{works}}" wx:key="id" class="work-option {{item.selected ? 'selected' : ''}}" bindtap="toggleHomepageWork" data-id="{{item.id}}">
+          <image class="work-cover" src="{{item.coverUrl}}" mode="aspectFill" aria-label="{{item.title}}"/>
+          <view class="work-check">{{item.selected ? '✓' : ''}}</view>
+          <text class="work-name">{{item.title}}</text>
+        </view>
+      </view>
+    </scroll-view>
+    <view class="works-entry" bindtap="goWorks"><text>上传或管理更多作品</text><text>›</text></view>
+  </view>
   <view class="save {{saving ? 'disabled' : ''}}" bindtap="save">{{saving ? '保存中...' : '保存主页'}}</view>
 </view>

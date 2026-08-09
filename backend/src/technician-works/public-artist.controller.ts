@@ -35,7 +35,10 @@ function parseJsonArray(value: string | null): unknown[] {
   }
 }
 
-function parseImageUrls(images: string | null, coverUrl: string | null): string[] {
+function parseImageUrls(
+  images: string | null,
+  coverUrl: string | null,
+): string[] {
   if (!images) return coverUrl ? [coverUrl] : [];
   try {
     const parsed = JSON.parse(images);
@@ -86,11 +89,19 @@ export class PublicArtistController {
         isVisible: true,
         visibilityScope: 'public',
       },
-      orderBy: [{ isPinned: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'desc' }],
+      orderBy: [
+        { isFeatured: 'desc' },
+        { isPinned: 'desc' },
+        { sortOrder: 'asc' },
+        { createdAt: 'desc' },
+      ],
       take: 30,
     });
 
-    const works = rawWorks.map((work) => {
+    const homepageWorks = rawWorks.some((work) => work.isFeatured)
+      ? rawWorks.filter((work) => work.isFeatured)
+      : rawWorks;
+    const works = homepageWorks.map((work) => {
       const imageUrls = parseImageUrls(work.images, work.coverUrl)
         .map((url) => toAbsoluteUrl(url))
         .filter((url): url is string => Boolean(url));
@@ -109,6 +120,7 @@ export class PublicArtistController {
         avatarUrl: toAbsoluteUrl(technician.avatarUrl),
         city: technician.city,
         serviceArea: technician.serviceArea,
+        bio: technician.bio,
         homeService: technician.homeService,
         shopService: technician.shopService,
         invitationCode: technician.invitationCode,
@@ -120,6 +132,9 @@ export class PublicArtistController {
         ),
         serviceSchedule: parseJsonObject(technician.serviceSchedule),
         socialMedia: parseJsonObject(technician.socialMedia),
+        followerCount: await this.prisma.technicianFollow.count({
+          where: { technicianId: technician.id },
+        }),
       },
       works,
     };

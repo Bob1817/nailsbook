@@ -39,6 +39,7 @@
 
     <!-- 其他登录方式 -->
     <text class="alt-login" bindtap="goPhoneLogin">其他登录方式</text>
+    <view class="guest-entry" bindtap="browseAsGuest">先逛逛，暂不登录</view>
   </view>
 
   <!-- 协议 -->

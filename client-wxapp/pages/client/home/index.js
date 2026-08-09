@@ -182,6 +182,11 @@ Page({
     this.setData({ swiperIndex: e.detail.current });
   },
 
+  viewWork(e) {
+    const id = e.currentTarget.dataset.id;
+    if (id) wx.navigateTo({ url: '/pages/client/public-work/index?id=' + id });
+  },
+
   onDotTap(e) {
     var index = e.currentTarget.dataset.index;
     this.setData({ swiperIndex: index });

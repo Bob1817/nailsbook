@@ -5,12 +5,14 @@ describe('PublicArtistController', () => {
   const prisma = {
     technician: { findFirst: jest.fn() },
     nailWork: { findMany: jest.fn() },
+    technicianFollow: { count: jest.fn() },
   } as any;
   const controller = new PublicArtistController(prisma);
 
   beforeEach(() => jest.clearAllMocks());
 
   it('returns only active services, enabled addresses and public works', async () => {
+    prisma.technicianFollow.count.mockResolvedValue(12);
     prisma.technician.findFirst.mockResolvedValue({
       id: 7,
       name: '阿琳',
@@ -45,6 +47,7 @@ describe('PublicArtistController', () => {
     );
     expect(result.artist.serviceItems).toHaveLength(1);
     expect(result.artist.shopAddresses).toHaveLength(1);
+    expect(result.artist.followerCount).toBe(12);
     expect(result.works[0].coverUrl).toContain('/work.png');
     expect(result.artist).not.toHaveProperty('phone');
   });

@@ -41,7 +41,7 @@ App({
           setTimeout(() => wx.reLaunch({ url: homePage }), 300);
         });
     }
-    // 无 token → 不跳转，由 app.json 首页（统一登录页）接管
+    // 无 token → 保持 app.json 的公开发现页，允许游客先浏览再转化
   },
 
   /** 用一次轻量请求校验 token 是否仍有效 */

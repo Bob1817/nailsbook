@@ -69,6 +69,7 @@ model Technician {
   city                      String?
   province                  String?
   serviceArea               String?
+  bio                       String?
   status                    String                      @default("inactive")
   invitationCode            String?                     @unique
   invitedAt                 DateTime?
@@ -119,6 +120,7 @@ model Technician {
   dataExportAudits          DataExportAudit[]
   uploadedAssets            UploadedAsset[]
   subscriptionMetricEvents  SubscriptionMetricEvent[]
+  followers                 TechnicianFollow[]
 }
 
 model ReferralCampaign {
@@ -395,6 +397,19 @@ model ClientUser {
   rewardAccounts            RewardAccount[]
   paymentOrders             PaymentOrder[]
   wechatIdentity            WechatIdentity?
+  followedTechnicians       TechnicianFollow[]
+}
+
+model TechnicianFollow {
+  id           Int        @id @default(autoincrement())
+  clientUserId Int
+  technicianId Int
+  createdAt    DateTime   @default(now())
+  clientUser   ClientUser @relation(fields: [clientUserId], references: [id], onDelete: Cascade)
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@unique([clientUserId, technicianId])
+  @@index([technicianId])
 }
 
 model WechatIdentity {

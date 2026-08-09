@@ -598,6 +598,7 @@ export class TechnicianAuthService {
       city?: string;
       province?: string;
       serviceArea?: string;
+      bio?: string;
       avatarUrl?: string;
       socialMedia?: Record<string, string>;
       serviceSchedule?: any;
@@ -628,6 +629,10 @@ export class TechnicianAuthService {
 
     if (dto.serviceArea !== undefined) {
       updateData.serviceArea = dto.serviceArea.trim() || null;
+    }
+
+    if (dto.bio !== undefined) {
+      updateData.bio = dto.bio.trim() || null;
     }
 
     if (dto.avatarUrl !== undefined) {
@@ -668,6 +673,7 @@ export class TechnicianAuthService {
         city: true,
         province: true,
         serviceArea: true,
+        bio: true,
         status: true,
         invitationCode: true,
         homeService: true,

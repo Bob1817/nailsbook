@@ -86,15 +86,7 @@ Page({
 
   goToArtist() {
     if (this.data.work && this.data.work.technician) {
-      const target = `/pages/client/works/index?techId=${this.data.work.technician.id}`;
-      const app = getApp();
-      const token = app.globalData.token || wx.getStorageSync('client_token');
-      const role = app.globalData.role || wx.getStorageSync('role');
-      if (token && role === 'client') {
-        wx.navigateTo({ url: target });
-      } else {
-        wx.navigateTo({ url: `/pages/client/login/index?redirect=${encodeURIComponent(target)}` });
-      }
+      wx.navigateTo({ url: `/pages/client/artist-home/index?id=${this.data.work.technician.id}` });
     }
   },
 

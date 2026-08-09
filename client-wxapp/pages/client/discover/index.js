@@ -56,9 +56,10 @@ Page({
     var self = this;
     self.setData({ loading: true });
 
+    var loggedIn = !!(getApp().globalData.token || wx.getStorageSync('client_token'));
     return Promise.all([
-      api.client.works.list({ sortBy: 'latest', sortDir: 'desc' }),
-      api.client.likes.list().catch(function () { return []; })
+      api.public.works.list({ limit: 50 }),
+      loggedIn ? api.client.likes.list().catch(function () { return []; }) : Promise.resolve([])
     ]).then(function (results) {
       var res = results[0];
       var likedList = results[1] || [];
@@ -102,6 +103,7 @@ Page({
   },
 
   refreshLikes: function () {
+    if (!(getApp().globalData.token || wx.getStorageSync('client_token'))) return;
     var self = this;
     api.client.likes.list().catch(function () { return []; }).then(function (likedList) {
       var likedIds = {};
@@ -181,7 +183,7 @@ Page({
   // === work-card 组件事件 ===
   onWorkCardTap: function (e) {
     var id = e.detail && e.detail.id;
-    if (id) wx.navigateTo({ url: '/pages/client/work-detail/index?id=' + id });
+    if (id) wx.navigateTo({ url: '/pages/client/public-work/index?id=' + id });
   },
 
   onArtistTap: function (e) {
@@ -192,6 +194,10 @@ Page({
   onLikeTap: function (e) {
     var id = e.detail && e.detail.id;
     if (!id) return;
+    if (!(getApp().globalData.token || wx.getStorageSync('client_token'))) {
+      wx.navigateTo({ url: '/pages/login/index?redirect=' + encodeURIComponent('/pages/client/discover/index') });
+      return;
+    }
     var self = this;
     var works = self.data.works.map(function (w) {
       if (String(w.id) === String(id)) {

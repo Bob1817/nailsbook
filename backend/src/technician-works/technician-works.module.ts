@@ -5,6 +5,7 @@ import { PublicWorksController } from './public-works.controller';
 import { PublicArtistController } from './public-artist.controller';
 import { TechnicianWorksService } from './technician-works.service';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
+import { ClientArtistFollowsController } from './client-artist-follows.controller';
 
 @Module({
   imports: [PrismaModule, SubscriptionsModule],
@@ -12,6 +13,7 @@ import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
     TechnicianWorksController,
     PublicWorksController,
     PublicArtistController,
+    ClientArtistFollowsController,
   ],
   providers: [TechnicianWorksService],
 })

@@ -13,7 +13,10 @@
         <text class="name">{{artist.name}}</text>
         <text class="location">{{artist.city || '本地美甲师'}}{{artist.serviceArea ? ' · 服务 ' + artist.serviceArea : ''}}</text>
       </view>
-      <view class="book-btn" bindtap="bookArtist">预约</view>
+      <view class="head-actions">
+        <view class="follow-btn {{followed ? 'is-followed' : ''}} {{followLoading ? 'is-disabled' : ''}}" bindtap="toggleFollow">{{followed ? '已关注' : '+ 关注'}}</view>
+        <view class="book-btn" bindtap="bookArtist">预约</view>
+      </view>
     </view>
 
     <text class="bio">{{artist.bio || '专注每一次细节，为你完成适合日常与重要时刻的美甲设计。'}}</text>
@@ -26,7 +29,7 @@
     <view class="stats">
       <view class="stat"><text class="stat-value">{{works.length}}</text><text class="stat-label">作品</text></view>
       <view class="stat"><text class="stat-value">{{artist.rating || '—'}}</text><text class="stat-label">评分</text></view>
-      <view class="stat"><text class="stat-value">{{serviceCount}}</text><text class="stat-label">服务</text></view>
+      <view class="stat"><text class="stat-value">{{artist.followerCount || 0}}</text><text class="stat-label">关注者</text></view>
     </view>
 
     <view class="section-head"><text class="section-title">作品</text><text class="section-count">{{works.length}} 篇</text></view>

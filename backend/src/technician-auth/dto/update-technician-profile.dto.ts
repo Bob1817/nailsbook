@@ -32,6 +32,12 @@ export class UpdateTechnicianProfileDto {
   @MaxLength(120)
   serviceArea?: string;
 
+  @ApiPropertyOptional({ description: '公开主页个人简介' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  bio?: string;
+
   @ApiPropertyOptional({ description: '头像URL' })
   @IsOptional()
   @Matches(/^(https?:\/\/.+|\/uploads\/.+)$/i, {

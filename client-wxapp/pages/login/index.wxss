@@ -171,6 +171,8 @@ page {
   padding: var(--space-sm);
 }
 
+.guest-entry { min-height:88rpx; display:flex; align-items:center; justify-content:center; color:#6a6065; font-size:28rpx; }
+
 .alt-login:active { opacity: 0.6; }
 
 /* ===== 手机号 + 密码登录屏 ===== */
