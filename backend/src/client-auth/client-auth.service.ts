@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../common/prisma/prisma.service';
+import type { Technician } from '@prisma/client';
 import { ClientLoginDto } from './dto/client-login.dto';
 import { RegisterByInviteDto } from './dto/register-by-invite.dto';
 import { RegisterBySmsDto } from './dto/register-by-sms.dto';
@@ -527,7 +528,7 @@ export class ClientAuthService {
     const registrationSource = dto.source || 'invite';
 
     // 有邀请码时查找对应的美甲师
-    let technician = null;
+    let technician: Technician | null = null;
     if (dto.inviteCode) {
       technician = await this.findActiveTechnicianByInviteCode(
         dto.inviteCode,

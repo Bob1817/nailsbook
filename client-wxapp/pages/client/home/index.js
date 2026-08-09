@@ -162,7 +162,7 @@ Page({
       });
 
       this.setData({
-        featuredWorks: reset ? newWorks : this.data.featuredWorks.concat(newWorks),
+        featuredWorks: reset ? newWorks : this._dedupWorks(this.data.featuredWorks, newWorks),
         worksPage: page + 1,
         worksHasMore: newWorks.length >= 10,
         worksLoading: false
@@ -225,6 +225,15 @@ Page({
     self.setData({ featuredWorks: featuredWorks });
     self.splitFeaturedWorks();
     api.client.works.like(id).catch(function () { self.loadFeaturedWorks(true); });
+  },
+
+  /** 按 id 去重合并作品数组 */
+  _dedupWorks(existing, incoming) {
+    var seen = {};
+    var result = [];
+    existing.forEach(function (w) { if (!seen[w.id]) { seen[w.id] = true; result.push(w); } });
+    incoming.forEach(function (w) { if (!seen[w.id]) { seen[w.id] = true; result.push(w); } });
+    return result;
   },
 
   /** 将 featuredWorks 拆分为左右两列，并分配宽高比 */
