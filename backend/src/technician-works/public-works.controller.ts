@@ -40,6 +40,55 @@ function parseImageUrls(
 export class PublicWorksController {
   constructor(private readonly prisma: PrismaService) {}
 
+  @Get()
+  @ApiOperation({ summary: '获取游客可浏览的公开作品流' })
+  async getPublicFeed(@Query('limit') limit?: string) {
+    const take = Math.min(50, Math.max(1, Number(limit) || 30));
+    const works = await this.prisma.nailWork.findMany({
+      where: {
+        isVisible: true,
+        visibilityScope: 'public',
+        technician: { status: 'active' },
+      },
+      include: {
+        technician: {
+          select: { id: true, name: true, avatarUrl: true, city: true },
+        },
+        _count: { select: { likes: true, comments: true } },
+      },
+      orderBy: [
+        { isHomepageFeatured: 'desc' },
+        { isFeatured: 'desc' },
+        { createdAt: 'desc' },
+      ],
+      take,
+    });
+    return works.map((work) => {
+      const imageUrls = parseImageUrls(work.images, work.coverUrl)
+        .map(toAbsoluteUrl)
+        .filter(Boolean);
+      return {
+        id: work.id,
+        title: work.title,
+        coverUrl: toAbsoluteUrl(work.coverUrl) ?? imageUrls[0] ?? null,
+        imageUrls,
+        tags: work.tags
+          ? work.tags
+              .split(',')
+              .map((tag) => tag.trim())
+              .filter(Boolean)
+          : [],
+        technicianId: work.technician.id,
+        technicianName: work.technician.name,
+        technicianAvatarUrl: toAbsoluteUrl(work.technician.avatarUrl),
+        technicianCity: work.technician.city,
+        likeCount: work._count.likes,
+        commentCount: work._count.comments,
+        createdAt: work.createdAt,
+      };
+    });
+  }
+
   @Get('featured')
   @ApiOperation({ summary: '获取精选作品列表' })
   @ApiResponse({ status: 200, description: '返回精选作品列表' })

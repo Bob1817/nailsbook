@@ -423,6 +423,7 @@ const publicApi = {
     resolve: (token) => api.get(`${P}/referrals/${token}`, null, { needAuth: false })
   },
   works: {
+    list: (params) => api.get(`${P}/works`, params, { needAuth: false }),
     detail: (id) => api.get(`${P}/works/${id}`, null, { needAuth: false }),
     shared: (token) => api.get(`${P}/works/shared/${token}`, null, { needAuth: false })
   }
