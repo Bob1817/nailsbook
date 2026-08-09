@@ -100,6 +100,18 @@
   font-weight: var(--weight-medium); line-height: 1;
 }
 
+.wc-owner-badge {
+  position: absolute; top: 66rpx; left: 14rpx; z-index: 2;
+  min-height: 36rpx; padding: 0 12rpx;
+  display: flex; align-items: center;
+  border-radius: var(--radius-sm);
+  background: rgba(181, 79, 121, 0.94);
+  color: var(--text-inverse);
+  font-size: 20rpx; font-weight: var(--weight-semibold);
+  line-height: 1;
+  box-shadow: 0 2rpx 8rpx rgba(67, 25, 45, 0.2);
+}
+
 /* ===== 底部：标题 + 标签 + 查看详情 ===== */
 .wc-bottom {
   position: absolute; bottom: 0; left: 0; right: 0;

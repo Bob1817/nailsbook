@@ -16,6 +16,7 @@
       <text class="wc-like-num">{{work.likeCount}}</text>
     </view>
   </view>
+  <text wx:if="{{work.isMyTechnician}}" class="wc-owner-badge">我的美甲师</text>
 
   <!-- 底部：标题 + 标签 + 日期 + 查看详情 -->
   <view class="wc-bottom">

@@ -15,6 +15,20 @@ function formatDate(dateStr) {
   return m + '月' + day + '日';
 }
 
+function getCachedTechnicians() {
+  var bindings = wx.getStorageSync('client_bindings') || [];
+  return bindings.map(function (binding) { return binding.technician || binding; }).filter(function (tech) { return tech && tech.id; });
+}
+
+function mergeByWorkId(primary, secondary) {
+  var seen = {};
+  return primary.concat(secondary).filter(function (work) {
+    if (!work || !work.id || seen[work.id]) return false;
+    seen[work.id] = true;
+    return true;
+  });
+}
+
 Page({
   data: {
     works: [],
@@ -59,10 +73,16 @@ Page({
     var loggedIn = !!(getApp().globalData.token || wx.getStorageSync('client_token'));
     return Promise.all([
       api.public.works.list({ limit: 50 }),
-      loggedIn ? api.client.likes.list().catch(function () { return []; }) : Promise.resolve([])
+      loggedIn ? api.client.likes.list().catch(function () { return []; }) : Promise.resolve([]),
+      loggedIn ? api.auth.getUserInfo('client').catch(function () { return null; }) : Promise.resolve(null)
     ]).then(function (results) {
       var res = results[0];
       var likedList = results[1] || [];
+      var profile = results[2] || {};
+      var technicians = (profile.technicians || []).concat(getCachedTechnicians());
+      var technicianById = {};
+      technicians.forEach(function (tech) { if (tech && tech.id) technicianById[String(tech.id)] = tech; });
+      var boundIds = Object.keys(technicianById);
 
       var likedIds = {};
       likedList.forEach(function (item) {
@@ -71,7 +91,19 @@ Page({
       });
 
       var list = res.list || res.data || (Array.isArray(res) ? res : []);
-      var works = list.map(function (w) {
+      return Promise.all(boundIds.map(function (id) {
+        return api.public.works.list({ techId: id, limit: 50 }).catch(function () { return []; });
+      })).then(function (workLists) {
+        var boundWorks = [];
+        workLists.forEach(function (workList) {
+          var items = workList && (workList.list || workList.data || workList);
+          (Array.isArray(items) ? items : []).forEach(function (work) {
+            boundWorks.push(Object.assign({}, work, { isMyTechnician: true }));
+          });
+        });
+        return mergeByWorkId(boundWorks, list);
+      }).then(function (mergedList) {
+      var works = mergedList.map(function (w) {
         var name = w.technicianName || (w.technician ? w.technician.name : '') || '';
         var rawTags = w.tags || [];
         var tags = Array.isArray(rawTags)
@@ -89,6 +121,7 @@ Page({
           likeCount: w.likeCount || 0,
           isLiked: !!w.isLiked || !!likedIds[w.id],
           commentCount: w.commentCount || 0,
+          isMyTechnician: !!w.isMyTechnician || boundIds.indexOf(String(w.technicianId || (w.technician && w.technician.id))) !== -1,
           createdAt: w.createdAt || '',
           dateStr: formatDate(w.createdAt)
         };
@@ -96,6 +129,7 @@ Page({
 
       self.setData({ works: works, loading: false, loadedCount: PAGE_SIZE });
       self.applyFilter();
+      });
     }).catch(function (err) {
       console.error('discover loadWorks error:', err);
       self.setData({ loading: false });

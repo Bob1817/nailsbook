@@ -42,13 +42,20 @@ export class PublicWorksController {
 
   @Get()
   @ApiOperation({ summary: '获取游客可浏览的公开作品流' })
-  async getPublicFeed(@Query('limit') limit?: string) {
+  async getPublicFeed(
+    @Query('limit') limit?: string,
+    @Query('techId') techId?: string,
+  ) {
     const take = Math.min(50, Math.max(1, Number(limit) || 30));
+    const technicianId = Number(techId);
     const works = await this.prisma.nailWork.findMany({
       where: {
         isVisible: true,
         visibilityScope: 'public',
         technician: { status: 'active' },
+        ...(Number.isInteger(technicianId) && technicianId > 0
+          ? { techId: technicianId }
+          : {}),
       },
       include: {
         technician: {
