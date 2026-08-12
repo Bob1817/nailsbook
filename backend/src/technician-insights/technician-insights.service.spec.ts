@@ -30,6 +30,12 @@ describe('TechnicianInsightsService', () => {
     rewardLedger: {
       aggregate: jest.fn(),
     },
+    conversionEvent: {
+      findMany: jest.fn(),
+    },
+    nailWorkShareEvent: {
+      findMany: jest.fn(),
+    },
   };
 
   let service: TechnicianInsightsService;
@@ -44,6 +50,8 @@ describe('TechnicianInsightsService', () => {
     prisma.rewardLedger.aggregate.mockResolvedValue({ _sum: { amount: null } });
     prisma.revenue.findMany.mockResolvedValue([]);
     prisma.customer.findMany.mockResolvedValue([]);
+    prisma.conversionEvent.findMany.mockResolvedValue([]);
+    prisma.nailWorkShareEvent.findMany.mockResolvedValue([]);
     service = new TechnicianInsightsService(prisma as never);
   });
 
@@ -136,6 +144,18 @@ describe('TechnicianInsightsService', () => {
     expect(result.trends.sampleSize).toBe(5);
     expect(result.trends.daily.at(-1).newCustomers).toBe(1);
     expect(result.performance.sufficientData).toBe(true);
+    expect(result.conversion.homepage).toMatchObject({
+      sufficientData: false,
+      minimumViews: 20,
+      views: 0,
+      rates: null,
+    });
+    expect(result.conversion.works).toMatchObject({
+      sufficientData: false,
+      minimumViews: 30,
+      views: 0,
+      rates: null,
+    });
     expect(result.performance.services[0]).toMatchObject({
       name: '手绘美甲',
       orders: 5,
@@ -196,5 +216,7 @@ describe('TechnicianInsightsService', () => {
       timeSlots: [],
     });
     expect(result.reminders).toEqual([]);
+    expect(result.conversion.homepage.rates).toBeNull();
+    expect(result.conversion.works.rates).toBeNull();
   });
 });

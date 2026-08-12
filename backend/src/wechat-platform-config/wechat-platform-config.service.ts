@@ -9,6 +9,7 @@ import {
   createDecipheriv,
   createHash,
   createPrivateKey,
+  createPublicKey,
   createSign,
   randomBytes,
 } from 'crypto';
@@ -38,6 +39,11 @@ export class WechatPlatformConfigService {
       merchantSerialNo: item.merchantSerialNo ?? '',
       hasMerchantPrivateKey: !!item.merchantPrivateKey,
       hasApiV3Key: !!item.apiV3Key,
+      paymentVerifierMode: item.paymentVerifierMode ?? 'platform_public_key',
+      platformKeyId: item.platformKeyId ?? '',
+      hasPlatformPublicKey: !!item.platformPublicKey,
+      boundAppId: item.boundAppId ?? '',
+      bindingConfirmed: item.bindingConfirmed,
       paymentNotifyUrl: item.paymentNotifyUrl ?? '',
       paymentValidatedAt: item.paymentValidatedAt,
       paymentValidationError: item.paymentValidationError,
@@ -68,11 +74,20 @@ export class WechatPlatformConfigService {
     const current = await this.getRecord();
     const privateKey = dto.merchantPrivateKey?.trim();
     const apiV3Key = dto.apiV3Key?.trim();
+    const platformPublicKey = dto.platformPublicKey?.trim();
     if (!privateKey && !current.merchantPrivateKey) {
       throw new BadRequestException('首次配置必须填写商户私钥');
     }
     if (!apiV3Key && !current.apiV3Key) {
       throw new BadRequestException('首次配置必须填写 APIv3 Key');
+    }
+    if (!platformPublicKey && !current.platformPublicKey) {
+      throw new BadRequestException(
+        '首次配置必须填写微信支付平台证书或平台公钥',
+      );
+    }
+    if (dto.boundAppId.trim() !== current.miniProgramAppId) {
+      throw new BadRequestException('绑定 AppID 必须与当前小程序 AppID 一致');
     }
     await this.prisma.wechatPlatformConfig.update({
       where: { id: 1 },
@@ -80,9 +95,16 @@ export class WechatPlatformConfigService {
         paymentEnabled: dto.paymentEnabled,
         merchantId: dto.merchantId.trim(),
         merchantSerialNo: dto.merchantSerialNo.trim(),
+        paymentVerifierMode: dto.paymentVerifierMode,
+        platformKeyId: dto.platformKeyId.trim(),
+        boundAppId: dto.boundAppId.trim(),
+        bindingConfirmed: dto.bindingConfirmed,
         paymentNotifyUrl: dto.paymentNotifyUrl.trim(),
         ...(privateKey ? { merchantPrivateKey: this.encrypt(privateKey) } : {}),
         ...(apiV3Key ? { apiV3Key: this.encrypt(apiV3Key) } : {}),
+        ...(platformPublicKey
+          ? { platformPublicKey: this.encrypt(platformPublicKey) }
+          : {}),
         paymentValidatedAt: null,
         paymentValidationError: '配置已变更，请重新校验',
       },
@@ -134,6 +156,11 @@ export class WechatPlatformConfigService {
         !item.merchantSerialNo ||
         !item.merchantPrivateKey ||
         !item.apiV3Key ||
+        !item.paymentVerifierMode ||
+        !item.platformKeyId ||
+        !item.platformPublicKey ||
+        !item.boundAppId ||
+        !item.bindingConfirmed ||
         !item.paymentNotifyUrl
       ) {
         throw new Error('微信支付配置不完整');
@@ -141,9 +168,13 @@ export class WechatPlatformConfigService {
       if (!item.paymentNotifyUrl.startsWith('https://')) {
         throw new Error('支付回调地址必须使用 HTTPS');
       }
+      if (item.boundAppId !== item.miniProgramAppId) {
+        throw new Error('商户绑定 AppID 与当前小程序 AppID 不一致');
+      }
       this.decrypt(item.apiV3Key);
       const privateKey = this.decrypt(item.merchantPrivateKey);
       createPrivateKey(privateKey);
+      createPublicKey(this.decrypt(item.platformPublicKey));
 
       const path = '/v3/certificates';
       const timestamp = Math.floor(Date.now() / 1000).toString();
@@ -213,6 +244,24 @@ export class WechatPlatformConfigService {
     return this.paymentEffective(item) && this.loginEffective(item);
   }
 
+  async getPaymentCredentials() {
+    const item = await this.getRecord();
+    if (!this.paymentEffective(item) || !this.loginEffective(item)) {
+      throw new ServiceUnavailableException('微信支付配置未完整校验或未启用');
+    }
+    return {
+      appId: item.miniProgramAppId!,
+      merchantId: item.merchantId!,
+      merchantSerialNo: item.merchantSerialNo!,
+      merchantPrivateKey: this.decrypt(item.merchantPrivateKey!),
+      apiV3Key: this.decrypt(item.apiV3Key!),
+      verifierMode: item.paymentVerifierMode!,
+      platformKeyId: item.platformKeyId!,
+      platformPublicKey: this.decrypt(item.platformPublicKey!),
+      paymentNotifyUrl: item.paymentNotifyUrl!,
+    };
+  }
+
   private loginEffective(item: Awaited<ReturnType<typeof this.getRecord>>) {
     return !!(
       item.loginEnabled &&
@@ -230,6 +279,11 @@ export class WechatPlatformConfigService {
       item.merchantSerialNo &&
       item.merchantPrivateKey &&
       item.apiV3Key &&
+      item.paymentVerifierMode &&
+      item.platformKeyId &&
+      item.platformPublicKey &&
+      item.boundAppId === item.miniProgramAppId &&
+      item.bindingConfirmed &&
       item.paymentNotifyUrl &&
       item.paymentValidatedAt &&
       !item.paymentValidationError

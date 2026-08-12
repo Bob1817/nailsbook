@@ -26,9 +26,7 @@ function periodBoundaries(now: Date) {
 }
 
 function dateKey(date: Date) {
-  return new Date(date.getTime() + CHINA_OFFSET_MS)
-    .toISOString()
-    .slice(0, 10);
+  return new Date(date.getTime() + CHINA_OFFSET_MS).toISOString().slice(0, 10);
 }
 
 function weekKey(date: Date) {
@@ -223,14 +221,19 @@ export class TechnicianInsightsService {
         item.order.remark ||
         item.order.serviceType ||
         '未分类服务';
-      const hour = new Date(item.order.startTime.getTime() + CHINA_OFFSET_MS)
-        .getUTCHours();
+      const hour = new Date(
+        item.order.startTime.getTime() + CHINA_OFFSET_MS,
+      ).getUTCHours();
       const time = hour < 12 ? '上午' : hour < 18 ? '下午' : '晚间';
       for (const [map, key] of [
         [dailyMap, day],
         [weeklyMap, week],
       ] as Array<[Map<string, TrendValue>, string]>) {
-        const value = map.get(key) || { orders: 0, revenue: 0, newCustomers: 0 };
+        const value = map.get(key) || {
+          orders: 0,
+          revenue: 0,
+          newCustomers: 0,
+        };
         value.orders += 1;
         value.revenue += item.amount;
         map.set(key, value);
@@ -258,7 +261,11 @@ export class TechnicianInsightsService {
         [dailyMap, dateKey(customer.createdAt)],
         [weeklyMap, weekKey(customer.createdAt)],
       ] as Array<[Map<string, TrendValue>, string]>) {
-        const value = map.get(key) || { orders: 0, revenue: 0, newCustomers: 0 };
+        const value = map.get(key) || {
+          orders: 0,
+          revenue: 0,
+          newCustomers: 0,
+        };
         value.newCustomers += 1;
         map.set(key, value);
       }
@@ -283,7 +290,8 @@ export class TechnicianInsightsService {
             key: `${lifecycle.status}-${customerId}`,
             type: lifecycle.status,
             customerId,
-            customerName: customer?.name || customerNames.get(customerId) || '客户',
+            customerName:
+              customer?.name || customerNames.get(customerId) || '客户',
             reason: lifecycle.reason,
             expectedNextServiceAt: lifecycle.expectedNextServiceAt,
           });
@@ -300,6 +308,55 @@ export class TechnicianInsightsService {
         return items;
       })
       .slice(0, 20);
+
+    const conversionSince = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    const [conversionEvents, shareEvents] = await Promise.all([
+      this.prisma.conversionEvent.findMany({
+        where: { technicianId, createdAt: { gte: conversionSince, lte: now } },
+        select: {
+          eventType: true,
+          workId: true,
+          visitorId: true,
+          source: true,
+        },
+      }),
+      this.prisma.nailWorkShareEvent.findMany({
+        where: {
+          work: { techId: technicianId },
+          eventType: 'share',
+          createdAt: { gte: conversionSince, lte: now },
+        },
+        select: { workId: true },
+      }),
+    ]);
+    const countEvents = (
+      type: string,
+      predicate?: (item: (typeof conversionEvents)[number]) => boolean,
+    ) =>
+      conversionEvents.filter(
+        (item) => item.eventType === type && (!predicate || predicate(item)),
+      ).length;
+    const artistViews = countEvents('artist_view');
+    const artistBookingIntents = countEvents(
+      'booking_intent',
+      (item) => !item.workId,
+    );
+    const artistOrders = countEvents(
+      'order_created',
+      (item) => !item.workId && item.source === 'artist_home',
+    );
+    const follows = countEvents('follow');
+    const workViews = countEvents('work_view');
+    const workBookingIntents = countEvents('booking_intent', (item) =>
+      Boolean(item.workId),
+    );
+    const workOrders = countEvents('order_created', (item) =>
+      Boolean(item.workId),
+    );
+    const homepageMinimum = 20;
+    const worksMinimum = 30;
+    const safeRate = (value: number, base: number) =>
+      base > 0 ? value / base : null;
 
     return {
       period: {
@@ -353,12 +410,54 @@ export class TechnicianInsightsService {
       performance: {
         sufficientData: recentRevenues.length >= 5,
         minimumSampleSize: 5,
-        services:
-          recentRevenues.length >= 5 ? performance(serviceMap) : [],
-        timeSlots:
-          recentRevenues.length >= 5 ? performance(timeMap) : [],
+        services: recentRevenues.length >= 5 ? performance(serviceMap) : [],
+        timeSlots: recentRevenues.length >= 5 ? performance(timeMap) : [],
       },
       reminders: reminderItems,
+      conversion: {
+        periodDays: 90,
+        homepage: {
+          sufficientData: artistViews >= homepageMinimum,
+          minimumViews: homepageMinimum,
+          views: artistViews,
+          uniqueVisitors: new Set(
+            conversionEvents
+              .filter((item) => item.eventType === 'artist_view')
+              .map((item) => item.visitorId)
+              .filter(Boolean),
+          ).size,
+          follows,
+          bookingIntents: artistBookingIntents,
+          orders: artistOrders,
+          rates:
+            artistViews >= homepageMinimum
+              ? {
+                  followRate: safeRate(follows, artistViews),
+                  bookingIntentRate: safeRate(
+                    artistBookingIntents,
+                    artistViews,
+                  ),
+                  orderRate: safeRate(artistOrders, artistViews),
+                }
+              : null,
+        },
+        works: {
+          sufficientData: workViews >= worksMinimum,
+          minimumViews: worksMinimum,
+          views: workViews,
+          shares: shareEvents.length,
+          bookingIntents: workBookingIntents,
+          orders: workOrders,
+          rates:
+            workViews >= worksMinimum
+              ? {
+                  shareRate: safeRate(shareEvents.length, workViews),
+                  bookingIntentRate: safeRate(workBookingIntents, workViews),
+                  orderRate: safeRate(workOrders, workViews),
+                }
+              : null,
+        },
+      },
     };
   }
 }

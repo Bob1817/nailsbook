@@ -74,7 +74,7 @@ describe('OrdersService 流转成功路径', () => {
     );
   });
 
-  it('confirm 带定金 + depositConfirmed=true：标记定金已付', async () => {
+  it('confirm 带定金但支付未确认：拒绝美甲师自行标记已付', async () => {
     jest.spyOn(service, 'findOne').mockResolvedValue({
       id: 1,
       status: 'pending_confirm',
@@ -85,16 +85,8 @@ describe('OrdersService 流转成功路径', () => {
       isDepositPaid: false,
     } as never);
 
-    await service.confirm(1, true);
-
-    expect(prisma.order.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          isDepositPaid: true,
-          depositStatus: 'paid',
-        }),
-      }),
-    );
+    await expect(service.confirm(1)).rejects.toThrow('请先确认用户已缴纳定金');
+    expect(prisma.order.update).not.toHaveBeenCalled();
   });
 
   it('complete：in_progress → completed，并生成收入记录', async () => {
@@ -105,6 +97,8 @@ describe('OrdersService 流转成功路径', () => {
       technicianId: 7,
       customerId: 3,
       quotePrice: 200,
+      paidAmount: 200,
+      paymentStatus: 'paid',
     } as never);
 
     const res = await service.complete(1);

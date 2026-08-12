@@ -52,6 +52,7 @@ export class PublicWorksController {
       where: {
         isVisible: true,
         visibilityScope: 'public',
+        publicationStatus: 'approved',
         technician: { status: 'active' },
         ...(Number.isInteger(technicianId) && technicianId > 0
           ? { techId: technicianId }
@@ -105,6 +106,8 @@ export class PublicWorksController {
         isFeatured: true,
         isVisible: true,
         visibilityScope: 'public',
+        publicationStatus: 'approved',
+        technician: { status: 'active' },
       },
       include: {
         technician: {
@@ -141,6 +144,8 @@ export class PublicWorksController {
         isHomepageFeatured: true,
         isVisible: true,
         visibilityScope: 'public',
+        publicationStatus: 'approved',
+        technician: { status: 'active' },
       },
       include: {
         technician: { select: { name: true, avatarUrl: true } },
@@ -183,6 +188,8 @@ export class PublicWorksController {
       id,
       isVisible: true,
       visibilityScope: 'public',
+      publicationStatus: 'approved',
+      technician: { status: 'active' },
     });
   }
 

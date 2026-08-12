@@ -90,9 +90,7 @@ export class TechnicianOrdersController {
   @ApiOperation({ summary: '获取注册以来的收入日历数据' })
   @ApiResponse({ status: 200, description: '返回注册时间与轻量订单收入字段' })
   @ApiResponse({ status: 401, description: '未授权' })
-  findIncomeCalendar(
-    @Req() request: { user: { technicianId: number } },
-  ) {
+  findIncomeCalendar(@Req() request: { user: { technicianId: number } }) {
     return this.ordersService.findIncomeCalendar(request.user.technicianId);
   }
 
@@ -157,26 +155,18 @@ export class TechnicianOrdersController {
   @Patch(':id/confirm')
   @ApiOperation({ summary: '确认订单' })
   @ApiParam({ name: 'id', type: String, description: '订单ID' })
-  @ApiBody({
-    schema: {
-      properties: {
-        depositConfirmed: { type: 'boolean', description: '是否确认定金' },
-      },
-    },
-  })
   @ApiResponse({ status: 200, description: '确认成功' })
   @ApiResponse({ status: 401, description: '未授权' })
   @ApiResponse({ status: 404, description: '订单不存在' })
   async confirm(
     @Req() request: { user: { technicianId: number } },
     @Param('id') id: string,
-    @Body() body: { depositConfirmed?: boolean },
   ) {
     await this.ordersService.findOneForTechnician(
       parseInt(id, 10),
       request.user.technicianId,
     );
-    return this.ordersService.confirm(parseInt(id, 10), body?.depositConfirmed);
+    return this.ordersService.confirm(parseInt(id, 10));
   }
 
   @Patch(':id/complete')

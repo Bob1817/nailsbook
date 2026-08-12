@@ -7,6 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { bookingReadiness } from '../technicians/booking-readiness';
 import { VerificationCodeService } from '../common/verification-code/verification-code.service';
 import { SmsService } from '../common/sms/sms.service';
 import type { Prisma } from '@prisma/client';
@@ -290,6 +291,7 @@ export class TechnicianAuthService {
       name: technician.name,
       phone: technician.phone,
       avatarUrl: technician.avatarUrl,
+      bio: technician.bio,
       city: technician.city,
       province: technician.province,
       serviceArea: technician.serviceArea,
@@ -301,7 +303,8 @@ export class TechnicianAuthService {
       isActivated: !!technician.passwordHash,
       isTourist: !technician.passwordHash,
       // 接单就绪：至少开启一种服务类型；未就绪则锁定邀请码/邀请链接
-      bookingReady: technician.homeService || technician.shopService,
+      bookingReady: bookingReadiness(technician).ready,
+      bookingReadinessIssues: bookingReadiness(technician).issues,
       shopAddresses: this.parseShopAddresses(technician.shopAddresses),
       socialMedia: this.parseSocialMedia(technician.socialMedia),
       serviceItems: this.parseServiceItems(technician.serviceItems),
@@ -695,6 +698,8 @@ export class TechnicianAuthService {
         ? JSON.parse(updated.serviceSchedule)
         : null,
       customTags: updated.customTags ? JSON.parse(updated.customTags) : [],
+      bookingReady: bookingReadiness(updated).ready,
+      bookingReadinessIssues: bookingReadiness(updated).issues,
     };
   }
 

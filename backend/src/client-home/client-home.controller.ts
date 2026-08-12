@@ -20,6 +20,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { ClientJwtAuthGuard } from '../client-auth/client-jwt-auth.guard';
+import { ClientOptionalJwtAuthGuard } from '../client-auth/client-optional-jwt-auth.guard';
 import { ClientHomeService } from './client-home.service';
 
 @Controller('client')
@@ -30,6 +31,7 @@ export class ClientHomeController {
   // ========== 公开接口（无需登录）==========
 
   @Get('home')
+  @UseGuards(ClientOptionalJwtAuthGuard)
   @ApiOperation({ summary: '获取首页数据（未登录返回公开精品作品）' })
   @ApiResponse({ status: 200, description: '返回首页数据' })
   getHome(@Req() request?: { user?: { clientUserId: number } }) {
@@ -41,6 +43,7 @@ export class ClientHomeController {
   }
 
   @Get('featured-works')
+  @UseGuards(ClientOptionalJwtAuthGuard)
   @ApiOperation({ summary: '获取推荐作品（分页）' })
   @ApiQuery({ name: 'page', type: Number, required: false })
   @ApiQuery({ name: 'limit', type: Number, required: false })
@@ -65,6 +68,7 @@ export class ClientHomeController {
   }
 
   @Get('works')
+  @UseGuards(ClientOptionalJwtAuthGuard)
   @ApiOperation({ summary: '获取作品列表' })
   @ApiQuery({ name: 'techId', type: Number, required: false })
   @ApiQuery({ name: 'sortBy', required: false })
@@ -96,6 +100,7 @@ export class ClientHomeController {
   }
 
   @Get('works/:id')
+  @UseGuards(ClientOptionalJwtAuthGuard)
   @ApiOperation({ summary: '获取作品详情' })
   @ApiParam({ name: 'id', type: Number })
   getWork(
@@ -110,6 +115,7 @@ export class ClientHomeController {
   }
 
   @Get('works/:id/comments')
+  @UseGuards(ClientOptionalJwtAuthGuard)
   @ApiOperation({ summary: '获取作品评论列表' })
   @ApiParam({ name: 'id', type: Number })
   getComments(

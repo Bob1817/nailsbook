@@ -118,6 +118,7 @@ model Technician {
   subscriptionUsageEvents   SubscriptionUsageEvent[]
   marketingMaterials        MarketingMaterial[]
   dataExportAudits          DataExportAudit[]
+  conversionEvents          ConversionEvent[]
   uploadedAssets            UploadedAsset[]
   subscriptionMetricEvents  SubscriptionMetricEvent[]
   followers                 TechnicianFollow[]
@@ -398,6 +399,7 @@ model ClientUser {
   paymentOrders             PaymentOrder[]
   wechatIdentity            WechatIdentity?
   followedTechnicians       TechnicianFollow[]
+  conversionEvents          ConversionEvent[]
 }
 
 model TechnicianFollow {
@@ -460,6 +462,11 @@ model WechatPlatformConfig {
   merchantSerialNo       String?
   merchantPrivateKey     String?
   apiV3Key               String?
+  paymentVerifierMode    String?
+  platformKeyId          String?
+  platformPublicKey      String?
+  boundAppId             String?
+  bindingConfirmed       Boolean   @default(false)
   paymentNotifyUrl       String?
   paymentValidatedAt     DateTime?
   paymentValidationError String?
@@ -527,6 +534,11 @@ model NailWork {
   price               Float?
   viewCount           Int                    @default(0)
   isHomepageFeatured  Boolean                @default(false)
+  publicationStatus   String                 @default("pending")
+  reviewNote           String?
+  reviewedAt           DateTime?
+  reviewedBy           Int?
+  publishedAt          DateTime?
   // public: 已绑定客户均可见；authorized_clients: 仅授权客户可见
   visibilityScope     String                 @default("public")
   createdAt           DateTime               @default(now())
@@ -539,10 +551,12 @@ model NailWork {
   shareGrants         NailWorkShareGrant[]
   shareEvents         NailWorkShareEvent[]
   sourceOrders        Order[]
+  conversionEvents    ConversionEvent[]
 
   @@index([techId])
   @@index([isVisible])
   @@index([isHomepageFeatured])
+  @@index([publicationStatus, createdAt])
 }
 
 model NailWorkClientAccess {
@@ -604,6 +618,25 @@ model NailWorkShareEvent {
   @@index([clientUserId])
   @@index([shareGrantId])
   @@index([createdAt])
+}
+
+model ConversionEvent {
+  id           Int         @id @default(autoincrement())
+  eventId      String      @unique
+  technicianId Int
+  workId       Int?
+  clientUserId Int?
+  visitorId    String?
+  eventType    String
+  source       String?
+  createdAt    DateTime    @default(now())
+  technician   Technician  @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  work         NailWork?   @relation(fields: [workId], references: [id], onDelete: SetNull)
+  clientUser   ClientUser? @relation(fields: [clientUserId], references: [id], onDelete: SetNull)
+
+  @@index([technicianId, eventType, createdAt])
+  @@index([workId, eventType, createdAt])
+  @@index([visitorId, createdAt])
 }
 
 model ServiceReview {
@@ -1042,6 +1075,7 @@ model BlockedTimeSlot {
   technician Technician @relation(fields: [techId], references: [id])
 
   @@index([techId])
+  @@unique([techId, startTime])
   @@index([startTime])
   @@index([endTime])
 }

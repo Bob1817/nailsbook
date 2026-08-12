@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { RewardFundService } from './reward-fund.service';
+import { confirmedPaidAmount, isFullyPaid } from '../orders/order-accounting';
 
 const REFERRAL_REWARD_RATE = 0.05;
 
@@ -14,6 +15,8 @@ type CompletedOrder = {
   technicianId: number;
   quotePrice: number | null;
   fundDiscountAmount?: number | null;
+  paidAmount?: number | null;
+  paymentStatus?: string | null;
 };
 
 @Injectable()
@@ -34,11 +37,7 @@ export class ReferralQualificationService {
       },
       include: { qualification: true },
     });
-    if (
-      !relation ||
-      relation.qualification ||
-      !relation.rewardPromised
-    ) {
+    if (!relation || relation.qualification || !relation.rewardPromised) {
       if (relation?.qualification) {
         await this.rewardFunds.issueReferralReward(tx, {
           qualificationId: relation.qualification.id,
@@ -50,10 +49,8 @@ export class ReferralQualificationService {
       return relation?.qualification ?? null;
     }
 
-    const paidAmount = Math.max(
-      0,
-      (order.quotePrice ?? 0) - (order.fundDiscountAmount ?? 0),
-    );
+    if (!isFullyPaid(order)) return null;
+    const paidAmount = confirmedPaidAmount(order);
     if (paidAmount < relation.minimumOrderAmount) return null;
     const rewardAmount = calculateRewardAmount(paidAmount);
     if (rewardAmount <= 0) return null;

@@ -15,6 +15,8 @@ describe('ReferralQualificationService', () => {
     clientUserId: 8,
     technicianId: 3,
     quotePrice: 199,
+    paidAmount: 199,
+    paymentStatus: 'paid',
   };
   let service: ReferralQualificationService;
   const rewardFunds = { issueReferralReward: jest.fn() };
@@ -40,9 +42,10 @@ describe('ReferralQualificationService', () => {
       rewardAmount: 9.95,
     });
 
-    await expect(
-      service.qualifyCompletedOrder(tx, order),
-    ).resolves.toEqual({ id: 9, rewardAmount: 9.95 });
+    await expect(service.qualifyCompletedOrder(tx, order)).resolves.toEqual({
+      id: 9,
+      rewardAmount: 9.95,
+    });
     expect(tx.referralQualification.upsert).toHaveBeenCalledWith({
       where: { relationId: 5 },
       create: {
@@ -76,17 +79,24 @@ describe('ReferralQualificationService', () => {
       minimumOrderAmount: 0,
       qualification: null,
     });
-    tx.referralQualification.upsert.mockResolvedValue({ id: 10, rewardAmount: 7.45 });
+    tx.referralQualification.upsert.mockResolvedValue({
+      id: 10,
+      rewardAmount: 7.45,
+    });
 
     await service.qualifyCompletedOrder(tx, {
       ...order,
       quotePrice: 199,
       fundDiscountAmount: 50,
+      paidAmount: 149,
     });
 
     expect(tx.referralQualification.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        create: expect.objectContaining({ paidAmount: 149, rewardAmount: 7.45 }),
+        create: expect.objectContaining({
+          paidAmount: 149,
+          rewardAmount: 7.45,
+        }),
       }),
     );
   });
@@ -100,10 +110,28 @@ describe('ReferralQualificationService', () => {
       qualification: null,
     });
 
+    await expect(service.qualifyCompletedOrder(tx, order)).resolves.toBeNull();
+    expect(tx.referralQualification.upsert).not.toHaveBeenCalled();
+  });
+
+  it('订单未足额支付时不确认推荐资格', async () => {
+    tx.referralRelation.findUnique.mockResolvedValue({
+      id: 5,
+      rewardPromised: true,
+      rewardAmount: null,
+      minimumOrderAmount: 0,
+      qualification: null,
+    });
+
     await expect(
-      service.qualifyCompletedOrder(tx, order),
+      service.qualifyCompletedOrder(tx, {
+        ...order,
+        paidAmount: 50,
+        paymentStatus: 'partial',
+      }),
     ).resolves.toBeNull();
     expect(tx.referralQualification.upsert).not.toHaveBeenCalled();
+    expect(rewardFunds.issueReferralReward).not.toHaveBeenCalled();
   });
 
   it('重复完成或定时重试返回已有资格且不重复写入', async () => {
@@ -118,9 +146,9 @@ describe('ReferralQualificationService', () => {
       qualification,
     });
 
-    await expect(
-      service.qualifyCompletedOrder(tx, order),
-    ).resolves.toBe(qualification);
+    await expect(service.qualifyCompletedOrder(tx, order)).resolves.toBe(
+      qualification,
+    );
     expect(tx.referralQualification.upsert).not.toHaveBeenCalled();
     expect(tx.referralRelation.update).not.toHaveBeenCalled();
     expect(rewardFunds.issueReferralReward).toHaveBeenCalledWith(tx, {
@@ -140,9 +168,7 @@ describe('ReferralQualificationService', () => {
       qualification: null,
     });
 
-    await expect(
-      service.qualifyCompletedOrder(tx, order),
-    ).resolves.toBeNull();
+    await expect(service.qualifyCompletedOrder(tx, order)).resolves.toBeNull();
     expect(tx.referralQualification.upsert).not.toHaveBeenCalled();
   });
 });

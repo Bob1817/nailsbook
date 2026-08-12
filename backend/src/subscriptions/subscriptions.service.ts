@@ -158,7 +158,9 @@ export class SubscriptionsService {
           },
         },
       }),
-      this.prisma.nailWork.count({ where: { techId: technicianId } }),
+      this.prisma.nailWork.count({
+        where: { techId: technicianId, publicationStatus: { not: 'draft' } },
+      }),
       this.prisma.subscriptionResourceUsage.findUnique({
         where: { technicianId_period: { technicianId, period } },
       }),

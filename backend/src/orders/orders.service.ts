@@ -14,6 +14,8 @@ import { BookingMutexService } from './booking-mutex.service';
 import { ReferralQualificationService } from '../referrals/referral-qualification.service';
 import { RewardFundService } from '../referrals/reward-fund.service';
 import { assertWithinServiceSchedule } from './order-work-schedule';
+import { revenueSnapshot } from './order-accounting';
+import { throwIfBookingSlotConflict } from './booking-conflict';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import {
   getBusinessDateTimeParts,
@@ -111,7 +113,11 @@ export class OrdersService {
     ) {
       throw new BadRequestException('预约时间无效');
     }
-    await this.assertTechnicianWorkSchedule(technicianId, initialStart, initialEnd);
+    await this.assertTechnicianWorkSchedule(
+      technicianId,
+      initialStart,
+      initialEnd,
+    );
 
     const confirmToken = dto.shareToClient ? crypto.randomUUID() : null;
     const confirmTokenExpiresAt = confirmToken
@@ -181,9 +187,14 @@ export class OrdersService {
 
         return order;
       });
-    const order = this.bookingMutex
-      ? await this.bookingMutex.runExclusive(technicianId, createOrder)
-      : await createOrder();
+    let order;
+    try {
+      order = this.bookingMutex
+        ? await this.bookingMutex.runExclusive(technicianId, createOrder)
+        : await createOrder();
+    } catch (error) {
+      throwIfBookingSlotConflict(error);
+    }
 
     const result: Record<string, unknown> = { ...order };
     if (confirmToken) {
@@ -529,7 +540,7 @@ export class OrdersService {
     return updated;
   }
 
-  async confirm(id: number, depositConfirmed?: boolean) {
+  async confirm(id: number) {
     const order = await this.findOne(id);
 
     if (
@@ -539,11 +550,7 @@ export class OrdersService {
       throw new BadRequestException('当前订单状态不支持确认');
     }
 
-    if (
-      (order.depositAmount ?? 0) > 0 &&
-      !order.isDepositPaid &&
-      !depositConfirmed
-    ) {
+    if ((order.depositAmount ?? 0) > 0 && !order.isDepositPaid) {
       throw new BadRequestException('请先确认用户已缴纳定金');
     }
 
@@ -559,11 +566,6 @@ export class OrdersService {
         data: {
           status: targetStatus,
           confirmedAt: new Date(),
-          isDepositPaid: depositConfirmed ? true : order.isDepositPaid,
-          depositStatus: depositConfirmed ? 'paid' : order.depositStatus,
-          depositConfirmedAt: depositConfirmed
-            ? new Date()
-            : order.depositConfirmedAt,
         },
       });
 
@@ -664,18 +666,16 @@ export class OrdersService {
         },
       });
 
+      const accounting = revenueSnapshot(order);
       const revenue = await tx.revenue.create({
         data: {
           revenueNo: this.generateRevenueNo(),
           orderId: id,
           technicianId: order.technicianId,
           customerId: order.customerId,
-          amount: Math.max(
-            0,
-            (order.quotePrice ?? 0) - (order.fundDiscountAmount ?? 0),
-          ),
+          amount: accounting.amount,
           recognizedAt: new Date(),
-          status: 'confirmed',
+          status: accounting.status,
         },
       });
 

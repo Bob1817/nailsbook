@@ -13,6 +13,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "seed:demo": "ts-node -r tsconfig-paths/register src/scripts/seed-demo.ts",
+    "check:production-readiness": "ts-node -r tsconfig-paths/register src/scripts/check-production-readiness.ts",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",

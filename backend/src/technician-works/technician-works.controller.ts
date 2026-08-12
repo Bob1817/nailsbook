@@ -74,6 +74,15 @@ export class TechnicianWorksController {
     return this.technicianWorksService.create(request.user.technicianId, dto);
   }
 
+  @Post('drafts')
+  @ApiOperation({ summary: '创建作品草稿' })
+  createDraft(
+    @Req() request: { user: { technicianId: number } },
+    @Body() dto: UpdateWorkDto,
+  ) {
+    return this.technicianWorksService.createDraft(request.user.technicianId, dto);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: '更新作品' })
   @ApiParam({ name: 'id', type: Number, description: '作品ID' })
@@ -91,6 +100,25 @@ export class TechnicianWorksController {
       id,
       dto,
     );
+  }
+
+  @Patch(':id/draft')
+  @ApiOperation({ summary: '保存作品草稿' })
+  saveDraft(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateWorkDto,
+  ) {
+    return this.technicianWorksService.saveDraft(request.user.technicianId, id, dto);
+  }
+
+  @Post(':id/publish')
+  @ApiOperation({ summary: '提交作品发布审核' })
+  publish(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.technicianWorksService.publish(request.user.technicianId, id);
   }
 
   @Put(':id/access')

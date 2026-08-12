@@ -22,11 +22,13 @@ describe('客户端核心路径静态契约', () => {
     const publicWorkWxml = readWxapp('pages/client/public-work/index.wxml');
     const login = readWxapp('pages/client/login/index.js');
     const register = readWxapp('pages/client/register/index.js');
+    const navigation = readWxapp('utils/artist-navigation.js');
 
     expect(publicWorkWxml).toContain('bindtap="bookSameStyle"');
-    expect(publicWorkJs).toContain('login/index?redirect=');
-    expect(login).toContain("this.redirect || '/pages/client/home/index'");
-    expect(register).toContain("this.redirect || '/pages/client/home/index'");
+    expect(publicWorkJs).toContain('buildClientLoginUrl(target');
+    expect(navigation).toContain('post_auth_redirect');
+    expect(login).toContain('consumePostAuthRedirect(this.redirect)');
+    expect(register).toContain('consumePostAuthRedirect(this.redirect)');
   });
 
   it('聊天与设计预约入口兼容美甲师参数', () => {

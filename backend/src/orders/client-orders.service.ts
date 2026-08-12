@@ -17,8 +17,11 @@ import { BookingMutexService } from './booking-mutex.service';
 import { ReferralQualificationService } from '../referrals/referral-qualification.service';
 import { RewardFundService } from '../referrals/reward-fund.service';
 import { assertWithinServiceSchedule } from './order-work-schedule';
+import { bookingReadiness } from '../technicians/booking-readiness';
 import { parseBusinessDateTime } from './business-time';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
+import { revenueSnapshot } from './order-accounting';
+import { throwIfBookingSlotConflict } from './booking-conflict';
 
 import * as crypto from 'crypto';
 
@@ -73,6 +76,13 @@ export class ClientOrdersService {
     if (binding.technician.status !== 'active') {
       throw new BadRequestException('该美甲师当前未开启接单');
     }
+    const readiness = bookingReadiness(
+      binding.technician,
+      dto.serviceType as '上门美甲' | '到店美甲',
+    );
+    if (!readiness.ready) {
+      throw new BadRequestException(readiness.issues[0]);
+    }
     if (this.subscriptions) {
       await this.subscriptions.assertCanCreateBooking(dto.techId);
       await this.subscriptions.assertCanActivateCustomer(
@@ -101,20 +111,6 @@ export class ClientOrdersService {
       if (!sourceWork) {
         throw new NotFoundException('来源作品不存在或查看授权已失效');
       }
-    }
-
-    if (!binding.technician.homeService && !binding.technician.shopService) {
-      throw new BadRequestException(
-        '美甲师未开启美甲服务，请联系美甲师开启服务',
-      );
-    }
-
-    if (dto.serviceType === '上门美甲' && !binding.technician.homeService) {
-      throw new BadRequestException('该美甲师暂未开启上门美甲服务');
-    }
-
-    if (dto.serviceType === '到店美甲' && !binding.technician.shopService) {
-      throw new BadRequestException('该美甲师暂未开启到店美甲服务');
     }
 
     const isCustom =
@@ -213,6 +209,19 @@ export class ClientOrdersService {
           include: this.orderInclude(),
         });
 
+        await tx.conversionEvent.create({
+          data: {
+            eventId: `order-created-${createdOrder.id}`,
+            technicianId: dto.techId,
+            workId: dto.sourceWorkId ?? null,
+            clientUserId,
+            eventType: 'order_created',
+            source: dto.sourceWorkId
+              ? 'work_detail'
+              : this.normalizeAttributionSource(dto.attributionSource),
+          },
+        });
+
         const previewContent = isCustom
           ? dto.customTitle || '自定义美甲需求'
           : selectedServiceNames.length > 0
@@ -271,9 +280,14 @@ export class ClientOrdersService {
 
         return createdOrder;
       });
-    const order = this.bookingMutex
-      ? await this.bookingMutex.runExclusive(dto.techId, createOrder)
-      : await createOrder();
+    let order;
+    try {
+      order = this.bookingMutex
+        ? await this.bookingMutex.runExclusive(dto.techId, createOrder)
+        : await createOrder();
+    } catch (error) {
+      throwIfBookingSlotConflict(error);
+    }
 
     // 推送新预约给技师（best-effort，不阻塞主流程）
     void this.push.sendToTechnician(dto.techId, {
@@ -283,6 +297,11 @@ export class ClientOrdersService {
     });
 
     return this.mapOrder(order);
+  }
+
+  private normalizeAttributionSource(source?: string) {
+    const normalized = String(source || 'direct').trim().toLowerCase();
+    return /^[a-z0-9_-]{1,32}$/.test(normalized) ? normalized : 'direct';
   }
 
   async createFromDesign(clientUserId: number, dto: CreateOrderFromDesignDto) {
@@ -479,9 +498,14 @@ export class ClientOrdersService {
 
         return createdOrder;
       });
-    const order = this.bookingMutex
-      ? await this.bookingMutex.runExclusive(design.techId, createOrder)
-      : await createOrder();
+    let order;
+    try {
+      order = this.bookingMutex
+        ? await this.bookingMutex.runExclusive(design.techId, createOrder)
+        : await createOrder();
+    } catch (error) {
+      throwIfBookingSlotConflict(error);
+    }
 
     // 推送新预约给技师（best-effort，不阻塞主流程）
     void this.push.sendToTechnician(dto.techId, {
@@ -964,18 +988,16 @@ export class ClientOrdersService {
           },
         });
 
+        const accounting = revenueSnapshot(order);
         await tx.revenue.create({
           data: {
             revenueNo: this.generateRevenueNo(),
             orderId: id,
             technicianId: order.technicianId,
             customerId: order.customerId,
-            amount: Math.max(
-              0,
-              (order.quotePrice ?? 0) - (order.fundDiscountAmount ?? 0),
-            ),
+            amount: accounting.amount,
             recognizedAt: new Date(),
-            status: 'confirmed',
+            status: accounting.status,
           },
         });
 
@@ -1034,105 +1056,6 @@ export class ClientOrdersService {
         include: this.orderInclude(),
       });
     });
-
-    return this.mapOrder(updatedOrder);
-  }
-
-  async markDepositPaid(clientUserId: number, id: number) {
-    const order = await this.prisma.order.findFirst({
-      where: {
-        id,
-        clientUserId,
-      },
-      include: this.orderInclude(),
-    });
-
-    if (!order) {
-      throw new NotFoundException('订单不存在');
-    }
-
-    if (order.status !== 'pending_confirm') {
-      throw new BadRequestException('当前订单状态不支持确认定金');
-    }
-
-    if (order.isDepositPaid) {
-      throw new BadRequestException('定金已确认，无需重复操作');
-    }
-
-    const updatedOrder = await this.prisma.order.update({
-      where: { id },
-      data: {
-        isDepositPaid: true,
-        depositStatus: 'paid',
-        depositConfirmedAt: new Date(),
-      },
-      include: this.orderInclude(),
-    });
-
-    // 通知美甲师
-    let systemMessage: any = null;
-    let conversationId: number | null = null;
-
-    try {
-      const conversation = await this.prisma.conversation.upsert({
-        where: {
-          clientId_techId: {
-            clientId: clientUserId,
-            techId: order.technicianId,
-          },
-        },
-        update: {
-          lastMessage: '客户已确认支付定金',
-          lastMessageAt: new Date(),
-        },
-        create: {
-          clientId: clientUserId,
-          techId: order.technicianId,
-          lastMessage: '客户已确认支付定金',
-          lastMessageAt: new Date(),
-        },
-      });
-
-      conversationId = conversation.id;
-
-      systemMessage = await this.prisma.message.create({
-        data: {
-          conversationId: conversation.id,
-          senderType: 'client',
-          senderId: clientUserId,
-          receiverType: 'technician',
-          receiverId: order.technicianId,
-          messageType: 'system',
-          content: `客户已确认支付定金（¥${order.depositAmount ?? 0}），请确认后接单～`,
-          relatedType: 'order',
-          relatedId: order.id,
-        },
-      });
-    } catch (e) {
-      console.error(
-        '[ClientOrdersService] Failed to push deposit notification:',
-        e,
-      );
-    }
-
-    if (systemMessage && conversationId) {
-      try {
-        const updatedConversation = await this.prisma.conversation.findUnique({
-          where: { id: conversationId },
-        });
-        this.chatGateway.server
-          .to(`conversation:${String(conversationId)}`)
-          .emit('message:new', {
-            message: systemMessage,
-            conversation: updatedConversation,
-          });
-      } catch (e) {
-        console.error(
-          '[ClientOrdersService] Failed to emit deposit notification:',
-          e,
-        );
-      }
-    }
 
     return this.mapOrder(updatedOrder);
   }

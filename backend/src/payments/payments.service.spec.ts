@@ -1,4 +1,8 @@
-import { BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 
 describe('PaymentsService', () => {
@@ -6,10 +10,12 @@ describe('PaymentsService', () => {
     paymentOrder: {
       findUnique: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
       aggregate: jest.fn(),
       findMany: jest.fn(),
     },
     order: { findFirst: jest.fn() },
+    wechatIdentity: { findFirst: jest.fn() },
     $transaction: jest.fn(),
   };
   const config = { get: jest.fn() };
@@ -27,7 +33,9 @@ describe('PaymentsService', () => {
       fundDiscountAmount: 20,
       depositAmount: 50,
     });
-    prisma.paymentOrder.aggregate.mockResolvedValue({ _sum: { amountCents: null } });
+    prisma.paymentOrder.aggregate.mockResolvedValue({
+      _sum: { amountCents: null },
+    });
   });
 
   it('创建定金支付单并以分保存金额', async () => {
@@ -39,7 +47,12 @@ describe('PaymentsService', () => {
       ...data,
     }));
 
-    const result = await service.createOrderPayment(8, 10, 'deposit', 'deposit-10-v1');
+    const result = await service.createOrderPayment(
+      8,
+      10,
+      'deposit',
+      'deposit-10-v1',
+    );
 
     expect(prisma.paymentOrder.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ amountCents: 5000, status: 'pending' }),
@@ -47,20 +60,12 @@ describe('PaymentsService', () => {
     expect(result.amount).toBe(50);
   });
 
-  it('商户资质未就绪时创建可追踪支付单但不标记成功', async () => {
+  it('正式支付配置未生效时拒绝创建支付单', async () => {
     config.get.mockReturnValue(undefined);
-    prisma.paymentOrder.create.mockImplementation(({ data }: any) => ({
-      id: 1,
-      createdAt: new Date(),
-      paidAt: null,
-      ...data,
-    }));
-
-    const result = await service.createOrderPayment(8, 10, 'deposit', 'deposit-10-v2');
-
-    expect(result.status).toBe('channel_pending');
-    expect(result.channelReady).toBe(false);
-    expect(result.unavailableReason).toContain('营业执照');
+    await expect(
+      service.createOrderPayment(8, 10, 'deposit', 'deposit-10-v2'),
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
+    expect(prisma.paymentOrder.create).not.toHaveBeenCalled();
   });
 
   it('相同幂等键返回原支付单，跨业务复用则拒绝', async () => {
@@ -75,11 +80,70 @@ describe('PaymentsService', () => {
       status: 'pending',
       providerPayload: null,
     });
-    await expect(service.createOrderPayment(8, 10, 'deposit', 'same')).resolves.toMatchObject({ id: 1 });
-    await expect(service.createOrderPayment(9, 10, 'deposit', 'same')).rejects.toBeInstanceOf(ConflictException);
+    await expect(
+      service.createOrderPayment(8, 10, 'deposit', 'same'),
+    ).resolves.toMatchObject({ id: 1 });
+    await expect(
+      service.createOrderPayment(9, 10, 'deposit', 'same'),
+    ).rejects.toBeInstanceOf(ConflictException);
   });
 
   it('服务未开始时拒绝创建尾款支付单', async () => {
-    await expect(service.createOrderPayment(8, 10, 'final', 'final-10')).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      service.createOrderPayment(8, 10, 'final', 'final-10'),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('配置生效且用户有当前 AppID openid 时返回 JSAPI 调起参数', async () => {
+    config.get.mockImplementation((key: string) =>
+      key === 'NODE_ENV' ? 'test' : undefined,
+    );
+    const platformConfig = {
+      isPaymentAvailable: jest.fn().mockResolvedValue(true),
+      getPaymentCredentials: jest.fn().mockResolvedValue({ appId: 'wx-app' }),
+    };
+    const wechatPay = {
+      createJsapiPayment: jest.fn().mockResolvedValue({
+        timeStamp: '1',
+        nonceStr: 'nonce',
+        package: 'prepay_id=1',
+        signType: 'RSA',
+        paySign: 'sign',
+      }),
+    };
+    service = new PaymentsService(
+      prisma,
+      config as any,
+      undefined,
+      platformConfig as any,
+      wechatPay as any,
+    );
+    prisma.wechatIdentity.findFirst.mockResolvedValue({ openId: 'openid-1' });
+    prisma.paymentOrder.create.mockImplementation(({ data }: any) => ({
+      id: 1,
+      createdAt: new Date(),
+      paidAt: null,
+      ...data,
+    }));
+    prisma.paymentOrder.update.mockImplementation(({ data }: any) => ({
+      id: 1,
+      createdAt: new Date(),
+      paidAt: null,
+      paymentNo: 'PAY1',
+      orderId: 10,
+      subscriptionId: null,
+      paymentType: 'deposit',
+      amountCents: 5000,
+      channel: 'wechat',
+      status: 'pending',
+      ...data,
+    }));
+
+    const result = await service.createOrderPayment(8, 10, 'deposit', 'real-1');
+
+    expect(wechatPay.createJsapiPayment).toHaveBeenCalledWith(
+      expect.objectContaining({ amountCents: 5000, openId: 'openid-1' }),
+    );
+    expect(result.providerPayload.package).toBe('prepay_id=1');
   });
 });

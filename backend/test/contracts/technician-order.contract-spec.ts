@@ -277,7 +277,7 @@ describe('Technician operation HTTP contract', () => {
         .expect(200);
       expect(completeRes.body).toMatchObject({
         orderId: order3.id,
-        status: 'confirmed',
+        status: 'pending',
       });
 
       const order4 = await seedOrder(

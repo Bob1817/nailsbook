@@ -1,4 +1,4 @@
-import { IsBoolean, IsOptional, IsString, IsUrl } from 'class-validator';
+import { IsBoolean, IsIn, IsOptional, IsString, IsUrl } from 'class-validator';
 
 export class UpdateWechatLoginConfigDto {
   @IsBoolean()
@@ -29,6 +29,22 @@ export class UpdateWechatPaymentConfigDto {
   @IsOptional()
   @IsString()
   apiV3Key?: string;
+
+  @IsIn(['platform_public_key', 'platform_certificate'])
+  paymentVerifierMode: 'platform_public_key' | 'platform_certificate';
+
+  @IsString()
+  platformKeyId: string;
+
+  @IsOptional()
+  @IsString()
+  platformPublicKey?: string;
+
+  @IsString()
+  boundAppId: string;
+
+  @IsBoolean()
+  bindingConfirmed: boolean;
 
   @IsUrl({ require_protocol: true, protocols: ['https'] })
   paymentNotifyUrl: string;

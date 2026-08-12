@@ -1,6 +1,14 @@
 import {
-  Controller, Get, Param, Patch, Delete, Query,
-  ParseIntPipe, Body, UseGuards,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Delete,
+  Query,
+  ParseIntPipe,
+  Body,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -24,15 +32,39 @@ export class AdminWorksController {
     @Query('keyword') keyword?: string,
     @Query('isVisible') isVisible?: string,
     @Query('isHomepageFeatured') isHomepageFeatured?: string,
+    @Query('publicationStatus') publicationStatus?: string,
   ) {
     return this.service.findAll({
       page: page ? Number(page) : undefined,
       pageSize: pageSize ? Number(pageSize) : undefined,
       technicianId: technicianId ? Number(technicianId) : undefined,
       keyword,
-      isVisible: isVisible === 'true' ? true : isVisible === 'false' ? false : undefined,
-      isHomepageFeatured: isHomepageFeatured === 'true' ? true : isHomepageFeatured === 'false' ? false : undefined,
+      isVisible:
+        isVisible === 'true' ? true : isVisible === 'false' ? false : undefined,
+      isHomepageFeatured:
+        isHomepageFeatured === 'true'
+          ? true
+          : isHomepageFeatured === 'false'
+            ? false
+            : undefined,
+      publicationStatus,
     });
+  }
+
+  @Patch(':id/review')
+  @Permissions('work:manage')
+  @ApiOperation({ summary: '审核通过或驳回作品发布' })
+  review(
+    @Req() request: { user: { userId: number } },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { decision: 'approved' | 'rejected'; note?: string },
+  ) {
+    return this.service.review(
+      id,
+      request.user.userId,
+      body.decision,
+      body.note,
+    );
   }
 
   @Get(':id')

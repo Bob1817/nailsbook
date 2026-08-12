@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { bookingReadiness } from '../technicians/booking-readiness';
 
 const UPLOAD_BASE_URL = process.env.UPLOAD_BASE_URL || 'http://localhost:3000';
 
@@ -88,6 +89,7 @@ export class PublicArtistController {
         techId: technician.id,
         isVisible: true,
         visibilityScope: 'public',
+        publicationStatus: 'approved',
       },
       orderBy: [
         { isFeatured: 'desc' },
@@ -112,6 +114,7 @@ export class PublicArtistController {
         imageUrls,
       };
     });
+    const readiness = bookingReadiness(technician);
 
     return {
       artist: {
@@ -135,6 +138,8 @@ export class PublicArtistController {
         followerCount: await this.prisma.technicianFollow.count({
           where: { technicianId: technician.id },
         }),
+        bookingReady: readiness.ready,
+        bookingReadinessIssues: readiness.issues,
       },
       works,
     };

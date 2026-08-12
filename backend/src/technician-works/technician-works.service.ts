@@ -105,6 +105,7 @@ export class TechnicianWorksService {
         price: dto.price ?? null,
         isVisible: dto.isVisible ?? true,
         sortOrder: dto.sortOrder ?? 0,
+        publicationStatus: 'pending',
       },
       include: {
         likes: true,
@@ -113,6 +114,29 @@ export class TechnicianWorksService {
       },
     });
 
+    return this.mapWork(work, technicianId);
+  }
+
+  async createDraft(technicianId: number, dto: UpdateWorkDto) {
+    this.assertImageLimit(dto.images);
+    const work = await this.prisma.nailWork.create({
+      data: {
+        techId: technicianId,
+        title: dto.title?.trim() || null,
+        coverUrl: dto.coverUrl ?? null,
+        images: dto.images ?? null,
+        description: dto.description ?? null,
+        designIdea: dto.designIdea ?? null,
+        suitableScene: dto.suitableScene ?? null,
+        recommendationScore: dto.recommendationScore ?? null,
+        tags: dto.tags ?? null,
+        price: dto.price ?? null,
+        isVisible: dto.isVisible ?? true,
+        sortOrder: dto.sortOrder ?? 0,
+        publicationStatus: 'draft',
+      },
+      include: { likes: true, favorites: true, comments: true },
+    });
     return this.mapWork(work, technicianId);
   }
 
@@ -243,6 +267,12 @@ export class TechnicianWorksService {
         ...(dto.price !== undefined && { price: dto.price }),
         ...(dto.isVisible !== undefined && { isVisible: dto.isVisible }),
         ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
+        publicationStatus: 'pending',
+        reviewNote: null,
+        reviewedAt: null,
+        reviewedBy: null,
+        publishedAt: null,
+        isHomepageFeatured: false,
       },
       include: {
         likes: true,
@@ -251,6 +281,70 @@ export class TechnicianWorksService {
       },
     });
 
+    return this.mapWork(work, technicianId);
+  }
+
+  async saveDraft(technicianId: number, id: number, dto: UpdateWorkDto) {
+    this.assertImageLimit(dto.images);
+    const existing = await this.prisma.nailWork.findFirst({
+      where: { id, techId: technicianId },
+    });
+    if (!existing) throw new NotFoundException('作品不存在');
+
+    const work = await this.prisma.nailWork.update({
+      where: { id },
+      data: {
+        ...(dto.title !== undefined && { title: dto.title.trim() || null }),
+        ...(dto.coverUrl !== undefined && { coverUrl: dto.coverUrl || null }),
+        ...(dto.images !== undefined && { images: dto.images }),
+        ...(dto.description !== undefined && { description: dto.description || null }),
+        ...(dto.designIdea !== undefined && { designIdea: dto.designIdea || null }),
+        ...(dto.suitableScene !== undefined && { suitableScene: dto.suitableScene || null }),
+        ...(dto.recommendationScore !== undefined && { recommendationScore: dto.recommendationScore }),
+        ...(dto.tags !== undefined && { tags: dto.tags || null }),
+        ...(dto.price !== undefined && { price: dto.price }),
+        ...(dto.isVisible !== undefined && { isVisible: dto.isVisible }),
+        publicationStatus: 'draft',
+        reviewNote: null,
+        reviewedAt: null,
+        reviewedBy: null,
+        publishedAt: null,
+        isHomepageFeatured: false,
+      },
+      include: { likes: true, favorites: true, comments: true },
+    });
+    return this.mapWork(work, technicianId);
+  }
+
+  async publish(technicianId: number, id: number) {
+    const existing = await this.prisma.nailWork.findFirst({
+      where: { id, techId: technicianId },
+      include: { clientAccesses: true },
+    });
+    if (!existing) throw new NotFoundException('作品不存在');
+    if (!existing.title?.trim()) throw new BadRequestException('请输入作品标题');
+    if (!existing.coverUrl?.trim()) throw new BadRequestException('请上传封面图片');
+    if (
+      existing.visibilityScope === 'authorized_clients' &&
+      existing.clientAccesses.length === 0
+    ) {
+      throw new BadRequestException('客户专属作品至少需要授权一位客户');
+    }
+    if (existing.publicationStatus !== 'draft') {
+      throw new BadRequestException('当前作品状态不能重复发布');
+    }
+    await this.subscriptions.assertCanCreateWork(technicianId);
+    const work = await this.prisma.nailWork.update({
+      where: { id },
+      data: {
+        publicationStatus: 'pending',
+        reviewNote: null,
+        reviewedAt: null,
+        reviewedBy: null,
+        publishedAt: null,
+      },
+      include: { likes: true, favorites: true, comments: true },
+    });
     return this.mapWork(work, technicianId);
   }
 
@@ -766,6 +860,9 @@ export class TechnicianWorksService {
       comments?: { id: number; isRead?: boolean }[];
       technician?: { name: string | null };
       visibilityScope?: string;
+      publicationStatus?: string;
+      reviewNote?: string | null;
+      publishedAt?: Date | null;
       clientAccesses?: any[];
       _count?: { shareEvents?: number };
     },
@@ -811,6 +908,9 @@ export class TechnicianWorksService {
       isPinned: work.isPinned ?? false,
       isFeatured: work.isFeatured ?? false,
       visibilityScope: work.visibilityScope ?? 'public',
+      publicationStatus: work.publicationStatus ?? 'pending',
+      reviewNote: work.reviewNote ?? null,
+      publishedAt: work.publishedAt ?? null,
       clientAccesses: work.clientAccesses ?? [],
       shareEventCount: work._count?.shareEvents ?? 0,
       sortOrder: work.sortOrder,

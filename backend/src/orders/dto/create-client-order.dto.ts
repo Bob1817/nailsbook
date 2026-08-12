@@ -5,6 +5,7 @@ import {
   IsArray,
   ValidateNested,
   IsBoolean,
+  MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -71,6 +72,12 @@ export class CreateClientOrderDto {
   @IsOptional()
   @IsInt()
   sourceWorkId?: number;
+
+  @ApiPropertyOptional({ description: '预约发起入口，仅用于转化归因' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  attributionSource?: string;
 
   @ApiPropertyOptional({ description: '店铺地址（到店服务时使用）' })
   @IsOptional()

@@ -3,10 +3,16 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../common/prisma/prisma.service';
 import * as crypto from 'crypto';
+import { Optional } from '@nestjs/common';
+import { ReferralQualificationService } from '../referrals/referral-qualification.service';
+import { revenueSnapshot } from '../orders/order-accounting';
+import { WechatPlatformConfigService } from '../wechat-platform-config/wechat-platform-config.service';
+import { WechatPayService } from './wechat-pay.service';
 
 export type OrderPaymentType = 'deposit' | 'final';
 
@@ -15,6 +21,12 @@ export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    @Optional()
+    private readonly referralQualification?: ReferralQualificationService,
+    @Optional()
+    private readonly platformConfig?: WechatPlatformConfigService,
+    @Optional()
+    private readonly wechatPay?: WechatPayService,
   ) {}
 
   async createOrderPayment(
@@ -96,7 +108,32 @@ export class PaymentsService {
       throw new BadRequestException('当前阶段没有待支付金额');
 
     const mockEnabled = this.config.get('PAYMENT_PROVIDER') === 'mock';
-    const status = mockEnabled ? 'pending' : 'channel_pending';
+    if (mockEnabled && this.config.get('NODE_ENV') === 'production') {
+      throw new ServiceUnavailableException('生产环境禁止使用模拟支付通道');
+    }
+    if (!mockEnabled) {
+      if (
+        !this.platformConfig ||
+        !(await this.platformConfig.isPaymentAvailable())
+      ) {
+        throw new ServiceUnavailableException('微信支付配置未完整校验或未启用');
+      }
+      if (!this.wechatPay) {
+        throw new ServiceUnavailableException('微信支付服务不可用');
+      }
+    }
+    const identity = mockEnabled
+      ? null
+      : await this.prisma.wechatIdentity.findFirst({
+          where: {
+            clientUserId,
+            appId: (await this.platformConfig!.getPaymentCredentials()).appId,
+          },
+          select: { openId: true },
+        });
+    if (!mockEnabled && !identity) {
+      throw new BadRequestException('请先使用微信登录后再发起支付');
+    }
     const payment = await this.prisma.paymentOrder.create({
       data: {
         paymentNo: `PAY${Date.now()}${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
@@ -106,13 +143,32 @@ export class PaymentsService {
         paymentType,
         amountCents,
         channel: 'wechat',
-        status,
+        status: 'pending',
         idempotencyKey: normalizedKey,
-        failureReason: mockEnabled ? null : '等待企业营业执照和微信商户资质',
+        failureReason: null,
         providerPayload: mockEnabled ? JSON.stringify({ mock: true }) : null,
       },
     });
-    return this.mapPayment(payment);
+    if (mockEnabled) return this.mapPayment(payment);
+
+    try {
+      const providerPayload = await this.wechatPay!.createJsapiPayment({
+        paymentNo: payment.paymentNo,
+        amountCents,
+        description: `美甲预约${paymentType === 'deposit' ? '定金' : '尾款'}`,
+        openId: identity!.openId,
+      });
+      const ready = await this.prisma.paymentOrder.update({
+        where: { id: payment.id },
+        data: { providerPayload: JSON.stringify(providerPayload) },
+      });
+      return this.mapPayment(ready);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : '微信支付下单失败';
+      await this.markFailed(payment.id, message);
+      throw error;
+    }
   }
 
   async listForOrder(clientUserId: number, orderId: number) {
@@ -160,7 +216,7 @@ export class PaymentsService {
           0,
           (order.quotePrice ?? 0) - order.fundDiscountAmount,
         );
-        await tx.order.update({
+        const settledOrder = await tx.order.update({
           where: { id: payment.orderId },
           data: {
             paidAmount,
@@ -175,10 +231,55 @@ export class PaymentsService {
               : {}),
           },
         });
+        if (settledOrder.status === 'completed') {
+          const accounting = revenueSnapshot(settledOrder);
+          await tx.revenue.updateMany({
+            where: { orderId: settledOrder.id },
+            data: accounting,
+          });
+          if (this.referralQualification) {
+            await this.referralQualification.qualifyCompletedOrder(
+              tx,
+              settledOrder,
+            );
+          }
+        }
       }
       return tx.paymentOrder.findUniqueOrThrow({ where: { id: payment.id } });
     });
     return this.mapPayment(updated);
+  }
+
+  async handleWechatPaymentNotification(
+    headers: Record<string, unknown>,
+    rawBody: Buffer,
+  ) {
+    if (!this.wechatPay) {
+      throw new ServiceUnavailableException('微信支付服务不可用');
+    }
+    const transaction = await this.wechatPay.parsePaymentNotification(
+      headers,
+      rawBody,
+    );
+    const payment = await this.prisma.paymentOrder.findUnique({
+      where: { paymentNo: transaction.out_trade_no },
+    });
+    if (!payment) throw new NotFoundException('支付单不存在');
+    if (transaction.amount?.total !== payment.amountCents) {
+      throw new BadRequestException('微信支付回调金额不匹配');
+    }
+    if (!transaction.transaction_id) {
+      throw new BadRequestException('微信支付交易号缺失');
+    }
+    await this.confirmPaid(payment.paymentNo, transaction.transaction_id);
+    return { code: 'SUCCESS', message: '成功' };
+  }
+
+  private async markFailed(id: number, reason: string) {
+    await this.prisma.paymentOrder.update({
+      where: { id },
+      data: { status: 'failed', failureReason: reason.slice(0, 240) },
+    });
   }
 
   private toCents(amount: number) {

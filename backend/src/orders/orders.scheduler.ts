@@ -5,6 +5,7 @@ import { ChatGateway } from '../chat/chat.gateway';
 import { PushService } from '../notifications/push.service';
 import * as crypto from 'crypto';
 import { ReferralQualificationService } from '../referrals/referral-qualification.service';
+import { revenueSnapshot } from './order-accounting';
 
 @Injectable()
 export class OrdersScheduler {
@@ -101,12 +102,7 @@ export class OrdersScheduler {
       const scheduledFor = new Date(
         new Date(order.startTime).getTime() - 60 * 60 * 1000,
       );
-      await this.processReminder(
-        order,
-        'hour_before',
-        preview,
-        scheduledFor,
-      );
+      await this.processReminder(order, 'hour_before', preview, scheduledFor);
     }
   }
 
@@ -317,7 +313,9 @@ export class OrdersScheduler {
         // 系统自动操作（无人工操作者），客户与美甲师双方均通知
         await this.broadcastOrderExpired(order);
 
-        this.logger.log(`预约 #${order.id} 自动从 ${order.status} 置为 expired`);
+        this.logger.log(
+          `预约 #${order.id} 自动从 ${order.status} 置为 expired`,
+        );
       } catch (error) {
         this.logger.error(
           `预约 #${order.id} 自动置为 expired 失败: ${error.message}`,
@@ -544,18 +542,16 @@ export class OrdersScheduler {
           });
 
           if (!revenueExists) {
+            const accounting = revenueSnapshot(order);
             await tx.revenue.create({
               data: {
                 revenueNo: `RV${Date.now()}${crypto.randomBytes(2).toString('hex').toUpperCase()}`,
                 orderId: order.id,
                 technicianId: order.technicianId,
                 customerId: order.customerId,
-                amount: Math.max(
-                  0,
-                  (order.quotePrice ?? 0) - (order.fundDiscountAmount ?? 0),
-                ),
+                amount: accounting.amount,
                 recognizedAt: new Date(),
-                status: 'confirmed',
+                status: accounting.status,
               },
             });
           }

@@ -51,6 +51,7 @@ import { MarketingMaterialsModule } from './marketing-materials/marketing-materi
 import { WechatAuthModule } from './wechat-auth/wechat-auth.module';
 import { WechatPlatformConfigModule } from './wechat-platform-config/wechat-platform-config.module';
 import { ThrottlerCleanupService } from './common/throttler-cleanup.service';
+import { ConversionEventsModule } from './conversion-events/conversion-events.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { ThrottlerCleanupService } from './common/throttler-cleanup.service';
     SmsModule,
     StorageModule,
     PrismaModule,
+    ConversionEventsModule,
     AuthModule,
     TechniciansModule,
     CustomersModule,

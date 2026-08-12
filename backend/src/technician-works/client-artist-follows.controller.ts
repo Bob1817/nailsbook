@@ -37,7 +37,7 @@ export class ClientArtistFollowsController {
     @Req() req: { user: { clientUserId: number } },
     @Param('id', ParseIntPipe) technicianId: number,
   ) {
-    await this.prisma.technicianFollow.upsert({
+    const follow = await this.prisma.technicianFollow.upsert({
       where: {
         clientUserId_technicianId: {
           clientUserId: req.user.clientUserId,
@@ -45,6 +45,17 @@ export class ClientArtistFollowsController {
         },
       },
       create: { clientUserId: req.user.clientUserId, technicianId },
+      update: {},
+    });
+    await this.prisma.conversionEvent.upsert({
+      where: { eventId: `artist-follow-${follow.id}` },
+      create: {
+        eventId: `artist-follow-${follow.id}`,
+        technicianId,
+        clientUserId: req.user.clientUserId,
+        eventType: 'follow',
+        source: 'artist_home',
+      },
       update: {},
     });
     return { followed: true };

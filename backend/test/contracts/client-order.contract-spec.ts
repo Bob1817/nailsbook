@@ -185,7 +185,7 @@ describe('Client booking and design HTTP contract', () => {
       });
     });
 
-    it('accepts default service items when technician services are not initialized', async () => {
+    it('rejects booking before technician service items are initialized', async () => {
       const { accessToken, technician } = await setupClientAndBinding(
         'order-default-service',
         { serviceItems: null },
@@ -202,14 +202,9 @@ describe('Client booking and design HTTP contract', () => {
           shopAddress: { name: 'Contract Studio' },
           selectedServiceIds: ['svc_basic_care_1'],
         })
-        .expect(201);
+        .expect(400);
 
-      expect(createRes.body).toMatchObject({
-        id: expect.any(Number),
-        status: 'pending_quote',
-        serviceType: '到店美甲',
-      });
-      ownedOrderNos.push(createRes.body.orderNo);
+      expect(createRes.body.message).toContain('服务项目');
     });
 
     it('updates an order with new address, date, and time', async () => {
@@ -615,11 +610,25 @@ describe('Client booking and design HTTP contract', () => {
                   id: 'contract-basic',
                   name: 'Basic Care',
                   category: 'basic_care',
+                  price: 128,
+                  durationMinutes: 60,
                   isActive: true,
                   sortOrder: 1,
                 },
               ])
             : overrides.serviceItems,
+        serviceSchedule: JSON.stringify({
+          activeSchemeId: 'contract',
+          schemes: [
+            {
+              id: 'contract',
+              days: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
+              startTime: '08:00',
+              endTime: '22:00',
+            },
+          ],
+          restDays: [],
+        }),
       },
     });
     ownedTechnicianIds.push(technician.id);

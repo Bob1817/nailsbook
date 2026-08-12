@@ -11,7 +11,24 @@ describe('ClientOrdersService.create 下单校验', () => {
     status: 'active',
     homeService: true,
     shopService: true,
-    serviceItems: null,
+    serviceItems: JSON.stringify([
+      {
+        id: 'basic',
+        name: '基础美甲',
+        price: 128,
+        durationMinutes: 90,
+        isActive: true,
+      },
+    ]),
+    serviceSchedule: JSON.stringify({
+      activeSchemeId: 'regular',
+      schemes: [
+        { id: 'regular', days: ['wed'], startTime: '09:00', endTime: '18:00' },
+      ],
+    }),
+    shopAddresses: JSON.stringify([
+      { id: 'shop-1', detailAddress: '测试路 1 号', enabled: true },
+    ]),
     ...over,
   });
 
@@ -44,7 +61,7 @@ describe('ClientOrdersService.create 下单校验', () => {
       technician: tech({ homeService: false, shopService: false }),
     });
     await expect(service.create(11, baseDto)).rejects.toThrow(
-      '美甲师未开启美甲服务，请联系美甲师开启服务',
+      '请至少开启一种服务方式',
     );
   });
 
@@ -54,7 +71,7 @@ describe('ClientOrdersService.create 下单校验', () => {
     });
     await expect(
       service.create(11, { ...baseDto, serviceType: '上门美甲' }),
-    ).rejects.toThrow('该美甲师暂未开启上门美甲服务');
+    ).rejects.toThrow('尚未开启上门服务');
   });
 
   it('选到店但美甲师未开到店 → BadRequest', async () => {
@@ -63,7 +80,7 @@ describe('ClientOrdersService.create 下单校验', () => {
     });
     await expect(
       service.create(11, { ...baseDto, serviceType: '到店美甲' }),
-    ).rejects.toThrow('该美甲师暂未开启到店美甲服务');
+    ).rejects.toThrow('尚未开启到店服务');
   });
 
   it('非聊天/非自定义且未选服务内容 → BadRequest（内容必填）', async () => {

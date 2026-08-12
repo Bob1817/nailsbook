@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import type { RawBodyRequest } from '@nestjs/common';
+import type { Request } from 'express';
 import { ClientJwtAuthGuard } from '../client-auth/client-jwt-auth.guard';
 import { OrderPaymentType, PaymentsService } from './payments.service';
 
@@ -27,5 +38,18 @@ export class ClientPaymentsController {
     @Param('orderId', ParseIntPipe) orderId: number,
   ) {
     return this.payments.listForOrder(request.user.clientUserId, orderId);
+  }
+}
+
+@Controller('payments/wechat')
+export class WechatPaymentNotificationController {
+  constructor(private readonly payments: PaymentsService) {}
+
+  @Post('notify')
+  notify(@Req() request: RawBodyRequest<Request>) {
+    return this.payments.handleWechatPaymentNotification(
+      request.headers,
+      request.rawBody || Buffer.alloc(0),
+    );
   }
 }
