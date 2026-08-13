@@ -132,6 +132,7 @@ model Technician {
   reviewInvitations        ReviewInvitation[]
   customerLifecycleHistories CustomerLifecycleHistory[]
   attributionCorrections   AttributionCorrection[]
+  contentPublicationTasks  ContentPublicationTask[]
 }
 
 model ReferralCampaign {
@@ -416,6 +417,7 @@ model Order {
   referralRelationId     Int?
   referrerClientId       Int?
   @@index([referralRelationId])
+  contentPublicationTask ContentPublicationTask?
 }
 
 model OrderReminder {
@@ -1083,6 +1085,7 @@ model DataExportAudit {
   technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
 
   @@index([technicianId, createdAt])
+  includedSensitive Boolean   @default(false)
 }
 
 model UploadedAsset {
@@ -1528,4 +1531,26 @@ model AttributionCorrection {
   technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
 
   @@index([technicianId, entityType, entityId, createdAt])
+}
+
+model ContentPublicationTask {
+  id                   Int        @id @default(autoincrement())
+  technicianId         Int
+  orderId              Int        @unique
+  status               String     @default("selecting_images")
+  imageUrls            String?
+  headline             String?
+  serviceSummary       String?
+  designHighlights     String?
+  bookingCallToAction  String?
+  hashtags             String?
+  platform             String?
+  publishedAt          DateTime?
+  originalUrl          String?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @default(now())
+  technician           Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  order                Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([technicianId, status, updatedAt])
 }

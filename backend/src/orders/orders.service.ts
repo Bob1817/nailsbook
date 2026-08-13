@@ -782,6 +782,19 @@ export class OrdersService {
           suggestedMaintenanceAt,
         },
       });
+      const contentTask = await tx.contentPublicationTask.upsert({
+        where: { orderId: id },
+        create: {
+          technicianId: order.technicianId,
+          orderId: id,
+          status: 'selecting_images',
+          headline: '本次美甲作品',
+          serviceSummary: order.remark || null,
+          bookingCallToAction: '欢迎咨询档期与价格',
+          hashtags: '#美甲 #美甲作品',
+        },
+        update: {},
+      });
       const postServiceTasks = [
         ['complete_service_record', '补全服务记录', 'high', actualEnd],
         ['care_instructions', '发送护理说明', 'high', actualEnd],
@@ -789,6 +802,7 @@ export class OrdersService {
         ['photo_consent', '确认照片公开授权', 'normal', actualEnd],
         ['organize_work', '整理本次作品素材', 'normal', actualEnd],
         ['create_case', '创建作品案例', 'normal', actualEnd],
+        ['publish_content', '发布本次服务内容', 'normal', actualEnd],
         [
           'repurchase_reminder',
           '客户复购提醒',
@@ -810,7 +824,12 @@ export class OrdersService {
             priority,
             relatedType: 'order',
             relatedId: id,
-            actionPath: `/pages/technician/order-detail/index?id=${id}`,
+            actionPath:
+              type === 'create_case'
+                ? `/pages/technician/work-edit/index?orderId=${id}`
+                : type === 'publish_content'
+                  ? `/pages/technician/content-publication/index?id=${contentTask.id}`
+                  : `/pages/technician/order-detail/index?id=${id}`,
             dueAt,
           },
           update: {},
