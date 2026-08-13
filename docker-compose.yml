@@ -1,8 +1,7 @@
 services:
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    # 镜像由 GitHub Actions 构建；生产机只拉取，不在 ECS 上执行 npm ci/build。
+    image: ${BACKEND_IMAGE:-ghcr.io/bob1817/nailsbook-backend:latest}
     restart: always
     env_file: ./backend/.env.production
     mem_limit: 512m
