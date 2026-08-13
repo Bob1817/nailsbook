@@ -130,6 +130,7 @@ model Technician {
   actionTasks              ActionTask[]
   serviceRecords           ServiceRecord[]
   reviewInvitations        ReviewInvitation[]
+  customerLifecycleHistories CustomerLifecycleHistory[]
 }
 
 model ReferralCampaign {
@@ -266,6 +267,24 @@ model Customer {
   leads                    Lead[]
   serviceRecords           ServiceRecord[]
   publicationConsents      PublicationConsent[]
+  completedServiceCount  Int                        @default(0)
+  lifetimePaidAmount     Float                      @default(0)
+  lastServiceAt          DateTime?
+  suggestedMaintenanceAt DateTime?
+  lifecycleStage         String                     @default("potential")
+  lifecycleManual        Boolean                    @default(false)
+  preferredStyles        String?
+  preferredColors        String?
+  preferredNailShapes    String?
+  preferredNailLengths   String?
+  preferredPriceMin      Float?
+  preferredPriceMax      Float?
+  allergies              String?
+  contraindications      String?
+  specialReminders       String?
+  referrer               String?
+  anonymizedAt           DateTime?
+  lifecycleHistories     CustomerLifecycleHistory[]
 }
 
 model CustomerFollowUp {
@@ -382,6 +401,9 @@ model Order {
   serviceRecord            ServiceRecord?
   reviewInvitation         ReviewInvitation?
   worksFromOrder           NailWork[]              @relation("WorkSourceOrder")
+  isRepeatBooking        Boolean                  @default(false)
+  sourceServiceRecordId  Int?
+  @@index([sourceServiceRecordId])
 }
 
 model OrderReminder {
@@ -1283,6 +1305,7 @@ model Service {
 
   @@unique([technicianId, publicId])
   @@index([technicianId, archivedAt, isBookable, sortOrder])
+  maintenanceCycleDays Int        @default(21)
 }
 
 model Lead {
@@ -1454,4 +1477,19 @@ model ReviewInvitation {
   serviceReview  ServiceReview?
 
   @@index([technicianId, expiresAt])
+}
+
+model CustomerLifecycleHistory {
+  id           Int        @id @default(autoincrement())
+  customerId   Int
+  technicianId Int
+  fromStage    String
+  toStage      String
+  reason       String
+  createdAt    DateTime   @default(now())
+  customer     Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, createdAt])
+  @@index([technicianId, createdAt])
 }

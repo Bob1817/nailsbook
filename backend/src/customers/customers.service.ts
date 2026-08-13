@@ -207,6 +207,17 @@ export class CustomersService {
             address: true,
             customTitle: true,
             quotePrice: true,
+            review: {
+              select: {
+                id: true,
+                rating: true,
+                content: true,
+                moderationStatus: true,
+                publicationStatus: true,
+                technicianReply: true,
+                createdAt: true,
+              },
+            },
           },
           orderBy: { startTime: 'desc' },
         },
@@ -235,6 +246,9 @@ export class CustomersService {
           orderBy: { plannedAt: 'desc' },
           take: 50,
         },
+        leads: { orderBy: { createdAt: 'desc' }, take: 50 },
+        serviceRecords: { orderBy: { actualEndTime: 'desc' }, take: 50 },
+        lifecycleHistories: { orderBy: { createdAt: 'desc' }, take: 20 },
       },
     });
 
@@ -246,11 +260,19 @@ export class CustomersService {
       customer.orders,
       customer.revenues,
     );
-    const lifecycle = calculateCustomerLifecycle(
+    const calculatedLifecycle = calculateCustomerLifecycle(
       customer.orders
         .filter((order) => order.status === 'completed')
         .map((order) => order.completedAt || order.startTime),
     );
+    const lifecycle = customer.lifecycleManual
+      ? {
+          ...calculatedLifecycle,
+          status: customer.lifecycleStage,
+          reason: customer.lifecycleHistories[0]?.reason || '人工调整',
+          manual: true,
+        }
+      : calculatedLifecycle;
     const activeSince = new Date();
     activeSince.setFullYear(activeSince.getFullYear() - 1);
     const workAccesses = customer.workAccesses ?? [];
@@ -287,12 +309,181 @@ export class CustomersService {
             canComment: access.canComment,
           },
         })),
+      reviews: (customer.orders ?? [])
+        .filter((order: any) => order.review)
+        .map((order: any) => order.review),
+      timeline: [
+        ...(customer.leads ?? []).map((item) => ({
+          type: 'consultation',
+          at: item.createdAt,
+          id: item.id,
+        })),
+        ...customer.orders.map((item) => ({
+          type: 'booking',
+          at: item.createdAt,
+          id: item.id,
+          status: item.status,
+        })),
+        ...(customer.serviceRecords ?? []).map((item) => ({
+          type: 'service',
+          at: item.actualEndTime,
+          id: item.id,
+          amount: item.actualAmount,
+        })),
+      ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()),
       // 地址回退：客户地址 → 最近一笔有地址的订单
       address:
         customer.address ||
         customer.orders.find((order) => order.address)?.address ||
         null,
     };
+  }
+
+  async updateProfile(
+    id: number,
+    technicianId: number,
+    data: Record<string, unknown>,
+  ) {
+    await this.assertOwned(id, technicianId);
+    const allowed = [
+      'preferredStyles',
+      'preferredColors',
+      'preferredNailShapes',
+      'preferredNailLengths',
+      'preferredPriceMin',
+      'preferredPriceMax',
+      'allergies',
+      'contraindications',
+      'specialReminders',
+      'referrer',
+    ];
+    const update = Object.fromEntries(
+      allowed
+        .filter((key) => data[key] !== undefined)
+        .map((key) => [key, data[key]]),
+    );
+    if (Number(update.preferredPriceMax) < Number(update.preferredPriceMin))
+      throw new BadRequestException('价格区间无效');
+    return this.prisma.customer.update({ where: { id }, data: update });
+  }
+
+  async updateLifecycle(
+    id: number,
+    technicianId: number,
+    stage: string,
+    reason: string,
+  ) {
+    if (!['potential', 'new', 'active', 'due', 'dormant'].includes(stage))
+      throw new BadRequestException('客户阶段无效');
+    if (!reason?.trim())
+      throw new BadRequestException('人工调整阶段必须填写原因');
+    const customer = await this.assertOwned(id, technicianId);
+    return this.prisma.$transaction(async (tx) => {
+      await tx.customerLifecycleHistory.create({
+        data: {
+          customerId: id,
+          technicianId,
+          fromStage: customer.lifecycleStage,
+          toStage: stage,
+          reason: reason.trim(),
+        },
+      });
+      return tx.customer.update({
+        where: { id },
+        data: { lifecycleStage: stage, lifecycleManual: true },
+      });
+    });
+  }
+
+  async mergeCustomers(
+    technicianId: number,
+    targetId: number,
+    duplicateId: number,
+  ) {
+    if (targetId === duplicateId)
+      throw new BadRequestException('不能合并同一客户');
+    const [target, duplicate] = await Promise.all([
+      this.assertOwned(targetId, technicianId),
+      this.assertOwned(duplicateId, technicianId),
+    ]);
+    if (
+      target.clientUserId &&
+      duplicate.clientUserId &&
+      target.clientUserId !== duplicate.clientUserId
+    )
+      throw new ConflictException('两个客户绑定了不同账号，不能自动合并');
+    return this.prisma.$transaction(async (tx) => {
+      await tx.order.updateMany({
+        where: { customerId: duplicateId },
+        data: { customerId: targetId },
+      });
+      await tx.revenue.updateMany({
+        where: { customerId: duplicateId },
+        data: { customerId: targetId },
+      });
+      await tx.serviceRecord.updateMany({
+        where: { customerId: duplicateId },
+        data: { customerId: targetId },
+      });
+      await tx.lead.updateMany({
+        where: { customerId: duplicateId },
+        data: { customerId: targetId },
+      });
+      await tx.nailWorkClientAccess.updateMany({
+        where: { customerId: duplicateId },
+        data: { customerId: targetId },
+      });
+      await tx.publicationConsent.updateMany({
+        where: { customerId: duplicateId },
+        data: { customerId: targetId },
+      });
+      await tx.customer.update({
+        where: { id: targetId },
+        data: {
+          completedServiceCount: { increment: duplicate.completedServiceCount },
+          lifetimePaidAmount: { increment: duplicate.lifetimePaidAmount },
+          lastServiceAt:
+            !target.lastServiceAt ||
+            (duplicate.lastServiceAt &&
+              duplicate.lastServiceAt > target.lastServiceAt)
+              ? duplicate.lastServiceAt
+              : target.lastServiceAt,
+          clientUserId: target.clientUserId || duplicate.clientUserId,
+        },
+      });
+      await tx.customer.delete({ where: { id: duplicateId } });
+      return { targetId, mergedCustomerId: duplicateId };
+    });
+  }
+
+  async anonymizeCustomer(id: number, technicianId: number) {
+    await this.assertOwned(id, technicianId);
+    return this.prisma.customer.update({
+      where: { id },
+      data: {
+        name: `已匿名客户-${id}`,
+        phone: null,
+        avatarUrl: null,
+        gender: null,
+        birthday: null,
+        address: null,
+        notes: null,
+        allergies: null,
+        contraindications: null,
+        specialReminders: null,
+        clientUserId: null,
+        anonymizedAt: new Date(),
+        archivedAt: new Date(),
+      },
+    });
+  }
+
+  private async assertOwned(id: number, technicianId: number) {
+    const customer = await this.prisma.customer.findFirst({
+      where: { id, technicianId },
+    });
+    if (!customer) throw new NotFoundException('客户不存在');
+    return customer;
   }
 
   private absoluteUrl(url: string | null) {

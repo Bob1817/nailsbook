@@ -49,7 +49,7 @@ export class CreateTechnicianOrderDto {
   @IsOptional()
   customImages?: string[];
 
-  @ApiPropertyOptional({ description: '约定价格（元）。shareToClient=true 时必填', example: 180 })
+  @ApiPropertyOptional({ description: '约定价格（元）。shareToClient 时必填', example: 180 })
   @IsOptional()
   @IsNumber()
   price?: number;
@@ -58,4 +58,43 @@ export class CreateTechnicianOrderDto {
   @IsOptional()
   @IsBoolean()
   shareToClient?: boolean;
+
+  @ApiPropertyOptional({ description: '服务项目 publicId' })
+  @IsOptional()
+  @IsString()
+  serviceId?: string;
+
+  @ApiPropertyOptional({ description: '预估金额' })
+  @IsOptional()
+  @IsNumber()
+  estimatedAmount?: number;
+
+  @ApiPropertyOptional({ description: '期望日期' })
+  @IsOptional()
+  @IsString()
+  expectedDate?: string;
+
+  @ApiPropertyOptional({ description: '期望时段' })
+  @IsOptional()
+  @IsString()
+  expectedTimeSlot?: string;
+
+  @ApiPropertyOptional({ description: '材料成本' })
+  @IsOptional()
+  @IsNumber()
+  materialCost?: number;
+
+  @ApiPropertyOptional({ description: '是否复购预约' })
+  @IsOptional()
+  @IsBoolean()
+  isRepeatBooking?: boolean;
+
+  @ApiPropertyOptional({ description: '来源服务记录ID' })
+  @IsOptional()
+  @IsInt()
+  sourceServiceRecordId?: number;
+
+  @ApiPropertyOptional({ description: '意向作品ID列表' })
+  @IsOptional()
+  intentWorkIds?: number[];
 }

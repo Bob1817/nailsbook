@@ -204,6 +204,31 @@ export class OrdersService {
     return result;
   }
 
+  async repeatFromServiceRecord(
+    technicianId: number,
+    recordId: number,
+    schedule: { startTime: string; endTime: string; address: string },
+  ) {
+    const record = await this.prisma.serviceRecord.findFirst({
+      where: { id: recordId, technicianId },
+      include: { order: { include: { service: true, customer: true } } },
+    });
+    if (!record) throw new NotFoundException('历史服务记录不存在');
+    return this.createForTechnician(technicianId, {
+      customerId: record.customerId,
+      serviceId: record.order.service?.publicId,
+      serviceName:
+        record.order.service?.name || record.order.remark || '复购服务',
+      startTime: schedule.startTime,
+      endTime: schedule.endTime,
+      address: schedule.address,
+      serviceType: record.order.serviceType || undefined,
+      price: record.actualAmount,
+      sourceServiceRecordId: record.id,
+      isRepeatBooking: true,
+    } as any);
+  }
+
   async findAll(
     page: number = 1,
     limit: number = 20,
@@ -632,12 +657,20 @@ export class OrdersService {
     return updated;
   }
 
-  async complete(id: number) {
+  async complete(id: number, dto?: any) {
     const order = await this.findOne(id);
 
     if (!canTransition(order.status as OrderStatus, 'completed')) {
       throw new BadRequestException('当前订单状态不支持完成');
     }
+    if (
+      dto &&
+      (!dto.actualStartTime ||
+        !dto.actualEndTime ||
+        dto.actualAmount == null ||
+        dto.materialCost == null)
+    )
+      throw new BadRequestException('请完整填写实际时间、实收金额和材料成本');
 
     const revenueExists = await this.prisma.revenue.findUnique({
       where: { orderId: id },
@@ -650,10 +683,31 @@ export class OrdersService {
     let systemMessage: any = null;
     let conversationId: number | null = null;
 
+    const actualStart = dto
+      ? new Date(dto.actualStartTime)
+      : order.confirmedStartTime || order.startTime;
+    const actualEnd = dto
+      ? new Date(dto.actualEndTime)
+      : order.confirmedEndTime || order.endTime || new Date();
+    if (actualEnd <= actualStart)
+      throw new BadRequestException('实际结束时间必须晚于开始时间');
+    const actualAmount = dto?.actualAmount ?? order.paidAmount ?? 0,
+      materialCost = dto?.materialCost ?? 0;
+    const service = order.serviceId
+      ? await this.prisma.service.findUnique({
+          where: { id: order.serviceId },
+          select: { maintenanceCycleDays: true },
+        })
+      : null;
+    const maintenanceCycleDays = service?.maintenanceCycleDays ?? 21;
+    const aftercareDeadline = new Date(actualEnd.getTime() + 7 * 86400000),
+      suggestedMaintenanceAt = new Date(
+        actualEnd.getTime() + maintenanceCycleDays * 86400000,
+      );
     const revenue = await this.prisma.$transaction(async (tx) => {
       const claimed = await tx.order.updateMany({
         where: { id, status: 'in_progress' },
-        data: { status: 'completed' },
+        data: { status: 'completed', bookingPhase: 'finished' },
       });
       if (claimed.count !== 1) {
         throw new BadRequestException('该订单已完成，无需重复处理');
@@ -662,11 +716,83 @@ export class OrdersService {
       await tx.order.update({
         where: { id },
         data: {
-          completedAt: new Date(),
+          completedAt: actualEnd,
+          confirmedStartTime: actualStart,
+          confirmedEndTime: actualEnd,
+          actualAmount,
+          materialCost,
+          paidAmount: actualAmount,
+          paymentStatus: actualAmount > 0 ? 'paid' : order.paymentStatus,
+          aftercareDeadline,
+          suggestedMaintenanceAt,
         },
       });
-
-      const accounting = revenueSnapshot(order);
+      await tx.serviceRecord.create({
+        data: {
+          orderId: id,
+          technicianId: order.technicianId,
+          customerId: order.customerId,
+          actualStartTime: actualStart,
+          actualEndTime: actualEnd,
+          actualAmount,
+          materialCost,
+          materials: dto?.materials || null,
+          techniques: dto?.techniques || null,
+          nailCondition: dto?.nailCondition || null,
+          customerFeedback: dto?.customerFeedback || null,
+          careAdvice: dto?.careAdvice || null,
+          aftercareDeadline,
+          suggestedMaintenanceAt,
+        },
+      });
+      const postServiceTasks = [
+        ['complete_service_record', '补全服务记录', 'high', actualEnd],
+        ['care_instructions', '发送护理说明', 'high', actualEnd],
+        ['review_invitation', '邀请客户评价', 'normal', actualEnd],
+        ['photo_consent', '确认照片公开授权', 'normal', actualEnd],
+        ['organize_work', '整理本次作品素材', 'normal', actualEnd],
+        ['create_case', '创建作品案例', 'normal', actualEnd],
+        [
+          'repurchase_reminder',
+          '客户复购提醒',
+          'normal',
+          suggestedMaintenanceAt,
+        ],
+      ] as const;
+      for (const [type, title, priority, dueAt] of postServiceTasks) {
+        await tx.actionTask.upsert({
+          where: {
+            taskKey: `${order.technicianId}:${type}:order:${id}`,
+          },
+          create: {
+            technicianId: order.technicianId,
+            taskKey: `${order.technicianId}:${type}:order:${id}`,
+            type,
+            title,
+            description: `服务订单 #${id}`,
+            priority,
+            relatedType: 'order',
+            relatedId: id,
+            actionPath: `/pages/technician/order-detail/index?id=${id}`,
+            dueAt,
+          },
+          update: {},
+        });
+      }
+      await tx.customer.update({
+        where: { id: order.customerId },
+        data: {
+          completedServiceCount: { increment: 1 },
+          lifetimePaidAmount: { increment: actualAmount },
+          lastServiceAt: actualEnd,
+          suggestedMaintenanceAt,
+        },
+      });
+      const accounting = revenueSnapshot({
+        ...order,
+        paidAmount: actualAmount,
+        paymentStatus: actualAmount > 0 ? 'paid' : order.paymentStatus,
+      });
       const revenue = await tx.revenue.create({
         data: {
           revenueNo: this.generateRevenueNo(),
@@ -674,7 +800,7 @@ export class OrdersService {
           technicianId: order.technicianId,
           customerId: order.customerId,
           amount: accounting.amount,
-          recognizedAt: new Date(),
+          recognizedAt: actualEnd,
           status: accounting.status,
         },
       });

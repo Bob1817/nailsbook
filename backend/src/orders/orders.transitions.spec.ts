@@ -27,6 +27,10 @@ describe('OrdersService 流转成功路径', () => {
         findUnique: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockResolvedValue({ id: 9, amount: 200 }),
       },
+      serviceRecord: { create: jest.fn().mockResolvedValue({ id: 1 }) },
+      actionTask: { upsert: jest.fn().mockResolvedValue({ id: 1 }) },
+      customer: { update: jest.fn().mockResolvedValue({ id: 3 }) },
+      service: { findUnique: jest.fn().mockResolvedValue(null) },
     };
     service = new OrdersService(prisma, chatGateway as never);
   });

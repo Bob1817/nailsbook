@@ -37,7 +37,7 @@ export class ActionTasksService {
     start.setHours(0, 0, 0, 0);
     const end = new Date(start);
     end.setDate(end.getDate() + 1);
-    const [leads, orders] = await Promise.all([
+    const [leads, orders, repurchaseCustomers] = await Promise.all([
       this.prisma.lead.findMany({
         where: {
           technicianId,
@@ -59,6 +59,20 @@ export class ActionTasksService {
           },
         },
         include: { intentWorks: { include: { work: true } } },
+      }),
+      this.prisma.customer.findMany({
+        where: {
+          technicianId,
+          archivedAt: null,
+          suggestedMaintenanceAt: { lte: now },
+          completedServiceCount: { gt: 0 },
+        },
+        select: {
+          id: true,
+          name: true,
+          suggestedMaintenanceAt: true,
+          lastServiceAt: true,
+        },
       }),
     ]);
     const candidates: Candidate[] = [];
@@ -84,6 +98,24 @@ export class ActionTasksService {
             lead.nextFollowUpAt,
           ),
         );
+    }
+    for (const customer of repurchaseCustomers) {
+      const dormant = Boolean(
+        customer.suggestedMaintenanceAt &&
+        now.getTime() - customer.suggestedMaintenanceAt.getTime() >=
+          28 * 86400000,
+      );
+      candidates.push({
+        taskKey: `${technicianId}:repurchase_contact:customer:${customer.id}:${customer.lastServiceAt?.toISOString() || 'none'}`,
+        type: 'repurchase_contact',
+        title: dormant ? '沉睡客户复购联系' : '客户待复购联系',
+        description: customer.name,
+        priority: dormant ? 'normal' : 'high',
+        relatedType: 'customer',
+        relatedId: customer.id,
+        actionPath: `/pages/technician/customer-detail/index?id=${customer.id}`,
+        dueAt: customer.suggestedMaintenanceAt ?? undefined,
+      });
     }
     for (const order of orders) {
       const path = `/pages/technician/order-detail/index?id=${order.id}`;
