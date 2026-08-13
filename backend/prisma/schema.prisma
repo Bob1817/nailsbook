@@ -122,6 +122,8 @@ model Technician {
   uploadedAssets            UploadedAsset[]
   subscriptionMetricEvents  SubscriptionMetricEvent[]
   followers                 TechnicianFollow[]
+  brandProfile             BrandProfile?
+  services                 Service[]
 }
 
 model ReferralCampaign {
@@ -344,8 +346,11 @@ model Order {
   @@index([designRequestId])
   @@index([customServiceRequestId])
   @@index([sourceWorkId])
+  @@index([serviceId])
   @@index([status])
   @@index([startTime])
+  serviceId              Int?
+  service                Service?              @relation(fields: [serviceId], references: [id], onDelete: SetNull)
 }
 
 model OrderReminder {
@@ -557,6 +562,29 @@ model NailWork {
   @@index([isVisible])
   @@index([isHomepageFeatured])
   @@index([publicationStatus, createdAt])
+  serviceId              Int?
+  service                Service?              @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  style                  String?
+  color                  String?
+  nailShape              String?
+  nailLength             String?
+  suitableSkinTones      String?
+  scenes                 String?
+  productionMinutes      Int?
+  craftHighlights        String?
+  priceDisplayPolicy     String                @default("exact")
+  referencePriceMinFen   Int?
+  referencePriceMaxFen   Int?
+  isReproducible         Boolean               @default(true)
+  reproductionNotes      String?
+  assetStatus            String                @default("draft")
+  publicAuthorizationStatus String             @default("pending")
+  publicSortOrder        Int                   @default(0)
+  archivedAt             DateTime?
+  @@index([serviceId])
+  @@index([techId, assetStatus, archivedAt])
+  @@index([techId, style, color, nailShape])
+  @@index([assetStatus, publicAuthorizationStatus, publicSortOrder])
 }
 
 model NailWorkClientAccess {
@@ -1127,4 +1155,85 @@ model DeviceToken {
 
   @@index([clientUserId])
   @@index([technicianId])
+}
+
+model BrandProfile {
+  id                  Int                     @id @default(autoincrement())
+  technicianId        Int                     @unique
+  brandName           String
+  tagline             String?
+  city                String?
+  publicServiceArea   String?
+  artistIntroduction  String?
+  aestheticPhilosophy String?
+  transportationNotes String?
+  hygieneStandards    String?
+  materialStandards   String?
+  allergyNotice       String?
+  latePolicy          String?
+  cancellationPolicy  String?
+  aftercarePolicy     String?
+  shareTitle          String?
+  shareDescription    String?
+  shareCoverUrl       String?
+  publicationStatus   String                  @default("draft")
+  publishedAt         DateTime?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @default(now()) @updatedAt
+  technician          Technician              @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  environmentPhotos   BrandEnvironmentPhoto[]
+  faqs                BrandFaq[]
+
+  @@index([publicationStatus, updatedAt])
+}
+
+model BrandEnvironmentPhoto {
+  id             Int          @id @default(autoincrement())
+  brandProfileId Int
+  imageUrl       String
+  caption        String?
+  sortOrder      Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now()) @updatedAt
+  brandProfile   BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+
+  @@index([brandProfileId, sortOrder])
+}
+
+model BrandFaq {
+  id             Int          @id @default(autoincrement())
+  brandProfileId Int
+  question       String
+  answer         String
+  sortOrder      Int          @default(0)
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now()) @updatedAt
+  brandProfile   BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+
+  @@index([brandProfileId, isActive, sortOrder])
+}
+
+model Service {
+  id                   Int        @id @default(autoincrement())
+  publicId             String
+  technicianId         Int
+  name                 String
+  description          String?
+  category             String
+  durationMinutes      Int?
+  priceType            String     @default("fixed")
+  priceMinFen          Int?
+  priceMaxFen          Int?
+  isBookable           Boolean    @default(true)
+  sortOrder            Int        @default(0)
+  archivedAt           DateTime?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @default(now()) @updatedAt
+  technician           Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  orders               Order[]
+  works                NailWork[]
+
+  @@unique([technicianId, publicId])
+  @@index([technicianId, archivedAt, isBookable, sortOrder])
 }
