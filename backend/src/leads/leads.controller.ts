@@ -82,4 +82,18 @@ export class LeadsController {
   ) {
     return this.service.convertToCustomer(req.user.technicianId, id);
   }
+  @Patch(':id/attribution')
+  correctAttribution(
+    @Req() req: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { channel: string; workId?: number; reason: string },
+  ) {
+    return this.service.correctAttribution(
+      req.user.technicianId,
+      id,
+      body.channel,
+      body.workId,
+      body.reason,
+    );
+  }
 }

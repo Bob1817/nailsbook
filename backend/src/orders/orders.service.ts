@@ -104,6 +104,19 @@ export class OrdersService {
     if (dto.shareToClient && dto.price == null) {
       throw new BadRequestException('生成微信确认链接时，价格为必填项');
     }
+    const structuredService = dto.serviceId
+      ? await this.prisma.service.findFirst({
+          where: {
+            technicianId,
+            publicId: dto.serviceId,
+            archivedAt: null,
+            isBookable: true,
+          },
+          select: { id: true, name: true },
+        })
+      : null;
+    if (dto.serviceId && !structuredService)
+      throw new BadRequestException('所选服务内容已失效，请重新选择');
     const initialStart = new Date(dto.startTime);
     const initialEnd = new Date(dto.endTime);
     if (
@@ -126,6 +139,12 @@ export class OrdersService {
 
     const createOrder = () =>
       this.prisma.$transaction(async (tx) => {
+        const referralAttribution = dto.sourceLeadId
+          ? await tx.lead.findUnique({
+              where: { id: dto.sourceLeadId },
+              select: { referralRelationId: true, referrerClientId: true },
+            })
+          : null;
         const order = await tx.order.create({
           data: {
             orderNo: this.generateOrderNo(),
@@ -136,17 +155,35 @@ export class OrdersService {
             endTime: new Date(dto.endTime),
             address: dto.address,
             serviceType: dto.serviceType || null,
+            serviceId: structuredService?.id ?? null,
+            sourceLeadId: dto.sourceLeadId ?? null,
+            referralRelationId: referralAttribution?.referralRelationId ?? null,
+            referrerClientId: referralAttribution?.referrerClientId ?? null,
             // 美甲师直接发起且已填写价格的预约无需再报价，直接进入待客户确认。
             status:
               dto.shareToClient || (dto.price != null && dto.price > 0)
                 ? 'pending_client_confirm'
                 : 'pending_quote',
-            remark: dto.note || dto.serviceName || null,
+            remark:
+              dto.note || structuredService?.name || dto.serviceName || null,
             customDescription: dto.customDescription || null,
             customImages: dto.customImages?.length
               ? JSON.stringify(dto.customImages)
               : null,
             quotePrice: dto.price ?? 0,
+            estimatedAmount: dto.estimatedAmount ?? dto.price ?? 0,
+            expectedDate: dto.expectedDate
+              ? new Date(dto.expectedDate)
+              : new Date(dto.startTime),
+            expectedTimeSlot: dto.expectedTimeSlot ?? null,
+            materialCost: dto.materialCost ?? 0,
+            isRepeatBooking: dto.isRepeatBooking ?? false,
+            sourceServiceRecordId: dto.sourceServiceRecordId ?? null,
+            attributionChannel: dto.isRepeatBooking
+              ? 'repeat'
+              : dto.sourceLeadId
+                ? 'referral'
+                : null,
             confirmToken,
             confirmTokenExpiresAt,
           },

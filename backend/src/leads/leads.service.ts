@@ -55,6 +55,20 @@ export class LeadsService {
       .digest('hex');
     const now = new Date(),
       nextFollowUpAt = new Date(now.getTime() + 86400000);
+    const referralLink = dto.referral
+      ? await this.prisma.referralLink.findFirst({
+          where: {
+            technicianId: dto.technicianId,
+            revokedAt: null,
+            expiresAt: { gt: now },
+            OR: [
+              { token: dto.referral },
+              { referralCode: dto.referral.toUpperCase() },
+            ],
+          },
+          include: { relations: { orderBy: { createdAt: 'desc' }, take: 1 } },
+        })
+      : null;
     const lead = await this.prisma.$transaction(async (tx) => {
       const row = await tx.lead.upsert({
         where: { dedupeKey },
@@ -65,6 +79,8 @@ export class LeadsService {
           sourceCampaign: safeAttributionToken(dto.campaign),
           sourceContent: safeAttributionToken(dto.content),
           sourceWorkId: dto.workId,
+          referralRelationId: referralLink?.relations[0]?.id ?? null,
+          referrerClientId: referralLink?.referrerClientId ?? null,
           firstTouchpoint:
             safeAttributionToken(dto.touchpoint, 32) || 'inquiry_form',
           latestTouchpoint: 'inquiry_form',
@@ -102,6 +118,11 @@ export class LeadsService {
           visitorId: dto.visitorId?.trim() || null,
           eventType: 'consult_submit',
           source: channel,
+          channel,
+          touchpoint: 'inquiry_form',
+          campaign: safeAttributionToken(dto.campaign),
+          content: safeAttributionToken(dto.content),
+          dedupeKey: `consult-submit-${dto.submissionKey}`,
         },
         update: {},
       });
@@ -326,4 +347,53 @@ export class LeadsService {
     return customer;
   }
 
+  async correctAttribution(
+    technicianId: number,
+    id: number,
+    channel: string,
+    workId: number | undefined,
+    reason: string,
+  ) {
+    if (!reason?.trim()) throw new BadRequestException('修正来源必须填写原因');
+    const lead = await this.findOne(technicianId, id);
+    if (workId) {
+      const work = await this.prisma.nailWork.findFirst({
+        where: { id: workId, techId: technicianId },
+        select: { id: true },
+      });
+      if (!work) throw new NotFoundException('归因作品不存在');
+    }
+    const normalized = normalizeChannel(channel);
+    return this.prisma.$transaction(async (tx) => {
+      await tx.attributionCorrection.create({
+        data: {
+          technicianId,
+          entityType: 'lead',
+          entityId: id,
+          oldChannel: lead.sourceChannel,
+          newChannel: normalized,
+          oldWorkId: lead.sourceWorkId,
+          newWorkId: workId ?? null,
+          reason: reason.trim(),
+        },
+      });
+      const updated = await tx.lead.update({
+        where: { id },
+        data: {
+          sourceChannel: normalized,
+          sourceWorkId: workId ?? null,
+          latestTouchpoint: 'manual_correction',
+        },
+      });
+      if (lead.convertedOrderId)
+        await tx.order.update({
+          where: { id: lead.convertedOrderId },
+          data: {
+            attributionChannel: normalized,
+            sourceWorkId: workId ?? null,
+          },
+        });
+      return updated;
+    });
+  }
 }

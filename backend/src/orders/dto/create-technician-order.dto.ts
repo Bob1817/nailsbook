@@ -97,4 +97,9 @@ export class CreateTechnicianOrderDto {
   @ApiPropertyOptional({ description: '意向作品ID列表' })
   @IsOptional()
   intentWorkIds?: number[];
+
+  @ApiPropertyOptional({ description: '来源线索ID（转介绍归因）' })
+  @IsOptional()
+  @IsInt()
+  sourceLeadId?: number;
 }

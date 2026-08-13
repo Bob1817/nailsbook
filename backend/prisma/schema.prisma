@@ -131,6 +131,7 @@ model Technician {
   serviceRecords           ServiceRecord[]
   reviewInvitations        ReviewInvitation[]
   customerLifecycleHistories CustomerLifecycleHistory[]
+  attributionCorrections   AttributionCorrection[]
 }
 
 model ReferralCampaign {
@@ -162,6 +163,7 @@ model ReferralLink {
 
   @@index([referrerClientId, technicianId])
   @@index([expiresAt])
+  referralCode     String?             @unique
 }
 
 model ReferralRelation {
@@ -199,6 +201,9 @@ model ReferralQualification {
   updatedAt          DateTime         @default(now()) @updatedAt
   relation           ReferralRelation @relation(fields: [relationId], references: [id], onDelete: Cascade)
   order              Order            @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  redeemedAt         DateTime?
+  redeemedBy         Int?
+  redemptionNote     String?
 }
 
 model RewardAccount {
@@ -404,6 +409,13 @@ model Order {
   isRepeatBooking        Boolean                  @default(false)
   sourceServiceRecordId  Int?
   @@index([sourceServiceRecordId])
+  attributionChannel     String?                @default("direct")
+  attributionCampaign    String?
+  attributionContent     String?
+  attributionVisitorId   String?
+  referralRelationId     Int?
+  referrerClientId       Int?
+  @@index([referralRelationId])
 }
 
 model OrderReminder {
@@ -724,6 +736,11 @@ model ConversionEvent {
   @@index([technicianId, eventType, createdAt])
   @@index([workId, eventType, createdAt])
   @@index([visitorId, createdAt])
+  channel      String     @default("direct")
+  touchpoint   String?
+  campaign     String?
+  content      String?
+  dedupeKey    String?   @unique
 }
 
 model ServiceReview {
@@ -1350,6 +1367,9 @@ model Lead {
   @@index([technicianId, status, nextFollowUpAt])
   @@index([technicianId, sourceChannel, createdAt])
   @@index([visitorId, technicianId])
+  referralRelationId  Int?
+  referrerClientId    Int?
+  @@index([referralRelationId])
 }
 
 model LeadFollowUp {
@@ -1492,4 +1512,20 @@ model CustomerLifecycleHistory {
 
   @@index([customerId, createdAt])
   @@index([technicianId, createdAt])
+}
+
+model AttributionCorrection {
+  id           Int        @id @default(autoincrement())
+  technicianId Int
+  entityType   String
+  entityId     Int
+  oldChannel   String?
+  newChannel   String
+  oldWorkId    Int?
+  newWorkId    Int?
+  reason       String
+  createdAt    DateTime   @default(now())
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([technicianId, entityType, entityId, createdAt])
 }
