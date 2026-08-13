@@ -124,6 +124,10 @@ model Technician {
   followers                 TechnicianFollow[]
   brandProfile             BrandProfile?
   services                 Service[]
+  leads                    Lead[]
+  leadFollowUps            LeadFollowUp[]
+  leadStatusHistories      LeadStatusHistory[]
+  actionTasks              ActionTask[]
 }
 
 model ReferralCampaign {
@@ -257,6 +261,7 @@ model Customer {
   @@index([technicianId, archivedAt])
   @@index([clientUserId])
   @@index([phone])
+  leads                    Lead[]
 }
 
 model CustomerFollowUp {
@@ -351,6 +356,25 @@ model Order {
   @@index([startTime])
   serviceId              Int?
   service                Service?              @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  sourceLeadId           Int?
+  applicationKey         String?                 @unique
+  bookingPhase           String                  @default("application")
+  expectedDate           DateTime?
+  expectedTimeSlot       String?
+  confirmedStartTime     DateTime?
+  confirmedEndTime       DateTime?
+  estimatedAmount        Float?
+  confirmedAmount        Float?
+  actualAmount           Float?
+  materialCost           Float                   @default(0)
+  rejectionReason        String?
+  noShowReason           String?
+  aftercareDeadline      DateTime?
+  suggestedMaintenanceAt DateTime?
+  sourceLead             Lead?                   @relation("LeadBookings", fields: [sourceLeadId], references: [id], onDelete: SetNull)
+  intentWorks            OrderIntentWork[]
+  convertedLead          Lead[]                  @relation("LeadConvertedOrder")
+  @@index([sourceLeadId])
 }
 
 model OrderReminder {
@@ -405,6 +429,7 @@ model ClientUser {
   wechatIdentity            WechatIdentity?
   followedTechnicians       TechnicianFollow[]
   conversionEvents          ConversionEvent[]
+  leads                    Lead[]
 }
 
 model TechnicianFollow {
@@ -585,6 +610,8 @@ model NailWork {
   @@index([techId, assetStatus, archivedAt])
   @@index([techId, style, color, nailShape])
   @@index([assetStatus, publicAuthorizationStatus, publicSortOrder])
+  leadSources              Lead[]
+  intentOrders           OrderIntentWork[]
 }
 
 model NailWorkClientAccess {
@@ -1236,4 +1263,111 @@ model Service {
 
   @@unique([technicianId, publicId])
   @@index([technicianId, archivedAt, isBookable, sortOrder])
+}
+
+model Lead {
+  id                 Int          @id @default(autoincrement())
+  technicianId       Int
+  clientUserId       Int?
+  customerId         Int?
+  convertedOrderId   Int?
+  visitorId          String?
+  sourceChannel      String       @default("direct")
+  sourceCampaign     String?
+  sourceContent      String?
+  sourceWorkId       Int?
+  firstTouchpoint    String?
+  latestTouchpoint   String?
+  nickname           String?
+  contact            String?
+  requirement        String?
+  budget             String?
+  expectedDate       DateTime?
+  privacyAgreedAt    DateTime?
+  submissionKey      String?      @unique
+  status             String       @default("new")
+  lostReason         String?
+  lostReasonNote     String?
+  nextFollowUpAt     DateTime?
+  pausedAt           DateTime?
+  convertedAt        DateTime?
+  lastActivityAt     DateTime     @default(now())
+  dedupeKey          String       @unique
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @default(now()) @updatedAt
+  technician         Technician   @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  clientUser         ClientUser?  @relation(fields: [clientUserId], references: [id], onDelete: SetNull)
+  customer           Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  convertedOrder     Order?       @relation("LeadConvertedOrder", fields: [convertedOrderId], references: [id], onDelete: SetNull)
+  sourceWork         NailWork?    @relation(fields: [sourceWorkId], references: [id], onDelete: SetNull)
+  followUps          LeadFollowUp[]
+  statusHistories    LeadStatusHistory[]
+  bookingOrders      Order[]      @relation("LeadBookings")
+
+  @@index([technicianId, status, nextFollowUpAt])
+  @@index([technicianId, sourceChannel, createdAt])
+  @@index([visitorId, technicianId])
+}
+
+model LeadFollowUp {
+  id               Int        @id @default(autoincrement())
+  leadId           Int
+  technicianId     Int
+  content          String
+  nextFollowUpAt   DateTime?
+  createdAt        DateTime   @default(now())
+  lead             Lead       @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  technician       Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, createdAt])
+  @@index([technicianId, nextFollowUpAt])
+}
+
+model LeadStatusHistory {
+  id           Int        @id @default(autoincrement())
+  leadId       Int
+  technicianId Int
+  fromStatus   String?
+  toStatus     String
+  reason       String?
+  createdAt    DateTime   @default(now())
+  lead         Lead       @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, createdAt])
+}
+
+model ActionTask {
+  id           Int        @id @default(autoincrement())
+  technicianId Int
+  taskKey      String     @unique
+  type         String
+  title        String
+  description  String?
+  priority     String     @default("normal")
+  status       String     @default("pending")
+  relatedType  String
+  relatedId    Int
+  actionPath   String
+  dueAt        DateTime?
+  remindAt     DateTime?
+  resolvedAt   DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @default(now()) @updatedAt
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([technicianId, status, dueAt])
+  @@index([technicianId, type, relatedId])
+}
+
+model OrderIntentWork {
+  orderId    Int
+  workId     Int
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  work       NailWork @relation(fields: [workId], references: [id], onDelete: Restrict)
+
+  @@id([orderId, workId])
+  @@index([workId])
 }
