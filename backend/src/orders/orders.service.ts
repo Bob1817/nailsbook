@@ -992,6 +992,69 @@ export class OrdersService {
     return updated;
   }
 
+  async createReviewInvitation(technicianId: number, orderId: number) {
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, technicianId, status: 'completed' },
+      select: { id: true },
+    });
+    if (!order) throw new BadRequestException('只有已完成订单可生成评价邀请');
+    const existingReview = await this.prisma.serviceReview.findUnique({
+      where: { orderId },
+      select: { id: true },
+    });
+    if (existingReview) throw new BadRequestException('该订单已提交评价');
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto
+      .createHash('sha256')
+      .update(rawToken)
+      .digest('hex');
+    const expiresAt = new Date(Date.now() + 7 * 86400000);
+    const invitation = await this.prisma.reviewInvitation.upsert({
+      where: { orderId },
+      create: { orderId, technicianId, tokenHash, expiresAt },
+      update: { tokenHash, expiresAt, usedAt: null },
+    });
+    return {
+      id: invitation.id,
+      expiresAt,
+      path: `/pages/client/order-detail/index?id=${orderId}&reviewToken=${rawToken}`,
+    };
+  }
+
+  async moderateReview(
+    technicianId: number,
+    reviewId: number,
+    decision: 'approved' | 'rejected',
+  ) {
+    const review = await this.prisma.serviceReview.findFirst({
+      where: { id: reviewId, technicianId },
+      select: { id: true },
+    });
+    if (!review) throw new NotFoundException('评价不存在');
+    return this.prisma.serviceReview.update({
+      where: { id: reviewId },
+      data: {
+        moderationStatus: decision,
+        publicationStatus: decision === 'approved' ? 'public' : 'private',
+        moderatedAt: new Date(),
+        moderatorId: technicianId,
+      },
+    });
+  }
+
+  async replyToReview(technicianId: number, reviewId: number, reply: string) {
+    const review = await this.prisma.serviceReview.findFirst({
+      where: { id: reviewId, technicianId },
+      select: { id: true },
+    });
+    if (!review) throw new NotFoundException('评价不存在');
+    if (!reply.trim()) throw new BadRequestException('回复内容不能为空');
+    return this.prisma.serviceReview.update({
+      where: { id: reviewId },
+      data: { technicianReply: reply.trim(), repliedAt: new Date() },
+    });
+  }
+
   private generateOrderNo(): string {
     return `OD${Date.now()}${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
   }

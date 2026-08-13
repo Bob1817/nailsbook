@@ -348,6 +348,66 @@ export class TechnicianWorksService {
     return this.mapWork(work, technicianId);
   }
 
+  async createFromOrder(technicianId: number, orderId: number) {
+    const existing = await this.prisma.nailWork.findUnique({
+      where: { sourceOrderId: orderId },
+      select: { id: true, techId: true },
+    });
+    if (existing) {
+      if (existing.techId !== technicianId)
+        throw new NotFoundException('已完成订单不存在');
+      return this.findOne(technicianId, existing.id);
+    }
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, technicianId, status: 'completed' },
+      include: {
+        service: { select: { name: true } },
+        serviceRecord: { select: { actualAmount: true } },
+      },
+    });
+    if (!order) throw new NotFoundException('已完成订单不存在');
+    const clientPhotos = this.parseStoredImageUrls(order.clientPhotos);
+    const images = clientPhotos.length
+      ? clientPhotos
+      : this.parseStoredImageUrls(order.customImages);
+    const amount = order.serviceRecord?.actualAmount ?? order.actualAmount ?? 0;
+    const work = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.nailWork.create({
+        data: {
+          techId: technicianId,
+          sourceOrderId: order.id,
+          serviceId: order.serviceId,
+          title: order.service?.name
+            ? `${order.service.name}服务案例`
+            : '服务案例',
+          coverUrl: images[0] || null,
+          images: JSON.stringify(images.slice(0, 9)),
+          price: amount,
+          referencePriceMinFen: Math.round(amount * 100),
+          assetStatus: 'draft',
+          publicationStatus: 'draft',
+          publicAuthorizationStatus: 'pending',
+          isVisible: false,
+        },
+      });
+      await tx.nailWorkClientAccess.create({
+        data: {
+          workId: created.id,
+          customerId: order.customerId,
+          clientUserId: order.clientUserId,
+          orderId: order.id,
+          canView: true,
+          canShare: false,
+          canFavorite: true,
+          canLike: true,
+          canComment: true,
+        },
+      });
+      return created;
+    });
+    return this.findOne(technicianId, work.id);
+  }
+
   private assertImageLimit(images?: string) {
     if (!images) return;
     try {

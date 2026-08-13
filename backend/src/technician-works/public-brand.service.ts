@@ -288,6 +288,64 @@ export class PublicBrandService {
     };
   }
 
+  async reviews(id: number, query: Record<string, string | undefined>) {
+    await this.assertActive(id);
+    const { page, pageSize, skip } = this.page(query);
+    const where = {
+      technicianId: id,
+      order: { status: 'completed' },
+      verificationSource: 'completed_order',
+      moderationStatus: 'approved',
+      publicationStatus: 'public',
+      publicationConsents: {
+        some: { contentType: 'review_publication', revokedAt: null },
+      },
+    };
+    const [items, total, aggregate] = await Promise.all([
+      this.prisma.serviceReview.findMany({
+        where,
+        skip,
+        take: pageSize,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          publicationConsents: {
+            where: { contentType: 'review_publication', revokedAt: null },
+            take: 1,
+          },
+        },
+      }),
+      this.prisma.serviceReview.count({ where }),
+      this.prisma.serviceReview.aggregate({ where, _avg: { rating: true } }),
+    ]);
+    const size = this.imageSize(query.imageSize);
+    return {
+      summary: {
+        count: total,
+        averageRating:
+          aggregate._avg.rating == null
+            ? null
+            : Number(aggregate._avg.rating.toFixed(1)),
+      },
+      items: items.map((item) => ({
+        id: item.id,
+        rating: item.rating,
+        content: item.content || '',
+        authorName:
+          item.publicationConsents[0]?.displayIdentity === 'nickname'
+            ? item.publicationConsents[0].displayName || '客户'
+            : '匿名客户',
+        photos: item.photoUseAuthorized
+          ? this.listJson(item.photos).map((url) => this.image(url, size))
+          : [],
+        createdAt: item.createdAt,
+        technicianReply: item.technicianReply || null,
+        repliedAt: item.repliedAt || null,
+      })),
+      pagination: this.pagination(page, pageSize, total),
+      attribution: this.attribution(query),
+    };
+  }
+
   async availability(id: number, query: Record<string, string | undefined>) {
     const technician = await this.prisma.technician.findFirst({
       where: { id, status: 'active' },

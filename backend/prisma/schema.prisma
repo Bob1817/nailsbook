@@ -128,6 +128,8 @@ model Technician {
   leadFollowUps            LeadFollowUp[]
   leadStatusHistories      LeadStatusHistory[]
   actionTasks              ActionTask[]
+  serviceRecords           ServiceRecord[]
+  reviewInvitations        ReviewInvitation[]
 }
 
 model ReferralCampaign {
@@ -262,6 +264,8 @@ model Customer {
   @@index([clientUserId])
   @@index([phone])
   leads                    Lead[]
+  serviceRecords           ServiceRecord[]
+  publicationConsents      PublicationConsent[]
 }
 
 model CustomerFollowUp {
@@ -375,6 +379,9 @@ model Order {
   intentWorks            OrderIntentWork[]
   convertedLead          Lead[]                  @relation("LeadConvertedOrder")
   @@index([sourceLeadId])
+  serviceRecord            ServiceRecord?
+  reviewInvitation         ReviewInvitation?
+  worksFromOrder           NailWork[]              @relation("WorkSourceOrder")
 }
 
 model OrderReminder {
@@ -430,6 +437,7 @@ model ClientUser {
   followedTechnicians       TechnicianFollow[]
   conversionEvents          ConversionEvent[]
   leads                    Lead[]
+  publicationConsents      PublicationConsent[]
 }
 
 model TechnicianFollow {
@@ -612,6 +620,8 @@ model NailWork {
   @@index([assetStatus, publicAuthorizationStatus, publicSortOrder])
   leadSources              Lead[]
   intentOrders           OrderIntentWork[]
+  sourceOrderId            Int?                    @unique
+  sourceOrder              Order?                  @relation("WorkSourceOrder", fields: [sourceOrderId], references: [id])
 }
 
 model NailWorkClientAccess {
@@ -712,6 +722,16 @@ model ServiceReview {
 
   @@index([clientUserId])
   @@index([technicianId, rating])
+  verificationSource       String                  @default("completed_order")
+  moderationStatus         String                  @default("pending")
+  publicationStatus        String                  @default("private")
+  moderatedAt              DateTime?
+  moderatorId              Int?
+  technicianReply          String?
+  repliedAt                DateTime?
+  reviewInvitationId       Int?                    @unique
+  reviewInvitation         ReviewInvitation?       @relation(fields: [reviewInvitationId], references: [id])
+  publicationConsents      PublicationConsent[]
 }
 
 model NailWorkLike {
@@ -1370,4 +1390,68 @@ model OrderIntentWork {
 
   @@id([orderId, workId])
   @@index([workId])
+}
+
+model ServiceRecord {
+  id                     Int        @id @default(autoincrement())
+  orderId                Int        @unique
+  technicianId           Int
+  customerId             Int
+  actualStartTime        DateTime
+  actualEndTime          DateTime
+  actualAmount           Float
+  materialCost           Float      @default(0)
+  materials              String?
+  techniques             String?
+  nailCondition          String?
+  customerFeedback       String?
+  careAdvice             String?
+  aftercareDeadline      DateTime
+  suggestedMaintenanceAt DateTime
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @default(now()) @updatedAt
+  order                  Order      @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  technician             Technician @relation(fields: [technicianId], references: [id], onDelete: Restrict)
+  customer               Customer   @relation(fields: [customerId], references: [id], onDelete: Restrict)
+
+  @@index([technicianId, actualEndTime])
+  @@index([customerId, actualEndTime])
+}
+
+model PublicationConsent {
+  id                Int             @id @default(autoincrement())
+  clientUserId      Int?
+  customerId        Int?
+  contentType       String
+  contentId         Int
+  reviewId          Int?
+  displayIdentity   String          @default("anonymous")
+  displayName       String?
+  acquisitionMethod String
+  grantedAt         DateTime
+  revokedAt         DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @default(now()) @updatedAt
+  clientUser        ClientUser?     @relation(fields: [clientUserId], references: [id], onDelete: SetNull)
+  customer          Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  review            ServiceReview?  @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+
+  @@unique([contentType, contentId])
+  @@index([clientUserId, revokedAt])
+  @@index([customerId, revokedAt])
+}
+
+model ReviewInvitation {
+  id             Int            @id @default(autoincrement())
+  orderId        Int            @unique
+  technicianId   Int
+  tokenHash      String         @unique
+  expiresAt      DateTime
+  usedAt         DateTime?
+  createdAt      DateTime       @default(now())
+  order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  technician     Technician     @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  serviceReview  ServiceReview?
+
+  @@index([technicianId, expiresAt])
 }
