@@ -112,6 +112,7 @@ model Technician {
   referralRelations         ReferralRelation[]
   rewardAccounts            RewardAccount[]
   paymentOrders             PaymentOrder[]
+  bookingTradeOrders        BookingTradeOrder[]
   wechatIdentity            WechatIdentity?
   subscriptionUsages        SubscriptionResourceUsage[]
   subscriptionChanges       SubscriptionChange[]
@@ -336,6 +337,9 @@ model Order {
   quotePrice             Float?
   fundDiscountAmount     Float                  @default(0)
   paymentStatus          String                 @default("unpaid")
+  tradeStatus            String?
+  tradeCreatedAt         DateTime?
+  fulfillmentStatus      String?
   paidAmount             Float                  @default(0)
   paidAt                 DateTime?
   quoteRemark            String?
@@ -372,6 +376,7 @@ model Order {
   reminders              OrderReminder[]
   referralQualification  ReferralQualification?
   paymentOrders          PaymentOrder[]
+  tradeOrder             BookingTradeOrder?
 
   @@index([technicianId])
   @@index([customerId])
@@ -469,6 +474,7 @@ model ClientUser {
   referralAttributions      ReferralRelation[]     @relation("ReferralReferred")
   rewardAccounts            RewardAccount[]
   paymentOrders             PaymentOrder[]
+  bookingTradeOrders        BookingTradeOrder[]
   wechatIdentity            WechatIdentity?
   followedTechnicians       TechnicianFollow[]
   conversionEvents          ConversionEvent[]
@@ -988,6 +994,30 @@ model PaymentOrder {
   @@index([subscriptionId, status])
   @@index([clientUserId, createdAt])
   @@index([technicianId, createdAt])
+}
+
+model BookingTradeOrder {
+  id                Int      @id @default(autoincrement())
+  tradeNo           String   @unique
+  bookingId         Int      @unique
+  clientUserId      Int
+  technicianId      Int
+  totalAmount       Float
+  depositAmount     Float    @default(0)
+  balanceAmount     Float    @default(0)
+  paidAmount        Float    @default(0)
+  status            String   @default("pending")
+  currentPayStage   String   @default("deposit")
+  cancelledAt       DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
+  booking           Order    @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  clientUser        ClientUser @relation(fields: [clientUserId], references: [id], onDelete: Restrict)
+  technician        Technician @relation(fields: [technicianId], references: [id], onDelete: Restrict)
+
+  @@index([clientUserId, status, createdAt])
+  @@index([technicianId, status, createdAt])
 }
 
 model TechnicianSubscription {
