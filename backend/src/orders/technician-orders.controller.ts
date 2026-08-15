@@ -24,6 +24,7 @@ import { TouristGuard } from '../technician-auth/tourist.guard';
 import { CreateTechnicianOrderDto } from './dto/create-technician-order.dto';
 import { ReviewOrderDto } from './dto/review-order.dto';
 import { UpdateTechnicianOrderDto } from './dto/update-technician-order.dto';
+import { CompleteServiceDto } from './dto/complete-service.dto';
 
 @ApiTags('美甲师-订单')
 @ApiBearerAuth()
@@ -186,12 +187,23 @@ export class TechnicianOrdersController {
   async complete(
     @Req() request: { user: { technicianId: number } },
     @Param('id') id: string,
+    @Body() body: CompleteServiceDto,
   ) {
     await this.ordersService.findOneForTechnician(
       parseInt(id, 10),
       request.user.technicianId,
     );
-    return this.ordersService.complete(parseInt(id, 10));
+    const hasRecordFields = Boolean(
+      body &&
+        (body.actualStartTime ||
+          body.actualEndTime ||
+          body.actualAmount != null ||
+          body.materialCost != null),
+    );
+    return this.ordersService.complete(
+      parseInt(id, 10),
+      hasRecordFields ? body : undefined,
+    );
   }
 
   @Patch(':id/reinitiate')
