@@ -32,6 +32,7 @@ describe('PaymentsService', () => {
       quotePrice: 200,
       fundDiscountAmount: 20,
       depositAmount: 50,
+      tradeOrder: { id: 20, status: 'pending' },
     });
     prisma.paymentOrder.aggregate.mockResolvedValue({
       _sum: { amountCents: null },
@@ -145,5 +146,80 @@ describe('PaymentsService', () => {
       expect.objectContaining({ amountCents: 5000, openId: 'openid-1' }),
     );
     expect(result.providerPayload.package).toBe('prepay_id=1');
+  });
+
+  it('定金到账后推进预约到预定履约状态', async () => {
+    const paidAt = new Date('2026-08-15T10:00:00Z');
+    const tx: any = {
+      paymentOrder: {
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        aggregate: jest.fn().mockResolvedValue({ _sum: { amountCents: 5000 } }),
+        findUniqueOrThrow: jest.fn().mockResolvedValue({
+          id: 1, paymentNo: 'PAY1', paymentType: 'deposit', amountCents: 5000,
+          channel: 'wechat', status: 'paid', paidAt,
+        }),
+      },
+      order: {
+        findUniqueOrThrow: jest.fn().mockResolvedValue({
+          id: 10, clientUserId: 8, technicianId: 3, status: 'pending_confirm',
+          fulfillmentStatus: 'pending_shop', serviceType: '到店美甲',
+          quotePrice: 200, fundDiscountAmount: 0,
+        }),
+        update: jest.fn().mockImplementation(({ data }: any) => ({ id: 10, status: data.status, ...data })),
+      },
+      conversation: { upsert: jest.fn().mockResolvedValue({ id: 6 }) },
+      message: { createMany: jest.fn().mockResolvedValue({ count: 2 }) },
+      bookingTradeOrder: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+    };
+    prisma.paymentOrder.findUnique.mockResolvedValue({
+      id: 1, paymentNo: 'PAY1', orderId: 10, clientUserId: 8,
+      paymentType: 'deposit', amountCents: 5000, status: 'pending',
+    });
+    prisma.$transaction.mockImplementation((callback: any) => callback(tx));
+
+    await service.confirmPaid('PAY1', 'WX1');
+
+    expect(tx.order.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        status: 'pending_shop', bookingPhase: 'booking', tradeStatus: 'deposit_paid',
+      }),
+    }));
+  });
+
+  it('尾款到账后完成进行中的预约与交易订单', async () => {
+    const tx: any = {
+      paymentOrder: {
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        aggregate: jest.fn().mockResolvedValue({ _sum: { amountCents: 20000 } }),
+        findUniqueOrThrow: jest.fn().mockResolvedValue({
+          id: 2, paymentNo: 'PAY2', paymentType: 'final', amountCents: 15000,
+          channel: 'wechat', status: 'paid', paidAt: new Date(),
+        }),
+      },
+      order: {
+        findUniqueOrThrow: jest.fn().mockResolvedValue({
+          id: 10, clientUserId: 8, technicianId: 3, status: 'in_progress',
+          quotePrice: 200, fundDiscountAmount: 0,
+        }),
+        update: jest.fn().mockImplementation(({ data }: any) => ({ id: 10, status: data.status, ...data })),
+      },
+      conversation: { upsert: jest.fn().mockResolvedValue({ id: 6 }) },
+      message: { createMany: jest.fn().mockResolvedValue({ count: 2 }) },
+      bookingTradeOrder: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      revenue: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
+    };
+    prisma.paymentOrder.findUnique.mockResolvedValue({
+      id: 2, paymentNo: 'PAY2', orderId: 10, clientUserId: 8,
+      paymentType: 'final', amountCents: 15000, status: 'pending',
+    });
+    prisma.$transaction.mockImplementation((callback: any) => callback(tx));
+
+    await service.confirmPaid('PAY2', 'WX2');
+
+    expect(tx.order.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        status: 'completed', bookingPhase: 'finished', tradeStatus: 'paid', paymentStatus: 'paid',
+      }),
+    }));
   });
 });

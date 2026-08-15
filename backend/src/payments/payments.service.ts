@@ -62,9 +62,13 @@ export class PaymentsService {
         quotePrice: true,
         fundDiscountAmount: true,
         depositAmount: true,
+        tradeOrder: { select: { id: true, status: true } },
       },
     });
     if (!order) throw new NotFoundException('订单不存在');
+    if (!order.tradeOrder || order.tradeOrder.status === 'cancelled') {
+      throw new BadRequestException('预约尚未生成可支付订单');
+    }
     if (!order.quotePrice || order.quotePrice <= 0) {
       throw new BadRequestException('订单尚未完成报价');
     }
@@ -99,8 +103,8 @@ export class PaymentsService {
         depositTarget - (paidDeposit._sum.amountCents ?? 0),
       );
     } else {
-      if (!['in_progress', 'completed'].includes(order.status)) {
-        throw new BadRequestException('服务开始或完成后才能支付尾款');
+      if (!['pending_home', 'pending_shop', 'in_progress', 'completed'].includes(order.status)) {
+        throw new BadRequestException('定金支付后才能支付尾款');
       }
       amountCents = Math.max(0, totalCents - paidCents);
     }
@@ -227,10 +231,47 @@ export class PaymentsService {
                   isDepositPaid: true,
                   depositStatus: 'paid',
                   depositConfirmedAt: paidAt,
+                  tradeStatus: 'deposit_paid',
+                  status: order.fulfillmentStatus ||
+                    (order.serviceType === '上门美甲' ? 'pending_home' : 'pending_shop'),
+                  bookingPhase: 'booking',
                 }
-              : {}),
+              : {
+                  tradeStatus: paidAmount >= payable ? 'paid' : 'balance_pending',
+                  ...(paidAmount >= payable && order.status === 'in_progress'
+                    ? { status: 'completed', bookingPhase: 'finished', completedAt: paidAt }
+                    : {}),
+                }),
           },
         });
+        await tx.bookingTradeOrder.updateMany({
+          where: { bookingId: order.id, status: { not: 'cancelled' } },
+          data: {
+            paidAmount,
+            status: paidAmount >= payable ? 'completed' : 'pending',
+            currentPayStage:
+              payment.paymentType === 'deposit' && paidAmount < payable
+                ? 'balance'
+                : payment.paymentType,
+            completedAt: paidAmount >= payable ? paidAt : null,
+          },
+        });
+        if (order.clientUserId) {
+          const content = payment.paymentType === 'deposit'
+            ? '定金支付成功，预约已进入履约阶段'
+            : '尾款支付成功，预约已完成';
+          const conversation = await tx.conversation.upsert({
+            where: { clientId_techId: { clientId: order.clientUserId, techId: order.technicianId } },
+            update: { lastMessage: content, lastMessageAt: paidAt },
+            create: { clientId: order.clientUserId, techId: order.technicianId, lastMessage: content, lastMessageAt: paidAt },
+          });
+          await tx.message.createMany({
+            data: [
+              { conversationId: conversation.id, senderType: 'system', senderId: 0, receiverType: 'client', receiverId: order.clientUserId, messageType: 'system', content, relatedType: 'order', relatedId: order.id },
+              { conversationId: conversation.id, senderType: 'system', senderId: 0, receiverType: 'technician', receiverId: order.technicianId, messageType: 'system', content, relatedType: 'order', relatedId: order.id },
+            ],
+          });
+        }
         if (settledOrder.status === 'completed') {
           const accounting = revenueSnapshot(settledOrder);
           await tx.revenue.updateMany({

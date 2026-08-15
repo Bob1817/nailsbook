@@ -69,6 +69,13 @@ export class ClientOrdersController {
     return this.clientOrdersService.findAll(request.user.clientUserId);
   }
 
+  @Get('trade-orders/list')
+  findTradeOrders(
+    @Req() request: { user: { clientUserId: number } },
+  ) {
+    return this.clientOrdersService.findTradeOrders(request.user.clientUserId);
+  }
+
   @Get('trips')
   @ApiOperation({ summary: '获取上门服务行程列表' })
   @ApiResponse({ status: 200, description: '返回行程列表' })

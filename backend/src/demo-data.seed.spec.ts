@@ -173,6 +173,27 @@ describe('ensureDemoData', () => {
             : null;
         }),
       },
+      paymentOrder: {
+        upsert: jest.fn(({ where, create, update }: any) => ({
+          id: 850,
+          idempotencyKey: where.idempotencyKey,
+          ...(create ?? update),
+        })),
+      },
+      bookingTradeOrder: {
+        upsert: jest.fn(({ where, create, update }: any) => ({
+          id: 855,
+          bookingId: where.bookingId,
+          ...(create ?? update),
+        })),
+      },
+      serviceReview: {
+        upsert: jest.fn(({ where, create, update }: any) => ({
+          id: 860,
+          orderId: where.orderId,
+          ...(create ?? update),
+        })),
+      },
       revenue: {
         upsert: jest.fn(({ where, create, update }: any) => ({
           id: 900,
@@ -245,7 +266,10 @@ describe('ensureDemoData', () => {
       }),
     );
     expect(prisma.clientUser.upsert).toHaveBeenCalledTimes(5);
-    expect(prisma.order.upsert).toHaveBeenCalledTimes(10);
+    expect(prisma.order.upsert).toHaveBeenCalledTimes(14);
+    expect(prisma.paymentOrder.upsert).toHaveBeenCalled();
+    expect(prisma.bookingTradeOrder.upsert).toHaveBeenCalled();
+    expect(prisma.serviceReview.upsert).toHaveBeenCalledTimes(3);
     expect(prisma.revenue.upsert).toHaveBeenCalledTimes(5);
     expect(prisma.customServiceRequest.create).toHaveBeenCalled();
     expect(prisma.artistApplication.update).toHaveBeenCalledWith(
@@ -262,6 +286,8 @@ describe('ensureDemoData', () => {
       '13800138005',
     ]);
     expect(result.orderNos).toContain('DEMO-OD-1008');
+    expect(result.orderNos).toContain('DEMO-OD-1011');
+    expect(result.orderNos).toContain('DEMO-OD-1014');
     expect(result.artistApplicationPhones).toEqual([
       '13800138120',
       '13800138121',

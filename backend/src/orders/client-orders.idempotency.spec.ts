@@ -19,6 +19,7 @@ describe('ClientOrdersService 状态操作幂等', () => {
           customerId: 3,
           status: 'in_progress',
           quotePrice: 200,
+          paymentStatus: 'paid',
         }),
       },
       revenue: { findUnique: jest.fn().mockResolvedValue(null) },

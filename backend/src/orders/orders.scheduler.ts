@@ -421,7 +421,7 @@ export class OrdersScheduler {
         await this.prisma.$transaction(async (tx) => {
           await tx.order.update({
             where: { id: order.id },
-            data: { status: 'in_progress' },
+            data: { status: 'in_progress', tradeStatus: 'balance_pending' },
           });
 
           if (order.clientUserId) {
@@ -516,6 +516,7 @@ export class OrdersScheduler {
     const orders = await this.prisma.order.findMany({
       where: {
         status: 'in_progress',
+        paymentStatus: 'paid',
         endTime: { lte: twentyFourHoursAgo },
       },
       take: OrdersScheduler.BATCH_SIZE,

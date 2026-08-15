@@ -32,6 +32,14 @@ import { UpdateTechnicianOrderDto } from './dto/update-technician-order.dto';
 export class TechnicianOrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
+  @Get('trade-orders/list')
+  findTradeOrders(
+    @Req() request: { user: { technicianId: number } },
+    @Query('status') status?: string,
+  ) {
+    return this.ordersService.findTradeOrders(request.user.technicianId, status);
+  }
+
   @Post()
   @ApiOperation({ summary: '创建订单' })
   @ApiBody({ type: CreateTechnicianOrderDto })

@@ -48,15 +48,13 @@ describe('OrdersService 状态守卫（美甲师端）', () => {
     await expect(service.confirm(1)).rejects.toBeInstanceOf(BadRequestException);
   });
 
-  it('confirm：有定金且未确认缴纳 → BadRequest', async () => {
+  it('complete：尾款未支付 → BadRequest', async () => {
     jest.spyOn(service, 'findOne').mockResolvedValue({
       id: 1,
-      status: 'pending_confirm',
-      serviceType: '到店美甲',
-      depositAmount: 50,
-      isDepositPaid: false,
+      status: 'in_progress',
+      paymentStatus: 'partial',
     } as never);
-    await expect(service.confirm(1)).rejects.toThrow('请先确认用户已缴纳定金');
+    await expect(service.complete(1)).rejects.toThrow('请先通知客户支付剩余尾款');
   });
 
   it('complete：未到可完成状态(pending_quote) → BadRequest', async () => {

@@ -301,6 +301,24 @@ export class OrdersService {
     };
   }
 
+  async findTradeOrders(technicianId: number, status?: string) {
+    return this.prisma.bookingTradeOrder.findMany({
+      where: {
+        technicianId,
+        ...(status && status !== 'all' ? { status } : {}),
+      },
+      include: {
+        booking: {
+          include: {
+            customer: { select: { id: true, name: true, avatarUrl: true } },
+            paymentOrders: { orderBy: { createdAt: 'desc' } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async findTrips(technicianId: number) {
     return this.prisma.order.findMany({
       where: {
@@ -463,6 +481,7 @@ export class OrdersService {
         where: { id },
         data: updateData,
       });
+
       await tx.orderReminder.updateMany({
         where: { orderId: id, status: { not: 'cancelled' } },
         data: {
@@ -510,8 +529,6 @@ export class OrdersService {
     }
     await this.assertTechnicianWorkSchedule(technicianId, startTime, endTime);
 
-    await this.assertOrderConflict(technicianId, startTime, endTime, order.id);
-
     let systemMessage: any = null;
     let conversationId: number | null = null;
 
@@ -525,6 +542,9 @@ export class OrdersService {
           quoteRemark: dto.remark || null,
           quotedAt: new Date(),
           status: 'pending_agree',
+          bookingPhase: 'application',
+          expectedDate: startTime,
+          expectedTimeSlot: dto.startTime,
           depositAmount: dto.depositAmount ?? 0,
         },
         include: {
@@ -533,13 +553,6 @@ export class OrdersService {
             select: { id: true, name: true, phone: true, avatarUrl: true },
           },
         },
-      });
-
-      // 用实际服务时间（startTime~endTime）替换创建时的预估占用，
-      // 保持该预约的“已预约时间范围”与确认后的服务时长同步。
-      await tx.blockedTimeSlot.updateMany({
-        where: { orderId: id },
-        data: { startTime, endTime, reason: 'booking' },
       });
 
       if (order.clientUserId) {
@@ -612,28 +625,79 @@ export class OrdersService {
       throw new BadRequestException('当前订单状态不支持确认');
     }
 
-    if ((order.depositAmount ?? 0) > 0 && !order.isDepositPaid) {
-      throw new BadRequestException('请先确认用户已缴纳定金');
-    }
-
     const targetStatus: OrderStatus =
       order.serviceType === '上门美甲' ? 'pending_home' : 'pending_shop';
+    const requiresDeposit = (order.depositAmount ?? 0) > 0;
 
     let systemMessage: any = null;
     let conversationId: number | null = null;
 
-    const updated = await this.prisma.$transaction(async (tx) => {
+    const confirmBooking = () => this.prisma.$transaction(async (tx) => {
+      const conflict = await tx.blockedTimeSlot.findFirst({
+        where: {
+          techId: order.technicianId,
+          NOT: { orderId: id },
+          startTime: { lt: order.endTime },
+          endTime: { gt: order.startTime },
+        },
+        select: { id: true },
+      });
+      if (conflict) {
+        throw new BadRequestException('该时间段已被预约，请与客户协商新的时间');
+      }
       const updated = await tx.order.update({
         where: { id },
         data: {
           status: targetStatus,
+          bookingPhase: 'booking',
+          tradeStatus: requiresDeposit ? 'deposit_pending' : 'deposit_paid',
+          tradeCreatedAt: new Date(),
+          fulfillmentStatus: targetStatus,
+          confirmedStartTime: order.startTime,
+          confirmedEndTime: order.endTime,
           confirmedAt: new Date(),
         },
       });
 
       if (order.clientUserId) {
-        const preview =
-          targetStatus === 'pending_home'
+        const totalAmount = Math.max(
+          0,
+          (order.quotePrice ?? 0) - (order.fundDiscountAmount ?? 0),
+        );
+        await tx.bookingTradeOrder.upsert({
+          where: { bookingId: id },
+          update: {},
+          create: {
+            tradeNo: `TRADE${Date.now()}${id}`,
+            bookingId: id,
+            clientUserId: order.clientUserId,
+            technicianId: order.technicianId,
+            totalAmount,
+            depositAmount: Math.min(totalAmount, order.depositAmount ?? 0),
+            balanceAmount: Math.max(0, totalAmount - (order.depositAmount ?? 0)),
+            paidAmount: 0,
+            status: totalAmount > 0 ? 'pending' : 'completed',
+            currentPayStage: requiresDeposit ? 'deposit' : 'balance',
+            completedAt: totalAmount > 0 ? null : new Date(),
+          },
+        });
+      }
+
+      await tx.blockedTimeSlot.deleteMany({ where: { orderId: id } });
+      await tx.blockedTimeSlot.create({
+        data: {
+          techId: order.technicianId,
+          orderId: id,
+          startTime: order.startTime,
+          endTime: order.endTime,
+          reason: 'booking',
+        },
+      });
+
+      if (order.clientUserId) {
+        const preview = requiresDeposit
+          ? `双方已确认预约，订单已生成，请支付定金 ¥${Number(order.depositAmount).toFixed(2)}`
+          : targetStatus === 'pending_home'
             ? '美甲师已确认订单，届时将上门服务～'
             : '美甲师已确认订单，请准时到店～';
         const conversation = await tx.conversation.upsert({
@@ -671,6 +735,9 @@ export class OrdersService {
 
       return updated;
     });
+    const updated = this.bookingMutex
+      ? await this.bookingMutex.runExclusive(order.technicianId, confirmBooking)
+      : await confirmBooking();
 
     if (systemMessage && conversationId) {
       try {
@@ -699,6 +766,9 @@ export class OrdersService {
 
     if (!canTransition(order.status as OrderStatus, 'completed')) {
       throw new BadRequestException('当前订单状态不支持完成');
+    }
+    if (order.paymentStatus !== 'paid') {
+      throw new BadRequestException('请先通知客户支付剩余尾款');
     }
     if (
       dto &&
@@ -759,7 +829,7 @@ export class OrdersService {
           actualAmount,
           materialCost,
           paidAmount: actualAmount,
-          paymentStatus: actualAmount > 0 ? 'paid' : order.paymentStatus,
+          paymentStatus: order.paymentStatus,
           aftercareDeadline,
           suggestedMaintenanceAt,
         },
@@ -946,11 +1016,19 @@ export class OrdersService {
     const updated = await this.prisma.$transaction(async (tx) => {
       const claimed = await tx.order.updateMany({
         where: { id, status: { in: cancellableStatuses } },
-        data: { status: 'cancelled' },
+        data: { status: 'cancelled', tradeStatus: 'cancelled' },
       });
       if (claimed.count !== 1) {
         throw new BadRequestException('该订单已取消，无需重复处理');
       }
+      await tx.paymentOrder.updateMany({
+        where: { orderId: id, status: { in: ['created', 'pending', 'channel_pending'] } },
+        data: { status: 'closed', closedAt: new Date() },
+      });
+      await tx.bookingTradeOrder.updateMany({
+        where: { bookingId: id, status: { not: 'cancelled' } },
+        data: { status: 'cancelled', cancelledAt: new Date() },
+      });
       await tx.orderReminder.updateMany({
         where: { orderId: id, status: { not: 'sent' } },
         data: { status: 'cancelled', cancelledAt: new Date() },

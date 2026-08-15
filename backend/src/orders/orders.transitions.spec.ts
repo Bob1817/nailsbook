@@ -23,6 +23,15 @@ describe('OrdersService 流转成功路径', () => {
         findUnique: jest.fn().mockResolvedValue({ id: 5 }),
       },
       message: { create: jest.fn().mockResolvedValue({ id: 1 }) },
+      blockedTimeSlot: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+        create: jest.fn().mockResolvedValue({ id: 4 }),
+      },
+      bookingTradeOrder: {
+        upsert: jest.fn().mockResolvedValue({ id: 20 }),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
       revenue: {
         findUnique: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockResolvedValue({ id: 9, amount: 200 }),
@@ -45,18 +54,21 @@ describe('OrdersService 流转成功路径', () => {
       technicianId: 7,
       depositAmount: 0,
       isDepositPaid: false,
+      startTime: new Date('2026-06-10T10:00:00Z'),
+      endTime: new Date('2026-06-10T12:00:00Z'),
     } as never);
 
     await service.confirm(1);
 
     expect(prisma.order.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ status: 'pending_home' }),
+        data: expect.objectContaining({ status: 'pending_home', bookingPhase: 'booking' }),
       }),
     );
     const msg = prisma.message.create.mock.calls[0][0].data;
     expect(msg.receiverType).toBe('client');
     expect(msg.relatedType).toBe('order');
+    expect(prisma.blockedTimeSlot.create).toHaveBeenCalledTimes(1);
     expect(emit).toHaveBeenCalledTimes(1);
   });
 
@@ -68,6 +80,8 @@ describe('OrdersService 流转成功路径', () => {
       clientUserId: 11,
       technicianId: 7,
       depositAmount: 0,
+      startTime: new Date('2026-06-10T10:00:00Z'),
+      endTime: new Date('2026-06-10T12:00:00Z'),
     } as never);
 
     await service.confirm(1);
@@ -79,7 +93,24 @@ describe('OrdersService 流转成功路径', () => {
     );
   });
 
-  it('confirm 带定金但支付未确认：拒绝美甲师自行标记已付', async () => {
+  it('confirm 遇到已锁定档期时不转正式预约', async () => {
+    prisma.blockedTimeSlot.findFirst.mockResolvedValue({ id: 99 });
+    jest.spyOn(service, 'findOne').mockResolvedValue({
+      id: 1,
+      status: 'pending_confirm',
+      serviceType: '到店美甲',
+      technicianId: 7,
+      depositAmount: 0,
+      startTime: new Date('2026-06-10T10:00:00Z'),
+      endTime: new Date('2026-06-10T12:00:00Z'),
+    } as never);
+
+    await expect(service.confirm(1)).rejects.toThrow('该时间段已被预约');
+    expect(prisma.order.update).not.toHaveBeenCalled();
+    expect(prisma.blockedTimeSlot.create).not.toHaveBeenCalled();
+  });
+
+  it('confirm 带定金但支付未确认：创建交易并等待定金回调', async () => {
     jest.spyOn(service, 'findOne').mockResolvedValue({
       id: 1,
       status: 'pending_confirm',
@@ -88,10 +119,19 @@ describe('OrdersService 流转成功路径', () => {
       technicianId: 7,
       depositAmount: 50,
       isDepositPaid: false,
+      startTime: new Date('2026-06-10T10:00:00Z'),
+      endTime: new Date('2026-06-10T12:00:00Z'),
     } as never);
 
-    await expect(service.confirm(1)).rejects.toThrow('请先确认用户已缴纳定金');
-    expect(prisma.order.update).not.toHaveBeenCalled();
+    await service.confirm(1);
+    expect(prisma.order.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        status: 'pending_home',
+        tradeStatus: 'deposit_pending',
+        fulfillmentStatus: 'pending_home',
+      }),
+    }));
+    expect(prisma.blockedTimeSlot.create).toHaveBeenCalledTimes(1);
   });
 
   it('complete：in_progress → completed，并生成收入记录', async () => {
@@ -100,8 +140,10 @@ describe('OrdersService 流转成功路径', () => {
       status: 'in_progress',
       clientUserId: 11,
       technicianId: 7,
+      paymentStatus: 'paid',
       customerId: 3,
       quotePrice: 200,
+      paymentStatus: 'paid',
       paidAmount: 200,
       paymentStatus: 'paid',
     } as never);
@@ -127,6 +169,7 @@ describe('OrdersService 流转成功路径', () => {
       id: 1,
       status: 'in_progress',
       technicianId: 7,
+      paymentStatus: 'paid',
     } as never);
     prisma.revenue.findUnique.mockResolvedValue({ id: 9 });
 
@@ -143,6 +186,7 @@ describe('OrdersService 流转成功路径', () => {
       technicianId: 7,
       customerId: 3,
       quotePrice: 200,
+      paymentStatus: 'paid',
     } as never);
     prisma.order.updateMany.mockResolvedValue({ count: 0 });
 

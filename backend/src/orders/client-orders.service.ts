@@ -57,7 +57,37 @@ export class ClientOrdersService {
     @Optional() private readonly subscriptions?: SubscriptionsService,
   ) {}
 
+  async findTradeOrders(clientUserId: number, status?: string) {
+    return this.prisma.bookingTradeOrder.findMany({
+      where: {
+        clientUserId,
+        ...(status && status !== 'all' ? { status } : {}),
+      },
+      include: {
+        booking: {
+          include: {
+            technician: { select: { id: true, name: true, avatarUrl: true } },
+            paymentOrders: { orderBy: { createdAt: 'desc' } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async create(clientUserId: number, dto: CreateClientOrderDto) {
+    if (dto.applicationKey) {
+      const existing = await this.prisma.order.findUnique({
+        where: { applicationKey: dto.applicationKey },
+        include: this.orderInclude(),
+      });
+      if (existing) {
+        if (existing.clientUserId !== clientUserId) {
+          throw new BadRequestException('预约申请标识已被使用');
+        }
+        return this.mapOrder(existing);
+      }
+    }
     const binding = await this.prisma.clientTechBinding.findFirst({
       where: {
         clientId: clientUserId,
@@ -202,6 +232,12 @@ export class ClientOrdersService {
                 ? JSON.stringify(dto.customImages)
                 : null,
             sourceWorkId: dto.sourceWorkId ?? null,
+            applicationKey: dto.applicationKey ?? null,
+            bookingPhase: 'application',
+            expectedDate: startTime,
+            expectedTimeSlot: dto.startTime,
+            confirmedStartTime: null,
+            confirmedEndTime: null,
             quotePrice: 0,
             status: 'pending_quote',
             source: 'client_webapp',
@@ -261,31 +297,23 @@ export class ClientOrdersService {
           },
         });
 
-        const blockEndTime = endTime;
-        await this.assertNoBlockedConflict(
-          tx,
-          dto.techId,
-          startTime,
-          blockEndTime,
-        );
-        await tx.blockedTimeSlot.create({
-          data: {
-            techId: dto.techId,
-            orderId: createdOrder.id,
-            startTime,
-            endTime: blockEndTime,
-            reason: 'booking',
-          },
-        });
-
         return createdOrder;
       });
-    let order;
+    let order: any;
     try {
-      order = this.bookingMutex
-        ? await this.bookingMutex.runExclusive(dto.techId, createOrder)
-        : await createOrder();
+      order = await createOrder();
     } catch (error) {
+      if (
+        dto.applicationKey &&
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        const existing = await this.prisma.order.findUnique({
+          where: { applicationKey: dto.applicationKey },
+          include: this.orderInclude(),
+        });
+        if (existing?.clientUserId === clientUserId) return this.mapOrder(existing);
+      }
       throwIfBookingSlotConflict(error);
     }
 
@@ -305,6 +333,18 @@ export class ClientOrdersService {
   }
 
   async createFromDesign(clientUserId: number, dto: CreateOrderFromDesignDto) {
+    if (dto.applicationKey) {
+      const existing = await this.prisma.order.findUnique({
+        where: { applicationKey: dto.applicationKey },
+        include: this.orderInclude(),
+      });
+      if (existing) {
+        if (existing.clientUserId !== clientUserId) {
+          throw new BadRequestException('预约申请标识已被使用');
+        }
+        return this.mapOrder(existing);
+      }
+    }
     const design = await this.prisma.clientDesignRequest.findFirst({
       where: {
         id: dto.designId,
@@ -459,14 +499,6 @@ export class ClientOrdersService {
           data: { status: 'converted' },
         });
 
-        const blockEndTime = endTime;
-        await this.assertNoBlockedConflict(
-          tx,
-          dto.techId,
-          startTime,
-          blockEndTime,
-        );
-
         const createdOrder = await tx.order.create({
           data: {
             orderNo: this.generateOrderNo(),
@@ -479,6 +511,12 @@ export class ClientOrdersService {
             endTime,
             address: orderAddress,
             serviceType: dto.serviceType,
+            applicationKey: dto.applicationKey ?? null,
+            bookingPhase: 'application',
+            expectedDate: startTime,
+            expectedTimeSlot: dto.startTime,
+            confirmedStartTime: null,
+            confirmedEndTime: null,
             quotePrice: design.quotePrice ?? 0,
             status: 'pending_quote',
             source: 'client_webapp',
@@ -486,24 +524,23 @@ export class ClientOrdersService {
           include: this.orderInclude(),
         });
 
-        await tx.blockedTimeSlot.create({
-          data: {
-            techId: dto.techId,
-            orderId: createdOrder.id,
-            startTime,
-            endTime: blockEndTime,
-            reason: 'booking',
-          },
-        });
-
         return createdOrder;
       });
-    let order;
+    let order: any;
     try {
-      order = this.bookingMutex
-        ? await this.bookingMutex.runExclusive(design.techId, createOrder)
-        : await createOrder();
+      order = await createOrder();
     } catch (error) {
+      if (
+        dto.applicationKey &&
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        const existing = await this.prisma.order.findUnique({
+          where: { applicationKey: dto.applicationKey },
+          include: this.orderInclude(),
+        });
+        if (existing?.clientUserId === clientUserId) return this.mapOrder(existing);
+      }
       throwIfBookingSlotConflict(error);
     }
 
@@ -963,6 +1000,9 @@ export class ClientOrdersService {
       if (order.status !== 'in_progress') {
         throw new BadRequestException('当前订单状态不支持完成');
       }
+      if (order.paymentStatus !== 'paid') {
+        throw new BadRequestException('请先支付剩余尾款');
+      }
 
       const revenueExists = await this.prisma.revenue.findUnique({
         where: { orderId: id },
@@ -1029,11 +1069,19 @@ export class ClientOrdersService {
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
       const claimed = await tx.order.updateMany({
         where: { id, clientUserId, status: { in: cancellableStatuses } },
-        data: { status: 'cancelled' },
+        data: { status: 'cancelled', tradeStatus: 'cancelled' },
       });
       if (claimed.count !== 1) {
         throw new BadRequestException('该订单已取消，无需重复处理');
       }
+      await tx.paymentOrder.updateMany({
+        where: { orderId: id, status: { in: ['created', 'pending', 'channel_pending'] } },
+        data: { status: 'closed', closedAt: new Date() },
+      });
+      await tx.bookingTradeOrder.updateMany({
+        where: { bookingId: id, status: { not: 'cancelled' } },
+        data: { status: 'cancelled', cancelledAt: new Date() },
+      });
       await tx.orderReminder.updateMany({
         where: { orderId: id, status: { not: 'sent' } },
         data: { status: 'cancelled', cancelledAt: new Date() },
@@ -1232,6 +1280,7 @@ export class ClientOrdersService {
         },
       },
       review: true,
+      tradeOrder: true,
       sourceWork: {
         select: { id: true, title: true, coverUrl: true },
       },
@@ -1261,6 +1310,11 @@ export class ClientOrdersService {
       id: order.id,
       orderNo: order.orderNo,
       status: order.status,
+      bookingPhase: order.bookingPhase ?? 'application',
+      expectedDate: order.expectedDate ?? order.startTime,
+      expectedTimeSlot: order.expectedTimeSlot ?? null,
+      confirmedStartTime: order.confirmedStartTime ?? null,
+      confirmedEndTime: order.confirmedEndTime ?? null,
       source: order.source ?? null,
       startTime: order.startTime,
       endTime: order.endTime,
@@ -1270,12 +1324,22 @@ export class ClientOrdersService {
       quotePrice: order.quotePrice ?? null,
       fundDiscountAmount: order.fundDiscountAmount ?? 0,
       paymentStatus: order.paymentStatus ?? 'unpaid',
+      tradeStatus: order.tradeStatus ?? null,
+      tradeCreatedAt: order.tradeCreatedAt ?? null,
+      fulfillmentStatus: order.fulfillmentStatus ?? null,
+      tradeOrder: order.tradeOrder ?? null,
       paidAmount: order.paidAmount ?? 0,
       paidAt: order.paidAt ?? null,
       quoteRemark: order.quoteRemark ?? null,
       quotedAt: order.quotedAt ?? null,
       isDepositPaid: order.isDepositPaid,
       depositAmount: order.depositAmount ?? 0,
+      balanceAmount: Math.max(
+        0,
+        (order.quotePrice ?? 0) -
+          (order.fundDiscountAmount ?? 0) -
+          (order.depositAmount ?? 0),
+      ),
       customTitle: order.customTitle ?? null,
       customDescription: order.customDescription ?? null,
       customImages: order.customImages

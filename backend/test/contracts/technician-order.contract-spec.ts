@@ -270,6 +270,10 @@ describe('Technician operation HTTP contract', () => {
       expect(confirmRes.body).toMatchObject({ id: order2.id });
 
       const order3 = await seedOrder(technician.id, customer.id, 'in_progress');
+      await testApp.prisma.order.update({
+        where: { id: order3.id },
+        data: { paymentStatus: 'paid', paidAmount: order3.quotePrice || 0 },
+      });
 
       const completeRes = await request(testApp.app.getHttpServer())
         .patch(`/api/technician/orders/${order3.id}/complete`)

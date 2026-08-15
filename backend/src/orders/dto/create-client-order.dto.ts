@@ -17,6 +17,12 @@ class ShopAddressDto {
 }
 
 export class CreateClientOrderDto {
+  @ApiPropertyOptional({ description: '客户端生成的预约申请幂等键' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  applicationKey?: string;
+
   @ApiProperty({ description: '美甲师ID', example: 1 })
   @IsInt()
   techId: number;
