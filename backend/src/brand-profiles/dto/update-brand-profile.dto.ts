@@ -55,6 +55,13 @@ export class UpdateBrandProfileDto {
   brandName: string;
 
   @IsOptional() @IsString() @MaxLength(80) tagline?: string;
+  @IsOptional()
+  @Matches(IMAGE_URL, { message: '主页背景图地址格式不正确' })
+  heroImageUrl?: string;
+  @IsOptional() @IsInt() @Min(0) experienceYears?: number;
+  @IsOptional() @IsArray() @IsString({ each: true }) specialties?: string[];
+  @IsOptional() @IsString() @MaxLength(80) certificationTitle?: string;
+  @IsOptional() @IsArray() @IsInt({ each: true }) featuredReviewIds?: number[];
   @IsOptional() @IsString() @MaxLength(50) city?: string;
   @IsOptional() @IsString() @MaxLength(120) publicServiceArea?: string;
   @IsOptional() @IsString() @MaxLength(1000) artistIntroduction?: string;

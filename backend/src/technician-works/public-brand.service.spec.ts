@@ -54,57 +54,62 @@ describe('PublicBrandService public DTO snapshots', () => {
     });
 
     expect(result).toMatchInlineSnapshot(`
-{
-  "attribution": {
-    "campaign": "summer",
-    "content": "card-a",
-    "source": "wechat",
-  },
-  "brand": {
-    "aestheticPhilosophy": "简洁耐看",
-    "avatarUrl": "http://localhost:3000/uploads/luna-thumb.webp",
-    "bookingReady": true,
-    "city": "上海",
-    "environmentPhotos": [
-      {
-        "caption": "工作台",
-        "imageUrl": "http://localhost:3000/uploads/room-thumb.webp",
-      },
-    ],
-    "faqs": [
-      {
-        "answer": "需要",
-        "question": "需要预约吗？",
-      },
-    ],
-    "id": 7,
-    "introduction": "独立美甲师",
-    "name": "Luna Nail",
-    "policies": {
-      "aftercare": "7天内联系",
-      "cancellation": "24小时前取消",
-      "late": "迟到请联系",
-    },
-    "serviceArea": "静安区及周边",
-    "serviceModes": {
-      "home": true,
-      "studio": true,
-    },
-    "share": {
-      "coverUrl": "http://localhost:3000/uploads/share-thumb.webp",
-      "description": "预约美甲",
-      "title": "Luna Nail",
-    },
-    "standards": {
-      "allergyNotice": "请提前说明过敏史",
-      "hygiene": "一客一消毒",
-      "materials": "正规材料",
-    },
-    "tagline": "低饱和手绘美甲",
-    "transportationNotes": "地铁步行可达",
-  },
-}
-`);
+     {
+       "attribution": {
+         "campaign": "summer",
+         "content": "card-a",
+         "source": "wechat",
+       },
+       "brand": {
+         "aestheticPhilosophy": "简洁耐看",
+         "avatarUrl": "http://localhost:3000/uploads/luna-thumb.webp",
+         "bookingReady": true,
+         "certificationTitle": null,
+         "city": "上海",
+         "environmentPhotos": [
+           {
+             "caption": "工作台",
+             "imageUrl": "http://localhost:3000/uploads/room-thumb.webp",
+           },
+         ],
+         "experienceYears": null,
+         "faqs": [
+           {
+             "answer": "需要",
+             "question": "需要预约吗？",
+           },
+         ],
+         "featuredReviewIds": [],
+         "heroImageUrl": "http://localhost:3000/uploads/share-thumb.webp",
+         "id": 7,
+         "introduction": "独立美甲师",
+         "name": "Luna Nail",
+         "policies": {
+           "aftercare": "7天内联系",
+           "cancellation": "24小时前取消",
+           "late": "迟到请联系",
+         },
+         "serviceArea": "静安区及周边",
+         "serviceModes": {
+           "home": true,
+           "studio": true,
+         },
+         "share": {
+           "coverUrl": "http://localhost:3000/uploads/share-thumb.webp",
+           "description": "预约美甲",
+           "title": "Luna Nail",
+         },
+         "specialties": [],
+         "standards": {
+           "allergyNotice": "请提前说明过敏史",
+           "hygiene": "一客一消毒",
+           "materials": "正规材料",
+         },
+         "tagline": "低饱和手绘美甲",
+         "transportationNotes": "地铁步行可达",
+       },
+     }
+    `);
     expect(JSON.stringify(result)).not.toContain('13800000000');
     expect(JSON.stringify(result)).not.toContain('内部精确地址');
   });

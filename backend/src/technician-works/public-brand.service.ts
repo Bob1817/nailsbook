@@ -35,6 +35,11 @@ export class PublicBrandService {
               select: {
                 brandName: true,
                 tagline: true,
+                heroImageUrl: true,
+                experienceYears: true,
+                specialties: true,
+                certificationTitle: true,
+                featuredReviewIds: true,
                 city: true,
                 publicServiceArea: true,
                 artistIntroduction: true,
@@ -76,6 +81,16 @@ export class PublicBrandService {
             name: brand?.brandName || technician.name,
             avatarUrl: this.image(technician.avatarUrl, size),
             tagline: brand?.tagline || null,
+            heroImageUrl: this.image(
+              brand?.heroImageUrl || brand?.shareCoverUrl || null,
+              size,
+            ),
+            experienceYears: brand?.experienceYears || null,
+            specialties: this.list(brand?.specialties || null),
+            certificationTitle: brand?.certificationTitle || null,
+            featuredReviewIds: this.list(brand?.featuredReviewIds || null)
+              .map(Number)
+              .filter(Boolean),
             city: brand?.city || technician.city,
             serviceArea: brand?.publicServiceArea || technician.serviceArea,
             introduction: brand?.artistIntroduction || null,

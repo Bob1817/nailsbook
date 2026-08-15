@@ -33,30 +33,39 @@ export class BrandProfilesService {
         faqs: { orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }] },
       },
     });
-    return (
-      profile || {
-        technicianId,
-        brandName: technician.name,
-        tagline: null,
-        city: technician.city,
-        publicServiceArea: technician.serviceArea,
-        artistIntroduction: technician.bio,
-        aestheticPhilosophy: null,
-        transportationNotes: null,
-        hygieneStandards: null,
-        materialStandards: null,
-        allergyNotice: null,
-        latePolicy: null,
-        cancellationPolicy: null,
-        aftercarePolicy: null,
-        shareTitle: null,
-        shareDescription: null,
-        shareCoverUrl: null,
-        publicationStatus: 'draft',
-        environmentPhotos: [],
-        faqs: [],
-      }
-    );
+    return profile
+      ? {
+          ...profile,
+          specialties: this.parseArray(profile.specialties),
+          featuredReviewIds: this.parseArray(profile.featuredReviewIds),
+        }
+      : {
+          technicianId,
+          brandName: technician.name,
+          tagline: null,
+          heroImageUrl: null,
+          experienceYears: null,
+          specialties: [],
+          certificationTitle: null,
+          featuredReviewIds: [],
+          city: technician.city,
+          publicServiceArea: technician.serviceArea,
+          artistIntroduction: technician.bio,
+          aestheticPhilosophy: null,
+          transportationNotes: null,
+          hygieneStandards: null,
+          materialStandards: null,
+          allergyNotice: null,
+          latePolicy: null,
+          cancellationPolicy: null,
+          aftercarePolicy: null,
+          shareTitle: null,
+          shareDescription: null,
+          shareCoverUrl: null,
+          publicationStatus: 'draft',
+          environmentPhotos: [],
+          faqs: [],
+        };
   }
 
   async update(technicianId: number, dto: UpdateBrandProfileDto) {
@@ -94,6 +103,15 @@ export class BrandProfilesService {
       const data = {
         brandName: dto.brandName.trim(),
         tagline: clean(dto.tagline),
+        heroImageUrl: clean(dto.heroImageUrl),
+        experienceYears: dto.experienceYears ?? null,
+        specialties: dto.specialties?.length
+          ? JSON.stringify(dto.specialties)
+          : null,
+        certificationTitle: clean(dto.certificationTitle),
+        featuredReviewIds: dto.featuredReviewIds?.length
+          ? JSON.stringify(dto.featuredReviewIds)
+          : null,
         city: clean(dto.city),
         publicServiceArea: clean(dto.publicServiceArea),
         artistIntroduction: clean(dto.artistIntroduction),
@@ -180,6 +198,11 @@ export class BrandProfilesService {
       brandName: profile.brandName,
       avatarUrl: profile.technician.avatarUrl,
       tagline: profile.tagline,
+      heroImageUrl: profile.heroImageUrl,
+      experienceYears: profile.experienceYears,
+      specialties: this.parseArray(profile.specialties),
+      certificationTitle: profile.certificationTitle,
+      featuredReviewIds: this.parseArray(profile.featuredReviewIds),
       city: profile.city,
       publicServiceArea: profile.publicServiceArea,
       artistIntroduction: profile.artistIntroduction,
@@ -209,5 +232,14 @@ export class BrandProfilesService {
         sortOrder: item.sortOrder,
       })),
     };
+  }
+
+  private parseArray(value: string | null) {
+    if (!value) return [];
+    try {
+      return JSON.parse(value);
+    } catch {
+      return [];
+    }
   }
 }

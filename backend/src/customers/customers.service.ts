@@ -57,6 +57,8 @@ export class CustomersService {
           },
           clientUser: {
             select: {
+              nickname: true,
+              avatarUrl: true,
               passwordHash: true,
               managedPasswordCiphertext: true,
               status: true,
@@ -101,6 +103,10 @@ export class CustomersService {
 
         return {
           ...safeCustomer,
+          accountName: clientUser?.nickname || null,
+          avatarUrl: this.absoluteUrl(
+            clientUser?.avatarUrl || safeCustomer.avatarUrl,
+          ),
           account: customer.clientUserId
             ? {
                 linked: true,
@@ -195,6 +201,12 @@ export class CustomersService {
             phone: true,
           },
         },
+        clientUser: {
+          select: {
+            nickname: true,
+            avatarUrl: true,
+          },
+        },
         orders: {
           select: {
             id: true,
@@ -286,8 +298,14 @@ export class CustomersService {
       !customer.archivedAt &&
       interactionDates.every((date) => new Date(date) < activeSince);
 
+    const { clientUser, ...safeCustomer } = customer;
+
     return {
-      ...customer,
+      ...safeCustomer,
+      accountName: clientUser?.nickname || null,
+      avatarUrl: this.absoluteUrl(
+        clientUser?.avatarUrl || safeCustomer.avatarUrl,
+      ),
       businessSummary,
       lifecycle,
       archiveEligible,

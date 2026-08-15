@@ -129,7 +129,11 @@ export class ClientAuthService {
 
     return {
       accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
-      refreshToken: this.signRefreshToken(client.id, client.phone, client.tokenVersion),
+      refreshToken: this.signRefreshToken(
+        client.id,
+        client.phone,
+        client.tokenVersion,
+      ),
       client: {
         id: client.id,
         nickname: client.nickname,
@@ -158,7 +162,7 @@ export class ClientAuthService {
       where: { phone: dto.phone },
       include: {
         bindings: {
-          where: { status: 'active' },
+          where: { status: { in: ['active', 'pending'] } },
           include: { technician: true },
           orderBy: { isDefault: 'desc' },
         },
@@ -182,7 +186,8 @@ export class ClientAuthService {
       roles.push('technician');
     }
 
-    const needsOnboarding = client.bindings.length === 0 && !hasTechnicianAccount;
+    const needsOnboarding =
+      client.bindings.length === 0 && !hasTechnicianAccount;
 
     // 4. 构建返回数据
     if (client.bindings.length > 0) {
@@ -196,7 +201,11 @@ export class ClientAuthService {
     // 没有绑定的纯客户登录
     return {
       accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
-      refreshToken: this.signRefreshToken(client.id, client.phone, client.tokenVersion),
+      refreshToken: this.signRefreshToken(
+        client.id,
+        client.phone,
+        client.tokenVersion,
+      ),
       client: {
         id: client.id,
         nickname: client.nickname,
@@ -315,7 +324,8 @@ export class ClientAuthService {
             name: client.nickname || target.name || client.phone,
             status: 'active',
             invitationCode:
-              target.invitationCode || (await this.allocateInvitationCodeInTx(tx)),
+              target.invitationCode ||
+              (await this.allocateInvitationCodeInTx(tx)),
           },
         });
         await tx.technicianInviteKey.update({
@@ -395,7 +405,8 @@ export class ClientAuthService {
 
   /** 生成随机托管密码 */
   private generateManagedPassword(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$';
+    const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$';
     let pwd = '';
     for (let i = 0; i < 16; i++) {
       pwd += chars[Math.floor(Math.random() * chars.length)];
@@ -404,9 +415,7 @@ export class ClientAuthService {
   }
 
   /** 在事务中分配唯一邀请码 */
-  private async allocateInvitationCodeInTx(
-    tx: any,
-  ): Promise<string> {
+  private async allocateInvitationCodeInTx(tx: any): Promise<string> {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let code = '';
     for (let i = 0; i < 8; i++) {
@@ -684,7 +693,8 @@ export class ClientAuthService {
       }
     }
 
-    const needsOnboarding = client.bindings.length === 0 && !hasTechnicianAccount;
+    const needsOnboarding =
+      client.bindings.length === 0 && !hasTechnicianAccount;
 
     // 构建返回数据（与 loginBySms 一致）
     if (client.bindings.length > 0) {
@@ -698,7 +708,11 @@ export class ClientAuthService {
     // 没有绑定的客户登录，返回 needsOnboarding 让前端引导
     return {
       accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
-      refreshToken: this.signRefreshToken(client.id, client.phone, client.tokenVersion),
+      refreshToken: this.signRefreshToken(
+        client.id,
+        client.phone,
+        client.tokenVersion,
+      ),
       client: {
         id: client.id,
         nickname: client.nickname,
@@ -967,7 +981,8 @@ export class ClientAuthService {
       roles.push('technician');
     }
 
-    const needsOnboarding = client.bindings.length === 0 && !hasTechnicianAccount;
+    const needsOnboarding =
+      client.bindings.length === 0 && !hasTechnicianAccount;
 
     if (client.bindings.length > 0) {
       return { ...this.buildLoginResult(client), roles, needsOnboarding };
@@ -975,7 +990,11 @@ export class ClientAuthService {
 
     return {
       accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
-      refreshToken: this.signRefreshToken(client.id, client.phone, client.tokenVersion),
+      refreshToken: this.signRefreshToken(
+        client.id,
+        client.phone,
+        client.tokenVersion,
+      ),
       client: {
         id: client.id,
         nickname: client.nickname,
@@ -1070,12 +1089,21 @@ export class ClientAuthService {
       throw new UnauthorizedException('客户不存在');
     }
 
-    const defaultBinding = client.bindings.find((b) => b.isDefault);
+    const activeBindings = client.bindings.filter((b) => b.status === 'active');
+    const pendingBindings = client.bindings.filter(
+      (b) => b.status === 'pending',
+    );
+    const defaultBinding = activeBindings.find((b) => b.isDefault);
 
     // 检查是否同时是美甲师
     const technicianAccount = await this.prisma.technician.findUnique({
       where: { phone: client.phone },
-      select: { id: true, status: true, passwordHash: true, invitationCode: true },
+      select: {
+        id: true,
+        status: true,
+        passwordHash: true,
+        invitationCode: true,
+      },
     });
 
     return {
@@ -1087,7 +1115,7 @@ export class ClientAuthService {
       bio: client.bio,
       status: client.status,
       capabilities: {
-        hasBoundTechnician: client.bindings.length > 0,
+        hasBoundTechnician: activeBindings.length > 0,
         isTechnician: !!technicianAccount,
         isTechnicianActivated:
           !!technicianAccount && !!technicianAccount.passwordHash,
@@ -1113,7 +1141,8 @@ export class ClientAuthService {
             },
           }
         : null,
-      technicians: client.bindings.map((b) => ({
+      pendingTechnicianIds: pendingBindings.map((b) => b.techId),
+      technicians: activeBindings.map((b) => ({
         id: b.technician.id,
         name: b.technician.name,
         phone: b.technician.phone,
@@ -1167,7 +1196,31 @@ export class ClientAuthService {
     );
   }
 
-  /// 历史会话再次申请绑定（已有过绑定关系，无需重新输入邀请码）。
+  async listFollowedTechnicians(clientUserId: number) {
+    const follows = await this.prisma.technicianFollow.findMany({
+      where: { clientUserId, technician: { status: 'active' } },
+      include: { technician: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    const bindings = await this.prisma.clientTechBinding.findMany({
+      where: { clientId: clientUserId },
+      select: { techId: true, status: true },
+    });
+    const statusByTech = new Map(
+      bindings.map((item) => [item.techId, item.status]),
+    );
+    return follows
+      .filter((item) => statusByTech.get(item.technicianId) !== 'active')
+      .map((item) => ({
+        id: item.technician.id,
+        name: item.technician.name,
+        avatarUrl: item.technician.avatarUrl,
+        city: item.technician.city,
+        bindingStatus: statusByTech.get(item.technicianId) || 'unbound',
+      }));
+  }
+
+  /// 已关注或有历史绑定关系的客户，无需邀请码再次申请绑定。
   async requestRebind(clientUserId: number, techId: number, note?: string) {
     const technician = await this.prisma.technician.findUnique({
       where: { id: techId },
@@ -1178,14 +1231,20 @@ export class ClientAuthService {
     const existing = await this.prisma.clientTechBinding.findUnique({
       where: { clientId_techId: { clientId: clientUserId, techId } },
     });
-    if (!existing) {
-      throw new BadRequestException('请通过邀请码绑定该美甲师');
+    const followed = await this.prisma.technicianFollow.findUnique({
+      where: {
+        clientUserId_technicianId: { clientUserId, technicianId: techId },
+      },
+    });
+    if (!existing && !followed) {
+      throw new BadRequestException('请先关注该美甲师或使用邀请码绑定');
     }
     return this.applyBindingPending(
       clientUserId,
       techId,
-      existing.inviteCode,
+      existing?.inviteCode || null,
       note?.trim() || null,
+      followed ? 'follow' : 'rebind',
     );
   }
 

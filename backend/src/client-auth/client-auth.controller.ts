@@ -33,7 +33,10 @@ import { BindTechnicianDto } from './dto/bind-technician.dto';
 import { CheckPhoneDto } from '../technician-auth/dto/check-phone.dto';
 import { RefreshTokenDto } from '../common/dto/refresh-token.dto';
 import { ClientChangePasswordDto } from './dto/change-password.dto';
-import { ClientForgotSendCodeDto, ClientForgotResetDto } from './dto/forgot-password.dto';
+import {
+  ClientForgotSendCodeDto,
+  ClientForgotResetDto,
+} from './dto/forgot-password.dto';
 import { SetupPasswordDto } from './dto/setup-password.dto';
 import { SelectRoleDto } from './dto/select-role.dto';
 import { RegisterDeviceTokenDto } from '../notifications/dto/register-device-token.dto';
@@ -99,7 +102,10 @@ export class ClientAuthController {
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: '手机号 + 短信验证码注册（免邀请码）' })
   @ApiBody({ type: RegisterBySmsDto })
-  @ApiResponse({ status: 200, description: '注册成功，返回 token + needsOnboarding' })
+  @ApiResponse({
+    status: 200,
+    description: '注册成功，返回 token + needsOnboarding',
+  })
   @ApiResponse({ status: 400, description: '验证码错误或手机号已注册' })
   async registerBySms(@Body() body: RegisterBySmsDto) {
     return this.clientAuthService.registerBySms(body);
@@ -118,7 +124,9 @@ export class ClientAuthController {
   @Post('activate-technician')
   @UseGuards(ClientJwtAuthGuard)
   @Throttle({ default: { ttl: 60000, limit: 3 } })
-  @ApiOperation({ summary: '激活美甲师身份（需先登录为客户，使用超管后台生成的激活密钥）' })
+  @ApiOperation({
+    summary: '激活美甲师身份（需先登录为客户，使用超管后台生成的激活密钥）',
+  })
   @ApiBody({ type: ActivateTechnicianDto })
   @ApiResponse({ status: 201, description: '激活成功，返回美甲师 token' })
   @ApiResponse({ status: 400, description: '密钥无效或已被使用' })
@@ -147,7 +155,10 @@ export class ClientAuthController {
   @Throttle({ default: { ttl: 60000, limit: 3 } })
   @ApiOperation({ summary: '忘记密码：发送短信验证码' })
   @ApiBody({ type: ClientForgotSendCodeDto })
-  @ApiResponse({ status: 200, description: '已发送（无论手机号是否注册均返回成功）' })
+  @ApiResponse({
+    status: 200,
+    description: '已发送（无论手机号是否注册均返回成功）',
+  })
   async sendResetCode(@Body() body: ClientForgotSendCodeDto) {
     return this.clientAuthService.sendResetCode(body.phone);
   }
@@ -253,6 +264,17 @@ export class ClientAuthController {
       request.user.clientUserId,
       Number(body.techId),
       body.note,
+    );
+  }
+
+  @Get('followed-technicians')
+  @UseGuards(ClientJwtAuthGuard)
+  @ApiOperation({ summary: '可申请绑定的已关注美甲师' })
+  async followedTechnicians(
+    @Req() request: { user: { clientUserId: number } },
+  ) {
+    return this.clientAuthService.listFollowedTechnicians(
+      request.user.clientUserId,
     );
   }
 

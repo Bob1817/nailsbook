@@ -1251,6 +1251,11 @@ model BrandProfile {
   technicianId        Int                     @unique
   brandName           String
   tagline             String?
+  heroImageUrl        String?
+  experienceYears     Int?
+  specialties         String?
+  certificationTitle  String?
+  featuredReviewIds   String?
   city                String?
   publicServiceArea   String?
   artistIntroduction  String?
