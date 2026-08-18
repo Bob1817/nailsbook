@@ -94,6 +94,16 @@ model Technician {
   serviceSchedule           String?
   // Custom tags (JSON array of {id, name, color})
   customTags                String?
+  // Homepage settings
+  coverImageUrl             String? // Homepage cover image
+  servicePhilosophy         String? // Service philosophy
+  bookingNotes              String? // Booking notes/instructions
+  styleTags                 String? // JSON array of style tags ["风格1", "风格2"]
+  isVerified                Boolean @default(false) // Platform verified
+  verifiedAt                DateTime?
+  // Qualifications
+  qualifications            TechnicianQualification[]
+  featuredComments          TechnicianFeaturedComment[]
   customers                 Customer[]
   orders                    Order[]
   revenues                  Revenue[]
@@ -134,6 +144,38 @@ model Technician {
   customerLifecycleHistories CustomerLifecycleHistory[]
   attributionCorrections   AttributionCorrection[]
   contentPublicationTasks  ContentPublicationTask[]
+}
+
+model TechnicianQualification {
+  id           Int        @id @default(autoincrement())
+  technicianId Int
+  type         String     // education, training, certificate, certification, award
+  title        String
+  detail       String
+  organization String?
+  year         Int
+  month        Int?
+  imageUrl     String?
+  isVerified   Boolean    @default(false)
+  sortOrder    Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @default(now()) @updatedAt
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([technicianId, type])
+  @@index([technicianId, sortOrder])
+}
+
+model TechnicianFeaturedComment {
+  id           Int        @id @default(autoincrement())
+  technicianId Int
+  commentId    Int
+  sortOrder    Int        @default(0)
+  createdAt    DateTime   @default(now())
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@unique([technicianId, commentId])
+  @@index([technicianId, sortOrder])
 }
 
 model ReferralCampaign {

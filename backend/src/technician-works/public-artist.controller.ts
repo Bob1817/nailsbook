@@ -116,14 +116,84 @@ export class PublicArtistController {
     });
     const readiness = bookingReadiness(technician);
 
+    // Get qualifications
+    const qualifications = await this.prisma.technicianQualification.findMany({
+      where: { technicianId: technician.id },
+      orderBy: [{ sortOrder: 'asc' }, { year: 'desc' }],
+    });
+
+    // Get featured comments with review details
+    const featuredComments = await this.prisma.technicianFeaturedComment.findMany({
+      where: { technicianId: technician.id },
+      orderBy: { sortOrder: 'asc' },
+      take: 5,
+    });
+
+    const featuredReviews = await Promise.all(
+      featuredComments.map(async (fc) => {
+        const review = await this.prisma.serviceReview.findUnique({
+          where: { id: fc.commentId },
+          include: {
+            client: {
+              select: {
+                id: true,
+                nickname: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        });
+        if (!review) return null;
+        return {
+          id: review.id,
+          content: review.content,
+          rating: review.rating,
+          client: {
+            id: review.client.id,
+            name: review.client.nickname || '匿名用户',
+            avatarUrl: toAbsoluteUrl(review.client.avatarUrl),
+          },
+          createdAt: review.createdAt,
+        };
+      }),
+    );
+
+    // Get like count (from nail works)
+    const likeCount = await this.prisma.nailWorkLike.count({
+      where: {
+        work: { techId: technician.id },
+      },
+    });
+
+    // Get favorite count
+    const favoriteCount = await this.prisma.nailWorkFavorite.count({
+      where: {
+        work: { techId: technician.id },
+      },
+    });
+
+    // Get rating from service reviews
+    const reviews = await this.prisma.serviceReview.findMany({
+      where: { technicianId: technician.id },
+      select: { rating: true },
+    });
+    const avgRating = reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+      : null;
+
     return {
       artist: {
         id: technician.id,
         name: technician.name,
         avatarUrl: toAbsoluteUrl(technician.avatarUrl),
+        coverImageUrl: toAbsoluteUrl(technician.coverImageUrl),
         city: technician.city,
         serviceArea: technician.serviceArea,
         bio: technician.bio,
+        servicePhilosophy: technician.servicePhilosophy,
+        bookingNotes: technician.bookingNotes,
+        styleTags: parseJsonArray(technician.styleTags),
+        isVerified: technician.isVerified,
         homeService: technician.homeService,
         shopService: technician.shopService,
         invitationCode: technician.invitationCode,
@@ -135,13 +205,32 @@ export class PublicArtistController {
         ),
         serviceSchedule: parseJsonObject(technician.serviceSchedule),
         socialMedia: parseJsonObject(technician.socialMedia),
-        followerCount: await this.prisma.technicianFollow.count({
-          where: { technicianId: technician.id },
-        }),
+        stats: {
+          followerCount: await this.prisma.technicianFollow.count({
+            where: { technicianId: technician.id },
+          }),
+          likeCount,
+          favoriteCount,
+          workCount: works.length,
+          rating: avgRating ? Math.round(avgRating * 10) / 10 : null,
+          reviewCount: reviews.length,
+        },
         bookingReady: readiness.ready,
         bookingReadinessIssues: readiness.issues,
       },
       works,
+      qualifications: qualifications.map((q) => ({
+        id: q.id,
+        type: q.type,
+        title: q.title,
+        detail: q.detail,
+        organization: q.organization,
+        year: q.year,
+        month: q.month,
+        imageUrl: toAbsoluteUrl(q.imageUrl),
+        isVerified: q.isVerified,
+      })),
+      featuredReviews: featuredReviews.filter(Boolean),
     };
   }
 }

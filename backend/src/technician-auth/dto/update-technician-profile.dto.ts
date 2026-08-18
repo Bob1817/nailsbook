@@ -61,4 +61,26 @@ export class UpdateTechnicianProfileDto {
   @IsOptional()
   @IsArray()
   customTags?: unknown[];
+
+  @ApiPropertyOptional({ description: '封面图URL' })
+  @IsOptional()
+  @IsString()
+  coverImageUrl?: string;
+
+  @ApiPropertyOptional({ description: '服务理念' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  servicePhilosophy?: string;
+
+  @ApiPropertyOptional({ description: '预约说明' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  bookingNotes?: string;
+
+  @ApiPropertyOptional({ description: '风格标签' })
+  @IsOptional()
+  @IsArray()
+  styleTags?: string[];
 }

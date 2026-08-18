@@ -665,6 +665,24 @@ export class TechnicianAuthService {
         : null;
     }
 
+    if (dto.coverImageUrl !== undefined) {
+      updateData.coverImageUrl = dto.coverImageUrl.trim() || null;
+    }
+
+    if (dto.servicePhilosophy !== undefined) {
+      updateData.servicePhilosophy = dto.servicePhilosophy.trim() || null;
+    }
+
+    if (dto.bookingNotes !== undefined) {
+      updateData.bookingNotes = dto.bookingNotes.trim() || null;
+    }
+
+    if (dto.styleTags !== undefined) {
+      updateData.styleTags = dto.styleTags.length
+        ? JSON.stringify(dto.styleTags)
+        : null;
+    }
+
     const updated = await this.prisma.technician.update({
       where: { id: technicianId },
       data: updateData,
