@@ -134,7 +134,7 @@ export class PublicArtistController {
         const review = await this.prisma.serviceReview.findUnique({
           where: { id: fc.commentId },
           include: {
-            client: {
+            clientUser: {
               select: {
                 id: true,
                 nickname: true,
@@ -149,9 +149,9 @@ export class PublicArtistController {
           content: review.content,
           rating: review.rating,
           client: {
-            id: review.client.id,
-            name: review.client.nickname || '匿名用户',
-            avatarUrl: toAbsoluteUrl(review.client.avatarUrl),
+            id: review.clientUser.id,
+            name: review.clientUser.nickname || '匿名用户',
+            avatarUrl: toAbsoluteUrl(review.clientUser.avatarUrl),
           },
           createdAt: review.createdAt,
         };

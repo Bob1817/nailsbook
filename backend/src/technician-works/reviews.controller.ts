@@ -39,7 +39,7 @@ export class ReviewsController {
         skip,
         take: limitNum,
         include: {
-          client: {
+          clientUser: {
             select: {
               id: true,
               nickname: true,
@@ -66,9 +66,9 @@ export class ReviewsController {
         content: review.content,
         rating: review.rating,
         client: {
-          id: review.client.id,
-          name: review.client.nickname || '匿名用户',
-          avatarUrl: review.client.avatarUrl,
+          id: review.clientUser.id,
+          name: review.clientUser.nickname || '匿名用户',
+          avatarUrl: review.clientUser.avatarUrl,
         },
         isFeatured: featuredCommentIds.has(review.id),
         createdAt: review.createdAt,
@@ -95,7 +95,7 @@ export class ReviewsController {
         const review = await this.prisma.serviceReview.findUnique({
           where: { id: fc.commentId },
           include: {
-            client: {
+            clientUser: {
               select: {
                 id: true,
                 nickname: true,
@@ -110,9 +110,9 @@ export class ReviewsController {
           content: review.content,
           rating: review.rating,
           client: {
-            id: review.client.id,
-            name: review.client.nickname || '匿名用户',
-            avatarUrl: review.client.avatarUrl,
+            id: review.clientUser.id,
+            name: review.clientUser.nickname || '匿名用户',
+            avatarUrl: review.clientUser.avatarUrl,
           },
           sortOrder: fc.sortOrder,
           createdAt: review.createdAt,
