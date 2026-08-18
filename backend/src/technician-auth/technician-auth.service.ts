@@ -606,6 +606,10 @@ export class TechnicianAuthService {
       socialMedia?: Record<string, string>;
       serviceSchedule?: any;
       customTags?: any[];
+      coverImageUrl?: string;
+      servicePhilosophy?: string;
+      bookingNotes?: string;
+      styleTags?: string[];
     },
   ) {
     const technician = await this.prisma.technician.findUnique({
