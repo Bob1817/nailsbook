@@ -129,22 +129,29 @@ export class PublicArtistController {
       take: 5,
     });
 
-    const featuredReviews = await Promise.all(
-      featuredComments.map(async (fc) => {
-        const review = await this.prisma.serviceReview.findUnique({
-          where: { id: fc.commentId },
-          include: {
-            clientUser: {
-              select: {
-                id: true,
-                nickname: true,
-                avatarUrl: true,
-              },
+    const featuredReviews: Array<{
+      id: number;
+      content: string | null;
+      rating: number;
+      client: { id: number; name: string; avatarUrl: string | null };
+      createdAt: Date;
+    } | null> = [];
+
+    for (const fc of featuredComments) {
+      const review = await this.prisma.serviceReview.findUnique({
+        where: { id: fc.commentId },
+        include: {
+          clientUser: {
+            select: {
+              id: true,
+              nickname: true,
+              avatarUrl: true,
             },
           },
-        });
-        if (!review) return null;
-        return {
+        },
+      });
+      if (review) {
+        featuredReviews.push({
           id: review.id,
           content: review.content,
           rating: review.rating,
@@ -154,23 +161,20 @@ export class PublicArtistController {
             avatarUrl: toAbsoluteUrl(review.clientUser.avatarUrl),
           },
           createdAt: review.createdAt,
-        };
-      }),
-    );
+        });
+      }
+    }
 
-    // Get like count (from nail works)
-    const likeCount = await this.prisma.nailWorkLike.count({
-      where: {
-        work: { techId: technician.id },
-      },
-    });
+    // Get like count (from nail works belonging to this technician)
+    const workIds = works.map((w) => w.id);
+    const likeCount = workIds.length > 0
+      ? await this.prisma.nailWorkLike.count({ where: { workId: { in: workIds } } })
+      : 0;
 
     // Get favorite count
-    const favoriteCount = await this.prisma.nailWorkFavorite.count({
-      where: {
-        work: { techId: technician.id },
-      },
-    });
+    const favoriteCount = workIds.length > 0
+      ? await this.prisma.nailWorkFavorite.count({ where: { workId: { in: workIds } } })
+      : 0;
 
     // Get rating from service reviews
     const reviews = await this.prisma.serviceReview.findMany({
@@ -230,7 +234,7 @@ export class PublicArtistController {
         imageUrl: toAbsoluteUrl(q.imageUrl),
         isVerified: q.isVerified,
       })),
-      featuredReviews: featuredReviews.filter(Boolean),
+      featuredReviews,
     };
   }
 }

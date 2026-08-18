@@ -61,14 +61,14 @@ export class ReviewsController {
     const featuredCommentIds = new Set(featuredComments.map((fc) => fc.commentId));
 
     return {
-      reviews: reviews.map((review) => ({
+      reviews: reviews.map((review: any) => ({
         id: review.id,
         content: review.content,
         rating: review.rating,
         client: {
-          id: review.clientUser.id,
-          name: review.clientUser.nickname || '匿名用户',
-          avatarUrl: review.clientUser.avatarUrl,
+          id: review.clientUser?.id,
+          name: review.clientUser?.nickname || '匿名用户',
+          avatarUrl: review.clientUser?.avatarUrl || null,
         },
         isFeatured: featuredCommentIds.has(review.id),
         createdAt: review.createdAt,
@@ -90,37 +90,38 @@ export class ReviewsController {
       take: 10,
     });
 
-    const reviews = await Promise.all(
-      featuredComments.map(async (fc) => {
-        const review = await this.prisma.serviceReview.findUnique({
-          where: { id: fc.commentId },
-          include: {
-            clientUser: {
-              select: {
-                id: true,
-                nickname: true,
-                avatarUrl: true,
-              },
+    const reviews: any[] = [];
+
+    for (const fc of featuredComments) {
+      const review = await this.prisma.serviceReview.findUnique({
+        where: { id: fc.commentId },
+        include: {
+          clientUser: {
+            select: {
+              id: true,
+              nickname: true,
+              avatarUrl: true,
             },
           },
-        });
-        if (!review) return null;
-        return {
+        },
+      });
+      if (review) {
+        reviews.push({
           id: review.id,
           content: review.content,
           rating: review.rating,
           client: {
-            id: review.clientUser.id,
-            name: review.clientUser.nickname || '匿名用户',
-            avatarUrl: review.clientUser.avatarUrl,
+            id: (review as any).clientUser?.id,
+            name: (review as any).clientUser?.nickname || '匿名用户',
+            avatarUrl: (review as any).clientUser?.avatarUrl || null,
           },
           sortOrder: fc.sortOrder,
           createdAt: review.createdAt,
-        };
-      }),
-    );
+        });
+      }
+    }
 
-    return reviews.filter(Boolean);
+    return reviews;
   }
 
   @Post(':id/featured')
