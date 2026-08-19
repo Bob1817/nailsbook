@@ -8,32 +8,34 @@
   </view>
   <block wx:else>
 
-    <!-- 封面图区域（无右上角分享按钮） -->
-    <view class="cover-area">
-      <image wx:if="{{artist.coverImageUrl}}" class="cover-image" src="{{artist.coverImageUrl}}" mode="aspectFill"/>
-      <view wx:else class="cover-gradient"></view>
-      <view class="cover-overlay"></view>
-      <view class="cover-content">
-        <view class="avatar-row">
-          <view class="avatar-wrap">
-            <image wx:if="{{artist.avatarUrl}}" class="avatar-img" src="{{artist.avatarUrl}}" mode="aspectFill"/>
-            <view wx:else class="avatar-fallback">{{artist.initial}}</view>
-          </view>
-          <view class="avatar-info">
-            <view class="name-row">
-              <text class="artist-name">{{artist.name}}</text>
-              <image wx:if="{{artist.isVerified}}" class="verified-icon" src="/static/icons/check-circle.svg"/>
-            </view>
-            <text class="artist-subtitle">{{artist.subtitle || '专业美甲师'}}</text>
-            <view class="status-row">
-              <view class="status-dot {{artist.status === 'active' ? 'dot-active' : ''}}"></view>
-              <text class="status-text">{{artist.status === 'active' ? '可预约' : '休息中'}}</text>
-            </view>
-          </view>
+<!-- 封面图区域 -->
+<view class="cover-area">
+  <image wx:if="{{artist.coverImageUrl}}" class="cover-image" src="{{artist.coverImageUrl}}" mode="aspectFill"/>
+  <view wx:else class="cover-gradient"></view>
+  <view class="cover-overlay"></view>
+  <view class="cover-content">
+    <view class="avatar-row">
+      <view class="avatar-wrap">
+        <image wx:if="{{artist.avatarUrl}}" class="avatar-img" src="{{artist.avatarUrl}}" mode="aspectFill"/>
+        <view wx:else class="avatar-fallback">{{artist.initial}}</view>
+        <view wx:if="{{artist.isVerified}}" class="verified-badge">
+          <image src="/static/icons/check-circle.svg"/>
         </view>
       </view>
-      <view wx:if="{{previewMode}}" class="hero-edit" bindtap="editSection" data-section="hero">编辑封面</view>
+      <view class="avatar-info">
+        <view class="name-row">
+          <text class="artist-name">{{artist.name}}</text>
+        </view>
+        <text class="artist-subtitle">{{artist.subtitle || '专业美甲师'}}</text>
+        <view class="status-row">
+          <view class="status-dot {{artist.status === 'active' ? 'dot-active' : ''}}"></view>
+          <text class="status-text">{{artist.status === 'active' ? '可预约' : '休息中'}}</text>
+        </view>
+      </view>
     </view>
+  </view>
+  <view wx:if="{{previewMode}}" class="hero-edit" bindtap="editSection" data-section="hero">编辑封面</view>
+</view>
 
     <!-- 专业标签（始终显示） -->
     <view class="tags-bar">
@@ -160,10 +162,10 @@
           <view class="review-header">
             <view class="review-avatar">
               <image wx:if="{{item.clientAvatarUrl}}" src="{{item.clientAvatarUrl}}" class="review-avatar-img"/>
-              <text wx:else class="review-avatar-text">{{item.clientName ? item.clientName[0] : '匿'}}</text>
+              <text wx:else class="review-avatar-text">{{item.initial}}</text>
             </view>
             <view class="review-meta">
-              <text class="review-name">{{item.clientName || '匿名用户'}}</text>
+              <text class="review-name">{{item.clientName}}</text>
               <view class="review-stars">
                 <text wx:for="{{5}}" wx:for-item="star" wx:key="*this" class="star {{star < item.rating ? 'star-filled' : ''}}">★</text>
               </view>

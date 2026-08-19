@@ -44,8 +44,21 @@ Page({
         ...shop,
         displayName: shop.name || '工作室',
         displayAddress: formatAddress(shop),
-        businessHoursText: formatBusinessHours(shop.businessHours)
+        businessHoursText: formatBusinessHours(shop.businessHours),
+        phone: shop.phone || shop.contactPhone || '',
+        wechat: shop.wechat || shop.wechatId || ''
       }));
+      
+      // 如果没有店铺信息，提供默认提示
+      if (!artist.shopAddresses.length) {
+        artist.shopAddresses = [{
+          displayName: '暂未设置店铺信息',
+          displayAddress: '',
+          businessHoursText: '',
+          phone: '',
+          wechat: ''
+        }];
+      }
       artist.serviceHoursText = formatSchedule(artist.serviceSchedule)
         || (artist.shopAddresses[0] && artist.shopAddresses[0].businessHoursText)
         || '时间灵活，预约后确认';
@@ -68,9 +81,19 @@ Page({
       artist.styleTags = (artist.styleTags || artist.specialties || []).slice(0, 4);
       // 标签：优先使用美甲师设置的，否则使用默认标签
       const displayTags = artist.styleTags.length ? artist.styleTags : DEFAULT_TAGS;
+      
+      // 确保标签不为空
+      if (!displayTags.length) {
+        displayTags.push(...DEFAULT_TAGS);
+      }
       // 服务内容：优先使用服务项目，否则使用默认
       const serviceItems = (artist.serviceItems || []).map((s) => s.name || s).filter(Boolean);
       if (!serviceItems.length) serviceItems.push(...DEFAULT_SERVICE_ITEMS);
+      
+      // 确保风格标签不为空
+      if (!artist.styleTags.length) {
+        artist.styleTags = ['简约', '法式', '日式', '韩式'];
+      }
       artist.followerCount = artist.followerCount || (res.stats && res.stats.followerCount) || 0;
       artist.likeCount = artist.likeCount || res.stats?.likeCount || 0;
       artist.favoriteCount = artist.favoriteCount || res.stats?.favoriteCount || 0;
@@ -117,7 +140,8 @@ Page({
           content: review.content,
           rating: review.rating || 5,
           clientName: review.client?.name || review.clientName || '匿名用户',
-          clientAvatarUrl: review.client?.avatarUrl || review.clientAvatarUrl || ''
+          clientAvatarUrl: review.client?.avatarUrl || review.clientAvatarUrl || '',
+          initial: (review.client?.name || review.clientName || '匿').charAt(0)
         }));
 
       this.setData({
