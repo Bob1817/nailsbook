@@ -4,7 +4,7 @@ const QUAL_ICONS = { education:'🎓', training:'📚', certificate:'📜', cert
 
 Page({
   data: {
-    artistId: '', previewMode:false, artist: {}, works: [], reviews:[], qualifications:[],
+    artistId: '', previewMode:false, artist: {}, works: [], displayWorks:[], reviews:[], qualifications:[],
     leftCol: [], rightCol: [], isLiked:false, isFavorited:false,
     serviceCount: 0, loading: true, loadFailed: false, followed: false, followLoading: false,
     bindingStatus: 'unbound', showBindModal:false, bindInviteCode:'', bindChecking:false,
@@ -115,6 +115,7 @@ Page({
       this.setData({
         artist,
         works,
+        displayWorks: works.slice(0, 3),
         qualifications,
         leftCol: works.filter((_, index) => index % 2 === 0),
         rightCol: works.filter((_, index) => index % 2 === 1),

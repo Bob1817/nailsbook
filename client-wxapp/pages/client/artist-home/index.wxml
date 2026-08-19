@@ -123,7 +123,7 @@
       </view>
       <view wx:if="{{works.length === 0}}" class="empty">暂无作品</view>
       <view wx:else class="works-grid">
-        <view wx:for="{{works.slice(0,3)}}" wx:key="id" class="work-thumb" bindtap="viewWork" data-id="{{item.id}}">
+        <view wx:for="{{displayWorks}}" wx:key="id" class="work-thumb" bindtap="viewWork" data-id="{{item.id}}">
           <image src="{{item.coverUrl}}" mode="aspectFill" class="work-thumb-img"/>
         </view>
       </view>
