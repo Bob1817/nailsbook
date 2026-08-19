@@ -27,6 +27,7 @@ import WorkDetailPage from './pages/WorkDetailPage';
 import MyFavorites from './pages/MyFavorites';
 import MyLikes from './pages/MyLikes';
 import PublicArtistCard from './pages/PublicArtistCard';
+import ArtistWorksPage from './pages/ArtistWorksPage';
 import PublicWorkDetail from './pages/PublicWorkDetail';
 import ForgotPassword from './pages/ForgotPassword';
 import Settings from './pages/Settings';
@@ -71,6 +72,7 @@ function AppRoutes() {
       <Route path="/invite" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/artist/:code" element={<PublicArtistCard />} />
+      <Route path="/artist/:code/works" element={<ArtistWorksPage />} />
       <Route path="/w/:id" element={<PublicWorkDetail />} />
 
       {/* Welcome Page - for first-time users */}

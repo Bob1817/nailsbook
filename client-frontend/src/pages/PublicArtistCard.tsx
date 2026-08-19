@@ -13,6 +13,8 @@ const PublicArtistCard: React.FC = () => {
   const [data, setData] = useState<PublicArtistCardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
 
   useEffect(() => {
     if (!code) {
@@ -42,7 +44,7 @@ const PublicArtistCard: React.FC = () => {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#FF6B8A] border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-pink-500 border-t-transparent" />
       </div>
     );
   }
@@ -50,23 +52,27 @@ const PublicArtistCard: React.FC = () => {
   if (error || !data) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-white px-8 text-center">
-        <p className="text-base font-medium text-[var(--color-text,#1f2230)]">名片不存在或已失效</p>
-        <p className="text-sm text-[var(--color-text-muted,#8d8590)]">请向美甲师确认后重新打开链接</p>
+        <p className="text-base font-medium text-gray-900">名片不存在或已失效</p>
+        <p className="text-sm text-gray-500">请向美甲师确认后重新打开链接</p>
       </div>
     );
   }
 
-  const { artist, works } = data;
-  const inviteLink = `${window.location.origin}/invite?invite_code=${encodeURIComponent(artist.invitationCode)}`;
+  const { artist, works, qualifications, featuredReviews } = data;
   const isBound = isAuthenticated && technicians.some((t) => t.id === artist.id);
 
   const handlePrimary = () => {
+    if (!isAuthenticated) {
+      // 未登录 -> 跳转登录/注册
+      navigate(`/login?redirect=/artist/${encodeURIComponent(artist.invitationCode)}`);
+      return;
+    }
     if (isBound) {
       // 已登录且已绑定 -> 直接发起预约
       navigate(`/orders/create?tech_id=${artist.id}`);
     } else {
-      // 未登录或未绑定 -> 联系美甲师（进入邀请注册/绑定流程）
-      window.location.href = inviteLink;
+      // 已登录未绑定 -> 进入预约流程（自动绑定）
+      navigate(`/orders/create?tech_id=${artist.id}`);
     }
   };
 
@@ -92,26 +98,56 @@ const PublicArtistCard: React.FC = () => {
   };
 
   const handleWorkClick = (workId: number) => {
-    // 已绑定用户可进入可交互的作品详情；其余进入公开只读详情
-    navigate(isBound ? `/works/${workId}` : `/w/${workId}`);
+    // 作品详情页公开访问，无需登录
+    navigate(`/works/${workId}`);
+  };
+
+  const handleLike = () => {
+    if (!isAuthenticated) {
+      toast.info('登录后即可点赞');
+      return;
+    }
+    setIsLiked(!isLiked);
+    toast.success(isLiked ? '已取消点赞' : '已点赞');
+  };
+
+  const handleFavorite = () => {
+    if (!isAuthenticated) {
+      toast.info('登录后即可收藏');
+      return;
+    }
+    setIsFavorited(!isFavorited);
+    toast.success(isFavorited ? '已取消收藏' : '已收藏');
   };
 
   return (
     <ArtistCardView
       name={artist.name}
       avatarUrl={artist.avatarUrl}
+      coverImageUrl={artist.coverImageUrl}
       city={artist.city}
       serviceArea={artist.serviceArea}
+      bio={artist.bio}
+      servicePhilosophy={artist.servicePhilosophy}
+      bookingNotes={artist.bookingNotes}
+      styleTags={artist.styleTags}
+      isVerified={artist.isVerified}
       homeService={artist.homeService}
       shopService={artist.shopService}
       status={artist.status}
-      socialMedia={artist.socialMedia}
+      stats={artist.stats}
+      qualifications={qualifications}
+      featuredReviews={featuredReviews}
       works={works}
       loadingWorks={false}
-      primaryLabel={isBound ? '预约该美甲师' : '联系美甲师'}
+      primaryLabel={isBound ? '预约咨询' : '预约咨询'}
       onPrimary={handlePrimary}
       onShare={handleShare}
       onWorkClick={handleWorkClick}
+      onLike={handleLike}
+      onFavorite={handleFavorite}
+      isLiked={isLiked}
+      isFavorited={isFavorited}
     />
   );
 };
