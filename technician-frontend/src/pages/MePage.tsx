@@ -264,14 +264,16 @@ const WorkScheduleModal: React.FC<WorkScheduleModalProps> = ({ onClose, technici
 };
 
 const tools = [
+  { icon: '📄', label: '主页设置', path: '/homepage-settings' },
   { icon: '💅', label: '服务管理', path: '/services' },
   { icon: '💰', label: '价格设置' },
   { icon: '🚗', label: '上门设置', path: '/home-service-settings' },
   { icon: '🏪', label: '店铺管理', path: '/shops' },
   { icon: '🖼️', label: '作品管理', path: '/works' },
   { icon: '🏷️', label: '标签管理', path: '/tag-management' },
+  { icon: '🎓', label: '资质管理', path: '/qualifications' },
   { icon: '🔗', label: '绑定申请', path: '/binding-applications' },
-  { icon: '⭐', label: '评价管理' },
+  { icon: '⭐', label: '评价管理', path: '/reviews' },
 ];
 
 const settings = [
