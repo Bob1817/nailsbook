@@ -180,16 +180,16 @@
 
 <!-- 底部操作栏 -->
 <view wx:if="{{!loading && !loadFailed && !previewMode}}" class="action-bar">
-  <button class="action-btn" open-type="share">
-    <image src="/static/icons/tab-chat.svg" class="action-icon"/>
+  <button class="action-icon-btn" open-type="share">
+    <image src="/static/icons/tab-chat.svg" class="action-icon-img"/>
   </button>
-  <view class="action-btn {{isLiked ? 'action-liked' : ''}}" bindtap="toggleLike">
-    <image src="{{isLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}" class="action-icon"/>
+  <view class="action-icon-btn {{isLiked ? 'liked' : ''}}" bindtap="toggleLike">
+    <image src="{{isLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}" class="action-icon-img"/>
   </view>
-  <view class="action-btn {{isFavorited ? 'action-favorited' : ''}}" bindtap="toggleFavorite">
-    <image src="{{isFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}" class="action-icon"/>
+  <view class="action-icon-btn {{isFavorited ? 'favorited' : ''}}" bindtap="toggleFavorite">
+    <image src="{{isFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}" class="action-icon-img"/>
   </view>
-  <view class="action-book" bindtap="bookArtist">预约咨询</view>
+  <view class="action-book-btn" bindtap="bookArtist">预约咨询</view>
 </view>
 
 <view wx:if="{{!loading && !loadFailed && previewMode}}" class="preview-edit-bar"><view bindtap="editSection" data-section="profile">编辑主页内容</view></view>
