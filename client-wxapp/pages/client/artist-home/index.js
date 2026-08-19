@@ -66,7 +66,7 @@ Page({
       artist.followerCount = artist.followerCount || (res.stats && res.stats.followerCount) || 0;
       artist.likeCount = artist.likeCount || res.stats?.likeCount || 0;
       artist.favoriteCount = artist.favoriteCount || res.stats?.favoriteCount || 0;
-      artist.servicePhilosophy = artist.servicePhilosophy || brand.aestheticPhilosophy || '';
+      artist.servicePhilosophy = artist.servicePhilosophy || '';
       artist.bookingNotes = artist.bookingNotes || '';
       artist.isVerified = artist.isVerified || false;
       const works = (res.works || []).map((item, index) => ({
