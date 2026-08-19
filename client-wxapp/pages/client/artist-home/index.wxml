@@ -8,7 +8,7 @@
   </view>
   <block wx:else>
 
-    <!-- 封面图区域 -->
+    <!-- 封面图区域（无右上角分享按钮） -->
     <view class="cover-area">
       <image wx:if="{{artist.coverImageUrl}}" class="cover-image" src="{{artist.coverImageUrl}}" mode="aspectFill"/>
       <view wx:else class="cover-gradient"></view>
@@ -32,13 +32,12 @@
           </view>
         </view>
       </view>
-      <button class="cover-share" open-type="share" aria-label="分享">分享</button>
       <view wx:if="{{previewMode}}" class="hero-edit" bindtap="editSection" data-section="hero">编辑封面</view>
     </view>
 
-    <!-- 专业标签 -->
-    <view wx:if="{{artist.styleTags.length}}" class="tags-bar">
-      <text wx:for="{{artist.styleTags}}" wx:key="*this" class="tag-chip">{{item}}</text>
+    <!-- 专业标签（始终显示） -->
+    <view class="tags-bar">
+      <text wx:for="{{displayTags}}" wx:key="*this" class="tag-chip">{{item}}</text>
     </view>
 
     <!-- 核心数据 -->
@@ -64,41 +63,62 @@
       </view>
     </view>
 
-    <!-- 关于我 -->
-    <view wx:if="{{artist.bio}}" class="section">
+    <!-- 关于我（始终显示） -->
+    <view class="section">
       <text class="section-title">关于我</text>
-      <text class="bio-text">{{artist.bio}}</text>
+      <text class="bio-text">{{artist.bio || '该美甲师还未自我介绍哦～'}}</text>
     </view>
 
-    <!-- 服务信息 -->
+    <!-- 服务内容 -->
     <view class="section section-gray">
-      <text class="section-title">服务信息</text>
-      <view class="service-tags">
-        <view wx:if="{{artist.homeService}}" class="service-tag">
-          <image src="/static/icons/tab-home.svg" class="service-tag-icon"/>
-          <text>可上门</text>
-        </view>
-        <view wx:if="{{artist.shopService}}" class="service-tag">
-          <image src="/static/icons/tab-compass.svg" class="service-tag-icon"/>
-          <text>可到店</text>
+      <text class="section-title">服务内容</text>
+      <view class="capsule-tags">
+        <text wx:for="{{serviceItems}}" wx:key="*this" class="capsule-tag">{{item}}</text>
+      </view>
+
+      <!-- 擅长风格 -->
+      <view wx:if="{{artist.styleTags.length}}" class="sub-section">
+        <text class="sub-title">擅长风格</text>
+        <view class="capsule-tags">
+          <text wx:for="{{artist.styleTags}}" wx:key="*this" class="capsule-tag style-tag">{{item}}</text>
         </view>
       </view>
-      <view wx:if="{{artist.serviceArea}}" class="info-row">
-        <text class="info-label">服务范围</text>
-        <text class="info-value">{{artist.serviceArea}}</text>
-      </view>
+
+      <!-- 服务理念 -->
       <view wx:if="{{artist.servicePhilosophy}}" class="philosophy-box">
-        <text class="philosophy-label">服务理念</text>
         <text class="philosophy-text">"{{artist.servicePhilosophy}}"</text>
       </view>
-      <view wx:if="{{artist.bookingNotes}}" class="info-row">
-        <text class="info-label">预约说明</text>
-        <text class="info-value">{{artist.bookingNotes}}</text>
-      </view>
     </view>
 
-    <!-- 专业资质 -->
-    <view wx:if="{{qualifications.length}}" class="section">
+    <!-- 店铺信息 -->
+    <view class="section">
+      <text class="section-title">店铺信息</text>
+      <block wx:if="{{artist.shopAddresses.length}}">
+        <view wx:for="{{artist.shopAddresses}}" wx:key="id" class="shop-card">
+          <text class="shop-name">{{item.displayName}}</text>
+          <view wx:if="{{item.displayAddress}}" class="shop-info-row">
+            <text class="shop-info-label">地址</text>
+            <text class="shop-info-value">{{item.displayAddress}}</text>
+          </view>
+          <view wx:if="{{item.businessHoursText}}" class="shop-info-row">
+            <text class="shop-info-label">营业</text>
+            <text class="shop-info-value">{{item.businessHoursText}}</text>
+          </view>
+          <view wx:if="{{item.phone}}" class="shop-info-row">
+            <text class="shop-info-label">电话</text>
+            <text class="shop-info-value">{{item.phone}}</text>
+          </view>
+          <view wx:if="{{item.wechat}}" class="shop-info-row">
+            <text class="shop-info-label">微信</text>
+            <text class="shop-info-value">{{item.wechat}}</text>
+          </view>
+        </view>
+      </block>
+      <view wx:else class="empty-hint">暂未设置店铺信息</view>
+    </view>
+
+    <!-- 专业资质（仅在有数据时显示） -->
+    <view wx:if="{{qualifications.length}}" class="section section-gray">
       <view class="section-head">
         <text class="section-title">专业资质</text>
         <text class="section-more">全部 ></text>
@@ -121,7 +141,7 @@
         <text class="section-title">精选作品</text>
         <text class="section-more" bindtap="viewAllWorks">查看全部 ></text>
       </view>
-      <view wx:if="{{works.length === 0}}" class="empty">暂无作品</view>
+      <view wx:if="{{works.length === 0}}" class="empty-hint">暂无作品</view>
       <view wx:else class="works-grid">
         <view wx:for="{{displayWorks}}" wx:key="id" class="work-thumb" bindtap="viewWork" data-id="{{item.id}}">
           <image src="{{item.coverUrl}}" mode="aspectFill" class="work-thumb-img"/>
@@ -129,27 +149,30 @@
       </view>
     </view>
 
-    <!-- 精选评价 -->
-    <view wx:if="{{reviews.length}}" class="section section-gray">
+    <!-- 客户评价（始终显示） -->
+    <view class="section section-gray">
       <view class="section-head">
         <text class="section-title">客户评价</text>
-        <text class="section-count">{{artist.reviewCount || reviews.length}}条评价</text>
+        <text wx:if="{{reviews.length}}" class="section-count">{{artist.reviewCount || reviews.length}}条评价</text>
       </view>
-      <view wx:for="{{reviews}}" wx:key="id" class="review-item">
-        <view class="review-header">
-          <view class="review-avatar">
-            <image wx:if="{{item.clientAvatarUrl}}" src="{{item.clientAvatarUrl}}" class="review-avatar-img"/>
-            <text wx:else class="review-avatar-text">{{item.clientName ? item.clientName[0] : '匿'}}</text>
-          </view>
-          <view class="review-meta">
-            <text class="review-name">{{item.clientName || '匿名用户'}}</text>
-            <view class="review-stars">
-              <text wx:for="{{5}}" wx:for-item="star" wx:key="*this" class="star {{star < item.rating ? 'star-filled' : ''}}">★</text>
+      <block wx:if="{{reviews.length}}">
+        <view wx:for="{{reviews}}" wx:key="id" class="review-item">
+          <view class="review-header">
+            <view class="review-avatar">
+              <image wx:if="{{item.clientAvatarUrl}}" src="{{item.clientAvatarUrl}}" class="review-avatar-img"/>
+              <text wx:else class="review-avatar-text">{{item.clientName ? item.clientName[0] : '匿'}}</text>
+            </view>
+            <view class="review-meta">
+              <text class="review-name">{{item.clientName || '匿名用户'}}</text>
+              <view class="review-stars">
+                <text wx:for="{{5}}" wx:for-item="star" wx:key="*this" class="star {{star < item.rating ? 'star-filled' : ''}}">★</text>
+              </view>
             </view>
           </view>
+          <text class="review-content">{{item.content}}</text>
         </view>
-        <text class="review-content">{{item.content}}</text>
-      </view>
+      </block>
+      <view wx:else class="empty-hint">该美甲师还未有任何评价信息哦～</view>
     </view>
 
   </block>
@@ -157,15 +180,15 @@
 
 <!-- 底部操作栏 -->
 <view wx:if="{{!loading && !loadFailed && !previewMode}}" class="action-bar">
-      <button class="action-btn action-share" open-type="share">
-        <image src="/static/icons/tab-chat.svg" class="action-icon"/>
-      </button>
-      <view class="action-btn {{isLiked ? 'action-liked' : ''}}" bindtap="toggleLike">
-        <image src="{{isLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}" class="action-icon"/>
-      </view>
-      <view class="action-btn {{isFavorited ? 'action-favorited' : ''}}" bindtap="toggleFavorite">
-        <image src="{{isFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}" class="action-icon"/>
-      </view>
+  <button class="action-btn" open-type="share">
+    <image src="/static/icons/tab-chat.svg" class="action-icon"/>
+  </button>
+  <view class="action-btn {{isLiked ? 'action-liked' : ''}}" bindtap="toggleLike">
+    <image src="{{isLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}" class="action-icon"/>
+  </view>
+  <view class="action-btn {{isFavorited ? 'action-favorited' : ''}}" bindtap="toggleFavorite">
+    <image src="{{isFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}" class="action-icon"/>
+  </view>
   <view class="action-book" bindtap="bookArtist">预约咨询</view>
 </view>
 

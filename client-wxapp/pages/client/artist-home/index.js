@@ -1,10 +1,13 @@
 const api = require('../../../services/api');
 
 const QUAL_ICONS = { education:'🎓', training:'📚', certificate:'📜', certification:'✅', award:'🏆' };
+const DEFAULT_TAGS = ['认证美甲师', '专业美甲师', '高级美甲师'];
+const DEFAULT_SERVICE_ITEMS = ['本甲', '延长甲', '彩绘', '手绘', '简约', '法式'];
 
 Page({
   data: {
     artistId: '', previewMode:false, artist: {}, works: [], displayWorks:[], reviews:[], qualifications:[],
+    displayTags:[], serviceItems:[],
     leftCol: [], rightCol: [], isLiked:false, isFavorited:false,
     serviceCount: 0, loading: true, loadFailed: false, followed: false, followLoading: false,
     bindingStatus: 'unbound', showBindModal:false, bindInviteCode:'', bindChecking:false,
@@ -63,6 +66,11 @@ Page({
       artist.coverImageUrl = artist.coverImageUrl || artist.heroUrl || '';
       artist.subtitle = [artist.city || '', artist.experienceYears ? artist.experienceYears + '年从业' : ''].filter(Boolean).join(' · ') || '专业美甲师';
       artist.styleTags = (artist.styleTags || artist.specialties || []).slice(0, 4);
+      // 标签：优先使用美甲师设置的，否则使用默认标签
+      const displayTags = artist.styleTags.length ? artist.styleTags : DEFAULT_TAGS;
+      // 服务内容：优先使用服务项目，否则使用默认
+      const serviceItems = (artist.serviceItems || []).map((s) => s.name || s).filter(Boolean);
+      if (!serviceItems.length) serviceItems.push(...DEFAULT_SERVICE_ITEMS);
       artist.followerCount = artist.followerCount || (res.stats && res.stats.followerCount) || 0;
       artist.likeCount = artist.likeCount || res.stats?.likeCount || 0;
       artist.favoriteCount = artist.favoriteCount || res.stats?.favoriteCount || 0;
@@ -116,6 +124,8 @@ Page({
         artist,
         works,
         displayWorks: works.slice(0, 3),
+        displayTags,
+        serviceItems,
         qualifications,
         leftCol: works.filter((_, index) => index % 2 === 0),
         rightCol: works.filter((_, index) => index % 2 === 1),
