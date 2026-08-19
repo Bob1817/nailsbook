@@ -157,15 +157,15 @@
 
 <!-- 底部操作栏 -->
 <view wx:if="{{!loading && !loadFailed && !previewMode}}" class="action-bar">
-  <view class="action-btn action-share" bindtap="onShareTap">
-    <image src="/static/icons/share.svg" class="action-icon"/>
-  </view>
-  <view class="action-btn {{isLiked ? 'action-liked' : ''}}" bindtap="toggleLike">
-    <image src="/static/icons/heart.svg" class="action-icon"/>
-  </view>
-  <view class="action-btn {{isFavorited ? 'action-favorited' : ''}}" bindtap="toggleFavorite">
-    <image src="/static/icons/star.svg" class="action-icon"/>
-  </view>
+      <button class="action-btn action-share" open-type="share">
+        <image src="/static/icons/tab-chat.svg" class="action-icon"/>
+      </button>
+      <view class="action-btn {{isLiked ? 'action-liked' : ''}}" bindtap="toggleLike">
+        <image src="{{isLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}" class="action-icon"/>
+      </view>
+      <view class="action-btn {{isFavorited ? 'action-favorited' : ''}}" bindtap="toggleFavorite">
+        <image src="{{isFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}" class="action-icon"/>
+      </view>
   <view class="action-book" bindtap="bookArtist">预约咨询</view>
 </view>
 

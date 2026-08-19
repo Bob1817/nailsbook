@@ -26,9 +26,9 @@ Page({
     try {
       const results = await Promise.all([
         api.public.artists.detail(this.data.artistId),
-        api.public.brands.profile(this.data.artistId,{imageSize:'original'}).catch(() => ({})),
-        api.public.brands.reviews(this.data.artistId,{page:1,pageSize:6}).catch(() => ({items:[],summary:{}})),
-        api.public.brands.availability(this.data.artistId,{}).catch(() => ({}))
+        (api.public.brands && api.public.brands.profile ? api.public.brands.profile(this.data.artistId,{imageSize:'original'}) : Promise.resolve({})).catch(() => ({})),
+        (api.public.brands && api.public.brands.reviews ? api.public.brands.reviews(this.data.artistId,{page:1,pageSize:6}) : Promise.resolve({items:[],summary:{}})).catch(() => ({items:[],summary:{}})),
+        (api.public.brands && api.public.brands.availability ? api.public.brands.availability(this.data.artistId,{}) : Promise.resolve({})).catch(() => ({}))
       ]);
       const res = results[0];
       const brand = (results[1] && results[1].brand) || {};
