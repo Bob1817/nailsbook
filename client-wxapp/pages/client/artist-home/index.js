@@ -24,31 +24,19 @@ Page({
     if (!this.data.artistId) return this.setData({ loading: false, loadFailed: true });
     this.setData({ loading: true, loadFailed: false });
     try {
-      const results = await Promise.all([
-        api.public.artists.detail(this.data.artistId),
-        (api.public.brands && api.public.brands.profile ? api.public.brands.profile(this.data.artistId,{imageSize:'original'}) : Promise.resolve({})).catch(() => ({})),
-        (api.public.brands && api.public.brands.reviews ? api.public.brands.reviews(this.data.artistId,{page:1,pageSize:6}) : Promise.resolve({items:[],summary:{}})).catch(() => ({items:[],summary:{}})),
-        (api.public.brands && api.public.brands.availability ? api.public.brands.availability(this.data.artistId,{}) : Promise.resolve({})).catch(() => ({}))
-      ]);
-      const res = results[0];
-      const brand = (results[1] && results[1].brand) || {};
-      const reviewData = results[2] || {};
+      const res = await api.public.artists.detail(this.data.artistId);
       const artist = res.artist || res.technician || res || {};
-      artist.name = brand.name || artist.name;
-      artist.heroUrl = brand.heroImageUrl || (brand.share && brand.share.coverUrl) || artist.coverUrl || artist.profileCoverUrl || '';
-      artist.shareTitle = brand.shareTitle || artist.name || '美甲师主页';
-      artist.shareDescription = brand.shareDescription || brand.tagline || artist.bio || '发现一位值得预约的美甲师';
-      artist.shareCoverUrl = brand.shareCoverUrl || artist.heroUrl || '';
-      artist.positioning = brand.tagline || artist.positioning || artist.specialty || artist.title || '独立美甲设计师';
-      artist.manifesto = brand.aestheticPhilosophy || artist.aestheticPhilosophy || artist.designPhilosophy || artist.bio || '让每一次指尖设计，都成为安静而有力量的自我表达。';
-      artist.bio = brand.introduction || artist.bio || '';
-      artist.city = brand.city || artist.city;
-      artist.serviceArea = brand.serviceArea || artist.serviceArea;
-      artist.experienceYears = Math.max(1, Number(brand.experienceYears || artist.experienceYears) || 1);
-      artist.certificationTitle = brand.certificationTitle || '平台实名与作品认证';
-      artist.specialties = brand.specialties || [];
-      artist.environmentPhotos = brand.environmentPhotos || [];
-      artist.serviceModes = brand.serviceModes || {};
+      artist.heroUrl = artist.coverUrl || artist.profileCoverUrl || '';
+      artist.shareTitle = artist.name || '美甲师主页';
+      artist.shareDescription = artist.bio || '发现一位值得预约的美甲师';
+      artist.shareCoverUrl = artist.heroUrl || '';
+      artist.positioning = artist.positioning || artist.specialty || artist.title || '独立美甲设计师';
+      artist.manifesto = artist.aestheticPhilosophy || artist.designPhilosophy || artist.bio || '';
+      artist.experienceYears = Math.max(1, Number(artist.experienceYears) || 1);
+      artist.certificationTitle = artist.certificationTitle || '平台实名与作品认证';
+      artist.specialties = artist.specialties || artist.styleTags || [];
+      artist.environmentPhotos = artist.environmentPhotos || [];
+      artist.serviceModes = artist.serviceModes || {};
       artist.shopAddresses = (artist.shopAddresses || []).map((shop) => ({
         ...shop,
         displayName: shop.name || '工作室',
@@ -63,19 +51,19 @@ Page({
       if (artist.serviceModes.home || artist.homeService) artist.serviceModeLines.push('上门美甲');
       if (artist.serviceModes.studio || artist.shopService) artist.serviceModeLines.push('到店美甲');
       if (!artist.serviceModeLines.length) artist.serviceModeLines.push('待完善');
-      artist.availabilityText = results[3].summary || results[3].label || '本月可预约';
-      artist.rating = reviewData.summary && reviewData.summary.averageRating;
-      artist.reviewCount = reviewData.summary && reviewData.summary.count;
+      artist.availabilityText = '本月可预约';
+      artist.rating = artist.rating || (res.stats && res.stats.rating) || null;
+      artist.reviewCount = artist.reviewCount || (res.stats && res.stats.reviewCount) || 0;
       artist.initial = (artist.name || '美').charAt(0);
       artist.experienceText = artist.experienceYears + '年';
       artist.reviewText = artist.rating ? artist.rating + (artist.reviewCount ? ' · ' + artist.reviewCount + '条' : '') : '暂无评价';
       artist.specialtiesText = artist.specialties.length ? artist.specialties.slice(0,3).join(' / ') : (normalizeSpecialties(artist) || '-');
       artist.priceText = getStartingPrice(artist.serviceItems || res.services || []);
       // 新增字段
-      artist.coverImageUrl = artist.coverImageUrl || brand.heroImageUrl || artist.heroUrl || '';
+      artist.coverImageUrl = artist.coverImageUrl || artist.heroUrl || '';
       artist.subtitle = [artist.city || '', artist.experienceYears ? artist.experienceYears + '年从业' : ''].filter(Boolean).join(' · ') || '专业美甲师';
-      artist.styleTags = (artist.styleTags || brand.specialties || artist.specialties || []).slice(0, 4);
-      artist.followerCount = artist.followerCount || res.stats?.followerCount || 0;
+      artist.styleTags = (artist.styleTags || artist.specialties || []).slice(0, 4);
+      artist.followerCount = artist.followerCount || (res.stats && res.stats.followerCount) || 0;
       artist.likeCount = artist.likeCount || res.stats?.likeCount || 0;
       artist.favoriteCount = artist.favoriteCount || res.stats?.favoriteCount || 0;
       artist.servicePhilosophy = artist.servicePhilosophy || brand.aestheticPhilosophy || '';
@@ -101,6 +89,11 @@ Page({
         tagsText: (Array.isArray(item.tags) ? item.tags : String(item.tags || '').split(',').filter(Boolean)).slice(0, 2).map((tag) => '#' + tag).join(' '),
         aspect: ['work-tall', 'work-standard', 'work-wide'][index % 3]
       })).filter((item) => item.coverUrl);
+      artist.likeCount = artist.likeCount || (res.stats && res.stats.likeCount) || 0;
+      artist.favoriteCount = artist.favoriteCount || (res.stats && res.stats.favoriteCount) || 0;
+      artist.servicePhilosophy = artist.servicePhilosophy || '';
+      artist.bookingNotes = artist.bookingNotes || '';
+      artist.isVerified = artist.isVerified || false;
       if (!artist.heroUrl && works.length) artist.heroUrl = works[0].coverUrl;
       // 处理资质数据
       const qualifications = (res.qualifications || []).map((q) => ({
@@ -109,8 +102,7 @@ Page({
       }));
 
       // 处理精选评价
-      const reviews = (res.featuredReviews || reviewData.items || [])
-        .filter((review) => !brand.featuredReviewIds || !brand.featuredReviewIds.length || brand.featuredReviewIds.map(String).indexOf(String(review.id)) !== -1)
+      const reviews = (res.featuredReviews || [])
         .slice(0, 3)
         .map((review) => ({
           id: review.id,
