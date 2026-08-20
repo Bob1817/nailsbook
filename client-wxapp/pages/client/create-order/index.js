@@ -1,4 +1,5 @@
 const api = require('../../../services/api');
+const { requestBookingReminder } = require('../../../utils/wechat-subscription');
 const DRAFT_KEY='client_booking_application_draft';
 
 const TIME_SLOTS = [
@@ -133,7 +134,6 @@ Page({
     if (this._uploadFinishedWhileHidden) {
       this.setData({ uploading: false });
       this._uploadFinishedWhileHidden = false;
-    }
     }
   },
   onHide: function () { this._pageActive = false; this.saveDraft(); },
@@ -615,11 +615,12 @@ Page({
     this.setData({ showApplicationReview: false });
   },
 
-  confirmApplicationReview: function () {
+  confirmApplicationReview: async function () {
     if (!this.data.bookingRulesAgreed) {
       wx.showToast({ title: '请先确认预约申请规则', icon: 'none' });
       return;
     }
+    await requestBookingReminder('client');
     this.setData({ showApplicationReview: false });
     this.doSubmit();
   },

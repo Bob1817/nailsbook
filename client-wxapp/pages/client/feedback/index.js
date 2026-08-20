@@ -1,6 +1,6 @@
 const api = require('../../../services/api');
 
-var TYPES = ['功能建议', '使用问题', '预约相关', '账号问题', '其他'];
+var TYPES = ['功能建议', '使用问题', '预约相关', '账号问题', '账号注销申请', '其他'];
 var TITLE_MAX = 30;
 var CONTENT_MAX = 500;
 
@@ -15,7 +15,16 @@ Page({
     submitting: false
   },
 
-  onLoad() { this._pageActive = true; },
+  onLoad(options) {
+    this._pageActive = true;
+    if (options && options.action === 'account-deletion') {
+      this.setData({
+        typeIndex: TYPES.indexOf('账号注销申请'),
+        title: '申请注销账号',
+        content: '请注销我的客户账号。我已了解，运营方将在核验身份及处理未完成预约后联系我确认。'
+      });
+    }
+  },
   onShow() {
     this._pageActive = true;
     if (this._submitFinishedWhileHidden) {

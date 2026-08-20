@@ -3,6 +3,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OperationLog } from '../auth/operation-log.decorator';
 import { Permissions } from '../auth/permission.decorator';
 import {
+  UpdateMiniProgramLaunchConfigDto,
   UpdateWechatLoginConfigDto,
   UpdateWechatPaymentConfigDto,
 } from './dto/update-wechat-config.dto';
@@ -46,6 +47,19 @@ export class AdminWechatPlatformConfigController {
   validatePayment() {
     return this.service.validatePayment();
   }
+
+  @Get('launch')
+  @Permissions('feature_flag:view')
+  getLaunchConfig() {
+    return this.service.getLaunchConfig();
+  }
+
+  @Patch('launch')
+  @Permissions('feature_flag:update')
+  @OperationLog({ module: 'wechat_config', action: 'update_launch_config' })
+  updateLaunchConfig(@Body() dto: UpdateMiniProgramLaunchConfigDto) {
+    return this.service.updateLaunchConfig(dto);
+  }
 }
 
 @Controller('public/capabilities')
@@ -55,5 +69,15 @@ export class PublicCapabilitiesController {
   @Get()
   getCapabilities() {
     return this.service.getCapabilities();
+  }
+}
+
+@Controller('public/launch-config')
+export class PublicLaunchConfigController {
+  constructor(private readonly service: WechatPlatformConfigService) {}
+
+  @Get()
+  getConfig() {
+    return this.service.getPublicLaunchConfig();
   }
 }

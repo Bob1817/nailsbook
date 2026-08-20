@@ -3,9 +3,23 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  const minimumTechnicians = Number(process.env.MIN_LAUNCH_TECHNICIANS || 1);
   const minimumWorks = Number(process.env.MIN_PUBLIC_WORKS || 6);
-  const [activeTechnicians, publicWorks, demoOrders, wechatConfig] =
+  const wechatConfig = await prisma.wechatPlatformConfig.findUnique({
+    where: { id: 1 },
+  });
+  const launchTechnicianId =
+    wechatConfig?.launchTechnicianId ??
+    Number(process.env.MINIPROGRAM_TECHNICIAN_ID);
+  const requiredText = [
+    ['operatorName', wechatConfig?.operatorName],
+    ['storeName', wechatConfig?.storeName],
+    ['storeAddress', wechatConfig?.storeAddress],
+    ['storePhone', wechatConfig?.storePhone],
+    ['privacyContact', wechatConfig?.privacyContact],
+    ['filingNumber', wechatConfig?.filingNumber],
+    ['bookingReminderTemplateId', wechatConfig?.bookingReminderTemplateId],
+  ] as const;
+  const [activeTechnicians, publicWorks, demoOrders] =
     await Promise.all([
       prisma.technician.findMany({
         where: { status: 'active' },
@@ -26,12 +40,14 @@ async function main() {
           isVisible: true,
           visibilityScope: 'public',
           publicationStatus: 'approved',
+          techId: Number.isInteger(launchTechnicianId)
+            ? launchTechnicianId
+            : -1,
           technician: { status: 'active' },
         },
         select: { id: true, title: true, coverUrl: true, images: true },
       }),
       prisma.order.count({ where: { source: 'demo_seed' } }),
-      prisma.wechatPlatformConfig.findUnique({ where: { id: 1 } }),
     ]);
 
   const incompleteTechnicians = activeTechnicians.filter(
@@ -49,14 +65,39 @@ async function main() {
   );
   const checks = [
     {
-      key: 'active_technicians',
-      passed: activeTechnicians.length >= minimumTechnicians,
-      detail: `${activeTechnicians.length}/${minimumTechnicians}`,
+      key: 'launch_mode_enabled',
+      passed: process.env.MINIPROGRAM_LAUNCH_MODE !== 'false',
+      detail: process.env.MINIPROGRAM_LAUNCH_MODE || 'default(true)',
+    },
+    {
+      key: 'single_launch_technician_configured',
+      passed:
+        Number.isInteger(launchTechnicianId) &&
+        activeTechnicians.some((item) => item.id === launchTechnicianId),
+      detail: Number.isFinite(launchTechnicianId)
+        ? String(launchTechnicianId)
+        : 'missing',
+    },
+    {
+      key: 'launch_technician_shop_only',
+      passed: activeTechnicians.some(
+        (item) =>
+          item.id === launchTechnicianId &&
+          item.shopService &&
+          !item.homeService,
+      ),
+      detail: 'shop=true, home=false',
     },
     {
       key: 'technician_profiles_complete',
-      passed: incompleteTechnicians.length === 0,
-      detail: incompleteTechnicians.map((item) => item.id).join(',') || 'ok',
+      passed: !incompleteTechnicians.some(
+        (item) => item.id === launchTechnicianId,
+      ),
+      detail:
+        incompleteTechnicians
+          .filter((item) => item.id === launchTechnicianId)
+          .map((item) => item.id)
+          .join(',') || 'ok',
     },
     {
       key: 'approved_public_works',
@@ -83,13 +124,18 @@ async function main() {
       detail: wechatConfig?.loginValidationError || 'ok',
     },
     {
-      key: 'wechat_payment_effective',
-      passed: Boolean(
-        wechatConfig?.paymentEnabled &&
-        wechatConfig.paymentValidatedAt &&
-        !wechatConfig.paymentValidationError,
-      ),
-      detail: wechatConfig?.paymentValidationError || 'ok',
+      key: 'wechat_payment_disabled',
+      passed: !wechatConfig?.paymentEnabled,
+      detail: wechatConfig?.paymentEnabled ? 'enabled' : 'disabled',
+    },
+    {
+      key: 'release_identity_and_message_configured',
+      passed: requiredText.every(([, value]) => Boolean(value?.trim())),
+      detail:
+        requiredText
+          .filter(([, value]) => !value?.trim())
+          .map(([key]) => key)
+          .join(',') || 'ok',
     },
   ];
 

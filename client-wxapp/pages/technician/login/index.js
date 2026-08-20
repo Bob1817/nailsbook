@@ -1,6 +1,7 @@
 const api = require('../../../services/api');
 const { validatePhone } = require('../../../utils/util');
 const { silentWechatLogin } = require('../../../utils/wechat-auth');
+const privacy = require('../../../utils/privacy');
 
 function validatePassword(pwd) {
   if (!pwd || pwd.length < 8) return '密码至少 8 位';
@@ -22,7 +23,8 @@ Page({
     wechatReady: false,
     wechatLinked: false,
     wechatChecking: true,
-    wechatFeatureVisible: false
+    wechatFeatureVisible: false,
+    privacyAgreed: false
   },
 
   onLoad() {
@@ -79,6 +81,7 @@ Page({
   },
 
   async handleWechatPhone(e) {
+    if (!privacy.requireAgreement(this)) return;
     const phoneCode = e.detail && e.detail.code;
     if (!phoneCode || this.data.loading) {
       if (!phoneCode) wx.showToast({ title: '需要授权手机号才能继续', icon: 'none' });
@@ -109,6 +112,7 @@ Page({
     this.setData({ loading: true });
     wx.showLoading({ title: '微信登录中...' });
     try {
+      await privacy.requireWechatPrivacyAuthorization();
       const res = await api.auth.completeWechatTechnician({
         wechatSessionToken,
         phoneCode,
@@ -142,6 +146,7 @@ Page({
   },
 
   async handlePhoneNext() {
+    if (!privacy.requireAgreement(this)) return;
     const phone = this.data.phone.trim();
     // (1) 手机号校验
     if (!/^1\d{10}$/.test(phone)) {
@@ -155,8 +160,9 @@ Page({
       const res = await api.auth.checkPhone(phone, 'technician');
       wx.hideLoading();
       if (!res.exists) {
-        // (2) 未注册 → 注册页
-        this.setData({ step: 'register', loading: false });
+        // 首期仅允许已由运营方预先开通的美甲师登录。
+        this.setData({ loading: false });
+        wx.showToast({ title: '该手机号未开通美甲师账号', icon: 'none' });
       } else if (!res.activated) {
         // (3) 已注册但未设置密码 → 设置密码页（设置后自动登录）
         this.setData({ loading: false });
@@ -172,6 +178,7 @@ Page({
   },
 
   async handleLogin() {
+    if (!privacy.requireAgreement(this)) return;
     if (this.data.loading) return;
     const { phone, password } = this.data;
     if (!password) {
@@ -199,6 +206,7 @@ Page({
   },
 
   async handleRegister() {
+    if (!privacy.requireAgreement(this)) return;
     if (this.data.loading) return;
     const { phone, name, password, confirmPassword, inviteKey } = this.data;
 
@@ -227,6 +235,18 @@ Page({
       this.setData({ loading: false });
       wx.showToast({ title: err.message || '注册失败', icon: 'none' });
     }
+  },
+
+  onPrivacyAgreementChange(e) {
+    this.setData({ privacyAgreed: (e.detail.value || []).includes('agree') });
+  },
+
+  openUserAgreement() {
+    wx.navigateTo({ url: '/pages/client/agreement/index?type=user' });
+  },
+
+  openPrivacyPolicy() {
+    privacy.openPrivacyContract();
   },
 
   _afterAuth(res) {

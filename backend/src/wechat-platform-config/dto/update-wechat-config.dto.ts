@@ -1,4 +1,4 @@
-import { IsBoolean, IsIn, IsOptional, IsString, IsUrl } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsOptional, IsString, IsUrl, MaxLength, Min } from 'class-validator';
 
 export class UpdateWechatLoginConfigDto {
   @IsBoolean()
@@ -48,4 +48,15 @@ export class UpdateWechatPaymentConfigDto {
 
   @IsUrl({ require_protocol: true, protocols: ['https'] })
   paymentNotifyUrl: string;
+}
+
+export class UpdateMiniProgramLaunchConfigDto {
+  @IsString() @MaxLength(120) operatorName: string;
+  @IsString() @MaxLength(120) storeName: string;
+  @IsString() @MaxLength(240) storeAddress: string;
+  @IsString() @MaxLength(40) storePhone: string;
+  @IsString() @MaxLength(120) privacyContact: string;
+  @IsOptional() @IsString() @MaxLength(120) filingNumber?: string;
+  @IsInt() @Min(1) launchTechnicianId: number;
+  @IsOptional() @IsString() @MaxLength(120) bookingReminderTemplateId?: string;
 }

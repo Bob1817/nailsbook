@@ -1,4 +1,5 @@
 const api = require('../../../services/api');
+const { requestBookingReminder } = require('../../../utils/wechat-subscription');
 const {
   parseDate,
   formatClock,
@@ -17,7 +18,7 @@ const STATUS_DESC = {
   pending_quote:   '客户已发起预约，请尽快给出报价',
   pending_agree:   '已发送报价，等待客户确认',
   pending_client_confirm: '预约链接已发送，等待客户确认',
-  pending_confirm: '客户已同意报价，请确认此单并核实定金',
+  pending_confirm: '客户已同意报价，请确认到店排期',
   pending_shop:    '已确认排期，记得准时到店',
   in_progress:     '服务进行中',
   completed:       '预约已完成',
@@ -44,7 +45,7 @@ function actionsForStatus(status) {
 }
 
 // 取消原因常用项
-const CANCEL_REASONS = ['客户临时取消', '档期冲突', '客户未支付定金', '其他'];
+const CANCEL_REASONS = ['客户临时取消', '档期冲突', '双方未能确认时间', '其他'];
 
 function maskPhone(phone) {
   if (!phone) return '';
@@ -76,7 +77,6 @@ Page({
     quoteDate: '',
     quoteTime: '',
     quoteDuration: '120',
-    quoteDeposit: '',
     quoteRemark: '',
 
     // 取消 sheet
@@ -115,7 +115,6 @@ Page({
 
       // 补充详情页专有字段
       o.orderNo = raw.orderNo;
-      o.depositAmount = raw.depositAmount || 0;
       o.remark = raw.remark || raw.note || '';
 
       const start = parseDate(o.startTime);
@@ -125,7 +124,7 @@ Page({
       const pres = resolveOrderPresentation(o);
 
       // 是否显示价格卡
-      const showPriceCard = o.price > 0 || o.depositAmount > 0;
+      const showPriceCard = o.price > 0;
 
       const decorated = {
         ...o,
@@ -156,7 +155,6 @@ Page({
         quoteDate: sd,
         quoteTime: st,
         quoteDuration: decorated.durationMinutes > 0 ? String(decorated.durationMinutes) : '120',
-        quoteDeposit: o.depositAmount ? String(o.depositAmount) : '',
         quoteRemark: o.remark || ''
       });
 
@@ -216,12 +214,11 @@ Page({
   onQuoteDateChange(e)    { this.setData({ quoteDate: e.detail.value }); },
   onQuoteTimeChange(e)    { this.setData({ quoteTime: e.detail.value }); },
   onQuoteDurationInput(e) { this.setData({ quoteDuration: e.detail.value }); },
-  onQuoteDepositInput(e)  { this.setData({ quoteDeposit: e.detail.value }); },
   onQuoteRemarkInput(e)   { this.setData({ quoteRemark: e.detail.value }); },
 
   async submitQuote() {
     if (this.data.submitting) return;
-    const { quotePrice, quoteDate, quoteTime, quoteDuration, quoteDeposit, quoteRemark } = this.data;
+    const { quotePrice, quoteDate, quoteTime, quoteDuration, quoteRemark } = this.data;
 
     const price = Number(quotePrice);
     if (!quotePrice || Number.isNaN(price) || price < 0) {
@@ -235,17 +232,6 @@ Page({
       return wx.showToast({ title: '请输入正确的服务时长', icon: 'none' });
     }
 
-    let deposit;
-    if (quoteDeposit !== '') {
-      deposit = Number(quoteDeposit);
-      if (Number.isNaN(deposit) || deposit < 0) {
-        return wx.showToast({ title: '定金金额不正确', icon: 'none' });
-      }
-      if (deposit > price) {
-        return wx.showToast({ title: '定金不能高于总价', icon: 'none' });
-      }
-    }
-
     this.setData({ submitting: true });
     try {
       const payload = {
@@ -255,8 +241,6 @@ Page({
         durationMinutes: duration
       };
       if (quoteRemark) payload.remark = quoteRemark;
-      if (deposit != null) payload.depositAmount = deposit;
-
       await api.technician.orders.quote(this.orderId, payload);
       this.setData({ submitting: false, showQuote: false });
       wx.showToast({ title: '报价已发送', icon: 'success' });
@@ -269,17 +253,13 @@ Page({
 
   // ---------- 确认 ----------
   async confirmOrder() {
-    const order = this.data.order;
-    const depositInfo = order.depositAmount > 0 && !order.depositPaid
-      ? `\n请先确认客户已支付定金 ¥${order.depositAmount}`
-      : '';
-
     const r = await wx.showModal({
       title: '确认排期',
-      content: `确认接此预约？${depositInfo}`,
+      content: '确认接此到店预约？实际付款由门店与客户线下完成。',
       confirmText: '已确认'
     });
     if (!r.confirm) return;
+    await requestBookingReminder('technician');
 
     try {
       wx.showLoading({ title: '处理中...' });

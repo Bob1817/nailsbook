@@ -3,6 +3,7 @@ import { PrismaModule } from '../common/prisma/prisma.module';
 import {
   AdminWechatPlatformConfigController,
   PublicCapabilitiesController,
+  PublicLaunchConfigController,
 } from './wechat-platform-config.controller';
 import { WechatPlatformConfigService } from './wechat-platform-config.service';
 
@@ -12,6 +13,7 @@ import { WechatPlatformConfigService } from './wechat-platform-config.service';
   controllers: [
     AdminWechatPlatformConfigController,
     PublicCapabilitiesController,
+    PublicLaunchConfigController,
   ],
   providers: [WechatPlatformConfigService],
   exports: [WechatPlatformConfigService],

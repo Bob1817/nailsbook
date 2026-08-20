@@ -2,6 +2,7 @@ const api = require('../../../services/api');
 const { validatePhone } = require('../../../utils/util');
 const { silentWechatLogin } = require('../../../utils/wechat-auth');
 const { consumePostAuthRedirect } = require('../../../utils/artist-navigation');
+const privacy = require('../../../utils/privacy');
 
 Page({
   data: {
@@ -13,7 +14,8 @@ Page({
     wechatReady: false,
     wechatLinked: false,
     wechatChecking: true,
-    wechatFeatureVisible: false
+    wechatFeatureVisible: false,
+    privacyAgreed: false
   },
 
   onLoad(options) {
@@ -77,6 +79,7 @@ Page({
   },
 
   async handleWechatPhone(e) {
+    if (!privacy.requireAgreement(this)) return;
     const phoneCode = e.detail && e.detail.code;
     if (!phoneCode || this.data.loading) {
       if (!phoneCode) wx.showToast({ title: '需要授权手机号才能继续', icon: 'none' });
@@ -91,6 +94,7 @@ Page({
     this.setData({ loading: true });
     wx.showLoading({ title: '微信登录中...' });
     try {
+      await privacy.requireWechatPrivacyAuthorization();
       const res = await api.auth.completeWechatClient({
         wechatSessionToken,
         phoneCode,
@@ -126,6 +130,7 @@ Page({
   },
 
   async handlePhoneNext() {
+    if (!privacy.requireAgreement(this)) return;
     const phone = this.data.phone.trim();
     if (!validatePhone(phone)) {
       wx.showToast({ title: '请输入正确的手机号', icon: 'none' });
@@ -157,6 +162,7 @@ Page({
   },
 
   async handleLogin() {
+    if (!privacy.requireAgreement(this)) return;
     if (this.data.loading) return;
     const { phone, password } = this.data;
     if (!password) {
@@ -193,6 +199,18 @@ Page({
 
       wx.showToast({ title: err.message || '登录失败', icon: 'none' });
     }
+  },
+
+  onPrivacyAgreementChange(e) {
+    this.setData({ privacyAgreed: (e.detail.value || []).includes('agree') });
+  },
+
+  openUserAgreement() {
+    wx.navigateTo({ url: '/pages/client/agreement/index?type=user' });
+  },
+
+  openPrivacyPolicy() {
+    privacy.openPrivacyContract();
   },
 
   async _afterAuth(res) {

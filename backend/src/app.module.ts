@@ -52,6 +52,7 @@ import { WechatAuthModule } from './wechat-auth/wechat-auth.module';
 import { WechatPlatformConfigModule } from './wechat-platform-config/wechat-platform-config.module';
 import { ThrottlerCleanupService } from './common/throttler-cleanup.service';
 import { ConversionEventsModule } from './conversion-events/conversion-events.module';
+import { WechatSubscribeMessagesModule } from './wechat-subscribe-messages/wechat-subscribe-messages.module';
 
 @Module({
   imports: [
@@ -109,6 +110,7 @@ import { ConversionEventsModule } from './conversion-events/conversion-events.mo
     MarketingMaterialsModule,
     WechatAuthModule,
     WechatPlatformConfigModule,
+    WechatSubscribeMessagesModule,
   ],
   controllers: [AppController],
   providers: [

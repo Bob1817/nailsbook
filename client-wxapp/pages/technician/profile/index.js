@@ -16,26 +16,20 @@ const TOOLS = [
   { key: 'homepage',    label: '我的主页' },
   { key: 'services',    label: '服务管理' },
   { key: 'works',       label: '作品管理' },
-  { key: 'marketing',   label: '宣传物料' },
   { key: 'designs',     label: '设计需求' },
   { key: 'serviceTime', label: '服务时间' },
   { key: 'shops',       label: '店铺管理' },
-  { key: 'tags',        label: '标签管理' },
-  { key: 'referrals',   label: '邀请基金' },
-  { key: 'subscription',label: '订阅套餐' }
+  { key: 'tags',        label: '标签管理' }
 ];
 
 const TOOL_ROUTES = {
   homepage:     '/pages/technician/homepage-settings/index',
   services:     '/pages/technician/services/index',
   works:        '/pages/technician/works/index',
-  marketing:    '/pages/technician/marketing-materials/index',
   designs:      '/pages/technician/design-requests/index',
   serviceTime:  '/pages/technician/service-time/index',
   shops:        '/pages/technician/shop-management/index',
-  tags:         '/pages/technician/tag-management/index',
-  referrals:    '/pages/technician/referral-campaign/index',
-  subscription: '/pages/technician/subscription/index'
+  tags:         '/pages/technician/tag-management/index'
 };
 
 Page({
@@ -258,7 +252,7 @@ Page({
     wx.navigateTo({ url: '/pages/technician/all-bookings/index' });
   },
   goTradeOrders() {
-    wx.navigateTo({ url: '/pages/technician/trade-orders/index' });
+    wx.navigateTo({ url: '/pages/technician/all-bookings/index' });
   },
   goOrderStatus(e) {
     const status = e.currentTarget.dataset.status;

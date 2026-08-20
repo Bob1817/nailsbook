@@ -1,7 +1,7 @@
 const CLIENT_TABS = [
   { key: 'home',     icon: 'home', label: '首页',  path: '/pages/client/home/index' },
   { key: 'orders',   icon: 'calendar', label: '预约',  path: '/pages/client/orders/index' },
-  { key: 'discover', icon: 'compass', label: '发现',  path: '/pages/client/discover/index' },
+  { key: 'discover', icon: 'compass', label: '作品',  path: '/pages/client/discover/index' },
   { key: 'chat',     icon: 'chat', label: '消息',  path: '/pages/client/chat/index' },
   { key: 'profile',  icon: 'profile', label: '我的',  path: '/pages/client/profile/index' }
 ];

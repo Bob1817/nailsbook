@@ -102,7 +102,7 @@
     <view class="card-head">
       <view>
         <text class="card-title">我的订单</text>
-        <text class="invite-sub">查看定金、尾款与订单支付状态</text>
+        <text class="invite-sub">查看报价、排期与服务状态</text>
       </view>
       <view class="card-more">全部订单 ›</view>
     </view>

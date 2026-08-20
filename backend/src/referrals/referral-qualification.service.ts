@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { RewardFundService } from './reward-fund.service';
 import { confirmedPaidAmount, isFullyPaid } from '../orders/order-accounting';
+import { isMiniProgramLaunchMode } from '../common/miniprogram-launch-mode';
 
 const REFERRAL_REWARD_RATE = 0.05;
 
@@ -27,6 +28,7 @@ export class ReferralQualificationService {
     tx: Prisma.TransactionClient,
     order: CompletedOrder,
   ) {
+    if (isMiniProgramLaunchMode()) return null;
     if (!order.clientUserId) return null;
     const relation = await tx.referralRelation.findUnique({
       where: {

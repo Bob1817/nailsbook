@@ -5,12 +5,14 @@ App({
     role: null,
     isTourist: false,
     apiBaseUrl: 'https://api.lunails.cn',
-    capabilities: { wechatLogin: false, wechatPay: false }
+    capabilities: { wechatLogin: false, wechatPay: false },
+    launchConfig: null
   },
 
   onLaunch() {
     console.log('App launched');
     this.loadCapabilities();
+    this.loadLaunchConfig();
     this.normalizeStoredSession();
 
     // 恢复游客状态
@@ -136,6 +138,32 @@ App({
       });
     }).finally(() => { this._capabilitiesPromise = null; });
     return this._capabilitiesPromise;
+  },
+
+  loadLaunchConfig(force = false) {
+    if (this._launchConfigPromise && !force) return this._launchConfigPromise;
+    const localFallback = require('./config');
+    this._launchConfigPromise = new Promise((resolve) => {
+      wx.request({
+        url: `${this.globalData.apiBaseUrl}/api/public/launch-config`,
+        method: 'GET',
+        timeout: 8000,
+        success: (res) => {
+          const remote = res.statusCode >= 200 && res.statusCode < 300 ? res.data : {};
+          const config = { ...localFallback, ...remote };
+          this.globalData.launchConfig = config;
+          wx.setStorageSync('launch_config', config);
+          resolve(config);
+        },
+        fail: () => {
+          const cached = wx.getStorageSync('launch_config') || {};
+          const config = { ...localFallback, ...cached };
+          this.globalData.launchConfig = config;
+          resolve(config);
+        }
+      });
+    }).finally(() => { this._launchConfigPromise = null; });
+    return this._launchConfigPromise;
   },
 
   setLogin(role, token, userInfo, roles, isTourist) {

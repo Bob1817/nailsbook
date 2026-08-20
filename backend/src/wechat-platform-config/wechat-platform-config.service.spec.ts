@@ -1,4 +1,5 @@
 import { WechatPlatformConfigService } from './wechat-platform-config.service';
+import { resetLaunchTechnicianIdConfiguration } from '../common/miniprogram-launch-mode';
 
 describe('WechatPlatformConfigService capabilities', () => {
   const base = {
@@ -24,6 +25,11 @@ describe('WechatPlatformConfigService capabilities', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
   };
+
+  afterEach(() => {
+    process.env.MINIPROGRAM_LAUNCH_MODE = 'false';
+    resetLaunchTechnicianIdConfiguration();
+  });
 
   it('keeps both WeChat capabilities hidden by default', async () => {
     const prisma = {
@@ -104,5 +110,60 @@ describe('WechatPlatformConfigService capabilities', () => {
         }),
       }),
     );
+  });
+
+  it('saves a validated shop-only launch technician and forces payment off', async () => {
+    process.env.MINIPROGRAM_LAUNCH_MODE = 'true';
+    const updated = {
+      ...base,
+      operatorName: '测试科技公司',
+      storeName: '测试美甲店',
+      storeAddress: '测试路 1 号',
+      storePhone: '13800138000',
+      privacyContact: 'privacy@example.com',
+      filingNumber: null,
+      launchTechnicianId: 7,
+      bookingReminderTemplateId: null,
+    };
+    const update = jest.fn().mockResolvedValue(updated);
+    const prisma = {
+      technician: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 7,
+          name: '阿琳',
+          phone: '13800138000',
+          status: 'active',
+          homeService: false,
+          shopService: true,
+        }),
+      },
+      wechatPlatformConfig: {
+        upsert: jest.fn().mockResolvedValue(updated),
+        update,
+      },
+    };
+    const service = new WechatPlatformConfigService(
+      prisma as never,
+      { get: jest.fn() } as never,
+    );
+
+    const result = await service.updateLaunchConfig({
+      operatorName: '测试科技公司',
+      storeName: '测试美甲店',
+      storeAddress: '测试路 1 号',
+      storePhone: '13800138000',
+      privacyContact: 'privacy@example.com',
+      launchTechnicianId: 7,
+    });
+
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          launchTechnicianId: 7,
+          paymentEnabled: false,
+        }),
+      }),
+    );
+    expect(result.launchTechnicianId).toBe(7);
   });
 });

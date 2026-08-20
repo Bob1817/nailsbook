@@ -65,4 +65,10 @@
     <view class="guest-row"><text class="link-muted" bindtap="browseAsGuest">我先逛逛，去看看作品</text></view>
   </view>
 
+  <checkbox-group class="privacy-consent" bindchange="onPrivacyAgreementChange">
+    <label><checkbox value="agree" checked="{{privacyAgreed}}"/><text>我已阅读并同意</text></label>
+    <text class="privacy-link" catchtap="openUserAgreement">《用户协议》</text>
+    <text>和</text><text class="privacy-link" catchtap="openPrivacyPolicy">《隐私政策》</text>
+  </checkbox-group>
+
 </view>

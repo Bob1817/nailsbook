@@ -3,6 +3,7 @@
  * 流程：微信授权（默认）→ 手机号 + 密码登录
  */
 const api = require('../../services/api');
+const privacy = require('../../utils/privacy');
 
 Page({
   data: {
@@ -15,7 +16,8 @@ Page({
     wechatLoading: false,
     wechatChecking: true,
     showPassword: false,
-    canLogin: false
+    canLogin: false,
+    privacyAgreed: false
   },
 
   onLoad(options) {
@@ -54,6 +56,7 @@ Page({
   // ========== WeChat 登录 ==========
 
   async onWechatPhone(e) {
+    if (!privacy.requireAgreement(this)) return;
     const phoneCode = e.detail && e.detail.code;
     if (!phoneCode) {
       wx.showToast({ title: '需要授权手机号才能继续', icon: 'none' });
@@ -64,6 +67,7 @@ Page({
     wx.showLoading({ title: '登录中...', mask: true });
 
     try {
+      await privacy.requireWechatPrivacyAuthorization();
       // 先获取微信 session
       const wxSession = await this._getWechatSession();
       if (!wxSession) throw new Error('微信授权失败');
@@ -178,6 +182,7 @@ Page({
 
   /** 手机号 + 密码登录（统一入口：优先客户端，失败后尝试美甲师端） */
   async doLogin() {
+    if (!privacy.requireAgreement(this)) return;
     const { phone, phoneValid, password, phoneLoading } = this.data;
     if (!phoneValid || !password || password.length < 6 || phoneLoading) return;
 
@@ -233,6 +238,18 @@ Page({
 
       wx.showToast({ title: err.message || '登录失败', icon: 'none' });
     }
+  },
+
+  onPrivacyAgreementChange(e) {
+    this.setData({ privacyAgreed: (e.detail.value || []).includes('agree') });
+  },
+
+  openUserAgreement() {
+    wx.navigateTo({ url: '/pages/client/agreement/index?type=user' });
+  },
+
+  openPrivacyPolicy() {
+    privacy.openPrivacyContract();
   },
 
   // ========== 登录后处理 ==========

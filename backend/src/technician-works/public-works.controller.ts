@@ -8,6 +8,10 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { PrismaService } from '../common/prisma/prisma.service';
+import {
+  isLaunchTechnician,
+  launchTechnicianFilterId,
+} from '../common/miniprogram-launch-mode';
 
 const UPLOAD_BASE_URL = process.env.UPLOAD_BASE_URL || 'http://localhost:3000';
 
@@ -47,7 +51,8 @@ export class PublicWorksController {
     @Query('techId') techId?: string,
   ) {
     const take = Math.min(50, Math.max(1, Number(limit) || 30));
-    const technicianId = Number(techId);
+    const requestedTechnicianId = Number(techId);
+    const technicianId = launchTechnicianFilterId() ?? requestedTechnicianId;
     const works = await this.prisma.nailWork.findMany({
       where: {
         isVisible: true,
@@ -101,6 +106,7 @@ export class PublicWorksController {
   @ApiOperation({ summary: '获取精选作品列表' })
   @ApiResponse({ status: 200, description: '返回精选作品列表' })
   async getFeatured() {
+    const technicianId = launchTechnicianFilterId();
     const works = await this.prisma.nailWork.findMany({
       where: {
         isFeatured: true,
@@ -108,6 +114,7 @@ export class PublicWorksController {
         visibilityScope: 'public',
         publicationStatus: 'approved',
         technician: { status: 'active' },
+        ...(technicianId ? { techId: technicianId } : {}),
       },
       include: {
         technician: {
@@ -139,6 +146,7 @@ export class PublicWorksController {
   async getHomepageFeatured(@Query('limit') limit?: string) {
     const take = Math.min(50, Math.max(1, Number(limit) || 20));
 
+    const technicianId = launchTechnicianFilterId();
     const works = await this.prisma.nailWork.findMany({
       where: {
         isHomepageFeatured: true,
@@ -146,6 +154,7 @@ export class PublicWorksController {
         visibilityScope: 'public',
         publicationStatus: 'approved',
         technician: { status: 'active' },
+        ...(technicianId ? { techId: technicianId } : {}),
       },
       include: {
         technician: { select: { name: true, avatarUrl: true } },
@@ -253,6 +262,9 @@ export class PublicWorksController {
     });
 
     if (!work) {
+      throw new NotFoundException('作品不存在');
+    }
+    if (!isLaunchTechnician(work.technician.id)) {
       throw new NotFoundException('作品不存在');
     }
 

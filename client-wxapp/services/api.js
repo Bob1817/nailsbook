@@ -118,6 +118,9 @@ const client = {
 
   favorites: { list: () => api.get(`${C}/favorites`) },
   likes: { list: () => api.get(`${C}/likes`) },
+  wechatSubscriptions: {
+    record: (decisions) => api.post(`${C}/wechat-subscriptions/authorization`, { decisions })
+  },
 
   orders: {
     list: (params) => api.get(`${C}/orders`, params),
@@ -200,6 +203,9 @@ const technician = {
   },
   insights: {
     overview: () => api.get(`${T}/insights/overview`)
+  },
+  wechatSubscriptions: {
+    record: (decisions) => api.post(`${T}/wechat-subscriptions/authorization`, { decisions })
   },
 
   auth: {
@@ -458,6 +464,10 @@ const upload = {
 
 const publicApi = {
   capabilities: () => api.get(`${P}/capabilities`, null, { needAuth: false, silent: true }),
+  launchConfig: () => api.get(`${P}/launch-config`, null, { needAuth: false, silent: true }),
+  conversionEvents: {
+    record: (data) => api.post(`${P}/conversion-events`, data, { needAuth: false, silent: true })
+  },
   artists: {
     detail: (id) => api.get(`${P}/artist/id/${id}`, null, { needAuth: false }),
     card: (code) => api.get(`${P}/artist/${code}`, null, { needAuth: false })

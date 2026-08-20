@@ -4,6 +4,10 @@ import { ClientJwtAuthGuard } from '../client-auth/client-jwt-auth.guard';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
 import { TouristGuard } from '../technician-auth/tourist.guard';
 import { RewardFundService } from './reward-fund.service';
+import {
+  assertMiniProgramFeatureDisabled,
+  isMiniProgramLaunchMode,
+} from '../common/miniprogram-launch-mode';
 
 @ApiTags('客户端-美甲基金')
 @ApiBearerAuth()
@@ -14,6 +18,9 @@ export class ClientRewardFundController {
 
   @Get()
   get(@Req() request: { user: { clientUserId: number } }) {
+    if (isMiniProgramLaunchMode()) {
+      assertMiniProgramFeatureDisabled('美甲基金');
+    }
     return this.service.getForClient(request.user.clientUserId);
   }
 }
@@ -27,6 +34,9 @@ export class TechnicianRewardFundController {
 
   @Get('summary')
   get(@Req() request: { user: { technicianId: number } }) {
+    if (isMiniProgramLaunchMode()) {
+      assertMiniProgramFeatureDisabled('美甲基金');
+    }
     return this.service.getForTechnician(request.user.technicianId);
   }
 }

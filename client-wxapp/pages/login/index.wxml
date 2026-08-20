@@ -43,7 +43,11 @@
   </view>
 
   <!-- 协议 -->
-  <text class="agreement">登录即表示同意《用户协议》和《隐私政策》</text>
+  <checkbox-group class="privacy-consent" bindchange="onPrivacyAgreementChange">
+    <label><checkbox value="agree" checked="{{privacyAgreed}}"/><text>我已阅读并同意</text></label>
+    <text class="privacy-link" catchtap="openUserAgreement">《用户协议》</text>
+    <text>和</text><text class="privacy-link" catchtap="openPrivacyPolicy">《隐私政策》</text>
+  </checkbox-group>
 </view>
 
 <!-- Step 2: 手机号 + 密码登录 -->
@@ -118,5 +122,9 @@
     </view>
   </view>
 
-  <text class="agreement">登录即表示同意《用户协议》和《隐私政策》</text>
+  <checkbox-group class="privacy-consent" bindchange="onPrivacyAgreementChange">
+    <label><checkbox value="agree" checked="{{privacyAgreed}}"/><text>我已阅读并同意</text></label>
+    <text class="privacy-link" catchtap="openUserAgreement">《用户协议》</text>
+    <text>和</text><text class="privacy-link" catchtap="openPrivacyPolicy">《隐私政策》</text>
+  </checkbox-group>
 </view>

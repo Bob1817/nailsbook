@@ -22,6 +22,11 @@ import { parseBusinessDateTime } from './business-time';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { revenueSnapshot } from './order-accounting';
 import { throwIfBookingSlotConflict } from './booking-conflict';
+import {
+  assertLaunchShopService,
+  isLaunchTechnician,
+  isMiniProgramLaunchMode,
+} from '../common/miniprogram-launch-mode';
 
 import * as crypto from 'crypto';
 
@@ -76,6 +81,10 @@ export class ClientOrdersService {
   }
 
   async create(clientUserId: number, dto: CreateClientOrderDto) {
+    assertLaunchShopService(dto.serviceType);
+    if (!isLaunchTechnician(dto.techId)) {
+      throw new NotFoundException('该美甲师暂未开放预约');
+    }
     if (dto.applicationKey) {
       const existing = await this.prisma.order.findUnique({
         where: { applicationKey: dto.applicationKey },
@@ -312,7 +321,8 @@ export class ClientOrdersService {
           where: { applicationKey: dto.applicationKey },
           include: this.orderInclude(),
         });
-        if (existing?.clientUserId === clientUserId) return this.mapOrder(existing);
+        if (existing?.clientUserId === clientUserId)
+          return this.mapOrder(existing);
       }
       throwIfBookingSlotConflict(error);
     }
@@ -328,11 +338,17 @@ export class ClientOrdersService {
   }
 
   private normalizeAttributionSource(source?: string) {
-    const normalized = String(source || 'direct').trim().toLowerCase();
+    const normalized = String(source || 'direct')
+      .trim()
+      .toLowerCase();
     return /^[a-z0-9_-]{1,32}$/.test(normalized) ? normalized : 'direct';
   }
 
   async createFromDesign(clientUserId: number, dto: CreateOrderFromDesignDto) {
+    assertLaunchShopService(dto.serviceType);
+    if (!isLaunchTechnician(dto.techId)) {
+      throw new NotFoundException('该美甲师暂未开放预约');
+    }
     if (dto.applicationKey) {
       const existing = await this.prisma.order.findUnique({
         where: { applicationKey: dto.applicationKey },
@@ -539,7 +555,8 @@ export class ClientOrdersService {
           where: { applicationKey: dto.applicationKey },
           include: this.orderInclude(),
         });
-        if (existing?.clientUserId === clientUserId) return this.mapOrder(existing);
+        if (existing?.clientUserId === clientUserId)
+          return this.mapOrder(existing);
       }
       throwIfBookingSlotConflict(error);
     }
@@ -785,6 +802,9 @@ export class ClientOrdersService {
   }
 
   async agree(clientUserId: number, id: number, fundAmount: number = 0) {
+    if (isMiniProgramLaunchMode() && fundAmount > 0) {
+      throw new BadRequestException('小程序首期不支持美甲基金抵扣');
+    }
     const order = await this.prisma.order.findFirst({
       where: {
         id,
@@ -810,7 +830,7 @@ export class ClientOrdersService {
     let conversationId: number | null = null;
 
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
-      if (this.rewardFunds) {
+      if (this.rewardFunds && !isMiniProgramLaunchMode()) {
         await this.rewardFunds.redeemForOrder(tx, {
           orderId: id,
           technicianId: order.technicianId,
@@ -1075,7 +1095,10 @@ export class ClientOrdersService {
         throw new BadRequestException('该订单已取消，无需重复处理');
       }
       await tx.paymentOrder.updateMany({
-        where: { orderId: id, status: { in: ['created', 'pending', 'channel_pending'] } },
+        where: {
+          orderId: id,
+          status: { in: ['created', 'pending', 'channel_pending'] },
+        },
         data: { status: 'closed', closedAt: new Date() },
       });
       await tx.bookingTradeOrder.updateMany({

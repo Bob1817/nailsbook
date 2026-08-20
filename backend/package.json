@@ -96,6 +96,9 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
+    "setupFiles": [
+      "<rootDir>/test/jest-env.ts"
+    ],
     "testTimeout": 30000
   }
 }

@@ -81,15 +81,6 @@
       <text class="price-main">{{order._priceText}}</text>
     </view>
 
-    <view wx:if="{{order.depositAmount > 0}}" class="info-row">
-      <text class="info-label">定金</text>
-      <view class="info-value-block">
-        <text class="info-value">¥{{order.depositAmount}}</text>
-        <text class="deposit-state {{order.depositPaid ? 'deposit-paid' : 'deposit-unpaid'}}">
-          {{order.depositPaid ? '已支付' : '待支付'}}
-        </text>
-      </view>
-    </view>
   </view>
 
   <!-- ============ 备注 ============ -->
@@ -156,18 +147,6 @@
         value="{{quoteDuration}}"
         bindinput="onQuoteDurationInput"
       />
-    </view>
-
-    <view class="form-item">
-      <text class="form-label">定金金额（元，选填）</text>
-      <input
-        class="form-input"
-        type="digit"
-        placeholder="例：30"
-        value="{{quoteDeposit}}"
-        bindinput="onQuoteDepositInput"
-      />
-      <text class="form-hint">收取定金可在客户确认后要求支付</text>
     </view>
 
     <view class="form-item">

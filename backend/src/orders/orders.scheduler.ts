@@ -6,6 +6,7 @@ import { PushService } from '../notifications/push.service';
 import * as crypto from 'crypto';
 import { ReferralQualificationService } from '../referrals/referral-qualification.service';
 import { revenueSnapshot } from './order-accounting';
+import { WechatSubscribeMessagesService } from '../wechat-subscribe-messages/wechat-subscribe-messages.service';
 
 @Injectable()
 export class OrdersScheduler {
@@ -15,6 +16,8 @@ export class OrdersScheduler {
     private prisma: PrismaService,
     private chatGateway: ChatGateway,
     private push: PushService,
+    @Optional()
+    private readonly wechatSubscribe?: WechatSubscribeMessagesService,
     @Optional()
     private readonly referralQualification?: ReferralQualificationService,
   ) {}
@@ -245,6 +248,9 @@ export class OrdersScheduler {
     });
 
     await Promise.all([
+      this.wechatSubscribe
+        ? this.wechatSubscribe.sendOrderReminder(order, preview)
+        : Promise.resolve({ sent: 0 }),
       this.push.sendToClient(order.clientUserId, {
         title: '预约提醒',
         body: preview,

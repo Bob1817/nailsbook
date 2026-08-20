@@ -43,7 +43,13 @@ describe('客户端核心路径静态契约', () => {
 
   it('核心页面仍注册在小程序路由中', () => {
     const appConfig = JSON.parse(readWxapp('app.json'));
-    expect(appConfig.pages).toEqual(
+    const registeredPages = [
+      ...appConfig.pages,
+      ...(appConfig.subPackages || []).flatMap((pkg: any) =>
+        pkg.pages.map((page: string) => `${pkg.root}/${page}`),
+      ),
+    ];
+    expect(registeredPages).toEqual(
       expect.arrayContaining([
         'pages/client/work-detail/index',
         'pages/client/create-order/index',

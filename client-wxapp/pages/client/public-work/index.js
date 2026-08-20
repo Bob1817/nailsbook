@@ -1,5 +1,6 @@
 const api = require('../../../services/api');
 const { buildClientLoginUrl } = require('../../../utils/artist-navigation');
+const { normalizeWork } = require('../../../utils/normalize-work');
 
 Page({
   data: {
@@ -26,20 +27,57 @@ Page({
   async loadWork() {
     this.setData({ loading: true, error: false, errorMessage: '', canRetry: false });
     try {
-      const work = this.shareToken
+      const rawWork = this.shareToken
         ? await api.public.works.shared(this.shareToken)
         : await api.public.works.detail(this.workId);
-      const technician = work.technician || (work.technicianId ? {
-        id: work.technicianId,
-        name: work.technicianName || '美甲师',
-        avatarUrl: work.technicianAvatarUrl || ''
-      } : null);
+
+      // 拉取美甲师最新详情（与美甲师主页同一接口），确保 city/experienceYears/specialtiesText 完全同步
+      let techSnapshot = null;
+      const techId = rawWork.technicianId || (rawWork.technician && (rawWork.technician.id || rawWork.technician.technicianId));
+      if (techId) {
+        try {
+          const artistRes = await api.public.artists.detail(String(techId));
+          const artist = artistRes.artist || artistRes || {};
+          if (artist && artist.id) {
+            artist.experienceYears = Math.max(1, Number(artist.experienceYears) || 1);
+            artist.styleTags = (artist.styleTags || artist.specialties || []).slice(0, 5);
+            artist.specialtiesText = artist.specialtiesText || (artist.styleTags.length ? artist.styleTags.slice(0, 2).join(' · ') : '');
+            techSnapshot = {
+              id: String(artist.id),
+              technicianId: String(artist.id),
+              name: artist.name,
+              avatarUrl: artist.avatarUrl,
+              city: artist.city || '',
+              experienceYears: Number(artist.experienceYears) || 1,
+              specialtiesText: artist.specialtiesText || '',
+              specialties: artist.styleTags || [],
+              styleTags: artist.styleTags || []
+            };
+          }
+        } catch (e) {
+          // 美甲师详情拉取失败时，用作品自带的 technician 做 fallback
+        }
+      }
+      // 如果没拉到美甲师详情，用作品自带的 technician 对象做快照
+      if (!techSnapshot && rawWork.technician) {
+        const t = rawWork.technician;
+        techSnapshot = {
+          id: String(t.id || techId || ''),
+          name: t.name || rawWork.technicianName || '美甲师',
+          avatarUrl: t.avatarUrl || rawWork.technicianAvatarUrl || '',
+          city: t.city || '',
+          experienceYears: Number(t.experienceYears) || 1,
+          specialtiesText: t.specialtiesText || '',
+          specialties: t.specialties || t.styleTags || [],
+          styleTags: t.styleTags || t.specialties || []
+        };
+      }
+
+      const work = normalizeWork(rawWork, techSnapshot, { index: 0 });
+      work.dateStr = this.formatDate(rawWork.createdAt);
+
       this.setData({
-        work: {
-          ...work,
-          technician,
-          dateStr: this.formatDate(work.createdAt)
-        },
+        work: work,
         loading: false,
         error: false
       });

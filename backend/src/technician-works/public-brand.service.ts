@@ -1,6 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { bookingReadiness } from '../technicians/booking-readiness';
+import {
+  isLaunchTechnician,
+  isMiniProgramLaunchMode,
+} from '../common/miniprogram-launch-mode';
 
 const UPLOAD_BASE_URL = process.env.UPLOAD_BASE_URL || 'http://localhost:3000';
 type ImageSize = 'thumbnail' | 'medium' | 'original';
@@ -70,6 +74,9 @@ export class PublicBrandService {
         });
         if (!technician)
           throw new NotFoundException('公开品牌主页不存在或已下架');
+        if (!isLaunchTechnician(technician.id)) {
+          throw new NotFoundException('公开品牌主页不存在或已下架');
+        }
         const brand =
           technician.brandProfile?.publicationStatus === 'published'
             ? technician.brandProfile
@@ -123,7 +130,9 @@ export class PublicBrandService {
                 }
               : null,
             serviceModes: {
-              home: technician.homeService,
+              home: isMiniProgramLaunchMode()
+                ? false
+                : technician.homeService,
               studio: technician.shopService,
             },
             bookingReady: bookingReadiness(technician).ready,
@@ -386,6 +395,9 @@ export class PublicBrandService {
   }
 
   private async assertActive(id: number) {
+    if (!isLaunchTechnician(id)) {
+      throw new NotFoundException('公开品牌主页不存在或已下架');
+    }
     const exists = await this.prisma.technician.count({
       where: { id, status: 'active' },
     });

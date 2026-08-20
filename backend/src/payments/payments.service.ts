@@ -13,6 +13,10 @@ import { ReferralQualificationService } from '../referrals/referral-qualificatio
 import { revenueSnapshot } from '../orders/order-accounting';
 import { WechatPlatformConfigService } from '../wechat-platform-config/wechat-platform-config.service';
 import { WechatPayService } from './wechat-pay.service';
+import {
+  assertMiniProgramFeatureDisabled,
+  isMiniProgramLaunchMode,
+} from '../common/miniprogram-launch-mode';
 
 export type OrderPaymentType = 'deposit' | 'final';
 
@@ -35,6 +39,9 @@ export class PaymentsService {
     paymentType: OrderPaymentType,
     idempotencyKey: string,
   ) {
+    if (isMiniProgramLaunchMode()) {
+      assertMiniProgramFeatureDisabled('在线支付');
+    }
     const normalizedKey = idempotencyKey?.trim();
     if (!normalizedKey) throw new BadRequestException('缺少支付幂等键');
     if (!['deposit', 'final'].includes(paymentType)) {
@@ -103,7 +110,11 @@ export class PaymentsService {
         depositTarget - (paidDeposit._sum.amountCents ?? 0),
       );
     } else {
-      if (!['pending_home', 'pending_shop', 'in_progress', 'completed'].includes(order.status)) {
+      if (
+        !['pending_home', 'pending_shop', 'in_progress', 'completed'].includes(
+          order.status,
+        )
+      ) {
         throw new BadRequestException('定金支付后才能支付尾款');
       }
       amountCents = Math.max(0, totalCents - paidCents);
@@ -232,14 +243,22 @@ export class PaymentsService {
                   depositStatus: 'paid',
                   depositConfirmedAt: paidAt,
                   tradeStatus: 'deposit_paid',
-                  status: order.fulfillmentStatus ||
-                    (order.serviceType === '上门美甲' ? 'pending_home' : 'pending_shop'),
+                  status:
+                    order.fulfillmentStatus ||
+                    (order.serviceType === '上门美甲'
+                      ? 'pending_home'
+                      : 'pending_shop'),
                   bookingPhase: 'booking',
                 }
               : {
-                  tradeStatus: paidAmount >= payable ? 'paid' : 'balance_pending',
+                  tradeStatus:
+                    paidAmount >= payable ? 'paid' : 'balance_pending',
                   ...(paidAmount >= payable && order.status === 'in_progress'
-                    ? { status: 'completed', bookingPhase: 'finished', completedAt: paidAt }
+                    ? {
+                        status: 'completed',
+                        bookingPhase: 'finished',
+                        completedAt: paidAt,
+                      }
                     : {}),
                 }),
           },
@@ -257,18 +276,49 @@ export class PaymentsService {
           },
         });
         if (order.clientUserId) {
-          const content = payment.paymentType === 'deposit'
-            ? '定金支付成功，预约已进入履约阶段'
-            : '尾款支付成功，预约已完成';
+          const content =
+            payment.paymentType === 'deposit'
+              ? '定金支付成功，预约已进入履约阶段'
+              : '尾款支付成功，预约已完成';
           const conversation = await tx.conversation.upsert({
-            where: { clientId_techId: { clientId: order.clientUserId, techId: order.technicianId } },
+            where: {
+              clientId_techId: {
+                clientId: order.clientUserId,
+                techId: order.technicianId,
+              },
+            },
             update: { lastMessage: content, lastMessageAt: paidAt },
-            create: { clientId: order.clientUserId, techId: order.technicianId, lastMessage: content, lastMessageAt: paidAt },
+            create: {
+              clientId: order.clientUserId,
+              techId: order.technicianId,
+              lastMessage: content,
+              lastMessageAt: paidAt,
+            },
           });
           await tx.message.createMany({
             data: [
-              { conversationId: conversation.id, senderType: 'system', senderId: 0, receiverType: 'client', receiverId: order.clientUserId, messageType: 'system', content, relatedType: 'order', relatedId: order.id },
-              { conversationId: conversation.id, senderType: 'system', senderId: 0, receiverType: 'technician', receiverId: order.technicianId, messageType: 'system', content, relatedType: 'order', relatedId: order.id },
+              {
+                conversationId: conversation.id,
+                senderType: 'system',
+                senderId: 0,
+                receiverType: 'client',
+                receiverId: order.clientUserId,
+                messageType: 'system',
+                content,
+                relatedType: 'order',
+                relatedId: order.id,
+              },
+              {
+                conversationId: conversation.id,
+                senderType: 'system',
+                senderId: 0,
+                receiverType: 'technician',
+                receiverId: order.technicianId,
+                messageType: 'system',
+                content,
+                relatedType: 'order',
+                relatedId: order.id,
+              },
             ],
           });
         }

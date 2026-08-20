@@ -9,8 +9,14 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
 // ---------- 1. 静态检查：路由与接线 ----------
 const appJson = JSON.parse(read('app.json'));
+const registeredPages = [
+  ...appJson.pages,
+  ...(appJson.subPackages || []).flatMap((pkg) =>
+    pkg.pages.map((page) => `${pkg.root}/${page}`),
+  ),
+];
 assert.ok(
-  appJson.pages.includes('pages/technician/complete-service/index'),
+  registeredPages.includes('pages/technician/complete-service/index'),
   'app.json 应注册 complete-service 页面'
 );
 

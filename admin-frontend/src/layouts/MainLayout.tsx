@@ -19,6 +19,7 @@ import {
   FormOutlined,
   NotificationOutlined,
   SettingOutlined,
+  RocketOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -102,6 +103,12 @@ const MainLayout: React.FC = () => {
       key: '/feature-flags',
       icon: <FlagOutlined />,
       label: '功能开关',
+      permission: 'feature_flag:view',
+    },
+    {
+      key: '/launch-config',
+      icon: <RocketOutlined />,
+      label: '首期上线配置',
       permission: 'feature_flag:view',
     },
     {

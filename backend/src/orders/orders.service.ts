@@ -21,6 +21,10 @@ import {
   getBusinessDateTimeParts,
   parseBusinessDateTime,
 } from './business-time';
+import {
+  assertLaunchShopService,
+  isLaunchTechnician,
+} from '../common/miniprogram-launch-mode';
 
 export type OrderStatus =
   | 'pending_quote'
@@ -75,6 +79,10 @@ export class OrdersService {
     technicianId: number,
     dto: CreateTechnicianOrderDto,
   ) {
+    if (!isLaunchTechnician(technicianId)) {
+      throw new ForbiddenException('该美甲师不在小程序首期开放范围内');
+    }
+    assertLaunchShopService(dto.serviceType);
     if (this.subscriptions) {
       await this.subscriptions.assertCanCreateBooking(technicianId);
     }
@@ -413,6 +421,7 @@ export class OrdersService {
       depositAmount?: number;
     },
   ) {
+    assertLaunchShopService(dto.serviceType);
     const order = await this.findOneForTechnician(id, technicianId);
 
     const updateData: any = {};
@@ -632,109 +641,115 @@ export class OrdersService {
     let systemMessage: any = null;
     let conversationId: number | null = null;
 
-    const confirmBooking = () => this.prisma.$transaction(async (tx) => {
-      const conflict = await tx.blockedTimeSlot.findFirst({
-        where: {
-          techId: order.technicianId,
-          NOT: { orderId: id },
-          startTime: { lt: order.endTime },
-          endTime: { gt: order.startTime },
-        },
-        select: { id: true },
-      });
-      if (conflict) {
-        throw new BadRequestException('该时间段已被预约，请与客户协商新的时间');
-      }
-      const updated = await tx.order.update({
-        where: { id },
-        data: {
-          status: targetStatus,
-          bookingPhase: 'booking',
-          tradeStatus: requiresDeposit ? 'deposit_pending' : 'deposit_paid',
-          tradeCreatedAt: new Date(),
-          fulfillmentStatus: targetStatus,
-          confirmedStartTime: order.startTime,
-          confirmedEndTime: order.endTime,
-          confirmedAt: new Date(),
-        },
-      });
-
-      if (order.clientUserId) {
-        const totalAmount = Math.max(
-          0,
-          (order.quotePrice ?? 0) - (order.fundDiscountAmount ?? 0),
-        );
-        await tx.bookingTradeOrder.upsert({
-          where: { bookingId: id },
-          update: {},
-          create: {
-            tradeNo: `TRADE${Date.now()}${id}`,
-            bookingId: id,
-            clientUserId: order.clientUserId,
-            technicianId: order.technicianId,
-            totalAmount,
-            depositAmount: Math.min(totalAmount, order.depositAmount ?? 0),
-            balanceAmount: Math.max(0, totalAmount - (order.depositAmount ?? 0)),
-            paidAmount: 0,
-            status: totalAmount > 0 ? 'pending' : 'completed',
-            currentPayStage: requiresDeposit ? 'deposit' : 'balance',
-            completedAt: totalAmount > 0 ? null : new Date(),
+    const confirmBooking = () =>
+      this.prisma.$transaction(async (tx) => {
+        const conflict = await tx.blockedTimeSlot.findFirst({
+          where: {
+            techId: order.technicianId,
+            NOT: { orderId: id },
+            startTime: { lt: order.endTime },
+            endTime: { gt: order.startTime },
+          },
+          select: { id: true },
+        });
+        if (conflict) {
+          throw new BadRequestException(
+            '该时间段已被预约，请与客户协商新的时间',
+          );
+        }
+        const updated = await tx.order.update({
+          where: { id },
+          data: {
+            status: targetStatus,
+            bookingPhase: 'booking',
+            tradeStatus: requiresDeposit ? 'deposit_pending' : 'deposit_paid',
+            tradeCreatedAt: new Date(),
+            fulfillmentStatus: targetStatus,
+            confirmedStartTime: order.startTime,
+            confirmedEndTime: order.endTime,
+            confirmedAt: new Date(),
           },
         });
-      }
 
-      await tx.blockedTimeSlot.deleteMany({ where: { orderId: id } });
-      await tx.blockedTimeSlot.create({
-        data: {
-          techId: order.technicianId,
-          orderId: id,
-          startTime: order.startTime,
-          endTime: order.endTime,
-          reason: 'booking',
-        },
-      });
+        if (order.clientUserId) {
+          const totalAmount = Math.max(
+            0,
+            (order.quotePrice ?? 0) - (order.fundDiscountAmount ?? 0),
+          );
+          await tx.bookingTradeOrder.upsert({
+            where: { bookingId: id },
+            update: {},
+            create: {
+              tradeNo: `TRADE${Date.now()}${id}`,
+              bookingId: id,
+              clientUserId: order.clientUserId,
+              technicianId: order.technicianId,
+              totalAmount,
+              depositAmount: Math.min(totalAmount, order.depositAmount ?? 0),
+              balanceAmount: Math.max(
+                0,
+                totalAmount - (order.depositAmount ?? 0),
+              ),
+              paidAmount: 0,
+              status: totalAmount > 0 ? 'pending' : 'completed',
+              currentPayStage: requiresDeposit ? 'deposit' : 'balance',
+              completedAt: totalAmount > 0 ? null : new Date(),
+            },
+          });
+        }
 
-      if (order.clientUserId) {
-        const preview = requiresDeposit
-          ? `双方已确认预约，订单已生成，请支付定金 ¥${Number(order.depositAmount).toFixed(2)}`
-          : targetStatus === 'pending_home'
-            ? '美甲师已确认订单，届时将上门服务～'
-            : '美甲师已确认订单，请准时到店～';
-        const conversation = await tx.conversation.upsert({
-          where: {
-            clientId_techId: {
+        await tx.blockedTimeSlot.deleteMany({ where: { orderId: id } });
+        await tx.blockedTimeSlot.create({
+          data: {
+            techId: order.technicianId,
+            orderId: id,
+            startTime: order.startTime,
+            endTime: order.endTime,
+            reason: 'booking',
+          },
+        });
+
+        if (order.clientUserId) {
+          const preview = requiresDeposit
+            ? `双方已确认预约，订单已生成，请支付定金 ¥${Number(order.depositAmount).toFixed(2)}`
+            : targetStatus === 'pending_home'
+              ? '美甲师已确认订单，届时将上门服务～'
+              : '美甲师已确认订单，请准时到店～';
+          const conversation = await tx.conversation.upsert({
+            where: {
+              clientId_techId: {
+                clientId: order.clientUserId,
+                techId: order.technicianId,
+              },
+            },
+            update: { lastMessage: preview, lastMessageAt: new Date() },
+            create: {
               clientId: order.clientUserId,
               techId: order.technicianId,
+              lastMessage: preview,
+              lastMessageAt: new Date(),
             },
-          },
-          update: { lastMessage: preview, lastMessageAt: new Date() },
-          create: {
-            clientId: order.clientUserId,
-            techId: order.technicianId,
-            lastMessage: preview,
-            lastMessageAt: new Date(),
-          },
-        });
+          });
 
-        conversationId = conversation.id;
+          conversationId = conversation.id;
 
-        systemMessage = await tx.message.create({
-          data: {
-            conversationId: conversation.id,
-            senderType: 'system',
-            senderId: 0,
-            receiverType: 'client',
-            receiverId: order.clientUserId,
-            messageType: 'system',
-            content: preview,
-            relatedType: 'order',
-            relatedId: order.id,
-          },
-        });
-      }
+          systemMessage = await tx.message.create({
+            data: {
+              conversationId: conversation.id,
+              senderType: 'system',
+              senderId: 0,
+              receiverType: 'client',
+              receiverId: order.clientUserId,
+              messageType: 'system',
+              content: preview,
+              relatedType: 'order',
+              relatedId: order.id,
+            },
+          });
+        }
 
-      return updated;
-    });
+        return updated;
+      });
     const updated = this.bookingMutex
       ? await this.bookingMutex.runExclusive(order.technicianId, confirmBooking)
       : await confirmBooking();
@@ -1022,7 +1037,10 @@ export class OrdersService {
         throw new BadRequestException('该订单已取消，无需重复处理');
       }
       await tx.paymentOrder.updateMany({
-        where: { orderId: id, status: { in: ['created', 'pending', 'channel_pending'] } },
+        where: {
+          orderId: id,
+          status: { in: ['created', 'pending', 'channel_pending'] },
+        },
         data: { status: 'closed', closedAt: new Date() },
       });
       await tx.bookingTradeOrder.updateMany({

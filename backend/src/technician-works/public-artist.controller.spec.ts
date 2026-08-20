@@ -5,7 +5,12 @@ describe('PublicArtistController', () => {
   const prisma = {
     technician: { findFirst: jest.fn() },
     nailWork: { findMany: jest.fn() },
+    nailWorkLike: { count: jest.fn() },
+    nailWorkFavorite: { count: jest.fn() },
     technicianFollow: { count: jest.fn() },
+    technicianQualification: { findMany: jest.fn() },
+    technicianFeaturedComment: { findMany: jest.fn() },
+    serviceReview: { findUnique: jest.fn(), findMany: jest.fn() },
   } as any;
   const controller = new PublicArtistController(prisma);
 
@@ -13,6 +18,11 @@ describe('PublicArtistController', () => {
 
   it('returns only active services, enabled addresses and public works', async () => {
     prisma.technicianFollow.count.mockResolvedValue(12);
+    prisma.nailWorkLike.count.mockResolvedValue(0);
+    prisma.nailWorkFavorite.count.mockResolvedValue(0);
+    prisma.technicianQualification.findMany.mockResolvedValue([]);
+    prisma.technicianFeaturedComment.findMany.mockResolvedValue([]);
+    prisma.serviceReview.findMany.mockResolvedValue([]);
     prisma.technician.findFirst.mockResolvedValue({
       id: 7,
       name: '阿琳',

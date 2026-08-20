@@ -247,3 +247,29 @@ textarea {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+.privacy-consent {
+  display: flex;
+  min-height: 88rpx;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6rpx;
+  padding: 12rpx 28rpx calc(12rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  color: #756c70;
+  font-size: 24rpx;
+}
+
+.privacy-consent label {
+  display: flex;
+  min-height: 64rpx;
+  align-items: center;
+}
+
+.privacy-consent checkbox {
+  transform: scale(.82);
+}
+
+.privacy-link {
+  color: #9b6155;
+}

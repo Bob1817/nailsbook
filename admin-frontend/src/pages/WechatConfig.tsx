@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Button,
@@ -19,6 +19,11 @@ import {
 
 const { Title, Paragraph, Text } = Typography;
 
+function apiErrorMessage(error: unknown) {
+  const value = error as { response?: { data?: { message?: string } }; errorFields?: unknown };
+  return value.response?.data?.message;
+}
+
 function Status({ validAt, error }: { validAt: string | null; error: string | null }) {
   if (validAt && !error) return <Tag color="success">已校验生效</Tag>;
   return <Tag color="warning">未生效</Tag>;
@@ -30,7 +35,7 @@ export default function WechatConfig() {
   const [loginForm] = Form.useForm();
   const [paymentForm] = Form.useForm();
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const next = await wechatConfigService.get();
@@ -53,9 +58,9 @@ export default function WechatConfig() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [loginForm, paymentForm]);
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); }, [load]);
 
   const saveLogin = async () => {
     try {
@@ -63,9 +68,9 @@ export default function WechatConfig() {
       await wechatConfigService.updateLogin(values);
       message.success('登录配置已保存，请重新校验');
       await load();
-    } catch (error: any) {
-      if (error?.errorFields) return;
-      message.error(error?.response?.data?.message || '保存失败');
+    } catch (error: unknown) {
+      if ((error as { errorFields?: unknown }).errorFields) return;
+      message.error(apiErrorMessage(error) || '保存失败');
     }
   };
 
@@ -75,9 +80,9 @@ export default function WechatConfig() {
       await wechatConfigService.updatePayment(values);
       message.success('支付配置已保存，请重新校验');
       await load();
-    } catch (error: any) {
-      if (error?.errorFields) return;
-      message.error(error?.response?.data?.message || '保存失败');
+    } catch (error: unknown) {
+      if ((error as { errorFields?: unknown }).errorFields) return;
+      message.error(apiErrorMessage(error) || '保存失败');
     }
   };
 
@@ -88,8 +93,8 @@ export default function WechatConfig() {
       else await wechatConfigService.validatePayment();
       message.success('微信配置校验成功并已生效');
       await load();
-    } catch (error: any) {
-      message.error(error?.response?.data?.message || '校验失败');
+    } catch (error: unknown) {
+      message.error(apiErrorMessage(error) || '校验失败');
       await load();
     } finally {
       setLoading(false);

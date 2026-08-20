@@ -134,7 +134,7 @@ Page({
   },
 
   navigateToOrders() {
-    wx.navigateTo({ url: '/pages/client/trade-orders/index' });
+    wx.navigateTo({ url: '/pages/client/orders/index' });
   },
 
   navigateToDesigns() {
@@ -149,16 +149,28 @@ Page({
     wx.navigateTo({ url: '/pages/client/my-likes/index' });
   },
 
-  navigateToReferrals() {
-    wx.navigateTo({ url: '/pages/client/referrals/index' });
-  },
-
   navigateToFeedback() {
     wx.navigateTo({ url: '/pages/client/feedback/index' });
   },
 
+  async requestAccountDeletion() {
+    const result = await wx.showModal({
+      title: '申请注销账号',
+      content: '提交后需要运营方核验身份并处理未完成预约。注销完成后相关账号信息将按法律要求删除或匿名化。',
+      confirmText: '继续申请',
+      confirmColor: '#DC4C58'
+    });
+    if (result.confirm) {
+      wx.navigateTo({ url: '/pages/client/feedback/index?action=account-deletion' });
+    }
+  },
+
   navigateToManual() {
     wx.navigateTo({ url: '/pages/client/manual/index' });
+  },
+
+  navigateToAbout() {
+    wx.navigateTo({ url: '/pages/technician/about/index' });
   },
 
   openAgreement(e) {
@@ -180,8 +192,7 @@ Page({
         // 已激活：弹出确认
         this.setData({ showSwitchConfirmModal: true });
       } else {
-        // 未开通：弹出激活密钥输入框
-        this.setData({ showActivateModal: true, activationKey: '' });
+        wx.showToast({ title: '首期不开放新美甲师入驻', icon: 'none' });
       }
       return;
     }

@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { launchTechnicianFilterId } from '../common/miniprogram-launch-mode';
 
 @Injectable()
 export class ClientHomeService {
@@ -21,8 +22,14 @@ export class ClientHomeService {
 
   /** 公开首页：无需登录，返回精品作品（无个性化数据） */
   async getHomePublic() {
+    const technicianId = launchTechnicianFilterId();
     const works = await this.prisma.nailWork.findMany({
-      where: { isVisible: true, isFeatured: true, visibilityScope: 'public' },
+      where: {
+        isVisible: true,
+        isFeatured: true,
+        visibilityScope: 'public',
+        ...(technicianId ? { techId: technicianId } : {}),
+      },
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
       take: 6,
       include: {
@@ -696,7 +703,13 @@ export class ClientHomeService {
   // ===== 公开方法（无需登录）=====
 
   async getFeaturedWorksPublic(page = 1, limit = 10) {
-    const where = { isVisible: true, isFeatured: true, visibilityScope: 'public' as const };
+    const technicianId = launchTechnicianFilterId();
+    const where = {
+      isVisible: true,
+      isFeatured: true,
+      visibilityScope: 'public' as const,
+      ...(technicianId ? { techId: technicianId } : {}),
+    };
     const [works, total] = await Promise.all([
       this.prisma.nailWork.findMany({
         where,
@@ -720,10 +733,15 @@ export class ClientHomeService {
 
   async getWorksPublic(techId?: number) {
     const where: any = { isVisible: true, visibilityScope: 'public' };
-    if (techId) where.techId = techId;
+    const technicianId = launchTechnicianFilterId();
+    if (technicianId || techId) where.techId = technicianId ?? techId;
     const works = await this.prisma.nailWork.findMany({
       where,
-      orderBy: [{ isPinned: 'desc' as const }, { sortOrder: 'asc' as const }, { createdAt: 'desc' as const }],
+      orderBy: [
+        { isPinned: 'desc' as const },
+        { sortOrder: 'asc' as const },
+        { createdAt: 'desc' as const },
+      ],
       include: {
         likes: true,
         comments: true,
@@ -735,8 +753,14 @@ export class ClientHomeService {
   }
 
   async getWorkPublic(id: number) {
+    const technicianId = launchTechnicianFilterId();
     const work = await this.prisma.nailWork.findFirst({
-      where: { id, isVisible: true, visibilityScope: 'public' },
+      where: {
+        id,
+        isVisible: true,
+        visibilityScope: 'public',
+        ...(technicianId ? { techId: technicianId } : {}),
+      },
       include: {
         likes: true,
         favorites: true,
@@ -749,8 +773,12 @@ export class ClientHomeService {
             replies: {
               orderBy: { createdAt: 'asc' },
               include: {
-                client: { select: { id: true, nickname: true, avatarUrl: true } },
-                technician: { select: { id: true, name: true, avatarUrl: true } },
+                client: {
+                  select: { id: true, nickname: true, avatarUrl: true },
+                },
+                technician: {
+                  select: { id: true, name: true, avatarUrl: true },
+                },
               },
             },
           },
@@ -759,7 +787,12 @@ export class ClientHomeService {
       },
     });
     if (!work) throw new NotFoundException('作品不存在');
-    return { ...this.mapWork(work), isLiked: false, isFavorited: false, comments: [] };
+    return {
+      ...this.mapWork(work),
+      isLiked: false,
+      isFavorited: false,
+      comments: [],
+    };
   }
 
   async getCommentsPublic(workId: number) {

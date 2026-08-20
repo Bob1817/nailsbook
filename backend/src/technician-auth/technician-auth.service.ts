@@ -12,6 +12,10 @@ import { VerificationCodeService } from '../common/verification-code/verificatio
 import { SmsService } from '../common/sms/sms.service';
 import type { Prisma } from '@prisma/client';
 import { buildDefaultServiceItems } from '../common/default-service-items';
+import {
+  isLaunchTechnician,
+  isMiniProgramLaunchMode,
+} from '../common/miniprogram-launch-mode';
 
 @Injectable()
 export class TechnicianAuthService {
@@ -108,6 +112,12 @@ export class TechnicianAuthService {
 
     if (keyRecord.usedAt) {
       throw new BadRequestException('邀请密钥已被使用');
+    }
+
+    if (isMiniProgramLaunchMode() && !keyRecord.usedByTechnicianId) {
+      throw new BadRequestException(
+        '小程序首期不开放新美甲师入驻，请联系运营方预先开通账号',
+      );
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -249,6 +259,9 @@ export class TechnicianAuthService {
   }
 
   private async issueTokens(technicianId: number, phone: string) {
+    if (!isLaunchTechnician(technicianId)) {
+      throw new UnauthorizedException('该美甲师账号未在小程序首期开放');
+    }
     const technician = await this.prisma.technician.findUnique({
       where: { id: technicianId },
       include: { subscription: { include: { plan: true } } },
@@ -779,8 +792,13 @@ export class TechnicianAuthService {
 
     // 局部更新：只写入本次提交的字段，未提交的保持不变
     const updateData: any = {};
+    if (isMiniProgramLaunchMode() && dto.homeService) {
+      throw new BadRequestException('小程序首期仅支持到店美甲');
+    }
     if (dto.homeService !== undefined) {
-      updateData.homeService = dto.homeService;
+      updateData.homeService = isMiniProgramLaunchMode()
+        ? false
+        : dto.homeService;
     }
     if (dto.shopService !== undefined) {
       updateData.shopService = dto.shopService;

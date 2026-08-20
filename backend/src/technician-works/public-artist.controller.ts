@@ -8,6 +8,7 @@ import {
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { bookingReadiness } from '../technicians/booking-readiness';
+import { isLaunchTechnician } from '../common/miniprogram-launch-mode';
 
 const UPLOAD_BASE_URL = process.env.UPLOAD_BASE_URL || 'http://localhost:3000';
 
@@ -83,6 +84,9 @@ export class PublicArtistController {
     if (!technician) {
       throw new NotFoundException('美甲师不存在或未启用');
     }
+    if (!isLaunchTechnician(technician.id)) {
+      throw new NotFoundException('美甲师不存在或未启用');
+    }
 
     const rawWorks = await this.prisma.nailWork.findMany({
       where: {
@@ -123,11 +127,12 @@ export class PublicArtistController {
     });
 
     // Get featured comments with review details
-    const featuredComments = await this.prisma.technicianFeaturedComment.findMany({
-      where: { technicianId: technician.id },
-      orderBy: { sortOrder: 'asc' },
-      take: 5,
-    });
+    const featuredComments =
+      await this.prisma.technicianFeaturedComment.findMany({
+        where: { technicianId: technician.id },
+        orderBy: { sortOrder: 'asc' },
+        take: 5,
+      });
 
     const featuredReviews: Array<{
       id: number;
@@ -167,23 +172,33 @@ export class PublicArtistController {
 
     // Get like count (from nail works belonging to this technician)
     const workIds = works.map((w) => w.id);
-    const likeCount = workIds.length > 0
-      ? await this.prisma.nailWorkLike.count({ where: { workId: { in: workIds } } })
-      : 0;
+    const likeCount =
+      workIds.length > 0
+        ? await this.prisma.nailWorkLike.count({
+            where: { workId: { in: workIds } },
+          })
+        : 0;
 
     // Get favorite count
-    const favoriteCount = workIds.length > 0
-      ? await this.prisma.nailWorkFavorite.count({ where: { workId: { in: workIds } } })
-      : 0;
+    const favoriteCount =
+      workIds.length > 0
+        ? await this.prisma.nailWorkFavorite.count({
+            where: { workId: { in: workIds } },
+          })
+        : 0;
 
     // Get rating from service reviews
     const reviews = await this.prisma.serviceReview.findMany({
       where: { technicianId: technician.id },
       select: { rating: true },
     });
-    const avgRating = reviews.length > 0
-      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-      : null;
+    const avgRating =
+      reviews.length > 0
+        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+        : null;
+    const followerCount = await this.prisma.technicianFollow.count({
+      where: { technicianId: technician.id },
+    });
 
     return {
       artist: {
@@ -198,7 +213,7 @@ export class PublicArtistController {
         bookingNotes: technician.bookingNotes,
         styleTags: parseJsonArray(technician.styleTags),
         isVerified: technician.isVerified,
-        homeService: technician.homeService,
+        homeService: false,
         shopService: technician.shopService,
         invitationCode: technician.invitationCode,
         serviceItems: parseJsonArray(technician.serviceItems).filter(
@@ -209,10 +224,9 @@ export class PublicArtistController {
         ),
         serviceSchedule: parseJsonObject(technician.serviceSchedule),
         socialMedia: parseJsonObject(technician.socialMedia),
+        followerCount,
         stats: {
-          followerCount: await this.prisma.technicianFollow.count({
-            where: { technicianId: technician.id },
-          }),
+          followerCount,
           likeCount,
           favoriteCount,
           workCount: works.length,

@@ -30,6 +30,10 @@ import { TouristGuard } from '../technician-auth/tourist.guard';
 import { Permissions } from '../auth/permission.decorator';
 import { OperationLog } from '../auth/operation-log.decorator';
 import { OperationLogInterceptor } from '../auth/operation-log.interceptor';
+import {
+  assertMiniProgramFeatureDisabled,
+  isMiniProgramLaunchMode,
+} from '../common/miniprogram-launch-mode';
 
 @Controller('technician/subscriptions')
 @UseGuards(TechnicianJwtAuthGuard, TouristGuard)
@@ -40,6 +44,9 @@ export class TechnicianSubscriptionsPublicController {
   @ApiOperation({ summary: '获取订阅套餐列表' })
   @ApiResponse({ status: 200, description: '返回套餐列表' })
   findPlans() {
+    if (isMiniProgramLaunchMode()) {
+      assertMiniProgramFeatureDisabled('订阅套餐');
+    }
     return this.subscriptionsService.findPlans(true);
   }
 
@@ -57,6 +64,9 @@ export class TechnicianSubscriptionsPublicController {
     @Req() request: { user: { technicianId: number } },
     @Param('planId') planId: string,
   ) {
+    if (isMiniProgramLaunchMode()) {
+      assertMiniProgramFeatureDisabled('订阅变更');
+    }
     return this.subscriptionsService.previewPlanChange(
       request.user.technicianId,
       parseInt(planId, 10),

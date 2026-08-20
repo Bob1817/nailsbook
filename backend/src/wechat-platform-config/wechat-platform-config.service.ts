@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  OnModuleInit,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -15,16 +16,28 @@ import {
 } from 'crypto';
 import { PrismaService } from '../common/prisma/prisma.service';
 import {
+  UpdateMiniProgramLaunchConfigDto,
   UpdateWechatLoginConfigDto,
   UpdateWechatPaymentConfigDto,
 } from './dto/update-wechat-config.dto';
+import {
+  configureLaunchTechnicianId,
+  isMiniProgramLaunchMode,
+} from '../common/miniprogram-launch-mode';
 
 @Injectable()
-export class WechatPlatformConfigService {
+export class WechatPlatformConfigService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
   ) {}
+
+  async onModuleInit() {
+    const item = await this.getRecord();
+    if (item.launchTechnicianId) {
+      configureLaunchTechnicianId(item.launchTechnicianId);
+    }
+  }
 
   async getAdminConfig() {
     const item = await this.getRecord();
@@ -51,6 +64,114 @@ export class WechatPlatformConfigService {
     };
   }
 
+  async getLaunchConfig() {
+    const item = await this.getRecord();
+    const technician = item.launchTechnicianId
+      ? await this.prisma.technician.findUnique({
+          where: { id: item.launchTechnicianId },
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            status: true,
+            homeService: true,
+            shopService: true,
+          },
+        })
+      : null;
+    const required = {
+      operatorName: !!item.operatorName?.trim(),
+      storeName: !!item.storeName?.trim(),
+      storeAddress: !!item.storeAddress?.trim(),
+      storePhone: !!item.storePhone?.trim(),
+      privacyContact: !!item.privacyContact?.trim(),
+      filingNumber: !!item.filingNumber?.trim(),
+      launchTechnician:
+        !!technician &&
+        technician.status === 'active' &&
+        technician.shopService &&
+        !technician.homeService,
+      bookingReminderTemplateId:
+        !!item.bookingReminderTemplateId?.trim(),
+      wechatLogin: this.loginEffective(item),
+      paymentDisabled: !item.paymentEnabled,
+    };
+    return {
+      operatorName: item.operatorName ?? '',
+      storeName: item.storeName ?? '',
+      storeAddress: item.storeAddress ?? '',
+      storePhone: item.storePhone ?? '',
+      privacyContact: item.privacyContact ?? '',
+      filingNumber: item.filingNumber ?? '',
+      launchTechnicianId: item.launchTechnicianId,
+      bookingReminderTemplateId: item.bookingReminderTemplateId ?? '',
+      technician,
+      launchModeLocked: isMiniProgramLaunchMode(),
+      required,
+      readyForReview: Object.values(required).every(Boolean),
+      updatedAt: item.updatedAt,
+    };
+  }
+
+  async updateLaunchConfig(dto: UpdateMiniProgramLaunchConfigDto) {
+    if (!isMiniProgramLaunchMode()) {
+      throw new BadRequestException(
+        '必须先在服务器启用小程序首期合规模式',
+      );
+    }
+    const technician = await this.prisma.technician.findUnique({
+      where: { id: dto.launchTechnicianId },
+      select: {
+        id: true,
+        status: true,
+        homeService: true,
+        shopService: true,
+      },
+    });
+    if (!technician || technician.status !== 'active') {
+      throw new BadRequestException('请选择已启用的美甲师');
+    }
+    if (!technician.shopService || technician.homeService) {
+      throw new BadRequestException(
+        '首期美甲师必须仅开启到店服务',
+      );
+    }
+    await this.prisma.wechatPlatformConfig.update({
+      where: { id: 1 },
+      data: {
+        operatorName: dto.operatorName.trim(),
+        storeName: dto.storeName.trim(),
+        storeAddress: dto.storeAddress.trim(),
+        storePhone: dto.storePhone.trim(),
+        privacyContact: dto.privacyContact.trim(),
+        filingNumber: dto.filingNumber?.trim() || null,
+        launchTechnicianId: dto.launchTechnicianId,
+        bookingReminderTemplateId:
+          dto.bookingReminderTemplateId?.trim() || null,
+        paymentEnabled: false,
+        paymentValidatedAt: null,
+      },
+    });
+    configureLaunchTechnicianId(dto.launchTechnicianId);
+    return this.getLaunchConfig();
+  }
+
+  async getPublicLaunchConfig() {
+    const item = await this.getRecord();
+    return {
+      operatorName: item.operatorName ?? '',
+      storeName: item.storeName ?? '',
+      storeAddress: item.storeAddress ?? '',
+      storePhone: item.storePhone ?? '',
+      privacyContact: item.privacyContact ?? '',
+      filingNumber: item.filingNumber ?? '',
+      launchTechnicianId: item.launchTechnicianId,
+      bookingReminderTemplateId: item.bookingReminderTemplateId ?? '',
+      paymentEnabled: false,
+      homeServiceEnabled: false,
+    };
+  }
+
   async updateLogin(dto: UpdateWechatLoginConfigDto) {
     const current = await this.getRecord();
     const secret = dto.miniProgramSecret?.trim();
@@ -71,6 +192,9 @@ export class WechatPlatformConfigService {
   }
 
   async updatePayment(dto: UpdateWechatPaymentConfigDto) {
+    if (isMiniProgramLaunchMode() && dto.paymentEnabled) {
+      throw new BadRequestException('小程序首期版本禁止启用微信支付');
+    }
     const current = await this.getRecord();
     const privateKey = dto.merchantPrivateKey?.trim();
     const apiV3Key = dto.apiV3Key?.trim();
@@ -215,7 +339,10 @@ export class WechatPlatformConfigService {
   async getCapabilities() {
     const item = await this.getRecord();
     const loginAvailable = this.loginEffective(item);
-    const paymentAvailable = this.paymentEffective(item) && loginAvailable;
+    const paymentAvailable =
+      !isMiniProgramLaunchMode() &&
+      this.paymentEffective(item) &&
+      loginAvailable;
     return {
       wechatLogin: {
         available: loginAvailable,
@@ -239,12 +366,25 @@ export class WechatPlatformConfigService {
     };
   }
 
+  async getBookingReminderTemplateId() {
+    const item = await this.getRecord();
+    return (
+      item.bookingReminderTemplateId?.trim() ||
+      process.env.WECHAT_BOOKING_REMINDER_TEMPLATE_ID?.trim() ||
+      ''
+    );
+  }
+
   async isPaymentAvailable() {
+    if (isMiniProgramLaunchMode()) return false;
     const item = await this.getRecord();
     return this.paymentEffective(item) && this.loginEffective(item);
   }
 
   async getPaymentCredentials() {
+    if (isMiniProgramLaunchMode()) {
+      throw new ServiceUnavailableException('小程序首期版本禁止启用微信支付');
+    }
     const item = await this.getRecord();
     if (!this.paymentEffective(item) || !this.loginEffective(item)) {
       throw new ServiceUnavailableException('微信支付配置未完整校验或未启用');

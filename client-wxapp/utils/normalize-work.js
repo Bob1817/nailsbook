@@ -20,21 +20,34 @@ function normalizeWork(raw, technician, options) {
   const styleTags = Array.isArray(options.styleTags) ? options.styleTags : [];
   const isBound = !!options.isBound;
 
-  // ===== 1. 合并 technician 信息：优先用入参快照（真理源），其次用 raw.technician，最后用 technician* 扁平字段 =====
+  // ===== 1. 合并 technician 信息 =====
+  // 优先级规则（严格，不 OR 混合，防止旧快照数据污染）：
+  //   当显式传入 technician 参数 → 它是唯一真理源，每个字段都用 `!= null` 判断（0 也算有效值），不 fallback 到 raw
+  //   当未传入 technician → 用 raw.technician 对象，再 fallback 到 raw 的扁平字段
+  const hasTechParam = !!technician;
   const rawTech = technician || raw.technician || {};
-  const fallbackId = String(raw.technicianId || rawTech.id || rawTech.technicianId || '');
-  const fallbackName = rawTech.name || raw.technicianName || '';
-  const fallbackAvatar = rawTech.avatarUrl || raw.technicianAvatarUrl || '';
-  const fallbackCity = rawTech.city || raw.technicianCity || '';
-  const fallbackExperience = Number(rawTech.experienceYears || raw.experienceYears || 0) || 0;
-  const fallbackStyleTags = Array.isArray(rawTech.styleTags)
-    ? rawTech.styleTags
-    : Array.isArray(rawTech.specialties)
-      ? rawTech.specialties
-      : Array.isArray(raw.specialties) ? raw.specialties : [];
-  const fallbackSpecialtiesText = rawTech.specialtiesText
+
+  function pickTech(field, flatField) {
+    // technician 传入时：严格从 technician 取值（0 也有效），只有 undefined/null 才看 raw
+    if (hasTechParam && technician[field] != null) return technician[field];
+    if (rawTech[field] != null) return rawTech[field];
+    flatField = flatField || field;
+    return raw[flatField] != null ? raw[flatField] : undefined;
+  }
+
+  const fallbackId = String(pickTech('id', 'technicianId') || pickTech('technicianId') || '');
+  const fallbackName = pickTech('name', 'technicianName') || '';
+  const fallbackAvatar = pickTech('avatarUrl', 'technicianAvatarUrl') || '';
+  const fallbackCity = pickTech('city', 'technicianCity') || '';
+  const fallbackExperience = Number(pickTech('experienceYears') || 0) || 0;
+  const rawStyleTags = pickTech('styleTags') || pickTech('specialties');
+  const fallbackStyleTags = Array.isArray(rawStyleTags)
+    ? rawStyleTags
+    : Array.isArray(raw.specialties) ? raw.specialties : [];
+  const fallbackSpecialtiesText = pickTech('specialtiesText')
+    || (fallbackStyleTags.length ? fallbackStyleTags.join(' · ') : '')
     || raw.specialtiesText
-    || (fallbackStyleTags.length ? fallbackStyleTags.join(' · ') : '');
+    || '';
 
   const cityText = fallbackCity || '';
   const experienceNum = Math.max(1, fallbackExperience);

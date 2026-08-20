@@ -21,6 +21,10 @@ import { SmsService } from '../common/sms/sms.service';
 import { buildDefaultServiceItems } from '../common/default-service-items';
 import { ChatGateway } from '../chat/chat.gateway';
 import type { Prisma } from '@prisma/client';
+import {
+  isLaunchTechnician,
+  launchTechnicianFilterId,
+} from '../common/miniprogram-launch-mode';
 
 type ClientWithBindings = Prisma.ClientUserGetPayload<{
   include: { bindings: { include: { technician: true } } };
@@ -1011,8 +1015,14 @@ export class ClientAuthService {
   }
 
   private buildLoginResult(client: ClientWithBindings) {
+    const launchBindings = client.bindings.filter((binding) =>
+      isLaunchTechnician(binding.techId),
+    );
     const defaultBinding =
-      client.bindings.find((b) => b.isDefault) || client.bindings[0];
+      launchBindings.find((b) => b.isDefault) || launchBindings[0];
+    if (!defaultBinding) {
+      throw new NotFoundException('当前账号尚未绑定指定美甲店');
+    }
 
     return {
       accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
@@ -1035,7 +1045,7 @@ export class ClientAuthService {
         name: defaultBinding.technician.name,
         phone: defaultBinding.technician.phone,
         status: defaultBinding.technician.status,
-        homeService: defaultBinding.technician.homeService,
+        homeService: false,
         shopService: defaultBinding.technician.shopService,
         shopAddresses: defaultBinding.technician.shopAddresses
           ? JSON.parse(defaultBinding.technician.shopAddresses)
@@ -1044,7 +1054,7 @@ export class ClientAuthService {
           defaultBinding.technician.serviceItems,
         ),
       },
-      technicians: client.bindings.map((b) => ({
+      technicians: launchBindings.map((b) => ({
         id: b.technician.id,
         name: b.technician.name,
         phone: b.technician.phone,
@@ -1052,7 +1062,7 @@ export class ClientAuthService {
         city: b.technician.city,
         serviceArea: b.technician.serviceArea,
         status: b.technician.status,
-        homeService: b.technician.homeService,
+        homeService: false,
         shopService: b.technician.shopService,
         invitationCode: b.technician.invitationCode,
         socialMedia: b.technician.socialMedia
@@ -1089,9 +1099,11 @@ export class ClientAuthService {
       throw new UnauthorizedException('客户不存在');
     }
 
-    const activeBindings = client.bindings.filter((b) => b.status === 'active');
+    const activeBindings = client.bindings.filter(
+      (b) => b.status === 'active' && isLaunchTechnician(b.techId),
+    );
     const pendingBindings = client.bindings.filter(
-      (b) => b.status === 'pending',
+      (b) => b.status === 'pending' && isLaunchTechnician(b.techId),
     );
     const defaultBinding = activeBindings.find((b) => b.isDefault);
 
@@ -1130,7 +1142,7 @@ export class ClientAuthService {
               name: defaultBinding.technician.name,
               phone: defaultBinding.technician.phone,
               status: defaultBinding.technician.status,
-              homeService: defaultBinding.technician.homeService,
+              homeService: false,
               shopService: defaultBinding.technician.shopService,
               shopAddresses: defaultBinding.technician.shopAddresses
                 ? JSON.parse(defaultBinding.technician.shopAddresses)
@@ -1150,7 +1162,7 @@ export class ClientAuthService {
         city: b.technician.city,
         serviceArea: b.technician.serviceArea,
         status: b.technician.status,
-        homeService: b.technician.homeService,
+        homeService: false,
         shopService: b.technician.shopService,
         invitationCode: b.technician.invitationCode,
         socialMedia: b.technician.socialMedia
@@ -1172,6 +1184,9 @@ export class ClientAuthService {
 
   /// 申请绑定美甲师（改为审批制）：校验邀请码后创建 pending 申请并通知美甲师。
   async bindTechnician(clientUserId: number, dto: BindTechnicianDto) {
+    if (!isLaunchTechnician(dto.techId)) {
+      throw new NotFoundException('美甲师不存在');
+    }
     const technician = await this.prisma.technician.findUnique({
       where: { id: dto.techId },
     });
@@ -1197,8 +1212,13 @@ export class ClientAuthService {
   }
 
   async listFollowedTechnicians(clientUserId: number) {
+    const technicianId = launchTechnicianFilterId();
     const follows = await this.prisma.technicianFollow.findMany({
-      where: { clientUserId, technician: { status: 'active' } },
+      where: {
+        clientUserId,
+        technician: { status: 'active' },
+        ...(technicianId ? { technicianId } : {}),
+      },
       include: { technician: true },
       orderBy: { createdAt: 'desc' },
     });
@@ -1692,10 +1712,12 @@ export class ClientAuthService {
     inviteCode: string,
     notFoundMessage: string,
   ) {
+    const technicianId = launchTechnicianFilterId();
     const technician = await this.prisma.technician.findFirst({
       where: {
         invitationCode: inviteCode,
         status: 'active',
+        ...(technicianId ? { id: technicianId } : {}),
       },
     });
 
@@ -1720,7 +1742,7 @@ export class ClientAuthService {
       city: technician.city,
       serviceArea: technician.serviceArea,
       status: technician.status,
-      homeService: technician.homeService,
+      homeService: false,
       shopService: technician.shopService,
       shopAddresses: technician.shopAddresses
         ? JSON.parse(technician.shopAddresses)

@@ -21,7 +21,27 @@
     </view>
     <view class="info-item info-item-border">
       <text class="info-label">运营主体</text>
-      <text class="info-value">本小程序运营者，以微信小程序备案及认证主体信息为准</text>
+      <text class="info-value">{{operatorName}}</text>
+    </view>
+    <view class="info-item info-item-border">
+      <text class="info-label">服务门店</text>
+      <text class="info-value">{{storeName}}</text>
+    </view>
+    <view wx:if="{{storeAddress}}" class="info-item info-item-border">
+      <text class="info-label">门店地址</text>
+      <text class="info-value">{{storeAddress}}</text>
+    </view>
+    <view wx:if="{{storePhone}}" class="info-item info-item-border">
+      <text class="info-label">门店电话</text>
+      <text class="info-value">{{storePhone}}</text>
+    </view>
+    <view class="info-item info-item-border">
+      <text class="info-label">小程序备案号</text>
+      <text class="info-value">{{filingNumber}}</text>
+    </view>
+    <view class="info-item info-item-border">
+      <text class="info-label">隐私联系方式</text>
+      <text class="info-value">{{privacyContact}}</text>
     </view>
     <view class="agreement-row" bindtap="openAgreement" data-type="user">用户服务协议<text>›</text></view>
     <view class="agreement-row" bindtap="openAgreement" data-type="privacy">隐私政策<text>›</text></view>

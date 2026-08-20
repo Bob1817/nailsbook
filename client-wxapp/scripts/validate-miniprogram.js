@@ -29,7 +29,13 @@ function parseJson(file) {
 }
 
 const appConfig = parseJson(path.join(root, 'app.json'));
-const pages = appConfig && Array.isArray(appConfig.pages) ? appConfig.pages : [];
+const mainPages = appConfig && Array.isArray(appConfig.pages) ? appConfig.pages : [];
+const subPages = appConfig && Array.isArray(appConfig.subPackages)
+  ? appConfig.subPackages.flatMap((pkg) =>
+      (Array.isArray(pkg.pages) ? pkg.pages : []).map((page) => `${pkg.root}/${page}`),
+    )
+  : [];
+const pages = [...mainPages, ...subPages];
 const uniquePages = new Set(pages);
 
 if (uniquePages.size !== pages.length) {
@@ -95,7 +101,7 @@ if (errors.length) {
 }
 
 console.log(
-  `小程序静态检查通过：${pages.length} 个页面，` +
+  `小程序静态检查通过：${mainPages.length} 个主包页面、${subPages.length} 个分包页面，` +
     `${sourceFiles.filter((file) => file.endsWith('.js')).length} 个 JavaScript 文件，` +
     `${sourceFiles.filter((file) => file.endsWith('.json')).length} 个 JSON 文件。`,
 );
