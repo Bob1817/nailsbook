@@ -1,171 +1,225 @@
 <nav-bar title="美甲师主页" showBack/>
-<view wx:if="{{previewMode}}" class="preview-mode-bar"><text>主页预览模式</text><view class="edit-chip" bindtap="editSection" data-section="profile">编辑基础资料</view></view>
 <view class="page">
-  <view wx:if="{{loading}}" class="state">正在加载主页...</view>
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="state">
+    <view class="loading-spinner"></view>
+    <text>正在加载主页...</text>
+  </view>
   <view wx:elif="{{loadFailed}}" class="state">
     <text class="state-title">主页加载失败</text>
-    <view class="retry" bindtap="loadHome">重新加载</view>
+    <view class="retry-btn" bindtap="loadHome">重新加载</view>
   </view>
   <block wx:else>
 
-<!-- 封面图区域 -->
-<view class="cover-area">
-  <image wx:if="{{artist.coverImageUrl}}" class="cover-image" src="{{artist.coverImageUrl}}" mode="aspectFill"/>
-  <view wx:else class="cover-gradient"></view>
-  <view class="cover-overlay"></view>
-  <view class="cover-content">
-    <view class="avatar-row">
-      <view class="avatar-wrap">
-        <image wx:if="{{artist.avatarUrl}}" class="avatar-img" src="{{artist.avatarUrl}}" mode="aspectFill"/>
-        <view wx:else class="avatar-fallback">{{artist.initial}}</view>
-        <view wx:if="{{artist.isVerified}}" class="verified-badge">
-          <image src="/static/icons/check-circle.svg"/>
-        </view>
+    <!-- ===== 1. Header Banner — 毛玻璃马赛克背景 ===== -->
+    <section class="banner-section">
+      <view class="banner-mosaic">
+        <image wx:for="{{bannerImages}}" wx:key="*this" src="{{item}}" mode="aspectFill" class="mosaic-img"/>
       </view>
-      <view class="avatar-info">
-        <view class="name-row">
-          <text class="artist-name">{{artist.name}}</text>
-        </view>
-        <text class="artist-subtitle">{{artist.subtitle || '专业美甲师'}}</text>
-        <view class="status-row">
-          <view class="status-dot {{artist.status === 'active' ? 'dot-active' : ''}}"></view>
-          <text class="status-text">{{artist.status === 'active' ? '可预约' : '休息中'}}</text>
-        </view>
-      </view>
-    </view>
-  </view>
-  <view wx:if="{{previewMode}}" class="hero-edit" bindtap="editSection" data-section="hero">编辑封面</view>
-</view>
-
-    <!-- 专业标签（始终显示） -->
-    <view class="tags-bar">
-      <text wx:for="{{displayTags}}" wx:key="*this" class="tag-chip">{{item}}</text>
-    </view>
-
-    <!-- 核心数据 -->
-    <view class="stats-bar">
-      <view class="stat-item">
-        <text class="stat-num">{{artist.followerCount || 0}}</text>
-        <text class="stat-label">关注</text>
-      </view>
-      <view class="stat-divider"></view>
-      <view class="stat-item">
-        <text class="stat-num">{{artist.likeCount || 0}}</text>
-        <text class="stat-label">点赞</text>
-      </view>
-      <view class="stat-divider"></view>
-      <view class="stat-item">
-        <text class="stat-num">{{artist.favoriteCount || 0}}</text>
-        <text class="stat-label">收藏</text>
-      </view>
-      <view class="stat-divider"></view>
-      <view class="stat-item">
-        <text class="stat-num accent">{{artist.rating || '暂无'}}</text>
-        <text class="stat-label">评分</text>
-      </view>
-    </view>
-
-    <!-- 关于我（始终显示） -->
-    <view class="section">
-      <text class="section-title">关于我</text>
-      <text class="bio-text">{{artist.bio || '该美甲师还未自我介绍哦～'}}</text>
-    </view>
-
-    <!-- 服务内容 -->
-    <view class="section section-gray">
-      <text class="section-title">服务内容</text>
-      <view class="capsule-tags">
-        <text wx:for="{{serviceItems}}" wx:key="*this" class="capsule-tag">{{item}}</text>
-      </view>
-
-      <!-- 擅长风格 -->
-      <view wx:if="{{artist.styleTags.length}}" class="sub-section">
-        <text class="sub-title">擅长风格</text>
-        <view class="capsule-tags">
-          <text wx:for="{{artist.styleTags}}" wx:key="*this" class="capsule-tag style-tag">{{item}}</text>
-        </view>
-      </view>
-
-      <!-- 服务理念 -->
-      <view wx:if="{{artist.servicePhilosophy}}" class="philosophy-box">
-        <text class="philosophy-text">"{{artist.servicePhilosophy}}"</text>
-      </view>
-    </view>
-
-    <!-- 店铺信息 -->
-    <view class="section">
-      <text class="section-title">店铺信息</text>
-      <block wx:if="{{artist.shopAddresses.length}}">
-        <view wx:for="{{artist.shopAddresses}}" wx:key="id" class="shop-card">
-          <text class="shop-name">{{item.displayName}}</text>
-          <view wx:if="{{item.displayAddress}}" class="shop-info-row">
-            <text class="shop-info-label">地址</text>
-            <text class="shop-info-value">{{item.displayAddress}}</text>
+      <view class="banner-overlay"></view>
+      <view class="banner-gradient"></view>
+      
+      <view class="banner-content">
+        <view class="artist-info-row">
+          <!-- 头像 -->
+          <view class="avatar-wrap">
+            <image wx:if="{{artist.avatarUrl}}" src="{{artist.avatarUrl}}" class="avatar-img" mode="aspectFill"/>
+            <view wx:else class="avatar-fallback">{{artist.initial}}</view>
+            <view wx:if="{{artist.isOnline}}" class="online-dot"></view>
           </view>
-          <view wx:if="{{item.businessHoursText}}" class="shop-info-row">
-            <text class="shop-info-label">营业</text>
-            <text class="shop-info-value">{{item.businessHoursText}}</text>
-          </view>
-          <view wx:if="{{item.phone}}" class="shop-info-row">
-            <text class="shop-info-label">电话</text>
-            <text class="shop-info-value">{{item.phone}}</text>
-          </view>
-          <view wx:if="{{item.wechat}}" class="shop-info-row">
-            <text class="shop-info-label">微信</text>
-            <text class="shop-info-value">{{item.wechat}}</text>
+          
+          <!-- 信息区 -->
+          <view class="artist-detail">
+            <view class="name-row">
+              <text class="artist-name">{{artist.name}}</text>
+              <view wx:if="{{artist.isVerified}}" class="badge-gold">
+                <text class="badge-icon">✓</text>
+                <text>高级认证</text>
+              </view>
+            </view>
+            <view class="meta-row">
+              <text class="meta-icon">📍</text>
+              <text>{{artist.city || '上海'}} · 从业{{artist.experienceYears || 6}}年</text>
+              <text class="meta-divider">|</text>
+              <text>{{artist.specialtiesText || '日式专攻'}}</text>
+            </view>
+            <button class="btn-book-now" bindtap="bookArtist">
+              <text class="btn-icon">📅</text>
+              立即预约
+            </button>
           </view>
         </view>
-      </block>
-      <view wx:else class="empty-hint">暂未设置店铺信息</view>
-    </view>
-
-    <!-- 专业资质（仅在有数据时显示） -->
-    <view wx:if="{{qualifications.length}}" class="section section-gray">
-      <view class="section-head">
-        <text class="section-title">专业资质</text>
-        <text class="section-more">全部 ></text>
       </view>
-      <view wx:for="{{qualifications}}" wx:key="id" class="qual-row">
-        <view class="qual-icon-wrap qual-type-{{item.type}}">
-          <text class="qual-icon">{{item.icon}}</text>
-        </view>
-        <view class="qual-info">
-          <text class="qual-title">{{item.title}}</text>
-          <text class="qual-detail">{{item.detail}} · {{item.year}}</text>
-        </view>
-        <image wx:if="{{item.isVerified}}" class="qual-verified" src="/static/icons/check-circle.svg"/>
-      </view>
-    </view>
+    </section>
 
-    <!-- 精选作品 -->
-    <view class="section">
-      <view class="section-head">
+    <!-- ===== 2. 统计概览 ===== -->
+    <section class="stats-section">
+      <view class="stats-card">
+        <view class="stat-item">
+          <text class="stat-num">{{artist.serviceCount || 1280}}</text>
+          <text class="stat-label">服务客户</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-num">{{artist.satisfactionRate || '99.2'}}<text class="stat-unit">%</text></text>
+          <text class="stat-label">好评率</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-num">{{works.length || 326}}</text>
+          <text class="stat-label">精选作品</text>
+        </view>
+      </view>
+    </section>
+
+    <!-- ===== 3. 关于我 ===== -->
+    <section class="section-block">
+      <view class="section-header">
+        <view class="section-bar"></view>
+        <text class="section-title">关于我</text>
+      </view>
+      <view class="about-card">
+        <text class="bio-text">{{artist.bio || '每一双手都值得被温柔以待。从业六年，我始终相信美甲不只是指尖的装饰，更是一种生活态度的表达。擅长将日式的精致细腻与当下流行元素融合，为每一位客人打造独一无二的指尖艺术。'}}</text>
+        
+        <!-- 成长时间线 -->
+        <view class="timeline-section" wx:if="{{timeline.length}}">
+          <text class="timeline-label">成长历程</text>
+          <view class="timeline-list">
+            <view wx:for="{{timeline}}" wx:key="year" class="timeline-item">
+              <view class="timeline-dot {{index < timeline.length - 1 ? 'has-line' : ''}}"></view>
+              <view wx:if="{{index < timeline.length - 1}}" class="timeline-line"></view>
+              <view class="timeline-content">
+                <text class="timeline-year">{{item.year}}</text>
+                <text class="timeline-desc">{{item.desc}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </section>
+
+    <!-- ===== 4. 精选作品 ===== -->
+    <section class="section-block">
+      <view class="section-header">
+        <view class="section-bar"></view>
         <text class="section-title">精选作品</text>
-        <text class="section-more" bindtap="viewAllWorks">查看全部 ></text>
+        <text class="section-more" bindtap="viewAllWorks">查看全部 ›</text>
       </view>
       <view wx:if="{{works.length === 0}}" class="empty-hint">暂无作品</view>
-      <view wx:else class="works-grid">
-        <view wx:for="{{displayWorks}}" wx:key="id" class="work-thumb" bindtap="viewWork" data-id="{{item.id}}">
-          <image src="{{item.coverUrl}}" mode="aspectFill" class="work-thumb-img"/>
+      <view wx:else class="gallery-grid">
+        <view wx:for="{{displayWorks}}" wx:key="id" class="gallery-item" bindtap="viewWork" data-id="{{item.id}}">
+          <image src="{{item.coverUrl}}" mode="aspectFill" class="gallery-img"/>
+          <view class="gallery-overlay">
+            <view class="gallery-tag">
+              <text>{{item.styleText || '美甲设计'}} · {{item.duration || '60'}}min</text>
+            </view>
+          </view>
         </view>
       </view>
-    </view>
+    </section>
 
-    <!-- 客户评价（始终显示） -->
-    <view class="section section-gray">
-      <view class="section-head">
-        <text class="section-title">客户评价</text>
-        <text wx:if="{{reviews.length}}" class="section-count">{{artist.reviewCount || reviews.length}}条评价</text>
+    <!-- ===== 5. 擅长风格 ===== -->
+    <section class="section-block" wx:if="{{artist.styleTags.length}}">
+      <view class="section-header">
+        <view class="section-bar"></view>
+        <text class="section-title">擅长风格</text>
       </view>
-      <block wx:if="{{reviews.length}}">
-        <view wx:for="{{reviews}}" wx:key="id" class="review-item">
-          <view class="review-header">
-            <view class="review-avatar">
-              <image wx:if="{{item.clientAvatarUrl}}" src="{{item.clientAvatarUrl}}" class="review-avatar-img"/>
-              <text wx:else class="review-avatar-text">{{item.initial}}</text>
+      <scroll-view scroll-x class="style-scroll">
+        <view class="style-list">
+          <view wx:for="{{artist.styleTags}}" wx:key="*this" class="style-card">
+            <view class="style-card-bg" style="background: {{styleBgs[index % styleBgs.length]}}"></view>
+            <view class="style-card-overlay"></view>
+            <text class="style-card-text">{{item}}</text>
+          </view>
+        </view>
+      </scroll-view>
+    </section>
+
+    <!-- ===== 6. 服务内容 ===== -->
+    <section class="section-block">
+      <view class="section-header">
+        <view class="section-bar"></view>
+        <text class="section-title">服务内容</text>
+      </view>
+      <view class="service-list">
+        <view wx:for="{{services}}" wx:key="name" class="service-card">
+          <view class="service-icon-wrap">
+            <text class="service-icon">{{item.icon}}</text>
+          </view>
+          <view class="service-info">
+            <view class="service-top">
+              <text class="service-name">{{item.name}}</text>
+              <text class="service-price">¥{{item.price}}起</text>
             </view>
+            <text class="service-desc">{{item.desc}}</text>
+            <view class="service-duration">
+              <text class="duration-icon">⏱</text>
+              <text>约{{item.duration}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </section>
+
+    <!-- ===== 7. 店铺信息 ===== -->
+    <section class="section-block">
+      <view class="section-header">
+        <view class="section-bar"></view>
+        <text class="section-title">店铺信息</text>
+      </view>
+      <view class="shop-card">
+        <!-- 地图占位 -->
+        <view class="map-placeholder">
+          <view class="map-grid"></view>
+          <view class="map-pin">
+            <text class="pin-icon">📍</text>
+          </view>
+        </view>
+        
+        <view class="shop-info">
+          <text class="shop-name">{{artist.shopName || '晴日美甲工作室'}}</text>
+          <view class="shop-detail-row">
+            <text class="detail-icon">📍</text>
+            <text class="detail-text">{{artist.shopAddress || '上海市静安区南京西路1515号静安嘉里中心3楼316室'}}</text>
+          </view>
+          <view class="shop-detail-row">
+            <text class="detail-icon">🕐</text>
+            <text class="detail-text">营业时间：{{artist.businessHours || '10:00 - 21:00（周一至周日）'}}</text>
+          </view>
+          
+          <view class="shop-actions">
+            <button class="action-btn" bindtap="openNavigation">
+              <text class="action-icon">🧭</text>
+              <text>一键导航</text>
+            </button>
+            <button class="action-btn" bindtap="callPhone">
+              <text class="action-icon">📞</text>
+              <text>一键拨号</text>
+            </button>
+          </view>
+        </view>
+      </view>
+    </section>
+
+    <!-- ===== 8. 客户评价 ===== -->
+    <section class="section-block">
+      <view class="section-header">
+        <view class="section-bar"></view>
+        <text class="section-title">客户评价</text>
+        <text wx:if="{{reviews.length}}" class="section-more">查看全部 ›</text>
+      </view>
+      
+      <view wx:if="{{reviews.length === 0}}" class="empty-hint">该美甲师还未有任何评价信息哦～</view>
+      <view wx:else class="review-list">
+        <view wx:for="{{reviews}}" wx:key="id" class="review-card">
+          <view class="review-header">
+            <image wx:if="{{item.clientAvatarUrl}}" src="{{item.clientAvatarUrl}}" class="review-avatar" mode="aspectFill"/>
+            <view wx:else class="review-avatar-fallback">{{item.initial}}</view>
             <view class="review-meta">
-              <text class="review-name">{{item.clientName}}</text>
+              <view class="review-name-row">
+                <text class="review-name">{{item.clientName}}</text>
+                <text class="review-time">{{item.timeAgo || '3天前'}}</text>
+              </view>
               <view class="review-stars">
                 <text wx:for="{{5}}" wx:for-item="star" wx:key="*this" class="star {{star < item.rating ? 'star-filled' : ''}}">★</text>
               </view>
@@ -173,41 +227,52 @@
           </view>
           <text class="review-content">{{item.content}}</text>
         </view>
-      </block>
-      <view wx:else class="empty-hint">该美甲师还未有任何评价信息哦～</view>
-    </view>
+      </view>
+    </section>
 
+    <!-- 占位空间（底部栏高度） -->
+    <view style="height: 160rpx;"></view>
   </block>
 </view>
 
-<!-- 底部操作栏 -->
-<view wx:if="{{!loading && !loadFailed && !previewMode}}" class="action-bar">
-  <button class="action-icon-btn" open-type="share">
-    <image src="/static/icons/tab-chat.svg" class="action-icon-img"/>
-  </button>
-  <view class="action-icon-btn {{isLiked ? 'liked' : ''}}" bindtap="toggleLike">
-    <image src="{{isLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}" class="action-icon-img"/>
+<!-- ===== 9. 底部操作栏 ===== -->
+<view wx:if="{{!loading && !loadFailed}}" class="bottom-bar">
+  <view class="bottom-bar-inner">
+    <view class="bottom-actions">
+      <button class="action-icon-btn" open-type="contact">
+        <text class="action-icon-text">💬</text>
+        <text class="action-label">聊天</text>
+      </button>
+      <view class="action-icon-btn {{isFavorited ? 'favorited' : ''}}" bindtap="toggleFavorite">
+        <text class="action-icon-text">{{isFavorited ? '❤️' : '🤍'}}</text>
+        <text class="action-label">收藏</text>
+      </view>
+    </view>
+    <button class="btn-book-main" bindtap="bookArtist">
+      <text class="btn-icon">📅</text>
+      预约咨询
+    </button>
   </view>
-  <view class="action-icon-btn {{isFavorited ? 'favorited' : ''}}" bindtap="toggleFavorite">
-    <image src="{{isFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}" class="action-icon-img"/>
-  </view>
-  <view class="action-book-btn" bindtap="bookArtist">预约咨询</view>
+  <view class="safe-area-bottom"></view>
 </view>
 
-<view wx:if="{{!loading && !loadFailed && previewMode}}" class="preview-edit-bar"><view bindtap="editSection" data-section="profile">编辑主页内容</view></view>
-
 <!-- 绑定弹窗 -->
-<view wx:if="{{showBindModal}}" class="bind-mask" bindtap="closeBindModal">
-  <view class="bind-panel" catchtap="">
-    <view class="bind-handle"></view>
-    <text class="bind-title">绑定 {{artist.name}}</text>
-    <text class="bind-copy">请输入美甲师提供的邀请码。申请通过后，你的预约会默认归属给这位美甲师。</text>
-    <view class="bind-input-row">
-      <input class="bind-input" value="{{bindInviteCode}}" bindinput="onBindInviteInput" placeholder="邀请码或邀请链接" disabled="{{bindChecking}}"/>
-      <view class="verify-btn" bindtap="verifyInviteCode">{{bindChecking ? '验证中' : '验证'}}</view>
+<view wx:if="{{showBindModal}}" class="modal-mask" bindtap="closeBindModal">
+  <view class="modal-panel" catchtap="">
+    <view class="modal-handle"></view>
+    <text class="modal-title">绑定 {{artist.name}}</text>
+    <text class="modal-desc">请输入美甲师提供的邀请码。申请通过后，你的预约会默认归属给这位美甲师。</text>
+    <view class="modal-input-row">
+      <input class="modal-input" value="{{bindInviteCode}}" bindinput="onBindInviteInput" placeholder="邀请码或邀请链接" disabled="{{bindChecking}}"/>
+      <view class="modal-verify-btn" bindtap="verifyInviteCode">{{bindChecking ? '验证中' : '验证'}}</view>
     </view>
-    <view wx:if="{{bindCandidate}}" class="bind-result"><image src="/static/icons/check-circle.svg"/><text>已确认：{{bindCandidate.name}}</text></view>
-    <text wx:if="{{bindError}}" class="bind-error">{{bindError}}</text>
-    <view class="bind-actions"><view class="bind-cancel" bindtap="closeBindModal">取消</view><view class="bind-confirm {{!bindCandidate || bindChecking ? 'is-disabled' : ''}}" bindtap="submitBinding">提交绑定申请</view></view>
+    <view wx:if="{{bindCandidate}}" class="modal-success">
+      <text>✓ 已确认：{{bindCandidate.name}}</text>
+    </view>
+    <text wx:if="{{bindError}}" class="modal-error">{{bindError}}</text>
+    <view class="modal-actions">
+      <view class="modal-cancel" bindtap="closeBindModal">取消</view>
+      <view class="modal-confirm {{!bindCandidate || bindChecking ? 'is-disabled' : ''}}" bindtap="submitBinding">提交绑定申请</view>
+    </view>
   </view>
 </view>
