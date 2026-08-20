@@ -98,11 +98,12 @@ describe('DevelopmentAuthSeedService', () => {
       }),
     });
     expect(prisma.clientUser.create).toHaveBeenCalledWith({
-      data: {
+      data: expect.objectContaining({
         phone: '13800138001',
         nickname: '王小美',
         status: 'active',
-      },
+        passwordHash: expect.any(String),
+      }),
     });
     expect(prisma.clientTechBinding.create).toHaveBeenCalledWith({
       data: {

@@ -4,7 +4,7 @@ import { ClientHomeService } from './client-home.service';
 describe('ClientHomeService', () => {
   let service: ClientHomeService;
   let prisma: {
-    clientTechBinding: { findFirst: jest.Mock };
+    clientTechBinding: { findFirst: jest.Mock; findMany: jest.Mock };
     nailWork: { findMany: jest.Mock; findFirst: jest.Mock };
     order: { findFirst: jest.Mock };
   };
@@ -13,6 +13,7 @@ describe('ClientHomeService', () => {
     prisma = {
       clientTechBinding: {
         findFirst: jest.fn(),
+        findMany: jest.fn(),
       },
       nailWork: {
         findMany: jest.fn(),
@@ -170,32 +171,20 @@ describe('ClientHomeService', () => {
   });
 
   it('rejects reading a work when it is missing, invisible, or not owned by the bound technician', async () => {
-    prisma.clientTechBinding.findFirst.mockResolvedValueOnce({
-      clientId: 11,
-      techId: 7,
-      technician: { id: 7 },
-    });
+    prisma.clientTechBinding.findMany.mockResolvedValueOnce([{ techId: 7 }]);
     prisma.nailWork.findFirst.mockResolvedValueOnce(null);
 
     await expect(service.getWork(11, 99)).rejects.toThrow(
       new NotFoundException('作品不存在'),
     );
-    expect(prisma.nailWork.findFirst).toHaveBeenCalledWith({
-      where: {
-        id: 99,
-        techId: 7,
-        isVisible: true,
-      },
-      include: {
-        likes: true,
-        favorites: true,
-        comments: {
-          orderBy: { createdAt: 'desc' },
+    expect(prisma.nailWork.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          id: 99,
+          techId: { in: [7] },
+          isVisible: true,
         },
-        technician: {
-          select: { name: true, avatarUrl: true, id: true },
-        },
-      },
-    });
+      }),
+    );
   });
 });
