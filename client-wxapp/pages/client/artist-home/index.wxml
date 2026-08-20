@@ -12,7 +12,7 @@
   <block wx:else>
 
     <!-- ===== 1. Header Banner — 毛玻璃马赛克背景 ===== -->
-    <section class="banner-section">
+    <view class="banner-section">
       <view class="banner-mosaic">
         <image wx:for="{{bannerImages}}" wx:key="*this" src="{{item}}" mode="aspectFill" class="mosaic-img"/>
       </view>
@@ -50,10 +50,10 @@
           </view>
         </view>
       </view>
-    </section>
+    </view>
 
     <!-- ===== 2. 统计概览 ===== -->
-    <section class="stats-section">
+    <view class="stats-section">
       <view class="stats-card">
         <view class="stat-item">
           <text class="stat-num">{{artist.serviceCount || 1280}}</text>
@@ -70,10 +70,10 @@
           <text class="stat-label">精选作品</text>
         </view>
       </view>
-    </section>
+    </view>
 
     <!-- ===== 3. 关于我 ===== -->
-    <section class="section-block">
+    <view class="section-block">
       <view class="section-header">
         <view class="section-bar"></view>
         <text class="section-title">关于我</text>
@@ -96,10 +96,10 @@
           </view>
         </view>
       </view>
-    </section>
+    </view>
 
     <!-- ===== 4. 精选作品 ===== -->
-    <section class="section-block">
+    <view class="section-block">
       <view class="section-header">
         <view class="section-bar"></view>
         <text class="section-title">精选作品</text>
@@ -116,10 +116,10 @@
           </view>
         </view>
       </view>
-    </section>
+    </view>
 
     <!-- ===== 5. 擅长风格 ===== -->
-    <section class="section-block" wx:if="{{artist.styleTags.length}}">
+    <view class="section-block" wx:if="{{artist.styleTags.length}}">
       <view class="section-header">
         <view class="section-bar"></view>
         <text class="section-title">擅长风格</text>
@@ -133,10 +133,10 @@
           </view>
         </view>
       </scroll-view>
-    </section>
+    </view>
 
     <!-- ===== 6. 服务内容 ===== -->
-    <section class="section-block">
+    <view class="section-block">
       <view class="section-header">
         <view class="section-bar"></view>
         <text class="section-title">服务内容</text>
@@ -159,10 +159,10 @@
           </view>
         </view>
       </view>
-    </section>
+    </view>
 
     <!-- ===== 7. 店铺信息 ===== -->
-    <section class="section-block">
+    <view class="section-block">
       <view class="section-header">
         <view class="section-bar"></view>
         <text class="section-title">店铺信息</text>
@@ -199,10 +199,10 @@
           </view>
         </view>
       </view>
-    </section>
+    </view>
 
     <!-- ===== 8. 客户评价 ===== -->
-    <section class="section-block">
+    <view class="section-block">
       <view class="section-header">
         <view class="section-bar"></view>
         <text class="section-title">客户评价</text>
@@ -228,7 +228,7 @@
           <text class="review-content">{{item.content}}</text>
         </view>
       </view>
-    </section>
+    </view>
 
     <!-- 占位空间（底部栏高度） -->
     <view style="height: 160rpx;"></view>
