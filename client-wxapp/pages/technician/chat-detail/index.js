@@ -4,6 +4,8 @@ Page({
   data: {
     conversationId: null,
     clientName: '',
+    clientAvatar: '',
+    clientAvatarFailed: false,
     messages: [],
     groupedMessages: [],
     inputText: '',
@@ -24,10 +26,11 @@ Page({
   onLoad(options) {
     this._pageActive = true;
     this.calcNavHeight();
-    const { conversationId, clientName, clientId } = options;
+    const { conversationId, clientName, clientId, clientAvatar } = options;
     this.setData({
       conversationId: conversationId ? parseInt(conversationId) : null,
-      clientId: clientId ? parseInt(clientId) : null
+      clientId: clientId ? parseInt(clientId) : null,
+      clientAvatar: clientAvatar ? decodeURIComponent(clientAvatar) : ''
     });
     if (clientName) {
       const name = decodeURIComponent(clientName);
@@ -82,17 +85,21 @@ Page({
     if (showLoading) this.setData({ loading: true });
     try {
       const reqOpts = isPolling ? { timeout: 10000, silent: true } : {};
-      const res = await api.chat.messages({ conversationId: this.data.conversationId }, 'technician', reqOpts);
+      const res = await api.chat.technician.messages({ conversationId: this.data.conversationId }, reqOpts);
       const messages = this.formatMessages(res.messages || res.data || res || []);
       const client = res.client;
       if (client) {
         wx.setNavigationBarTitle({ title: client.nickname || client.phone || '客户' });
-        this.setData({ clientName: client.nickname || client.phone || '客户' });
+        this.setData({
+          clientName: client.nickname || client.phone || '客户',
+          clientAvatar: client.avatarUrl || '',
+          clientAvatarFailed: false
+        });
       }
       const isFirst = this.data.messages.length === 0;
       this.setData({ messages, loading: false });
       this.groupByDate();
-      api.chat.markRead(this.data.conversationId, 'technician').catch(() => {});
+      api.chat.technician.markRead(this.data.conversationId).catch(() => {});
       if (isFirst || this.data.isAtBottom) {
         this.scrollToBottom(true);
       }
@@ -182,7 +189,7 @@ Page({
       var payload = { messageType: 'text', content: text };
       if (this.data.conversationId) payload.conversationId = this.data.conversationId;
       else payload.clientId = this.data.clientId;
-      var res = await api.chat.sendMessage(payload, 'technician');
+      var res = await api.chat.technician.sendMessage(payload);
       if (!this._pageActive) { this._sendFinishedWhileHidden = true; return; }
       if (res.conversationId && !this.data.conversationId) this.setData({ conversationId: res.conversationId });
       if (res.message) {
@@ -219,7 +226,7 @@ Page({
           var payload = { messageType: 'image', imageUrl: uploadRes.url };
           if (this.data.conversationId) payload.conversationId = this.data.conversationId;
           else payload.clientId = this.data.clientId;
-          var msgRes = await api.chat.sendMessage(payload, 'technician');
+          var msgRes = await api.chat.technician.sendMessage(payload);
           if (!this._pageActive) { this._sendFinishedWhileHidden = true; return; }
           if (msgRes.conversationId && !this.data.conversationId) this.setData({ conversationId: msgRes.conversationId });
           if (msgRes.message) {
@@ -247,6 +254,10 @@ Page({
 
   previewImage(e) {
     wx.previewImage({ urls: [e.currentTarget.dataset.url], current: e.currentTarget.dataset.url });
+  },
+
+  onClientAvatarError() {
+    this.setData({ clientAvatarFailed: true });
   },
 
   viewOrder(e) {

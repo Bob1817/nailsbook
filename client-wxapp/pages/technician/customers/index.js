@@ -47,6 +47,17 @@ function isPhoneLikeName(name) {
   return /^1\d{10}$/.test(String(name || '').trim());
 }
 
+function conversationClients(response) {
+  const conversations = Array.isArray(response)
+    ? response
+    : ((response && (response.list || response.data)) || []);
+  return conversations.reduce((map, conversation) => {
+    const client = conversation.client || {};
+    if (client.id != null) map[String(client.id)] = client;
+    return map;
+  }, {});
+}
+
 function formatMoney(value) {
   if (!value && value !== 0) return '¥0';
   return '¥' + Math.round(value);
@@ -67,15 +78,21 @@ function formatDateLabel(dateStr) {
 
 function decorateCustomer(c) {
   const tags = parseTags(c.tags);
-  const phoneLike = isPhoneLikeName(c.name);
-  const displayName = phoneLike ? '未设置名称' : (c.name || '未设置名称');
-  const initial = phoneLike ? '客' : ((c.name && c.name[0]) || '客');
+  const accountName = isPhoneLikeName(c.accountName) ? '' : String(c.accountName || '').trim();
+  const savedName = isPhoneLikeName(c.name) ? '' : String(c.name || '').trim();
+  const hasRemark = Boolean(savedName && accountName && savedName !== accountName);
+  const displayName = hasRemark
+    ? `${savedName}（${accountName}）`
+    : (accountName || savedName || '未设置名称');
+  const initialName = accountName || savedName;
+  const initial = initialName ? initialName[0] : '客';
   const tagsWithColor = tags.map(t => ({ name: t, ...getTagColor(t) }));
 
   return {
     ...c,
     _tags: tagsWithColor,
     _displayName: displayName,
+    _hasRemark: hasRemark,
     _initial: initial,
     _totalSpentText: formatMoney(c.totalSpent),
     _recentServiceText: formatDateLabel(c.recentServiceAt),
@@ -98,11 +115,7 @@ Page({
     customers: [],
     visibleCustomers: [],
     loading: true,
-    loadFailed: false,
-    tagPopoverId: null,
-    showEditName: false,
-    editingCustomerId: null,
-    editingName: ''
+    loadFailed: false
   },
 
   onLoad(options) {
@@ -129,9 +142,20 @@ Page({
     if (this.data.keyword) params.search = this.data.keyword;
 
     try {
-      const res = await api.technician.customers.list(params);
+      const [res, conversations] = await Promise.all([
+        api.technician.customers.list(params),
+        api.chat.technician.conversations({ timeout: 10000, silent: true }).catch(() => [])
+      ]);
+      const clientsById = conversationClients(conversations);
       const rawList = Array.isArray(res) ? res : (res.data || res.list || []);
-      const customers = rawList.map(decorateCustomer);
+      const customers = rawList.map((customer) => {
+        const conversationClient = clientsById[String(customer.clientUserId)] || {};
+        return decorateCustomer({
+          ...customer,
+          accountName: customer.accountName || conversationClient.nickname || '',
+          avatarUrl: customer.avatarUrl || conversationClient.avatarUrl || ''
+        });
+      });
       const dynamicTags = customers.reduce((all, customer) => {
         customer._tags.forEach(tag => { if (all.indexOf(tag.name) < 0) all.push(tag.name); });
         return all;
@@ -209,42 +233,15 @@ Page({
     wx.navigateTo({ url: `/pages/technician/customer-detail/index?id=${id}` });
   },
 
-  toggleTagPopover(e) {
+  onAvatarError(e) {
     const id = e.currentTarget.dataset.id;
-    this.setData({ tagPopoverId: this.data.tagPopoverId === id ? null : id });
-  },
-
-  startEditName(e) {
-    const { id, name } = e.currentTarget.dataset;
+    const markFailed = customer => String(customer.id) === String(id)
+      ? { ...customer, _avatarFailed: true }
+      : customer;
     this.setData({
-      showEditName: true,
-      editingCustomerId: id,
-      editingName: isPhoneLikeName(name) ? '' : (name || '')
+      customers: this.data.customers.map(markFailed),
+      visibleCustomers: this.data.visibleCustomers.map(markFailed)
     });
-  },
-
-  cancelEditName() {
-    this.setData({ showEditName: false, editingCustomerId: null, editingName: '' });
-  },
-
-  onEditNameInput(e) {
-    this.setData({ editingName: e.detail.value });
-  },
-
-  async saveEditName() {
-    const { editingCustomerId, editingName } = this.data;
-    if (!editingName.trim()) {
-      wx.showToast({ title: '名称不能为空', icon: 'none' });
-      return;
-    }
-    try {
-      await api.technician.customers.updateName(editingCustomerId, editingName.trim());
-      wx.showToast({ title: '已更新', icon: 'success' });
-      this.setData({ showEditName: false, editingCustomerId: null, editingName: '' });
-      this.loadCustomers();
-    } catch (err) {
-      wx.showToast({ title: '更新失败', icon: 'none' });
-    }
   },
 
   async handleInvite() {
@@ -260,7 +257,5 @@ Page({
         wx.showToast({ title: '邀请码已复制', icon: 'success' });
       }
     });
-  },
-
-  noop() {}
+  }
 });

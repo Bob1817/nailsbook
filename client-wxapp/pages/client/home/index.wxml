@@ -129,15 +129,15 @@
     </view>
     <text class="section-sub">设计能力、审美理念与适合你的场景</text>
 
-    <view wx:if="{{featuredWorks.length > 0}}" class="home-works-grid">
+    <view wx:if="{{featuredWorks.length}}" class="home-works-grid">
       <view class="home-works-col">
         <view wx:for="{{featuredLeftCol}}" wx:key="id" class="work-card">
-          <work-card work="{{item}}" aspectClass="{{item.aspectClass}}" bind:cardtap="onWorkCardTap" bind:artisttap="onArtistTap" bind:liketap="onLikeTap" />
+          <work-card work="{{item}}" bind:cardtap="onWorkCardTap" bind:artisttap="onArtistTap" bind:liketap="onLikeTap" bind:favoritetap="onFavoriteTap" bind:commenttap="onWorkCardTap" />
         </view>
       </view>
       <view class="home-works-col">
         <view wx:for="{{featuredRightCol}}" wx:key="id" class="work-card">
-          <work-card work="{{item}}" aspectClass="{{item.aspectClass}}" bind:cardtap="onWorkCardTap" bind:artisttap="onArtistTap" bind:liketap="onLikeTap" />
+          <work-card work="{{item}}" bind:cardtap="onWorkCardTap" bind:artisttap="onArtistTap" bind:liketap="onLikeTap" bind:favoritetap="onFavoriteTap" bind:commenttap="onWorkCardTap" />
         </view>
       </view>
     </view>

@@ -7,14 +7,13 @@ const STATUS_DESC = {
   pending_agree: '美甲师已报价，请确认是否接受',
   pending_client_confirm: '请确认本次预约信息',
   pending_confirm: '你已同意报价，等待美甲师确认排期',
-  pending_home: '已确认排期，美甲师将按时上门服务',
   pending_shop: '已确认排期，请按时到店',
   in_progress: '服务进行中',
   completed: '服务已完成，期待再次为你服务',
   cancelled: '预约已取消'
 };
 
-const CANCELLABLE = ['pending_quote','pending_agree','pending_confirm','pending_home','pending_shop'];
+const CANCELLABLE = ['pending_quote','pending_agree','pending_confirm','pending_shop'];
 const EDITABLE = ['pending_quote','pending_agree','pending_confirm'];
 const REJECT_REASONS = ['价格超出预算','时间不合适','想换个款式','其他'];
 const TIME_SLOTS = ['09:00','09:30','10:00','10:30','11:00','11:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30','20:00','20:30'];
@@ -23,8 +22,8 @@ function actionsForStatus(order, wechatPayAvailable) {
   const list = [];
   const s = order.status;
   if (s === 'pending_agree') list.push({ key:'reject', label:'拒绝报价', style:'action-ghost' }, { key:'agree', label:'同意报价', style:'action-primary' });
-  if (wechatPayAvailable && s === 'pending_confirm' && order.depositAmount > 0 && !order.depositPaid) list.push({ key:'payDeposit', label:'支付定金', style:'action-primary' });
-  if (wechatPayAvailable && (s === 'in_progress' || s === 'completed') && order.remainingAmount > 0) list.push({ key:'payFinal', label:'支付尾款', style:'action-primary' });
+  if (wechatPayAvailable && order.hasTradeOrder && ['pending_shop'].includes(s) && order.depositAmount > 0 && !order.depositPaid) list.push({ key:'payDeposit', label:'支付定金', style:'action-primary' });
+  if (wechatPayAvailable && ['pending_shop','in_progress','completed'].includes(s) && (order.depositPaid || order.depositAmount <= 0) && order.remainingAmount > 0) list.push({ key:'payFinal', label:'支付尾款', style:'action-primary' });
   if (CANCELLABLE.indexOf(s) >= 0 || EDITABLE.indexOf(s) >= 0) list.unshift({ key:'more', label:'更多操作', style:'action-ghost' });
   return list;
 }
@@ -82,6 +81,7 @@ Page({
         remark: raw.remark || raw.note || '', durationMinutes, price, depositAmount, depositPaid,
         fundDiscountAmount: Number(raw.fundDiscountAmount || 0),
         paymentStatus: raw.paymentStatus || 'unpaid', paidAmount,
+        hasTradeOrder: !!raw.tradeOrder,
         totalPayable, remainingAmount: Math.max(0, totalPayable - paidAmount),
         techName: raw.technician?.name || '美甲师', techAvatar: raw.technician?.avatarUrl || '',
         techPhone: raw.technician?.phone || '', techId: raw.technician?.id || raw.technicianId,
@@ -200,6 +200,11 @@ Page({
     wx.makePhoneCall({ phoneNumber: String(phone) });
   },
 
+  viewArtist() {
+    const id = this.data.order?.techId;
+    if (id) wx.navigateTo({ url: `/pages/client/artist-home/index?id=${id}` });
+  },
+
   goChat() {
     const o = this.data.order;
     if (!o?.techId) return;
@@ -290,21 +295,15 @@ Page({
   },
 
   // ---- 定金 ----
-  async markDepositPaid() {
-    const r = await wx.showModal({ title: '确认已支付定金', content: `请确认你已通过线下方式向美甲师支付定金 ¥${this.data.order.depositAmount}`, confirmText: '已支付' });
-    if (!r.confirm) return;
-    this.setData({ actionSubmitting: 'deposit' });
-    try {
-      wx.showLoading({ title: '处理中...' });
-      await api.client.orders.markDepositPaid(this.orderId);
-      wx.hideLoading(); wx.showToast({ title: '已确认定金', icon: 'success' }); this.loadOrder();
-    } catch (err) { wx.hideLoading(); wx.showToast({ title: err.message || '操作失败', icon: 'none' }); }
-    finally { this.setData({ actionSubmitting: '' }); }
-  },
-
   // ---- 取消 ----
   async cancelOrder() {
-    const r = await wx.showModal({ title: '取消预约', content: '确定要取消这个预约吗？', confirmText: '取消预约', confirmColor: '#DC4C58' });
+    const depositLocked = this.data.order.depositPaid && ['pending_shop'].includes(this.data.order.status);
+    const r = await wx.showModal({
+      title: '取消预约',
+      content: depositLocked ? '当前预约已支付定金。取消后定金不予退还，是否仍要取消？' : '确定要取消这个预约吗？',
+      confirmText: '确认取消',
+      confirmColor: '#DC4C58'
+    });
     if (!r.confirm) return;
     this.setData({ actionSubmitting: 'cancel' });
     try {

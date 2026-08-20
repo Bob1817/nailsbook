@@ -20,19 +20,22 @@ page { background: var(--bg-page); }
 .status-scroll { width: 598rpx; flex-shrink: 0; white-space: nowrap; }
 .status-list { display: inline-flex; align-items: center; gap: 12rpx; padding-right: 4rpx; }
 .status-tab {
-  min-height: 88rpx;
+  position: relative;
+  min-height: var(--control-hit-height);
   padding: 0 24rpx;
-  border-radius: var(--radius-lg);
-  background: var(--bg-page);
+  background: transparent;
   color: var(--text-muted);
   font-size: var(--font-sm);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  z-index: 0;
 }
-.status-tab:active { background: #edf0f4; }
-.status-tab-active { background: var(--brand-primary); color: var(--text-inverse); font-weight: var(--weight-semibold); }
+.status-tab::before { content:''; position:absolute; left:0; right:0; top:var(--control-visual-inset); bottom:var(--control-visual-inset); z-index:-1; border-radius:var(--radius-lg); background:var(--bg-page); }
+.status-tab:active::before { background: #edf0f4; }
+.status-tab-active { color: var(--text-inverse); font-weight: var(--weight-semibold); }
+.status-tab-active::before { background:var(--brand-primary); }
 .filter-create {
   width: 88rpx;
   height: 88rpx;

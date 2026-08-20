@@ -40,18 +40,17 @@ Page({
     loadErrorText: '',
     canRetryLoad: false,
     currentImageIndex: 0,
-    viewerOpen: false,
-    viewerIndex: 0,
     commentText: '',
+    commentFocused: false,
     replyingTo: null,
     techAvatar: '',
     techName: '',
-    techCity: '',
     permissions: { canView: true, canShare: true, canFavorite: true, canLike: true, canComment: true },
     sharePath: ''
   },
 
   onLoad: function (options) {
+    this.focusCommentsOnLoad = options.focus === 'comments';
     if (options.id) {
       this.workId = parseInt(options.id);
       this.loadWork();
@@ -76,7 +75,6 @@ Page({
       var imageUrls = work.images ? (typeof work.images === 'string' ? JSON.parse(work.images) : work.images) : [];
       if (imageUrls.length === 0 && work.coverUrl) imageUrls.push(work.coverUrl);
 
-      // API 返回扁平字段：technicianName, technicianAvatarUrl, technicianId
       var techName = work.technicianName || '';
       var techAvatar = work.technicianAvatarUrl || '';
 
@@ -92,6 +90,7 @@ Page({
       });
       self.prepareSharePath();
       self.loadComments();
+      if (self.focusCommentsOnLoad) setTimeout(function () { self.focusComment(); }, 120);
     }).catch(function () {
       self.setData({ loading: false, loadFailed: true, loadErrorText: '作品暂时无法加载', canRetryLoad: true });
     }).finally(function () {
@@ -117,14 +116,17 @@ Page({
     wx.navigateBack();
   },
 
-  contactTech: function () {
-    var work = this.data.work;
-    if (work.technicianId) {
-      wx.navigateTo({ url: '/pages/client/chat-detail/index?techId=' + work.technicianId });
-    }
+  viewArtist: function () {
+    var work = this.data.work || {};
+    var technicianId = work.technicianId || (work.technician && work.technician.id);
+    if (technicianId) wx.navigateTo({ url: '/pages/client/artist-home/index?id=' + technicianId });
   },
 
-  // 预约同款：以该作品作为预约服务内容，跳转创建预约
+  viewCommentArtist: function (e) {
+    if (e.currentTarget.dataset.role === 'technician') this.viewArtist();
+  },
+
+  // 预约同款
   bookSameStyle: function () {
     var work = this.data.work;
     if (!work || !work.id) return;
@@ -155,7 +157,7 @@ Page({
     }).catch(() => this.setData({ sharePath: '' }));
   },
 
-  // ── 图片轮播 ──────────────────────────────
+  // ── 图片轮播 / 预览 ──────────────────────
 
   onImageSwiperChange: function (e) {
     var index = e.detail.current;
@@ -164,20 +166,12 @@ Page({
     }
   },
 
-  openViewer: function (e) {
-    var index = e.currentTarget.dataset.index;
-    this.setData({ viewerOpen: true, viewerIndex: index });
-  },
-
-  closeViewer: function () {
-    this.setData({ viewerOpen: false });
-  },
-
-  onViewerSwiperChange: function (e) {
-    var index = e.detail.current;
-    if (index !== this.data.viewerIndex) {
-      this.setData({ viewerIndex: index, currentImageIndex: index });
-    }
+  previewImage: function (e) {
+    var url = e.currentTarget.dataset.url;
+    wx.previewImage({
+      current: url,
+      urls: this.data.imageUrls
+    });
   },
 
   // ── 点赞 / 收藏 ──────────────────────────
@@ -189,8 +183,9 @@ Page({
     self.setData({ liking: true });
     api.client.works.like(work.id).then(function (res) {
       work.isLiked = res.liked;
-      work.likeCount = (work.likeCount || 0) + (res.liked ? 1 : -1);
+      work.likeCount = Math.max(0, (work.likeCount || 0) + (res.liked ? 1 : -1));
       self.setData({ work: work });
+      wx.showToast({ title: res.liked ? '点赞成功' : '去掉点赞成功', icon: 'none' });
     }).catch(function (err) {
       wx.showToast({ title: err.message || '操作失败', icon: 'none' });
     }).finally(function () { self.setData({ liking: false }); });
@@ -205,12 +200,18 @@ Page({
       work.isFavorited = res.favorited;
       work.favoriteCount = Math.max(0, (work.favoriteCount || 0) + (res.favorited ? 1 : -1));
       self.setData({ work: work });
+      wx.showToast({ title: res.favorited ? '收藏成功' : '取消收藏成功', icon: 'none' });
     }).catch(function (err) {
       wx.showToast({ title: err.message || '操作失败', icon: 'none' });
     }).finally(function () { self.setData({ favoriting: false }); });
   },
 
   // ── 评论 ──────────────────────────────────
+
+  focusComment: function () {
+    this.setData({ commentFocused: true });
+    wx.pageScrollTo({ selector: '#work-comments', duration: 280 });
+  },
 
   onTapComment: function (e) {
     var item = e.currentTarget.dataset.item;

@@ -19,7 +19,17 @@ Page({
     this.setData({ loading: true, loadFailed: false });
     try {
       const res = await api.technician.works.list({});
-      const works = Array.isArray(res) ? res : (res.data || []);
+      const profile = wx.getStorageSync('userInfo') || wx.getStorageSync('technician_userInfo') || {};
+      const works = (Array.isArray(res) ? res : (res.data || [])).map((work) => ({
+        ...work,
+        coverUrl: work.coverUrl || (work.imageUrls && work.imageUrls[0]) || '',
+        tags: Array.isArray(work.tags) ? work.tags : String(work.tags || '').split(',').filter(Boolean),
+        technicianId: profile.id || '',
+        technicianName: profile.name || '我的作品',
+        technicianAvatarUrl: profile.avatarUrl || '',
+        techInitial: (profile.name || '我').charAt(0),
+        expertiseText: profile.specialty || ''
+      }));
       this.setData({ works });
       this.splitIntoColumns(works);
     } catch (err) {
@@ -41,7 +51,8 @@ Page({
 
   /* ===== 操作菜单 ===== */
   showActions(e) {
-    const { id, visible, pinned, featured } = e.currentTarget.dataset;
+    const source = e.detail || e.currentTarget.dataset;
+    const { id, visible, pinned, featured } = source;
     this.setData({ selectedWorkId: id });
 
     const itemList = [
@@ -70,7 +81,7 @@ Page({
     if (guardTourist('发布作品')) return;
     wx.navigateTo({ url: '/pages/technician/work-edit/index' });
   },
-  goDetail(e) { wx.navigateTo({ url: '/pages/technician/work-detail/index?id=' + e.currentTarget.dataset.id }); },
+  goDetail(e) { wx.navigateTo({ url: '/pages/technician/work-detail/index?id=' + ((e.detail && e.detail.id) || e.currentTarget.dataset.id) }); },
   goEditById(id) { wx.navigateTo({ url: '/pages/technician/work-edit/index?id=' + id }); },
 
   async toggleVisible(id) {

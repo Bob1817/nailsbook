@@ -1,4 +1,5 @@
 var api = require('../../../services/api');
+var { normalizeWork } = require('../../../utils/normalize-work');
 
 var CATEGORIES = ['全部', '法式', '渐变', '日系', 'ins风', '简约', '可爱', '水晶', '炫彩'];
 var PAGE_SIZE = 10;
@@ -13,6 +14,22 @@ function formatDate(dateStr) {
   var m = d.getMonth() + 1;
   var day = d.getDate();
   return m + '月' + day + '日';
+}
+
+function formatPrice(work) {
+  var cents = work.referencePriceCents || work.priceCents;
+  var price = cents ? Math.round(cents / 100) : Number(work.price || 0);
+  if (!price) return '';
+  if (work.priceDisplayType === 'range' && work.maxPriceCents) {
+    return '¥' + price + '-' + Math.round(work.maxPriceCents / 100);
+  }
+  return '¥' + price + (work.priceDisplayType === 'fixed' ? '' : ' 起');
+}
+
+function getExpertise(work, tags) {
+  var years = work.technician && work.technician.experienceYears;
+  var specialty = work.technician && (work.technician.specialty || work.technician.positioning);
+  return [years ? years + '年经验' : '', specialty || tags.slice(0, 2).join(' · ')].filter(Boolean).join(' · ');
 }
 
 function getCachedTechnicians() {
@@ -33,6 +50,9 @@ Page({
   data: {
     works: [],
     filteredWorks: [],
+    featuredWork: null,
+    featuredWorks: [],
+    featuredIndex: 0,
     leftCol: [],
     rightCol: [],
     loading: true,
@@ -103,28 +123,39 @@ Page({
         });
         return mergeByWorkId(boundWorks, list);
       }).then(function (mergedList) {
-      var works = mergedList.map(function (w) {
-        var name = w.technicianName || (w.technician ? w.technician.name : '') || '';
+      var works = mergedList.map(function (w, index) {
         var rawTags = w.tags || [];
         var tags = Array.isArray(rawTags)
           ? rawTags
           : (typeof rawTags === 'string' ? rawTags.split(',').map(function (t) { return t.trim(); }).filter(Boolean) : []);
-        return {
-          id: w.id,
-          coverUrl: w.coverUrl || (w.imageUrls && w.imageUrls[0]) || '',
-          title: w.title || '美甲作品',
-          tags: tags,
-          technicianId: w.technicianId || (w.technician ? w.technician.id : ''),
-          technicianName: name,
-          technicianAvatarUrl: w.technicianAvatarUrl || (w.technician ? w.technician.avatarUrl : '') || '',
-          techInitial: name.charAt(0) || '美',
-          likeCount: w.likeCount || 0,
-          isLiked: !!w.isLiked || !!likedIds[w.id],
-          commentCount: w.commentCount || 0,
-          isMyTechnician: !!w.isMyTechnician || boundIds.indexOf(String(w.technicianId || (w.technician && w.technician.id))) !== -1,
-          createdAt: w.createdAt || '',
-          dateStr: formatDate(w.createdAt)
-        };
+        // 只要作品的 technicianId 命中绑定的美甲师（哪怕作品自带 technicianName），就强制用绑定的美甲师快照覆盖
+        // 这样作品卡显示的从业年限/城市/擅长风格永远和美甲师详情页一致，不会被作品创建时的旧快照污染
+        var workTechId = String(w.technicianId || (w.technician && (w.technician.id || w.technician.technicianId)) || '');
+        var boundTechSnapshot = workTechId ? technicianById[workTechId] : null;
+        var techLite = null;
+        if (boundTechSnapshot) {
+          techLite = {
+            id: String(boundTechSnapshot.id || boundTechSnapshot.technicianId || workTechId),
+            name: boundTechSnapshot.name || w.technicianName || '',
+            avatarUrl: boundTechSnapshot.avatarUrl || w.technicianAvatarUrl || '',
+            city: boundTechSnapshot.city || '',
+            experienceYears: Number(boundTechSnapshot.experienceYears || 0) || 0,
+            specialtiesText: boundTechSnapshot.specialtiesText || '',
+            specialties: Array.isArray(boundTechSnapshot.styleTags) ? boundTechSnapshot.styleTags : (Array.isArray(boundTechSnapshot.specialties) ? boundTechSnapshot.specialties : []),
+            styleTags: Array.isArray(boundTechSnapshot.styleTags) ? boundTechSnapshot.styleTags : []
+          };
+        }
+        var normalized = normalizeWork(Object.assign({}, w, { tags: tags }), techLite, {
+          index: index,
+          isBound: !!techLite
+        });
+        normalized.isLiked = !!w.isLiked || !!likedIds[w.id];
+        normalized.isFavorited = !!w.isFavorited;
+        normalized.isMyTechnician = !!techLite || !!w.isMyTechnician || boundIds.indexOf(String(normalized.technicianId)) !== -1;
+        normalized.dateStr = normalized.dateStr || formatDate(w.createdAt);
+        normalized.tagsText = normalized.tags.slice(0, 3).join(' · ');
+        normalized.priceText = formatPrice(normalized) || formatPrice(w);
+        return normalized;
       });
 
       self.setData({ works: works, loading: false, loadedCount: PAGE_SIZE });
@@ -170,8 +201,12 @@ Page({
 
     var visible = filtered.slice(0, this.data.loadedCount);
 
+    var featuredWorks = visible.slice(0, 3).map(function (work) {
+      return Object.assign({}, work, { aspect: 'aspect-featured' });
+    });
+    var featuredWork = featuredWorks[0] || null;
     var leftCol = [], rightCol = [];
-    visible.forEach(function (w, i) {
+    visible.slice(featuredWorks.length).forEach(function (w, i) {
       var isLeft = i % 2 === 0;
       var rowIdx = Math.floor(i / 2);
       if (isLeft) {
@@ -185,6 +220,8 @@ Page({
 
     this.setData({
       filteredWorks: filtered,
+      featuredWork: featuredWork,
+      featuredWorks: featuredWorks,
       leftCol: leftCol,
       rightCol: rightCol,
       resultCount: filtered.length,
@@ -198,6 +235,10 @@ Page({
     if (cat === this.data.activeCategory) return;
     this.setData({ activeCategory: cat, loadedCount: PAGE_SIZE });
     this.applyFilter();
+  },
+
+  onFeaturedChange: function (e) {
+    this.setData({ featuredIndex: e.detail.current || 0 });
   },
 
   onSearchInput: function (e) {
@@ -256,6 +297,29 @@ Page({
         return w;
       });
       self.setData({ works: reverted });
+      self.applyFilter();
+    });
+  },
+
+  onFavoriteTap: function (e) {
+    var id = e.detail && e.detail.id;
+    if (!id) return;
+    if (!(getApp().globalData.token || wx.getStorageSync('client_token'))) {
+      wx.navigateTo({ url: '/pages/login/index?redirect=' + encodeURIComponent('/pages/client/discover/index') });
+      return;
+    }
+    var self = this;
+    var toggle = function (w) {
+      if (String(w.id) !== String(id)) return w;
+      return Object.assign({}, w, {
+        isFavorited: !w.isFavorited,
+        favoriteCount: w.isFavorited ? Math.max(0, w.favoriteCount - 1) : w.favoriteCount + 1
+      });
+    };
+    self.setData({ works: self.data.works.map(toggle) });
+    self.applyFilter();
+    api.client.works.favorite(id).catch(function () {
+      self.setData({ works: self.data.works.map(toggle) });
       self.applyFilter();
     });
   },

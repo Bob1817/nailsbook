@@ -209,7 +209,10 @@
 
 /* 底部链接 */
 .footer-links {
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16rpx;
   margin-top: var(--space-md);
 }
 
@@ -217,4 +220,14 @@
   font-size: var(--font-md);
   color: var(--brand-primary);
   font-weight: var(--weight-medium);
+}
+
+.link-sep {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+}
+
+.link-muted {
+  font-size: var(--font-md);
+  color: var(--text-muted);
 }

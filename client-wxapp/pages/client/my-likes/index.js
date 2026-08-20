@@ -27,6 +27,9 @@ function mapWork(work) {
     tags: tags,
     likeCount: work.likeCount || 0,
     isLiked: work.isLiked !== undefined ? !!work.isLiked : true,
+    favoriteCount: work.favoriteCount || 0,
+    isFavorited: !!work.isFavorited,
+    commentCount: work.commentCount || 0,
     dateStr: formatDate(work.createdAt)
   };
 }
@@ -86,6 +89,18 @@ Page({
     const id = e.detail && e.detail.id;
     if (!id) return;
     wx.navigateTo({ url: `/pages/client/work-detail/index?id=${id}` });
+  },
+
+  viewArtist(e) {
+    const id = e.detail && e.detail.id;
+    if (id) wx.navigateTo({ url: `/pages/client/artist-home/index?id=${id}` });
+  },
+
+  async toggleLike(e) {
+    const id = e.detail && e.detail.id;
+    if (!id) return;
+    await api.client.works.like(id).catch(() => wx.showToast({ title: '操作失败', icon: 'none' }));
+    this.loadLikes();
   },
 
   goWorks() {

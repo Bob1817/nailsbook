@@ -171,53 +171,15 @@
       <view class="card-more pink" bindtap="navigateToWorks">更多</view>
     </view>
 
-    <view wx:if="{{featuredWorks.length > 0}}" class="hw-wall">
+    <view wx:if="{{featuredWorks.length}}" class="hw-wall">
       <view class="hw-col">
-        <view wx:for="{{worksLeft}}" wx:key="id" class="hw-card" bindtap="navigateToWorkDetail" data-id="{{item.id}}">
-          <view class="hw-img-wrap">
-            <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="hw-img" lazy-load aria-label="{{item.title || '美甲作品'}}" />
-            <view wx:else class="hw-img hw-img-empty"></view>
-            <view class="hw-gradient"></view>
-            <view class="hw-tags-top">
-              <view wx:if="{{item.isPinned}}" class="hw-tag hw-tag-pin">置顶</view>
-              <view wx:if="{{item.isFeatured}}" class="hw-tag hw-tag-feat">推荐</view>
-            </view>
-            <view class="hw-bottom">
-              <text class="hw-title">{{item.title || '未命名'}}</text>
-              <view class="hw-stats">
-                <text class="hw-stat-icon">♥</text>
-                <text class="hw-stat-num">{{item.likeCount || 0}}</text>
-                <text class="hw-stat-icon hw-stat-gap">★</text>
-                <text class="hw-stat-num">{{item.favoriteCount || 0}}</text>
-                <text class="hw-stat-icon hw-stat-gap">✎</text>
-                <text class="hw-stat-num">{{item.commentCount || 0}}</text>
-              </view>
-            </view>
-          </view>
+        <view wx:for="{{worksLeft}}" wx:key="id" class="hw-card">
+          <work-card work="{{item}}" manageable bind:cardtap="navigateToWorkDetail" bind:actiontap="showWorkActions" />
         </view>
       </view>
       <view class="hw-col">
-        <view wx:for="{{worksRight}}" wx:key="id" class="hw-card" bindtap="navigateToWorkDetail" data-id="{{item.id}}">
-          <view class="hw-img-wrap">
-            <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="hw-img" lazy-load aria-label="{{item.title || '美甲作品'}}" />
-            <view wx:else class="hw-img hw-img-empty"></view>
-            <view class="hw-gradient"></view>
-            <view class="hw-tags-top">
-              <view wx:if="{{item.isPinned}}" class="hw-tag hw-tag-pin">置顶</view>
-              <view wx:if="{{item.isFeatured}}" class="hw-tag hw-tag-feat">推荐</view>
-            </view>
-            <view class="hw-bottom">
-              <text class="hw-title">{{item.title || '未命名'}}</text>
-              <view class="hw-stats">
-                <text class="hw-stat-icon">♥</text>
-                <text class="hw-stat-num">{{item.likeCount || 0}}</text>
-                <text class="hw-stat-icon hw-stat-gap">★</text>
-                <text class="hw-stat-num">{{item.favoriteCount || 0}}</text>
-                <text class="hw-stat-icon hw-stat-gap">✎</text>
-                <text class="hw-stat-num">{{item.commentCount || 0}}</text>
-              </view>
-            </view>
-          </view>
+        <view wx:for="{{worksRight}}" wx:key="id" class="hw-card">
+          <work-card work="{{item}}" manageable bind:cardtap="navigateToWorkDetail" bind:actiontap="showWorkActions" />
         </view>
       </view>
     </view>

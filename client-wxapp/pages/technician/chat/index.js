@@ -89,7 +89,7 @@ Page({
     self.setData({ loading: true, loadFailed: false });
     self._loaded = true;
 
-    return api.chat.conversations('technician', { timeout: 15000, silent: true }).then(function(conversations) {
+    return api.chat.technician.conversations({ timeout: 15000, silent: true }).then(function(conversations) {
       var convList = [];
       if (Array.isArray(conversations)) convList = conversations;
       else if (conversations && conversations.list) convList = conversations.list;
@@ -133,7 +133,7 @@ Page({
       var fetchPromises = [];
       for (var j = 0; j < convList.length; j++) {
         (function(idx) {
-          var p = api.chat.messages({ conversation_id: convList[idx].id }, 'technician', { timeout: 10000, silent: true }).then(function(res) {
+          var p = api.chat.technician.messages({ conversation_id: convList[idx].id }, { timeout: 10000, silent: true }).then(function(res) {
             msgResults.push({ conv: convList[idx], res: res });
           }).catch(function() {});
           fetchPromises.push(p);
@@ -151,7 +151,7 @@ Page({
           for (var n = 0; n < messages.length; n++) {
             var m = messages[n];
             var isNotifType = m.messageType === 'system' || m.messageType === 'booking' || m.messageType === 'quote' || m.messageType === 'order';
-            var isNotifRelated = m.relatedType === 'order' || m.relatedType === 'booking' || m.relatedType === 'comment' || m.relatedType === 'work_comment';
+            var isNotifRelated = m.relatedType === 'order' || m.relatedType === 'booking' || m.relatedType === 'comment' || m.relatedType === 'work_comment' || m.relatedType === 'binding';
             if (isNotifType && isNotifRelated) {
               var nType = categorizeNotification(m);
               var actionLabel = '';
@@ -281,12 +281,19 @@ Page({
     var item = this.data.filteredItems[index];
     if (!item) return;
 
-    if (item.type === 'chat') {
-      wx.navigateTo({ url: '/pages/technician/chat-detail/index?conversationId=' + item.conversationId });
+    if (item.relatedType === 'binding') {
+      api.chat.technician.markRead(item.conversationId).catch(function() {});
+      wx.navigateTo({ url: '/pages/technician/binding-applications/index' });
+    } else if (item.type === 'chat') {
+      wx.navigateTo({
+        url: '/pages/technician/chat-detail/index?conversationId=' + item.conversationId
+          + '&clientName=' + encodeURIComponent(item.clientName || item.name || '')
+          + '&clientAvatar=' + encodeURIComponent(item.clientAvatar || '')
+      });
     } else {
       // Mark as read
       if (item.unread) {
-        api.chat.markRead(item.conversationId, 'technician').catch(function() {});
+        api.chat.technician.markRead(item.conversationId).catch(function() {});
         var allItems = this.data.allItems;
         var updated = [];
         for (var i = 0; i < allItems.length; i++) {
@@ -351,6 +358,11 @@ Page({
       this.setData({ selectedNotification: null });
       wx.navigateTo({ url: '/pages/technician/order-detail/index?id=' + selected.relatedId });
     }
+  },
+
+  viewBindingApplications: function() {
+    this.setData({ selectedNotification: null });
+    wx.navigateTo({ url: '/pages/technician/binding-applications/index' });
   },
 
   // ---- 新建对话 ----

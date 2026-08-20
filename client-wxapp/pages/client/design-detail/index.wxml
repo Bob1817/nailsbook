@@ -67,7 +67,7 @@
       <!-- 报价信息 -->
       <view wx:if="{{design.quotePrice || design.status === 'quoted' || design.status === 'accepted' || design.status === 'converted'}}" class="quote-section">
         <view wx:if="{{design.technician}}" class="tech-info">
-          <view class="tech-avatar-wrap">
+          <view class="tech-avatar-wrap" bindtap="viewArtist" role="button" aria-label="查看{{design.technician.name || '美甲师'}}主页">
             <image wx:if="{{design.technician.avatarUrl}}" src="{{design.technician.avatarUrl}}" mode="aspectFill" class="tech-avatar" aria-label="{{design.technician.name || '美甲师'}}的头像" />
             <text wx:else class="tech-avatar-text">{{design.technician.name[0]}}</text>
           </view>
@@ -127,7 +127,7 @@
       </view>
 
       <view wx:if="{{design.technician}}" class="modal-tech">
-        <view class="modal-tech-avatar-wrap">
+        <view class="modal-tech-avatar-wrap" bindtap="viewArtist" role="button" aria-label="查看{{design.technician.name || '美甲师'}}主页">
           <image wx:if="{{design.technician.avatarUrl}}" src="{{design.technician.avatarUrl}}" mode="aspectFill" class="modal-tech-avatar" aria-label="{{design.technician.name || '美甲师'}}的头像" />
           <text wx:else class="modal-tech-avatar-text">{{design.technician.name[0]}}</text>
         </view>

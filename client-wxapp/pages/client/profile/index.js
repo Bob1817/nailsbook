@@ -33,6 +33,10 @@ Page({
     foundTech: null,
     checkingCode: false,
     binding: false,
+    bindMode: 'invite',
+    followedTechnicians: [],
+    followedLoading: false,
+    selectedFollowedTech: null,
 
     // 客户 → 美甲师：确认弹窗
     showSwitchConfirmModal: false,
@@ -115,7 +119,6 @@ Page({
           avatar: b.technician?.avatarUrl || b.avatarUrl || '',
           city: b.technician?.city || b.city || '',
           status: b.technician?.status || b.status || 'active',
-          homeService: b.technician?.homeService || b.homeService || false,
           shopService: b.technician?.shopService || b.shopService || false,
           isDefault: b.isDefault || false
         })),
@@ -130,8 +133,8 @@ Page({
     wx.navigateTo({ url: '/pages/client/settings/index' });
   },
 
-  navigateToAddresses() {
-    wx.navigateTo({ url: '/pages/client/addresses/index' });
+  navigateToOrders() {
+    wx.navigateTo({ url: '/pages/client/trade-orders/index' });
   },
 
   navigateToDesigns() {
@@ -361,11 +364,36 @@ Page({
 
   // 绑定美甲师
   openBindModal() {
-    this.setData({ showBindModal: true, inviteCode: '', bindNote: '', foundTech: null });
+    this.setData({ showBindModal: true, bindMode: 'invite', inviteCode: '', bindNote: '', foundTech: null, selectedFollowedTech: null });
   },
 
   closeBindModal() {
-    this.setData({ showBindModal: false, inviteCode: '', bindNote: '', foundTech: null });
+    this.setData({ showBindModal: false, inviteCode: '', bindNote: '', foundTech: null, selectedFollowedTech: null });
+  },
+
+  async switchBindMode(e) {
+    const mode = e.currentTarget.dataset.mode;
+    this.setData({ bindMode: mode, bindNote: '', selectedFollowedTech: null });
+    if (mode !== 'followed' || this.data.followedLoading) return;
+    this.setData({ followedLoading: true });
+    try {
+      const result = await api.client.profile.followedTechnicians();
+      this.setData({ followedTechnicians: Array.isArray(result) ? result : (result.items || []) });
+    } catch (error) {
+      wx.showToast({ title: error.message || '关注列表加载失败', icon: 'none' });
+    } finally {
+      this.setData({ followedLoading: false });
+    }
+  },
+
+  selectFollowedTech(e) {
+    const id = Number(e.currentTarget.dataset.id);
+    const selected = this.data.followedTechnicians.find((item) => Number(item.id) === id) || null;
+    if (selected && selected.bindingStatus === 'pending') {
+      wx.showToast({ title: '绑定申请审核中', icon: 'none' });
+      return;
+    }
+    this.setData({ selectedFollowedTech: selected });
   },
 
   onBindNoteInput(e) {
@@ -411,6 +439,24 @@ Page({
     } catch (err) {
       wx.hideLoading();
       wx.showToast({ title: err.message || '绑定失败', icon: 'none' });
+    } finally {
+      this.setData({ binding: false });
+    }
+  },
+
+  async requestFollowedBinding() {
+    const { selectedFollowedTech, bindNote, binding } = this.data;
+    if (!selectedFollowedTech || binding) return;
+    this.setData({ binding: true });
+    wx.showLoading({ title: '申请中...' });
+    try {
+      await api.client.profile.requestBinding(selectedFollowedTech.id, bindNote);
+      wx.hideLoading();
+      wx.showToast({ title: '申请已发送', icon: 'success' });
+      this.closeBindModal();
+    } catch (error) {
+      wx.hideLoading();
+      wx.showToast({ title: error.message || '申请提交失败', icon: 'none' });
     } finally {
       this.setData({ binding: false });
     }

@@ -159,6 +159,7 @@ page {
 }
 
 .msg-card {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: 20rpx;
@@ -166,6 +167,7 @@ page {
   background: var(--bg-gradient-entry);
   border-radius: var(--radius-lg);
   box-shadow: 0 12rpx 24rpx rgba(36, 27, 41, 0.05);
+  overflow: hidden;
 }
 
 .msg-card:active { background: #fefbfc; }
@@ -194,8 +196,14 @@ page {
 
 .avatar-chat { background: #ffe9f0; }
 .avatar-pending { background: #fff3e8; }
-.avatar-service { background: #eef6ff; }
-.avatar-system { background: var(--bg-input); }
+.avatar-service { background: #eaf4ff; }
+.avatar-system { background: #f1edfb; }
+
+.msg-semantic-icon {
+  width: 52rpx;
+  height: 52rpx;
+  display: block;
+}
 
 .msg-avatar-char {
   font-size: var(--font-lg);
@@ -245,11 +253,11 @@ page {
 .badge-pending { background: #fff3e8; }
 .badge-pending .msg-type-badge-text { color: #c96c1a; }
 
-.badge-service { background: #eef6ff; }
-.badge-service .msg-type-badge-text { color: #3f6dbe; }
+.badge-service { background: #eaf4ff; }
+.badge-service .msg-type-badge-text { color: #3569b3; }
 
-.badge-system { background: var(--bg-input); }
-.badge-system .msg-type-badge-text { color: var(--text-muted); }
+.badge-system { background: #f1edfb; }
+.badge-system .msg-type-badge-text { color: #67569e; }
 
 .msg-preview {
   font-size: var(--font-sm);
@@ -282,8 +290,8 @@ page {
 }
 
 .action-pending { color: #c96c1a; }
-.action-service { color: #3f6dbe; }
-.action-system { color: var(--text-muted); }
+.action-service { color: #3569b3; }
+.action-system { color: #67569e; }
 
 .msg-unread-badge {
   min-width: 32rpx;
@@ -305,6 +313,9 @@ page {
   border-radius: 50%;
   background: var(--brand-primary);
 }
+
+.unread-service { background: #4b83d1; }
+.unread-system { background: #7c6bb3; }
 
 /* ===== 空态 ===== */
 .empty-card {

@@ -1,6 +1,7 @@
 const api = require('../../../services/api');
 const { validatePhone } = require('../../../utils/util');
 const { silentWechatLogin } = require('../../../utils/wechat-auth');
+const { consumePostAuthRedirect } = require('../../../utils/artist-navigation');
 
 Page({
   data: {
@@ -120,6 +121,10 @@ Page({
     wx.reLaunch({ url: '/pages/login/index' });
   },
 
+  browseAsGuest() {
+    wx.reLaunch({ url: '/pages/client/discover/index' });
+  },
+
   async handlePhoneNext() {
     const phone = this.data.phone.trim();
     if (!validatePhone(phone)) {
@@ -211,6 +216,6 @@ Page({
       }
     }
     wx.hideLoading();
-    wx.reLaunch({ url: this.redirect || '/pages/client/home/index' });
+    wx.reLaunch({ url: consumePostAuthRedirect(this.redirect) });
   }
 });

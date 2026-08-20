@@ -1,4 +1,4 @@
-<nav-bar title="全部预约" showBack="{{true}}"/>
+<nav-bar title="{{tradeView ? '我的订单' : '全部预约'}}" showBack="{{true}}"/>
 <view class="page">
   <!-- 筛选标签栏 -->
   <view class="filter-strip">
@@ -19,7 +19,7 @@
 
   <!-- 统计 -->
   <view class="page-header">
-    <text class="page-count">共 {{filteredOrders.length}} 个预约</text>
+    <text class="page-count">共 {{filteredOrders.length}} 个{{tradeView ? '订单' : '预约'}}</text>
   </view>
 
   <!-- 预约列表 -->

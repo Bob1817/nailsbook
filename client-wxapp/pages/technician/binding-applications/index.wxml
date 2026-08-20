@@ -1,0 +1,29 @@
+<nav-bar title="绑定申请" showBack></nav-bar>
+<view class="page">
+  <view wx:if="{{loading}}" class="state"><view class="spinner"></view><text>正在加载申请</text></view>
+  <view wx:elif="{{loadFailed}}" class="state">
+    <text class="state-title">申请加载失败</text>
+    <button class="retry" bindtap="loadApplications">重新加载</button>
+  </view>
+  <view wx:elif="{{applications.length === 0}}" class="state">
+    <text class="state-title">暂无待处理申请</text>
+    <text class="state-desc">客户通过邀请码或经营主页申请绑定后会显示在这里</text>
+  </view>
+  <view wx:else class="list">
+    <view wx:for="{{applications}}" wx:key="id" class="card">
+      <view class="customer">
+        <view class="avatar fallback">{{item.initial}}</view>
+        <view class="info">
+          <text class="name">{{item.name || '新客户'}}</text>
+          <text class="meta">{{item.phone || '微信客户'}}</text>
+          <text wx:if="{{item.address}}" class="meta">{{item.address}}</text>
+          <text wx:if="{{item.note}}" class="note">留言：{{item.note}}</text>
+        </view>
+      </view>
+      <view class="actions">
+        <button class="button secondary" disabled="{{processingId === item.id}}" bindtap="reject" data-id="{{item.id}}">拒绝</button>
+        <button class="button primary" disabled="{{processingId === item.id}}" bindtap="approve" data-id="{{item.id}}" data-name="{{item.name}}">通过</button>
+      </view>
+    </view>
+  </view>
+</view>

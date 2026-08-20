@@ -7,7 +7,7 @@ const {
   getStatusTone
 } = require('../../../utils/order');
 
-const TRIP_STATUSES = ['pending_home', 'pending_shop', 'in_progress'];
+const TRIP_STATUSES = ['pending_shop', 'in_progress'];
 
 Page({
   data: {

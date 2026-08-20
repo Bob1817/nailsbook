@@ -2,7 +2,7 @@
 <view class="page">
 
   <!-- 选择美甲师 -->
-  <view class="section">
+  <view class="section" wx:if="{{!presetLocked}}">
     <view class="section-head">
       <text class="section-title">选择美甲师</text>
       <text class="section-sub">{{technicians.length > 1 ? '请选择已开启接单的美甲师' : '当前仅有1位可预约的美甲师'}}</text>
@@ -11,7 +11,7 @@
       <view wx:for="{{technicians}}" wx:key="id"
         class="tech-card {{selectedTechId === item.id ? 'tech-card-active' : ''}}"
         bindtap="selectTech" data-id="{{item.id}}">
-        <view class="tech-avatar">
+        <view class="tech-avatar" catchtap="viewArtist" data-id="{{item.id}}" role="button" aria-label="查看{{item.name || '美甲师'}}主页">
           <image wx:if="{{item.avatarUrl}}" src="{{item.avatarUrl}}" mode="aspectFill" class="tech-avatar-img" lazy-load aria-label="{{item.name || '美甲师'}}的头像" />
           <text wx:else class="tech-avatar-text">{{item.name[0]}}</text>
         </view>
@@ -22,7 +22,6 @@
           </view>
           <text class="tech-city">{{item.city || '暂未设置服务区域'}}</text>
           <view class="tech-tags">
-            <text wx:if="{{item.homeService}}" class="tag">上门美甲</text>
             <text wx:if="{{item.shopService && item.shopAddresses.length > 0}}" class="tag">到店美甲</text>
           </view>
         </view>
@@ -34,17 +33,15 @@
     <view wx:else class="empty-hint"><text>暂无可预约的美甲师</text></view>
   </view>
 
+  <view class="section preset-tech" wx:if="{{presetLocked && selectedTech}}">
+    <view class="section-head"><text class="section-title">预约美甲师</text><text class="section-sub">已从主页带入，无需再次选择</text></view>
+    <view class="tech-card tech-card-active"><view class="tech-avatar"><image wx:if="{{selectedTech.avatarUrl}}" src="{{selectedTech.avatarUrl}}" mode="aspectFill" class="tech-avatar-img"/><text wx:else class="tech-avatar-text">{{selectedTech.name[0]}}</text></view><view class="tech-info"><text class="tech-name">{{selectedTech.name}}</text><text class="tech-city">{{selectedTech.city || '服务信息以主页为准'}}</text></view><image class="preset-check" src="/static/icons/check-circle.svg"/></view>
+  </view>
+
   <!-- 服务类型 -->
   <view class="section" wx:if="{{selectedTech}}">
     <view class="section-head">
       <text class="section-title">服务类型</text>
-    </view>
-    <view wx:if="{{availableServiceTypes.length > 1}}" class="segment-wrap">
-      <view wx:for="{{availableServiceTypes}}" wx:key="value"
-        class="segment-item {{serviceType === item.value ? 'segment-active' : ''}}"
-        bindtap="selectServiceType" data-type="{{item.value}}">
-        <text class="segment-text">{{item.label}}</text>
-      </view>
     </view>
     <view wx:if="{{availableServiceTypes.length === 1}}" class="single-type">
       <text class="single-type-label">{{availableServiceTypes[0].label}}</text>
@@ -159,35 +156,6 @@
     </view>
   </view>
 
-  <!-- 上门地址 -->
-  <view class="section" wx:if="{{serviceType === '上门美甲'}}">
-    <view class="section-head">
-      <text class="section-title">上门服务地址</text>
-      <text class="section-sub">美甲师会按所选地址上门服务</text>
-    </view>
-    <view wx:if="{{addresses.length > 0}}" class="addr-list">
-      <view wx:for="{{addresses}}" wx:key="id"
-        class="addr-card {{selectedAddressId === item.id ? 'addr-card-active' : ''}}"
-        bindtap="selectAddress" data-id="{{item.id}}">
-        <view class="radio-circle {{selectedAddressId === item.id ? 'radio-active' : ''}}">
-          <text wx:if="{{selectedAddressId === item.id}}" class="radio-check">✓</text>
-        </view>
-        <view class="addr-info">
-          <view class="addr-name-row">
-            <text class="addr-name">{{item.contactName}}</text>
-            <text class="addr-phone">{{item.contactPhone}}</text>
-            <text wx:if="{{item.isDefault}}" class="badge-default">默认</text>
-          </view>
-          <text class="addr-detail">{{item.province}}{{item.city}}{{item.district}}{{item.detailAddress}}</text>
-        </view>
-      </view>
-    </view>
-    <view wx:else class="empty-hint">
-      <text>暂无地址</text>
-      <view class="add-addr-btn" bindtap="goToAddAddress">添加地址</view>
-    </view>
-  </view>
-
   <!-- 预约时间：日历 + 时间段 -->
   <view class="section" wx:if="{{selectedTech}}">
     <view class="section-head">
@@ -253,27 +221,29 @@
   <!-- 提交按钮 -->
   <view class="submit-bar">
     <view class="submit-btn {{submitting ? 'btn-disabled' : ''}}" bindtap="handleSubmit">
-      <text>{{submitting ? '提交中...' : isCustomService ? '提交需求等待报价' : '提交预约'}}</text>
+      <text>{{submitting ? '提交中...' : isCustomService ? '提交需求等待报价' : '提交预约申请'}}</text>
     </view>
   </view>
 </view>
 
-<!-- 到店确认弹窗 -->
-<view wx:if="{{showShopConfirm}}" class="modal-overlay" bindtap="cancelShopBooking">
-  <view class="modal-panel" catchtap="">
+<!-- 预约申请核对 -->
+<view wx:if="{{showApplicationReview}}" class="modal-overlay" bindtap="cancelApplicationReview">
+  <view class="modal-panel application-review" catchtap="">
     <view class="modal-handle"></view>
-    <text class="modal-title">确认到店预约</text>
-    <view class="modal-shop-info" wx:for="{{shopAddresses}}" wx:key="name" wx:if="{{selectedShopName === item.name}}">
-      <text class="modal-shop-name">{{item.name}}</text>
-      <text class="modal-shop-addr">{{item.province}}{{item.city}}{{item.district}}{{item.detailAddress}}</text>
+    <text class="modal-title">核对预约申请</text>
+    <text class="application-review-tip">当前提交的是预约申请，美甲师人工确认后生效；确认前不会占用正式档期。</text>
+    <view class="review-summary">
+      <view class="review-row"><text>美甲师</text><text>{{selectedTech.name}}</text></view>
+      <view class="review-row"><text>期望时间</text><text>{{serviceDate}} {{startTime}}</text></view>
+      <view class="review-row"><text>服务方式</text><text>{{serviceType}}</text></view>
     </view>
-    <view class="modal-date-row">
-      <text class="modal-date-label">预约时间</text>
-      <text class="modal-date-value">{{serviceDate}} {{startTime}}</text>
+    <view class="rules-check" bindtap="toggleBookingRules">
+      <view class="rules-box {{bookingRulesAgreed ? 'rules-box-active' : ''}}">{{bookingRulesAgreed ? '✓' : ''}}</view>
+      <text>我已确认信息无误，并理解最终时间与价格以美甲师确认为准</text>
     </view>
     <view class="modal-btns">
-      <view class="modal-btn modal-btn-cancel" bindtap="cancelShopBooking">取消</view>
-      <view class="modal-btn modal-btn-confirm" bindtap="confirmShopBooking">确认预约</view>
+      <view class="modal-btn modal-btn-cancel" bindtap="cancelApplicationReview">返回修改</view>
+      <view class="modal-btn modal-btn-confirm {{bookingRulesAgreed ? '' : 'modal-btn-disabled'}}" bindtap="confirmApplicationReview">提交申请</view>
     </view>
   </view>
 </view>

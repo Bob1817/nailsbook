@@ -8,7 +8,9 @@
     role="button"
     aria-label="{{item.label}}"
   >
-    <image class="tab-icon" src="/static/icons/tab-{{item.icon}}.svg" mode="aspectFit" />
+    <view class="tab-icon-wrap">
+      <image class="tab-icon" src="/static/icons/tab-{{item.icon}}{{item.key === selected ? '-active' : ''}}.svg" mode="aspectFit" aria-hidden="true" />
+    </view>
     <text class="tab-label">{{item.label}}</text>
   </view>
 </view>

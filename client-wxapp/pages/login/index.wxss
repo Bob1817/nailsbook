@@ -305,7 +305,13 @@ page {
 /* ===== 提交按钮 ===== */
 .submit-btn {
   width: 100%;
+  min-width: 100%;
+  max-width: 100%;
   height: var(--btn-height);
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  align-self: stretch;
   border-radius: var(--btn-radius);
   background: var(--bg-input);
   border: none;

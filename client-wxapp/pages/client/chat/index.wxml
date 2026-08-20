@@ -49,7 +49,7 @@
             bindtap="onItemClick"
             data-index="{{index}}"
           >
-            <view class="msg-avatar-wrap">
+            <view class="msg-avatar-wrap" catchtap="viewArtist" data-id="{{item.techId}}" role="button" aria-label="查看{{item.name || '美甲师'}}主页">
               <image wx:if="{{item.techAvatar && item.type === 'chat'}}" src="{{item.techAvatar}}" mode="aspectFill" class="msg-avatar-img" lazy-load aria-label="{{item.name}}的头像" />
               <view wx:else class="msg-avatar-placeholder">
                 <text class="msg-avatar-char">{{item._avatarChar}}</text>

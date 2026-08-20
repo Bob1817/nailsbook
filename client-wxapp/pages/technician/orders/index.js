@@ -12,7 +12,7 @@ const {
 } = require('../../../utils/order');
 
 // 行程状态：已确认排期 / 进行中（完成预约但未做完美甲）
-const TRIP_STATUSES = ['pending_home', 'pending_shop', 'in_progress'];
+const TRIP_STATUSES = ['pending_shop', 'in_progress'];
 const WEEK = ['日', '一', '二', '三', '四', '五', '六'];
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
 const INVALID_INCOME_STATUSES = ['cancelled', 'expired', 'rejected'];

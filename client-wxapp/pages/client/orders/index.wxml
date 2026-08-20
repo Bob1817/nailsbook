@@ -1,4 +1,4 @@
-<nav-bar title="预约"/>
+<nav-bar title="{{tradeView ? '我的订单' : '预约'}}"/>
 
 <view class="filter-bar">
   <scroll-view scroll-x class="status-scroll" enhanced show-scrollbar="{{false}}">

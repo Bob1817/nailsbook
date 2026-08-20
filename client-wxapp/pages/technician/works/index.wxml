@@ -28,79 +28,15 @@
   <view wx:else class="waterfall">
     <!-- 左列 -->
     <view class="col">
-      <view wx:for="{{leftCol}}" wx:key="id" class="card-img-wrap" bindtap="goDetail" data-id="{{item.id}}">
-        <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="card-img" lazy-load aria-label="{{item.title || '美甲作品'}}" />
-        <view wx:else class="card-img card-img-empty"></view>
-        <view class="card-gradient"></view>
-        <!-- 隐藏状态遮罩 -->
-        <view wx:if="{{!item.isVisible}}" class="hidden-mask">
-          <text class="hidden-label">已隐藏</text>
-        </view>
-        <!-- 左上角标签 -->
-        <view class="card-tags-top">
-          <view wx:if="{{item.isPinned}}" class="tag-pill tag-pin">置顶</view>
-          <view wx:if="{{item.isFeatured}}" class="tag-pill tag-feat">推荐</view>
-        </view>
-        <!-- 右上角更多操作 -->
-        <view class="card-more-btn" catchtap="showActions" data-id="{{item.id}}" data-visible="{{item.isVisible}}" data-pinned="{{item.isPinned}}" data-featured="{{item.isFeatured}}">
-          <text class="card-more-icon">⋯</text>
-        </view>
-        <!-- 底部信息 -->
-        <view class="card-bottom">
-          <text class="card-title">{{item.title || '未命名作品'}}</text>
-          <text wx:if="{{item.price}}" class="card-price">¥{{item.price}}</text>
-          <view class="card-stats-row">
-            <view class="card-stat">
-              <text class="stat-icon">♥</text>
-              <text class="stat-num">{{item.likeCount || 0}}</text>
-            </view>
-            <view class="card-stat">
-              <text class="stat-icon">★</text>
-              <text class="stat-num">{{item.favoriteCount || 0}}</text>
-            </view>
-            <view class="card-stat">
-              <text class="stat-icon">✎</text>
-              <text class="stat-num">{{item.commentCount || 0}}</text>
-            </view>
-          </view>
-        </view>
+      <view wx:for="{{leftCol}}" wx:key="id" class="work-item">
+        <work-card work="{{item}}" manageable bind:cardtap="goDetail" bind:actiontap="showActions" />
       </view>
     </view>
 
     <!-- 右列 -->
     <view class="col">
-      <view wx:for="{{rightCol}}" wx:key="id" class="card-img-wrap" bindtap="goDetail" data-id="{{item.id}}">
-        <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="card-img" lazy-load aria-label="{{item.title || '美甲作品'}}" />
-        <view wx:else class="card-img card-img-empty"></view>
-        <view class="card-gradient"></view>
-        <view wx:if="{{!item.isVisible}}" class="hidden-mask">
-          <text class="hidden-label">已隐藏</text>
-        </view>
-        <view class="card-tags-top">
-          <view wx:if="{{item.isPinned}}" class="tag-pill tag-pin">置顶</view>
-          <view wx:if="{{item.isFeatured}}" class="tag-pill tag-feat">推荐</view>
-        </view>
-        <view class="card-more-btn" catchtap="showActions" data-id="{{item.id}}" data-visible="{{item.isVisible}}" data-pinned="{{item.isPinned}}" data-featured="{{item.isFeatured}}">
-          <text class="card-more-icon">⋯</text>
-        </view>
-        <view class="card-bottom">
-          <text class="card-title">{{item.title || '未命名作品'}}</text>
-          <text wx:if="{{item.price}}" class="card-price">¥{{item.price}}</text>
-          <view class="card-stats-row">
-            <view class="card-stat">
-              <text class="stat-icon">♥</text>
-              <text class="stat-num">{{item.likeCount || 0}}</text>
-            </view>
-            <view class="card-stat">
-              <text class="stat-icon">★</text>
-              <text class="stat-num">{{item.favoriteCount || 0}}</text>
-            </view>
-            <view class="card-stat">
-              <text class="stat-icon">✎</text>
-              <text class="stat-num">{{item.commentCount || 0}}</text>
-            </view>
-          </view>
-        </view>
+      <view wx:for="{{rightCol}}" wx:key="id" class="work-item">
+        <work-card work="{{item}}" manageable bind:cardtap="goDetail" bind:actiontap="showActions" />
       </view>
     </view>
   </view>

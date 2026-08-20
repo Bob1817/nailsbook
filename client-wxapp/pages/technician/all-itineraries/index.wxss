@@ -39,25 +39,25 @@ page {
   margin: 80rpx 0;
   padding: 60rpx 40rpx;
   background: var(--bg-card);
-  border-radius: var(--card-radius);
+  border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12rpx;
-  border: 2rpx solid rgba(255,107,138,0.08) /* brand-primary-alpha */;
+  border: 2rpx solid var(--border-light);
   box-shadow: var(--shadow-lg);
 }
 .empty-title { font-size: var(--font-md); font-weight: var(--weight-semibold); color: var(--text-primary); }
 .empty-sub { font-size: var(--font-sm); color: var(--text-muted); text-align: center; }
-.retry-btn { display:flex; min-height:88rpx; margin-top:22rpx; padding:0 38rpx; align-items:center; justify-content:center; border-radius: var(--radius-xl); background: var(--bg-tag); color:#9e496f; font-size: var(--font-sm); font-weight: var(--weight-semibold); }
+.retry-btn { display:flex; min-height:var(--touch-min); margin-top:22rpx; padding:0 38rpx; align-items:center; justify-content:center; border-radius: var(--btn-radius); background: var(--bg-tag); color:var(--brand-primary); font-size: var(--font-sm); font-weight: var(--weight-semibold); }
 
 /* ===== 行程卡片 ===== */
 .trip-list { display: flex; flex-direction: column; gap: 16rpx; }
 .trip-card {
   background: var(--bg-card);
-  border-radius: var(--card-radius);
-  padding: var(--space-md);
-  border: 2rpx solid rgba(255,107,138,0.08) /* brand-primary-alpha */;
+  border-radius: var(--radius-lg);
+  padding: 24rpx;
+  border: 2rpx solid var(--border-light);
   box-shadow: var(--shadow-lg);
 }
 .trip-card:active { background: #fef7f9; }
@@ -70,12 +70,12 @@ page {
 .trip-time {
   width: 88rpx;
   flex-shrink: 0;
-  font-size: var(--font-lg);
+  font-size: var(--font-md);
   font-weight: var(--weight-bold);
   color: var(--text-primary);
 }
 .trip-avatar {
-  width: 64rpx; height: 64rpx;
+  width: 72rpx; height: 72rpx;
   border-radius: 50%;
   background: var(--bg-page);
   display: flex; align-items: center; justify-content: center;
@@ -100,52 +100,55 @@ page {
 .trip-status {
   flex-shrink: 0;
   padding: 6rpx 16rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-xs);
   font-size: var(--font-xs);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-semibold);
 }
-.tone-orange  { background: #fff2dc; color: #c97f1a; }
-.tone-purple  { background: #f0e9ff; color: #7c5dd4; }
-.tone-yellow  { background: #fff8d6; color: #a48313; }
-.tone-emerald { background: #e3f6ec; color: #067b4a; }
-.tone-teal    { background: #d8f1ee; color: #107d70; }
-.tone-sky     { background: #dbecff; color: #1f6dd6; }
-.tone-gray    { background: #f4f5f7; color: #8a8f98; }
-.tone-red     { background: #ffe5e6; color: #c5333d; }
+.tone-orange  { background: var(--tone-amber-bg); color: var(--tone-amber-text); }
+.tone-purple  { background: var(--tone-purple-bg); color: var(--tone-purple-text); }
+.tone-yellow  { background: var(--tone-yellow-bg); color: var(--tone-yellow-text); }
+.tone-emerald { background: var(--tone-emerald-bg); color: var(--tone-emerald-text); }
+.tone-teal    { background: var(--tone-teal-bg); color: var(--tone-teal-text); }
+.tone-sky     { background: var(--tone-sky-bg); color: var(--tone-sky-text); }
+.tone-gray    { background: var(--tone-gray-bg); color: var(--tone-gray-text); }
+.tone-red     { background: var(--tone-rose-bg); color: var(--tone-rose-text); }
 
 .trip-addr {
-  margin-top: var(--space-sm);
-  padding: 12rpx 16rpx;
-  background: var(--bg-input);
-  border-radius: var(--radius-xs);
+  margin-top: 16rpx;
+  padding: 14rpx 18rpx;
+  background: var(--bg-gradient-entry);
+  border-radius: var(--radius-md);
   font-size: var(--font-xs);
   line-height: var(--leading-normal);
   color: var(--text-muted);
+  border: 1rpx solid var(--border-neutral);
 }
 
 .trip-actions {
-  margin-top: var(--space-sm);
+  margin-top: 16rpx;
   display: flex;
   gap: 12rpx;
 }
 .trip-btn {
   flex: 1;
-  min-height: 72rpx;
-  border-radius: var(--radius-sm);
+  min-height: var(--touch-min);
+  height: var(--touch-min);
+  border-radius: var(--btn-radius);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8rpx;
   font-size: var(--font-sm);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-semibold);
 }
 .trip-btn:active { opacity: 0.85; }
 .trip-primary {
   background: var(--brand-gradient);
   color: var(--text-inverse);
+  box-shadow: 0 8rpx 18rpx rgba(255, 107, 138, 0.22);
 }
 .trip-ghost {
   background: var(--bg-card);
-  color: var(--text-body);
-  border: 2rpx solid rgba(255,107,138,0.15) /* brand-primary-alpha */;
+  color: var(--brand-primary);
+  border: 2rpx solid var(--border-light);
 }

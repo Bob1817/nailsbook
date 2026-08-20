@@ -59,14 +59,16 @@
           <view
             wx:for="{{filteredItems}}"
             wx:key="id"
-            class="msg-card"
+            class="msg-card msg-card-{{item.type}}"
             bindtap="onItemClick"
             data-index="{{index}}"
           >
             <view class="msg-avatar-wrap">
               <image wx:if="{{item.clientAvatar && item.type === 'chat'}}" src="{{item.clientAvatar}}" mode="aspectFill" class="msg-avatar-img" lazy-load aria-label="{{item.name}}的头像" />
               <view wx:else class="msg-avatar-placeholder {{item._avatarBgClass}}">
-                <text class="msg-avatar-char">{{item._avatarChar}}</text>
+                <image wx:if="{{item.type === 'service'}}" class="msg-semantic-icon" src="/static/icons/notification-service.svg" mode="aspectFit" aria-label="服务提醒" />
+                <image wx:elif="{{item.type === 'system'}}" class="msg-semantic-icon" src="/static/icons/notification-system.svg" mode="aspectFit" aria-label="系统通知" />
+                <text wx:else class="msg-avatar-char">{{item._avatarChar}}</text>
               </view>
             </view>
             <view class="msg-body">
@@ -82,8 +84,8 @@
               <text class="msg-time">{{item._timeText}}</text>
               <text wx:if="{{item._actionLabel}}" class="msg-action {{item._actionClass}}">{{item._actionLabel}}</text>
               <block wx:if="{{item.unread}}">
-                <view wx:if="{{item.unreadCount > 1}}" class="msg-unread-badge">{{item.unreadCount > 99 ? '99+' : item.unreadCount}}</view>
-                <view wx:else class="msg-unread-dot"></view>
+                <view wx:if="{{item.unreadCount > 1}}" class="msg-unread-badge unread-{{item.type}}">{{item.unreadCount > 99 ? '99+' : item.unreadCount}}</view>
+                <view wx:else class="msg-unread-dot unread-{{item.type}}"></view>
               </block>
             </view>
           </view>
@@ -127,7 +129,10 @@
       <view class="modal-btn modal-btn-close" bindtap="closeNotification">
         <text class="modal-btn-close-text">关闭</text>
       </view>
-      <view wx:if="{{selectedNotification.type === 'pending'}}" class="modal-btn modal-btn-primary" bindtap="viewRelatedOrder">
+      <view wx:if="{{selectedNotification.relatedType === 'binding'}}" class="modal-btn modal-btn-primary" bindtap="viewBindingApplications">
+        <text class="modal-btn-primary-text">处理绑定申请</text>
+      </view>
+      <view wx:elif="{{selectedNotification.type === 'pending'}}" class="modal-btn modal-btn-primary" bindtap="viewRelatedOrder">
         <text class="modal-btn-primary-text">去处理</text>
       </view>
       <view wx:elif="{{selectedNotification.type === 'service'}}" class="modal-btn modal-btn-primary" bindtap="viewRelatedOrder">

@@ -34,7 +34,8 @@
       <view wx:for="{{group.messages}}" wx:key="id" wx:for-item="item" id="msg-{{item.id}}" class="msg-row {{item.isMe ? 'row-right' : 'row-left'}}">
         <!-- 对方头像 -->
         <view wx:if="{{!item.isMe}}" class="msg-avatar">
-          <view class="avatar-placeholder"><text>{{clientName[0] || '客'}}</text></view>
+          <image wx:if="{{clientAvatar && !clientAvatarFailed}}" class="avatar-img" src="{{clientAvatar}}" mode="aspectFill" lazy-load binderror="onClientAvatarError" aria-label="{{clientName || '客户'}}的头像" />
+          <view wx:else class="avatar-placeholder"><text>{{clientName[0] || '客'}}</text></view>
         </view>
 
         <view class="msg-content-wrap">
@@ -54,7 +55,7 @@
               <text class="card-content">{{item.content}}</text>
               <view class="card-footer">
                 <text class="card-action">查看预约详情</text>
-                <text class="card-chevron">›</text>
+                <view class="card-chevron"></view>
               </view>
             </view>
           </view>

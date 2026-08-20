@@ -30,6 +30,8 @@ Page({
     if (options.id) {
       this.setData({ isEdit: true, workId: options.id });
       this.loadWork(options.id);
+    } else if (options.orderId) {
+      this.prefillFromOrder(options.orderId);
     } else if (options.customerId) {
       this.prefillCustomer(options.customerId);
     }
@@ -63,6 +65,27 @@ Page({
     this.setData({
       visibilityScope: 'authorized_clients',
       accessGrants: [makeGrant(customer, customer.orders || [])]
+    });
+  },
+
+  // 由"完成服务"引导进入：预填该订单所属客户的授权，并预选关联该订单
+  prefillFromOrder(orderId) {
+    const customer = this.data.accessOptions.find(item =>
+      (item.orders || []).some(order => String(order.id) === String(orderId))
+    );
+    if (!customer) {
+      wx.showToast({ title: '该订单客户尚未绑定客户端账号', icon: 'none' });
+      return;
+    }
+    const grant = makeGrant(customer, customer.orders || []);
+    const orderIndex = grant.customerOrders.findIndex(order => String(order.id) === String(orderId));
+    if (orderIndex >= 0) {
+      grant.selectedOrderIndex = orderIndex + 1;
+      grant.selectedOrderText = grant.orderNames[orderIndex + 1];
+    }
+    this.setData({
+      visibilityScope: 'authorized_clients',
+      accessGrants: [grant]
     });
   },
 

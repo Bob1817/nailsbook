@@ -48,6 +48,27 @@ page {
   --border-focus: #ff6b8a;
   --border-error: #dc2626;
   --border-card: rgba(0, 0, 0, 0.06);
+  --border-neutral: rgba(15, 23, 42, 0.08);
+
+  /* ===== 状态色：统一订单/客户标签用 ===== */
+  --tone-amber-bg: #fff2dc;
+  --tone-amber-text: #b56f12;
+  --tone-blue-bg: #ebf4ff;
+  --tone-blue-text: #3b82f6;
+  --tone-emerald-bg: #e3f6ec;
+  --tone-emerald-text: #067b4a;
+  --tone-purple-bg: #f0e9ff;
+  --tone-purple-text: #7c5dd4;
+  --tone-rose-bg: #ffe5e6;
+  --tone-rose-text: #c5333d;
+  --tone-gray-bg: #f4f5f7;
+  --tone-gray-text: #8a8f98;
+  --tone-sky-bg: #dbecff;
+  --tone-sky-text: #1f6dd6;
+  --tone-teal-bg: #d8f1ee;
+  --tone-teal-text: #107d70;
+  --tone-yellow-bg: #fff8d6;
+  --tone-yellow-text: #a48313;
 
   /* ===== 圆角 ===== */
   --radius-xs: 8rpx;
@@ -64,7 +85,11 @@ page {
   --shadow-lg: 0 10rpx 26rpx rgba(15, 23, 42, 0.05);
   --shadow-elevated: 0 12rpx 32rpx rgba(15, 23, 42, 0.08);
 
-  /* ===== 字号（基于 750rpx 设计稿） ===== */
+  /* ===== 字体：系统无衬线负责信息效率，宋体/衬线负责作品与主页展示感 ===== */
+  --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Source Han Sans SC', sans-serif;
+  --font-display: Georgia, 'Times New Roman', 'Songti SC', STSong, 'Noto Serif CJK SC', 'Source Han Serif SC', serif;
+
+  /* ===== 统一字号阶梯（基于 750rpx 设计稿） ===== */
   --font-xs: 22rpx;
   --font-sm: 24rpx;
   --font-md: 28rpx;
@@ -72,6 +97,14 @@ page {
   --font-xl: 40rpx;
   --font-2xl: 48rpx;
   --font-3xl: 64rpx;
+
+  /* ===== 语义字号：新页面和共享组件优先使用 ===== */
+  --type-meta: var(--font-xs);
+  --type-body: var(--font-sm);
+  --type-body-lg: var(--font-md);
+  --type-title: var(--font-lg);
+  --type-section: var(--font-xl);
+  --type-display: var(--font-2xl);
 
   /* ===== 行高 ===== */
   --leading-tight: 1.25;
@@ -103,7 +136,10 @@ page {
   --card-gap: 24rpx;
 
   /* ===== 按钮 ===== */
-  --btn-height: 88rpx;
+  --control-visual-height: 64rpx;
+  --control-hit-height: 88rpx;
+  --control-visual-inset: 12rpx;
+  --btn-height: var(--control-hit-height);
   --btn-radius: 48rpx;
   --btn-font-size: 30rpx;
   --btn-font-weight: 500;

@@ -38,7 +38,8 @@ Component({
       if (!tab || key === this.data.selected) return;
 
       const app = getApp();
-      const token = app.globalData.token || wx.getStorageSync('client_token');
+      const role = app.globalData.role || wx.getStorageSync('role') || 'client';
+      const token = app.globalData.token || wx.getStorageSync(`${role}_token`) || wx.getStorageSync('token');
       if (!token && key !== 'discover') {
         wx.navigateTo({ url: '/pages/login/index?redirect=' + encodeURIComponent(tab.path) });
         return;

@@ -48,6 +48,32 @@ function genderText(g) {
   return '';
 }
 
+function buildCustomerIdentity(raw) {
+  const accountName = isPhoneLikeName(raw.accountName) ? '' : String(raw.accountName || '').trim();
+  const savedName = isPhoneLikeName(raw.name) ? '' : String(raw.name || '').trim();
+  const hasRemark = Boolean(savedName && accountName && savedName !== accountName);
+  return {
+    accountName,
+    savedName,
+    hasRemark,
+    displayName: hasRemark
+      ? `${savedName}（${accountName}）`
+      : (accountName || savedName || '未设置名称')
+  };
+}
+
+function findConversationClient(response, clientUserId) {
+  const conversations = Array.isArray(response)
+    ? response
+    : ((response && (response.list || response.data)) || []);
+  const targetId = String(clientUserId || '');
+  for (let i = 0; i < conversations.length; i += 1) {
+    const client = conversations[i].client || {};
+    if (String(client.id || '') === targetId) return client;
+  }
+  return null;
+}
+
 Page({
   data: {
     customer: null,
@@ -64,6 +90,9 @@ Page({
     availableTags: [],
     newTag: '',
     savingTags: false,
+    showRemarkEdit: false,
+    remarkDraft: '',
+    savingRemark: false,
     followUpContent: '',
     followUpDate: todayDateValue(),
     savingFollowUp: false
@@ -99,7 +128,16 @@ Page({
     this._loadingCustomer = true;
     this.setData({ loading: true, loadFailed: false, loadErrorText: '' });
     try {
-      const raw = await api.technician.customers.detail(this.customerId);
+      const [detail, conversations] = await Promise.all([
+        api.technician.customers.detail(this.customerId),
+        api.chat.technician.conversations({ timeout: 10000, silent: true }).catch(() => [])
+      ]);
+      const conversationClient = findConversationClient(conversations, detail.clientUserId) || {};
+      const raw = {
+        ...detail,
+        accountName: detail.accountName || conversationClient.nickname || '',
+        avatarUrl: detail.avatarUrl || conversationClient.avatarUrl || ''
+      };
 
       const orders = (raw.orders || []).map((o) => ({
         ...o,
@@ -125,7 +163,7 @@ Page({
       const recentDate = parseDate(recent);
 
       const tags = parseTags(raw.tags);
-      const phoneLike = isPhoneLikeName(raw.name);
+      const identity = buildCustomerIdentity(raw);
 
       const customer = {
         ...raw,
@@ -140,8 +178,10 @@ Page({
           ].filter(Boolean).join(' · ') || '仅查看'
         })),
         _tags: tags,
-        _displayName: phoneLike ? '未设置名称' : (raw.name || '未设置名称'),
-        _initial: phoneLike ? '客' : ((raw.name && raw.name[0]) || '客'),
+        _displayName: identity.displayName,
+        _accountName: identity.accountName,
+        _remarkName: identity.hasRemark ? identity.savedName : '',
+        _initial: (identity.accountName || identity.savedName || '客')[0],
         _phoneMasked: maskPhone(raw.phone),
         _genderText: genderText(raw.gender),
         _birthdayText: raw.birthday ? String(raw.birthday).slice(0, 10) : '',
@@ -206,6 +246,45 @@ Page({
       data: addr,
       success: () => wx.showToast({ title: '已复制', icon: 'success' })
     });
+  },
+
+  onAvatarError() {
+    this.setData({ 'customer._avatarFailed': true });
+  },
+
+  openRemarkEdit() {
+    this.setData({
+      showRemarkEdit: true,
+      remarkDraft: this.data.customer._remarkName || ''
+    });
+  },
+
+  closeRemarkEdit() {
+    if (this.data.savingRemark) return;
+    this.setData({ showRemarkEdit: false, remarkDraft: '' });
+  },
+
+  onRemarkInput(e) {
+    this.setData({ remarkDraft: e.detail.value });
+  },
+
+  async saveRemark() {
+    if (this.data.savingRemark) return;
+    const remark = String(this.data.remarkDraft || '').trim();
+    if (!remark) {
+      wx.showToast({ title: '请输入客户备注', icon: 'none' });
+      return;
+    }
+    this.setData({ savingRemark: true });
+    try {
+      await api.technician.customers.updateName(this.customerId, remark);
+      this.setData({ showRemarkEdit: false, remarkDraft: '', savingRemark: false });
+      wx.showToast({ title: '备注已更新', icon: 'success' });
+      await this.loadCustomer();
+    } catch (err) {
+      this.setData({ savingRemark: false });
+      wx.showToast({ title: err.message || '备注更新失败', icon: 'none' });
+    }
   },
 
   goOrderDetail(e) {

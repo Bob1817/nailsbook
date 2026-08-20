@@ -10,7 +10,6 @@ const ORDER_STATUS_LABELS = {
   pending_client_confirm: '待客户确认',
   quoted:         '已报价',
   confirmed:      '已确认',
-  pending_home:    '待上门',
   pending_shop:    '待到店',
   in_progress:     '进行中',
   completed:       '已完成',
@@ -27,7 +26,6 @@ const ORDER_STATUS_TONES = {
   pending_client_confirm: 'tone-purple',
   quoted:          'tone-sky',
   confirmed:       'tone-purple',
-  pending_home:    'tone-emerald',
   pending_shop:    'tone-teal',
   in_progress:     'tone-sky',
   completed:       'tone-gray',
@@ -42,7 +40,6 @@ const ORDER_TABS = [
   { value: 'pending_quote',   label: '待报价' },
   { value: 'pending_agree',   label: '待用户确认' },
   { value: 'pending_confirm', label: '待我确认' },
-  { value: 'pending_home',    label: '待上门' },
   { value: 'pending_shop',    label: '待到店' },
   { value: 'in_progress',     label: '进行中' },
   { value: 'completed',       label: '已完成' },
@@ -65,8 +62,13 @@ function normalizeOrder(raw) {
     startTime: raw.startTime,
     endTime: raw.endTime,
     address: raw.address || raw.clientAddress?.detailAddress || '',
-    serviceType: raw.serviceType || 'home',     // 'home' | 'shop'
+    serviceType: raw.serviceType || 'shop',     // 'home' | 'shop'
     price: raw.quotePrice || 0,
+    tradeStatus: raw.tradeStatus || null,
+    tradeCreatedAt: raw.tradeCreatedAt || null,
+    paymentStatus: raw.paymentStatus || 'unpaid',
+    paidAmount: Number(raw.paidAmount || 0),
+    depositAmount: Number(raw.depositAmount || 0),
     depositPaid: !!raw.isDepositPaid,
     customerId: raw.customer?.id,
     customerName: raw.customer?.name || '客户',
@@ -95,32 +97,31 @@ function getOrderStateMeta(status) {
 
 // 服务类型展示
 function resolveOrderPresentation(order) {
-  const isShop = order.serviceType === 'shop';
   const shopName = order.shopName || '';
 
   return {
-    isShop,
-    typeLabel: isShop ? '到店美甲' : '上门美甲',
-    typeClass: isShop ? 'tag-shop' : 'tag-home',
-    fullAddress: isShop
-      ? (shopName ? `到店 · ${shopName} · ${order.address}` : `到店 · ${order.address}`)
-      : `上门 · ${order.address}`,
+    isShop: true,
+    typeLabel: '到店美甲',
+    typeClass: 'tag-shop',
+    fullAddress: shopName
+      ? `到店 · ${shopName} · ${order.address}`
+      : `到店 · ${order.address}`,
   };
 }
 
-// 单趟预估时长（分钟）— 与 webapp 一致的常量估算
+// 单趟预估时长（分钟）— 到店服务常量
 function estimateSingleTravelMinutes(order) {
-  return order.serviceType === 'home' ? 24 : 16;
+  return 16;
 }
 
 // 单趟预估距离（km）
 function estimateRouteDistance(order) {
-  return order.serviceType === 'home' ? 7.8 : 3.6;
+  return 3.6;
 }
 
 // 是否「待出发/待到店/服务中」之一（用于行程列表）
 function isActiveOrderStatus(status) {
-  return status === 'pending_home' || status === 'pending_shop' || status === 'in_progress';
+  return status === 'pending_shop' || status === 'in_progress';
 }
 
 // 是否未确认地址
@@ -144,7 +145,7 @@ function buildDashboardSummary(orders, now = new Date()) {
   // 待确认：状态为 pending_quote 等（即 trips 里看不到的，但从 list 里能看到）
   // 我们这里以 trips 为输入，pendingCount 计为：trips 中 pending_home/pending_shop 总数
   const pendingCount = orders.filter(
-    (o) => o.status === 'pending_home' || o.status === 'pending_shop'
+    (o) => o.status === 'pending_shop'
   ).length;
 
   const sortedActive = orders

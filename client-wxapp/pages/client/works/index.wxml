@@ -18,8 +18,8 @@
     <block wx:else>
       <view wx:if="{{businessPage && artist}}" class="business-card">
         <view class="business-profile">
-          <image wx:if="{{artist.avatarUrl}}" class="business-avatar" src="{{artist.avatarUrl}}" mode="aspectFill" aria-label="{{artist.name}}的头像" />
-          <view wx:else class="business-avatar business-avatar-fallback">{{artist.initial}}</view>
+          <image wx:if="{{artist.avatarUrl}}" class="business-avatar" src="{{artist.avatarUrl}}" mode="aspectFill" bindtap="viewArtist" data-id="{{artist.id}}" aria-label="查看{{artist.name}}主页" />
+          <view wx:else class="business-avatar business-avatar-fallback" bindtap="viewArtist" data-id="{{artist.id}}" role="button" aria-label="查看{{artist.name}}主页">{{artist.initial}}</view>
           <view class="business-copy">
             <text class="business-name">{{artist.name}}</text>
             <text class="business-area">{{artist.city || '本地'}}{{artist.serviceArea ? ' · ' + artist.serviceArea : ''}}</text>
@@ -115,85 +115,14 @@
 
       <!-- 瀑布流 -->
       <view wx:else class="waterfall">
-        <!-- 左列 -->
         <view class="col">
-          <view wx:for="{{leftCol}}" wx:key="id" class="card-img-wrap {{item.aspect}}" bindtap="viewWork" data-id="{{item.id}}">
-            <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="card-img" lazy-load aria-label="{{item.title}}" />
-            <view wx:else class="card-img card-img-empty"></view>
-            <view class="card-gradient"></view>
-            <view class="card-top">
-              <view class="card-tech-pill" catchtap="viewArtist" data-id="{{item.technicianId}}">
-                <image wx:if="{{item.technicianAvatarUrl}}" src="{{item.technicianAvatarUrl}}" mode="aspectFill" class="card-tech-av" binderror="onAvatarError" data-id="{{item.id}}" lazy-load aria-label="{{item.technicianName}}的头像" />
-                <view wx:else class="card-tech-av-fallback">
-                  <text class="card-tech-av-char">{{item.techInitial}}</text>
-                </view>
-                <view class="card-tech-info">
-                  <text class="card-tech-name">{{item.technicianName}}</text>
-
-                </view>
-              </view>
-              <view class="card-like-pill">
-                <image wx:if="{{item.isLiked}}" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAUElEQVR4nGNgQAP/3cP/o2NS5PEqJBVT1TAUQ6lqIDUNG6kG0iSWqZ4OqWEo1txCjsF4DaKZgcQaSrRhxBhKsmH4DCXbMGyGUmwYsqHEqAMAvy56MytYoCsAAAAASUVORK5CYII=" class="heart-icon" />
-                <image wx:else src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAS0lEQVR4nOXTMQ4AIAgDQP7/aV3RkKbFMtmV5hYg4soqosxhUY0VO1Ar6MR+BUe2bL9DB1p+SweG0BjIojTGoDKG0DZWoc9YRpneBsE8yGLtxtorAAAAAElFTkSuQmCC" class="heart-icon" />
-                <text class="card-like-num">{{item.likeCount}}</text>
-              </view>
-            </view>
-            <view class="card-bottom">
-              <text class="card-title">{{item.title}}</text>
-              <view wx:if="{{item.tags.length > 0}}" class="card-tags">
-                <block wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">
-                  <text wx:if="{{index < 2}}" class="card-tag">#{{tag}}</text>
-                </block>
-              </view>
-              <view class="card-foot-row">
-                <text class="card-date">{{item.dateStr}}</text>
-                <view class="card-cta">
-                  <view class="icon icon-check-circle"></view>
-                  <text class="card-cta-text">查看详情</text>
-                </view>
-              </view>
-            </view>
+          <view wx:for="{{leftCol}}" wx:key="id">
+            <work-card work="{{item}}" bind:cardtap="viewWork" bind:artisttap="viewArtist" />
           </view>
         </view>
-
-        <!-- 右列 -->
         <view class="col">
-          <view wx:for="{{rightCol}}" wx:key="id" class="card-img-wrap {{item.aspect}}" bindtap="viewWork" data-id="{{item.id}}">
-            <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="card-img" lazy-load aria-label="{{item.title}}" />
-            <view wx:else class="card-img card-img-empty"></view>
-            <view class="card-gradient"></view>
-            <view class="card-top">
-              <view class="card-tech-pill" catchtap="viewArtist" data-id="{{item.technicianId}}">
-                <image wx:if="{{item.technicianAvatarUrl}}" src="{{item.technicianAvatarUrl}}" mode="aspectFill" class="card-tech-av" binderror="onAvatarError" data-id="{{item.id}}" lazy-load aria-label="{{item.technicianName}}的头像" />
-                <view wx:else class="card-tech-av-fallback">
-                  <text class="card-tech-av-char">{{item.techInitial}}</text>
-                </view>
-                <view class="card-tech-info">
-                  <text class="card-tech-name">{{item.technicianName}}</text>
-
-                </view>
-              </view>
-              <view class="card-like-pill">
-                <image wx:if="{{item.isLiked}}" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAUElEQVR4nGNgQAP/3cP/o2NS5PEqJBVT1TAUQ6lqIDUNG6kG0iSWqZ4OqWEo1txCjsF4DaKZgcQaSrRhxBhKsmH4DCXbMGyGUmwYsqHEqAMAvy56MytYoCsAAAAASUVORK5CYII=" class="heart-icon" />
-                <image wx:else src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAS0lEQVR4nOXTMQ4AIAgDQP7/aV3RkKbFMtmV5hYg4soqosxhUY0VO1Ar6MR+BUe2bL9DB1p+SweG0BjIojTGoDKG0DZWoc9YRpneBsE8yGLtxtorAAAAAElFTkSuQmCC" class="heart-icon" />
-                <text class="card-like-num">{{item.likeCount}}</text>
-              </view>
-            </view>
-            <view class="card-bottom">
-              <text class="card-title">{{item.title}}</text>
-              <view wx:if="{{item.tags.length > 0}}" class="card-tags">
-                <block wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">
-                  <text wx:if="{{index < 2}}" class="card-tag">#{{tag}}</text>
-                </block>
-              </view>
-              <view class="card-foot-row">
-                <text class="card-date">{{item.dateStr}}</text>
-                <view class="card-cta">
-                  <view class="icon icon-check-circle"></view>
-                  <text class="card-cta-text">查看详情</text>
-                </view>
-              </view>
-            </view>
+          <view wx:for="{{rightCol}}" wx:key="id">
+            <work-card work="{{item}}" bind:cardtap="viewWork" bind:artisttap="viewArtist" />
           </view>
         </view>
       </view>

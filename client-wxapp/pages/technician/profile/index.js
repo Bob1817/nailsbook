@@ -7,7 +7,6 @@ const { normalizeSchedule, genId, daysSummary, DAY_KEYS, TIME_OPTIONS } = requir
 const ORDER_SHORTCUTS = [
   { status: 'pending_quote',   label: '待报价' },
   { status: 'pending_confirm', label: '待确认' },
-  { status: 'pending_home',    label: '待上门' },
   { status: 'pending_shop',    label: '待到店' },
   { status: 'in_progress',     label: '服务中' }
 ];
@@ -19,7 +18,6 @@ const TOOLS = [
   { key: 'works',       label: '作品管理' },
   { key: 'marketing',   label: '宣传物料' },
   { key: 'designs',     label: '设计需求' },
-  { key: 'homeService', label: '上门设置' },
   { key: 'serviceTime', label: '服务时间' },
   { key: 'shops',       label: '店铺管理' },
   { key: 'tags',        label: '标签管理' },
@@ -33,7 +31,6 @@ const TOOL_ROUTES = {
   works:        '/pages/technician/works/index',
   marketing:    '/pages/technician/marketing-materials/index',
   designs:      '/pages/technician/design-requests/index',
-  homeService:  '/pages/technician/home-service-settings/index',
   serviceTime:  '/pages/technician/service-time/index',
   shops:        '/pages/technician/shop-management/index',
   tags:         '/pages/technician/tag-management/index',
@@ -51,16 +48,12 @@ Page({
     tools: TOOLS,
 
     // 新手引导
-    needsSetup: false,       // homeService 和 shopService 均未配置时显示引导卡
-    homeServiceOn: false,    // 控制工具格子状态点
+    needsSetup: false,       // shopService 未配置时显示引导卡
     shopServiceOn: false,
 
     // 服务类型引导弹窗（仅工作时间设置时触发）
     showServiceTypeModal: false,
-    serviceTypeTab: 'home',  // 'home' | 'shop'
-    // 上门设置
-    homeServiceEnabled: false,
-    homeSaving: false,
+    serviceTypeTab: 'shop',  // 仅到店服务
     // 店铺管理
     shopList: [],
     shopLoading: false,
@@ -110,11 +103,10 @@ Page({
   applyUserInfo() {
     const userInfo = wx.getStorageSync('userInfo') || wx.getStorageSync('technician_userInfo') || {};
     if (userInfo.phone) userInfo.phoneDisplay = phoneMask(userInfo.phone);
-    const homeServiceOn = !!userInfo.homeService;
     const shopServiceOn = !!userInfo.shopService;
-    const needsSetup = !homeServiceOn && !shopServiceOn;
-    const canAcceptOrders = homeServiceOn || shopServiceOn;
-    this.setData({ userInfo, homeServiceOn, shopServiceOn, needsSetup, canAcceptOrders });
+    const needsSetup = !shopServiceOn;
+    const canAcceptOrders = shopServiceOn;
+    this.setData({ userInfo, shopServiceOn, needsSetup, canAcceptOrders });
     this.computeAccepting();
   },
 
@@ -265,6 +257,9 @@ Page({
   goAllOrders() {
     wx.navigateTo({ url: '/pages/technician/all-bookings/index' });
   },
+  goTradeOrders() {
+    wx.navigateTo({ url: '/pages/technician/trade-orders/index' });
+  },
   goOrderStatus(e) {
     const status = e.currentTarget.dataset.status;
     wx.navigateTo({ url: `/pages/technician/all-bookings/index?status=${status}` });
@@ -305,9 +300,6 @@ Page({
   },
 
   // ---------- 引导入口 ----------
-  goSetupHomeService() {
-    wx.navigateTo({ url: '/pages/technician/home-service-settings/index?from=setup' });
-  },
   goSetupShop() {
     wx.navigateTo({ url: '/pages/technician/shop-management/index?from=setup' });
   },
@@ -315,6 +307,11 @@ Page({
   // ---------- 工具 ----------
   onTool(e) {
     const key = e.currentTarget.dataset.key;
+    if (key === 'homepage') {
+      const user = this.data.userInfo || wx.getStorageSync('technician_userInfo') || wx.getStorageSync('userInfo') || {};
+      if (!user.id) return wx.showToast({ title:'账号信息加载中', icon:'none' });
+      return wx.navigateTo({ url:'/pages/client/artist-home/index?id=' + user.id + '&preview=1' });
+    }
     if (key === 'serviceTime') return this.openScheduleModal();
     const url = TOOL_ROUTES[key];
     if (url) wx.navigateTo({ url });
@@ -322,18 +319,13 @@ Page({
 
   // ---------- 服务类型引导弹窗（仅工作时间设置时触发） ----------
   openServiceTypeModal(tab) {
-    this.setData({ showServiceTypeModal: true, serviceTypeTab: tab || 'home' });
+    this.setData({ showServiceTypeModal: true, serviceTypeTab: tab || 'shop' });
     this.loadServiceTypeConfig();
   },
 
   closeServiceTypeModal() {
     this.setData({ showServiceTypeModal: false, showShopForm: false, editingShop: null });
     this.applyUserInfo();
-  },
-
-  switchServiceTypeTab(e) {
-    const tab = e.currentTarget.dataset.tab;
-    this.setData({ serviceTypeTab: tab });
   },
 
   preventBubble() {},
@@ -343,34 +335,8 @@ Page({
     const userInfo = this.data.userInfo || {};
     const shopAddresses = userInfo.shopAddresses || [];
     this.setData({
-      homeServiceEnabled: !!userInfo.homeService,
       shopList: shopAddresses
     });
-  },
-
-  toggleHomeService(e) {
-    this.setData({ homeServiceEnabled: e.detail.value });
-  },
-
-  async saveHomeService() {
-    if (this.data.homeSaving) return;
-    this.setData({ homeSaving: true });
-    try {
-      await api.technician.auth.updateServiceType({
-        homeService: this.data.homeServiceEnabled
-      });
-      // 重新获取用户信息
-      const res = await api.technician.auth.getUserInfo();
-      const userInfo = { ...this.data.userInfo, ...res };
-      wx.setStorageSync('userInfo', userInfo);
-      wx.setStorageSync('technician_userInfo', userInfo);
-      this.setData({ homeSaving: false, userInfo });
-      this.applyUserInfo();
-      wx.showToast({ title: '上门设置已保存', icon: 'success' });
-    } catch (err) {
-      this.setData({ homeSaving: false });
-      wx.showToast({ title: err.message || '保存失败', icon: 'none' });
-    }
   },
 
   // ---- 店铺快速配置 ----
@@ -463,9 +429,9 @@ Page({
 
   // ---------- 工作时间设置 ----------
   openScheduleModal() {
-    // 前置条件检查：必须开启上门服务或到店服务
+    // 前置条件检查：必须开启到店服务
     if (!this.data.canAcceptOrders) {
-      this.openServiceTypeModal('home');
+      this.openServiceTypeModal('shop');
       return;
     }
     const userInfo = this.data.userInfo || {};

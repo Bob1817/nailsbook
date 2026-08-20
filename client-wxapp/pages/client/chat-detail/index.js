@@ -292,6 +292,10 @@ Page({
     wx.previewImage({ urls: [url], current: url });
   },
 
+  viewArtist() {
+    if (this.data.techId) wx.navigateTo({ url: '/pages/client/artist-home/index?id=' + this.data.techId });
+  },
+
   /* ===== 预约卡片 ===== */
   async openBookingSheet() {
     this.setData({ showBookingSheet: true });
@@ -355,7 +359,7 @@ function formatDateStr(time) {
 }
 
 function getStatusLabel(status) {
-  var map = { pending_quote:'待报价', pending_agree:'待同意', pending_confirm:'待确认', pending_home:'待上门', pending_shop:'待到店', in_progress:'服务中', completed:'已完成', cancelled:'已取消' };
+  var map = { pending_quote:'待报价', pending_agree:'待同意', pending_confirm:'待确认', pending_shop:'待到店', in_progress:'服务中', completed:'已完成', cancelled:'已取消' };
   return map[status] || status;
 }
 

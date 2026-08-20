@@ -40,7 +40,8 @@ Page({
     showHidden: false,
     commentText: '',
     replyingTo: null,
-    scrollTarget: ''
+    scrollTarget: '',
+    socialLoading: false
   },
 
   onLoad(options) {
@@ -51,6 +52,7 @@ Page({
     if (options.id) {
       this.workId = parseInt(options.id);
       this.loadWork();
+      if (options.focus === 'comments') setTimeout(() => this.setData({ commentFocused: true }), 120);
     } else {
       this.setData({ loadFailed: true, loadErrorText: '作品参数无效', canRetryLoad: false });
     }
@@ -152,6 +154,44 @@ Page({
     } catch (err) {
       wx.showToast({ title: '评论失败', icon: 'none' });
     }
+  },
+
+  async toggleLike() {
+    if (this.data.socialLoading) return;
+    this.setData({ socialLoading: true });
+    try {
+      const res = await api.technician.works.like(this.workId);
+      const work = { ...this.data.work };
+      work.isLiked = res.liked;
+      work.likeCount = Math.max(0, (work.likeCount || 0) + (res.liked ? 1 : -1));
+      this.setData({ work });
+      wx.showToast({ title: res.liked ? '点赞成功' : '去掉点赞成功', icon: 'none' });
+    } catch (err) {
+      wx.showToast({ title: '操作失败', icon: 'none' });
+    } finally {
+      this.setData({ socialLoading: false });
+    }
+  },
+
+  async toggleFavorite() {
+    if (this.data.socialLoading) return;
+    this.setData({ socialLoading: true });
+    try {
+      const res = await api.technician.works.favorite(this.workId);
+      const work = { ...this.data.work };
+      work.isFavorited = res.favorited;
+      work.favoriteCount = Math.max(0, (work.favoriteCount || 0) + (res.favorited ? 1 : -1));
+      this.setData({ work });
+      wx.showToast({ title: res.favorited ? '收藏成功' : '取消收藏成功', icon: 'none' });
+    } catch (err) {
+      wx.showToast({ title: '操作失败', icon: 'none' });
+    } finally {
+      this.setData({ socialLoading: false });
+    }
+  },
+
+  focusComment() {
+    this.setData({ commentFocused: true });
   },
 
   toggleHiddenComments() {

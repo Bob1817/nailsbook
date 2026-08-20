@@ -11,6 +11,7 @@ App({
   onLaunch() {
     console.log('App launched');
     this.loadCapabilities();
+    this.normalizeStoredSession();
 
     // 恢复游客状态
     this.globalData.isTourist = !!wx.getStorageSync('isTourist');
@@ -42,6 +43,31 @@ App({
         });
     }
     // 无 token → 保持 app.json 的公开发现页，允许游客先浏览再转化
+  },
+
+  /** 修复旧版本曾把客户端 JWT 存入 technician 会话槽位的问题。 */
+  normalizeStoredSession() {
+    const token = wx.getStorageSync('token');
+    if (!token || typeof token !== 'string') return;
+    try {
+      const payloadPart = token.split('.')[1];
+      if (!payloadPart) return;
+      const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = normalized + '='.repeat((4 - normalized.length % 4) % 4);
+      const bytes = wx.base64ToArrayBuffer(padded);
+      const payload = JSON.parse(decodeURIComponent(Array.prototype.map.call(new Uint8Array(bytes), function (byte) {
+        return '%' + ('00' + byte.toString(16)).slice(-2);
+      }).join('')));
+      const tokenRole = payload.userType === 'technician' ? 'technician' : payload.userType === 'client' ? 'client' : '';
+      const storedRole = wx.getStorageSync('role');
+      if (!tokenRole || tokenRole === storedRole) return;
+      wx.setStorageSync('role', tokenRole);
+      wx.setStorageSync(`${tokenRole}_token`, token);
+      this.globalData.role = tokenRole;
+      this.globalData.token = token;
+    } catch (err) {
+      console.warn('[App] 无法识别本地登录凭证，将由服务端校验', err);
+    }
   },
 
   /** 用一次轻量请求校验 token 是否仍有效 */

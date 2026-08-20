@@ -82,7 +82,8 @@ const auth = {
 
 // ========== 客户端 ==========
 const client = {
-  home: () => api.get(`${C}/home`),
+  // 首页后端支持游客访问；始终匿名请求，避免失效 token 被 optional guard 拒绝后产生 401。
+  home: () => api.get(`${C}/home`, null, { needAuth: false, silent: true }),
   beautyArchive: () => api.get(`${C}/beauty-archive`),
 
   // 后端：PUT /auth/me 更新资料；PATCH /auth/password 改密
@@ -95,6 +96,9 @@ const client = {
       api.get(`${C}/auth/find-by-invite-code`, { inviteCode: code }),
     bindTechnician: (techId, inviteCode, note, source) =>
       api.post(`${C}/auth/bind-technician`, { techId, inviteCode, note, source }),
+    followedTechnicians: () => api.get(`${C}/auth/followed-technicians`),
+    requestBinding: (techId, note) =>
+      api.post(`${C}/auth/binding-applications/request`, { techId, note }),
     unbindTechnician: (techId) =>
       api.del(`${C}/auth/unbind-technician/${techId}`),
     setDefaultTechnician: (techId) =>
@@ -124,11 +128,14 @@ const client = {
     acceptQuote: (id, fundAmount = 0) => api.post(`${C}/orders/${id}/agree`, { fundAmount }),
     rejectQuote: (id, reason) => api.post(`${C}/orders/${id}/reject-quote`, { reason }),
     cancel: (id) => api.patch(`${C}/orders/${id}/status`, { status: 'cancelled' }),
-    markDepositPaid: (id) => api.post(`${C}/orders/${id}/mark-deposit-paid`),
     saveReview: (id, data) => api.patch(`${C}/orders/${id}/review`, data),
     saveClientPhotos: (id, photos) => api.patch(`${C}/orders/${id}/client-photos`, { photos }),
     saveClientRecordNote: (id, note) => api.patch(`${C}/orders/${id}/client-record-note`, { note }),
     blockedSlots: (techId) => api.get(`${C}/orders/blocked-slots/${techId}`)
+  },
+
+  tradeOrders: {
+    list: () => api.get(`${C}/orders/trade-orders/list`)
   },
 
   payments: {
@@ -171,6 +178,12 @@ const client = {
     create: (data) => api.post(`${C}/feedback`, data)
   },
 
+  artists: {
+    followStatus: (id) => api.get(`${C}/artists/${id}/follow`),
+    follow: (id) => api.post(`${C}/artists/${id}/follow`, {}),
+    unfollow: (id) => api.del(`${C}/artists/${id}/follow`)
+  },
+
   referrals: {
     list: () => api.get(`${C}/referrals`),
     createLink: (technicianId) => api.post(`${C}/referrals/link`, { technicianId }),
@@ -181,6 +194,10 @@ const client = {
 
 // ========== 技师端 ==========
 const technician = {
+  brandProfile: {
+    get: () => api.get(`${T}/brand-profile`),
+    update: (data) => api.put(`${T}/brand-profile`, data)
+  },
   insights: {
     overview: () => api.get(`${T}/insights/overview`)
   },
@@ -195,7 +212,10 @@ const technician = {
     updateServiceType: (data) => api.patch(`${T}/auth/service-type`, data),
     sendInitialPasswordCode: (phone) => api.post(`${T}/auth/set-initial-password/send-code`, { phone }, { needAuth: false }),
     setInitialPassword: (phone, code, newPassword) => api.post(`${T}/auth/set-initial-password`, { phone, code, newPassword }, { needAuth: false }),
-    setPassword: (newPassword) => api.post(`${T}/auth/set-password`, { newPassword })
+    setPassword: (newPassword) => api.post(`${T}/auth/set-password`, { newPassword }),
+    bindingApplications: () => api.get(`${T}/auth/binding-applications`),
+    approveBinding: (id) => api.post(`${T}/auth/binding-applications/${id}/approve`, {}),
+    rejectBinding: (id, reason) => api.post(`${T}/auth/binding-applications/${id}/reject`, { reason })
   },
 
   orders: {
@@ -207,8 +227,9 @@ const technician = {
     update: (id, data) => api.patch(`${T}/orders/${id}`, data),
     quote: (id, data) => api.patch(`${T}/orders/${id}/review`, data),
     confirm: (id) => api.patch(`${T}/orders/${id}/confirm`, {}),
-    complete: (id) => api.patch(`${T}/orders/${id}/complete`, {}),
-    cancel: (id, reason) => api.patch(`${T}/orders/${id}/cancel`, { reason })
+    complete: (id, data) => api.patch(`${T}/orders/${id}/complete`, data || {}),
+    cancel: (id, reason) => api.patch(`${T}/orders/${id}/cancel`, { reason }),
+    tradeList: (params) => api.get(`${T}/orders/trade-orders/list`, params)
   },
 
   customers: {
@@ -334,6 +355,28 @@ const technician = {
 
 // ========== 消息（双端共用）==========
 const chat = {
+  technician: {
+    conversations: (opts = {}) => api.get(`${T}/messages/conversations`, null, opts),
+    messages: (params, opts = {}) => {
+      const query = params && params.conversationId
+        ? { conversation_id: params.conversationId }
+        : params;
+      return api.get(`${T}/messages`, query, opts);
+    },
+    sendMessage: (data) => {
+      const body = { ...data };
+      if (body.conversationId != null) {
+        body.conversation_id = body.conversationId;
+        delete body.conversationId;
+      }
+      if (body.clientId != null) {
+        body.client_id = body.clientId;
+        delete body.clientId;
+      }
+      return api.post(`${T}/messages`, body);
+    },
+    markRead: (conversationId) => api.patch(`${T}/messages/read`, { conversation_id: conversationId })
+  },
   conversations: (role = 'client', opts = {}) => {
     const base = role === 'technician' ? T : C;
     return api.get(`${base}/messages/conversations`, null, opts);
@@ -418,6 +461,13 @@ const publicApi = {
   artists: {
     detail: (id) => api.get(`${P}/artist/id/${id}`, null, { needAuth: false }),
     card: (code) => api.get(`${P}/artist/${code}`, null, { needAuth: false })
+  },
+  brands: {
+    profile: (id, params) => api.get(`${P}/brands/${id}`, params, { needAuth: false }),
+    services: (id, params) => api.get(`${P}/brands/${id}/services`, params, { needAuth: false }),
+    works: (id, params) => api.get(`${P}/brands/${id}/works`, params, { needAuth: false }),
+    reviews: (id, params) => api.get(`${P}/brands/${id}/reviews`, params, { needAuth: false }),
+    availability: (id, params) => api.get(`${P}/brands/${id}/availability`, params, { needAuth: false })
   },
   referrals: {
     resolve: (token) => api.get(`${P}/referrals/${token}`, null, { needAuth: false })

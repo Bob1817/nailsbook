@@ -49,7 +49,7 @@
     </view>
 
     <view class="info-row">
-      <text class="info-label">预约时间</text>
+      <text class="info-label">{{order.bookingPhase === 'application' ? '客户期望时间' : '预约时间'}}</text>
       <text class="info-value">{{order._dateLabel}} {{order._timeRange}}</text>
     </view>
 

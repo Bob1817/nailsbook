@@ -1,4 +1,5 @@
 const api = require('../../../services/api');
+const { buildClientLoginUrl } = require('../../../utils/artist-navigation');
 
 Page({
   data: {
@@ -28,9 +29,15 @@ Page({
       const work = this.shareToken
         ? await api.public.works.shared(this.shareToken)
         : await api.public.works.detail(this.workId);
+      const technician = work.technician || (work.technicianId ? {
+        id: work.technicianId,
+        name: work.technicianName || '美甲师',
+        avatarUrl: work.technicianAvatarUrl || ''
+      } : null);
       this.setData({
         work: {
           ...work,
+          technician,
           dateStr: this.formatDate(work.createdAt)
         },
         loading: false,
@@ -79,15 +86,18 @@ Page({
       wx.navigateTo({ url: target });
       return;
     }
-    wx.navigateTo({
-      url: `/pages/client/login/index?redirect=${encodeURIComponent(target)}`
-    });
+    wx.navigateTo({ url: buildClientLoginUrl(target, { source: 'public_work' }) });
   },
 
   goToArtist() {
-    if (this.data.work && this.data.work.technician) {
-      wx.navigateTo({ url: `/pages/client/artist-home/index?id=${this.data.work.technician.id}` });
-    }
+    const work = this.data.work || {};
+    const technicianId = work.technicianId || (work.technician && work.technician.id);
+    if (technicianId) wx.navigateTo({ url: `/pages/client/artist-home/index?id=${technicianId}` });
+  },
+
+  goToCommentArtist(e) {
+    const role = e.currentTarget.dataset.role;
+    if (role === 'technician') this.goToArtist();
   },
 
   onShareAppMessage() {

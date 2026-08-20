@@ -486,11 +486,13 @@ page {
 
 /* ===== 首页作品网格（瀑布流，与发现页统一为 flex 双列） ===== */
 .home-works-grid {
+  width:100%; max-width:100%; min-width:0; overflow:hidden; box-sizing:border-box;
   display: flex; gap: var(--space-sm);
   align-items: flex-start;
 }
+.home-featured-lead { margin-bottom:24rpx; }
 .home-works-col {
-  flex: 1; display: flex; flex-direction: column; gap: var(--space-sm);
+  flex: 1 1 0; width:calc((100% - var(--space-sm)) / 2); min-width:0; max-width:calc((100% - var(--space-sm)) / 2); display: flex; flex-direction: column; gap: var(--space-sm);
 }
 
 /* ===== 加载 / 空状态 ===== */

@@ -33,6 +33,10 @@ Component({
       type: Boolean,
       value: false
     },
+    backUrl: {
+      type: String,
+      value: ''
+    },
     transparent: {
       type: Boolean,
       value: false

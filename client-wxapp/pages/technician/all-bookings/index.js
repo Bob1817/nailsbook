@@ -14,11 +14,14 @@ Page({
     filterTabs: ORDER_TABS,
     allOrders: [],
     filteredOrders: [],
+    tradeView: false,
     loading: false,
     loadFailed: false
   },
 
   onLoad(options) {
+    const tradeView = options && options.view === 'trade';
+    this.setData({ tradeView });
     if (options && options.status) {
       this.setData({ activeFilter: options.status });
     }
@@ -31,6 +34,7 @@ Page({
       const res = await api.technician.orders.list({});
       const raw = Array.isArray(res) ? res : (res.list || res.data || []);
       const allOrders = raw
+        .filter(o => !this.data.tradeView || Boolean(o.tradeCreatedAt || o.tradeStatus))
         .map(normalizeOrder)
         .filter(Boolean)
         .map(o => {

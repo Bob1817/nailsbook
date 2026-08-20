@@ -1,5 +1,6 @@
 const api = require('../../../services/api');
 const { validatePhone } = require('../../../utils/util');
+const { consumePostAuthRedirect } = require('../../../utils/artist-navigation');
 
 function validatePassword(pwd) {
   if (!pwd || pwd.length < 8) return '密码至少 8 位';
@@ -147,10 +148,14 @@ Page({
       }
     }
     wx.hideLoading();
-    wx.reLaunch({ url: this.redirect || '/pages/client/home/index' });
+    wx.reLaunch({ url: consumePostAuthRedirect(this.redirect) });
   },
 
   goBack() {
     wx.navigateBack();
+  },
+
+  browseAsGuest() {
+    wx.reLaunch({ url: '/pages/client/discover/index' });
   }
 });

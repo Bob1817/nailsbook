@@ -1,114 +1,146 @@
-<!-- Loading -->
-<view wx:if="{{loading}}" class="loading-screen">
-  <view class="loading-spinner"></view>
-</view>
-
-<view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
-  <view class="load-error-mark">!</view>
-  <text class="load-error-title">{{loadErrorText}}</text>
-  <text wx:if="{{canRetryLoad}}" class="load-error-desc">请检查网络后重试</text>
-  <button wx:if="{{canRetryLoad}}" class="retry-btn" bindtap="loadWork">重新加载</button>
-  <button class="back-btn-error" bindtap="goBack">返回</button>
-</view>
-
-<view wx:elif="{{work.id}}" class="page">
-  <!-- 左上角玻璃胶囊，与微信胶囊水平对齐 -->
-  <view class="header">
-    <view class="header-pill" bindtap="goBack">
-      <view class="header-close-circle">
-        <view class="header-x-l1"></view>
-        <view class="header-x-l2"></view>
-      </view>
-      <view class="header-text">
-        <text class="header-name">{{techName || '美甲师'}}</text>
-        <text class="header-sub">作品详情</text>
-      </view>
-    </view>
+<nav-bar title="作品详情" showBack light/>
+<view class="container">
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading-wrap">
+    <view class="loading-spinner"></view>
   </view>
 
-  <!-- 主滚动区：小红书式，整页上滑查看内容与评论 -->
-  <scroll-view class="main-scroll" scroll-y enhanced show-scrollbar="{{false}}">
-    <!-- 图片 -->
-    <view class="image-area">
-      <swiper class="image-swiper" current="{{currentImageIndex}}" bindchange="onImageSwiperChange" circular="{{imageUrls.length > 1}}">
-        <swiper-item wx:for="{{imageUrls}}" wx:key="index">
-          <image src="{{item}}" mode="aspectFill" class="slide-image" bindtap="openViewer" data-index="{{index}}" aria-label="{{work.title || '美甲作品'}}第{{index + 1}}张图片" />
+  <!-- 错误状态 -->
+  <view wx:elif="{{loadFailed}}" class="error-wrap">
+    <text class="error-text">{{loadErrorText}}</text>
+    <text wx:if="{{canRetryLoad}}" class="error-sub">请检查网络后重新加载</text>
+    <button wx:if="{{canRetryLoad}}" class="btn-retry" bindtap="loadWork">重新加载</button>
+    <button class="btn-back" bindtap="goBack">返回</button>
+  </view>
+
+  <!-- 内容 -->
+  <view wx:else class="content">
+
+    <!-- 图片轮播 -->
+    <view class="image-section">
+      <swiper
+        class="image-swiper"
+        current="{{currentImageIndex}}"
+        circular="{{imageUrls.length > 1}}"
+        bindchange="onImageSwiperChange"
+      >
+        <swiper-item
+          wx:for="{{imageUrls}}"
+          wx:key="*this"
+          bindtap="previewImage"
+          data-url="{{item}}"
+        >
+          <image src="{{item}}" mode="aspectFill" class="work-image" aria-label="{{work.title || '美甲作品'}}第{{index + 1}}张图片" />
         </swiper-item>
       </swiper>
-      <view wx:if="{{imageUrls.length > 1}}" class="image-dots">
-        <view wx:for="{{imageUrls}}" wx:key="index" class="dot {{currentImageIndex === index ? 'dot-active' : ''}}"></view>
+
+      <!-- 指示器 -->
+      <view wx:if="{{imageUrls.length > 1}}" class="indicator">
+        <view
+          wx:for="{{imageUrls}}"
+          wx:key="*this"
+          class="dot {{index === currentImageIndex ? 'active' : ''}}"
+        ></view>
       </view>
     </view>
 
-    <!-- 白色内容面板 -->
-    <view class="content-panel">
-      <!-- 标题区 -->
-      <view class="title-block">
+    <!-- 信息面板 -->
+    <view class="info-panel">
+      <!-- 标题和描述 -->
+      <view class="title-section">
         <text class="work-title">{{work.title || '未命名作品'}}</text>
         <text wx:if="{{work.description}}" class="work-desc">{{work.description}}</text>
-        <view wx:if="{{work.tags.length > 0}}" class="tags-row">
-          <text wx:for="{{work.tags}}" wx:key="*this" class="tag">#{{item}}</text>
+      </view>
+
+      <!-- 标签 -->
+      <view wx:if="{{work.tags.length > 0}}" class="tags-section">
+        <view
+          wx:for="{{work.tags}}"
+          wx:key="*this"
+          class="tag"
+        >
+          <text class="tag-text">#{{item}}</text>
         </view>
-        <view class="aesthetic-meta">
-          <view class="aesthetic-item">
-            <text class="aesthetic-label">设计理念</text>
-            <text class="aesthetic-value">{{work.designIdea || work.description || '以质感与日常搭配为核心，呈现专属于你的审美表达。'}}</text>
-          </view>
-          <view wx:if="{{work.recommendationScore}}" class="aesthetic-item recommendation-row">
-            <text class="aesthetic-label">推荐指数</text>
-            <text class="recommendation-value">{{work.recommendationScore}} / 5</text>
-          </view>
-          <view class="aesthetic-item">
-            <text class="aesthetic-label">适合场景</text>
-            <text class="aesthetic-value">{{work.scene || work.suitableScene || '约会 · 日常 · 重要时刻'}}</text>
-          </view>
+      </view>
+
+      <!-- 美甲师信息 -->
+      <view wx:if="{{techName}}" class="tech-section" bindtap="viewArtist">
+        <view class="tech-avatar-wrap">
+          <image wx:if="{{techAvatar}}" src="{{techAvatar}}" mode="aspectFill" class="tech-avatar" aria-label="{{techName || '美甲师'}}的头像" />
+          <text wx:else class="tech-avatar-text">{{techName[0]}}</text>
         </view>
-        <view wx:if="{{work.visibilityScope === 'authorized_clients'}}" class="private-badge">你的专属作品 · 权限由美甲师授权</view>
+        <view class="tech-info">
+          <text class="tech-name">{{techName}}</text>
+          <text class="tech-label">美甲师</text>
+        </view>
+        <text class="tech-arrow">›</text>
+      </view>
+
+      <!-- 操作按钮（登录态：实际交互） -->
+      <view class="actions-section">
+        <button class="action-btn" bindtap="toggleLike">
+          <image wx:if="{{work.isLiked}}" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2VmNDQ0NCIgZD0iTTEyIDIxLjZsLTEuNS0xLjM3QzUuMSAxNS4zNiAyIDEyLjUzIDIgOS4wNiAyIDYuMyA0LjE2IDQuMTQgNi45MiA0LjE0YzEuNTYgMCAzLjA2LjczIDQuMDQgMS44OGwxLjA0IDEuMjIgMS4wNC0xLjIyYTUuMzMgNS4zMyAwIDAgMSA0LjA0LTEuODhDMTkuODQgNC4xNCAyMiA2LjMgMjIgOS4wNmMwIDMuNDctMy4xIDYuMy04LjUgMTEuMThMMTIgMjEuNnoiLz48L3N2Zz4=" class="action-icon" />
+          <image wx:else src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNjM2MzYzIiBzdHJva2Utd2lkdGg9IjEuOCIgZD0iTTEyIDIxLjZsLTEuNS0xLjM3QzUuMSAxNS4zNiAyIDEyLjUzIDIgOS4wNiAyIDYuMyA0LjE2IDQuMTQgNi45MiA0LjE0YzEuNTYgMCAzLjA2LjczIDQuMDQgMS44OGwxLjA0IDEuMjIgMS4wNC0xLjIyYTUuMzMgNS4zMyAwIDAgMSA0LjA0LTEuODhDMTkuODQgNC4xNCAyMiA2LjMgMjIgOS4wNmMwIDMuNDctMy4xIDYuMy04LjUgMTEuMThMMTIgMjEuNnoiLz48L3N2Zz4=" class="action-icon" />
+          <text class="action-text">喜欢</text>
+          <text wx:if="{{work.likeCount > 0}}" class="action-count">{{work.likeCount}}</text>
+        </button>
+        <button class="action-btn" bindtap="toggleFavorite">
+          <image wx:if="{{work.isFavorited}}" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2Y1OWUwYiIgZD0iTTEyIDIuNmwyLjcgNS44NiA2LjMuNjYtNC43IDQuMjcgMS4zIDYuMjJMMTIgMTYuOTZsLTUuNiAzLjY1IDEuMy02LjIyLTQuNy00LjI3IDYuMy0uNjZ6Ii8+PC9zdmc+" class="action-icon" />
+          <image wx:else src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNjM2MzYzIiBzdHJva2Utd2lkdGg9IjEuOCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTEyIDIuNmwyLjcgNS44NiA2LjMuNjYtNC43IDQuMjcgMS4zIDYuMjJMMTIgMTYuOTZsLTUuNiAzLjY1IDEuMy02LjIyLTQuNy00LjI3IDYuMy0uNjZ6Ii8+PC9zdmc+" class="action-icon" />
+          <text class="action-text">收藏</text>
+        </button>
+        <button class="action-btn share" open-type="share">
+          <image src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNjM2MzYzIiBzdHJva2Utd2lkdGg9IjEuOCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTIxIDExLjRjMCA0LTMuOSA3LjItOC43IDcuMi0xIDAtMi0uMTQtMi45LS40TDQgMjBsMS4zLTMuN0M0LjIgMTUuMSAzLjYgMTMuMyAzLjYgMTEuNCAzLjYgNy40IDcuNSA0LjIgMTIuMyA0LjJTMjEgNy40IDIxIDExLjR6Ii8+PC9zdmc+" class="action-icon" />
+          <text class="action-text">分享</text>
+        </button>
       </view>
 
       <!-- 评论区 -->
-      <view class="comments-section">
-        <view class="comments-inner">
+      <view id="work-comments" class="comments-section">
         <view class="comments-header">
           <text class="comments-title">评论</text>
           <text class="comments-count">{{comments.length}} 条</text>
         </view>
 
-        <view wx:if="{{commentsLoading}}" class="comments-empty"><text class="empty-text">评论加载中…</text></view>
-        <view wx:elif="{{commentsFailed}}" class="comments-empty"><text class="empty-text">评论加载失败</text><view class="comment-retry" bindtap="loadComments">重新加载</view></view>
+        <view wx:if="{{commentsLoading}}" class="comments-empty">
+          <text class="empty-text">评论加载中…</text>
+        </view>
+        <view wx:elif="{{commentsFailed}}" class="comments-empty">
+          <text class="empty-text">评论加载失败</text>
+          <view class="comment-retry" bindtap="loadComments">重新加载</view>
+        </view>
         <view wx:elif="{{comments.length > 0}}" class="comments-list">
-          <view wx:for="{{comments}}" wx:key="id" class="comment-item" bindtap="onTapComment" data-item="{{item}}">
-            <view class="comment-avatar-wrap">
+          <view
+            wx:for="{{comments}}"
+            wx:key="id"
+            class="comment-item"
+            bindtap="onTapComment"
+            data-item="{{item}}"
+          >
+            <view class="comment-avatar-wrap" catchtap="viewCommentArtist" data-role="{{item.userRole}}" role="button" aria-label="{{item.userRole === 'technician' ? '查看美甲师主页' : '用户头像'}}">
               <image wx:if="{{item.userAvatar}}" src="{{item.userAvatar}}" mode="aspectFill" class="comment-avatar" lazy-load aria-label="{{item.userName || '用户'}}的头像" />
-              <view wx:else class="comment-avatar-placeholder {{item.userRole === 'technician' ? 'comment-avatar-tech' : ''}}">
-                <text class="avatar-text">{{item.userName[0] || '用'}}</text>
-              </view>
+              <text wx:else class="comment-avatar-text">{{item.userName[0] || '用'}}</text>
             </view>
-            <view class="comment-body">
-              <view class="comment-bubble">
-                <view class="comment-name-row">
-                  <text class="comment-name">{{item.userName || '匿名用户'}}</text>
-                  <text wx:if="{{item.userRole === 'technician'}}" class="role-badge">美甲师</text>
-                  <text class="comment-time">{{item.createdAtText}}</text>
-                </view>
-                <text class="comment-content">{{item.content}}</text>
+            <view class="comment-content">
+              <view class="comment-header">
+                <text class="comment-name">{{item.userName || '匿名用户'}}</text>
+                <text wx:if="{{item.userRole === 'technician'}}" class="comment-badge">美甲师</text>
+                <text class="comment-time">{{item.createdAtText}}</text>
               </view>
+              <text class="comment-text">{{item.content}}</text>
+              <!-- 回复 -->
               <view wx:if="{{item.replies.length > 0}}" class="replies-list">
-                <view wx:for="{{item.replies}}" wx:for-item="reply" wx:key="id" class="comment-item">
-                  <view class="reply-avatar-wrap">
-                    <image wx:if="{{reply.userAvatar}}" src="{{reply.userAvatar}}" mode="aspectFill" class="reply-avatar" lazy-load aria-label="{{reply.userName || '用户'}}的头像" />
-                    <view wx:else class="reply-avatar-placeholder">
-                      <text class="avatar-text">{{reply.userName[0] || '用'}}</text>
-                    </view>
+                <view wx:for="{{item.replies}}" wx:for-item="reply" wx:key="id" class="comment-item reply-item">
+                  <view class="reply-avatar-wrap" catchtap="viewCommentArtist" data-role="{{reply.userRole}}">
+                    <image wx:if="{{reply.userAvatar}}" src="{{reply.userAvatar}}" mode="aspectFill" class="reply-avatar" lazy-load />
+                    <text wx:else class="reply-avatar-text">{{reply.userName[0] || '用'}}</text>
                   </view>
-                  <view class="comment-body">
-                    <view class="comment-bubble">
-                      <view class="comment-name-row">
-                        <text class="comment-name">{{reply.userName || '匿名用户'}}</text>
-                        <text class="comment-time">{{reply.createdAtText}}</text>
-                      </view>
-                      <text class="comment-content">{{reply.content}}</text>
+                  <view class="comment-content reply-content">
+                    <view class="comment-header">
+                      <text class="comment-name">{{reply.userName || '匿名用户'}}</text>
+                      <text class="comment-time">{{reply.createdAtText}}</text>
                     </view>
+                    <text class="comment-text">{{reply.content}}</text>
                   </view>
                 </view>
               </view>
@@ -119,79 +151,43 @@
         <view wx:else class="comments-empty">
           <text class="empty-text">暂无评论，欢迎添加第一条评论</text>
         </view>
-        </view>
       </view>
     </view>
-  </scroll-view>
 
-  <!-- 固定底部：评论输入 + 点赞/收藏/咨询/预约同款 -->
-  <view class="comment-input-bar">
+    <!-- 底部评论输入框（与未登录态一致） -->
+    <view class="bottom-bar">
       <view wx:if="{{replyingTo}}" class="reply-indicator">
         <text class="reply-indicator-text">回复 <text class="reply-indicator-name">@{{replyingTo.name}}</text></text>
-        <view class="reply-cancel-btn" bindtap="cancelReply">
-          <view class="icon-close-sm"></view>
-        </view>
+        <view class="reply-cancel-btn" bindtap="cancelReply">✕</view>
       </view>
-      <view class="input-row">
-        <input wx:if="{{permissions.canComment}}"
+      <view wx:if="{{commentText}}" class="input-with-send">
+        <input
           class="comment-input"
-          placeholder="{{replyingTo ? '回复 @' + replyingTo.name + '...' : '说点什么...'}}"
+          placeholder="{{replyingTo ? '回复 @' + replyingTo.name + '...' : '添加评论…'}}"
           value="{{commentText}}"
+          focus="{{commentFocused}}"
           bindinput="onCommentInput"
           bindconfirm="submitComment"
           confirm-type="send"
         />
-        <view wx:else class="comment-disabled">此作品未开放评论</view>
-        <!-- 发送（有文字时替换图标） -->
-        <view wx:if="{{commentText}}" class="send-btn {{submittingComment ? 'is-disabled' : ''}}" bindtap="submitComment">
+        <view class="send-btn {{submittingComment ? 'is-disabled' : ''}}" bindtap="submitComment">
           <text class="send-text">{{submittingComment ? '发送中' : '发送'}}</text>
         </view>
-        <block wx:else>
-          <!-- 爱心 + 数字 -->
-          <view wx:if="{{permissions.canLike}}" class="bar-btn bar-first" bindtap="toggleLike">
-            <image wx:if="{{work.isLiked}}" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2VmNDQ0NCIgZD0iTTEyIDIxLjZsLTEuNS0xLjM3QzUuMSAxNS4zNiAyIDEyLjUzIDIgOS4wNiAyIDYuMyA0LjE2IDQuMTQgNi45MiA0LjE0YzEuNTYgMCAzLjA2LjczIDQuMDQgMS44OGwxLjA0IDEuMjIgMS4wNC0xLjIyYTUuMzMgNS4zMyAwIDAgMSA0LjA0LTEuODhDMTkuODQgNC4xNCAyMiA2LjMgMjIgOS4wNmMwIDMuNDctMy4xIDYuMy04LjUgMTEuMThMMTIgMjEuNnoiLz48L3N2Zz4=" class="bar-icon-img" />
-            <image wx:else src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWNhM2FmIiBzdHJva2Utd2lkdGg9IjEuOCIgZD0iTTEyIDIxLjZsLTEuNS0xLjM3QzUuMSAxNS4zNiAyIDEyLjUzIDIgOS4wNiAyIDYuMyA0LjE2IDQuMTQgNi45MiA0LjE0YzEuNTYgMCAzLjA2LjczIDQuMDQgMS44OGwxLjA0IDEuMjIgMS4wNC0xLjIyYTUuMzMgNS4zMyAwIDAgMSA0LjA0LTEuODhDMTkuODQgNC4xNCAyMiA2LjMgMjIgOS4wNmMwIDMuNDctMy4xIDYuMy04LjUgMTEuMThMMTIgMjEuNnoiLz48L3N2Zz4=" class="bar-icon-img" />
-            <text class="bar-num {{work.isLiked ? 'bar-num-liked' : ''}}">{{work.likeCount || 0}}</text>
-          </view>
-          <!-- 收藏 + 数字 -->
-          <view wx:if="{{permissions.canFavorite}}" class="bar-btn" bindtap="toggleFavorite">
-            <image wx:if="{{work.isFavorited}}" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2Y1OWUwYiIgZD0iTTEyIDIuNmwyLjcgNS44NiA2LjMuNjYtNC43IDQuMjcgMS4zIDYuMjJMMTIgMTYuOTZsLTUuNiAzLjY1IDEuMy02LjIyLTQuNy00LjI3IDYuMy0uNjZ6Ii8+PC9zdmc+" class="bar-icon-img" />
-            <image wx:else src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWNhM2FmIiBzdHJva2Utd2lkdGg9IjEuOCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTEyIDIuNmwyLjcgNS44NiA2LjMuNjYtNC43IDQuMjcgMS4zIDYuMjJMMTIgMTYuOTZsLTUuNiAzLjY1IDEuMy02LjIyLTQuNy00LjI3IDYuMy0uNjZ6Ii8+PC9zdmc+" class="bar-icon-img" />
-            <text class="bar-num {{work.isFavorited ? 'bar-num-star' : ''}}">{{work.favoriteCount || 0}}</text>
-          </view>
-          <!-- 咨询 -->
-          <view class="bar-btn" bindtap="contactTech">
-            <image src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWNhM2FmIiBzdHJva2Utd2lkdGg9IjEuOCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTIxIDExLjRjMCA0LTMuOSA3LjItOC43IDcuMi0xIDAtMi0uMTQtMi45LS40TDQgMjBsMS4zLTMuN0M0LjIgMTUuMSAzLjYgMTMuMyAzLjYgMTEuNCAzLjYgNy40IDcuNSA0LjIgMTIuMyA0LjJTMjEgNy40IDIxIDExLjR6Ii8+PC9zdmc+" class="bar-icon-img" />
-          </view>
-          <button wx:if="{{permissions.canShare && sharePath}}" class="bar-btn share-bar-btn" open-type="share" aria-label="分享作品">
-            <view class="share-icon"></view>
-          </button>
-          <!-- 预约同款 -->
-          <view class="bar-book-btn" bindtap="bookSameStyle">
-            <text class="bar-book-text">预约同款</text>
-          </view>
-        </block>
+      </view>
+      <block wx:else>
+        <input
+          class="comment-input"
+          placeholder="{{replyingTo ? '回复 @' + replyingTo.name + '...' : '添加评论…'}}"
+          value="{{commentText}}"
+          focus="{{commentFocused}}"
+          bindinput="onCommentInput"
+          bindconfirm="submitComment"
+          confirm-type="send"
+        />
+      </block>
+      <view class="book-same-btn" bindtap="bookSameStyle">
+        <text class="book-same-text">预约同款</text>
       </view>
     </view>
-
-  <!-- Fullscreen Image Viewer -->
-  <view wx:if="{{viewerOpen}}" class="viewer-overlay">
-    <cover-view class="viewer-close" bindtap="closeViewer">
-      <cover-view class="viewer-close-icon">
-        <cover-view class="viewer-x-line1"></cover-view>
-        <cover-view class="viewer-x-line2"></cover-view>
-      </cover-view>
-    </cover-view>
-    <cover-view wx:if="{{imageUrls.length > 1}}" class="viewer-counter">
-      <cover-view class="viewer-counter-text">{{viewerIndex + 1}} / {{imageUrls.length}}</cover-view>
-    </cover-view>
-    <swiper class="viewer-swiper" current="{{viewerIndex}}" bindchange="onViewerSwiperChange" circular="{{false}}">
-      <swiper-item wx:for="{{imageUrls}}" wx:key="index">
-      <image src="{{item}}" mode="aspectFit" class="viewer-image" bindtap="closeViewer" aria-label="{{work.title || '美甲作品'}}大图" />
-      </swiper-item>
-    </swiper>
-    <cover-view wx:if="{{imageUrls.length > 1}}" class="viewer-dots">
-      <cover-view wx:for="{{imageUrls}}" wx:key="index" class="viewer-dot {{viewerIndex === index ? 'viewer-dot-active' : ''}}"></cover-view>
-    </cover-view>
   </view>
 </view>

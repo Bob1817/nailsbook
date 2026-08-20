@@ -31,7 +31,7 @@
           <text wx:if="{{item.hint}}" class="usage-hint">{{item.hint}}</text>
         </view>
       </view>
-      <text class="current-mode">订阅支付与订单微信支付共用支付能力；商户资质完成前，升级由平台人工确认。</text>
+      <text class="current-mode">订阅升级由平台客服一对一确认，请通过下方按钮联系客服。</text>
     </view>
 
     <!-- 可选套餐 -->
@@ -42,13 +42,11 @@
       <view wx:for="{{plans}}" wx:key="id" class="plan-card">
         <view class="plan-info">
           <text class="plan-name">{{item.name}}</text>
-          <text class="plan-price">¥{{item.price}}<text class="plan-cycle">/{{item.cycle || '月'}}</text></text>
           <text wx:if="{{item.description}}" class="plan-desc">{{item.description}}</text>
           <text wx:if="{{item.targetStage}}" class="plan-stage">适合：{{item.targetStage}}</text>
           <text class="plan-quota">{{item.quotaText}}</text>
         </view>
         <view class="plan-actions">
-          <button class="impact-btn" data-id="{{item.id}}" bindtap="previewPlanChange">变更影响</button>
           <button class="plan-btn" open-type="contact" show-message-card="true" send-message-title="咨询{{item.name}}套餐">
             <text>了解升级</text>
           </button>

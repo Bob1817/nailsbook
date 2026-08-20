@@ -98,49 +98,55 @@ page { background: var(--bg-gradient-entry); }
   background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><polyline points='12 6 12 12 16 14'/></svg>");
 }
 
-/* 数据概览悬浮卡（双行） */
+/* 数据概览悬浮卡（分组清晰） */
 .stats-card {
   margin-top: var(--space-md);
   background: var(--bg-card);
-  border-radius: var(--card-radius);
-  border: 2rpx solid rgba(255,107,138,0.08) /* brand-primary-alpha */;
+  border-radius: var(--radius-lg);
+  border: 2rpx solid var(--border-light);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
 }
 .stats-row {
   display: flex;
-  align-items: center;
-  padding: 22rpx 32rpx;
+  align-items: stretch;
+  padding: 24rpx 20rpx;
 }
 .stats-h-divider {
   height: 1rpx;
-  background: #f5f0f3;
-  margin: 0 32rpx;
+  background: var(--bg-gradient-entry);
+  margin: 0 28rpx;
 }
 .stat-item {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6rpx;
+  justify-content: center;
+  gap: 8rpx;
+  padding: 4rpx 0;
 }
 .stat-item:active { opacity: 0.6; }
 .stat-value { font-size: var(--font-lg); font-weight: var(--weight-bold); color: var(--text-primary); line-height: 1.1; }
 .stat-value-alert { color: var(--brand-primary); }
-.stat-label { font-size: var(--font-xs); color: var(--text-muted); }
-.stat-divider { width: 1rpx; height: 44rpx; background: #f0eaed; flex-shrink: 0; }
-.business-row { min-height:88rpx; }.business-value { font-size: var(--font-md); }
+.stat-label { font-size: var(--font-xs); color: var(--text-muted); text-align: center; line-height: 1.35; }
+.stat-divider { width: 1rpx; align-self: stretch; background: var(--bg-gradient-entry); flex-shrink: 0; margin: 6rpx 0; }
+.business-row { min-height: 92rpx; }
+.business-value { font-size: var(--font-lg); color: var(--brand-primary); }
+/* 分组背景：每两组之间用微弱背景区分 */
+.stats-card .stats-row:nth-child(5) { background: linear-gradient(180deg, rgba(255,248,251,0.5) 0%, transparent 100%); }
+.stats-card .stats-row:nth-child(1) { background: linear-gradient(180deg, transparent 0%, rgba(255,248,251,0.5) 100%); }
 
 /* ===== 卡片 ===== */
 .card {
-  margin: 20rpx 40rpx 0;
+  margin: 16rpx 40rpx 0;
   background: var(--bg-card);
-  border-radius: var(--card-radius);
+  border-radius: var(--radius-lg);
   padding: 28rpx;
-  border: 2rpx solid rgba(255,107,138,0.08) /* brand-primary-alpha */;
+  border: 2rpx solid var(--border-light);
   box-shadow: var(--shadow-lg);
 }
-.card-gap { margin-top: 20rpx; }
+.card-gap { margin-top: 16rpx; }
 
 .card-head {
   display: flex;
@@ -443,12 +449,12 @@ page { background: var(--bg-gradient-entry); }
   color: var(--text-muted);
 }
 
-/* ===== 我的预约：per-status 背景色 ===== */
-.order-bg-pending_quote   { background: #EEF2FF; }
-.order-bg-pending_confirm { background: #FFFBEB; }
-.order-bg-pending_home    { background: #FFF1F2; }
-.order-bg-pending_shop    { background: #EFF6FF; }
-.order-bg-in_progress     { background: #FDF4FF; }
+/* ===== 我的预约：per-status 背景色（收束到 粉/紫/蓝 三色系） ===== */
+.order-bg-pending_quote   { background: var(--tone-blue-bg); }
+.order-bg-pending_confirm { background: var(--tone-amber-bg); }
+.order-bg-pending_home    { background: var(--tone-rose-bg); }
+.order-bg-pending_shop    { background: var(--tone-sky-bg); }
+.order-bg-in_progress     { background: var(--tone-purple-bg); }
 
 /* ===== 我的预约：per-status SVG 图标 ===== */
 .order-icon-pending_quote {
@@ -467,18 +473,18 @@ page { background: var(--bg-gradient-entry); }
   background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a855f7' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/></svg>");
 }
 
-/* ===== 工具：per-key 背景色 ===== */
-.tool-bg-services     { background: #FFF1F6; }
-.tool-bg-homepage     { background: #FDF2F8; }
-.tool-bg-works        { background: #EEF2FF; }
-.tool-bg-marketing    { background: #FDF2F8; }
-.tool-bg-designs      { background: #FFF0F6; }
-.tool-bg-homeService  { background: #FFF7ED; }
-.tool-bg-serviceTime  { background: #F0FDF4; }
-.tool-bg-shops        { background: #EFF6FF; }
-.tool-bg-tags         { background: #FEFCE8; }
-.tool-bg-referrals    { background: #F0FDF4; }
-.tool-bg-subscription { background: #FDF4FF; }
+/* ===== 工具：per-key 背景色（收束到 粉/紫/蓝 三色系） ===== */
+.tool-bg-services     { background: var(--bg-tag); }     /* 粉 */
+.tool-bg-homepage     { background: var(--bg-tag); }     /* 粉 */
+.tool-bg-works        { background: var(--tone-blue-bg); } /* 蓝 */
+.tool-bg-marketing    { background: var(--tone-purple-bg); } /* 紫 */
+.tool-bg-designs      { background: var(--bg-tag); }     /* 粉 */
+.tool-bg-homeService  { background: var(--tone-amber-bg); } /* 琥珀 */
+.tool-bg-serviceTime  { background: var(--tone-teal-bg); }  /* 青绿 */
+.tool-bg-shops        { background: var(--tone-sky-bg); }   /* 天蓝 */
+.tool-bg-tags         { background: var(--tone-yellow-bg); }/* 黄 */
+.tool-bg-referrals    { background: var(--tone-emerald-bg); }/* 绿 */
+.tool-bg-subscription { background: var(--tone-purple-bg); }/* 紫 */
 
 /* ===== 工具：per-key SVG 图标 ===== */
 .tool-icon-homepage {

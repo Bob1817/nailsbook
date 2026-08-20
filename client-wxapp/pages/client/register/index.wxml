@@ -76,6 +76,8 @@
 
     <view class="footer-links">
       <text class="link" bindtap="goBack">换个手机号</text>
+      <text class="link-sep">|</text>
+      <text class="link-muted" bindtap="browseAsGuest">我先逛逛</text>
     </view>
   </view>
 </view>

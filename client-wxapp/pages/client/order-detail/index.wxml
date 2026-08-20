@@ -25,7 +25,7 @@
   <!-- ============ 美甲师卡片 ============ -->
   <view class="card tech-card card-overlap">
     <view class="tech-row">
-      <view class="tech-avatar">
+      <view class="tech-avatar" bindtap="viewArtist" role="button" aria-label="查看{{order.techName}}主页">
         <image wx:if="{{order.techAvatar}}" src="{{order.techAvatar}}" mode="aspectFill" class="tech-avatar-img" aria-label="{{order.techName}}的头像" />
         <text wx:else class="tech-avatar-char">{{order.techName[0]}}</text>
       </view>
@@ -54,7 +54,7 @@
     </view>
 
     <view class="info-row">
-      <text class="info-label">预约时间</text>
+      <text class="info-label">{{order.bookingPhase === 'application' ? '期望时间' : '预约时间'}}</text>
       <text class="info-value">{{order._dateLabel}} {{order._timeRange}}</text>
     </view>
 

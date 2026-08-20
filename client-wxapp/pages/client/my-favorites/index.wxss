@@ -82,34 +82,24 @@ page { background: var(--bg-page-alt); }
 .go-btn:active { opacity: 0.85; }
 
 /* ===== 瀑布流（与发现/作品列表页一致）===== */
-.waterfall-wrap { padding: 20rpx 16rpx 0; }
+.waterfall-wrap { padding: 24rpx 28rpx 0; }
 
 .waterfall {
+  width:100%; max-width:100%; min-width:0; overflow:hidden; box-sizing:border-box;
   display: flex;
-  gap: 16rpx;
+  gap: 20rpx;
   align-items: flex-start;
 }
 
 .col {
-  flex: 1;
+  flex: 1 1 0; width:calc((100% - 20rpx) / 2); min-width:0; max-width:calc((100% - 20rpx) / 2);
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
+  gap: 20rpx;
 }
 
 /* ===== 作品卡片：height:0 + padding-bottom 百分比 ===== */
-.w-card {
-  position: relative;
-  width: 100%;
-  height: 0;
-  overflow: hidden;
-  border-radius: var(--radius-md);
-  box-sizing: border-box;
-  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.08), 0 1rpx 4rpx rgba(15, 23, 42, 0.04);
-}
+.w-card { width:100%; box-sizing:border-box; }
 .w-card:active { transform: scale(0.984); opacity: 0.94; }
 
-.aspect-3-4 { padding-bottom: 133.33%; }
-.aspect-4-5 { padding-bottom: 125%; }
-.aspect-5-6 { padding-bottom: 120%; }
 .page-hint { padding:28rpx 0 40rpx; color:#81717a; font-size: var(--font-xs); text-align:center; }

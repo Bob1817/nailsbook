@@ -206,12 +206,9 @@ Page({
         }
       }
 
-      // 2. 根据 roles 判断优先跳转美甲师端
+      // 2. 使用实际完成登录的角色。roles 仅表示账号能力，不能改变本次 JWT 的类型。
       const roles = res.roles || [loginRole];
-      const hasTechnicianRole = roles.includes('technician');
-      const finalRole = hasTechnicianRole ? 'technician' : loginRole;
-
-      await this._afterAuth(res, finalRole);
+      await this._afterAuth({ ...res, roles }, loginRole);
     } catch (err) {
       wx.hideLoading();
       this.setData({ phoneLoading: false });
@@ -243,7 +240,8 @@ Page({
   async _afterAuth(res, role) {
     const app = getApp();
     const roles = res.roles || [role || 'client'];
-    const activeRole = role || (roles.includes('technician') ? 'technician' : 'client');
+    // 微信统一入口完成的是客户端登录；拥有技师角色不等于拿到了技师 JWT。
+    const activeRole = role || 'client';
 
     // 根据角色选择对应的 token 和 userInfo
     const token = res.accessToken || res.token;

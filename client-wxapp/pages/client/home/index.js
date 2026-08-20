@@ -1,16 +1,16 @@
 const api = require('../../../services/api');
 const { formatTime } = require('../../../utils/util');
+const { normalizeWork } = require('../../../utils/normalize-work');
 
 const STATUS_LABELS = {
   pending_quote: '待报价',
   pending_agree: '待同意',
   pending_confirm: '待确认',
-  pending_home: '待上门',
   pending_shop: '待到店',
   in_progress: '服务中'
 };
 
-const UPCOMING_STATUSES = new Set(['pending_quote', 'pending_agree', 'pending_confirm', 'pending_home', 'pending_shop', 'in_progress']);
+const UPCOMING_STATUSES = new Set(['pending_quote', 'pending_agree', 'pending_confirm', 'pending_shop', 'in_progress']);
 
 const MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 const WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
@@ -22,6 +22,7 @@ Page({
     upcomingOrder: null,
     recentWorks: [],
     featuredWorks: [],
+    featuredLead: null,
     featuredLeftCol: [],
     featuredRightCol: [],
     loading: true,
@@ -37,9 +38,7 @@ Page({
     popularStyles: ['法式', '极简', '新中式', '婚礼', '职场', '艺术风']
   },
 
-  onLoad() {
-    this.loadData();
-  },
+  onLoad() {},
 
   onShow() {
     this.loadData();
@@ -54,8 +53,15 @@ Page({
 
     try {
       var homeData = await api.client.home().catch(function () { return null; });
-      var ordersData = await api.client.orders.list({ limit: 10 }).catch(function () { return null; });
-      var likedList = await api.client.likes.list().catch(function () { return []; });
+      var app = getApp();
+      var currentRole = app.globalData.role || wx.getStorageSync('role');
+      var loggedIn = currentRole === 'client' && !!(app.globalData.token || wx.getStorageSync('client_token'));
+      var ordersData = loggedIn
+        ? await api.client.orders.list({ limit: 10 }).catch(function () { return null; })
+        : null;
+      var likedList = loggedIn
+        ? await api.client.likes.list().catch(function () { return []; })
+        : [];
       var likedIds = {};
       (likedList || []).forEach(function (item) {
         var wid = item.workId || (item.work && item.work.id) || item.id;
@@ -70,20 +76,27 @@ Page({
         }
 
         var boundTech = techFromHome || tech;
-        var works = (homeData.works || []).slice(0, 5).map(function (w) {
-          var name = w.technicianName || (boundTech ? boundTech.name : '') || '';
-          return {
-            id: w.id,
-            title: w.title || '未命名作品',
-            coverUrl: w.coverUrl || (w.imageUrls && w.imageUrls[0]) || '',
-            technicianName: name,
-            technicianAvatarUrl: w.technicianAvatarUrl || (boundTech ? boundTech.avatarUrl : '') || '',
-            techInitial: name.charAt(0) || '美',
-            likeCount: w.likeCount || 0,
-            isLiked: !!w.isLiked || !!likedIds[w.id],
-            commentCount: w.commentCount || 0,
-            tags: w.tags || []
-          };
+        var works = (homeData.works || []).slice(0, 5).map(function (w, index) {
+          var workTechId = String(w.technicianId || (w.technician && (w.technician.id || w.technician.technicianId)) || '');
+          var boundId = String(boundTech ? (boundTech.id || boundTech.technicianId || '') : '');
+          var techLite = null;
+          // 只要 boundTech 存在且该作品 technicianId 命中（或作品本身没 technicianId，默认用绑定的）就强制覆盖
+          // 保证作品卡从业年限/城市与技师主页顶部完全一致
+          if (boundTech && (!workTechId || workTechId === boundId)) {
+            techLite = {
+              id: String(boundTech.id || boundTech.technicianId || workTechId),
+              name: boundTech.name || w.technicianName || '',
+              avatarUrl: boundTech.avatarUrl || w.technicianAvatarUrl || '',
+              city: boundTech.city || '',
+              experienceYears: Number(boundTech.experienceYears || 0) || 0,
+              specialtiesText: boundTech.specialtiesText || '',
+              specialties: Array.isArray(boundTech.styleTags) ? boundTech.styleTags : (Array.isArray(boundTech.specialties) ? boundTech.specialties : []),
+              styleTags: Array.isArray(boundTech.styleTags) ? boundTech.styleTags : []
+            };
+          }
+          var normalized = normalizeWork(w, techLite, { index: index });
+          normalized.isLiked = !!w.isLiked || !!likedIds[normalized.id];
+          return normalized;
         });
 
         var uniqueTechs = {};
@@ -140,25 +153,35 @@ Page({
     this.setData({ worksLoading: true });
 
     try {
-      var res = await api.client.works.list({ page: page, limit: 10 });
+      // 首页瀑布流是公开内容，避免向 optional-auth 接口附带可能已失效的会话。
+      var res = await api.public.works.list({ page: page, limit: 10 });
       var list = res.list || res.data || res || [];
       var boundTech = this.data.technician;
       var likedIds = this._likedIds || {};
-      var newWorks = list.map(function (w) {
-        var name = w.technicianName || (boundTech ? boundTech.name : '') || '';
-        return {
-          id: w.id,
-          title: w.title || '未命名作品',
-          coverUrl: w.coverUrl || (w.imageUrls && w.imageUrls[0]) || '',
-          technicianName: name,
-          technicianAvatarUrl: w.technicianAvatarUrl || (boundTech ? boundTech.avatarUrl : '') || '',
-          techInitial: name.charAt(0) || '美',
-          likeCount: w.likeCount || 0,
-          isLiked: !!w.isLiked || !!likedIds[w.id],
-          commentCount: w.commentCount || 0,
-          tags: w.tags || [],
-          createdAt: formatShortDate(w.createdAt)
-        };
+      var newWorks = list.map(function (w, index) {
+        var workTechId = String(w.technicianId || (w.technician && (w.technician.id || w.technician.technicianId)) || '');
+        var boundId = String(boundTech ? (boundTech.id || boundTech.technicianId || '') : '');
+        var techLite = null;
+        // 只要 technicianId 命中绑定技师就强制覆盖（即使作品自带 technician 快照），保证与美甲师详情页同步
+        if (boundTech && (!workTechId || workTechId === boundId)) {
+          techLite = {
+            id: String(boundTech.id || boundTech.technicianId || workTechId),
+            name: boundTech.name || w.technicianName || '',
+            avatarUrl: boundTech.avatarUrl || w.technicianAvatarUrl || '',
+            city: boundTech.city || '',
+            experienceYears: Number(boundTech.experienceYears || 0) || 0,
+            specialtiesText: boundTech.specialtiesText || '',
+            specialties: Array.isArray(boundTech.styleTags) ? boundTech.styleTags : (Array.isArray(boundTech.specialties) ? boundTech.specialties : []),
+            styleTags: Array.isArray(boundTech.styleTags) ? boundTech.styleTags : []
+          };
+        }
+        var normalized = normalizeWork(w, techLite, { index: index });
+        normalized.isLiked = !!w.isLiked || !!likedIds[normalized.id];
+        normalized.isFavorited = !!w.isFavorited;
+        normalized.tagsText = normalizeTags(normalized.tags).slice(0, 3).join(' · ');
+        normalized.priceText = formatWorkPrice(normalized) || formatWorkPrice(w);
+        normalized.createdAt = normalized.createdAt || formatShortDate(w.createdAt);
+        return normalized;
       });
 
       this.setData({
@@ -229,7 +252,23 @@ Page({
     });
     self.setData({ featuredWorks: featuredWorks });
     self.splitFeaturedWorks();
-    api.client.works.like(id).catch(function () { self.loadFeaturedWorks(true); });
+    api.client.works.like(id).catch(function () { self.loadMoreWorks(true); });
+  },
+
+  onFavoriteTap(e) {
+    var id = e.detail && e.detail.id;
+    if (!id) return;
+    var self = this;
+    var featuredWorks = self.data.featuredWorks.map(function (w) {
+      if (String(w.id) !== String(id)) return w;
+      return Object.assign({}, w, {
+        isFavorited: !w.isFavorited,
+        favoriteCount: w.isFavorited ? Math.max(0, w.favoriteCount - 1) : w.favoriteCount + 1
+      });
+    });
+    self.setData({ featuredWorks: featuredWorks });
+    self.splitFeaturedWorks();
+    api.client.works.favorite(id).catch(function () { self.loadMoreWorks(true); });
   },
 
   /** 按 id 去重合并作品数组 */
@@ -256,7 +295,7 @@ Page({
         right.push(w);
       }
     });
-    this.setData({ featuredLeftCol: left, featuredRightCol: right });
+    this.setData({ featuredLead: null, featuredLeftCol: left, featuredRightCol: right });
   },
 
   viewUpcomingOrder() {
@@ -304,4 +343,19 @@ function calcCountdown(startTime) {
   if (days >= 1) return days + '天' + hours + '小时';
   if (hours >= 1) return hours + '小时' + minutes + '分';
   return minutes + '分钟';
+}
+
+function normalizeTags(tags) {
+  return Array.isArray(tags) ? tags : String(tags || '').split(',').map(function (tag) { return tag.trim(); }).filter(Boolean);
+}
+
+function formatWorkPrice(work) {
+  var cents = work.referencePriceCents || work.priceCents;
+  var price = cents ? Math.round(cents / 100) : Number(work.price || 0);
+  return price ? '¥' + price + (work.priceDisplayType === 'fixed' ? '' : ' 起') : '';
+}
+
+function getWorkExpertise(work, fallbackTech) {
+  var tech = work.technician || fallbackTech || {};
+  return [tech.experienceYears ? tech.experienceYears + '年经验' : '', tech.specialty || tech.positioning || ''].filter(Boolean).join(' · ');
 }

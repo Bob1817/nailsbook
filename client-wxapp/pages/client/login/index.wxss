@@ -140,3 +140,17 @@
   font-size: var(--font-sm);
   color: var(--text-muted);
 }
+
+.guest-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 48rpx;
+}
+
+.link-muted {
+  display: inline-flex;
+  min-height: 88rpx;
+  align-items: center;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+}

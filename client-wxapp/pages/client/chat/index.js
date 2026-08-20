@@ -16,10 +16,12 @@ function getBadgeClass(type) {
   if (type === 'chat') return 'badge-chat';
   if (type === 'booking') return 'badge-booking';
   if (type === 'service') return 'badge-service';
+  if (type === 'reminder') return 'badge-reminder';
   return 'badge-system';
 }
 
 function categorizeNotification(m) {
+  if (m.relatedType === 'binding') return 'reminder';
   if (m.messageType === 'booking' || m.relatedType === 'booking') return 'booking';
   if (m.content && (m.content.indexOf('即将开始') >= 0 || m.content.indexOf('服务完成') >= 0)) return 'service';
   return 'system';
@@ -28,6 +30,7 @@ function categorizeNotification(m) {
 function getNotificationName(type) {
   if (type === 'booking') return '预约提醒';
   if (type === 'service') return '服务提醒';
+  if (type === 'reminder') return '系统提醒';
   return '系统通知';
 }
 
@@ -35,6 +38,7 @@ var TAB_LIST = [
   { value: 'unread', label: '未读' },
   { value: 'all', label: '全部' },
   { value: 'chat', label: '聊天' },
+  { value: 'reminder', label: '系统提醒' },
   { value: 'booking', label: '预约提醒' },
   { value: 'service', label: '服务提醒' },
   { value: 'system', label: '系统通知' }
@@ -114,41 +118,47 @@ Page({
         });
       }
 
-      var unreadCount = 0;
-      for (var u = 0; u < chatItems.length; u++) {
-        if (chatItems[u].unread) unreadCount++;
-      }
-
-      for (var t = 0; t < chatItems.length; t++) {
-        chatItems[t]._timeText = formatTime(chatItems[t].time);
-        chatItems[t]._badgeClass = getBadgeClass(chatItems[t].type);
-      }
-
-      var tabs = [];
-      for (var w = 0; w < TAB_LIST.length; w++) {
-        var tabDef = TAB_LIST[w];
-        var show = true;
-        if (tabDef.value === 'unread' && unreadCount <= 0) show = false;
-        if (tabDef.value === 'booking') show = false;
-        if (tabDef.value === 'service') show = false;
-        if (tabDef.value === 'system') show = false;
-        if (show) {
-          var count = 0;
-          if (tabDef.value === 'unread') count = unreadCount;
-          else if (tabDef.value === 'all') count = chatItems.length;
-          else if (tabDef.value === 'chat') count = chatItems.length;
-          tabs.push({ value: tabDef.value, label: tabDef.label, count: count });
-        }
-      }
-
-      self.setData({
-        allItems: chatItems,
-        tabs: tabs,
-        unreadCount: unreadCount,
-        loading: false,
-        loadFailed: false
+      var requests = convList.map(function(conv) {
+        return api.chat.messages({ conversation_id: conv.id }, 'client', { timeout: 10000, silent: true })
+          .then(function(result) { return { conv: conv, messages: result.messages || result || [] }; })
+          .catch(function() { return { conv: conv, messages: [] }; });
       });
-      self._applyFilter();
+      return Promise.all(requests).then(function(results) {
+        var notificationItems = [];
+        results.forEach(function(result) {
+          var tech = result.conv.technician || {};
+          result.messages.forEach(function(m) {
+            if (!['system', 'booking', 'quote', 'order'].includes(m.messageType)) return;
+            var type = categorizeNotification(m);
+            notificationItems.push({
+              id: 'notif-' + result.conv.id + '-' + m.id,
+              type: type,
+              name: getNotificationName(type),
+              preview: m.content || getNotificationName(type),
+              time: m.createdAt,
+              unread: !m.isRead,
+              unreadCount: m.isRead ? 0 : 1,
+              conversationId: result.conv.id,
+              techId: tech.id,
+              techName: tech.name || '美甲师',
+              relatedType: m.relatedType,
+              relatedId: m.relatedId,
+              badge: getNotificationName(type),
+              _avatarChar: type === 'reminder' ? '提' : '通'
+            });
+          });
+        });
+        var allItems = chatItems.concat(notificationItems).sort(function(a, b) { return new Date(b.time) - new Date(a.time); });
+        var unreadCount = 0;
+        allItems.forEach(function(item) {
+          item._timeText = formatTime(item.time);
+          item._badgeClass = getBadgeClass(item.type);
+          if (item.unread) unreadCount++;
+        });
+        self.setData({ allItems: allItems, unreadCount: unreadCount, loading: false, loadFailed: false });
+        self._rebuildTabs();
+        self._applyFilter();
+      });
     }).catch(function(err) {
       console.error('Load inbox error:', err);
       self.setData({ loading: false, loadFailed: true });
@@ -187,6 +197,11 @@ Page({
     }
   },
 
+  viewArtist: function(e) {
+    var id = e.currentTarget.dataset.id;
+    if (id) wx.navigateTo({ url: '/pages/client/artist-home/index?id=' + id });
+  },
+
   closeNotification: function() {
     var self = this;
     var selected = self.data.selectedNotification;
@@ -217,11 +232,10 @@ Page({
   _rebuildTabs: function() {
     var allItems = this.data.allItems;
     var unreadCount = this.data.unreadCount;
-    var hasBooking = false, hasService = false, hasSystem = false;
+    var hasBooking = false, hasService = false;
     for (var i = 0; i < allItems.length; i++) {
       if (allItems[i].type === 'booking') hasBooking = true;
       if (allItems[i].type === 'service') hasService = true;
-      if (allItems[i].type === 'system') hasSystem = true;
     }
     var tabs = [];
     for (var w = 0; w < TAB_LIST.length; w++) {
@@ -230,7 +244,7 @@ Page({
       if (tabDef.value === 'unread' && unreadCount <= 0) show = false;
       if (tabDef.value === 'booking' && !hasBooking) show = false;
       if (tabDef.value === 'service' && !hasService) show = false;
-      if (tabDef.value === 'system' && !hasSystem) show = false;
+      // 系统通知和系统提醒是固定信息架构，即使暂时为 0 也保留入口。
       if (show) {
         var count = 0;
         if (tabDef.value === 'unread') count = unreadCount;

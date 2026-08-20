@@ -38,14 +38,14 @@
               </view>
             </view>
             <view class="meta-row">
-              <text class="meta-icon">📍</text>
+              <image class="meta-icon" src="/static/icons/pin-light.svg" mode="aspectFit"/>
               <text>{{artist.city || '上海'}} · 从业{{artist.experienceYears || 6}}年</text>
               <text class="meta-divider">|</text>
               <text>{{artist.specialtiesText || '日式专攻'}}</text>
             </view>
             <button class="btn-book-now" bindtap="bookArtist">
-              <text class="btn-icon">📅</text>
-              立即预约
+              <image class="btn-icon-svg" src="/static/icons/calendar.svg" mode="aspectFit"/>
+              <text class="btn-text">立即预约</text>
             </button>
           </view>
         </view>
@@ -144,18 +144,20 @@
       <view class="service-list">
         <view wx:for="{{services}}" wx:key="name" class="service-card">
           <view class="service-icon-wrap">
-            <text class="service-icon">{{item.icon}}</text>
+            <image class="service-icon-svg" src="{{item.icon}}" mode="aspectFit"/>
           </view>
           <view class="service-info">
             <view class="service-top">
               <text class="service-name">{{item.name}}</text>
-              <text class="service-price">¥{{item.price}}起</text>
+              <view class="service-right-meta">
+                <view class="service-duration">
+                  <image class="duration-icon-svg" src="/static/icons/clock.svg" mode="aspectFit"/>
+                  <text>约{{item.duration}}</text>
+                </view>
+                <text class="service-price">¥{{item.price}}起</text>
+              </view>
             </view>
             <text class="service-desc">{{item.desc}}</text>
-            <view class="service-duration">
-              <text class="duration-icon">⏱</text>
-              <text>约{{item.duration}}</text>
-            </view>
           </view>
         </view>
       </view>
@@ -172,28 +174,28 @@
         <view class="map-placeholder">
           <view class="map-grid"></view>
           <view class="map-pin">
-            <text class="pin-icon">📍</text>
+            <image class="map-pin-icon" src="/static/icons/pin.svg" mode="aspectFit"/>
           </view>
         </view>
         
         <view class="shop-info">
           <text class="shop-name">{{artist.shopName || '晴日美甲工作室'}}</text>
           <view class="shop-detail-row">
-            <text class="detail-icon">📍</text>
+            <image class="detail-icon-svg" src="/static/icons/pin.svg" mode="aspectFit"/>
             <text class="detail-text">{{artist.shopAddress || '上海市静安区南京西路1515号静安嘉里中心3楼316室'}}</text>
           </view>
           <view class="shop-detail-row">
-            <text class="detail-icon">🕐</text>
+            <image class="detail-icon-svg" src="/static/icons/clock.svg" mode="aspectFit"/>
             <text class="detail-text">营业时间：{{artist.businessHours || '10:00 - 21:00（周一至周日）'}}</text>
           </view>
           
           <view class="shop-actions">
             <button class="action-btn" bindtap="openNavigation">
-              <text class="action-icon">🧭</text>
+              <image class="action-icon-svg" src="/static/icons/navigation.svg" mode="aspectFit"/>
               <text>一键导航</text>
             </button>
             <button class="action-btn" bindtap="callPhone">
-              <text class="action-icon">📞</text>
+              <image class="action-icon-svg" src="/static/icons/phone.svg" mode="aspectFit"/>
               <text>一键拨号</text>
             </button>
           </view>
@@ -239,18 +241,25 @@
 <view wx:if="{{!loading && !loadFailed}}" class="bottom-bar">
   <view class="bottom-bar-inner">
     <view class="bottom-actions">
-      <button class="action-icon-btn" open-type="contact">
-        <text class="action-icon-text">💬</text>
-        <text class="action-label">聊天</text>
-      </button>
+      <!-- 关注：需登录；下方显示美甲师粉丝总数（不受登录态影响） -->
+      <view class="action-icon-btn {{isFollowed ? 'followed' : ''}}" bindtap="toggleFollow">
+        <image class="social-icon-svg" src="{{isFollowed ? '/static/icons/social-follow-active.svg' : '/static/icons/social-follow.svg'}}" mode="aspectFit"/>
+        <text class="count-label">{{followerCount || 0}}</text>
+      </view>
+      <!-- 点赞：无需登录；下方显示总点赞数 -->
+      <view class="action-icon-btn {{isLiked ? 'liked' : ''}}" bindtap="toggleLike">
+        <image class="social-icon-svg" src="{{isLiked ? '/static/icons/social-like-active.svg' : '/static/icons/social-like.svg'}}" mode="aspectFit"/>
+        <text class="count-label">{{likeCount || 0}}</text>
+      </view>
+      <!-- 收藏：需登录；下方显示总收藏数 -->
       <view class="action-icon-btn {{isFavorited ? 'favorited' : ''}}" bindtap="toggleFavorite">
-        <text class="action-icon-text">{{isFavorited ? '❤️' : '🤍'}}</text>
-        <text class="action-label">收藏</text>
+        <image class="social-icon-svg" src="{{isFavorited ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}" mode="aspectFit"/>
+        <text class="count-label">{{favoriteCount || 0}}</text>
       </view>
     </view>
     <button class="btn-book-main" bindtap="bookArtist">
-      <text class="btn-icon">📅</text>
-      预约咨询
+      <image class="btn-icon-svg" src="/static/icons/calendar.svg" mode="aspectFit"/>
+      <text class="btn-text">{{isBound ? '立即预约' : '绑定预约'}}</text>
     </button>
   </view>
   <view class="safe-area-bottom"></view>

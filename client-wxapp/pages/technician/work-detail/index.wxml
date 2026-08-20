@@ -167,6 +167,11 @@
 
   <!-- 固定底部评论输入栏 -->
   <view wx:if="{{work.id && !loading}}" class="comment-input-bar">
+    <view class="detail-social-row">
+      <view class="detail-social-btn {{work.isLiked ? 'is-active-like' : ''}}" bindtap="toggleLike" role="button" aria-label="点赞"><image src="{{work.isLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}"/><text>{{work.likeCount || 0}}</text></view>
+      <view class="detail-social-btn {{work.isFavorited ? 'is-active-favorite' : ''}}" bindtap="toggleFavorite" role="button" aria-label="收藏"><image src="{{work.isFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}"/><text>{{work.favoriteCount || 0}}</text></view>
+      <view class="detail-social-btn" bindtap="focusComment" role="button" aria-label="评论"><image src="/static/icons/social-comment.svg"/><text>{{work.commentCount || comments.length || 0}}</text></view>
+    </view>
     <view wx:if="{{replyingTo}}" class="reply-hint">
       <text class="reply-hint-text">回复 <text class="reply-name">@{{replyingTo.name}}</text></text>
       <view class="reply-cancel" bindtap="cancelReply">
@@ -178,6 +183,7 @@
         class="comment-input"
         placeholder="{{replyingTo ? '回复 @' + replyingTo.name + '...' : '添加评论...'}}"
         value="{{commentText}}"
+        focus="{{commentFocused}}"
         bindinput="onCommentInput"
         bindconfirm="submitComment"
         confirm-type="send"

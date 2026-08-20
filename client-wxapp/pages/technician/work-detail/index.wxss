@@ -404,6 +404,12 @@
   padding: 20rpx 40rpx calc(20rpx + env(safe-area-inset-bottom));
   box-shadow: 0 -8rpx 32rpx rgba(15, 23, 42, 0.06);
 }
+.detail-social-row { min-height:88rpx; display:flex; align-items:center; justify-content:flex-end; gap:8rpx; }
+.detail-social-btn { min-width:88rpx; min-height:88rpx; display:flex; align-items:center; justify-content:center; gap:8rpx; color:#8f8790; font-size:24rpx; }
+.detail-social-btn image { width:34rpx; height:34rpx; }
+.detail-social-btn:active { opacity:.5; }
+.detail-social-btn.is-active-like { color:#ef4444; }
+.detail-social-btn.is-active-favorite { color:#d97706; }
 
 .reply-hint {
   display: flex;

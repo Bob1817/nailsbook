@@ -32,6 +32,7 @@ Page({
     businessOverview: null,
 
     featuredWorks: [],
+    featuredLead: null,
     worksLeft: [],
     worksRight: [],
     unreadMessageCount: 0
@@ -70,7 +71,7 @@ Page({
     try {
       const [tripsResult, convResult, worksResult, followUpsResult, insights, incomeCalendar] = await Promise.all([
         api.technician.orders.trips().catch(() => []),
-        api.chat.conversations('technician').catch(() => []),
+        api.chat.technician.conversations().catch(() => []),
         api.technician.works.list().catch(() => []),
         api.technician.customers.todayFollowUps().catch(() => []),
         api.technician.insights.overview().catch(() => null),
@@ -93,6 +94,7 @@ Page({
       const summary = buildDashboardSummary(orders, new Date());
 
       const unread = convs.reduce((s, c) => s + (c.unreadCount || 0), 0);
+      const technicianProfile = wx.getStorageSync('userInfo') || wx.getStorageSync('technician_userInfo') || {};
 
       // 装饰每个预约（添加 _ 前缀的展示字段）
       const decorate = (o) => {
@@ -159,10 +161,19 @@ Page({
           likeCount: w.likeCount || 0,
           favoriteCount: w.favoriteCount || 0,
           commentCount: w.commentCount || 0,
+          isLiked: !!w.isLiked,
+          isFavorited: !!w.isFavorited,
+          isVisible: w.isVisible !== false,
           isPinned: !!w.isPinned,
           isFeatured: !!w.isFeatured,
           coverUrl: w.coverUrl || '',
           title: w.title || '',
+          tags: Array.isArray(w.tags) ? w.tags : [],
+          technicianId: technicianProfile.id || '',
+          technicianName: technicianProfile.name || '我的作品',
+          technicianAvatarUrl: technicianProfile.avatarUrl || '',
+          techInitial: (technicianProfile.name || '我').charAt(0),
+          expertiseText: technicianProfile.specialty || '',
           _fav: w.favoriteCount || w.likeCount || 0
         }));
 
@@ -196,6 +207,7 @@ Page({
         todayFollowUps,
         businessOverview,
         featuredWorks,
+        featuredLead: null,
         worksLeft,
         worksRight,
         unreadMessageCount: unread
@@ -275,8 +287,42 @@ Page({
   },
 
   navigateToWorkDetail(e) {
-    const id = e.currentTarget.dataset.id;
+    const id = (e.detail && e.detail.id) || e.currentTarget.dataset.id;
     if (id) wx.navigateTo({ url: `/pages/technician/work-detail/index?id=${id}` });
+  },
+
+  showWorkActions(e) {
+    if (isTouristTechnician()) {
+      wx.showToast({ title: '请先激活美甲师账号', icon: 'none' });
+      return;
+    }
+    const source = e.detail || {};
+    const { id, visible, pinned, featured } = source;
+    if (!id) return;
+    wx.showActionSheet({
+      itemList: [
+        visible ? '隐藏作品' : '显示作品',
+        pinned ? '取消置顶' : '置顶作品',
+        featured ? '取消推荐' : '推荐作品',
+        '编辑作品'
+      ],
+      success: async (res) => {
+        try {
+          if (res.tapIndex === 0) await api.technician.works.toggleVisible(id);
+          if (res.tapIndex === 1) await api.technician.works.togglePinned(id);
+          if (res.tapIndex === 2) await api.technician.works.toggleFeatured(id);
+          if (res.tapIndex === 3) {
+            wx.navigateTo({ url: `/pages/technician/work-edit/index?id=${id}` });
+            return;
+          }
+          const messages = [visible ? '已隐藏' : '已显示', pinned ? '已取消置顶' : '已置顶', featured ? '已取消推荐' : '已推荐'];
+          wx.showToast({ title: messages[res.tapIndex], icon: 'success' });
+          this.loadDashboard();
+        } catch (err) {
+          wx.showToast({ title: '操作失败', icon: 'none' });
+        }
+      }
+    });
   },
 
   onTodoTap(e) {

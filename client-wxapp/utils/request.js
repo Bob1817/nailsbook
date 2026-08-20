@@ -27,7 +27,14 @@ function request(options) {
   } = options;
 
   const appInstance = getAppInstance();
-  const token = appInstance?.globalData?.token;
+  const role = appInstance?.globalData?.role || wx.getStorageSync('role');
+  const token = appInstance?.globalData?.token
+    || (role && wx.getStorageSync(`${role}_token`))
+    || wx.getStorageSync('token');
+  const requiredRole = url.indexOf('/api/technician/') === 0
+    ? 'technician'
+    : url.indexOf('/api/client/') === 0 ? 'client' : '';
+  const roleMismatch = !!(needAuth && requiredRole && role && requiredRole !== role);
   const apiBase = baseUrl || appInstance?.globalData?.apiBaseUrl || 'http://localhost:3000';
 
   let fullUrl = url;
@@ -40,7 +47,7 @@ function request(options) {
     ...header
   };
 
-  if (needAuth && token) {
+  if (needAuth && token && !roleMismatch) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
@@ -56,6 +63,11 @@ function request(options) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(res.data);
         } else if (res.statusCode === 401) {
+          // 另一角色命名空间的失败不能注销当前角色的有效会话。
+          if (roleMismatch) {
+            reject(normalizeResponseError(res, '当前身份无权访问此内容'));
+            return;
+          }
           if (needAuth && !_retried) {
             refreshAccessToken(apiBase)
               .then(() => request({ ...options, _retried: true }))
@@ -153,13 +165,17 @@ function normalizeResponseError(res, fallbackMessage) {
 }
 
 function handleUnauthorized() {
+  clearAuthState();
+  wx.reLaunch({
+    url: '/pages/login/index'
+  });
+}
+
+function clearAuthState() {
   const appInstance = getAppInstance();
   if (appInstance && appInstance.logout) {
     appInstance.logout();
   }
-  wx.reLaunch({
-    url: '/pages/role-select/index'
-  });
 }
 
 function get(url, params, options = {}) {

@@ -16,14 +16,14 @@
   <view class="header">
     <view class="header-row">
       <view class="cu-avatar">
-        <image wx:if="{{customer.avatarUrl}}" src="{{customer.avatarUrl}}" mode="aspectFill" class="cu-avatar-img" aria-label="{{customer._displayName}}的头像" />
+        <image wx:if="{{customer.avatarUrl && !customer._avatarFailed}}" src="{{customer.avatarUrl}}" mode="aspectFill" class="cu-avatar-img" binderror="onAvatarError" aria-label="{{customer._displayName}}的头像" />
         <text wx:else class="cu-avatar-char">{{customer._initial}}</text>
       </view>
       <view class="cu-info">
         <text class="cu-name">{{customer._displayName}}</text>
         <text wx:if="{{customer.phone}}" class="cu-phone">{{customer._phoneMasked}}</text>
       </view>
-      <view wx:if="{{customer.phone}}" class="round-btn" catchtap="callCustomer" role="button" aria-label="拨打客户电话"><view class="btn-icon-phone"></view></view>
+      <view wx:if="{{customer.phone}}" class="round-btn" catchtap="callCustomer" role="button" aria-label="拨打客户电话"><image class="phone-icon" src="/static/icons/phone-white.svg" mode="aspectFit" /></view>
     </view>
 
     <!-- 悬浮统计卡 -->
@@ -97,6 +97,14 @@
   <view class="card">
     <text class="card-title">基础信息</text>
 
+    <view class="info-row info-action-row remark-row">
+      <text class="info-label">客户备注</text>
+      <view class="remark-value-wrap">
+        <text class="remark-value">{{customer._remarkName || '未设置'}}</text>
+        <text wx:if="{{customer._accountName}}" class="account-name">（{{customer._accountName}}）</text>
+      </view>
+      <view class="inline-action" bindtap="openRemarkEdit" role="button" aria-label="更改客户备注">更改</view>
+    </view>
     <view wx:if="{{customer._genderText}}" class="info-row">
       <text class="info-label">性别</text>
       <text class="info-value">{{customer._genderText}}</text>
@@ -105,15 +113,13 @@
       <text class="info-label">生日</text>
       <text class="info-value">{{customer._birthdayText}}</text>
     </view>
-    <view wx:if="{{customer.address}}" class="info-row">
+    <view wx:if="{{customer.address}}" class="info-row info-action-row">
       <text class="info-label">地址</text>
-      <view class="info-value-block">
-        <text class="addr-text">{{customer.address}}</text>
-        <view class="copy-link" catchtap="copyAddress" role="button" aria-label="复制客户地址">复制</view>
-      </view>
+      <text class="addr-text">{{customer.address}}</text>
+      <view class="inline-action" catchtap="copyAddress" role="button" aria-label="复制客户地址">复制</view>
     </view>
     <view class="info-row">
-      <text class="info-label">备注</text>
+      <text class="info-label">其他备注</text>
       <text class="info-value">{{customer.notes || '暂无备注'}}</text>
     </view>
     <view class="info-row">
@@ -208,6 +214,28 @@
   <view class="bottom-actions">
     <view class="action-btn action-primary" bindtap="newOrder">联系客户发起预约</view>
     <view wx:if="{{customer.archiveEligible}}" class="archive-btn" bindtap="archiveCustomer">归档长期未互动客户</view>
+  </view>
+</view>
+
+<!-- ============ 客户备注编辑弹窗 ============ -->
+<view wx:if="{{showRemarkEdit}}" class="remark-modal-mask" bindtap="closeRemarkEdit">
+  <view class="remark-modal" catchtap="">
+    <text class="remark-modal-title">更改客户备注</text>
+    <text class="remark-modal-help">客户本人名称：{{customer._accountName || '未设置'}}</text>
+    <input
+      class="remark-input"
+      maxlength="30"
+      placeholder="输入便于识别的客户备注"
+      value="{{remarkDraft}}"
+      bindinput="onRemarkInput"
+      focus="{{showRemarkEdit}}"
+      confirm-type="done"
+      bindconfirm="saveRemark"
+    />
+    <view class="remark-modal-actions">
+      <view class="remark-modal-btn remark-cancel" bindtap="closeRemarkEdit">取消</view>
+      <view class="remark-modal-btn remark-confirm {{savingRemark ? 'is-disabled' : ''}}" bindtap="saveRemark">{{savingRemark ? '保存中' : '保存备注'}}</view>
+    </view>
   </view>
 </view>
 

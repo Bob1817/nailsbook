@@ -168,6 +168,13 @@ Page({
     }
   },
 
+  viewArtist() {
+    const technician = this.data.design && this.data.design.technician;
+    if (technician && technician.id) {
+      wx.navigateTo({ url: `/pages/client/artist-home/index?id=${technician.id}` });
+    }
+  },
+
   // 查看预约
   goToOrders() {
     wx.navigateTo({ url: '/pages/client/orders/index' });

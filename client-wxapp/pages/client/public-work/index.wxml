@@ -70,8 +70,18 @@
           <text wx:else class="tech-avatar-text">{{work.technician.name[0]}}</text>
         </view>
         <view class="tech-info">
-          <text class="tech-name">{{work.technician.name}}</text>
-          <text class="tech-label">美甲师</text>
+          <view class="tech-name-row">
+            <text class="tech-name">{{work.technician.name}}</text>
+            <text class="tech-label">美甲师</text>
+          </view>
+          <text wx:if="{{work.technician.artistMetaText}}" class="tech-meta">{{work.technician.artistMetaText}}</text>
+          <view wx:else class="tech-meta tech-meta-join">
+            <text wx:if="{{work.technician.cityText || work.technician.city}}" class="tech-meta-item">{{work.technician.cityText || work.technician.city}}</text>
+            <text wx:if="{{work.technician.cityText || work.technician.city}}" class="tech-meta-dot">·</text>
+            <text class="tech-meta-item">{{work.technician.experienceText || ('从业' + (work.technician.experienceYears || 1) + '年')}}</text>
+            <text wx:if="{{work.technician.specialtiesText}}" class="tech-meta-dot">·</text>
+            <text wx:if="{{work.technician.specialtiesText}}" class="tech-meta-item">{{work.technician.specialtiesText}}</text>
+          </view>
         </view>
         <text class="tech-arrow">›</text>
       </view>
@@ -79,16 +89,16 @@
       <!-- 操作按钮 -->
       <view class="actions-section">
         <button class="action-btn" bindtap="goToLogin">
-          <view class="menu-icon icon-heart"></view>
+          <image src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNjM2MzYzIiBzdHJva2Utd2lkdGg9IjEuOCIgZD0iTTEyIDIxLjZsLTEuNS0xLjM3QzUuMSAxNS4zNiAyIDEyLjUzIDIgOS4wNiAyIDYuMyA0LjE2IDQuMTQgNi45MiA0LjE0YzEuNTYgMCAzLjA2LjczIDQuMDQgMS44OGwxLjA0IDEuMjIgMS4wNC0xLjIyYTUuMzMgNS4zMyAwIDAgMSA0LjA0LTEuODhDMTkuODQgNC4xNCAyMiA2LjMgMjIgOS4wNmMwIDMuNDctMy4xIDYuMy04LjUgMTEuMThMMTIgMjEuNnoiLz48L3N2Zz4=" class="action-icon" />
           <text class="action-text">喜欢</text>
           <text wx:if="{{work.likeCount > 0}}" class="action-count">{{work.likeCount}}</text>
         </button>
         <button class="action-btn" bindtap="goToLogin">
-          <view class="menu-icon icon-bookmark"></view>
+          <image src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNjM2MzYzIiBzdHJva2Utd2lkdGg9IjEuOCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTEyIDIuNmwyLjcgNS44NiA2LjMuNjYtNC43IDQuMjcgMS4zIDYuMjJMMTIgMTYuOTZsLTUuNiAzLjY1IDEuMy02LjIyLTQuNy00LjI3IDYuMy0uNjZ6Ii8+PC9zdmc+" class="action-icon" />
           <text class="action-text">收藏</text>
         </button>
         <button class="action-btn share" open-type="share">
-          <view class="menu-icon icon-share"></view>
+          <image src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNjM2MzYzIiBzdHJva2Utd2lkdGg9IjEuOCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTIxIDExLjRjMCA0LTMuOSA3LjItOC43IDcuMi0xIDAtMi0uMTQtMi45LS40TDQgMjBsMS4zLTMuN0M0LjIgMTUuMSAzLjYgMTMuMyAzLjYgMTEuNCAzLjYgNy40IDcuNSA0LjIgMTIuMyA0LjJTMjEgNy40IDIxIDExLjR6Ii8+PC9zdmc+" class="action-icon" />
           <text class="action-text">分享</text>
         </button>
       </view>
@@ -106,7 +116,7 @@
             wx:key="id"
             class="comment-item"
           >
-            <view class="comment-avatar-wrap">
+            <view class="comment-avatar-wrap" catchtap="goToCommentArtist" data-role="{{item.user.role}}" role="button" aria-label="{{item.user.role === 'technician' ? '查看美甲师主页' : '用户头像'}}">
           <image wx:if="{{item.user.avatarUrl}}" src="{{item.user.avatarUrl}}" mode="aspectFill" class="comment-avatar" lazy-load aria-label="{{item.user.nickname || '用户'}}的头像" />
               <text wx:else class="comment-avatar-text">{{item.user.name[0]}}</text>
             </view>

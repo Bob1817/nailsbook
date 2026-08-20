@@ -24,7 +24,7 @@
       <!-- 该日期下的消息 -->
       <view wx:for="{{group.messages}}" wx:key="id" wx:for-item="item" id="msg-{{item.id}}" class="msg-row {{item.isClient ? 'row-right' : 'row-left'}}">
         <!-- 对方头像 -->
-        <view wx:if="{{!item.isClient}}" class="msg-avatar">
+        <view wx:if="{{!item.isClient}}" class="msg-avatar" bindtap="viewArtist" role="button" aria-label="查看{{techName || '美甲师'}}主页">
           <image wx:if="{{techAvatar}}" src="{{techAvatar}}" mode="aspectFill" class="avatar-img" aria-label="{{techName || '美甲师'}}的头像" />
           <view wx:else class="avatar-placeholder"><text>{{techName[0] || '师'}}</text></view>
         </view>

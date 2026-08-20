@@ -20,12 +20,11 @@
     "pages/client/create-order/index",
     "pages/client/orders/index",
     "pages/client/order-detail/index",
+    "pages/client/trade-orders/index",
     "pages/client/designs/index",
     "pages/client/create-design/index",
     "pages/client/customize-design/index",
     "pages/client/design-detail/index",
-    "pages/client/addresses/index",
-    "pages/client/address-edit/index",
     "pages/client/chat/index",
     "pages/client/chat-detail/index",
     "pages/client/profile/index",
@@ -43,7 +42,9 @@
     "pages/technician/home/index",
     "pages/technician/business-data/index",
     "pages/technician/orders/index",
+    "pages/technician/trade-orders/index",
     "pages/technician/order-detail/index",
+    "pages/technician/complete-service/index",
     "pages/technician/customers/index",
     "pages/technician/customer-detail/index",
     "pages/technician/works/index",
@@ -56,11 +57,11 @@
     "pages/technician/all-bookings/index",
     "pages/technician/chat/index",
     "pages/technician/chat-detail/index",
+    "pages/technician/binding-applications/index",
     "pages/technician/profile/index",
     "pages/technician/profile-settings/index",
     "pages/technician/homepage-settings/index",
     "pages/technician/account-security/index",
-    "pages/technician/home-service-settings/index",
     "pages/technician/service-time/index",
     "pages/technician/shop-management/index",
     "pages/technician/subscription/index",
@@ -79,13 +80,5 @@
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json",
-  "lazyCodeLoading": "requiredComponents",
-  "permission": {
-    "scope.userLocation": {
-      "desc": "用于选择上门服务地址"
-    }
-  },
-  "requiredPrivateInfos": [
-    "chooseLocation"
-  ]
+  "lazyCodeLoading": "requiredComponents"
 }

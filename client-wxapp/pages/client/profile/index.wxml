@@ -88,7 +88,6 @@
                     <text>服务城市 · {{item.city}}</text>
                   </view>
                   <view class="tech-tags">
-                    <text wx:if="{{item.homeService}}" class="tech-tag tech-tag-pink">上门美甲</text>
                     <text wx:if="{{item.shopService}}" class="tech-tag tech-tag-shop">到店美甲</text>
                     <view class="tech-tag {{item.status === 'active' ? 'tech-tag-active' : 'tech-tag-rest'}}">
                       <view class="status-dot {{item.status === 'active' ? 'status-dot-active' : 'status-dot-rest'}}"></view>
@@ -126,9 +125,9 @@
           <text class="section-sub">管理地址、预约、设计与服务沟通</text>
         </view>
         <view class="menu-list">
-          <view class="menu-item" bindtap="navigateToAddresses">
-            <view class="menu-icon-wrap menu-icon-pink"><view class="m-icon m-icon-pin"></view></view>
-            <text class="menu-label">地址管理</text>
+          <view class="menu-item" bindtap="navigateToOrders">
+            <view class="menu-icon-wrap menu-icon-pink"><view class="m-icon m-icon-doc"></view></view>
+            <text class="menu-label">我的订单</text>
             <text class="menu-arrow">›</text>
           </view>
           <view class="menu-item" bindtap="navigateToDesigns">
@@ -211,10 +210,15 @@
   <view class="modal-content" catchtap="">
     <view class="modal-header">
       <text class="modal-title">绑定美甲师</text>
-      <view class="modal-close" bindtap="closeBindModal">&#x2715;</view>
+      <view class="modal-close" bindtap="closeBindModal">×</view>
     </view>
 
-    <view class="modal-body">
+    <view class="bind-mode-tabs">
+      <view class="bind-mode-tab {{bindMode === 'invite' ? 'bind-mode-tab-active' : ''}}" bindtap="switchBindMode" data-mode="invite">填写邀请码</view>
+      <view class="bind-mode-tab {{bindMode === 'followed' ? 'bind-mode-tab-active' : ''}}" bindtap="switchBindMode" data-mode="followed">从已关注中选择</view>
+    </view>
+
+    <view wx:if="{{bindMode === 'invite'}}" class="modal-body">
       <text class="field-label">邀请码</text>
       <view class="code-input-wrap">
         <input
@@ -229,7 +233,7 @@
       <text class="field-hint">输入美甲师邀请码，提交绑定申请，待其通过后生效</text>
 
       <view wx:if="{{foundTech}}" class="found-tech">
-        <view class="found-avatar">
+        <view class="found-avatar" bindtap="viewTechnicianHome" data-id="{{foundTech.id}}" role="button" aria-label="查看{{foundTech.name || '美甲师'}}主页">
           <image wx:if="{{foundTech.avatarUrl}}" src="{{foundTech.avatarUrl}}" mode="aspectFill" class="found-avatar-img" aria-label="{{foundTech.name || '美甲师'}}的头像"/>
           <text wx:else class="found-avatar-char">{{foundTech.name[0]}}</text>
         </view>
@@ -249,10 +253,25 @@
       />
     </view>
 
-    <view
-      class="modal-btn {{!foundTech || binding ? 'modal-btn-disabled' : ''}}"
-      bindtap="bindTechnician"
-    >
+    <view wx:else class="modal-body">
+      <view wx:if="{{followedLoading}}" class="followed-state">正在加载已关注美甲师…</view>
+      <view wx:elif="{{followedTechnicians.length === 0}}" class="followed-state">暂无可申请绑定的已关注美甲师</view>
+      <view wx:else class="followed-list">
+        <view wx:for="{{followedTechnicians}}" wx:key="id" class="followed-item {{selectedFollowedTech && selectedFollowedTech.id === item.id ? 'followed-item-active' : ''}} {{item.bindingStatus === 'pending' ? 'followed-item-pending' : ''}}" bindtap="selectFollowedTech" data-id="{{item.id}}">
+          <image wx:if="{{item.avatarUrl}}" class="followed-avatar" src="{{item.avatarUrl}}" mode="aspectFill"/>
+          <view wx:else class="followed-avatar followed-avatar-fallback">{{item.name[0]}}</view>
+          <view class="followed-info"><text class="found-name">{{item.name}}</text><text class="found-city">{{item.city || '暂未填写服务城市'}}</text></view>
+          <text class="followed-status">{{item.bindingStatus === 'pending' ? '审核中' : (selectedFollowedTech && selectedFollowedTech.id === item.id ? '已选择' : '选择')}}</text>
+        </view>
+      </view>
+      <textarea wx:if="{{selectedFollowedTech}}" class="bind-note-input" value="{{bindNote}}" bindinput="onBindNoteInput" placeholder="给美甲师留言（可选）" maxlength="100"/>
+      <text class="field-hint">提交后将发送系统提醒，美甲师可在消息中同意或拒绝。</text>
+    </view>
+
+    <view wx:if="{{bindMode === 'invite'}}" class="modal-btn {{!foundTech || binding ? 'modal-btn-disabled' : ''}}" bindtap="bindTechnician">
+      <text>{{binding ? '申请中...' : '申请绑定'}}</text>
+    </view>
+    <view wx:else class="modal-btn {{!selectedFollowedTech || binding ? 'modal-btn-disabled' : ''}}" bindtap="requestFollowedBinding">
       <text>{{binding ? '申请中...' : '申请绑定'}}</text>
     </view>
   </view>
@@ -327,7 +346,7 @@
       <text class="field-hint">输入美甲师邀请码，提交绑定申请，待其通过后即可将其设为专属美甲师。</text>
 
       <view wx:if="{{techSwitchFoundTech}}" class="found-tech">
-        <view class="found-avatar">
+        <view class="found-avatar" bindtap="viewTechnicianHome" data-id="{{techSwitchFoundTech.id}}" role="button" aria-label="查看{{techSwitchFoundTech.name || '美甲师'}}主页">
           <image wx:if="{{techSwitchFoundTech.avatarUrl}}" src="{{techSwitchFoundTech.avatarUrl}}" mode="aspectFill" class="found-avatar-img" aria-label="{{techSwitchFoundTech.name || '美甲师'}}的头像"/>
           <text wx:else class="found-avatar-char">{{techSwitchFoundTech.name[0]}}</text>
         </view>

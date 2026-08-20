@@ -82,88 +82,57 @@
         wx:for="{{visibleCustomers}}"
         wx:key="id"
         class="customer-card"
-        bindtap="viewCustomer"
-        data-id="{{item.id}}"
       >
-        <view class="card-body">
-          <!-- 头像 -->
-          <view class="avatar-wrap">
-            <view class="avatar" bindtap="toggleTagPopover" data-id="{{item.id}}">
-              <image wx:if="{{item.avatarUrl}}" src="{{item.avatarUrl}}" mode="aspectFill" class="avatar-img" lazy-load aria-label="{{item.name || item.nickname || '客户'}}的头像" />
-              <text wx:else class="avatar-char">{{item._initial}}</text>
-            </view>
-            <!-- 标签弹出层 -->
-            <view wx:if="{{tagPopoverId === item.id && item._tags.length > 0}}" class="tag-popover">
-              <view class="tag-popover-arrow"></view>
-              <view class="tag-popover-content">
-                <text wx:for="{{item._tags}}" wx:for-item="t" wx:key="*this" class="tag-pill" style="background:{{t.bg}};color:{{t.text}}">{{t.name}}</text>
-              </view>
-            </view>
+        <view class="customer-card-header">
+          <view class="avatar">
+            <image wx:if="{{item.avatarUrl && !item._avatarFailed}}" src="{{item.avatarUrl}}" mode="aspectFill" class="avatar-img" lazy-load binderror="onAvatarError" data-id="{{item.id}}" aria-label="{{item.name || item.nickname || '客户'}}的头像" />
+            <text wx:else class="avatar-char">{{item._initial}}</text>
           </view>
-
-          <!-- 信息区 -->
-          <view class="info-area">
-            <view class="info-top">
-              <view class="name-row">
-                <text class="customer-name">{{item._displayName}}</text>
-                <text class="lifecycle-badge {{item._lifecycleClass}}">{{item._lifecycleLabel}}</text>
-                <view class="edit-name-btn" catchtap="startEditName" data-id="{{item.id}}" data-name="{{item.name}}">
-                  <view class="edit-icon"></view>
-                </view>
-                <text class="arrow-icon">›</text>
-              </view>
+          <view class="identity-area">
+            <view class="identity-title-row">
+              <text class="customer-name">{{item._displayName}}</text>
+              <text class="lifecycle-badge {{item._lifecycleClass}}">{{item._lifecycleLabel}}</text>
+            </view>
+            <view class="address-row">
+              <view class="location-icon"></view>
               <text class="customer-addr">{{item.address || '暂无地址'}}</text>
             </view>
-
-            <view class="lifecycle-reason">
-              <text>{{item._lifecycleReason}}</text>
-              <text wx:if="{{item._expectedServiceText}}"> · 预计 {{item._expectedServiceText}}</text>
-            </view>
-
-            <!-- 标签 -->
-            <view wx:if="{{item._tags.length > 0}}" class="tags-row">
-              <text wx:for="{{item._tags}}" wx:for-item="t" wx:key="*this" class="tag-pill" style="background:{{t.bg}};color:{{t.text}}">{{t.name}}</text>
-            </view>
-
-            <!-- 统计网格 -->
-            <view class="stats-grid">
-              <view class="stat-item">
-                <text class="stat-label">最近服务</text>
-                <text class="stat-value">{{item._recentServiceText || '暂无记录'}}</text>
-              </view>
-              <view class="stat-item">
-                <text class="stat-label">累计消费</text>
-                <text class="stat-value stat-price">{{item._totalSpentText}}</text>
-              </view>
-              <view class="stat-item">
-                <text class="stat-label">服务次数</text>
-                <text class="stat-value">{{item.totalOrders || 0}} 次</text>
-              </view>
-            </view>
+          </view>
+          <view class="card-entry" bindtap="viewCustomer" data-id="{{item.id}}" role="button" aria-label="查看{{item._displayName}}的客户档案">
+            <view class="card-chevron"></view>
           </view>
         </view>
+
+        <view class="customer-status {{item._lifecycleClass}}-surface">
+          <view class="status-dot {{item._lifecycleClass}}-dot"></view>
+          <text class="status-copy">{{item._lifecycleReason}}</text>
+          <text wx:if="{{item._expectedServiceText}}" class="status-date">预计 {{item._expectedServiceText}}</text>
+        </view>
+
+        <view wx:if="{{item._tags.length > 0}}" class="tags-row">
+          <text wx:for="{{item._tags}}" wx:for-item="t" wx:key="*this" class="tag-pill" style="background:{{t.bg}};color:{{t.text}}">{{t.name}}</text>
+        </view>
+
+        <view class="stats-grid">
+          <view class="stat-item stat-item-primary">
+            <text class="stat-label">累计消费</text>
+            <text class="stat-value stat-price">{{item._totalSpentText}}</text>
+          </view>
+          <view class="stat-item">
+            <text class="stat-label">服务次数</text>
+            <text class="stat-value">{{item.totalOrders || 0}} 次</text>
+          </view>
+          <view class="stat-item">
+            <text class="stat-label">最近服务</text>
+            <text class="stat-value">{{item._recentServiceText || '暂无记录'}}</text>
+          </view>
+        </view>
+
       </view>
     </view>
   </view>
   </scroll-view>
 </view>
 
-<!-- 编辑名称弹窗 -->
-<view wx:if="{{showEditName}}" class="modal-overlay" bindtap="cancelEditName">
-  <view class="modal-content" catchtap="noop">
-    <text class="modal-title">编辑客户名称</text>
-    <input
-      class="modal-input"
-      placeholder="请输入客户名称"
-      value="{{editingName}}"
-      bindinput="onEditNameInput"
-      focus="{{showEditName}}"
-    />
-    <view class="modal-actions">
-      <view class="modal-btn modal-cancel" bindtap="cancelEditName">取消</view>
-      <view class="modal-btn modal-confirm" bindtap="saveEditName">保存</view>
-    </view>
-  </view>
-</view>
 
 <tab-bar selected="customers"/>

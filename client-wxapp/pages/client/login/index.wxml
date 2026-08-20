@@ -23,6 +23,7 @@
       {{wechatChecking ? '正在检查微信登录...' : '重新获取微信登录状态'}}
     </button>
     <view class="link-row"><text class="link" data-method="phone" bindtap="selectLoginMethod">改用手机号登录</text></view>
+    <view class="guest-row"><text class="link-muted" bindtap="browseAsGuest">我先逛逛，去看看作品</text></view>
   </view>
 
   <!-- Step 1: 输入手机号 -->
@@ -36,6 +37,7 @@
     <view class="link-row">
       <text class="link" bindtap="goRoleSelect">返回身份选择</text>
     </view>
+    <view class="guest-row"><text class="link-muted" bindtap="browseAsGuest">我先逛逛，去看看作品</text></view>
   </view>
 
   <!-- Step 2: 登录（已注册） -->
@@ -60,6 +62,7 @@
       <text class="link-sep">|</text>
       <text class="link" bindtap="goRoleSelect">返回选择身份</text>
     </view>
+    <view class="guest-row"><text class="link-muted" bindtap="browseAsGuest">我先逛逛，去看看作品</text></view>
   </view>
 
 </view>

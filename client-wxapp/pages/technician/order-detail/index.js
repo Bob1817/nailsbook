@@ -18,7 +18,6 @@ const STATUS_DESC = {
   pending_agree:   '已发送报价，等待客户确认',
   pending_client_confirm: '预约链接已发送，等待客户确认',
   pending_confirm: '客户已同意报价，请确认此单并核实定金',
-  pending_home:    '已确认排期，记得准时上门',
   pending_shop:    '已确认排期，记得准时到店',
   in_progress:     '服务进行中',
   completed:       '预约已完成',
@@ -38,7 +37,6 @@ function actionsForStatus(status) {
     case 'pending_agree':   return [REVISE, CANCEL];
     case 'pending_client_confirm': return [CANCEL];
     case 'pending_confirm': return [REVISE, CANCEL, CONFIRM];
-    case 'pending_home':
     case 'pending_shop':    return [CANCEL];
     case 'in_progress':     return [COMPLETE];
     default:                return [];
@@ -295,24 +293,9 @@ Page({
     }
   },
 
-  // ---------- 完成 ----------
-  async completeOrder() {
-    const r = await wx.showModal({
-      title: '标记完成',
-      content: '确认本次服务已完成？'
-    });
-    if (!r.confirm) return;
-
-    try {
-      wx.showLoading({ title: '处理中...' });
-      await api.technician.orders.complete(this.orderId);
-      wx.hideLoading();
-      wx.showToast({ title: '预约已完成', icon: 'success' });
-      this.loadOrder();
-    } catch (err) {
-      wx.hideLoading();
-      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
-    }
+  // ---------- 完成：填写服务记录并完成订单 ----------
+  completeOrder() {
+    wx.navigateTo({ url: `/pages/technician/complete-service/index?id=${this.orderId}` });
   },
 
   // ---------- 取消 ----------

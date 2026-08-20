@@ -4,7 +4,6 @@ const TABS = [
   { label: '全部', value: 'all' },
   { label: '待报价', value: 'pending_quote' },
   { label: '待确认', value: 'pending_confirm' },
-  { label: '待上门', value: 'pending_home' },
   { label: '待到店', value: 'pending_shop' },
   { label: '进行中', value: 'in_progress' },
   { label: '已完成', value: 'completed' },
@@ -15,7 +14,6 @@ const TABS = [
 const STATUS_GROUPS = {
   pending_quote: ['pending_quote'],
   pending_confirm: ['quoted', 'pending_agree', 'pending_confirm', 'pending_client_confirm', 'confirmed'],
-  pending_home: ['pending_home'],
   pending_shop: ['pending_shop'],
   in_progress: ['in_progress'],
   completed: ['completed'],
@@ -33,7 +31,6 @@ const STATUS_MAP = {
   pending_confirm: { text: '待确认', class: 'status-purple' },
   pending_client_confirm: { text: '待客户确认', class: 'status-blue' },
   confirmed: { text: '已确认', class: 'status-purple' },
-  pending_home: { text: '待上门', class: 'status-green' },
   pending_shop: { text: '待到店', class: 'status-green' },
   in_progress: { text: '进行中', class: 'status-orange' },
   completed: { text: '已完成', class: 'status-gray' },
@@ -49,7 +46,6 @@ const NEXT_STEP_MAP = {
   pending_confirm: '美甲师正在确认最终排期',
   pending_client_confirm: '请确认本次预约安排',
   confirmed: '预约已确认，请按时到达',
-  pending_home: '等待美甲师按预约时间上门',
   pending_shop: '请按预约时间前往门店',
   in_progress: '服务正在进行，完成后可上传照片',
   completed: '可以评价并加入你的美甲记录',
@@ -156,10 +152,12 @@ Page({
     orders: [],
     loading: false,
     emptyTitle: '还没有预约',
-    emptyCopy: '选择喜欢的作品或服务，发起你的下一次美甲预约'
+    emptyCopy: '选择喜欢的作品或服务，发起你的下一次美甲预约',
+    tradeView: false
   },
 
-  onLoad() {
+  onLoad(options) {
+    this.setData({ tradeView: options && options.view === 'trade' });
     this.startCountdownTimer();
     this.loadOrders();
   },
@@ -182,7 +180,9 @@ Page({
     try {
       const res = await api.client.orders.list();
       const rawList = res.list || res.data || (Array.isArray(res) ? res : []);
-      const allOrders = rawList.map(decorateOrder);
+      const allOrders = rawList
+        .filter(order => !this.data.tradeView || Boolean(order.tradeCreatedAt || order.tradeStatus))
+        .map(decorateOrder);
 
       this.setData({
         allOrders,

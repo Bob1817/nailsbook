@@ -1,4 +1,5 @@
 var api = require('../../../services/api');
+var { normalizeWork } = require('../../../utils/normalize-work');
 
 var SORT_TABS = [
   { key: 'latest', label: '最新' },
@@ -73,20 +74,19 @@ Page({
     api.public.artists.detail(self.data.targetTechId).then(function (res) {
       var artist = res.artist || {};
       artist.initial = (artist.name || '美').charAt(0);
-      var works = (res.works || []).map(function (work) {
-        return {
-          id: work.id,
-          coverUrl: work.coverUrl || (work.imageUrls && work.imageUrls[0]) || '',
-          title: work.title || '美甲作品',
-          tags: [],
-          technicianName: artist.name || '美甲师',
-          technicianId: artist.id,
-          technicianAvatarUrl: artist.avatarUrl || '',
-          techInitial: (artist.name || '美').charAt(0),
-          likeCount: 0,
-          createdAt: '',
-          dateStr: ''
-        };
+      var techSnapshot = {
+        id: artist.id,
+        technicianId: artist.id,
+        name: artist.name,
+        avatarUrl: artist.avatarUrl,
+        city: artist.city,
+        experienceYears: artist.experienceYears || 0,
+        specialtiesText: artist.specialtiesText || '',
+        specialties: artist.styleTags || [],
+        styleTags: artist.styleTags || []
+      };
+      var works = (res.works || []).map(function (work, index) {
+        return normalizeWork(work, techSnapshot, { index: index, styleTags: techSnapshot.styleTags });
       });
       self.setData({
         artist: artist,
@@ -114,9 +114,12 @@ Page({
   loadWorks: function () {
     var self = this;
     self.setData({ loading: true, loadFailed: false });
+    var app = getApp();
+    var currentRole = app.globalData.role || wx.getStorageSync('role');
+    var isClient = currentRole === 'client' && !!(app.globalData.token || wx.getStorageSync('client_token'));
     Promise.all([
-      api.client.works.list({ sortBy: self.data.sortBy, sortDir: self.data.sortDirs[self.data.sortBy] }),
-      api.client.likes.list().catch(function () { return []; })
+      api.public.works.list({ sortBy: self.data.sortBy, sortDir: self.data.sortDirs[self.data.sortBy] }),
+      isClient ? api.client.likes.list().catch(function () { return []; }) : Promise.resolve([])
     ]).then(function (results) {
         var res = results[0];
         var likedList = results[1] || [];
@@ -128,25 +131,11 @@ Page({
         var list = res.list || res.data || res || [];
         var sortBy = self.data.sortBy;
         var dir = self.data.sortDirs[sortBy] === 'asc' ? 1 : -1;
-        var works = list.map(function (w) {
-          var name = w.technicianName || (w.technician ? w.technician.name : '') || '';
-          return {
-            id: w.id,
-            coverUrl: w.coverUrl || (w.imageUrls && w.imageUrls[0]) || '',
-            title: w.title || '未命名作品',
-            tags: w.tags || [],
-            technicianName: name,
-            technicianId: w.technicianId || (w.technician && w.technician.id) || '',
-            technicianAvatarUrl: w.technicianAvatarUrl || (w.technician ? w.technician.avatarUrl : '') || '',
-            techInitial: name.charAt(0) || '美',
-            likeCount: w.likeCount || 0,
-            isLiked: !!w.isLiked || !!likedIds[w.id],
-            commentCount: w.commentCount || 0,
-            favoriteCount: w.favoriteCount || 0,
-            createdAt: w.createdAt || '',
-            dateStr: formatDate(w.createdAt),
-            aspect: ''
-          };
+        var works = list.map(function (w, index) {
+          var normalized = normalizeWork(w, null, { index: index });
+          normalized.isLiked = !!w.isLiked || !!likedIds[w.id];
+          normalized.dateStr = normalized.dateStr || formatDate(w.createdAt);
+          return normalized;
         });
 
         // 客户端排序（保证排序生效，不依赖后端部署）
@@ -246,13 +235,13 @@ Page({
   },
 
   viewWork: function (e) {
-    var id = e.currentTarget.dataset.id;
+    var id = (e.detail && e.detail.id) || e.currentTarget.dataset.id;
     var path = this.data.businessPage ? '/pages/client/public-work/index?id=' : '/pages/client/work-detail/index?id=';
     wx.navigateTo({ url: path + id });
   },
 
   viewArtist: function (e) {
-    var id = e.currentTarget.dataset.id;
+    var id = (e.detail && e.detail.id) || e.currentTarget.dataset.id;
     if (id) wx.navigateTo({ url: '/pages/client/artist-home/index?id=' + id });
   },
 

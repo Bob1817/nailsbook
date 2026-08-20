@@ -1,4 +1,4 @@
-<nav-bar title="发现"/>
+<nav-bar title="发现好作品"/>
 <view class="page">
 
   <!-- ===== 头部（sticky，top 由 JS 注入）===== -->
@@ -9,7 +9,7 @@
       <input class="search-input" value="{{keyword}}" placeholder="搜索作品、风格或美甲师" placeholder-class="search-hint" confirm-type="search" bindinput="onSearchInput" bindconfirm="onSearchConfirm" />
       <view wx:if="{{keyword}}" class="search-clear" bindtap="clearSearch" aria-label="清除搜索"><view class="clear-line clear-a"></view><view class="clear-line clear-b"></view></view>
     </view>
-    <!-- 分类 pills -->
+    <!-- 分类：编辑式文字导航 -->
     <scroll-view scroll-x class="cats-scroll" enhanced show-scrollbar="{{false}}">
       <view class="cats-bar">
         <view
@@ -54,29 +54,57 @@
   <!-- 瀑布流 -->
   <view wx:else class="waterfall-wrap">
     <view wx:if="{{keyword}}" class="result-summary">找到 {{resultCount}} 个与“{{keyword}}”相关的作品</view>
+    <view wx:if="{{featuredWorks.length}}" class="featured-work">
+      <text class="featured-kicker">本期精选</text>
+      <swiper class="featured-swiper" autoplay="{{featuredWorks.length > 1}}" interval="4200" duration="520" circular="{{featuredWorks.length > 1}}" indicator-dots="{{false}}" bindchange="onFeaturedChange">
+          <swiper-item wx:for="{{featuredWorks}}" wx:key="id" class="featured-slide">
+            <work-card
+              work="{{item}}"
+              variant="editorial"
+              featured
+              bind:cardtap="onWorkCardTap"
+              bind:artisttap="onArtistTap"
+              bind:liketap="onLikeTap"
+              bind:favoritetap="onFavoriteTap"
+              bind:commenttap="onWorkCardTap"
+            />
+          </swiper-item>
+      </swiper>
+      <view wx:if="{{featuredWorks.length > 1}}" class="featured-indicators" aria-label="第 {{featuredIndex + 1}} 张，共 {{featuredWorks.length}} 张">
+        <view
+          wx:for="{{featuredWorks}}"
+          wx:key="id"
+          class="featured-indicator {{index === featuredIndex ? 'is-active' : ''}}"
+        ></view>
+      </view>
+    </view>
     <view class="waterfall">
       <!-- 左列 -->
       <view class="col">
-        <view wx:for="{{leftCol}}" wx:key="id" class="work-card">
+        <view wx:for="{{leftCol}}" wx:key="id" class="work-card editorial-card">
           <work-card
             work="{{item}}"
-            aspectClass="{{item.aspect}}"
+            variant="editorial"
             bind:cardtap="onWorkCardTap"
             bind:artisttap="onArtistTap"
             bind:liketap="onLikeTap"
+            bind:favoritetap="onFavoriteTap"
+            bind:commenttap="onWorkCardTap"
           />
         </view>
       </view>
 
       <!-- 右列 -->
       <view class="col">
-        <view wx:for="{{rightCol}}" wx:key="id" class="work-card">
+        <view wx:for="{{rightCol}}" wx:key="id" class="work-card editorial-card">
           <work-card
             work="{{item}}"
-            aspectClass="{{item.aspect}}"
+            variant="editorial"
             bind:cardtap="onWorkCardTap"
             bind:artisttap="onArtistTap"
             bind:liketap="onLikeTap"
+            bind:favoritetap="onFavoriteTap"
+            bind:commenttap="onWorkCardTap"
           />
         </view>
       </view>

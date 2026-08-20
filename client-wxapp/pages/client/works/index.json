@@ -4,6 +4,7 @@
   "navigationStyle": "custom",
   "usingComponents": {
     "nav-bar": "/components/nav-bar/index",
-    "tab-bar": "/components/tab-bar/index"
+    "tab-bar": "/components/tab-bar/index",
+    "work-card": "/components/work-card/index"
   }
 }

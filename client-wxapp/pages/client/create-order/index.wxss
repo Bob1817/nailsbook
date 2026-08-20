@@ -41,6 +41,7 @@
 .tech-avatar-text { font-size: var(--font-lg); font-weight: var(--weight-semibold); color: var(--brand-primary); }
 
 .tech-info { flex: 1; min-width: 0; }
+.preset-check { width:40rpx; height:40rpx; flex-shrink:0; }
 .tech-name-row { display: flex; align-items: center; gap: 12rpx; }
 .tech-name { font-size: var(--font-md); font-weight: var(--weight-semibold); color: var(--text-primary); }
 .tech-city { font-size: var(--font-sm); color: var(--text-muted); margin-top: 4rpx; display: block; }
@@ -360,6 +361,13 @@
 .modal-btn:active { opacity: 0.85; }
 
 /* 绑定美甲师弹窗 */
+.application-review-tip { display:block; margin:12rpx 0 28rpx; color:var(--text-muted); font-size:var(--font-sm); line-height:1.7; }
+.review-summary { padding:20rpx 24rpx; border-radius:20rpx; background:var(--bg-input); }
+.review-row { min-height:64rpx; display:flex; align-items:center; justify-content:space-between; gap:24rpx; color:var(--text-primary); font-size:var(--font-sm); }
+.review-row text:first-child { color:var(--text-muted); flex-shrink:0; }
+.rules-check { min-height:88rpx; display:flex; align-items:center; gap:16rpx; margin:22rpx 0; color:var(--text-secondary); font-size:var(--font-xs); line-height:1.55; }
+.rules-box { width:40rpx; height:40rpx; flex-shrink:0; display:flex; align-items:center; justify-content:center; border:2rpx solid #cbd5e1; border-radius:10rpx; box-sizing:border-box; color:#fff; }
+.rules-box-active { border-color:var(--brand-primary); background:var(--brand-primary); }
 .bind-hint {
   font-size: 26rpx; color: var(--text-muted); line-height: 1.6;
   margin-bottom: 24rpx;

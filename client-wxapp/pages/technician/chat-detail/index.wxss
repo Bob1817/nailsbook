@@ -109,8 +109,8 @@ page {
 .msg-row {
   display: flex;
   align-items: flex-end;
-  padding: 8rpx 32rpx;
-  gap: 12rpx;
+  padding: 12rpx 28rpx;
+  gap: 16rpx;
 }
 
 .row-right {
@@ -126,16 +126,17 @@ page {
 }
 
 .avatar-img {
-  width: 64rpx;
-  height: 64rpx;
+  display:block;
+  width: 68rpx;
+  height: 68rpx;
   border-radius: 50%;
   background: #f0f0f0;
   border: 1rpx solid rgba(0, 0, 0, 0.03);
 }
 
 .avatar-placeholder, .avatar-self {
-  width: 64rpx;
-  height: 64rpx;
+  width: 68rpx;
+  height: 68rpx;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -156,7 +157,7 @@ page {
 }
 
 .msg-content-wrap {
-  max-width: 72%;
+  max-width: calc(100% - 96rpx);
   display: flex;
   flex-direction: column;
 }
@@ -171,8 +172,8 @@ page {
 
 /* ===== 消息气泡 ===== */
 .bubble {
-  border-radius: var(--radius-md);
-  padding: 16rpx 24rpx;
+  border-radius: 22rpx;
+  padding: 18rpx 24rpx 14rpx;
   word-break: break-word;
   max-width: 100%;
   position: relative;
@@ -181,14 +182,14 @@ page {
 .bubble-right {
   background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-light) 100%);
   border-bottom-right-radius: 8rpx;
-  box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.15) /* brand-primary-alpha */, 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
+  box-shadow: 0 6rpx 18rpx rgba(255,107,138,0.13);
 }
 
 .bubble-left {
-  background: rgba(255, 255, 255, 0.9);
+  background: #ffffff;
   border-bottom-left-radius: 8rpx;
   border: 1rpx solid rgba(0, 0, 0, 0.03);
-  box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, 0.06), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
+  box-shadow: 0 6rpx 18rpx rgba(54, 42, 49, 0.07);
 }
 
 .bubble-img {
@@ -198,8 +199,8 @@ page {
 }
 
 .msg-text {
-  font-size: var(--font-md);
-  line-height: 1.55;
+  font-size: var(--font-sm);
+  line-height: 1.6;
 }
 
 .bubble-right .msg-text {
@@ -220,8 +221,8 @@ page {
 .msg-time-inline {
   display: block;
   font-size: var(--font-xs);
-  margin-top: 8rpx;
-  opacity: 0.6;
+  margin-top: 10rpx;
+  opacity: 0.68;
 }
 
 .time-right {
@@ -256,12 +257,14 @@ page {
 
 /* ===== 预约卡片消息 ===== */
 .order-card-msg {
-  border-radius: var(--radius-md);
+  border-radius: 24rpx;
   overflow: hidden;
   background: linear-gradient(180deg, #ffffff 0%, #fcfafb 100%);
-  box-shadow: 0 8rpx 22rpx rgba(47, 34, 42, 0.055);
+  box-shadow: 0 8rpx 24rpx rgba(47, 34, 42, 0.07);
   border: 1rpx solid #eee8eb;
-  width: 500rpx;
+  width: 510rpx;
+  max-width:100%;
+  box-sizing:border-box;
 }
 
 .order-card-msg:active { background:#faf6f8; }
@@ -275,7 +278,7 @@ page {
   display: flex;
   align-items: center;
   gap: 12rpx;
-  margin-bottom: 18rpx;
+  margin-bottom: 14rpx;
 }
 
 .card-calendar-icon {
@@ -316,8 +319,8 @@ page {
 }
 
 .card-footer {
-  min-height:88rpx;
-  margin-top:18rpx;
+  min-height:76rpx;
+  margin-top:16rpx;
   border-top:1rpx solid #f0ebed;
   display:flex;
   align-items:center;
@@ -328,7 +331,7 @@ page {
   color: #7b6d75;
   font-weight: var(--weight-semibold);
 }
-.card-chevron { color:#a89da3; font-size: var(--font-lg); line-height:1; }
+.card-chevron { width:12rpx; height:12rpx; margin-right:4rpx; border-top:3rpx solid #a89da3; border-right:3rpx solid #a89da3; transform:rotate(45deg); }
 
 /* ===== 底部输入栏 ===== */
 .input-bar {
