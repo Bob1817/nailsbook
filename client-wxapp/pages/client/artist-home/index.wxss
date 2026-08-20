@@ -22,7 +22,16 @@ page {
   font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans SC', sans-serif;
 }
 
-.page { min-height: 100vh; }
+.page { 
+  min-height: 100vh;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ===== Section 通用样式 ===== */
+.section-block {
+  padding: 0 40rpx;
+  margin-top: 48rpx;
+}
 
 /* ===== 加载状态 ===== */
 .state {
@@ -224,10 +233,6 @@ page {
 }
 
 /* ===== 通用 Section ===== */
-.section-block {
-  padding: 0 40rpx;
-  margin-top: 48rpx;
-}
 .section-header {
   display: flex;
   align-items: center;
