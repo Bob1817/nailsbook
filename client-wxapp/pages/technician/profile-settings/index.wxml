@@ -45,7 +45,7 @@
     <!-- 个人简介 -->
     <view class="field field-textarea">
       <text class="label">个人简介</text>
-      <textarea class="textarea" value="{{bio}}" bindinput="onBioInput" placeholder="介绍一下自己吧" placeholder-class="ph" maxlength="200" adjust-position cursor-spacing="120" />
+      <textarea class="textarea" value="{{bio}}" bindinput="onBioInput" placeholder="介绍一下自己吧" placeholder-class="ph" maxlength="200" adjust-position cursor-spacing="120" confirm-type="done" />
     </view>
   </view>
 

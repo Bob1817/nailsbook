@@ -1,11 +1,35 @@
-import { IsNumber, IsString, IsOptional, Min } from 'class-validator';
+import {
+  IsArray,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+export class QuoteServiceSelectionDto {
+  @ApiProperty({ description: '服务公开 ID' })
+  @IsString()
+  servicePublicId: string;
+
+  @ApiPropertyOptional({ description: '数量', default: 1 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  quantity?: number;
+}
+
 export class ReviewOrderDto {
-  @ApiProperty({ description: '报价金额', example: 199 })
-  @IsNumber()
-  @Min(0)
-  price: number;
+  @ApiProperty({ description: '构成报价的基础服务' })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => QuoteServiceSelectionDto)
+  services: QuoteServiceSelectionDto[];
 
   @ApiProperty({ description: '服务日期', example: '2026-05-15' })
   @IsString()
@@ -15,10 +39,11 @@ export class ReviewOrderDto {
   @IsString()
   startTime: string;
 
-  @ApiProperty({ description: '服务时长(分钟)', example: 120 })
-  @IsNumber()
-  @Min(1)
-  durationMinutes: number;
+  @ApiPropertyOptional({ description: '优惠金额（分）', example: 2000 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  discountAmountFen?: number;
 
   @ApiPropertyOptional({ description: '备注', example: '请准时到达' })
   @IsOptional()

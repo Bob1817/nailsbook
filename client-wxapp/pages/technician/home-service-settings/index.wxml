@@ -62,8 +62,7 @@
             value="{{radius}}"
             bindinput="onRadiusInput"
             placeholder="如：10"
-            placeholder-class="ph"
-          />
+            placeholder-class="ph" confirm-type="done" />
         </view>
         <view class="field-sep"></view>
 
@@ -79,8 +78,7 @@
             value="{{nightFee}}"
             bindinput="onNightFeeInput"
             placeholder="如：30"
-            placeholder-class="ph"
-          />
+            placeholder-class="ph" confirm-type="done" />
         </view>
         <view class="field-sep"></view>
 
@@ -96,8 +94,7 @@
             value="{{holidayFee}}"
             bindinput="onHolidayFeeInput"
             placeholder="如：50"
-            placeholder-class="ph"
-          />
+            placeholder-class="ph" confirm-type="done" />
         </view>
         <view class="field-sep"></view>
 
@@ -113,8 +110,7 @@
             value="{{minOrderAmount}}"
             bindinput="onMinAmountInput"
             placeholder="如：100"
-            placeholder-class="ph"
-          />
+            placeholder-class="ph" confirm-type="done" />
         </view>
       </view>
     </view>
@@ -130,14 +126,14 @@
         <view wx:for="{{pricing}}" wx:key="idx" class="pricing-item">
           <view class="pricing-row">
             <text class="pricing-label">距离</text>
-            <input class="pricing-input" type="digit" value="{{item.minKm}}" bindinput="onPricingMinKmInput" data-idx="{{index}}" placeholder="0" />
+            <input class="pricing-input" type="digit" value="{{item.minKm}}" bindinput="onPricingMinKmInput" data-idx="{{index}}" placeholder="0" confirm-type="done" />
             <text class="pricing-dash">-</text>
-            <input class="pricing-input" type="digit" value="{{item.maxKm}}" bindinput="onPricingMaxKmInput" data-idx="{{index}}" placeholder="5" />
+            <input class="pricing-input" type="digit" value="{{item.maxKm}}" bindinput="onPricingMaxKmInput" data-idx="{{index}}" placeholder="5" confirm-type="done" />
             <text class="pricing-unit">公里</text>
           </view>
           <view class="pricing-row">
             <text class="pricing-label">附加费</text>
-            <input class="pricing-input" type="digit" value="{{item.price}}" bindinput="onPricingPriceInput" data-idx="{{index}}" placeholder="0" />
+            <input class="pricing-input" type="digit" value="{{item.price}}" bindinput="onPricingPriceInput" data-idx="{{index}}" placeholder="0" confirm-type="done" />
             <text class="pricing-unit">元</text>
             <view wx:if="{{pricing.length > 1}}" class="pricing-remove" bindtap="removePricingTier" data-idx="{{index}}">
               <text>删除</text>

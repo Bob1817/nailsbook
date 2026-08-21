@@ -11,17 +11,17 @@
       <button class="text-btn" bindtap="newMaterial">清空重建</button>
     </view>
     <text class="field-label">主标题</text>
-    <input class="field-input" maxlength="30" value="{{title}}" placeholder="例如：春日法式新款" bindinput="onTitleInput" />
+    <input class="field-input" maxlength="30" value="{{title}}" placeholder="例如：春日法式新款" bindinput="onTitleInput" confirm-type="done" />
     <text class="field-label">副标题</text>
-    <input class="field-input" maxlength="50" value="{{subtitle}}" placeholder="描述款式或活动亮点" bindinput="onSubtitleInput" />
+    <input class="field-input" maxlength="50" value="{{subtitle}}" placeholder="描述款式或活动亮点" bindinput="onSubtitleInput" confirm-type="done" />
     <view class="field-row">
       <view class="field-half">
         <text class="field-label">参考价格</text>
-        <input class="field-input" type="digit" value="{{price}}" placeholder="选填" bindinput="onPriceInput" />
+        <input class="field-input" type="digit" value="{{price}}" placeholder="选填" bindinput="onPriceInput" confirm-type="done" />
       </view>
       <view class="field-half">
         <text class="field-label">预约说明</text>
-        <input class="field-input" maxlength="30" value="{{contact}}" placeholder="欢迎咨询预约" bindinput="onContactInput" />
+        <input class="field-input" maxlength="30" value="{{contact}}" placeholder="欢迎咨询预约" bindinput="onContactInput" confirm-type="done" />
       </view>
     </view>
     <image wx:if="{{previewUrl}}" class="poster-preview" src="{{previewUrl}}" mode="widthFix" aria-label="宣传海报预览" />

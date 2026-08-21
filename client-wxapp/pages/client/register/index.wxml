@@ -26,7 +26,7 @@
           value="{{inviteCode}}"
           data-field="inviteCode"
           bindinput="onInput"
-          confirm-type="next"
+          confirm-type="done"
           cursor-spacing="24"
         />
         <view wx:if="{{checkingCode}}" class="spinner"></view>
@@ -48,7 +48,7 @@
         value="{{password}}"
         data-field="password"
         bindinput="onInput"
-        confirm-type="next"
+        confirm-type="done"
         cursor-spacing="24"
       />
       <text wx:if="{{passwordError}}" class="error-text">{{passwordError}}</text>

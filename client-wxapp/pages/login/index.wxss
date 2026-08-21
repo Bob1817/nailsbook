@@ -302,6 +302,14 @@ page {
 
 .forgot-link:active { opacity: 0.6; }
 
+.phone-privacy-consent {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 var(--space-md);
+  padding: 0;
+  justify-content: flex-start;
+}
+
 /* ===== 提交按钮 ===== */
 .submit-btn {
   width: 100%;

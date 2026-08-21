@@ -8,6 +8,10 @@ import { CreateWorkDto, UpdateWorkDto } from './dto/create-work.dto';
 import { UpdateWorkAccessDto } from './dto/work-access.dto';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { StorageService } from '../common/storage/storage.service';
+import {
+  buildServiceSnapshotLines,
+  summarizeSnapshotLines,
+} from '../orders/booking-pricing';
 
 // Configurable base URL for uploads
 const UPLOAD_BASE_URL = process.env.UPLOAD_BASE_URL || 'http://localhost:3000';
@@ -49,6 +53,7 @@ export class TechnicianWorksService {
           },
         },
         _count: { select: { shareEvents: true } },
+        serviceLines: { orderBy: { sortOrder: 'asc' } },
       },
     });
 
@@ -78,6 +83,7 @@ export class TechnicianWorksService {
           },
         },
         _count: { select: { shareEvents: true } },
+        serviceLines: { orderBy: { sortOrder: 'asc' } },
       },
     });
 
@@ -91,6 +97,11 @@ export class TechnicianWorksService {
   async create(technicianId: number, dto: CreateWorkDto) {
     await this.subscriptions.assertCanCreateWork(technicianId);
     this.assertImageLimit(dto.images);
+    const pricing = await this.resolveWorkPricing(
+      technicianId,
+      dto.selectedServiceIds,
+      dto.standardPrice,
+    );
     const work = await this.prisma.nailWork.create({
       data: {
         techId: technicianId,
@@ -103,6 +114,12 @@ export class TechnicianWorksService {
         recommendationScore: dto.recommendationScore ?? null,
         tags: dto.tags ?? null,
         price: dto.price ?? null,
+        serviceSubtotalFen: pricing.serviceSubtotalFen,
+        standardPriceFen: pricing.standardPriceFen,
+        totalDurationMinutes: pricing.totalDurationMinutes,
+        serviceLines: {
+          create: pricing.lines,
+        },
         isVisible: dto.isVisible ?? true,
         sortOrder: dto.sortOrder ?? 0,
         publicationStatus: 'pending',
@@ -111,6 +128,7 @@ export class TechnicianWorksService {
         likes: true,
         favorites: true,
         comments: true,
+        serviceLines: { orderBy: { sortOrder: 'asc' } },
       },
     });
 
@@ -249,36 +267,58 @@ export class TechnicianWorksService {
       throw new NotFoundException('作品不存在');
     }
 
-    const work = await this.prisma.nailWork.update({
-      where: { id },
-      data: {
-        ...(dto.title !== undefined && { title: dto.title }),
-        ...(dto.coverUrl !== undefined && { coverUrl: dto.coverUrl }),
-        ...(dto.images !== undefined && { images: dto.images }),
-        ...(dto.description !== undefined && { description: dto.description }),
-        ...(dto.designIdea !== undefined && { designIdea: dto.designIdea }),
-        ...(dto.suitableScene !== undefined && {
-          suitableScene: dto.suitableScene,
-        }),
-        ...(dto.recommendationScore !== undefined && {
-          recommendationScore: dto.recommendationScore,
-        }),
-        ...(dto.tags !== undefined && { tags: dto.tags }),
-        ...(dto.price !== undefined && { price: dto.price }),
-        ...(dto.isVisible !== undefined && { isVisible: dto.isVisible }),
-        ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
-        publicationStatus: 'pending',
-        reviewNote: null,
-        reviewedAt: null,
-        reviewedBy: null,
-        publishedAt: null,
-        isHomepageFeatured: false,
-      },
-      include: {
-        likes: true,
-        favorites: true,
-        comments: true,
-      },
+    const pricing =
+      dto.selectedServiceIds !== undefined || dto.standardPrice !== undefined
+        ? await this.resolveWorkPricing(
+            technicianId,
+            dto.selectedServiceIds ?? [],
+            dto.standardPrice,
+          )
+        : null;
+    const work = await this.prisma.$transaction(async (tx) => {
+      if (pricing) {
+        await tx.nailWorkServiceLine.deleteMany({ where: { workId: id } });
+      }
+      return tx.nailWork.update({
+        where: { id },
+        data: {
+          ...(dto.title !== undefined && { title: dto.title }),
+          ...(dto.coverUrl !== undefined && { coverUrl: dto.coverUrl }),
+          ...(dto.images !== undefined && { images: dto.images }),
+          ...(dto.description !== undefined && {
+            description: dto.description,
+          }),
+          ...(dto.designIdea !== undefined && { designIdea: dto.designIdea }),
+          ...(dto.suitableScene !== undefined && {
+            suitableScene: dto.suitableScene,
+          }),
+          ...(dto.recommendationScore !== undefined && {
+            recommendationScore: dto.recommendationScore,
+          }),
+          ...(dto.tags !== undefined && { tags: dto.tags }),
+          ...(dto.price !== undefined && { price: dto.price }),
+          ...(pricing && {
+            serviceSubtotalFen: pricing.serviceSubtotalFen,
+            standardPriceFen: pricing.standardPriceFen,
+            totalDurationMinutes: pricing.totalDurationMinutes,
+            serviceLines: { create: pricing.lines },
+          }),
+          ...(dto.isVisible !== undefined && { isVisible: dto.isVisible }),
+          ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
+          publicationStatus: 'pending',
+          reviewNote: null,
+          reviewedAt: null,
+          reviewedBy: null,
+          publishedAt: null,
+          isHomepageFeatured: false,
+        },
+        include: {
+          likes: true,
+          favorites: true,
+          comments: true,
+          serviceLines: { orderBy: { sortOrder: 'asc' } },
+        },
+      });
     });
 
     return this.mapWork(work, technicianId);
@@ -297,10 +337,18 @@ export class TechnicianWorksService {
         ...(dto.title !== undefined && { title: dto.title.trim() || null }),
         ...(dto.coverUrl !== undefined && { coverUrl: dto.coverUrl || null }),
         ...(dto.images !== undefined && { images: dto.images }),
-        ...(dto.description !== undefined && { description: dto.description || null }),
-        ...(dto.designIdea !== undefined && { designIdea: dto.designIdea || null }),
-        ...(dto.suitableScene !== undefined && { suitableScene: dto.suitableScene || null }),
-        ...(dto.recommendationScore !== undefined && { recommendationScore: dto.recommendationScore }),
+        ...(dto.description !== undefined && {
+          description: dto.description || null,
+        }),
+        ...(dto.designIdea !== undefined && {
+          designIdea: dto.designIdea || null,
+        }),
+        ...(dto.suitableScene !== undefined && {
+          suitableScene: dto.suitableScene || null,
+        }),
+        ...(dto.recommendationScore !== undefined && {
+          recommendationScore: dto.recommendationScore,
+        }),
         ...(dto.tags !== undefined && { tags: dto.tags || null }),
         ...(dto.price !== undefined && { price: dto.price }),
         ...(dto.isVisible !== undefined && { isVisible: dto.isVisible }),
@@ -322,8 +370,10 @@ export class TechnicianWorksService {
       include: { clientAccesses: true },
     });
     if (!existing) throw new NotFoundException('作品不存在');
-    if (!existing.title?.trim()) throw new BadRequestException('请输入作品标题');
-    if (!existing.coverUrl?.trim()) throw new BadRequestException('请上传封面图片');
+    if (!existing.title?.trim())
+      throw new BadRequestException('请输入作品标题');
+    if (!existing.coverUrl?.trim())
+      throw new BadRequestException('请上传封面图片');
     if (
       existing.visibilityScope === 'authorized_clients' &&
       existing.clientAccesses.length === 0
@@ -886,6 +936,48 @@ export class TechnicianWorksService {
     };
   }
 
+  private async resolveWorkPricing(
+    technicianId: number,
+    selectedServiceIds: string[],
+    standardPrice?: number,
+  ) {
+    if (!selectedServiceIds.length) {
+      throw new BadRequestException('请选择至少一项作品基础服务');
+    }
+    if (
+      standardPrice == null ||
+      !Number.isFinite(standardPrice) ||
+      standardPrice <= 0
+    ) {
+      throw new BadRequestException('请填写作品标准报价');
+    }
+    const services = await this.prisma.service.findMany({
+      where: {
+        technicianId,
+        publicId: { in: selectedServiceIds },
+        isBookable: true,
+        archivedAt: null,
+      },
+      select: {
+        id: true,
+        publicId: true,
+        name: true,
+        priceMinFen: true,
+        durationMinutes: true,
+      },
+    });
+    const lines = buildServiceSnapshotLines(
+      services,
+      selectedServiceIds.map((servicePublicId) => ({ servicePublicId })),
+    );
+    const summary = summarizeSnapshotLines(lines);
+    return {
+      lines,
+      ...summary,
+      standardPriceFen: Math.round(standardPrice * 100),
+    };
+  }
+
   private mapWork(
     work: {
       id: number;
@@ -925,6 +1017,10 @@ export class TechnicianWorksService {
       publishedAt?: Date | null;
       clientAccesses?: any[];
       _count?: { shareEvents?: number };
+      serviceSubtotalFen?: number;
+      standardPriceFen?: number | null;
+      totalDurationMinutes?: number;
+      serviceLines?: any[];
     },
     currentTechnicianId?: number,
   ) {
@@ -964,6 +1060,19 @@ export class TechnicianWorksService {
       recommendationScore: work.recommendationScore ?? null,
       tags: this.parseTags(work.tags ?? null),
       price: work.price ?? null,
+      serviceSubtotalFen: work.serviceSubtotalFen ?? 0,
+      standardPriceFen: work.standardPriceFen ?? null,
+      standardPrice:
+        work.standardPriceFen == null ? null : work.standardPriceFen / 100,
+      totalDurationMinutes: work.totalDurationMinutes ?? 0,
+      serviceLines: (work.serviceLines ?? []).map((line) => ({
+        serviceId: line.servicePublicIdSnapshot ?? null,
+        name: line.nameSnapshot,
+        unitPriceFen: line.unitPriceFen,
+        durationMinutes: line.durationMinutes,
+        quantity: line.quantity,
+        subtotalFen: line.subtotalFen,
+      })),
       isVisible: work.isVisible,
       isPinned: work.isPinned ?? false,
       isFeatured: work.isFeatured ?? false,

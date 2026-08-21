@@ -20,8 +20,7 @@
         bindinput="onNicknameInput"
         placeholder="请输入您的昵称"
         placeholder-class="placeholder"
-        focus="{{true}}"
-      />
+        focus="{{true}}" confirm-type="done" />
       <text class="form-hint">美甲师将通过这个称呼来认识您</text>
     </view>
 

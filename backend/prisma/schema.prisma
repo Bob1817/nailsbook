@@ -451,6 +451,12 @@ model Order {
   referralRelationId     Int?
   referrerClientId       Int?
   contentPublicationTask ContentPublicationTask?
+  bookingType            String                  @default("legacy")
+  serviceSubtotalFen     Int                     @default(0)
+  discountAmountFen      Int                     @default(0)
+  finalPriceFen          Int?
+  totalDurationMinutes   Int?
+  serviceLines           OrderServiceLine[]
 
   @@index([technicianId])
   @@index([customerId])
@@ -573,35 +579,35 @@ model AuthVerificationRateLimit {
 }
 
 model WechatPlatformConfig {
-  id                     Int       @id @default(1)
-  loginEnabled           Boolean   @default(false)
-  miniProgramAppId       String?
-  miniProgramSecret      String?
-  loginValidatedAt       DateTime?
-  loginValidationError   String?
-  paymentEnabled         Boolean   @default(false)
-  merchantId             String?
-  merchantSerialNo       String?
-  merchantPrivateKey     String?
-  apiV3Key               String?
-  paymentVerifierMode    String?
-  platformKeyId          String?
-  platformPublicKey      String?
-  boundAppId             String?
-  bindingConfirmed       Boolean   @default(false)
-  paymentNotifyUrl       String?
-  paymentValidatedAt     DateTime?
-  paymentValidationError String?
-  operatorName           String?
-  storeName              String?
-  storeAddress           String?
-  storePhone             String?
-  privacyContact         String?
-  filingNumber           String?
-  launchTechnicianId     Int?
+  id                        Int       @id @default(1)
+  loginEnabled              Boolean   @default(false)
+  miniProgramAppId          String?
+  miniProgramSecret         String?
+  loginValidatedAt          DateTime?
+  loginValidationError      String?
+  paymentEnabled            Boolean   @default(false)
+  merchantId                String?
+  merchantSerialNo          String?
+  merchantPrivateKey        String?
+  apiV3Key                  String?
+  paymentVerifierMode       String?
+  platformKeyId             String?
+  platformPublicKey         String?
+  boundAppId                String?
+  bindingConfirmed          Boolean   @default(false)
+  paymentNotifyUrl          String?
+  paymentValidatedAt        DateTime?
+  paymentValidationError    String?
+  operatorName              String?
+  storeName                 String?
+  storeAddress              String?
+  storePhone                String?
+  privacyContact            String?
+  filingNumber              String?
+  launchTechnicianId        Int?
   bookingReminderTemplateId String?
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @default(now()) @updatedAt
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @default(now()) @updatedAt
 }
 
 model ClientTechBinding {
@@ -705,6 +711,10 @@ model NailWork {
   intentOrders              OrderIntentWork[]
   sourceOrderId             Int?                   @unique
   sourceOrder               Order?                 @relation("WorkSourceOrder", fields: [sourceOrderId], references: [id])
+  serviceSubtotalFen        Int                    @default(0)
+  standardPriceFen          Int?
+  totalDurationMinutes      Int                    @default(0)
+  serviceLines              NailWorkServiceLine[]
 
   @@index([techId])
   @@index([isVisible])
@@ -1389,28 +1399,71 @@ model BrandFaq {
 }
 
 model Service {
-  id                   Int        @id @default(autoincrement())
+  id                   Int                   @id @default(autoincrement())
   publicId             String
   technicianId         Int
   name                 String
   description          String?
   category             String
   durationMinutes      Int?
-  priceType            String     @default("fixed")
+  priceType            String                @default("fixed")
   priceMinFen          Int?
   priceMaxFen          Int?
-  isBookable           Boolean    @default(true)
-  sortOrder            Int        @default(0)
+  isBookable           Boolean               @default(true)
+  sortOrder            Int                   @default(0)
   archivedAt           DateTime?
-  createdAt            DateTime   @default(now())
-  updatedAt            DateTime   @default(now()) @updatedAt
-  technician           Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @default(now()) @updatedAt
+  technician           Technician            @relation(fields: [technicianId], references: [id], onDelete: Cascade)
   orders               Order[]
   works                NailWork[]
-  maintenanceCycleDays Int        @default(21)
+  workServiceLines     NailWorkServiceLine[]
+  orderServiceLines    OrderServiceLine[]
+  maintenanceCycleDays Int                   @default(21)
 
   @@unique([technicianId, publicId])
   @@index([technicianId, archivedAt, isBookable, sortOrder])
+}
+
+model NailWorkServiceLine {
+  id                      Int      @id @default(autoincrement())
+  workId                  Int
+  serviceId               Int?
+  servicePublicIdSnapshot String?
+  nameSnapshot            String
+  unitPriceFen            Int
+  durationMinutes         Int
+  quantity                Int      @default(1)
+  subtotalFen             Int
+  sortOrder               Int      @default(0)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @default(now()) @updatedAt
+  work                    NailWork @relation(fields: [workId], references: [id], onDelete: Cascade)
+  service                 Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  @@index([workId, sortOrder])
+  @@index([serviceId])
+}
+
+model OrderServiceLine {
+  id                      Int      @id @default(autoincrement())
+  orderId                 Int
+  serviceId               Int?
+  servicePublicIdSnapshot String?
+  nameSnapshot            String
+  unitPriceFen            Int
+  durationMinutes         Int
+  quantity                Int      @default(1)
+  subtotalFen             Int
+  source                  String
+  sortOrder               Int      @default(0)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @default(now()) @updatedAt
+  order                   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  service                 Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  @@index([orderId, sortOrder])
+  @@index([serviceId])
 }
 
 model Lead {

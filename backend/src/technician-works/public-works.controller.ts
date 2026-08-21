@@ -68,6 +68,7 @@ export class PublicWorksController {
           select: { id: true, name: true, avatarUrl: true, city: true },
         },
         _count: { select: { likes: true, comments: true } },
+        serviceLines: { orderBy: { sortOrder: 'asc' } },
       },
       orderBy: [
         { isHomepageFeatured: 'desc' },
@@ -125,6 +126,7 @@ export class PublicWorksController {
             city: true,
           },
         },
+        serviceLines: { orderBy: { sortOrder: 'asc' } },
       },
       orderBy: { createdAt: 'desc' },
       take: 20,
@@ -258,6 +260,7 @@ export class PublicWorksController {
             invitationCode: true,
           },
         },
+        serviceLines: { orderBy: { sortOrder: 'asc' } },
       },
     });
 
@@ -318,6 +321,17 @@ export class PublicWorksController {
         : [],
       coverUrl: toAbsoluteUrl(work.coverUrl) ?? imageUrls[0] ?? null,
       imageUrls,
+      serviceSubtotalFen: work.serviceSubtotalFen,
+      standardPriceFen: work.standardPriceFen,
+      totalDurationMinutes: work.totalDurationMinutes,
+      serviceLines: work.serviceLines.map((line) => ({
+        serviceId: line.servicePublicIdSnapshot,
+        name: line.nameSnapshot,
+        unitPriceFen: line.unitPriceFen,
+        durationMinutes: line.durationMinutes,
+        quantity: line.quantity,
+        subtotalFen: line.subtotalFen,
+      })),
       likeCount: work.likes?.length ?? 0,
       commentCount: work.comments?.length ?? 0,
       technician: {

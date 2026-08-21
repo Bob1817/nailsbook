@@ -67,6 +67,7 @@ Page({
     showWorkSelector: false,
     techWorks: [],
     selectedWorkIds: [],
+    sourceWork: null,
     // Calendar
     calendarYear: 0,
     calendarMonth: 0,
@@ -218,7 +219,11 @@ Page({
         techId: techId,
         customTitle: w.title || '同款美甲',
         customDesc: w.description || '',
-        customImages: images
+        customImages: images,
+        serviceLines: w.serviceLines || [],
+        serviceSubtotalFen: Number(w.serviceSubtotalFen || 0),
+        standardPriceFen: w.standardPriceFen,
+        totalDurationMinutes: Number(w.totalDurationMinutes || 0)
       };
       if (techId) self._presetTechId = techId;
       // 美甲师已加载则立即应用，否则等 loadTechnicians 完成后应用
@@ -237,10 +242,14 @@ Page({
       this.selectTechById(pf.techId);
     }
     this.setData({
-      isCustomService: true,
+      isCustomService: false,
       customTitle: pf.customTitle,
       customDesc: pf.customDesc,
-      customImages: pf.customImages
+      customImages: pf.customImages,
+      sourceWork: pf,
+      selectedServiceTotal: Number(pf.standardPriceFen || 0) / 100,
+      selectedServiceDuration: pf.totalDurationMinutes,
+      selectedServiceCount: (pf.serviceLines || []).length
     });
     this.sourceWorkId = pf.sourceWorkId;
     this._pendingWorkPrefill = null;
@@ -341,6 +350,7 @@ Page({
   // ── 自定义 / 标准服务切换 ──────────────
 
   switchContentMode: function (e) {
+    if (this.sourceWorkId) return;
     var mode = e.currentTarget.dataset.mode;
     if (mode === 'standard') this.sourceWorkId = null;
     this.setData({
@@ -625,8 +635,8 @@ Page({
     if (!d.serviceDate) { wx.showToast({ title: '请选择日期', icon: 'none' }); return; }
     if (!d.startTime) { wx.showToast({ title: '请选择时间', icon: 'none' }); return; }
     if (d.serviceType === '到店美甲' && !d.selectedShopName) { wx.showToast({ title: '请选择门店', icon: 'none' }); return; }
-    if (d.isCustomService && !d.customTitle.trim()) { wx.showToast({ title: '请输入服务名称', icon: 'none' }); return; }
-    if (!d.isCustomService && d.selectedServiceIds.length === 0) { wx.showToast({ title: '请选择服务内容', icon: 'none' }); return; }
+    if (!this.sourceWorkId && d.isCustomService && !d.customTitle.trim()) { wx.showToast({ title: '请输入服务名称', icon: 'none' }); return; }
+    if (!this.sourceWorkId && !d.isCustomService && d.selectedServiceIds.length === 0) { wx.showToast({ title: '请选择服务内容', icon: 'none' }); return; }
 
     this.saveDraft();
     this.setData({ showApplicationReview: true, bookingRulesAgreed: false });
@@ -669,7 +679,9 @@ Page({
       var shop = d.shopAddresses.find(function (s) { return s.name === d.selectedShopName; });
       if (shop) payload.shopAddress = shop;
     }
-    if (d.isCustomService) {
+    if (self.sourceWorkId) {
+      // 作品预约的服务与价格均由后端按作品快照生成。
+    } else if (d.isCustomService) {
       payload.customTitle = d.customTitle.trim();
       if (d.customDesc.trim()) payload.customDescription = d.customDesc.trim();
       if (d.customImages.length > 0) payload.customImages = d.customImages;

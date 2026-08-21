@@ -66,8 +66,9 @@ export function assertWithinServiceSchedule(
   if (bookingStart == null || workingStart == null || workingEnd == null || workingEnd <= workingStart) {
     throw new BadRequestException('美甲师工作时间配置异常，请联系美甲师');
   }
-  const bookingEnd = bookingStart + Math.max(1, durationMinutes);
-  if (bookingStart < workingStart || bookingEnd > workingEnd) {
-    throw new BadRequestException('预约服务时段不在美甲师工作时间内');
+  // 可预约时间只约束服务开始时刻。服务持续时间用于完整区间占位和冲突校验，
+  // 允许一次连续服务跨过休息时间或工作时段结束点。
+  if (bookingStart < workingStart || bookingStart >= workingEnd) {
+    throw new BadRequestException('预约开始时间不在美甲师工作时间内');
   }
 }

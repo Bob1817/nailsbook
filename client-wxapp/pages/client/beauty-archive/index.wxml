@@ -66,7 +66,7 @@
     <view class="note-sheet" catchtap="noop">
       <text class="note-sheet-title">编辑美甲记录</text>
       <text class="note-field-label">我的备注</text>
-      <textarea class="note-textarea" value="{{noteDraft}}" maxlength="300" auto-height="{{false}}" adjust-position placeholder="例如：这次裸粉色很显白，下次想把长度稍微缩短" bindinput="onNoteInput"/>
+      <textarea class="note-textarea" value="{{noteDraft}}" maxlength="300" auto-height="{{false}}" adjust-position placeholder="例如：这次裸粉色很显白，下次想把长度稍微缩短" bindinput="onNoteInput" confirm-type="done" />
       <text class="note-counter">{{noteDraft.length}} / 300</text>
       <view class="note-actions">
         <button class="note-button note-cancel" disabled="{{savingNote}}" bindtap="closeNoteEditor">取消</button>

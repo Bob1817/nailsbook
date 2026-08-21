@@ -11,7 +11,6 @@ import { CreateClientOrderDto } from './dto/create-client-order.dto';
 import { UpdateClientOrderDto } from './dto/update-client-order.dto';
 import { CreateOrderFromDesignDto } from './dto/create-order-from-design.dto';
 import { Prisma } from '@prisma/client';
-import { buildDefaultServiceItems } from '../common/default-service-items';
 import { ServiceReviewDto } from './dto/service-review.dto';
 import { BookingMutexService } from './booking-mutex.service';
 import { ReferralQualificationService } from '../referrals/referral-qualification.service';
@@ -22,11 +21,16 @@ import { parseBusinessDateTime } from './business-time';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { revenueSnapshot } from './order-accounting';
 import { throwIfBookingSlotConflict } from './booking-conflict';
+import { buildDefaultServiceItems } from '../common/default-service-items';
 import {
   assertLaunchShopService,
   isLaunchTechnician,
   isMiniProgramLaunchMode,
 } from '../common/miniprogram-launch-mode';
+import {
+  buildServiceSnapshotLines,
+  summarizeSnapshotLines,
+} from './booking-pricing';
 
 import * as crypto from 'crypto';
 
@@ -130,29 +134,39 @@ export class ClientOrdersService {
       );
     }
 
-    if (dto.sourceWorkId) {
-      const sourceWork = await this.prisma.nailWork.findFirst({
-        where: {
-          id: dto.sourceWorkId,
-          techId: dto.techId,
-          isVisible: true,
-          OR: [
-            { visibilityScope: 'public' },
-            {
-              clientAccesses: {
-                some: { clientUserId, canView: true },
+    const sourceWork = dto.sourceWorkId
+      ? await this.prisma.nailWork.findFirst({
+          where: {
+            id: dto.sourceWorkId,
+            techId: dto.techId,
+            isVisible: true,
+            archivedAt: null,
+            OR: [
+              { visibilityScope: 'public' },
+              {
+                clientAccesses: {
+                  some: { clientUserId, canView: true },
+                },
               },
-            },
-          ],
-        },
-        select: { id: true },
-      });
+            ],
+          },
+          include: { serviceLines: { orderBy: { sortOrder: 'asc' } } },
+        })
+      : null;
+    if (dto.sourceWorkId) {
       if (!sourceWork) {
         throw new NotFoundException('来源作品不存在或查看授权已失效');
+      }
+      if (
+        !sourceWork.standardPriceFen ||
+        sourceWork.serviceLines.length === 0
+      ) {
+        throw new BadRequestException('该作品尚未配置标准服务与报价');
       }
     }
 
     const isCustom =
+      !sourceWork &&
       (!dto.selectedServiceIds || dto.selectedServiceIds.length === 0) &&
       (dto.customTitle ||
         dto.customDescription ||
@@ -161,24 +175,81 @@ export class ClientOrdersService {
     // chatMode: booking initiated from chat; service details agreed verbally, no content required
     if (
       !dto.chatMode &&
+      !sourceWork &&
       !isCustom &&
       (!dto.selectedServiceIds || dto.selectedServiceIds.length === 0)
     ) {
       throw new BadRequestException('请选择至少一项服务内容或填写自定义需求');
     }
 
-    const selectedServices =
-      isCustom || dto.chatMode
-        ? { names: [], totalPrice: 0, totalDurationMinutes: 120 }
-        : this.resolveSelectedServices(
-            binding.technician.serviceItems,
-            dto.selectedServiceIds,
-          );
+    const bookingType = sourceWork
+      ? 'work'
+      : isCustom || dto.chatMode
+        ? 'custom'
+        : 'standard';
+    let serviceLines: Array<{
+      serviceId: number | null;
+      servicePublicIdSnapshot: string | null;
+      nameSnapshot: string;
+      unitPriceFen: number;
+      durationMinutes: number;
+      quantity: number;
+      subtotalFen: number;
+      sortOrder: number;
+    }> = [];
+    if (sourceWork) {
+      serviceLines = sourceWork.serviceLines.map((line) => ({
+        serviceId: line.serviceId,
+        servicePublicIdSnapshot: line.servicePublicIdSnapshot,
+        nameSnapshot: line.nameSnapshot,
+        unitPriceFen: line.unitPriceFen,
+        durationMinutes: line.durationMinutes,
+        quantity: line.quantity,
+        subtotalFen: line.subtotalFen,
+        sortOrder: line.sortOrder,
+      }));
+    } else if (bookingType === 'standard') {
+      await this.ensureStructuredServices(
+        dto.techId,
+        binding.technician.serviceItems,
+      );
+      const requested = (dto.selectedServiceIds ?? []).map(
+        (servicePublicId) => ({
+          servicePublicId,
+        }),
+      );
+      const services = await this.prisma.service.findMany({
+        where: {
+          technicianId: dto.techId,
+          publicId: { in: dto.selectedServiceIds ?? [] },
+          isBookable: true,
+          archivedAt: null,
+        },
+        select: {
+          id: true,
+          publicId: true,
+          name: true,
+          priceMinFen: true,
+          durationMinutes: true,
+        },
+      });
+      serviceLines = buildServiceSnapshotLines(services, requested);
+    }
+    const summary = summarizeSnapshotLines(serviceLines);
+    const totalDurationMinutes =
+      bookingType === 'custom' ? 120 : summary.totalDurationMinutes;
+    const serviceSubtotalFen = summary.serviceSubtotalFen;
+    const finalPriceFen =
+      bookingType === 'work'
+        ? sourceWork!.standardPriceFen
+        : bookingType === 'standard'
+          ? serviceSubtotalFen
+          : null;
     assertWithinServiceSchedule(
       binding.technician.serviceSchedule,
       dto.serviceDate,
       dto.startTime,
-      selectedServices.totalDurationMinutes,
+      totalDurationMinutes,
     );
 
     const client = await this.prisma.clientUser.findUnique({
@@ -198,7 +269,7 @@ export class ClientOrdersService {
       );
     const startTime = this.buildStartTime(dto.serviceDate, dto.startTime);
     const endTime = new Date(
-      startTime.getTime() + selectedServices.totalDurationMinutes * 60 * 1000,
+      startTime.getTime() + totalDurationMinutes * 60 * 1000,
     );
 
     const createOrder = () =>
@@ -238,21 +309,39 @@ export class ClientOrdersService {
             remark: dto.remark ?? null,
             customTitle: isCustom
               ? (dto.customTitle ?? null)
-              : selectedServices.names.join('、'),
+              : serviceLines.map((line) => line.nameSnapshot).join('、'),
             customDescription: dto.customDescription ?? null,
             customImages:
               dto.customImages && dto.customImages.length > 0
                 ? JSON.stringify(dto.customImages)
                 : null,
             sourceWorkId: dto.sourceWorkId ?? null,
+            bookingType,
+            serviceSubtotalFen,
+            discountAmountFen: Math.max(
+              0,
+              serviceSubtotalFen - (finalPriceFen ?? serviceSubtotalFen),
+            ),
+            finalPriceFen,
+            totalDurationMinutes,
+            serviceLines:
+              serviceLines.length > 0
+                ? {
+                    create: serviceLines.map((line) => ({
+                      ...line,
+                      source: bookingType,
+                    })),
+                  }
+                : undefined,
             applicationKey: dto.applicationKey ?? null,
             bookingPhase: 'application',
             expectedDate: startTime,
             expectedTimeSlot: dto.startTime,
             confirmedStartTime: null,
             confirmedEndTime: null,
-            quotePrice: selectedServices.totalPrice,
-            status: 'pending_quote',
+            quotePrice: finalPriceFen == null ? null : finalPriceFen / 100,
+            status:
+              bookingType === 'custom' ? 'pending_quote' : 'pending_confirm',
             source: 'client_webapp',
           },
           include: this.orderInclude(),
@@ -273,8 +362,8 @@ export class ClientOrdersService {
 
         const previewContent = isCustom
           ? dto.customTitle || '自定义美甲需求'
-          : selectedServices.names.length > 0
-            ? selectedServices.names.join('、')
+          : serviceLines.length > 0
+            ? serviceLines.map((line) => line.nameSnapshot).join('、')
             : '到店/上门预约';
         const preview = `新的预约申请：${previewContent} · ${dto.serviceType}`;
         const conversation = await tx.conversation.upsert({
@@ -346,6 +435,48 @@ export class ClientOrdersService {
       .trim()
       .toLowerCase();
     return /^[a-z0-9_-]{1,32}$/.test(normalized) ? normalized : 'direct';
+  }
+
+  private async ensureStructuredServices(
+    technicianId: number,
+    legacyRaw: string | null,
+  ) {
+    if (
+      await this.prisma.service.count({
+        where: { technicianId, archivedAt: null },
+      })
+    ) {
+      return;
+    }
+    const legacy = legacyRaw
+      ? JSON.parse(legacyRaw)
+      : buildDefaultServiceItems();
+    for (const [index, item] of legacy.entries()) {
+      if (
+        !item?.id ||
+        !item?.name ||
+        item.isActive === false ||
+        !Number.isFinite(Number(item.price)) ||
+        !Number.isFinite(Number(item.durationMinutes)) ||
+        Number(item.durationMinutes) < 1
+      )
+        continue;
+      await this.prisma.service.create({
+        data: {
+          technicianId,
+          publicId: String(item.id),
+          name: String(item.name).trim(),
+          description: item.description?.trim() || null,
+          category: item.category || 'other',
+          durationMinutes: Number(item.durationMinutes),
+          priceType: 'fixed',
+          priceMinFen: Math.round(Number(item.price) * 100),
+          priceMaxFen: Math.round(Number(item.price) * 100),
+          isBookable: true,
+          sortOrder: Number(item.sortOrder) || index + 1,
+        },
+      });
+    }
   }
 
   async createFromDesign(clientUserId: number, dto: CreateOrderFromDesignDto) {
@@ -832,6 +963,8 @@ export class ClientOrdersService {
 
     let systemMessage: any = null;
     let conversationId: number | null = null;
+    const isCustomQuote = order.bookingType === 'custom';
+    const nextStatus = isCustomQuote ? 'pending_shop' : 'pending_confirm';
 
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
       if (this.rewardFunds && !isMiniProgramLaunchMode()) {
@@ -848,14 +981,19 @@ export class ClientOrdersService {
       const updated = await tx.order.update({
         where: { id },
         data: {
-          status: 'pending_confirm',
+          status: nextStatus,
+          bookingPhase: isCustomQuote ? 'booking' : order.bookingPhase,
           confirmedAt: new Date(),
+          confirmedStartTime: isCustomQuote ? order.startTime : undefined,
+          confirmedEndTime: isCustomQuote ? order.endTime : undefined,
           fundDiscountAmount: fundAmount,
         },
         include: this.orderInclude(),
       });
 
-      const preview = '客户已同意报价，请确认接单～';
+      const preview = isCustomQuote
+        ? '客户已同意服务组合与报价，预约已确认～'
+        : '客户已同意报价，请确认接单～';
       const conversation = await tx.conversation.upsert({
         where: {
           clientId_techId: {
@@ -1309,8 +1447,16 @@ export class ClientOrdersService {
       review: true,
       tradeOrder: true,
       sourceWork: {
-        select: { id: true, title: true, coverUrl: true },
+        select: {
+          id: true,
+          title: true,
+          coverUrl: true,
+          serviceSubtotalFen: true,
+          standardPriceFen: true,
+          totalDurationMinutes: true,
+        },
       },
+      serviceLines: { orderBy: { sortOrder: 'asc' as const } },
     };
   }
 
@@ -1349,6 +1495,22 @@ export class ClientOrdersService {
       remark: order.remark ?? null,
       address: order.address ?? null,
       quotePrice: order.quotePrice ?? null,
+      bookingType: order.bookingType ?? 'legacy',
+      serviceSubtotalFen: order.serviceSubtotalFen ?? 0,
+      discountAmountFen: order.discountAmountFen ?? 0,
+      finalPriceFen: order.finalPriceFen ?? null,
+      totalDurationMinutes: order.totalDurationMinutes ?? null,
+      serviceLines: (order.serviceLines ?? []).map((line: any) => ({
+        id: line.id,
+        serviceId: line.serviceId ?? null,
+        servicePublicId: line.servicePublicIdSnapshot ?? null,
+        name: line.nameSnapshot,
+        unitPriceFen: line.unitPriceFen,
+        durationMinutes: line.durationMinutes,
+        quantity: line.quantity,
+        subtotalFen: line.subtotalFen,
+        source: line.source,
+      })),
       fundDiscountAmount: order.fundDiscountAmount ?? 0,
       paymentStatus: order.paymentStatus ?? 'unpaid',
       tradeStatus: order.tradeStatus ?? null,
@@ -1550,59 +1712,6 @@ export class ClientOrdersService {
     if (bookingMinutes < startMinutes || bookingMinutes >= endMinutes) {
       throw new BadRequestException('预约时间不在店铺营业时间内');
     }
-  }
-
-  private resolveSelectedServices(
-    serviceItemsRaw: string | null,
-    selectedServiceIds?: string[],
-  ) {
-    const serviceItems = serviceItemsRaw
-      ? JSON.parse(serviceItemsRaw)
-      : buildDefaultServiceItems();
-
-    if (!selectedServiceIds || selectedServiceIds.length === 0) {
-      throw new BadRequestException('请选择至少一项服务内容');
-    }
-
-    const selectedServices = serviceItems.filter(
-      (item: any) => selectedServiceIds.includes(item.id) && item.isActive,
-    );
-
-    if (selectedServices.length !== selectedServiceIds.length) {
-      throw new BadRequestException('所选服务内容已失效，请重新选择');
-    }
-
-    const normalized = selectedServices
-      .sort((left: any, right: any) => left.sortOrder - right.sortOrder)
-      .map((item: any) => ({
-        name: String(item.name).trim(),
-        price: Number(item.price),
-        durationMinutes: Number(item.durationMinutes),
-      }));
-    if (
-      normalized.some(
-        (item) =>
-          !item.name ||
-          !Number.isFinite(item.price) ||
-          item.price < 0 ||
-          !Number.isFinite(item.durationMinutes) ||
-          item.durationMinutes <= 0,
-      )
-    ) {
-      throw new BadRequestException('所选服务价格或时长配置异常，请重新选择');
-    }
-    return {
-      names: normalized.map((item) => item.name),
-      totalPrice:
-        normalized.reduce(
-          (sum, item) => sum + Math.round(item.price * 100),
-          0,
-        ) / 100,
-      totalDurationMinutes: normalized.reduce(
-        (sum, item) => sum + item.durationMinutes,
-        0,
-      ),
-    };
   }
 
   private async assertOrderConflict(

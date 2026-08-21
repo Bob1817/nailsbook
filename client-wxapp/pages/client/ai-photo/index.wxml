@@ -98,9 +98,9 @@
 
   <view class="section compact">
     <view class="section-head"><view><text class="step">05</text><text class="section-title">分享标题</text></view></view>
-    <input class="poster-title-input" value="{{posterTitle}}" maxlength="16" placeholder="输入成片标题" bindinput="changePosterTitle"/>
+    <input class="poster-title-input" value="{{posterTitle}}" maxlength="16" placeholder="输入成片标题" bindinput="changePosterTitle" confirm-type="done" />
     <picker mode="date" value="{{posterDate}}" bindchange="changePosterDate"><view class="poster-date-picker"><text>记录日期</text><text>{{posterDate}} ›</text></view></picker>
-    <textarea class="share-copy-input" value="{{customShareCopy}}" maxlength="120" auto-height placeholder="可选：输入自己的朋友圈文案" bindinput="changeShareCopy"/>
+    <textarea class="share-copy-input" value="{{customShareCopy}}" maxlength="120" auto-height placeholder="可选：输入自己的朋友圈文案" bindinput="changeShareCopy" confirm-type="done" />
     <text class="section-help">标题会显示在生成的分享美照中</text>
   </view>
 

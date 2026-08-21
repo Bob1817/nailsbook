@@ -79,8 +79,7 @@
         bindinput="onPhoneInput"
         placeholder="请输入手机号码"
         placeholder-class="input-placeholder"
-        focus="{{step === 'phone'}}"
-      />
+        focus="{{step === 'phone'}}" confirm-type="done" />
     </view>
 
     <!-- 密码输入 -->
@@ -93,8 +92,7 @@
         value="{{password}}"
         bindinput="onPasswordInput"
         placeholder="请输入密码"
-        placeholder-class="input-placeholder"
-      />
+        placeholder-class="input-placeholder" confirm-type="done" />
       <view class="pwd-toggle" bindtap="togglePassword">
         <image
           class="pwd-toggle-icon"
@@ -110,6 +108,13 @@
       <text class="forgot-link" bindtap="goRegister">注册账号</text>
     </view>
 
+    <!-- 协议同意应先于登录操作 -->
+    <checkbox-group class="privacy-consent phone-privacy-consent" bindchange="onPrivacyAgreementChange">
+      <label><checkbox value="agree" checked="{{privacyAgreed}}"/><text>我已阅读并同意</text></label>
+      <text class="privacy-link" catchtap="openUserAgreement">《用户协议》</text>
+      <text>和</text><text class="privacy-link" catchtap="openPrivacyPolicy">《隐私政策》</text>
+    </checkbox-group>
+
     <!-- 登录按钮 -->
     <button
       class="submit-btn {{canLogin ? 'submit-btn-active' : ''}}"
@@ -121,10 +126,4 @@
     </button>
     </view>
   </view>
-
-  <checkbox-group class="privacy-consent" bindchange="onPrivacyAgreementChange">
-    <label><checkbox value="agree" checked="{{privacyAgreed}}"/><text>我已阅读并同意</text></label>
-    <text class="privacy-link" catchtap="openUserAgreement">《用户协议》</text>
-    <text>和</text><text class="privacy-link" catchtap="openPrivacyPolicy">《隐私政策》</text>
-  </checkbox-group>
 </view>

@@ -81,7 +81,7 @@
     </view>
 
     <!-- 切换：选服务项目 / 自定义需求 -->
-    <view class="segment-wrap content-segment">
+    <view wx:if="{{!sourceWork}}" class="segment-wrap content-segment">
       <view class="segment-item {{!isCustomService ? 'segment-active' : ''}}" bindtap="switchContentMode" data-mode="standard">
         <text class="segment-text">选服务项目</text>
       </view>
@@ -90,15 +90,25 @@
       </view>
     </view>
 
+    <view wx:if="{{sourceWork}}" class="work-booking-card">
+      <image class="work-booking-cover" src="{{sourceWork.customImages[0]}}" mode="aspectFill" aria-label="{{sourceWork.customTitle}}"/>
+      <view class="work-booking-main">
+        <text class="work-booking-title">{{sourceWork.customTitle}}</text>
+        <text class="work-booking-meta">{{sourceWork.serviceLines.length}} 项服务 · 约 {{sourceWork.totalDurationMinutes}} 分钟</text>
+        <view class="work-service-lines"><text wx:for="{{sourceWork.serviceLines}}" wx:key="name" class="work-service-line">{{item.name}} ¥{{item.subtotalFen / 100}}</text></view>
+        <view class="work-price-row"><text>服务合计 ¥{{sourceWork.serviceSubtotalFen / 100}}</text><text class="work-final-price">标准报价 ¥{{sourceWork.standardPriceFen / 100}}</text></view>
+      </view>
+    </view>
+
     <!-- 自定义需求表单 -->
-    <view wx:if="{{isCustomService}}" class="custom-form">
+    <view wx:if="{{isCustomService && !sourceWork}}" class="custom-form">
       <view class="form-field">
         <text class="form-label">服务名称</text>
-        <input class="form-input" value="{{customTitle}}" bindinput="onCustomTitleInput" placeholder="例如：法式渐变美甲" />
+        <input class="form-input" value="{{customTitle}}" bindinput="onCustomTitleInput" placeholder="例如：法式渐变美甲" confirm-type="done" />
       </view>
       <view class="form-field">
         <text class="form-label">详细描述</text>
-        <textarea class="form-textarea" value="{{customDesc}}" bindinput="onCustomDescInput" placeholder="描述你的具体需求..." adjust-position cursor-spacing="120" />
+        <textarea class="form-textarea" value="{{customDesc}}" bindinput="onCustomDescInput" placeholder="描述你的具体需求..." adjust-position cursor-spacing="120" confirm-type="done" />
       </view>
       <view class="form-field">
         <text class="form-label">参考图片（可选，最多3张）</text>
@@ -138,7 +148,7 @@
     </view>
 
     <!-- 标准服务列表 -->
-    <view wx:if="{{!isCustomService && activeServiceItems.length > 0}}" class="service-list">
+    <view wx:if="{{!sourceWork && !isCustomService && activeServiceItems.length > 0}}" class="service-list">
       <view wx:for="{{activeServiceItems}}" wx:key="id"
         class="service-card {{selectedServiceIds.indexOf(item.id) >= 0 ? 'service-card-active' : ''}}"
         bindtap="toggleService" data-id="{{item.id}}">
@@ -153,7 +163,7 @@
         <text class="service-price">¥{{item.price}}</text>
       </view>
     </view>
-    <view wx:if="{{!isCustomService && activeServiceItems.length === 0}}" class="empty-hint">
+    <view wx:if="{{!sourceWork && !isCustomService && activeServiceItems.length === 0}}" class="empty-hint">
       <text>该美甲师暂未配置服务项目，请切换至「自定义需求」描述你的需求</text>
     </view>
   </view>
@@ -217,12 +227,12 @@
     <view class="section-head">
       <text class="section-title">补充说明</text>
     </view>
-    <textarea class="remark-input" value="{{remark}}" bindinput="onRemarkInput" placeholder="请输入特殊需求..." adjust-position cursor-spacing="120" />
+    <textarea class="remark-input" value="{{remark}}" bindinput="onRemarkInput" placeholder="请输入特殊需求..." adjust-position cursor-spacing="120" confirm-type="done" />
   </view>
 
   <!-- 提交按钮 -->
   <view class="submit-bar">
-    <view wx:if="{{!isCustomService && selectedServiceCount > 0}}" class="booking-price-summary">
+    <view wx:if="{{(!isCustomService || sourceWork) && selectedServiceCount > 0}}" class="booking-price-summary">
       <view class="booking-price-copy">
         <text class="booking-price-label">已选 {{selectedServiceCount}} 项 · 约 {{selectedServiceDuration}} 分钟</text>
         <text class="booking-price-hint">预约服务价格</text>
@@ -230,7 +240,7 @@
       <text class="booking-price-total">¥{{selectedServiceTotal}}</text>
     </view>
     <view class="submit-btn {{submitting ? 'btn-disabled' : ''}}" bindtap="handleSubmit">
-      <text>{{submitting ? '提交中...' : isCustomService ? '提交需求等待报价' : '提交预约申请'}}</text>
+      <text>{{submitting ? '提交中...' : isCustomService ? '提交需求等待报价' : '确认预约'}}</text>
     </view>
   </view>
 </view>
@@ -245,7 +255,12 @@
       <view class="review-row"><text>美甲师</text><text>{{selectedTech.name}}</text></view>
       <view class="review-row"><text>期望时间</text><text>{{serviceDate}} {{startTime}}</text></view>
       <view class="review-row"><text>服务方式</text><text>{{serviceType}}</text></view>
-      <view wx:if="{{!isCustomService}}" class="review-row"><text>服务价格</text><text class="review-price">¥{{selectedServiceTotal}}</text></view>
+      <view wx:if="{{sourceWork}}" class="review-price-breakdown">
+        <view wx:for="{{sourceWork.serviceLines}}" wx:key="name" class="review-row"><text>{{item.name}}</text><text>¥{{item.subtotalFen / 100}}</text></view>
+        <view class="review-row"><text>服务合计</text><text>¥{{sourceWork.serviceSubtotalFen / 100}}</text></view>
+        <view class="review-row"><text>作品标准报价</text><text class="review-price">¥{{sourceWork.standardPriceFen / 100}}</text></view>
+      </view>
+      <view wx:elif="{{!isCustomService}}" class="review-row"><text>服务价格</text><text class="review-price">¥{{selectedServiceTotal}}</text></view>
     </view>
     <view class="rules-check" bindtap="toggleBookingRules">
       <view class="rules-box {{bookingRulesAgreed ? 'rules-box-active' : ''}}">{{bookingRulesAgreed ? '✓' : ''}}</view>
@@ -270,8 +285,7 @@
         placeholder="输入邀请码或邀请链接"
         value="{{bindInviteCode}}"
         bindinput="onBindInviteInput"
-        disabled="{{bindChecking}}"
-      />
+        disabled="{{bindChecking}}" confirm-type="done" />
     </view>
     <!-- 验证状态 -->
     <view wx:if="{{bindChecking}}" class="bind-status checking">

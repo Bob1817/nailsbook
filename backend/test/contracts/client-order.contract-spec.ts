@@ -155,7 +155,7 @@ describe('Client booking and design HTTP contract', () => {
       expect(createRes.body).toMatchObject({
         id: expect.any(Number),
         orderNo: expect.any(String),
-        status: 'pending_quote',
+        status: 'pending_confirm',
         serviceType: '到店美甲',
         remark: 'Contract test order',
         quotePrice: 128,
@@ -180,7 +180,7 @@ describe('Client booking and design HTTP contract', () => {
       expect(detailRes.body.id).toBe(createRes.body.id);
       expect(detailRes.body).toMatchObject({
         orderNo: createRes.body.orderNo,
-        status: 'pending_quote',
+        status: 'pending_confirm',
         serviceType: '到店美甲',
       });
     });

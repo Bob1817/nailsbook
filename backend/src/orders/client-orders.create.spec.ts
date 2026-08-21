@@ -120,6 +120,7 @@ describe('ClientOrdersService.create 下单校验', () => {
         id: 88,
         techId: 7,
         isVisible: true,
+        archivedAt: null,
         OR: [
           { visibilityScope: 'public' },
           {
@@ -129,38 +130,8 @@ describe('ClientOrdersService.create 下单校验', () => {
           },
         ],
       },
-      select: { id: true },
+      include: { serviceLines: { orderBy: { sortOrder: 'asc' } } },
     });
     expect(prisma.clientUser.findUnique).not.toHaveBeenCalled();
-  });
-
-  it('按所选有效服务计算合计价格与时长', () => {
-    const result = service.resolveSelectedServices(
-      JSON.stringify([
-        {
-          id: 'a',
-          name: '基础护理',
-          price: 88,
-          durationMinutes: 45,
-          isActive: true,
-          sortOrder: 1,
-        },
-        {
-          id: 'b',
-          name: '法式款式',
-          price: 168,
-          durationMinutes: 75,
-          isActive: true,
-          sortOrder: 2,
-        },
-      ]),
-      ['a', 'b'],
-    );
-
-    expect(result).toEqual({
-      names: ['基础护理', '法式款式'],
-      totalPrice: 256,
-      totalDurationMinutes: 120,
-    });
   });
 });

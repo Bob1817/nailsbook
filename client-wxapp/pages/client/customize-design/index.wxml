@@ -164,8 +164,7 @@
               value="{{title}}"
               bindinput="onTitleInput"
               placeholder="{{defaultTitle}}"
-              placeholder-class="placeholder"
-            />
+              placeholder-class="placeholder" confirm-type="done" />
           </view>
 
           <view class="preview-tags">
@@ -196,8 +195,7 @@
               bindinput="onDescInput"
               placeholder="添加设计描述或特殊要求..."
               placeholder-class="placeholder"
-              maxlength="500"
-            />
+              maxlength="500" confirm-type="done" />
           </view>
         </view>
       </view>

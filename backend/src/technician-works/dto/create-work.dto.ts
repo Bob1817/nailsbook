@@ -1,5 +1,14 @@
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateWorkDto {
@@ -65,6 +74,18 @@ export class CreateWorkDto {
   @Transform(({ value, obj }) => value ?? obj.price)
   @IsOptional()
   price?: number;
+
+  @ApiProperty({ description: '作品所需的基础服务 ID 列表' })
+  @Transform(({ value }) => parseStringArray(value))
+  @IsArray()
+  @IsString({ each: true })
+  selectedServiceIds: string[];
+
+  @ApiProperty({ description: '作品标准报价（元）' })
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  @Min(0.01)
+  standardPrice: number;
 
   @ApiPropertyOptional({ description: '是否可见', example: true })
   @Transform(({ value }) => value === 'true' || value === true)
@@ -144,6 +165,20 @@ export class UpdateWorkDto {
   @IsOptional()
   price?: number;
 
+  @ApiPropertyOptional({ description: '作品所需的基础服务 ID 列表' })
+  @Transform(({ value }) => parseStringArray(value))
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  selectedServiceIds?: string[];
+
+  @ApiPropertyOptional({ description: '作品标准报价（元）' })
+  @Transform(({ value }) => Number(value))
+  @IsOptional()
+  @IsNumber()
+  @Min(0.01)
+  standardPrice?: number;
+
   @ApiPropertyOptional({ description: '是否可见', example: true })
   @Transform(({ value }) => value === 'true' || value === true)
   @IsOptional()
@@ -155,4 +190,18 @@ export class UpdateWorkDto {
   @IsOptional()
   @IsInt()
   sortOrder?: number;
+}
+
+function parseStringArray(value: unknown): unknown {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== 'string') return value;
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : value.split(',').filter(Boolean);
+  } catch {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
 }

@@ -81,8 +81,13 @@
   <view wx:if="{{order._showPriceCard}}" class="card">
     <text class="card-title">{{order.status === 'pending_agree' ? '美甲师报价' : '费用信息'}}</text>
 
+    <view wx:if="{{order.serviceLines.length}}" class="price-lines">
+      <view wx:for="{{order.serviceLines}}" wx:key="id" class="price-line"><text>{{item.name}}{{item.quantity > 1 ? ' × ' + item.quantity : ''}}</text><text>¥{{item.subtotalFen / 100}}</text></view>
+      <view class="price-line price-subtotal"><text>服务合计</text><text>¥{{order.serviceSubtotalFen / 100}}</text></view>
+      <view wx:if="{{order.discountAmountFen > 0}}" class="price-line price-discount"><text>优惠</text><text>-¥{{order.discountAmountFen / 100}}</text></view>
+    </view>
     <view class="price-row">
-      <text class="price-label">报价金额</text>
+      <text class="price-label">{{order.bookingType === 'work' ? '作品标准报价' : '最终价格'}}</text>
       <text class="price-main">{{order._priceText}}</text>
     </view>
 
@@ -111,7 +116,7 @@
       <view wx:for="{{[1,2,3,4,5]}}" wx:key="*this" class="rating-btn {{reviewRating === item ? 'rating-active' : ''}}" bindtap="selectReviewRating" data-rating="{{item}}">{{item}}</view>
     </view>
     <text class="rating-caption">{{reviewRating === 5 ? '非常满意' : (reviewRating === 4 ? '满意' : (reviewRating === 3 ? '一般' : (reviewRating === 2 ? '有待改善' : '不满意')))}}</text>
-    <textarea class="review-input" value="{{reviewContent}}" bindinput="onReviewInput" maxlength="500" placeholder="写下你对设计、服务或体验的感受（选填）"/>
+    <textarea class="review-input" value="{{reviewContent}}" bindinput="onReviewInput" maxlength="500" placeholder="写下你对设计、服务或体验的感受（选填）" confirm-type="done" />
     <view class="review-photos">
       <view wx:for="{{reviewPhotos}}" wx:key="*this" class="review-photo-wrap">
           <image src="{{item}}" mode="aspectFill" class="review-photo" lazy-load aria-label="本次服务评价照片"/>
@@ -156,8 +161,7 @@
         placeholder="告诉美甲师你为什么拒绝该报价，便于重新协商"
         value="{{rejectReason}}"
         bindinput="onRejectReasonInput"
-        maxlength="200"
-      />
+        maxlength="200" confirm-type="done" />
     </view>
 
     <view class="reason-chips">

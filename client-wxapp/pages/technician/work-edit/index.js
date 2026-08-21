@@ -12,6 +12,11 @@ Page({
     recommendationOptions: ['1 · 小众灵感', '2 · 值得尝试', '3 · 人气推荐', '4 · 高度推荐', '5 · 本季精选'],
     tags: '',
     price: '',
+    standardPrice: '',
+    availableServices: [],
+    selectedServiceIds: [],
+    serviceSubtotalFen: 0,
+    totalDurationMinutes: 0,
     coverUrl: '',
     images: [],
     isVisible: true,
@@ -26,7 +31,7 @@ Page({
 
   async onLoad(options) {
     this._pageActive = true;
-    await this.loadAccessOptions();
+    await Promise.all([this.loadAccessOptions(), this.loadServices()]);
     if (options.id) {
       this.setData({ isEdit: true, workId: options.id });
       this.loadWork(options.id);
@@ -100,6 +105,17 @@ Page({
     }
   },
 
+  async loadServices() {
+    try {
+      const list = await api.technician.services.list();
+      if (!this._pageActive) return;
+      this.setData({ availableServices: (list || []).filter(item => item.isActive !== false) });
+      this.recalculatePricing();
+    } catch (err) {
+      console.error('load services error:', err);
+    }
+  },
+
   async loadWork(id) {
     wx.showLoading({ title: '加载中...' });
     try {
@@ -116,11 +132,14 @@ Page({
         recommendationScore: work.recommendationScore || 5,
         tags: Array.isArray(work.tags) ? work.tags.join(',') : (work.tags || ''),
         price: work.price != null ? String(work.price) : '',
+        standardPrice: work.standardPrice != null ? String(work.standardPrice) : '',
+        selectedServiceIds: (work.serviceLines || []).map(item => item.serviceId).filter(Boolean),
         coverUrl: work.coverUrl || '',
         images,
         isVisible: work.isVisible !== false,
         visibilityScope: work.visibilityScope || 'public'
       });
+      this.recalculatePricing();
       if (work.clientAccesses && work.clientAccesses.length) this.applyExistingGrants(work.clientAccesses);
     } catch (err) {
       wx.hideLoading();
@@ -131,6 +150,30 @@ Page({
 
   onInput(e) {
     this.setData({ [e.currentTarget.dataset.field]: e.detail.value });
+  },
+
+  toggleService(e) {
+    const id = String(e.currentTarget.dataset.id);
+    const selected = this.data.selectedServiceIds.includes(id)
+      ? this.data.selectedServiceIds.filter(item => item !== id)
+      : this.data.selectedServiceIds.concat(id);
+    this.setData({ selectedServiceIds: selected });
+    this.recalculatePricing();
+  },
+
+  recalculatePricing() {
+    const availableServices = this.data.availableServices.map(item => ({
+      ...item,
+      selected: this.data.selectedServiceIds.includes(String(item.id))
+    }));
+    const selected = availableServices.filter(item =>
+      this.data.selectedServiceIds.includes(String(item.id))
+    );
+    this.setData({
+      availableServices,
+      serviceSubtotalFen: selected.reduce((sum, item) => sum + Math.round(Number(item.price || 0) * 100), 0),
+      totalDurationMinutes: selected.reduce((sum, item) => sum + Number(item.durationMinutes || 0), 0)
+    });
   },
 
   onVisibleChange(e) {
@@ -269,6 +312,14 @@ Page({
       wx.showToast({ title: '请上传封面图片', icon: 'none' });
       return false;
     }
+    if (!this.data.selectedServiceIds.length) {
+      wx.showToast({ title: '请选择作品所需的基础服务', icon: 'none' });
+      return false;
+    }
+    if (!this.data.standardPrice || Number(this.data.standardPrice) <= 0) {
+      wx.showToast({ title: '请填写作品标准报价', icon: 'none' });
+      return false;
+    }
     if (this.data.visibilityScope === 'authorized_clients' && !this.data.accessGrants.length) {
       wx.showToast({ title: '请选择授权客户', icon: 'none' });
       return false;
@@ -290,7 +341,7 @@ Page({
   async handleSubmit() {
     if (!this.validate() || this.data.submitting) return;
 
-    const { title, description, designIdea, suitableScene, recommendationScore, tags, price, coverUrl, images, isVisible, isEdit, workId } = this.data;
+    const { title, description, designIdea, suitableScene, recommendationScore, tags, price, standardPrice, selectedServiceIds, coverUrl, images, isVisible, isEdit, workId } = this.data;
     const desiredVisible = isVisible;
     const payload = {
       title: title.trim(),
@@ -300,6 +351,8 @@ Page({
       recommendationScore,
       tags: tags.trim() || undefined,
       price: price ? Number(price) : undefined,
+      standardPrice: Number(standardPrice),
+      selectedServiceIds,
       coverUrl,
       images: JSON.stringify(images),
       isVisible: !isEdit && this.data.visibilityScope === 'authorized_clients' ? false : isVisible

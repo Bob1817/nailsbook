@@ -98,8 +98,7 @@
       placeholder="给美甲师留言（可选，如：我是老顾客小红）"
       placeholder-class="flow-placeholder"
       maxlength="100"
-      auto-height
-    />
+      auto-height confirm-type="done" />
 
     <view class="flow-error" wx:if="{{bindError}}">{{bindError}}</view>
 

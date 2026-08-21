@@ -361,3 +361,13 @@ page { background: var(--bg-gradient-entry); }
   font-size: var(--font-sm);
 }
 .reason-chip:active { background: #ffe0eb; }
+.quote-helper { display:block; margin:8rpx 0 16rpx; color:#897680; font-size:24rpx; line-height:1.5; }
+.quote-service-list { display:flex; flex-direction:column; gap:12rpx; }
+.quote-service { min-height:92rpx; padding:16rpx 20rpx; border:1rpx solid #e8dfe3; border-radius:16rpx; display:flex; align-items:center; justify-content:space-between; box-sizing:border-box; }
+.quote-service.selected { border-color:#ec4899; background:#fff7fb; }
+.quote-service-name,.quote-service-meta { display:block; }
+.quote-service-name { color:#392a31; font-size:27rpx; font-weight:600; }
+.quote-service-meta { margin-top:5rpx; color:#826f78; font-size:23rpx; }
+.quote-service-check { width:42rpx; height:42rpx; border-radius:50%; background:#ec4899; color:#fff; display:flex; align-items:center; justify-content:center; }
+.quote-summary { margin-top:18rpx; padding:20rpx; border-radius:16rpx; background:#f8f4f6; display:flex; flex-direction:column; gap:8rpx; color:#715c66; font-size:24rpx; }
+.quote-final { color:#c83470; font-size:30rpx; font-weight:700; }

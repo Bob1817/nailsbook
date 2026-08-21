@@ -4,15 +4,15 @@
   <view class="form">
     <view class="field">
       <text class="label">原密码</text>
-      <input class="input" password value="{{oldPassword}}" bindinput="onOldInput" placeholder="请输入原密码" placeholder-class="ph" />
+      <input class="input" password value="{{oldPassword}}" bindinput="onOldInput" placeholder="请输入原密码" placeholder-class="ph" confirm-type="done" />
     </view>
     <view class="field">
       <text class="label">新密码</text>
-      <input class="input" password value="{{newPassword}}" bindinput="onNewInput" placeholder="至少6位" placeholder-class="ph" />
+      <input class="input" password value="{{newPassword}}" bindinput="onNewInput" placeholder="至少6位" placeholder-class="ph" confirm-type="done" />
     </view>
     <view class="field">
       <text class="label">确认密码</text>
-      <input class="input" password value="{{confirmPassword}}" bindinput="onConfirmInput" placeholder="再次输入新密码" placeholder-class="ph" />
+      <input class="input" password value="{{confirmPassword}}" bindinput="onConfirmInput" placeholder="再次输入新密码" placeholder-class="ph" confirm-type="done" />
     </view>
   </view>
   <view class="save-btn {{saving ? 'btn-disabled' : ''}}" bindtap="changePassword">

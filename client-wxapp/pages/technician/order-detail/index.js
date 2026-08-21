@@ -78,6 +78,12 @@ Page({
     quoteTime: '',
     quoteDuration: '120',
     quoteRemark: '',
+    quoteServices: [],
+    quoteSelectedServiceIds: [],
+    quoteSubtotalFen: 0,
+    quoteDiscount: '',
+    quoteFinalFen: 0,
+    quoteTotalDuration: 0,
 
     // 取消 sheet
     showCancel: false,
@@ -110,7 +116,12 @@ Page({
     this._loadingOrder = true;
     this.setData({ loading: true, loadFailed: false, loadErrorText: '' });
     try {
-      const raw = await api.technician.orders.detail(this.orderId);
+      const result = await Promise.all([
+        api.technician.orders.detail(this.orderId),
+        api.technician.services.list()
+      ]);
+      const raw = result[0];
+      const quoteServices = (result[1] || []).filter(item => item.isActive !== false);
       const o = normalizeOrder(raw);
 
       // 补充详情页专有字段
@@ -156,7 +167,11 @@ Page({
         quoteTime: st,
         quoteDuration: decorated.durationMinutes > 0 ? String(decorated.durationMinutes) : '120',
         quoteRemark: o.remark || ''
+        ,quoteServices,
+        quoteSelectedServiceIds: (raw.serviceLines || []).map(item => item.servicePublicIdSnapshot).filter(Boolean),
+        quoteDiscount: raw.discountAmountFen ? String(raw.discountAmountFen / 100) : ''
       });
+      this.recalculateQuote();
 
       // 从列表跳来时如果带 action=quote，直接打开报价 sheet
       if (this.pendingAction === 'quote' && actionsForStatus(o.status).some((a) => a.key === 'quote')) {
@@ -210,35 +225,43 @@ Page({
   },
   closeQuote() { this.setData({ showQuote: false }); },
 
-  onQuotePriceInput(e)    { this.setData({ quotePrice: e.detail.value }); },
   onQuoteDateChange(e)    { this.setData({ quoteDate: e.detail.value }); },
   onQuoteTimeChange(e)    { this.setData({ quoteTime: e.detail.value }); },
-  onQuoteDurationInput(e) { this.setData({ quoteDuration: e.detail.value }); },
+  toggleQuoteService(e) {
+    const id = String(e.currentTarget.dataset.id);
+    const ids = this.data.quoteSelectedServiceIds.includes(id)
+      ? this.data.quoteSelectedServiceIds.filter(item => item !== id)
+      : this.data.quoteSelectedServiceIds.concat(id);
+    this.setData({ quoteSelectedServiceIds: ids });
+    this.recalculateQuote();
+  },
+  onQuoteDiscountInput(e) { this.setData({ quoteDiscount: e.detail.value }); this.recalculateQuote(e.detail.value); },
+  recalculateQuote(discountValue) {
+    const selected = this.data.quoteServices.filter(item => this.data.quoteSelectedServiceIds.includes(String(item.id)));
+    const subtotal = selected.reduce((sum, item) => sum + Math.round(Number(item.price || 0) * 100), 0);
+    const duration = selected.reduce((sum, item) => sum + Number(item.durationMinutes || 0), 0);
+    const discountFen = Math.max(0, Math.round(Number(discountValue !== undefined ? discountValue : this.data.quoteDiscount || 0) * 100));
+    this.setData({ quoteSubtotalFen: subtotal, quoteFinalFen: Math.max(0, subtotal - discountFen), quoteTotalDuration: duration });
+  },
   onQuoteRemarkInput(e)   { this.setData({ quoteRemark: e.detail.value }); },
 
   async submitQuote() {
     if (this.data.submitting) return;
-    const { quotePrice, quoteDate, quoteTime, quoteDuration, quoteRemark } = this.data;
-
-    const price = Number(quotePrice);
-    if (!quotePrice || Number.isNaN(price) || price < 0) {
-      return wx.showToast({ title: '请输入正确的报价金额', icon: 'none' });
-    }
+    const { quoteDate, quoteTime, quoteRemark, quoteSelectedServiceIds, quoteDiscount, quoteSubtotalFen } = this.data;
+    if (!quoteSelectedServiceIds.length) return wx.showToast({ title: '请选择至少一项基础服务', icon: 'none' });
     if (!quoteDate) return wx.showToast({ title: '请选择服务日期', icon: 'none' });
     if (!quoteTime) return wx.showToast({ title: '请选择服务时间', icon: 'none' });
 
-    const duration = Number(quoteDuration);
-    if (!quoteDuration || Number.isNaN(duration) || duration < 1) {
-      return wx.showToast({ title: '请输入正确的服务时长', icon: 'none' });
-    }
+    const discountAmountFen = Math.round(Number(quoteDiscount || 0) * 100);
+    if (discountAmountFen < 0 || discountAmountFen > quoteSubtotalFen) return wx.showToast({ title: '优惠金额不能超过服务合计', icon: 'none' });
 
     this.setData({ submitting: true });
     try {
       const payload = {
-        price,
+        services: quoteSelectedServiceIds.map(servicePublicId => ({ servicePublicId, quantity: 1 })),
         serviceDate: quoteDate,
         startTime: quoteTime,
-        durationMinutes: duration
+        discountAmountFen
       };
       if (quoteRemark) payload.remark = quoteRemark;
       await api.technician.orders.quote(this.orderId, payload);

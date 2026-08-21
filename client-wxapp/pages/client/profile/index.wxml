@@ -231,8 +231,7 @@
           value="{{inviteCode}}"
           bindinput="onInviteCodeInput"
           placeholder="请输入美甲师提供的邀请码"
-          placeholder-class="code-placeholder"
-        />
+          placeholder-class="code-placeholder" confirm-type="done" />
         <view wx:if="{{checkingCode}}" class="code-spinner"></view>
       </view>
       <text class="field-hint">输入美甲师邀请码，提交绑定申请，待其通过后生效</text>
@@ -254,8 +253,7 @@
         value="{{bindNote}}"
         bindinput="onBindNoteInput"
         placeholder="给美甲师留言（可选，如：我是老顾客小红）"
-        maxlength="100"
-      />
+        maxlength="100" confirm-type="done" />
     </view>
 
     <view wx:else class="modal-body">
@@ -269,7 +267,7 @@
           <text class="followed-status">{{item.bindingStatus === 'pending' ? '审核中' : (selectedFollowedTech && selectedFollowedTech.id === item.id ? '已选择' : '选择')}}</text>
         </view>
       </view>
-      <textarea wx:if="{{selectedFollowedTech}}" class="bind-note-input" value="{{bindNote}}" bindinput="onBindNoteInput" placeholder="给美甲师留言（可选）" maxlength="100"/>
+      <textarea wx:if="{{selectedFollowedTech}}" class="bind-note-input" value="{{bindNote}}" bindinput="onBindNoteInput" placeholder="给美甲师留言（可选）" maxlength="100" confirm-type="done" />
       <text class="field-hint">提交后将发送系统提醒，美甲师可在消息中同意或拒绝。</text>
     </view>
 
@@ -318,8 +316,7 @@
           value="{{activationKey}}"
           bindinput="onActivationKeyInput"
           placeholder="请输入超管分配的激活密钥"
-          placeholder-class="code-placeholder"
-        />
+          placeholder-class="code-placeholder" confirm-type="done" />
       </view>
       <text class="field-hint">输入激活密钥后即可开通美甲师账户，开通后可管理预约、服务客户并展示作品。</text>
     </view>
@@ -344,8 +341,7 @@
           value="{{techSwitchInviteCode}}"
           bindinput="onTechSwitchInviteInput"
           placeholder="输入邀请码绑定美甲师"
-          placeholder-class="code-placeholder"
-        />
+          placeholder-class="code-placeholder" confirm-type="done" />
         <view wx:if="{{techSwitchCheckingCode}}" class="code-spinner"></view>
       </view>
       <text class="field-hint">输入美甲师邀请码，提交绑定申请，待其通过后即可将其设为专属美甲师。</text>

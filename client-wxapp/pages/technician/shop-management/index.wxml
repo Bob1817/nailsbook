@@ -66,7 +66,7 @@
       <!-- 店铺名称 -->
       <view class="form-item">
         <text class="label">店铺名称 *</text>
-        <input class="input" value="{{name}}" bindinput="onNameInput" placeholder="请输入店铺名称" placeholder-class="ph" />
+        <input class="input" value="{{name}}" bindinput="onNameInput" placeholder="请输入店铺名称" placeholder-class="ph" confirm-type="done" />
       </view>
 
       <!-- 省市区选择 -->
@@ -82,13 +82,13 @@
       <!-- 详细地址 -->
       <view class="form-item">
         <text class="label">详细地址 *</text>
-        <input class="input" value="{{detailAddress}}" bindinput="onDetailAddressInput" placeholder="请输入街道、楼栋、门牌号" placeholder-class="ph" />
+        <input class="input" value="{{detailAddress}}" bindinput="onDetailAddressInput" placeholder="请输入街道、楼栋、门牌号" placeholder-class="ph" confirm-type="done" />
       </view>
 
       <!-- 联系电话 -->
       <view class="form-item">
         <text class="label">联系电话（选填）</text>
-        <input class="input" type="number" value="{{phone}}" bindinput="onPhoneInput" placeholder="选填" placeholder-class="ph" />
+        <input class="input" type="number" value="{{phone}}" bindinput="onPhoneInput" placeholder="选填" placeholder-class="ph" confirm-type="done" />
       </view>
 
       <!-- 启用状态 -->

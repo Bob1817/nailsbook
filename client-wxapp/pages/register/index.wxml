@@ -23,8 +23,7 @@
         placeholder="输入邀请码、邀请链接或激活密钥"
         value="{{inviteInput}}"
         bindinput="onInviteInput"
-        disabled="{{loading}}"
-      />
+        disabled="{{loading}}" confirm-type="done" />
       <!-- 邀请码验证状态 -->
       <view wx:if="{{inviteChecking}}" class="invite-status checking">
         <text>验证中...</text>
@@ -50,8 +49,7 @@
         placeholder="请输入您的姓名"
         value="{{name}}"
         bindinput="onNameInput"
-        disabled="{{loading}}"
-      />
+        disabled="{{loading}}" confirm-type="done" />
     </view>
 
     <!-- 密码 -->
@@ -65,8 +63,7 @@
           placeholder="至少 8 位，含字母和数字"
           value="{{password}}"
           bindinput="onPasswordInput"
-          disabled="{{loading}}"
-        />
+          disabled="{{loading}}" confirm-type="done" />
         <view class="pwd-toggle" bindtap="togglePassword">
           <text class="pwd-toggle-text">{{showPassword ? '隐藏' : '显示'}}</text>
         </view>
@@ -83,8 +80,7 @@
         placeholder="再次输入密码"
         value="{{confirmPassword}}"
         bindinput="onConfirmPasswordInput"
-        disabled="{{loading}}"
-      />
+        disabled="{{loading}}" confirm-type="done" />
     </view>
 
     <!-- 注册按钮 -->

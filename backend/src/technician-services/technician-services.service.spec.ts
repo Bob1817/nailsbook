@@ -6,6 +6,11 @@ describe('TechnicianServicesService', () => {
       findUnique: jest.fn(),
       update: jest.fn(),
     },
+    service: {
+      count: jest.fn(),
+      create: jest.fn(),
+      findMany: jest.fn(),
+    },
   };
   let service: TechnicianServicesService;
 
@@ -20,6 +25,23 @@ describe('TechnicianServicesService', () => {
       serviceItems: '[]',
     });
     prisma.technician.update.mockResolvedValue({});
+    prisma.service.count.mockResolvedValue(0);
+    prisma.service.create.mockResolvedValue({});
+    prisma.service.findMany.mockResolvedValue([
+      {
+        id: 1,
+        publicId: 'svc-test',
+        name: '法式美甲',
+        description: null,
+        category: 'color_style',
+        priceMinFen: 26800,
+        durationMinutes: 120,
+        isBookable: true,
+        sortOrder: 1,
+        createdAt: new Date('2026-08-21T00:00:00Z'),
+        updatedAt: new Date('2026-08-21T00:00:00Z'),
+      },
+    ]);
 
     const result = await service.create(7, {
       name: '法式美甲',
@@ -28,9 +50,17 @@ describe('TechnicianServicesService', () => {
       durationMinutes: 120,
     });
 
-    expect(result).toMatchObject({ price: 268, durationMinutes: 120 });
+    expect(prisma.service.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          name: '法式美甲',
+          priceMinFen: 26800,
+          durationMinutes: 120,
+        }),
+      }),
+    );
     const saved = JSON.parse(
-      prisma.technician.update.mock.calls[0][0].data.serviceItems,
+      prisma.technician.update.mock.calls.at(-1)[0].data.serviceItems,
     );
     expect(saved[0]).toMatchObject({ price: 268, durationMinutes: 120 });
   });

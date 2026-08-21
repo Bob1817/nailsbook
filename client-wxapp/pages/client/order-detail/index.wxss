@@ -437,3 +437,7 @@ page { background: var(--bg-page); }
 .payment-summary { margin-top: var(--space-md); padding-top:20rpx; border-top:1rpx solid #f0e8ec; }
 .payment-remaining { font-weight: var(--weight-bold); color:#b8325b; }
 .payment-count { display:block; margin-top:12rpx; color: var(--text-muted); font-size: var(--font-xs); }
+.price-lines { margin-bottom:20rpx; padding-bottom:16rpx; border-bottom:1rpx solid #eee5e9; }
+.price-line { min-height:52rpx; display:flex; align-items:center; justify-content:space-between; gap:20rpx; color:#705d66; font-size:25rpx; }
+.price-subtotal { margin-top:8rpx; color:#493841; font-weight:600; }
+.price-discount { color:#b93668; }

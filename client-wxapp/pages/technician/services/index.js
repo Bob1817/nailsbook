@@ -13,6 +13,7 @@ Page({
     loading: false,
     loadFailed: false,
     showForm: false,
+    actionMenuId: null,
     editingId: null,
     form: { name: '', description: '', category: 'basic_care', price: '', durationMinutes: '' },
     categories: Object.entries(CATEGORIES).map(([value, label]) => ({ value, label })),
@@ -43,6 +44,7 @@ Page({
   openCreate() {
     this.setData({
       showForm: true,
+      actionMenuId: null,
       editingId: null,
       form: { name: '', description: '', category: 'basic_care', price: '', durationMinutes: '' },
       categoryIndex: 0
@@ -55,6 +57,7 @@ Page({
     const categoryIndex = this.data.categories.findIndex(c => c.value === svc.category);
     this.setData({
       showForm: true,
+      actionMenuId: null,
       editingId: svc.id,
       form: {
         name: svc.name,
@@ -69,6 +72,15 @@ Page({
 
   closeForm() {
     this.setData({ showForm: false });
+  },
+
+  toggleActionMenu(e) {
+    const id = e.currentTarget.dataset.id;
+    this.setData({ actionMenuId: this.data.actionMenuId === id ? null : id });
+  },
+
+  closeActionMenu() {
+    this.setData({ actionMenuId: null });
   },
 
   onFormInput(e) {
@@ -129,6 +141,7 @@ Page({
 
   async toggleService(e) {
     const id = e.currentTarget.dataset.id;
+    this.setData({ actionMenuId: null });
     try {
       await api.technician.services.toggle(id);
       const services = this.data.services.map(s =>
@@ -142,6 +155,7 @@ Page({
 
   confirmDelete(e) {
     const id = e.currentTarget.dataset.id;
+    this.setData({ actionMenuId: null });
     wx.showModal({
       title: '删除服务',
       content: '确定删除该服务项目吗？',

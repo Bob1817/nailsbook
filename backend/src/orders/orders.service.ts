@@ -25,6 +25,11 @@ import {
   assertLaunchShopService,
   isLaunchTechnician,
 } from '../common/miniprogram-launch-mode';
+import {
+  buildServiceSnapshotLines,
+  finalPriceFen,
+  summarizeSnapshotLines,
+} from './booking-pricing';
 
 export type OrderStatus =
   | 'pending_quote'
@@ -389,6 +394,7 @@ export class OrdersService {
             referenceWorkIds: true,
           },
         },
+        serviceLines: { orderBy: { sortOrder: 'asc' } },
       },
     });
 
@@ -524,19 +530,57 @@ export class OrdersService {
       throw new BadRequestException('当前订单状态不支持报价');
     }
 
+    if (order.bookingType !== 'custom' && order.bookingType !== 'legacy') {
+      throw new BadRequestException('标准作品或基础服务预约无需重新报价');
+    }
+    const requested = dto.services ?? [];
+    const services = await this.prisma.service.findMany({
+      where: {
+        technicianId,
+        publicId: { in: requested.map((item) => item.servicePublicId) },
+        isBookable: true,
+        archivedAt: null,
+      },
+      select: {
+        id: true,
+        publicId: true,
+        name: true,
+        priceMinFen: true,
+        durationMinutes: true,
+      },
+    });
+    const serviceLines = buildServiceSnapshotLines(services, requested);
+    const summary = summarizeSnapshotLines(serviceLines);
+    const discountAmountFen = dto.discountAmountFen ?? 0;
+    const quotedFinalPriceFen = finalPriceFen(
+      summary.serviceSubtotalFen,
+      discountAmountFen,
+    );
     const startTime = parseBusinessDateTime(dto.serviceDate, dto.startTime);
     const endTime = new Date(
-      startTime.getTime() + Number(dto.durationMinutes) * 60000,
+      startTime.getTime() + summary.totalDurationMinutes * 60000,
     );
 
     if (
       Number.isNaN(startTime.getTime()) ||
       Number.isNaN(endTime.getTime()) ||
-      Number(dto.durationMinutes) <= 0
+      summary.totalDurationMinutes <= 0
     ) {
       throw new BadRequestException('预约时间或预估时长无效');
     }
     await this.assertTechnicianWorkSchedule(technicianId, startTime, endTime);
+    const blockedConflict = await this.prisma.blockedTimeSlot.findFirst({
+      where: {
+        techId: technicianId,
+        NOT: { orderId: id },
+        startTime: { lt: endTime },
+        endTime: { gt: startTime },
+      },
+      select: { id: true },
+    });
+    if (blockedConflict) {
+      throw new BadRequestException('该时间段已被预约，请与客户协商新的时间');
+    }
 
     let systemMessage: any = null;
     let conversationId: number | null = null;
@@ -547,7 +591,12 @@ export class OrdersService {
         data: {
           startTime,
           endTime,
-          quotePrice: dto.price,
+          bookingType: 'custom',
+          serviceSubtotalFen: summary.serviceSubtotalFen,
+          discountAmountFen,
+          finalPriceFen: quotedFinalPriceFen,
+          totalDurationMinutes: summary.totalDurationMinutes,
+          quotePrice: quotedFinalPriceFen / 100,
           quoteRemark: dto.remark || null,
           quotedAt: new Date(),
           status: 'pending_agree',
@@ -561,6 +610,24 @@ export class OrdersService {
           customer: {
             select: { id: true, name: true, phone: true, avatarUrl: true },
           },
+        },
+      });
+      await tx.orderServiceLine.deleteMany({ where: { orderId: id } });
+      await tx.orderServiceLine.createMany({
+        data: serviceLines.map((line) => ({
+          orderId: id,
+          ...line,
+          source: 'quote',
+        })),
+      });
+      await tx.blockedTimeSlot.deleteMany({ where: { orderId: id } });
+      await tx.blockedTimeSlot.create({
+        data: {
+          techId: technicianId,
+          orderId: id,
+          startTime,
+          endTime,
+          reason: 'booking',
         },
       });
 

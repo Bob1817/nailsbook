@@ -117,6 +117,9 @@ api.technician.orders.complete = async (id, data) => { completeCalls.push({ id, 
       ]
     }
   ]);
+  api.technician.services.list = async () => ([
+    { id: 'basic', name: '基础护理', price: 88, durationMinutes: 60, isActive: true }
+  ]);
 
   const workPage = createPage('../pages/technician/work-edit/index');
   await workPage.onLoad({ orderId: '12' });
@@ -132,6 +135,8 @@ api.technician.orders.complete = async (id, data) => { completeCalls.push({ id, 
   // buildGrants 提交载荷应携带该订单
   workPage.data.title = '小美猫眼';
   workPage.data.coverUrl = '/uploads/c.jpg';
+  workPage.data.selectedServiceIds = ['basic'];
+  workPage.data.standardPrice = '128';
   assert.strictEqual(workPage.validate(), true, '预填后应满足必填校验');
   const payloadGrants = workPage.buildGrants();
   assert.strictEqual(payloadGrants[0].orderId, 12, '提交载荷应关联本次订单');

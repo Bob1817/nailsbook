@@ -23,7 +23,7 @@
       <view class="business-hero-more">详情 <text>›</text></view>
     </view>
     <view wx:if="{{businessOverview}}" class="business-hero-content">
-      <view class="business-hero-primary"><text class="business-hero-value">{{businessOverview.revenue}}</text><text class="business-hero-label">已完成确定收入</text></view>
+      <view class="business-hero-primary"><text class="business-hero-value">{{businessOverview.revenue}}</text><text class="business-hero-label">已完成确认收入</text></view>
       <view class="business-hero-grid">
         <view class="business-hero-metric business-hero-estimated"><text class="business-hero-number">{{businessOverview.estimatedRevenue}}</text><text class="business-hero-label">预计收入</text></view>
         <view class="business-hero-metric"><text class="business-hero-number">{{businessOverview.monthCompleted}}</text><text class="business-hero-label">完成订单</text></view>

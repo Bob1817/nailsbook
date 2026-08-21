@@ -14,14 +14,14 @@
     <view class="change-avatar" bindtap="chooseAvatar">更换头像</view>
   </view>
   <view class="form">
-    <view class="field"><text class="label">主页名称</text><input class="input" value="{{name}}" bindinput="onInput" data-field="name" maxlength="20" placeholder="输入展示名称"/></view>
-    <view class="field"><text class="label">主页 Slogan</text><input class="input" value="{{tagline}}" bindinput="onInput" data-field="tagline" maxlength="80" placeholder="一句话表达你的审美与价值"/></view>
+    <view class="field"><text class="label">主页名称</text><input class="input" value="{{name}}" bindinput="onInput" data-field="name" maxlength="20" placeholder="输入展示名称" confirm-type="done" /></view>
+    <view class="field"><text class="label">主页 Slogan</text><input class="input" value="{{tagline}}" bindinput="onInput" data-field="tagline" maxlength="80" placeholder="一句话表达你的审美与价值" confirm-type="done" /></view>
     <view class="field experience-field">
       <view class="label-row"><text class="label">从业经验</text><text class="experience-value">{{experienceYears}} 年</text></view>
       <slider min="1" max="30" step="1" value="{{experienceYears}}" activeColor="#8f284c" backgroundColor="#e8e0e4" block-color="#8f284c" block-size="22" bindchange="onExperienceChange" bindchanging="onExperienceChange"/>
       <view class="slider-scale"><text>1 年</text><text>30 年以上</text></view>
     </view>
-    <view class="field"><text class="label">认证展示</text><input class="input" value="{{certificationTitle}}" bindinput="onInput" data-field="certificationTitle" placeholder="如 平台认证美甲师"/></view>
+    <view class="field"><text class="label">认证展示</text><input class="input" value="{{certificationTitle}}" bindinput="onInput" data-field="certificationTitle" placeholder="如 平台认证美甲师" confirm-type="done" /></view>
     <view class="field">
       <view class="label-row"><text class="label">擅长领域</text><text class="skill-limit">{{specialties.length}}/3</text></view>
       <text class="skill-help">像填写简历技能一样选择最能代表你的美甲能力</text>
@@ -30,8 +30,8 @@
       </view>
       <text wx:if="{{specialties.length === 0}}" class="skill-empty">-</text>
     </view>
-    <view class="field"><view class="label-row"><text class="label">自我介绍</text><text class="counter">{{artistIntroduction.length}}/1000</text></view><textarea class="textarea" value="{{artistIntroduction}}" bindinput="onInput" data-field="artistIntroduction" maxlength="1000" placeholder="介绍你的经历、风格和服务理念"/></view>
-    <view class="field"><text class="label">审美宣言</text><textarea class="textarea compact" value="{{aestheticPhilosophy}}" bindinput="onInput" data-field="aestheticPhilosophy" maxlength="1000" placeholder="例如：让指尖成为安静但有力量的自我表达"/></view>
+    <view class="field"><view class="label-row"><text class="label">自我介绍</text><text class="counter">{{artistIntroduction.length}}/1000</text></view><textarea class="textarea" value="{{artistIntroduction}}" bindinput="onInput" data-field="artistIntroduction" maxlength="1000" placeholder="介绍你的经历、风格和服务理念" confirm-type="done" /></view>
+    <view class="field"><text class="label">审美宣言</text><textarea class="textarea compact" value="{{aestheticPhilosophy}}" bindinput="onInput" data-field="aestheticPhilosophy" maxlength="1000" placeholder="例如：让指尖成为安静但有力量的自我表达" confirm-type="done" /></view>
     <view class="field"><text class="label">所在城市</text><picker mode="region" bindchange="onCityChange"><view class="picker">{{city || '选择城市'}}<text>›</text></view></picker></view>
     <view class="field"><text class="label">服务区域</text><picker mode="region" bindchange="onServiceAreaChange"><view class="picker">{{serviceArea || '选择服务区域'}}<text>›</text></view></picker></view>
   </view>

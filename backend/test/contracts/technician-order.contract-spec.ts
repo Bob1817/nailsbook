@@ -250,10 +250,9 @@ describe('Technician operation HTTP contract', () => {
         .patch(`/api/technician/orders/${order.id}/review`)
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
-          price: 299,
+          services: [{ servicePublicId: 'contract-basic', quantity: 1 }],
           serviceDate: '2026-06-15',
           startTime: '14:00',
-          durationMinutes: 120,
           remark: 'Includes materials',
         })
         .expect(200);
@@ -372,6 +371,8 @@ describe('Technician operation HTTP contract', () => {
           description: 'A test work',
           tags: 'nail,test',
           isVisible: true,
+          selectedServiceIds: ['contract-basic'],
+          standardPrice: 199,
         })
         .expect(201);
 
@@ -525,6 +526,8 @@ describe('Technician operation HTTP contract', () => {
             id: 'contract-basic',
             name: 'Basic Care',
             category: 'basic_care',
+            price: 128,
+            durationMinutes: 90,
             isActive: true,
             sortOrder: 1,
           },
@@ -532,6 +535,18 @@ describe('Technician operation HTTP contract', () => {
       },
     });
     ownedTechnicianIds.push(technician.id);
+    await testApp.prisma.service.create({
+      data: {
+        technicianId: technician.id,
+        publicId: 'contract-basic',
+        name: 'Basic Care',
+        category: 'basic_care',
+        priceMinFen: 12800,
+        priceMaxFen: 12800,
+        durationMinutes: 90,
+        isBookable: true,
+      },
+    });
 
     const accessToken = testApp.signTechnicianToken(
       technician.id,

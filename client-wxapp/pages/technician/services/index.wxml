@@ -20,38 +20,47 @@
   </view>
 
   <!-- 服务列表 -->
-  <view wx:else class="list">
+  <view wx:if="{{actionMenuId !== null}}" class="action-menu-scrim" bindtap="closeActionMenu"></view>
+  <view wx:if="{{!loading && !loadFailed && services.length > 0}}" class="list">
     <view
-      class="svc-card"
+      class="svc-card {{actionMenuId === item.id ? 'menu-open' : ''}}"
       wx:for="{{services}}"
       wx:key="id"
     >
-      <!-- 卡片顶部：名称 + 状态 -->
-      <view class="card-top">
-        <view class="card-title-area">
-          <text class="svc-name">{{item.name}}</text>
+      <view class="svc-card-body">
+        <view class="card-top">
           <text class="svc-category">{{item.categoryLabel}}</text>
+          <view class="card-menu-wrap">
+            <view class="card-menu-trigger" catchtap="toggleActionMenu" data-id="{{item.id}}" role="button" aria-label="打开{{item.name}}操作菜单" aria-expanded="{{actionMenuId === item.id}}">
+              <view class="more-icon"><view></view><view></view><view></view></view>
+            </view>
+            <view wx:if="{{actionMenuId === item.id}}" class="action-menu">
+              <view class="action-menu-arrow"></view>
+              <view class="action-menu-item action-edit" catchtap="openEdit" data-id="{{item.id}}" role="button">编辑</view>
+              <view class="action-menu-item action-toggle" catchtap="toggleService" data-id="{{item.id}}" role="button">{{item.isActive ? '下架' : '上架'}}</view>
+              <view class="action-menu-item action-delete" catchtap="confirmDelete" data-id="{{item.id}}" role="button">删除</view>
+            </view>
+          </view>
         </view>
-        <view class="svc-badge {{item.isActive ? 'badge-active' : 'badge-inactive'}}">
-          <view class="badge-dot {{item.isActive ? 'dot-active' : 'dot-inactive'}}"></view>
-          <text>{{item.isActive ? '上架中' : '已下架'}}</text>
-        </view>
-      </view>
 
-      <!-- 描述 -->
-      <text wx:if="{{item.description}}" class="svc-desc">{{item.description}}</text>
-      <view class="svc-meta"><text>¥{{item.price != null ? item.price : '待设置'}}</text><text>{{item.durationMinutes || '待设置'}} 分钟</text></view>
+        <view class="svc-title-row">
+          <text class="svc-name">{{item.name}}</text>
+          <view class="svc-badge {{item.isActive ? 'badge-active' : 'badge-inactive'}}">
+            <view class="badge-dot {{item.isActive ? 'dot-active' : 'dot-inactive'}}"></view>
+            <text>{{item.isActive ? '上架中' : '已下架'}}</text>
+          </view>
+        </view>
+        <text wx:if="{{item.description}}" class="svc-desc">{{item.description}}</text>
 
-      <!-- 操作按钮 -->
-      <view class="card-actions">
-        <view class="action-btn action-toggle" bindtap="toggleService" data-id="{{item.id}}">
-          <text>{{item.isActive ? '下架' : '上架'}}</text>
-        </view>
-        <view class="action-btn action-edit" bindtap="openEdit" data-id="{{item.id}}">
-          <text>编辑</text>
-        </view>
-        <view class="action-btn action-delete" bindtap="confirmDelete" data-id="{{item.id}}">
-          <text>删除</text>
+        <view class="svc-meta">
+          <view class="svc-meta-group">
+            <text class="svc-meta-label">服务价格</text>
+            <text class="svc-price">¥{{item.price != null ? item.price : '待设置'}}</text>
+          </view>
+          <view class="svc-meta-group">
+            <text class="svc-meta-label">预计时长</text>
+            <view class="svc-duration-value"><text class="svc-duration-number">{{item.durationMinutes || '待设置'}}</text><text class="svc-duration-unit">分钟</text></view>
+          </view>
         </view>
       </view>
     </view>
@@ -74,7 +83,7 @@
 
     <view class="form-item">
       <text class="label">服务名称 *</text>
-      <input class="input" placeholder="例：法式美甲" value="{{form.name}}" data-field="name" bindinput="onFormInput"/>
+      <input class="input" placeholder="例：法式美甲" value="{{form.name}}" data-field="name" bindinput="onFormInput" confirm-type="done" />
     </view>
 
     <view class="form-item">
@@ -88,15 +97,15 @@
     </view>
 
     <view class="form-pair">
-      <view class="form-item form-half"><text class="label">服务价格（元）*</text><input class="input" type="digit" placeholder="例如 168" value="{{form.price}}" data-field="price" bindinput="onFormInput"/></view>
-      <view class="form-item form-half"><text class="label">预计时长（分钟）*</text><input class="input" type="number" placeholder="60" value="{{form.durationMinutes}}" data-field="durationMinutes" bindinput="onFormInput"/></view>
+      <view class="form-item form-half"><text class="label">服务价格（元）*</text><input class="input" type="digit" placeholder="例如 168" value="{{form.price}}" data-field="price" bindinput="onFormInput" confirm-type="done" /></view>
+      <view class="form-item form-half"><text class="label">预计时长（分钟）*</text><input class="input" type="number" placeholder="60" value="{{form.durationMinutes}}" data-field="durationMinutes" bindinput="onFormInput" confirm-type="done" /></view>
     </view>
 
     <text class="form-helper">客户预约时可多选服务，系统会按这里的价格自动累加。</text>
 
     <view class="form-item">
       <text class="label">描述（选填）</text>
-      <textarea class="textarea" placeholder="服务详细说明" value="{{form.description}}" data-field="description" bindinput="onFormInput"/>
+      <textarea class="textarea" placeholder="服务详细说明" value="{{form.description}}" data-field="description" bindinput="onFormInput" confirm-type="done" />
     </view>
 
     <button class="btn-save" bindtap="handleSubmit" disabled="{{submitting}}">

@@ -18,7 +18,7 @@
           placeholder="一句话描述你的问题"
           placeholder-class="ph"
           bindinput="onTitleInput"
-          confirm-type="next"
+          confirm-type="done"
           cursor-spacing="24"
         />
         <text class="field-count">{{title.length}}/{{titleMax}}</text>
@@ -47,8 +47,7 @@
           bindinput="onContentInput"
           auto-height
           adjust-position
-          cursor-spacing="120"
-        />
+          cursor-spacing="120" confirm-type="done" />
         <text class="field-count">{{content.length}}/{{contentMax}}</text>
       </view>
     </view>

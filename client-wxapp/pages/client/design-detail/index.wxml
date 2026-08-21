@@ -165,8 +165,7 @@
             value="{{editTitle}}"
             bindinput="onEditTitleInput"
             placeholder="输入设计标题"
-            placeholder-class="placeholder"
-          />
+            placeholder-class="placeholder" confirm-type="done" />
         </view>
 
         <view class="form-group">
@@ -177,8 +176,7 @@
             bindinput="onEditDescInput"
             placeholder="输入设计描述"
             placeholder-class="placeholder"
-            maxlength="500"
-          />
+            maxlength="500" confirm-type="done" />
         </view>
 
         <view class="form-group">

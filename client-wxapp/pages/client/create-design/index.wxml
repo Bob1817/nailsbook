@@ -9,7 +9,7 @@
       bindinput="onTitleInput"
       placeholder="给你的设计起个名字..."
       placeholder-class="placeholder"
-      confirm-type="next"
+      confirm-type="done"
       cursor-spacing="24"
     />
   </view>
@@ -67,8 +67,7 @@
       placeholder-class="placeholder"
       maxlength="500"
       adjust-position
-      cursor-spacing="120"
-    />
+      cursor-spacing="120" confirm-type="done" />
   </view>
 
   <!-- 提示 -->

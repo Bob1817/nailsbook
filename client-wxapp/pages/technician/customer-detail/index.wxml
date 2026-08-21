@@ -136,8 +136,7 @@
       maxlength="500"
       placeholder="记录本次要沟通的内容"
       value="{{followUpContent}}"
-      bindinput="onFollowUpInput"
-    />
+      bindinput="onFollowUpInput" confirm-type="done" />
     <view class="follow-plan-row">
       <picker mode="date" value="{{followUpDate}}" bindchange="onFollowUpDateChange">
         <view class="follow-date">计划日期：{{followUpDate}}</view>
@@ -278,8 +277,7 @@
         placeholder="输入新标签名称"
         value="{{newTag}}"
         bindinput="onNewTagInput"
-        bindconfirm="addNewTag"
-      />
+        bindconfirm="addNewTag" confirm-type="done" />
       <view class="new-tag-btn" bindtap="addNewTag">添加</view>
     </view>
   </scroll-view>

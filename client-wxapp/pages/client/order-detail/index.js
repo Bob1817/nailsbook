@@ -67,6 +67,7 @@ Page({
       const pres = resolveOrderPresentation({ serviceType: isShop ? 'shop' : 'home', address });
       const order = {
         id: raw.id, orderNo: raw.orderNo, status: raw.status, address,
+        bookingPhase: raw.bookingPhase || 'application', bookingType: raw.bookingType || 'legacy',
         serviceName: raw.customTitle || raw.customServiceRequest?.title || raw.designRequest?.title || '预约服务',
         remark: raw.remark || raw.note || '', durationMinutes, price, depositAmount, depositPaid,
         techName: raw.technician?.name || '美甲师', techAvatar: raw.technician?.avatarUrl || '',
@@ -79,7 +80,11 @@ Page({
         _priceText: price ? formatMoney(price) : '待报价',
         _showPriceCard: price > 0 || depositAmount > 0, _actions: null,
         review: raw.review || null,
-        sourceWork: raw.sourceWork || null
+        sourceWork: raw.sourceWork || null,
+        serviceLines: raw.serviceLines || [],
+        serviceSubtotalFen: Number(raw.serviceSubtotalFen || 0),
+        discountAmountFen: Number(raw.discountAmountFen || 0),
+        finalPriceFen: raw.finalPriceFen == null ? null : Number(raw.finalPriceFen)
       };
       order._actions = actionsForStatus(order);
       this.setData({

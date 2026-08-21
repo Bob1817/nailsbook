@@ -113,14 +113,9 @@
 
   <scroll-view scroll-y class="sheet-body">
     <view class="form-item">
-      <text class="form-label">报价金额（元）<text class="required">*</text></text>
-      <input
-        class="form-input"
-        type="digit"
-        placeholder="请输入"
-        value="{{quotePrice}}"
-        bindinput="onQuotePriceInput"
-      />
+      <text class="form-label">服务组合 <text class="required">*</text></text>
+      <text class="quote-helper">根据客户图片和描述，选择实际需要的基础服务</text>
+      <view class="quote-service-list"><view wx:for="{{quoteServices}}" wx:key="id" class="quote-service {{quoteSelectedServiceIds.indexOf(item.id) >= 0 ? 'selected' : ''}}" data-id="{{item.id}}" bindtap="toggleQuoteService"><view><text class="quote-service-name">{{item.name}}</text><text class="quote-service-meta">¥{{item.price}} · {{item.durationMinutes}}分钟</text></view><text class="quote-service-check">{{quoteSelectedServiceIds.indexOf(item.id) >= 0 ? '✓' : ''}}</text></view></view>
     </view>
 
     <view class="form-row-2">
@@ -139,14 +134,9 @@
     </view>
 
     <view class="form-item">
-      <text class="form-label">服务时长（分钟）<text class="required">*</text></text>
-      <input
-        class="form-input"
-        type="number"
-        placeholder="例：120"
-        value="{{quoteDuration}}"
-        bindinput="onQuoteDurationInput"
-      />
+      <text class="form-label">优惠金额（元）</text>
+      <input class="form-input" type="digit" placeholder="0" value="{{quoteDiscount}}" bindinput="onQuoteDiscountInput" confirm-type="done" />
+      <view class="quote-summary"><text>服务合计 ¥{{quoteSubtotalFen / 100}}</text><text>预计 {{quoteTotalDuration}} 分钟</text><text class="quote-final">最终报价 ¥{{quoteFinalFen / 100}}</text></view>
     </view>
 
     <view class="form-item">
@@ -156,8 +146,7 @@
         placeholder="给客户的备注"
         value="{{quoteRemark}}"
         bindinput="onQuoteRemarkInput"
-        maxlength="200"
-      />
+        maxlength="200" confirm-type="done" />
     </view>
   </scroll-view>
 
@@ -184,8 +173,7 @@
         placeholder="请简要说明取消原因，便于客户了解"
         value="{{cancelReason}}"
         bindinput="onCancelReasonInput"
-        maxlength="200"
-      />
+        maxlength="200" confirm-type="done" />
     </view>
 
     <view class="reason-chips">

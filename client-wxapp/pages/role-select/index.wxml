@@ -62,8 +62,7 @@
         value="{{inviteCode}}"
         bindinput="onInviteInput"
         placeholder="邀请码 / 邀请链接（选填）"
-        placeholder-class="input-placeholder"
-      />
+        placeholder-class="input-placeholder" confirm-type="done" />
       <view wx:if="{{findingTech}}" class="spinner"></view>
       <view wx:if="{{foundTech && !findingTech}}" class="check">✓</view>
     </view>
@@ -99,8 +98,7 @@
         bindinput="onActivationKeyInput"
         placeholder="激活密钥（选填）"
         placeholder-class="input-placeholder"
-        password="{{!showActivationKey}}"
-      />
+        password="{{!showActivationKey}}" confirm-type="done" />
       <view class="eye" bindtap="toggleActivationKeyVisibility">
         <text>{{showActivationKey ? '隐藏' : '显示'}}</text>
       </view>

@@ -23,8 +23,14 @@
       </view>
     </view>
 
-    <view class="section-card">
-      <view class="section-head"><text class="section-title">收入趋势</text><view class="export-actions"><button class="export-button" disabled="{{exporting}}" bindtap="exportRevenue">收入 CSV</button><button class="export-button" loading="{{exporting}}" disabled="{{exporting}}" bindtap="exportFullData">完整数据</button></view></view>
+    <view class="section-card trend-section">
+      <view class="section-head trend-head">
+        <text class="section-title">收入趋势</text>
+        <view class="export-actions">
+          <button class="export-button" disabled="{{exporting}}" bindtap="exportRevenue">收入 CSV</button>
+          <button class="export-button" loading="{{exporting}}" disabled="{{exporting}}" bindtap="exportFullData">完整数据</button>
+        </view>
+      </view>
       <text class="sub-title">近 7 日</text>
       <view wx:if="{{overview.dailyTrend.length}}" class="trend-list"><view wx:for="{{overview.dailyTrend}}" wx:key="period" class="trend-row"><text>{{item.label}}</text><text>{{item.orders}} 单 · +{{item.newCustomers}} 客</text><text>{{item.revenueText}}</text></view></view>
       <text wx:else class="empty">最近 7 日暂无确认收入</text>

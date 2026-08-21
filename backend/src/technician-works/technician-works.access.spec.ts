@@ -155,6 +155,17 @@ describe('TechnicianWorksService work access', () => {
     };
     const prisma = {
       nailWork: { create: jest.fn().mockResolvedValue(created) },
+      service: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: 3,
+            publicId: 'basic',
+            name: '基础护理',
+            priceMinFen: 8800,
+            durationMinutes: 60,
+          },
+        ]),
+      },
     };
     const subscriptions = {
       assertCanCreateWork: jest.fn().mockResolvedValue({}),
@@ -174,6 +185,8 @@ describe('TechnicianWorksService work access', () => {
       designIdea: '低饱和花园色彩',
       suitableScene: '约会,旅行',
       recommendationScore: 5,
+      selectedServiceIds: ['basic'],
+      standardPrice: 128,
     });
 
     expect(prisma.nailWork.create).toHaveBeenCalledWith(

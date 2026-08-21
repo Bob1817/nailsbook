@@ -272,7 +272,7 @@
     <text class="modal-title">绑定 {{artist.name}}</text>
     <text class="modal-desc">请输入美甲师提供的邀请码。申请通过后，你的预约会默认归属给这位美甲师。</text>
     <view class="modal-input-row">
-      <input class="modal-input" value="{{bindInviteCode}}" bindinput="onBindInviteInput" placeholder="邀请码或邀请链接" disabled="{{bindChecking}}"/>
+      <input class="modal-input" value="{{bindInviteCode}}" bindinput="onBindInviteInput" placeholder="邀请码或邀请链接" disabled="{{bindChecking}}" confirm-type="done" />
       <view class="modal-verify-btn" bindtap="verifyInviteCode">{{bindChecking ? '验证中' : '验证'}}</view>
     </view>
     <view wx:if="{{bindCandidate}}" class="modal-success">
