@@ -1,5 +1,5 @@
-import { IsNotEmpty, IsString, Matches } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsIn, IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsStrongPassword } from '../../common/validators/password.validator';
 
 export class RegisterByInviteDto {
@@ -13,8 +13,18 @@ export class RegisterByInviteDto {
   @IsStrongPassword()
   password: string;
 
-  @ApiProperty({ description: '美甲师邀请码', example: 'A3F9K2M7' })
+  @ApiPropertyOptional({ description: '美甲师邀请码（选填）', example: 'A3F9K2M7' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty({ message: '邀请码不能为空' })
-  inviteCode: string;
+  inviteCode?: string;
+
+  @ApiPropertyOptional({ description: '用户昵称', example: '小美' })
+  @IsOptional()
+  @IsString()
+  nickname?: string;
+
+  @ApiPropertyOptional({ description: '注册来源', enum: ['invite', 'card'] })
+  @IsOptional()
+  @IsIn(['invite', 'card'])
+  source?: 'invite' | 'card';
 }

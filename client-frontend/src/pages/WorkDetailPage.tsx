@@ -1,6 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { worksService, type Comment, type WorkDetail } from '../services/works';
+import { useAuth } from '../contexts/AuthContext';
+import BookingSheet from '../components/BookingSheet';
+import type { Technician } from '../services/auth';
 
 // ─── CommentItem ────────────────────────────────────────────────────────────
 
@@ -8,6 +11,7 @@ interface CommentItemProps {
   comment: Comment;
   onReply: (comment: Comment) => void;
   onDelete: (commentId: number) => void;
+  onReport: (commentId: number) => void;
   actionMenuId: number | null;
   setActionMenuId: (id: number | null) => void;
 }
@@ -16,6 +20,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   comment,
   onReply,
   onDelete,
+  onReport,
   actionMenuId,
   setActionMenuId,
 }) => {
@@ -63,8 +68,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
             <span className="ml-auto whitespace-nowrap">
               {new Date(comment.createdAt).toLocaleDateString()}
             </span>
-            {/* More button (own comments only) */}
-            {comment.isAuthor && !isDeleted && (
+            {/* More button — delete for own comments, report for others */}
+            {!isDeleted && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -98,18 +103,33 @@ const CommentItem: React.FC<CommentItemProps> = ({
               className="rounded-t-2xl bg-white p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
               onClick={(e) => e.stopPropagation()}
             >
-              <button
-                onClick={() => {
-                  setActionMenuId(null);
-                  onDelete(comment.id);
-                }}
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-red-500 active:bg-red-50"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                删除评论
-              </button>
+              {comment.isAuthor ? (
+                <button
+                  onClick={() => {
+                    setActionMenuId(null);
+                    onDelete(comment.id);
+                  }}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-red-500 active:bg-red-50"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  删除评论
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setActionMenuId(null);
+                    onReport(comment.id);
+                  }}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-orange-500 active:bg-orange-50"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 2H21l-3 6 3 6h-8.5l-1-2H5a2 2 0 00-2 2z" />
+                  </svg>
+                  举报
+                </button>
+              )}
               <div className="my-1 h-px bg-gray-100" />
               <button
                 onClick={() => setActionMenuId(null)}
@@ -130,6 +150,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 comment={reply}
                 onReply={onReply}
                 onDelete={onDelete}
+                onReport={onReport}
                 actionMenuId={actionMenuId}
                 setActionMenuId={setActionMenuId}
               />
@@ -177,12 +198,13 @@ interface HiddenCommentsSectionProps {
   comments: Comment[];
   onReply: (c: Comment) => void;
   onDelete: (id: number) => void;
+  onReport: (id: number) => void;
   actionMenuId: number | null;
   setActionMenuId: (id: number | null) => void;
 }
 
 const HiddenCommentsSection: React.FC<HiddenCommentsSectionProps> = ({
-  comments, onReply, onDelete, actionMenuId, setActionMenuId,
+  comments, onReply, onDelete, onReport, actionMenuId, setActionMenuId,
 }) => {
   const [expanded, setExpanded] = useState(false);
   if (comments.length === 0) return null;
@@ -209,6 +231,7 @@ const HiddenCommentsSection: React.FC<HiddenCommentsSectionProps> = ({
               comment={c}
               onReply={onReply}
               onDelete={onDelete}
+              onReport={onReport}
               actionMenuId={actionMenuId}
               setActionMenuId={setActionMenuId}
             />
@@ -323,6 +346,8 @@ const WorkDetailPage: React.FC = () => {
     else navigate('/works');
   };
   const { id } = useParams<{ id: string }>();
+  const { technicians } = useAuth();
+  const [quickBookTech, setQuickBookTech] = useState<Technician | null>(null);
   const [work, setWork] = useState<WorkDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -331,7 +356,13 @@ const WorkDetailPage: React.FC = () => {
   const [replyingTo, setReplyingTo] = useState<{ id: number; name: string } | null>(null);
   const [actionMenuId, setActionMenuId] = useState<number | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
+  const [reportTarget, setReportTarget] = useState<number | null>(null);
+  const [reportToast, setReportToast] = useState<string | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
+  // 默认图高调低，首屏即露出评论；用户仍可拖拽手柄放大至 55vh 或缩到 22vh
+  const [imageHeightVh, setImageHeightVh] = useState(38);
+  const dragRef = useRef<{ startY: number; startVh: number } | null>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
   const imageSliderRef = useRef<HTMLDivElement>(null);
 
@@ -360,6 +391,20 @@ const WorkDetailPage: React.FC = () => {
     return () => document.removeEventListener('click', close);
   }, [actionMenuId]);
 
+  // 多图自动轮播（4s 循环；全屏预览时暂停）
+  useEffect(() => {
+    const el = imageSliderRef.current;
+    if (!el || !work || work.imageUrls.length <= 1 || viewerOpen) return;
+    const timer = setInterval(() => {
+      const w = el.clientWidth;
+      if (!w) return;
+      const cur = Math.round(el.scrollLeft / w);
+      const next = (cur + 1) % work.imageUrls.length;
+      el.scrollTo({ left: next * w, behavior: 'smooth' });
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [work, viewerOpen]);
+
   const refreshComments = async (workId: number) => {
     const data = await worksService.getComments(workId);
     setComments(data);
@@ -372,6 +417,20 @@ const WorkDetailPage: React.FC = () => {
 
   const handleDeleteRequest = (commentId: number) => {
     setConfirmDelete(commentId);
+  };
+
+  const handleReport = async (reason: 'spam' | 'inappropriate' | 'harassment' | 'other') => {
+    if (reportTarget === null) return;
+    const commentId = reportTarget;
+    setReportTarget(null);
+    try {
+      const res = await worksService.reportComment(commentId, reason);
+      setReportToast(res.alreadyReported ? '你已举报过该评论' : '已举报，我们将尽快处理');
+    } catch {
+      setReportToast('举报失败，请稍后再试');
+    } finally {
+      setTimeout(() => setReportToast(null), 2200);
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -423,15 +482,34 @@ const WorkDetailPage: React.FC = () => {
     }
   };
 
+  // 真正滚动图片容器（snap 横滑）——此前只改 index 不滚动，导致箭头无反应
+  const scrollToImage = (index: number) => {
+    const el = imageSliderRef.current;
+    if (!el) return;
+    el.scrollTo({ left: index * el.clientWidth, behavior: 'smooth' });
+  };
+
   const handleImageSwipe = (direction: 'left' | 'right') => {
     if (!work) return;
     const maxIndex = work.imageUrls.length - 1;
-    if (direction === 'left' && currentImageIndex < maxIndex) {
-      setCurrentImageIndex(currentImageIndex + 1);
-    } else if (direction === 'right' && currentImageIndex > 0) {
-      setCurrentImageIndex(currentImageIndex - 1);
-    }
+    const target =
+      direction === 'left'
+        ? Math.min(currentImageIndex + 1, maxIndex)
+        : Math.max(currentImageIndex - 1, 0);
+    scrollToImage(target);
   };
+
+  const onGrabberDown = (e: React.PointerEvent) => {
+    dragRef.current = { startY: e.clientY, startVh: imageHeightVh };
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+  };
+  const onGrabberMove = (e: React.PointerEvent) => {
+    if (!dragRef.current) return;
+    const vhPx = window.innerHeight / 100;
+    const next = Math.min(55, Math.max(22, dragRef.current.startVh + (e.clientY - dragRef.current.startY) / vhPx));
+    setImageHeightVh(next);
+  };
+  const onGrabberUp = () => { dragRef.current = null; };
 
   const handleShare = async () => {
     if (!work) return;
@@ -446,6 +524,22 @@ const WorkDetailPage: React.FC = () => {
       if ((error as { name?: string })?.name === 'AbortError') return;
       console.error('Failed to share:', error);
     }
+  };
+
+  const handleContactTech = () => {
+    if (!work?.technicianId) return;
+    navigate(`/chat/direct?tech_id=${work.technicianId}`);
+  };
+
+  const handleBookSame = () => {
+    if (!work) return;
+    const fullTech = technicians.find((t) => t.id === work.technicianId);
+    if (fullTech) {
+      setQuickBookTech(fullTech);
+      return;
+    }
+    // 取不到完整美甲师信息：回退到完整预约表单
+    if (work.technicianId) navigate(`/orders/create?tech_id=${work.technicianId}`);
   };
 
   if (loading) {
@@ -480,7 +574,7 @@ const WorkDetailPage: React.FC = () => {
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-20 px-4 pt-[max(0.875rem,env(safe-area-inset-top)+0.5rem)] pb-2">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 rounded-full bg-black/28 px-2 py-1.5 backdrop-blur-md">
+          <div className="flex min-w-0 items-center gap-2 rounded-full bg-black/28 px-2 py-1.5 backdrop-blur-md">
             <button
               onClick={handleBack}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-white/12 text-white"
@@ -489,24 +583,34 @@ const WorkDetailPage: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
+            {(work.technician?.avatarUrl || work.technicianAvatarUrl) ? (
+              <img
+                src={work.technician?.avatarUrl || work.technicianAvatarUrl || ''}
+                alt=""
+                className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-white/30"
+              />
+            ) : (
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/18 text-[11px] font-semibold text-white">
+                {(work.technician?.name || work.technicianName)?.slice(0, 1) || '美'}
+              </div>
+            )}
             <div className="min-w-0 pr-1">
-              <p className="truncate text-sm font-medium text-white">{work.technicianName || '美甲师作品'}</p>
+              <p className="truncate text-sm font-medium text-white">{work.technician?.name || work.technicianName || '美甲师作品'}</p>
               <p className="text-[11px] text-white/70">作品详情</p>
             </div>
           </div>
           <button
             onClick={handleShare}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-black/28 text-white backdrop-blur-md"
+            aria-label="分享"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black/28 text-white backdrop-blur-md"
           >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-            </svg>
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
           </button>
         </div>
       </div>
 
       {/* Image Slider */}
-      <div className="relative h-[55vh] flex-shrink-0 bg-black">
+      <div className="relative flex-shrink-0 bg-black transition-[height] duration-150" style={{ height: `${imageHeightVh}vh` }}>
         <div
           ref={imageSliderRef}
           onScroll={() => {
@@ -565,8 +669,20 @@ const WorkDetailPage: React.FC = () => {
 
       {/* Work Info Panel */}
       <div className="relative z-10 -mt-6 flex min-h-0 flex-1 flex-col rounded-t-[28px] bg-white shadow-[0_-12px_40px_rgba(15,23,42,0.06)]">
+        {/* Grabber handle */}
+        <div
+          className="flex shrink-0 cursor-grab touch-none items-center justify-center pt-2 pb-1 active:cursor-grabbing"
+          onPointerDown={onGrabberDown}
+          onPointerMove={onGrabberMove}
+          onPointerUp={onGrabberUp}
+          onPointerCancel={onGrabberUp}
+        >
+          <div className="h-1.5 w-10 rounded-full bg-gray-300" />
+        </div>
+        {/* 标题 + 评论：统一滚动流，标题随评论一起滚动，评论获得完整高度 */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {/* Title block */}
-        <div className="shrink-0 px-5 pt-5 pb-4">
+        <div className="px-5 pt-3 pb-4">
           <h2 className="text-[1.35rem] font-bold leading-tight tracking-[-0.02em] text-gray-900">
             {work.title || '未命名作品'}
           </h2>
@@ -582,57 +698,10 @@ const WorkDetailPage: React.FC = () => {
               ))}
             </div>
           )}
-
-          {/* Action bar */}
-          <div className="mt-4 flex items-center gap-3 border-t border-gray-100 pt-4">
-            <button
-              onClick={handleLike}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-medium transition-colors ${
-                work.isLiked ? 'bg-red-50 text-red-500' : 'bg-gray-50 text-gray-600'
-              }`}
-            >
-              {work.isLiked ? (
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                </svg>
-              ) : (
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-              )}
-              <span>{work.isLiked ? '已喜欢' : '喜欢'}</span>
-              {(work.likeCount || 0) > 0 && <span className="text-xs text-gray-400">{work.likeCount}</span>}
-            </button>
-            <button
-              onClick={handleFavorite}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-medium transition-colors ${
-                work.isFavorited ? 'bg-amber-50 text-amber-600' : 'bg-gray-50 text-gray-600'
-              }`}
-            >
-              {work.isFavorited ? (
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                </svg>
-              ) : (
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                </svg>
-              )}
-              <span>{work.isFavorited ? '已收藏' : '收藏'}</span>
-            </button>
-            <button
-              onClick={handleShare}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gray-50 text-gray-600"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-              </svg>
-            </button>
-          </div>
         </div>
 
-        {/* Comments — scrollable */}
-        <div className="flex-1 overflow-y-auto border-t border-gray-100 px-5 py-4">
+        {/* Comments */}
+        <div className="border-t border-gray-100 px-5 py-4">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-gray-900">评论</h3>
             <span className="text-xs text-gray-400">{visibleComments.length} 条</span>
@@ -646,6 +715,7 @@ const WorkDetailPage: React.FC = () => {
                   comment={comment}
                   onReply={handleReply}
                   onDelete={handleDeleteRequest}
+                  onReport={setReportTarget}
                   actionMenuId={actionMenuId}
                   setActionMenuId={setActionMenuId}
                 />
@@ -661,13 +731,23 @@ const WorkDetailPage: React.FC = () => {
             comments={hiddenComments}
             onReply={handleReply}
             onDelete={handleDeleteRequest}
+            onReport={setReportTarget}
             actionMenuId={actionMenuId}
             setActionMenuId={setActionMenuId}
           />
         </div>
+        </div>
 
         {/* Comment input bar */}
         <div className="shrink-0 border-t border-gray-100 bg-white px-5 pt-3 pb-[max(0.875rem,env(safe-area-inset-bottom)+0.5rem)]">
+          {/* 预约同款 — 常驻主行动入口（原在标题块，移至此处腾出评论空间并常驻可见） */}
+          <button
+            onClick={handleBookSame}
+            className="mb-2.5 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(255,107,138,0.3)] active:scale-[0.99] transition-transform"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+            预约同款
+          </button>
           {replyingTo && (
             <div className="mb-2 flex items-center gap-2 text-xs text-gray-500">
               <span>回复 <span className="font-medium text-[var(--color-primary)]">@{replyingTo.name}</span></span>
@@ -687,6 +767,8 @@ const WorkDetailPage: React.FC = () => {
               type="text"
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
+              onFocus={() => setInputFocused(true)}
+              onBlur={() => setInputFocused(false)}
               placeholder={replyingTo ? `回复 @${replyingTo.name}...` : '添加评论...'}
               className="h-11 flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 text-sm focus:border-[var(--color-primary)] focus:bg-white focus:outline-none"
               onKeyDown={(e) => {
@@ -696,16 +778,54 @@ const WorkDetailPage: React.FC = () => {
                 }
               }}
             />
-            <button
-              onClick={handleAddComment}
-              disabled={!commentText.trim()}
-              className="h-11 rounded-full bg-[var(--color-primary)] px-5 text-sm font-medium text-white disabled:opacity-40"
-            >
-              发送
-            </button>
+            {inputFocused || commentText.trim() ? (
+              <button
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleAddComment}
+                disabled={!commentText.trim()}
+                className="h-11 shrink-0 rounded-full bg-[#FF6B8A] px-5 text-sm font-medium text-white disabled:opacity-40"
+              >
+                发送
+              </button>
+            ) : (
+              <div className="flex shrink-0 items-center gap-1">
+                <button onClick={handleLike} className="flex h-11 items-center gap-1 px-2 text-gray-600" aria-label="点赞">
+                  {work.isLiked ? (
+                    <svg className="h-6 w-6 text-[#FF6B8A]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
+                  ) : (
+                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                  )}
+                  {(work.likeCount || 0) > 0 && <span className="text-xs text-gray-500">{work.likeCount}</span>}
+                </button>
+                <button onClick={handleFavorite} className="flex h-11 items-center gap-1 px-2 text-gray-600" aria-label="收藏">
+                  {work.isFavorited ? (
+                    <svg className="h-6 w-6 text-amber-500" fill="currentColor" viewBox="0 0 24 24"><path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118L2.49 9.901c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+                  ) : (
+                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118L2.49 9.901c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+                  )}
+                  {(work.favoriteCount || 0) > 0 && <span className="text-xs text-gray-500">{work.favoriteCount}</span>}
+                </button>
+                <button onClick={handleContactTech} className="flex h-11 items-center px-2 text-gray-600" aria-label="联系美甲师">
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* 预约同款 */}
+      {quickBookTech && (
+        <BookingSheet
+          technician={quickBookTech}
+          prefill={{
+            title: work.title || '预约同款',
+            images: work.imageUrls || [],
+          }}
+          onClose={() => setQuickBookTech(null)}
+          onCreated={() => { setQuickBookTech(null); navigate('/orders'); }}
+        />
+      )}
 
       {/* Delete confirm dialog */}
       {confirmDelete !== null && (
@@ -714,6 +834,49 @@ const WorkDetailPage: React.FC = () => {
           onConfirm={handleDeleteConfirm}
           onCancel={() => setConfirmDelete(null)}
         />
+      )}
+
+      {/* Report reason sheet */}
+      {reportTarget !== null && (
+        <div
+          className="fixed inset-0 z-[200] flex flex-col justify-end bg-black/40"
+          onClick={() => setReportTarget(null)}
+        >
+          <div
+            className="rounded-t-2xl bg-white p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="py-2 text-center text-sm font-medium text-gray-900">举报原因</p>
+            {([
+              { value: 'spam', label: '广告/垃圾信息' },
+              { value: 'inappropriate', label: '不雅内容' },
+              { value: 'harassment', label: '骚扰' },
+              { value: 'other', label: '其他' },
+            ] as const).map((item) => (
+              <button
+                key={item.value}
+                onClick={() => handleReport(item.value)}
+                className="w-full rounded-xl py-3.5 text-sm font-medium text-gray-700 active:bg-gray-50"
+              >
+                {item.label}
+              </button>
+            ))}
+            <div className="my-1 h-px bg-gray-100" />
+            <button
+              onClick={() => setReportTarget(null)}
+              className="w-full rounded-xl py-3.5 text-sm font-medium text-gray-500 active:bg-gray-50"
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Report toast */}
+      {reportToast && (
+        <div className="fixed left-1/2 top-1/2 z-[250] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-black/80 px-5 py-3 text-sm text-white">
+          {reportToast}
+        </div>
       )}
 
       {/* Fullscreen image viewer */}

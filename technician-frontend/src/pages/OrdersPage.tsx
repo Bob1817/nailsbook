@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/feedback/ToastProvider';
@@ -9,7 +9,6 @@ import { ActionConfirmDialog } from '../components/ActionConfirmDialog';
 import {
   orderStatusClasses,
   orderStatusLabels,
-  detectOrderConflict,
   formatClock,
   formatDateLabel,
   formatMoney,
@@ -19,6 +18,7 @@ import {
   type TechnicianCustomerSummary,
 } from '../services/technicianData';
 import { ListItemSkeleton } from '../components/Skeleton';
+import { CreateBookingSheet } from '../components/CreateBookingSheet';
 
 const orderTabs: Array<{ label: string; value: 'all' | OrderStatus }> = [
   { label: '全部', value: 'all' },
@@ -30,18 +30,9 @@ const orderTabs: Array<{ label: string; value: 'all' | OrderStatus }> = [
   { label: '进行中', value: 'in_progress' },
   { label: '已完成', value: 'completed' },
   { label: '已取消', value: 'cancelled' },
+  { label: '已过期', value: 'expired' },
 ];
 
-function buildEndTime(date: string, startTime: string, durationMinutes: number) {
-  const [hours, minutes] = startTime.split(':').map(Number);
-  const start = new Date(`${date}T${startTime}:00`);
-  if (Number.isNaN(hours) || Number.isNaN(minutes) || Number.isNaN(start.getTime())) {
-    return '';
-  }
-
-  const end = new Date(start.getTime() + durationMinutes * 60000);
-  return end.toISOString();
-}
 
 export const OrdersPage: React.FC = () => {
   const navigate = useNavigate();
@@ -54,13 +45,6 @@ export const OrdersPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateSheet, setShowCreateSheet] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
-  const [serviceName, setServiceName] = useState('');
-  const [orderDate, setOrderDate] = useState('');
-  const [startClock, setStartClock] = useState('14:00');
-  const [durationMinutes, setDurationMinutes] = useState('90');
-  const [address, setAddress] = useState('');
-  const [price, setPrice] = useState('');
-  const [note, setNote] = useState('');
   const [showDetailSheet, setShowDetailSheet] = useState(false);
   const [showReviewSheet, setShowReviewSheet] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
@@ -72,8 +56,6 @@ export const OrdersPage: React.FC = () => {
   const [reviewDepositAmount, setReviewDepositAmount] = useState('');
   const [reviewError, setReviewError] = useState('');
   const [isReviewing, setIsReviewing] = useState(false);
-  const [formError, setFormError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const toast = useToast();
 
@@ -147,18 +129,6 @@ export const OrdersPage: React.FC = () => {
     }
   }, [orders, searchParams]);
 
-  const selectedCustomer = useMemo(
-    () => customers.find((customer) => String(customer.id) === selectedCustomerId) ?? null,
-    [customers, selectedCustomerId]
-  );
-
-  useEffect(() => {
-    if (!selectedCustomer) {
-      return;
-    }
-
-    setAddress((current) => current || selectedCustomer.address);
-  }, [selectedCustomer]);
 
   const visibleOrders = orders.filter((order) => {
     const matchesTab = activeTab === 'all' || order.status === activeTab;
@@ -167,70 +137,6 @@ export const OrdersPage: React.FC = () => {
     return matchesTab && matchesName && isActive;
   });
 
-  async function handleCreateDraft() {
-    setFormError('');
-
-    if (!selectedCustomer || !serviceName || !orderDate || !startClock || !address || !price) {
-      setFormError('请填写客户、服务内容、时间、地址和价格');
-      return;
-    }
-
-    const nextDurationMinutes = Number(durationMinutes);
-    const nextPrice = Number(price);
-    const startTime = new Date(`${orderDate}T${startClock}:00`).toISOString();
-    const endTime = buildEndTime(orderDate, startClock, nextDurationMinutes);
-
-    if (!endTime || Number.isNaN(nextDurationMinutes) || nextDurationMinutes <= 0 || Number.isNaN(nextPrice)) {
-      setFormError('请检查服务时长和价格');
-      return;
-    }
-
-    if (detectOrderConflict(startTime, endTime, orders)) {
-      setFormError('该时间段已有预约，请调整开始时间或服务时长');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const createdOrder = await ordersService.createDraft({
-        customerId: selectedCustomer.id,
-        customerName: selectedCustomer.name,
-        customerPhone: selectedCustomer.phone,
-        serviceName,
-        address,
-        startTime,
-        endTime,
-        price: nextPrice,
-        note,
-      });
-      await reloadPageData(createdOrder.id);
-      setShowCreateSheet(false);
-      setSelectedCustomerId('');
-      // 清掉 URL 里的 customerId 参数，避免再次进入页面时自动弹出新建预约
-      if (searchParams.has('customerId')) {
-        setSearchParams({}, { replace: true });
-      }
-      setServiceName('');
-      setOrderDate('');
-      setStartClock('14:00');
-      setDurationMinutes('90');
-      setAddress('');
-      setPrice('');
-      setNote('');
-      if (createdOrder.isLocalDraft) {
-        toast.warning('后端暂不可用，已先保存为本地草稿，稍后可继续同步。');
-      } else {
-        toast.success('预约创建成功，已同步到预约、行程和客户记录。');
-      }
-      searchParams.delete('customerId');
-      setSearchParams(searchParams);
-    } catch {
-      setFormError('创建预约失败，请稍后重试');
-      toast.error('创建预约失败，请检查网络或稍后再试。');
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
 
   // 待确认的状态变更（弹窗后再执行）
   const [pendingStatusChange, setPendingStatusChange] = useState<OrderStatus | null>(null);
@@ -340,8 +246,8 @@ export const OrdersPage: React.FC = () => {
       setShowReviewConfirm(false);
       setShowReviewSheet(false);
       toast.success('报价已发送，等待客户确认。');
-    } catch (error: any) {
-      setReviewError(error?.response?.data?.message || '核实预约失败，请稍后重试');
+    } catch (error: unknown) {
+      setReviewError((error as { response?: { data?: { message?: string } } })?.response?.data?.message || '核实预约失败，请稍后重试');
     } finally {
       setIsReviewing(false);
     }
@@ -582,7 +488,7 @@ export const OrdersPage: React.FC = () => {
                       const result = await messageService.sendOrderCard(selectedOrder.id);
                       toast.success('已发送给客户');
                       if (result.conversationId) { setShowDetailSheet(false); navigate(`/chat?conversation_id=${result.conversationId}`); }
-                    } catch (err: any) { toast.error(err?.response?.data?.message || '发送失败，请重试'); }
+                    } catch (err: unknown) { toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || '发送失败，请重试'); }
                   }}
                   className="flex-1 min-w-0 h-12 rounded-[18px] bg-slate-800 text-[15px] font-semibold text-white shadow-none active:opacity-80">
                   发给 {selectedOrder.customerName}
@@ -674,104 +580,21 @@ export const OrdersPage: React.FC = () => {
         </div>
       ) : null}
 
-      {showCreateSheet ? (
-        <div className="fixed inset-0 z-[100] bg-black/30">
-          <div className="absolute bottom-0 left-0 right-0 rounded-t-3xl bg-white px-5 pb-8 pt-5">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">新建预约</h2>
-                <p className="text-xs text-gray-400">创建后会直接写入系统并同步到行程、首页和客户记录</p>
-              </div>
-              <button
-                onClick={() => {
-                  setShowCreateSheet(false);
-                  searchParams.delete('customerId');
-                  setSearchParams(searchParams);
-                }}
-                className="rounded-full bg-gray-100 px-3 py-2 text-sm text-gray-600 min-h-[44px]"
-              >
-                关闭
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <select
-                value={selectedCustomerId}
-                onChange={(event) => setSelectedCustomerId(event.target.value)}
-                className="h-12 w-full rounded-xl bg-gray-100 px-4 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
-              >
-                <option value="">选择客户</option>
-                {customers.map((customer) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.name}
-                  </option>
-                ))}
-              </select>
-
-              <input
-                value={serviceName}
-                onChange={(event) => setServiceName(event.target.value)}
-                placeholder="服务内容"
-                className="h-12 w-full rounded-xl bg-gray-100 px-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
-              />
-
-              <div className="grid grid-cols-2 gap-3">
-                <input
-                  type="date"
-                  value={orderDate}
-                  onChange={(event) => setOrderDate(event.target.value)}
-                  className="h-12 w-full rounded-xl bg-gray-100 px-4 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
-                />
-                <input
-                  type="time"
-                  value={startClock}
-                  onChange={(event) => setStartClock(event.target.value)}
-                  className="h-12 w-full rounded-xl bg-gray-100 px-4 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <input
-                  value={durationMinutes}
-                  onChange={(event) => setDurationMinutes(event.target.value.replace(/\D/g, ''))}
-                  placeholder="服务时长(分钟)"
-                  className="h-12 w-full rounded-xl bg-gray-100 px-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
-                />
-                <input
-                  value={price}
-                  onChange={(event) => setPrice(event.target.value.replace(/[^\d.]/g, ''))}
-                  placeholder="价格"
-                  className="h-12 w-full rounded-xl bg-gray-100 px-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
-                />
-              </div>
-
-              <input
-                value={address}
-                onChange={(event) => setAddress(event.target.value)}
-                placeholder="服务地址"
-                className="h-12 w-full rounded-xl bg-gray-100 px-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
-              />
-
-              <textarea
-                value={note}
-                onChange={(event) => setNote(event.target.value)}
-                placeholder="备注（可选）"
-                className="min-h-[96px] w-full rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
-              />
-
-              {formError ? <p className="text-sm text-red-500">{formError}</p> : null}
-
-              <button
-                onClick={() => void handleCreateDraft()}
-                disabled={isSubmitting}
-                className="w-full rounded-xl bg-[#FF5A66] py-3 text-sm font-medium text-white min-h-[48px] disabled:opacity-60"
-              >
-                {isSubmitting ? '创建中...' : '创建预约'}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <CreateBookingSheet
+        open={showCreateSheet}
+        customers={customers}
+        presetCustomerId={selectedCustomerId || undefined}
+        onClose={() => {
+          setShowCreateSheet(false);
+          if (searchParams.has('customerId')) {
+            setSearchParams({}, { replace: true });
+          }
+        }}
+        onCreated={(order) => {
+          setShowCreateSheet(false);
+          void reloadPageData(order.id);
+        }}
+      />
 
       {/* 操作确认弹窗 */}
       <ActionConfirmDialog

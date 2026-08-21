@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  ParseIntPipe,
   Patch,
   Post,
   Req,
@@ -16,6 +18,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { TechnicianJwtAuthGuard } from './technician-jwt-auth.guard';
+import { TouristGuard, AllowTourist } from './tourist.guard';
 import { TechnicianAuthService } from './technician-auth.service';
 import { TechnicianLoginDto } from './dto/technician-login.dto';
 import { TechnicianRegisterDto } from './dto/technician-register.dto';
@@ -24,14 +27,23 @@ import { UpdateTechnicianProfileDto } from './dto/update-technician-profile.dto'
 import { UpdateTechnicianSelfStatusDto } from './dto/update-technician-status.dto';
 import { UpdateTechnicianServiceTypeDto } from './dto/update-service-type.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { SetPasswordDto } from './dto/set-password.dto';
+import { SetInitialPasswordDto } from './dto/set-initial-password.dto';
 import { ForgotSendCodeDto, ForgotResetDto } from './dto/forgot-password.dto';
 import { RefreshTokenDto } from '../common/dto/refresh-token.dto';
+import { RegisterDeviceTokenDto } from '../notifications/dto/register-device-token.dto';
+import { PushService } from '../notifications/push.service';
+import { ClientAuthService } from '../client-auth/client-auth.service';
 
 @ApiTags('美甲师-认证')
 @ApiBearerAuth()
 @Controller('technician/auth')
 export class TechnicianAuthController {
-  constructor(private readonly technicianAuthService: TechnicianAuthService) {}
+  constructor(
+    private readonly technicianAuthService: TechnicianAuthService,
+    private readonly pushService: PushService,
+    private readonly clientAuthService: ClientAuthService,
+  ) {}
 
   @Post('login')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
@@ -85,6 +97,29 @@ export class TechnicianAuthController {
     return this.technicianAuthService.checkPhone(body.phone);
   }
 
+  @Post('set-initial-password')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @ApiOperation({ summary: '首次登录设置密码（短信验证后设置并自动登录）' })
+  @ApiBody({ type: SetInitialPasswordDto })
+  @ApiResponse({ status: 201, description: '密码设置成功，返回 token（自动登录）' })
+  @ApiResponse({ status: 400, description: '手机号未注册或账号已设置密码' })
+  async setInitialPassword(@Body() body: SetInitialPasswordDto) {
+    return this.technicianAuthService.setInitialPassword(
+      body.phone,
+      body.code,
+      body.newPassword,
+    );
+  }
+
+  @Post('set-initial-password/send-code')
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
+  @ApiOperation({ summary: '首次登录设置密码：发送短信验证码' })
+  @ApiBody({ type: ForgotSendCodeDto })
+  @ApiResponse({ status: 200, description: '已发送（统一响应）' })
+  async sendInitialPasswordCode(@Body() body: ForgotSendCodeDto) {
+    return this.technicianAuthService.sendInitialPasswordCode(body.phone);
+  }
+
   @Post('register')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: '美甲师注册（使用邀请密钥）' })
@@ -97,7 +132,7 @@ export class TechnicianAuthController {
   }
 
   @Get('me')
-  @UseGuards(TechnicianJwtAuthGuard)
+  @UseGuards(TechnicianJwtAuthGuard, TouristGuard)
   @ApiOperation({ summary: '获取当前美甲师信息' })
   @ApiResponse({ status: 200, description: '返回美甲师资料' })
   @ApiResponse({ status: 401, description: '未授权' })
@@ -105,8 +140,27 @@ export class TechnicianAuthController {
     return this.technicianAuthService.getProfile(request.user.technicianId);
   }
 
+  @AllowTourist()
+  @Post('device-token')
+  @UseGuards(TechnicianJwtAuthGuard, TouristGuard)
+  @ApiOperation({ summary: '上报设备推送 token' })
+  @ApiResponse({ status: 201, description: 'token 已记录' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  async registerDeviceToken(
+    @Req() request: { user: { technicianId: number } },
+    @Body() dto: RegisterDeviceTokenDto,
+  ) {
+    await this.pushService.registerToken({
+      role: 'technician',
+      technicianId: request.user.technicianId,
+      token: dto.token,
+      platform: dto.platform,
+    });
+    return { success: true };
+  }
+
   @Patch('status')
-  @UseGuards(TechnicianJwtAuthGuard)
+  @UseGuards(TechnicianJwtAuthGuard, TouristGuard)
   @ApiOperation({ summary: '更新美甲师状态' })
   @ApiBody({ type: UpdateTechnicianSelfStatusDto })
   @ApiResponse({ status: 200, description: '状态更新成功' })
@@ -121,8 +175,9 @@ export class TechnicianAuthController {
     );
   }
 
+  @AllowTourist()
   @Patch('profile')
-  @UseGuards(TechnicianJwtAuthGuard)
+  @UseGuards(TechnicianJwtAuthGuard, TouristGuard)
   @ApiOperation({ summary: '更新美甲师资料' })
   @ApiBody({ type: UpdateTechnicianProfileDto })
   @ApiResponse({ status: 200, description: '资料更新成功' })
@@ -138,7 +193,7 @@ export class TechnicianAuthController {
   }
 
   @Patch('password')
-  @UseGuards(TechnicianJwtAuthGuard)
+  @UseGuards(TechnicianJwtAuthGuard, TouristGuard)
   @ApiOperation({ summary: '修改密码' })
   @ApiBody({ type: ChangePasswordDto })
   @ApiResponse({ status: 200, description: '密码修改成功' })
@@ -155,8 +210,26 @@ export class TechnicianAuthController {
     );
   }
 
+  @AllowTourist()
+  @Post('set-password')
+  @UseGuards(TechnicianJwtAuthGuard, TouristGuard)
+  @ApiOperation({ summary: '首次登录设置密码' })
+  @ApiBody({ type: SetPasswordDto })
+  @ApiResponse({ status: 200, description: '密码设置成功，返回新 token' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  async setPassword(
+    @Req() request: { user: { technicianId: number } },
+    @Body() body: SetPasswordDto,
+  ) {
+    return this.technicianAuthService.setPassword(
+      request.user.technicianId,
+      body.newPassword,
+    );
+  }
+
+  @AllowTourist()
   @Patch('service-type')
-  @UseGuards(TechnicianJwtAuthGuard)
+  @UseGuards(TechnicianJwtAuthGuard, TouristGuard)
   @ApiOperation({ summary: '更新服务类型' })
   @ApiBody({ type: UpdateTechnicianServiceTypeDto })
   @ApiResponse({ status: 200, description: '服务类型更新成功' })
@@ -172,6 +245,50 @@ export class TechnicianAuthController {
     return this.technicianAuthService.updateServiceType(
       request.user.technicianId,
       body,
+    );
+  }
+
+  // ── 客户绑定申请审批 ──
+
+  @Get('binding-applications')
+  @UseGuards(TechnicianJwtAuthGuard, TouristGuard)
+  @ApiOperation({ summary: '待审批的客户绑定申请列表' })
+  @ApiResponse({ status: 200, description: '返回待审批申请' })
+  async listBindingApplications(
+    @Req() request: { user: { technicianId: number } },
+  ) {
+    return this.clientAuthService.listPendingBindingApplications(
+      request.user.technicianId,
+    );
+  }
+
+  @Post('binding-applications/:id/approve')
+  @UseGuards(TechnicianJwtAuthGuard, TouristGuard)
+  @ApiOperation({ summary: '通过绑定申请' })
+  @ApiResponse({ status: 201, description: '已通过' })
+  async approveBindingApplication(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.clientAuthService.approveBindingApplication(
+      request.user.technicianId,
+      id,
+    );
+  }
+
+  @Post('binding-applications/:id/reject')
+  @UseGuards(TechnicianJwtAuthGuard, TouristGuard)
+  @ApiOperation({ summary: '拒绝绑定申请' })
+  @ApiResponse({ status: 201, description: '已拒绝' })
+  async rejectBindingApplication(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { reason?: string },
+  ) {
+    return this.clientAuthService.rejectBindingApplication(
+      request.user.technicianId,
+      id,
+      body?.reason,
     );
   }
 }

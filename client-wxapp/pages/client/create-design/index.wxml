@@ -1,0 +1,95 @@
+<nav-bar title="新建设计" showBack/>
+<view class="container">
+  <!-- 标题输入 -->
+  <view class="form-card">
+    <text class="form-label">设计标题</text>
+    <input
+      class="form-input"
+      value="{{title}}"
+      bindinput="onTitleInput"
+      placeholder="给你的设计起个名字..."
+      placeholder-class="placeholder"
+      confirm-type="next"
+      cursor-spacing="24"
+    />
+  </view>
+
+  <!-- 图片上传 -->
+  <view class="form-card">
+    <view class="form-header">
+      <text class="form-label">上传图片</text>
+      <text class="form-count">({{images.length}}/9)</text>
+    </view>
+    
+    <view class="image-grid">
+      <view
+        wx:for="{{images}}"
+        wx:key="*this"
+        class="image-item"
+      >
+        <image
+          src="{{item}}"
+          mode="aspectFill"
+          class="image-thumb"
+          bindtap="previewImage"
+          data-url="{{item}}"
+          aria-label="私人设计参考图"
+        />
+        <view class="image-remove" catchtap="removeImage" data-index="{{index}}">
+          <text class="remove-icon">×</text>
+        </view>
+      </view>
+
+      <view
+        wx:if="{{images.length < 9}}"
+        class="image-add {{uploading ? 'uploading' : ''}}"
+        bindtap="chooseImage"
+      >
+        <view wx:if="{{uploading}}" class="upload-loading">
+          <view class="loading-spinner"></view>
+        </view>
+        <view wx:else class="add-content">
+          <text class="add-icon">+</text>
+          <text class="add-text">添加图片</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 描述 -->
+  <view class="form-card">
+    <text class="form-label">设计描述</text>
+    <textarea
+      class="form-textarea"
+      value="{{description}}"
+      bindinput="onDescInput"
+      placeholder="描述您想要的美甲款式，如：想做类似图片的猫眼款式..."
+      placeholder-class="placeholder"
+      maxlength="500"
+      adjust-position
+      cursor-spacing="120"
+    />
+  </view>
+
+  <!-- 提示 -->
+  <view class="tips-card">
+    <view class="tips-content">
+      <view class="menu-icon"></view>
+      <view class="tips-text">
+        <text class="tips-title">上传建议</text>
+        <text class="tips-desc">上传清晰的参考图片，并详细描述你的风格偏好，方便美甲师理解设计方向。</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 提交按钮 -->
+  <view class="submit-section">
+    <button
+      class="submit-btn {{submitting || images.length === 0 ? 'disabled' : ''}}"
+      disabled="{{submitting || images.length === 0}}"
+      bindtap="handleSubmit"
+    >
+      {{submitting ? '提交中...' : '提交设计'}}
+    </button>
+  </view>
+</view>

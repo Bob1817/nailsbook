@@ -102,6 +102,7 @@ describe('DevelopmentAuthSeedService', () => {
         phone: '13800138001',
         nickname: '王小美',
         status: 'active',
+        // 开发 fixture 现在带初始密码（bcrypt 哈希，非确定值）
         passwordHash: expect.any(String),
       }),
     });

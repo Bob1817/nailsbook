@@ -62,6 +62,22 @@ sed -i 's/api.lunails.cn/api.你的域名.com/g' deploy/nginx/conf.d/nailbook.co
 
 ## 第五步：启动所有服务
 
+管理后台镜像由 GitHub Actions 构建并推送到 GHCR，生产服务器不再构建
+`admin-frontend`。私有镜像首次部署前，需要使用具备 `read:packages` 权限的
+GitHub PAT 登录：
+
+```bash
+echo "$GHCR_PAT" | docker login ghcr.io -u Bob1817 --password-stdin
+docker compose pull admin-web
+```
+
+默认拉取 `ghcr.io/bob1817/nailsbook-admin-web:latest`。生产发布建议在仓库根目录
+`.env` 中固定已通过 CI 的提交镜像，避免 `latest` 漂移：
+
+```bash
+ADMIN_WEB_IMAGE=ghcr.io/bob1817/nailsbook-admin-web:sha-<完整提交 SHA>
+```
+
 ```bash
 docker compose up -d --build
 docker compose logs -f backend   # 观察启动日志
@@ -100,13 +116,77 @@ apiBaseUrl: 'https://api.你的域名.com'
 
 ---
 
+## 用户端 WebApp 部署（m.lunails.cn）
+
+用户端是一个静态 SPA（`client-frontend`），由 `client-web` 容器内部 nginx 提供，
+边缘 nginx 终止 TLS 并反代 `m.lunails.cn`：`/api/` 和 `/socket.io/` 转发到后端，
+其余转发到 SPA。前端用相对路径 `/api/client` 调接口，**同源、无需 CORS**。
+
+> 想换域名/换前端：把下文的 `m.lunails.cn` 全局替换为目标域名即可
+> （`deploy/nginx/conf.d/nailbook.conf`、`deploy/nginx/conf.d/m.lunails.cn-ssl.conf.disabled` 两处）。
+
+### 第一步：DNS 解析
+
+在域名服务商处添加一条 A 记录：`m.lunails.cn` → ECS 公网 IP（与 `api.lunails.cn` 同一台）。
+
+### 第二步：拉取代码并构建前端容器
+
+```bash
+cd /opt/nailbook
+git pull
+docker compose up -d --build client-web      # 构建并启动用户端静态服务
+docker compose restart nginx                  # 加载 m.lunails.cn 的 HTTP(80) 配置
+```
+
+此时 `m.lunails.cn` 的 80 端口已可用于 ACME 验证（HTTPS 暂未开启）。
+
+### 第三步：申请 SSL 证书
+
+```bash
+./deploy/init-ssl.sh m.lunails.cn admin@lunails.cn
+```
+
+### 第四步：启用 HTTPS 配置
+
+证书申请成功后，去掉 SSL 配置文件的 `.disabled` 后缀并重启 nginx：
+
+```bash
+mv deploy/nginx/conf.d/m.lunails.cn-ssl.conf.disabled deploy/nginx/conf.d/m.lunails.cn-ssl.conf
+docker compose restart nginx
+```
+
+### 第五步：验证
+
+```bash
+curl -I https://m.lunails.cn          # 期望 200，返回 SPA 的 index.html
+# 浏览器打开 https://m.lunails.cn ，登录后进入「消息」→ 对话页，确认顶部有「发起预约」按钮
+```
+
+### 证书自动续期
+
+`m.lunails.cn` 与 `api.lunails.cn` 共用 certbot 容器，已有的 `renew-ssl.sh` crontab
+会一并续期，无需额外配置。
+
+---
+
 ## 后续更新部署
 
 ```bash
 cd /opt/nailbook
 git pull
-docker compose up -d --build backend
+docker compose up -d --build backend       # 仅后端更新
+docker compose up -d --build client-web     # 仅用户端更新
+docker compose pull admin-web               # 拉取 CI 构建的管理端镜像
+docker compose up -d admin-web               # 仅重建管理端容器
 ```
+
+也可以使用 `./deploy/deploy.sh admin-web`。该命令只拉取管理端镜像并重建容器，
+不会在生产服务器执行 `npm ci` 或前端构建。执行前应确认目标提交的
+`admin-image` GitHub Actions 任务已经成功。
+
+后端容器启动时执行 `prisma migrate deploy`。迁移失败时应用不会继续启动，
+禁止使用 `prisma db push` 代替生产迁移；详细预检和备份流程见
+`backend/docs/DATABASE-MIGRATION-DEPLOYMENT.md`。
 
 ---
 

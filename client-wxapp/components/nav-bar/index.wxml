@@ -1,0 +1,27 @@
+<view class="nav-bar {{transparent ? 'transparent' : ''}} {{light ? 'light' : ''}}" style="padding-top: {{statusBarHeight}}px;">
+  <view class="nav-content" style="height: {{navBarHeight - statusBarHeight}}px;">
+
+    <!-- 左侧：返回按钮 -->
+    <view class="nav-left">
+      <navigator wx:if="{{showBack && backUrl}}" class="back-btn" url="{{backUrl}}" open-type="redirect" hover-class="none" bindtap="onBack">
+        <image class="back-chevron" src="/static/icons/nav-back.svg" mode="aspectFit" />
+      </navigator>
+      <navigator wx:elif="{{showBack}}" class="back-btn" open-type="navigateBack" delta="1" hover-class="none" bindtap="onBack">
+        <image class="back-chevron" src="/static/icons/nav-back.svg" mode="aspectFit" />
+      </navigator>
+    </view>
+
+    <!-- 标题区域：有返回键时居中，否则左对齐 -->
+    <view class="title-zone {{showBack || titleCenter ? 'title-center' : 'title-left'}}">
+      <text wx:if="{{subtitle}}" class="subtitle">{{subtitle}}</text>
+      <text class="title">{{title}}</text>
+    </view>
+
+    <!-- 右侧插槽 -->
+    <view class="nav-right">
+      <slot name="right"></slot>
+    </view>
+
+  </view>
+</view>
+<view class="nav-placeholder" style="height: {{navBarHeight}}px;"></view>

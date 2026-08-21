@@ -7,7 +7,8 @@ import { uploadService } from '../services/upload';
 import { useSocket } from '../hooks/useSocket';
 import { useTyping } from '../hooks/useTyping';
 import OrderDetail from './OrderDetail';
-import { ORDER_STATUS_LABEL } from '../utils/orderStatus';
+import BookingSheet from '../components/BookingSheet';
+import OrderCardMessage from '../components/OrderCardMessage';
 
 const ChatDetail: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const ChatDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showTechSelector, setShowTechSelector] = useState(false);
+  const [showBookingSheet, setShowBookingSheet] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [detailOrderId, setDetailOrderId] = useState<number | null>(null);
@@ -309,6 +311,18 @@ const ChatDetail: React.FC = () => {
               <p className="text-xs text-slate-500">一对一沟通与服务提醒</p>
             </div>
           </div>
+
+          {currentTechnician && (
+            <button
+              onClick={() => setShowBookingSheet(true)}
+              className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(135deg,#FF6B8A_0%,#FF8FA3_100%)] px-3.5 py-2 text-[13px] font-semibold text-white shadow-[0_10px_24px_rgba(255,107,138,0.3)]"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              发起预约
+            </button>
+          )}
         </div>
       </div>
 
@@ -364,71 +378,11 @@ const ChatDetail: React.FC = () => {
                                 onClick={() => message.imageUrl && window.open(message.imageUrl, '_blank')}
                               />
                             ) : message.messageType === 'order_card' ? (
-                              (() => {
-                                let card: {
-                                  orderNo?: string;
-                                  serviceType?: string | null;
-                                  startTime?: string;
-                                  status?: string;
-                                  price?: number | null;
-                                } = {};
-                                try {
-                                  card = JSON.parse(message.content || '{}');
-                                } catch {
-                                  card = {};
-                                }
-                                const hasData = Boolean(card.orderNo);
-                                const muted = isClient ? 'text-pink-100' : 'text-slate-400';
-                                const serviceLabel =
-                                  card.serviceType === 'home'
-                                    ? '上门美甲'
-                                    : card.serviceType === 'shop'
-                                      ? '到店美甲'
-                                      : card.serviceType || null;
-                                return (
-                                  <div className="min-w-[190px]">
-                                    <div className="flex items-center gap-1.5 text-sm font-semibold">
-                                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                      </svg>
-                                      预约卡片
-                                    </div>
-                                    {hasData ? (
-                                      <div className="mt-2 space-y-1 text-[13px]">
-                                        <div className="flex justify-between gap-4">
-                                          <span className={muted}>时间</span>
-                                          <span>{card.startTime ? dayjs(card.startTime).format('MM-DD HH:mm') : '待定'}</span>
-                                        </div>
-                                        {serviceLabel && (
-                                          <div className="flex justify-between gap-4">
-                                            <span className={muted}>服务</span>
-                                            <span>{serviceLabel}</span>
-                                          </div>
-                                        )}
-                                        <div className="flex justify-between gap-4">
-                                          <span className={muted}>价格</span>
-                                          <span>{card.price != null ? `¥${card.price}` : '待报价'}</span>
-                                        </div>
-                                        <div className="flex justify-between gap-4">
-                                          <span className={muted}>状态</span>
-                                          <span>{ORDER_STATUS_LABEL[card.status || ''] || card.status || '—'}</span>
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <p className="mt-1 text-sm leading-6">{message.content}</p>
-                                    )}
-                                    {message.relatedId && (
-                                      <button
-                                        type="button"
-                                        onClick={() => setDetailOrderId(message.relatedId!)}
-                                        className={`mt-2.5 w-full rounded-lg py-1.5 text-xs font-medium active:opacity-80 ${isClient ? 'bg-white/20 text-white' : 'bg-pink-50 text-[#FF6B8A]'}`}
-                                      >
-                                        查看预约详情 →
-                                      </button>
-                                    )}
-                                  </div>
-                                );
-                              })()
+                              <OrderCardMessage
+                                message={message}
+                                isClient={isClient}
+                                onViewDetail={setDetailOrderId}
+                              />
                             ) : (
                               <p className="text-sm whitespace-pre-wrap leading-6">{message.content}</p>
                             )}
@@ -577,6 +531,33 @@ const ChatDetail: React.FC = () => {
           onClose={() => setDetailOrderId(null)}
         />
       )}
+
+      {showBookingSheet && currentTechnician && (() => {
+        const fullTech = technicians.find((t) => t.id === currentTechnician.id);
+        if (!fullTech) {
+          return (
+            <div
+              className="fixed inset-0 z-[110] flex items-end justify-center bg-black/35 backdrop-blur-sm sm:items-center"
+              onClick={() => setShowBookingSheet(false)}
+            >
+              <div
+                className="w-full max-w-md rounded-t-[32px] bg-white p-6 text-center sm:rounded-[32px]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <p className="text-sm text-slate-500">无法获取该美甲师的服务信息，请稍后重试</p>
+              </div>
+            </div>
+          );
+        }
+        return (
+          <BookingSheet
+            technician={fullTech}
+            mode="chat"
+            onClose={() => setShowBookingSheet(false)}
+            onCreated={() => navigate('/orders')}
+          />
+        );
+      })()}
     </div>
   );
 };

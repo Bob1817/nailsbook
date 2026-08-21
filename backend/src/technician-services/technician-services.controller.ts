@@ -18,12 +18,13 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
+import { TouristGuard } from '../technician-auth/tourist.guard';
 import { TechnicianServicesService } from './technician-services.service';
 
 @ApiTags('美甲师-服务')
 @ApiBearerAuth()
 @Controller('technician/services')
-@UseGuards(TechnicianJwtAuthGuard)
+@UseGuards(TechnicianJwtAuthGuard, TouristGuard)
 export class TechnicianServicesController {
   constructor(
     private readonly technicianServicesService: TechnicianServicesService,
@@ -54,6 +55,8 @@ export class TechnicianServicesController {
           ],
           description: '服务分类',
         },
+        price: { type: 'number', description: '参考价格' },
+        durationMinutes: { type: 'number', description: '预计服务时长（分钟）' },
       },
       required: ['name', 'category'],
     },
@@ -72,6 +75,8 @@ export class TechnicianServicesController {
         | 'color_style'
         | 'extension_reinforcement'
         | 'removal';
+      price?: number;
+      durationMinutes?: number;
     },
   ) {
     return this.technicianServicesService.create(
@@ -100,6 +105,8 @@ export class TechnicianServicesController {
         },
         isActive: { type: 'boolean', description: '是否启用' },
         sortOrder: { type: 'number', description: '排序顺序' },
+        price: { type: 'number', description: '参考价格' },
+        durationMinutes: { type: 'number', description: '预计服务时长（分钟）' },
       },
     },
   })
@@ -120,6 +127,8 @@ export class TechnicianServicesController {
         | 'removal';
       isActive?: boolean;
       sortOrder?: number;
+      price?: number;
+      durationMinutes?: number;
     },
   ) {
     return this.technicianServicesService.update(

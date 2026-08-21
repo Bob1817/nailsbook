@@ -88,8 +88,21 @@ export interface DaySchedule {
   endTime: string;
 }
 
+export interface WorkTimeScheme {
+  id: string;
+  label: string;
+  startTime: string; // "10:00"
+  endTime: string;   // "21:00"
+  days: string[];    // subset of ['mon','tue','wed','thu','fri','sat','sun']
+}
+
 export interface ServiceSchedule {
-  days: Record<string, DaySchedule>;
+  schemes?: WorkTimeScheme[];
+  activeSchemeId?: string | null;
+  restDays?: string[]; // 'YYYY-MM-DD'
+  // legacy (read-only compat):
+  days?: Record<string, DaySchedule>;
+  selectedDates?: string[];
 }
 
 export interface CustomTag {
@@ -106,6 +119,7 @@ export interface Technician {
   avatar?: string;
   status: string;
   invitationCode?: string;
+  province?: string;
   city?: string;
   serviceArea?: string;
   homeService?: boolean;
@@ -139,8 +153,10 @@ export interface AuthContextType {
   technician: Technician | null;
   token: string | null;
   loading: boolean;
-  login: (phone: string, passwordOrCode: string) => Promise<void>;
+  login: (phone: string, passwordOrCode: string) => Promise<{ mustChangePassword: boolean }>;
   register: (params: { inviteKey: string; name: string; phone: string; password: string }) => Promise<void>;
+  setPassword: (newPassword: string) => Promise<void>;
+  setInitialPassword: (phone: string, newPassword: string) => Promise<void>;
   updateTechnicianStatus: (status: string) => Promise<void>;
   updateServiceType: (settings: ServiceTypeSettings) => Promise<void>;
   updateTechnicianProfile: (profile: Partial<Technician>) => Promise<void>;

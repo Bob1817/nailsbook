@@ -1,0 +1,16 @@
+<nav-bar title="设计需求" showBack/>
+<view class="page">
+  <view wx:if="{{loading}}" class="state">正在加载设计需求…</view>
+  <view wx:elif="{{loadFailed}}" class="state"><text>设计需求加载失败</text><view class="retry" bindtap="loadDesigns">重新加载</view></view>
+  <view wx:elif="{{!designs.length}}" class="state"><text class="state-title">还没有客户设计需求</text><text class="state-copy">客户提交私人设计后会显示在这里</text></view>
+  <view wx:else class="list">
+    <view wx:for="{{designs}}" wx:key="id" class="card">
+      <view class="card-head"><view><text class="title">{{item.title || '未命名设计'}}</text><text class="meta">{{item.clientName}} · {{item.dateText}}</text></view><text class="status">{{item.statusText}}</text></view>
+      <text wx:if="{{item.description}}" class="description">{{item.description}}</text>
+      <scroll-view wx:if="{{item.imageUrls.length}}" scroll-x class="photos"><view class="photo-row"><image wx:for="{{item.imageUrls}}" wx:for-item="photo" wx:key="*this" src="{{photo}}" class="photo" mode="aspectFill" bindtap="previewImages" data-id="{{item.id}}" data-url="{{photo}}" lazy-load aria-label="{{item.title || '设计需求'}}参考图"/></view></scroll-view>
+      <view wx:if="{{item.quotePrice}}" class="quote-summary"><text>当前报价</text><text class="price">¥{{item.quotePrice}}</text></view>
+      <view wx:if="{{item.status === 'pending_quote' || item.status === 'rejected' || item.status === 'quoted'}}" class="quote-btn" bindtap="openQuote" data-id="{{item.id}}">{{item.status === 'quoted' ? '修改报价' : '立即报价'}}</view>
+    </view>
+  </view>
+</view>
+<view wx:if="{{showQuote}}" class="mask" bindtap="closeQuote"><view class="sheet" catchtap="noop"><text class="sheet-title">设计报价</text><text class="label">报价金额</text><input class="input" type="digit" value="{{quotePrice}}" data-field="quotePrice" bindinput="onQuoteInput" placeholder="请输入金额"/><text class="label">报价说明</text><textarea class="textarea" value="{{quoteRemark}}" data-field="quoteRemark" bindinput="onQuoteInput" maxlength="200" placeholder="说明包含的服务和注意事项"/><view class="sheet-actions"><view class="cancel" bindtap="closeQuote">取消</view><view class="submit" bindtap="submitQuote">{{submitting ? '提交中...' : '发送报价'}}</view></view></view></view>

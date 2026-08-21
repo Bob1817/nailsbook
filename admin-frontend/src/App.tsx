@@ -9,8 +9,6 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Technicians from './pages/Technicians';
 import Customers from './pages/Customers';
-import Quotes from './pages/Quotes';
-import Orders from './pages/Orders';
 import Revenues from './pages/Revenues';
 import Subscriptions from './pages/Subscriptions';
 import OperationLogs from './pages/OperationLogs';
@@ -18,6 +16,13 @@ import Forbidden from './pages/Forbidden';
 import FeatureFlags from './pages/FeatureFlags';
 import Roles from './pages/Roles';
 import InviteKeys from './pages/InviteKeys';
+import Works from './pages/Works';
+import Comments from './pages/Comments';
+import Reports from './pages/Reports';
+import Feedback from './pages/Feedback';
+import ArtistApplications from './pages/ArtistApplications';
+import WechatConfig from './pages/WechatConfig';
+import LaunchConfig from './pages/LaunchConfig';
 
 const App: React.FC = () => {
   return (
@@ -38,12 +43,17 @@ const App: React.FC = () => {
               <Route index element={<Dashboard />} />
               <Route path="technicians" element={<ProtectedRoute permission="technician:view"><Technicians /></ProtectedRoute>} />
               <Route path="customers" element={<ProtectedRoute permission="customer:view"><Customers /></ProtectedRoute>} />
-              <Route path="quotes" element={<ProtectedRoute permission="quote:view"><Quotes /></ProtectedRoute>} />
-              <Route path="orders" element={<ProtectedRoute permission="order:view"><Orders /></ProtectedRoute>} />
+              <Route path="works" element={<ProtectedRoute permission="work:view"><Works /></ProtectedRoute>} />
+              <Route path="comments" element={<ProtectedRoute permission="comment:view"><Comments /></ProtectedRoute>} />
+              <Route path="reports" element={<ProtectedRoute permission="report:view"><Reports /></ProtectedRoute>} />
+              <Route path="feedback" element={<ProtectedRoute permission="feedback:view"><Feedback /></ProtectedRoute>} />
+              <Route path="applications" element={<ProtectedRoute permission="application:view"><ArtistApplications /></ProtectedRoute>} />
               <Route path="revenues" element={<ProtectedRoute permission="revenue:view"><Revenues /></ProtectedRoute>} />
               <Route path="subscriptions" element={<ProtectedRoute permission="subscription:view"><Subscriptions /></ProtectedRoute>} />
               <Route path="logs" element={<ProtectedRoute permission="log:view"><OperationLogs /></ProtectedRoute>} />
               <Route path="feature-flags" element={<ProtectedRoute permission="feature_flag:view"><FeatureFlags /></ProtectedRoute>} />
+              <Route path="wechat-config" element={<ProtectedRoute permission="feature_flag:view"><WechatConfig /></ProtectedRoute>} />
+              <Route path="launch-config" element={<ProtectedRoute permission="feature_flag:view"><LaunchConfig /></ProtectedRoute>} />
               <Route path="roles" element={<ProtectedRoute permission="role:view"><Roles /></ProtectedRoute>} />
               <Route path="invite-keys" element={<InviteKeys />} />
             </Route>

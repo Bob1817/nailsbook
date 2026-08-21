@@ -6,6 +6,7 @@ import { Button } from '../components/base/Button';
 import { Card } from '../components/base/Card';
 import type { SocialMediaAccounts } from '../contexts/authTypes';
 import { uploadService } from '../services/upload';
+import RegionSelect from '../components/RegionSelect';
 
 const SOCIAL_MEDIA_CONFIG = [
   { key: 'weibo', label: '微博', icon: '🔴', placeholder: 'https://weibo.com/u/xxxxx', prefix: 'weibo.com' },
@@ -25,6 +26,7 @@ const ProfileSettingsPage: React.FC = () => {
     avatar: '',
     name: '',
     phone: '',
+    province: '',
     city: '',
     serviceArea: '',
     socialMedia: {} as SocialMediaAccounts,
@@ -36,6 +38,7 @@ const ProfileSettingsPage: React.FC = () => {
         avatar: technician.avatar || '',
         name: technician.name || '',
         phone: technician.phone || '',
+        province: technician.province || '',
         city: technician.city || '',
         serviceArea: technician.serviceArea || '',
         socialMedia: technician.socialMedia || {},
@@ -55,6 +58,7 @@ const ProfileSettingsPage: React.FC = () => {
       await updateTechnicianProfile({
         avatar: formData.avatar,
         name: formData.name,
+        province: formData.province,
         city: formData.city,
         serviceArea: formData.serviceArea,
         socialMedia: formData.socialMedia,
@@ -188,12 +192,10 @@ const ProfileSettingsPage: React.FC = () => {
               <label className={labelClassName}>
                 所在城市
               </label>
-              <input
-                type="text"
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                placeholder="如：北京市"
-                className={inputClassName}
+              <RegionSelect
+                province={formData.province}
+                city={formData.city}
+                onChange={({ province, city }) => setFormData({ ...formData, province, city })}
               />
             </div>
 

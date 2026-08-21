@@ -21,6 +21,7 @@ export class OperationLogInterceptor implements NestInterceptor {
       module: string;
       action: string;
       targetType?: string;
+      logResponse?: boolean;
     }>('operationLog', context.getHandler());
 
     if (!options) {
@@ -50,7 +51,10 @@ export class OperationLogInterceptor implements NestInterceptor {
                 targetType: options.targetType,
                 targetId,
                 beforeData: undefined,
-                afterData: response ? JSON.stringify(response) : undefined,
+                afterData:
+                  options.logResponse !== false && response
+                    ? JSON.stringify(response)
+                    : undefined,
                 ip: request.ip,
                 userAgent: request.headers['user-agent'],
               },

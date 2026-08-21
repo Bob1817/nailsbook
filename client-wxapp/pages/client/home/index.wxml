@@ -1,17 +1,161 @@
 <view class="container">
-  <view class="header">
-    <image class="avatar" src="{{avatar}}" mode="aspectFill"></image>
-    <text class="nickname">{{nickname}}</text>
-    <text class="phone">{{phone}}</text>
+  <!-- 顶部导航 -->
+  <nav-bar title="首页"></nav-bar>
+
+  <!-- 轮播 - 最新作品 -->
+  <view class="hero-section">
+    <swiper wx:if="{{recentWorks.length > 0}}" class="hero-swiper" autoplay interval="4000" circular current="{{swiperIndex}}" bindchange="onSwiperChange">
+      <swiper-item wx:for="{{recentWorks}}" wx:key="id" bindtap="viewWork" data-id="{{item.id}}">
+        <view class="hero-item">
+          <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="hero-img" aria-label="{{item.title || '精选美甲作品'}}" />
+          <view wx:else class="hero-img-empty"></view>
+          <view class="hero-overlay">
+            <view class="hero-bottom-area">
+              <view class="hero-bottom-row">
+                <view class="hero-info">
+                  <text class="hero-info-title">{{item.title}}</text>
+                  <view class="hero-info-meta">
+                    <text>{{item.technicianName}}</text>
+                  </view>
+                </view>
+                <view class="hero-cta-btn" catchtap="viewWork" data-id="{{item.id}}">
+                  <text>查看详情</text>
+                  <text class="hero-cta-arrow">›</text>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </swiper-item>
+    </swiper>
+
+    <view wx:else class="hero-placeholder">
+      <view class="icon-placeholder-circle">
+        <view class="icon-placeholder-inner"></view>
+      </view>
+      <text class="hero-placeholder-text">绑定美甲师后查看最新作品</text>
+    </view>
+
+    <view wx:if="{{recentWorks.length > 1}}" class="hero-dots">
+      <view
+        wx:for="{{recentWorks}}"
+        wx:key="id"
+        class="hero-dot {{swiperIndex === index ? 'hero-dot-active' : ''}}"
+        data-index="{{index}}"
+        bindtap="onDotTap"
+      ></view>
+    </view>
   </view>
-  <view class="technician-card">
-    <image class="tech-avatar" src="{{techAvatar}}" mode="aspectFill"></image>
-    <text class="tech-name">{{techName}}</text>
+
+  <!-- 我的预约：首屏核心信息，紧跟作品 Hero -->
+  <view class="section booking-section booking-section-primary">
+    <view class="section-header">
+      <text class="section-title">我的预约</text>
+      <view wx:if="{{upcomingOrder}}" class="section-more" bindtap="navigateToOrders">查看全部 ›</view>
+    </view>
+    <text class="section-sub">{{upcomingOrder ? '距离最近的一次预约' : '快速发起你的下一次美甲'}}</text>
+
+    <view wx:if="{{upcomingOrder}}" class="order-card" bindtap="viewUpcomingOrder">
+      <view class="order-card-content">
+        <view class="order-card-top">
+          <view class="order-status-badge">{{upcomingOrder.statusText}}</view>
+          <view class="order-countdown"><text class="countdown-dot"></text><text class="countdown-value">{{upcomingOrder.countdown}}</text></view>
+        </view>
+        <view class="order-card-body">
+          <view class="order-date-box"><text class="order-date-month">{{orderMonth}}</text><text class="order-date-day">{{orderDay}}</text><text class="order-date-weekday">{{orderWeekday}}</text></view>
+          <view class="order-details">
+            <text class="order-service-name">{{upcomingOrder.serviceType}}</text>
+            <view class="order-detail-row"><view class="icon icon-clock"></view><text class="order-detail-text">{{upcomingOrder.timeStr}}</text></view>
+            <view wx:if="{{upcomingOrder.technician}}" class="order-detail-row"><view class="icon icon-person"></view><text class="order-detail-text order-detail-truncate">{{upcomingOrder.technician.name}}</text></view>
+            <view wx:if="{{orderAddress}}" class="order-detail-row"><view class="icon icon-pin"></view><text class="order-detail-text order-detail-address">{{orderAddress}}</text></view>
+          </view>
+        </view>
+        <view class="order-card-actions" catchtap="">
+          <view class="order-action-btn" bindtap="navigateToChat"><view class="icon icon-chat-white"></view><text>发消息</text></view>
+          <view wx:if="{{upcomingOrder.technician.phone}}" class="order-action-btn" bindtap="callTech"><view class="icon icon-phone-white"></view><text>打电话</text></view>
+          <view class="order-action-btn order-action-primary" bindtap="viewUpcomingOrder">查看详情</view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:else class="no-order-card" bindtap="navigateToBooking">
+      <view class="no-order-content">
+        <view class="no-order-copy"><text class="no-order-title">当前暂无预约</text><text class="no-order-sub">挑选喜欢的款式，快速预约美甲师</text></view>
+        <view class="book-btn"><text>去预约</text><text class="book-btn-arrow">›</text></view>
+      </view>
+    </view>
   </view>
-  <view class="quick-actions">
-    <view bindtap="navigateToWorks">作品浏览</view>
-    <view bindtap="navigateToBooking">立即预约</view>
-    <view bindtap="navigateToAddresses">地址管理</view>
-    <view bindtap="switchRole">切换身份</view>
+
+  <view class="section asset-section">
+    <view class="section-header">
+      <text class="section-title">我的美甲记录</text>
+      <view class="section-more" bindtap="navigateToArchive">查看全部 ›</view>
+    </view>
+    <text class="section-sub">按时间记录每一次完成的美甲和照片</text>
+    <view class="asset-grid">
+      <view class="asset-card archive-card" bindtap="navigateToArchive" role="button" aria-label="查看我的美甲记录">
+        <text class="asset-eyebrow">NAIL MOMENTS</text>
+        <text class="asset-title">我的美甲记录</text>
+        <text class="asset-desc">上传照片，也会同步美甲师关联的作品</text>
+        <text class="asset-link">查看时间记录 →</text>
+      </view>
+      <view class="asset-card ai-card" bindtap="navigateToAiPhoto" role="button" aria-label="生成朋友圈分享图">
+        <text class="asset-eyebrow">SHARE PHOTO</text>
+        <text class="asset-title">生成朋友圈分享图</text>
+        <text class="asset-desc">从记录中选图，生成适合分享的画面</text>
+        <text class="asset-link">选择照片 →</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="section style-section">
+    <view class="section-header">
+      <text class="section-title">热门风格</text>
+      <view class="section-more" bindtap="navigateToWorks">查看全部 ›</view>
+    </view>
+    <text class="section-sub">按你的场景，快速找到下一款灵感</text>
+    <scroll-view class="style-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+      <view class="style-row">
+        <view wx:for="{{popularStyles}}" wx:key="*this" class="style-chip" bindtap="viewStyle" data-style="{{item}}">{{item}}</view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 精选作品 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">精选作品</text>
+      <view class="section-more" bindtap="navigateToWorks">查看全部 ›</view>
+    </view>
+    <text class="section-sub">设计能力、审美理念与适合你的场景</text>
+
+    <view wx:if="{{featuredWorks.length}}" class="home-works-grid">
+      <view class="home-works-col">
+        <view wx:for="{{featuredLeftCol}}" wx:key="id" class="work-card">
+          <work-card work="{{item}}" bind:cardtap="onWorkCardTap" bind:artisttap="onArtistTap" bind:liketap="onLikeTap" bind:favoritetap="onFavoriteTap" bind:commenttap="onWorkCardTap" />
+        </view>
+      </view>
+      <view class="home-works-col">
+        <view wx:for="{{featuredRightCol}}" wx:key="id" class="work-card">
+          <work-card work="{{item}}" bind:cardtap="onWorkCardTap" bind:artisttap="onArtistTap" bind:liketap="onLikeTap" bind:favoritetap="onFavoriteTap" bind:commenttap="onWorkCardTap" />
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{worksLoading}}" class="works-loading">
+      <view class="loading-spinner"></view>
+    </view>
+    <view wx:if="{{!worksHasMore && featuredWorks.length > 0}}" class="works-end">
+      <text class="works-end-text">没有更多了</text>
+    </view>
+
+    <view wx:if="{{featuredWorks.length === 0 && !worksLoading}}" class="works-empty">
+      <view class="works-empty-icon-wrap">
+        <view class="icon icon-image-placeholder-lg"></view>
+      </view>
+      <text class="works-empty-text">暂无作品展示</text>
+    </view>
   </view>
 </view>
+
+<tab-bar selected="home" />

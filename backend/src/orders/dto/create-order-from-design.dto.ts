@@ -1,4 +1,4 @@
-import { IsString, IsInt, IsOptional, ValidateNested } from 'class-validator';
+import { IsString, IsInt, IsOptional, ValidateNested, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -9,6 +9,12 @@ class ShopAddressFromDesignDto {
 }
 
 export class CreateOrderFromDesignDto {
+  @ApiPropertyOptional({ description: '客户端生成的预约申请幂等键' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  applicationKey?: string;
+
   @ApiProperty({ description: '设计ID', example: 1 })
   @IsInt()
   designId: number;

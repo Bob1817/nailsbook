@@ -1,6 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ChatService } from './chat.service';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { PushService } from '../notifications/push.service';
+
+const mockPush = { sendToUser: jest.fn(), notifyNewMessage: jest.fn() };
 
 const mockPrisma = {
   conversation: {
@@ -23,6 +26,7 @@ describe('ChatService', () => {
       providers: [
         ChatService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: PushService, useValue: mockPush },
       ],
     }).compile();
 

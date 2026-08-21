@@ -1,76 +1,292 @@
-<view class="container" wx:if="{{customer}}">
+<nav-bar title="客户详情" showBack/>
+<view wx:if="{{loading}}" class="loading-page">
+  <view class="spinner"></view>
+  <text class="loading-text">加载中...</text>
+</view>
 
-  <!-- Profile card -->
-  <view class="profile-card">
-    <image
-      class="avatar"
-      src="{{customer.avatarUrl || '/assets/images/default-avatar.png'}}"
-      mode="aspectFill"
-    />
-    <view class="profile-info">
-      <text class="name">{{customer.name || customer.phone}}</text>
-      <text class="phone">{{customer.phone}}</text>
+<view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+  <view class="load-error-mark">!</view>
+  <text class="load-error-title">{{loadErrorText}}</text>
+  <text wx:if="{{customerId}}" class="load-error-desc">请检查网络后重试</text>
+  <button wx:if="{{customerId}}" class="retry-btn" bindtap="loadCustomer">重新加载</button>
+</view>
+
+<view wx:else class="page {{customer.archiveEligible ? 'page-with-archive' : ''}}">
+  <!-- ============ Header ============ -->
+  <view class="header">
+    <view class="header-row">
+      <view class="cu-avatar">
+        <image wx:if="{{customer.avatarUrl && !customer._avatarFailed}}" src="{{customer.avatarUrl}}" mode="aspectFill" class="cu-avatar-img" binderror="onAvatarError" aria-label="{{customer._displayName}}的头像" />
+        <text wx:else class="cu-avatar-char">{{customer._initial}}</text>
+      </view>
+      <view class="cu-info">
+        <text class="cu-name">{{customer._displayName}}</text>
+        <text wx:if="{{customer.phone}}" class="cu-phone">{{customer._phoneMasked}}</text>
+      </view>
+      <view wx:if="{{customer.phone}}" class="round-btn" catchtap="callCustomer" role="button" aria-label="拨打客户电话"><image class="phone-icon" src="/static/icons/phone-white.svg" mode="aspectFit" /></view>
     </view>
-    <view class="stats">
+
+    <!-- 悬浮统计卡 -->
+    <view class="stats-card">
       <view class="stat-item">
-        <text class="stat-num">{{customer.orders.length}}</text>
-        <text class="stat-label">订单</text>
+        <text class="stat-value">{{customer._totalSpentText}}</text>
+        <text class="stat-label">累计消费</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <text class="stat-value">{{customer._completedServices}}</text>
+        <text class="stat-label">服务次数</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <text class="stat-value">{{customer._recentLabel}}</text>
+        <text class="stat-label">最近服务</text>
       </view>
     </view>
   </view>
 
-  <!-- Tags -->
-  <view class="section">
-    <view class="section-header">
-      <text class="section-title">客户标签</text>
-      <text wx:if="{{!editingTags}}" class="section-action" bindtap="startEditTags">编辑</text>
+  <!-- ============ 经营摘要 ============ -->
+  <view class="card business-card">
+    <view class="card-head">
+      <text class="card-title">经营摘要</text>
+      <text class="lifecycle-summary">{{customer._lifecycleLabel}}</text>
     </view>
-    <view wx:if="{{!editingTags}}" class="tag-list">
-      <text
-        class="tag"
-        wx:for="{{customer.tagList}}"
-        wx:key="index"
-      >{{item}}</text>
-      <text wx:if="{{customer.tagList.length === 0}}" class="no-tags">暂无标签</text>
+    <view class="summary-grid">
+      <view class="summary-item">
+        <text class="summary-label">首次服务</text>
+        <text class="summary-value">{{customer._firstServiceText}}</text>
+      </view>
+      <view class="summary-item">
+        <text class="summary-label">最近服务</text>
+        <text class="summary-value">{{customer._lastServiceText}}</text>
+      </view>
+      <view class="summary-item">
+        <text class="summary-label">平均客单价</text>
+        <text class="summary-value">{{customer._averageTicketText}}</text>
+      </view>
+      <view class="summary-item">
+        <text class="summary-label">服务周期</text>
+        <text class="summary-value">{{customer._serviceCycleText}}</text>
+      </view>
     </view>
-    <view wx:else class="tag-edit">
+    <view class="next-service-row">
+      <view>
+        <text class="summary-label">预计下次服务</text>
+        <text class="next-service-value">{{customer._expectedNextServiceText}}</text>
+      </view>
+      <text class="cycle-hint">{{customer._serviceCycleHint}}</text>
+    </view>
+    <text class="lifecycle-explanation">{{customer._lifecycleReason}}。仅统计已完成服务与确认收入。</text>
+  </view>
+
+  <!-- ============ 标签 ============ -->
+  <view class="card card-gap">
+    <view class="card-head">
+      <text class="card-title">客户标签</text>
+      <view class="card-action" bindtap="openTagEdit">
+        {{customer._tags.length > 0 ? '编辑' : '+ 添加'}}
+      </view>
+    </view>
+    <view wx:if="{{customer._tags.length > 0}}" class="tag-list">
+      <text wx:for="{{customer._tags}}" wx:key="*this" class="tag">{{item}}</text>
+    </view>
+    <text wx:else class="muted">暂无标签，点击「+ 添加」为客户打标签</text>
+  </view>
+
+  <!-- ============ 基础信息 ============ -->
+  <view class="card">
+    <text class="card-title">基础信息</text>
+
+    <view class="info-row info-action-row remark-row">
+      <text class="info-label">客户备注</text>
+      <view class="remark-value-wrap">
+        <text class="remark-value">{{customer._remarkName || '未设置'}}</text>
+        <text wx:if="{{customer._accountName}}" class="account-name">（{{customer._accountName}}）</text>
+      </view>
+      <view class="inline-action" bindtap="openRemarkEdit" role="button" aria-label="更改客户备注">更改</view>
+    </view>
+    <view wx:if="{{customer._genderText}}" class="info-row">
+      <text class="info-label">性别</text>
+      <text class="info-value">{{customer._genderText}}</text>
+    </view>
+    <view wx:if="{{customer._birthdayText}}" class="info-row">
+      <text class="info-label">生日</text>
+      <text class="info-value">{{customer._birthdayText}}</text>
+    </view>
+    <view wx:if="{{customer.address}}" class="info-row info-action-row">
+      <text class="info-label">地址</text>
+      <text class="addr-text">{{customer.address}}</text>
+      <view class="inline-action" catchtap="copyAddress" role="button" aria-label="复制客户地址">复制</view>
+    </view>
+    <view class="info-row">
+      <text class="info-label">其他备注</text>
+      <text class="info-value">{{customer.notes || '暂无备注'}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">客户来源</text>
+      <text class="info-value">{{customer._sourceLabel}}</text>
+    </view>
+  </view>
+
+  <!-- ============ 客户跟进 ============ -->
+  <view class="card">
+    <text class="card-title">客户跟进</text>
+    <textarea
+      class="follow-input"
+      maxlength="500"
+      placeholder="记录本次要沟通的内容"
+      value="{{followUpContent}}"
+      bindinput="onFollowUpInput"
+    />
+    <view class="follow-plan-row">
+      <picker mode="date" value="{{followUpDate}}" bindchange="onFollowUpDateChange">
+        <view class="follow-date">计划日期：{{followUpDate}}</view>
+      </picker>
+      <view class="follow-add {{savingFollowUp ? 'is-disabled' : ''}}" bindtap="createFollowUp">
+        {{savingFollowUp ? '创建中' : '添加跟进'}}
+      </view>
+    </view>
+    <view wx:if="{{customer._followUps.length > 0}}" class="follow-list">
+      <view wx:for="{{customer._followUps}}" wx:key="id" class="follow-item">
+        <view class="follow-main">
+          <text class="follow-content">{{item.content}}</text>
+          <text class="follow-meta">{{item._plannedText}} · {{item._statusText}}</text>
+        </view>
+        <view
+          wx:if="{{item.status === 'pending'}}"
+          class="follow-complete"
+          bindtap="completeFollowUp"
+          data-id="{{item.id}}"
+        >完成</view>
+      </view>
+    </view>
+    <text wx:else class="muted">暂无跟进记录</text>
+  </view>
+
+  <!-- ============ 预约记录 ============ -->
+  <view class="card">
+    <view class="card-head">
+      <text class="card-title">关联作品（{{customer.relatedWorks.length}}）</text>
+      <view wx:if="{{customer.clientUserId}}" class="card-action" bindtap="createExclusiveWork">新建专属作品</view>
+    </view>
+    <view wx:if="{{customer.relatedWorks.length === 0}}" class="muted">暂无关联作品，可在发布或编辑作品时为该客户授权</view>
+    <scroll-view wx:else scroll-x enhanced show-scrollbar="{{false}}" class="work-scroll">
+      <view class="work-row">
+        <view wx:for="{{customer.relatedWorks}}" wx:key="id" class="related-work" bindtap="goWorkDetail" data-id="{{item.id}}">
+          <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="related-work-image" lazy-load aria-label="{{item.title || '客户关联作品'}}"/>
+          <view wx:else class="related-work-image related-work-placeholder"></view>
+          <text class="related-work-title">{{item.title || '未命名作品'}}</text>
+          <text class="related-work-meta">{{item._dateText}}</text>
+          <text class="related-work-permission">已授权：{{item._permissionText}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- ============ 预约记录 ============ -->
+  <view class="card">
+    <text class="card-title">预约记录（{{customer._totalOrders}}）</text>
+
+    <view wx:if="{{customer.orders.length === 0}}" class="muted">暂无预约记录</view>
+
+    <view wx:else class="order-list">
+      <view wx:for="{{customer.orders}}" wx:key="id" class="order-card">
+        <!-- 日期 + 状态 -->
+        <view class="order-top">
+          <text class="order-date">{{item._dateStr}}</text>
+          <text class="order-status {{item._statusTone}}">{{item._statusLabel}}</text>
+        </view>
+        <!-- 服务类型 + 服务名称 -->
+        <view class="order-mid">
+          <text class="order-type {{item._serviceTypeClass}}">{{item._serviceTypeLabel}}</text>
+          <text class="order-svc-name">{{item._serviceName}}</text>
+        </view>
+        <!-- 价格 + 查看详情 -->
+        <view class="order-bot">
+          <text class="{{item.quotePrice ? 'order-price' : 'order-price-pending'}}">{{item._priceText}}</text>
+          <view class="order-detail-btn" bindtap="goOrderDetail" data-id="{{item.id}}">查看详情</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ============ 底部操作 ============ -->
+  <view class="bottom-actions">
+    <view class="action-btn action-primary" bindtap="newOrder">联系客户发起预约</view>
+    <view wx:if="{{customer.archiveEligible}}" class="archive-btn" bindtap="archiveCustomer">归档长期未互动客户</view>
+  </view>
+</view>
+
+<!-- ============ 客户备注编辑弹窗 ============ -->
+<view wx:if="{{showRemarkEdit}}" class="remark-modal-mask" bindtap="closeRemarkEdit">
+  <view class="remark-modal" catchtap="">
+    <text class="remark-modal-title">更改客户备注</text>
+    <text class="remark-modal-help">客户本人名称：{{customer._accountName || '未设置'}}</text>
+    <input
+      class="remark-input"
+      maxlength="30"
+      placeholder="输入便于识别的客户备注"
+      value="{{remarkDraft}}"
+      bindinput="onRemarkInput"
+      focus="{{showRemarkEdit}}"
+      confirm-type="done"
+      bindconfirm="saveRemark"
+    />
+    <view class="remark-modal-actions">
+      <view class="remark-modal-btn remark-cancel" bindtap="closeRemarkEdit">取消</view>
+      <view class="remark-modal-btn remark-confirm {{savingRemark ? 'is-disabled' : ''}}" bindtap="saveRemark">{{savingRemark ? '保存中' : '保存备注'}}</view>
+    </view>
+  </view>
+</view>
+
+<!-- ============ 标签编辑底部弹层 ============ -->
+<view wx:if="{{showTagEdit}}" class="sheet-mask" bindtap="closeTagEdit"></view>
+<view class="sheet {{showTagEdit ? 'sheet-show' : ''}}" catchtap="">
+  <view class="sheet-header">
+    <text class="sheet-title">编辑标签</text>
+    <view class="sheet-close" bindtap="closeTagEdit">✕</view>
+  </view>
+
+  <scroll-view scroll-y class="sheet-body">
+    <text class="sub-label">当前标签（点击移除）</text>
+    <view class="tag-list editable">
+      <view
+        wx:for="{{editTags}}"
+        wx:key="*this"
+        class="tag tag-removable"
+        bindtap="removeTag"
+        data-tag="{{item}}"
+      >{{item}} ✕</view>
+      <text wx:if="{{editTags.length === 0}}" class="muted">暂无标签</text>
+    </view>
+
+    <text wx:if="{{availableTags.length > 0}}" class="sub-label">可选标签（点击添加）</text>
+    <view wx:if="{{availableTags.length > 0}}" class="tag-list">
+      <view
+        wx:for="{{availableTags}}"
+        wx:key="*this"
+        class="tag tag-addable"
+        bindtap="addExistingTag"
+        data-tag="{{item}}"
+      >+ {{item}}</view>
+    </view>
+
+    <text class="sub-label">新增标签</text>
+    <view class="new-tag-row">
       <input
-        class="tag-input"
-        value="{{tagInput}}"
-        placeholder="用逗号分隔，例：回头客, VIP, 喜欢渐变"
-        bindinput="onTagInput"
+        class="new-tag-input"
+        placeholder="输入新标签名称"
+        value="{{newTag}}"
+        bindinput="onNewTagInput"
+        bindconfirm="addNewTag"
       />
-      <view class="tag-edit-actions">
-        <button class="btn-cancel" bindtap="cancelEditTags">取消</button>
-        <button class="btn-save" bindtap="saveTags">保存</button>
-      </view>
+      <view class="new-tag-btn" bindtap="addNewTag">添加</view>
+    </view>
+  </scroll-view>
+
+  <view class="sheet-footer">
+    <view class="action-btn action-primary {{savingTags ? 'is-disabled' : ''}}" bindtap="saveTags">
+      {{savingTags ? '保存中...' : '保存标签'}}
     </view>
   </view>
-
-  <!-- Order history -->
-  <view class="section">
-    <view class="section-header">
-      <text class="section-title">订单记录</text>
-    </view>
-    <view wx:if="{{customer.orders.length === 0}}" class="no-orders">
-      <text class="no-orders-text">暂无订单</text>
-    </view>
-    <view
-      class="order-item"
-      wx:for="{{customer.orders}}"
-      wx:key="id"
-      bindtap="goOrderDetail"
-      data-id="{{item.id}}"
-    >
-      <view class="order-left">
-        <text class="order-date">{{item.dateStr}}</text>
-        <text class="order-type">{{item.serviceType === 'home' ? '上门' : '到店'}}</text>
-      </view>
-      <view class="order-right">
-        <text class="order-status {{item.status}}">{{item.statusLabel}}</text>
-        <text class="order-arrow">›</text>
-      </view>
-    </view>
-  </view>
-
 </view>

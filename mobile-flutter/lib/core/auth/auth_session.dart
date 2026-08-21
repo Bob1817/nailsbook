@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import '../api/api_client.dart';
+import '../config.dart';
+import '../notifications/push_notification_service.dart';
 import 'token_store.dart';
 
 enum AuthStatus { unknown, unauthenticated, client, technician }
@@ -7,6 +11,7 @@ enum AuthStatus { unknown, unauthenticated, client, technician }
 class AuthSession extends ChangeNotifier {
   final TokenStore _tokenStore;
   final ApiClient _apiClient;
+  final PushNotificationService? _pushService;
 
   AuthStatus _status = AuthStatus.unknown;
   Map<String, dynamic>? _profile;
@@ -20,8 +25,56 @@ class AuthSession extends ChangeNotifier {
   AuthSession({
     required TokenStore tokenStore,
     required ApiClient apiClient,
+    PushNotificationService? pushService,
   })  : _tokenStore = tokenStore,
-        _apiClient = apiClient;
+        _apiClient = apiClient,
+        _pushService = pushService {
+    // 注入 401 静默续期能力。
+    _apiClient.onRefreshToken = _refreshSession;
+  }
+
+  /// 用 refreshToken 静默换取新 access token；成功则更新存储/ApiClient 并返回 true。
+  Future<bool> _refreshSession() async {
+    final role = await _tokenStore.getActiveRole();
+    if (role != 'client' && role != 'technician') return false;
+    final refreshToken = role == 'client'
+        ? await _tokenStore.getClientRefreshToken()
+        : await _tokenStore.getTechnicianRefreshToken();
+    if (refreshToken == null || refreshToken.isEmpty) return false;
+    try {
+      final res = await _apiClient.refreshTokens(role!, refreshToken);
+      final newAccess = res['accessToken'] as String?;
+      final newRefresh = res['refreshToken'] as String?;
+      if (newAccess == null || newAccess.isEmpty) return false;
+      if (role == 'client') {
+        await _tokenStore.saveClientTokens(
+            accessToken: newAccess, refreshToken: newRefresh);
+      } else {
+        await _tokenStore.saveTechnicianTokens(
+            accessToken: newAccess, refreshToken: newRefresh);
+      }
+      _apiClient.setToken(newAccess);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// 登录/恢复会话后，初始化 Firebase 并把设备 token 上报后端。
+  /// best-effort：失败不影响登录流程。先 await init 再上报，确保 token 已就绪。
+  Future<void> _registerPush(String role, String accessToken) async {
+    final push = _pushService;
+    if (push == null) return;
+    try {
+      await push.init(role: role);
+      await push.registerTokenOnServer(
+        apiBaseUrl: kApiBaseUrl,
+        accessToken: accessToken,
+      );
+    } catch (_) {
+      // 推送注册失败不影响登录
+    }
+  }
 
   Future<void> restoreSession() async {
     final role = await _tokenStore.getActiveRole();
@@ -51,6 +104,7 @@ class AuthSession extends ChangeNotifier {
         _profile = me;
         _status = AuthStatus.technician;
       }
+      unawaited(_registerPush(role, token));
     } catch (_) {
       _status = AuthStatus.unauthenticated;
       _apiClient.setToken(null);
@@ -68,6 +122,7 @@ class AuthSession extends ChangeNotifier {
     _apiClient.setRole('client');
     _status = AuthStatus.client;
     notifyListeners();
+    unawaited(_registerPush('client', accessToken));
   }
 
   Future<void> loginAsTechnician(String accessToken, {String? refreshToken}) async {
@@ -79,6 +134,7 @@ class AuthSession extends ChangeNotifier {
     _apiClient.setRole('technician');
     _status = AuthStatus.technician;
     notifyListeners();
+    unawaited(_registerPush('technician', accessToken));
   }
 
   Future<void> logout() async {
@@ -94,6 +150,12 @@ class AuthSession extends ChangeNotifier {
   }
 
   void handleUnauthorized() {
+    // 仅在已登录态（会话过期）时处理。登录尝试密码错误也会返回 401，
+    // 此时若 notifyListeners 会触发路由刷新、重建登录页（输入框被清空、
+    // 错误信息丢失），因此未登录态直接忽略，让登录页自行展示错误。
+    if (_status != AuthStatus.client && _status != AuthStatus.technician) {
+      return;
+    }
     _status = AuthStatus.unauthenticated;
     _profile = null;
     _apiClient.setToken(null);

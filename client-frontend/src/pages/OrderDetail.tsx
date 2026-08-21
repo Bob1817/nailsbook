@@ -39,6 +39,9 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderIdProp, onClose, isModal
   const [markingDeposit, setMarkingDeposit] = useState(false);
   const [showDepositConfirm, setShowDepositConfirm] = useState(false);
   const [sendingOrderCard, setSendingOrderCard] = useState(false);
+  const [showReinitModal, setShowReinitModal] = useState(false);
+  const [reinitiating, setReinitiating] = useState(false);
+  const [reinitForm, setReinitForm] = useState({ serviceDate: '', startTime: '' });
   const [editForm, setEditForm] = useState({
     serviceDate: '',
     startTime: '',
@@ -150,6 +153,25 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderIdProp, onClose, isModal
       alert('确认定金失败');
     } finally {
       setMarkingDeposit(false);
+    }
+  };
+
+  const handleReinitiate = async () => {
+    if (!order) return;
+    if (!reinitForm.serviceDate || !reinitForm.startTime) {
+      alert('请先选择预约日期和时间');
+      return;
+    }
+    setReinitiating(true);
+    try {
+      const updated = await orderService.reinitiate(order.id, reinitForm);
+      setOrder(updated);
+      setShowReinitModal(false);
+      setReinitForm({ serviceDate: '', startTime: '' });
+    } catch {
+      alert('重新发起失败');
+    } finally {
+      setReinitiating(false);
     }
   };
 
@@ -299,6 +321,70 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderIdProp, onClose, isModal
                 className="w-full rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-4 font-medium text-white shadow-lg shadow-pink-200 disabled:opacity-50"
               >
                 {savingEdit ? '保存中...' : '保存修改'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showReinitModal && (
+        <div
+          className="fixed inset-0 z-[200] flex items-end justify-center bg-black/35 backdrop-blur-sm sm:items-center"
+          onClick={() => !reinitiating && setShowReinitModal(false)}
+        >
+          <div
+            className="w-full max-w-md max-h-[90vh] rounded-t-[32px] bg-white/95 shadow-2xl ring-1 ring-black/5 backdrop-blur sm:rounded-[32px] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="shrink-0 px-6 pt-6 pb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">重新发起预约</h3>
+                <p className="mt-1 text-sm text-[var(--color-text-muted)]">仅需重新选择预约时间，其余信息将沿用原预约</p>
+              </div>
+              <button onClick={() => setShowReinitModal(false)} disabled={reinitiating} className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 disabled:opacity-50">
+                <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-6 space-y-4 pb-4">
+              <div className="rounded-[24px] bg-slate-50/80 p-4">
+                <label className="mb-3 block text-sm font-medium text-gray-700">预约日期</label>
+                <input
+                  type="date"
+                  value={reinitForm.serviceDate}
+                  min={dayjs().format('YYYY-MM-DD')}
+                  onChange={(e) => setReinitForm((prev) => ({ ...prev, serviceDate: e.target.value }))}
+                  className="w-full rounded-2xl bg-white px-4 py-3 text-gray-900 outline-none ring-1 ring-transparent focus:ring-[#FF6B8A]/20"
+                />
+              </div>
+              <div className="rounded-[24px] bg-slate-50/80 p-4">
+                <label className="mb-3 block text-sm font-medium text-gray-700">预约时间</label>
+                <div className="grid max-h-44 grid-cols-4 gap-2 overflow-y-auto scrollbar-hide">
+                  {timeSlots.map((time) => (
+                    <button
+                      key={time}
+                      type="button"
+                      onClick={() => setReinitForm((prev) => ({ ...prev, startTime: time }))}
+                      className={`rounded-2xl py-2.5 text-sm font-medium transition ${
+                        reinitForm.startTime === time
+                          ? 'bg-[linear-gradient(135deg,#FF6B8A_0%,#FF8FA3_100%)] text-white shadow-lg shadow-pink-200/80'
+                          : 'bg-white text-slate-600'
+                      }`}
+                    >
+                      {time}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="shrink-0 px-6 pb-[max(1.5rem,env(safe-area-inset-bottom)+1rem)] pt-2">
+              <button
+                onClick={handleReinitiate}
+                disabled={reinitiating}
+                className="w-full rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-4 font-medium text-white shadow-lg shadow-pink-200 disabled:opacity-50"
+              >
+                {reinitiating ? '提交中...' : '确认重新发起'}
               </button>
             </div>
           </div>
@@ -572,7 +658,14 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderIdProp, onClose, isModal
             {/* Bottom actions */}
             {(order.status !== 'completed' && order.status !== 'cancelled') && (
               <div className="shrink-0 pt-3">
-                {isClientTurn ? (
+                {order.status === 'expired' ? (
+                  <button
+                    onClick={() => setShowReinitModal(true)}
+                    className="w-full rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-3.5 text-sm font-semibold text-white shadow-md"
+                  >
+                    重新发起预约
+                  </button>
+                ) : isClientTurn ? (
                   <div className="grid grid-cols-4 gap-2">
                     <button
                       onClick={() => setShowEditModal(true)}
@@ -844,7 +937,15 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderIdProp, onClose, isModal
                   {sendingOrderCard ? '发送中...' : `发给 ${order.technician.name}`}
                 </button>
               )}
-              {isClientTurn ? (
+              {order.status === 'expired' ? (
+                // 已过期：仅展示「重新发起预约」
+                <button
+                  onClick={() => setShowReinitModal(true)}
+                  className="w-full rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-3.5 text-sm font-semibold text-white shadow-md"
+                >
+                  重新发起预约
+                </button>
+              ) : isClientTurn ? (
                 // 用户该操作：同意 / 拒绝 / 修改 / 取消
                 <div className="grid grid-cols-4 gap-2">
                   <button

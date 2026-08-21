@@ -9,7 +9,11 @@ export interface NailWork {
   tags: string[];
   likeCount: number;
   commentCount: number;
+  favoriteCount?: number;
+  isLiked?: boolean;
   technicianName: string;
+  technicianAvatarUrl?: string | null;
+  technicianId?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -52,6 +56,12 @@ export const homeService = {
 
   async getWork(id: number): Promise<NailWork> {
     const response = await api.get(`/home/works/${id}`);
+    return response.data;
+  },
+
+  // 首页"最新动态"：所有已绑定美甲师的推荐作品，分页无限上拉
+  async getFeaturedWorks(page = 1, limit = 10): Promise<{ works: NailWork[]; hasMore: boolean }> {
+    const response = await api.get('/featured-works', { params: { page, limit } });
     return response.data;
   },
 };

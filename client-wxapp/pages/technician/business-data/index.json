@@ -1,0 +1,7 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "经营数据",
+  "usingComponents": {
+    "nav-bar": "/components/nav-bar/index"
+  }
+}

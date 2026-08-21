@@ -8,11 +8,24 @@ export interface SubscriptionPlan {
   billingCycle: string;
   maxCustomers?: number;
   maxMonthlyBookings?: number;
+  maxWorks?: number;
+  maxStorageBytes?: number;
+  maxMarketingExports?: number;
+  maxMonthlySms?: number;
+  maxEmployees?: number;
+  maxBookingPages?: number;
+  targetStage?: string;
+  description?: string;
   features?: string;
   status: string;
   createdAt: string;
   updatedAt: string;
 }
+
+export type SubscriptionPlanInput = Omit<
+  SubscriptionPlan,
+  'id' | 'createdAt' | 'updatedAt' | 'status' | 'features'
+> & { features?: string[]; status?: string };
 
 export interface TechnicianSubscription {
   id: number;
@@ -28,6 +41,16 @@ export interface TechnicianSubscription {
   plan?: SubscriptionPlan;
 }
 
+export interface SubscriptionMetrics {
+  upgradeTriggers: Array<{
+    eventType: string;
+    source: string;
+    planCode?: string;
+    count: number;
+  }>;
+  subscriptionChanges: Array<{ reason: string; count: number }>;
+}
+
 export const subscriptionService = {
   getPlans: async (): Promise<SubscriptionPlan[]> => {
     const response = await api.get('/subscription-plans');
@@ -39,29 +62,12 @@ export const subscriptionService = {
     return response.data;
   },
 
-  createPlan: async (data: {
-    name: string;
-    code: string;
-    price: number;
-    billingCycle: string;
-    maxCustomers?: number;
-    maxMonthlyBookings?: number;
-    features?: string[];
-  }): Promise<SubscriptionPlan> => {
+  createPlan: async (data: SubscriptionPlanInput): Promise<SubscriptionPlan> => {
     const response = await api.post('/subscription-plans', data);
     return response.data;
   },
 
-  updatePlan: async (id: number, data: Partial<{
-    name: string;
-    code: string;
-    price: number;
-    billingCycle: string;
-    maxCustomers?: number;
-    maxMonthlyBookings?: number;
-    features?: string[];
-    status: string;
-  }>): Promise<SubscriptionPlan> => {
+  updatePlan: async (id: number, data: Partial<SubscriptionPlanInput>): Promise<SubscriptionPlan> => {
     const response = await api.patch(`/subscription-plans/${id}`, data);
     return response.data;
   },
@@ -76,6 +82,11 @@ export const subscriptionService = {
 
   updateTechnicianSubscription: async (technicianId: number, planId: number): Promise<TechnicianSubscription> => {
     const response = await api.patch(`/technician-subscriptions/technicians/${technicianId}`, { planId });
+    return response.data;
+  },
+
+  getMetrics: async (): Promise<SubscriptionMetrics> => {
+    const response = await api.get('/technician-subscriptions/metrics/overview');
     return response.data;
   },
 };

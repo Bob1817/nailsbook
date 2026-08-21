@@ -1,0 +1,166 @@
+<nav-bar title="上门设置" showBack/>
+<view class="page">
+
+  <view wx:if="{{loading}}" class="loading-wrap">
+    <view class="loading-spinner"></view>
+  </view>
+
+  <view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+    <view class="load-error-mark">!</view>
+    <text class="load-error-title">上门设置加载失败</text>
+    <text class="load-error-desc">请检查网络后重试</text>
+    <button class="retry-btn" bindtap="loadConfig">重新加载</button>
+  </view>
+
+  <view wx:else>
+
+    <!-- ===== 状态 Hero 卡 ===== -->
+    <view class="hero-card {{enabled ? 'hero-on' : 'hero-off'}}">
+      <view class="hero-left">
+        <view class="hero-icon-wrap">
+          <view class="hero-icon"><view class="car-body"></view><view class="car-wheel wheel-left"></view><view class="car-wheel wheel-right"></view></view>
+        </view>
+        <view class="hero-text">
+          <text class="hero-title">上门服务</text>
+          <text class="hero-status-label {{enabled ? 'label-on' : 'label-off'}}">
+            {{enabled ? '已开启' : '未开启'}}
+          </text>
+        </view>
+      </view>
+      <switch checked="{{enabled}}" bindchange="toggleEnabled" color="#FF6B8A" />
+    </view>
+
+    <!-- ===== 快速开启引导（仅未开启时显示）===== -->
+    <view wx:if="{{!enabled}}" class="quick-banner">
+      <view class="quick-banner-body">
+        <view class="quick-banner-text">
+          <text class="quick-banner-title">{{fromSetup ? '快速完成设置' : '一键开启'}}</text>
+          <text class="quick-banner-desc">开启后客户可预约上门美甲服务</text>
+        </view>
+      </view>
+      <view class="quick-btn {{saving ? 'quick-btn-disabled' : ''}}" bindtap="quickEnable">
+        <text>{{saving ? '开启中…' : '一键开启'}}</text>
+      </view>
+    </view>
+
+    <!-- ===== 服务配置（开启后显示）===== -->
+    <view wx:if="{{enabled}}" class="config-card">
+      <view class="config-card-header">
+        <text class="config-card-title">服务配置</text>
+      </view>
+
+      <!-- 服务范围 -->
+      <view class="field-group">
+        <view class="field-row">
+          <view class="field-label-wrap">
+            <text class="field-label">服务范围</text>
+            <text class="field-unit">公里</text>
+          </view>
+          <input
+            class="field-input"
+            type="digit"
+            value="{{radius}}"
+            bindinput="onRadiusInput"
+            placeholder="如：10"
+            placeholder-class="ph"
+          />
+        </view>
+        <view class="field-sep"></view>
+
+        <!-- 夜间服务费 -->
+        <view class="field-row">
+          <view class="field-label-wrap">
+            <text class="field-label">夜间服务费</text>
+            <text class="field-unit">元</text>
+          </view>
+          <input
+            class="field-input"
+            type="digit"
+            value="{{nightFee}}"
+            bindinput="onNightFeeInput"
+            placeholder="如：30"
+            placeholder-class="ph"
+          />
+        </view>
+        <view class="field-sep"></view>
+
+        <!-- 节假日服务费 -->
+        <view class="field-row">
+          <view class="field-label-wrap">
+            <text class="field-label">节假日服务费</text>
+            <text class="field-unit">元</text>
+          </view>
+          <input
+            class="field-input"
+            type="digit"
+            value="{{holidayFee}}"
+            bindinput="onHolidayFeeInput"
+            placeholder="如：50"
+            placeholder-class="ph"
+          />
+        </view>
+        <view class="field-sep"></view>
+
+        <!-- 保底消费 -->
+        <view class="field-row">
+          <view class="field-label-wrap">
+            <text class="field-label">保底消费</text>
+            <text class="field-unit">元</text>
+          </view>
+          <input
+            class="field-input"
+            type="digit"
+            value="{{minOrderAmount}}"
+            bindinput="onMinAmountInput"
+            placeholder="如：100"
+            placeholder-class="ph"
+          />
+        </view>
+      </view>
+    </view>
+
+    <!-- ===== 阶梯报价（开启后显示）===== -->
+    <view wx:if="{{enabled}}" class="config-card">
+      <view class="config-card-header">
+        <text class="config-card-title">阶梯报价</text>
+        <text class="config-card-tip">按距离设置上门附加费</text>
+      </view>
+
+      <view class="pricing-list">
+        <view wx:for="{{pricing}}" wx:key="idx" class="pricing-item">
+          <view class="pricing-row">
+            <text class="pricing-label">距离</text>
+            <input class="pricing-input" type="digit" value="{{item.minKm}}" bindinput="onPricingMinKmInput" data-idx="{{index}}" placeholder="0" />
+            <text class="pricing-dash">-</text>
+            <input class="pricing-input" type="digit" value="{{item.maxKm}}" bindinput="onPricingMaxKmInput" data-idx="{{index}}" placeholder="5" />
+            <text class="pricing-unit">公里</text>
+          </view>
+          <view class="pricing-row">
+            <text class="pricing-label">附加费</text>
+            <input class="pricing-input" type="digit" value="{{item.price}}" bindinput="onPricingPriceInput" data-idx="{{index}}" placeholder="0" />
+            <text class="pricing-unit">元</text>
+            <view wx:if="{{pricing.length > 1}}" class="pricing-remove" bindtap="removePricingTier" data-idx="{{index}}">
+              <text>删除</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="add-pricing-btn" bindtap="addPricingTier">
+        <text class="add-icon">+</text>
+        <text>添加阶梯</text>
+      </view>
+    </view>
+
+    <!-- ===== 保存按钮 ===== -->
+    <view class="btn-save {{saving ? 'btn-disabled' : ''}}" bindtap="save">
+      <text>{{saving ? '保存中…' : '保存设置'}}</text>
+    </view>
+
+    <!-- 关闭服务提示 -->
+    <view wx:if="{{!enabled}}" class="close-tip">
+      <text>关闭上门服务后，客户将无法预约上门美甲</text>
+    </view>
+
+  </view>
+</view>

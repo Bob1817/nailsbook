@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Put,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -19,13 +20,15 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
+import { TouristGuard } from '../technician-auth/tourist.guard';
 import { TechnicianWorksService } from './technician-works.service';
 import { CreateWorkDto, UpdateWorkDto } from './dto/create-work.dto';
+import { UpdateWorkAccessDto } from './dto/work-access.dto';
 
 @ApiTags('美甲师-作品')
 @ApiBearerAuth()
 @Controller('technician/works')
-@UseGuards(TechnicianJwtAuthGuard)
+@UseGuards(TechnicianJwtAuthGuard, TouristGuard)
 export class TechnicianWorksController {
   constructor(
     private readonly technicianWorksService: TechnicianWorksService,
@@ -37,6 +40,12 @@ export class TechnicianWorksController {
   @ApiResponse({ status: 401, description: '未授权' })
   findAll(@Req() request: { user: { technicianId: number } }) {
     return this.technicianWorksService.findAll(request.user.technicianId);
+  }
+
+  @Get('access-options')
+  @ApiOperation({ summary: '获取可关联到作品的客户与订单' })
+  getAccessOptions(@Req() request: { user: { technicianId: number } }) {
+    return this.technicianWorksService.getAccessOptions(request.user.technicianId);
   }
 
   @Get(':id')
@@ -65,6 +74,15 @@ export class TechnicianWorksController {
     return this.technicianWorksService.create(request.user.technicianId, dto);
   }
 
+  @Post('drafts')
+  @ApiOperation({ summary: '创建作品草稿' })
+  createDraft(
+    @Req() request: { user: { technicianId: number } },
+    @Body() dto: UpdateWorkDto,
+  ) {
+    return this.technicianWorksService.createDraft(request.user.technicianId, dto);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: '更新作品' })
   @ApiParam({ name: 'id', type: Number, description: '作品ID' })
@@ -82,6 +100,35 @@ export class TechnicianWorksController {
       id,
       dto,
     );
+  }
+
+  @Patch(':id/draft')
+  @ApiOperation({ summary: '保存作品草稿' })
+  saveDraft(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateWorkDto,
+  ) {
+    return this.technicianWorksService.saveDraft(request.user.technicianId, id, dto);
+  }
+
+  @Post(':id/publish')
+  @ApiOperation({ summary: '提交作品发布审核' })
+  publish(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.technicianWorksService.publish(request.user.technicianId, id);
+  }
+
+  @Put(':id/access')
+  @ApiOperation({ summary: '更新作品客户关联与授权' })
+  updateAccess(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateWorkAccessDto,
+  ) {
+    return this.technicianWorksService.updateAccess(request.user.technicianId, id, dto);
   }
 
   @Delete(':id')
@@ -276,6 +323,38 @@ export class TechnicianWorksController {
     @Param('id', ParseIntPipe) id: number,
   ) {
     return this.technicianWorksService.markCommentsAsRead(
+      id,
+      request.user.technicianId,
+    );
+  }
+
+  @Post(':id/mark-likes-read')
+  @ApiOperation({ summary: '标记点赞已读' })
+  @ApiParam({ name: 'id', type: Number, description: '作品ID' })
+  @ApiResponse({ status: 200, description: '标记成功' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiResponse({ status: 404, description: '作品不存在' })
+  markLikesAsRead(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.technicianWorksService.markLikesAsRead(
+      id,
+      request.user.technicianId,
+    );
+  }
+
+  @Post(':id/mark-favorites-read')
+  @ApiOperation({ summary: '标记收藏已读' })
+  @ApiParam({ name: 'id', type: Number, description: '作品ID' })
+  @ApiResponse({ status: 200, description: '标记成功' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiResponse({ status: 404, description: '作品不存在' })
+  markFavoritesAsRead(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.technicianWorksService.markFavoritesAsRead(
       id,
       request.user.technicianId,
     );

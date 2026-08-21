@@ -5,6 +5,8 @@ import type { ClientAddress } from '../services/address';
 import { orderService } from '../services/order';
 import { uploadService } from '../services/upload';
 import { useAuth } from '../contexts/AuthContext';
+import BookingSheet from '../components/BookingSheet';
+import type { Technician } from '../services/auth';
 import dayjs from 'dayjs';
 
 const getEnabledShopAddresses = (addresses?: ShopAddress[]) =>
@@ -60,6 +62,7 @@ const DesignDetail: React.FC = () => {
   const [clientAddresses] = useState<ClientAddress[]>([]);
   const [creatingBooking, setCreatingBooking] = useState(false);
   const [bookingError, setBookingError] = useState('');
+  const [quickBookTech, setQuickBookTech] = useState<Technician | null>(null);
   const selectedShopHours = getShopHoursForDate(selectedShopAddress, selectedDate);
 
   const loadDesign = useCallback(async (designId: number) => {
@@ -258,11 +261,15 @@ const DesignDetail: React.FC = () => {
 
 
   // Booking handlers
-  const handleOpenBooking = async () => {
-    // Navigate to CreateOrder page with design info
-    if (design?.technician) {
-      navigate(`/orders/create?design_id=${design.id}&tech_id=${design.technician.id}`);
+  const handleOpenBooking = () => {
+    if (!design?.technician) return;
+    const fullTech = technicians.find((t) => t.id === design.technician!.id);
+    if (fullTech) {
+      setQuickBookTech(fullTech);
+      return;
     }
+    // 取不到完整美甲师信息：回退到完整表单
+    navigate(`/orders/create?design_id=${design.id}&tech_id=${design.technician.id}`);
   };
 
   const handleCreateOrder = async () => {
@@ -1089,6 +1096,19 @@ const DesignDetail: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {quickBookTech && design && (
+        <BookingSheet
+          technician={quickBookTech}
+          prefill={{
+            title: design.title || '预约同款',
+            description: design.description || undefined,
+            images: design.imageUrls || [],
+          }}
+          onClose={() => setQuickBookTech(null)}
+          onCreated={() => { setQuickBookTech(null); navigate('/orders'); }}
+        />
       )}
 
     </div>

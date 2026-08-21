@@ -1,0 +1,130 @@
+<!--
+  NailBook 统一登录页
+  设计原则：微信优先 → 手机号+密码登录
+  对标支付宝个人版设计 —— 单一主操作，无 Tab 切换
+-->
+
+<!-- Step 1: 微信授权登录（默认主屏） -->
+<view wx:if="{{step === 'wechat'}}" class="login-root">
+  <view class="stub-status"></view>
+
+  <view class="hero">
+    <view class="logo-ring">
+      <text class="logo-text">N</text>
+    </view>
+    <text class="app-name">NailBook</text>
+    <text class="tagline">让美丽更简单</text>
+  </view>
+
+  <view class="spacer"></view>
+
+  <view class="btn-area">
+    <!-- 微信授权登录按钮 -->
+    <button
+      class="wechat-btn"
+      wx:if="{{wechatAvailable}}"
+      open-type="getPhoneNumber"
+      bindgetphonenumber="onWechatPhone"
+      loading="{{wechatLoading}}"
+      disabled="{{wechatLoading}}"
+    >
+      <image class="wechat-btn-icon" src="/static/icons/wechat.svg" mode="aspectFit" />
+      <text>微信授权登录</text>
+    </button>
+
+    <!-- 微信不可用时降级提示 -->
+    <view wx:else class="wechat-unavailable">
+      <text class="wechat-unavailable-hint">微信登录暂不可用</text>
+    </view>
+
+    <!-- 其他登录方式 -->
+    <text class="alt-login" bindtap="goPhoneLogin">其他登录方式</text>
+    <view class="guest-entry" bindtap="browseAsGuest">先逛逛，暂不登录</view>
+  </view>
+
+  <!-- 协议 -->
+  <checkbox-group class="privacy-consent" bindchange="onPrivacyAgreementChange">
+    <label><checkbox value="agree" checked="{{privacyAgreed}}"/><text>我已阅读并同意</text></label>
+    <text class="privacy-link" catchtap="openUserAgreement">《用户协议》</text>
+    <text>和</text><text class="privacy-link" catchtap="openPrivacyPolicy">《隐私政策》</text>
+  </checkbox-group>
+</view>
+
+<!-- Step 2: 手机号 + 密码登录 -->
+<view wx:if="{{step === 'phone'}}" class="login-root">
+  <view class="stub-status"></view>
+
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="goBackToWechat">
+      <image class="nav-back-icon" src="/static/icons/nav-back.svg" mode="aspectFit" />
+    </view>
+    <text class="nav-title">手机号登录</text>
+    <view class="nav-placeholder"></view>
+  </view>
+
+  <view class="phone-content">
+    <text class="phone-heading">欢迎回来</text>
+    <text class="phone-sub">请使用手机号和密码登录</text>
+
+    <view class="form-section">
+    <!-- 手机号输入 -->
+    <view class="input-row">
+      <text class="input-prefix">+86</text>
+      <view class="input-divider"></view>
+      <input
+        class="input-field"
+        type="number"
+        maxlength="11"
+        value="{{phone}}"
+        bindinput="onPhoneInput"
+        placeholder="请输入手机号码"
+        placeholder-class="input-placeholder"
+        focus="{{step === 'phone'}}"
+      />
+    </view>
+
+    <!-- 密码输入 -->
+    <view class="input-row">
+      <image class="input-icon" src="/static/icons/lock.svg" mode="aspectFit" />
+      <input
+        class="input-field"
+        type="{{showPassword ? 'text' : 'password'}}"
+        password="{{!showPassword}}"
+        value="{{password}}"
+        bindinput="onPasswordInput"
+        placeholder="请输入密码"
+        placeholder-class="input-placeholder"
+      />
+      <view class="pwd-toggle" bindtap="togglePassword">
+        <image
+          class="pwd-toggle-icon"
+          src="{{showPassword ? '/static/icons/eye-open.svg' : '/static/icons/eye-closed.svg'}}"
+          mode="aspectFit"
+        />
+      </view>
+    </view>
+
+    <!-- 忘记密码 & 注册 -->
+    <view class="forgot-row">
+      <text class="forgot-link" bindtap="goForgotPassword">忘记密码？</text>
+      <text class="forgot-link" bindtap="goRegister">注册账号</text>
+    </view>
+
+    <!-- 登录按钮 -->
+    <button
+      class="submit-btn {{canLogin ? 'submit-btn-active' : ''}}"
+      disabled="{{!canLogin || phoneLoading}}"
+      loading="{{phoneLoading}}"
+      bindtap="doLogin"
+    >
+      登录
+    </button>
+    </view>
+  </view>
+
+  <checkbox-group class="privacy-consent" bindchange="onPrivacyAgreementChange">
+    <label><checkbox value="agree" checked="{{privacyAgreed}}"/><text>我已阅读并同意</text></label>
+    <text class="privacy-link" catchtap="openUserAgreement">《用户协议》</text>
+    <text>和</text><text class="privacy-link" catchtap="openPrivacyPolicy">《隐私政策》</text>
+  </checkbox-group>
+</view>

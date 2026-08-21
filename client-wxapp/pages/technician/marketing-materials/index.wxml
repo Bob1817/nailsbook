@@ -1,0 +1,46 @@
+<nav-bar title="宣传物料" showBack/>
+<view class="page">
+  <view class="intro-card">
+    <text class="intro-title">制作作品宣传海报</text>
+    <text class="intro-desc">预览、编辑和保存草稿不会扣额度，仅成功导出图片时计费。</text>
+  </view>
+
+  <view class="editor-card">
+    <view class="section-head">
+      <text class="section-title">{{editingId ? '编辑物料' : '新建物料'}}</text>
+      <button class="text-btn" bindtap="newMaterial">清空重建</button>
+    </view>
+    <text class="field-label">主标题</text>
+    <input class="field-input" maxlength="30" value="{{title}}" placeholder="例如：春日法式新款" bindinput="onTitleInput" />
+    <text class="field-label">副标题</text>
+    <input class="field-input" maxlength="50" value="{{subtitle}}" placeholder="描述款式或活动亮点" bindinput="onSubtitleInput" />
+    <view class="field-row">
+      <view class="field-half">
+        <text class="field-label">参考价格</text>
+        <input class="field-input" type="digit" value="{{price}}" placeholder="选填" bindinput="onPriceInput" />
+      </view>
+      <view class="field-half">
+        <text class="field-label">预约说明</text>
+        <input class="field-input" maxlength="30" value="{{contact}}" placeholder="欢迎咨询预约" bindinput="onContactInput" />
+      </view>
+    </view>
+    <image wx:if="{{previewUrl}}" class="poster-preview" src="{{previewUrl}}" mode="widthFix" aria-label="宣传海报预览" />
+    <view class="editor-actions">
+      <button class="secondary-btn" bindtap="previewMaterial" loading="{{saving}}">预览</button>
+      <button class="primary-btn" bindtap="exportMaterial" loading="{{exporting}}">导出到相册</button>
+    </view>
+  </view>
+
+  <view class="history-card">
+    <text class="section-title">历史草稿</text>
+    <view wx:if="{{loading}}" class="empty-text">加载中…</view>
+    <view wx:elif="{{materials.length === 0}}" class="empty-text">暂无草稿，从上方创建第一张海报</view>
+    <button wx:for="{{materials}}" wx:key="id" class="material-row" data-id="{{item.id}}" bindtap="editMaterial">
+      <view class="material-main">
+        <text class="material-title">{{item.title}}</text>
+        <text class="material-meta">{{item.status === 'exported' ? '已导出' : '草稿'}} · 已导出 {{item.exportCount}} 次</text>
+      </view>
+      <text class="material-edit">编辑</text>
+    </button>
+  </view>
+</view>

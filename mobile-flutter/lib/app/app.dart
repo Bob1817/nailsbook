@@ -2,16 +2,22 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import '../core/api/api_client.dart';
 import '../core/auth/auth_session.dart';
 import '../core/deeplink/deep_link_service.dart';
 import '../core/theme/app_theme.dart';
+import '../core/widgets/nb_toast.dart';
+import '../features/client/auth/client_auth_service.dart';
 import 'router.dart';
 
 class NailBookApp extends StatefulWidget {
   final String apiBaseUrl;
   final DeepLinkService deepLinkService;
 
-  const NailBookApp({super.key, this.apiBaseUrl = 'http://10.0.2.2:3000', required this.deepLinkService});
+  const NailBookApp(
+      {super.key,
+      this.apiBaseUrl = 'http://10.0.2.2:3000',
+      required this.deepLinkService});
 
   @override
   State<NailBookApp> createState() => _NailBookAppState();
@@ -19,6 +25,7 @@ class NailBookApp extends StatefulWidget {
 
 class _NailBookAppState extends State<NailBookApp> {
   StreamSubscription<Uri>? _deepLinkSub;
+  final _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
   @override
   void initState() {
@@ -40,15 +47,40 @@ class _NailBookAppState extends State<NailBookApp> {
     }
   }
 
-  void _handleDeepLink(Uri uri) {
+  Future<void> _handleDeepLink(Uri uri) async {
     final params = DeepLinkService.parseInviteLink(uri);
-    if (params != null && params.type == DeepLinkType.invite) {
-      final authSession = context.read<AuthSession>();
-      if (authSession.isClient) {
-        GoRouter.of(context).go('/client/login');
-      } else {
-        GoRouter.of(context).go('/client/login');
-      }
+    if (params == null) return;
+
+    final authSession = context.read<AuthSession>();
+    final router = GoRouter.of(context);
+    final code = params.inviteCode;
+
+    // 未登录：带邀请码进入客户端登录/注册页
+    if (!authSession.isClient) {
+      router.go(
+          code != null ? '/client/login?inviteCode=$code' : '/client/login');
+      return;
+    }
+
+    // 已登录客户：有邀请码则尝试绑定该美甲师
+    if (code != null) {
+      await _bindByInviteCode(code);
+    }
+
+    // 作品分享链接：跳转作品详情
+    if (params.type == DeepLinkType.work && params.workId != null) {
+      router.go('/client/works/${params.workId}');
+    }
+  }
+
+  Future<void> _bindByInviteCode(String code) async {
+    try {
+      final service = ClientAuthService(context.read<ApiClient>());
+      final tech = await service.findTechnicianByInviteCode(code);
+      await service.bindTechnician(techId: tech.id, inviteCode: code);
+      if (mounted) NbToast.success(context, '已绑定美甲师 ${tech.name}');
+    } catch (_) {
+      if (mounted) NbToast.error(context, '邀请码无效或已绑定');
     }
   }
 
@@ -61,7 +93,19 @@ class _NailBookAppState extends State<NailBookApp> {
           title: 'NailBook',
           theme: AppTheme.light,
           routerConfig: router,
+          scaffoldMessengerKey: _scaffoldMessengerKey,
           debugShowCheckedModeBanner: false,
+          builder: (context, child) => GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () {
+              final focusScope = FocusScope.of(context);
+              if (!focusScope.hasPrimaryFocus &&
+                  focusScope.focusedChild != null) {
+                focusScope.unfocus();
+              }
+            },
+            child: child ?? const SizedBox.shrink(),
+          ),
         );
       },
     );

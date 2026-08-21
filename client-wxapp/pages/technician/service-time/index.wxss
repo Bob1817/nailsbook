@@ -1,0 +1,21 @@
+.container { min-height: 100vh; background: var(--bg-gradient-entry); padding: 32rpx; }
+.loading-wrap { display: flex; justify-content: center; padding: 200rpx 0; }
+.loading-spinner { width: 60rpx; height: 60rpx; border: 4rpx solid var(--brand-primary); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.load-error { display:flex; min-height:420rpx; flex-direction:column; align-items:center; justify-content:center; padding:60rpx 32rpx; text-align:center; }
+.load-error-mark { width:88rpx; height:88rpx; margin-bottom:28rpx; border-radius:50%; background:#fff0f4; color:#c75b83; font-size: var(--font-xl); line-height:88rpx; text-align:center; }
+.load-error-title { margin-bottom:12rpx; color: var(--text-body); font-size: var(--font-lg); font-weight: var(--weight-semibold); }
+.load-error-desc { color:#7d6c75; font-size: var(--font-sm); line-height:1.6; }
+.retry-btn { min-height:88rpx; margin:44rpx 0 0; padding:0 56rpx; border:0; border-radius: var(--radius-xl); background:#1f2937; color: var(--text-inverse); font-size: var(--font-md); line-height:88rpx; }
+.retry-btn::after { border:0; }
+.card { background: var(--bg-gradient-entry); border-radius: var(--radius-md); overflow: hidden; margin-bottom: var(--space-md); }
+.day-item { display: flex; align-items: center; justify-content: space-between; padding: 28rpx 40rpx; }
+.item-border { border-bottom: 1rpx solid var(--border-card); }
+.day-left { flex: 1; }
+.day-label { display: block; font-size: var(--font-md); font-weight: var(--weight-semibold); color: var(--text-primary); margin-bottom: 6rpx; }
+.day-time { font-size: var(--font-sm); color: var(--brand-primary); }
+.day-off { font-size: var(--font-sm); color: var(--text-muted); }
+.tip { display: block; font-size: var(--font-sm); color: var(--text-muted); margin-bottom: 32rpx; }
+.save-btn { background: var(--brand-gradient); color: var(--text-inverse); font-size: var(--font-md); font-weight: var(--weight-semibold); text-align: center; padding: 28rpx; border-radius: var(--btn-radius); box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.3) /* brand-primary-alpha */; }
+.save-btn:active { opacity: 0.85; }
+.btn-disabled { opacity: 0.6; }

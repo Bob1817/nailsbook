@@ -16,6 +16,7 @@ const Profile: React.FC = () => {
   const [showBindModal, setShowBindModal] = useState(false);
   const [cardTech, setCardTech] = useState<Technician | null>(null);
   const [inviteCode, setInviteCode] = useState('');
+  const [bindNote, setBindNote] = useState('');
   const [foundTechnician, setFoundTechnician] = useState<{ id: number; name: string; avatarUrl?: string | null; city?: string | null; serviceArea?: string | null } | null>(null);
   const [checkingInviteCode, setCheckingInviteCode] = useState(false);
   const [bindingLoading, setBindingLoading] = useState(false);
@@ -48,12 +49,15 @@ const Profile: React.FC = () => {
     if (!foundTechnician) return;
     setBindingLoading(true);
     try {
-      await bindTechnician(foundTechnician.id, inviteCode, false);
+      await bindTechnician(foundTechnician.id, inviteCode, false, bindNote);
       setShowBindModal(false);
       setInviteCode('');
+      setBindNote('');
       setFoundTechnician(null);
-    } catch {
-      alert('绑定失败');
+      alert('绑定申请已提交，待美甲师通过后生效');
+    } catch (e) {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      alert(msg || '申请失败，请重试');
     } finally {
       setBindingLoading(false);
     }
@@ -90,6 +94,15 @@ const Profile: React.FC = () => {
     {
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      ),
+      label: '我的设计',
+      onClick: () => navigate('/designs'),
+    },
+    {
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
         </svg>
       ),
@@ -117,15 +130,11 @@ const Profile: React.FC = () => {
   ];
 
   const settingItems = [
-    {
-      icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      label: '帮助与反馈',
-      onClick: () => navigate('/profile/help'),
-    },
+    { icon: (<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>), label: '修改密码', onClick: () => navigate('/profile/password') },
+    { icon: (<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>), label: '通知设置', onClick: () => navigate('/profile/notifications') },
+    { icon: (<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>), label: '帮助与反馈', onClick: () => navigate('/profile/help') },
+    { icon: (<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>), label: '用户协议', onClick: () => navigate('/profile/legal/terms') },
+    { icon: (<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>), label: '隐私政策', onClick: () => navigate('/profile/legal/privacy') },
   ];
 
   return (
@@ -137,28 +146,26 @@ const Profile: React.FC = () => {
         <div className="absolute -top-16 right-0 h-64 w-64 rounded-full bg-white/12 blur-3xl"></div>
         <div className="absolute -bottom-20 left-[-3rem] h-56 w-56 rounded-full bg-white/10 blur-3xl"></div>
 
-        <div className="relative px-5 app-hero-safe pb-10 text-white">
+        <div className="relative px-5 app-hero-safe pb-7 text-white">
           <div
             onClick={() => navigate('/profile/settings')}
-            className="rounded-[32px] border border-white/18 bg-white/10 px-5 py-5 shadow-[0_24px_70px_rgba(255,107,138,0.26)] backdrop-blur-xl cursor-pointer active:scale-[0.99] transition-transform"
+            className="rounded-[28px] border border-white/18 bg-white/10 px-4 py-4 shadow-[0_18px_52px_rgba(255,107,138,0.24)] backdrop-blur-xl cursor-pointer active:scale-[0.99] transition-transform"
           >
             <div className="flex items-center gap-4">
-              <div className="flex h-[76px] w-[76px] items-center justify-center overflow-hidden rounded-full bg-white/20 ring-2 ring-white/30">
+              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-white/20 ring-2 ring-white/30">
               {user?.avatarUrl ? (
                 <img src={user.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
               ) : (
-                <svg className="w-9 h-9 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               )}
               </div>
               <div className="min-w-0 flex-1">
-                <span className="text-[11px] uppercase tracking-[0.28em] text-white/70">PROFILE</span>
-                <h1 className="mt-0.5 truncate text-[1.75rem] font-bold tracking-[-0.03em] text-white">
+                <h1 className="truncate text-[20px] font-semibold text-white">
                   {user?.nickname || user?.phone || '用户'}
                 </h1>
                 <p className="mt-1 text-sm text-white/80">{user?.phone}</p>
-                <p className="mt-1 text-xs text-white/70">点击编辑资料与设置</p>
               </div>
               <svg className="h-5 w-5 text-white/70 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -322,7 +329,7 @@ const Profile: React.FC = () => {
         <div className="rounded-[32px] bg-white/88 p-2 shadow-[0_24px_64px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
           <div className="px-3 pb-2 pt-1">
             <h3 className="text-lg font-semibold text-[var(--color-text)]">更多</h3>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">查看帮助、反馈问题与账号设置</p>
+            <p className="mt-1 text-sm text-[var(--color-text-muted)]">账号设置、协议与版本信息</p>
           </div>
           {settingItems.map((item, index) => (
             <button
@@ -343,6 +350,15 @@ const Profile: React.FC = () => {
               </svg>
             </button>
           ))}
+          <div className="flex items-center justify-between rounded-[24px] px-4 py-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#FFF0F5_0%,#F4F7FB_100%)] text-[var(--color-text-secondary)]">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              </span>
+              <span className="text-body text-[var(--color-text)]">版本</span>
+            </div>
+            <span className="text-sm text-[var(--color-text-muted)]">1.0.0</span>
+          </div>
         </div>
       </div>
 
@@ -355,9 +371,6 @@ const Profile: React.FC = () => {
           退出登录
         </button>
       </div>
-
-      {/* Version */}
-      <p className="mt-6 text-center text-caption text-[var(--color-text-muted)]">版本 1.0.0</p>
 
       {/* Bind Technician Modal */}
       {showBindModal && (
@@ -405,30 +418,43 @@ const Profile: React.FC = () => {
                   )}
                 </div>
                 <p className="mt-2 text-caption text-[var(--color-text-muted)]">
-                  输入美甲师提供的邀请码后，即可完成绑定
+                  输入美甲师邀请码，提交绑定申请，待美甲师通过后生效
                 </p>
               </div>
 
               {foundTechnician && (
-                <div className="p-4 bg-[var(--color-primary-soft)] rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center overflow-hidden">
-                      {foundTechnician.avatarUrl ? (
-                        <img src={foundTechnician.avatarUrl} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <svg className="w-7 h-7 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-body font-medium text-[var(--color-text)]">{foundTechnician.name}</p>
-                      <p className="text-caption text-[var(--color-text-muted)]">
-                        {foundTechnician.city || '未知城市'} {foundTechnician.serviceArea ? `· ${foundTechnician.serviceArea}` : ''}
-                      </p>
+                <>
+                  <div className="p-4 bg-[var(--color-primary-soft)] rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center overflow-hidden">
+                        {foundTechnician.avatarUrl ? (
+                          <img src={foundTechnician.avatarUrl} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <svg className="w-7 h-7 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-body font-medium text-[var(--color-text)]">{foundTechnician.name}</p>
+                        <p className="text-caption text-[var(--color-text-muted)]">
+                          {foundTechnician.city || '未知城市'} {foundTechnician.serviceArea ? `· ${foundTechnician.serviceArea}` : ''}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
+
+                  <div>
+                    <label className="block text-body-sm text-[var(--color-text-secondary)] mb-2">备注（可选）</label>
+                    <textarea
+                      value={bindNote}
+                      onChange={(e) => setBindNote(e.target.value)}
+                      placeholder="给美甲师留言，如：我是老顾客小红"
+                      rows={2}
+                      className="w-full px-4 py-3 bg-gray-50 rounded-xl text-body text-[var(--color-text)] outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 resize-none"
+                    />
+                  </div>
+                </>
               )}
 
               <button
@@ -436,7 +462,7 @@ const Profile: React.FC = () => {
                 disabled={!foundTechnician || bindingLoading}
                 className="w-full py-4 bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] text-white rounded-full text-body font-medium shadow-lg shadow-pink-200 active:scale-[0.98] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {bindingLoading ? '绑定中...' : '确认绑定'}
+                {bindingLoading ? '申请中...' : '申请绑定'}
               </button>
             </div>
           </div>

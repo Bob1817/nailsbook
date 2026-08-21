@@ -1,0 +1,47 @@
+<view wx:if="{{show}}" class="overlay" bindtap="onClose">
+  <view class="sheet" catchtap="preventScroll">
+    <!-- Header: 月份导航 -->
+    <view class="sheet-header">
+      <view class="nav-btn" bindtap="prevMonth">
+        <text class="nav-icon">‹</text>
+      </view>
+      <text class="month-title">{{year}}年{{month + 1}}月</text>
+      <view class="nav-btn" bindtap="nextMonth">
+        <text class="nav-icon">›</text>
+      </view>
+    </view>
+
+    <!-- 星期标题 -->
+    <view class="calendar-body">
+      <view class="weekday-row">
+        <text wx:for="{{weekDays}}" wx:key="*this" class="weekday-cell">{{item}}</text>
+      </view>
+
+      <!-- 日期网格 -->
+      <view class="day-grid">
+        <view
+          wx:for="{{days}}"
+          wx:key="dateStr"
+          class="day-cell"
+          bindtap="onDayTap"
+          data-date="{{item.dateStr}}"
+          data-past="{{item.isPast}}"
+        >
+          <view wx:if="{{item.day}}" class="day-inner {{item.isSelected ? 'day-selected' : ''}} {{item.isPast ? 'day-past' : ''}}">
+            <text class="day-num">{{item.day}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- Footer -->
+    <view class="sheet-footer">
+      <view class="btn-cancel" bindtap="onClose">
+        <text class="btn-cancel-text">取消</text>
+      </view>
+      <view class="btn-confirm" bindtap="onConfirm">
+        <text class="btn-confirm-text">设置为休息日</text>
+      </view>
+    </view>
+  </view>
+</view>

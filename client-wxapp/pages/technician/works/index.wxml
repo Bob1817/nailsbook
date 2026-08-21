@@ -1,43 +1,48 @@
+<nav-bar title="作品" showBack>
+</nav-bar>
 <view class="container">
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading-wrap">
+    <view class="spinner"></view>
+  </view>
 
-  <view wx:if="{{!loading && works.length === 0}}" class="empty">
-    <text class="empty-text">还没有作品</text>
+  <view wx:elif="{{loadFailed}}" class="empty" aria-live="polite">
+    <text class="empty-title">作品列表加载失败</text>
+    <text class="empty-sub">请检查网络后重试</text>
+    <button class="btn-add-first" bindtap="loadWorks">重新加载</button>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:elif="{{works.length === 0}}" class="empty">
+    <view class="empty-icon-wrap">
+      <view class="icon-placeholder-circle">
+        <view class="icon-placeholder-inner"></view>
+      </view>
+    </view>
+    <text class="empty-title">还没有作品</text>
     <text class="empty-sub">上传你的美甲作品，吸引更多客户</text>
     <button class="btn-add-first" bindtap="goCreate">上传第一个作品</button>
   </view>
 
-  <view wx:else class="grid">
-    <view
-      class="work-card"
-      wx:for="{{works}}"
-      wx:key="id"
-    >
-      <image
-        class="work-cover"
-        src="{{item.coverUrl}}"
-        mode="aspectFill"
-        bindtap="goEdit"
-        data-id="{{item.id}}"
-      />
-      <view wx:if="{{!item.isVisible}}" class="hidden-mask">
-        <text class="hidden-label">已隐藏</text>
-      </view>
-      <view class="work-info">
-        <text class="work-title">{{item.title || '未命名'}}</text>
-        <view class="work-actions">
-          <text class="action-btn" bindtap="toggleVisible" data-id="{{item.id}}">
-            {{item.isVisible ? '隐藏' : '显示'}}
-          </text>
-          <text class="action-btn" bindtap="goEdit" data-id="{{item.id}}">编辑</text>
-          <text class="action-btn danger" bindtap="confirmDelete" data-id="{{item.id}}">删除</text>
-        </view>
+  <!-- 瀑布流 -->
+  <view wx:else class="waterfall">
+    <!-- 左列 -->
+    <view class="col">
+      <view wx:for="{{leftCol}}" wx:key="id" class="work-item">
+        <work-card work="{{item}}" manageable bind:cardtap="goDetail" bind:actiontap="showActions" />
       </view>
     </view>
 
-    <view class="work-card add-card" bindtap="goCreate">
-      <text class="add-icon">+</text>
-      <text class="add-text">上传作品</text>
+    <!-- 右列 -->
+    <view class="col">
+      <view wx:for="{{rightCol}}" wx:key="id" class="work-item">
+        <work-card work="{{item}}" manageable bind:cardtap="goDetail" bind:actiontap="showActions" />
+      </view>
     </view>
   </view>
+</view>
 
+<!-- 固定底部发布按钮 -->
+<view wx:if="{{works.length > 0}}" class="fixed-bottom">
+  <button class="btn-publish" bindtap="goCreate">+ 上传作品</button>
 </view>

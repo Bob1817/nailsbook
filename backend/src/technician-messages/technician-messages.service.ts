@@ -9,6 +9,7 @@ import { CreateTechnicianMessageDto } from './dto/create-technician-message.dto'
 const ALLOWED_MESSAGE_TYPES = new Set([
   'text',
   'image',
+  'voice',
   'system',
   'quote',
   'booking',
@@ -112,8 +113,12 @@ export class TechnicianMessagesService {
         orderNo: true,
         serviceType: true,
         startTime: true,
+        endTime: true,
         status: true,
         quotePrice: true,
+        depositAmount: true,
+        address: true,
+        customTitle: true,
       },
     });
     if (!order) {
@@ -128,11 +133,16 @@ export class TechnicianMessagesService {
 
     const preview = `[预约卡片] ${order.orderNo}`;
     const cardContent = JSON.stringify({
+      orderId: order.id,
       orderNo: order.orderNo,
       serviceType: order.serviceType ?? null,
       startTime: order.startTime,
+      endTime: order.endTime,
       status: order.status,
       price: order.quotePrice ?? null,
+      depositAmount: order.depositAmount ?? null,
+      address: order.address ?? null,
+      customTitle: order.customTitle ?? null,
     });
     const conversation = await this.prisma.conversation.upsert({
       where: {

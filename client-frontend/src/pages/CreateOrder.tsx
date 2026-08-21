@@ -7,14 +7,11 @@ import { addressService, type ClientAddress } from '../services/address';
 import { uploadService } from '../services/upload';
 import { worksService, type NailWork } from '../services/works';
 import { designService } from '../services/design';
+import { useTechnicianAvailability } from '../hooks/useTechnicianAvailability';
+import { sameCity } from '../utils/sameCity';
+import { shopHoursOptionForDate, isShopOpenOnDate } from '../utils/shopHours';
+import DistrictSelect from '../components/DistrictSelect';
 import type { ShopAddress, Technician, TechnicianServiceItem } from '../services/auth';
-
-const timeSlots = [
-  '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-  '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
-  '16:00', '16:30', '17:00', '17:30', '18:00', '18:30',
-  '19:00', '19:30', '20:00', '20:30',
-];
 
 const serviceTypeOptions = [
   { value: '上门美甲', label: '上门美甲', description: '美甲师按预约时间上门服务' },
@@ -27,12 +24,7 @@ const formatClientAddress = (address: ClientAddress) =>
 const formatShopAddress = (address: ShopAddress) =>
   [address.province, address.city, address.district, address.detailAddress].filter(Boolean).join(' ');
 
-const timeToMinutes = (value: string) => {
-  const [hours, minutes] = value.split(':').map(Number);
-  return hours * 60 + minutes;
-};
-
-const getShopHoursForDate = (shopAddress: ShopAddress | null, serviceDate: string) => {
+const getShopHoursForDate =(shopAddress: ShopAddress | null, serviceDate: string) => {
   if (!shopAddress?.businessHours || !serviceDate) {
     return null;
   }
@@ -70,10 +62,17 @@ const CreateOrder: React.FC = () => {
   const bookableTechnicians = useMemo(() => getBookableTechnicians(technicians), [technicians]);
   const [addresses, setAddresses] = useState<ClientAddress[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  
-  // Get design info from URL params
+  const [useInlineAddr, setUseInlineAddr] = useState(false);
+  const [inlineName, setInlineName] = useState('');
+  const [inlinePhone, setInlinePhone] = useState('');
+  const [inlineAddr, setInlineAddr] = useState('');
+  const [inlineDistrict, setInlineDistrict] = useState('');
+  const [showShopConfirm, setShowShopConfirm] = useState(false);
+
+  // Get design/work info from URL params
   const designId = searchParams.get('design_id');
   const designTechId = searchParams.get('tech_id');
+  const workId = searchParams.get('work_id');
   
   const [formData, setFormData] = useState({
     serviceDate: dayjs().add(1, 'day').format('YYYY-MM-DD'),
@@ -95,12 +94,17 @@ const CreateOrder: React.FC = () => {
   const [technicianWorks, setTechnicianWorks] = useState<NailWork[]>([]);
   const [showWorkSelector, setShowWorkSelector] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedTechnician = useMemo(
     () => bookableTechnicians.find((item) => item.id === formData.techId) || null,
     [bookableTechnicians, formData.techId],
   );
+  const { isDateAvailable, getSlotStatuses, refresh } = useTechnicianAvailability(selectedTechnician);
   const isHomeService = formData.serviceType === '上门美甲';
   const isShopService = formData.serviceType === '到店美甲';
   const canChooseServiceType = !!selectedTechnician;
@@ -123,22 +127,22 @@ const CreateOrder: React.FC = () => {
     () => getShopHoursForDate(selectedShopAddress, formData.serviceDate),
     [formData.serviceDate, selectedShopAddress],
   );
-  const shopAvailableTimeSlots = useMemo(() => {
-    if (!isShopService || !selectedShopAddress) {
-      return timeSlots;
-    }
 
-    if (!selectedShopHours || selectedShopHours.closed) {
-      return [];
-    }
+  const shopHoursOpt = useMemo(() => {
+    if (!isShopService || !selectedShopAddress) return null;
+    return shopHoursOptionForDate(selectedShopAddress, formData.serviceDate);
+  }, [isShopService, selectedShopAddress, formData.serviceDate]);
 
-    const startMinutes = timeToMinutes(selectedShopHours.start);
-    const endMinutes = timeToMinutes(selectedShopHours.end);
-    return timeSlots.filter((slot) => {
-      const slotMinutes = timeToMinutes(slot);
-      return slotMinutes >= startMinutes && slotMinutes < endMinutes;
-    });
-  }, [isShopService, selectedShopAddress, selectedShopHours]);
+  const slotStatuses = useMemo(
+    () => getSlotStatuses(formData.serviceDate, { shopMode: isShopService, shopHours: shopHoursOpt }),
+    [getSlotStatuses, formData.serviceDate, shopHoursOpt, isShopService],
+  );
+
+  const availableTimeSlots = useMemo(
+    () => slotStatuses.filter((s) => !s.occupied).map((s) => s.time),
+    [slotStatuses],
+  );
+
   const activeServiceItems = useMemo(
     () =>
       (selectedTechnician?.serviceItems || [])
@@ -151,10 +155,6 @@ const CreateOrder: React.FC = () => {
     try {
       const data = await addressService.getAddresses();
       setAddresses(data);
-      if (data.length > 0) {
-        const defaultAddress = data.find((item) => item.isDefault) || data[0];
-        setFormData((prev) => ({ ...prev, addressId: prev.addressId || defaultAddress.id }));
-      }
     } catch {
       console.error('Failed to load addresses');
     }
@@ -178,6 +178,21 @@ const CreateOrder: React.FC = () => {
     loadAddresses();
   }, [loadAddresses]);
 
+  // 默认仅自动选择同城地址；无同城地址则留空，由用户走内联建址
+  useEffect(() => {
+    if (!isHomeService || !selectedTechnician || addresses.length === 0 || useInlineAddr) {
+      return;
+    }
+    const sameCityAddresses = addresses.filter((item) => sameCity(item, selectedTechnician));
+    setFormData((prev) => {
+      if (prev.addressId && sameCityAddresses.some((item) => item.id === prev.addressId)) {
+        return prev;
+      }
+      const defaultAddress = sameCityAddresses.find((item) => item.isDefault) || sameCityAddresses[0];
+      return { ...prev, addressId: defaultAddress ? defaultAddress.id : 0 };
+    });
+  }, [isHomeService, selectedTechnician, addresses, useInlineAddr]);
+
   // Load design from URL if design_id is provided
   useEffect(() => {
     if (designId) {
@@ -192,11 +207,28 @@ const CreateOrder: React.FC = () => {
     }
   }, [designId]);
 
+  // Load work from URL if work_id is provided
+  useEffect(() => {
+    if (workId) {
+      worksService.getWorks().then((works) => {
+        const target = works.find((w) => w.id === parseInt(workId, 10));
+        if (target) {
+          setSelectedWorks([target]);
+          setIsCustomService(true);
+          setCustomServiceTitle(target.title || '美甲款式');
+          setCustomServiceDescription(target.description || '');
+        }
+      }).catch((err) => {
+        console.error('Failed to load work reference', err);
+      });
+    }
+  }, [workId]);
+
   useEffect(() => {
     if (bookableTechnicians.length === 1 && formData.techId === 0) {
       setFormData((prev) => ({ ...prev, techId: bookableTechnicians[0].id }));
     }
-  }, [bookableTechnicians, formData.techId]);
+  }, [formData.techId, bookableTechnicians]);
 
   useEffect(() => {
     setFormData((prev) => {
@@ -244,19 +276,19 @@ const CreateOrder: React.FC = () => {
       return;
     }
 
-    if (shopAvailableTimeSlots.length === 0) {
+    if (slotStatuses.length === 0) {
       requestAnimationFrame(() => {
         setFormData((prev) => ({ ...prev, startTime: '' }));
       });
       return;
     }
 
-    if (!shopAvailableTimeSlots.includes(formData.startTime)) {
+    if (!availableTimeSlots.includes(formData.startTime)) {
       requestAnimationFrame(() => {
-        setFormData((prev) => ({ ...prev, startTime: shopAvailableTimeSlots[0] }));
+        setFormData((prev) => ({ ...prev, startTime: availableTimeSlots[0] || '' }));
       });
     }
-  }, [formData.startTime, isShopService, selectedShopAddress, shopAvailableTimeSlots]);
+  }, [formData.startTime, isShopService, selectedShopAddress, slotStatuses, availableTimeSlots]);
 
   useEffect(() => {
     if (selectedTechnician) {
@@ -313,8 +345,16 @@ const CreateOrder: React.FC = () => {
       return false;
     }
 
-    if (isHomeService && formData.addressId === 0) {
-      return false;
+    if (isHomeService) {
+      const usingInline = addresses.length === 0 || useInlineAddr;
+      if (usingInline) {
+        const districtOk = selectedTechnician?.city ? inlineDistrict.trim().length > 0 : true;
+        if (!inlineName.trim() || !inlineAddr.trim() || !districtOk) {
+          return false;
+        }
+      } else if (formData.addressId === 0) {
+        return false;
+      }
     }
 
     if (isShopService && !selectedShopAddress) {
@@ -331,7 +371,7 @@ const CreateOrder: React.FC = () => {
       return false;
     }
 
-    if (isShopService && selectedShopAddress && !shopAvailableTimeSlots.includes(formData.startTime)) {
+    if (!availableTimeSlots.includes(formData.startTime)) {
       return false;
     }
 
@@ -369,9 +409,25 @@ const CreateOrder: React.FC = () => {
       return;
     }
 
-    if (isHomeService && formData.addressId === 0) {
-      alert('请选择上门服务地址');
-      return;
+    const usingInlineAddr = isHomeService && (addresses.length === 0 || useInlineAddr);
+    if (isHomeService) {
+      if (usingInlineAddr) {
+        const districtOk = selectedTechnician?.city ? inlineDistrict.trim().length > 0 : true;
+        if (!inlineName.trim() || !inlineAddr.trim() || !districtOk) {
+          alert('请填写或选择上门地址');
+          return;
+        }
+      } else {
+        if (formData.addressId === 0) {
+          alert('请填写或选择上门地址');
+          return;
+        }
+        const chosen = addresses.find((a) => a.id === formData.addressId);
+        if (chosen && !sameCity(chosen, selectedTechnician)) {
+          alert('跨城美甲无法预约');
+          return;
+        }
+      }
     }
 
     if (isShopService && !selectedShopAddress) {
@@ -379,6 +435,19 @@ const CreateOrder: React.FC = () => {
       return;
     }
 
+    if (isShopService) {
+      setShowShopConfirm(true);
+      return;
+    }
+
+    await doCreate();
+  };
+
+  const doCreate = async () => {
+    if (!selectedTechnician) {
+      return;
+    }
+    const usingInlineAddr = isHomeService && (addresses.length === 0 || useInlineAddr);
     setSubmitting(true);
     try {
       if (isCustomService) {
@@ -400,13 +469,27 @@ const CreateOrder: React.FC = () => {
         }
       }
 
+      let homeAddressId = formData.addressId;
+      if (usingInlineAddr) {
+        const saved = await addressService.createAddress({
+          contactName: inlineName.trim(),
+          contactPhone: inlinePhone.trim() || undefined,
+          province: selectedTechnician?.province || undefined,
+          city: selectedTechnician?.city || undefined,
+          district: inlineDistrict || undefined,
+          detailAddress: inlineAddr.trim(),
+          isDefault: addresses.length === 0,
+        });
+        homeAddressId = saved.id;
+      }
+
       // 统一走 createOrder 接口
       await orderService.createOrder({
         serviceDate: formData.serviceDate,
         startTime: formData.startTime,
         techId: formData.techId,
         serviceType: formData.serviceType,
-        addressId: isHomeService ? formData.addressId : undefined,
+        addressId: isHomeService ? homeAddressId : undefined,
         shopAddress: isShopService ? selectedShopAddress || undefined : undefined,
         remark: formData.remark,
         ...(isCustomService
@@ -424,6 +507,12 @@ const CreateOrder: React.FC = () => {
       const e = err as { response?: { data?: { message?: string | string[] } } };
       const msg = e.response?.data?.message;
       const text = Array.isArray(msg) ? msg[0] : msg;
+      if (typeof text === 'string' && text.includes('该时间段已经被其他用户预约')) {
+        alert('该时间段已经被其他用户预约，请重新选择预约时间');
+        refresh();
+        setFormData((prev) => ({ ...prev, startTime: '' }));
+        return;
+      }
       alert('创建预约失败：' + (text || (err as Error).message || '请稍后重试'));
       console.error('Create order failed', err);
     } finally {
@@ -458,7 +547,37 @@ const CreateOrder: React.FC = () => {
               {bookableTechnicians.length > 1 ? '请选择当前已开启接单的美甲师' : '当前仅有 1 位可预约的美甲师'}
             </p>
           </div>
-          {bookableTechnicians.length > 0 ? (
+          {bookableTechnicians.length === 0 ? (
+            <div className="rounded-[24px] bg-slate-50 px-5 py-8 text-center">
+              <p className="text-sm font-medium text-slate-700">
+                {technicians.length === 1 ? '美甲师未开启美甲服务' : '当前暂无可预约的美甲师'}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                {technicians.length === 1
+                  ? '请联系美甲师开启服务'
+                  : '请等待美甲师开启接单并配置可用服务后再发起预约'}
+              </p>
+            </div>
+          ) : bookableTechnicians.length === 1 ? (
+            <div className="flex items-center gap-3 rounded-[24px] bg-slate-50/80 p-4 ring-1 ring-black/5">
+              <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-[18px] bg-[linear-gradient(135deg,#FFE0EA_0%,#F4F7FB_100%)]">
+                {bookableTechnicians[0].avatarUrl ? (
+                  <img src={bookableTechnicians[0].avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-base font-semibold text-[var(--color-primary)]">{bookableTechnicians[0].name[0]}</span>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-900">{bookableTechnicians[0].name}</span>
+                  {bookableTechnicians[0].isDefault && (
+                    <span className="rounded-full bg-[var(--color-primary-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-primary)]">默认</span>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-gray-500">{bookableTechnicians[0].city || bookableTechnicians[0].serviceArea || '暂未设置服务区域'}</p>
+              </div>
+            </div>
+          ) : (
             <div className="space-y-3">
               {bookableTechnicians.map((tech) => {
               const isSelected = formData.techId === tech.id;
@@ -517,11 +636,6 @@ const CreateOrder: React.FC = () => {
                 </button>
               );
             })}
-            </div>
-          ) : (
-            <div className="rounded-[24px] bg-slate-50 px-5 py-8 text-center">
-              <p className="text-sm font-medium text-slate-700">当前暂无可预约的美甲师</p>
-              <p className="mt-2 text-sm leading-6 text-slate-400">请等待美甲师开启接单并配置可用服务后再发起预约</p>
             </div>
           )}
         </section>
@@ -590,35 +704,27 @@ const CreateOrder: React.FC = () => {
             <div className="rounded-[24px] bg-slate-50 px-5 py-6 text-sm text-slate-400">选择美甲师后，这里会显示她在服务管理里设置的服务内容</div>
           ) : (
             <div className="space-y-3">
-              {/* Custom Service Option */}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsCustomService(!isCustomService);
-                  if (!isCustomService) {
-                    setFormData((prev) => ({ ...prev, selectedServiceIds: [] }));
-                  }
-                }}
-                className={`flex w-full items-start gap-3 rounded-[24px] p-4 text-left ring-1 transition ${
-                  isCustomService
-                    ? 'bg-[linear-gradient(135deg,#FFF0F5_0%,#FAFBFF_100%)] ring-[#FF6B8A]/25'
-                    : 'bg-slate-50/80 ring-black/5'
-                }`}
-              >
-                <div className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-md border-2 ${
-                  isCustomService ? 'border-[#FF6B8A] bg-[#FF6B8A]' : 'border-slate-300'
-                }`}>
-                  {isCustomService && (
-                    <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <span className="text-sm font-medium text-gray-900">自定义服务</span>
-                  <p className="mt-1 text-sm leading-6 text-gray-500">描述你的需求，上传参考图片或选择美甲师作品，等待报价</p>
-                </div>
-              </button>
+              {/* Segmented control: 选服务项目 | 自定义需求 */}
+              <div className="mb-3 grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1">
+                <button
+                  type="button"
+                  onClick={() => { setIsCustomService(false); }}
+                  className={`rounded-xl py-2.5 text-sm font-medium transition ${
+                    !isCustomService ? 'bg-white text-gray-900 shadow-sm' : 'text-slate-500'
+                  }`}
+                >
+                  选服务项目
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setIsCustomService(true); setFormData((prev) => ({ ...prev, selectedServiceIds: [] })); }}
+                  className={`rounded-xl py-2.5 text-sm font-medium transition ${
+                    isCustomService ? 'bg-white text-gray-900 shadow-sm' : 'text-slate-500'
+                  }`}
+                >
+                  自定义需求
+                </button>
+              </div>
 
               {/* Custom Service Form */}
               {isCustomService && (
@@ -840,17 +946,44 @@ const CreateOrder: React.FC = () => {
                 管理地址
               </button>
             </div>
-            {addresses.length > 0 ? (
+            {addresses.length === 0 || useInlineAddr ? (
+              <div className="space-y-3">
+                {(selectedTechnician?.province || selectedTechnician?.city) && (
+                  <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                    服务城市：{[selectedTechnician?.province, selectedTechnician?.city].filter(Boolean).join(' ')}（仅支持同城上门）
+                  </div>
+                )}
+                <input value={inlineName} onChange={(e) => setInlineName(e.target.value)} placeholder="联系人姓名"
+                  className="w-full rounded-2xl bg-slate-50 px-4 py-3 text-sm text-gray-900 outline-none ring-1 ring-slate-200 focus:ring-[#FF6B8A]/20" />
+                <input value={inlinePhone} onChange={(e) => setInlinePhone(e.target.value)} placeholder="联系电话（选填）" type="tel"
+                  className="w-full rounded-2xl bg-slate-50 px-4 py-3 text-sm text-gray-900 outline-none ring-1 ring-slate-200 focus:ring-[#FF6B8A]/20" />
+                <DistrictSelect city={selectedTechnician?.city || ''} value={inlineDistrict} onChange={setInlineDistrict} />
+                <input value={inlineAddr} onChange={(e) => setInlineAddr(e.target.value)} placeholder="街道、村、道路、小区、门牌等详细地址"
+                  className="w-full rounded-2xl bg-slate-50 px-4 py-3 text-sm text-gray-900 outline-none ring-1 ring-slate-200 focus:ring-[#FF6B8A]/20" />
+                {addresses.length > 0 && (
+                  <button type="button" onClick={() => setUseInlineAddr(false)} className="text-xs text-slate-400">取消，使用已有地址</button>
+                )}
+              </div>
+            ) : (
               <div className="space-y-3">
                 {addresses.map((address) => {
                   const isSelected = formData.addressId === address.id;
+                  const cityOk = sameCity(address, selectedTechnician || {});
                   return (
                     <button
                       key={address.id}
                       type="button"
-                      onClick={() => setFormData((prev) => ({ ...prev, addressId: address.id }))}
+                      onClick={() => {
+                        if (!sameCity(address, selectedTechnician || {})) {
+                          alert('跨城美甲无法预约');
+                          return;
+                        }
+                        setFormData((prev) => ({ ...prev, addressId: address.id }));
+                      }}
                       className={`w-full rounded-[24px] p-4 text-left ring-1 transition ${
-                        isSelected
+                        !cityOk
+                          ? 'bg-slate-50/80 ring-black/5 opacity-50'
+                          : isSelected
                           ? 'bg-[linear-gradient(135deg,#FFF0F5_0%,#FAFBFF_100%)] ring-[#FF6B8A]/25'
                           : 'bg-slate-50/80 ring-black/5'
                       }`}
@@ -874,6 +1007,11 @@ const CreateOrder: React.FC = () => {
                                 默认
                               </span>
                             )}
+                            {!cityOk && (
+                              <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-500">
+                                跨城不可用
+                              </span>
+                            )}
                           </div>
                           <p className="mt-2 text-sm leading-6 text-gray-600">{formatClientAddress(address)}</p>
                         </div>
@@ -881,17 +1019,12 @@ const CreateOrder: React.FC = () => {
                     </button>
                   );
                 })}
-              </div>
-            ) : (
-              <div className="rounded-[24px] bg-slate-50 px-5 py-8 text-center">
-                <p className="text-sm font-medium text-slate-700">暂无上门地址，请先添加</p>
-                <p className="mt-2 text-sm leading-6 text-slate-400">至少添加一个上门地址后，才能继续预约上门美甲</p>
                 <button
                   type="button"
-                  onClick={() => navigate('/profile/addresses')}
-                  className="mt-4 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white"
+                  onClick={() => setUseInlineAddr(true)}
+                  className="w-full rounded-[24px] border-2 border-dashed border-slate-200 py-3 text-sm font-medium text-[var(--color-primary)]"
                 >
-                  添加地址
+                  + 新增同城地址
                 </button>
               </div>
             )}
@@ -956,36 +1089,102 @@ const CreateOrder: React.FC = () => {
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">确认服务方式后，选择你方便的预约时间段</p>
           </div>
             <div className="space-y-4">
-              <input
-                type="date"
-              value={formData.serviceDate}
-              min={dayjs().format('YYYY-MM-DD')}
-              onChange={(e) => setFormData((prev) => ({ ...prev, serviceDate: e.target.value }))}
-                className="w-full rounded-2xl bg-slate-50 px-4 py-3 text-gray-900 outline-none ring-1 ring-transparent focus:ring-[#FF6B8A]/20"
-              />
+              {/* 自定义月历：休息日/非工作日置灰不可选 */}
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setCalendarMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-200"
+                  >
+                    ‹
+                  </button>
+                  <span className="text-sm font-medium text-gray-900">
+                    {calendarMonth.getFullYear()}年{calendarMonth.getMonth() + 1}月
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCalendarMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-200"
+                  >
+                    ›
+                  </button>
+                </div>
+                <div className="mb-1 grid grid-cols-7 gap-1">
+                  {['日', '一', '二', '三', '四', '五', '六'].map((w) => (
+                    <div key={w} className="flex h-6 items-center justify-center text-xs text-slate-400">
+                      {w}
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                  {(() => {
+                    const year = calendarMonth.getFullYear();
+                    const month = calendarMonth.getMonth();
+                    const firstWeekday = new Date(year, month, 1).getDay();
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    const todayStr = dayjs().format('YYYY-MM-DD');
+                    const cells: React.ReactNode[] = [];
+                    for (let i = 0; i < firstWeekday; i++) cells.push(<div key={`e${i}`} className="h-10" />);
+                    for (let day = 1; day <= daysInMonth; day++) {
+                      const dateStr = dayjs(new Date(year, month, day)).format('YYYY-MM-DD');
+                      const dateOk = isShopService
+                        ? isShopOpenOnDate(selectedShopAddress, dateStr)
+                        : isDateAvailable(dateStr);
+                      const disabled = dateStr < todayStr || !dateOk;
+                      const selected = formData.serviceDate === dateStr;
+                      cells.push(
+                        <button
+                          key={day}
+                          type="button"
+                          disabled={disabled}
+                          onClick={() => setFormData((prev) => ({ ...prev, serviceDate: dateStr, startTime: '' }))}
+                          className={`h-10 rounded-lg text-sm font-medium transition ${
+                            disabled
+                              ? 'cursor-not-allowed text-slate-300'
+                              : selected
+                              ? 'bg-[#FF6B8A] text-white'
+                              : 'text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          {day}
+                        </button>,
+                      );
+                    }
+                    return cells;
+                  })()}
+                </div>
+                <p className="mt-2 text-xs text-slate-400">灰色日期为休息日，不可预约</p>
+              </div>
+              {selectedTechnician?.serviceSchedule?.selectedDates && selectedTechnician.serviceSchedule.selectedDates.length > 0 && (
+                <div className="rounded-2xl bg-pink-50 px-4 py-3 text-sm text-pink-600">
+                  该美甲师仅在特定日期接单，请选择可预约日期
+                </div>
+              )}
               {isShopService && selectedShopAddress && (
                 <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
-                  {shopAvailableTimeSlots.length > 0
+                  {slotStatuses.length > 0
                     ? `店铺营业时间：${selectedShopHours?.start} - ${selectedShopHours?.end}`
                     : '所选日期为该店铺休息日，请改选其他日期'}
                 </div>
               )}
               <div className="grid max-h-44 grid-cols-4 gap-2 overflow-y-auto scrollbar-hide">
-                {timeSlots.map((time) => (
+                {slotStatuses.map(({ time, occupied }) => (
                   <button
                     key={time}
                     type="button"
-                    onClick={() => setFormData((prev) => ({ ...prev, startTime: time }))}
-                    disabled={isShopService && selectedShopAddress ? !shopAvailableTimeSlots.includes(time) : false}
-                    className={`rounded-2xl py-2.5 text-sm font-medium transition ${
-                      formData.startTime === time
+                    disabled={occupied}
+                    onClick={() => !occupied && setFormData((prev) => ({ ...prev, startTime: time }))}
+                    className={`flex flex-col items-center justify-center rounded-2xl py-2 text-sm font-medium transition ${
+                      occupied
+                        ? 'cursor-not-allowed bg-slate-100 text-slate-400'
+                        : formData.startTime === time
                         ? 'bg-[linear-gradient(135deg,#FF6B8A_0%,#FF8FA3_100%)] text-white shadow-lg shadow-pink-200/80'
-                        : isShopService && selectedShopAddress && !shopAvailableTimeSlots.includes(time)
-                          ? 'cursor-not-allowed bg-slate-100 text-slate-300'
-                          : 'bg-slate-50 text-slate-600'
+                        : 'bg-slate-50 text-slate-600'
                     }`}
                   >
-                    {time}
+                    <span className={occupied ? 'text-xs leading-none line-through' : ''}>{time}</span>
+                    {occupied && <span className="mt-0.5 text-[10px] leading-none">已预约</span>}
                 </button>
               ))}
             </div>
@@ -1018,6 +1217,23 @@ const CreateOrder: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {showShopConfirm && selectedShopAddress && (
+        <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/40 sm:items-center" onClick={() => setShowShopConfirm(false)}>
+          <div className="w-full max-w-md rounded-t-[28px] bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:max-w-sm sm:rounded-[28px] sm:pb-5" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-semibold text-gray-900">确认到店地址</h3>
+            <p className="mt-1 text-sm text-gray-500">请确认前往的美甲师店铺地址：</p>
+            <div className="mt-3 rounded-xl bg-slate-50 px-4 py-3 text-sm text-gray-800">
+              <div className="font-medium">{selectedShopAddress.name}</div>
+              <div className="mt-1 text-gray-600">{[selectedShopAddress.province, selectedShopAddress.city, selectedShopAddress.district, selectedShopAddress.detailAddress].filter(Boolean).join(' ')}</div>
+            </div>
+            <div className="mt-4 flex gap-3">
+              <button onClick={() => setShowShopConfirm(false)} className="flex-1 rounded-full bg-slate-100 py-3 text-sm font-medium text-gray-600 min-h-[48px]">取消</button>
+              <button onClick={async () => { setShowShopConfirm(false); await doCreate(); }} className="flex-1 rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-3 text-sm font-medium text-white min-h-[48px]">确认预约</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

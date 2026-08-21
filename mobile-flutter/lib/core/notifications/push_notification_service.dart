@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import '../../firebase_options.dart';
 
 class PushNotificationService {
   FirebaseMessaging? _messaging;
@@ -20,7 +21,11 @@ class PushNotificationService {
     _role = role;
 
     try {
-      await Firebase.initializeApp();
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+      }
     } catch (_) {
       return;
     }
@@ -78,6 +83,9 @@ class PushNotificationService {
   }
 
   static Future<void> initFirebase() async {
-    await Firebase.initializeApp();
+    if (Firebase.apps.isNotEmpty) return;
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
   }
 }

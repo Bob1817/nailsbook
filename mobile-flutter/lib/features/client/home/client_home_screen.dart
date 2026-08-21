@@ -1,8 +1,17 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../../core/api/api_client.dart';
-import '../orders/client_orders_screen.dart';
+import 'dart:async';
+
+import 'package:url_launcher/url_launcher.dart';
+
+import '../../../core/media/oss_image.dart';
+import '../../../core/widgets/glass_container.dart';
+import '../../../core/widgets/nav_badge_icon.dart';
+import '../discover/client_discover_screen.dart';
 import '../../shared/chat/conversations_screen.dart';
+import '../orders/client_create_order_screen.dart';
+import '../orders/client_orders_screen.dart';
+import '../orders/client_order_detail_screen.dart';
+import '../orders/client_order_models.dart';
+import '../orders/client_order_service.dart';
 import '../profile/client_profile_screen.dart';
 import '../works/client_works_screen.dart';
 import '../works/client_work_detail_screen.dart';
@@ -18,6 +27,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   int _currentIndex = 0;
   Map<String, dynamic>? _homeData;
   bool _loading = true;
+  int _unread = 0;
 
   @override
   void initState() {
@@ -29,147 +39,1020 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     try {
       final apiClient = context.read<ApiClient>();
       final data = await apiClient.get('/home');
-      if (mounted) setState(() { _homeData = data; _loading = false; });
+      if (mounted) {
+        setState(() {
+          _homeData = data;
+          _loading = false;
+        });
+      }
     } catch (_) {
-      if (mounted) setState(() { _loading = false; });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final pages = <Widget>[
-      _ClientHomeTabPage(homeData: _homeData, loading: _loading, onRefresh: _loadHomeData),
+      _ClientHomeTabPage(
+        homeData: _homeData,
+        loading: _loading,
+        onRefresh: _loadHomeData,
+        onSelectTab: (i) => setState(() => _currentIndex = i),
+      ),
       const ClientOrdersScreen(),
-      const ConversationsScreen(),
+      const ClientDiscoverScreen(),
+      ConversationsScreen(onUnread: (n) => setState(() => _unread = n)),
       const ClientProfileScreen(),
     ];
 
     return Scaffold(
+      extendBody: true,
       body: IndexedStack(index: _currentIndex, children: pages),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: _GlassTabBar(
         currentIndex: _currentIndex,
+        unread: _unread,
         onTap: (i) => setState(() => _currentIndex = i),
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFFE91E63),
-        unselectedItemColor: const Color(0xFF757575),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: '首页'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: '订单'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: '消息'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: '我的'),
-        ],
       ),
     );
   }
 }
 
-class _ClientHomeTabPage extends StatelessWidget {
-  final Map<String, dynamic>? homeData;
-  final bool loading;
-  final Future<void> Function() onRefresh;
+/// 浮动玻璃态底部导航（Liquid Glass）。对齐 CLAUDE_CODE_GUIDE Step 4。
+class _GlassTabBar extends StatelessWidget {
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+  final int unread;
 
-  const _ClientHomeTabPage({this.homeData, this.loading = true, required this.onRefresh});
+  const _GlassTabBar(
+      {required this.currentIndex, required this.onTap, this.unread = 0});
+
+  static const _items = <(IconData, IconData, String)>[
+    (Icons.home_rounded, Icons.home_outlined, '首页'),
+    (Icons.calendar_today_rounded, Icons.calendar_today_outlined, '预约'),
+    (Icons.explore_rounded, Icons.explore_outlined, '发现'),
+    (Icons.chat_bubble_rounded, Icons.chat_bubble_outline_rounded, '消息'),
+    (Icons.person_rounded, Icons.person_outline_rounded, '我的'),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('NailBook')),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(onRefresh: onRefresh, child: _buildBody(context)),
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    // 缩小与屏幕底部的距离：只保留 home indicator 之上的小间隙
+    final bottomGap = (bottomInset * 0.4).clamp(8.0, 16.0);
+    // 与美甲师端底部导航完全对齐：黑底深玻璃 + 白色描边 + 顶部高光
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 0, 16, bottomGap),
+      child: GlassContainer(
+        tint: TechnicianGlassStyle.tint,
+        blur: TechnicianGlassStyle.blur,
+        opacity: TechnicianGlassStyle.opacity,
+        borderRadius: 28,
+        showBorder: true,
+        boxShadow: const [
+          BoxShadow(
+              color: Color(0x66000000), blurRadius: 28, offset: Offset(0, 10))
+        ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(_items.length, (i) => _tab(i)),
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildBody(BuildContext context) {
-    if (homeData == null) {
-      return ListView(children: [
-        const SizedBox(height: 100),
-        Center(child: Text('暂无数据', style: Theme.of(context).textTheme.bodyLarge)),
-      ]);
+  Widget _tab(int i) {
+    final item = _items[i];
+    final active = i == currentIndex;
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => onTap(i),
+        child: SizedBox(
+          height: 48,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              NavBadgeIcon(
+                icon: active ? item.$1 : item.$2,
+                color: active ? ET.accent : ET.inkSecondary,
+                badge: i == 3 ? unread : 0,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                item.$3,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                  color: active ? ET.accent : ET.inkSecondary,
+                ),
+              ),
+              const SizedBox(height: 3),
+              // 4px 选中指示点
+              Container(
+                width: 4,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: active ? ET.accent : Colors.transparent,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 客户端首页 — 图片优先编辑式（Hero 作品轮播 / 我的预约 / 最新动态）。
+/// 保留 webapp Home.tsx 的功能模块，UI 对齐 Apple + Liquid Glass 设计准则。
+class _ClientHomeTabPage extends StatefulWidget {
+  final Map<String, dynamic>? homeData;
+  final bool loading;
+  final Future<void> Function() onRefresh;
+  final ValueChanged<int> onSelectTab;
+
+  const _ClientHomeTabPage({
+    this.homeData,
+    this.loading = true,
+    required this.onRefresh,
+    required this.onSelectTab,
+  });
+
+  @override
+  State<_ClientHomeTabPage> createState() => _ClientHomeTabPageState();
+}
+
+const _upcomingStatuses = {
+  'pending_quote',
+  'pending_agree',
+  'pending_confirm',
+  'pending_home',
+  'pending_shop',
+  'in_progress',
+};
+
+class _ClientHomeTabPageState extends State<_ClientHomeTabPage> {
+  final _scrollController = ScrollController();
+  final _pageController = PageController();
+
+  final List<Map<String, dynamic>> _featured = [];
+  int _featPage = 1;
+  bool _featHasMore = true;
+  bool _featLoading = false;
+
+  ClientOrder? _upcoming;
+  int _heroIndex = 0;
+  Timer? _heroTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFeatured(reset: true);
+    _loadUpcoming();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _heroTimer?.cancel();
+    _scrollController.dispose();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  List<Map<String, dynamic>> get _heroWorks {
+    final works = (widget.homeData?['works'] as List<dynamic>?) ?? const [];
+    return works.take(5).cast<Map<String, dynamic>>().toList();
+  }
+
+  void _ensureHeroTimer() {
+    final count = _heroWorks.length;
+    if (count <= 1) {
+      _heroTimer?.cancel();
+      return;
     }
+    _heroTimer ??= Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted || !_pageController.hasClients) return;
+      final next = (_heroIndex + 1) % count;
+      _pageController.animateToPage(next,
+          duration: const Duration(milliseconds: 600), curve: Curves.easeInOut);
+    });
+  }
 
-    final technician = homeData!['technician'] as Map<String, dynamic>?;
-    final works = homeData!['works'] as List<dynamic>? ?? [];
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 400) {
+      _loadFeatured();
+    }
+  }
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        if (technician != null) ...[
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(children: [
-                CircleAvatar(
-                  backgroundColor: const Color(0xFFE91E63),
-                  child: Text(
-                    (technician['name'] as String?)?.substring(0, 1) ?? '?',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(technician['name']?.toString() ?? '', style: Theme.of(context).textTheme.titleMedium),
-                    if (technician['city'] != null)
-                      Text(technician['city'].toString(), style: Theme.of(context).textTheme.bodySmall),
-                  ]),
-                ),
-              ]),
+  Future<void> _loadFeatured({bool reset = false}) async {
+    if (_featLoading) return;
+    if (!reset && !_featHasMore) return;
+    setState(() => _featLoading = true);
+    final page = reset ? 1 : _featPage + 1;
+    try {
+      final json =
+          await context.read<ApiClient>().get('/featured-works', queryParams: {
+        'page': '$page',
+        'limit': '10',
+      });
+      final works =
+          (json['works'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
+      if (mounted) {
+        setState(() {
+          if (reset) _featured.clear();
+          _featured.addAll(works);
+          _featHasMore = json['hasMore'] as bool? ?? false;
+          _featPage = page;
+          _featLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _featHasMore = false;
+          _featLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadUpcoming() async {
+    try {
+      final orders = await ClientOrderService(context.read<ApiClient>()).list();
+      final upcoming = orders
+          .where((o) =>
+              _upcomingStatuses.contains(o.status) &&
+              (o.startTime?.isNotEmpty ?? false))
+          .toList()
+        ..sort((a, b) => (a.startTime ?? '').compareTo(b.startTime ?? ''));
+      if (mounted) {
+        setState(() => _upcoming = upcoming.isEmpty ? null : upcoming.first);
+      }
+    } catch (_) {/* 静默 */}
+  }
+
+  Future<void> _refreshAll() async {
+    await Future.wait(
+        [widget.onRefresh(), _loadFeatured(reset: true), _loadUpcoming()]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _ensureHeroTimer();
+    return Container(
+      color: ET.bg,
+      child: RefreshIndicator(
+        color: ET.accent,
+        backgroundColor: ET.surface,
+        onRefresh: _refreshAll,
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            SliverToBoxAdapter(child: _heroSection()),
+            SliverToBoxAdapter(child: _bookingSection()),
+            SliverToBoxAdapter(child: _latestHeader()),
+            _featuredGrid(),
+            SliverToBoxAdapter(child: _footer()),
+            const SliverToBoxAdapter(child: SizedBox(height: 96)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Hero carousel ───────────────────────────────────────
+  // 全出血：紧贴屏幕顶部与左右边，美甲图占据首屏。高度=视口减去「我的预约」
+  // 区块 + 悬浮 Tab 的预留空间，使预约卡片刚好落在底部、不露出下方动态。
+  Widget _heroSection() {
+    final works = _heroWorks;
+    final media = MediaQuery.of(context);
+    // 无作品时留出状态栏高度，避免下方内容顶进刘海区
+    if (works.isEmpty) return SizedBox(height: media.padding.top + 8);
+    final current = works[_heroIndex.clamp(0, works.length - 1)];
+    // 预留：预约区块（标题 + 卡片）约 300 + 悬浮 Tab 48 + 底部安全区
+    final reserve = 348 + media.padding.bottom;
+    final heroH =
+        (media.size.height - reserve).clamp(360.0, 560.0).toDouble();
+    return GestureDetector(
+      onTap: () => _openHeroDetail(current),
+      child: SizedBox(
+        height: heroH,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // 美甲图：主角，满铺
+            PageView.builder(
+              controller: _pageController,
+              itemCount: works.length,
+              onPageChanged: (i) => setState(() => _heroIndex = i),
+              itemBuilder: (_, i) => _heroSlide(works[i]),
             ),
-          ),
-          const SizedBox(height: 16),
-        ],
-        Row(children: [
-          Text('作品', style: Theme.of(context).textTheme.titleMedium),
-          const Spacer(),
-          TextButton(
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ClientWorksScreen())),
-            child: const Text('查看全部'),
-          ),
-        ]),
-        const SizedBox(height: 8),
-        if (works.isEmpty)
-          const Center(child: Padding(padding: EdgeInsets.all(32), child: Text('暂无作品')))
-        else
-          SizedBox(
-            height: 200,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: works.length > 6 ? 6 : works.length,
-              itemBuilder: (context, index) {
-                final w = works[index];
-                final images = (w['imageUrls'] as List<dynamic>?) ?? [];
-                return GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => ClientWorkDetailScreen(workId: w['id'] as int)),
+            // 顶部 + 底部轻渐变，保证状态栏/分页点/文字可读
+            const IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0x66000000),
+                      Colors.transparent,
+                      Colors.transparent,
+                      Color(0x73000000),
+                      Color(0xB3000000),
+                    ],
+                    stops: [0.0, 0.22, 0.55, 0.82, 1.0],
                   ),
-                  child: Container(
-                    width: 160,
-                    margin: const EdgeInsets.only(right: 8),
-                    child: Card(
-                      clipBehavior: Clip.antiAlias,
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                        Expanded(
-                          child: images.isNotEmpty
-                              ? Image.network(images[0].toString(), fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(color: Colors.grey.shade200, child: const Icon(Icons.spa, color: Colors.grey)))
-                              : Container(color: Colors.grey.shade200, child: const Icon(Icons.spa, color: Colors.grey)),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Text(w['title']?.toString() ?? '未命名作品',
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                              maxLines: 1, overflow: TextOverflow.ellipsis),
-                        ),
-                      ]),
+                ),
+              ),
+            ),
+            // 分页点：状态栏下方正中央
+            if (works.length > 1)
+              Positioned(
+                top: media.padding.top + 10,
+                left: 0,
+                right: 0,
+                child: Center(child: _heroDots(works.length)),
+              ),
+            // 底部轻量信息（标题 + 小达人）
+            Positioned(
+              left: 20,
+              right: 20,
+              bottom: 16,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(child: _heroCaption(current)),
+                  const SizedBox(width: 12),
+                  // 右下角「查看详情」按钮
+                  GestureDetector(
+                    onTap: () => _openHeroDetail(current),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.22)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('查看详情',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white)),
+                          SizedBox(width: 2),
+                          Icon(Icons.chevron_right_rounded,
+                              size: 16, color: Colors.white),
+                        ],
+                      ),
                     ),
                   ),
-                );
-              },
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openHeroDetail(Map<String, dynamic> w) {
+    final id = w['id'] as int?;
+    if (id == null) return;
+    Navigator.push(context,
+        MaterialPageRoute(builder: (_) => ClientWorkDetailScreen(workId: id)));
+  }
+
+  // 底部轻量说明：标题 + 小达人，直接叠在图片上（无玻璃卡片）
+  Widget _heroCaption(Map<String, dynamic> w) {
+    final title = w['title']?.toString();
+    final techName = w['technicianName']?.toString() ?? '已绑定美甲师';
+    final techAvatar = w['technicianAvatarUrl']?.toString();
+    const shadow = [
+      Shadow(color: Color(0xB3000000), blurRadius: 12, offset: Offset(0, 1))
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(title?.isNotEmpty == true ? title! : '最新作品',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                shadows: shadow)),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            _heroAvatar(techName, techAvatar),
+            const SizedBox(width: 7),
+            Flexible(
+              child: Text(techName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withValues(alpha: 0.9),
+                      shadows: shadow)),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _heroSlide(Map<String, dynamic> w) {
+    final cover = w['coverUrl']?.toString();
+    final imgs = (w['imageUrls'] as List<dynamic>?) ?? const [];
+    final url = (cover != null && cover.isNotEmpty)
+        ? cover
+        : (imgs.isNotEmpty ? imgs.first.toString() : null);
+    if (url == null) return Container(color: ET.surface);
+    return CachedNetworkImage(
+      imageUrl: ossHero(url),
+      fit: BoxFit.cover,
+      placeholder: (_, __) => Container(color: ET.surface),
+      errorWidget: (_, __, ___) => Container(color: ET.surface),
+    );
+  }
+
+  Widget _heroAvatar(String name, String? avatar) {
+    if (avatar != null && avatar.isNotEmpty) {
+      return Container(
+        decoration: const BoxDecoration(shape: BoxShape.circle, boxShadow: [
+          BoxShadow(color: Color(0x66000000), blurRadius: 6)
+        ]),
+        child: ClipOval(
+            child: CachedNetworkImage(
+                imageUrl: avatar, width: 22, height: 22, fit: BoxFit.cover)),
+      );
+    }
+    return Container(
+      width: 22,
+      height: 22,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.28), shape: BoxShape.circle),
+      child: Text(name.isNotEmpty ? name.substring(0, 1) : '美',
+          style: const TextStyle(
+              fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
+    );
+  }
+
+  // 精致分页点：当前页为细长胶囊，其余为小圆点
+  Widget _heroDots(int count) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(count, (i) {
+        final active = i == _heroIndex;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOut,
+          margin: const EdgeInsets.only(left: 5),
+          width: active ? 16 : 5,
+          height: 5,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: active ? 0.95 : 0.5),
+            borderRadius: BorderRadius.circular(999),
+            boxShadow: const [
+              BoxShadow(color: Color(0x59000000), blurRadius: 4)
+            ],
+          ),
+        );
+      }),
+    );
+  }
+
+  // ── My booking ──────────────────────────────────────────
+  Widget _bookingSection() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionHeader(
+            '我的预约',
+            _upcoming != null ? '距离最近的一次预约' : '快速发起你的下一次美甲',
+            onMore: _upcoming != null
+                ? () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const ClientOrdersScreen()))
+                : null,
+          ),
+          const SizedBox(height: 12),
+          _upcoming != null ? _bookingCard(_upcoming!) : _bookingEmpty(),
+        ],
+      ),
+    );
+  }
+
+  Widget _bookingCard(ClientOrder o) {
+    final tech = o.technician;
+    final start = DateTime.tryParse(o.startTime ?? '');
+    return GestureDetector(
+      onTap: () => _openOrder(o.id),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: ET.surface.withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(DT.rCard),
+          boxShadow: ET.shadowTile,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(o.serviceType ?? '美甲服务',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: ET.ink)),
+                ),
+                const SizedBox(width: 8),
+                _tintPill(o.statusLabel, ET.accentSoft, ET.accentOnDark),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _dateBlock(start),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _metaRow(Icons.access_time_rounded,
+                          '${_hm(o.startTime)} - ${_hm(o.endTime)}'),
+                      if (tech?['name'] != null) ...[
+                        const SizedBox(height: 4),
+                        _metaRow(Icons.person_outline_rounded,
+                            tech!['name'].toString()),
+                      ],
+                      if (o.address != null && o.address!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        _metaRow(Icons.location_on_outlined, o.address!,
+                            maxLines: 2),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            const Divider(height: 1, color: ET.hairline),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                    child: _bookingAction('发消息', () => widget.onSelectTab(3),
+                        filled: false)),
+                if (tech?['phone'] != null) ...[
+                  const SizedBox(width: 8),
+                  Expanded(
+                      child: _bookingAction(
+                          '打电话', () => _call(tech!['phone'].toString()),
+                          filled: false)),
+                ],
+                const SizedBox(width: 8),
+                Expanded(
+                    child: _bookingAction('查看详情', () => _openOrder(o.id),
+                        filled: true)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _bookingEmpty() {
+    return GestureDetector(
+      onTap: () => Navigator.push(context,
+          MaterialPageRoute(builder: (_) => const ClientCreateOrderScreen())),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: ET.surface.withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(DT.rCard),
+          boxShadow: ET.shadowTile,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                  color: ET.accentSoft,
+                  borderRadius: BorderRadius.circular(16)),
+              child: const Icon(Icons.add_rounded, color: ET.accent, size: 26),
+            ),
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('还没有预约美甲',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: ET.ink)),
+                  SizedBox(height: 4),
+                  Text('预约你的美甲吧 ～',
+                      style: TextStyle(fontSize: 13, color: ET.inkSecondary)),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+              decoration: BoxDecoration(
+                  color: ET.cream, borderRadius: BorderRadius.circular(999)),
+              child: const Text('立即预约',
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: ET.onCream)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _dateBlock(DateTime? d) {
+    return Container(
+      width: 72,
+      height: 72,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      decoration: BoxDecoration(
+          color: ET.accentSoft, borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(_relDay(d),
+                style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    height: 1.1,
+                    color: ET.ink)),
+          ),
+          const SizedBox(height: 3),
+          Text(d != null ? _weekday(d) : '--',
+              style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: ET.accentOnDark)),
+        ],
+      ),
+    );
+  }
+
+  // 相对日期：今天 / 明天 / 后天，否则「M月D日」
+  String _relDay(DateTime? d) {
+    if (d == null) return '--';
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final that = DateTime(d.year, d.month, d.day);
+    final diff = that.difference(today).inDays;
+    if (diff == 0) return '今天';
+    if (diff == 1) return '明天';
+    if (diff == 2) return '后天';
+    return '${d.month}月${d.day}日';
+  }
+
+  String _weekday(DateTime d) {
+    const names = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+    return names[d.weekday - 1];
+  }
+
+  Widget _metaRow(IconData icon, String text, {int maxLines = 1}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 14, color: ET.inkMuted),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(text,
+              maxLines: maxLines,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 13, color: ET.inkSecondary)),
+        ),
+      ],
+    );
+  }
+
+  Widget _bookingAction(String label, VoidCallback onTap,
+      {required bool filled}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 40,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: filled ? ET.cream : ET.surfaceGlass,
+          borderRadius: BorderRadius.circular(999),
+          border: filled ? null : Border.all(color: ET.hairline),
+        ),
+        child: Text(label,
+            style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: filled ? ET.onCream : ET.ink)),
+      ),
+    );
+  }
+
+  // ── Featured works ──────────────────────────────────────
+  Widget _latestHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+      child: _sectionHeader('热门推荐', '美甲师精选推荐的人气作品',
+          onMore: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const ClientWorksScreen()))),
+    );
+  }
+
+  Widget _featuredGrid() {
+    if (_featured.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.all(40),
+          child: Center(
+            child: Text(_featLoading ? '加载中…' : '暂无作品展示',
+                style: const TextStyle(fontSize: 13, color: ET.inkSecondary)),
+          ),
+        ),
+      );
+    }
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      sliver: SliverGrid(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 0.72,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (_, i) => _workCard(_featured[i]),
+          childCount: _featured.length,
+        ),
+      ),
+    );
+  }
+
+  Widget _workCard(Map<String, dynamic> w) {
+    final id = w['id'] as int;
+    final cover = w['coverUrl']?.toString();
+    final imgs = (w['imageUrls'] as List<dynamic>?) ?? const [];
+    final url = (cover != null && cover.isNotEmpty)
+        ? cover
+        : (imgs.isNotEmpty ? imgs.first.toString() : null);
+    final title = w['title']?.toString();
+    final techName = w['technicianName']?.toString() ?? '';
+    final techAvatar = w['technicianAvatarUrl']?.toString();
+    final likeCount = w['likeCount'] as int? ?? 0;
+    final liked = w['isLiked'] as bool? ?? false;
+    final tags =
+        (w['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+            const [];
+
+    return GestureDetector(
+      onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => ClientWorkDetailScreen(workId: id))),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (url != null)
+              CachedNetworkImage(
+                  imageUrl: ossThumb(url),
+                  fit: BoxFit.cover,
+                  placeholder: (_, __) =>
+                      Container(color: ET.surface),
+                  errorWidget: (_, __, ___) =>
+                      Container(color: ET.surface))
+            else
+              Container(color: ET.surface),
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Color(0x12000000),
+                    Color(0xC2000000)
+                  ],
+                  stops: [0.45, 0.65, 1.0],
+                ),
+              ),
+            ),
+            Positioned(
+              left: 8,
+              top: 8,
+              child: GlassContainer(
+                tint: Colors.black,
+                opacity: 0.24,
+                blur: DT.glassBlurLight,
+                borderRadius: 999,
+                padding: const EdgeInsets.fromLTRB(4, 4, 10, 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircleAvatar(
+                      radius: 9,
+                      backgroundColor: Colors.white24,
+                      backgroundImage:
+                          (techAvatar != null && techAvatar.isNotEmpty)
+                              ? CachedNetworkImageProvider(techAvatar)
+                              : null,
+                      child: (techAvatar == null || techAvatar.isEmpty)
+                          ? Text(
+                              techName.isNotEmpty
+                                  ? techName.substring(0, 1)
+                                  : '美',
+                              style: const TextStyle(
+                                  fontSize: 9, color: Colors.white))
+                          : null,
+                    ),
+                    const SizedBox(width: 6),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 70),
+                      child: Text(techName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              left: 10,
+              right: 10,
+              bottom: 10,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(title?.isNotEmpty == true ? title! : '未命名作品',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white)),
+                  if (tags.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 5,
+                      children: tags
+                          .take(2)
+                          .map((t) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.16),
+                                    borderRadius: BorderRadius.circular(999)),
+                                child: Text('#$t',
+                                    style: TextStyle(
+                                        fontSize: 9,
+                                        color: Colors.white.withValues(alpha: 0.92))),
+                              ))
+                          .toList(),
+                    ),
+                  ],
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(liked ? Icons.favorite : Icons.favorite_border,
+                          size: 12, color: liked ? ET.like : Colors.white),
+                      const SizedBox(width: 3),
+                      Text('$likeCount',
+                          style: const TextStyle(
+                              fontSize: 11, color: Colors.white)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _footer() {
+    if (_featured.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: _featLoading
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: ET.accent))
+            : Text(_featHasMore ? '' : '没有更多了',
+                style: const TextStyle(fontSize: 12, color: ET.inkMuted)),
+      ),
+    );
+  }
+
+  // ── Shared ──────────────────────────────────────────────
+  Widget _sectionHeader(String title, String subtitle, {VoidCallback? onMore}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 模块标题字号对齐美甲师端首页（DT.titleMedium = 17）
+              Text(title, style: DT.titleMedium),
+              const SizedBox(height: 2),
+              Text(subtitle,
+                  style: const TextStyle(fontSize: 12, color: ET.inkMuted)),
+            ],
+          ),
+        ),
+        if (onMore != null)
+          GestureDetector(
+            onTap: onMore,
+            child: const Row(
+              children: [
+                Text('查看全部',
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: ET.accentOnDark)),
+                Icon(Icons.chevron_right_rounded,
+                    size: 18, color: ET.accentOnDark),
+              ],
             ),
           ),
       ],
     );
+  }
+
+  Widget _tintPill(String text, Color bg, Color fg) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration:
+          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
+      child: Text(text,
+          style:
+              TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: fg)),
+    );
+  }
+
+  void _openOrder(int id) {
+    Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => ClientOrderDetailScreen(orderId: id)))
+        .then((_) => _loadUpcoming());
+  }
+
+  Future<void> _call(String phone) async {
+    final uri = Uri.parse('tel:$phone');
+    if (await canLaunchUrl(uri)) await launchUrl(uri);
+  }
+
+  String _hm(String? iso) {
+    final d = DateTime.tryParse(iso ?? '');
+    if (d == null) return '--';
+    return '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
   }
 }

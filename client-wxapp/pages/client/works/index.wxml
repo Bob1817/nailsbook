@@ -1,19 +1,132 @@
-<view class="container">
-  <view class="search-bar">
-    <input placeholder="搜索作品" bindconfirm="onSearch" />
-  </view>
-  <view class="filter-tabs">
-    <view bindtap="switchTab" data-tab="all">全部</view>
-    <view bindtap="switchTab" data-tab="featured">精选</view>
-    <view bindtap="switchTab" data-tab="new">最新</view>
-  </view>
-  <view class="works-grid">
-    <view wx:for="{{works}}" bindtap="viewWork" data-id="{{item.id}}">
-      <image src="{{item.coverUrl}}" mode="aspectFill"></image>
-      <text>{{item.title}}</text>
-      <image src="{{item.technicianAvatar}}" mode="aspectFill"></image>
-      <text>{{item.technicianName}}</text>
-      <text>{{item.likes}}</text>
+<nav-bar title="{{businessPage ? '美甲师主页' : '作品'}}" showBack="{{true}}"></nav-bar>
+
+<view class="page">
+  <!-- 内容区 -->
+  <view class="content">
+    <!-- 加载中 -->
+    <view wx:if="{{loading}}" class="loading-wrap">
+      <view class="spinner"></view>
     </view>
+
+    <view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+      <view class="load-error-mark">!</view>
+      <text class="empty-title">作品加载失败</text>
+      <text class="empty-sub">请检查网络后重试</text>
+      <button class="retry-btn" bindtap="retryLoad">重新加载</button>
+    </view>
+
+    <block wx:else>
+      <view wx:if="{{businessPage && artist}}" class="business-card">
+        <view class="business-profile">
+          <image wx:if="{{artist.avatarUrl}}" class="business-avatar" src="{{artist.avatarUrl}}" mode="aspectFill" bindtap="viewArtist" data-id="{{artist.id}}" aria-label="查看{{artist.name}}主页" />
+          <view wx:else class="business-avatar business-avatar-fallback" bindtap="viewArtist" data-id="{{artist.id}}" role="button" aria-label="查看{{artist.name}}主页">{{artist.initial}}</view>
+          <view class="business-copy">
+            <text class="business-name">{{artist.name}}</text>
+            <text class="business-area">{{artist.city || '本地'}}{{artist.serviceArea ? ' · ' + artist.serviceArea : ''}}</text>
+          </view>
+          <button class="share-card-btn" open-type="share" aria-label="分享美甲师名片">分享名片</button>
+        </view>
+
+        <view class="business-tags">
+          <text wx:if="{{artist.shopService}}" class="business-tag">到店服务</text>
+          <text wx:if="{{artist.homeService}}" class="business-tag">上门服务</text>
+          <text class="business-tag business-tag-muted">{{availabilityText}}</text>
+        </view>
+
+        <view wx:if="{{serviceItems.length}}" class="business-section">
+          <text class="business-section-title">服务项目</text>
+          <view class="service-list">
+            <view wx:for="{{serviceItems}}" wx:key="id" class="service-row">
+              <view class="service-copy">
+                <text class="service-name">{{item.name}}</text>
+                <text wx:if="{{item.durationMinutes}}" class="service-meta">约 {{item.durationMinutes}} 分钟</text>
+              </view>
+              <text wx:if="{{item.price !== undefined && item.price !== null}}" class="service-price">¥{{item.price}} 起</text>
+            </view>
+          </view>
+        </view>
+
+        <view wx:if="{{shopAddresses.length}}" class="business-section">
+          <text class="business-section-title">服务地址</text>
+          <view wx:for="{{shopAddresses}}" wx:key="id" class="address-row">
+            <text class="address-name">{{item.name || '工作室'}}</text>
+            <text class="address-detail">{{item.displayAddress}}</text>
+          </view>
+        </view>
+
+        <button class="business-book-btn" bindtap="bookArtist">查看可约时间并预约</button>
+      </view>
+
+      <!-- 空状态 -->
+      <view wx:if="{{works.length === 0}}" class="empty-card">
+        <view class="empty-icon-wrap">
+          <view class="icon-placeholder-circle">
+            <view class="icon-placeholder-inner"></view>
+          </view>
+        </view>
+        <text class="empty-title">暂无公开作品</text>
+        <text class="empty-sub">{{businessPage ? '可以先查看服务并发起预约' : '你绑定的美甲师暂时还没有发布作品'}}</text>
+      </view>
+
+      <!-- 有作品时 -->
+      <block wx:else>
+      <!-- 区域标题 -->
+      <view class="section-head">
+        <view class="section-titles">
+          <text class="section-title">{{businessPage ? '作品画册' : (keyword ? keyword + '灵感' : '精选作品')}}</text>
+          <text class="section-sub">{{businessPage ? '浏览公开作品，选择喜欢的款式' : (keyword ? '为你筛选相关风格作品' : '来自你已绑定美甲师的作品画册')}}</text>
+        </view>
+        <view wx:if="{{totalCount > 0}}" class="count-badge">
+          <text class="count-text">{{totalCount}} 条动态</text>
+        </view>
+      </view>
+
+      <!-- 排序 tabs -->
+      <view wx:if="{{!businessPage}}" class="sort-tabs">
+        <view
+          wx:for="{{sortTabs}}"
+          wx:key="key"
+          class="sort-tab {{sortBy === item.key ? 'sort-tab-active' : ''}}"
+          bindtap="switchSort"
+          data-key="{{item.key}}"
+        >
+          <text>{{item.label}}</text>
+          <view class="sort-arrow {{sortBy === item.key ? (sortDirs[item.key] === 'asc' ? 'sort-arrow-up' : 'sort-arrow-down') : 'sort-arrow-down'}}"></view>
+        </view>
+      </view>
+
+      <!-- 美甲师筛选 pills -->
+      <scroll-view wx:if="{{!businessPage}}" scroll-x class="tech-scroll" enhanced show-scrollbar="{{false}}">
+        <view class="tech-pills">
+          <view
+            wx:for="{{techFilters}}"
+            wx:key="*this"
+            class="tech-pill {{selectedTech === item ? 'tech-pill-active' : ''}}"
+            bindtap="switchTech"
+            data-name="{{item}}"
+          >{{item}}</view>
+        </view>
+      </scroll-view>
+
+      <!-- 筛选为空 -->
+      <view wx:if="{{filteredWorks.length === 0}}" class="filter-empty">
+        <text class="filter-empty-text">当前筛选下暂无作品动态</text>
+      </view>
+
+      <!-- 瀑布流 -->
+      <view wx:else class="waterfall">
+        <view class="col">
+          <view wx:for="{{leftCol}}" wx:key="id">
+            <work-card work="{{item}}" bind:cardtap="viewWork" bind:artisttap="viewArtist" />
+          </view>
+        </view>
+        <view class="col">
+          <view wx:for="{{rightCol}}" wx:key="id">
+            <work-card work="{{item}}" bind:cardtap="viewWork" bind:artisttap="viewArtist" />
+          </view>
+        </view>
+      </view>
+      </block>
+    </block>
   </view>
 </view>

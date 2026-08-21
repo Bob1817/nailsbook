@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "美照工作台",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "nav-bar": "/components/nav-bar/index"
+  }
+}

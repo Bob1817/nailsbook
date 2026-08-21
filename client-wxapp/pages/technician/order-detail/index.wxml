@@ -1,122 +1,207 @@
-<view class="container" wx:if="{{!loading && order}}">
+<nav-bar title="预约详情" showBack/>
+<view wx:if="{{loading}}" class="loading-page">
+  <view class="spinner"></view>
+  <text class="loading-text">加载中...</text>
+</view>
 
-  <!-- 状态栏 -->
-  <view class="status-bar status-{{order.status}}">
-    <text class="status-text">{{order.statusText}}</text>
-    <text class="order-no">订单号：{{order.orderNo}}</text>
+<view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+  <view class="load-error-mark">!</view>
+  <text class="load-error-title">{{loadErrorText}}</text>
+  <text wx:if="{{orderId}}" class="load-error-desc">请检查网络后重试</text>
+  <button wx:if="{{orderId}}" class="retry-btn" bindtap="loadOrder">重新加载</button>
+</view>
+
+<view wx:else class="page">
+  <!-- ============ 状态头 ============ -->
+  <view class="status-hero {{order._statusTone}}">
+    <view class="hero-row">
+      <text class="hero-status">{{order._statusLabel}}</text>
+      <text class="hero-type">{{order._typeLabel}}</text>
+    </view>
+    <text class="hero-order-no">预约号 {{order.orderNo}}</text>
+    <text wx:if="{{order._statusDesc}}" class="hero-desc">{{order._statusDesc}}</text>
   </view>
 
-  <!-- 客户信息 -->
-  <view class="section">
-    <text class="section-title">客户信息</text>
-    <view class="info-row">
-      <text class="info-label">姓名</text>
-      <text class="info-value">{{order.client.nickname || order.client.phone}}</text>
-    </view>
-    <view class="info-row">
-      <text class="info-label">手机</text>
-      <text class="info-value">{{order.client.phone}}</text>
-    </view>
-  </view>
-
-  <!-- 服务信息 -->
-  <view class="section">
-    <text class="section-title">服务信息</text>
-    <view class="info-row">
-      <text class="info-label">方式</text>
-      <text class="info-value">{{order.serviceType}}</text>
-    </view>
-    <view class="info-row" wx:if="{{order.serviceDate}}">
-      <text class="info-label">日期</text>
-      <text class="info-value">{{order.serviceDate}} {{order.startTime}}</text>
-    </view>
-    <view class="info-row" wx:if="{{order.address}}">
-      <text class="info-label">地址</text>
-      <text class="info-value">{{order.address.province}}{{order.address.city}}{{order.address.district}}{{order.address.detail}}</text>
-    </view>
-    <view class="info-row" wx:if="{{order.remark}}">
-      <text class="info-label">备注</text>
-      <text class="info-value">{{order.remark}}</text>
+  <!-- ============ 客户卡片 ============ -->
+  <view class="card customer-card card-overlap">
+    <view class="customer-row">
+      <view class="cu-avatar">
+        <image wx:if="{{order.customerAvatar}}" src="{{order.customerAvatar}}" mode="aspectFill" class="cu-avatar-img" aria-label="{{order.customerName}}的头像" />
+        <text wx:else class="cu-avatar-char">{{order.customerName[0]}}</text>
+      </view>
+      <view class="cu-info">
+        <text class="cu-name">{{order.customerName}}</text>
+        <text class="cu-phone">{{order._customerPhoneMasked}}</text>
+      </view>
+      <view class="cu-actions">
+        <view wx:if="{{order.customerPhone}}" class="round-btn" catchtap="callCustomer" role="button" aria-label="拨打客户电话"><view class="btn-icon-phone"></view></view>
+      </view>
     </view>
   </view>
 
-  <!-- 报价信息（已报价后显示） -->
-  <view class="section" wx:if="{{order.price}}">
-    <text class="section-title">报价信息</text>
+  <!-- ============ 服务信息 ============ -->
+  <view class="card">
+    <text class="card-title">服务信息</text>
+
     <view class="info-row">
-      <text class="info-label">金额</text>
-      <text class="info-value price">¥{{order.price}}</text>
+      <text class="info-label">服务方式</text>
+      <text class="info-value">{{order._typeLabel}}</text>
     </view>
-    <view class="info-row" wx:if="{{order.durationMinutes}}">
-      <text class="info-label">时长</text>
+
+    <view class="info-row">
+      <text class="info-label">{{order.bookingPhase === 'application' ? '客户期望时间' : '预约时间'}}</text>
+      <text class="info-value">{{order._dateLabel}} {{order._timeRange}}</text>
+    </view>
+
+    <view wx:if="{{order.address}}" class="info-row">
+      <text class="info-label">服务地址</text>
+      <view class="info-value-block">
+        <text class="addr-text">{{order.address}}</text>
+        <view wx:if="{{order.address}}" class="copy-link" catchtap="copyAddress" role="button" aria-label="复制服务地址">复制</view>
+      </view>
+    </view>
+
+    <view class="info-row">
+      <text class="info-label">服务项目</text>
+      <text class="info-value">{{order.serviceName}}</text>
+    </view>
+
+    <view wx:if="{{order.durationMinutes > 0}}" class="info-row">
+      <text class="info-label">预计时长</text>
       <text class="info-value">{{order.durationMinutes}}分钟</text>
     </view>
   </view>
 
-  <!-- 操作按钮 -->
-  <view class="actions">
-    <button
-      wx:if="{{order.status === 'pending_quote'}}"
-      class="btn btn-primary"
-      bindtap="openQuoteForm"
-    >发送报价</button>
+  <!-- ============ 价格信息 ============ -->
+  <view wx:if="{{order._showPriceCard}}" class="card">
+    <text class="card-title">价格信息</text>
 
-    <button
-      wx:if="{{order.status === 'confirmed'}}"
-      class="btn btn-success"
-      bindtap="completeOrder"
-    >完成服务</button>
+    <view class="price-row">
+      <text class="price-label">报价金额</text>
+      <text class="price-main">{{order._priceText}}</text>
+    </view>
 
-    <button
-      wx:if="{{order.status === 'pending_quote' || order.status === 'quoted' || order.status === 'confirmed'}}"
-      class="btn btn-danger"
-      bindtap="cancelOrder"
-    >取消订单</button>
   </view>
 
-</view>
-
-<!-- 加载中 -->
-<view class="loading" wx:if="{{loading}}">
-  <text>加载中...</text>
-</view>
-
-<!-- 报价弹窗 -->
-<view class="quote-mask" wx:if="{{showQuoteForm}}" bindtap="closeQuoteForm"></view>
-<view class="quote-panel" wx:if="{{showQuoteForm}}">
-  <view class="quote-header">
-    <text class="quote-title">发送报价</text>
-    <text class="quote-close" bindtap="closeQuoteForm">✕</text>
+  <!-- ============ 备注 ============ -->
+  <view wx:if="{{order.remark}}" class="card">
+    <text class="card-title">备注</text>
+    <text class="remark-text">{{order.remark}}</text>
   </view>
 
-  <view class="quote-form">
-    <view class="form-item">
-      <text class="form-label">报价金额（元）</text>
-      <input class="form-input" type="digit" placeholder="例：199" value="{{quotePrice}}" bindinput="onQuotePriceInput"/>
+  <!-- ============ 底部操作栏 ============ -->
+  <view wx:if="{{order._actions.length > 0}}" class="bottom-actions">
+    <view
+      wx:for="{{order._actions}}"
+      wx:key="key"
+      class="action-btn {{item.style}}"
+      bindtap="onAction"
+      data-key="{{item.key}}"
+    >
+      {{item.label}}
     </view>
+  </view>
+</view>
+
+<!-- ============ 报价底部弹层 ============ -->
+<view wx:if="{{showQuote}}" class="sheet-mask" bindtap="closeQuote"></view>
+<view class="sheet {{showQuote ? 'sheet-show' : ''}}" catchtap="">
+  <view class="sheet-header">
+    <text class="sheet-title">{{quoteIsRevise ? '修改报价' : '发送报价'}}</text>
+    <view class="sheet-close" bindtap="closeQuote">✕</view>
+  </view>
+
+  <scroll-view scroll-y class="sheet-body">
     <view class="form-item">
-      <text class="form-label">服务日期</text>
-      <picker mode="date" value="{{quoteDate}}" bindchange="onQuoteDateChange">
-        <view class="form-input picker">{{quoteDate || '请选择'}}</view>
-      </picker>
+      <text class="form-label">报价金额（元）<text class="required">*</text></text>
+      <input
+        class="form-input"
+        type="digit"
+        placeholder="请输入"
+        value="{{quotePrice}}"
+        bindinput="onQuotePriceInput"
+      />
     </view>
+
+    <view class="form-row-2">
+      <view class="form-item form-half">
+        <text class="form-label">服务日期 <text class="required">*</text></text>
+        <picker mode="date" value="{{quoteDate}}" start="{{todayDate}}" bindchange="onQuoteDateChange">
+          <view class="form-input picker-input">{{quoteDate || '请选择'}}</view>
+        </picker>
+      </view>
+      <view class="form-item form-half">
+        <text class="form-label">开始时间 <text class="required">*</text></text>
+        <picker mode="time" value="{{quoteTime}}" bindchange="onQuoteTimeChange">
+          <view class="form-input picker-input">{{quoteTime || '请选择'}}</view>
+        </picker>
+      </view>
+    </view>
+
     <view class="form-item">
-      <text class="form-label">开始时间</text>
-      <picker mode="time" value="{{quoteTime}}" bindchange="onQuoteTimeChange">
-        <view class="form-input picker">{{quoteTime || '请选择'}}</view>
-      </picker>
+      <text class="form-label">服务时长（分钟）<text class="required">*</text></text>
+      <input
+        class="form-input"
+        type="number"
+        placeholder="例：120"
+        value="{{quoteDuration}}"
+        bindinput="onQuoteDurationInput"
+      />
     </view>
-    <view class="form-item">
-      <text class="form-label">服务时长（分钟）</text>
-      <input class="form-input" type="number" placeholder="例：120" value="{{quoteDuration}}" bindinput="onQuoteDurationInput"/>
-    </view>
+
     <view class="form-item">
       <text class="form-label">备注（选填）</text>
-      <input class="form-input" placeholder="给客户的备注" value="{{quoteRemark}}" bindinput="onQuoteRemarkInput"/>
+      <textarea
+        class="form-textarea"
+        placeholder="给客户的备注"
+        value="{{quoteRemark}}"
+        bindinput="onQuoteRemarkInput"
+        maxlength="200"
+      />
+    </view>
+  </scroll-view>
+
+  <view class="sheet-footer">
+    <view class="action-btn action-primary {{submitting ? 'is-disabled' : ''}}" bindtap="submitQuote">
+      {{submitting ? '提交中...' : '确认报价'}}
+    </view>
+  </view>
+</view>
+
+<!-- ============ 取消预约底部弹层 ============ -->
+<view wx:if="{{showCancel}}" class="sheet-mask" bindtap="closeCancel"></view>
+<view class="sheet {{showCancel ? 'sheet-show' : ''}}" catchtap="">
+  <view class="sheet-header">
+    <text class="sheet-title">取消预约</text>
+    <view class="sheet-close" bindtap="closeCancel">✕</view>
+  </view>
+
+  <view class="sheet-body">
+    <view class="form-item">
+      <text class="form-label">取消原因（选填）</text>
+      <textarea
+        class="form-textarea"
+        placeholder="请简要说明取消原因，便于客户了解"
+        value="{{cancelReason}}"
+        bindinput="onCancelReasonInput"
+        maxlength="200"
+      />
+    </view>
+
+    <view class="reason-chips">
+      <view
+        wx:for="{{cancelReasons}}"
+        wx:key="*this"
+        class="reason-chip"
+        bindtap="onPickReason"
+        data-reason="{{item}}"
+      >{{item}}</view>
     </view>
   </view>
 
-  <button class="btn btn-primary btn-full" bindtap="submitQuote" disabled="{{submitting}}">
-    {{submitting ? '提交中...' : '确认报价'}}
-  </button>
+  <view class="sheet-footer">
+    <view class="action-btn action-danger {{submitting ? 'is-disabled' : ''}}" bindtap="submitCancel">
+      {{submitting ? '提交中...' : '确认取消'}}
+    </view>
+  </view>
 </view>

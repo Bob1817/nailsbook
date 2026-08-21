@@ -1,0 +1,17 @@
+<view class="tab-bar">
+  <view
+    wx:for="{{tabs}}"
+    wx:key="key"
+    class="tab-item {{item.key === selected ? 'tab-item-active' : ''}}"
+    bindtap="onTabTap"
+    data-key="{{item.key}}"
+    role="button"
+    aria-label="{{item.label}}"
+  >
+    <view class="tab-icon-wrap">
+      <image class="tab-icon" src="/static/icons/tab-{{item.icon}}{{item.key === selected ? '-active' : ''}}.svg" mode="aspectFit" aria-hidden="true" />
+    </view>
+    <text class="tab-label">{{item.label}}</text>
+  </view>
+</view>
+<view class="tab-bar-placeholder"></view>

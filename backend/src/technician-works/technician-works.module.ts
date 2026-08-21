@@ -4,10 +4,21 @@ import { TechnicianWorksController } from './technician-works.controller';
 import { PublicWorksController } from './public-works.controller';
 import { PublicArtistController } from './public-artist.controller';
 import { TechnicianWorksService } from './technician-works.service';
+import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
+import { ClientArtistFollowsController } from './client-artist-follows.controller';
+import { QualificationsController } from './qualifications.controller';
+import { ReviewsController } from './reviews.controller';
 
 @Module({
-  imports: [PrismaModule],
-  controllers: [TechnicianWorksController, PublicWorksController, PublicArtistController],
+  imports: [PrismaModule, SubscriptionsModule],
+  controllers: [
+    TechnicianWorksController,
+    PublicWorksController,
+    PublicArtistController,
+    ClientArtistFollowsController,
+    QualificationsController,
+    ReviewsController,
+  ],
   providers: [TechnicianWorksService],
 })
 export class TechnicianWorksModule {}

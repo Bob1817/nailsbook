@@ -19,7 +19,9 @@ import '../features/technician/services/technician_services_screen.dart';
 import '../features/technician/profile/technician_profile_screen.dart';
 import '../features/shared/chat/conversations_screen.dart';
 import '../features/shared/chat/chat_screen.dart';
-import 'role_select_screen.dart';
+import '../features/shared/booking/order_confirm_screen.dart';
+import '../features/shared/auth/unified_login_screen.dart';
+import '../features/shared/auth/unified_register_screen.dart';
 
 GoRouter createRouter(AuthSession authSession) {
   return GoRouter(
@@ -31,24 +33,27 @@ GoRouter createRouter(AuthSession authSession) {
 
       if (status == AuthStatus.unknown) return null;
 
-      final authRoutes = ['/client/login', '/technician/login', '/role-select'];
+      // Public route: WeChat confirm link, accessible without login
+      if (location.startsWith('/confirm')) return null;
+
+      final authRoutes = [
+        '/login',
+        '/register',
+        '/client/login',
+        '/technician/login',
+        '/role-select',
+      ];
       final isOnAuthRoute = authRoutes.contains(location);
 
       if (status == AuthStatus.unauthenticated) {
         if (isOnAuthRoute) return null;
-        return '/role-select';
+        return '/login';
       }
 
-      if (status == AuthStatus.client) {
-        if (location.startsWith('/client/login') || location == '/role-select' || location == '/technician/login') {
-          return '/client/home';
-        }
-      }
-
-      if (status == AuthStatus.technician) {
-        if (location.startsWith('/technician/login') || location == '/role-select' || location == '/client/login') {
-          return '/technician/home';
-        }
+      // 已登录用户落到任意登录/注册页 → 回到对应首页
+      if (status == AuthStatus.client && isOnAuthRoute) return '/client/home';
+      if (status == AuthStatus.technician && isOnAuthRoute) {
+        return '/technician/home';
       }
 
       return null;
@@ -56,15 +61,31 @@ GoRouter createRouter(AuthSession authSession) {
     routes: [
       GoRoute(
         path: '/',
-        redirect: (_, __) => '/role-select',
+        redirect: (_, __) => '/login',
       ),
+      // 已去掉身份选择页：旧路由统一重定向到登录页
       GoRoute(
         path: '/role-select',
-        builder: (context, state) => const RoleSelectScreen(),
+        redirect: (_, __) => '/login',
+      ),
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => const UnifiedLoginScreen(),
+      ),
+      GoRoute(
+        path: '/register',
+        builder: (context, state) => const UnifiedRegisterScreen(),
+      ),
+      GoRoute(
+        path: '/confirm/:token',
+        builder: (context, state) =>
+            OrderConfirmScreen(token: state.pathParameters['token']!),
       ),
       GoRoute(
         path: '/client/login',
-        builder: (context, state) => const ClientLoginScreen(),
+        builder: (context, state) => ClientLoginScreen(
+          initialInviteCode: state.uri.queryParameters['inviteCode'],
+        ),
       ),
       GoRoute(
         path: '/client/home',

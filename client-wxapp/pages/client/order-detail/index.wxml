@@ -1,73 +1,218 @@
-<view class="container" wx:if="{{!loading && order}}">
-
-  <!-- 状态头 -->
-  <view class="status-bar status-{{order.status}}">
-    <text class="status-text">{{order.statusText}}</text>
-    <text class="order-no">{{order.orderNo}}</text>
-  </view>
-
-  <!-- 报价卡片（quoted 状态才显示） -->
-  <view class="quote-card" wx:if="{{order.status === 'quoted'}}">
-    <text class="quote-label">美甲师报价</text>
-    <text class="quote-price">¥{{order.price}}</text>
-    <view class="quote-meta">
-      <text>{{order.serviceDate}} {{order.startTime}}</text>
-      <text wx:if="{{order.durationMinutes}}"> · {{order.durationMinutes}}分钟</text>
-    </view>
-    <text class="quote-remark" wx:if="{{order.techRemark}}">备注：{{order.techRemark}}</text>
-    <view class="quote-actions">
-      <button class="btn btn-outline" bindtap="rejectQuote">拒绝</button>
-      <button class="btn btn-primary" bindtap="acceptQuote">接受报价</button>
-    </view>
-  </view>
-
-  <!-- 服务信息 -->
-  <view class="section">
-    <text class="section-title">服务信息</text>
-    <view class="info-row">
-      <text class="label">服务方式</text>
-      <text class="value">{{order.serviceType}}</text>
-    </view>
-    <view class="info-row" wx:if="{{order.serviceDate}}">
-      <text class="label">预约时间</text>
-      <text class="value">{{order.serviceDate}} {{order.startTime}}</text>
-    </view>
-    <view class="info-row" wx:if="{{order.addressText}}">
-      <text class="label">上门地址</text>
-      <text class="value">{{order.addressText}}</text>
-    </view>
-    <view class="info-row" wx:if="{{order.remark}}">
-      <text class="label">备注</text>
-      <text class="value">{{order.remark}}</text>
-    </view>
-  </view>
-
-  <!-- 美甲师信息 -->
-  <view class="section" wx:if="{{order.techName}}">
-    <text class="section-title">美甲师</text>
-    <view class="tech-row">
-      <image class="tech-avatar" src="{{order.techAvatar || '/static/logo.svg'}}" mode="aspectFill"/>
-      <text class="tech-name">{{order.techName}}</text>
-    </view>
-  </view>
-
-  <!-- 金额（confirmed/completed 显示） -->
-  <view class="section" wx:if="{{order.price && order.status !== 'quoted'}}">
-    <text class="section-title">费用</text>
-    <view class="info-row">
-      <text class="label">服务金额</text>
-      <text class="value price">¥{{order.price}}</text>
-    </view>
-  </view>
-
-  <!-- 取消按钮 -->
-  <view class="cancel-wrap"
-    wx:if="{{order.status === 'pending_quote' || order.status === 'confirmed'}}">
-    <button class="btn-cancel" bindtap="cancelOrder">取消预约</button>
-  </view>
-
+<nav-bar title="预约详情" showBack/>
+<view wx:if="{{loading}}" class="loading-page">
+  <view class="spinner"></view>
+  <text class="loading-text">加载中...</text>
 </view>
 
-<view class="loading" wx:if="{{loading}}">
-  <text>加载中...</text>
+<view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+  <view class="load-error-mark">!</view>
+  <text class="load-error-title">{{loadErrorText}}</text>
+  <text wx:if="{{orderId}}" class="load-error-desc">请检查网络后重试</text>
+  <button wx:if="{{orderId}}" class="retry-btn" bindtap="loadOrder">重新加载</button>
+</view>
+
+<view wx:else class="page">
+  <!-- ============ 状态头 ============ -->
+  <view class="status-hero {{order._statusTone}}">
+    <view class="hero-row">
+      <text class="hero-status">{{order._statusLabel}}</text>
+      <text class="hero-type">{{order._typeLabel}}</text>
+    </view>
+    <text class="hero-order-no">预约号 {{order.orderNo}}</text>
+    <text wx:if="{{order._statusDesc}}" class="hero-desc">{{order._statusDesc}}</text>
+  </view>
+
+  <!-- ============ 美甲师卡片 ============ -->
+  <view class="card tech-card card-overlap">
+    <view class="tech-row">
+      <view class="tech-avatar" bindtap="viewArtist" role="button" aria-label="查看{{order.techName}}主页">
+        <image wx:if="{{order.techAvatar}}" src="{{order.techAvatar}}" mode="aspectFill" class="tech-avatar-img" aria-label="{{order.techName}}的头像" />
+        <text wx:else class="tech-avatar-char">{{order.techName[0]}}</text>
+      </view>
+      <view class="tech-info">
+        <text class="tech-name">{{order.techName}}</text>
+        <text class="tech-label">服务美甲师</text>
+      </view>
+      <view class="tech-actions">
+        <view wx:if="{{order.techPhone}}" class="round-btn" catchtap="callTech" role="button" aria-label="拨打美甲师电话">
+          <view class="btn-icon-phone"></view>
+        </view>
+        <view class="round-btn round-chat" catchtap="goChat" role="button" aria-label="联系美甲师">
+          <view class="btn-icon-chat"></view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ============ 服务信息 ============ -->
+  <view class="card">
+    <text class="card-title">服务信息</text>
+
+    <view class="info-row">
+      <text class="info-label">服务方式</text>
+      <text class="info-value">{{order._typeLabel}}</text>
+    </view>
+
+    <view class="info-row">
+      <text class="info-label">{{order.bookingPhase === 'application' ? '期望时间' : '预约时间'}}</text>
+      <text class="info-value">{{order._dateLabel}} {{order._timeRange}}</text>
+    </view>
+
+    <view wx:if="{{order.address}}" class="info-row">
+      <text class="info-label">{{order._isShop ? '到店地址' : '上门地址'}}</text>
+      <view class="info-value-block">
+        <text class="addr-text">{{order.address}}</text>
+        <view class="copy-link" catchtap="copyAddress" role="button" aria-label="复制服务地址">复制</view>
+      </view>
+    </view>
+
+    <view class="info-row">
+      <text class="info-label">服务项目</text>
+      <text class="info-value">{{order.serviceName}}</text>
+    </view>
+
+    <view wx:if="{{order.durationMinutes > 0}}" class="info-row">
+      <text class="info-label">预计时长</text>
+      <text class="info-value">{{order.durationMinutes}}分钟</text>
+    </view>
+  </view>
+
+  <!-- ============ 价格信息 ============ -->
+  <view wx:if="{{order._showPriceCard}}" class="card">
+    <text class="card-title">{{order.status === 'pending_agree' ? '美甲师报价' : '费用信息'}}</text>
+
+    <view class="price-row">
+      <text class="price-label">报价金额</text>
+      <text class="price-main">{{order._priceText}}</text>
+    </view>
+
+    <text class="offline-payment-note">实际付款由客户与门店线下完成，小程序不提供代收款服务。</text>
+  </view>
+
+  <!-- ============ 备注 ============ -->
+  <view wx:if="{{order.sourceWork}}" class="card source-work-card" bindtap="viewSourceWork">
+        <image wx:if="{{order.sourceWork.coverUrl}}" class="source-work-cover" src="{{order.sourceWork.coverUrl}}" mode="aspectFill" aria-label="{{order.sourceWork.title || '预约来源作品'}}"/>
+    <view class="source-work-copy">
+      <text class="source-work-label">预约同款来源</text>
+      <text class="source-work-title">{{order.sourceWork.title || '美甲作品'}}</text>
+    </view>
+    <text class="source-work-arrow">›</text>
+  </view>
+
+  <view wx:if="{{order.remark}}" class="card">
+    <text class="card-title">备注</text>
+    <text class="remark-text">{{order.remark}}</text>
+  </view>
+
+  <view wx:if="{{order.status === 'completed'}}" class="card review-card">
+    <text class="card-title">{{order.review ? '我的服务评价' : '评价这次服务'}}</text>
+    <text class="review-hint">你的反馈只用于改善服务；照片默认不会被公开使用。</text>
+    <view class="rating-row">
+      <view wx:for="{{[1,2,3,4,5]}}" wx:key="*this" class="rating-btn {{reviewRating === item ? 'rating-active' : ''}}" bindtap="selectReviewRating" data-rating="{{item}}">{{item}}</view>
+    </view>
+    <text class="rating-caption">{{reviewRating === 5 ? '非常满意' : (reviewRating === 4 ? '满意' : (reviewRating === 3 ? '一般' : (reviewRating === 2 ? '有待改善' : '不满意')))}}</text>
+    <textarea class="review-input" value="{{reviewContent}}" bindinput="onReviewInput" maxlength="500" placeholder="写下你对设计、服务或体验的感受（选填）"/>
+    <view class="review-photos">
+      <view wx:for="{{reviewPhotos}}" wx:key="*this" class="review-photo-wrap">
+          <image src="{{item}}" mode="aspectFill" class="review-photo" lazy-load aria-label="本次服务评价照片"/>
+        <view class="review-photo-remove" bindtap="removeReviewPhoto" data-index="{{index}}"></view>
+      </view>
+      <view wx:if="{{reviewPhotos.length < 6}}" class="review-photo-add" bindtap="chooseReviewPhotos"><text class="review-photo-plus">+</text><text>添加照片</text></view>
+    </view>
+    <view wx:if="{{reviewPhotos.length}}" class="photo-consent">
+      <view class="consent-copy"><text class="consent-title">授权美甲师用于作品展示</text><text class="consent-desc">开启后，美甲师可将这些照片用于作品集；关闭即可撤销后续使用授权。</text></view>
+      <switch checked="{{photoUseAuthorized}}" bindchange="onPhotoAuthorizationChange" color="#ec4899"/>
+    </view>
+    <view class="review-save {{savingReview ? 'is-disabled' : ''}}" bindtap="saveReview">{{savingReview ? '保存中...' : (order.review ? '更新评价' : '提交评价')}}</view>
+  </view>
+
+  <!-- ============ 底部操作栏 ============ -->
+  <view wx:if="{{order._actions.length > 0}}" class="bottom-actions">
+    <view
+      wx:for="{{order._actions}}"
+      wx:key="key"
+      class="action-btn {{item.style}} {{actionSubmitting ? 'is-disabled' : ''}}"
+      bindtap="onAction"
+      data-key="{{item.key}}"
+    >
+      {{actionSubmitting === item.key ? '处理中...' : item.label}}
+    </view>
+  </view>
+</view>
+
+<!-- ============ 拒绝报价底部弹层 ============ -->
+<view wx:if="{{showReject}}" class="sheet-mask" bindtap="closeReject"></view>
+<view class="sheet {{showReject ? 'sheet-show' : ''}}" catchtap="">
+  <view class="sheet-header">
+    <text class="sheet-title">拒绝报价</text>
+    <view class="sheet-close" bindtap="closeReject">&#x2715;</view>
+  </view>
+
+  <view class="sheet-body">
+    <view class="form-item">
+      <text class="form-label">拒绝原因（选填）</text>
+      <textarea
+        class="form-textarea"
+        placeholder="告诉美甲师你为什么拒绝该报价，便于重新协商"
+        value="{{rejectReason}}"
+        bindinput="onRejectReasonInput"
+        maxlength="200"
+      />
+    </view>
+
+    <view class="reason-chips">
+      <view
+        wx:for="{{rejectReasons}}"
+        wx:key="*this"
+        class="reason-chip"
+        bindtap="onPickReason"
+        data-reason="{{item}}"
+      >{{item}}</view>
+    </view>
+  </view>
+
+  <view class="sheet-footer">
+    <view class="action-btn action-danger {{submitting ? 'is-disabled' : ''}}" bindtap="submitReject">
+      {{submitting ? '提交中...' : '确认拒绝'}}
+    </view>
+  </view>
+</view>
+
+<!-- ============ 编辑预约底部弹层 ============ -->
+<view wx:if="{{showEdit}}" class="sheet-mask" bindtap="closeEdit"></view>
+<view class="sheet {{showEdit ? 'sheet-show' : ''}}" catchtap="">
+  <view class="sheet-header">
+    <text class="sheet-title">修改预约</text>
+    <view class="sheet-close" bindtap="closeEdit">&#x2715;</view>
+  </view>
+  <view class="sheet-body">
+    <view class="form-item">
+      <text class="form-label">预约日期</text>
+      <picker mode="date" value="{{editDate}}" bindchange="onEditDateChange">
+        <view class="picker-row"><text class="picker-value">{{editDate || '请选择'}}</text></view>
+      </picker>
+    </view>
+    <view class="form-item">
+      <text class="form-label">预约时间</text>
+      <picker mode="selector" range="{{editTimeSlots}}" bindchange="onEditTimeChange">
+        <view class="picker-row"><text class="picker-value">{{editTime || '请选择'}}</text></view>
+      </picker>
+    </view>
+    <view class="form-item" wx:if="{{editAddresses.length > 0}}">
+      <text class="form-label">上门地址</text>
+      <view class="addr-select-list">
+        <view wx:for="{{editAddresses}}" wx:key="id"
+          class="addr-select-item {{editAddressId === item.id ? 'addr-select-active' : ''}}"
+          bindtap="onEditAddressSelect" data-id="{{item.id}}">
+          <text class="addr-select-name">{{item.contactName}} {{item.contactPhone}}</text>
+          <text class="addr-select-detail">{{item.province}}{{item.city}}{{item.district}}{{item.detailAddress}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view class="sheet-footer">
+    <view class="action-btn action-primary {{savingEdit ? 'is-disabled' : ''}}" bindtap="saveEdit">
+      {{savingEdit ? '保存中...' : '保存修改'}}
+    </view>
+  </view>
 </view>

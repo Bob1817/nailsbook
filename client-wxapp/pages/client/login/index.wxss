@@ -1,6 +1,6 @@
 .container {
   min-height: 100vh;
-  background-color: #fff;
+  background: var(--bg-page);
   padding: 100rpx 48rpx;
   box-sizing: border-box;
 }
@@ -15,11 +15,11 @@
 .logo-circle {
   width: 120rpx;
   height: 120rpx;
-  background: #ff6b9d;
-  border-radius: 60rpx;
-  color: #fff;
+  background: var(--brand-gradient);
+  border-radius: 36rpx;
+  color: var(--text-inverse);
   font-size: 56rpx;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -27,75 +27,130 @@
 }
 
 .title {
-  font-size: 40rpx;
-  font-weight: 600;
-  color: #333;
+  font-size: var(--font-xl);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
 }
+
+.login-tabs { display: flex; padding: 8rpx; margin-bottom: 32rpx; border-radius: var(--card-radius); background: #eef0f4; }
+.login-tab { flex: 1; min-height: 88rpx; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); color: var(--text-muted); font-size: var(--font-sm); }
+.login-tab-active { color: var(--text-primary); background: var(--bg-card); font-weight: var(--weight-semibold); box-shadow: 0 4rpx 14rpx rgba(31, 41, 55, 0.08); }
+.wechat-hint { display: block; color: var(--text-muted); font-size: var(--font-sm); line-height: 1.6; text-align: center; }
 
 .form-item {
   margin-bottom: 32rpx;
 }
 
 .label {
-  font-size: 26rpx;
-  color: #666;
+  font-size: var(--font-sm);
+  color: var(--text-body);
   display: block;
   margin-bottom: 12rpx;
 }
 
-.input {
+.input  {
   width: 100%;
   height: 96rpx;
-  background-color: #f8f8f8;
-  border-radius: 16rpx;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: var(--radius-sm);
   padding: 0 32rpx;
-  font-size: 30rpx;
-  color: #333;
+  font-size: var(--font-md);
+  color: var(--text-primary);
   box-sizing: border-box;
+  border: 2rpx solid #ddd8dc;
+  box-shadow: 0 2rpx 8rpx rgba(54, 43, 49, 0.035), inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
 }
+.input:focus { border-color:#bd587d; background: var(--bg-card); box-shadow:0 0 0 6rpx rgba(189,88,125,.08); }
 
 .readonly {
+  width: 100%;
   height: 96rpx;
   background: #f0f0f0;
-  border-radius: 16rpx;
+  border-radius: var(--radius-sm);
   padding: 0 32rpx;
-  font-size: 30rpx;
-  color: #999;
+  font-size: var(--font-md);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  border: 2rpx solid #e5e1e4;
+}
+
+.readonly-phone {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.readonly-action {
+  flex-shrink: 0;
+  font-size: var(--font-sm);
+  color: var(--brand-primary);
+  margin-left: 16rpx;
 }
 
 .hint-banner {
   background: #fff7e6;
   color: #fa8c16;
-  font-size: 26rpx;
-  padding: 20rpx 24rpx;
-  border-radius: 12rpx;
+  font-size: var(--font-sm);
+  padding: 20rpx 40rpx;
+  border-radius: var(--radius-sm);
   margin-bottom: 32rpx;
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 
 .btn-primary {
   width: 100%;
   height: 96rpx;
-  background-color: #ff6b9d;
-  color: #fff;
-  border-radius: 48rpx;
-  font-size: 32rpx;
-  font-weight: 500;
+  background: var(--brand-gradient);
+  color: var(--text-inverse);
+  border-radius: var(--radius-md);
+  font-size: var(--font-md);
+  font-weight: var(--weight-medium);
   display: flex;
   align-items: center;
   justify-content: center;
   margin-top: 48rpx;
 }
 .btn-primary[disabled] {
-  background-color: #ccc;
+  background-color: var(--text-muted);
 }
 
 .link {
-  display: block;
-  text-align: center;
-  font-size: 26rpx;
-  color: #ff6b9d;
+  display:inline-flex;
+  min-height:88rpx;
+  align-items:center;
+  font-size: var(--font-sm);
+  color: var(--brand-primary);
+}
+
+.link-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16rpx;
   margin-top: 32rpx;
+}
+
+.link-sep {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+}
+
+.guest-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 48rpx;
+}
+
+.link-muted {
+  display: inline-flex;
+  min-height: 88rpx;
+  align-items: center;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
 }

@@ -1,5 +1,125 @@
-<view class="container">
-  <view class="empty-page">
-    <text>功能开发中</text>
+<nav-bar title="消息"/>
+<view class="page">
+  <!-- 固定 Tab 栏 -->
+  <view class="tabs-bar">
+    <scroll-view scroll-x class="tab-scroll" enhanced show-scrollbar="{{false}}">
+      <view class="tab-bar-inner">
+        <view
+          wx:for="{{tabs}}"
+          wx:key="value"
+          class="tab-pill {{activeTab === item.value ? 'tab-pill-active' : ''}}"
+          bindtap="onTabChange"
+          data-tab="{{item.value}}"
+        >
+          <text class="tab-label">{{item.label}}</text>
+          <text class="tab-count">{{item.count}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 可滚动内容区 -->
+  <scroll-view scroll-y class="content-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="content-area">
+      <!-- 加载态 -->
+      <view wx:if="{{loading}}" class="skeleton-list">
+        <view wx:for="{{[1,2,3,4,5]}}" wx:key="*this" class="skeleton-card">
+          <view class="skel-avatar"></view>
+          <view class="skel-lines">
+            <view class="skel-line skel-line-wide"></view>
+            <view class="skel-line skel-line-narrow"></view>
+          </view>
+        </view>
+      </view>
+
+      <view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+        <view class="load-error-mark">!</view>
+        <text class="empty-title">消息加载失败</text>
+        <text class="empty-sub">请检查网络后重试</text>
+        <button class="retry-btn" bindtap="loadInbox">重新加载</button>
+      </view>
+
+      <block wx:else>
+        <!-- 消息列表 -->
+        <view wx:if="{{filteredItems.length > 0}}" class="msg-list">
+          <view
+            wx:for="{{filteredItems}}"
+            wx:key="id"
+            class="msg-card"
+            bindtap="onItemClick"
+            data-index="{{index}}"
+          >
+            <view class="msg-avatar-wrap" catchtap="viewArtist" data-id="{{item.techId}}" role="button" aria-label="查看{{item.name || '美甲师'}}主页">
+              <image wx:if="{{item.techAvatar && item.type === 'chat'}}" src="{{item.techAvatar}}" mode="aspectFill" class="msg-avatar-img" lazy-load aria-label="{{item.name}}的头像" />
+              <view wx:else class="msg-avatar-placeholder">
+                <text class="msg-avatar-char">{{item._avatarChar}}</text>
+              </view>
+              <view wx:if="{{item.type === 'chat'}}" class="msg-online-dot"></view>
+            </view>
+            <view class="msg-body">
+              <view class="msg-top-row">
+                <text class="msg-name">{{item.name}}</text>
+                <view class="msg-type-badge {{item._badgeClass}}">
+                  <text class="msg-type-badge-text">{{item.badge}}</text>
+                </view>
+              </view>
+              <text class="msg-preview">{{item.preview}}</text>
+            </view>
+            <view class="msg-right">
+              <text class="msg-time">{{item._timeText}}</text>
+              <view wx:if="{{item.unread}}" class="msg-unread-badge">
+                <text class="msg-unread-num">{{item.unreadCount > 99 ? '99+' : item.unreadCount}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 空态 -->
+        <view wx:else class="empty-card">
+          <view class="empty-icon-wrap">
+            <view class="empty-icon-inner"></view>
+          </view>
+          <text class="empty-title">消息会在这里聚合</text>
+          <text class="empty-sub">预约提醒和服务通知会统一显示在消息页</text>
+        </view>
+      </block>
+    </view>
+  </scroll-view>
+</view>
+
+<!-- 通知详情弹窗 -->
+<view wx:if="{{selectedNotification}}" class="modal-overlay" bindtap="closeNotification">
+  <view class="modal-sheet" catchtap="noop">
+    <view class="modal-header">
+      <view class="modal-type-badge {{selectedNotification._badgeClass}}">
+        <text class="msg-type-badge-text">{{selectedNotification.badge}}</text>
+      </view>
+      <view class="modal-close" bindtap="closeNotification" aria-label="关闭消息详情">
+        <text class="modal-close-icon"></text>
+      </view>
+    </view>
+
+    <text class="modal-name">{{selectedNotification.name}}</text>
+    <text class="modal-preview">{{selectedNotification.preview}}</text>
+
+    <view class="modal-meta">
+      <text class="modal-meta-text">{{selectedNotification.techName}}</text>
+      <text class="modal-meta-dot">·</text>
+      <text class="modal-meta-text">{{selectedNotification._timeText}}</text>
+    </view>
+
+    <view class="modal-actions">
+      <view class="modal-btn modal-btn-close" bindtap="closeNotification">
+        <text class="modal-btn-close-text">关闭</text>
+      </view>
+      <view wx:if="{{selectedNotification.relatedType === 'order'}}" class="modal-btn modal-btn-primary" bindtap="viewRelatedOrder">
+        <text class="modal-btn-primary-text">查看预约详情</text>
+      </view>
+      <view wx:elif="{{selectedNotification.relatedType === 'comment' || selectedNotification.relatedType === 'work_comment'}}" class="modal-btn modal-btn-primary" bindtap="viewRelatedWork">
+        <text class="modal-btn-primary-text">查看作品</text>
+      </view>
+    </view>
   </view>
 </view>
+
+<tab-bar selected="chat" />

@@ -1,11 +1,27 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../../core/api/api_client.dart';
+
+import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import '../../../core/maps/map_service.dart';
+import '../../../core/widgets/nav_badge_icon.dart';
+import '../../../core/widgets/glass_container.dart';
+import '../../../core/widgets/technician_glass_header.dart';
 import '../auth/technician_auth_service.dart';
+import '../onboarding/technician_setup_guide_screen.dart';
 import '../schedule/technician_schedule_screen.dart';
 import '../orders/technician_orders_screen.dart';
-import '../../shared/chat/conversations_screen.dart';
+import '../orders/technician_order_service.dart';
+import '../orders/technician_pending_actions_dialog.dart';
+import '../orders/technician_order_detail_screen.dart';
+import '../customers/technician_customers_screen.dart';
+import '../../shared/chat/chat_service.dart';
+import '../messages/technician_messages_screen.dart';
+import '../works/technician_works_screen.dart';
+import '../works/technician_work_service.dart';
+import '../works/technician_work_detail_screen.dart';
 import '../profile/technician_profile_screen.dart';
+import '../profile/technician_business_card_screen.dart';
+import '../profile/technician_profile_completion_screen.dart';
 
 class TechnicianHomeScreen extends StatefulWidget {
   const TechnicianHomeScreen({super.key});
@@ -18,6 +34,9 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
   int _currentIndex = 0;
   Map<String, dynamic>? _profile;
   bool _loading = true;
+  int _unread = 0;
+  // 待办预约提醒每次进入 app 仅弹一次。
+  bool _promptedActions = false;
 
   @override
   void initState() {
@@ -29,159 +48,1376 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
     try {
       final apiClient = context.read<ApiClient>();
       final data = await apiClient.get('/auth/me');
-      if (mounted) setState(() { _profile = data; _loading = false; });
+      if (mounted) {
+        setState(() {
+          _profile = data;
+          _loading = false;
+        });
+        _maybePromptProfileCompletion(data);
+        _maybePromptPendingActions(data);
+      }
     } catch (_) {
-      if (mounted) setState(() { _loading = false; });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
     }
+  }
+
+  /// 首次登录强制引导：
+  /// 1) 缺少 province/city 时强制完善（对齐 webapp ProtectedRoute 守卫）；
+  /// 2) province/city 就绪后，若未开启任何服务类型，强制进入接单前配置引导。
+  void _maybePromptProfileCompletion(Map<String, dynamic> data) {
+    final province = (data['province'] as String?)?.trim() ?? '';
+    final city = (data['city'] as String?)?.trim() ?? '';
+    final needProfile = province.isEmpty || city.isEmpty;
+    final ready =
+        data['homeService'] == true || data['shopService'] == true;
+    if (!needProfile && ready) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      if (needProfile) {
+        final done = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TechnicianProfileCompletionScreen(
+              initialProvince: province.isEmpty ? null : province,
+              initialCity: city.isEmpty ? null : city,
+            ),
+          ),
+        );
+        if (done == true && mounted) _loadProfile();
+        return;
+      }
+      // province/city 就绪但未开启服务类型 → 强制接单前配置引导
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const TechnicianSetupGuideScreen(),
+        ),
+      );
+      if (mounted) _loadProfile();
+    });
+  }
+
+  /// 进入 app 后弹出待办预约提醒（仅一次）。仅在已完成接单前配置时弹，
+  /// 避免与首次登录引导流程冲突。
+  void _maybePromptPendingActions(Map<String, dynamic> data) {
+    if (_promptedActions) return;
+    final province = (data['province'] as String?)?.trim() ?? '';
+    final city = (data['city'] as String?)?.trim() ?? '';
+    final ready = data['homeService'] == true || data['shopService'] == true;
+    if (province.isEmpty || city.isEmpty || !ready) return;
+    _promptedActions = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) TechnicianPendingActionsDialog.maybeShow(context);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final pages = <Widget>[
-      _TechnicianHomeTabPage(profile: _profile, loading: _loading, onRefresh: _loadProfile),
+      _TechnicianHomeTabPage(
+          profile: _profile, loading: _loading, onRefresh: _loadProfile),
       const TechnicianScheduleScreen(),
-      const TechnicianOrdersScreen(),
-      const ConversationsScreen(),
+      const TechnicianCustomersScreen(),
+      TechnicianMessagesScreen(onUnread: (n) => setState(() => _unread = n)),
       const TechnicianProfileScreen(),
     ];
 
     return Scaffold(
+      extendBody: true,
       body: IndexedStack(index: _currentIndex, children: pages),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: _TechGlassTabBar(
         currentIndex: _currentIndex,
+        unread: _unread,
         onTap: (i) => setState(() => _currentIndex = i),
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFFE91E63),
-        unselectedItemColor: const Color(0xFF757575),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: '首页'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: '日程'),
-          BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: '订单'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: '消息'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: '我的'),
-        ],
       ),
     );
   }
 }
 
-class _TechnicianHomeTabPage extends StatelessWidget {
-  final Map<String, dynamic>? profile;
-  final bool loading;
-  final Future<void> Function() onRefresh;
+/// 美甲师端浮动玻璃导航（与客户端一致的材质，工具型 5 tab）。
+class _TechGlassTabBar extends StatelessWidget {
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+  final int unread;
 
-  const _TechnicianHomeTabPage({this.profile, this.loading = true, required this.onRefresh});
+  const _TechGlassTabBar(
+      {required this.currentIndex, required this.onTap, this.unread = 0});
+
+  static const _items = <(IconData, IconData, String)>[
+    (CupertinoIcons.house_fill, CupertinoIcons.house, '首页'),
+    (CupertinoIcons.calendar, CupertinoIcons.calendar, '行程'),
+    (CupertinoIcons.person_2_fill, CupertinoIcons.person_2, '客户'),
+    (CupertinoIcons.chat_bubble_fill, CupertinoIcons.chat_bubble, '消息'),
+    (CupertinoIcons.person_fill, CupertinoIcons.person, '我的'),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('NailBook')),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(onRefresh: onRefresh, child: _buildBody(context)),
-    );
-  }
-
-  Widget _buildBody(BuildContext context) {
-    if (profile == null) {
-      return ListView(children: [
-        const SizedBox(height: 100),
-        Center(child: Text('加载失败', style: Theme.of(context).textTheme.bodyLarge)),
-      ]);
-    }
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(children: [
-              CircleAvatar(
-                backgroundColor: const Color(0xFFE91E63),
-                radius: 28,
-                child: Text(
-                  (profile!['name'] as String?)?.substring(0, 1) ?? '?',
-                  style: const TextStyle(color: Colors.white, fontSize: 24),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(profile!['name']?.toString() ?? '', style: Theme.of(context).textTheme.titleLarge),
-                  if (profile!['city'] != null)
-                    Text('${profile!['city']} · ${profile!['serviceArea'] ?? ''}', style: Theme.of(context).textTheme.bodySmall),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: profile!['status'] == 'active' ? Colors.green.shade50 : Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      profile!['status'] == 'active' ? '接单中' : '休息中',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: profile!['status'] == 'active' ? Colors.green : Colors.grey,
-                      ),
-                    ),
-                  ),
-                ]),
-              ),
-            ]),
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    final bottomGap = (bottomInset * 0.4).clamp(8.0, 16.0);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(DT.lg, 0, DT.lg, bottomGap),
+      child: GlassContainer(
+        tint: TechnicianGlassHeader.glassTint,
+        blur: TechnicianGlassHeader.glassBlur,
+        opacity: TechnicianGlassHeader.glassOpacity,
+        borderRadius: 28,
+        showBorder: true,
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x66000000),
+            blurRadius: 28,
+            offset: Offset(0, 10),
           ),
-        ),
-        const SizedBox(height: 16),
-        Text('快捷操作', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        Row(children: [
-          _quickAction(context, Icons.receipt_long, '订单管理', Colors.blue),
-          const SizedBox(width: 8),
-          _quickAction(context, Icons.people, '客户管理', Colors.orange),
-          const SizedBox(width: 8),
-          _quickAction(context, Icons.photo_library, '作品管理', Colors.purple),
-        ]),
-        const SizedBox(height: 16),
-        Row(children: [
-          _quickAction(context, Icons.miscellaneous_services, '服务管理', Colors.teal),
-          const SizedBox(width: 8),
-          _quickAction(context, Icons.toggle_on, '状态切换', profile!['status'] == 'active' ? Colors.red : Colors.green),
-          const SizedBox(width: 8),
-          _quickAction(context, Icons.settings, '资料设置', Colors.grey),
-        ]),
-      ],
-    );
-  }
-
-  Widget _quickAction(BuildContext context, IconData icon, String label, Color color) {
-    return Expanded(
-      child: Material(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () => _handleQuickAction(context, label),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Column(children: [
-              Icon(icon, color: color, size: 28),
-              const SizedBox(height: 6),
-              Text(label, style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w500)),
-            ]),
+        ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: DT.sm, horizontal: 2),
+          child: Row(
+            children: List.generate(_items.length, (i) => _tab(i)),
           ),
         ),
       ),
     );
   }
 
-  Future<void> _handleQuickAction(BuildContext context, String label) async {
-    if (label == '状态切换') {
-      final newStatus = profile?['status'] == 'active' ? 'inactive' : 'active';
-      try {
-        final apiClient = context.read<ApiClient>();
-        await TechnicianAuthService(apiClient).updateStatus(newStatus);
-        await onRefresh();
-      } catch (_) {}
+  Widget _tab(int i) {
+    final item = _items[i];
+    final active = i == currentIndex;
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap(i);
+        },
+        child: SizedBox(
+          height: 52,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              NavBadgeIcon(
+                icon: active ? item.$1 : item.$2,
+                size: 23,
+                color: active ? DT.primary : DT.textSecondary,
+                badge: i == 3 ? unread : 0,
+              ),
+              const SizedBox(height: DT.xs),
+              Text(item.$3,
+                  style: TextStyle(
+                    fontSize: DT.captionMedium.fontSize,
+                    fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                    color: active ? DT.primary : DT.textSecondary,
+                  )),
+              const SizedBox(height: DT.xs),
+              Container(
+                width: 4,
+                height: 4,
+                decoration: BoxDecoration(
+                    color: active ? DT.primary : Colors.transparent,
+                    shape: BoxShape.circle),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 美甲师工作台首页 —— 一比一对齐 webapp HomePage 的功能模块与布局：
+/// 头部问候 → 下一单 → 待处理事项 → 今日行程 → 今日热门作品 → 分享名片。
+class _TechnicianHomeTabPage extends StatefulWidget {
+  final Map<String, dynamic>? profile;
+  final bool loading;
+  final Future<void> Function() onRefresh;
+
+  const _TechnicianHomeTabPage(
+      {this.profile, this.loading = true, required this.onRefresh});
+
+  @override
+  State<_TechnicianHomeTabPage> createState() => _TechnicianHomeTabPageState();
+}
+
+class _TechnicianHomeTabPageState extends State<_TechnicianHomeTabPage> {
+  static const _activeStatuses = {
+    'pending_quote',
+    'pending_agree',
+    'pending_confirm',
+    'pending_home',
+    'pending_shop',
+    'in_progress'
+  };
+
+  List<Map<String, dynamic>> _orders = [];
+  List<Map<String, dynamic>> _works = [];
+  int _unread = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final api = context.read<ApiClient>();
+      final results = await Future.wait([
+        TechnicianOrderService(api).list(),
+        ChatService(api).conversations(),
+        TechnicianWorkService(api).list(),
+      ]);
+      final orders = (results[0] as List).cast<Map<String, dynamic>>();
+      final convs = (results[1] as List).cast<Map<String, dynamic>>();
+      final works = (results[2] as List).cast<Map<String, dynamic>>();
+      final unread =
+          convs.fold<int>(0, (s, c) => s + ((c['unreadCount'] as int?) ?? 0));
+      if (mounted) {
+        setState(() {
+          _orders = orders;
+          _works = works;
+          _unread = unread;
+        });
+      }
+    } catch (_) {
+      // 保持空态，下拉可重试
     }
+  }
+
+  Future<void> _refreshAll() async {
+    await Future.wait([widget.onRefresh(), _loadData()]);
+  }
+
+  // 行程：仅待上门 / 待到店 / 进行中（已取消、已完成不计入行程）。
+  static const _tripStatuses = {'pending_home', 'pending_shop', 'in_progress'};
+
+  // ── helpers ──
+  bool _isActive(Map<String, dynamic> o) =>
+      _activeStatuses.contains(o['status']);
+  bool _isTrip(Map<String, dynamic> o) => _tripStatuses.contains(o['status']);
+  bool _isToday(String? iso) {
+    final d = DateTime.tryParse(iso ?? '');
+    if (d == null) return false;
+    final n = DateTime.now();
+    final l = d.toLocal();
+    return l.year == n.year && l.month == n.month && l.day == n.day;
+  }
+
+  String _clock(String? iso) {
+    final d = DateTime.tryParse(iso ?? '');
+    if (d == null) return '';
+    final l = d.toLocal();
+    return '${l.hour.toString().padLeft(2, '0')}:${l.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _bookingDate(String? iso) {
+    final d = DateTime.tryParse(iso ?? '');
+    if (d == null) return '';
+    final l = d.toLocal();
+    const wk = ['一', '二', '三', '四', '五', '六', '日'];
+    return '${l.month}月${l.day}日 周${wk[l.weekday - 1]} ${_clock(iso)}';
+  }
+
+  void _push(Widget s) =>
+      Navigator.push(context, MaterialPageRoute(builder: (_) => s))
+          .then((_) => _refreshAll());
+
+  Future<void> _call(String phone) async {
+    if (phone.isEmpty) {
+      NbToast.error(context, '当前客户暂无联系电话');
+      return;
+    }
+    await launchUrl(Uri.parse('tel:$phone'));
+  }
+
+  Future<void> _navigate(Map<String, dynamic> o) async {
+    final lat = (o['latitude'] as num?)?.toDouble();
+    final lng = (o['longitude'] as num?)?.toDouble();
+    if (lat != null && lng != null) {
+      await MapService.launchNavigation(lat, lng);
+      return;
+    }
+    final addr = o['address']?.toString() ?? '';
+    if (addr.isEmpty) {
+      NbToast.error(context, '当前预约还没有地址信息');
+      return;
+    }
+    await launchUrl(
+      Uri.parse(
+          'https://uri.amap.com/search?keyword=${Uri.encodeComponent(addr)}'),
+      mode: LaunchMode.externalApplication,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.loading) {
+      return const Scaffold(
+          backgroundColor: DT.bg,
+          body: Center(child: CircularProgressIndicator(color: DT.primary)));
+    }
+    final profile = widget.profile;
+
+    final todayOrders = _orders
+        .where((o) => _isToday(o['startTime']?.toString()) && _isTrip(o))
+        .toList()
+      ..sort((a, b) => (a['startTime']?.toString() ?? '')
+          .compareTo(b['startTime']?.toString() ?? ''));
+    final expected = todayOrders.fold<double>(
+        0, (s, o) => s + ((o['quotePrice'] as num?)?.toDouble() ?? 0));
+    final active = _orders
+        .where((o) =>
+            _isTrip(o) && (o['startTime']?.toString().isNotEmpty ?? false))
+        .toList()
+      ..sort((a, b) => (a['startTime']?.toString() ?? '')
+          .compareTo(b['startTime']?.toString() ?? ''));
+    final next = active.isNotEmpty ? active.first : null;
+
+    final headerH = TechnicianGlassHeader.estimateHeight(
+      context,
+      belowHeight: 56,
+      hasTitle: false,
+    );
+
+    return Container(
+      decoration: const BoxDecoration(gradient: DT.screenGradient),
+      child: Stack(
+        children: [
+          RefreshIndicator(
+            color: DT.primary,
+            onRefresh: _refreshAll,
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(DT.xl, headerH + DT.md, DT.xl, 110),
+              children: [
+                _sectionTitle('下一单'),
+                const SizedBox(height: DT.md),
+                _nextOrderCard(next),
+                const SizedBox(height: DT.xxl),
+                _sectionTitle('待处理事项'),
+                const SizedBox(height: DT.md),
+                _pendingCard(),
+                const SizedBox(height: DT.xxl),
+                _sectionTitle('今日行程'),
+                const SizedBox(height: DT.md),
+                _todayScheduleCard(todayOrders),
+                const SizedBox(height: DT.xxl),
+                Row(
+                  children: [
+                    Expanded(child: _sectionTitle('今日热门作品')),
+                    GestureDetector(
+                      onTap: () => _push(const TechnicianWorksScreen()),
+                      child: Text('查看全部',
+                          style: DT.bodyMedium.copyWith(
+                              color: DT.primary, fontWeight: FontWeight.w600)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: DT.md),
+                _popularWorks(),
+                const SizedBox(height: DT.xxl),
+                _sectionTitle('分享我的美甲名片'),
+                const SizedBox(height: DT.md),
+                _shareCard(profile),
+              ],
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            child: TechnicianGlassHeader(
+              below: _header(profile, todayOrders.length, expected),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String t) => Text(t, style: DT.titleMedium);
+
+  BoxDecoration get _cardDeco => BoxDecoration(
+        color: DT.surface.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(DT.rCard),
+        boxShadow: DT.shadowTile,
+      );
+
+  // ── 头部：头像 + 问候 + 今日概览 + 接单状态 ──
+  Widget _header(
+      Map<String, dynamic>? profile, int todayCount, double expected) {
+    final name = profile?['name']?.toString() ?? '美甲师';
+    final avatar = profile?['avatarUrl']?.toString();
+    final isActive = profile?['status'] == 'active';
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 28,
+          backgroundColor: DT.primarySoft,
+          backgroundImage: (avatar != null && avatar.isNotEmpty)
+              ? NetworkImage(avatar)
+              : null,
+          child: (avatar == null || avatar.isEmpty)
+              ? Text(name.isNotEmpty ? name.substring(0, 1) : '美',
+                  style: const TextStyle(fontSize: 22, color: DT.primary))
+              : null,
+        ),
+        const SizedBox(width: DT.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('你好，$name',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: DT.titleLarge),
+              const SizedBox(height: 2),
+              Text('今日 $todayCount 单 · 预估 ¥${expected.toStringAsFixed(0)}',
+                  style: DT.bodySmall.copyWith(color: DT.textMuted)),
+            ],
+          ),
+        ),
+        GestureDetector(
+          onTap: _toggleStatus,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: DT.sm + 2, vertical: DT.xs + 1),
+            decoration: BoxDecoration(
+              color: isActive ? DT.successBg : DT.surfaceAlt,
+              borderRadius: BorderRadius.circular(DT.rFull),
+              border:
+                  Border.all(color: isActive ? Colors.transparent : DT.border),
+            ),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                      color: isActive ? DT.success : DT.textMuted,
+                      shape: BoxShape.circle)),
+              const SizedBox(width: DT.xs + 1),
+              Text(isActive ? '接单中' : '休息中',
+                  style: TextStyle(
+                      fontSize: DT.captionLarge.fontSize,
+                      fontWeight: FontWeight.w600,
+                      color: isActive ? DT.successText : DT.textSecondary)),
+            ]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _toggleStatus() async {
+    HapticFeedback.selectionClick();
+    final isActive = widget.profile?['status'] == 'active';
+    final newStatus = isActive ? 'inactive' : 'active';
+
+    // 从休息中切换到接单中时，检查是否至少启用了一种服务类型
+    if (!isActive) {
+      final homeService = widget.profile?['homeService'] == true;
+      final shopService = widget.profile?['shopService'] == true;
+      if (!homeService && !shopService) {
+        final result = await _showServiceTypeDialog();
+        if (result != true || !mounted) return;
+      }
+    }
+
+    try {
+      await TechnicianAuthService(context.read<ApiClient>())
+          .updateStatus(newStatus);
+      await widget.onRefresh();
+    } catch (_) {}
+  }
+
+  /// 强制弹窗：让美甲师选择开启上门/到店服务类型
+  Future<bool?> _showServiceTypeDialog() {
+    bool home = false;
+    bool shop = false;
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: DT.surface,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(DT.rCard)),
+          title: Text('请先开启服务类型',
+              style: DT.titleMedium.copyWith(color: DT.textPrimary)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('开启接单前，请至少选择一种服务类型',
+                  style: DT.bodySmall.copyWith(color: DT.textSecondary)),
+              const SizedBox(height: DT.lg),
+              _serviceTypeRow(ctx, '上门美甲', CupertinoIcons.location_fill,
+                  home, (v) => setDialogState(() => home = v)),
+              const SizedBox(height: DT.md),
+              _serviceTypeRow(ctx, '到店美甲', CupertinoIcons.house_fill,
+                  shop, (v) => setDialogState(() => shop = v)),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text('取消',
+                  style: DT.bodyMedium.copyWith(color: DT.textSecondary)),
+            ),
+            TextButton(
+              onPressed: (!home && !shop)
+                  ? null
+                  : () async {
+                      HapticFeedback.mediumImpact();
+                      try {
+                        final api = context.read<ApiClient>()
+                          ..setRole('technician');
+                        await TechnicianAuthService(api)
+                            .updateServiceType({
+                          'homeService': home,
+                          'shopService': shop,
+                        });
+                        if (ctx.mounted) Navigator.pop(ctx, true);
+                      } catch (_) {
+                        if (ctx.mounted) {
+                          NbToast.error(ctx, '保存失败，请重试');
+                        }
+                      }
+                    },
+              child: Text('确认',
+                  style: DT.bodyMedium.copyWith(
+                      color: (!home && !shop)
+                          ? DT.textMuted
+                          : DT.primary,
+                      fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _serviceTypeRow(BuildContext ctx, String label, IconData icon,
+      bool value, ValueChanged<bool> onChanged) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onChanged(!value);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: DT.md, vertical: DT.sm),
+        decoration: BoxDecoration(
+          color: value
+              ? DT.primarySoft
+              : DT.bg.withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Icon(icon,
+                size: 20,
+                color: value ? DT.primary : DT.textMuted),
+            const SizedBox(width: DT.md),
+            Expanded(
+              child: Text(label,
+                  style: DT.titleSmall.copyWith(
+                      color: value
+                          ? DT.textPrimary
+                          : DT.textMuted)),
+            ),
+            Transform.scale(
+              scale: 0.72,
+              child: CupertinoSwitch(
+                value: value,
+                activeTrackColor: DT.primary,
+                inactiveTrackColor: DT.bgWarm,
+                thumbColor: DT.cream,
+                onChanged: (_) {
+                  HapticFeedback.selectionClick();
+                  onChanged(!value);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── 下一单 ──
+  Widget _nextOrderCard(Map<String, dynamic>? o) {
+    if (o == null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(DT.lg),
+        decoration: _cardDeco,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('暂无行程安排', style: DT.titleSmall),
+            const SizedBox(height: DT.xs),
+            Text('当前没有待上门、待到店或服务中的预约，可以安排新预约。',
+                style: DT.bodySmall.copyWith(color: DT.textMuted, height: 1.5)),
+          ],
+        ),
+      );
+    }
+    final isShop = o['serviceType'] == 'shop';
+    final service = _serviceTitle(o);
+    final addr = isShop
+        ? (o['shopName']?.toString() ?? o['address']?.toString() ?? '')
+        : (o['address']?.toString() ?? '');
+    final phone = _customerPhone(o);
+    final customerName = _customerName(o);
+    final customerAvatar = _customerAvatarUrl(o);
+    final orderId = o['id'] as int?;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(DT.lg),
+      decoration: BoxDecoration(
+        gradient: DT.primaryGradient,
+        borderRadius: BorderRadius.circular(DT.rCard),
+        boxShadow: DT.shadowButtonLg,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                  child: Text(_bookingDate(o['startTime']?.toString()),
+                      style: DT.bodyMedium.copyWith(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontWeight: FontWeight.w600))),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: DT.sm + 2, vertical: DT.xs),
+                decoration: BoxDecoration(
+                    color: DT.surface.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(DT.rFull)),
+                child: Text(isShop ? '到店美甲' : '上门美甲',
+                    style: TextStyle(
+                        fontSize: DT.captionLarge.fontSize,
+                        fontWeight: FontWeight.w600,
+                        color: DT.textWhite)),
+              ),
+            ],
+          ),
+          const SizedBox(height: DT.md),
+          Row(
+            children: [
+              ClipOval(
+                child: (customerAvatar != null && customerAvatar.isNotEmpty)
+                    ? CachedNetworkImage(
+                        imageUrl: customerAvatar,
+                        width: 32,
+                        height: 32,
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) => Container(
+                            width: 32, height: 32, color: DT.primarySoft),
+                        errorWidget: (_, __, ___) => Container(
+                            width: 32,
+                            height: 32,
+                            alignment: Alignment.center,
+                            decoration: const BoxDecoration(
+                                color: DT.primarySoft, shape: BoxShape.circle),
+                            child: Text(customerName.substring(0, 1),
+                                style: const TextStyle(
+                                    fontSize: 13,
+                                    color: DT.primary,
+                                    fontWeight: FontWeight.w600))))
+                    : Container(
+                        width: 32,
+                        height: 32,
+                        alignment: Alignment.center,
+                        decoration: const BoxDecoration(
+                            color: DT.primarySoft, shape: BoxShape.circle),
+                        child: Text(customerName.substring(0, 1),
+                            style: const TextStyle(
+                                fontSize: 13,
+                                color: DT.primary,
+                                fontWeight: FontWeight.w600))),
+              ),
+              const SizedBox(width: DT.sm),
+              Expanded(
+                child: Text(customerName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: DT.bodyMedium.copyWith(
+                        color: Colors.white.withValues(alpha: 0.95),
+                        fontWeight: FontWeight.w600)),
+              ),
+              const SizedBox(width: DT.sm),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(service,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.right,
+                      style: DT.bodySmall.copyWith(
+                          color: DT.textWhite,
+                          fontWeight: FontWeight.w700,
+                          height: 1.25)),
+                ),
+              ),
+            ],
+          ),
+          if (addr.isNotEmpty) ...[
+            const SizedBox(height: DT.sm),
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(CupertinoIcons.location_solid,
+                  size: 15, color: Colors.white.withValues(alpha: 0.85)),
+              const SizedBox(width: DT.xs + 1),
+              Expanded(
+                  child: Text(addr,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: DT.bodySmall.copyWith(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          height: 1.4))),
+            ]),
+          ],
+          const SizedBox(height: DT.lg),
+          Row(children: [
+            Expanded(
+                child: _heroBtn(CupertinoIcons.location_north_line_fill, '开始导航',
+                    filled: true, onTap: () => _navigate(o))),
+            const SizedBox(width: DT.sm + 2),
+            Expanded(
+                child: _heroBtn(CupertinoIcons.phone_fill, '联系客户',
+                    filled: false, onTap: () => _call(phone))),
+            if (orderId != null) ...[
+              const SizedBox(width: DT.sm + 2),
+              GestureDetector(
+                onTap: () =>
+                    _push(TechnicianOrderDetailScreen(orderId: orderId)),
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                      color: DT.surface.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(DT.md)),
+                  child: const Icon(CupertinoIcons.chevron_right,
+                      color: DT.textWhite, size: 18),
+                ),
+              ),
+            ],
+          ]),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroBtn(IconData icon, String label,
+      {required bool filled, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: filled ? Colors.white : Colors.white.withValues(alpha: 0.18),
+          borderRadius: BorderRadius.circular(DT.rFull),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, size: 16, color: filled ? DT.primary : DT.textWhite),
+          const SizedBox(width: DT.xs + 1),
+          Text(label,
+              style: TextStyle(
+                  fontSize: DT.bodyMedium.fontSize,
+                  fontWeight: FontWeight.w600,
+                  color: filled ? DT.primary : DT.textWhite)),
+        ]),
+      ),
+    );
+  }
+
+  // ── 待处理事项 ──
+  Widget _pendingCard() {
+    final pendingConfirm =
+        _orders.where((o) => o['status'] == 'pending_confirm').length;
+    final unpaidDeposit = _orders
+        .where((o) =>
+            _isActive(o) &&
+            !((o['depositPaid'] ?? o['isDepositPaid']) as bool? ?? false))
+        .length;
+    final items = <(IconData, int, String, VoidCallback)>[
+      if (pendingConfirm > 0)
+        (
+          CupertinoIcons.checkmark_seal,
+          pendingConfirm,
+          '个预约待确认',
+          () => _push(const TechnicianOrdersScreen(
+              initialStatusFilter: 'pending_confirm'))
+        ),
+      if (unpaidDeposit > 0)
+        (
+          CupertinoIcons.money_yen_circle,
+          unpaidDeposit,
+          '个客户未支付定金',
+          () => _push(
+              const TechnicianOrdersScreen(initialUnpaidDepositOnly: true))
+        ),
+      if (_unread > 0)
+        (
+          CupertinoIcons.chat_bubble_2,
+          _unread,
+          '条未读消息',
+          () => _push(const TechnicianMessagesScreen(initialTab: 'unread'))
+        ),
+    ];
+    if (items.isEmpty) {
+      return GlassContainer(
+        tint: DT.surface,
+        padding: const EdgeInsets.all(DT.lg),
+        borderRadius: DT.rCard,
+        opacity: 0.52,
+        blur: DT.glassBlurStandard,
+        showBorder: false,
+        boxShadow: DT.shadowTile,
+        child: Row(children: [
+          const Icon(CupertinoIcons.checkmark_circle_fill,
+              size: 20, color: DT.success),
+          const SizedBox(width: DT.sm),
+          Expanded(
+              child: Text('今日待办已清空，可以专心服务客户。',
+                  style: DT.bodyMedium.copyWith(color: DT.textSecondary))),
+        ]),
+      );
+    }
+    return GlassContainer(
+      tint: DT.surface,
+      borderRadius: DT.rCard,
+      opacity: 0.52,
+      blur: DT.glassBlurStandard,
+      showBorder: false,
+      boxShadow: DT.shadowTile,
+      padding: const EdgeInsets.all(DT.sm),
+      child: Column(
+        children: [
+          for (var i = 0; i < items.length; i++) ...[
+            if (i > 0) const SizedBox(height: DT.sm),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: DT.shadowSm,
+              ),
+              child: Material(
+                type: MaterialType.transparency,
+                child: ListTile(
+                  onTap: items[i].$4,
+                  minVerticalPadding: DT.sm,
+                  leading: Container(
+                    width: 38,
+                    height: 38,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                        color: DT.primarySoft,
+                        borderRadius: BorderRadius.circular(14)),
+                    child: Icon(items[i].$1, size: 18, color: DT.primary),
+                  ),
+                  title: Row(children: [
+                    Text('${items[i].$2}',
+                        style: DT.titleSmall.copyWith(color: DT.primary)),
+                    const SizedBox(width: DT.xs),
+                    Expanded(child: Text(items[i].$3, style: DT.bodyMedium)),
+                  ]),
+                  trailing: const Icon(CupertinoIcons.chevron_right,
+                      size: 18, color: DT.textQuaternary),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ── 今日行程 ──
+  Widget _todayScheduleCard(List<Map<String, dynamic>> todayOrders) {
+    if (todayOrders.isEmpty) {
+      return GlassContainer(
+        tint: DT.surface,
+        padding: const EdgeInsets.symmetric(vertical: DT.space32, horizontal: DT.lg),
+        borderRadius: DT.rCard,
+        opacity: 0.52,
+        blur: DT.glassBlurStandard,
+        showBorder: false,
+        boxShadow: DT.shadowTile,
+        child: Center(
+            child: Text('今天还没有新的预约安排',
+                style: DT.bodyMedium.copyWith(color: DT.textMuted))),
+      );
+    }
+    return GlassContainer(
+      tint: DT.surface,
+      borderRadius: DT.rCard,
+      opacity: 0.52,
+      blur: DT.glassBlurStandard,
+      showBorder: false,
+      boxShadow: DT.shadowTile,
+      padding: const EdgeInsets.all(DT.sm),
+      child: Column(
+        children: [
+          for (var i = 0; i < todayOrders.length; i++) ...[
+            if (i > 0) const SizedBox(height: DT.sm),
+            _scheduleRow(todayOrders[i]),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _scheduleRow(Map<String, dynamic> o) {
+    final isShop = o['serviceType'] == 'shop';
+    final service = o['serviceName']?.toString() ?? '预约服务';
+    final customer = o['customerName']?.toString() ?? '客户';
+    final address = isShop
+        ? (o['shopName']?.toString() ?? o['address']?.toString() ?? '到店服务')
+        : (o['address']?.toString() ?? '待确认地址');
+    final phone = o['customerPhone']?.toString() ?? '';
+    final customerAvatar = o['customerAvatar']?.toString();
+    final orderId = o['id'] as int?;
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: orderId != null
+            ? () => _push(TechnicianOrderDetailScreen(orderId: orderId))
+            : null,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.all(DT.lg),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: DT.shadowSm,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(_clock(o['startTime']?.toString()),
+                            style: DT.titleLarge.copyWith(
+                              color: DT.textPrimary,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures()
+                              ],
+                            )),
+                        const SizedBox(width: DT.sm),
+                        _scheduleAvatar(customer, customerAvatar),
+                        const SizedBox(width: DT.xs),
+                        Flexible(
+                          child: Text(customer,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: DT.titleSmall),
+                        ),
+                        const SizedBox(width: DT.xs),
+                        Flexible(
+                          child: Text(service,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: DT.bodySmall
+                                  .copyWith(color: DT.textSecondary)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: DT.sm),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(CupertinoIcons.location_solid,
+                            size: 15,
+                            color: isShop ? DT.primary : DT.warningText),
+                        const SizedBox(width: DT.xs + 1),
+                        Expanded(
+                          child: Text(address,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: DT.bodySmall.copyWith(
+                                  color: DT.textSecondary, height: 1.4)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: DT.sm),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                          color: isShop ? DT.primarySoft : DT.warningBg,
+                          borderRadius: BorderRadius.circular(DT.rFull)),
+                      child: Text(isShop ? '到店' : '上门',
+                          style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: isShop ? DT.primary : DT.warningText)),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: DT.md),
+              GestureDetector(
+                onTap: () => _call(phone),
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                      color: DT.primarySoft,
+                      borderRadius: BorderRadius.circular(DT.rFull)),
+                  child: const Icon(CupertinoIcons.phone,
+                      size: 18, color: DT.primary),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── 行程卡片头像 ──
+  Widget _scheduleAvatar(String name, String? url) {
+    if (url != null && url.isNotEmpty) {
+      return ClipOval(
+          child: CachedNetworkImage(
+              imageUrl: url,
+              width: 28,
+              height: 28,
+              fit: BoxFit.cover,
+              errorWidget: (_, __, ___) => _scheduleAvatarFallback(name)));
+    }
+    return _scheduleAvatarFallback(name);
+  }
+
+  Widget _scheduleAvatarFallback(String name) {
+    return Container(
+      width: 28,
+      height: 28,
+      alignment: Alignment.center,
+      decoration:
+          const BoxDecoration(color: DT.primarySoft, shape: BoxShape.circle),
+      child: Text(name.isNotEmpty ? name.substring(0, 1) : '?',
+          style: const TextStyle(
+              fontSize: 12, color: DT.primary, fontWeight: FontWeight.w600)),
+    );
+  }
+
+  // ── 今日热门作品 ──
+  Widget _popularWorks() {
+    final works = [..._works]..sort((a, b) {
+        final fa = (a['isFeatured'] as bool? ?? false) ? 1 : 0;
+        final fb = (b['isFeatured'] as bool? ?? false) ? 1 : 0;
+        if (fa != fb) return fb - fa;
+        final la =
+            (a['favoriteCount'] as int?) ?? (a['likeCount'] as int?) ?? 0;
+        final lb =
+            (b['favoriteCount'] as int?) ?? (b['likeCount'] as int?) ?? 0;
+        return lb - la;
+      });
+    final top = works.take(8).toList();
+    if (top.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: DT.space32, horizontal: DT.lg),
+        decoration: _cardDeco,
+        child: Center(
+            child: Text('还没有推荐作品，去作品管理设置好看的款式吧。',
+                textAlign: TextAlign.center,
+                style: DT.bodyMedium.copyWith(color: DT.textMuted))),
+      );
+    }
+    return SizedBox(
+      height: 168,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: top.length,
+        separatorBuilder: (_, __) => const SizedBox(width: DT.md),
+        itemBuilder: (_, i) => _workCard(top[i]),
+      ),
+    );
+  }
+
+  Widget _workCard(Map<String, dynamic> w) {
+    final cover = w['coverUrl']?.toString();
+    final imgs = (w['imageUrls'] as List<dynamic>?) ?? const [];
+    final url = (cover != null && cover.isNotEmpty)
+        ? cover
+        : (imgs.isNotEmpty ? imgs.first.toString() : null);
+    final count = (w['favoriteCount'] as int?) ?? (w['likeCount'] as int?) ?? 0;
+    return GestureDetector(
+      onTap: () => _push(TechnicianWorkDetailScreen(work: w)),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(DT.radius16),
+        child: SizedBox(
+          width: 132,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (url != null)
+                CachedNetworkImage(
+                    imageUrl: url,
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) => Container(color: DT.surfaceAlt),
+                    errorWidget: (_, __, ___) => Container(
+                        color: DT.surfaceAlt,
+                        child: const Icon(CupertinoIcons.photo,
+                            color: DT.textTertiary)))
+              else
+                Container(
+                    color: DT.surfaceAlt,
+                    child: const Center(
+                        child: Text('作品',
+                            style: TextStyle(color: DT.textTertiary)))),
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Color(0x66000000)],
+                      stops: [0.55, 1.0]),
+                ),
+              ),
+              Positioned(
+                left: 8,
+                right: 8,
+                bottom: 8,
+                child: Row(children: [
+                  Icon(CupertinoIcons.heart_fill,
+                      size: 12, color: Colors.white.withValues(alpha: 0.9)),
+                  const SizedBox(width: 4),
+                  Text('$count',
+                      style:
+                          const TextStyle(fontSize: 11, color: Colors.white)),
+                  if (w['isFeatured'] as bool? ?? false) ...[
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                          color: DT.primary,
+                          borderRadius: BorderRadius.circular(DT.rFull)),
+                      child: const Text('精选',
+                          style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white)),
+                    ),
+                  ],
+                ]),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── 分享名片 ──
+  /// 唤起系统分享；带 sharePositionOrigin（iPad 必需）；失败回退复制链接。
+  Future<void> _shareLink(String text, String fallbackLink) async {
+    final box = context.findRenderObject() as RenderBox?;
+    try {
+      await Share.share(text,
+          sharePositionOrigin:
+              box != null ? box.localToGlobal(Offset.zero) & box.size : null);
+    } catch (_) {
+      await Clipboard.setData(ClipboardData(text: fallbackLink));
+      if (mounted) NbToast.success(context, '链接已复制，发给客户即可');
+    }
+  }
+
+  String _shareUrl(Map<String, dynamic>? profile) {
+    const base = 'https://m.lunails.cn';
+    final code = profile?['invitationCode']?.toString();
+    if (code != null && code.isNotEmpty) {
+      return '$base/artist/${Uri.encodeComponent(code)}';
+    }
+    return '$base/artist/${profile?['id']}';
+  }
+
+  Widget _shareCard(Map<String, dynamic>? profile) {
+    final name = profile?['name']?.toString() ?? '美甲师';
+    final city = profile?['city']?.toString() ?? '';
+    final code = profile?['invitationCode']?.toString();
+    final home = profile?['homeService'] == true;
+    final shop = profile?['shopService'] == true;
+    final url = _shareUrl(profile);
+    return Container(
+      padding: const EdgeInsets.all(DT.lg),
+      decoration: BoxDecoration(
+        gradient: DT.primaryGradient,
+        borderRadius: BorderRadius.circular(DT.rCard),
+        boxShadow: DT.shadowButtonLg,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 点击进入名片预览
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              HapticFeedback.lightImpact();
+              _push(const TechnicianBusinessCardScreen());
+            },
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                      color: DT.surface,
+                      borderRadius: BorderRadius.circular(12)),
+                  child: QrImageView(
+                      data: url,
+                      version: QrVersions.auto,
+                      size: 64,
+                      padding: EdgeInsets.zero),
+                ),
+                const SizedBox(width: DT.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: DT.titleLarge.copyWith(color: DT.textWhite)),
+                      if (city.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(city,
+                            style: DT.bodySmall.copyWith(
+                                color: Colors.white.withValues(alpha: 0.85))),
+                      ],
+                      const SizedBox(height: DT.sm),
+                      Wrap(spacing: 6, runSpacing: 6, children: [
+                        if (home) _cardTag('🚗 上门'),
+                        if (shop) _cardTag('🏪 到店'),
+                        if (code != null && code.isNotEmpty)
+                          _cardTag('邀请码 $code'),
+                      ]),
+                    ],
+                  ),
+                ),
+                const Icon(CupertinoIcons.chevron_right,
+                    size: 18, color: Colors.white70),
+              ],
+            ),
+          ),
+          const SizedBox(height: DT.md),
+          Row(children: [
+            Expanded(
+                child: _heroBtn(CupertinoIcons.doc_on_clipboard, '复制链接',
+                    filled: true, onTap: () {
+              Clipboard.setData(ClipboardData(text: url));
+              NbToast.success(context, '链接已复制，发给客户即可');
+            })),
+            const SizedBox(width: DT.sm + 2),
+            Expanded(
+                child: _heroBtn(CupertinoIcons.share, '分享名片', filled: false,
+                    onTap: () => _shareLink(
+                        '$name 的美甲主页，长按或点击预约：$url', url))),
+          ]),
+        ],
+      ),
+    );
+  }
+
+  Widget _cardTag(String t) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+          color: DT.surface.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(DT.rFull)),
+      child: Text(t,
+          style: const TextStyle(
+              fontSize: 11, color: DT.textWhite, fontWeight: FontWeight.w500)),
+    );
+  }
+
+  String _customerName(Map<String, dynamic> order) {
+    final client = order['client'] as Map<String, dynamic>?;
+    final customer = order['customer'] as Map<String, dynamic>?;
+    final clientUser = order['clientUser'] as Map<String, dynamic>?;
+    final customerClient = customer?['client'] as Map<String, dynamic>?;
+    final customerClientUser = customer?['clientUser'] as Map<String, dynamic>?;
+    return _nameStr(order['customerName']) ??
+        _nameStr(order['clientName']) ??
+        _nameStr(clientUser?['nickname']) ??
+        _nameStr(clientUser?['name']) ??
+        _nameStr(client?['nickname']) ??
+        _nameStr(client?['name']) ??
+        _nameStr(customer?['name']) ??
+        _nameStr(customer?['nickname']) ??
+        _nameStr(customerClient?['nickname']) ??
+        _nameStr(customerClient?['name']) ??
+        _nameStr(customerClientUser?['nickname']) ??
+        _nameStr(customerClientUser?['name']) ??
+        '客户';
+  }
+
+  String _customerPhone(Map<String, dynamic> order) {
+    final client = order['client'] as Map<String, dynamic>?;
+    final customer = order['customer'] as Map<String, dynamic>?;
+    final clientUser = order['clientUser'] as Map<String, dynamic>?;
+    final customerClientUser = customer?['clientUser'] as Map<String, dynamic>?;
+    return _str(order['customerPhone']) ??
+        _str(order['clientPhone']) ??
+        _str(clientUser?['phone']) ??
+        _str(client?['phone']) ??
+        _str(customer?['phone']) ??
+        _str(customerClientUser?['phone']) ??
+        '';
+  }
+
+  String? _customerAvatarUrl(Map<String, dynamic> order) {
+    final client = order['client'] as Map<String, dynamic>?;
+    final customer = order['customer'] as Map<String, dynamic>?;
+    final clientUser = order['clientUser'] as Map<String, dynamic>?;
+    final customerClient = customer?['client'] as Map<String, dynamic>?;
+    final customerClientUser = customer?['clientUser'] as Map<String, dynamic>?;
+    return _str(order['avatarUrl']) ??
+        _str(order['customerAvatar']) ??
+        _str(order['clientAvatar']) ??
+        _str(clientUser?['avatarUrl']) ??
+        _str(client?['avatarUrl']) ??
+        _str(client?['avatar']) ??
+        _str(customer?['avatarUrl']) ??
+        _str(customer?['customerAvatar']) ??
+        _str(customerClient?['avatarUrl']) ??
+        _str(customerClientUser?['avatarUrl']);
+  }
+
+  String _serviceTitle(Map<String, dynamic> order) {
+    final work = order['work'] as Map<String, dynamic>?;
+    final design = order['design'] as Map<String, dynamic>?;
+    return _str(order['customTitle']) ??
+        _str(work?['title']) ??
+        _str(order['workTitle']) ??
+        _str(design?['title']) ??
+        _str(order['designTitle']) ??
+        _str(order['serviceName']) ??
+        '预约服务';
+  }
+
+  String? _str(dynamic value) {
+    final s = value?.toString().trim();
+    if (s == null || s.isEmpty || s == 'null') return null;
+    return s;
+  }
+
+  String? _nameStr(dynamic value) {
+    final s = _str(value);
+    if (s == null || s == '客户') return null;
+    return s;
   }
 }

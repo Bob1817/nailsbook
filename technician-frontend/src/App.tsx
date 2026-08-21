@@ -12,6 +12,10 @@ const Login = lazy(async () => {
   return { default: module.Login };
 });
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const SetPasswordPage = lazy(async () => {
+  const module = await import('./pages/SetPasswordPage');
+  return { default: module.SetPasswordPage };
+});
 const HomePage = lazy(async () => {
   const module = await import('./pages/HomePage');
   return { default: module.HomePage };
@@ -44,18 +48,20 @@ const ShopEdit = lazy(() => import('./pages/ShopEdit'));
 const ServicesPage = lazy(() => import('./pages/ServicesPage'));
 const HomeServiceSettingsPage = lazy(() => import('./pages/HomeServiceSettingsPage'));
 const ProfileSettingsPage = lazy(() => import('./pages/ProfileSettingsPage'));
+const ProfileCompletionPage = lazy(() => import('./pages/ProfileCompletionPage'));
+const SetupGuidePage = lazy(() => import('./pages/SetupGuidePage'));
 const OrderDetailPage = lazy(() => import('./pages/OrderDetailPage'));
 const SubscriptionPage = lazy(async () => {
   const module = await import('./pages/SubscriptionPage');
   return { default: module.SubscriptionPage };
 });
-const ServiceTimePage = lazy(async () => {
-  const module = await import('./pages/ServiceTimePage');
-  return { default: module.ServiceTimePage };
-});
 const TagManagementPage = lazy(async () => {
   const module = await import('./pages/TagManagementPage');
   return { default: module.TagManagementPage };
+});
+const BindingApplicationsPage = lazy(async () => {
+  const module = await import('./pages/BindingApplicationsPage');
+  return { default: module.BindingApplicationsPage };
 });
 const CustomerDetailPage = lazy(() => import('./pages/CustomerDetailPage'));
 const AccountSecurityPage = lazy(() => import('./pages/AccountSecurityPage'));
@@ -85,6 +91,7 @@ function App() {
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/set-password" element={<SetPasswordPage />} />
                 <Route
                   element={
                     <ProtectedRoute>
@@ -106,9 +113,11 @@ function App() {
                   <Route path="/services" element={<ServicesPage />} />
                   <Route path="/home-service-settings" element={<HomeServiceSettingsPage />} />
                   <Route path="/profile-settings" element={<ProfileSettingsPage />} />
+                  <Route path="/profile-completion" element={<ProfileCompletionPage />} />
+                  <Route path="/setup-guide" element={<SetupGuidePage />} />
                   <Route path="/subscription" element={<SubscriptionPage />} />
-                  <Route path="/service-time" element={<ServiceTimePage />} />
                   <Route path="/tag-management" element={<TagManagementPage />} />
+                  <Route path="/binding-applications" element={<BindingApplicationsPage />} />
                   <Route path="/orders/:id" element={<OrderDetailPage />} />
                   <Route path="/account-security" element={<AccountSecurityPage />} />
                   <Route path="/notification-settings" element={<NotificationSettingsPage />} />

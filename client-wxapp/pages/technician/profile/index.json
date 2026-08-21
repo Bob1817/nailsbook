@@ -1,3 +1,9 @@
 {
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "nav-bar": "/components/nav-bar/index",
+    "tab-bar": "/components/tab-bar/index",
+    "rest-day-calendar": "/components/rest-day-calendar/index"
+  },
   "navigationBarTitleText": "我的"
 }

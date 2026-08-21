@@ -4,6 +4,8 @@ import {
   IsInt,
   IsArray,
   ValidateNested,
+  IsBoolean,
+  MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -15,6 +17,12 @@ class ShopAddressDto {
 }
 
 export class CreateClientOrderDto {
+  @ApiPropertyOptional({ description: '客户端生成的预约申请幂等键' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  applicationKey?: string;
+
   @ApiProperty({ description: '美甲师ID', example: 1 })
   @IsInt()
   techId: number;
@@ -66,9 +74,27 @@ export class CreateClientOrderDto {
   @IsString({ each: true })
   customImages?: string[];
 
+  @ApiPropertyOptional({ description: '预约同款的来源作品 ID' })
+  @IsOptional()
+  @IsInt()
+  sourceWorkId?: number;
+
+  @ApiPropertyOptional({ description: '预约发起入口，仅用于转化归因' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  attributionSource?: string;
+
   @ApiPropertyOptional({ description: '店铺地址（到店服务时使用）' })
   @IsOptional()
   @ValidateNested()
   @Type(() => ShopAddressDto)
   shopAddress?: ShopAddressDto;
+
+  @ApiPropertyOptional({
+    description: '从聊天发起的预约，跳过服务内容必填校验',
+  })
+  @IsOptional()
+  @IsBoolean()
+  chatMode?: boolean;
 }

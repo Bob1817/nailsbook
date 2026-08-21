@@ -9,15 +9,21 @@ export interface NailWork {
   tags: string[];
   likeCount: number;
   commentCount: number;
+  favoriteCount?: number;
+  isLiked?: boolean;
   technicianName: string;
+  technicianAvatarUrl?: string | null;
   technicianId?: number;
   createdAt: string;
   updatedAt: string;
 }
 
+export type WorksSortBy = 'latest' | 'likes' | 'comments' | 'favorites';
+
 export interface WorkDetail extends NailWork {
   isLiked: boolean;
   isFavorited: boolean;
+  technician?: { id: number; name: string; avatarUrl: string | null };
   comments: Comment[];
 }
 
@@ -43,8 +49,12 @@ export interface Comment {
 }
 
 export const worksService = {
-  async getWorks(techId?: number): Promise<NailWork[]> {
-    const response = await api.get('/works', techId ? { params: { techId } } : undefined);
+  async getWorks(techId?: number, sortBy?: WorksSortBy, sortDir?: 'asc' | 'desc'): Promise<NailWork[]> {
+    const params: Record<string, string | number> = {};
+    if (techId) params.techId = techId;
+    if (sortBy) params.sortBy = sortBy;
+    if (sortDir) params.sortDir = sortDir;
+    const response = await api.get('/works', Object.keys(params).length ? { params } : undefined);
     return response.data;
   },
 
@@ -85,6 +95,14 @@ export const worksService = {
 
   async deleteComment(workId: number, commentId: number): Promise<{ success: boolean }> {
     const response = await api.delete(`/works/${workId}/comments/${commentId}`);
+    return response.data;
+  },
+
+  async reportComment(
+    commentId: number,
+    reason: 'spam' | 'inappropriate' | 'harassment' | 'other',
+  ): Promise<{ success: boolean; alreadyReported: boolean }> {
+    const response = await api.post('/client/reports', { commentId, reason });
     return response.data;
   },
 };

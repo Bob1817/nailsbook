@@ -32,7 +32,7 @@ export class TechnicianJwtStrategy extends PassportStrategy(
     }
     const technician = await this.prisma.technician.findUnique({
       where: { id: payload.sub },
-      select: { tokenVersion: true },
+      select: { tokenVersion: true, passwordHash: true, status: true },
     });
     if (!technician) {
       throw new UnauthorizedException('美甲师不存在');
@@ -41,10 +41,13 @@ export class TechnicianJwtStrategy extends PassportStrategy(
     if ((payload.tv ?? 0) !== technician.tokenVersion) {
       throw new UnauthorizedException('登录状态已失效，请重新登录');
     }
+    // 游客美甲师：passwordHash 为空且 status 为 inactive
+    const isTourist = !technician.passwordHash && technician.status === 'inactive';
     return {
       technicianId: payload.sub,
       phone: payload.phone,
       userType: payload.userType,
+      isTourist,
     };
   }
 }

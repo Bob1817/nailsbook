@@ -1,0 +1,24 @@
+page { background: var(--bg-page); }
+.page { padding: 32rpx; }
+.card, .fund-card, .relation { background: var(--bg-card); border-radius: var(--radius-md); padding: 32rpx; }
+.title { display: block; font-size: var(--font-lg); font-weight: var(--weight-semibold); color: var(--text-primary); }
+.notice { display: block; margin: 16rpx 0 28rpx; color: var(--text-muted); font-size: var(--font-sm); }
+.primary { min-height: 88rpx; border-radius: var(--radius-xl); background: #ff6685; color: var(--text-inverse); font-size: var(--font-md); }
+.section-title { margin: 40rpx 0 20rpx; font-weight: var(--weight-semibold); color: var(--text-primary); }
+.list { display: flex; flex-direction: column; gap: 16rpx; }
+.relation { display: flex; align-items: center; justify-content: space-between; min-height: 88rpx; }
+.name, .tech { display: block; }
+.name { color: var(--text-primary); }
+.tech, .status, .empty { color: var(--text-muted); font-size: var(--font-sm); }
+.empty { padding: 48rpx 0; text-align: center; }
+.fund-card { margin-top: var(--space-md); }
+.fund-label { display:block; color: var(--text-muted); font-size: var(--font-sm); }
+.fund-balance { display:block; margin-top:8rpx; color: var(--text-primary); font-size:52rpx; font-weight: var(--weight-bold); }
+.fund-summary,.fund-account { min-height:88rpx; display:flex; align-items:center; justify-content:space-between; color: var(--text-muted); font-size: var(--font-sm); }
+.fund-account { border-top:1rpx solid #f2edef; color: var(--text-body); }
+.ledger-row { min-height:100rpx; display:flex; align-items:center; justify-content:space-between; border-top:1rpx solid #f2edef; }
+.ledger-source,.ledger-date,.ledger-amount,.ledger-status { display:block; }
+.ledger-source { color: var(--text-primary); font-size: var(--font-sm); }
+.ledger-date,.ledger-status { margin-top:6rpx; color: var(--text-faint); font-size: var(--font-xs); }
+.ledger-amount-wrap { text-align:right; }
+.ledger-amount { color:#ff6685; font-weight: var(--weight-semibold); }

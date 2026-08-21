@@ -6,7 +6,8 @@ export type OrderStatus =
   | 'pending_shop'
   | 'in_progress'
   | 'completed'
-  | 'cancelled';
+  | 'cancelled'
+  | 'expired';
 
 export interface TechnicianOrder {
   id: number;
@@ -83,6 +84,7 @@ export const orderStatusLabels: Record<OrderStatus, string> = {
   in_progress: '进行中',
   completed: '已完成',
   cancelled: '已取消',
+  expired: '已过期',
 };
 
 export const orderStatusClasses: Record<OrderStatus, string> = {
@@ -94,6 +96,7 @@ export const orderStatusClasses: Record<OrderStatus, string> = {
   in_progress: 'bg-sky-100 text-sky-700',
   completed: 'bg-gray-100 text-gray-600',
   cancelled: 'bg-red-100 text-red-600',
+  expired: 'bg-gray-100 text-gray-500',
 };
 
 export const orderStatusActions: Record<OrderStatus, OrderStatus[]> = {
@@ -105,6 +108,7 @@ export const orderStatusActions: Record<OrderStatus, OrderStatus[]> = {
   in_progress: ['completed'],
   completed: [],
   cancelled: [],
+  expired: [],
 };
 
 export const fallbackOrders: TechnicianOrder[] = [

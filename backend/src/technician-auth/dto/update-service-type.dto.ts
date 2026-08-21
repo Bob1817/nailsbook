@@ -100,13 +100,17 @@ export class ShopAddressDto {
 }
 
 export class UpdateTechnicianServiceTypeDto {
-  @ApiProperty({ description: '是否提供上门服务', example: true })
+  // 局部更新：各入口（上门设置 / 到店设置 / 店铺地址）只提交各自字段，
+  // 未提交的字段保持不变，因此均为可选。
+  @ApiPropertyOptional({ description: '是否提供上门服务', example: true })
   @IsBoolean()
-  homeService: boolean;
+  @IsOptional()
+  homeService?: boolean;
 
-  @ApiProperty({ description: '是否提供到店服务', example: true })
+  @ApiPropertyOptional({ description: '是否提供到店服务', example: true })
   @IsBoolean()
-  shopService: boolean;
+  @IsOptional()
+  shopService?: boolean;
 
   @ApiPropertyOptional({ description: '店铺地址列表', type: [ShopAddressDto] })
   @IsOptional()

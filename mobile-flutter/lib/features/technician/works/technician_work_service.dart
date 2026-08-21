@@ -37,6 +37,36 @@ class TechnicianWorkService {
   Future<Map<String, dynamic>> toggleFeatured(int id) async {
     return _api.post('/works/$id/toggle-featured');
   }
+
+  // ── 评论管理 ──
+
+  Future<List<Map<String, dynamic>>> comments(int workId) async {
+    final items = await _api.getList('/works/$workId/comments');
+    return items.cast<Map<String, dynamic>>();
+  }
+
+  Future<Map<String, dynamic>> addComment(int workId, String content, {int? parentId}) async {
+    return _api.post('/works/$workId/comments', body: {
+      'content': content,
+      if (parentId != null) 'parentId': parentId,
+    });
+  }
+
+  Future<void> deleteComment(int workId, int commentId) async {
+    await _api.delete('/works/$workId/comments/$commentId');
+  }
+
+  Future<Map<String, dynamic>> pinComment(int workId, int commentId) async {
+    return _api.post('/works/$workId/comments/$commentId/pin');
+  }
+
+  Future<Map<String, dynamic>> hideComment(int workId, int commentId) async {
+    return _api.post('/works/$workId/comments/$commentId/hide');
+  }
+
+  Future<void> markCommentsAsRead(int workId) async {
+    await _api.post('/works/$workId/mark-comments-read');
+  }
 }
 
 class TechnicianServiceService {

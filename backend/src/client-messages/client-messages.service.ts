@@ -9,6 +9,7 @@ import { CreateClientMessageDto } from './dto/create-client-message.dto';
 const ALLOWED_MESSAGE_TYPES = new Set([
   'text',
   'image',
+  'voice',
   'system',
   'quote',
   'booking',

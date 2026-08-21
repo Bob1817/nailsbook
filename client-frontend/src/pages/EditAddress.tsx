@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { addressService } from '../services/address';
+import RegionDistrictSelect from '../components/RegionDistrictSelect';
 
 const EditAddress: React.FC = () => {
   const navigate = useNavigate();
@@ -139,38 +140,10 @@ const EditAddress: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900">服务地址</h3>
             <p className="mt-1 text-sm text-gray-500">补充你的常用上门服务地点与门禁信息</p>
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">省</label>
-              <input
-                type="text"
-                value={formData.province}
-                onChange={(e) => setFormData({ ...formData, province: e.target.value })}
-                placeholder="省"
-                className="w-full px-3 py-3 bg-gray-50 rounded-xl text-gray-900 outline-none focus:ring-2 focus:ring-[#FF6B8A]/20 text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">市</label>
-              <input
-                type="text"
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                placeholder="市"
-                className="w-full px-3 py-3 bg-gray-50 rounded-xl text-gray-900 outline-none focus:ring-2 focus:ring-[#FF6B8A]/20 text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">区</label>
-              <input
-                type="text"
-                value={formData.district}
-                onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                placeholder="区"
-                className="w-full px-3 py-3 bg-gray-50 rounded-xl text-gray-900 outline-none focus:ring-2 focus:ring-[#FF6B8A]/20 text-sm"
-              />
-            </div>
-          </div>
+          <RegionDistrictSelect
+            value={{ province: formData.province, city: formData.city, district: formData.district }}
+            onChange={(v) => setFormData({ ...formData, province: v.province, city: v.city, district: v.district })}
+          />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">详细地址</label>
             <input

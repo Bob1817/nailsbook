@@ -1,10 +1,11 @@
+<nav-bar title="编辑作品" showBack/>
 <view class="container">
 
   <view class="section">
     <view class="form-item">
       <text class="label">封面图片 *</text>
       <view class="cover-picker" bindtap="chooseCover">
-        <image wx:if="{{coverUrl}}" class="cover-preview" src="{{coverUrl}}" mode="aspectFill"/>
+    <image wx:if="{{coverUrl}}" class="cover-preview" src="{{coverUrl}}" mode="aspectFill" aria-label="作品封面预览"/>
         <view wx:else class="cover-placeholder">
           <text class="cover-icon">+</text>
           <text class="cover-hint">点击上传封面</text>
@@ -16,11 +17,11 @@
   <view class="section">
     <view class="form-item">
       <text class="label">作品标题 *</text>
-      <input class="input" placeholder="给作品起个名字" value="{{title}}" data-field="title" bindinput="onInput"/>
+      <input class="input" placeholder="给作品起个名字" value="{{title}}" data-field="title" bindinput="onInput" confirm-type="next" cursor-spacing="24"/>
     </view>
     <view class="form-item">
       <text class="label">价格（元）</text>
-      <input class="input" type="digit" placeholder="例：128（选填）" value="{{price}}" data-field="price" bindinput="onInput"/>
+      <input class="input" type="digit" placeholder="例：128（选填）" value="{{price}}" data-field="price" bindinput="onInput" confirm-type="next" cursor-spacing="24"/>
     </view>
     <view class="form-item">
       <text class="label">标签</text>
@@ -28,7 +29,21 @@
     </view>
     <view class="form-item">
       <text class="label">描述</text>
-      <textarea class="textarea" placeholder="作品介绍（选填）" value="{{description}}" data-field="description" bindinput="onInput"/>
+      <textarea class="textarea" placeholder="作品介绍（选填）" value="{{description}}" data-field="description" bindinput="onInput" adjust-position cursor-spacing="120"/>
+    </view>
+    <view class="form-item">
+      <text class="label">设计理念</text>
+      <textarea class="textarea aesthetic-textarea" placeholder="例如：以莫奈花园色彩为灵感，通过低饱和蓝绿色营造春日高级感" value="{{designIdea}}" data-field="designIdea" bindinput="onInput" maxlength="300" adjust-position cursor-spacing="120"/>
+    </view>
+    <view class="form-item">
+      <text class="label">适合场景</text>
+      <input class="input" placeholder="例如：职场、约会、婚礼（逗号分隔）" value="{{suitableScene}}" data-field="suitableScene" bindinput="onInput"/>
+    </view>
+    <view class="form-item">
+      <text class="label">推荐指数</text>
+      <picker mode="selector" range="{{recommendationOptions}}" value="{{recommendationScore - 1}}" bindchange="onRecommendationChange">
+        <view class="picker-field">{{recommendationOptions[recommendationScore - 1]}}<text class="picker-arrow">›</text></view>
+      </picker>
     </view>
   </view>
 
@@ -37,11 +52,60 @@
       <text class="label">更多图片（最多9张）</text>
       <view class="image-grid">
         <view class="img-wrap" wx:for="{{images}}" wx:key="index">
-          <image class="img-thumb" src="{{item}}" mode="aspectFill"/>
+        <image class="img-thumb" src="{{item}}" mode="aspectFill" aria-label="作品图片"/>
           <view class="img-remove" bindtap="removeImage" data-index="{{index}}">×</view>
         </view>
         <view wx:if="{{images.length < 9}}" class="img-add" bindtap="addImage">
           <text class="img-add-icon">+</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section access-section">
+    <view class="access-heading">
+      <view class="access-copy">
+        <text class="access-title">关联客户作品</text>
+        <text class="access-sub">从已完成预约关联客户照片，并为客户设置查看与互动权限</text>
+      </view>
+      <switch checked="{{visibilityScope === 'authorized_clients'}}" bindchange="onScopeChange" color="#ec4899"/>
+    </view>
+
+    <view wx:if="{{visibilityScope === 'authorized_clients'}}" class="access-fields">
+      <view wx:if="{{customerNames.length}}" class="form-item">
+        <text class="label">添加授权客户 *</text>
+        <picker mode="selector" range="{{customerNames}}" value="{{selectedCustomerIndex}}" bindchange="onCustomerChange">
+          <view class="picker-field picker-placeholder">
+            请选择已绑定客户端账号的客户
+            <text class="picker-arrow">›</text>
+          </view>
+        </picker>
+      </view>
+      <view wx:else class="access-empty">暂无可授权客户。客户完成账号绑定后即可关联作品。</view>
+
+      <view wx:if="{{accessGrants.length}}" class="grant-list">
+        <view wx:for="{{accessGrants}}" wx:key="customerId" wx:for-item="grant" wx:for-index="grantIndex" class="grant-card">
+          <view class="grant-head">
+            <view><text class="grant-name">{{grant.customerName}}</text><text class="grant-index">授权客户 {{grantIndex + 1}}</text></view>
+            <view class="grant-remove" bindtap="removeGrant" data-index="{{grantIndex}}">移除</view>
+          </view>
+          <view class="form-item grant-order">
+            <text class="label">关联预约（已完成优先）</text>
+            <picker mode="selector" range="{{grant.orderNames}}" value="{{grant.selectedOrderIndex}}" bindchange="onGrantOrderChange" data-index="{{grantIndex}}">
+              <view class="picker-field">{{grant.orderNames[grant.selectedOrderIndex]}}<text class="picker-arrow">›</text></view>
+            </picker>
+          </view>
+          <view class="permission-list">
+            <view class="permission-row"><view><text class="permission-name">允许分享</text><text class="permission-desc">客户可生成限时分享链接</text></view><switch checked="{{grant.canShare}}" data-index="{{grantIndex}}" data-field="canShare" bindchange="onGrantPermissionChange" color="#ec4899"/></view>
+            <view class="permission-row"><view><text class="permission-name">允许收藏</text><text class="permission-desc">加入客户个人收藏</text></view><switch checked="{{grant.canFavorite}}" data-index="{{grantIndex}}" data-field="canFavorite" bindchange="onGrantPermissionChange" color="#ec4899"/></view>
+            <view class="permission-row"><view><text class="permission-name">允许点赞</text><text class="permission-desc">对作品表达喜欢</text></view><switch checked="{{grant.canLike}}" data-index="{{grantIndex}}" data-field="canLike" bindchange="onGrantPermissionChange" color="#ec4899"/></view>
+            <view class="permission-row"><view><text class="permission-name">允许评论</text><text class="permission-desc">在作品下留言交流</text></view><switch checked="{{grant.canComment}}" data-index="{{grantIndex}}" data-field="canComment" bindchange="onGrantPermissionChange" color="#ec4899"/></view>
+          </view>
+          <view class="grant-summary">
+            <text class="grant-summary-title">关联与授权摘要</text>
+            <text class="grant-summary-order">{{grant.selectedOrderText}}</text>
+            <text class="grant-summary-permissions">客户可查看{{grant.canShare ? ' · 可分享' : ''}}{{grant.canFavorite ? ' · 可收藏' : ''}}{{grant.canLike ? ' · 可点赞' : ''}}{{grant.canComment ? ' · 可评论' : ''}}</text>
+          </view>
         </view>
       </view>
     </view>

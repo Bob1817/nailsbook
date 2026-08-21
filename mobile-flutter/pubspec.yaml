@@ -23,7 +23,18 @@ dependencies:
   firebase_messaging: ^14.7.19
   url_launcher: ^6.2.5
   geolocator: ^12.0.0
+  qr_flutter: ^4.1.0
+  screenshot: ^3.0.0
+  share_plus: ^7.2.2
+  shared_preferences: ^2.2.2
+  record: ^6.0.0
+  audioplayers: ^6.1.0
+  path_provider: ^2.1.3
+  gal: ^2.3.0
+  any_link_preview: ^3.0.2
+  firebase_crashlytics: ^3.5.7
 
+  http_parser: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -31,3 +42,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/data/regions.json
+    - assets/images/

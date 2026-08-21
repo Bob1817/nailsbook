@@ -39,6 +39,11 @@ function getCustomerAvatar(name: string) {
   return name.slice(0, 1).toUpperCase();
 }
 
+/** 判断 name 是否只是手机号（说明客户未设置昵称） */
+function isPhoneNumberAsName(name: string): boolean {
+  return /^1\d{10}$/.test(name);
+}
+
 export const CustomersPage: React.FC = () => {
   const { technician } = useAuth();
   const navigate = useNavigate();
@@ -48,6 +53,8 @@ export const CustomersPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [avatarTagCustomerId, setAvatarTagCustomerId] = useState<number | null>(null);
+  const [editingCustomerId, setEditingCustomerId] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState('');
 
   const customTags = useMemo(() => technician?.customTags ?? [], [technician?.customTags]);
 
@@ -89,12 +96,18 @@ export const CustomersPage: React.FC = () => {
   });
 
   const handleInvite = async () => {
+    // 接单就绪：至少开启一种服务类型；未就绪则锁定邀请码/邀请链接
+    if (!(technician?.homeService || technician?.shopService)) {
+      toast.warning('请先开启上门或到店服务，才能邀请客户。');
+      return;
+    }
     const invitationCode = technician?.invitationCode;
     if (!invitationCode) {
       toast.warning('暂未生成邀请码，请稍后重试。');
       return;
     }
-    const inviteLink = `${window.location.origin}/invite?invite_code=${encodeURIComponent(invitationCode)}`;
+    const clientBaseUrl = import.meta.env.VITE_CLIENT_BASE_URL || 'https://m.lunails.cn';
+    const inviteLink = `${clientBaseUrl}/invite?invite_code=${encodeURIComponent(invitationCode)}`;
     const shareText = `${technician?.name || '美甲师'}邀请你预约美甲服务，点击链接完成绑定：`;
     try {
       if (navigator.share) {
@@ -112,6 +125,24 @@ export const CustomersPage: React.FC = () => {
       } catch {
         toast.error('分享失败，请重试');
       }
+    }
+  };
+
+  const handleUpdateName = async (customerId: number) => {
+    if (!editingName.trim()) {
+      toast.warning('客户名称不能为空');
+      return;
+    }
+    try {
+      await customersService.updateName(customerId, editingName.trim());
+      setCustomers((prev) =>
+        prev.map((c) => (c.id === customerId ? { ...c, name: editingName.trim() } : c)),
+      );
+      toast.success('客户名称已更新');
+      setEditingCustomerId(null);
+      setEditingName('');
+    } catch {
+      toast.error('更新失败，请重试');
     }
   };
 
@@ -168,8 +199,8 @@ export const CustomersPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 可滚动内容：客户卡片列表 */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-6">
+      {/* 可滚动内容：客户卡片列表（底部留出 TabBar 高度 + 安全区，避免最后一条被遮挡） */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-[calc(3.5rem+env(safe-area-inset-bottom)+1.5rem)]">
         {isLoading ? (
           <div className="space-y-1">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -203,7 +234,13 @@ export const CustomersPage: React.FC = () => {
                         }}
                         className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#fdecef] text-sm font-semibold text-[#e86b8f] active:opacity-80"
                       >
-                        {getCustomerAvatar(customer.name)}
+                        {isPhoneNumberAsName(customer.name) ? (
+                          <svg className="h-6 w-6 text-[#e86b8f]/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
+                          </svg>
+                        ) : (
+                          <span className="text-sm font-semibold text-[#e86b8f]">{getCustomerAvatar(customer.name)}</span>
+                        )}
                       </button>
                       {avatarTagCustomerId === customer.id && customer.tags.length > 0 && (
                         <div
@@ -228,12 +265,64 @@ export const CustomersPage: React.FC = () => {
                       <div className="flex flex-col gap-3 min-[391px]:flex-row min-[391px]:items-start min-[391px]:justify-between">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="truncate text-sm font-semibold text-gray-900">{customer.name}</p>
-                            <svg className="h-4 w-4 shrink-0 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
+                            {editingCustomerId === customer.id ? (
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="text"
+                                  value={editingName}
+                                  onChange={(e) => setEditingName(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleUpdateName(customer.id);
+                                    if (e.key === 'Escape') { setEditingCustomerId(null); setEditingName(''); }
+                                  }}
+                                  className="w-28 rounded-lg border border-pink-300 px-2 py-1 text-sm focus:border-pink-500 focus:outline-none"
+                                  autoFocus
+                                />
+                                <button
+                                  onClick={() => handleUpdateName(customer.id)}
+                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-pink-500 text-white active:bg-pink-600"
+                                >
+                                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => { setEditingCustomerId(null); setEditingName(''); }}
+                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 text-gray-500 active:bg-gray-300"
+                                >
+                                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <p className="truncate text-sm font-semibold text-gray-900">
+                                  {isPhoneNumberAsName(customer.name) ? '未设置名称' : customer.name}
+                                </p>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingCustomerId(customer.id);
+                                    setEditingName(isPhoneNumberAsName(customer.name) ? '' : customer.name);
+                                  }}
+                                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-gray-300 hover:text-pink-500 active:text-pink-600"
+                                >
+                                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </button>
+                                <svg className="h-4 w-4 shrink-0 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </>
+                            )}
                           </div>
-                          <p className="mt-1 break-all text-xs text-gray-500">{customer.phone}</p>
+                          {customer.address ? (
+                            <p className="mt-1 truncate text-xs text-gray-500">{customer.address}</p>
+                          ) : (
+                            <p className="mt-1 text-xs text-gray-400">暂无地址</p>
+                          )}
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {customer.tags.map((tag) => {
@@ -262,11 +351,6 @@ export const CustomersPage: React.FC = () => {
                           <p className="text-[11px] text-gray-400">服务次数</p>
                           <p className="mt-1 text-xs font-medium text-gray-700">{customer.totalOrders} 次</p>
                         </div>
-                      </div>
-
-                      <div className="mt-3 flex flex-col gap-1 text-xs text-gray-400 min-[391px]:flex-row min-[391px]:items-center min-[391px]:justify-between min-[391px]:gap-3">
-                        <span className="break-words">{customer.address}</span>
-                        <span className="shrink-0">{customer.totalOrders} 次服务</span>
                       </div>
                     </div>
                   </div>

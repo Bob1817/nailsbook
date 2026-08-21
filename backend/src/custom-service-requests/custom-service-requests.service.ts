@@ -362,6 +362,8 @@ export class CustomServiceRequestsService {
           clientUserId,
           name: request.client?.nickname || request.client?.phone || '客户',
           phone: request.client?.phone || '',
+          sourceType: 'custom_request',
+          sourceRef: String(request.id),
         },
       });
 

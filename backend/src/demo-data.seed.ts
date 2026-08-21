@@ -47,6 +47,10 @@ type DemoBookingSeed = {
   cancelledAt?: Date;
   cancelReason?: string;
   designRequestTitle?: string;
+  tradeStatus?: string;
+  depositPaid?: boolean;
+  paymentStatus?: string;
+  paidAmount?: number;
 };
 
 const PRIMARY_TECHNICIAN_PHONE = '13800138000';
@@ -576,9 +580,20 @@ export async function ensureDemoData(
       name: '免费版',
       price: 0,
       billingCycle: 'free',
-      maxCustomers: 20,
-      maxMonthlyBookings: 40,
-      features: json(['basic_profile']),
+      maxCustomers: 30,
+      maxMonthlyBookings: 30,
+      maxWorks: 50,
+      maxStorageBytes: 500 * 1024 * 1024,
+      maxMarketingExports: 5,
+      maxMonthlySms: 10,
+      maxEmployees: 1,
+      maxBookingPages: 1,
+      features: json([
+        'customer_management',
+        'booking',
+        'works',
+        'basic_insights',
+      ]),
       status: 'active',
     },
     create: {
@@ -586,44 +601,79 @@ export async function ensureDemoData(
       code: 'free',
       price: 0,
       billingCycle: 'free',
-      maxCustomers: 20,
-      maxMonthlyBookings: 40,
-      features: json(['basic_profile']),
+      maxCustomers: 30,
+      maxMonthlyBookings: 30,
+      maxWorks: 50,
+      maxStorageBytes: 500 * 1024 * 1024,
+      maxMarketingExports: 5,
+      maxMonthlySms: 10,
+      maxEmployees: 1,
+      maxBookingPages: 1,
+      features: json([
+        'customer_management',
+        'booking',
+        'works',
+        'basic_insights',
+      ]),
       status: 'active',
     },
   });
 
-  const proPlan = await prisma.subscriptionPlan.upsert({
-    where: { code: 'pro' },
+  const starterPlan = await prisma.subscriptionPlan.upsert({
+    where: { code: 'starter' },
     update: {
-      name: 'Pro版',
+      name: '入门版',
       price: 29,
       billingCycle: 'monthly',
-      maxCustomers: null,
-      maxMonthlyBookings: null,
-      features: json(['customer_tags', 'analytics', 'unlimited_bookings']),
+      maxCustomers: 150,
+      maxMonthlyBookings: 150,
+      maxWorks: 300,
+      maxStorageBytes: 5 * 1024 * 1024 * 1024,
+      maxMarketingExports: 30,
+      maxMonthlySms: 30,
+      maxEmployees: 1,
+      maxBookingPages: 1,
+      features: json([
+        'customer_management',
+        'booking',
+        'works',
+        'branding',
+        'monthly_insights',
+      ]),
       status: 'active',
     },
     create: {
-      name: 'Pro版',
-      code: 'pro',
+      name: '入门版',
+      code: 'starter',
       price: 29,
       billingCycle: 'monthly',
-      maxCustomers: null,
-      maxMonthlyBookings: null,
-      features: json(['customer_tags', 'analytics', 'unlimited_bookings']),
+      maxCustomers: 150,
+      maxMonthlyBookings: 150,
+      maxWorks: 300,
+      maxStorageBytes: 5 * 1024 * 1024 * 1024,
+      maxMarketingExports: 30,
+      maxMonthlySms: 30,
+      maxEmployees: 1,
+      maxBookingPages: 1,
+      features: json([
+        'customer_management',
+        'booking',
+        'works',
+        'branding',
+        'monthly_insights',
+      ]),
       status: 'active',
     },
   });
 
-  const studioPlusPlan = await prisma.subscriptionPlan.upsert({
-    where: { code: 'studio_plus' },
+  const advancedPlan = await prisma.subscriptionPlan.upsert({
+    where: { code: 'advanced' },
     update: {
-      name: 'Studio Plus',
-      price: 99,
+      name: '高阶版',
+      price: 79,
       billingCycle: 'monthly',
-      maxCustomers: null,
-      maxMonthlyBookings: null,
+      maxCustomers: 500,
+      maxMonthlyBookings: 500,
       features: json([
         'team_dashboard',
         'priority_support',
@@ -632,17 +682,39 @@ export async function ensureDemoData(
       status: 'active',
     },
     create: {
-      name: 'Studio Plus',
-      code: 'studio_plus',
-      price: 99,
+      name: '高阶版',
+      code: 'advanced',
+      price: 79,
       billingCycle: 'monthly',
-      maxCustomers: null,
-      maxMonthlyBookings: null,
+      maxCustomers: 500,
+      maxMonthlyBookings: 500,
       features: json([
         'team_dashboard',
         'priority_support',
         'advanced_analytics',
       ]),
+      status: 'active',
+    },
+  });
+
+  await prisma.subscriptionPlan.upsert({
+    where: { code: 'ultimate' },
+    update: {
+      name: '终极版',
+      price: 199,
+      billingCycle: 'monthly',
+      maxCustomers: 2000,
+      maxMonthlyBookings: null,
+      status: 'active',
+    },
+    create: {
+      name: '终极版',
+      code: 'ultimate',
+      price: 199,
+      billingCycle: 'monthly',
+      maxCustomers: 2000,
+      maxMonthlyBookings: null,
+      features: json(['team_management', 'team_insights']),
       status: 'active',
     },
   });
@@ -782,14 +854,14 @@ export async function ensureDemoData(
   await prisma.technicianSubscription.upsert({
     where: { technicianId: primaryTechnician.id },
     update: {
-      planId: proPlan.id,
+      planId: starterPlan.id,
       status: 'active',
       startedAt: daysAgo(45),
       expiredAt: daysFromNow(15),
     },
     create: {
       technicianId: primaryTechnician.id,
-      planId: proPlan.id,
+      planId: starterPlan.id,
       status: 'active',
       startedAt: daysAgo(45),
       expiredAt: daysFromNow(15),
@@ -799,14 +871,14 @@ export async function ensureDemoData(
   await prisma.technicianSubscription.upsert({
     where: { technicianId: extraTechnicians[0].id },
     update: {
-      planId: studioPlusPlan.id,
+      planId: advancedPlan.id,
       status: 'active',
       startedAt: daysAgo(20),
       expiredAt: daysFromNow(10),
     },
     create: {
       technicianId: extraTechnicians[0].id,
-      planId: studioPlusPlan.id,
+      planId: advancedPlan.id,
       status: 'active',
       startedAt: daysAgo(20),
       expiredAt: daysFromNow(10),
@@ -1205,28 +1277,28 @@ export async function ensureDemoData(
       featureCode: 'home_service',
       featureName: '上门服务',
       enabled: true,
-      enabledPlans: json(['pro', 'studio_plus']),
+      enabledPlans: json(['starter', 'advanced', 'ultimate']),
       description: '美甲师上门服务功能开关',
     },
     {
       featureCode: 'design_request',
       featureName: '定制设计请求',
       enabled: true,
-      enabledPlans: json(['free', 'pro', 'studio_plus']),
+      enabledPlans: json(['free', 'starter', 'advanced', 'ultimate']),
       description: '客户提交定制设计需求功能',
     },
     {
       featureCode: 'advanced_analytics',
       featureName: '高级数据分析',
       enabled: true,
-      enabledPlans: json(['studio_plus']),
+      enabledPlans: json(['advanced', 'ultimate']),
       description: '高级数据统计与分析面板',
     },
     {
       featureCode: 'priority_support',
       featureName: '优先客服',
       enabled: false,
-      enabledPlans: json(['studio_plus']),
+      enabledPlans: json(['ultimate']),
       description: '优先客服通道（暂未开放）',
     },
   ];
@@ -1505,10 +1577,80 @@ export async function ensureDemoData(
       address: '浦东新区浦电路 56 弄 3 号楼 502',
       remark: '客户希望报价，偏好纯色快做。',
     },
+    {
+      orderNo: 'DEMO-OD-1011',
+      clientPhone: '13800138005',
+      title: '香槟金渐变约会款',
+      description: '双方已确认，等待客户支付定金',
+      serviceType: '上门美甲',
+      status: 'pending_confirm',
+      tradeStatus: 'deposit_pending',
+      price: 298,
+      depositAmount: 80,
+      depositPaid: false,
+      paymentStatus: 'unpaid',
+      startTime: daysFromNow(2, 18, 0),
+      endTime: addMinutes(daysFromNow(2, 18, 0), 130),
+      address: '虹口区四川北路 2018 号 1103',
+      remark: '交易订单已创建，用于验证待支付定金场景。',
+    },
+    {
+      orderNo: 'DEMO-OD-1012',
+      clientPhone: '13800138001',
+      title: '手绘花卉上门款',
+      description: '定金已支付，等待美甲师上门',
+      serviceType: '上门美甲',
+      status: 'pending_home',
+      tradeStatus: 'deposit_paid',
+      price: 358,
+      depositAmount: 100,
+      depositPaid: true,
+      paymentStatus: 'partial',
+      paidAmount: 100,
+      startTime: daysFromNow(2, 13, 30),
+      endTime: addMinutes(daysFromNow(2, 13, 30), 160),
+      address: '静安区铜仁路 88 号 1202',
+      remark: '用于验证上门履约与尾款未支付场景。',
+    },
+    {
+      orderNo: 'DEMO-OD-1013',
+      clientPhone: '13800138003',
+      title: '过期未确认试色预约',
+      description: '超过预约时间仍未完成双方确认',
+      serviceType: '到店美甲',
+      status: 'expired',
+      price: 168,
+      depositAmount: 0,
+      startTime: daysAgo(3, 11, 0),
+      endTime: addMinutes(daysAgo(3, 11, 0), 90),
+      address: '静安工作室 · 南京西路 818 号 3 楼',
+      remark: '用于验证过期后重新发起预约。',
+    },
+    {
+      orderNo: 'DEMO-OD-1014',
+      clientPhone: '13800138004',
+      title: '已付定金后取消的延长款',
+      description: '客户确认不退定金后取消',
+      serviceType: '到店美甲',
+      status: 'cancelled',
+      tradeStatus: 'cancelled',
+      price: 398,
+      depositAmount: 100,
+      depositPaid: true,
+      paymentStatus: 'partial',
+      paidAmount: 100,
+      startTime: daysFromNow(3, 16, 0),
+      endTime: addMinutes(daysFromNow(3, 16, 0), 180),
+      address: '静安工作室 · 南京西路 818 号 3 楼',
+      remark: '用于验证取消时定金不退提示与订单取消状态。',
+      cancelledAt: daysAgo(1, 18, 0),
+      cancelReason: '客户确认取消，定金不退',
+    },
   ];
 
   const orderNos: string[] = [];
   const revenueNos: string[] = [];
+  const orderLookup = new Map<string, any>();
 
   for (const seed of bookingSeeds) {
     const client = clientLookup.get(seed.clientPhone);
@@ -1518,6 +1660,25 @@ export async function ensureDemoData(
       ? designRequestLookup.get(seed.designRequestTitle)
       : null;
 
+    const depositPaid = seed.depositPaid ?? (seed.depositAmount > 0);
+    const hasTrade = Boolean(seed.tradeStatus) || [
+      'pending_home',
+      'pending_shop',
+      'in_progress',
+      'completed',
+    ].includes(seed.status);
+    const tradeStatus = seed.tradeStatus ?? (
+      seed.status === 'completed' ? 'paid' :
+      seed.status === 'in_progress' ? 'balance_pending' :
+      hasTrade ? 'deposit_paid' : null
+    );
+    const paidAmount = seed.paidAmount ?? (
+      seed.status === 'completed' ? seed.price : depositPaid ? seed.depositAmount : 0
+    );
+    const paymentStatus = seed.paymentStatus ?? (
+      paidAmount >= seed.price && seed.price > 0 ? 'paid' : paidAmount > 0 ? 'partial' : 'unpaid'
+    );
+    const fulfillmentStatus = seed.serviceType === '上门美甲' ? 'pending_home' : 'pending_shop';
     const order = await prisma.order.upsert({
       where: { orderNo: seed.orderNo },
       update: {
@@ -1531,12 +1692,20 @@ export async function ensureDemoData(
         address: seed.address,
         serviceType: seed.serviceType,
         remark: seed.remark,
+        customTitle: seed.title,
+        customDescription: seed.description,
         quotePrice: seed.price,
+        paymentStatus,
+        paidAmount,
+        paidAt: paymentStatus === 'paid' ? (seed.recognizedAt ?? seed.endTime) : null,
+        tradeStatus,
+        tradeCreatedAt: hasTrade || seed.tradeStatus ? seed.startTime : null,
+        fulfillmentStatus: hasTrade || seed.tradeStatus ? fulfillmentStatus : null,
         status: seed.status,
-        isDepositPaid: seed.depositAmount > 0,
+        isDepositPaid: depositPaid,
         depositAmount: seed.depositAmount,
-        depositStatus: seed.depositAmount > 0 ? 'paid' : 'pending',
-        depositConfirmedAt: seed.depositAmount > 0 ? seed.startTime : null,
+        depositStatus: depositPaid ? 'paid' : 'pending',
+        depositConfirmedAt: depositPaid ? seed.startTime : null,
         confirmedAt: [
           'pending_home',
           'pending_shop',
@@ -1565,12 +1734,20 @@ export async function ensureDemoData(
         address: seed.address,
         serviceType: seed.serviceType,
         remark: seed.remark,
+        customTitle: seed.title,
+        customDescription: seed.description,
         quotePrice: seed.price,
+        paymentStatus,
+        paidAmount,
+        paidAt: paymentStatus === 'paid' ? (seed.recognizedAt ?? seed.endTime) : null,
+        tradeStatus,
+        tradeCreatedAt: hasTrade || seed.tradeStatus ? seed.startTime : null,
+        fulfillmentStatus: hasTrade || seed.tradeStatus ? fulfillmentStatus : null,
         status: seed.status,
-        isDepositPaid: seed.depositAmount > 0,
+        isDepositPaid: depositPaid,
         depositAmount: seed.depositAmount,
-        depositStatus: seed.depositAmount > 0 ? 'paid' : 'pending',
-        depositConfirmedAt: seed.depositAmount > 0 ? seed.startTime : null,
+        depositStatus: depositPaid ? 'paid' : 'pending',
+        depositConfirmedAt: depositPaid ? seed.startTime : null,
         confirmedAt: [
           'pending_home',
           'pending_shop',
@@ -1590,6 +1767,99 @@ export async function ensureDemoData(
     });
 
     orderNos.push(seed.orderNo);
+    orderLookup.set(seed.orderNo, order);
+
+    if (hasTrade || seed.tradeStatus) {
+      const businessStatus = seed.status === 'cancelled'
+        ? 'cancelled'
+        : paymentStatus === 'paid'
+          ? 'completed'
+          : 'pending';
+      await prisma.bookingTradeOrder.upsert({
+        where: { bookingId: order.id },
+        update: {
+          totalAmount: seed.price,
+          depositAmount: seed.depositAmount,
+          balanceAmount: Math.max(0, seed.price - seed.depositAmount),
+          paidAmount,
+          status: businessStatus,
+          currentPayStage: depositPaid ? 'balance' : 'deposit',
+          cancelledAt: businessStatus === 'cancelled' ? seed.cancelledAt ?? seed.startTime : null,
+          completedAt: businessStatus === 'completed' ? seed.recognizedAt ?? seed.endTime : null,
+        },
+        create: {
+          tradeNo: `DEMO-TRADE-${seed.orderNo}`,
+          bookingId: order.id,
+          clientUserId: client.id,
+          technicianId: primaryTechnician.id,
+          totalAmount: seed.price,
+          depositAmount: seed.depositAmount,
+          balanceAmount: Math.max(0, seed.price - seed.depositAmount),
+          paidAmount,
+          status: businessStatus,
+          currentPayStage: depositPaid ? 'balance' : 'deposit',
+          cancelledAt: businessStatus === 'cancelled' ? seed.cancelledAt ?? seed.startTime : null,
+          completedAt: businessStatus === 'completed' ? seed.recognizedAt ?? seed.endTime : null,
+          createdAt: seed.status === 'completed' ? seed.startTime : daysAgo(1, 12, 0),
+        },
+      });
+    }
+
+    if (hasTrade && seed.depositAmount > 0) {
+      await prisma.paymentOrder.upsert({
+        where: { idempotencyKey: `demo:${seed.orderNo}:deposit` },
+        update: {
+          orderId: order.id,
+          clientUserId: client.id,
+          technicianId: primaryTechnician.id,
+          amountCents: Math.round(seed.depositAmount * 100),
+          status: depositPaid ? 'paid' : 'pending',
+          paidAt: depositPaid ? seed.startTime : null,
+        },
+        create: {
+          paymentNo: `DEMO-PAY-${seed.orderNo}-D`,
+          orderId: order.id,
+          clientUserId: client.id,
+          technicianId: primaryTechnician.id,
+          paymentType: 'deposit',
+          amountCents: Math.round(seed.depositAmount * 100),
+          channel: 'mock',
+          status: depositPaid ? 'paid' : 'pending',
+          idempotencyKey: `demo:${seed.orderNo}:deposit`,
+          providerTradeNo: depositPaid ? `DEMO-WX-${seed.orderNo}-D` : null,
+          paidAt: depositPaid ? seed.startTime : null,
+        },
+      });
+    }
+
+    const finalAmount = Math.max(0, seed.price - seed.depositAmount);
+    if (hasTrade && finalAmount > 0 && ['in_progress', 'completed'].includes(seed.status)) {
+      const finalPaid = paymentStatus === 'paid';
+      await prisma.paymentOrder.upsert({
+        where: { idempotencyKey: `demo:${seed.orderNo}:final` },
+        update: {
+          orderId: order.id,
+          clientUserId: client.id,
+          technicianId: primaryTechnician.id,
+          amountCents: Math.round(finalAmount * 100),
+          status: finalPaid ? 'paid' : 'pending',
+          paidAt: finalPaid ? (seed.recognizedAt ?? seed.endTime) : null,
+        },
+        create: {
+          paymentNo: `DEMO-PAY-${seed.orderNo}-F`,
+          orderId: order.id,
+          clientUserId: client.id,
+          technicianId: primaryTechnician.id,
+          paymentType: 'final',
+          amountCents: Math.round(finalAmount * 100),
+          channel: 'mock',
+          status: finalPaid ? 'paid' : 'pending',
+          idempotencyKey: `demo:${seed.orderNo}:final`,
+          providerTradeNo: finalPaid ? `DEMO-WX-${seed.orderNo}-F` : null,
+          paidAt: finalPaid ? (seed.recognizedAt ?? seed.endTime) : null,
+        },
+      });
+    }
 
     if (seed.revenueNo && seed.recognizedAt) {
       await prisma.revenue.upsert({
@@ -1616,6 +1886,104 @@ export async function ensureDemoData(
       });
       revenueNos.push(seed.revenueNo);
     }
+  }
+
+  const reviewSeeds = [
+    {
+      orderNo: 'DEMO-OD-1001',
+      rating: 5,
+      content: '颜色很显白，甲型修得很干净，通勤也不会显得单调。',
+      moderationStatus: 'approved',
+      publicationStatus: 'published',
+      photoUseAuthorized: true,
+      technicianReply: '谢谢信任，下次可以试试同色系细闪渐变。',
+    },
+    {
+      orderNo: 'DEMO-OD-1002',
+      rating: 4,
+      content: '上门很准时，婚礼款细节完成度很好。',
+      moderationStatus: 'pending',
+      publicationStatus: 'private',
+      photoUseAuthorized: false,
+      technicianReply: null,
+    },
+    {
+      orderNo: 'DEMO-OD-1005',
+      rating: 5,
+      content: '贝壳和银箔的层次很漂亮，旅行拍照特别出片。',
+      moderationStatus: 'approved',
+      publicationStatus: 'published',
+      photoUseAuthorized: true,
+      technicianReply: '很开心你喜欢，旅途注意做好指缘护理。',
+    },
+  ];
+  for (const seed of reviewSeeds) {
+    const order = orderLookup.get(seed.orderNo);
+    if (!order) continue;
+    const client = clientLookup.get(
+      bookingSeeds.find((item) => item.orderNo === seed.orderNo)!.clientPhone,
+    );
+    const reviewData = {
+      clientUserId: client.id,
+      technicianId: primaryTechnician.id,
+      rating: seed.rating,
+      content: seed.content,
+      photoUseAuthorized: seed.photoUseAuthorized,
+      photoUseAuthorizedAt: seed.photoUseAuthorized ? order.endTime : null,
+      verificationSource: 'completed_order',
+      moderationStatus: seed.moderationStatus,
+      publicationStatus: seed.publicationStatus,
+      moderatedAt: seed.moderationStatus === 'approved' ? order.endTime : null,
+      technicianReply: seed.technicianReply,
+      repliedAt: seed.technicianReply ? order.endTime : null,
+    };
+    await prisma.serviceReview.upsert({
+      where: { orderId: order.id },
+      update: reviewData,
+      create: { orderId: order.id, ...reviewData },
+    });
+  }
+
+  const orderMessageSeeds = [
+    {
+      orderNo: 'DEMO-OD-1011',
+      clientPhone: '13800138005',
+      content: '双方已确认预约，订单已生成，请支付定金 ¥80.00',
+      isRead: false,
+    },
+    {
+      orderNo: 'DEMO-OD-1012',
+      clientPhone: '13800138001',
+      content: '定金支付成功，预约已进入待上门阶段',
+      isRead: true,
+    },
+  ];
+  for (const seed of orderMessageSeeds) {
+    const order = orderLookup.get(seed.orderNo);
+    const client = clientLookup.get(seed.clientPhone);
+    if (!order || !client) continue;
+    const conversation = await prisma.conversation.upsert({
+      where: { clientId_techId: { clientId: client.id, techId: primaryTechnician.id } },
+      update: { lastMessage: seed.content, lastMessageAt: order.updatedAt },
+      create: {
+        clientId: client.id,
+        techId: primaryTechnician.id,
+        lastMessage: seed.content,
+        lastMessageAt: order.updatedAt,
+      },
+    });
+    await ensureMessage(prisma, conversation.id, {
+      senderType: 'system',
+      senderId: 0,
+      receiverType: 'client',
+      receiverId: client.id,
+      messageType: 'system',
+      content: seed.content,
+      relatedType: 'order',
+      relatedId: order.id,
+      isRead: seed.isRead,
+      createdAt: order.updatedAt,
+    });
   }
 
   // ── Voided Revenue (refund scenario on oldest completed order) ──────────

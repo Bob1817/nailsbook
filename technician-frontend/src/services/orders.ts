@@ -300,6 +300,18 @@ export const ordersService = {
     await api.patch(`/orders/${id}/cancel`);
   },
 
+  /** 重新发起已过期预约：仅重选预约时间，其余信息保留 */
+  async reinitiate(
+    id: number,
+    data: { serviceDate: string; startTime: string },
+  ): Promise<TechnicianOrder> {
+    const response = await api.patch<OrderApiItem>(
+      `/orders/${id}/reinitiate`,
+      data,
+    );
+    return normalizeOrder(response.data);
+  },
+
   async review(
     id: number,
     data: {

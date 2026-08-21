@@ -1,19 +1,20 @@
+<nav-bar title="编辑地址" showBack/>
 <view class="container">
 
   <view class="section">
     <view class="form-item">
       <text class="label">联系人</text>
-      <input class="input" placeholder="姓名" value="{{contactName}}" data-field="contactName" bindinput="onInput"/>
+      <input class="input" placeholder="姓名" value="{{contactName}}" data-field="contactName" bindinput="onInput" confirm-type="next" cursor-spacing="24"/>
     </view>
     <view class="form-item">
       <text class="label">手机号</text>
-      <input class="input" type="number" maxlength="11" placeholder="手机号" value="{{contactPhone}}" data-field="contactPhone" bindinput="onInput"/>
+      <input class="input" type="number" maxlength="11" placeholder="手机号" value="{{contactPhone}}" data-field="contactPhone" bindinput="onInput" confirm-type="next" cursor-spacing="24"/>
     </view>
   </view>
 
   <view class="section">
     <view class="location-row" bindtap="chooseLocation">
-      <text class="location-label">📍 从地图选择位置</text>
+      <text class="location-label"><view class="menu-icon icon-location"></view> 从地图选择位置</text>
       <text class="location-hint">自动填入地址</text>
     </view>
   </view>
@@ -37,13 +38,16 @@
     </view>
     <view class="form-item">
       <text class="label">门牌号</text>
-      <input class="input" placeholder="例：A栋1203（选填）" value="{{doorInfo}}" data-field="doorInfo" bindinput="onInput"/>
+      <input class="input" placeholder="例：A栋1203（选填）" value="{{doorInfo}}" data-field="doorInfo" bindinput="onInput" confirm-type="done" cursor-spacing="120"/>
     </view>
   </view>
 
   <view class="section default-row">
-    <text class="label">设为默认地址</text>
-    <switch checked="{{isDefault}}" bindchange="onDefaultChange" color="#ff6b9d"/>
+    <view class="default-label-wrap">
+      <text class="label">设为默认地址</text>
+      <text wx:if="{{lockDefault}}" class="default-hint">默认地址不能为空，需保留一个</text>
+    </view>
+    <switch checked="{{isDefault}}" disabled="{{lockDefault}}" bindchange="onDefaultChange" color="#ff6b9d"/>
   </view>
 
   <view class="footer">

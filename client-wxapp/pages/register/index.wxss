@@ -1,0 +1,173 @@
+.container {
+  padding: 0 48rpx;
+  padding-top: 80rpx;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 60rpx;
+}
+
+.logo-circle {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF6B8A, #FF8E9E);
+  color: #fff;
+  font-size: 56rpx;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24rpx;
+}
+
+.title {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #333;
+  display: block;
+  margin-bottom: 12rpx;
+}
+
+.subtitle {
+  font-size: 28rpx;
+  color: #999;
+  display: block;
+}
+
+.form {
+  width: 100%;
+}
+
+.form-item {
+  margin-bottom: 32rpx;
+}
+
+.label {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #333;
+  display: block;
+  margin-bottom: 12rpx;
+}
+
+.optional {
+  font-weight: normal;
+  color: #999;
+  font-size: 24rpx;
+}
+
+.input {
+  width: 100%;
+  height: 88rpx;
+  background: #f5f5f5;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+}
+
+.phone-display {
+  width: 100%;
+  height: 88rpx;
+  background: #f0f0f0;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.phone-text {
+  font-size: 28rpx;
+  color: #666;
+}
+
+/* 邀请码验证状态 */
+.invite-status {
+  margin-top: 8rpx;
+  padding: 8rpx 0;
+  font-size: 24rpx;
+}
+
+.invite-status.checking {
+  color: #999;
+}
+
+.invite-status.valid {
+  color: #07C160;
+}
+
+.invite-status.error {
+  color: #e64340;
+}
+
+.mode-hint {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 密码行 */
+.password-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-row .input {
+  flex: 1;
+  padding-right: 100rpx;
+}
+
+.pwd-toggle {
+  position: absolute;
+  right: 24rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+.pwd-toggle-text {
+  font-size: 24rpx;
+  color: #FF6B8A;
+}
+
+/* 按钮 */
+.btn-primary {
+  width: 100%;
+  height: 88rpx;
+  background: #ccc;
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: bold;
+  border-radius: 12rpx;
+  border: none;
+  margin-top: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-primary::after {
+  border: none;
+}
+
+.btn-active {
+  background: linear-gradient(135deg, #FF6B8A, #FF8E9E);
+  box-shadow: 0 8rpx 24rpx rgba(255, 107, 138, 0.3);
+}
+
+/* 链接行 */
+.link-row {
+  text-align: center;
+  margin-top: 32rpx;
+  padding-bottom: 60rpx;
+}
+
+.link {
+  font-size: 28rpx;
+  color: #FF6B8A;
+}

@@ -1,0 +1,2363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NailBook — Premium UI Prototype</title>
+<style>
+/* ═══════════════════════════════════════════════════════════
+   NailBook — Apple-Inspired Premium UI Prototype
+   iOS 26 Liquid Glass · Image-First Editorial · SF Pro
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Reset & Foundation ── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  /* Seed tokens */
+  --seed-bg: #f5f5f7;
+  --seed-fg: #1d1d1f;
+  --seed-surface: #ffffff;
+  --seed-primary: #c4627a;
+  --seed-accent: #0071e3;
+  --seed-muted: #6e6e73;
+  --seed-border: #d2d2d7;
+  --seed-radius: 16px;
+
+  /* Derived tokens */
+  --bg: var(--seed-bg);
+  --fg: var(--seed-fg);
+  --surface: var(--seed-surface);
+  --primary: var(--seed-primary);
+  --accent: var(--seed-accent);
+  --muted: var(--seed-muted);
+  --border: var(--seed-border);
+  --radius: var(--seed-radius);
+
+  /* Glass tokens */
+  --glass-bg: rgba(255,255,255,0.72);
+  --glass-bg-heavy: rgba(255,255,255,0.88);
+  --glass-border: rgba(255,255,255,0.5);
+  --glass-blur: 20px;
+  --glass-blur-heavy: 40px;
+
+  /* Typography */
+  --font-display: -apple-system, 'SF Pro Display', 'SF Pro Icons', 'Helvetica Neue', sans-serif;
+  --font-text: -apple-system, 'SF Pro Text', 'SF Pro Icons', 'Helvetica Neue', sans-serif;
+
+  /* Spacing */
+  --sp-4: 4px; --sp-8: 8px; --sp-12: 12px; --sp-16: 16px;
+  --sp-20: 20px; --sp-24: 24px; --sp-32: 32px; --sp-48: 48px;
+
+  /* Device */
+  --device-w: 393px;
+  --device-h: 852px;
+  --device-r: 48px;
+}
+
+html { font-family: var(--font-text); color: var(--fg); -webkit-font-smoothing: antialiased; }
+
+body {
+  background: #e8e8ed;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  font-family: var(--font-text);
+}
+
+/* ── Prototype Container ── */
+.prototype-wrapper {
+  display: flex;
+  gap: 60px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.prototype-label {
+  text-align: center;
+  margin-bottom: 16px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── Device Frame ── */
+.device {
+  width: var(--device-w);
+  height: var(--device-h);
+  border-radius: var(--device-r);
+  background: #000;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.1),
+    0 24px 80px rgba(0,0,0,0.25),
+    0 8px 32px rgba(0,0,0,0.15);
+  flex-shrink: 0;
+}
+
+.device::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 126px;
+  height: 34px;
+  background: #000;
+  border-radius: 0 0 20px 20px;
+  z-index: 100;
+}
+
+/* ── Screen Container ── */
+.screen-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s cubic-bezier(0.25, 0.1, 0.25, 1),
+              transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+  transform: translateY(12px);
+  scrollbar-width: none;
+}
+
+.screen::-webkit-scrollbar { display: none; }
+
+.screen.active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+/* ── Status Bar ── */
+.status-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: 54px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 28px 8px;
+  font-family: var(--font-text);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.status-bar.light { color: #fff; }
+.status-bar.dark { color: var(--fg); }
+
+.status-icons { display: flex; gap: 4px; align-items: center; }
+.status-icons svg { width: 16px; height: 16px; }
+
+/* ── Glass Tab Bar ── */
+.tab-bar {
+  position: absolute;
+  bottom: 12px;
+  left: 20px;
+  right: 20px;
+  height: 64px;
+  background: var(--glass-bg-heavy);
+  backdrop-filter: blur(var(--glass-blur-heavy)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--glass-blur-heavy)) saturate(180%);
+  border-radius: 28px;
+  border: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 8px;
+  z-index: 90;
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.08),
+    0 2px 8px rgba(0,0,0,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+.tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+}
+
+.tab-item svg {
+  width: 24px;
+  height: 24px;
+  stroke: var(--muted);
+  fill: none;
+  stroke-width: 1.8;
+  transition: all 0.3s ease;
+}
+
+.tab-item span {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+  transition: color 0.3s ease;
+}
+
+.tab-item.active svg {
+  stroke: var(--primary);
+  fill: var(--primary);
+  stroke-width: 0;
+}
+
+.tab-item.active span { color: var(--primary); font-weight: 600; }
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+/* ═══════════════════════════════════
+   SCREEN 1: HOME
+   ═══════════════════════════════════ */
+
+.home-hero {
+  width: 100%;
+  height: 440px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+
+.home-hero-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(165deg,
+      #f4c6d0 0%, #e8a4b8 15%, #d4879e 30%,
+      #c47088 45%, #b85a74 60%, #a84862 75%,
+      #8e3550 100%);
+}
+
+.home-hero-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.3) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(180,80,120,0.4) 0%, transparent 40%);
+}
+
+.home-hero-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 32px 24px 24px;
+  background: linear-gradient(to top,
+    rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 40%, transparent 100%);
+}
+
+.home-hero-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 100px;
+  border: 1px solid rgba(255,255,255,0.25);
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: 0.04em;
+  margin-bottom: 12px;
+}
+
+.home-hero-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+
+.home-hero-sub {
+  font-size: 14px;
+  color: rgba(255,255,255,0.7);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+/* Nail art visual elements inside hero */
+.hero-nail-shapes {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.nail-shape {
+  position: absolute;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  opacity: 0.6;
+}
+
+.nail-shape-1 {
+  width: 120px; height: 160px;
+  top: 60px; left: 30px;
+  background: linear-gradient(135deg, #f8d7e0, #e8a4b8);
+  transform: rotate(-15deg);
+}
+
+.nail-shape-2 {
+  width: 80px; height: 110px;
+  top: 100px; right: 40px;
+  background: linear-gradient(135deg, #fce4ec, #f48fb1);
+  transform: rotate(20deg);
+  opacity: 0.4;
+}
+
+.nail-shape-3 {
+  width: 60px; height: 85px;
+  top: 40px; right: 120px;
+  background: linear-gradient(135deg, #fff, #f8d7e0);
+  transform: rotate(-8deg);
+  opacity: 0.5;
+}
+
+/* Hand silhouette */
+.hero-hand {
+  position: absolute;
+  bottom: 80px;
+  right: -20px;
+  width: 260px;
+  height: 320px;
+  opacity: 0.15;
+}
+
+.hero-hand svg { width: 100%; height: 100%; }
+
+/* Trending Section */
+.section-padding { padding: 28px 20px; }
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.section-action {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--primary);
+  cursor: pointer;
+  letter-spacing: -0.01em;
+}
+
+/* Trending Carousel */
+.trending-scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+  margin: 0 -20px;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.trending-scroll::-webkit-scrollbar { display: none; }
+
+.trending-card {
+  flex-shrink: 0;
+  width: 240px;
+  height: 320px;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  scroll-snap-align: start;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.trending-card:hover { transform: scale(0.98); }
+
+.trending-card-bg {
+  position: absolute;
+  inset: 0;
+}
+
+.tc-1 .trending-card-bg { background: linear-gradient(145deg, #fce4ec, #f8bbd0, #f48fb1, #ec407a); }
+.tc-2 .trending-card-bg { background: linear-gradient(145deg, #fff3e0, #ffe0b2, #ffcc80, #ffb74d); }
+.tc-3 .trending-card-bg { background: linear-gradient(145deg, #f3e5f5, #e1bee7, #ce93d8, #ab47bc); }
+.tc-4 .trending-card-bg { background: linear-gradient(145deg, #e8eaf6, #c5cae9, #9fa8da, #7986cb); }
+
+.trending-card-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px 16px 16px;
+  background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%);
+}
+
+.trending-card-title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+
+.trending-card-meta {
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+  font-weight: 400;
+}
+
+/* Nail art pattern overlays */
+.nail-pattern {
+  position: absolute;
+  inset: 0;
+  opacity: 0.15;
+}
+
+.nail-pattern-dots {
+  background: radial-gradient(circle 3px, rgba(255,255,255,0.8) 100%, transparent 100%);
+  background-size: 16px 16px;
+}
+
+.nail-pattern-lines {
+  background: repeating-linear-gradient(
+    45deg, transparent, transparent 8px,
+    rgba(255,255,255,0.5) 8px, rgba(255,255,255,0.5) 10px
+  );
+}
+
+.nail-pattern-marble {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(255,255,255,0.6) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.4) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 80%, rgba(255,255,255,0.3) 0%, transparent 60%);
+}
+
+/* AI Curated */
+.curated-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.curated-card {
+  height: 180px;
+  border-radius: 18px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.curated-card:hover { transform: scale(0.97); }
+
+.curated-card-bg { position: absolute; inset: 0; }
+
+.cc-1 .curated-card-bg { background: linear-gradient(160deg, #fce4ec, #f48fb1); }
+.cc-2 .curated-card-bg { background: linear-gradient(160deg, #e0f2f1, #80cbc4); }
+.cc-3 .curated-card-bg { background: linear-gradient(160deg, #fff8e1, #ffcc80); }
+.cc-4 .curated-card-bg { background: linear-gradient(160deg, #ede7f6, #b39ddb); }
+
+.curated-card-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px;
+  background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
+}
+
+.curated-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 4px;
+}
+
+.curated-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+/* Personalized */
+.personal-card {
+  display: flex;
+  gap: 14px;
+  padding: 14px;
+  background: var(--surface);
+  border-radius: 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  border: 1px solid rgba(0,0,0,0.04);
+}
+
+.personal-card:hover { transform: scale(0.99); }
+
+.personal-thumb {
+  width: 88px;
+  height: 88px;
+  border-radius: 14px;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.personal-thumb-bg { position: absolute; inset: 0; }
+
+.pt-1 { background: linear-gradient(135deg, #fce4ec, #f48fb1); }
+.pt-2 { background: linear-gradient(135deg, #e8eaf6, #7986cb); }
+.pt-3 { background: linear-gradient(135deg, #fff3e0, #ffb74d); }
+
+.personal-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.personal-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.personal-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.personal-tags {
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.personal-tag {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: rgba(0,0,0,0.04);
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+/* ═══════════════════════════════════
+   SCREEN 2: DISCOVER
+   ═══════════════════════════════════ */
+
+.discover-header {
+  padding: 8px 20px 0;
+  position: sticky;
+  top: 54px;
+  z-index: 40;
+  background: var(--bg);
+}
+
+.discover-title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.discover-subtitle {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 14px;
+  letter-spacing: -0.01em;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-radius: 100px;
+  border: 1px solid rgba(0,0,0,0.06);
+  margin-bottom: 14px;
+}
+
+.search-bar svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--muted);
+  fill: none;
+  stroke-width: 2;
+  flex-shrink: 0;
+}
+
+.search-bar span {
+  font-size: 14px;
+  color: var(--muted);
+  letter-spacing: -0.01em;
+}
+
+.category-pills {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 14px;
+}
+
+.category-pills::-webkit-scrollbar { display: none; }
+
+.cat-pill {
+  flex-shrink: 0;
+  padding: 7px 16px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: 1px solid transparent;
+}
+
+.cat-pill.inactive {
+  background: var(--surface);
+  color: var(--muted);
+  border-color: rgba(0,0,0,0.06);
+}
+
+.cat-pill.active {
+  background: var(--fg);
+  color: #fff;
+  border-color: var(--fg);
+}
+
+/* Masonry Grid */
+.masonry {
+  padding: 0 16px 100px;
+  display: flex;
+  gap: 10px;
+}
+
+.masonry-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.masonry-card {
+  border-radius: 18px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.masonry-card:hover { transform: scale(0.98); }
+
+.masonry-card-bg { position: absolute; inset: 0; }
+
+.mc-1 { background: linear-gradient(155deg, #fce4ec 0%, #f48fb1 50%, #e91e63 100%); }
+.mc-2 { background: linear-gradient(155deg, #fff3e0 0%, #ffcc80 50%, #ff9800 100%); }
+.mc-3 { background: linear-gradient(155deg, #f3e5f5 0%, #ce93d8 50%, #9c27b0 100%); }
+.mc-4 { background: linear-gradient(155deg, #e8eaf6 0%, #9fa8da 50%, #5c6bc0 100%); }
+.mc-5 { background: linear-gradient(155deg, #e0f2f1 0%, #80cbc4 50%, #26a69a 100%); }
+.mc-6 { background: linear-gradient(155deg, #fce4ec 0%, #ef9a9a 50%, #e57373 100%); }
+.mc-7 { background: linear-gradient(155deg, #f1f8e9 0%, #aed581 50%, #7cb342 100%); }
+.mc-8 { background: linear-gradient(155deg, #fff8e1 0%, #ffe082 50%, #ffc107 100%); }
+
+.masonry-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom,
+    rgba(0,0,0,0.15) 0%, transparent 30%,
+    transparent 60%, rgba(0,0,0,0.45) 100%);
+}
+
+.masonry-author {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 4px;
+  background: rgba(0,0,0,0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 100px;
+}
+
+.masonry-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f48fb1, #e91e63);
+}
+
+.masonry-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.95);
+  letter-spacing: 0;
+}
+
+.masonry-like {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(0,0,0,0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 100px;
+}
+
+.masonry-like svg {
+  width: 12px; height: 12px;
+  stroke: none;
+  fill: rgba(255,255,255,0.9);
+}
+
+.masonry-like span {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.9);
+}
+
+.masonry-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px;
+}
+
+.masonry-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+
+.masonry-tags {
+  display: flex;
+  gap: 4px;
+}
+
+.masonry-tag {
+  font-size: 9px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 100px;
+  background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 0.02em;
+}
+
+/* ═══════════════════════════════════
+   SCREEN 3: WORK DETAIL
+   ═══════════════════════════════════ */
+
+.detail-gallery {
+  width: 100%;
+  height: 480px;
+  position: relative;
+  overflow: hidden;
+}
+
+.detail-gallery-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(155deg,
+    #fce4ec 0%, #f8bbd0 20%, #f48fb1 40%,
+    #ec407a 60%, #e91e63 80%, #c2185b 100%);
+}
+
+.detail-gallery-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 40% 30%, rgba(255,255,255,0.35) 0%, transparent 50%),
+    radial-gradient(ellipse at 60% 70%, rgba(200,50,100,0.3) 0%, transparent 40%);
+}
+
+.detail-page-dots {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+}
+
+.page-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.4);
+}
+
+.page-dot.active { background: #fff; }
+
+.detail-back {
+  position: absolute;
+  top: 58px;
+  left: 16px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.detail-back svg {
+  width: 20px;
+  height: 20px;
+  stroke: #fff;
+  fill: none;
+  stroke-width: 2;
+}
+
+.detail-actions-top {
+  position: absolute;
+  top: 58px;
+  right: 16px;
+  display: flex;
+  gap: 8px;
+}
+
+.detail-action-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.detail-action-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke: #fff;
+  fill: none;
+  stroke-width: 1.8;
+}
+
+.detail-action-btn.filled svg { fill: #fff; stroke: none; }
+
+/* Glass Info Panel */
+.detail-panel {
+  position: relative;
+  margin-top: -32px;
+  background: var(--glass-bg-heavy);
+  backdrop-filter: blur(var(--glass-blur-heavy)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--glass-blur-heavy)) saturate(180%);
+  border-radius: 28px 28px 0 0;
+  padding: 24px 20px 100px;
+  border-top: 1px solid var(--glass-border);
+  min-height: 420px;
+}
+
+.detail-panel-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(0,0,0,0.12);
+  margin: 0 auto 20px;
+}
+
+.detail-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.detail-title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  flex: 1;
+}
+
+.detail-likes {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.detail-likes svg {
+  width: 20px; height: 20px;
+  fill: var(--primary);
+  stroke: none;
+}
+
+.detail-likes span {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.detail-desc {
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.detail-tag {
+  padding: 5px 14px;
+  border-radius: 100px;
+  background: rgba(196,98,122,0.08);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--primary);
+  letter-spacing: -0.01em;
+}
+
+/* Tech info */
+.detail-tech {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: rgba(0,0,0,0.03);
+  border-radius: 16px;
+  margin-bottom: 24px;
+}
+
+.detail-tech-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f48fb1, #e91e63);
+  flex-shrink: 0;
+}
+
+.detail-tech-info { flex: 1; }
+
+.detail-tech-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.01em;
+}
+
+.detail-tech-city {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.detail-tech-btn {
+  padding: 7px 16px;
+  border-radius: 100px;
+  background: var(--fg);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+}
+
+/* Comments */
+.comments-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.comment-item {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.comment-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ca-1 { background: linear-gradient(135deg, #b39ddb, #7e57c2); }
+.ca-2 { background: linear-gradient(135deg, #90caf9, #42a5f5); }
+
+.comment-content { flex: 1; }
+
+.comment-author {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+  margin-bottom: 2px;
+}
+
+.comment-time {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.comment-text {
+  font-size: 14px;
+  color: var(--fg);
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+}
+
+/* Comment Input */
+.comment-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 16px;
+  background: var(--glass-bg-heavy);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-top: 1px solid rgba(0,0,0,0.06);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  z-index: 10;
+}
+
+.comment-input {
+  flex: 1;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 100px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(0,0,0,0.03);
+  font-size: 14px;
+  font-family: var(--font-text);
+  color: var(--fg);
+  outline: none;
+}
+
+.comment-input::placeholder { color: var(--muted); }
+
+.comment-send {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--fg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.comment-send svg {
+  width: 18px; height: 18px;
+  stroke: #fff;
+  fill: none;
+  stroke-width: 2;
+}
+
+/* ═══════════════════════════════════
+   SCREEN 4: PROFILE
+   ═══════════════════════════════════ */
+
+.profile-header {
+  width: 100%;
+  padding: 16px 20px 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-header-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(155deg,
+    #1d1d1f 0%, #2c2c2e 40%, #3a3a3c 70%, #48484a 100%);
+}
+
+.profile-header-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(196,98,122,0.15) 0%, transparent 60%);
+}
+
+.profile-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f48fb1, #e91e63);
+  margin: 16px auto 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid rgba(255,255,255,0.2);
+}
+
+.profile-avatar-letter {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.profile-name {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.profile-phone {
+  font-size: 14px;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.01em;
+}
+
+/* Profile Body */
+.profile-body {
+  padding: 0 20px 100px;
+  margin-top: -16px;
+  position: relative;
+  z-index: 3;
+}
+
+/* Technician card */
+.tech-section-label {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.02em;
+  margin: 24px 0 12px;
+}
+
+.tech-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: var(--surface);
+  border-radius: 16px;
+  margin-bottom: 10px;
+  border: 1px solid rgba(0,0,0,0.04);
+}
+
+.tech-card-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f48fb1, #e91e63);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tech-card-avatar span {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.tech-card-info { flex: 1; }
+
+.tech-card-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tech-default-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: var(--primary);
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+
+.tech-card-city {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.tech-card-action {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.bind-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1.5px dashed var(--border);
+  background: transparent;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.bind-btn svg {
+  width: 18px; height: 18px;
+  stroke: var(--muted);
+  fill: none;
+  stroke-width: 2;
+}
+
+.bind-btn span {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* Menu sections */
+.menu-section {
+  background: var(--surface);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  border: 1px solid rgba(0,0,0,0.04);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.menu-item:not(:last-child) {
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+
+.menu-item:hover { background: rgba(0,0,0,0.02); }
+
+.menu-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.menu-icon-wrap svg {
+  width: 18px; height: 18px;
+  stroke: #fff;
+  fill: none;
+  stroke-width: 1.8;
+}
+
+.mi-pink { background: linear-gradient(135deg, #f48fb1, #e91e63); }
+.mi-blue { background: linear-gradient(135deg, #90caf9, #42a5f5); }
+.mi-purple { background: linear-gradient(135deg, #b39ddb, #7e57c2); }
+.mi-teal { background: linear-gradient(135deg, #80cbc4, #26a69a); }
+.mi-gray { background: linear-gradient(135deg, #b0bec5, #78909c); }
+.mi-orange { background: linear-gradient(135deg, #ffcc80, #ff9800); }
+
+.menu-label {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--fg);
+  letter-spacing: -0.01em;
+}
+
+.menu-arrow {
+  width: 16px;
+  height: 16px;
+  stroke: var(--border);
+  fill: none;
+  stroke-width: 2;
+}
+
+.logout-btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  text-align: center;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid rgba(0,0,0,0.04);
+  font-size: 15px;
+  font-weight: 500;
+  color: #e53935;
+  cursor: pointer;
+  margin: 24px 0 8px;
+  font-family: var(--font-text);
+}
+
+.version-text {
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+/* ═══════════════════════════════════
+   SCREEN 5: LOGIN
+   ═══════════════════════════════════ */
+
+.login-screen {
+  background: var(--surface);
+}
+
+.login-content {
+  padding: 0 28px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.login-brand {
+  text-align: center;
+  padding-top: 60px;
+  margin-bottom: 48px;
+}
+
+.login-logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--primary), #a84862);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  box-shadow: 0 12px 40px rgba(196,98,122,0.25);
+}
+
+.login-logo span {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.login-brand-name {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.03em;
+  margin-bottom: 4px;
+}
+
+.login-brand-tag {
+  font-size: 14px;
+  color: var(--muted);
+  letter-spacing: -0.01em;
+}
+
+.login-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-bottom: 6px;
+}
+
+.login-subtitle {
+  font-size: 15px;
+  color: var(--muted);
+  margin-bottom: 32px;
+  letter-spacing: -0.01em;
+}
+
+.login-field {
+  margin-bottom: 14px;
+}
+
+.login-input {
+  width: 100%;
+  height: 52px;
+  padding: 0 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(0,0,0,0.02);
+  font-size: 16px;
+  font-family: var(--font-text);
+  color: var(--fg);
+  outline: none;
+  transition: border-color 0.2s ease;
+  letter-spacing: -0.01em;
+}
+
+.login-input:focus {
+  border-color: var(--primary);
+}
+
+.login-input::placeholder {
+  color: var(--muted);
+}
+
+.login-agreement {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 8px 0 28px;
+  cursor: pointer;
+}
+
+.login-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+  transition: all 0.2s ease;
+}
+
+.login-check.checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.login-check.checked svg {
+  width: 12px; height: 12px;
+  stroke: #fff;
+  fill: none;
+  stroke-width: 2.5;
+}
+
+.login-agreement-text {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.login-agreement-text a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.login-cta {
+  width: 100%;
+  height: 52px;
+  border-radius: 100px;
+  border: none;
+  background: linear-gradient(135deg, var(--primary), #a84862);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: var(--font-text);
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(196,98,122,0.3);
+  transition: transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1),
+              box-shadow 0.2s ease;
+}
+
+.login-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 32px rgba(196,98,122,0.35);
+}
+
+.login-cta:active {
+  transform: translateY(0);
+}
+
+.login-skip {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 14px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.login-forgot {
+  text-align: center;
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--primary);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* ═══════════════════════════════════
+   SHARED ELEMENTS
+   ═══════════════════════════════════ */
+
+/* Nail art decorative shapes used across screens */
+.deco-nail {
+  position: absolute;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  pointer-events: none;
+}
+
+/* Shimmer animation for loading states */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg,
+    rgba(0,0,0,0.04) 25%,
+    rgba(0,0,0,0.08) 50%,
+    rgba(0,0,0,0.04) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 12px;
+}
+
+/* Spring bounce animation */
+@keyframes springIn {
+  0% { transform: scale(0.9); opacity: 0; }
+  60% { transform: scale(1.02); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.spring-in { animation: springIn 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards; }
+
+/* Parallax helper */
+.parallax-img {
+  transition: transform 0.1s linear;
+  will-change: transform;
+}
+
+/* ── Prototype Title ── */
+.prototype-title-block {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.prototype-title-block h1 {
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+
+.prototype-title-block p {
+  font-size: 17px;
+  color: var(--muted);
+  letter-spacing: -0.01em;
+  line-height: 1.5;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  body { padding: 20px 10px; }
+  .prototype-wrapper { gap: 32px; }
+  .prototype-title-block h1 { font-size: 28px; }
+}
+
+@media (max-width: 500px) {
+  .device {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
+  .device::before { display: none; }
+  body { padding: 0; }
+}
+</style>
+</head>
+<body>
+
+<div>
+  <div class="prototype-title-block">
+    <h1>NailBook</h1>
+    <p>Apple-inspired AI nail art experience with iOS 26 Liquid Glass, editorial imagery, and premium interactions.</p>
+  </div>
+
+  <div class="prototype-wrapper">
+
+    <!-- ═══ DEVICE: Main App ═══ -->
+    <div>
+      <div class="prototype-label">Interactive Prototype</div>
+      <div class="device" data-component="device-frame">
+        <div class="screen-container">
+
+          <!-- ── Screen 1: Home ── -->
+          <div class="screen active" id="screen-home">
+            <div class="home-hero">
+              <div class="home-hero-bg"></div>
+              <div class="hero-nail-shapes">
+                <div class="nail-shape nail-shape-1"></div>
+                <div class="nail-shape nail-shape-2"></div>
+                <div class="nail-shape nail-shape-3"></div>
+              </div>
+              <div class="status-bar light" style="position:absolute;z-index:10;">
+                <span>9:41</span>
+                <div class="status-icons">
+                  <svg viewBox="0 0 16 16"><path d="M1 10l3-3 3 3 5-5 3 3" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <svg viewBox="0 0 16 16"><rect x="1" y="4" width="12" height="8" rx="2" stroke="currentColor" fill="none" stroke-width="1.2"/><rect x="13.5" y="6" width="1.5" height="4" rx="0.5" fill="currentColor" opacity="0.4"/><rect x="2" y="5" width="8" height="6" rx="1" fill="currentColor" opacity="0.8"/></svg>
+                </div>
+              </div>
+              <div class="home-hero-overlay">
+                <div class="home-hero-tag">AI 精选推荐</div>
+                <div class="home-hero-title">发现你的<br>下一个美甲灵感</div>
+                <div class="home-hero-sub">根据你的偏好，为你精选法式优雅系列</div>
+              </div>
+            </div>
+
+            <!-- Trending -->
+            <div class="section-padding">
+              <div class="section-header">
+                <div class="section-title">趋势灵感</div>
+                <div class="section-action">查看全部</div>
+              </div>
+              <div class="trending-scroll">
+                <div class="trending-card tc-1" onclick="switchScreen('detail')">
+                  <div class="trending-card-bg"></div>
+                  <div class="nail-pattern nail-pattern-marble"></div>
+                  <div class="trending-card-overlay">
+                    <div class="trending-card-title">法式优雅</div>
+                    <div class="trending-card-meta">2.4k 人收藏</div>
+                  </div>
+                </div>
+                <div class="trending-card tc-2">
+                  <div class="trending-card-bg"></div>
+                  <div class="nail-pattern nail-pattern-dots"></div>
+                  <div class="trending-card-overlay">
+                    <div class="trending-card-title">暖阳渐变</div>
+                    <div class="trending-card-meta">1.8k 人收藏</div>
+                  </div>
+                </div>
+                <div class="trending-card tc-3">
+                  <div class="trending-card-bg"></div>
+                  <div class="nail-pattern nail-pattern-lines"></div>
+                  <div class="trending-card-overlay">
+                    <div class="trending-card-title">紫韵花香</div>
+                    <div class="trending-card-meta">1.2k 人收藏</div>
+                  </div>
+                </div>
+                <div class="trending-card tc-4">
+                  <div class="trending-card-bg"></div>
+                  <div class="nail-pattern nail-pattern-marble"></div>
+                  <div class="trending-card-overlay">
+                    <div class="trending-card-title">星空之境</div>
+                    <div class="trending-card-meta">980 人收藏</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- AI Curated -->
+            <div class="section-padding" style="padding-top:0">
+              <div class="section-header">
+                <div class="section-title">AI 精选合集</div>
+              </div>
+              <div class="curated-grid">
+                <div class="curated-card cc-1">
+                  <div class="curated-card-bg"></div>
+                  <div class="nail-pattern nail-pattern-marble"></div>
+                  <div class="curated-card-content">
+                    <div class="curated-label">合集</div>
+                    <div class="curated-title">春日樱花季</div>
+                  </div>
+                </div>
+                <div class="curated-card cc-2">
+                  <div class="curated-card-bg"></div>
+                  <div class="nail-pattern nail-pattern-dots"></div>
+                  <div class="curated-card-content">
+                    <div class="curated-label">合集</div>
+                    <div class="curated-title">极简主义</div>
+                  </div>
+                </div>
+                <div class="curated-card cc-3">
+                  <div class="curated-card-bg"></div>
+                  <div class="nail-pattern nail-pattern-lines"></div>
+                  <div class="curated-card-content">
+                    <div class="curated-label">合集</div>
+                    <div class="curated-title">复古金属感</div>
+                  </div>
+                </div>
+                <div class="curated-card cc-4">
+                  <div class="curated-card-bg"></div>
+                  <div class="nail-pattern nail-pattern-marble"></div>
+                  <div class="curated-card-content">
+                    <div class="curated-label">合集</div>
+                    <div class="curated-title">梦幻水晶</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Personalized -->
+            <div class="section-padding" style="padding-top:0; padding-bottom:100px;">
+              <div class="section-header">
+                <div class="section-title">为你推荐</div>
+              </div>
+              <div class="personal-card" onclick="switchScreen('detail')">
+                <div class="personal-thumb">
+                  <div class="personal-thumb-bg pt-1"></div>
+                </div>
+                <div class="personal-info">
+                  <div class="personal-title">珍珠贝壳法式</div>
+                  <div class="personal-desc">温润的珍珠光泽搭配经典法式，适合日常通勤</div>
+                  <div class="personal-tags">
+                    <span class="personal-tag">法式</span>
+                    <span class="personal-tag">日常</span>
+                  </div>
+                </div>
+              </div>
+              <div class="personal-card">
+                <div class="personal-thumb">
+                  <div class="personal-thumb-bg pt-2"></div>
+                </div>
+                <div class="personal-info">
+                  <div class="personal-title">冰透极光甲</div>
+                  <div class="personal-desc">透底色搭配极光粉末，阳光下呈现梦幻色彩</div>
+                  <div class="personal-tags">
+                    <span class="personal-tag">炫彩</span>
+                    <span class="personal-tag">ins风</span>
+                  </div>
+                </div>
+              </div>
+              <div class="personal-card">
+                <div class="personal-thumb">
+                  <div class="personal-thumb-bg pt-3"></div>
+                </div>
+                <div class="personal-info">
+                  <div class="personal-title">琥珀晕染</div>
+                  <div class="personal-desc">暖色系琥珀纹路，秋冬氛围感十足</div>
+                  <div class="personal-tags">
+                    <span class="personal-tag">渐变</span>
+                    <span class="personal-tag">秋冬</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Screen 2: Discover ── -->
+          <div class="screen" id="screen-discover">
+            <div class="status-bar dark">
+              <span>9:41</span>
+              <div class="status-icons">
+                <svg viewBox="0 0 16 16"><path d="M1 10l3-3 3 3 5-5 3 3" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <svg viewBox="0 0 16 16"><rect x="1" y="4" width="12" height="8" rx="2" stroke="currentColor" fill="none" stroke-width="1.2"/><rect x="13.5" y="6" width="1.5" height="4" rx="0.5" fill="currentColor" opacity="0.4"/><rect x="2" y="5" width="8" height="6" rx="1" fill="currentColor" opacity="0.8"/></svg>
+              </div>
+            </div>
+            <div class="discover-header">
+              <div class="discover-title">发现</div>
+              <div class="discover-subtitle">刷一刷你绑定美甲师发布的最新作品</div>
+              <div class="search-bar">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+                <span>搜索美甲风格、美甲师...</span>
+              </div>
+              <div class="category-pills">
+                <div class="cat-pill active">全部</div>
+                <div class="cat-pill inactive">法式</div>
+                <div class="cat-pill inactive">渐变</div>
+                <div class="cat-pill inactive">日系</div>
+                <div class="cat-pill inactive">ins风</div>
+                <div class="cat-pill inactive">简约</div>
+                <div class="cat-pill inactive">可爱</div>
+                <div class="cat-pill inactive">水晶</div>
+                <div class="cat-pill inactive">炫彩</div>
+              </div>
+            </div>
+
+            <div class="masonry">
+              <div class="masonry-col">
+                <div class="masonry-card" style="height:220px" onclick="switchScreen('detail')">
+                  <div class="masonry-card-bg mc-1"></div>
+                  <div class="nail-pattern nail-pattern-marble"></div>
+                  <div class="masonry-overlay"></div>
+                  <div class="masonry-author">
+                    <div class="masonry-avatar"></div>
+                    <span class="masonry-name">小雪</span>
+                  </div>
+                  <div class="masonry-like">
+                    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    <span>328</span>
+                  </div>
+                  <div class="masonry-info">
+                    <div class="masonry-title">法式珍珠</div>
+                    <div class="masonry-tags">
+                      <span class="masonry-tag">#法式</span>
+                      <span class="masonry-tag">#优雅</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="masonry-card" style="height:280px">
+                  <div class="masonry-card-bg mc-3"></div>
+                  <div class="nail-pattern nail-pattern-dots"></div>
+                  <div class="masonry-overlay"></div>
+                  <div class="masonry-author">
+                    <div class="masonry-avatar" style="background:linear-gradient(135deg,#ce93d8,#9c27b0)"></div>
+                    <span class="masonry-name">Nana</span>
+                  </div>
+                  <div class="masonry-like">
+                    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    <span>156</span>
+                  </div>
+                  <div class="masonry-info">
+                    <div class="masonry-title">紫韵渐变</div>
+                    <div class="masonry-tags">
+                      <span class="masonry-tag">#渐变</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="masonry-card" style="height:200px">
+                  <div class="masonry-card-bg mc-5"></div>
+                  <div class="nail-pattern nail-pattern-lines"></div>
+                  <div class="masonry-overlay"></div>
+                  <div class="masonry-author">
+                    <div class="masonry-avatar" style="background:linear-gradient(135deg,#80cbc4,#26a69a)"></div>
+                    <span class="masonry-name">小美</span>
+                  </div>
+                  <div class="masonry-like">
+                    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    <span>89</span>
+                  </div>
+                  <div class="masonry-info">
+                    <div class="masonry-title">抹茶清新</div>
+                    <div class="masonry-tags">
+                      <span class="masonry-tag">#简约</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="masonry-col">
+                <div class="masonry-card" style="height:260px" onclick="switchScreen('detail')">
+                  <div class="masonry-card-bg mc-2"></div>
+                  <div class="nail-pattern nail-pattern-lines"></div>
+                  <div class="masonry-overlay"></div>
+                  <div class="masonry-author">
+                    <div class="masonry-avatar" style="background:linear-gradient(135deg,#ffcc80,#ff9800)"></div>
+                    <span class="masonry-name">柚子</span>
+                  </div>
+                  <div class="masonry-like">
+                    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    <span>241</span>
+                  </div>
+                  <div class="masonry-info">
+                    <div class="masonry-title">暖阳琥珀</div>
+                    <div class="masonry-tags">
+                      <span class="masonry-tag">#渐变</span>
+                      <span class="masonry-tag">#秋冬</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="masonry-card" style="height:190px">
+                  <div class="masonry-card-bg mc-4"></div>
+                  <div class="nail-pattern nail-pattern-marble"></div>
+                  <div class="masonry-overlay"></div>
+                  <div class="masonry-author">
+                    <div class="masonry-avatar" style="background:linear-gradient(135deg,#9fa8da,#5c6bc0)"></div>
+                    <span class="masonry-name">Luna</span>
+                  </div>
+                  <div class="masonry-like">
+                    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    <span>197</span>
+                  </div>
+                  <div class="masonry-info">
+                    <div class="masonry-title">星空之境</div>
+                    <div class="masonry-tags">
+                      <span class="masonry-tag">#ins风</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="masonry-card" style="height:240px">
+                  <div class="masonry-card-bg mc-6"></div>
+                  <div class="nail-pattern nail-pattern-dots"></div>
+                  <div class="masonry-overlay"></div>
+                  <div class="masonry-author">
+                    <div class="masonry-avatar" style="background:linear-gradient(135deg,#ef9a9a,#e57373)"></div>
+                    <span class="masonry-name">桃桃</span>
+                  </div>
+                  <div class="masonry-like">
+                    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    <span>412</span>
+                  </div>
+                  <div class="masonry-info">
+                    <div class="masonry-title">蜜桃甜心</div>
+                    <div class="masonry-tags">
+                      <span class="masonry-tag">#可爱</span>
+                      <span class="masonry-tag">#日系</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Screen 3: Work Detail ── -->
+          <div class="screen" id="screen-detail">
+            <div class="detail-gallery">
+              <div class="detail-gallery-bg"></div>
+              <div class="nail-pattern nail-pattern-marble" style="opacity:0.1"></div>
+              <div class="status-bar light" style="position:absolute;z-index:10;">
+                <span>9:41</span>
+                <div class="status-icons">
+                  <svg viewBox="0 0 16 16"><path d="M1 10l3-3 3 3 5-5 3 3" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <svg viewBox="0 0 16 16"><rect x="1" y="4" width="12" height="8" rx="2" stroke="currentColor" fill="none" stroke-width="1.2"/><rect x="13.5" y="6" width="1.5" height="4" rx="0.5" fill="currentColor" opacity="0.4"/><rect x="2" y="5" width="8" height="6" rx="1" fill="currentColor" opacity="0.8"/></svg>
+                </div>
+              </div>
+              <div class="detail-back" onclick="switchScreen('discover')">
+                <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="detail-actions-top">
+                <div class="detail-action-btn">
+                  <svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="16 6 12 2 8 6" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="2" x2="12" y2="15" stroke-linecap="round"/></svg>
+                </div>
+                <div class="detail-action-btn">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                </div>
+              </div>
+              <div class="detail-page-dots">
+                <div class="page-dot active"></div>
+                <div class="page-dot"></div>
+                <div class="page-dot"></div>
+              </div>
+            </div>
+
+            <div class="detail-panel">
+              <div class="detail-panel-handle"></div>
+              <div class="detail-title-row">
+                <div class="detail-title">法式珍珠贝壳</div>
+                <div class="detail-likes">
+                  <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                  <span>328</span>
+                </div>
+              </div>
+              <div class="detail-desc">温润的珍珠光泽搭配经典法式设计，指尖散发出优雅与精致。适合日常通勤和轻熟风格，是今季最受欢迎的美甲设计之一。</div>
+              <div class="detail-tags">
+                <div class="detail-tag">法式</div>
+                <div class="detail-tag">珍珠</div>
+                <div class="detail-tag">优雅</div>
+                <div class="detail-tag">日常</div>
+              </div>
+              <div class="detail-tech">
+                <div class="detail-tech-avatar"></div>
+                <div class="detail-tech-info">
+                  <div class="detail-tech-name">小雪 NailArt</div>
+                  <div class="detail-tech-city">上海 · 静安区</div>
+                </div>
+                <div class="detail-tech-btn">关注</div>
+              </div>
+              <div class="comments-title">评论 (12)</div>
+              <div class="comment-item">
+                <div class="comment-avatar ca-1"></div>
+                <div class="comment-content">
+                  <div class="comment-author">Alice</div>
+                  <div class="comment-time">2小时前</div>
+                  <div class="comment-text">太好看了！已收藏，下次就去做这个款</div>
+                </div>
+              </div>
+              <div class="comment-item">
+                <div class="comment-avatar ca-2"></div>
+                <div class="comment-content">
+                  <div class="comment-author">Mia</div>
+                  <div class="comment-time">5小时前</div>
+                  <div class="comment-text">珍珠的质感好高级，请问做这个大概需要多久？</div>
+                </div>
+              </div>
+
+              <div class="comment-bar">
+                <input class="comment-input" placeholder="写评论..." />
+                <div class="comment-send">
+                  <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13" stroke-linecap="round" stroke-linejoin="round"/><polygon points="22 2 15 22 11 13 2 9 22 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Screen 4: Profile ── -->
+          <div class="screen" id="screen-profile">
+            <div class="status-bar light" style="position:absolute;z-index:10;width:100%;">
+              <span>9:41</span>
+              <div class="status-icons">
+                <svg viewBox="0 0 16 16"><path d="M1 10l3-3 3 3 5-5 3 3" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <svg viewBox="0 0 16 16"><rect x="1" y="4" width="12" height="8" rx="2" stroke="currentColor" fill="none" stroke-width="1.2"/><rect x="13.5" y="6" width="1.5" height="4" rx="0.5" fill="currentColor" opacity="0.4"/><rect x="2" y="5" width="8" height="6" rx="1" fill="currentColor" opacity="0.8"/></svg>
+              </div>
+            </div>
+            <div class="profile-header">
+              <div class="profile-header-bg"></div>
+              <div class="profile-content">
+                <div class="profile-avatar">
+                  <span class="profile-avatar-letter">L</span>
+                </div>
+                <div class="profile-name">Lily</div>
+                <div class="profile-phone">138****8888</div>
+              </div>
+            </div>
+
+            <div class="profile-body">
+              <div class="tech-section-label">我的美甲师</div>
+              <div class="tech-card">
+                <div class="tech-card-avatar">
+                  <span>雪</span>
+                </div>
+                <div class="tech-card-info">
+                  <div class="tech-card-name">
+                    小雪 NailArt
+                    <span class="tech-default-badge">默认</span>
+                  </div>
+                  <div class="tech-card-city">上海 · 静安区</div>
+                </div>
+              </div>
+              <div class="bind-btn">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke-linecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke-linecap="round"/></svg>
+                <span>绑定新美甲师</span>
+              </div>
+
+              <div class="tech-section-label">我的服务</div>
+              <div class="menu-section">
+                <div class="menu-item">
+                  <div class="menu-icon-wrap mi-pink">
+                    <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="10" r="3"/></svg>
+                  </div>
+                  <span class="menu-label">地址管理</span>
+                  <svg class="menu-arrow" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="menu-item">
+                  <div class="menu-icon-wrap mi-blue">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  </div>
+                  <span class="menu-label">我的预约</span>
+                  <svg class="menu-arrow" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="menu-item">
+                  <div class="menu-icon-wrap mi-purple">
+                    <svg viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+                  </div>
+                  <span class="menu-label">我的设计</span>
+                  <svg class="menu-arrow" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="menu-item">
+                  <div class="menu-icon-wrap mi-teal">
+                    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  </div>
+                  <span class="menu-label">联系客服</span>
+                  <svg class="menu-arrow" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+
+              <div class="tech-section-label">更多</div>
+              <div class="menu-section">
+                <div class="menu-item">
+                  <div class="menu-icon-wrap mi-gray">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                  </div>
+                  <span class="menu-label">设置</span>
+                  <svg class="menu-arrow" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="menu-item">
+                  <div class="menu-icon-wrap mi-orange">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  </div>
+                  <span class="menu-label">帮助与反馈</span>
+                  <svg class="menu-arrow" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+
+              <button class="logout-btn">退出登录</button>
+              <div class="version-text">v1.0.0</div>
+            </div>
+          </div>
+
+          <!-- ── Screen 5: Login ── -->
+          <div class="screen login-screen" id="screen-login">
+            <div class="status-bar dark" style="position:absolute;z-index:10;width:100%;">
+              <span>9:41</span>
+              <div class="status-icons">
+                <svg viewBox="0 0 16 16"><path d="M1 10l3-3 3 3 5-5 3 3" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <svg viewBox="0 0 16 16"><rect x="1" y="4" width="12" height="8" rx="2" stroke="currentColor" fill="none" stroke-width="1.2"/><rect x="13.5" y="6" width="1.5" height="4" rx="0.5" fill="currentColor" opacity="0.4"/><rect x="2" y="5" width="8" height="6" rx="1" fill="currentColor" opacity="0.8"/></svg>
+              </div>
+            </div>
+            <div class="login-content">
+              <div class="login-brand">
+                <div class="login-logo"><span>N</span></div>
+                <div class="login-brand-name">NailBook</div>
+                <div class="login-brand-tag">美甲预约，让美丽更简单</div>
+              </div>
+
+              <div class="login-title">欢迎使用</div>
+              <div class="login-subtitle">输入手机号开始</div>
+
+              <div class="login-field">
+                <input class="login-input" type="tel" placeholder="请输入手机号" />
+              </div>
+
+              <div class="login-agreement" onclick="this.querySelector('.login-check').classList.toggle('checked')">
+                <div class="login-check">
+                  <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="login-agreement-text">
+                  我已阅读并同意<a href="#">《用户协议》</a>和<a href="#">《隐私政策》</a>
+                </div>
+              </div>
+
+              <button class="login-cta">下一步</button>
+
+              <div class="login-skip">暂时跳过</div>
+            </div>
+          </div>
+
+          <!-- ── Glass Tab Bar ── -->
+          <div class="tab-bar" data-component="glass-tab-bar">
+            <div class="tab-item active" onclick="switchScreen('home')">
+              <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke-linecap="round" stroke-linejoin="round"/><polyline points="9 22 9 12 15 12 15 22" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>首页</span>
+            </div>
+            <div class="tab-item" onclick="switchScreen('discover')">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke-linecap="round"/></svg>
+              <span>发现</span>
+            </div>
+            <div class="tab-item" onclick="switchScreen('profile')">
+              <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>消息</span>
+            </div>
+            <div class="tab-item" onclick="switchScreen('profile')">
+              <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="7" r="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>我的</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ DEVICE: Login Screen ═══ -->
+    <div>
+      <div class="prototype-label">Login Experience</div>
+      <div class="device" data-component="device-login">
+        <div class="screen-container">
+          <div class="screen active login-screen" style="opacity:1;pointer-events:auto;transform:none;">
+            <div class="status-bar dark" style="position:absolute;z-index:10;width:100%;">
+              <span>9:41</span>
+              <div class="status-icons">
+                <svg viewBox="0 0 16 16"><path d="M1 10l3-3 3 3 5-5 3 3" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <svg viewBox="0 0 16 16"><rect x="1" y="4" width="12" height="8" rx="2" stroke="currentColor" fill="none" stroke-width="1.2"/><rect x="13.5" y="6" width="1.5" height="4" rx="0.5" fill="currentColor" opacity="0.4"/><rect x="2" y="5" width="8" height="6" rx="1" fill="currentColor" opacity="0.8"/></svg>
+              </div>
+            </div>
+            <div class="login-content">
+              <div class="login-brand">
+                <div class="login-logo"><span>N</span></div>
+                <div class="login-brand-name">NailBook</div>
+                <div class="login-brand-tag">美甲预约，让美丽更简单</div>
+              </div>
+              <div class="login-title">欢迎使用</div>
+              <div class="login-subtitle">输入手机号开始</div>
+              <div class="login-field">
+                <input class="login-input" type="tel" placeholder="请输入手机号" />
+              </div>
+              <div class="login-agreement">
+                <div class="login-check checked">
+                  <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="login-agreement-text">
+                  我已阅读并同意<a href="#">《用户协议》</a>和<a href="#">《隐私政策》</a>
+                </div>
+              </div>
+              <button class="login-cta">下一步</button>
+              <div class="login-skip">暂时跳过</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ── Screen Navigation ── */
+function switchScreen(name) {
+  const screens = document.querySelectorAll('#screen-home, #screen-discover, #screen-detail, #screen-profile, #screen-login');
+  const tabs = document.querySelectorAll('.tab-bar .tab-item');
+
+  // Hide all screens in first device
+  const firstDevice = document.querySelector('[data-component="device-frame"]');
+  firstDevice.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active');
+  });
+
+  // Show target
+  const target = firstDevice.querySelector('#screen-' + name);
+  if (target) {
+    target.classList.add('active');
+    target.scrollTop = 0;
+  }
+
+  // Update tabs
+  const tabMap = { home: 0, discover: 1, detail: 1, profile: 3, login: -1 };
+  const idx = tabMap[name] ?? -1;
+  tabs.forEach((t, i) => {
+    t.classList.toggle('active', i === idx);
+  });
+
+  // Hide tab bar on login/detail screens
+  const tabBar = firstDevice.querySelector('.tab-bar');
+  if (name === 'login' || name === 'detail') {
+    tabBar.style.opacity = '0';
+    tabBar.style.pointerEvents = 'none';
+  } else {
+    tabBar.style.opacity = '1';
+    tabBar.style.pointerEvents = 'auto';
+  }
+}
+
+/* ── Category pill toggle ── */
+document.querySelectorAll('.cat-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('.cat-pill').forEach(p => {
+      p.classList.remove('active');
+      p.classList.add('inactive');
+    });
+    pill.classList.remove('inactive');
+    pill.classList.add('active');
+  });
+});
+
+/* ── Parallax on hero images ── */
+const homeScreen = document.getElementById('screen-home');
+if (homeScreen) {
+  homeScreen.addEventListener('scroll', () => {
+    const scrollY = homeScreen.scrollTop;
+    const hero = homeScreen.querySelector('.home-hero-bg');
+    if (hero) {
+      hero.style.transform = `translateY(${scrollY * 0.3}px) scale(${1 + scrollY * 0.0005})`;
+    }
+  });
+}
+
+/* ── Spring animation on card tap ── */
+document.querySelectorAll('.trending-card, .masonry-card, .curated-card, .personal-card').forEach(card => {
+  card.addEventListener('mousedown', () => {
+    card.style.transform = 'scale(0.96)';
+    card.style.transition = 'transform 0.15s ease';
+  });
+  card.addEventListener('mouseup', () => {
+    card.style.transform = 'scale(1)';
+    card.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1)';
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = '';
+    card.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)';
+  });
+});
+</script>
+</body>
+</html>

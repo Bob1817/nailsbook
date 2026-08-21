@@ -1,7 +1,9 @@
 import {
   Controller,
+  Delete,
   Get,
   Patch,
+  Post,
   Body,
   Param,
   Query,
@@ -19,11 +21,13 @@ import {
 } from '@nestjs/swagger';
 import { CustomersService } from './customers.service';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
+import { TouristGuard } from '../technician-auth/tourist.guard';
+import { CreateCustomerFollowUpDto } from './dto/create-customer-follow-up.dto';
 
 @ApiTags('美甲师-客户')
 @ApiBearerAuth()
 @Controller('technician/customers')
-@UseGuards(TechnicianJwtAuthGuard)
+@UseGuards(TechnicianJwtAuthGuard, TouristGuard)
 export class TechnicianCustomersController {
   constructor(private readonly customersService: CustomersService) {}
 
@@ -65,6 +69,42 @@ export class TechnicianCustomersController {
     return this.customersService.getDistinctTags(request.user.technicianId);
   }
 
+  @Get('tag-templates')
+  @ApiOperation({ summary: '获取客户标签模板' })
+  getTagTemplates(@Req() request: { user: { technicianId: number } }) {
+    return this.customersService.getTagTemplates(request.user.technicianId);
+  }
+
+  @Post('tag-templates')
+  @ApiOperation({ summary: '新增客户标签模板' })
+  createTagTemplate(
+    @Req() request: { user: { technicianId: number } },
+    @Body() body: { name: string },
+  ) {
+    return this.customersService.createTagTemplate(
+      request.user.technicianId,
+      body.name,
+    );
+  }
+
+  @Delete('tag-templates/:templateId')
+  @ApiOperation({ summary: '删除客户标签模板' })
+  deleteTagTemplate(
+    @Req() request: { user: { technicianId: number } },
+    @Param('templateId') templateId: string,
+  ) {
+    return this.customersService.deleteTagTemplate(
+      request.user.technicianId,
+      templateId,
+    );
+  }
+
+  @Get('follow-ups/today')
+  @ApiOperation({ summary: '获取今日待跟进客户' })
+  getTodayFollowUps(@Req() request: { user: { technicianId: number } }) {
+    return this.customersService.getTodayFollowUps(request.user.technicianId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: '获取客户详情' })
   @ApiParam({ name: 'id', type: String, description: '客户ID' })
@@ -77,6 +117,35 @@ export class TechnicianCustomersController {
   ) {
     return this.customersService.findOneForTechnician(
       parseInt(id, 10),
+      request.user.technicianId,
+    );
+  }
+
+  @Post(':id/follow-ups')
+  @ApiOperation({ summary: '创建客户跟进记录' })
+  createFollowUp(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id') id: string,
+    @Body() body: CreateCustomerFollowUpDto,
+  ) {
+    return this.customersService.createFollowUp(
+      parseInt(id, 10),
+      request.user.technicianId,
+      body.content,
+      body.plannedAt,
+    );
+  }
+
+  @Patch(':id/follow-ups/:followUpId/complete')
+  @ApiOperation({ summary: '完成客户跟进记录' })
+  completeFollowUp(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id') id: string,
+    @Param('followUpId') followUpId: string,
+  ) {
+    return this.customersService.completeFollowUp(
+      parseInt(id, 10),
+      parseInt(followUpId, 10),
       request.user.technicianId,
     );
   }
@@ -101,6 +170,41 @@ export class TechnicianCustomersController {
       parseInt(id, 10),
       request.user.technicianId,
       body.tags,
+    );
+  }
+
+  @Patch(':id/name')
+  @ApiOperation({ summary: '更新客户备注名（仅美甲师可见）' })
+  @ApiParam({ name: 'id', type: String, description: '客户ID' })
+  @ApiBody({
+    schema: {
+      properties: { name: { type: 'string', description: '客户备注名' } },
+    },
+  })
+  @ApiResponse({ status: 200, description: '备注名更新成功' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  @ApiResponse({ status: 404, description: '客户不存在' })
+  updateName(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id') id: string,
+    @Body() body: { name: string },
+  ) {
+    return this.customersService.updateName(
+      parseInt(id, 10),
+      request.user.technicianId,
+      body.name,
+    );
+  }
+
+  @Patch(':id/archive')
+  @ApiOperation({ summary: '归档长期未互动客户' })
+  archive(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id') id: string,
+  ) {
+    return this.customersService.archiveCustomer(
+      parseInt(id, 10),
+      request.user.technicianId,
     );
   }
 }

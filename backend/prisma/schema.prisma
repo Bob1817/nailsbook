@@ -17,6 +17,7 @@ model AdminUser {
   phone        String?
   roleId       Int
   status       String         @default("active")
+  tokenVersion Int            @default(0)
   lastLoginAt  DateTime?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @default(now()) @updatedAt
@@ -57,78 +58,311 @@ model AdminRolePermission {
 }
 
 model Technician {
-  id                    Int                     @id @default(autoincrement())
-  name                  String
-  phone                 String                  @unique
-  passwordHash          String                  @default("")
-  tokenVersion          Int                     @default(0)
-  avatarUrl             String?
-  city                  String?
-  serviceArea           String?
-  status                String                  @default("inactive")
-  invitationCode        String?                 @unique
-  invitedAt             DateTime?
-  lastLoginAt           DateTime?
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @default(now()) @updatedAt
-  inviteKey             TechnicianInviteKey?
+  id                         Int                         @id @default(autoincrement())
+  name                       String
+  phone                      String                      @unique
+  passwordHash               String                      @default("")
+  managedPasswordCiphertext  String?
+  tokenVersion               Int                         @default(0)
+  mustChangePassword         Boolean                     @default(false)
+  avatarUrl                  String?
+  city                       String?
+  province                   String?
+  serviceArea                String?
+  bio                        String?
+  status                     String                      @default("inactive")
+  invitationCode             String?                     @unique
+  invitedAt                  DateTime?
+  lastLoginAt                DateTime?
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @default(now()) @updatedAt
+  inviteKey                  TechnicianInviteKey?
   // Service type settings
-  homeService           Boolean                 @default(false)
-  shopService           Boolean                 @default(false)
-  shopAddresses         String? // JSON array of shop addresses
-  serviceItems          String? // JSON array of technician service items
+  homeService                Boolean                     @default(false)
+  shopService                Boolean                     @default(false)
+  shopAddresses              String? // JSON array of shop addresses
+  serviceItems               String? // JSON array of technician service items
+  // Home service configuration
+  homeServiceRadius          Float? // Service radius in km
+  homeServicePricing         String? // JSON: tiered pricing [{minKm, maxKm, price}]
+  nightServiceFee            Float? // Night service surcharge
+  holidayServiceFee          Float? // Holiday service surcharge
+  minOrderAmount             Float? // Minimum order amount (guaranteed consumption)
   // Social media accounts
-  socialMedia           String? // JSON object of social media accounts
+  socialMedia                String? // JSON object of social media accounts
   // Service schedule (JSON: weekly availability + time ranges)
-  serviceSchedule       String?
+  serviceSchedule            String?
   // Custom tags (JSON array of {id, name, color})
-  customTags            String?
-  customers             Customer[]
-  orders                Order[]
-  revenues              Revenue[]
-  subscription          TechnicianSubscription?
-  clientBindings        ClientTechBinding[]
-  nailWorks             NailWork[]
-  designRequests        ClientDesignRequest[]
-  conversations         Conversation[]
-  customServiceRequests CustomServiceRequest[]
-  workComments  NailWorkComment[]
+  customTags                 String?
+  // Homepage settings
+  coverImageUrl              String? // Homepage cover image
+  servicePhilosophy          String? // Service philosophy
+  bookingNotes               String? // Booking notes/instructions
+  styleTags                  String? // JSON array of style tags ["风格1", "风格2"]
+  isVerified                 Boolean                     @default(false) // Platform verified
+  verifiedAt                 DateTime?
+  // Qualifications
+  qualifications             TechnicianQualification[]
+  featuredComments           TechnicianFeaturedComment[]
+  customers                  Customer[]
+  orders                     Order[]
+  revenues                   Revenue[]
+  subscription               TechnicianSubscription?
+  clientBindings             ClientTechBinding[]
+  nailWorks                  NailWork[]
+  designRequests             ClientDesignRequest[]
+  conversations              Conversation[]
+  customServiceRequests      CustomServiceRequest[]
+  workComments               NailWorkComment[]
+  blockedTimeSlots           BlockedTimeSlot[]
+  serviceReviews             ServiceReview[]
+  customerFollowUps          CustomerFollowUp[]
+  referralCampaign           ReferralCampaign?
+  referralLinks              ReferralLink[]
+  referralRelations          ReferralRelation[]
+  rewardAccounts             RewardAccount[]
+  paymentOrders              PaymentOrder[]
+  bookingTradeOrders         BookingTradeOrder[]
+  wechatIdentity             WechatIdentity?
+  subscriptionUsages         SubscriptionResourceUsage[]
+  subscriptionChanges        SubscriptionChange[]
+  subscriptionUsageEvents    SubscriptionUsageEvent[]
+  marketingMaterials         MarketingMaterial[]
+  dataExportAudits           DataExportAudit[]
+  conversionEvents           ConversionEvent[]
+  uploadedAssets             UploadedAsset[]
+  subscriptionMetricEvents   SubscriptionMetricEvent[]
+  followers                  TechnicianFollow[]
+  brandProfile               BrandProfile?
+  services                   Service[]
+  leads                      Lead[]
+  leadFollowUps              LeadFollowUp[]
+  leadStatusHistories        LeadStatusHistory[]
+  actionTasks                ActionTask[]
+  serviceRecords             ServiceRecord[]
+  reviewInvitations          ReviewInvitation[]
+  customerLifecycleHistories CustomerLifecycleHistory[]
+  attributionCorrections     AttributionCorrection[]
+  contentPublicationTasks    ContentPublicationTask[]
+}
+
+model TechnicianQualification {
+  id           Int        @id @default(autoincrement())
+  technicianId Int
+  type         String // education, training, certificate, certification, award
+  title        String
+  detail       String
+  organization String?
+  year         Int
+  month        Int?
+  imageUrl     String?
+  isVerified   Boolean    @default(false)
+  sortOrder    Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @default(now()) @updatedAt
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([technicianId, type])
+  @@index([technicianId, sortOrder])
+}
+
+model TechnicianFeaturedComment {
+  id           Int        @id @default(autoincrement())
+  technicianId Int
+  commentId    Int
+  sortOrder    Int        @default(0)
+  createdAt    DateTime   @default(now())
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@unique([technicianId, commentId])
+  @@index([technicianId, sortOrder])
+}
+
+model ReferralCampaign {
+  id                 Int        @id @default(autoincrement())
+  technicianId       Int        @unique
+  rewardAmount       Float
+  minimumOrderAmount Float      @default(0)
+  validFrom          DateTime
+  validUntil         DateTime
+  status             String     @default("inactive")
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @default(now()) @updatedAt
+  technician         Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([status, validUntil])
+}
+
+model ReferralLink {
+  id               Int                @id @default(autoincrement())
+  token            String             @unique
+  referrerClientId Int
+  technicianId     Int
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  createdAt        DateTime           @default(now())
+  referrer         ClientUser         @relation(fields: [referrerClientId], references: [id], onDelete: Cascade)
+  technician       Technician         @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  relations        ReferralRelation[]
+  referralCode     String?            @unique
+
+  @@index([referrerClientId, technicianId])
+  @@index([expiresAt])
+}
+
+model ReferralRelation {
+  id                 Int                    @id @default(autoincrement())
+  referrerClientId   Int
+  referredClientId   Int
+  technicianId       Int
+  sourceLinkId       Int
+  rewardPromised     Boolean                @default(false)
+  rewardAmount       Float?
+  minimumOrderAmount Float                  @default(0)
+  status             String                 @default("pending_first_order")
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @default(now()) @updatedAt
+  referrer           ClientUser             @relation("ReferralReferrer", fields: [referrerClientId], references: [id], onDelete: Cascade)
+  referred           ClientUser             @relation("ReferralReferred", fields: [referredClientId], references: [id], onDelete: Cascade)
+  technician         Technician             @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  sourceLink         ReferralLink           @relation(fields: [sourceLinkId], references: [id], onDelete: Restrict)
+  qualification      ReferralQualification?
+
+  @@unique([technicianId, referredClientId])
+  @@index([referrerClientId, technicianId])
+}
+
+model ReferralQualification {
+  id                 Int              @id @default(autoincrement())
+  relationId         Int              @unique
+  orderId            Int              @unique
+  paidAmount         Float
+  minimumOrderAmount Float
+  rewardAmount       Float
+  status             String           @default("qualified")
+  qualifiedAt        DateTime         @default(now())
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @default(now()) @updatedAt
+  relation           ReferralRelation @relation(fields: [relationId], references: [id], onDelete: Cascade)
+  order              Order            @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  redeemedAt         DateTime?
+  redeemedBy         Int?
+  redemptionNote     String?
+}
+
+model RewardAccount {
+  id           Int            @id @default(autoincrement())
+  technicianId Int
+  clientUserId Int
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now()) @updatedAt
+  technician   Technician     @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  clientUser   ClientUser     @relation(fields: [clientUserId], references: [id], onDelete: Cascade)
+  ledger       RewardLedger[]
+
+  @@unique([technicianId, clientUserId])
+  @@index([clientUserId])
+}
+
+model RewardLedger {
+  id           Int            @id @default(autoincrement())
+  accountId    Int
+  entryType    String
+  amount       Float
+  status       String
+  sourceType   String
+  sourceId     String
+  reversalOfId Int?
+  availableAt  DateTime?
+  expiresAt    DateTime?
+  createdAt    DateTime       @default(now())
+  account      RewardAccount  @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  reversalOf   RewardLedger?  @relation("RewardLedgerReversal", fields: [reversalOfId], references: [id], onDelete: Restrict)
+  reversals    RewardLedger[] @relation("RewardLedgerReversal")
+
+  @@unique([sourceType, sourceId, entryType])
+  @@index([accountId, status, expiresAt])
 }
 
 model Customer {
-  id           Int         @id @default(autoincrement())
-  technicianId Int
-  clientUserId Int?
-  name         String
-  phone        String?
-  avatarUrl    String?
-  gender       String?
-  birthday     DateTime?
-  address      String?
-  tags         String?
-  notes        String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @default(now()) @updatedAt
-  technician   Technician  @relation(fields: [technicianId], references: [id])
-  clientUser   ClientUser? @relation(fields: [clientUserId], references: [id])
-  orders       Order[]
-  revenues     Revenue[]
+  id                     Int                        @id @default(autoincrement())
+  technicianId           Int
+  clientUserId           Int?
+  name                   String
+  phone                  String?
+  avatarUrl              String?
+  gender                 String?
+  birthday               DateTime?
+  address                String?
+  tags                   String?
+  notes                  String?
+  sourceType             String                     @default("historical")
+  sourceRef              String?
+  createdAt              DateTime                   @default(now())
+  updatedAt              DateTime                   @default(now()) @updatedAt
+  archivedAt             DateTime?
+  technician             Technician                 @relation(fields: [technicianId], references: [id])
+  clientUser             ClientUser?                @relation(fields: [clientUserId], references: [id])
+  orders                 Order[]
+  revenues               Revenue[]
+  workAccesses           NailWorkClientAccess[]
+  followUps              CustomerFollowUp[]
+  leads                  Lead[]
+  serviceRecords         ServiceRecord[]
+  publicationConsents    PublicationConsent[]
+  completedServiceCount  Int                        @default(0)
+  lifetimePaidAmount     Float                      @default(0)
+  lastServiceAt          DateTime?
+  suggestedMaintenanceAt DateTime?
+  lifecycleStage         String                     @default("potential")
+  lifecycleManual        Boolean                    @default(false)
+  preferredStyles        String?
+  preferredColors        String?
+  preferredNailShapes    String?
+  preferredNailLengths   String?
+  preferredPriceMin      Float?
+  preferredPriceMax      Float?
+  allergies              String?
+  contraindications      String?
+  specialReminders       String?
+  referrer               String?
+  anonymizedAt           DateTime?
+  lifecycleHistories     CustomerLifecycleHistory[]
 
   @@unique([technicianId, clientUserId])
   @@index([technicianId])
+  @@index([technicianId, archivedAt])
   @@index([clientUserId])
   @@index([phone])
 }
 
+model CustomerFollowUp {
+  id           Int        @id @default(autoincrement())
+  customerId   Int
+  technicianId Int
+  content      String
+  plannedAt    DateTime
+  status       String     @default("pending")
+  completedAt  DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @default(now()) @updatedAt
+  customer     Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, plannedAt])
+  @@index([technicianId, status, plannedAt])
+}
+
 model Order {
-  id                     Int                   @id @default(autoincrement())
-  orderNo                String                @unique
+  id                     Int                     @id @default(autoincrement())
+  orderNo                String                  @unique
   technicianId           Int
   customerId             Int
   clientUserId           Int?
   addressId              Int?
   designRequestId        Int?
   customServiceRequestId Int?
+  sourceWorkId           Int?
   startTime              DateTime
   endTime                DateTime
   address                String?
@@ -138,30 +372,85 @@ model Order {
   customTitle            String?
   customDescription      String?
   customImages           String? // JSON array of image URLs
-  reminderDaySent        Boolean              @default(false)
-  reminderHourSent       Boolean              @default(false)
+  clientPhotos           String? // JSON array uploaded by the client after completion
+  clientRecordNote       String? // Client-authored note shown in the completed beauty record
+  reminderDaySent        Boolean                 @default(false)
+  reminderHourSent       Boolean                 @default(false)
   quotePrice             Float?
+  fundDiscountAmount     Float                   @default(0)
+  paymentStatus          String                  @default("unpaid")
+  tradeStatus            String?
+  tradeCreatedAt         DateTime?
+  fulfillmentStatus      String?
+  paidAmount             Float                   @default(0)
+  paidAt                 DateTime?
   quoteRemark            String?
   quotedAt               DateTime?
-  status                 String                @default("pending_quote")
-  isDepositPaid          Boolean               @default(false)
-  depositAmount          Float?                @default(0)
-  depositStatus          String?               @default("pending")
+  confirmToken           String?                 @unique
+  confirmTokenExpiresAt  DateTime?
+  confirmTokenUsedAt     DateTime?
+  status                 String                  @default("pending_quote")
+  isDepositPaid          Boolean                 @default(false)
+  depositAmount          Float?                  @default(0)
+  depositStatus          String?                 @default("pending")
   depositConfirmedAt     DateTime?
   confirmedAt            DateTime?
   completedAt            DateTime?
   cancelledAt            DateTime?
   cancelReason           String?
-  source                 String?               @default("technician")
-  createdAt              DateTime              @default(now())
-  updatedAt              DateTime              @default(now()) @updatedAt
-  technician             Technician            @relation(fields: [technicianId], references: [id])
-  customer               Customer              @relation(fields: [customerId], references: [id])
-  clientUser             ClientUser?           @relation(fields: [clientUserId], references: [id])
-  clientAddress          ClientAddress?        @relation(fields: [addressId], references: [id])
-  designRequest          ClientDesignRequest?  @relation(fields: [designRequestId], references: [id])
-  customServiceRequest   CustomServiceRequest? @relation(fields: [customServiceRequestId], references: [id])
+  // 自动过期：预约时间已过但仍未进入行程（待上门/待到店）时置为 expired。
+  // expiredFromStatus 记录过期前状态，便于「重新发起」时恢复原状态。
+  expiredAt              DateTime?
+  expiredFromStatus      String?
+  source                 String?                 @default("technician")
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @default(now()) @updatedAt
+  technician             Technician              @relation(fields: [technicianId], references: [id])
+  customer               Customer                @relation(fields: [customerId], references: [id])
+  clientUser             ClientUser?             @relation(fields: [clientUserId], references: [id])
+  clientAddress          ClientAddress?          @relation(fields: [addressId], references: [id])
+  designRequest          ClientDesignRequest?    @relation(fields: [designRequestId], references: [id])
+  customServiceRequest   CustomServiceRequest?   @relation(fields: [customServiceRequestId], references: [id])
+  sourceWork             NailWork?               @relation(fields: [sourceWorkId], references: [id], onDelete: SetNull)
   revenue                Revenue?
+  workAccesses           NailWorkClientAccess[]
+  review                 ServiceReview?
+  reminders              OrderReminder[]
+  referralQualification  ReferralQualification?
+  paymentOrders          PaymentOrder[]
+  tradeOrder             BookingTradeOrder?
+  serviceId              Int?
+  service                Service?                @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  sourceLeadId           Int?
+  applicationKey         String?                 @unique
+  bookingPhase           String                  @default("application")
+  expectedDate           DateTime?
+  expectedTimeSlot       String?
+  confirmedStartTime     DateTime?
+  confirmedEndTime       DateTime?
+  estimatedAmount        Float?
+  confirmedAmount        Float?
+  actualAmount           Float?
+  materialCost           Float                   @default(0)
+  rejectionReason        String?
+  noShowReason           String?
+  aftercareDeadline      DateTime?
+  suggestedMaintenanceAt DateTime?
+  sourceLead             Lead?                   @relation("LeadBookings", fields: [sourceLeadId], references: [id], onDelete: SetNull)
+  intentWorks            OrderIntentWork[]
+  convertedLead          Lead[]                  @relation("LeadConvertedOrder")
+  serviceRecord          ServiceRecord?
+  reviewInvitation       ReviewInvitation?
+  worksFromOrder         NailWork[]              @relation("WorkSourceOrder")
+  isRepeatBooking        Boolean                 @default(false)
+  sourceServiceRecordId  Int?
+  attributionChannel     String?                 @default("direct")
+  attributionCampaign    String?
+  attributionContent     String?
+  attributionVisitorId   String?
+  referralRelationId     Int?
+  referrerClientId       Int?
+  contentPublicationTask ContentPublicationTask?
 
   @@index([technicianId])
   @@index([customerId])
@@ -169,30 +458,150 @@ model Order {
   @@index([addressId])
   @@index([designRequestId])
   @@index([customServiceRequestId])
+  @@index([sourceWorkId])
+  @@index([serviceId])
   @@index([status])
   @@index([startTime])
+  @@index([sourceLeadId])
+  @@index([sourceServiceRecordId])
+  @@index([referralRelationId])
+}
+
+model OrderReminder {
+  id            Int       @id @default(autoincrement())
+  orderId       Int
+  type          String
+  scheduledFor  DateTime
+  status        String    @default("pending")
+  attempts      Int       @default(0)
+  lastAttemptAt DateTime?
+  sentAt        DateTime?
+  cancelledAt   DateTime?
+  lastError     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+  order         Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, type])
+  @@index([status, scheduledFor])
 }
 
 model ClientUser {
-  id                    Int                    @id @default(autoincrement())
-  nickname              String?
-  phone                 String                 @unique
-  passwordHash          String                 @default("")
-  tokenVersion          Int                    @default(0)
-  avatarUrl             String?
-  city                  String?
-  bio                   String?
-  status                String                 @default("active")
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @default(now()) @updatedAt
-  bindings              ClientTechBinding[]
-  addresses             ClientAddress[]
-  orders                Order[]
-  customers             Customer[]
-  designRequests        ClientDesignRequest[]
-  conversations         Conversation[]
-  customServiceRequests CustomServiceRequest[]
-  workComments          NailWorkComment[]
+  id                        Int                    @id @default(autoincrement())
+  nickname                  String?
+  phone                     String                 @unique
+  passwordHash              String                 @default("")
+  managedPasswordCiphertext String?
+  tokenVersion              Int                    @default(0)
+  avatarUrl                 String?
+  city                      String?
+  bio                       String?
+  status                    String                 @default("active")
+  createdAt                 DateTime               @default(now())
+  updatedAt                 DateTime               @default(now()) @updatedAt
+  bindings                  ClientTechBinding[]
+  addresses                 ClientAddress[]
+  orders                    Order[]
+  customers                 Customer[]
+  designRequests            ClientDesignRequest[]
+  conversations             Conversation[]
+  customServiceRequests     CustomServiceRequest[]
+  workComments              NailWorkComment[]
+  workAccesses              NailWorkClientAccess[]
+  workShareGrants           NailWorkShareGrant[]
+  serviceReviews            ServiceReview[]
+  workShareEvents           NailWorkShareEvent[]
+  referralLinks             ReferralLink[]
+  referralsMade             ReferralRelation[]     @relation("ReferralReferrer")
+  referralAttributions      ReferralRelation[]     @relation("ReferralReferred")
+  rewardAccounts            RewardAccount[]
+  paymentOrders             PaymentOrder[]
+  bookingTradeOrders        BookingTradeOrder[]
+  wechatIdentity            WechatIdentity?
+  followedTechnicians       TechnicianFollow[]
+  conversionEvents          ConversionEvent[]
+  leads                     Lead[]
+  publicationConsents       PublicationConsent[]
+}
+
+model TechnicianFollow {
+  id           Int        @id @default(autoincrement())
+  clientUserId Int
+  technicianId Int
+  createdAt    DateTime   @default(now())
+  clientUser   ClientUser @relation(fields: [clientUserId], references: [id], onDelete: Cascade)
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@unique([clientUserId, technicianId])
+  @@index([technicianId])
+}
+
+model WechatIdentity {
+  id           Int         @id @default(autoincrement())
+  appId        String
+  openId       String
+  unionId      String?
+  clientUserId Int?        @unique
+  technicianId Int?        @unique
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @default(now()) @updatedAt
+  clientUser   ClientUser? @relation(fields: [clientUserId], references: [id], onDelete: Cascade)
+  technician   Technician? @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@unique([appId, openId])
+  @@index([unionId])
+}
+
+model AuthVerificationCode {
+  key       String   @id
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([expiresAt])
+}
+
+model AuthVerificationRateLimit {
+  key       String   @id
+  count     Int      @default(1)
+  resetAt   DateTime
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([resetAt])
+}
+
+model WechatPlatformConfig {
+  id                     Int       @id @default(1)
+  loginEnabled           Boolean   @default(false)
+  miniProgramAppId       String?
+  miniProgramSecret      String?
+  loginValidatedAt       DateTime?
+  loginValidationError   String?
+  paymentEnabled         Boolean   @default(false)
+  merchantId             String?
+  merchantSerialNo       String?
+  merchantPrivateKey     String?
+  apiV3Key               String?
+  paymentVerifierMode    String?
+  platformKeyId          String?
+  platformPublicKey      String?
+  boundAppId             String?
+  bindingConfirmed       Boolean   @default(false)
+  paymentNotifyUrl       String?
+  paymentValidatedAt     DateTime?
+  paymentValidationError String?
+  operatorName           String?
+  storeName              String?
+  storeAddress           String?
+  storePhone             String?
+  privacyContact         String?
+  filingNumber           String?
+  launchTechnicianId     Int?
+  bookingReminderTemplateId String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @default(now()) @updatedAt
 }
 
 model ClientTechBinding {
@@ -202,7 +611,9 @@ model ClientTechBinding {
   inviteCode String?
   bindSource String
   isDefault  Boolean    @default(false)
+  // pending（待美甲师审批）| active（已绑定）| inactive（已解除）| rejected（被拒绝）
   status     String     @default("active")
+  note       String? // 客户申请绑定时填写的备注
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @default(now()) @updatedAt
   client     ClientUser @relation(fields: [clientId], references: [id])
@@ -236,26 +647,188 @@ model ClientAddress {
 }
 
 model NailWork {
-  id          Int                @id @default(autoincrement())
-  techId      Int
-  title       String?
-  coverUrl    String?
-  images      String?
-  description String?
-  tags        String?
-  isVisible   Boolean            @default(true)
-  isPinned    Boolean            @default(false)
-  isFeatured  Boolean            @default(false)
-  sortOrder   Int                @default(0)
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @default(now()) @updatedAt
-  technician  Technician         @relation(fields: [techId], references: [id])
-  likes       NailWorkLike[]
-  favorites   NailWorkFavorite[]
-  comments    NailWorkComment[]
+  id                        Int                    @id @default(autoincrement())
+  techId                    Int
+  title                     String?
+  coverUrl                  String?
+  images                    String?
+  description               String?
+  designIdea                String?
+  suitableScene             String?
+  recommendationScore       Int?
+  tags                      String?
+  isVisible                 Boolean                @default(true)
+  isPinned                  Boolean                @default(false)
+  isFeatured                Boolean                @default(false)
+  sortOrder                 Int                    @default(0)
+  price                     Float?
+  viewCount                 Int                    @default(0)
+  isHomepageFeatured        Boolean                @default(false)
+  publicationStatus         String                 @default("pending")
+  reviewNote                String?
+  reviewedAt                DateTime?
+  reviewedBy                Int?
+  publishedAt               DateTime?
+  // public: 已绑定客户均可见；authorized_clients: 仅授权客户可见
+  visibilityScope           String                 @default("public")
+  createdAt                 DateTime               @default(now())
+  updatedAt                 DateTime               @default(now()) @updatedAt
+  technician                Technician             @relation(fields: [techId], references: [id])
+  likes                     NailWorkLike[]
+  favorites                 NailWorkFavorite[]
+  comments                  NailWorkComment[]
+  clientAccesses            NailWorkClientAccess[]
+  shareGrants               NailWorkShareGrant[]
+  shareEvents               NailWorkShareEvent[]
+  sourceOrders              Order[]
+  conversionEvents          ConversionEvent[]
+  serviceId                 Int?
+  service                   Service?               @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  style                     String?
+  color                     String?
+  nailShape                 String?
+  nailLength                String?
+  suitableSkinTones         String?
+  scenes                    String?
+  productionMinutes         Int?
+  craftHighlights           String?
+  priceDisplayPolicy        String                 @default("exact")
+  referencePriceMinFen      Int?
+  referencePriceMaxFen      Int?
+  isReproducible            Boolean                @default(true)
+  reproductionNotes         String?
+  assetStatus               String                 @default("draft")
+  publicAuthorizationStatus String                 @default("pending")
+  publicSortOrder           Int                    @default(0)
+  archivedAt                DateTime?
+  leadSources               Lead[]
+  intentOrders              OrderIntentWork[]
+  sourceOrderId             Int?                   @unique
+  sourceOrder               Order?                 @relation("WorkSourceOrder", fields: [sourceOrderId], references: [id])
 
   @@index([techId])
   @@index([isVisible])
+  @@index([isHomepageFeatured])
+  @@index([publicationStatus, createdAt])
+  @@index([serviceId])
+  @@index([techId, assetStatus, archivedAt])
+  @@index([techId, style, color, nailShape])
+  @@index([assetStatus, publicAuthorizationStatus, publicSortOrder])
+}
+
+model NailWorkClientAccess {
+  id           Int                  @id @default(autoincrement())
+  workId       Int
+  customerId   Int
+  clientUserId Int?
+  orderId      Int?
+  canView      Boolean              @default(true)
+  canShare     Boolean              @default(false)
+  canFavorite  Boolean              @default(true)
+  canLike      Boolean              @default(true)
+  canComment   Boolean              @default(true)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @default(now()) @updatedAt
+  work         NailWork             @relation(fields: [workId], references: [id], onDelete: Cascade)
+  customer     Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  clientUser   ClientUser?          @relation(fields: [clientUserId], references: [id], onDelete: SetNull)
+  order        Order?               @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  shareGrants  NailWorkShareGrant[]
+
+  @@unique([workId, customerId])
+  @@index([clientUserId, canView])
+  @@index([orderId])
+}
+
+model NailWorkShareGrant {
+  id           Int                  @id @default(autoincrement())
+  token        String               @unique
+  workId       Int
+  accessId     Int
+  clientUserId Int
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime             @default(now())
+  work         NailWork             @relation(fields: [workId], references: [id], onDelete: Cascade)
+  access       NailWorkClientAccess @relation(fields: [accessId], references: [id], onDelete: Cascade)
+  clientUser   ClientUser           @relation(fields: [clientUserId], references: [id], onDelete: Cascade)
+  events       NailWorkShareEvent[]
+
+  @@index([workId])
+  @@index([accessId, revokedAt])
+  @@index([expiresAt])
+}
+
+model NailWorkShareEvent {
+  id           Int                 @id @default(autoincrement())
+  workId       Int
+  clientUserId Int?
+  shareGrantId Int?
+  eventType    String
+  channel      String?
+  createdAt    DateTime            @default(now())
+  work         NailWork            @relation(fields: [workId], references: [id], onDelete: Cascade)
+  clientUser   ClientUser?         @relation(fields: [clientUserId], references: [id], onDelete: SetNull)
+  shareGrant   NailWorkShareGrant? @relation(fields: [shareGrantId], references: [id], onDelete: SetNull)
+
+  @@index([workId, eventType])
+  @@index([clientUserId])
+  @@index([shareGrantId])
+  @@index([createdAt])
+}
+
+model ConversionEvent {
+  id           Int         @id @default(autoincrement())
+  eventId      String      @unique
+  technicianId Int
+  workId       Int?
+  clientUserId Int?
+  visitorId    String?
+  eventType    String
+  source       String?
+  createdAt    DateTime    @default(now())
+  technician   Technician  @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  work         NailWork?   @relation(fields: [workId], references: [id], onDelete: SetNull)
+  clientUser   ClientUser? @relation(fields: [clientUserId], references: [id], onDelete: SetNull)
+  channel      String      @default("direct")
+  touchpoint   String?
+  campaign     String?
+  content      String?
+  dedupeKey    String?     @unique
+
+  @@index([technicianId, eventType, createdAt])
+  @@index([workId, eventType, createdAt])
+  @@index([visitorId, createdAt])
+}
+
+model ServiceReview {
+  id                   Int                  @id @default(autoincrement())
+  orderId              Int                  @unique
+  clientUserId         Int
+  technicianId         Int
+  rating               Int
+  content              String?
+  photos               String?
+  photoUseAuthorized   Boolean              @default(false)
+  photoUseAuthorizedAt DateTime?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @default(now()) @updatedAt
+  order                Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  clientUser           ClientUser           @relation(fields: [clientUserId], references: [id], onDelete: Cascade)
+  technician           Technician           @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  verificationSource   String               @default("completed_order")
+  moderationStatus     String               @default("pending")
+  publicationStatus    String               @default("private")
+  moderatedAt          DateTime?
+  moderatorId          Int?
+  technicianReply      String?
+  repliedAt            DateTime?
+  reviewInvitationId   Int?                 @unique
+  reviewInvitation     ReviewInvitation?    @relation(fields: [reviewInvitationId], references: [id])
+  publicationConsents  PublicationConsent[]
+
+  @@index([clientUserId])
+  @@index([technicianId, rating])
 }
 
 model NailWorkLike {
@@ -263,6 +836,7 @@ model NailWorkLike {
   workId       Int
   clientId     Int?
   technicianId Int?
+  isRead       Boolean  @default(false)
   createdAt    DateTime @default(now())
   work         NailWork @relation(fields: [workId], references: [id], onDelete: Cascade)
 
@@ -275,6 +849,7 @@ model NailWorkFavorite {
   workId       Int
   clientId     Int?
   technicianId Int?
+  isRead       Boolean  @default(false)
   createdAt    DateTime @default(now())
   work         NailWork @relation(fields: [workId], references: [id], onDelete: Cascade)
 
@@ -283,22 +858,23 @@ model NailWorkFavorite {
 }
 
 model NailWorkComment {
-  id           Int              @id @default(autoincrement())
+  id           Int               @id @default(autoincrement())
   workId       Int
   clientId     Int?
   technicianId Int?
   parentId     Int?
   content      String
-  isRead       Boolean          @default(false)
-  isPinned     Boolean          @default(false)
-  isHidden     Boolean          @default(false)
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @default(now()) @updatedAt
-  work         NailWork         @relation(fields: [workId], references: [id], onDelete: Cascade)
-  client       ClientUser?      @relation(fields: [clientId], references: [id])
-  technician   Technician?      @relation(fields: [technicianId], references: [id])
-  parent       NailWorkComment? @relation("CommentReplies", fields: [parentId], references: [id])
+  isRead       Boolean           @default(false)
+  isPinned     Boolean           @default(false)
+  isHidden     Boolean           @default(false)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @default(now()) @updatedAt
+  work         NailWork          @relation(fields: [workId], references: [id], onDelete: Cascade)
+  client       ClientUser?       @relation(fields: [clientId], references: [id])
+  technician   Technician?       @relation(fields: [technicianId], references: [id])
+  parent       NailWorkComment?  @relation("CommentReplies", fields: [parentId], references: [id])
   replies      NailWorkComment[] @relation("CommentReplies")
+  reports      NailWorkReport[]
 
   @@index([workId])
   @@index([parentId])
@@ -417,35 +993,208 @@ model Revenue {
 }
 
 model SubscriptionPlan {
-  id                 Int                      @id @default(autoincrement())
-  name               String
-  code               String                   @unique
-  price              Float
-  billingCycle       String
-  maxCustomers       Int?
-  maxMonthlyBookings Int?
-  features           String?
-  status             String                   @default("active")
-  createdAt          DateTime                 @default(now())
-  updatedAt          DateTime                 @default(now()) @updatedAt
-  subscriptions      TechnicianSubscription[]
+  id                  Int                      @id @default(autoincrement())
+  name                String
+  code                String                   @unique
+  price               Float
+  billingCycle        String
+  maxCustomers        Int?
+  maxMonthlyBookings  Int?
+  maxWorks            Int?
+  maxStorageBytes     Float?
+  maxMarketingExports Int?
+  maxMonthlySms       Int?
+  maxEmployees        Int?
+  maxBookingPages     Int?
+  targetStage         String?
+  description         String?
+  features            String?
+  status              String                   @default("active")
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @default(now()) @updatedAt
+  subscriptions       TechnicianSubscription[]
+}
+
+model PaymentOrder {
+  id              Int                     @id @default(autoincrement())
+  paymentNo       String                  @unique
+  orderId         Int?
+  subscriptionId  Int?
+  clientUserId    Int?
+  technicianId    Int?
+  paymentType     String
+  amountCents     Int
+  channel         String                  @default("wechat")
+  status          String                  @default("created")
+  idempotencyKey  String                  @unique
+  providerTradeNo String?                 @unique
+  failureReason   String?
+  providerPayload String?
+  paidAt          DateTime?
+  closedAt        DateTime?
+  refundedAt      DateTime?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @default(now()) @updatedAt
+  order           Order?                  @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  subscription    TechnicianSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
+  clientUser      ClientUser?             @relation(fields: [clientUserId], references: [id], onDelete: Restrict)
+  technician      Technician?             @relation(fields: [technicianId], references: [id], onDelete: Restrict)
+
+  @@index([orderId, paymentType, status])
+  @@index([subscriptionId, status])
+  @@index([clientUserId, createdAt])
+  @@index([technicianId, createdAt])
+}
+
+model BookingTradeOrder {
+  id              Int        @id @default(autoincrement())
+  tradeNo         String     @unique
+  bookingId       Int        @unique
+  clientUserId    Int
+  technicianId    Int
+  totalAmount     Float
+  depositAmount   Float      @default(0)
+  balanceAmount   Float      @default(0)
+  paidAmount      Float      @default(0)
+  status          String     @default("pending")
+  currentPayStage String     @default("deposit")
+  cancelledAt     DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @default(now()) @updatedAt
+  booking         Order      @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  clientUser      ClientUser @relation(fields: [clientUserId], references: [id], onDelete: Restrict)
+  technician      Technician @relation(fields: [technicianId], references: [id], onDelete: Restrict)
+
+  @@index([clientUserId, status, createdAt])
+  @@index([technicianId, status, createdAt])
 }
 
 model TechnicianSubscription {
-  id           Int              @id @default(autoincrement())
-  technicianId Int              @unique
-  planId       Int
-  status       String           @default("active")
-  startedAt    DateTime
-  expiredAt    DateTime?
-  cancelledAt  DateTime?
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @default(now()) @updatedAt
-  technician   Technician       @relation(fields: [technicianId], references: [id])
-  plan         SubscriptionPlan @relation(fields: [planId], references: [id])
+  id                Int              @id @default(autoincrement())
+  technicianId      Int              @unique
+  planId            Int
+  status            String           @default("active")
+  startedAt         DateTime
+  expiredAt         DateTime?
+  cancelledAt       DateTime?
+  pendingPlanCode   String?
+  changeEffectiveAt DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @default(now()) @updatedAt
+  technician        Technician       @relation(fields: [technicianId], references: [id])
+  plan              SubscriptionPlan @relation(fields: [planId], references: [id])
+  paymentOrders     PaymentOrder[]
 
   @@index([status])
   @@index([expiredAt])
+}
+
+model SubscriptionResourceUsage {
+  id               Int        @id @default(autoincrement())
+  technicianId     Int
+  period           String
+  marketingExports Int        @default(0)
+  smsSent          Int        @default(0)
+  storageBytes     Float      @default(0)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @default(now()) @updatedAt
+  technician       Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@unique([technicianId, period])
+  @@index([period])
+}
+
+model SubscriptionChange {
+  id           Int        @id @default(autoincrement())
+  technicianId Int
+  fromPlanCode String?
+  toPlanCode   String
+  reason       String
+  effectiveAt  DateTime
+  metadata     String?
+  createdAt    DateTime   @default(now())
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([technicianId, createdAt])
+  @@index([effectiveAt])
+}
+
+model SubscriptionUsageEvent {
+  id             Int        @id @default(autoincrement())
+  technicianId   Int
+  resourceType   String
+  idempotencyKey String
+  amount         Int        @default(1)
+  period         String
+  metadata       String?
+  createdAt      DateTime   @default(now())
+  technician     Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@unique([technicianId, resourceType, idempotencyKey])
+  @@index([technicianId, resourceType, period])
+}
+
+model MarketingMaterial {
+  id                Int        @id @default(autoincrement())
+  technicianId      Int
+  type              String
+  title             String
+  content           String
+  status            String     @default("draft")
+  revision          Int        @default(1)
+  exportCount       Int        @default(0)
+  freeReexportCount Int        @default(0)
+  lastExportedAt    DateTime?
+  lastChargedAt     DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @default(now()) @updatedAt
+  technician        Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([technicianId, updatedAt])
+}
+
+model DataExportAudit {
+  id                Int        @id @default(autoincrement())
+  technicianId      Int
+  exportType        String
+  format            String
+  rowCount          Int
+  filters           String?
+  createdAt         DateTime   @default(now())
+  technician        Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  includedSensitive Boolean    @default(false)
+
+  @@index([technicianId, createdAt])
+}
+
+model UploadedAsset {
+  id           Int        @id @default(autoincrement())
+  technicianId Int
+  url          String     @unique
+  highUrl      String
+  mediumUrl    String
+  thumbnailUrl String
+  bytesStored  Int
+  deletedAt    DateTime?
+  createdAt    DateTime   @default(now())
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([technicianId, deletedAt])
+}
+
+model SubscriptionMetricEvent {
+  id           Int        @id @default(autoincrement())
+  technicianId Int
+  eventType    String
+  source       String
+  planCode     String?
+  metadata     String?
+  createdAt    DateTime   @default(now())
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([eventType, createdAt])
+  @@index([technicianId, createdAt])
 }
 
 model FeatureFlag {
@@ -487,6 +1236,7 @@ model ArtistApplication {
   serviceMode String? // home, shop, both
   experience  String? // years of experience
   specialty   String? // specialties
+  wechat      String? // 微信号，用于发放激活码
   note        String?
   status      String    @default("pending") // pending, approved, rejected
   reviewedBy  Int?
@@ -509,4 +1259,396 @@ model TechnicianInviteKey {
   technician         Technician? @relation(fields: [usedByTechnicianId], references: [id])
 
   @@index([usedByTechnicianId])
+}
+
+model BlockedTimeSlot {
+  id         Int        @id @default(autoincrement())
+  techId     Int
+  orderId    Int?
+  startTime  DateTime
+  endTime    DateTime
+  reason     String?
+  createdAt  DateTime   @default(now())
+  technician Technician @relation(fields: [techId], references: [id])
+
+  @@unique([techId, startTime])
+  @@index([techId])
+  @@index([startTime])
+  @@index([endTime])
+}
+
+model NailWorkReport {
+  id           Int             @id @default(autoincrement())
+  commentId    Int
+  reporterId   Int
+  reporterType String
+  reason       String
+  status       String          @default("pending")
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @default(now()) @updatedAt
+  comment      NailWorkComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, reporterId, reporterType])
+  @@index([status])
+  @@index([commentId])
+}
+
+model Feedback {
+  id             Int      @id @default(autoincrement())
+  sourceType     String // 'client' | 'technician'
+  sourceId       Int
+  sourceName     String?
+  sourcePhone    String?
+  title          String
+  type           String
+  content        String
+  attachmentUrls String   @default("[]")
+  status         String   @default("pending") // 'pending' | 'resolved'
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+
+  @@index([status])
+  @@index([sourceType])
+}
+
+/// 设备推送 token（FCM）。一个 token 属于一个客户或一个技师。
+model DeviceToken {
+  id           Int      @id @default(autoincrement())
+  token        String   @unique
+  platform     String // 'ios' | 'android'
+  role         String // 'client' | 'technician'
+  clientUserId Int?
+  technicianId Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  @@index([clientUserId])
+  @@index([technicianId])
+}
+
+model BrandProfile {
+  id                  Int                     @id @default(autoincrement())
+  technicianId        Int                     @unique
+  brandName           String
+  tagline             String?
+  heroImageUrl        String?
+  experienceYears     Int?
+  specialties         String?
+  certificationTitle  String?
+  featuredReviewIds   String?
+  city                String?
+  publicServiceArea   String?
+  artistIntroduction  String?
+  aestheticPhilosophy String?
+  transportationNotes String?
+  hygieneStandards    String?
+  materialStandards   String?
+  allergyNotice       String?
+  latePolicy          String?
+  cancellationPolicy  String?
+  aftercarePolicy     String?
+  shareTitle          String?
+  shareDescription    String?
+  shareCoverUrl       String?
+  publicationStatus   String                  @default("draft")
+  publishedAt         DateTime?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @default(now()) @updatedAt
+  technician          Technician              @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  environmentPhotos   BrandEnvironmentPhoto[]
+  faqs                BrandFaq[]
+
+  @@index([publicationStatus, updatedAt])
+}
+
+model BrandEnvironmentPhoto {
+  id             Int          @id @default(autoincrement())
+  brandProfileId Int
+  imageUrl       String
+  caption        String?
+  sortOrder      Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now()) @updatedAt
+  brandProfile   BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+
+  @@index([brandProfileId, sortOrder])
+}
+
+model BrandFaq {
+  id             Int          @id @default(autoincrement())
+  brandProfileId Int
+  question       String
+  answer         String
+  sortOrder      Int          @default(0)
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now()) @updatedAt
+  brandProfile   BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+
+  @@index([brandProfileId, isActive, sortOrder])
+}
+
+model Service {
+  id                   Int        @id @default(autoincrement())
+  publicId             String
+  technicianId         Int
+  name                 String
+  description          String?
+  category             String
+  durationMinutes      Int?
+  priceType            String     @default("fixed")
+  priceMinFen          Int?
+  priceMaxFen          Int?
+  isBookable           Boolean    @default(true)
+  sortOrder            Int        @default(0)
+  archivedAt           DateTime?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @default(now()) @updatedAt
+  technician           Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  orders               Order[]
+  works                NailWork[]
+  maintenanceCycleDays Int        @default(21)
+
+  @@unique([technicianId, publicId])
+  @@index([technicianId, archivedAt, isBookable, sortOrder])
+}
+
+model Lead {
+  id                 Int                 @id @default(autoincrement())
+  technicianId       Int
+  clientUserId       Int?
+  customerId         Int?
+  convertedOrderId   Int?
+  visitorId          String?
+  sourceChannel      String              @default("direct")
+  sourceCampaign     String?
+  sourceContent      String?
+  sourceWorkId       Int?
+  firstTouchpoint    String?
+  latestTouchpoint   String?
+  nickname           String?
+  contact            String?
+  requirement        String?
+  budget             String?
+  expectedDate       DateTime?
+  privacyAgreedAt    DateTime?
+  submissionKey      String?             @unique
+  status             String              @default("new")
+  lostReason         String?
+  lostReasonNote     String?
+  nextFollowUpAt     DateTime?
+  pausedAt           DateTime?
+  convertedAt        DateTime?
+  lastActivityAt     DateTime            @default(now())
+  dedupeKey          String              @unique
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @default(now()) @updatedAt
+  technician         Technician          @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  clientUser         ClientUser?         @relation(fields: [clientUserId], references: [id], onDelete: SetNull)
+  customer           Customer?           @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  convertedOrder     Order?              @relation("LeadConvertedOrder", fields: [convertedOrderId], references: [id], onDelete: SetNull)
+  sourceWork         NailWork?           @relation(fields: [sourceWorkId], references: [id], onDelete: SetNull)
+  followUps          LeadFollowUp[]
+  statusHistories    LeadStatusHistory[]
+  bookingOrders      Order[]             @relation("LeadBookings")
+  referralRelationId Int?
+  referrerClientId   Int?
+
+  @@index([technicianId, status, nextFollowUpAt])
+  @@index([technicianId, sourceChannel, createdAt])
+  @@index([visitorId, technicianId])
+  @@index([referralRelationId])
+}
+
+model LeadFollowUp {
+  id             Int        @id @default(autoincrement())
+  leadId         Int
+  technicianId   Int
+  content        String
+  nextFollowUpAt DateTime?
+  createdAt      DateTime   @default(now())
+  lead           Lead       @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  technician     Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, createdAt])
+  @@index([technicianId, nextFollowUpAt])
+}
+
+model LeadStatusHistory {
+  id           Int        @id @default(autoincrement())
+  leadId       Int
+  technicianId Int
+  fromStatus   String?
+  toStatus     String
+  reason       String?
+  createdAt    DateTime   @default(now())
+  lead         Lead       @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, createdAt])
+}
+
+model ActionTask {
+  id           Int        @id @default(autoincrement())
+  technicianId Int
+  taskKey      String     @unique
+  type         String
+  title        String
+  description  String?
+  priority     String     @default("normal")
+  status       String     @default("pending")
+  relatedType  String
+  relatedId    Int
+  actionPath   String
+  dueAt        DateTime?
+  remindAt     DateTime?
+  resolvedAt   DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @default(now()) @updatedAt
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([technicianId, status, dueAt])
+  @@index([technicianId, type, relatedId])
+}
+
+model OrderIntentWork {
+  orderId   Int
+  workId    Int
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  work      NailWork @relation(fields: [workId], references: [id], onDelete: Restrict)
+
+  @@id([orderId, workId])
+  @@index([workId])
+}
+
+model ServiceRecord {
+  id                     Int        @id @default(autoincrement())
+  orderId                Int        @unique
+  technicianId           Int
+  customerId             Int
+  actualStartTime        DateTime
+  actualEndTime          DateTime
+  actualAmount           Float
+  materialCost           Float      @default(0)
+  materials              String?
+  techniques             String?
+  nailCondition          String?
+  customerFeedback       String?
+  careAdvice             String?
+  aftercareDeadline      DateTime
+  suggestedMaintenanceAt DateTime
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @default(now()) @updatedAt
+  order                  Order      @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  technician             Technician @relation(fields: [technicianId], references: [id], onDelete: Restrict)
+  customer               Customer   @relation(fields: [customerId], references: [id], onDelete: Restrict)
+
+  @@index([technicianId, actualEndTime])
+  @@index([customerId, actualEndTime])
+}
+
+model PublicationConsent {
+  id                Int            @id @default(autoincrement())
+  clientUserId      Int?
+  customerId        Int?
+  contentType       String
+  contentId         Int
+  reviewId          Int?
+  displayIdentity   String         @default("anonymous")
+  displayName       String?
+  acquisitionMethod String
+  grantedAt         DateTime
+  revokedAt         DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @default(now()) @updatedAt
+  clientUser        ClientUser?    @relation(fields: [clientUserId], references: [id], onDelete: SetNull)
+  customer          Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  review            ServiceReview? @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+
+  @@unique([contentType, contentId])
+  @@index([clientUserId, revokedAt])
+  @@index([customerId, revokedAt])
+}
+
+model ReviewInvitation {
+  id            Int            @id @default(autoincrement())
+  orderId       Int            @unique
+  technicianId  Int
+  tokenHash     String         @unique
+  expiresAt     DateTime
+  usedAt        DateTime?
+  createdAt     DateTime       @default(now())
+  order         Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  technician    Technician     @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  serviceReview ServiceReview?
+
+  @@index([technicianId, expiresAt])
+}
+
+model CustomerLifecycleHistory {
+  id           Int        @id @default(autoincrement())
+  customerId   Int
+  technicianId Int
+  fromStage    String
+  toStage      String
+  reason       String
+  createdAt    DateTime   @default(now())
+  customer     Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, createdAt])
+  @@index([technicianId, createdAt])
+}
+
+model AttributionCorrection {
+  id           Int        @id @default(autoincrement())
+  technicianId Int
+  entityType   String
+  entityId     Int
+  oldChannel   String?
+  newChannel   String
+  oldWorkId    Int?
+  newWorkId    Int?
+  reason       String
+  createdAt    DateTime   @default(now())
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([technicianId, entityType, entityId, createdAt])
+}
+
+model ContentPublicationTask {
+  id                  Int        @id @default(autoincrement())
+  technicianId        Int
+  orderId             Int        @unique
+  status              String     @default("selecting_images")
+  imageUrls           String?
+  headline            String?
+  serviceSummary      String?
+  designHighlights    String?
+  bookingCallToAction String?
+  hashtags            String?
+  platform            String?
+  publishedAt         DateTime?
+  originalUrl         String?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @default(now())
+  technician          Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  order               Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([technicianId, status, updatedAt])
+}
+
+model WechatSubscriptionAuthorization {
+  id         Int       @id @default(autoincrement())
+  ownerKey   String
+  role       String
+  templateId String
+  status     String
+  grantedAt  DateTime?
+  updatedAt  DateTime  @default(now()) @updatedAt
+
+  @@unique([ownerKey, templateId])
+  @@index([role, status, updatedAt])
 }

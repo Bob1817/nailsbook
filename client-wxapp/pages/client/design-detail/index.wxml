@@ -1,0 +1,238 @@
+<nav-bar title="设计详情" showBack/>
+<view class="container">
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading-wrap">
+    <view class="loading-spinner"></view>
+  </view>
+
+  <view wx:elif="{{!design}}" class="error-wrap">
+    <text class="error-text">设计不存在</text>
+    <button class="btn-back" bindtap="goBack">返回</button>
+  </view>
+
+  <view wx:else class="content">
+    <!-- 设计信息卡片 -->
+    <view class="design-card">
+      <view class="card-header">
+        <view class="title-wrap">
+          <text class="design-title">{{design.title || '未命名设计'}}</text>
+          <text class="design-date">{{design.dateStr}}</text>
+        </view>
+        <!-- 编辑和删除按钮（仅待报价状态） -->
+        <view wx:if="{{design.status === 'pending_quote'}}" class="action-btns">
+          <view class="action-btn" bindtap="showEditModal">
+            <view class="action-icon-edit"></view>
+          </view>
+          <view class="action-btn delete" bindtap="showDeleteModal">
+            <view class="action-icon-delete"></view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 图片画廊 -->
+      <view wx:if="{{design.imageUrls && design.imageUrls.length > 0}}" class="image-gallery">
+        <view class="image-grid">
+          <image
+            wx:for="{{design.imageUrls}}"
+            wx:key="*this"
+            src="{{item}}"
+            mode="aspectFill"
+            class="gallery-img"
+            bindtap="previewImage"
+            data-url="{{item}}"
+            lazy-load
+            aria-label="私人设计参考图"
+          />
+        </view>
+      </view>
+
+      <!-- 描述 -->
+      <view wx:if="{{design.description}}" class="desc-section">
+        <text class="desc-text">{{design.description}}</text>
+      </view>
+    </view>
+
+    <!-- 报价状态卡片 -->
+    <view class="status-card">
+      <view class="status-header">
+        <view class="status-icon-wrap {{design.statusClass}}">
+          <view class="status-dot-icon"></view>
+        </view>
+        <view class="status-info">
+          <text class="status-label">当前状态</text>
+          <text class="status-value {{design.statusClass}}">{{design.statusText}}</text>
+        </view>
+      </view>
+
+      <!-- 报价信息 -->
+      <view wx:if="{{design.quotePrice || design.status === 'quoted' || design.status === 'accepted' || design.status === 'converted'}}" class="quote-section">
+        <view wx:if="{{design.technician}}" class="tech-info">
+          <view class="tech-avatar-wrap" bindtap="viewArtist" role="button" aria-label="查看{{design.technician.name || '美甲师'}}主页">
+            <image wx:if="{{design.technician.avatarUrl}}" src="{{design.technician.avatarUrl}}" mode="aspectFill" class="tech-avatar" aria-label="{{design.technician.name || '美甲师'}}的头像" />
+            <text wx:else class="tech-avatar-text">{{design.technician.name[0]}}</text>
+          </view>
+          <view class="tech-detail">
+            <text class="tech-name">{{design.technician.name}}</text>
+            <text class="tech-label">报价美甲师</text>
+          </view>
+        </view>
+
+        <view wx:if="{{design.quotePrice}}" class="price-wrap">
+          <text class="price-label">报价金额</text>
+          <text class="price-value">¥{{design.quotePrice}}</text>
+        </view>
+
+        <view wx:if="{{design.quoteRemark}}" class="remark-wrap">
+          <text class="remark-label">报价说明</text>
+          <text class="remark-text">{{design.quoteRemark}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部操作按钮 -->
+  <view wx:if="{{design}}" class="bottom-bar">
+    <!-- 待报价状态 -->
+    <view wx:if="{{design.status === 'pending_quote'}}" class="btn-group">
+      <button class="btn-quote" bindtap="showQuoteModal">发起报价</button>
+      <button class="btn-book" bindtap="goToCreateOrder">发起预约</button>
+    </view>
+
+    <!-- 已报价状态 -->
+    <view wx:if="{{design.status === 'quoted'}}" class="btn-group">
+      <button class="btn-book" disabled="{{processingQuote}}" bindtap="rejectQuote">拒绝报价</button>
+      <button class="btn-quote" disabled="{{processingQuote}}" bindtap="acceptQuote">{{processingQuote ? '处理中...' : '接受报价'}}</button>
+    </view>
+
+    <!-- 已接受状态 -->
+    <view wx:if="{{design.status === 'accepted'}}" class="btn-group">
+      <button class="btn-book full" bindtap="goToCreateOrder">发起预约</button>
+    </view>
+
+    <!-- 已转预约状态 -->
+    <view wx:if="{{design.status === 'converted'}}" class="btn-group">
+      <button class="btn-view-order full" bindtap="goToOrders">查看预约</button>
+    </view>
+  </view>
+
+  <!-- 报价弹窗 -->
+  <view wx:if="{{showQuoteModal}}" class="modal-mask" bindtap="hideQuoteModal">
+    <view class="modal-content" catchtap="">
+      <view class="modal-header">
+        <view class="modal-icon-wrap">
+          <view class="modal-icon-dot"></view>
+        </view>
+        <text class="modal-title">发起报价请求</text>
+        <text class="modal-desc">向美甲师发送报价请求</text>
+      </view>
+
+      <view wx:if="{{design.technician}}" class="modal-tech">
+        <view class="modal-tech-avatar-wrap" bindtap="viewArtist" role="button" aria-label="查看{{design.technician.name || '美甲师'}}主页">
+          <image wx:if="{{design.technician.avatarUrl}}" src="{{design.technician.avatarUrl}}" mode="aspectFill" class="modal-tech-avatar" aria-label="{{design.technician.name || '美甲师'}}的头像" />
+          <text wx:else class="modal-tech-avatar-text">{{design.technician.name[0]}}</text>
+        </view>
+        <view class="modal-tech-info">
+          <text class="modal-tech-name">{{design.technician.name}}</text>
+          <text class="modal-tech-label">默认美甲师</text>
+        </view>
+      </view>
+
+      <view class="modal-actions">
+        <button class="btn-cancel" bindtap="hideQuoteModal">取消</button>
+        <button class="btn-confirm {{requestingQuote ? 'disabled' : ''}}" disabled="{{requestingQuote}}" bindtap="requestQuote">
+          {{requestingQuote ? '发送中...' : '确认发送'}}
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 编辑弹窗 -->
+  <view wx:if="{{showEditModal}}" class="modal-mask" bindtap="hideEditModal">
+    <view class="modal-content edit-modal" catchtap="">
+      <view class="modal-header">
+        <view class="modal-icon-wrap">
+          <view class="modal-icon-dot"></view>
+        </view>
+        <text class="modal-title">编辑设计</text>
+        <text class="modal-desc">修改设计作品的标题和描述</text>
+      </view>
+
+      <view class="edit-form">
+        <view class="form-group">
+          <text class="form-label">标题</text>
+          <input
+            class="form-input"
+            value="{{editTitle}}"
+            bindinput="onEditTitleInput"
+            placeholder="输入设计标题"
+            placeholder-class="placeholder"
+          />
+        </view>
+
+        <view class="form-group">
+          <text class="form-label">描述</text>
+          <textarea
+            class="form-textarea"
+            value="{{editDescription}}"
+            bindinput="onEditDescInput"
+            placeholder="输入设计描述"
+            placeholder-class="placeholder"
+            maxlength="500"
+          />
+        </view>
+
+        <view class="form-group">
+          <text class="form-label">图片</text>
+          <view class="edit-images">
+            <view
+              wx:for="{{editImages}}"
+              wx:key="*this"
+              class="edit-img-item"
+            >
+              <image src="{{item}}" mode="aspectFill" class="edit-img" aria-label="待提交的私人设计参考图" />
+              <view class="edit-img-remove" bindtap="removeEditImage" data-index="{{index}}">
+                <text class="remove-icon">×</text>
+              </view>
+            </view>
+            <view
+              wx:if="{{editImages.length < 5}}"
+              class="edit-img-add {{uploadingImage ? 'uploading' : ''}}"
+              bindtap="uploadEditImage"
+            >
+              <view wx:if="{{uploadingImage}}" class="loading-spinner small"></view>
+              <text wx:else class="add-icon">+</text>
+            </view>
+          </view>
+          <text class="form-hint">最多可上传5张图片</text>
+        </view>
+      </view>
+
+      <view class="modal-actions">
+        <button class="btn-cancel" bindtap="hideEditModal">取消</button>
+        <button class="btn-confirm {{savingEdit ? 'disabled' : ''}}" disabled="{{savingEdit}}" bindtap="saveEdit">
+          {{savingEdit ? '保存中...' : '保存'}}
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 删除确认弹窗 -->
+  <view wx:if="{{showDeleteModal}}" class="modal-mask" bindtap="hideDeleteModal">
+    <view class="modal-content" catchtap="">
+      <view class="modal-header">
+        <view class="modal-icon-wrap danger">
+          <view class="modal-icon-dot danger"></view>
+        </view>
+        <text class="modal-title">确认删除</text>
+        <text class="modal-desc">删除后无法恢复，是否确认删除该设计？</text>
+      </view>
+
+      <view class="modal-actions">
+        <button class="btn-cancel" bindtap="hideDeleteModal">取消</button>
+        <button class="btn-danger {{deleting ? 'disabled' : ''}}" disabled="{{deleting}}" bindtap="deleteDesign">
+          {{deleting ? '删除中...' : '确认删除'}}
+        </button>
+      </view>
+    </view>
+  </view>
+</view>

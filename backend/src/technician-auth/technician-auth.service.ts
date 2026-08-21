@@ -7,47 +7,23 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { bookingReadiness } from '../technicians/booking-readiness';
 import { VerificationCodeService } from '../common/verification-code/verification-code.service';
 import { SmsService } from '../common/sms/sms.service';
 import type { Prisma } from '@prisma/client';
+import { buildDefaultServiceItems } from '../common/default-service-items';
+import {
+  isLaunchTechnician,
+  isMiniProgramLaunchMode,
+} from '../common/miniprogram-launch-mode';
 
 @Injectable()
 export class TechnicianAuthService {
-  private static readonly DEFAULT_SERVICE_ITEMS = [
-    {
-      id: 'svc_basic_care_1',
-      name: '基础护理与修形',
-      description: '指甲修剪、修形、去死皮、护理等基础服务',
-      category: 'basic_care',
-      isActive: true,
-      sortOrder: 1,
-    },
-    {
-      id: 'svc_color_style_1',
-      name: '色彩与款式制作',
-      description: '纯色美甲、彩绘、渐变、贴纸等款式设计服务',
-      category: 'color_style',
-      isActive: true,
-      sortOrder: 2,
-    },
-    {
-      id: 'svc_extension_1',
-      name: '指甲延长与加固',
-      description: '甲片延长、光疗延长、指甲加固等服务',
-      category: 'extension_reinforcement',
-      isActive: true,
-      sortOrder: 3,
-    },
-    {
-      id: 'svc_removal_1',
-      name: '卸甲服务',
-      description: '卸除甲油胶、卸甲片等服务',
-      category: 'removal',
-      isActive: true,
-      sortOrder: 4,
-    },
-  ];
   private static readonly EDITABLE_STATUSES = ['active', 'inactive'] as const;
+  private static readonly RESET_PASSWORD_CODE_PURPOSE =
+    'technician:reset-password';
+  private static readonly INITIAL_PASSWORD_CODE_PURPOSE =
+    'technician:initial-password';
 
   constructor(
     private readonly prisma: PrismaService,
@@ -61,9 +37,14 @@ export class TechnicianAuthService {
     try {
       const technician = await this.findTechnicianByPhone(phone);
       if (technician && technician.passwordHash) {
-        const code = this.verificationCode.generate(phone);
+        const code = await this.verificationCode.generate(
+          phone,
+          TechnicianAuthService.RESET_PASSWORD_CODE_PURPOSE,
+        );
         // 后台发送（带重试），不阻塞响应，也消除"是否注册"的响应耗时差异
-        void this.sms.sendVerificationCode(phone, code, '重置密码').catch(() => {});
+        void this.sms
+          .sendVerificationCode(phone, code, '重置密码')
+          .catch(() => {});
       }
     } catch {
       // 频率限制等错误也静默，避免暴露手机号是否注册
@@ -73,7 +54,11 @@ export class TechnicianAuthService {
 
   // 忘记密码：校验验证码并重置密码
   async resetPasswordByCode(phone: string, code: string, newPassword: string) {
-    this.verificationCode.validate(phone, code); // 校验失败抛 BadRequestException
+    await this.verificationCode.validate(
+      phone,
+      code,
+      TechnicianAuthService.RESET_PASSWORD_CODE_PURPOSE,
+    );
     const technician = await this.findTechnicianByPhone(phone);
     if (!technician || !technician.passwordHash) {
       throw new BadRequestException('该手机号未注册');
@@ -81,7 +66,11 @@ export class TechnicianAuthService {
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.prisma.technician.update({
       where: { id: technician.id },
-      data: { passwordHash, tokenVersion: { increment: 1 } },
+      data: {
+        passwordHash,
+        managedPasswordCiphertext: null,
+        tokenVersion: { increment: 1 },
+      },
     });
     return { success: true };
   }
@@ -103,12 +92,15 @@ export class TechnicianAuthService {
     };
   }
 
-  async register(dto: {
-    inviteKey: string;
-    name: string;
-    phone: string;
-    password: string;
-  }) {
+  async register(
+    dto: {
+      inviteKey: string;
+      name: string;
+      phone: string;
+      password: string;
+    },
+    wechatIdentity?: { appId: string; openId: string; unionId?: string },
+  ) {
     const keyRecord = await this.prisma.technicianInviteKey.findUnique({
       where: { key: dto.inviteKey },
       include: { technician: true },
@@ -120,6 +112,12 @@ export class TechnicianAuthService {
 
     if (keyRecord.usedAt) {
       throw new BadRequestException('邀请密钥已被使用');
+    }
+
+    if (isMiniProgramLaunchMode() && !keyRecord.usedByTechnicianId) {
+      throw new BadRequestException(
+        '小程序首期不开放新美甲师入驻，请联系运营方预先开通账号',
+      );
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -153,6 +151,11 @@ export class TechnicianAuthService {
           where: { id: keyRecord.id },
           data: { usedAt: new Date() },
         });
+        if (wechatIdentity) {
+          await tx.wechatIdentity.create({
+            data: { ...wechatIdentity, technicianId: t.id },
+          });
+        }
         return t;
       });
 
@@ -185,6 +188,12 @@ export class TechnicianAuthService {
         },
       });
 
+      if (wechatIdentity) {
+        await tx.wechatIdentity.create({
+          data: { ...wechatIdentity, technicianId: created.id },
+        });
+      }
+
       return created;
     });
 
@@ -195,7 +204,9 @@ export class TechnicianAuthService {
     tx: Prisma.TransactionClient,
   ): Promise<string> {
     let code = this.generateInvitationCode();
-    while (await tx.technician.findUnique({ where: { invitationCode: code } })) {
+    while (
+      await tx.technician.findUnique({ where: { invitationCode: code } })
+    ) {
       code = this.generateInvitationCode();
     }
     return code;
@@ -248,6 +259,9 @@ export class TechnicianAuthService {
   }
 
   private async issueTokens(technicianId: number, phone: string) {
+    if (!isLaunchTechnician(technicianId)) {
+      throw new UnauthorizedException('该美甲师账号未在小程序首期开放');
+    }
     const technician = await this.prisma.technician.findUnique({
       where: { id: technicianId },
       include: { subscription: { include: { plan: true } } },
@@ -290,12 +304,20 @@ export class TechnicianAuthService {
       name: technician.name,
       phone: technician.phone,
       avatarUrl: technician.avatarUrl,
+      bio: technician.bio,
       city: technician.city,
+      province: technician.province,
       serviceArea: technician.serviceArea,
       status: technician.status,
       invitationCode: technician.invitationCode,
       homeService: technician.homeService,
       shopService: technician.shopService,
+      // 是否已通过激活密钥认证（游客模式为 false）
+      isActivated: !!technician.passwordHash,
+      isTourist: !technician.passwordHash,
+      // 接单就绪：至少开启一种服务类型；未就绪则锁定邀请码/邀请链接
+      bookingReady: bookingReadiness(technician).ready,
+      bookingReadinessIssues: bookingReadiness(technician).issues,
       shopAddresses: this.parseShopAddresses(technician.shopAddresses),
       socialMedia: this.parseSocialMedia(technician.socialMedia),
       serviceItems: this.parseServiceItems(technician.serviceItems),
@@ -318,6 +340,10 @@ export class TechnicianAuthService {
       throw new UnauthorizedException('手机号或密码错误');
     }
 
+    if (technician.status === 'deleted') {
+      throw new UnauthorizedException('账号已被删除');
+    }
+
     if (technician.status === 'suspended') {
       throw new UnauthorizedException('账号已被禁用');
     }
@@ -331,6 +357,42 @@ export class TechnicianAuthService {
       throw new UnauthorizedException('手机号或密码错误');
     }
 
+    // 密码同步：如果客户端密码与美甲师密码不同，用美甲师密码覆盖客户端密码
+    const clientUser = await this.prisma.clientUser.findUnique({
+      where: { phone },
+      select: { id: true, passwordHash: true },
+    });
+    if (
+      clientUser &&
+      clientUser.passwordHash &&
+      clientUser.passwordHash !== technician.passwordHash
+    ) {
+      await this.prisma.clientUser.update({
+        where: { id: clientUser.id },
+        data: {
+          passwordHash: technician.passwordHash,
+          managedPasswordCiphertext: null,
+        },
+      });
+    }
+
+    const result = await this.issueTokens(technician.id, technician.phone);
+    return {
+      ...result,
+      mustChangePassword: technician.mustChangePassword,
+    };
+  }
+
+  async loginByWechat(technicianId: number) {
+    const technician = await this.prisma.technician.findUnique({
+      where: { id: technicianId },
+    });
+    if (!technician || technician.status === 'deleted') {
+      throw new UnauthorizedException('美甲师不存在');
+    }
+    if (technician.status === 'suspended') {
+      throw new UnauthorizedException('账号已被禁用');
+    }
     return this.issueTokens(technician.id, technician.phone);
   }
 
@@ -367,10 +429,98 @@ export class TechnicianAuthService {
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.prisma.technician.update({
       where: { id: technicianId },
-      data: { passwordHash, tokenVersion: { increment: 1 } },
+      data: {
+        passwordHash,
+        managedPasswordCiphertext: null,
+        tokenVersion: { increment: 1 },
+      },
     });
 
     return { success: true };
+  }
+
+  async setPassword(technicianId: number, newPassword: string) {
+    const technician = await this.prisma.technician.findUnique({
+      where: { id: technicianId },
+    });
+
+    if (!technician) {
+      throw new UnauthorizedException('美甲师不存在');
+    }
+
+    if (!technician.mustChangePassword) {
+      throw new BadRequestException('无需设置密码');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.technician.update({
+      where: { id: technicianId },
+      data: {
+        passwordHash,
+        managedPasswordCiphertext: null,
+        tokenVersion: { increment: 1 },
+        mustChangePassword: false,
+      },
+    });
+
+    return this.issueTokens(technician.id, technician.phone);
+  }
+
+  async sendInitialPasswordCode(phone: string) {
+    try {
+      const technician = await this.findTechnicianByPhone(phone);
+      if (technician && !technician.passwordHash) {
+        const code = await this.verificationCode.generate(
+          phone,
+          TechnicianAuthService.INITIAL_PASSWORD_CODE_PURPOSE,
+        );
+        void this.sms
+          .sendVerificationCode(phone, code, '首次设置密码')
+          .catch(() => {});
+      }
+    } catch {
+      // 与找回密码一致，统一响应，避免枚举美甲师手机号。
+    }
+    return { sent: true, devCode: this.verificationCode.getDevCode() };
+  }
+
+  // 首次登录设置密码：必须校验发送到预留手机号的短信验证码。
+  async setInitialPassword(phone: string, code: string, newPassword: string) {
+    await this.verificationCode.validate(
+      phone,
+      code,
+      TechnicianAuthService.INITIAL_PASSWORD_CODE_PURPOSE,
+    );
+    const technician = await this.findTechnicianByPhone(phone);
+
+    if (!technician) {
+      throw new BadRequestException('该手机号未注册');
+    }
+
+    if (technician.status === 'deleted') {
+      throw new UnauthorizedException('账号已被删除');
+    }
+
+    if (technician.status === 'suspended') {
+      throw new UnauthorizedException('账号已被禁用');
+    }
+
+    if (technician.passwordHash) {
+      throw new BadRequestException('该账号已设置密码，请直接登录');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.technician.update({
+      where: { id: technician.id },
+      data: {
+        passwordHash,
+        managedPasswordCiphertext: null,
+        mustChangePassword: false,
+        tokenVersion: { increment: 1 },
+      },
+    });
+
+    return this.issueTokens(technician.id, technician.phone);
   }
 
   async getProfile(technicianId: number) {
@@ -395,12 +545,18 @@ export class TechnicianAuthService {
       phone: technician.phone,
       avatarUrl: technician.avatarUrl,
       city: technician.city,
+      province: technician.province,
       serviceArea: technician.serviceArea,
       status: technician.status,
       invitationCode: technician.invitationCode,
       lastLoginAt: technician.lastLoginAt,
       homeService: technician.homeService,
       shopService: technician.shopService,
+      // 是否已通过激活密钥认证（游客模式为 false）
+      isActivated: !!technician.passwordHash,
+      isTourist: !technician.passwordHash,
+      // 接单就绪：至少开启一种服务类型；未就绪则锁定邀请码/邀请链接
+      bookingReady: technician.homeService || technician.shopService,
       shopAddresses: this.parseShopAddresses(technician.shopAddresses),
       socialMedia: this.parseSocialMedia(technician.socialMedia),
       serviceItems: this.parseServiceItems(technician.serviceItems),
@@ -434,6 +590,13 @@ export class TechnicianAuthService {
       throw new UnauthorizedException('美甲师不存在');
     }
 
+    if (status === 'active') {
+      const readiness = bookingReadiness({ ...technician, status: 'active' });
+      if (!readiness.ready) {
+        throw new BadRequestException(readiness.issues[0]);
+      }
+    }
+
     return this.prisma.technician.update({
       where: { id: technicianId },
       data: { status },
@@ -443,6 +606,7 @@ export class TechnicianAuthService {
         phone: true,
         avatarUrl: true,
         city: true,
+        province: true,
         serviceArea: true,
         status: true,
         socialMedia: true,
@@ -455,11 +619,17 @@ export class TechnicianAuthService {
     dto: {
       name?: string;
       city?: string;
+      province?: string;
       serviceArea?: string;
+      bio?: string;
       avatarUrl?: string;
       socialMedia?: Record<string, string>;
       serviceSchedule?: any;
       customTags?: any[];
+      coverImageUrl?: string;
+      servicePhilosophy?: string;
+      bookingNotes?: string;
+      styleTags?: string[];
     },
   ) {
     const technician = await this.prisma.technician.findUnique({
@@ -480,8 +650,16 @@ export class TechnicianAuthService {
       updateData.city = dto.city.trim() || null;
     }
 
+    if (dto.province !== undefined) {
+      updateData.province = dto.province.trim() || null;
+    }
+
     if (dto.serviceArea !== undefined) {
       updateData.serviceArea = dto.serviceArea.trim() || null;
+    }
+
+    if (dto.bio !== undefined) {
+      updateData.bio = dto.bio.trim() || null;
     }
 
     if (dto.avatarUrl !== undefined) {
@@ -511,6 +689,24 @@ export class TechnicianAuthService {
         : null;
     }
 
+    if (dto.coverImageUrl !== undefined) {
+      updateData.coverImageUrl = dto.coverImageUrl.trim() || null;
+    }
+
+    if (dto.servicePhilosophy !== undefined) {
+      updateData.servicePhilosophy = dto.servicePhilosophy.trim() || null;
+    }
+
+    if (dto.bookingNotes !== undefined) {
+      updateData.bookingNotes = dto.bookingNotes.trim() || null;
+    }
+
+    if (dto.styleTags !== undefined) {
+      updateData.styleTags = dto.styleTags.length
+        ? JSON.stringify(dto.styleTags)
+        : null;
+    }
+
     const updated = await this.prisma.technician.update({
       where: { id: technicianId },
       data: updateData,
@@ -520,7 +716,9 @@ export class TechnicianAuthService {
         phone: true,
         avatarUrl: true,
         city: true,
+        province: true,
         serviceArea: true,
+        bio: true,
         status: true,
         invitationCode: true,
         homeService: true,
@@ -542,6 +740,8 @@ export class TechnicianAuthService {
         ? JSON.parse(updated.serviceSchedule)
         : null,
       customTags: updated.customTags ? JSON.parse(updated.customTags) : [],
+      bookingReady: bookingReadiness(updated).ready,
+      bookingReadinessIssues: bookingReadiness(updated).issues,
     };
   }
 
@@ -583,7 +783,11 @@ export class TechnicianAuthService {
 
   async updateServiceType(
     technicianId: number,
-    dto: { homeService: boolean; shopService: boolean; shopAddresses?: any[] },
+    dto: {
+      homeService?: boolean;
+      shopService?: boolean;
+      shopAddresses?: any[];
+    },
   ) {
     const technician = await this.prisma.technician.findUnique({
       where: { id: technicianId },
@@ -593,10 +797,19 @@ export class TechnicianAuthService {
       throw new UnauthorizedException('美甲师不存在');
     }
 
-    const updateData: any = {
-      homeService: dto.homeService,
-      shopService: dto.shopService,
-    };
+    // 局部更新：只写入本次提交的字段，未提交的保持不变
+    const updateData: any = {};
+    if (isMiniProgramLaunchMode()) {
+      updateData.homeService = false;
+      updateData.shopService = true;
+    } else {
+      if (dto.homeService !== undefined) {
+        updateData.homeService = dto.homeService;
+      }
+      if (dto.shopService !== undefined) {
+        updateData.shopService = dto.shopService;
+      }
+    }
 
     if (dto.shopAddresses !== undefined) {
       updateData.shopAddresses = JSON.stringify(
@@ -613,6 +826,7 @@ export class TechnicianAuthService {
         phone: true,
         avatarUrl: true,
         city: true,
+        province: true,
         serviceArea: true,
         status: true,
         homeService: true,
@@ -687,8 +901,6 @@ export class TechnicianAuthService {
   }
 
   private parseServiceItems(serviceItems: string | null) {
-    return serviceItems
-      ? JSON.parse(serviceItems)
-      : TechnicianAuthService.DEFAULT_SERVICE_ITEMS;
+    return serviceItems ? JSON.parse(serviceItems) : buildDefaultServiceItems();
   }
 }

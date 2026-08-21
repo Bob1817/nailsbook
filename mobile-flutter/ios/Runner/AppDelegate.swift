@@ -1,7 +1,7 @@
 import UIKit
 import Flutter
 
-@UIApplicationMain
+@main
 @objc class AppDelegate: FlutterAppDelegate {
   override func application(
     _ application: UIApplication,
@@ -22,13 +22,5 @@ import Flutter
     }
     // Let Flutter handle the universal link via app_links plugin
     return super.application(application, continue: userActivity, restorationHandler: restorationHandler)
-  }
-
-  override func application(
-    _ application: UIApplication,
-    didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
-  ) {
-    // Forward to Firebase Messaging
-    Messaging.messaging().apnsToken = deviceToken
   }
 }

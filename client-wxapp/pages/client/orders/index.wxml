@@ -1,16 +1,102 @@
-<view class="container">
-  <view bindtap="switchStatus" data-status="">全部</view>
-  <view bindtap="switchStatus" data-status="pending_quote">待报价</view>
-  <view bindtap="switchStatus" data-status="quoted">已报价</view>
-  <view bindtap="switchStatus" data-status="confirmed">已确认</view>
-  <view bindtap="switchStatus" data-status="completed">已完成</view>
-  <view wx:for="{{orders}}" bindtap="viewOrder" data-id="{{item.id}}">
-    <text>{{item.orderNo}}</text>
-    <text>{{item.statusText}}</text>
-    <image src="{{item.techAvatar}}" mode="aspectFill"></image>
-    <text>{{item.techName}}</text>
-    <text>{{item.serviceType}}</text>
-    <text>{{item.startTime}}</text>
-    <text>¥{{item.quotePrice}}</text>
+<nav-bar title="{{tradeView ? '我的订单' : '预约'}}"/>
+
+<view class="filter-bar">
+  <scroll-view scroll-x class="status-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="status-list">
+      <view
+        wx:for="{{tabs}}"
+        wx:key="value"
+        class="status-tab {{currentStatus === item.value ? 'status-tab-active' : ''}}"
+        bindtap="switchStatus"
+        data-status="{{item.value}}"
+      >{{item.label}}</view>
+    </view>
+  </scroll-view>
+  <view class="filter-create" bindtap="createOrder" role="button" aria-label="发起预约">
+    <view class="filter-create-plus"></view>
   </view>
 </view>
+
+<view class="page">
+  <!-- ===== 列表区（原生页面滚动）===== -->
+  <view class="list-area">
+
+    <!-- 骨架屏 -->
+    <view wx:if="{{loading && orders.length === 0}}" class="skel-list">
+      <view wx:for="{{[1,2,3]}}" wx:key="*this" class="skel-card"></view>
+    </view>
+
+    <!-- 空状态 -->
+    <view wx:elif="{{!loading && orders.length === 0}}" class="empty-wrap">
+      <view class="empty-art">
+        <view class="empty-ring"></view>
+        <view class="empty-dot"></view>
+      </view>
+      <text class="empty-ttl">{{emptyTitle}}</text>
+      <text class="empty-sub">{{emptyCopy}}</text>
+      <view class="empty-cta" bindtap="createOrder">立即预约</view>
+    </view>
+
+    <!-- 预约卡片列表（与首页「我的预约」卡片统一）-->
+    <view wx:else class="order-list">
+      <view
+        wx:for="{{orders}}"
+        wx:key="id"
+        class="order-card"
+        bindtap="viewOrder"
+        data-id="{{item.id}}"
+      >
+        <view class="order-card-content">
+          <!-- 内容：日期 + 详情 -->
+          <view class="order-card-body">
+            <view class="order-date-box">
+              <text class="order-date-sub">{{item._monthText}}</text>
+              <text class="order-date-day">{{item._dayText}}</text>
+              <text class="order-date-weekday">{{item._weekdayText}}</text>
+            </view>
+            <view class="order-details">
+              <view class="order-title-row">
+                <text class="order-service-name">{{item._titleText}}</text>
+                <view class="status-badge {{item._statusClass}}">{{item.statusText}}</view>
+              </view>
+              <text wx:if="{{item.quotePrice}}" class="price-line">报价 ¥{{item._priceText}}</text>
+              <text wx:else class="price-pending">{{item._quoteText}}</text>
+              <view class="service-mode-row">
+                <text class="service-mode-badge">{{item._serviceModeText}}</text>
+              </view>
+              <view wx:if="{{item._timeRangeText}}" class="order-detail-row">
+                <view class="info-icon info-icon-time"></view>
+                <text class="order-detail-text">{{item._timeRangeText}}</text>
+              </view>
+              <view wx:if="{{item._isShopService}}" class="order-detail-row">
+                <view class="info-icon info-icon-shop"></view>
+                <text class="order-detail-label">店铺</text>
+                <text class="order-detail-text order-detail-truncate">{{item._shopNameText}}</text>
+              </view>
+              <view class="order-detail-row">
+                <view class="info-icon info-icon-loc"></view>
+                <text class="order-detail-label">{{item._isShopService ? '店址' : '上门地址'}}</text>
+                <text class="order-detail-text order-detail-truncate">{{item._addressText}}</text>
+              </view>
+            </view>
+          </view>
+
+          <view wx:if="{{item._isTerminal}}" class="order-footer order-footer-detail" catchtap="viewOrder" data-id="{{item.id}}">
+            <text>查看预约详细信息</text>
+            <view class="footer-chevron"></view>
+          </view>
+          <view wx:else class="order-footer order-footer-countdown">
+            <view class="countdown-info">
+              <view class="footer-clock"></view>
+              <view><text class="countdown-main">{{item._countdownText}}</text><text class="countdown-next">{{item._nextStepText}}</text></view>
+            </view>
+            <view class="footer-chevron"></view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+  </view>
+</view>
+
+<tab-bar selected="orders"/>

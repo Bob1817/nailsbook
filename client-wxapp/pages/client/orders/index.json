@@ -1,4 +1,9 @@
 {
-  "navigationBarTitleText": "我的订单",
-  "enablePullDownRefresh": true
+  "navigationBarTitleText": "我的预约",
+  "enablePullDownRefresh": true,
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "nav-bar": "/components/nav-bar/index",
+    "tab-bar": "/components/tab-bar/index"
+  }
 }

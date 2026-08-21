@@ -1,0 +1,22 @@
+<nav-bar title="账号安全" showBack/>
+<view class="container">
+  <view class="section-title-row"><text class="section-title">修改密码</text></view>
+  <view class="form">
+    <view class="field">
+      <text class="label">原密码</text>
+      <input class="input" password value="{{oldPassword}}" bindinput="onOldInput" placeholder="请输入原密码" placeholder-class="ph" />
+    </view>
+    <view class="field">
+      <text class="label">新密码</text>
+      <input class="input" password value="{{newPassword}}" bindinput="onNewInput" placeholder="至少6位" placeholder-class="ph" />
+    </view>
+    <view class="field">
+      <text class="label">确认密码</text>
+      <input class="input" password value="{{confirmPassword}}" bindinput="onConfirmInput" placeholder="再次输入新密码" placeholder-class="ph" />
+    </view>
+  </view>
+  <view class="save-btn {{saving ? 'btn-disabled' : ''}}" bindtap="changePassword">
+    <text>{{saving ? '修改中...' : '确认修改'}}</text>
+  </view>
+  <text class="tip">修改密码后需重新登录</text>
+</view>

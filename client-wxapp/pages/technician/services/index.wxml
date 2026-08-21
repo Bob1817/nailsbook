@@ -1,46 +1,75 @@
+<nav-bar title="服务管理" showBack/>
 <view class="container">
 
-  <view wx:if="{{services.length === 0 && !loading}}" class="empty">
+
+  <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
+
+  <view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+    <view class="load-error-mark">!</view>
+    <text class="empty-text">服务项目加载失败</text>
+    <text class="empty-sub">请检查网络后重试</text>
+    <button class="retry-btn" bindtap="loadServices">重新加载</button>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:elif="{{services.length === 0}}" class="empty">
+    <view class="service-empty-mark"><view></view><view></view><view></view></view>
     <text class="empty-text">还没有服务项目</text>
-    <text class="empty-sub">添加你提供的美甲服务，方便客户下单</text>
+      <text class="empty-sub">至少添加一项有效服务和价格，才能开启接单</text>
     <button class="btn-add-first" bindtap="openCreate">添加第一个服务</button>
   </view>
 
+  <!-- 服务列表 -->
   <view wx:else class="list">
     <view
-      class="svc-item"
+      class="svc-card"
       wx:for="{{services}}"
       wx:key="id"
     >
-      <view class="svc-header">
-        <view class="svc-left">
+      <!-- 卡片顶部：名称 + 状态 -->
+      <view class="card-top">
+        <view class="card-title-area">
           <text class="svc-name">{{item.name}}</text>
           <text class="svc-category">{{item.categoryLabel}}</text>
         </view>
-        <view class="svc-badge {{item.isActive ? 'active' : 'inactive'}}">
-          {{item.isActive ? '上架中' : '已下架'}}
+        <view class="svc-badge {{item.isActive ? 'badge-active' : 'badge-inactive'}}">
+          <view class="badge-dot {{item.isActive ? 'dot-active' : 'dot-inactive'}}"></view>
+          <text>{{item.isActive ? '上架中' : '已下架'}}</text>
         </view>
       </view>
+
+      <!-- 描述 -->
       <text wx:if="{{item.description}}" class="svc-desc">{{item.description}}</text>
-      <view class="svc-actions">
-        <text class="action-btn" bindtap="toggleService" data-id="{{item.id}}">
-          {{item.isActive ? '下架' : '上架'}}
-        </text>
-        <text class="action-btn" bindtap="openEdit" data-id="{{item.id}}">编辑</text>
-        <text class="action-btn danger" bindtap="confirmDelete" data-id="{{item.id}}">删除</text>
+      <view class="svc-meta"><text>¥{{item.price != null ? item.price : '待设置'}}</text><text>{{item.durationMinutes || '待设置'}} 分钟</text></view>
+
+      <!-- 操作按钮 -->
+      <view class="card-actions">
+        <view class="action-btn action-toggle" bindtap="toggleService" data-id="{{item.id}}">
+          <text>{{item.isActive ? '下架' : '上架'}}</text>
+        </view>
+        <view class="action-btn action-edit" bindtap="openEdit" data-id="{{item.id}}">
+          <text>编辑</text>
+        </view>
+        <view class="action-btn action-delete" bindtap="confirmDelete" data-id="{{item.id}}">
+          <text>删除</text>
+        </view>
       </view>
     </view>
   </view>
 
-  <!-- FAB add button -->
-  <view wx:if="{{services.length > 0}}" class="fab" bindtap="openCreate">+</view>
+  <!-- FAB 添加按钮 -->
+  <view wx:if="{{services.length > 0 && !loadFailed}}" class="fab" bindtap="openCreate">
+    <text class="fab-icon">+</text>
+  </view>
 
-  <!-- Bottom sheet form -->
+  <!-- 底部表单 -->
   <view wx:if="{{showForm}}" class="mask" bindtap="closeForm"/>
   <view class="form-sheet {{showForm ? 'show' : ''}}">
     <view class="sheet-header">
       <text class="sheet-title">{{editingId ? '编辑服务' : '添加服务'}}</text>
-      <text class="sheet-close" bindtap="closeForm">×</text>
+      <view class="sheet-close" bindtap="closeForm">
+        <text class="sheet-close-icon">×</text>
+      </view>
     </view>
 
     <view class="form-item">
@@ -57,6 +86,13 @@
         </view>
       </picker>
     </view>
+
+    <view class="form-pair">
+      <view class="form-item form-half"><text class="label">服务价格（元）*</text><input class="input" type="digit" placeholder="例如 168" value="{{form.price}}" data-field="price" bindinput="onFormInput"/></view>
+      <view class="form-item form-half"><text class="label">预计时长（分钟）*</text><input class="input" type="number" placeholder="60" value="{{form.durationMinutes}}" data-field="durationMinutes" bindinput="onFormInput"/></view>
+    </view>
+
+    <text class="form-helper">客户预约时可多选服务，系统会按这里的价格自动累加。</text>
 
     <view class="form-item">
       <text class="label">描述（选填）</text>

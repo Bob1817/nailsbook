@@ -24,6 +24,9 @@ import { UpdateClientOrderDto } from './dto/update-client-order.dto';
 import { CreateOrderFromDesignDto } from './dto/create-order-from-design.dto';
 import { UpdateClientOrderStatusDto } from './dto/update-client-order-status.dto';
 import { RejectQuoteDto } from './dto/reject-quote.dto';
+import { ServiceReviewDto } from './dto/service-review.dto';
+import { ClientOrderPhotosDto } from './dto/client-order-photos.dto';
+import { ClientOrderRecordNoteDto } from './dto/client-order-record-note.dto';
 
 @Controller('client/orders')
 @UseGuards(ClientJwtAuthGuard)
@@ -66,6 +69,13 @@ export class ClientOrdersController {
     return this.clientOrdersService.findAll(request.user.clientUserId);
   }
 
+  @Get('trade-orders/list')
+  findTradeOrders(
+    @Req() request: { user: { clientUserId: number } },
+  ) {
+    return this.clientOrdersService.findTradeOrders(request.user.clientUserId);
+  }
+
   @Get('trips')
   @ApiOperation({ summary: '获取上门服务行程列表' })
   @ApiResponse({ status: 200, description: '返回行程列表' })
@@ -83,6 +93,48 @@ export class ClientOrdersController {
     @Param('id', ParseIntPipe) id: number,
   ) {
     return this.clientOrdersService.findOne(request.user.clientUserId, id);
+  }
+
+  @Patch(':id/review')
+  @ApiOperation({ summary: '创建或更新已完成服务的评价与照片授权' })
+  review(
+    @Req() request: { user: { clientUserId: number } },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ServiceReviewDto,
+  ) {
+    return this.clientOrdersService.saveReview(
+      request.user.clientUserId,
+      id,
+      dto,
+    );
+  }
+
+  @Patch(':id/client-photos')
+  @ApiOperation({ summary: '保存客户在已完成预约中上传的美甲照片' })
+  saveClientPhotos(
+    @Req() request: { user: { clientUserId: number } },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ClientOrderPhotosDto,
+  ) {
+    return this.clientOrdersService.saveClientPhotos(
+      request.user.clientUserId,
+      id,
+      dto.photos,
+    );
+  }
+
+  @Patch(':id/client-record-note')
+  @ApiOperation({ summary: '保存客户的已完成美甲记录备注' })
+  saveClientRecordNote(
+    @Req() request: { user: { clientUserId: number } },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ClientOrderRecordNoteDto,
+  ) {
+    return this.clientOrdersService.saveClientRecordNote(
+      request.user.clientUserId,
+      id,
+      dto.note,
+    );
   }
 
   @Patch(':id')
@@ -107,8 +159,13 @@ export class ClientOrdersController {
   agree(
     @Req() request: { user: { clientUserId: number } },
     @Param('id', ParseIntPipe) id: number,
+    @Body() body: { fundAmount?: number } = {},
   ) {
-    return this.clientOrdersService.agree(request.user.clientUserId, id);
+    return this.clientOrdersService.agree(
+      request.user.clientUserId,
+      id,
+      Number(body.fundAmount ?? 0),
+    );
   }
 
   @Post(':id/reject-quote')
@@ -129,19 +186,29 @@ export class ClientOrdersController {
     );
   }
 
-  @Post(':id/mark-deposit-paid')
-  @ApiOperation({ summary: '标记定金已支付（线下）' })
-  @ApiResponse({ status: 200, description: '标记成功' })
+  @Post(':id/reinitiate')
+  @ApiOperation({ summary: '重新发起已过期订单' })
+  @ApiResponse({ status: 200, description: '重新发起成功' })
   @ApiResponse({ status: 400, description: '当前状态不支持' })
   @ApiResponse({ status: 404, description: '订单不存在' })
   @ApiParam({ name: 'id', type: Number, description: '订单ID' })
-  markDepositPaid(
+  @ApiBody({
+    schema: {
+      properties: {
+        serviceDate: { type: 'string', description: '预约日期 YYYY-MM-DD' },
+        startTime: { type: 'string', description: '预约时间 HH:mm' },
+      },
+    },
+  })
+  reinitiate(
     @Req() request: { user: { clientUserId: number } },
     @Param('id', ParseIntPipe) id: number,
+    @Body() dto: { serviceDate: string; startTime: string },
   ) {
-    return this.clientOrdersService.markDepositPaid(
+    return this.clientOrdersService.reinitiate(
       request.user.clientUserId,
       id,
+      dto,
     );
   }
 
@@ -162,5 +229,13 @@ export class ClientOrdersController {
       id,
       dto.status,
     );
+  }
+
+  @Get('blocked-slots/:techId')
+  @ApiOperation({ summary: '获取美甲师的冻结时间段' })
+  @ApiResponse({ status: 200, description: '返回冻结时间段列表' })
+  @ApiParam({ name: 'techId', type: Number, description: '美甲师ID' })
+  getBlockedSlots(@Param('techId', ParseIntPipe) techId: number) {
+    return this.clientOrdersService.getBlockedSlots(techId);
   }
 }

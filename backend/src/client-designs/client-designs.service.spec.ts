@@ -9,6 +9,8 @@ describe('ClientDesignsService', () => {
       create: jest.Mock;
       findMany: jest.Mock;
       findFirst: jest.Mock;
+      update: jest.Mock;
+      delete: jest.Mock;
     };
   };
 
@@ -21,6 +23,8 @@ describe('ClientDesignsService', () => {
         create: jest.fn(),
         findMany: jest.fn(),
         findFirst: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
       },
     };
     service = new ClientDesignsService(prisma as never);
@@ -81,6 +85,27 @@ describe('ClientDesignsService', () => {
         imageUrls: [],
       }),
     ).rejects.toThrow(new NotFoundException('客户未绑定美甲师'));
+  });
+
+  it('falls back to an active technician binding when no default binding exists', async () => {
+    prisma.clientTechBinding.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ clientId: 11, techId: 7 })
+      .mockResolvedValueOnce({ clientId: 11, techId: 7 });
+    prisma.clientDesignRequest.create.mockResolvedValueOnce({
+      id: 6,
+      clientId: 11,
+      techId: 7,
+      images: '[]',
+      status: 'pending_quote',
+    });
+
+    const result = await service.create(11, { imageUrls: [] });
+
+    expect(result.techId).toBe(7);
+    expect(prisma.clientDesignRequest.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ techId: 7 }) }),
+    );
   });
 
   it('returns design requests ordered by newest first and maps stored images', async () => {
@@ -158,5 +183,117 @@ describe('ClientDesignsService', () => {
         },
       },
     });
+  });
+
+  it('persists edited design images', async () => {
+    prisma.clientDesignRequest.findFirst.mockResolvedValueOnce({
+      id: 5,
+      clientId: 11,
+      status: 'pending_quote',
+      title: 'Old',
+      description: null,
+      images: '[]',
+    });
+    prisma.clientDesignRequest.update.mockResolvedValueOnce({
+      id: 5,
+      clientId: 11,
+      status: 'pending_quote',
+      title: 'New',
+      description: null,
+      images: '["/uploads/new.jpg"]',
+    });
+
+    await service.update(11, 5, {
+      title: 'New',
+      imageUrls: ['/uploads/new.jpg'],
+    });
+
+    expect(prisma.clientDesignRequest.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 5 },
+        data: expect.objectContaining({ images: '["/uploads/new.jpg"]' }),
+      }),
+    );
+  });
+
+  it('accepts a valid quoted design', async () => {
+    prisma.clientDesignRequest.findFirst.mockResolvedValueOnce({
+      id: 5,
+      clientId: 11,
+      status: 'quoted',
+      quotePrice: 288,
+    });
+    prisma.clientDesignRequest.update.mockResolvedValueOnce({
+      id: 5,
+      clientId: 11,
+      status: 'accepted',
+      quotePrice: 288,
+      images: '[]',
+    });
+
+    const result = await service.acceptQuote(11, 5);
+
+    expect(prisma.clientDesignRequest.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 5 },
+        data: { status: 'accepted' },
+      }),
+    );
+    expect(result.status).toBe('accepted');
+  });
+
+  it('lets a client reject a quoted design', async () => {
+    prisma.clientDesignRequest.findFirst.mockResolvedValueOnce({
+      id: 5,
+      clientId: 11,
+      status: 'quoted',
+    });
+    prisma.clientDesignRequest.update.mockResolvedValueOnce({
+      id: 5,
+      clientId: 11,
+      status: 'rejected',
+      images: '[]',
+    });
+
+    const result = await service.rejectQuote(11, 5);
+
+    expect(prisma.clientDesignRequest.update).toHaveBeenCalledWith({
+      where: { id: 5 },
+      data: { status: 'rejected' },
+    });
+    expect(result.status).toBe('rejected');
+  });
+
+  it('lets the assigned technician quote a design request', async () => {
+    prisma.clientDesignRequest.findFirst.mockResolvedValueOnce({
+      id: 5,
+      techId: 7,
+      status: 'pending_quote',
+    });
+    prisma.clientDesignRequest.update.mockResolvedValueOnce({
+      id: 5,
+      techId: 7,
+      status: 'quoted',
+      quotePrice: 288,
+      quoteRemark: 'includes removal',
+      images: '[]',
+    });
+
+    const result = await service.quoteForTechnician(
+      7,
+      5,
+      288,
+      ' includes removal ',
+    );
+
+    expect(prisma.clientDesignRequest.update).toHaveBeenCalledWith({
+      where: { id: 5 },
+      data: {
+        quotePrice: 288,
+        quoteRemark: 'includes removal',
+        status: 'quoted',
+      },
+    });
+    expect(result.status).toBe('quoted');
   });
 });

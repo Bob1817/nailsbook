@@ -1,34 +1,60 @@
+<nav-bar title="地址管理" showBack/>
 <view class="container">
 
-  <view wx:if="{{!loading && addresses.length === 0}}" class="empty">
+  <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
+
+  <view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
+    <view class="load-error-mark">!</view>
+    <text class="empty-text">地址加载失败</text>
+    <text class="empty-sub">请检查网络后重试</text>
+    <button class="retry-btn" bindtap="loadAddresses">重新加载</button>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:elif="{{addresses.length === 0}}" class="empty">
+    <view class="empty-icon"><view class="empty-pin"></view></view>
     <text class="empty-text">还没有地址</text>
     <text class="empty-sub">添加常用上门地址，方便快速预约</text>
   </view>
 
-  <view class="list" wx:else>
-    <view class="addr-item" wx:for="{{addresses}}" wx:key="id">
-      <view class="addr-body" bindtap="editAddress" data-id="{{item.id}}">
+  <!-- 地址卡片列表 -->
+  <view wx:else class="list">
+    <view
+      class="addr-card {{item.isDefault ? 'is-default' : ''}}"
+      wx:for="{{addresses}}"
+      wx:key="id"
+    >
+      <!-- 主体：点击进入编辑 -->
+      <view class="addr-main" bindtap="editAddress" data-id="{{item.id}}">
         <view class="addr-top">
           <text class="addr-name">{{item.contactName}}</text>
           <text class="addr-phone">{{item.contactPhone}}</text>
           <view class="tag-default" wx:if="{{item.isDefault}}">默认</view>
         </view>
-        <text class="addr-detail">
-          {{item.province}}{{item.city}}{{item.district}}{{item.detailAddress || item.detail}}{{item.doorInfo ? ' ' + item.doorInfo : ''}}
-        </text>
+        <text class="addr-detail">{{item.province}}{{item.city}}{{item.district}}{{item.detailAddress || item.detail}}{{item.doorInfo ? ' ' + item.doorInfo : ''}}</text>
       </view>
-      <view class="addr-actions">
-        <text
-          class="action-btn"
-          wx:if="{{!item.isDefault}}"
-          bindtap="setDefault"
-          data-id="{{item.id}}"
-        >设为默认</text>
-        <text class="action-btn danger" bindtap="deleteAddress" data-id="{{item.id}}">删除</text>
+
+      <!-- 底部：单选默认 + 编辑/删除 -->
+      <view class="addr-foot">
+        <view class="radio-row" bindtap="setDefault" data-id="{{item.id}}" data-default="{{item.isDefault}}">
+          <view class="radio {{item.isDefault ? 'radio-on' : ''}}"></view>
+          <text class="radio-label">{{item.isDefault ? '默认地址' : '设为默认'}}</text>
+        </view>
+        <view class="addr-ops">
+          <view class="op-btn" catchtap="editAddress" data-id="{{item.id}}">
+            <view class="op-icon op-edit"></view>
+            <text>编辑</text>
+          </view>
+          <view class="op-btn danger" catchtap="deleteAddress" data-id="{{item.id}}">
+            <view class="op-icon op-del"></view>
+            <text>删除</text>
+          </view>
+        </view>
       </view>
     </view>
   </view>
 
+  <!-- 新增 -->
   <view class="footer">
     <button class="btn-add" bindtap="addAddress">+ 新增地址</button>
   </view>

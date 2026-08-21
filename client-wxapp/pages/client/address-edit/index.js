@@ -12,20 +12,44 @@ Page({
     detailAddress: '',
     doorInfo: '',
     isDefault: false,
+    lockDefault: false,
     submitting: false
   },
 
   onLoad(options) {
+    this._pageActive = true;
     if (options.id) {
       this.setData({ isEdit: true, addressId: options.id });
       this.loadAddress(options.id);
+    } else if (options.forceDefault) {
+      // 新增第一个地址：强制为默认且不可取消
+      this.setData({ isDefault: true, lockDefault: true });
     }
+  },
+
+  onShow() {
+    this._pageActive = true;
+    if (this._submitFinishedWhileHidden) {
+      this.setData({ submitting: false });
+      this._submitFinishedWhileHidden = false;
+    }
+  },
+  onHide() { this._pageActive = false; },
+  onUnload() {
+    this._pageActive = false;
+    if (this._navTimer) clearTimeout(this._navTimer);
   },
 
   async loadAddress(id) {
     wx.showLoading({ title: '加载中...' });
     try {
       const addr = await api.client.addresses.detail(id);
+      wx.hideLoading();
+      if (!this._pageActive) return;
+      if (!addr) {
+        wx.showToast({ title: '地址不存在', icon: 'none' });
+        return;
+      }
       this.setData({
         contactName: addr.contactName || '',
         contactPhone: addr.contactPhone || '',
@@ -34,11 +58,13 @@ Page({
         district: addr.district || '',
         detailAddress: addr.detailAddress || addr.detail || '',
         doorInfo: addr.doorInfo || '',
-        isDefault: addr.isDefault || false
+        isDefault: addr.isDefault || false,
+        // 正在编辑当前默认地址：必须保留一个默认，开关锁定为开
+        lockDefault: addr.isDefault || false
       });
-      wx.hideLoading();
     } catch (err) {
       wx.hideLoading();
+      if (!this._pageActive) return;
       wx.showToast({ title: '加载失败', icon: 'none' });
     }
   },
@@ -48,6 +74,12 @@ Page({
   },
 
   onDefaultChange(e) {
+    // 默认地址不能为空：锁定时不允许关闭
+    if (this.data.lockDefault) {
+      this.setData({ isDefault: true });
+      wx.showToast({ title: '至少保留一个默认地址', icon: 'none' });
+      return;
+    }
     this.setData({ isDefault: e.detail.value });
   },
 
@@ -105,10 +137,14 @@ Page({
         await api.client.addresses.create(payload);
       }
       wx.hideLoading();
+      if (!this._pageActive) { this._submitFinishedWhileHidden = true; return; }
       wx.showToast({ title: '保存成功', icon: 'success' });
-      setTimeout(() => wx.navigateBack(), 800);
+      this._navTimer = setTimeout(() => {
+        if (this._pageActive) wx.navigateBack();
+      }, 800);
     } catch (err) {
       wx.hideLoading();
+      if (!this._pageActive) { this._submitFinishedWhileHidden = true; return; }
       this.setData({ submitting: false });
       wx.showToast({ title: err.message || '保存失败', icon: 'none' });
     }

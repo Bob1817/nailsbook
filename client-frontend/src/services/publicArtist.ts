@@ -12,22 +12,65 @@ export interface PublicArtistWork {
   imageUrls: string[];
 }
 
+export interface PublicArtistQualification {
+  id: number;
+  type: string;
+  title: string;
+  detail: string;
+  organization?: string;
+  year: number;
+  month?: number;
+  imageUrl?: string | null;
+  isVerified: boolean;
+}
+
+export interface PublicArtistStats {
+  followerCount: number;
+  likeCount: number;
+  favoriteCount: number;
+  workCount: number;
+  rating: number | null;
+  reviewCount: number;
+}
+
 export interface PublicArtist {
   id: number;
   name: string;
   avatarUrl: string | null;
+  coverImageUrl: string | null;
   city: string | null;
   serviceArea: string | null;
+  bio: string | null;
+  servicePhilosophy: string | null;
+  bookingNotes: string | null;
+  styleTags: string[];
+  isVerified: boolean;
   homeService: boolean;
   shopService: boolean;
   status: string;
   invitationCode: string;
   socialMedia: Record<string, string> | null;
+  stats: PublicArtistStats;
+  bookingReady: boolean;
+}
+
+export interface PublicFeaturedReview {
+  id: number;
+  content: string;
+  rating: number;
+  client: {
+    id: number;
+    name: string;
+    avatarUrl: string | null;
+  };
+  createdAt: string;
 }
 
 export interface PublicArtistCard {
   artist: PublicArtist;
   works: PublicArtistWork[];
+  qualifications: PublicArtistQualification[];
+  featuredReviews: PublicFeaturedReview[];
 }
 
 export interface PublicWorkComment {
@@ -48,7 +91,7 @@ export interface PublicWorkDetailData {
   imageUrls: string[];
   likeCount: number;
   commentCount: number;
-  technician: { id: number; name: string; avatarUrl: string | null };
+  technician: { id: number; name: string; avatarUrl: string | null; invitationCode?: string };
   comments: PublicWorkComment[];
   createdAt: string;
 }

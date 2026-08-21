@@ -1,0 +1,124 @@
+<nav-bar title="发现好作品"/>
+<view class="page">
+
+  <!-- ===== 头部（sticky，top 由 JS 注入）===== -->
+  <view class="discover-head" style="top: {{navBarHeight}}px;">
+    <!-- 搜索栏 -->
+    <view class="search-bar">
+      <image class="search-icon" src="/static/icons/search.svg" mode="aspectFit" />
+      <input class="search-input" value="{{keyword}}" placeholder="搜索作品、风格或美甲师" placeholder-class="search-hint" confirm-type="search" bindinput="onSearchInput" bindconfirm="onSearchConfirm" />
+      <view wx:if="{{keyword}}" class="search-clear" bindtap="clearSearch" aria-label="清除搜索"><view class="clear-line clear-a"></view><view class="clear-line clear-b"></view></view>
+    </view>
+    <!-- 分类：编辑式文字导航 -->
+    <scroll-view scroll-x class="cats-scroll" enhanced show-scrollbar="{{false}}">
+      <view class="cats-bar">
+        <view
+          wx:for="{{categories}}"
+          wx:key="*this"
+          class="cat-pill {{activeCategory === item ? 'cat-active' : ''}}"
+          bindtap="switchCategory"
+          data-cat="{{item}}"
+        >{{item}}</view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 加载骨架 -->
+  <view wx:if="{{loading && works.length === 0}}" class="waterfall skel-mode">
+    <view class="col">
+      <view wx:for="{{[1,2,3]}}" wx:key="*this" class="skel-card skel-tall"></view>
+    </view>
+    <view class="col">
+      <view wx:for="{{[1,2]}}" wx:key="*this" class="skel-card skel-mid"></view>
+    </view>
+  </view>
+
+  <!-- 空状态：无作品 -->
+  <view wx:elif="{{!loading && works.length === 0}}" class="empty-wrap">
+    <view class="empty-art">
+      <view class="empty-ring-outer"></view>
+      <view class="empty-ring-inner"></view>
+    </view>
+    <text class="empty-ttl">还没有作品可以刷</text>
+    <text class="empty-sub">绑定常用美甲师后，即可浏览她发布的最新作品，并从个人经营主页发起预约</text>
+    <view class="empty-cta" bindtap="goBindTech">绑定美甲师</view>
+  </view>
+
+  <!-- 空状态：筛选为空 -->
+  <view wx:elif="{{filteredWorks.length === 0}}" class="empty-wrap">
+    <text class="empty-ttl">{{keyword ? '没有找到相关作品' : '该风格暂无作品'}}</text>
+    <text class="empty-sub">{{keyword ? '换一个关键词，或清除搜索后继续发现灵感' : '你的美甲师还没有发布此风格的作品'}}</text>
+    <view wx:if="{{keyword}}" class="empty-cta secondary" bindtap="clearSearch">清除搜索</view>
+  </view>
+
+  <!-- 瀑布流 -->
+  <view wx:else class="waterfall-wrap">
+    <view wx:if="{{keyword}}" class="result-summary">找到 {{resultCount}} 个与“{{keyword}}”相关的作品</view>
+    <view wx:if="{{featuredWorks.length}}" class="featured-work">
+      <text class="featured-kicker">本期精选</text>
+      <swiper class="featured-swiper" autoplay="{{featuredWorks.length > 1}}" interval="4200" duration="520" circular="{{featuredWorks.length > 1}}" indicator-dots="{{false}}" bindchange="onFeaturedChange">
+          <swiper-item wx:for="{{featuredWorks}}" wx:key="id" class="featured-slide">
+            <work-card
+              work="{{item}}"
+              variant="editorial"
+              featured
+              bind:cardtap="onWorkCardTap"
+              bind:artisttap="onArtistTap"
+              bind:liketap="onLikeTap"
+              bind:favoritetap="onFavoriteTap"
+              bind:commenttap="onWorkCardTap"
+            />
+          </swiper-item>
+      </swiper>
+      <view wx:if="{{featuredWorks.length > 1}}" class="featured-indicators" aria-label="第 {{featuredIndex + 1}} 张，共 {{featuredWorks.length}} 张">
+        <view
+          wx:for="{{featuredWorks}}"
+          wx:key="id"
+          class="featured-indicator {{index === featuredIndex ? 'is-active' : ''}}"
+        ></view>
+      </view>
+    </view>
+    <view class="waterfall">
+      <!-- 左列 -->
+      <view class="col">
+        <view wx:for="{{leftCol}}" wx:key="id" class="work-card editorial-card">
+          <work-card
+            work="{{item}}"
+            variant="editorial"
+            bind:cardtap="onWorkCardTap"
+            bind:artisttap="onArtistTap"
+            bind:liketap="onLikeTap"
+            bind:favoritetap="onFavoriteTap"
+            bind:commenttap="onWorkCardTap"
+          />
+        </view>
+      </view>
+
+      <!-- 右列 -->
+      <view class="col">
+        <view wx:for="{{rightCol}}" wx:key="id" class="work-card editorial-card">
+          <work-card
+            work="{{item}}"
+            variant="editorial"
+            bind:cardtap="onWorkCardTap"
+            bind:artisttap="onArtistTap"
+            bind:liketap="onLikeTap"
+            bind:favoritetap="onFavoriteTap"
+            bind:commenttap="onWorkCardTap"
+          />
+        </view>
+      </view>
+    </view>
+
+    <!-- 底部加载 / 到底了 -->
+    <view wx:if="{{loadingMore}}" class="bottom-loader">
+      <view class="spinner"></view>
+    </view>
+    <view wx:elif="{{!hasMore && works.length > 0}}" class="bottom-end">
+      <text class="bottom-end-text">— 已经到底了 —</text>
+    </view>
+  </view>
+
+</view>
+
+<tab-bar selected="discover"/>

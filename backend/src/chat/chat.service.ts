@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { PushService } from '../notifications/push.service';
 
 export interface SendMessageInput {
   senderType: 'client' | 'technician';
@@ -16,7 +17,10 @@ export interface SendMessageInput {
 
 @Injectable()
 export class ChatService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private push: PushService,
+  ) {}
 
   async sendMessage(input: SendMessageInput) {
     const {
@@ -88,7 +92,68 @@ export class ChatService {
       },
     });
 
+    // 离线推送给接收方（best-effort，不阻塞主流程）
+    void this.notifyRecipient(
+      senderType,
+      senderId,
+      receiverType,
+      receiverId,
+      conversationId,
+      messageType,
+      content,
+    );
+
     return { message, conversation };
+  }
+
+  private async notifyRecipient(
+    senderType: 'client' | 'technician',
+    senderId: number,
+    receiverType: string,
+    receiverId: number,
+    conversationId: number,
+    messageType: string,
+    content?: string,
+  ) {
+    try {
+      let title: string;
+      if (senderType === 'client') {
+        const c = await this.prisma.clientUser.findUnique({
+          where: { id: senderId },
+          select: { nickname: true, phone: true },
+        });
+        title = c?.nickname || c?.phone || '客户';
+      } else {
+        const t = await this.prisma.technician.findUnique({
+          where: { id: senderId },
+          select: { name: true },
+        });
+        title = t?.name || '美甲师';
+      }
+      const preview =
+        messageType === 'image'
+          ? '[图片]'
+          : messageType === 'voice'
+            ? '[语音]'
+            : messageType === 'order_card'
+              ? '[预约]'
+              : content?.slice(0, 60) || '';
+      const payload = {
+        title,
+        body: preview,
+        data: {
+          type: 'chat',
+          conversationId: String(conversationId),
+        },
+      };
+      if (receiverType === 'technician') {
+        await this.push.sendToTechnician(receiverId, payload);
+      } else {
+        await this.push.sendToClient(receiverId, payload);
+      }
+    } catch {
+      // 推送失败不影响消息发送
+    }
   }
 
   async markAsRead(

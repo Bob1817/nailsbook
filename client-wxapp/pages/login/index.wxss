@@ -1,0 +1,350 @@
+/**
+ * NailBook 统一登录页 — 设计令牌体系
+ * 设计原则：微信优先、克制、高级感
+ * 输入框留白充足，视觉舒适
+ */
+
+/* ===== 页面根 ===== */
+page {
+  background: var(--bg-card);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.login-root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 var(--space-xl);
+}
+
+.stub-status {
+  width: 100%;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+/* ===== Nav Bar（Phone 步骤） ===== */
+.nav-bar {
+  width: 100%;
+  height: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.nav-back {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.nav-back-icon {
+  width: 24rpx;
+  height: 24rpx;
+  opacity: 0.55;
+}
+
+.nav-title {
+  flex: 1;
+  text-align: center;
+  font-size: var(--font-md);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.nav-placeholder {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+/* ===== WeChat 登录屏 ===== */
+.hero {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 80rpx;
+}
+
+.logo-ring {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: var(--radius-xl);
+  background: var(--brand-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-md);
+  box-shadow: 0 16rpx 48rpx rgba(255, 107, 138, 0.28);
+}
+
+.logo-text {
+  font-size: 88rpx;
+  font-weight: var(--weight-black);
+  color: var(--text-inverse);
+  line-height: 1;
+}
+
+.app-name {
+  font-size: var(--font-xl);
+  font-weight: var(--weight-black);
+  color: var(--text-primary);
+  margin-bottom: var(--space-xs);
+  letter-spacing: 2rpx;
+}
+
+.tagline {
+  font-size: 14px;
+  font-weight: var(--weight-regular);
+  color: var(--text-muted);
+}
+
+.spacer {
+  flex: 1;
+  min-height: 40rpx;
+}
+
+/* ===== 按钮区域 ===== */
+.btn-area {
+  width: 100%;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  padding-bottom: var(--space-xl);
+}
+
+/* WeChat 登录按钮 */
+.wechat-btn {
+  width: 100%;
+  height: var(--btn-height);
+  border-radius: var(--btn-radius);
+  background: transparent;
+  border: 2rpx solid #07C160;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  font-size: var(--font-md);
+  font-weight: var(--weight-bold);
+  color: #07C160;
+  box-shadow: 0 6rpx 24rpx rgba(7, 193, 96, 0.18);
+  transition: all 0.16s;
+}
+
+.wechat-btn::after { border: none; }
+
+.wechat-btn:active {
+  opacity: 0.88;
+  transform: scale(0.985);
+}
+
+.wechat-btn-icon {
+  width: 44rpx;
+  height: 44rpx;
+  flex-shrink: 0;
+}
+
+.wechat-unavailable {
+  text-align: center;
+  padding: var(--space-md) 0;
+}
+
+.wechat-unavailable-hint {
+  font-size: var(--font-sm);
+  color: var(--text-faint);
+}
+
+/* 其他登录方式 */
+.alt-login {
+  font-size: var(--font-sm);
+  color: var(--text-faint);
+  padding: var(--space-sm);
+}
+
+.guest-entry { min-height:88rpx; display:flex; align-items:center; justify-content:center; color:#6a6065; font-size:28rpx; }
+
+.alt-login:active { opacity: 0.6; }
+
+/* ===== 手机号 + 密码登录屏 ===== */
+.phone-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  margin-top: -60rpx;
+}
+
+.form-section {
+  padding: 0 8rpx;
+}
+
+.phone-heading {
+  font-size: 48rpx;
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-sm);
+  text-align: center;
+  width: 100%;
+}
+
+.phone-sub {
+  font-size: var(--font-sm);
+  color: var(--text-faint);
+  margin-bottom: var(--space-3xl);
+  text-align: center;
+  width: 100%;
+}
+
+/* ===== 统一输入行 ===== */
+.input-row {
+  width: 100%;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  background: var(--bg-input);
+  border-radius: 14px;
+  border: 1.5rpx solid var(--border-default);
+  padding: 0 28rpx;
+  margin-bottom: var(--space-md);
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.input-row:focus-within {
+  border-color: var(--border-focus);
+  background: var(--bg-input-focus);
+}
+
+/* 前缀区域（+86 / 图标） */
+.input-prefix {
+  font-size: 30rpx;
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  flex-shrink: 0;
+  padding-right: 0;
+}
+
+.input-icon {
+  width: 36rpx;
+  height: 36rpx;
+  flex-shrink: 0;
+  opacity: 0.45;
+  margin-right: 24rpx;
+}
+
+/* 区号与号码之间的分隔线 */
+.input-divider {
+  width: 1.5rpx;
+  height: 28rpx;
+  background: var(--border-default);
+  margin: 0 24rpx;
+  flex-shrink: 0;
+}
+
+/* 输入框本身 */
+.input-field {
+  flex: 1;
+  height: 56px;
+  font-size: 30rpx;
+  color: var(--text-primary);
+  background: transparent;
+  line-height: 56px;
+}
+
+.input-placeholder {
+  color: var(--text-faint);
+  font-size: 28rpx;
+}
+
+/* 密码可见切换按钮 */
+.pwd-toggle {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: var(--space-sm);
+}
+
+.pwd-toggle:active { opacity: 0.5; }
+
+.pwd-toggle-icon {
+  width: 40rpx;
+  height: 40rpx;
+  opacity: 0.35;
+}
+
+/* ===== 忘记密码 & 注册 ===== */
+.forgot-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--space-xl);
+  margin-top: calc(-1 * var(--space-xs));
+}
+
+.forgot-link {
+  font-size: var(--font-sm);
+  color: var(--brand-primary);
+  padding: var(--space-xs) 0;
+}
+
+.forgot-link:active { opacity: 0.6; }
+
+/* ===== 提交按钮 ===== */
+.submit-btn {
+  width: 100%;
+  min-width: 100%;
+  max-width: 100%;
+  height: var(--btn-height);
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  align-self: stretch;
+  border-radius: var(--btn-radius);
+  background: var(--bg-input);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-md);
+  font-weight: var(--weight-bold);
+  color: var(--text-muted);
+  transition: all 0.24s;
+  letter-spacing: 4rpx;
+}
+
+.submit-btn::after { border: none; }
+
+.submit-btn-active {
+  background: var(--brand-gradient);
+  color: var(--text-inverse);
+  box-shadow: 0 8rpx 28rpx rgba(255, 107, 138, 0.3);
+}
+
+.submit-btn-active:active {
+  opacity: 0.88;
+  transform: scale(0.985);
+}
+
+/* ===== 协议 ===== */
+.agreement {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--text-faint);
+  text-align: center;
+  width: 100%;
+  padding-bottom: env(safe-area-inset-bottom, 40rpx);
+  padding-top: var(--space-md);
+}

@@ -11,6 +11,7 @@ import Home from './pages/Home';
 import OrderList from './pages/OrderList';
 import CreateOrder from './pages/CreateOrder';
 import OrderDetail from './pages/OrderDetail';
+import Discover from './pages/Discover';
 import DesignList from './pages/DesignList';
 import CreateDesign from './pages/CreateDesign';
 import DesignDetail from './pages/DesignDetail';
@@ -26,10 +27,14 @@ import WorkDetailPage from './pages/WorkDetailPage';
 import MyFavorites from './pages/MyFavorites';
 import MyLikes from './pages/MyLikes';
 import PublicArtistCard from './pages/PublicArtistCard';
+import ArtistWorksPage from './pages/ArtistWorksPage';
 import PublicWorkDetail from './pages/PublicWorkDetail';
 import ForgotPassword from './pages/ForgotPassword';
 import Settings from './pages/Settings';
 import HelpFeedback from './pages/HelpFeedback';
+import ChangePassword from './pages/ChangePassword';
+import NotificationSettings from './pages/NotificationSettings';
+import LegalDoc from './pages/LegalDoc';
 
 function AppRoutes() {
   const { isAuthenticated, user, loading } = useAuth();
@@ -42,6 +47,15 @@ function AppRoutes() {
       navigate('/welcome', { replace: true });
     }
   }, [isAuthenticated, user, location.pathname, navigate]);
+
+  // Capture inviteCode parameter globally and save to localStorage
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const inviteCode = params.get('inviteCode') || params.get('invite_code');
+    if (inviteCode) {
+      localStorage.setItem('pendingInviteCode', inviteCode);
+    }
+  }, [location.search]);
 
   if (loading) {
     return (
@@ -58,6 +72,7 @@ function AppRoutes() {
       <Route path="/invite" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/artist/:code" element={<PublicArtistCard />} />
+      <Route path="/artist/:code/works" element={<ArtistWorksPage />} />
       <Route path="/w/:id" element={<PublicWorkDetail />} />
 
       {/* Welcome Page - for first-time users */}
@@ -73,6 +88,7 @@ function AppRoutes() {
           <Route path="/orders" element={<OrderList />} />
           <Route path="/orders/create" element={<CreateOrder />} />
           <Route path="/orders/:id" element={<OrderDetail />} />
+          <Route path="/discover" element={<Discover />} />
           <Route path="/designs" element={<DesignList />} />
           <Route path="/designs/create" element={<CreateDesign />} />
           <Route path="/designs/customize" element={<CustomizeDesign />} />
@@ -87,6 +103,9 @@ function AppRoutes() {
           <Route path="/likes" element={<MyLikes />} />
           <Route path="/profile/settings" element={<Settings />} />
           <Route path="/profile/help" element={<HelpFeedback />} />
+          <Route path="/profile/password" element={<ChangePassword />} />
+          <Route path="/profile/notifications" element={<NotificationSettings />} />
+          <Route path="/profile/legal/:type" element={<LegalDoc />} />
           {/* Works routes - no bottom tab bar */}
           <Route path="/works" element={<WorksPage />} />
           <Route path="/works/:id" element={<WorkDetailPage />} />

@@ -1,0 +1,19 @@
+<nav-bar title="帮助" showBack/>
+<view class="container">
+  <view class="section">
+    <text class="section-title">常见问题</text>
+    <view class="faq-card">
+      <view wx:for="{{faqs}}" wx:key="q" class="faq-item {{index < faqs.length - 1 ? 'faq-border' : ''}}">
+        <view class="faq-header" bindtap="toggleFaq" data-idx="{{index}}">
+          <text class="faq-q">{{item.q}}</text>
+          <text class="faq-arrow {{item.open ? 'arrow-open' : ''}}">›</text>
+        </view>
+        <view wx:if="{{item.open}}" class="faq-answer">
+          <text class="faq-a">{{item.a}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  <button class="support-btn" open-type="contact" show-message-card="true" send-message-title="美甲师使用问题">联系平台客服</button>
+  <text class="tip">业务预约问题可通过消息与客户沟通；产品使用问题可联系平台客服。</text>
+</view>

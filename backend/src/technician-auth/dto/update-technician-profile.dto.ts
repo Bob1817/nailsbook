@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsObject,
   IsOptional,
   IsString,
@@ -20,11 +21,22 @@ export class UpdateTechnicianProfileDto {
   @MaxLength(50)
   city?: string;
 
+  @ApiPropertyOptional({ description: '省份', example: '上海市' })
+  @IsString()
+  @IsOptional()
+  province?: string;
+
   @ApiPropertyOptional({ description: '服务区域', example: '浦东新区' })
   @IsOptional()
   @IsString()
   @MaxLength(120)
   serviceArea?: string;
+
+  @ApiPropertyOptional({ description: '公开主页个人简介' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  bio?: string;
 
   @ApiPropertyOptional({ description: '头像URL' })
   @IsOptional()
@@ -37,4 +49,38 @@ export class UpdateTechnicianProfileDto {
   @IsOptional()
   @IsObject()
   socialMedia?: Record<string, string>;
+
+  // 工作时间方案（含 schemes/activeSchemeId/restDays 或旧版 days/selectedDates）。
+  // 必须在此声明，否则全局 ValidationPipe(whitelist:true) 会剥离该字段导致排期无法保存。
+  @ApiPropertyOptional({ description: '工作时间方案' })
+  @IsOptional()
+  @IsObject()
+  serviceSchedule?: Record<string, unknown>;
+
+  @ApiPropertyOptional({ description: '自定义标签' })
+  @IsOptional()
+  @IsArray()
+  customTags?: unknown[];
+
+  @ApiPropertyOptional({ description: '封面图URL' })
+  @IsOptional()
+  @IsString()
+  coverImageUrl?: string;
+
+  @ApiPropertyOptional({ description: '服务理念' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  servicePhilosophy?: string;
+
+  @ApiPropertyOptional({ description: '预约说明' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  bookingNotes?: string;
+
+  @ApiPropertyOptional({ description: '风格标签' })
+  @IsOptional()
+  @IsArray()
+  styleTags?: string[];
 }

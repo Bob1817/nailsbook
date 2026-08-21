@@ -1,0 +1,63 @@
+@import '../../styles/tokens.wxss';
+
+/* ===== 导航栏容器 ===== */
+.nav-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(20px);
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.06);
+}
+.nav-bar.transparent { background: transparent; border-bottom: none; backdrop-filter: none; }
+.nav-bar.light { background: transparent; border-bottom: none; backdrop-filter: blur(20px); }
+
+/* 内容行 */
+.nav-content { display: flex; align-items: center; position: relative; padding: 0 var(--space-sm); }
+
+/* 左侧 */
+.nav-left { display: flex; align-items: center; flex-shrink: 0; }
+
+/* 返回按钮 */
+.back-btn { width: var(--touch-min); height: var(--touch-min); display: flex; align-items: center; justify-content: center; }
+.back-btn:active { opacity: 0.4; }
+
+.back-chevron {
+  width: 40rpx; height: 40rpx;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.nav-bar.light .back-chevron { opacity: 0.9; }
+
+/* 标题区域 */
+.title-zone { display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+.title-zone.title-center {
+  position: absolute; left: 112rpx; right: 112rpx; top: 0; bottom: 0;
+  align-items: center; pointer-events: none;
+}
+.title-zone.title-left { flex: 1; padding-left: var(--space-md); align-items: flex-start; }
+
+.subtitle {
+  font-size: var(--font-xs); font-weight: var(--weight-medium);
+  text-transform: uppercase; letter-spacing: 3rpx;
+  color: var(--text-muted); line-height: var(--leading-tight);
+  margin-bottom: 2rpx;
+}
+.nav-bar.light .subtitle { color: rgba(255, 255, 255, 0.65); }
+
+.title-zone.title-center .title {
+  font-size: var(--font-lg); font-weight: var(--weight-semibold);
+  color: var(--text-primary); letter-spacing: 0;
+  line-height: var(--leading-tight); text-align: center;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.title-zone.title-left .title {
+  font-size: var(--font-lg); font-weight: var(--weight-bold);
+  color: var(--text-primary); letter-spacing: -0.5rpx;
+  line-height: var(--leading-tight);
+}
+.nav-bar.light .title { color: var(--text-inverse); }
+
+/* 右侧 */
+.nav-right { width: 96rpx; display: flex; align-items: center; justify-content: flex-end; flex-shrink: 0; }
+
+/* 占位 */
+.nav-placeholder { width: 100%; }

@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   Post,
   Patch,
@@ -35,7 +36,7 @@ export class TechniciansController {
   constructor(private readonly techniciansService: TechniciansService) {}
 
   @Get()
-  @Permissions('technician.view')
+  @Permissions('technician:view')
   @ApiOperation({ summary: '获取美甲师列表' })
   @ApiQuery({
     name: 'page',
@@ -77,7 +78,7 @@ export class TechniciansController {
   }
 
   @Get(':id')
-  @Permissions('technician.view')
+  @Permissions('technician:view')
   @ApiOperation({ summary: '获取美甲师详情' })
   @ApiParam({ name: 'id', type: String, description: '美甲师ID' })
   @ApiResponse({ status: 200, description: '返回美甲师详情' })
@@ -87,7 +88,7 @@ export class TechniciansController {
   }
 
   @Post()
-  @Permissions('technician.create')
+  @Permissions('technician:create')
   @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'technician',
@@ -103,7 +104,7 @@ export class TechniciansController {
   }
 
   @Patch(':id')
-  @Permissions('technician.edit')
+  @Permissions('technician:update')
   @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'technician',
@@ -119,7 +120,7 @@ export class TechniciansController {
   }
 
   @Post(':id/invite-key')
-  @Permissions('technician.edit')
+  @Permissions('technician:update')
   @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'technician',
@@ -133,11 +134,14 @@ export class TechniciansController {
     @Param('id') id: string,
     @Body() body: { note?: string } = {},
   ) {
-    return this.techniciansService.generateInviteKey(parseInt(id, 10), body.note);
+    return this.techniciansService.generateInviteKey(
+      parseInt(id, 10),
+      body.note,
+    );
   }
 
   @Patch(':id/status')
-  @Permissions('technician.disable')
+  @Permissions('technician:disable')
   @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'technician',
@@ -157,19 +161,69 @@ export class TechniciansController {
   }
 
   @Post(':id/reset-password')
-  @Permissions('technician.edit')
+  @Permissions('account:reset-password')
   @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'technician',
     action: 'reset_password',
     targetType: 'technician',
+    logResponse: false,
   })
   @ApiOperation({ summary: '重置美甲师密码（生成一次性临时密码）' })
   @ApiParam({ name: 'id', type: String, description: '美甲师ID' })
-  @ApiResponse({ status: 201, description: '重置成功，返回临时密码（仅此次显示）' })
+  @ApiResponse({
+    status: 201,
+    description: '重置成功，返回临时密码（仅此次显示）',
+  })
   @ApiResponse({ status: 400, description: '账号未激活' })
   @ApiResponse({ status: 404, description: '美甲师不存在' })
   resetPassword(@Param('id') id: string) {
     return this.techniciansService.resetPassword(parseInt(id, 10));
+  }
+
+  @Get(':id/managed-password')
+  @Permissions('account:reset-password')
+  @UseInterceptors(OperationLogInterceptor)
+  @OperationLog({
+    module: 'technician',
+    action: 'view_password',
+    targetType: 'technician',
+    logResponse: false,
+  })
+  @ApiOperation({ summary: '查看超管受管的美甲师当前密码' })
+  getManagedPassword(@Param('id') id: string) {
+    return this.techniciansService.getManagedPassword(parseInt(id, 10));
+  }
+
+  @Delete(':id')
+  @Permissions('technician:delete')
+  @UseInterceptors(OperationLogInterceptor)
+  @OperationLog({
+    module: 'technician',
+    action: 'delete',
+    targetType: 'technician',
+  })
+  @ApiOperation({ summary: '删除美甲师（软删除）' })
+  @ApiParam({ name: 'id', type: String, description: '美甲师ID' })
+  @ApiResponse({ status: 200, description: '删除成功' })
+  @ApiResponse({ status: 404, description: '美甲师不存在' })
+  remove(@Param('id') id: string) {
+    return this.techniciansService.deleteTechnician(parseInt(id, 10));
+  }
+
+  @Patch(':id/disable')
+  @Permissions('technician:disable')
+  @UseInterceptors(OperationLogInterceptor)
+  @OperationLog({
+    module: 'technician',
+    action: 'disable',
+    targetType: 'technician',
+  })
+  @ApiOperation({ summary: '禁用美甲师' })
+  @ApiParam({ name: 'id', type: String, description: '美甲师ID' })
+  @ApiResponse({ status: 200, description: '禁用成功' })
+  @ApiResponse({ status: 404, description: '美甲师不存在' })
+  disable(@Param('id') id: string) {
+    return this.techniciansService.disableTechnician(parseInt(id, 10));
   }
 }

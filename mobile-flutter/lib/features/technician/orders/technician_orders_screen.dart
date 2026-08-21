@@ -1,10 +1,33 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../../core/api/api_client.dart';
+import '../../../core/maps/map_service.dart';
+import '../customers/technician_customer_service.dart';
+import '../../shared/chat/chat_screen.dart';
+import '../../shared/chat/chat_service.dart';
+import 'technician_create_booking_sheet.dart';
+import 'technician_order_detail_screen.dart';
 import '../orders/technician_order_service.dart';
+import '../widgets/technician_appointment_card.dart';
+import 'package:nailbook_mobile/core/widgets/glass_container.dart';
+import 'package:nailbook_mobile/core/widgets/technician_glass_header.dart';
 
 class TechnicianOrdersScreen extends StatefulWidget {
-  const TechnicianOrdersScreen({super.key});
+  /// 初始状态过滤（如 'pending_confirm'）。
+  final String? initialStatusFilter;
+
+  /// 初始客户过滤，用于从客户详情页查看该客户预约。
+  final int? initialCustomerId;
+  final String? initialCustomerName;
+  final bool initialActiveOnly;
+
+  /// true 时仅展示未付定金的进行中预约（用于「未支付定金」入口）。
+  final bool initialUnpaidDepositOnly;
+  const TechnicianOrdersScreen({
+    super.key,
+    this.initialStatusFilter,
+    this.initialCustomerId,
+    this.initialCustomerName,
+    this.initialActiveOnly = false,
+    this.initialUnpaidDepositOnly = false,
+  });
 
   @override
   State<TechnicianOrdersScreen> createState() => _TechnicianOrdersScreenState();
@@ -12,12 +35,24 @@ class TechnicianOrdersScreen extends StatefulWidget {
 
 class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
   List<Map<String, dynamic>> _orders = [];
+  List<Map<String, dynamic>> _customers = [];
   bool _loading = true;
   String? _statusFilter;
+  late bool _unpaidDepositOnly = widget.initialUnpaidDepositOnly;
+
+  static const _activeStatuses = {
+    'pending_quote',
+    'pending_agree',
+    'pending_confirm',
+    'pending_home',
+    'pending_shop',
+    'in_progress'
+  };
 
   @override
   void initState() {
     super.initState();
+    _statusFilter = widget.initialStatusFilter;
     _loadOrders();
   }
 
@@ -25,201 +60,359 @@ class _TechnicianOrdersScreenState extends State<TechnicianOrdersScreen> {
     try {
       final apiClient = context.read<ApiClient>();
       final service = TechnicianOrderService(apiClient);
-      final orders = await service.list(status: _statusFilter);
-      if (mounted) setState(() { _orders = orders; _loading = false; });
+      final results = await Future.wait([
+        service.list(
+            status: _statusFilter, customerId: widget.initialCustomerId),
+        TechnicianCustomerService(apiClient).list(),
+      ]);
+      var orders = (results[0] as List).cast<Map<String, dynamic>>();
+      if (_unpaidDepositOnly) {
+        orders = orders
+            .where((o) =>
+                _activeStatuses.contains(o['status']) &&
+                !((o['depositPaid'] ?? o['isDepositPaid']) as bool? ?? false))
+            .toList();
+      }
+      if (widget.initialActiveOnly) {
+        orders =
+            orders.where((o) => _activeStatuses.contains(o['status'])).toList();
+      }
+      if (mounted) {
+        setState(() {
+          _orders = orders;
+          _customers = (results[1] as List).cast<Map<String, dynamic>>();
+          _loading = false;
+        });
+      }
     } catch (_) {
-      if (mounted) setState(() { _loading = false; });
-    }
-  }
-
-  String _statusLabel(String? status) {
-    switch (status) {
-      case 'pending_quote': return '待报价';
-      case 'pending_agree': return '待确认';
-      case 'pending_confirm': return '待接单';
-      case 'in_progress': return '服务中';
-      case 'completed': return '已完成';
-      case 'cancelled': return '已取消';
-      default: return status ?? '';
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final topPanelH = _topPanelHeight(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('订单管理')),
-      body: Column(children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(children: [
-            _filterChip(null, '全部'),
-            const SizedBox(width: 8),
-            _filterChip('pending_quote', '待报价'),
-            const SizedBox(width: 8),
-            _filterChip('pending_agree', '待确认'),
-            const SizedBox(width: 8),
-            _filterChip('pending_confirm', '待接单'),
-            const SizedBox(width: 8),
-            _filterChip('in_progress', '服务中'),
-            const SizedBox(width: 8),
-            _filterChip('completed', '已完成'),
-          ]),
-        ),
-        Expanded(
-          child: _loading
-              ? const Center(child: CircularProgressIndicator())
-              : _orders.isEmpty
-                  ? const Center(child: Text('暂无订单'))
-                  : RefreshIndicator(
-                      onRefresh: _loadOrders,
-                      child: ListView.builder(
-                        itemCount: _orders.length,
-                        itemBuilder: (context, index) {
-                          final order = _orders[index];
-                          final status = order['status'] as String?;
-                          return Card(
-                            child: ListTile(
-                              title: Text(order['orderNo']?.toString() ?? ''),
-                              subtitle: Text(_statusLabel(status)),
-                              trailing: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                                Text(_statusLabel(status), style: const TextStyle(fontWeight: FontWeight.w600)),
-                                if (order['quotePrice'] != null)
-                                  Text('¥${(order['quotePrice'] as num).toStringAsFixed(0)}', style: const TextStyle(color: Color(0xFFE91E63))),
-                              ]),
-                              onTap: () => _showOrderActions(context, order),
-                            ),
-                          );
-                        },
+      backgroundColor: DT.bg,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: _loading
+                ? const Center(
+                    child: CircularProgressIndicator(color: DT.primary))
+                : _orders.isEmpty
+                    ? _emptyList(topPanelH)
+                    : RefreshIndicator(
+                        color: DT.primary,
+                        onRefresh: _loadOrders,
+                        child: ListView.separated(
+                          padding: EdgeInsets.fromLTRB(
+                              DT.lg, topPanelH + DT.md, DT.lg, 100),
+                          itemCount: _orders.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: DT.sm + 2),
+                          itemBuilder: (context, index) =>
+                              _bookingCard(_orders[index]),
+                        ),
                       ),
-                    ),
-        ),
-      ]),
-    );
-  }
-
-  Widget _filterChip(String? value, String label) {
-    final selected = _statusFilter == value;
-    return FilterChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) {
-        setState(() { _statusFilter = value; _loading = true; });
-        _loadOrders();
-      },
-    );
-  }
-
-  void _showOrderActions(BuildContext context, Map<String, dynamic> order) {
-    final id = order['id'] as int;
-    final status = order['status'] as String?;
-
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text('订单 ${order['orderNo']}', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 16),
-            if (status == 'pending_quote')
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: ElevatedButton(
-                  onPressed: () { Navigator.pop(ctx); _showReviewDialog(context, id); },
-                  child: const Text('报价'),
-                ),
-              ),
-            if (status == 'pending_confirm')
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    Navigator.pop(ctx);
-                    final apiClient = context.read<ApiClient>();
-                    await TechnicianOrderService(apiClient).confirm(id);
-                    _loadOrders();
-                  },
-                  child: const Text('确认接单'),
-                ),
-              ),
-            if (status == 'in_progress')
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    Navigator.pop(ctx);
-                    final apiClient = context.read<ApiClient>();
-                    await TechnicianOrderService(apiClient).complete(id);
-                    _loadOrders();
-                  },
-                  child: const Text('完成订单'),
-                ),
-              ),
-            if (['pending_quote', 'pending_agree', 'pending_confirm'].contains(status))
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: OutlinedButton(
-                  onPressed: () async {
-                    Navigator.pop(ctx);
-                    final apiClient = context.read<ApiClient>();
-                    await TechnicianOrderService(apiClient).cancel(id);
-                    _loadOrders();
-                  },
-                  child: const Text('取消订单'),
-                ),
-              ),
-          ]),
-        ),
-      ),
-    );
-  }
-
-  void _showReviewDialog(BuildContext context, int orderId) {
-    final priceCtl = TextEditingController();
-    final dateCtl = TextEditingController();
-    final timeCtl = TextEditingController();
-    final durationCtl = TextEditingController(text: '120');
-    final remarkCtl = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('报价'),
-        content: SingleChildScrollView(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            TextField(controller: priceCtl, decoration: const InputDecoration(labelText: '报价金额'), keyboardType: TextInputType.number),
-            TextField(controller: dateCtl, decoration: const InputDecoration(labelText: '服务日期', hintText: '2026-06-15')),
-            TextField(controller: timeCtl, decoration: const InputDecoration(labelText: '开始时间', hintText: '14:00')),
-            TextField(controller: durationCtl, decoration: const InputDecoration(labelText: '时长(分钟)'), keyboardType: TextInputType.number),
-            TextField(controller: remarkCtl, decoration: const InputDecoration(labelText: '备注')),
-          ]),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              try {
-                final apiClient = context.read<ApiClient>();
-                await TechnicianOrderService(apiClient).review(orderId, {
-                  'price': double.tryParse(priceCtl.text) ?? 0,
-                  'serviceDate': dateCtl.text,
-                  'startTime': timeCtl.text,
-                  'durationMinutes': int.tryParse(durationCtl.text) ?? 120,
-                  if (remarkCtl.text.isNotEmpty) 'remark': remarkCtl.text,
-                });
-                _loadOrders();
-              } catch (_) {}
-            },
-            child: const Text('提交报价'),
           ),
+          Positioned(left: 0, right: 0, top: 0, child: _topPanel()),
         ],
       ),
     );
   }
+
+  double _topPanelHeight(BuildContext context) {
+    final topPad = MediaQuery.of(context).padding.top;
+    return topPad + 122;
+  }
+
+  Widget _topPanel() {
+    final topPad = MediaQuery.of(context).padding.top;
+    return GlassContainer(
+      tint: TechnicianGlassHeader.glassTint,
+      blur: TechnicianGlassHeader.glassBlur,
+      opacity: TechnicianGlassHeader.glassOpacity,
+      borderRadius: 0,
+      showBorder: false,
+      padding: EdgeInsets.fromLTRB(DT.lg, topPad + DT.sm, DT.lg, DT.md),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: 44,
+            child: Row(
+              children: [
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    Navigator.maybePop(context);
+                  },
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(CupertinoIcons.back,
+                        size: 17, color: DT.textPrimary),
+                  ),
+                ),
+                const SizedBox(width: DT.md),
+                Expanded(child: Text(_title, style: DT.titleMedium)),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _showCreateBookingSheet,
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 36),
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: DT.cream,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text('新建预约',
+                        style: DT.captionLarge.copyWith(
+                            color: DT.onCream, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: DT.md),
+          _filterStrip(),
+        ],
+      ),
+    );
+  }
+
+  Widget _filterStrip() {
+    return SizedBox(
+      height: 36,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.zero,
+        children: [
+          if (_unpaidDepositOnly) _depositChip(),
+          _filterChip(null, '全部'),
+          _filterChip('pending_quote', '待报价'),
+          _filterChip('pending_agree', '待用户确认'),
+          _filterChip('pending_confirm', '待我确认'),
+          _filterChip('pending_home', '待上门'),
+          _filterChip('pending_shop', '待到店'),
+          _filterChip('in_progress', '进行中'),
+          _filterChip('completed', '已完成'),
+          _filterChip('cancelled', '已取消'),
+          _filterChip('expired', '已过期'),
+        ],
+      ),
+    );
+  }
+
+  void _showCreateBookingSheet() {
+    HapticFeedback.lightImpact();
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => TechnicianCreateBookingSheet(
+        customers: _customers,
+        presetCustomerId: widget.initialCustomerId,
+        onCreated: (_) => _loadOrders(),
+      ),
+    );
+  }
+
+  String get _title {
+    if (_unpaidDepositOnly) return '未支付定金';
+    final name = widget.initialCustomerName;
+    if (name != null && name.isNotEmpty) {
+      return widget.initialActiveOnly ? '$name 的预约' : '$name 的历史预约';
+    }
+    return '预约管理';
+  }
+
+  Widget _emptyList(double topPanelH) {
+    return ListView(
+      padding: EdgeInsets.fromLTRB(DT.lg, topPanelH + 80, DT.lg, 100),
+      children: [
+        Center(
+          child: Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: DT.surfaceAlt,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: const Icon(CupertinoIcons.calendar,
+                size: 32, color: DT.textTertiary),
+          ),
+        ),
+        const SizedBox(height: 14),
+        const Center(
+            child: Text('暂无预约',
+                style: TextStyle(fontSize: 14, color: DT.textMuted))),
+      ],
+    );
+  }
+
+  Widget _bookingCard(Map<String, dynamic> order) {
+    final customerName = order['customerName']?.toString() ??
+        (order['client'] as Map<String, dynamic>?)?['nickname']?.toString() ??
+        (order['customer'] as Map<String, dynamic>?)?['name']?.toString() ??
+        '客户';
+    final customerPhone = order['customerPhone']?.toString();
+    return TechnicianAppointmentCard(
+      order: order,
+      isTrip: false,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                TechnicianOrderDetailScreen(orderId: order['id'] as int),
+          ),
+        ).then((_) => _loadOrders());
+      },
+      onCall: () => _callCustomer(customerPhone),
+      onMessage: () => _openChat(order, customerName),
+      onNavigate: () => _navigateOrder(order),
+    );
+  }
+
+  Future<void> _navigateOrder(Map<String, dynamic> order) async {
+    final address = order['address']?.toString() ?? '';
+    if (address.isEmpty) {
+      NbToast.error(context, '当前预约还没有地址信息');
+      return;
+    }
+    HapticFeedback.lightImpact();
+    await MapService.launchAddressNavigation(address);
+  }
+
+  Widget _filterChip(String? value, String label) {
+    final selected = _statusFilter == value && !_unpaidDepositOnly;
+    return Padding(
+      padding: const EdgeInsets.only(right: DT.sm),
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          setState(() {
+            _statusFilter = value;
+            _unpaidDepositOnly = false;
+            _loading = true;
+          });
+          _loadOrders();
+        },
+        child: Container(
+          alignment: Alignment.center,
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: selected ? DT.cream : DT.surface,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: selected ? DT.cream : DT.border),
+          ),
+          child: Text(label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                color: selected ? DT.onCream : DT.textSecondary,
+              )),
+        ),
+      ),
+    );
+  }
+
+  Widget _depositChip() {
+    return Padding(
+      padding: const EdgeInsets.only(right: DT.sm),
+      child: Container(
+        alignment: Alignment.center,
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: DT.cream,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: DT.cream),
+        ),
+        child: const Text('未支付定金',
+            style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: DT.onCream)),
+      ),
+    );
+  }
+
+  Future<void> _callCustomer(String? phone) async {
+    if (phone == null || phone.trim().isEmpty) {
+      NbToast.error(context, '当前客户暂无联系电话');
+      return;
+    }
+    HapticFeedback.lightImpact();
+    final ok = await MapService.launchPhoneCall(phone);
+    if (!ok && mounted) NbToast.error(context, '无法发起电话');
+  }
+
+  Future<void> _openChat(Map<String, dynamic> order, String name) async {
+    final clientUserId = _clientUserId(order);
+    if (clientUserId == null) {
+      NbToast.error(context, '该客户尚未注册客户端，暂不支持在线消息');
+      return;
+    }
+    HapticFeedback.lightImpact();
+    final api = context.read<ApiClient>();
+    int? convId;
+    try {
+      final convs = await ChatService(api).conversations();
+      for (final conv in convs) {
+        if ((conv['client'] as Map<String, dynamic>?)?['id'] == clientUserId) {
+          convId = conv['id'] as int?;
+          break;
+        }
+      }
+    } catch (_) {}
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          conversationId: convId,
+          title: name,
+          otherPartyId: clientUserId,
+          clientId: clientUserId,
+        ),
+      ),
+    );
+  }
+
+  int? _clientUserId(Map<String, dynamic> order) {
+    final client = order['client'] as Map<String, dynamic>?;
+    final customer = order['customer'] as Map<String, dynamic>?;
+    final clientUser = order['clientUser'] as Map<String, dynamic>?;
+    final customerClientUser = customer?['clientUser'] as Map<String, dynamic>?;
+    return _int(order['clientUserId']) ??
+        _int(clientUser?['id']) ??
+        _int(client?['id']) ??
+        _int(customer?['clientUserId']) ??
+        _int(customerClientUser?['id']);
+  }
+
+  int? _int(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
 }

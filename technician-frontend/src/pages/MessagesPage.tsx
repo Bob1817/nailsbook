@@ -414,8 +414,8 @@ export const MessagesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 可滚动内容：消息卡片 */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-6">
+      {/* 可滚动内容：消息卡片（底部留出 TabBar 高度 + 安全区，避免最后一条被遮挡） */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-[calc(3.5rem+env(safe-area-inset-bottom)+1.5rem)]">
         <div className="space-y-3">
           {isLoading ? (
             <Card className="px-lg py-xl text-center text-sm text-gray-400">提醒加载中...</Card>

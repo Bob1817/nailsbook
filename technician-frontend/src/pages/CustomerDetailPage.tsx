@@ -11,6 +11,7 @@ import {
   type TechnicianCustomerDetail,
 } from '../services/technicianData';
 import type { CustomTag } from '../contexts/authTypes';
+import { CreateBookingSheet } from '../components/CreateBookingSheet';
 
 const TAG_FALLBACK_COLORS: Record<string, { bg: string; text: string }> = {
   '常客': { bg: '#FFE9F0', text: '#FF5E93' },
@@ -48,6 +49,7 @@ const CustomerDetailPage: React.FC = () => {
   const [editingTags, setEditingTags] = useState<string[]>([]);
   const [savingTags, setSavingTags] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
+  const [showBooking, setShowBooking] = useState(false);
 
   const customTags = useMemo(() => technician?.customTags ?? [], [technician?.customTags]);
   const allTagNames = useMemo(() => {
@@ -89,7 +91,7 @@ const CustomerDetailPage: React.FC = () => {
 
   function handleCreateOrder() {
     if (!customer) return;
-    navigate(`/orders?customerId=${customer.id}`);
+    setShowBooking(true);
   }
 
   function handleOpenTagEditor() {
@@ -464,6 +466,32 @@ const CustomerDetailPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <CreateBookingSheet
+        open={showBooking}
+        customers={customer ? [{
+          id: customer.id,
+          name: customer.name,
+          phone: customer.phone,
+          address: customer.address,
+          tags: customer.tags,
+          note: customer.note,
+          recentServiceAt: customer.recentServiceAt,
+          totalOrders: customer.totalOrders,
+          totalSpent: customer.totalSpent,
+        }] : []}
+        presetCustomerId={customer?.id}
+        onClose={() => setShowBooking(false)}
+        onCreated={async () => {
+          setShowBooking(false);
+          if (customer) {
+            const fresh = await customersService.getById(customer.id);
+            if (fresh) {
+              setCustomer(fresh);
+            }
+          }
+        }}
+      />
     </div>
   );
 };

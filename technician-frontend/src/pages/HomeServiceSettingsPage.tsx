@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/feedback/ToastProvider';
+import RegionSelect from '../components/RegionSelect';
 import type { HomeServiceSettings, HomeServiceFeeConfig } from '../contexts/authTypes';
 
 const defaultFeeConfig: HomeServiceFeeConfig = {
@@ -28,7 +29,7 @@ const STORAGE_KEY = 'home_service_settings';
 
 const HomeServiceSettingsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { technician, updateServiceType } = useAuth();
+  const { technician, updateServiceType, updateTechnicianProfile } = useAuth();
   const toast = useToast();
   const [settings, setSettings] = useState<HomeServiceSettings>(defaultSettings);
   const [loading, setLoading] = useState(false);
@@ -53,16 +54,23 @@ const HomeServiceSettingsPage: React.FC = () => {
   const saveSettings = async (newSettings: HomeServiceSettings) => {
     setLoading(true);
     try {
-      // 保存到 localStorage
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
 
-      // 同步到后端
       await updateServiceType({
         homeService: newSettings.enabled,
         shopService: technician?.shopService || false,
         shopAddresses: technician?.shopAddresses || [],
         homeServiceSettings: newSettings,
       });
+
+      // Sync address location fields back to technician profile so city/serviceArea stay consistent
+      if (newSettings.baseAddress) {
+        await updateTechnicianProfile({
+          province: newSettings.baseAddress.province || technician?.province || '',
+          city: newSettings.baseAddress.city || technician?.city || '',
+          serviceArea: newSettings.baseAddress.district || technician?.serviceArea || '',
+        });
+      }
 
       setSettings(newSettings);
       toast.success('设置已保存');
@@ -79,18 +87,31 @@ const HomeServiceSettingsPage: React.FC = () => {
   };
 
   const handleUpdateBaseAddress = (field: string, value: string) => {
-    const currentBaseAddress = settings.baseAddress || {
-      name: '',
-      detailAddress: '',
-    };
-    const newSettings = {
-      ...settings,
-      baseAddress: {
-        ...currentBaseAddress,
-        [field]: value,
-      },
-    };
-    setSettings(newSettings);
+    const currentBaseAddress = settings.baseAddress || { name: '', detailAddress: '' };
+    setSettings({ ...settings, baseAddress: { ...currentBaseAddress, [field]: value } });
+  };
+
+  const handleUpdateBaseRegion = ({ province, city }: { province: string; city: string }) => {
+    const currentBaseAddress = settings.baseAddress || { name: '', detailAddress: '' };
+    setSettings({ ...settings, baseAddress: { ...currentBaseAddress, province, city } });
+  };
+
+  const handleOpenAddressForm = () => {
+    // Pre-populate province/city/district from technician profile if not already set
+    if (!settings.baseAddress?.province && technician?.province) {
+      setSettings((s) => ({
+        ...s,
+        baseAddress: {
+          name: s.baseAddress?.name || '',
+          detailAddress: s.baseAddress?.detailAddress || '',
+          ...s.baseAddress,
+          province: s.baseAddress?.province || technician?.province || '',
+          city: s.baseAddress?.city || technician?.city || '',
+          district: s.baseAddress?.district || technician?.serviceArea || '',
+        },
+      }));
+    }
+    setShowAddressForm(true);
   };
 
   const handleUpdateFeeConfig = (updates: Partial<HomeServiceFeeConfig>) => {
@@ -224,7 +245,7 @@ const HomeServiceSettingsPage: React.FC = () => {
                         )}
                       </div>
                       <button
-                        onClick={() => setShowAddressForm(true)}
+                        onClick={handleOpenAddressForm}
                         className="text-sm text-pink-500 font-medium"
                       >
                         修改
@@ -233,7 +254,7 @@ const HomeServiceSettingsPage: React.FC = () => {
                   </div>
                 ) : (
                   <button
-                    onClick={() => setShowAddressForm(true)}
+                    onClick={handleOpenAddressForm}
                     className="w-full py-4 border-2 border-dashed border-gray-200 rounded-xl text-gray-500 flex items-center justify-center gap-2"
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -425,35 +446,26 @@ const HomeServiceSettingsPage: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">省</label>
-                  <input
-                    type="text"
-                    value={settings.baseAddress?.province || ''}
-                    onChange={(e) => handleUpdateBaseAddress('province', e.target.value)}
-                    placeholder="省份"
-                    className="w-full px-3 py-3 rounded-xl border border-gray-200 focus:border-pink-500 focus:outline-none text-sm"
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    所在城市
+                    <span className="ml-2 text-xs font-normal text-pink-400">与个人资料城市联动</span>
+                  </label>
+                  <RegionSelect
+                    province={settings.baseAddress?.province || ''}
+                    city={settings.baseAddress?.city || ''}
+                    onChange={handleUpdateBaseRegion}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">市</label>
-                  <input
-                    type="text"
-                    value={settings.baseAddress?.city || ''}
-                    onChange={(e) => handleUpdateBaseAddress('city', e.target.value)}
-                    placeholder="城市"
-                    className="w-full px-3 py-3 rounded-xl border border-gray-200 focus:border-pink-500 focus:outline-none text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">区</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">区县（服务区域）</label>
                   <input
                     type="text"
                     value={settings.baseAddress?.district || ''}
                     onChange={(e) => handleUpdateBaseAddress('district', e.target.value)}
-                    placeholder="区县"
-                    className="w-full px-3 py-3 rounded-xl border border-gray-200 focus:border-pink-500 focus:outline-none text-sm"
+                    placeholder="区县，如：朝阳区"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-pink-500 focus:outline-none text-sm"
                   />
                 </div>
               </div>

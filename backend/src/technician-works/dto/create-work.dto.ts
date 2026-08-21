@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsInt, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateWorkDto {
@@ -29,6 +29,24 @@ export class CreateWorkDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiPropertyOptional({ description: '设计理念' })
+  @IsOptional()
+  @IsString()
+  designIdea?: string;
+
+  @ApiPropertyOptional({ description: '适合场景，逗号分隔' })
+  @IsOptional()
+  @IsString()
+  suitableScene?: string;
+
+  @ApiPropertyOptional({ description: '推荐指数，1-5', minimum: 1, maximum: 5 })
+  @Transform(({ value }) => Number(value))
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  recommendationScore?: number;
 
   @ApiPropertyOptional({
     description: '标签(逗号分隔)',
@@ -89,6 +107,24 @@ export class UpdateWorkDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiPropertyOptional({ description: '设计理念' })
+  @IsOptional()
+  @IsString()
+  designIdea?: string;
+
+  @ApiPropertyOptional({ description: '适合场景，逗号分隔' })
+  @IsOptional()
+  @IsString()
+  suitableScene?: string;
+
+  @ApiPropertyOptional({ description: '推荐指数，1-5', minimum: 1, maximum: 5 })
+  @Transform(({ value }) => Number(value))
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  recommendationScore?: number;
 
   @ApiPropertyOptional({
     description: '标签(逗号分隔)',

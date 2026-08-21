@@ -1,7 +1,8 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { mkdtempSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { resolve } from 'path';
 import request from 'supertest';
+import sharp from 'sharp';
 import {
   ContractTestApp,
   createContractTestApp,
@@ -183,13 +184,12 @@ describe('Chat and upload HTTP contract', () => {
     it('client uploads an image and receives a URL', async () => {
       const { accessToken } = await setupClientWithBinding('upload-client');
 
-      const testImagePath = resolve(tempDir, 'test-upload.jpg');
-      writeFileSync(
-        testImagePath,
-        Buffer.from([
-          0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46,
-        ]),
-      );
+      const testImagePath = resolve(tempDir, 'test-upload.png');
+      await sharp({
+        create: { width: 10, height: 10, channels: 3, background: '#f472b6' },
+      })
+        .png()
+        .toFile(testImagePath);
 
       const uploadRes = await request(testApp.app.getHttpServer())
         .post('/api/client/uploads/image')
@@ -205,13 +205,12 @@ describe('Chat and upload HTTP contract', () => {
     it('technician uploads an image and receives a URL', async () => {
       const { accessToken } = await setupTechnician('upload-tech');
 
-      const testImagePath = resolve(tempDir, 'test-tech-upload.jpg');
-      writeFileSync(
-        testImagePath,
-        Buffer.from([
-          0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46,
-        ]),
-      );
+      const testImagePath = resolve(tempDir, 'test-tech-upload.png');
+      await sharp({
+        create: { width: 10, height: 10, channels: 3, background: '#f472b6' },
+      })
+        .png()
+        .toFile(testImagePath);
 
       const uploadRes = await request(testApp.app.getHttpServer())
         .post('/api/technician/uploads/image')

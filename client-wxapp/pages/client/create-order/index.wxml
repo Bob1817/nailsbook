@@ -1,110 +1,291 @@
-<view class="container">
+<nav-bar title="创建预约" showBack/>
+<view class="page">
 
-  <!-- 美甲师 -->
-  <view class="section">
-    <text class="section-title">美甲师</text>
-    <view class="tech-card" wx:if="{{technician}}">
-      <image class="tech-avatar" src="{{technician.avatarUrl || '/static/logo.svg'}}" mode="aspectFill"/>
-      <view class="tech-info">
-        <text class="tech-name">{{technician.name}}</text>
-        <text class="tech-phone">{{technician.phone}}</text>
-      </view>
+  <!-- 选择美甲师 -->
+  <view class="section" wx:if="{{!presetLocked}}">
+    <view class="section-head">
+      <text class="section-title">选择美甲师</text>
+      <text class="section-sub">{{technicians.length > 1 ? '请选择已开启接单的美甲师' : '当前仅有1位可预约的美甲师'}}</text>
     </view>
-    <text wx:else class="hint">未绑定美甲师</text>
-  </view>
-
-  <!-- 服务方式 -->
-  <view class="section">
-    <text class="section-title">服务方式</text>
-    <view class="type-tabs">
-      <view
-        class="type-tab {{serviceType === '上门' ? 'active' : ''}}"
-        bindtap="onServiceTypeChange"
-        data-type="上门"
-      >上门服务</view>
-      <view
-        class="type-tab {{serviceType === '到店' ? 'active' : ''}}"
-        bindtap="onServiceTypeChange"
-        data-type="到店"
-      >到店服务</view>
-    </view>
-  </view>
-
-  <!-- 上门地址 -->
-  <view class="section" wx:if="{{serviceType === '上门'}}">
-    <text class="section-title">上门地址</text>
-    <view wx:if="{{addresses.length > 0}}">
-      <view
-        wx:for="{{addresses}}"
-        wx:key="id"
-        class="address-item {{selectedAddressId === item.id ? 'selected' : ''}}"
-        bindtap="onAddressTap"
-        data-id="{{item.id}}"
-      >
-        <view class="address-main">
-          <text class="address-name">{{item.contactName}} {{item.contactPhone}}</text>
-          <text class="address-detail">{{item.province}}{{item.city}}{{item.district}}{{item.detail}}</text>
+    <view wx:if="{{technicians.length > 0}}" class="tech-list">
+      <view wx:for="{{technicians}}" wx:key="id"
+        class="tech-card {{selectedTechId === item.id ? 'tech-card-active' : ''}}"
+        bindtap="selectTech" data-id="{{item.id}}">
+        <view class="tech-avatar" catchtap="viewArtist" data-id="{{item.id}}" role="button" aria-label="查看{{item.name || '美甲师'}}主页">
+          <image wx:if="{{item.avatarUrl}}" src="{{item.avatarUrl}}" mode="aspectFill" class="tech-avatar-img" lazy-load aria-label="{{item.name || '美甲师'}}的头像" />
+          <text wx:else class="tech-avatar-text">{{item.name[0]}}</text>
         </view>
-        <view class="check-icon" wx:if="{{selectedAddressId === item.id}}">✓</view>
+        <view class="tech-info">
+          <view class="tech-name-row">
+            <text class="tech-name">{{item.name}}</text>
+            <text wx:if="{{item.isDefault}}" class="badge-default">默认</text>
+          </view>
+          <text class="tech-city">{{item.city || '暂未设置服务区域'}}</text>
+          <view class="tech-tags">
+            <text wx:if="{{item.shopService && item.shopAddresses.length > 0}}" class="tag">到店美甲</text>
+          </view>
+        </view>
+        <view class="radio-circle {{selectedTechId === item.id ? 'radio-active' : ''}}">
+          <text wx:if="{{selectedTechId === item.id}}" class="radio-check">✓</text>
+        </view>
       </view>
     </view>
-    <view class="add-address" bindtap="goToAddAddress">
-      <text>+ 添加新地址</text>
-    </view>
+    <view wx:else class="empty-hint"><text>暂无可预约的美甲师</text></view>
   </view>
 
-  <!-- 预约时间 -->
-  <view class="section">
-    <text class="section-title">预约时间</text>
-    <view class="time-row">
-      <view class="time-item">
-        <text class="time-label">日期</text>
-        <picker mode="date" value="{{serviceDate}}" start="{{minDate}}" bindchange="onDateChange">
-          <view class="picker-value">{{serviceDate || '请选择'}}</view>
-        </picker>
-      </view>
-      <view class="time-item">
-        <text class="time-label">时间</text>
-        <picker mode="time" value="{{startTime}}" bindchange="onTimeChange">
-          <view class="picker-value">{{startTime || '请选择'}}</view>
-        </picker>
-      </view>
-    </view>
+  <view class="section preset-tech" wx:if="{{presetLocked && selectedTech}}">
+    <view class="section-head"><text class="section-title">预约美甲师</text><text class="section-sub">已从主页带入，无需再次选择</text></view>
+    <view class="tech-card tech-card-active"><view class="tech-avatar"><image wx:if="{{selectedTech.avatarUrl}}" src="{{selectedTech.avatarUrl}}" mode="aspectFill" class="tech-avatar-img"/><text wx:else class="tech-avatar-text">{{selectedTech.name[0]}}</text></view><view class="tech-info"><text class="tech-name">{{selectedTech.name}}</text><text class="tech-city">{{selectedTech.city || '服务信息以主页为准'}}</text></view><image class="preset-check" src="/static/icons/check-circle.svg"/></view>
   </view>
 
-  <!-- 服务项目 -->
-  <view class="section" wx:if="{{serviceItems.length > 0}}">
-    <text class="section-title">服务项目（可多选）</text>
-    <view class="service-list">
-      <view
-        wx:for="{{serviceItems}}"
-        wx:key="id"
-        class="service-item {{selectedServiceIds.indexOf(item.id) >= 0 ? 'selected' : ''}}"
-        bindtap="toggleService"
-        data-id="{{item.id}}"
-      >
-        <text class="service-name">{{item.name}}</text>
-      </view>
+  <!-- 服务类型 -->
+  <view class="section" wx:if="{{selectedTech}}">
+    <view class="section-head">
+      <text class="section-title">服务类型</text>
+    </view>
+    <view wx:if="{{availableServiceTypes.length === 1}}" class="single-type">
+      <text class="single-type-label">{{availableServiceTypes[0].label}}</text>
+      <text class="single-type-badge">固定服务</text>
+    </view>
+    <view wx:if="{{availableServiceTypes.length === 0}}" class="empty-hint">
+      <text>该美甲师暂未配置服务类型</text>
     </view>
   </view>
 
-  <!-- 备注 -->
-  <view class="section">
-    <text class="section-title">备注（选填）</text>
-    <textarea
-      class="remark-input"
-      placeholder="如有特殊需求请备注，例如：想要渐变粉色系"
-      value="{{remark}}"
-      bindinput="onRemarkInput"
-      maxlength="200"
-    />
+  <!-- 到店：选择门店 -->
+  <view class="section" wx:if="{{serviceType === '到店美甲'}}">
+    <view class="section-head">
+      <text class="section-title">到店门店</text>
+      <text class="section-sub">请选择前往的门店地址</text>
+    </view>
+    <view wx:if="{{shopAddresses.length > 0}}" class="addr-list">
+      <view wx:for="{{shopAddresses}}" wx:key="name"
+        class="addr-card {{selectedShopName === item.name ? 'addr-card-active' : ''}}"
+        bindtap="selectShopAddress" data-name="{{item.name}}">
+        <view class="radio-circle {{selectedShopName === item.name ? 'radio-active' : ''}}">
+          <text wx:if="{{selectedShopName === item.name}}" class="radio-check">✓</text>
+        </view>
+        <view class="addr-info">
+          <text class="addr-name">{{item.name}}</text>
+          <text class="addr-detail">{{item.province}}{{item.city}}{{item.district}}{{item.detailAddress}}</text>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="empty-hint"><text>该美甲师暂未配置门店</text></view>
   </view>
 
-  <!-- 提交 -->
-  <view class="footer">
-    <button class="btn-submit" bindtap="handleSubmit" disabled="{{submitting}}">
-      {{submitting ? '提交中...' : '确认预约'}}
-    </button>
+  <!-- 服务内容 -->
+  <view class="section" wx:if="{{selectedTech}}">
+    <view class="section-head">
+      <text class="section-title">服务内容</text>
+    </view>
+
+    <!-- 切换：选服务项目 / 自定义需求 -->
+    <view class="segment-wrap content-segment">
+      <view class="segment-item {{!isCustomService ? 'segment-active' : ''}}" bindtap="switchContentMode" data-mode="standard">
+        <text class="segment-text">选服务项目</text>
+      </view>
+      <view class="segment-item {{isCustomService ? 'segment-active' : ''}}" bindtap="switchContentMode" data-mode="custom">
+        <text class="segment-text">自定义需求</text>
+      </view>
+    </view>
+
+    <!-- 自定义需求表单 -->
+    <view wx:if="{{isCustomService}}" class="custom-form">
+      <view class="form-field">
+        <text class="form-label">服务名称</text>
+        <input class="form-input" value="{{customTitle}}" bindinput="onCustomTitleInput" placeholder="例如：法式渐变美甲" />
+      </view>
+      <view class="form-field">
+        <text class="form-label">详细描述</text>
+        <textarea class="form-textarea" value="{{customDesc}}" bindinput="onCustomDescInput" placeholder="描述你的具体需求..." adjust-position cursor-spacing="120" />
+      </view>
+      <view class="form-field">
+        <text class="form-label">参考图片（可选，最多3张）</text>
+        <view class="image-grid">
+          <view wx:for="{{customImages}}" wx:key="*this" class="image-item">
+            <image src="{{item}}" mode="aspectFill" class="preview-img" aria-label="预约参考图" />
+            <view class="remove-btn" bindtap="removeImage" data-index="{{index}}">✕</view>
+          </view>
+          <view wx:if="{{customImages.length < 3}}" class="add-image" bindtap="chooseImage">
+            <text wx:if="{{uploading}}">上传中...</text>
+            <text wx:else>+</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 参考作品 -->
+      <view class="form-field" wx:if="{{techWorks.length > 0}}">
+        <view class="form-label-row">
+          <text class="form-label">参考作品（可选，最多3个）</text>
+          <text class="link-btn" bindtap="toggleWorkSelector">{{showWorkSelector ? '收起' : '选择作品'}}</text>
+        </view>
+        <view wx:if="{{selectedWorkIds.length > 0}}" class="selected-works">
+          <view wx:for="{{techWorks}}" wx:key="id" wx:if="{{selectedWorkIds.indexOf(item.id) >= 0}}" class="selected-work-item">
+            <image src="{{item.coverUrl}}" mode="aspectFill" class="work-thumb" lazy-load aria-label="{{item.title || '美甲作品'}}" />
+            <view class="remove-btn" bindtap="removeWork" data-id="{{item.id}}">✕</view>
+          </view>
+        </view>
+        <view wx:if="{{showWorkSelector}}" class="work-selector">
+          <view wx:for="{{techWorks}}" wx:key="id"
+            class="work-option {{selectedWorkIds.indexOf(item.id) >= 0 ? 'work-option-active' : ''}}"
+            bindtap="toggleWork" data-id="{{item.id}}">
+            <image src="{{item.coverUrl}}" mode="aspectFill" class="work-option-img" lazy-load aria-label="{{item.title || '美甲作品'}}" />
+            <view wx:if="{{selectedWorkIds.indexOf(item.id) >= 0}}" class="work-check">✓</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 标准服务列表 -->
+    <view wx:if="{{!isCustomService && activeServiceItems.length > 0}}" class="service-list">
+      <view wx:for="{{activeServiceItems}}" wx:key="id"
+        class="service-card {{selectedServiceIds.indexOf(item.id) >= 0 ? 'service-card-active' : ''}}"
+        bindtap="toggleService" data-id="{{item.id}}">
+        <view class="radio-circle {{selectedServiceIds.indexOf(item.id) >= 0 ? 'radio-active' : ''}}">
+          <text wx:if="{{selectedServiceIds.indexOf(item.id) >= 0}}" class="radio-check">✓</text>
+        </view>
+        <view class="type-info">
+          <text class="type-label">{{item.name}}</text>
+          <text wx:if="{{item.description}}" class="type-desc">{{item.description}}</text>
+          <text class="type-duration">约 {{item.durationMinutes}} 分钟</text>
+        </view>
+        <text class="service-price">¥{{item.price}}</text>
+      </view>
+    </view>
+    <view wx:if="{{!isCustomService && activeServiceItems.length === 0}}" class="empty-hint">
+      <text>该美甲师暂未配置服务项目，请切换至「自定义需求」描述你的需求</text>
+    </view>
   </view>
 
+  <!-- 预约时间：日历 + 时间段 -->
+  <view class="section" wx:if="{{selectedTech}}">
+    <view class="section-head">
+      <text class="section-title">预约时间</text>
+    </view>
+
+    <!-- 自定义日历 -->
+    <view class="calendar">
+      <view class="calendar-header">
+        <view class="cal-nav-btn" bindtap="onPrevMonth">‹</view>
+        <text class="calendar-title">{{calendarMonthLabel}}</text>
+        <view class="cal-nav-btn" bindtap="onNextMonth">›</view>
+      </view>
+      <view class="calendar-weekdays">
+        <text wx:for="{{['日','一','二','三','四','五','六']}}" wx:key="*this" class="weekday-cell">{{item}}</text>
+      </view>
+      <view class="calendar-grid">
+        <view wx:for="{{calendarDays}}" wx:key="index" class="day-cell-wrap">
+          <view wx:if="{{item.empty}}" class="day-cell day-empty"></view>
+          <view wx:elif="{{item.isPast || item.isRest}}"
+            class="day-cell day-disabled">
+            <text class="day-text">{{item.day}}</text>
+          </view>
+          <view wx:elif="{{item.isSelected}}"
+            class="day-cell day-selected" bindtap="onSelectDate" data-date="{{item.dateStr}}">
+            <text class="day-text day-text-selected">{{item.day}}</text>
+          </view>
+          <view wx:elif="{{item.isToday}}"
+            class="day-cell day-today" bindtap="onSelectDate" data-date="{{item.dateStr}}">
+            <text class="day-text">{{item.day}}</text>
+          </view>
+          <view wx:else
+            class="day-cell" bindtap="onSelectDate" data-date="{{item.dateStr}}">
+            <text class="day-text">{{item.day}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{serviceType === '到店美甲' && selectedShopName && timeSlotStatuses.length === 0}}" class="warn-text">
+      所选日期为店铺休息日，请改选其他日期
+    </view>
+
+    <!-- 时间段网格 -->
+    <view class="time-grid" wx:if="{{timeSlotStatuses.length > 0}}">
+      <view wx:for="{{timeSlotStatuses}}" wx:key="time"
+        class="time-item {{startTime === item.time ? 'time-item-active' : ''}} {{item.occupied ? 'time-item-occupied' : ''}}"
+        bindtap="selectTime" data-time="{{item.time}}">
+        <text class="time-text">{{item.time}}</text>
+        <text wx:if="{{item.occupied}}" class="occupied-label">已预约</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 补充说明 -->
+  <view class="section" wx:if="{{selectedTech}}">
+    <view class="section-head">
+      <text class="section-title">补充说明</text>
+    </view>
+    <textarea class="remark-input" value="{{remark}}" bindinput="onRemarkInput" placeholder="请输入特殊需求..." adjust-position cursor-spacing="120" />
+  </view>
+
+  <!-- 提交按钮 -->
+  <view class="submit-bar">
+    <view wx:if="{{!isCustomService && selectedServiceCount > 0}}" class="booking-price-summary">
+      <view class="booking-price-copy">
+        <text class="booking-price-label">已选 {{selectedServiceCount}} 项 · 约 {{selectedServiceDuration}} 分钟</text>
+        <text class="booking-price-hint">预约服务价格</text>
+      </view>
+      <text class="booking-price-total">¥{{selectedServiceTotal}}</text>
+    </view>
+    <view class="submit-btn {{submitting ? 'btn-disabled' : ''}}" bindtap="handleSubmit">
+      <text>{{submitting ? '提交中...' : isCustomService ? '提交需求等待报价' : '提交预约申请'}}</text>
+    </view>
+  </view>
+</view>
+
+<!-- 预约申请核对 -->
+<view wx:if="{{showApplicationReview}}" class="modal-overlay" bindtap="cancelApplicationReview">
+  <view class="modal-panel application-review" catchtap="">
+    <view class="modal-handle"></view>
+    <text class="modal-title">核对预约申请</text>
+    <text class="application-review-tip">当前提交的是预约申请，美甲师人工确认后生效；确认前不会占用正式档期。</text>
+    <view class="review-summary">
+      <view class="review-row"><text>美甲师</text><text>{{selectedTech.name}}</text></view>
+      <view class="review-row"><text>期望时间</text><text>{{serviceDate}} {{startTime}}</text></view>
+      <view class="review-row"><text>服务方式</text><text>{{serviceType}}</text></view>
+      <view wx:if="{{!isCustomService}}" class="review-row"><text>服务价格</text><text class="review-price">¥{{selectedServiceTotal}}</text></view>
+    </view>
+    <view class="rules-check" bindtap="toggleBookingRules">
+      <view class="rules-box {{bookingRulesAgreed ? 'rules-box-active' : ''}}">{{bookingRulesAgreed ? '✓' : ''}}</view>
+      <text>我已确认信息无误，并理解最终时间与价格以美甲师确认为准</text>
+    </view>
+    <view class="modal-btns">
+      <view class="modal-btn modal-btn-cancel" bindtap="cancelApplicationReview">返回修改</view>
+      <view class="modal-btn modal-btn-confirm {{bookingRulesAgreed ? '' : 'modal-btn-disabled'}}" bindtap="confirmApplicationReview">提交申请</view>
+    </view>
+  </view>
+</view>
+
+<!-- 绑定美甲师弹窗 -->
+<view wx:if="{{showBindTech}}" class="modal-overlay" bindtap="cancelBindTech">
+  <view class="modal-panel" catchtap="">
+    <view class="modal-handle"></view>
+    <text class="modal-title">绑定美甲师</text>
+    <text class="bind-hint">您还未绑定美甲师，无法预约服务。请输入美甲师邀请码或邀请链接进行绑定。</text>
+    <view class="bind-input-row">
+      <input
+        class="bind-input"
+        placeholder="输入邀请码或邀请链接"
+        value="{{bindInviteCode}}"
+        bindinput="onBindInviteInput"
+        disabled="{{bindChecking}}"
+      />
+    </view>
+    <!-- 验证状态 -->
+    <view wx:if="{{bindChecking}}" class="bind-status checking">
+      <text>验证中...</text>
+    </view>
+    <view wx:elif="{{bindTechName}}" class="bind-status valid">
+      <text>✓ 邀请码有效，美甲师：{{bindTechName}}</text>
+    </view>
+    <view wx:elif="{{bindError}}" class="bind-status error">
+      <text>✕ {{bindError}}</text>
+    </view>
+    <view class="modal-btns">
+      <view class="modal-btn modal-btn-cancel" bindtap="cancelBindTech">返回</view>
+      <view class="modal-btn modal-btn-confirm {{bindTechName ? '' : 'modal-btn-disabled'}}" bindtap="confirmBindTech">绑定</view>
+    </view>
+  </view>
 </view>

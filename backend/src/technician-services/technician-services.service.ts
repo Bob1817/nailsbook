@@ -1,17 +1,21 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
-
-type ServiceCategory =
-  | 'basic_care'
-  | 'color_style'
-  | 'extension_reinforcement'
-  | 'removal';
+import {
+  buildDefaultServiceItems,
+  ServiceCategory,
+} from '../common/default-service-items';
 
 type ServiceItem = {
   id: string;
   name: string;
   description?: string;
   category: ServiceCategory;
+  price?: number;
+  durationMinutes?: number;
   isActive: boolean;
   sortOrder: number;
   createdAt: string;
@@ -22,60 +26,18 @@ type CreateServiceDto = {
   name: string;
   description?: string;
   category: ServiceCategory;
+  price?: number;
+  durationMinutes?: number;
 };
 
 type UpdateServiceDto = {
   name?: string;
   description?: string;
   category?: ServiceCategory;
+  price?: number;
+  durationMinutes?: number;
   isActive?: boolean;
   sortOrder?: number;
-};
-
-const buildDefaultServices = (): ServiceItem[] => {
-  const now = new Date().toISOString();
-  return [
-    {
-      id: 'svc_basic_care_1',
-      name: '基础护理与修形',
-      description: '指甲修剪、修形、去死皮、护理等基础服务',
-      category: 'basic_care',
-      isActive: true,
-      sortOrder: 1,
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: 'svc_color_style_1',
-      name: '色彩与款式制作',
-      description: '纯色美甲、彩绘、渐变、贴纸等款式设计服务',
-      category: 'color_style',
-      isActive: true,
-      sortOrder: 2,
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: 'svc_extension_1',
-      name: '指甲延长与加固',
-      description: '甲片延长、光疗延长、指甲加固等服务',
-      category: 'extension_reinforcement',
-      isActive: true,
-      sortOrder: 3,
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: 'svc_removal_1',
-      name: '卸甲服务',
-      description: '卸除甲油胶、卸甲片等服务',
-      category: 'removal',
-      isActive: true,
-      sortOrder: 4,
-      createdAt: now,
-      updatedAt: now,
-    },
-  ];
 };
 
 @Injectable()
@@ -94,7 +56,7 @@ export class TechnicianServicesService {
 
     const services = technician.serviceItems
       ? JSON.parse(technician.serviceItems)
-      : buildDefaultServices();
+      : buildDefaultServiceItems();
 
     if (!technician.serviceItems) {
       await this.saveServices(technicianId, services);
@@ -107,11 +69,14 @@ export class TechnicianServicesService {
 
   async create(technicianId: number, dto: CreateServiceDto) {
     const services = await this.list(technicianId);
+    this.assertValidService(dto);
     const service: ServiceItem = {
       id: `svc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       name: dto.name,
       description: dto.description,
       category: dto.category,
+      price: dto.price,
+      durationMinutes: dto.durationMinutes,
       isActive: true,
       sortOrder: services.length + 1,
       createdAt: new Date().toISOString(),
@@ -130,11 +95,13 @@ export class TechnicianServicesService {
       throw new NotFoundException('服务不存在');
     }
 
-    services[index] = {
+    const updated = {
       ...services[index],
       ...dto,
       updatedAt: new Date().toISOString(),
     };
+    this.assertValidService(updated);
+    services[index] = updated;
 
     await this.saveServices(technicianId, services);
     return services[index];
@@ -169,5 +136,20 @@ export class TechnicianServicesService {
         serviceItems: JSON.stringify(services),
       },
     });
+  }
+
+  private assertValidService(service: Partial<ServiceItem>) {
+    if (typeof service.name !== 'string' || !service.name.trim()) {
+      throw new BadRequestException('请输入服务名称');
+    }
+    if (!Number.isFinite(Number(service.price)) || Number(service.price) < 0) {
+      throw new BadRequestException('请输入有效服务价格');
+    }
+    if (
+      !Number.isInteger(Number(service.durationMinutes)) ||
+      Number(service.durationMinutes) < 15
+    ) {
+      throw new BadRequestException('服务时长不能少于15分钟');
+    }
   }
 }

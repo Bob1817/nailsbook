@@ -146,8 +146,8 @@ const AddressList: React.FC = () => {
         )}
       </div>
 
-      {/* Add Button - floating above bottom tab bar with safe area */}
-      <div className="fixed left-0 right-0 z-40 px-5 py-4" style={{ bottom: 'max(80px, env(safe-area-inset-bottom) + 64px)' }}>
+      {/* Add Button - anchored at bottom with safe area */}
+      <div className="fixed left-0 right-0 bottom-0 z-40 border-t border-gray-100 bg-white/95 px-5 py-4 backdrop-blur safe-area-bottom">
         <div className="mx-auto max-w-md">
           <button
             onClick={() => navigate('/profile/addresses/edit')}

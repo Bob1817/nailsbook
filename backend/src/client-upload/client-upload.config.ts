@@ -1,6 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import * as crypto from 'crypto';
-import { diskStorage } from 'multer';
+import { memoryStorage } from 'multer';
 import * as path from 'path';
 
 const ALLOWED_IMAGE_TYPES: Record<string, string> = {
@@ -11,24 +10,36 @@ const ALLOWED_IMAGE_TYPES: Record<string, string> = {
 
 export const CLIENT_UPLOAD_IMAGE_LIMIT_BYTES = 5 * 1024 * 1024;
 
-export const clientUploadStorage = {
-  getDestination() {
-    return path.resolve(process.cwd(), 'uploads');
-  },
-  getFilename(
-    file: {
-      mimetype: string;
-      originalname?: string;
-    },
-    callback: (error: Error | null, filename: string) => void,
-  ) {
-    const extension = getSafeImageExtension(file);
-    callback(
-      null,
-      `${Date.now()}-${crypto.randomBytes(4).toString('hex')}${extension}`,
-    );
+export const clientUploadMulterOptions = {
+  // 内存存储：拿到 buffer 后交由 StorageService 上传 OSS
+  storage: memoryStorage(),
+  fileFilter: clientUploadFileFilter,
+  limits: {
+    fileSize: CLIENT_UPLOAD_IMAGE_LIMIT_BYTES,
   },
 };
+
+export const CLIENT_UPLOAD_AUDIO_LIMIT_BYTES = 10 * 1024 * 1024;
+
+export const clientUploadAudioMulterOptions = {
+  storage: memoryStorage(),
+  fileFilter: clientAudioFileFilter,
+  limits: {
+    fileSize: CLIENT_UPLOAD_AUDIO_LIMIT_BYTES,
+  },
+};
+
+export function clientAudioFileFilter(
+  _request: unknown,
+  file: { mimetype: string },
+  callback: (error: Error | null, acceptFile: boolean) => void,
+) {
+  if (typeof file.mimetype === 'string' && file.mimetype.startsWith('audio/')) {
+    callback(null, true);
+  } else {
+    callback(new BadRequestException('仅支持音频文件上传'), false);
+  }
+}
 
 export function clientUploadFileFilter(
   _request: unknown,
@@ -45,19 +56,6 @@ export function clientUploadFileFilter(
     callback(error as Error, false);
   }
 }
-
-export const clientUploadMulterOptions = {
-  storage: diskStorage({
-    destination: clientUploadStorage.getDestination(),
-    filename: (_request, file, callback) => {
-      clientUploadStorage.getFilename(file, callback);
-    },
-  }),
-  fileFilter: clientUploadFileFilter,
-  limits: {
-    fileSize: CLIENT_UPLOAD_IMAGE_LIMIT_BYTES,
-  },
-};
 
 function getSafeImageExtension(file: {
   mimetype: string;

@@ -4,6 +4,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { VerificationCodeModule } from './common/verification-code/verification-code.module';
 import { SmsModule } from './common/sms/sms.module';
+import { StorageModule } from './common/storage/storage.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -33,9 +34,25 @@ import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
 import { AdminRolesModule } from './admin-roles/admin-roles.module';
 import { AdminPermissionsModule } from './admin-permissions/admin-permissions.module';
 import { AdminInviteKeysModule } from './admin-invite-keys/admin-invite-keys.module';
+import { AdminWorksModule } from './admin-works/admin-works.module';
+import { AdminCommentsModule } from './admin-comments/admin-comments.module';
+import { AdminReportsModule } from './admin-reports/admin-reports.module';
+import { ClientReportsModule } from './client-reports/client-reports.module';
+import { FeedbackModule } from './feedback/feedback.module';
+import { PushModule } from './notifications/push.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { DevelopmentAuthSeedService } from './development-auth-seed.service';
 import { DevelopmentDemoSeedService } from './development-demo-seed.service';
+import { ProductionSeedService } from './production-seed.service';
+import { TechnicianInsightsModule } from './technician-insights/technician-insights.module';
+import { ReferralsModule } from './referrals/referrals.module';
+import { PaymentsModule } from './payments/payments.module';
+import { MarketingMaterialsModule } from './marketing-materials/marketing-materials.module';
+import { WechatAuthModule } from './wechat-auth/wechat-auth.module';
+import { WechatPlatformConfigModule } from './wechat-platform-config/wechat-platform-config.module';
+import { ThrottlerCleanupService } from './common/throttler-cleanup.service';
+import { ConversionEventsModule } from './conversion-events/conversion-events.module';
+import { WechatSubscribeMessagesModule } from './wechat-subscribe-messages/wechat-subscribe-messages.module';
 
 @Module({
   imports: [
@@ -46,12 +63,14 @@ import { DevelopmentDemoSeedService } from './development-demo-seed.service';
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
-        limit: 120,
+        limit: 60,  // 2GB 服务器：降低限流阈值减少内存 Map 大小
       },
     ]),
     VerificationCodeModule,
     SmsModule,
+    StorageModule,
     PrismaModule,
+    ConversionEventsModule,
     AuthModule,
     TechniciansModule,
     CustomersModule,
@@ -79,13 +98,28 @@ import { DevelopmentDemoSeedService } from './development-demo-seed.service';
     AdminRolesModule,
     AdminPermissionsModule,
     AdminInviteKeysModule,
+    AdminWorksModule,
+    AdminCommentsModule,
+    AdminReportsModule,
+    ClientReportsModule,
+    FeedbackModule,
+    PushModule,
+    TechnicianInsightsModule,
+    ReferralsModule,
+    PaymentsModule,
+    MarketingMaterialsModule,
+    WechatAuthModule,
+    WechatPlatformConfigModule,
+    WechatSubscribeMessagesModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
+    ProductionSeedService,
     DevelopmentAuthSeedService,
     DevelopmentDemoSeedService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    ThrottlerCleanupService,
   ],
 })
 export class AppModule {}

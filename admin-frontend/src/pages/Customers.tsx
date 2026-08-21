@@ -1,19 +1,25 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Table, Button, Space, Input, Select, Tag, message, Card, Modal, Descriptions } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Input, Select, Tag, message, Card, Modal, Descriptions, Typography } from 'antd';
+import { CopyOutlined, EyeOutlined, KeyOutlined, SearchOutlined } from '@ant-design/icons';
 import { customerService } from '../services/customer';
 import type { Customer } from '../services/customer';
 import type { PaginatedResponse } from '../services/technician';
 import { technicianService } from '../services/technician';
 import type { Technician } from '../services/technician';
+import { useAuth } from '../contexts/AuthContext';
+
+const { Text } = Typography;
 
 const Customers: React.FC = () => {
+  const { hasPermission } = useAuth();
+  const canResetPassword = hasPermission('account:reset-password');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<PaginatedResponse<Customer> | null>(null);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [detailVisible, setDetailVisible] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [filters, setFilters] = useState({ page: 1, limit: 10, technicianId: undefined as number | undefined, search: '' });
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<number, string>>({});
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -49,6 +55,53 @@ const Customers: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
+  const handleResetPassword = (customer: Customer) => {
+    Modal.confirm({
+      title: `确认重置 ${customer.name} 的登录密码？`,
+      content: '重置后原密码和当前登录状态立即失效，系统将生成一个随机临时密码。',
+      okText: '确认重置',
+      cancelText: '取消',
+      okButtonProps: { danger: true },
+      async onOk() {
+        try {
+          const result = await customerService.resetPassword(customer.id);
+          setVisiblePasswords((current) => ({ ...current, [customer.id]: result.tempPassword }));
+          Modal.success({
+            title: '密码重置成功',
+            content: (
+              <div>
+                <p>
+                  临时密码：
+                  <Text code copyable={{ text: result.tempPassword }} style={{ fontSize: 16, letterSpacing: 1 }}>
+                    {result.tempPassword}
+                  </Text>
+                </p>
+                <p style={{ color: '#999', fontSize: 12, marginTop: 8 }}>
+                  临时密码仅在本次显示，请复制后安全发送给客户。
+                </p>
+              </div>
+            ),
+          });
+          fetchData();
+        } catch (error: unknown) {
+          const err = error as { response?: { data?: { message?: string } } };
+          message.error(err.response?.data?.message || '重置失败');
+          throw error;
+        }
+      },
+    });
+  };
+
+  const revealPassword = async (id: number) => {
+    try {
+      const result = await customerService.getManagedPassword(id);
+      setVisiblePasswords((current) => ({ ...current, [id]: result.password }));
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || '密码读取失败');
+    }
+  };
+
   const columns = [
     { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },
     { title: '姓名', dataIndex: 'name', key: 'name' },
@@ -63,6 +116,28 @@ const Customers: React.FC = () => {
     },
     { title: '所属美甲师', dataIndex: ['technician', 'name'], key: 'technician' },
     {
+      title: '账号密码',
+      dataIndex: 'account',
+      key: 'account',
+      render: (account: Customer['account'], record: Customer) => {
+        if (!account?.linked) return <Tag>未关联账号</Tag>;
+        if (!account.passwordConfigured) return <Tag color="orange">未设置</Tag>;
+        if (!account.managedPasswordAvailable) return <Tag color="orange">用户已修改，需重置</Tag>;
+        if (!canResetPassword) return <Text code>••••••••••••</Text>;
+        const password = visiblePasswords[record.id];
+        return (
+          <Space>
+            <Text code>{password || '••••••••••••'}</Text>
+            {password ? (
+              <Button type="text" icon={<CopyOutlined />} style={{ minHeight: 44 }} onClick={() => navigator.clipboard.writeText(password).then(() => message.success('已复制'))}>复制</Button>
+            ) : (
+              <Button type="text" icon={<EyeOutlined />} style={{ minHeight: 44 }} onClick={() => revealPassword(record.id)}>查看</Button>
+            )}
+          </Space>
+        );
+      },
+    },
+    {
       title: '创建时间',
       dataIndex: 'createdAt',
       key: 'createdAt',
@@ -72,9 +147,16 @@ const Customers: React.FC = () => {
       title: '操作',
       key: 'action',
       render: (_: unknown, record: Customer) => (
-        <Button type="link" size="small" onClick={() => { setSelectedCustomer(record); setDetailVisible(true); }}>
-          详情
-        </Button>
+        <Space>
+          <Button type="link" size="small" onClick={() => { setSelectedCustomer(record); setDetailVisible(true); }}>
+            详情
+          </Button>
+          {canResetPassword && record.account?.linked && record.account.status === 'active' && (
+            <Button type="link" icon={<KeyOutlined />} style={{ minHeight: 44 }} onClick={() => handleResetPassword(record)}>
+              重置密码
+            </Button>
+          )}
+        </Space>
       ),
     },
   ];
@@ -136,8 +218,27 @@ const Customers: React.FC = () => {
             <Descriptions.Item label="标签">{selectedCustomer.tags || '-'}</Descriptions.Item>
             <Descriptions.Item label="备注">{selectedCustomer.notes || '-'}</Descriptions.Item>
             <Descriptions.Item label="所属美甲师">{selectedCustomer.technician?.name || '-'}</Descriptions.Item>
+            <Descriptions.Item label="账号密码">
+              {!selectedCustomer.account?.linked
+                ? '未关联登录账号'
+                : selectedCustomer.account.passwordConfigured
+                  ? selectedCustomer.account.managedPasswordAvailable
+                    ? '受管密码可查看'
+                    : '用户已修改，需重置后查看'
+                  : '未设置'}
+            </Descriptions.Item>
             <Descriptions.Item label="创建时间">{new Date(selectedCustomer.createdAt).toLocaleString('zh-CN')}</Descriptions.Item>
           </Descriptions>
+        )}
+        {canResetPassword && selectedCustomer?.account?.linked && selectedCustomer.account.status === 'active' && (
+          <Button
+            danger
+            icon={<KeyOutlined />}
+            style={{ marginTop: 16, minHeight: 44 }}
+            onClick={() => handleResetPassword(selectedCustomer)}
+          >
+            重置并生成可复制的临时密码
+          </Button>
         )}
       </Modal>
     </div>

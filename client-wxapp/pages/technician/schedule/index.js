@@ -1,19 +1,19 @@
 const api = require('../../../services/api');
-
-const STATUS_LABEL = {
-  pending_quote: '待报价',
-  quoted: '已报价',
-  confirmed: '已确认',
-  completed: '已完成',
-  cancelled: '已取消'
-};
+const { formatClock } = require('../../../utils/format');
+const {
+  normalizeOrder,
+  resolveOrderPresentation,
+  getStatusLabel,
+  getStatusTone
+} = require('../../../utils/order');
 
 Page({
   data: {
     selectedDate: '',
     days: [],
     dayOrders: [],
-    loading: false
+    loading: false,
+    loadFailed: false
   },
 
   onLoad() {
@@ -52,26 +52,35 @@ Page({
   },
 
   async loadOrders(date) {
-    this.setData({ loading: true });
+    this.setData({ loading: true, loadFailed: false });
     try {
       const res = await api.technician.orders.list({ date });
-      const all = Array.isArray(res) ? res : (res.data || []);
+      const all = Array.isArray(res) ? res : (res.list || res.data || []);
       const dayOrders = all
+        .map(normalizeOrder)
+        .filter(Boolean)
         .filter(o => o.status !== 'cancelled')
-        .map(o => ({
-          ...o,
-          statusLabel: STATUS_LABEL[o.status] || o.status,
-          timeStr: o.scheduledTime
-            ? o.scheduledTime.slice(11, 16)
-            : (o.preferredTime || '--:--')
-        }))
+        .map(o => {
+          const presentation = resolveOrderPresentation(o);
+          return {
+            ...o,
+            statusLabel: getStatusLabel(o.status),
+            statusTone: getStatusTone(o.status),
+            timeStr: formatClock(o.startTime),
+            typeLabel: presentation.typeLabel
+          };
+        })
         .sort((a, b) => (a.timeStr > b.timeStr ? 1 : -1));
       this.setData({ dayOrders });
     } catch (err) {
-      wx.showToast({ title: '加载失败', icon: 'none' });
+      this.setData({ loadFailed: true });
     } finally {
       this.setData({ loading: false });
     }
+  },
+
+  retryLoad() {
+    this.loadOrders(this.data.selectedDate);
   },
 
   goOrderDetail(e) {

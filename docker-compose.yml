@@ -1,21 +1,77 @@
 services:
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    # 镜像由 GitHub Actions 构建；生产机只拉取，不在 ECS 上执行 npm ci/build。
+    image: ${BACKEND_IMAGE:-ghcr.io/bob1817/nailsbook-backend:latest}
     restart: always
     env_file: ./backend/.env.production
+    mem_limit: 512m
+    memswap_limit: 512m  # 禁止 swap，避免磁盘颠簸
     volumes:
       - backend_db:/app/data
-      - backend_uploads:/app/uploads
+      - ./backend/uploads:/app/uploads  # bind mount，rsync 同步后容器立即可见；迁移 OSS 完成后可移除
     expose:
       - "3000"
+    ports:
+      - "3001:3000"
+    networks:
+      - internal
+
+  # 用户端 WebApp（静态 SPA，内部 nginx 提供服务）
+  client-web:
+    build:
+      context: ./client-frontend
+      dockerfile: Dockerfile
+    restart: always
+    mem_limit: 48m
+    memswap_limit: 48m
+    expose:
+      - "80"
+    networks:
+      - internal
+
+  # 管理后台（静态 SPA，内部 nginx 提供服务）
+  admin-web:
+    # 镜像由 GitHub Actions 构建；生产机只拉取，不在 ECS 上执行 npm ci/build。
+    image: ${ADMIN_WEB_IMAGE:-ghcr.io/bob1817/nailsbook-admin-web:latest}
+    restart: always
+    mem_limit: 48m
+    memswap_limit: 48m
+    expose:
+      - "80"
+    networks:
+      - internal
+
+  # 美甲师端（静态 SPA，内部 nginx 提供服务）
+  tech-web:
+    build:
+      context: ./technician-frontend
+      dockerfile: Dockerfile
+    restart: always
+    mem_limit: 48m
+    memswap_limit: 48m
+    expose:
+      - "80"
+    networks:
+      - internal
+
+  # 官网（静态 SPA，内部 nginx 提供服务）
+  website:
+    build:
+      context: ./website
+      dockerfile: Dockerfile
+    restart: always
+    mem_limit: 48m
+    memswap_limit: 48m
+    expose:
+      - "80"
     networks:
       - internal
 
   nginx:
     image: nginx:alpine
     restart: always
+    mem_limit: 64m
+    memswap_limit: 64m
     ports:
       - "80:80"
       - "443:443"
@@ -25,18 +81,23 @@ services:
       - certbot_certs:/etc/letsencrypt:ro
     depends_on:
       - backend
+      - client-web
+      - admin-web
+      - tech-web
+      - website
     networks:
       - internal
 
   certbot:
     image: certbot/certbot
+    mem_limit: 16m
+    memswap_limit: 16m
     volumes:
       - certbot_www:/var/www/certbot
       - certbot_certs:/etc/letsencrypt
 
 volumes:
   backend_db:
-  backend_uploads:
   certbot_www:
   certbot_certs:
 

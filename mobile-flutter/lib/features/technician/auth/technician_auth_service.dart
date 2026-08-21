@@ -6,15 +6,44 @@ class TechnicianAuthService {
 
   TechnicianAuthService(this._api);
 
-  Future<Map<String, dynamic>> requestCode(String phone) async {
-    return _api.post('/auth/request-code', body: {'phone': phone});
+  /// 检查手机号注册/激活状态（对齐 webapp authService.checkPhone）。
+  Future<TechnicianPhoneStatus> checkPhone(String phone) async {
+    final json = await _api.post('/auth/check-phone', body: {'phone': phone});
+    return TechnicianPhoneStatus.fromJson(json);
   }
 
   Future<TechnicianAuthResponse> login({
     required String phone,
-    required String code,
+    required String password,
   }) async {
-    final json = await _api.post('/auth/login', body: {'phone': phone, 'password': code});
+    final json = await _api.post('/auth/login', body: {'phone': phone, 'password': password});
+    return TechnicianAuthResponse.fromJson(json);
+  }
+
+  Future<TechnicianAuthResponse> register({
+    required String inviteKey,
+    required String name,
+    required String phone,
+    required String password,
+  }) async {
+    final json = await _api.post('/auth/register', body: {
+      'inviteKey': inviteKey,
+      'name': name,
+      'phone': phone,
+      'password': password,
+    });
+    return TechnicianAuthResponse.fromJson(json);
+  }
+
+  /// 已注册但未设密码的账号：设置初始密码并自动登录。
+  Future<TechnicianAuthResponse> setInitialPassword({
+    required String phone,
+    required String newPassword,
+  }) async {
+    final json = await _api.post('/auth/set-initial-password', body: {
+      'phone': phone,
+      'newPassword': newPassword,
+    });
     return TechnicianAuthResponse.fromJson(json);
   }
 
@@ -36,5 +65,48 @@ class TechnicianAuthService {
   Future<TechnicianProfile> updateServiceType(Map<String, dynamic> data) async {
     final json = await _api.patch('/auth/service-type', body: data);
     return TechnicianProfile.fromJson(json);
+  }
+
+  /// 已登录态强制改密（mustChangePassword 场景）。
+  Future<TechnicianAuthResponse> setPassword(String newPassword) async {
+    final json = await _api.post('/auth/set-password', body: {'newPassword': newPassword});
+    return TechnicianAuthResponse.fromJson(json);
+  }
+
+  Future<void> changePassword(String oldPassword, String newPassword) async {
+    await _api.patch('/auth/password', body: {
+      'oldPassword': oldPassword,
+      'newPassword': newPassword,
+    });
+  }
+
+  Future<void> sendResetCode(String phone) async {
+    await _api.post('/auth/forgot-password/send-code', body: {'phone': phone});
+  }
+
+  Future<void> resetPassword(
+      String phone, String code, String newPassword) async {
+    await _api.post('/auth/forgot-password/reset', body: {
+      'phone': phone,
+      'code': code,
+      'newPassword': newPassword,
+    });
+  }
+
+  // ── 客户绑定申请审批 ──
+
+  /// 待审批的客户绑定申请列表（含姓名/手机/地址/备注/申请时间）。
+  Future<List<Map<String, dynamic>>> bindingApplications() async {
+    final items = await _api.getList('/auth/binding-applications');
+    return items.cast<Map<String, dynamic>>();
+  }
+
+  Future<void> approveBinding(int id) async {
+    await _api.post('/auth/binding-applications/$id/approve');
+  }
+
+  Future<void> rejectBinding(int id, {String? reason}) async {
+    await _api.post('/auth/binding-applications/$id/reject',
+        body: {if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim()});
   }
 }

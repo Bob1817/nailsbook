@@ -1,0 +1,105 @@
+<nav-bar title="注册" transparent/>
+<view class="container">
+  <view class="header">
+    <view class="logo-circle">N</view>
+    <text class="title">创建账号</text>
+    <text class="subtitle">注册后即可使用 NailBook 服务</text>
+  </view>
+
+  <view class="form">
+    <!-- 手机号 -->
+    <view class="form-item">
+      <text class="label">手机号</text>
+      <view class="phone-display">
+        <text class="phone-text">{{phone || '未获取到手机号'}}</text>
+      </view>
+    </view>
+
+    <!-- 邀请码/激活密钥（非必填） -->
+    <view class="form-item">
+      <text class="label">邀请码/激活密钥 <text class="optional">（选填）</text></text>
+      <input
+        class="input"
+        placeholder="输入邀请码、邀请链接或激活密钥"
+        value="{{inviteInput}}"
+        bindinput="onInviteInput"
+        disabled="{{loading}}"
+      />
+      <!-- 邀请码验证状态 -->
+      <view wx:if="{{inviteChecking}}" class="invite-status checking">
+        <text>验证中...</text>
+      </view>
+      <view wx:elif="{{inviteValid}}" class="invite-status valid">
+        <text>✓ 邀请码有效，美甲师：{{inviteTechName}}</text>
+      </view>
+      <view wx:elif="{{inviteError}}" class="invite-status error">
+        <text>✕ {{inviteError}}</text>
+      </view>
+      <view wx:elif="{{inviteType === 'activationKey'}}" class="invite-status valid">
+        <text>✓ 检测到激活密钥格式</text>
+      </view>
+      <!-- 模式提示 -->
+      <text class="mode-hint">{{modeHint}}</text>
+    </view>
+
+    <!-- 美甲师注册时需要姓名 -->
+    <view wx:if="{{inviteType === 'activationKey'}}" class="form-item">
+      <text class="label">姓名</text>
+      <input
+        class="input"
+        placeholder="请输入您的姓名"
+        value="{{name}}"
+        bindinput="onNameInput"
+        disabled="{{loading}}"
+      />
+    </view>
+
+    <!-- 密码 -->
+    <view class="form-item">
+      <text class="label">设置密码</text>
+      <view class="password-row">
+        <input
+          class="input"
+          type="{{showPassword ? 'text' : 'password'}}"
+          password="{{!showPassword}}"
+          placeholder="至少 8 位，含字母和数字"
+          value="{{password}}"
+          bindinput="onPasswordInput"
+          disabled="{{loading}}"
+        />
+        <view class="pwd-toggle" bindtap="togglePassword">
+          <text class="pwd-toggle-text">{{showPassword ? '隐藏' : '显示'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 确认密码 -->
+    <view class="form-item">
+      <text class="label">确认密码</text>
+      <input
+        class="input"
+        type="{{showPassword ? 'text' : 'password'}}"
+        password="{{!showPassword}}"
+        placeholder="再次输入密码"
+        value="{{confirmPassword}}"
+        bindinput="onConfirmPasswordInput"
+        disabled="{{loading}}"
+      />
+    </view>
+
+    <!-- 注册按钮 -->
+    <button
+      class="btn-primary {{canSubmit ? 'btn-active' : ''}}"
+      disabled="{{!canSubmit || loading}}"
+      loading="{{loading}}"
+      bindtap="handleSubmit"
+    >
+      {{loading ? '注册中...' : '注册'}}
+    </button>
+
+    <!-- 返回登录 -->
+    <view class="link-row">
+      <text class="link" bindtap="goBack">已有账号？去登录</text>
+    </view>
+  </view>
+</view>

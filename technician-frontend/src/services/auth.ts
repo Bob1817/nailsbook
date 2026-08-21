@@ -17,16 +17,19 @@ export interface LoginCredentials {
 
 export interface AuthResponse {
   access_token: string;
+  mustChangePassword: boolean;
   technician: Technician;
 }
 
 interface AuthApiResponse {
   accessToken: string;
+  mustChangePassword?: boolean;
   technician: {
     id: number;
     name: string;
     phone: string;
     avatarUrl?: string;
+    province?: string;
     city?: string;
     serviceArea?: string;
     status: string;
@@ -45,6 +48,7 @@ interface MeApiResponse {
   name: string;
   phone: string;
   avatarUrl?: string;
+  province?: string;
   city?: string;
   serviceArea?: string;
   status: string;
@@ -97,11 +101,22 @@ function normalizeShopAddresses(shopAddresses?: ShopAddress[]): ShopAddress[] {
   return (shopAddresses ?? []).map(normalizeShopAddress);
 }
 
+export interface BindingApplication {
+  id: number;
+  clientId: number;
+  name: string;
+  phone: string | null;
+  address: string;
+  note: string | null;
+  appliedAt: string;
+}
+
 export const authService = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     const response = await api.post<AuthApiResponse>('/auth/login', credentials);
     const mappedResponse: AuthResponse = {
       access_token: response.data.accessToken,
+      mustChangePassword: response.data.mustChangePassword ?? false,
       technician: {
         id: response.data.technician.id,
         name: response.data.technician.name,
@@ -110,6 +125,7 @@ export const authService = {
         avatar: response.data.technician.avatarUrl,
         status: response.data.technician.status,
         invitationCode: response.data.technician.invitationCode,
+        province: response.data.technician.province,
         city: response.data.technician.city,
         serviceArea: response.data.technician.serviceArea,
         homeService: response.data.technician.homeService,
@@ -143,6 +159,7 @@ export const authService = {
         avatar: response.data.avatarUrl,
         status: response.data.status,
         invitationCode: response.data.invitationCode,
+        province: response.data.province,
         city: response.data.city,
         serviceArea: response.data.serviceArea,
         homeService: response.data.homeService,
@@ -194,8 +211,13 @@ export const authService = {
     return technician;
   },
 
-  checkPhone: async (phone: string): Promise<{ exists: boolean }> => {
-    const response = await api.post<{ exists: boolean }>('/auth/check-phone', { phone });
+  checkPhone: async (
+    phone: string,
+  ): Promise<{ exists: boolean; activated: boolean }> => {
+    const response = await api.post<{ exists: boolean; activated: boolean }>(
+      '/auth/check-phone',
+      { phone },
+    );
     return response.data;
   },
 
@@ -212,6 +234,7 @@ export const authService = {
     const response = await api.post<AuthApiResponse>('/auth/register', credentials);
     const mappedResponse: AuthResponse = {
       access_token: response.data.accessToken,
+      mustChangePassword: response.data.mustChangePassword ?? false,
       technician: {
         id: response.data.technician.id,
         name: response.data.technician.name,
@@ -220,6 +243,7 @@ export const authService = {
         avatar: response.data.technician.avatarUrl,
         status: response.data.technician.status,
         invitationCode: response.data.technician.invitationCode,
+        province: response.data.technician.province,
         city: response.data.technician.city,
         serviceArea: response.data.technician.serviceArea,
         homeService: response.data.technician.homeService,
@@ -263,6 +287,7 @@ export const authService = {
   updateProfile: async (profile: Partial<Technician>): Promise<Technician> => {
     const payload = {
       name: profile.name?.trim(),
+      province: profile.province,
       city: profile.city,
       serviceArea: profile.serviceArea,
       avatarUrl: profile.avatar?.trim() ? profile.avatar.trim() : undefined,
@@ -280,6 +305,7 @@ export const authService = {
       avatar: data.avatarUrl,
       status: data.status,
       invitationCode: data.invitationCode,
+      province: data.province,
       city: data.city,
       serviceArea: data.serviceArea,
       homeService: data.homeService,
@@ -295,6 +321,88 @@ export const authService = {
 
   changePassword: async (oldPassword: string, newPassword: string): Promise<void> => {
     await api.patch('/auth/password', { oldPassword, newPassword });
+  },
+
+  setPassword: async (newPassword: string): Promise<AuthResponse> => {
+    const response = await api.post<AuthApiResponse>('/auth/set-password', { newPassword });
+    const mappedResponse: AuthResponse = {
+      access_token: response.data.accessToken,
+      mustChangePassword: false,
+      technician: {
+        id: response.data.technician.id,
+        name: response.data.technician.name,
+        email: `${response.data.technician.phone}@nailbook.local`,
+        phone: response.data.technician.phone,
+        avatar: response.data.technician.avatarUrl,
+        status: response.data.technician.status,
+        invitationCode: response.data.technician.invitationCode,
+        city: response.data.technician.city,
+        serviceArea: response.data.technician.serviceArea,
+        homeService: response.data.technician.homeService,
+        shopService: response.data.technician.shopService,
+        shopAddresses: normalizeShopAddresses(response.data.technician.shopAddresses),
+        socialMedia: response.data.technician.socialMedia,
+        subscription: response.data.technician.subscription ?? null,
+        serviceItems: response.data.technician.serviceItems,
+      },
+    };
+    if (mappedResponse.access_token) {
+      localStorage.setItem('technician_token', mappedResponse.access_token);
+    }
+    return mappedResponse;
+  },
+
+  // 首次登录设置密码：账号未设置密码时，凭手机号设置并自动登录
+  setInitialPassword: async (
+    phone: string,
+    newPassword: string,
+  ): Promise<AuthResponse> => {
+    const response = await api.post<AuthApiResponse>('/auth/set-initial-password', {
+      phone,
+      newPassword,
+    });
+    const mappedResponse: AuthResponse = {
+      access_token: response.data.accessToken,
+      mustChangePassword: false,
+      technician: {
+        id: response.data.technician.id,
+        name: response.data.technician.name,
+        email: `${response.data.technician.phone}@nailbook.local`,
+        phone: response.data.technician.phone,
+        avatar: response.data.technician.avatarUrl,
+        status: response.data.technician.status,
+        invitationCode: response.data.technician.invitationCode,
+        city: response.data.technician.city,
+        serviceArea: response.data.technician.serviceArea,
+        homeService: response.data.technician.homeService,
+        shopService: response.data.technician.shopService,
+        shopAddresses: normalizeShopAddresses(response.data.technician.shopAddresses),
+        socialMedia: response.data.technician.socialMedia,
+        subscription: response.data.technician.subscription ?? null,
+        serviceItems: response.data.technician.serviceItems,
+      },
+    };
+    if (mappedResponse.access_token) {
+      localStorage.setItem('technician_token', mappedResponse.access_token);
+    }
+    return mappedResponse;
+  },
+
+  // ── 客户绑定申请审批 ──
+  getBindingApplications: async (): Promise<BindingApplication[]> => {
+    const response = await api.get('/auth/binding-applications');
+    return response.data;
+  },
+
+  approveBindingApplication: async (id: number): Promise<void> => {
+    await api.post(`/auth/binding-applications/${id}/approve`);
+  },
+
+  rejectBindingApplication: async (id: number, reason?: string): Promise<void> => {
+    await api.post(
+      `/auth/binding-applications/${id}/reject`,
+      reason ? { reason } : {},
+    );
   },
 
   isAuthenticated: (): boolean => {

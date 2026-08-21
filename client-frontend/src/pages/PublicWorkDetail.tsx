@@ -1,16 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import LoginPromptModal from '../components/LoginPromptModal';
 import { publicArtistService, type PublicWorkDetailData } from '../services/publicArtist';
 
 const PublicWorkDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { isAuthenticated } = useAuth();
   const [work, setWork] = useState<PublicWorkDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
   const [showLogin, setShowLogin] = useState(false);
+
+  const inviteCode = searchParams.get('inviteCode') || searchParams.get('invite_code');
+
+  useEffect(() => {
+    if (inviteCode) {
+      localStorage.setItem('pendingInviteCode', inviteCode);
+    }
+  }, [inviteCode]);
 
   useEffect(() => {
     if (!id) {
@@ -35,6 +46,38 @@ const PublicWorkDetail: React.FC = () => {
       cancelled = true;
     };
   }, [id]);
+
+  // Dynamic SEO meta tags injection
+  useEffect(() => {
+    if (work) {
+      document.title = `${work.title || '美甲款式'} | NailBook`;
+      
+      // Update description meta tag
+      let descMeta = document.querySelector('meta[name="description"]');
+      if (!descMeta) {
+        descMeta = document.createElement('meta');
+        descMeta.setAttribute('name', 'description');
+        document.head.appendChild(descMeta);
+      }
+      descMeta.setAttribute('content', work.description || `由美甲师 ${work.technician.name} 制作的精美美甲款式。`);
+
+      // Update OpenGraph meta tags
+      const setOgTag = (property: string, content: string) => {
+        let tag = document.querySelector(`meta[property="${property}"]`);
+        if (!tag) {
+          tag = document.createElement('meta');
+          tag.setAttribute('property', property);
+          document.head.appendChild(tag);
+        }
+        tag.setAttribute('content', content);
+      };
+
+      setOgTag('og:title', work.title || '美甲款式');
+      setOgTag('og:description', work.description || `美甲师 ${work.technician.name} 的作品设计`);
+      setOgTag('og:image', work.coverUrl || '');
+      setOgTag('og:url', window.location.href);
+    }
+  }, [work]);
 
   const promptLogin = () => setShowLogin(true);
 
@@ -123,10 +166,10 @@ const PublicWorkDetail: React.FC = () => {
           </div>
 
           {/* 操作（未登录 -> 登录提示） */}
-          <div className="mt-4 flex items-center gap-3 border-t border-gray-100 pt-4">
+          <div className="mt-4 flex items-center gap-2 border-t border-gray-100 pt-4">
             <button
               onClick={promptLogin}
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gray-50 py-2.5 text-sm font-medium text-gray-600"
+              className="flex items-center justify-center gap-1.5 rounded-2xl bg-gray-50 px-3 py-2 text-xs font-medium text-gray-600"
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -136,12 +179,30 @@ const PublicWorkDetail: React.FC = () => {
             </button>
             <button
               onClick={promptLogin}
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gray-50 py-2.5 text-sm font-medium text-gray-600"
+              className="flex items-center justify-center gap-1.5 rounded-2xl bg-gray-50 px-3 py-2 text-xs font-medium text-gray-600"
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
               </svg>
               <span>收藏</span>
+            </button>
+            <button
+              onClick={() => {
+                if (work.technician.invitationCode) {
+                  localStorage.setItem('pendingInviteCode', work.technician.invitationCode);
+                }
+                if (isAuthenticated) {
+                  navigate(`/orders/create?tech_id=${work.technician.id}&work_id=${work.id}`);
+                } else {
+                  promptLogin();
+                }
+              }}
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl bg-[#FF6B8A] py-2.5 text-sm font-semibold text-white shadow-sm active:scale-[0.98] transition-transform min-h-[44px]"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span>立即预约此款式</span>
             </button>
           </div>
         </div>

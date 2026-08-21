@@ -13,7 +13,7 @@ interface AuthContextType {
   registerByInvite: (phone: string, password: string, inviteCode: string) => Promise<void>;
   logout: () => void;
   refreshProfile: () => Promise<void>;
-  bindTechnician: (techId: number, inviteCode: string, isDefault?: boolean) => Promise<void>;
+  bindTechnician: (techId: number, inviteCode: string, isDefault?: boolean, note?: string) => Promise<void>;
   unbindTechnician: (techId: number) => Promise<void>;
   setDefaultTechnician: (techId: number) => Promise<void>;
   updateProfile: (data: Parameters<typeof authService.updateProfile>[0]) => Promise<void>;
@@ -140,8 +140,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
-  const bindTechnician = async (techId: number, inviteCode: string, isDefault?: boolean) => {
-    await authService.bindTechnician({ techId, inviteCode, isDefault });
+  const bindTechnician = async (techId: number, inviteCode: string, isDefault?: boolean, note?: string) => {
+    // 改为审批制：提交后为 pending，refreshProfile 不会把未通过的绑定显示为已绑定。
+    await authService.bindTechnician({ techId, inviteCode, isDefault, note });
     await refreshProfile();
   };
 

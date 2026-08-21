@@ -1,0 +1,147 @@
+.container {
+  min-height: 100vh;
+  background: var(--bg-gradient-entry);
+  padding: 40rpx 40rpx;
+}
+
+/* ===== 头像 ===== */
+.avatar-section { display: flex; flex-direction: column; align-items: center; margin-bottom: 40rpx; }
+.avatar-wrap { position: relative; width: 160rpx; height: 160rpx; border-radius: 50%; margin-bottom: var(--space-sm); }
+.avatar { width: 160rpx; height: 160rpx; border-radius: 50%; }
+.avatar-placeholder {
+  width: 160rpx; height: 160rpx; border-radius: 50%;
+  background: linear-gradient(135deg, #FFE0EA, #F4F7FB);
+  display: flex; align-items: center; justify-content: center;
+}
+.avatar-icon { font-size: 64rpx; }
+.avatar-uploading {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center;
+}
+.upload-spinner {
+  width: 48rpx; height: 48rpx;
+  border: 4rpx solid rgba(255,255,255,0.4);
+  border-top-color: var(--text-inverse);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.avatar-hint { font-size: var(--font-sm); color: var(--brand-primary); }
+
+/* ===== 表单卡片 ===== */
+.form {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 40rpx;
+  border: 2rpx solid rgba(255,107,138,0.06) /* brand-primary-alpha */;
+  box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, 0.04);
+}
+.field {
+  padding: 28rpx 40rpx;
+  border-bottom: 1rpx solid var(--border-card);
+}
+.field:last-child { border-bottom: none; }
+.field-textarea { align-items: flex-start; }
+
+/* 标签行（含徽标） */
+.field-label-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+}
+.field-label-row .label { margin-bottom: 0; }
+
+.label {
+  display: block;
+  font-size: var(--font-sm);
+  color: var(--text-body);
+  margin-bottom: 12rpx;
+}
+.label-badge {
+  font-size: var(--font-xs);
+  color: var(--brand-primary);
+  background: #fff1f6;
+  padding: 3rpx 14rpx;
+  border-radius: 999rpx;
+  font-weight: var(--weight-medium);
+  flex-shrink: 0;
+}
+
+/* 字段提示文字 */
+.field-hint {
+  display: block;
+  margin-top: 10rpx;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-normal);
+}
+
+/* ===== 文本输入 ===== */
+.input {
+  width: 100%;
+  font-size: var(--font-md);
+  color: var(--text-primary);
+  height: 88rpx;
+  padding: 0 24rpx;
+  background: var(--bg-input);
+  border:2rpx solid transparent;
+  border-radius: var(--radius-sm);
+  box-sizing: border-box;
+}
+.input:focus,.textarea:focus { border-color: var(--brand-primary); background: var(--bg-card); }
+.textarea {
+  width: 100%;
+  font-size: var(--font-md);
+  color: var(--text-primary);
+  min-height: 120rpx;
+  padding: 20rpx 24rpx;
+  background: var(--bg-input);
+  border:2rpx solid transparent;
+  border-radius: var(--radius-sm);
+  box-sizing: border-box;
+}
+.profile-avatar-mark { position:relative; width:56rpx; height:56rpx; border-radius:50%; background:#b96389; }
+.profile-avatar-mark::after { content:''; position:absolute; left:-18rpx; right:-18rpx; top:64rpx; height:34rpx; border-radius:34rpx 34rpx 14rpx 14rpx; background:#b96389; }
+.ph { color: var(--text-muted); }
+
+/* ===== 联动选择器行 ===== */
+.picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 88rpx;
+  padding: 0 24rpx;
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
+}
+.picker-val {
+  flex: 1;
+  font-size: var(--font-md);
+  color: var(--text-primary);
+}
+.picker-val.ph { color: var(--text-muted); }
+.picker-chevron {
+  width: 16rpx;
+  height: 16rpx;
+  border-right: 3rpx solid #9ca3af;
+  border-bottom: 3rpx solid #9ca3af;
+  transform: rotate(-45deg) translateY(-3rpx);
+  flex-shrink: 0;
+}
+
+/* ===== 保存按钮 ===== */
+.save-btn {
+  background: var(--brand-gradient);
+  color: var(--text-inverse);
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
+  text-align: center;
+  padding: 28rpx;
+  border-radius: var(--btn-radius);
+  box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.3) /* brand-primary-alpha */;
+}
+.save-btn:active { opacity: 0.85; }
+.btn-disabled { opacity: 0.6; }

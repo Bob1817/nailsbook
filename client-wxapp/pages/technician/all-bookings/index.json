@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "全部预约",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "nav-bar": "/components/nav-bar/index"
+  },
+  "disableScroll": true
+}

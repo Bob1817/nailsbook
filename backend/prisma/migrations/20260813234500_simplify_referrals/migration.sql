@@ -1,0 +1,12 @@
+ALTER TABLE "ReferralLink" ADD COLUMN "referralCode" TEXT;
+UPDATE "ReferralLink" SET "referralCode" = upper(substr(replace("token",'-',''),1,8));
+CREATE UNIQUE INDEX "ReferralLink_referralCode_key" ON "ReferralLink"("referralCode");
+ALTER TABLE "ReferralQualification" ADD COLUMN "redeemedAt" DATETIME;
+ALTER TABLE "ReferralQualification" ADD COLUMN "redeemedBy" INTEGER;
+ALTER TABLE "ReferralQualification" ADD COLUMN "redemptionNote" TEXT;
+ALTER TABLE "Lead" ADD COLUMN "referralRelationId" INTEGER;
+ALTER TABLE "Lead" ADD COLUMN "referrerClientId" INTEGER;
+ALTER TABLE "Order" ADD COLUMN "referralRelationId" INTEGER;
+ALTER TABLE "Order" ADD COLUMN "referrerClientId" INTEGER;
+CREATE INDEX "Lead_referralRelationId_idx" ON "Lead"("referralRelationId");
+CREATE INDEX "Order_referralRelationId_idx" ON "Order"("referralRelationId");

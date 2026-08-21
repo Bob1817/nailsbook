@@ -7,9 +7,20 @@ import {
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-function normalizeAvatarUrls(value: unknown, origin: string): unknown {
+/** 递归最大深度，超出后直接返回原值，防止深层嵌套对象导致性能问题 */
+const MAX_DEPTH = 5;
+
+function normalizeAvatarUrls(value: unknown, origin: string, depth = 0): unknown {
+  if (depth > MAX_DEPTH) return value;
+
   if (Array.isArray(value)) {
-    return value.map((item) => normalizeAvatarUrls(item, origin));
+    let changed = false;
+    const result = value.map((item) => {
+      const normalized = normalizeAvatarUrls(item, origin, depth + 1);
+      if (normalized !== item) changed = true;
+      return normalized;
+    });
+    return changed ? result : value;
   }
 
   if (value instanceof Date) {
@@ -21,6 +32,7 @@ function normalizeAvatarUrls(value: unknown, origin: string): unknown {
   }
 
   const record = value as Record<string, unknown>;
+  let changed = false;
   const normalized: Record<string, unknown> = {};
 
   for (const [key, currentValue] of Object.entries(record)) {
@@ -30,13 +42,17 @@ function normalizeAvatarUrls(value: unknown, origin: string): unknown {
       currentValue.startsWith('/')
     ) {
       normalized[key] = `${origin}${currentValue}`;
+      changed = true;
       continue;
     }
 
-    normalized[key] = normalizeAvatarUrls(currentValue, origin);
+    const child = normalizeAvatarUrls(currentValue, origin, depth + 1);
+    if (child !== currentValue) changed = true;
+    normalized[key] = child;
   }
 
-  return normalized;
+  // 无任何 avatarUrl 需转换时返回原对象，避免不必要的深拷贝
+  return changed ? normalized : value;
 }
 
 @Injectable()

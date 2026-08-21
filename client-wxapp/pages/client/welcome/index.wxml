@@ -1,0 +1,76 @@
+<nav-bar title="欢迎" transparent/>
+<view class="container">
+
+  <!-- 头部 -->
+  <view class="header">
+    <view class="logo-wrap">
+      <view class="logo-deco"></view>
+    </view>
+    <text class="title">欢迎使用 NailArt</text>
+    <text class="subtitle">让我们更好地了解您</text>
+  </view>
+
+  <!-- 表单 -->
+  <view class="form-section">
+    <view class="form-group">
+      <text class="form-label">您希望如何被称呼？</text>
+      <input
+        class="form-input"
+        value="{{nickname}}"
+        bindinput="onNicknameInput"
+        placeholder="请输入您的昵称"
+        placeholder-class="placeholder"
+        focus="{{true}}"
+      />
+      <text class="form-hint">美甲师将通过这个称呼来认识您</text>
+    </view>
+
+    <!-- 错误提示 -->
+    <text wx:if="{{error}}" class="error-text">{{error}}</text>
+
+    <!-- 提交按钮 -->
+    <button
+      class="btn-submit {{loading ? 'disabled' : ''}}"
+      disabled="{{loading}}"
+      bindtap="handleSubmit"
+    >
+      {{loading ? '保存中...' : '开始使用'}}
+    </button>
+
+    <!-- 跳过按钮 -->
+    <button class="btn-skip" bindtap="handleSkip">跳过，使用默认称呼</button>
+  </view>
+
+  <!-- 功能介绍 -->
+  <view class="features">
+    <view class="feature-item">
+      <view class="feature-icon-wrap">
+        <view class="menu-icon"></view>
+      </view>
+      <view class="feature-info">
+        <text class="feature-title">便捷预约</text>
+        <text class="feature-desc">随时随地预约美甲服务</text>
+      </view>
+    </view>
+
+    <view class="feature-item">
+      <view class="feature-icon-wrap">
+        <view class="menu-icon"></view>
+      </view>
+      <view class="feature-info">
+        <text class="feature-title">个性设计</text>
+        <text class="feature-desc">定制专属美甲设计方案</text>
+      </view>
+    </view>
+
+    <view class="feature-item">
+      <view class="feature-icon-wrap">
+        <view class="menu-icon"></view>
+      </view>
+      <view class="feature-info">
+        <text class="feature-title">实时沟通</text>
+        <text class="feature-desc">与美甲师即时交流需求</text>
+      </view>
+    </view>
+  </view>
+</view>

@@ -18,6 +18,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
+import { TouristGuard } from '../technician-auth/tourist.guard';
 import { TechnicianMessagesService } from './technician-messages.service';
 import { CreateTechnicianMessageDto } from './dto/create-technician-message.dto';
 import { ForwardMessageDto } from './dto/forward-message.dto';
@@ -25,7 +26,7 @@ import { ForwardMessageDto } from './dto/forward-message.dto';
 @ApiTags('美甲师-消息')
 @ApiBearerAuth()
 @Controller('technician/messages')
-@UseGuards(TechnicianJwtAuthGuard)
+@UseGuards(TechnicianJwtAuthGuard, TouristGuard)
 export class TechnicianMessagesController {
   constructor(
     private readonly technicianMessagesService: TechnicianMessagesService,

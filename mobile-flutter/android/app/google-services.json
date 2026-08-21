@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "663393249269",
+    "firebase_url": "https://applied-mystery-316003-default-rtdb.firebaseio.com",
+    "project_id": "applied-mystery-316003",
+    "storage_bucket": "applied-mystery-316003.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:663393249269:android:0c7aa0c2afbebd35dce2bc",
+        "android_client_info": {
+          "package_name": "com.nailbook.nailbook_mobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "663393249269-0u2nc6ob171ulnlij40es58nklsecb0v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA4QNxNUdXNRC_qL7yk_pZHKKDmakRQ_QM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "663393249269-0u2nc6ob171ulnlij40es58nklsecb0v.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

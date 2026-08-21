@@ -12,6 +12,11 @@ class ClientOrder {
   final Map<String, dynamic>? technician;
   final Map<String, dynamic>? customer;
   final Map<String, dynamic>? clientAddress;
+  final double? depositAmount;
+  final bool isDepositPaid;
+  final String? customTitle;
+  final String? customDescription;
+  final List<String>? customImages;
   final String createdAt;
 
   ClientOrder({
@@ -28,6 +33,11 @@ class ClientOrder {
     this.technician,
     this.customer,
     this.clientAddress,
+    this.depositAmount,
+    this.isDepositPaid = false,
+    this.customTitle,
+    this.customDescription,
+    this.customImages,
     required this.createdAt,
   });
 
@@ -45,6 +55,11 @@ class ClientOrder {
         technician: json['technician'] as Map<String, dynamic>?,
         customer: json['customer'] as Map<String, dynamic>?,
         clientAddress: json['clientAddress'] as Map<String, dynamic>?,
+        depositAmount: (json['depositAmount'] as num?)?.toDouble(),
+        isDepositPaid: json['isDepositPaid'] as bool? ?? false,
+        customTitle: json['customTitle'] as String?,
+        customDescription: json['customDescription'] as String?,
+        customImages: (json['customImages'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
         createdAt: json['createdAt'] as String,
       );
 
@@ -52,12 +67,14 @@ class ClientOrder {
     switch (status) {
       case 'pending_quote': return '待报价';
       case 'pending_agree': return '待确认';
+      case 'pending_client_confirm': return '待确认';
       case 'pending_confirm': return '待接单';
       case 'pending_home': return '待上门';
       case 'pending_shop': return '待到店';
       case 'in_progress': return '服务中';
       case 'completed': return '已完成';
       case 'cancelled': return '已取消';
+      case 'expired': return '已过期';
       default: return status;
     }
   }

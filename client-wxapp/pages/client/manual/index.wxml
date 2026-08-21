@@ -1,0 +1,46 @@
+<nav-bar title="使用手册" showBack/>
+<view class="page">
+  <scroll-view scroll-y class="scroll">
+    <view class="content">
+
+      <!-- 使用指引 -->
+      <view class="block-head">
+        <text class="block-title">使用指引</text>
+        <text class="block-sub">几步快速上手</text>
+      </view>
+      <view class="guides">
+        <view class="guide" wx:for="{{guides}}" wx:key="n">
+          <view class="guide-num">{{item.n}}</view>
+          <view class="guide-body">
+            <text class="guide-t">{{item.t}}</text>
+            <text class="guide-d">{{item.d}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 常见问题 -->
+      <view class="block-head">
+        <text class="block-title">常见问题</text>
+        <text class="block-sub">点击展开查看解答</text>
+      </view>
+      <view class="faqs">
+        <view class="faq {{openIndex === index ? 'faq-open' : ''}}" wx:for="{{faqs}}" wx:key="q" bindtap="toggleFaq" data-index="{{index}}">
+          <view class="faq-q-row">
+            <text class="faq-q">{{item.q}}</text>
+            <text class="faq-chevron">›</text>
+          </view>
+          <view wx:if="{{openIndex === index}}" class="faq-a-wrap">
+            <text class="faq-a">{{item.a}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 仍有疑问 -->
+      <view class="more">
+        <text class="more-text">没有找到答案？</text>
+        <view class="more-btn" bindtap="goFeedback">提交问题反馈</view>
+      </view>
+
+    </view>
+  </scroll-view>
+</view>

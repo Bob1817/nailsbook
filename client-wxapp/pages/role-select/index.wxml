@@ -1,33 +1,122 @@
-<view class="container">
-  <view class="logo-section">
-    <view class="logo-circle">N</view>
-    <text class="app-name">NailBook</text>
-    <text class="app-desc">美甲预约，让美丽更简单</text>
+<nav-bar title="选择你的身份" showBack="{{false}}"/>
+
+<view class="wrap">
+  <!-- 头部 -->
+  <view class="hero">
+    <view class="hero-icon-wrap">
+      <image class="hero-icon" src="/static/icons/role-client.svg" mode="aspectFit" />
+    </view>
+    <text class="hero-title">欢迎加入 NailBook</text>
+    <text class="hero-sub">选择你当前要使用的身份，随时可以在"我的"页面切换</text>
   </view>
 
-  <view class="role-section">
-    <text class="section-title">选择您的身份</text>
-
-    <view class="role-card" bindtap="selectRole" data-role="client">
-      <view class="role-icon client-icon">客</view>
+  <!-- 角色卡片 -->
+  <view class="role-grid">
+    <!-- 客户 -->
+    <view
+      class="role-card {{selectedRole === 'client' ? 'role-card-active' : ''}}"
+      bindtap="selectRole"
+      data-role="client"
+      hover-class="role-card-hover"
+    >
+      <view class="role-icon role-icon-pink">
+        <image src="/static/icons/role-client.svg" mode="aspectFit" class="role-icon-img" />
+      </view>
       <view class="role-info">
         <text class="role-title">我是客户</text>
         <text class="role-desc">浏览作品、预约美甲服务</text>
       </view>
-      <text class="arrow">›</text>
+      <view class="role-check {{selectedRole === 'client' ? 'role-check-active' : ''}}">
+        <view wx:if="{{selectedRole === 'client'}}" class="role-check-dot"></view>
+      </view>
     </view>
 
-    <view class="role-card" bindtap="selectRole" data-role="technician">
-      <view class="role-icon tech-icon">师</view>
+    <!-- 美甲师 -->
+    <view
+      class="role-card {{selectedRole === 'technician' ? 'role-card-active' : ''}}"
+      bindtap="selectRole"
+      data-role="technician"
+      hover-class="role-card-hover"
+    >
+      <view class="role-icon role-icon-purple">
+        <image src="/static/icons/role-technician.svg" mode="aspectFit" class="role-icon-img" />
+      </view>
       <view class="role-info">
         <text class="role-title">我是美甲师</text>
         <text class="role-desc">管理预约、服务客户、展示作品</text>
       </view>
-      <text class="arrow">›</text>
+      <view class="role-check {{selectedRole === 'technician' ? 'role-check-active' : ''}}">
+        <view wx:if="{{selectedRole === 'technician'}}" class="role-check-dot"></view>
+      </view>
     </view>
   </view>
 
-  <view class="footer">
-    <text class="footer-text">登录即表示同意《用户协议》和《隐私政策》</text>
+  <!-- 客户：绑定美甲师（可选） -->
+  <view wx:if="{{selectedRole === 'client'}}" class="flow-panel">
+    <text class="flow-title">绑定你的专属美甲师</text>
+    <text class="flow-sub">输入邀请码或粘贴邀请链接，也可以稍后再绑</text>
+
+    <view class="input-wrap {{findingTech ? 'input-loading' : ''}}">
+      <input
+        class="input {{foundTech ? 'input-success' : ''}}"
+        value="{{inviteCode}}"
+        bindinput="onInviteInput"
+        placeholder="邀请码 / 邀请链接（选填）"
+        placeholder-class="input-placeholder"
+      />
+      <view wx:if="{{findingTech}}" class="spinner"></view>
+      <view wx:if="{{foundTech && !findingTech}}" class="check">✓</view>
+    </view>
+
+    <view wx:if="{{foundTech}}" class="found-card">
+      <view class="found-avatar">
+        <image wx:if="{{foundTech.avatarUrl}}" src="{{foundTech.avatarUrl}}" mode="aspectFill" />
+        <text wx:else>{{foundTech.name ? foundTech.name[0] : '?'}}</text>
+      </view>
+      <view class="found-info">
+        <text class="found-name">{{foundTech.name}}</text>
+        <text wx:if="{{foundTech.city}}" class="found-city">{{foundTech.city}}</text>
+      </view>
+    </view>
+
+    <view class="btn-group">
+      <view class="btn btn-secondary" bindtap="submitClient" data-skip="true">跳过，先去逛逛</view>
+      <view class="btn btn-primary {{loading ? 'btn-disabled' : ''}}" bindtap="submitClient">
+        <text>{{loading ? '处理中...' : (foundTech ? '确认绑定并进入' : '进入客户版')}}</text>
+      </view>
+    </view>
   </view>
+
+  <!-- 美甲师：激活密钥（可选） -->
+  <view wx:if="{{selectedRole === 'technician'}}" class="flow-panel">
+    <text class="flow-title">开通美甲师账户</text>
+    <text class="flow-sub">输入超管分配的激活密钥即可认证，也可以先体验游客模式</text>
+
+    <view class="input-wrap">
+      <input
+        class="input"
+        value="{{activationKey}}"
+        bindinput="onActivationKeyInput"
+        placeholder="激活密钥（选填）"
+        placeholder-class="input-placeholder"
+        password="{{!showActivationKey}}"
+      />
+      <view class="eye" bindtap="toggleActivationKeyVisibility">
+        <text>{{showActivationKey ? '隐藏' : '显示'}}</text>
+      </view>
+    </view>
+
+    <view class="hint">
+      <text>游客模式：可查看美甲师端界面，但无法发布作品、接单或管理客户</text>
+    </view>
+
+    <view class="btn-group">
+      <view class="btn btn-secondary" bindtap="submitTechnician" data-skip="true">游客模式体验</view>
+      <view class="btn btn-primary {{!activationKey || loading ? 'btn-disabled' : ''}}" bindtap="submitTechnician">
+        <text>{{loading ? '激活中...' : '激活并进入'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{error}}" class="error">{{error}}</view>
 </view>

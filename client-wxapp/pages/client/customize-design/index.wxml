@@ -1,0 +1,217 @@
+<nav-bar title="定制设计" showBack/>
+<view class="container">
+  <!-- 步骤指示器 -->
+  <view class="steps-bar">
+    <view
+      wx:for="{{steps}}"
+      wx:key="id"
+      class="step-item {{currentStep === item.id ? 'active' : ''}} {{currentStep > item.id ? 'completed' : ''}}"
+      bindtap="goToStep"
+      data-step="{{item.id}}"
+    >
+      <view class="step-circle">
+        <text wx:if="{{currentStep > item.id}}" class="step-check">✓</text>
+        <text wx:else class="step-num">{{item.id}}</text>
+      </view>
+      <text class="step-name">{{item.name}}</text>
+    </view>
+    <view class="step-line-wrap">
+      <view wx:for="{{4}}" wx:key="*this" class="step-line {{currentStep > index + 1 ? 'completed' : ''}}"></view>
+    </view>
+  </view>
+
+  <!-- 步骤内容 -->
+  <view class="step-content">
+    <!-- 步骤1：基础款式 -->
+    <view wx:if="{{currentStep === 1}}" class="step-panel">
+      <view class="panel-header">
+        <text class="panel-title">选择基础款式</text>
+        <text class="panel-subtitle">或上传参考图</text>
+      </view>
+
+      <view class="style-grid">
+        <view
+          wx:for="{{baseStyles}}"
+          wx:key="id"
+          class="style-card {{selectedBase === item.id ? 'selected' : ''}}"
+          bindtap="selectBase"
+          data-id="{{item.id}}"
+        >
+          <image src="{{item.image}}" mode="aspectFill" class="style-img" lazy-load aria-label="{{item.name}}美甲参考图" />
+          <view class="style-overlay">
+            <text class="style-name">{{item.name}}</text>
+          </view>
+          <view wx:if="{{selectedBase === item.id}}" class="style-check">
+            <text class="check-icon">✓</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="divider"></view>
+
+      <view class="upload-section">
+        <text class="upload-hint">或者上传你喜欢的参考图片</text>
+        <view wx:if="{{customImage}}" class="preview-wrap">
+          <image src="{{customImage}}" mode="aspectFill" class="preview-img" aria-label="已上传的美甲参考图" />
+          <view class="preview-remove" bindtap="removeCustomImage">
+            <text class="remove-icon">×</text>
+          </view>
+        </view>
+        <view wx:else class="upload-btn {{uploading ? 'uploading' : ''}}" bindtap="uploadCustomImage">
+          <view wx:if="{{uploading}}" class="loading-spinner"></view>
+          <view wx:else class="upload-content">
+            <view class="menu-icon"></view>
+            <text class="upload-text">点击上传参考图</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 步骤2：甲型 -->
+    <view wx:if="{{currentStep === 2}}" class="step-panel">
+      <view class="panel-header">
+        <text class="panel-title">选择甲型</text>
+      </view>
+
+      <view class="shape-grid">
+        <view
+          wx:for="{{nailShapes}}"
+          wx:key="id"
+          class="shape-card {{selectedShape === item.id ? 'selected' : ''}}"
+          bindtap="selectShape"
+          data-id="{{item.id}}"
+        >
+          <view class="shape-icon-wrap">
+            <view class="menu-icon"></view>
+          </view>
+          <text class="shape-name">{{item.name}}</text>
+          <text class="shape-desc">{{item.description}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 步骤3：颜色 -->
+    <view wx:if="{{currentStep === 3}}" class="step-panel">
+      <view class="panel-header">
+        <text class="panel-title">选择颜色</text>
+        <text class="panel-subtitle">可多选</text>
+      </view>
+
+      <view class="color-grid">
+        <view
+          wx:for="{{colorOptionsDisplay}}"
+          wx:key="id"
+          class="color-item {{item._selected ? 'selected' : ''}}"
+          bindtap="toggleColor"
+          data-id="{{item.id}}"
+        >
+          <view class="color-circle" style="background-color: {{item.hex}}; {{item.id === 'white' ? 'border: 2rpx solid #e5e7eb;' : ''}}">
+            <view wx:if="{{item._selected}}" class="color-check">
+              <text class="check-mark">✓</text>
+            </view>
+          </view>
+          <text class="color-name">{{item.name}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 步骤4：配饰 -->
+    <view wx:if="{{currentStep === 4}}" class="step-panel">
+      <view class="panel-header">
+        <text class="panel-title">选择配饰元素</text>
+        <text class="panel-subtitle">可多选</text>
+      </view>
+
+      <view class="element-grid">
+        <view
+          wx:for="{{elementOptionsDisplay}}"
+          wx:key="id"
+          class="element-card {{item._selected ? 'selected' : ''}}"
+          bindtap="toggleElement"
+          data-id="{{item.id}}"
+        >
+          <text class="element-icon">{{item.name[0]}}</text>
+          <text class="element-name">{{item.name}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 步骤5：预览 -->
+    <view wx:if="{{currentStep === 5}}" class="step-panel">
+      <view class="panel-header">
+        <text class="panel-title">设计预览</text>
+      </view>
+
+      <view class="preview-card">
+        <view class="preview-image-wrap">
+          <image
+            wx:if="{{previewImage}}"
+            src="{{previewImage}}"
+            mode="aspectFill"
+            class="preview-main-img"
+            aria-label="定制美甲设计预览图"
+          />
+          <view wx:else class="preview-placeholder">
+            <view class="placeholder-icon"></view>
+          </view>
+        </view>
+
+        <view class="preview-info">
+          <view class="preview-title-wrap">
+            <text class="form-label">设计标题</text>
+            <input
+              class="form-input"
+              value="{{title}}"
+              bindinput="onTitleInput"
+              placeholder="{{defaultTitle}}"
+              placeholder-class="placeholder"
+            />
+          </view>
+
+          <view class="preview-tags">
+            <view wx:if="{{selectedShape}}" class="tag shape-tag">
+              <text>{{selectedShapeName}}</text>
+            </view>
+            <view
+              wx:for="{{selectedColorItems}}"
+              wx:key="*this"
+              class="tag color-tag"
+              style="background-color: {{item.hex}}; color: {{item.lightText ? '#1f2937' : '#fff'}}"
+            >
+              <text>{{item.name}}</text>
+            </view>
+            <view
+              wx:for="{{selectedElementItems}}"
+              wx:key="*this"
+              class="tag element-tag"
+            >
+              <text>{{item.name}}</text>
+            </view>
+          </view>
+
+          <view class="preview-desc-wrap">
+            <textarea
+              class="form-textarea"
+              value="{{description}}"
+              bindinput="onDescInput"
+              placeholder="添加设计描述或特殊要求..."
+              placeholder-class="placeholder"
+              maxlength="500"
+            />
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-bar">
+    <view class="bottom-actions">
+      <button wx:if="{{currentStep > 1}}" class="btn-prev" bindtap="prevStep">上一步</button>
+      <button wx:if="{{currentStep < 5}}" class="btn-next" bindtap="nextStep">下一步</button>
+      <button wx:else class="btn-submit {{submitting ? 'disabled' : ''}}" disabled="{{submitting}}" bindtap="handleSubmit">
+        {{submitting ? '保存中...' : '保存设计'}}
+      </button>
+    </view>
+  </view>
+</view>

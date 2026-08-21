@@ -1,0 +1,1 @@
+<nav-bar title="申请已提交"/><view class="page"><view class="card"><text class="mark">✓</text><text class="title">预约申请已提交</text><text class="copy">这还不是正式预约，美甲师会人工核对服务内容、价格和时间。确认后你会收到通知。</text><view class="notice">当前偏好时间尚未占用正式档期</view><button class="primary" bindtap="orders">查看申请进度</button><button class="secondary" bindtap="home">返回首页</button></view></view>

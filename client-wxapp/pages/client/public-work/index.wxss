@@ -1,0 +1,480 @@
+.container {
+  min-height: 100vh;
+  background: #000;
+  position: relative;
+}
+
+/* 加载中 */
+.loading-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.loading-spinner {
+  width: 48rpx;
+  height: 48rpx;
+  border: 4rpx solid #fff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 错误状态 */
+.error-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 48rpx;
+}
+
+.error-text {
+  font-size: var(--font-md);
+  color: var(--text-muted);
+  margin-bottom: var(--space-md);
+}
+.error-sub { margin-bottom:32rpx; color: var(--text-muted); font-size: var(--font-sm); }
+.btn-retry { min-height:88rpx; margin:0 0 20rpx; padding:0 56rpx; border:0; border-radius: var(--radius-xl); background:#1f2937; color: var(--text-inverse); font-size: var(--font-md); line-height:88rpx; }
+.btn-retry::after { border:0; }
+
+.btn-back {
+  min-height: 88rpx;
+  background: var(--brand-primary);
+  color: var(--text-inverse);
+  font-size: var(--font-md);
+  padding: 16rpx 48rpx;
+  border-radius: var(--radius-xl);
+  border: none;
+}
+
+.btn-back::after {
+  border: none;
+}
+
+/* 内容 */
+.content {
+  min-height: 100vh;
+  background: #000;
+}
+
+/* 顶部返回按钮 */
+.top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding: var(--space-md);
+  padding-top: calc(24rpx + env(safe-area-inset-top));
+}
+
+.back-btn {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.20);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-icon {
+  font-size: var(--font-lg);
+  color: var(--text-inverse);
+}
+
+/* 图片轮播 */
+.image-section {
+  position: relative;
+  height: 55vh;
+  background: #000;
+}
+
+.image-swiper {
+  width: 100%;
+  height: 100%;
+}
+
+.work-image {
+  width: 100%;
+  height: 100%;
+}
+
+.indicator {
+  position: absolute;
+  bottom: 24rpx;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 12rpx;
+}
+
+.dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.dot.active {
+  background: var(--bg-gradient-entry);
+  width: 32rpx;
+  border-radius: 6rpx;
+}
+
+/* 信息面板 */
+.info-panel {
+  position: relative;
+  margin-top: -48rpx;
+  background: var(--bg-card);
+  border-radius: var(--radius-md) 24rpx 0 0;
+  padding: 32rpx;
+  padding-bottom: 200rpx;
+  box-shadow: 0 -4rpx 24rpx rgba(15, 23, 42, 0.06);
+}
+
+/* 标题和描述 */
+.title-section {
+  margin-bottom: var(--space-md);
+}
+
+.work-title {
+  display: block;
+  font-size: var(--font-lg);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  margin-bottom: 12rpx;
+}
+
+.work-desc {
+  display: block;
+  font-size: var(--font-md);
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* 标签 */
+.tags-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: var(--space-md);
+}
+
+.tag {
+  padding: 8rpx 40rpx;
+  background: #fff1f5;
+  border-radius: var(--radius-sm);
+}
+
+.tag-text {
+  font-size: var(--font-xs);
+  color: var(--brand-primary);
+  font-weight: var(--weight-medium);
+}
+
+/* 美甲师信息 */
+.tech-section {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 20rpx 0;
+  border-top: 1rpx solid #f3f4f6;
+  border-bottom: 1rpx solid #f3f4f6;
+  margin-bottom: var(--space-md);
+}
+
+.tech-avatar-wrap {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: #fff1f5;
+  overflow: hidden;
+}
+
+.tech-avatar {
+  width: 100%;
+  height: 100%;
+}
+
+.tech-avatar-text {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-md);
+  color: var(--brand-primary);
+  font-weight: var(--weight-semibold);
+}
+
+.tech-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  min-width: 0;
+}
+
+.tech-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.tech-name {
+  display: inline;
+  font-size: var(--font-md);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+
+.tech-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 2rpx 10rpx;
+  border-radius: 999rpx;
+  font-size: 19rpx;
+  background: var(--warm-accent-light);
+  color: var(--warm-accent);
+}
+
+.tech-meta {
+  font-size: 21rpx;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tech-meta-join {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  flex-wrap: wrap;
+}
+.tech-meta-item {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+.tech-meta-dot {
+  color: var(--text-muted);
+  font-size: 20rpx;
+}
+
+.tech-arrow {
+  font-size: var(--font-lg);
+  color: var(--text-muted);
+}
+
+/* 操作按钮 */
+.actions-section {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 32rpx;
+}
+
+.action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  padding: 20rpx;
+  background: var(--bg-input);
+  border-radius: var(--radius-md);
+  border: none;
+}
+
+.action-btn::after {
+  border: none;
+}
+
+.action-icon {
+  width: 32rpx;
+  height: 32rpx;
+  flex-shrink: 0;
+}
+
+.action-text {
+  font-size: var(--font-sm);
+  color: var(--text-body);
+  font-weight: var(--weight-medium);
+}
+
+.action-count {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+/* 评论区 */
+.comments-section {
+  margin-bottom: 32rpx;
+}
+
+.comments-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
+.comments-title {
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.comments-count {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.comment-item {
+  display: flex;
+  gap: 16rpx;
+}
+
+.comment-avatar-wrap {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: var(--bg-input);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.comment-avatar {
+  width: 100%;
+  height: 100%;
+}
+
+.comment-avatar-text {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  font-weight: var(--weight-semibold);
+}
+
+.comment-content {
+  flex: 1;
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
+  padding: 16rpx 40rpx;
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 8rpx;
+}
+
+.comment-name {
+  font-size: var(--font-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-body);
+}
+
+.comment-badge {
+  font-size: var(--font-xs);
+  color: var(--brand-primary);
+  background: #fff1f5;
+  padding: 2rpx 40rpx;
+  border-radius: 10rpx;
+}
+
+.comment-text {
+  font-size: var(--font-sm);
+  color: var(--text-body);
+  line-height: var(--leading-normal);
+}
+
+.comments-empty {
+  padding: 40rpx;
+  text-align: center;
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
+}
+
+.empty-text {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+}
+
+/* 底部评论输入框 */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16rpx 40rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  background: var(--bg-page);
+  border-top: 1rpx solid #f3f4f6;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.comment-input {
+  flex: 1;
+  min-width: 0;
+  height: 88rpx;
+  background: var(--bg-input);
+  border-radius: var(--radius-md);
+  padding: 0 32rpx;
+  display: flex;
+  align-items: center;
+  border: 1rpx solid #e5e7eb;
+}
+
+.book-same-btn {
+  flex-shrink: 0;
+  height: 88rpx;
+  padding: 0 36rpx;
+  border-radius: var(--radius-md);
+  background: var(--brand-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6rpx 18rpx rgba(255,107,138,0.3) /* brand-primary-alpha */;
+}
+.book-same-btn:active { opacity: 0.85; }
+.book-same-text {
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
+  color: var(--text-inverse);
+  white-space: nowrap;
+}
+
+.comment-input::after {
+  border: none;
+}
+
+.input-placeholder  {
+  font-size: var(--font-md);
+  color: var(--text-muted);
+}

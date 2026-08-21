@@ -1,2 +1,8 @@
 #include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"
 #include "Generated.xcconfig"
+
+// 关闭 Xcode 16+ 显式模块，使 CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES
+// 在构建 firebase_messaging 模块时生效（FlutterFire 的 <Firebase/Firebase.h> 非模块化包含）。
+CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES
+SWIFT_ENABLE_EXPLICIT_MODULES = NO
+CLANG_ENABLE_EXPLICIT_MODULES = NO

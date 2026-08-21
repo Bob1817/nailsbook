@@ -20,4 +20,8 @@ class TechnicianCustomerService {
   Future<Map<String, dynamic>> updateTags(int id, String tags) async {
     return _api.patch('/customers/$id/tags', body: {'tags': tags});
   }
+
+  Future<Map<String, dynamic>> updateName(int id, String name) async {
+    return _api.patch('/customers/$id/name', body: {'name': name});
+  }
 }

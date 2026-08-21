@@ -1,29 +1,35 @@
 {
   "pages": [
-    "pages/role-select/index",
-    "pages/client/login/index",
-    "pages/client/home/index",
-    "pages/client/works/index",
-    "pages/client/work-detail/index",
-    "pages/client/create-order/index",
-    "pages/client/orders/index",
-    "pages/client/order-detail/index",
-    "pages/client/addresses/index",
-    "pages/client/address-edit/index",
-    "pages/client/chat/index",
-    "pages/client/profile/index",
-    "pages/technician/login/index",
-    "pages/technician/home/index",
-    "pages/technician/orders/index",
-    "pages/technician/order-detail/index",
-    "pages/technician/customers/index",
-    "pages/technician/customer-detail/index",
-    "pages/technician/works/index",
-    "pages/technician/work-edit/index",
-    "pages/technician/services/index",
-    "pages/technician/schedule/index",
-    "pages/technician/chat/index",
-    "pages/technician/profile/index"
+    "pages/login/index",
+    "pages/register/index",
+    "pages/setup-password/index",
+    "pages/onboarding/index",
+    "pages/role-select/index"
+  ],
+  "subPackages": [
+    {
+      "root": "pages/client",
+      "pages": [
+        "discover/index", "login/index", "register/index", "forgot-password/index", "welcome/index",
+        "home/index", "works/index", "artist-home/index", "work-detail/index", "beauty-archive/index",
+        "ai-photo/index", "public-work/index", "create-order/index", "orders/index", "order-detail/index",
+        "designs/index", "create-design/index", "customize-design/index", "design-detail/index", "chat/index",
+        "chat-detail/index", "profile/index", "settings/index", "my-favorites/index", "my-likes/index",
+        "feedback/index", "manual/index", "agreement/index", "help-feedback/index"
+      ]
+    },
+    {
+      "root": "pages/technician",
+      "pages": [
+        "login/index", "set-password/index", "forgot-password/index", "home/index", "business-data/index",
+        "orders/index", "order-detail/index", "complete-service/index", "customers/index", "customer-detail/index",
+        "works/index", "work-edit/index", "work-detail/index", "design-requests/index", "services/index",
+        "schedule/index", "all-itineraries/index", "all-bookings/index", "chat/index", "chat-detail/index",
+        "binding-applications/index", "profile/index", "profile-settings/index", "homepage-settings/index",
+        "account-security/index", "service-time/index", "shop-management/index", "tag-management/index",
+        "help-feedback/index", "about/index"
+      ]
+    }
   ],
   "window": {
     "backgroundTextStyle": "light",
@@ -34,16 +40,5 @@
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json",
-  "lazyCodeLoading": "requiredComponents",
-  "permission": {
-    "scope.userLocation": {
-      "desc": "用于选择上门服务地址"
-    },
-    "scope.writePhotosAlbum": {
-      "desc": "用于保存作品图片"
-    }
-  },
-  "requiredPrivateInfos": [
-    "chooseLocation"
-  ]
+  "lazyCodeLoading": "requiredComponents"
 }
