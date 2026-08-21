@@ -34,4 +34,21 @@ describe('TechnicianServicesService', () => {
     );
     expect(saved[0]).toMatchObject({ price: 268, durationMinutes: 120 });
   });
+
+  it('rejects creating a service without a valid price and duration', async () => {
+    prisma.technician.findUnique.mockResolvedValue({
+      id: 7,
+      serviceItems: '[]',
+    });
+
+    await expect(
+      service.create(7, {
+        name: '法式美甲',
+        category: 'color_style',
+        price: Number.NaN,
+        durationMinutes: 10,
+      }),
+    ).rejects.toThrow('请输入有效服务价格');
+    expect(prisma.technician.update).not.toHaveBeenCalled();
+  });
 });

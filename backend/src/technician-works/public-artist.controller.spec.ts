@@ -43,7 +43,12 @@ describe('PublicArtistController', () => {
         { id: 'b', name: '已下架服务', isActive: false },
       ]),
       shopAddresses: JSON.stringify([
-        { id: 'shop-1', name: '静安工作室', enabled: true },
+        {
+          id: 'shop-1',
+          name: '静安工作室',
+          detailAddress: '静安路1号',
+          enabled: true,
+        },
         { id: 'shop-2', name: '停用门店', enabled: false },
       ]),
       serviceSchedule: JSON.stringify({

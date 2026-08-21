@@ -590,6 +590,13 @@ export class TechnicianAuthService {
       throw new UnauthorizedException('美甲师不存在');
     }
 
+    if (status === 'active') {
+      const readiness = bookingReadiness({ ...technician, status: 'active' });
+      if (!readiness.ready) {
+        throw new BadRequestException(readiness.issues[0]);
+      }
+    }
+
     return this.prisma.technician.update({
       where: { id: technicianId },
       data: { status },

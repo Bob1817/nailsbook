@@ -1,5 +1,5 @@
 .page {
-  padding: var(--space-md) 32rpx 200rpx;
+  padding: var(--space-md) 32rpx calc(340rpx + env(safe-area-inset-bottom));
   background: var(--bg-page);
   min-height: 100vh;
 }
@@ -132,6 +132,8 @@
 .type-info { flex: 1; min-width: 0; }
 .type-label { font-size: var(--font-md); font-weight: var(--weight-medium); color: var(--text-primary); display: block; }
 .type-desc { font-size: var(--font-sm); color: var(--text-muted); margin-top: 4rpx; display: block; }
+.type-duration { display:block; margin-top:8rpx; color:var(--text-muted); font-size:var(--font-xs); }
+.service-price { flex-shrink:0; color:var(--brand-primary); font-size:var(--font-md); font-weight:var(--weight-semibold); font-variant-numeric:tabular-nums; }
 
 /* ===== Calendar ===== */
 .calendar { margin-top: 8rpx; }
@@ -295,6 +297,12 @@
   box-shadow: 0 -4rpx 20rpx rgba(0,0,0,0.04);
   z-index: 50;
 }
+.booking-price-summary { display:flex; align-items:center; justify-content:space-between; gap:24rpx; margin-bottom:16rpx; }
+.booking-price-copy { display:flex; flex-direction:column; gap:4rpx; }
+.booking-price-label { color:var(--text-primary); font-size:var(--font-sm); font-weight:var(--weight-medium); }
+.booking-price-hint { color:var(--text-muted); font-size:var(--font-xs); }
+.booking-price-total, .review-price { color:var(--brand-primary); font-weight:var(--weight-semibold); font-variant-numeric:tabular-nums; }
+.booking-price-total { font-size:40rpx; }
 
 .submit-btn {
   background: var(--brand-gradient); color: var(--text-inverse);

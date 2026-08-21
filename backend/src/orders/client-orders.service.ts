@@ -167,10 +167,10 @@ export class ClientOrdersService {
       throw new BadRequestException('请选择至少一项服务内容或填写自定义需求');
     }
 
-    const selectedServiceNames =
+    const selectedServices =
       isCustom || dto.chatMode
-        ? []
-        : this.resolveSelectedServiceNames(
+        ? { names: [], totalPrice: 0, totalDurationMinutes: 120 }
+        : this.resolveSelectedServices(
             binding.technician.serviceItems,
             dto.selectedServiceIds,
           );
@@ -178,7 +178,7 @@ export class ClientOrdersService {
       binding.technician.serviceSchedule,
       dto.serviceDate,
       dto.startTime,
-      120,
+      selectedServices.totalDurationMinutes,
     );
 
     const client = await this.prisma.clientUser.findUnique({
@@ -197,7 +197,9 @@ export class ClientOrdersService {
         dto,
       );
     const startTime = this.buildStartTime(dto.serviceDate, dto.startTime);
-    const endTime = new Date(startTime.getTime() + 120 * 60 * 1000);
+    const endTime = new Date(
+      startTime.getTime() + selectedServices.totalDurationMinutes * 60 * 1000,
+    );
 
     const createOrder = () =>
       this.prisma.$transaction(async (tx) => {
@@ -234,7 +236,9 @@ export class ClientOrdersService {
             address: orderAddress,
             serviceType: dto.serviceType,
             remark: dto.remark ?? null,
-            customTitle: dto.customTitle ?? null,
+            customTitle: isCustom
+              ? (dto.customTitle ?? null)
+              : selectedServices.names.join('、'),
             customDescription: dto.customDescription ?? null,
             customImages:
               dto.customImages && dto.customImages.length > 0
@@ -247,7 +251,7 @@ export class ClientOrdersService {
             expectedTimeSlot: dto.startTime,
             confirmedStartTime: null,
             confirmedEndTime: null,
-            quotePrice: 0,
+            quotePrice: selectedServices.totalPrice,
             status: 'pending_quote',
             source: 'client_webapp',
           },
@@ -269,8 +273,8 @@ export class ClientOrdersService {
 
         const previewContent = isCustom
           ? dto.customTitle || '自定义美甲需求'
-          : selectedServiceNames.length > 0
-            ? selectedServiceNames.join('、')
+          : selectedServices.names.length > 0
+            ? selectedServices.names.join('、')
             : '到店/上门预约';
         const preview = `新的预约申请：${previewContent} · ${dto.serviceType}`;
         const conversation = await tx.conversation.upsert({
@@ -1548,7 +1552,7 @@ export class ClientOrdersService {
     }
   }
 
-  private resolveSelectedServiceNames(
+  private resolveSelectedServices(
     serviceItemsRaw: string | null,
     selectedServiceIds?: string[],
   ) {
@@ -1568,9 +1572,37 @@ export class ClientOrdersService {
       throw new BadRequestException('所选服务内容已失效，请重新选择');
     }
 
-    return selectedServices
+    const normalized = selectedServices
       .sort((left: any, right: any) => left.sortOrder - right.sortOrder)
-      .map((item: any) => item.name);
+      .map((item: any) => ({
+        name: String(item.name).trim(),
+        price: Number(item.price),
+        durationMinutes: Number(item.durationMinutes),
+      }));
+    if (
+      normalized.some(
+        (item) =>
+          !item.name ||
+          !Number.isFinite(item.price) ||
+          item.price < 0 ||
+          !Number.isFinite(item.durationMinutes) ||
+          item.durationMinutes <= 0,
+      )
+    ) {
+      throw new BadRequestException('所选服务价格或时长配置异常，请重新选择');
+    }
+    return {
+      names: normalized.map((item) => item.name),
+      totalPrice:
+        normalized.reduce(
+          (sum, item) => sum + Math.round(item.price * 100),
+          0,
+        ) / 100,
+      totalDurationMinutes: normalized.reduce(
+        (sum, item) => sum + item.durationMinutes,
+        0,
+      ),
+    };
   }
 
   private async assertOrderConflict(

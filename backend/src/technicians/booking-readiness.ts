@@ -82,7 +82,7 @@ export function bookingReadiness(
         typeof (item.detailAddress || item.address) === 'string' &&
         (item.detailAddress || item.address).trim(),
     );
-    if (serviceType === '到店美甲' && enabledShops.length === 0) {
+    if (technician.shopService && enabledShops.length === 0) {
       issues.push('请配置至少一个启用中的门店地址');
     }
   }

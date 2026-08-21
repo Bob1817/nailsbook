@@ -44,6 +44,7 @@ Page({
     // 新手引导
     needsSetup: false,       // shopService 未配置时显示引导卡
     shopServiceOn: false,
+    setupSteps: [],
 
     // 服务类型引导弹窗（仅工作时间设置时触发）
     showServiceTypeModal: false,
@@ -86,7 +87,20 @@ Page({
   onShow() {
     if (wx.getStorageSync('role') !== 'technician') return;
     this.applyUserInfo();
+    this.refreshUserInfo();
     this.loadStats();
+  },
+
+  async refreshUserInfo() {
+    try {
+      const fresh = await api.technician.auth.getUserInfo();
+      const userInfo = { ...(this.data.userInfo || {}), ...fresh };
+      wx.setStorageSync('userInfo', userInfo);
+      wx.setStorageSync('technician_userInfo', userInfo);
+      this.applyUserInfo();
+    } catch (err) {
+      console.warn('refresh technician profile failed', err);
+    }
   },
 
   onPullDownRefresh() {
@@ -98,10 +112,71 @@ Page({
     const userInfo = wx.getStorageSync('userInfo') || wx.getStorageSync('technician_userInfo') || {};
     if (userInfo.phone) userInfo.phoneDisplay = phoneMask(userInfo.phone);
     const shopServiceOn = !!userInfo.shopService;
-    const needsSetup = !shopServiceOn;
-    const canAcceptOrders = shopServiceOn;
-    this.setData({ userInfo, shopServiceOn, needsSetup, canAcceptOrders });
+    const activeServices = (userInfo.serviceItems || []).filter((item) =>
+      item && item.isActive !== false && item.name && Number.isFinite(Number(item.price)) && Number(item.durationMinutes) > 0
+    );
+    const schedule = normalizeSchedule(userInfo.serviceSchedule);
+    const activeScheme = (schedule.schemes || []).find((item) => item.id === schedule.activeSchemeId);
+    const serviceReady = activeServices.length > 0;
+    const shopReady = shopServiceOn && (userInfo.shopAddresses || []).some((item) => item.enabled !== false && (item.detailAddress || item.address));
+    const scheduleReady = !!(activeScheme && activeScheme.days && activeScheme.days.length && activeScheme.startTime < activeScheme.endTime);
+    const setupSteps = [
+      { key: 'services', label: '完善服务与定价', hint: serviceReady ? '已配置有效服务' : '添加服务名称、价格和预计时长', done: serviceReady, route: 'services' },
+      { key: 'shop', label: '完善到店门店', hint: shopReady ? '已配置可用门店' : '添加客户到店地址', done: shopReady, route: 'shops' },
+      { key: 'schedule', label: '设置可预约时间', hint: scheduleReady ? '已启用工作时间方案' : '设置工作日和营业时段', done: scheduleReady, route: 'schedule' }
+    ];
+    const canAcceptOrders = serviceReady && shopReady && scheduleReady;
+    this.setData({ userInfo, shopServiceOn, needsSetup: !canAcceptOrders, canAcceptOrders, setupSteps });
     this.computeAccepting();
+  },
+
+  goSetupStep(e) {
+    const route = e.currentTarget.dataset.route;
+    if (route === 'schedule') return this.openScheduleModal();
+    if (route === 'shops') return wx.navigateTo({ url: '/pages/technician/shop-management/index' });
+    wx.navigateTo({ url: '/pages/technician/services/index' });
+  },
+
+  async toggleAccepting() {
+    const userInfo = this.data.userInfo || {};
+    if (userInfo.status === 'active') {
+      try {
+        const updated = await api.technician.auth.updateStatus('inactive');
+        const next = { ...userInfo, ...updated };
+        wx.setStorageSync('userInfo', next);
+        wx.setStorageSync('technician_userInfo', next);
+        this.setData({ userInfo: next, isAccepting: false });
+        wx.showToast({ title: '已暂停接单', icon: 'success' });
+      } catch (err) {
+        wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+      }
+      return;
+    }
+    if (!this.data.canAcceptOrders) {
+      const firstIncomplete = this.data.setupSteps.find((item) => !item.done);
+      wx.showModal({
+        title: '请先完成接单设置',
+        content: '需要完善服务与定价、到店门店和可预约时间后才能开启接单。',
+        confirmText: '去完善',
+        success: (res) => {
+          if (res.confirm && firstIncomplete) {
+            this.goSetupStep({ currentTarget: { dataset: { route: firstIncomplete.route } } });
+          }
+        }
+      });
+      return;
+    }
+    try {
+      const updated = await api.technician.auth.updateStatus('active');
+      const next = { ...userInfo, ...updated };
+      wx.setStorageSync('userInfo', next);
+      wx.setStorageSync('technician_userInfo', next);
+      this.setData({ userInfo: next });
+      this.computeAccepting();
+      wx.showToast({ title: '已开启接单', icon: 'success' });
+    } catch (err) {
+      wx.showToast({ title: err.message || '尚未满足接单条件', icon: 'none' });
+    }
   },
 
   // 根据工作时间方案和休息日自动判断接单状态
@@ -642,15 +717,10 @@ Page({
         activeSchemeId: schedule.activeSchemeId,
         restDays: schedule.restDays || []
       };
-      // 如果用户之前是 inactive 状态，自动切换为 active
       const updateData = { serviceSchedule: cleanSchedule };
-      if (this.data.userInfo.status === 'inactive' && this.data.canAcceptOrders) {
-        updateData.status = 'active';
-      }
       const res = await api.technician.auth.updateProfile(updateData);
       const userInfo = this.data.userInfo;
       userInfo.serviceSchedule = res.serviceSchedule || cleanSchedule;
-      if (updateData.status) userInfo.status = 'active';
       wx.setStorageSync('userInfo', userInfo);
       wx.setStorageSync('technician_userInfo', userInfo);
       this.setData({ userInfo, savingSchedule: false, showScheduleModal: false, schedule: null });

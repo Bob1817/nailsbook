@@ -79,6 +79,7 @@ page { background: var(--bg-gradient-entry); }
   color: var(--text-inverse);
   line-height: 1;
 }
+.status-action-hint { color:rgba(255,255,255,.72); font-size:22rpx; }
 
 .status-schedule-btn {
   width: 88rpx;
@@ -356,7 +357,12 @@ page { background: var(--bg-gradient-entry); }
   border-radius: var(--radius-sm);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
+  background: #fde8f0;
+  color: var(--brand-primary);
+  font-size: 26rpx;
+  font-weight: var(--weight-semibold);
 }
+.setup-step-done { background:#e8f7ee; color:#168a4a; }
 .setup-step-icon-home { background: #fde8f0; }
 .setup-step-icon-shop { background: #dbeafe; }
 .setup-step-icon-svg {

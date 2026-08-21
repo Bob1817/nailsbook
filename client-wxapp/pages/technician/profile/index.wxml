@@ -17,12 +17,13 @@
     </view>
 
     <!-- 接单状态 -->
-    <view class="status-bar">
+    <view class="status-bar" bindtap="toggleAccepting" role="button" aria-label="{{userInfo.status === 'active' ? '暂停接单' : '开启接单'}}">
       <view class="status-left">
         <view class="status-dot {{isAccepting ? 'dot-on' : 'dot-off'}}"></view>
         <text class="status-label">{{isAccepting ? '接单中' : '已暂停接单'}}</text>
+        <text class="status-action-hint">点击切换</text>
       </view>
-      <view class="status-schedule-btn" catchtap="openScheduleModal">
+      <view class="status-schedule-btn">
         <view class="status-schedule-icon-svg"></view>
       </view>
     </view>
@@ -154,21 +155,21 @@
         <text class="setup-guide-title">完成设置，开始接单</text>
         <view class="setup-guide-badge">待完善</view>
       </view>
-      <text class="setup-guide-desc">设置服务方式后，客户才能找到你并预约</text>
+      <text class="setup-guide-desc">以下信息全部完成后，才能开启接单并接受客户预约</text>
     </view>
     <view class="setup-steps">
-      <view class="setup-step" bindtap="goSetupShop">
+      <view wx:for="{{setupSteps}}" wx:key="key" class="setup-step" bindtap="goSetupStep" data-route="{{item.route}}">
         <view class="setup-step-left">
-          <view class="setup-step-icon-wrap setup-step-icon-shop">
-            <view class="setup-step-icon-svg setup-step-shop-svg"></view>
+          <view class="setup-step-icon-wrap {{item.done ? 'setup-step-done' : ''}}">
+            <text>{{item.done ? '✓' : index + 1}}</text>
           </view>
           <view class="setup-step-text">
-            <text class="setup-step-label">开启到店服务</text>
-            <text class="setup-step-hint">添加门店，接受到店预约</text>
+            <text class="setup-step-label">{{item.label}}</text>
+            <text class="setup-step-hint">{{item.hint}}</text>
           </view>
         </view>
         <view class="setup-step-action">
-          <text class="setup-step-btn">去开启</text>
+          <text class="setup-step-btn">{{item.done ? '查看' : '去完善'}}</text>
           <text class="setup-step-arrow">›</text>
         </view>
       </view>

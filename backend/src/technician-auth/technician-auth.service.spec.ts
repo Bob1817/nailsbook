@@ -130,4 +130,31 @@ describe('TechnicianAuthService.setInitialPassword', () => {
       }),
     );
   });
+
+  it('rejects enabling orders before service pricing is complete', async () => {
+    prisma.technician.findUnique.mockResolvedValue({
+      ...baseTechnician,
+      status: 'inactive',
+      shopService: true,
+      shopAddresses: JSON.stringify([
+        { detailAddress: '测试路1号', enabled: true },
+      ]),
+      serviceSchedule: JSON.stringify({
+        activeSchemeId: 'regular',
+        schemes: [
+          {
+            id: 'regular',
+            days: ['mon'],
+            startTime: '09:00',
+            endTime: '18:00',
+          },
+        ],
+      }),
+    });
+
+    await expect(service.updateStatus(7, 'active')).rejects.toThrow(
+      '请配置启用中的服务项目、价格和时长',
+    );
+    expect(prisma.technician.update).not.toHaveBeenCalled();
+  });
 });

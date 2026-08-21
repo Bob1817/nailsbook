@@ -170,7 +170,10 @@ describe('Technician operation HTTP contract', () => {
         process.env.ALLOW_DEV_MVP_VERIFICATION_CODE = previousDevCode;
       }
       expect(setRes.body.accessToken).toEqual(expect.any(String));
-      expect(setRes.body.technician).toMatchObject({ id: technician.id, phone });
+      expect(setRes.body.technician).toMatchObject({
+        id: technician.id,
+        phone,
+      });
 
       // 3. check-phone：现在已激活
       const check2 = await request(testApp.app.getHttpServer())
@@ -451,6 +454,8 @@ describe('Technician operation HTTP contract', () => {
           name: 'Contract Service',
           description: 'A test service',
           category: 'basic_care',
+          price: 168,
+          durationMinutes: 90,
         })
         .expect(201);
 
@@ -458,6 +463,8 @@ describe('Technician operation HTTP contract', () => {
         id: expect.any(String),
         name: 'Contract Service',
         category: 'basic_care',
+        price: 168,
+        durationMinutes: 90,
       });
 
       const listRes = await request(testApp.app.getHttpServer())

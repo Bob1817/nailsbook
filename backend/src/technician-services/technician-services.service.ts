@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import {
   buildDefaultServiceItems,
@@ -65,6 +69,7 @@ export class TechnicianServicesService {
 
   async create(technicianId: number, dto: CreateServiceDto) {
     const services = await this.list(technicianId);
+    this.assertValidService(dto);
     const service: ServiceItem = {
       id: `svc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       name: dto.name,
@@ -90,11 +95,13 @@ export class TechnicianServicesService {
       throw new NotFoundException('服务不存在');
     }
 
-    services[index] = {
+    const updated = {
       ...services[index],
       ...dto,
       updatedAt: new Date().toISOString(),
     };
+    this.assertValidService(updated);
+    services[index] = updated;
 
     await this.saveServices(technicianId, services);
     return services[index];
@@ -129,5 +136,20 @@ export class TechnicianServicesService {
         serviceItems: JSON.stringify(services),
       },
     });
+  }
+
+  private assertValidService(service: Partial<ServiceItem>) {
+    if (typeof service.name !== 'string' || !service.name.trim()) {
+      throw new BadRequestException('请输入服务名称');
+    }
+    if (!Number.isFinite(Number(service.price)) || Number(service.price) < 0) {
+      throw new BadRequestException('请输入有效服务价格');
+    }
+    if (
+      !Number.isInteger(Number(service.durationMinutes)) ||
+      Number(service.durationMinutes) < 15
+    ) {
+      throw new BadRequestException('服务时长不能少于15分钟');
+    }
   }
 }

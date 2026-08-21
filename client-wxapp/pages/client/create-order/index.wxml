@@ -148,7 +148,9 @@
         <view class="type-info">
           <text class="type-label">{{item.name}}</text>
           <text wx:if="{{item.description}}" class="type-desc">{{item.description}}</text>
+          <text class="type-duration">约 {{item.durationMinutes}} 分钟</text>
         </view>
+        <text class="service-price">¥{{item.price}}</text>
       </view>
     </view>
     <view wx:if="{{!isCustomService && activeServiceItems.length === 0}}" class="empty-hint">
@@ -220,6 +222,13 @@
 
   <!-- 提交按钮 -->
   <view class="submit-bar">
+    <view wx:if="{{!isCustomService && selectedServiceCount > 0}}" class="booking-price-summary">
+      <view class="booking-price-copy">
+        <text class="booking-price-label">已选 {{selectedServiceCount}} 项 · 约 {{selectedServiceDuration}} 分钟</text>
+        <text class="booking-price-hint">预约服务价格</text>
+      </view>
+      <text class="booking-price-total">¥{{selectedServiceTotal}}</text>
+    </view>
     <view class="submit-btn {{submitting ? 'btn-disabled' : ''}}" bindtap="handleSubmit">
       <text>{{submitting ? '提交中...' : isCustomService ? '提交需求等待报价' : '提交预约申请'}}</text>
     </view>
@@ -236,6 +245,7 @@
       <view class="review-row"><text>美甲师</text><text>{{selectedTech.name}}</text></view>
       <view class="review-row"><text>期望时间</text><text>{{serviceDate}} {{startTime}}</text></view>
       <view class="review-row"><text>服务方式</text><text>{{serviceType}}</text></view>
+      <view wx:if="{{!isCustomService}}" class="review-row"><text>服务价格</text><text class="review-price">¥{{selectedServiceTotal}}</text></view>
     </view>
     <view class="rules-check" bindtap="toggleBookingRules">
       <view class="rules-box {{bookingRulesAgreed ? 'rules-box-active' : ''}}">{{bookingRulesAgreed ? '✓' : ''}}</view>

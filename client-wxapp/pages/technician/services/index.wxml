@@ -15,7 +15,7 @@
   <view wx:elif="{{services.length === 0}}" class="empty">
     <view class="service-empty-mark"><view></view><view></view><view></view></view>
     <text class="empty-text">还没有服务项目</text>
-    <text class="empty-sub">添加你提供的美甲服务，方便客户下单</text>
+      <text class="empty-sub">至少添加一项有效服务和价格，才能开启接单</text>
     <button class="btn-add-first" bindtap="openCreate">添加第一个服务</button>
   </view>
 
@@ -88,9 +88,11 @@
     </view>
 
     <view class="form-pair">
-      <view class="form-item form-half"><text class="label">参考价格 *</text><input class="input" type="digit" placeholder="0" value="{{form.price}}" data-field="price" bindinput="onFormInput"/></view>
+      <view class="form-item form-half"><text class="label">服务价格（元）*</text><input class="input" type="digit" placeholder="例如 168" value="{{form.price}}" data-field="price" bindinput="onFormInput"/></view>
       <view class="form-item form-half"><text class="label">预计时长（分钟）*</text><input class="input" type="number" placeholder="60" value="{{form.durationMinutes}}" data-field="durationMinutes" bindinput="onFormInput"/></view>
     </view>
+
+    <text class="form-helper">客户预约时可多选服务，系统会按这里的价格自动累加。</text>
 
     <view class="form-item">
       <text class="label">描述（选填）</text>

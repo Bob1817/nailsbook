@@ -158,7 +158,7 @@ describe('Client booking and design HTTP contract', () => {
         status: 'pending_quote',
         serviceType: '到店美甲',
         remark: 'Contract test order',
-        quotePrice: 0,
+        quotePrice: 128,
         quoteRemark: null,
       });
       ownedOrderNos.push(createRes.body.orderNo);

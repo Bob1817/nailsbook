@@ -139,6 +139,7 @@
   font-weight: var(--weight-medium);
 }
 .form-pair { display:flex; gap:16rpx; }.form-half { min-width:0; flex:1; }
+.form-helper { display:block; margin:-4rpx 0 24rpx; color:var(--text-muted); font-size:24rpx; line-height:1.6; }
 .action-btn:active {
   opacity: 0.65;
 }

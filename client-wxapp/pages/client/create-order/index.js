@@ -1,5 +1,6 @@
 const api = require('../../../services/api');
 const { requestBookingReminder } = require('../../../utils/wechat-subscription');
+const { summarizeServices } = require('../../../utils/service-pricing');
 const DRAFT_KEY='client_booking_application_draft';
 
 const TIME_SLOTS = [
@@ -56,6 +57,9 @@ Page({
     selectedShopName: '',
     activeServiceItems: [],
     selectedServiceIds: [],
+    selectedServiceCount: 0,
+    selectedServiceTotal: 0,
+    selectedServiceDuration: 0,
     isCustomService: false,
     customTitle: '',
     customDesc: '',
@@ -280,13 +284,16 @@ Page({
       ? [{ value: '到店美甲', label: '到店美甲', desc: '前往美甲师门店地址服务' }]
       : [];
     var serviceType = types.length > 0 ? types[0].value : '';
-    var serviceItems = tech.serviceItems || [];
+    var serviceItems = (tech.serviceItems || []).filter(function (item) {
+      return item.isActive !== false && Number.isFinite(Number(item.price)) && Number(item.durationMinutes) > 0;
+    });
     this.setData({
       selectedTechId: id, selectedTech: tech,
       serviceType: serviceType, availableServiceTypes: types,
       shopAddresses: shopAddrs, selectedShopName: '',
       activeServiceItems: serviceItems,
       selectedServiceIds: [], selectedWorkIds: [],
+      selectedServiceCount: 0, selectedServiceTotal: 0, selectedServiceDuration: 0,
       // 美甲师无服务项目时自动切换到自定义需求模式
       isCustomService: serviceItems.length === 0,
       blockedSlots: [], timeSlotStatuses: [], startTime: ''
@@ -336,7 +343,13 @@ Page({
   switchContentMode: function (e) {
     var mode = e.currentTarget.dataset.mode;
     if (mode === 'standard') this.sourceWorkId = null;
-    this.setData({ isCustomService: mode === 'custom', selectedServiceIds: [] });
+    this.setData({
+      isCustomService: mode === 'custom',
+      selectedServiceIds: [],
+      selectedServiceCount: 0,
+      selectedServiceTotal: 0,
+      selectedServiceDuration: 0
+    });
   },
 
   toggleService: function (e) {
@@ -344,7 +357,13 @@ Page({
     var ids = this.data.selectedServiceIds.slice();
     var idx = ids.indexOf(id);
     if (idx >= 0) ids.splice(idx, 1); else ids.push(id);
-    this.setData({ selectedServiceIds: ids });
+    var summary = summarizeServices(this.data.activeServiceItems, ids);
+    this.setData({
+      selectedServiceIds: ids,
+      selectedServiceCount: summary.count,
+      selectedServiceTotal: summary.totalPrice,
+      selectedServiceDuration: summary.totalDurationMinutes
+    });
   },
 
   onCustomTitleInput: function (e) { this.setData({ customTitle: e.detail.value }); },
@@ -588,6 +607,12 @@ Page({
         serviceDate: draft.serviceDate || this.data.serviceDate,
         startTime: draft.startTime || this.data.startTime,
         remark: draft.remark || ''
+      });
+      var summary = summarizeServices(this.data.activeServiceItems, draft.selectedServiceIds || []);
+      this.setData({
+        selectedServiceCount: summary.count,
+        selectedServiceTotal: summary.totalPrice,
+        selectedServiceDuration: summary.totalDurationMinutes
       });
     }
   },
