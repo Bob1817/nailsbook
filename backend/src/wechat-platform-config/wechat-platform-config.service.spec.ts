@@ -112,7 +112,7 @@ describe('WechatPlatformConfigService capabilities', () => {
     );
   });
 
-  it('saves a validated shop-only launch technician and forces payment off', async () => {
+  it('forces the launch technician to shop-only and disables payment when saving', async () => {
     process.env.MINIPROGRAM_LAUNCH_MODE = 'true';
     const updated = {
       ...base,
@@ -125,22 +125,39 @@ describe('WechatPlatformConfigService capabilities', () => {
       launchTechnicianId: 7,
       bookingReminderTemplateId: null,
     };
-    const update = jest.fn().mockResolvedValue(updated);
+    const configUpdate = jest.fn().mockResolvedValue(updated);
+    const technicianUpdate = jest.fn().mockResolvedValue({});
+    const findTechnician = jest
+      .fn()
+      .mockResolvedValueOnce({
+        id: 7,
+        name: '阿琳',
+        phone: '13800138000',
+        status: 'active',
+        homeService: true,
+        shopService: false,
+      })
+      .mockResolvedValueOnce({
+        id: 7,
+        name: '阿琳',
+        phone: '13800138000',
+        status: 'active',
+        homeService: false,
+        shopService: true,
+      });
     const prisma = {
       technician: {
-        findUnique: jest.fn().mockResolvedValue({
-          id: 7,
-          name: '阿琳',
-          phone: '13800138000',
-          status: 'active',
-          homeService: false,
-          shopService: true,
-        }),
+        findUnique: findTechnician,
       },
       wechatPlatformConfig: {
         upsert: jest.fn().mockResolvedValue(updated),
-        update,
       },
+      $transaction: jest.fn(async (callback) =>
+        callback({
+          technician: { update: technicianUpdate },
+          wechatPlatformConfig: { update: configUpdate },
+        }),
+      ),
     };
     const service = new WechatPlatformConfigService(
       prisma as never,
@@ -156,7 +173,11 @@ describe('WechatPlatformConfigService capabilities', () => {
       launchTechnicianId: 7,
     });
 
-    expect(update).toHaveBeenCalledWith(
+    expect(technicianUpdate).toHaveBeenCalledWith({
+      where: { id: 7 },
+      data: { homeService: false, shopService: true },
+    });
+    expect(configUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           launchTechnicianId: 7,

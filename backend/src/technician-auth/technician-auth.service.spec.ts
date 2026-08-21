@@ -96,4 +96,38 @@ describe('TechnicianAuthService.setInitialPassword', () => {
       service.setInitialPassword('13800138000', '123456', 'abcd1234'),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
+
+  it('forces shop-only service settings in mini program launch mode', async () => {
+    const previousLaunchMode = process.env.MINIPROGRAM_LAUNCH_MODE;
+    process.env.MINIPROGRAM_LAUNCH_MODE = 'true';
+    prisma.technician.findUnique.mockResolvedValue({ ...baseTechnician });
+    prisma.technician.update.mockResolvedValue({
+      ...baseTechnician,
+      homeService: false,
+      shopService: true,
+    });
+
+    try {
+      await service.updateServiceType(7, {
+        homeService: true,
+        shopService: false,
+      });
+    } finally {
+      if (previousLaunchMode === undefined) {
+        delete process.env.MINIPROGRAM_LAUNCH_MODE;
+      } else {
+        process.env.MINIPROGRAM_LAUNCH_MODE = previousLaunchMode;
+      }
+    }
+
+    expect(prisma.technician.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 7 },
+        data: {
+          homeService: false,
+          shopService: true,
+        },
+      }),
+    );
+  });
 });

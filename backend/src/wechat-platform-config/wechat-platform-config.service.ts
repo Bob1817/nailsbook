@@ -131,26 +131,30 @@ export class WechatPlatformConfigService implements OnModuleInit {
     if (!technician || technician.status !== 'active') {
       throw new BadRequestException('请选择已启用的美甲师');
     }
-    if (!technician.shopService || technician.homeService) {
-      throw new BadRequestException(
-        '首期美甲师必须仅开启到店服务',
-      );
-    }
-    await this.prisma.wechatPlatformConfig.update({
-      where: { id: 1 },
-      data: {
-        operatorName: dto.operatorName.trim(),
-        storeName: dto.storeName.trim(),
-        storeAddress: dto.storeAddress.trim(),
-        storePhone: dto.storePhone.trim(),
-        privacyContact: dto.privacyContact.trim(),
-        filingNumber: dto.filingNumber?.trim() || null,
-        launchTechnicianId: dto.launchTechnicianId,
-        bookingReminderTemplateId:
-          dto.bookingReminderTemplateId?.trim() || null,
-        paymentEnabled: false,
-        paymentValidatedAt: null,
-      },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.technician.update({
+        where: { id: dto.launchTechnicianId },
+        data: {
+          homeService: false,
+          shopService: true,
+        },
+      });
+      await tx.wechatPlatformConfig.update({
+        where: { id: 1 },
+        data: {
+          operatorName: dto.operatorName.trim(),
+          storeName: dto.storeName.trim(),
+          storeAddress: dto.storeAddress.trim(),
+          storePhone: dto.storePhone.trim(),
+          privacyContact: dto.privacyContact.trim(),
+          filingNumber: dto.filingNumber?.trim() || null,
+          launchTechnicianId: dto.launchTechnicianId,
+          bookingReminderTemplateId:
+            dto.bookingReminderTemplateId?.trim() || null,
+          paymentEnabled: false,
+          paymentValidatedAt: null,
+        },
+      });
     });
     configureLaunchTechnicianId(dto.launchTechnicianId);
     return this.getLaunchConfig();

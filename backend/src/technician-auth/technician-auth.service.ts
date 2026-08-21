@@ -792,16 +792,16 @@ export class TechnicianAuthService {
 
     // 局部更新：只写入本次提交的字段，未提交的保持不变
     const updateData: any = {};
-    if (isMiniProgramLaunchMode() && dto.homeService) {
-      throw new BadRequestException('小程序首期仅支持到店美甲');
-    }
-    if (dto.homeService !== undefined) {
-      updateData.homeService = isMiniProgramLaunchMode()
-        ? false
-        : dto.homeService;
-    }
-    if (dto.shopService !== undefined) {
-      updateData.shopService = dto.shopService;
+    if (isMiniProgramLaunchMode()) {
+      updateData.homeService = false;
+      updateData.shopService = true;
+    } else {
+      if (dto.homeService !== undefined) {
+        updateData.homeService = dto.homeService;
+      }
+      if (dto.shopService !== undefined) {
+        updateData.shopService = dto.shopService;
+      }
     }
 
     if (dto.shopAddresses !== undefined) {
