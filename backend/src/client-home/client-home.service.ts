@@ -503,6 +503,7 @@ export class ClientHomeService {
         technician: {
           select: { name: true, avatarUrl: true, id: true },
         },
+        serviceLines: { orderBy: { sortOrder: 'asc' } },
         clientAccesses: { where: { clientUserId }, take: 1 },
       },
     });
@@ -592,6 +593,19 @@ export class ClientHomeService {
     };
     techId?: number;
     visibilityScope?: string;
+    price?: number | null;
+    serviceSubtotalFen?: number;
+    standardPriceFen?: number | null;
+    totalDurationMinutes?: number;
+    isFeatured?: boolean;
+    serviceLines?: Array<{
+      servicePublicIdSnapshot: string | null;
+      nameSnapshot: string;
+      unitPriceFen: number;
+      durationMinutes: number;
+      quantity: number;
+      subtotalFen: number;
+    }>;
   }) {
     const imageUrls = this.parseImageUrls(work.images, work.coverUrl);
     const UPLOAD_BASE_URL =
@@ -628,6 +642,19 @@ export class ClientHomeService {
         : null,
       technicianId: technicianId,
       visibilityScope: work.visibilityScope ?? 'public',
+      price: work.price ?? null,
+      serviceSubtotalFen: work.serviceSubtotalFen ?? 0,
+      standardPriceFen: work.standardPriceFen ?? null,
+      totalDurationMinutes: work.totalDurationMinutes ?? 0,
+      isFeatured: work.isFeatured ?? false,
+      serviceLines: (work.serviceLines ?? []).map((line) => ({
+        serviceId: line.servicePublicIdSnapshot,
+        name: line.nameSnapshot,
+        unitPriceFen: line.unitPriceFen,
+        durationMinutes: line.durationMinutes,
+        quantity: line.quantity,
+        subtotalFen: line.subtotalFen,
+      })),
       createdAt: work.createdAt,
       updatedAt: work.updatedAt,
     };
@@ -784,6 +811,7 @@ export class ClientHomeService {
           },
         },
         technician: { select: { name: true, avatarUrl: true, id: true } },
+        serviceLines: { orderBy: { sortOrder: 'asc' } },
       },
     });
     if (!work) throw new NotFoundException('作品不存在');

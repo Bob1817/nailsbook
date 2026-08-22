@@ -178,6 +178,61 @@ describe('ClientHomeService', () => {
     );
   });
 
+  it('getWork：返回预约同款所需的标准报价、服务明细与时长', async () => {
+    prisma.clientTechBinding.findMany.mockResolvedValueOnce([{ techId: 7 }]);
+    prisma.nailWork.findFirst.mockResolvedValueOnce({
+      id: 12,
+      techId: 7,
+      title: '法式同款',
+      coverUrl: '/work.jpg',
+      images: '["/work.jpg"]',
+      visibilityScope: 'public',
+      serviceSubtotalFen: 26000,
+      standardPriceFen: 23800,
+      totalDurationMinutes: 120,
+      serviceLines: [
+        {
+          servicePublicIdSnapshot: 'svc-french',
+          nameSnapshot: '法式造型',
+          unitPriceFen: 26000,
+          durationMinutes: 120,
+          quantity: 1,
+          subtotalFen: 26000,
+        },
+      ],
+      likes: [],
+      favorites: [],
+      comments: [],
+      clientAccesses: [],
+      technician: { id: 7, name: '贝贝', avatarUrl: null },
+      createdAt: new Date('2026-08-21T00:00:00.000Z'),
+      updatedAt: new Date('2026-08-21T00:00:00.000Z'),
+    });
+
+    const result = await service.getWork(11, 12);
+
+    expect(result).toMatchObject({
+      serviceSubtotalFen: 26000,
+      standardPriceFen: 23800,
+      totalDurationMinutes: 120,
+      serviceLines: [
+        {
+          serviceId: 'svc-french',
+          name: '法式造型',
+          subtotalFen: 26000,
+          durationMinutes: 120,
+        },
+      ],
+    });
+    expect(prisma.nailWork.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({
+          serviceLines: { orderBy: { sortOrder: 'asc' } },
+        }),
+      }),
+    );
+  });
+
   it('私密作品未授权收藏时由后端拒绝', async () => {
     prisma.nailWork.findFirst.mockResolvedValueOnce({
       id: 9,

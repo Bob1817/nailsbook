@@ -96,6 +96,10 @@ export class PublicWorksController {
         technicianName: work.technician.name,
         technicianAvatarUrl: toAbsoluteUrl(work.technician.avatarUrl),
         technicianCity: work.technician.city,
+        price: work.price,
+        serviceSubtotalFen: work.serviceSubtotalFen,
+        standardPriceFen: work.standardPriceFen,
+        totalDurationMinutes: work.totalDurationMinutes,
         likeCount: work._count.likes,
         commentCount: work._count.comments,
         createdAt: work.createdAt,
@@ -138,6 +142,10 @@ export class PublicWorksController {
       coverUrl: work.coverUrl,
       images: work.images,
       tags: work.tags,
+      price: work.price,
+      serviceSubtotalFen: work.serviceSubtotalFen,
+      standardPriceFen: work.standardPriceFen,
+      totalDurationMinutes: work.totalDurationMinutes,
       technician: work.technician,
     }));
   }
