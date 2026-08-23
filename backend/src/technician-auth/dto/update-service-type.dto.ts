@@ -37,6 +37,44 @@ export class ShopBusinessHourDto {
   closed?: boolean;
 }
 
+export class ShopGuidanceSectionDto {
+  @ApiPropertyOptional({ description: '指引文字', example: '2 号线南京西路站 1 号口出，步行 3 分钟' })
+  @IsString()
+  @IsOptional()
+  text?: string;
+
+  @ApiPropertyOptional({ description: '指引图片 URL 列表', type: [String] })
+  @IsArray()
+  @IsOptional()
+  @IsString({ each: true })
+  images?: string[];
+}
+
+export class ShopGuidanceDto {
+  @ApiPropertyOptional({ description: '是否开启地址指引', example: true })
+  @IsBoolean()
+  @IsOptional()
+  enabled?: boolean;
+
+  @ApiPropertyOptional({ description: '地铁指引', type: ShopGuidanceSectionDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ShopGuidanceSectionDto)
+  metro?: ShopGuidanceSectionDto;
+
+  @ApiPropertyOptional({ description: '公交指引', type: ShopGuidanceSectionDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ShopGuidanceSectionDto)
+  bus?: ShopGuidanceSectionDto;
+
+  @ApiPropertyOptional({ description: '开车指引', type: ShopGuidanceSectionDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ShopGuidanceSectionDto)
+  driving?: ShopGuidanceSectionDto;
+}
+
 export class ShopAddressDto {
   @ApiProperty({ description: '店铺名称', example: '美甲工作室' })
   @IsString()
@@ -97,6 +135,12 @@ export class ShopAddressDto {
   @Type(() => ShopBusinessHourDto)
   @ArrayUnique((item: ShopBusinessHourDto) => item.weekday)
   businessHours?: ShopBusinessHourDto[];
+
+  @ApiPropertyOptional({ description: '店铺地址指引（地铁/公交/开车）', type: ShopGuidanceDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ShopGuidanceDto)
+  guidance?: ShopGuidanceDto;
 }
 
 export class UpdateTechnicianServiceTypeDto {

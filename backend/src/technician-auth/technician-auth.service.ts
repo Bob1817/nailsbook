@@ -229,7 +229,25 @@ export class TechnicianAuthService {
         Array.isArray(shop.businessHours) && shop.businessHours.length > 0
           ? shop.businessHours
           : this.buildDefaultBusinessHours(),
+      guidance: this.normalizeShopGuidance(shop.guidance),
     }));
+  }
+
+  private normalizeShopGuidance(guidance?: any) {
+    const g = guidance && typeof guidance === 'object' ? guidance : {};
+    const section = (s?: any) => {
+      const v = s && typeof s === 'object' ? s : {};
+      return {
+        text: typeof v.text === 'string' ? v.text : '',
+        images: Array.isArray(v.images) ? v.images.filter(Boolean) : [],
+      };
+    };
+    return {
+      enabled: g.enabled === true,
+      metro: section(g.metro),
+      bus: section(g.bus),
+      driving: section(g.driving),
+    };
   }
 
   private parseShopAddresses(shopAddresses?: string | null) {
