@@ -425,6 +425,7 @@ export class OrdersService {
       price?: number;
       note?: string;
       depositAmount?: number;
+      isDepositPaid?: boolean;
     },
   ) {
     assertLaunchShopService(dto.serviceType);
@@ -439,6 +440,8 @@ export class OrdersService {
     if (dto.note !== undefined) updateData.remark = dto.note;
     if (dto.depositAmount !== undefined)
       updateData.depositAmount = dto.depositAmount;
+    if (dto.isDepositPaid !== undefined)
+      updateData.isDepositPaid = dto.isDepositPaid;
 
     if (!timeChanged) {
       return this.prisma.order.update({

@@ -1,4 +1,4 @@
-import { IsNumber, IsString, IsOptional, Min } from 'class-validator';
+import { IsNumber, IsString, IsBoolean, IsOptional, Min } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateTechnicianOrderDto {
@@ -33,4 +33,9 @@ export class UpdateTechnicianOrderDto {
   @IsNumber()
   @Min(0)
   depositAmount?: number;
+
+  @ApiPropertyOptional({ description: '定金是否已支付', example: true })
+  @IsOptional()
+  @IsBoolean()
+  isDepositPaid?: boolean;
 }
