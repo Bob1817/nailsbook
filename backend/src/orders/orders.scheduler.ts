@@ -517,13 +517,10 @@ export class OrdersScheduler {
   }
 
   private async autoTransitionToCompleted(now: Date) {
-    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-
     const orders = await this.prisma.order.findMany({
       where: {
         status: 'in_progress',
-        paymentStatus: 'paid',
-        endTime: { lte: twentyFourHoursAgo },
+        endTime: { lte: now },
       },
       take: OrdersScheduler.BATCH_SIZE,
       orderBy: { id: 'asc' },
