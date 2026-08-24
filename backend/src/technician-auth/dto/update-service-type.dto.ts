@@ -2,6 +2,7 @@ import {
   ArrayUnique,
   IsArray,
   IsBoolean,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -12,6 +13,28 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export class ShopGuidanceBlockDto {
+  @ApiProperty({ description: '内容块类型', enum: ['text', 'image'] })
+  @IsString()
+  @IsIn(['text', 'image'])
+  type: 'text' | 'image';
+
+  @ApiPropertyOptional({ description: '内容块标识' })
+  @IsString()
+  @IsOptional()
+  id?: string;
+
+  @ApiPropertyOptional({ description: '文字内容' })
+  @IsString()
+  @IsOptional()
+  text?: string;
+
+  @ApiPropertyOptional({ description: '图片 URL' })
+  @IsString()
+  @IsOptional()
+  url?: string;
+}
 
 export class ShopBusinessHourDto {
   @ApiProperty({ description: '星期几(0-6)', example: 1 })
@@ -38,6 +61,13 @@ export class ShopBusinessHourDto {
 }
 
 export class ShopGuidanceSectionDto {
+  @ApiPropertyOptional({ description: '按展示顺序排列的文字和图片内容块', type: [ShopGuidanceBlockDto] })
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => ShopGuidanceBlockDto)
+  blocks?: ShopGuidanceBlockDto[];
+
   @ApiPropertyOptional({ description: '指引文字', example: '2 号线南京西路站 1 号口出，步行 3 分钟' })
   @IsString()
   @IsOptional()

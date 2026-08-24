@@ -237,9 +237,29 @@ export class TechnicianAuthService {
     const g = guidance && typeof guidance === 'object' ? guidance : {};
     const section = (s?: any) => {
       const v = s && typeof s === 'object' ? s : {};
+      let blocks = Array.isArray(v.blocks)
+        ? v.blocks
+            .map((block: any, index: number) => {
+              if (block?.type === 'text' && typeof block.text === 'string') {
+                return { id: String(block.id || `text-${index}`), type: 'text', text: block.text };
+              }
+              if (block?.type === 'image' && typeof block.url === 'string' && block.url) {
+                return { id: String(block.id || `image-${index}`), type: 'image', url: block.url };
+              }
+              return null;
+            })
+            .filter(Boolean)
+        : [];
+      if (blocks.length === 0) {
+        if (typeof v.text === 'string' && v.text) blocks.push({ id: 'legacy-text', type: 'text', text: v.text });
+        if (Array.isArray(v.images)) {
+          v.images.filter(Boolean).forEach((url: string, index: number) => blocks.push({ id: `legacy-image-${index}`, type: 'image', url }));
+        }
+      }
       return {
-        text: typeof v.text === 'string' ? v.text : '',
-        images: Array.isArray(v.images) ? v.images.filter(Boolean) : [],
+        blocks,
+        text: blocks.filter((block: any) => block.type === 'text').map((block: any) => block.text).join('\n'),
+        images: blocks.filter((block: any) => block.type === 'image').map((block: any) => block.url),
       };
     };
     return {

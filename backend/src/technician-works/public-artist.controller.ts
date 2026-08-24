@@ -4,6 +4,7 @@ import {
   NotFoundException,
   Param,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { PrismaService } from '../common/prisma/prisma.service';
@@ -65,6 +66,71 @@ export class PublicArtistController {
   @ApiOperation({ summary: '通过 ID 获取美甲师公开经营主页' })
   async getBusinessPage(@Param('id', ParseIntPipe) id: number) {
     return this.getPublicCard({ id });
+  }
+
+  @Get('id/:id/shop-guidance')
+  @ApiOperation({ summary: '获取无需登录的公开店铺到店指引' })
+  async getShopGuidance(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('shopName') shopName?: string,
+    @Query('address') address?: string,
+  ) {
+    const technician = await this.prisma.technician.findFirst({
+      where: { id, status: 'active' },
+      select: { id: true, name: true, shopAddresses: true },
+    });
+    if (!technician || !isLaunchTechnician(technician.id)) {
+      throw new NotFoundException('美甲师不存在或未启用');
+    }
+    const normalizedAddress = String(address || '').replace(/\s+/g, '');
+    const shops = parseJsonArray(technician.shopAddresses).filter(
+      (item: any) => item && item.enabled !== false && item.guidance?.enabled === true,
+    ) as any[];
+    const shop = shops.find((item: any) => {
+      if (shopName && item.name === shopName) return true;
+      const fullAddress = [item.province, item.city, item.district, item.detailAddress]
+        .filter(Boolean).join('').replace(/\s+/g, '');
+      const detailAddress = String(item.detailAddress || '').replace(/\s+/g, '');
+      return normalizedAddress && (
+        fullAddress === normalizedAddress ||
+        (detailAddress && normalizedAddress.includes(detailAddress)) ||
+        fullAddress.includes(normalizedAddress)
+      );
+    }) || (shops.length === 1 ? shops[0] : null);
+    if (!shop) throw new NotFoundException('到店指引不存在或未公开');
+
+    const section = (value: any) => {
+      const blocks = Array.isArray(value?.blocks) ? value.blocks.map((block: any) => (
+        block?.type === 'image'
+          ? { ...block, url: toAbsoluteUrl(block.url) }
+          : block
+      )).filter(Boolean) : [];
+      return {
+        blocks,
+        text: typeof value?.text === 'string' ? value.text : '',
+        images: Array.isArray(value?.images) ? value.images.map((url: string) => toAbsoluteUrl(url)) : [],
+      };
+    };
+    return {
+      technicianId: technician.id,
+      technicianName: technician.name,
+      shop: {
+        id: shop.id,
+        name: shop.name,
+        province: shop.province,
+        city: shop.city,
+        district: shop.district,
+        detailAddress: shop.detailAddress,
+        latitude: shop.latitude,
+        longitude: shop.longitude,
+      },
+      guidance: {
+        enabled: true,
+        metro: section(shop.guidance.metro),
+        bus: section(shop.guidance.bus),
+        driving: section(shop.guidance.driving),
+      },
+    };
   }
 
   @Get(':code')

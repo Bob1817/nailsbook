@@ -99,4 +99,28 @@ describe('PublicArtistController', () => {
       where: { id: 7, status: 'active' },
     });
   });
+
+  it('serves enabled shop guidance publicly with absolute image URLs', async () => {
+    prisma.technician.findFirst.mockResolvedValue({
+      id: 7,
+      name: '阿琳',
+      status: 'active',
+      shopAddresses: JSON.stringify([{
+        id: 'shop-1',
+        name: '静安工作室',
+        detailAddress: '静安路1号',
+        enabled: true,
+        guidance: {
+          enabled: true,
+          metro: { blocks: [{ id: 'image-1', type: 'image', url: '/uploads/guide.png' }] },
+        },
+      }]),
+    });
+
+    const result = await controller.getShopGuidance(7, '静安工作室');
+
+    expect(result.shop.name).toBe('静安工作室');
+    expect(result.guidance.enabled).toBe(true);
+    expect(result.guidance.metro.blocks[0].url).toContain('/uploads/guide.png');
+  });
 });
