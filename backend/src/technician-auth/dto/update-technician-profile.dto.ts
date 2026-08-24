@@ -1,4 +1,5 @@
 import {
+  ArrayMaxSize,
   IsArray,
   IsObject,
   IsOptional,
@@ -82,5 +83,8 @@ export class UpdateTechnicianProfileDto {
   @ApiPropertyOptional({ description: '风格标签' })
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(5)
+  @IsString({ each: true })
+  @MaxLength(20, { each: true })
   styleTags?: string[];
 }

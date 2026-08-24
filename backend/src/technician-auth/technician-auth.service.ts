@@ -604,6 +604,9 @@ export class TechnicianAuthService {
       customTags: technician.customTags
         ? JSON.parse(technician.customTags)
         : [],
+      styleTags: technician.styleTags
+        ? JSON.parse(technician.styleTags)
+        : [],
       subscription: technician.subscription
         ? {
             status: technician.subscription.status,
@@ -766,6 +769,7 @@ export class TechnicianAuthService {
         serviceItems: true,
         serviceSchedule: true,
         customTags: true,
+        styleTags: true,
       },
     });
 
@@ -778,6 +782,7 @@ export class TechnicianAuthService {
         ? JSON.parse(updated.serviceSchedule)
         : null,
       customTags: updated.customTags ? JSON.parse(updated.customTags) : [],
+      styleTags: updated.styleTags ? JSON.parse(updated.styleTags) : [],
       bookingReady: bookingReadiness(updated).ready,
       bookingReadinessIssues: bookingReadiness(updated).issues,
     };

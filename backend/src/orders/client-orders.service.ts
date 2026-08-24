@@ -50,6 +50,7 @@ type ShopAddressConfig = {
   detailAddress?: string;
   doorInfo?: string;
   enabled?: boolean;
+  guidance?: { enabled?: boolean };
   businessHours?: ShopBusinessHour[];
 };
 
@@ -1585,6 +1586,7 @@ export class ClientOrdersService {
         ? {
             name: matchedShopAddress.name,
             phone: matchedShopAddress.phone,
+            guidanceEnabled: matchedShopAddress.guidance?.enabled === true,
             province: matchedShopAddress.province,
             city: matchedShopAddress.city,
             district: matchedShopAddress.district,
