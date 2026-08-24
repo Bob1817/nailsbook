@@ -1,10 +1,11 @@
-import { IsString, IsInt } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsInt, IsOptional } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateClientOrderDto {
-  @ApiProperty({ description: '地址ID', example: 1 })
+  @ApiPropertyOptional({ description: '上门地址ID；到店预约修改时间时不需要', example: 1 })
+  @IsOptional()
   @IsInt()
-  addressId: number;
+  addressId?: number;
 
   @ApiProperty({ description: '服务日期', example: '2024-01-15' })
   @IsString()

@@ -373,6 +373,14 @@ export class OrdersService {
     };
   }
 
+  async findBlockedSlots(technicianId: number) {
+    return this.prisma.blockedTimeSlot.findMany({
+      where: { techId: technicianId, endTime: { gte: new Date() } },
+      select: { orderId: true, startTime: true, endTime: true },
+      orderBy: { startTime: 'asc' },
+    });
+  }
+
   async findOne(id: number) {
     const order = await this.prisma.order.findUnique({
       where: { id },
@@ -392,6 +400,14 @@ export class OrdersService {
             images: true,
             description: true,
             referenceWorkIds: true,
+          },
+        },
+        sourceWork: {
+          select: {
+            id: true,
+            title: true,
+            coverUrl: true,
+            standardPriceFen: true,
           },
         },
         serviceLines: { orderBy: { sortOrder: 'asc' } },
@@ -473,6 +489,15 @@ export class OrdersService {
         ? endTime
         : new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
     await this.assertTechnicianWorkSchedule(technicianId, startTime, blockEnd);
+    const effectiveServiceType = dto.serviceType ?? order.serviceType;
+    if (['shop', '到店美甲'].includes(effectiveServiceType || '')) {
+      await this.assertTechnicianShopSchedule(
+        technicianId,
+        order.address || '',
+        startTime,
+        blockEnd,
+      );
+    }
 
     updateData.startTime = startTime;
     updateData.endTime = endTime;
@@ -1429,6 +1454,71 @@ export class OrdersService {
       `${parts.hour}:${parts.minute}`,
       durationMinutes,
     );
+  }
+
+  private async assertTechnicianShopSchedule(
+    technicianId: number,
+    orderAddress: string,
+    startTime: Date,
+    endTime: Date,
+  ) {
+    const technician = await this.prisma.technician.findUnique({
+      where: { id: technicianId },
+      select: { shopAddresses: true },
+    });
+    if (!technician) throw new NotFoundException('美甲师不存在');
+    let shops: any[] = [];
+    try {
+      shops = JSON.parse(technician.shopAddresses || '[]');
+    } catch {
+      throw new BadRequestException('店铺营业时间配置异常');
+    }
+    const normalizedAddress = orderAddress.replace(/\s+/g, '');
+    const shop = shops.find((item) => {
+      const fullAddress = [
+        item.province,
+        item.city,
+        item.district,
+        item.detailAddress,
+        item.doorInfo,
+      ]
+        .filter(Boolean)
+        .join('')
+        .replace(/\s+/g, '');
+      return (
+        item.enabled !== false &&
+        (fullAddress === normalizedAddress ||
+          (item.detailAddress &&
+            normalizedAddress.includes(String(item.detailAddress).replace(/\s+/g, ''))))
+      );
+    });
+    if (!shop) throw new BadRequestException('原预约门店已失效，请重新选择门店');
+    const parts = getBusinessDateTimeParts(startTime);
+    const weekday = new Date(
+      `${parts.year}-${parts.month}-${parts.day}T00:00:00`,
+    ).getDay();
+    const hours = (shop.businessHours || []).find(
+      (item: any) => item.weekday === weekday,
+    );
+    if (!hours || hours.closed) {
+      throw new BadRequestException('该日期店铺休息，无法预约');
+    }
+    const toMinutes = (value: string) => {
+      const [hour, minute] = String(value || '').split(':').map(Number);
+      return hour * 60 + minute;
+    };
+    const bookingStart = Number(parts.hour) * 60 + Number(parts.minute);
+    const duration = Math.ceil((endTime.getTime() - startTime.getTime()) / 60000);
+    const businessStart = toMinutes(hours.start);
+    const businessEnd = toMinutes(hours.end);
+    if (
+      !Number.isFinite(businessStart) ||
+      !Number.isFinite(businessEnd) ||
+      bookingStart < businessStart ||
+      bookingStart + duration > businessEnd
+    ) {
+      throw new BadRequestException('完整服务时间不在店铺营业时间内');
+    }
   }
 
   private generateRevenueNo(): string {

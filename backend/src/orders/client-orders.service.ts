@@ -266,6 +266,7 @@ export class ClientOrdersService {
         client,
         binding.technician,
         dto,
+        totalDurationMinutes,
       );
     const startTime = this.buildStartTime(dto.serviceDate, dto.startTime);
     const endTime = new Date(
@@ -854,29 +855,62 @@ export class ClientOrdersService {
       throw new BadRequestException('当前订单状态不支持修改');
     }
 
-    const address = await this.prisma.clientAddress.findFirst({
-      where: {
-        id: dto.addressId,
-        clientId: clientUserId,
-      },
-    });
-
-    if (!address) {
-      throw new NotFoundException('地址不存在');
-    }
-
     const startTime = this.buildStartTime(dto.serviceDate, dto.startTime);
     if (Number.isNaN(startTime.getTime())) {
       throw new BadRequestException('预约时间无效');
     }
     const previousDuration =
       new Date(order.endTime).getTime() - new Date(order.startTime).getTime();
+    const durationMinutes =
+      previousDuration > 0 ? Math.ceil(previousDuration / 60000) : 120;
     assertWithinServiceSchedule(
       order.technician?.serviceSchedule ?? null,
       dto.serviceDate,
       dto.startTime,
-      previousDuration > 0 ? Math.ceil(previousDuration / 60000) : 120,
+      durationMinutes,
     );
+
+    const isShopOrder = ['shop', '到店美甲'].includes(order.serviceType || '');
+    let orderAddress = order.address || '';
+    let addressId = order.addressId;
+    if (isShopOrder) {
+      const shops = this.normalizeShopAddresses(order.technician?.shopAddresses);
+      const normalizedAddress = orderAddress.replace(/\s+/g, '');
+      const matchedShop = shops.find((shop) => {
+        const fullAddress = [
+          shop.province,
+          shop.city,
+          shop.district,
+          shop.detailAddress,
+          shop.doorInfo,
+        ]
+          .filter(Boolean)
+          .join('')
+          .replace(/\s+/g, '');
+        return (
+          fullAddress === normalizedAddress ||
+          (shop.detailAddress &&
+            normalizedAddress.includes(shop.detailAddress.replace(/\s+/g, '')))
+        );
+      });
+      if (!matchedShop) {
+        throw new BadRequestException('原预约门店已失效，请重新选择门店');
+      }
+      this.assertShopOrderAvailability(
+        matchedShop,
+        dto.serviceDate,
+        dto.startTime,
+        durationMinutes,
+      );
+    } else {
+      if (!dto.addressId) throw new BadRequestException('请选择上门服务地址');
+      const address = await this.prisma.clientAddress.findFirst({
+        where: { id: dto.addressId, clientId: clientUserId },
+      });
+      if (!address) throw new NotFoundException('地址不存在');
+      addressId = address.id;
+      orderAddress = this.formatAddress(address);
+    }
     const endTime =
       previousDuration > 0
         ? new Date(startTime.getTime() + previousDuration)
@@ -885,8 +919,6 @@ export class ClientOrdersService {
       previousDuration > 0
         ? endTime
         : new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
-    const orderAddress = this.formatAddress(address);
-
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
       await this.assertNoBlockedConflict(
         tx,
@@ -899,7 +931,7 @@ export class ClientOrdersService {
       const updated = await tx.order.update({
         where: { id },
         data: {
-          addressId: address.id,
+          addressId,
           startTime,
           endTime,
           address: orderAddress,
@@ -1684,6 +1716,7 @@ export class ClientOrdersService {
     shopAddress: ShopAddressConfig,
     serviceDate: string,
     startTime: string,
+    durationMinutes = 120,
   ) {
     if (shopAddress.enabled === false) {
       throw new BadRequestException('该店铺当前已关闭，暂不可预约');
@@ -1709,8 +1742,13 @@ export class ClientOrdersService {
       throw new BadRequestException('该店铺营业时间配置异常，请联系美甲师');
     }
 
-    if (bookingMinutes < startMinutes || bookingMinutes >= endMinutes) {
-      throw new BadRequestException('预约时间不在店铺营业时间内');
+    if (
+      !Number.isFinite(durationMinutes) ||
+      durationMinutes <= 0 ||
+      bookingMinutes < startMinutes ||
+      bookingMinutes + durationMinutes > endMinutes
+    ) {
+      throw new BadRequestException('完整服务时间不在店铺营业时间内');
     }
   }
 
@@ -1787,6 +1825,7 @@ export class ClientOrdersService {
       city?: string | null;
     },
     dto: CreateClientOrderDto,
+    durationMinutes: number,
   ) {
     if (dto.serviceType === '上门美甲') {
       if (!dto.addressId) {
@@ -1836,6 +1875,7 @@ export class ClientOrdersService {
         matchedShopAddress,
         dto.serviceDate,
         dto.startTime,
+        durationMinutes,
       );
 
       const orderAddress = [
@@ -1866,6 +1906,7 @@ export class ClientOrdersService {
         endTime: { gte: now },
       },
       select: {
+        orderId: true,
         startTime: true,
         endTime: true,
       },

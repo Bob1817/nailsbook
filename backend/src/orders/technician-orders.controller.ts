@@ -103,6 +103,12 @@ export class TechnicianOrdersController {
     return this.ordersService.findIncomeCalendar(request.user.technicianId);
   }
 
+  @Get('blocked-slots')
+  @ApiOperation({ summary: '获取当前美甲师的预约占用时间段' })
+  findBlockedSlots(@Req() request: { user: { technicianId: number } }) {
+    return this.ordersService.findBlockedSlots(request.user.technicianId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: '获取订单详情' })
   @ApiParam({ name: 'id', type: String, description: '订单ID' })

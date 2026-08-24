@@ -24,10 +24,10 @@ describe('assertWithinServiceSchedule', () => {
     ).toThrow('工作日');
   });
 
-  it('开始时间在可预约范围内时，允许服务持续时间跨越下班点', () => {
+  it('拒绝服务持续时间跨越下班点', () => {
     expect(() =>
       assertWithinServiceSchedule(schedule, '2026-08-03', '17:00', 120),
-    ).not.toThrow();
+    ).toThrow('完整服务时间');
     expect(() =>
       assertWithinServiceSchedule(schedule, '2026-08-03', '18:00', 30),
     ).toThrow('工作时间');
@@ -39,7 +39,7 @@ describe('assertWithinServiceSchedule', () => {
     ).not.toThrow();
     expect(() =>
       assertWithinServiceSchedule(null, '2026-08-03', '20:00', 120),
-    ).not.toThrow();
+    ).toThrow('完整服务时间');
     expect(() =>
       assertWithinServiceSchedule(null, '2026-08-03', '21:00', 30),
     ).toThrow('工作时间');

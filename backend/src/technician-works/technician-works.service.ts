@@ -966,9 +966,19 @@ export class TechnicianWorksService {
         durationMinutes: true,
       },
     });
+    const quantities = selectedServiceIds.reduce(
+      (result, servicePublicId) => {
+        result.set(servicePublicId, (result.get(servicePublicId) ?? 0) + 1);
+        return result;
+      },
+      new Map<string, number>(),
+    );
     const lines = buildServiceSnapshotLines(
       services,
-      selectedServiceIds.map((servicePublicId) => ({ servicePublicId })),
+      Array.from(quantities, ([servicePublicId, quantity]) => ({
+        servicePublicId,
+        quantity,
+      })),
     );
     const summary = summarizeSnapshotLines(lines);
     return {
