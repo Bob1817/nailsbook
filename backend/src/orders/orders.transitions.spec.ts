@@ -32,9 +32,13 @@ describe('OrdersService 流转成功路径', () => {
         upsert: jest.fn().mockResolvedValue({ id: 20 }),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
+      paymentOrder: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      orderReminder: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
       revenue: {
         findUnique: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockResolvedValue({ id: 9, amount: 200 }),
+        upsert: jest.fn().mockResolvedValue({ id: 9, amount: 200 }),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
       serviceRecord: { create: jest.fn().mockResolvedValue({ id: 1 }) },
       contentPublicationTask: { upsert: jest.fn().mockResolvedValue({ id: 1 }) },
@@ -156,15 +160,15 @@ describe('OrdersService 流转成功路径', () => {
         data: expect.objectContaining({ status: 'completed' }),
       }),
     );
-    expect(prisma.revenue.create).toHaveBeenCalledWith(
+    expect(prisma.revenue.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ amount: 200, orderId: 1 }),
+        create: expect.objectContaining({ amount: 200, orderId: 1 }),
       }),
     );
     expect(res).toEqual({ id: 9, amount: 200 });
   });
 
-  it('complete：已有收入记录 → BadRequest（防重复入账）', async () => {
+  it('complete：已有定金收入记录时更新为实际收入', async () => {
     jest.spyOn(service, 'findOne').mockResolvedValue({
       id: 1,
       status: 'in_progress',
@@ -173,10 +177,12 @@ describe('OrdersService 流转成功路径', () => {
     } as never);
     prisma.revenue.findUnique.mockResolvedValue({ id: 9 });
 
-    await expect(service.complete(1)).rejects.toBeInstanceOf(
-      BadRequestException,
+    await service.complete(1, { actualAmount: 200 });
+    expect(prisma.revenue.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: expect.objectContaining({ amount: 200, status: 'confirmed' }),
+      }),
     );
-    expect(prisma.order.update).not.toHaveBeenCalled();
   });
 
   it('complete：并发请求未取得状态流转权时不生成收入', async () => {
@@ -193,6 +199,79 @@ describe('OrdersService 流转成功路径', () => {
     await expect(service.complete(1)).rejects.toThrow(
       '该订单已完成，无需重复处理',
     );
-    expect(prisma.revenue.create).not.toHaveBeenCalled();
+    expect(prisma.revenue.upsert).not.toHaveBeenCalled();
+  });
+
+  it('cancel：进行中已付定金选择不退时，定金确认为收入', async () => {
+    jest.spyOn(service, 'findOne').mockResolvedValue({
+      id: 1,
+      status: 'in_progress',
+      technicianId: 7,
+      customerId: 3,
+      clientUserId: null,
+      isDepositPaid: true,
+      depositAmount: 50,
+      paidAmount: 50,
+      depositConfirmedAt: new Date('2026-08-01T00:00:00Z'),
+    } as never);
+
+    await service.cancel(1, '客户取消', false);
+
+    expect(prisma.order.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ depositStatus: 'forfeited' }),
+      }),
+    );
+    expect(prisma.revenue.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ amount: 50, status: 'confirmed' }),
+      }),
+    );
+  });
+
+  it('cancel：进行中已付定金选择退还时，定金收入作废', async () => {
+    jest.spyOn(service, 'findOne').mockResolvedValue({
+      id: 1,
+      status: 'in_progress',
+      technicianId: 7,
+      customerId: 3,
+      clientUserId: null,
+      isDepositPaid: true,
+      depositAmount: 50,
+      paidAmount: 50,
+    } as never);
+
+    await service.cancel(1, undefined, true);
+
+    expect(prisma.order.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          depositStatus: 'refunded',
+          isDepositPaid: false,
+        }),
+      }),
+    );
+    expect(prisma.revenue.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ amount: 0, status: 'voided' }),
+      }),
+    );
+  });
+
+  it('已完成预约可单独修改实际支付金额和收入快照', async () => {
+    jest.spyOn(service, 'findOneForTechnician').mockResolvedValue({
+      id: 1,
+      status: 'completed',
+    } as never);
+
+    await service.updateActualAmount(1, 7, 688);
+
+    expect(prisma.order.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { actualAmount: 688 },
+    });
+    expect(prisma.revenue.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ amount: 688 }) }),
+    );
   });
 });

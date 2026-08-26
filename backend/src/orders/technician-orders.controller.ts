@@ -25,6 +25,8 @@ import { CreateTechnicianOrderDto } from './dto/create-technician-order.dto';
 import { ReviewOrderDto } from './dto/review-order.dto';
 import { UpdateTechnicianOrderDto } from './dto/update-technician-order.dto';
 import { CompleteServiceDto } from './dto/complete-service.dto';
+import { CancelOrderDto } from './dto/cancel-order.dto';
+import { UpdateActualAmountDto } from './dto/update-actual-amount.dto';
 
 @ApiTags('美甲师-订单')
 @ApiBearerAuth()
@@ -247,11 +249,30 @@ export class TechnicianOrdersController {
   async cancel(
     @Req() request: { user: { technicianId: number } },
     @Param('id') id: string,
+    @Body() body: CancelOrderDto,
   ) {
     await this.ordersService.findOneForTechnician(
       parseInt(id, 10),
       request.user.technicianId,
     );
-    return this.ordersService.cancel(parseInt(id, 10));
+    return this.ordersService.cancel(
+      parseInt(id, 10),
+      body?.reason,
+      body?.refundDeposit,
+    );
+  }
+
+  @Patch(':id/actual-amount')
+  @ApiOperation({ summary: '修改已完成订单的实际支付金额' })
+  async updateActualAmount(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id') id: string,
+    @Body() body: UpdateActualAmountDto,
+  ) {
+    return this.ordersService.updateActualAmount(
+      parseInt(id, 10),
+      request.user.technicianId,
+      body.actualAmount,
+    );
   }
 }

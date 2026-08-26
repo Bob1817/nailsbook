@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsInt,
   IsNumber,
   IsOptional,
@@ -55,4 +56,9 @@ export class ReviewOrderDto {
   @IsNumber()
   @Min(0)
   depositAmount?: number;
+
+  @ApiPropertyOptional({ description: '定金是否已确认支付' })
+  @IsOptional()
+  @IsBoolean()
+  isDepositPaid?: boolean;
 }

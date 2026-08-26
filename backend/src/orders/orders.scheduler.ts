@@ -5,7 +5,6 @@ import { ChatGateway } from '../chat/chat.gateway';
 import { PushService } from '../notifications/push.service';
 import * as crypto from 'crypto';
 import { ReferralQualificationService } from '../referrals/referral-qualification.service';
-import { revenueSnapshot } from './order-accounting';
 import { WechatSubscribeMessagesService } from '../wechat-subscribe-messages/wechat-subscribe-messages.service';
 
 @Injectable()
@@ -540,22 +539,41 @@ export class OrdersScheduler {
         let conversationId: number | null = null;
 
         await this.prisma.$transaction(async (tx) => {
+          const actualAmount = Math.max(
+            0,
+            order.actualAmount ??
+              (order.quotePrice ?? 0) - (order.fundDiscountAmount ?? 0),
+          );
           await tx.order.update({
             where: { id: order.id },
-            data: { status: 'completed', completedAt: new Date() },
+            data: {
+              status: 'completed',
+              completedAt: now,
+              actualAmount,
+              bookingPhase: 'finished',
+            },
           });
 
           if (!revenueExists) {
-            const accounting = revenueSnapshot(order);
             await tx.revenue.create({
               data: {
                 revenueNo: `RV${Date.now()}${crypto.randomBytes(2).toString('hex').toUpperCase()}`,
                 orderId: order.id,
                 technicianId: order.technicianId,
                 customerId: order.customerId,
-                amount: accounting.amount,
-                recognizedAt: new Date(),
-                status: accounting.status,
+                amount: actualAmount,
+                recognizedAt: now,
+                status: 'confirmed',
+              },
+            });
+          } else {
+            await tx.revenue.update({
+              where: { orderId: order.id },
+              data: {
+                amount: actualAmount,
+                recognizedAt: now,
+                status: 'confirmed',
+                voidedAt: null,
               },
             });
           }

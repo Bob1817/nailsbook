@@ -71,22 +71,37 @@ describe('TechnicianInsightsService', () => {
         { customerId: 13, _count: { id: 4 } },
       ]);
     prisma.customer.count.mockResolvedValueOnce(20).mockResolvedValueOnce(5);
-    prisma.revenue.aggregate.mockResolvedValue({
-      _sum: { amount: 1200 },
-      _count: { id: 4 },
-    });
+    prisma.order.findMany
+      .mockResolvedValueOnce([
+        {
+          status: 'completed',
+          actualAmount: null,
+          quotePrice: 1200,
+          fundDiscountAmount: 0,
+          depositAmount: 100,
+          paidAmount: 100,
+        },
+        {
+          status: 'pending_shop',
+          actualAmount: null,
+          quotePrice: 500,
+          fundDiscountAmount: 0,
+          depositAmount: 50,
+          paidAmount: 50,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          customerId: 11,
+          completedAt: new Date('2026-07-01T00:00:00Z'),
+          customer: { name: 'Alice' },
+        },
+      ]);
     prisma.serviceReview.aggregate.mockResolvedValue({
       _avg: { rating: 4.75 },
       _count: { id: 8 },
     });
     prisma.nailWork.count.mockResolvedValue(10);
-    prisma.order.findMany.mockResolvedValue([
-      {
-        customerId: 11,
-        completedAt: new Date('2026-07-01T00:00:00Z'),
-        customer: { name: 'Alice' },
-      },
-    ]);
     prisma.referralRelation.count
       .mockResolvedValueOnce(5)
       .mockResolvedValueOnce(2);
@@ -120,8 +135,8 @@ describe('TechnicianInsightsService', () => {
     );
 
     expect(result.revenue).toEqual({
-      monthConfirmed: 1200,
-      averageTicket: 300,
+      monthConfirmed: 1250,
+      averageTicket: 625,
     });
     expect(result.customers).toEqual({
       total: 20,
@@ -179,6 +194,55 @@ describe('TechnicianInsightsService', () => {
     for (const call of prisma.rewardLedger.aggregate.mock.calls) {
       expect(call[0].where.account.technicianId).toBe(7);
     }
+  });
+
+  it('定金先计入确认收入，完成后按订单总额计入且不重复累计定金', async () => {
+    prisma.order.count.mockResolvedValue(0);
+    prisma.order.groupBy.mockResolvedValue([]);
+    prisma.customer.count.mockResolvedValue(0);
+    prisma.order.findMany
+      .mockResolvedValueOnce([
+        {
+          status: 'pending_shop',
+          actualAmount: null,
+          quotePrice: 798,
+          fundDiscountAmount: 0,
+          depositAmount: 50,
+          paidAmount: 50,
+        },
+        {
+          status: 'completed',
+          actualAmount: null,
+          quotePrice: 998,
+          fundDiscountAmount: 100,
+          depositAmount: 50,
+          paidAmount: 50,
+        },
+        {
+          status: 'cancelled',
+          actualAmount: null,
+          quotePrice: 398,
+          fundDiscountAmount: 0,
+          depositAmount: 30,
+          paidAmount: 30,
+        },
+      ])
+      .mockResolvedValueOnce([]);
+    prisma.serviceReview.aggregate.mockResolvedValue({
+      _avg: { rating: null },
+      _count: { id: 0 },
+    });
+    prisma.nailWork.count.mockResolvedValue(0);
+
+    const result = await service.getOverview(
+      7,
+      new Date('2026-07-29T04:00:00.000Z'),
+    );
+
+    expect(result.revenue).toEqual({
+      monthConfirmed: 978,
+      averageTicket: 326,
+    });
   });
 
   it('零数据时不伪造客单价、复购率或评分', async () => {

@@ -14,7 +14,6 @@ import { BookingMutexService } from './booking-mutex.service';
 import { ReferralQualificationService } from '../referrals/referral-qualification.service';
 import { RewardFundService } from '../referrals/reward-fund.service';
 import { assertWithinServiceSchedule } from './order-work-schedule';
-import { revenueSnapshot } from './order-accounting';
 import { throwIfBookingSlotConflict } from './booking-conflict';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import {
@@ -50,7 +49,7 @@ export const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   pending_client_confirm: ['pending_confirm', 'cancelled', 'expired'],
   pending_home: ['in_progress', 'cancelled'],
   pending_shop: ['in_progress', 'cancelled'],
-  in_progress: ['completed'],
+  in_progress: ['completed', 'cancelled'],
   completed: [],
   cancelled: [],
   // 过期后可「重新发起」恢复到过期前的创建流程状态
@@ -456,8 +455,11 @@ export class OrdersService {
     if (dto.note !== undefined) updateData.remark = dto.note;
     if (dto.depositAmount !== undefined)
       updateData.depositAmount = dto.depositAmount;
-    if (dto.isDepositPaid !== undefined)
+    if (dto.isDepositPaid !== undefined) {
       updateData.isDepositPaid = dto.isDepositPaid;
+      updateData.depositStatus = dto.isDepositPaid ? 'paid' : 'pending';
+      updateData.depositConfirmedAt = dto.isDepositPaid ? new Date() : null;
+    }
 
     if (!timeChanged) {
       return this.prisma.order.update({
@@ -632,6 +634,9 @@ export class OrdersService {
           expectedDate: startTime,
           expectedTimeSlot: dto.startTime,
           depositAmount: dto.depositAmount ?? 0,
+          isDepositPaid: dto.isDepositPaid ?? false,
+          depositStatus: dto.isDepositPaid ? 'paid' : 'pending',
+          depositConfirmedAt: dto.isDepositPaid ? new Date() : null,
         },
         include: {
           technician: { select: { id: true, name: true, phone: true } },
@@ -877,38 +882,32 @@ export class OrdersService {
     if (!canTransition(order.status as OrderStatus, 'completed')) {
       throw new BadRequestException('当前订单状态不支持完成');
     }
-    if (order.paymentStatus !== 'paid') {
-      throw new BadRequestException('请先通知客户支付剩余尾款');
-    }
     if (
       dto &&
-      (!dto.actualStartTime ||
-        !dto.actualEndTime ||
-        dto.actualAmount == null ||
-        dto.materialCost == null)
+      ((dto.actualStartTime && !dto.actualEndTime) ||
+        (!dto.actualStartTime && dto.actualEndTime))
     )
-      throw new BadRequestException('请完整填写实际时间、实收金额和材料成本');
-
-    const revenueExists = await this.prisma.revenue.findUnique({
-      where: { orderId: id },
-    });
-
-    if (revenueExists) {
-      throw new BadRequestException('该订单已生成收入记录');
-    }
+      throw new BadRequestException('请同时填写实际开始和结束时间');
 
     let systemMessage: any = null;
     let conversationId: number | null = null;
 
     const actualStart = dto
-      ? new Date(dto.actualStartTime)
+      ? dto.actualStartTime
+        ? new Date(dto.actualStartTime)
+        : order.confirmedStartTime || order.startTime
       : order.confirmedStartTime || order.startTime;
     const actualEnd = dto
-      ? new Date(dto.actualEndTime)
+      ? dto.actualEndTime
+        ? new Date(dto.actualEndTime)
+        : new Date()
       : order.confirmedEndTime || order.endTime || new Date();
     if (actualEnd <= actualStart)
       throw new BadRequestException('实际结束时间必须晚于开始时间');
-    const actualAmount = dto?.actualAmount ?? order.paidAmount ?? 0,
+    const actualAmount =
+        dto?.actualAmount ??
+        order.actualAmount ??
+        Math.max(0, (order.quotePrice ?? 0) - (order.fundDiscountAmount ?? 0)),
       materialCost = dto?.materialCost ?? 0;
     const service = order.serviceId
       ? await this.prisma.service.findUnique({
@@ -1024,21 +1023,18 @@ export class OrdersService {
           suggestedMaintenanceAt,
         },
       });
-      const accounting = revenueSnapshot({
-        ...order,
-        paidAmount: actualAmount,
-        paymentStatus: actualAmount > 0 ? 'paid' : order.paymentStatus,
-      });
-      const revenue = await tx.revenue.create({
-        data: {
+      const revenue = await tx.revenue.upsert({
+        where: { orderId: id },
+        create: {
           revenueNo: this.generateRevenueNo(),
           orderId: id,
           technicianId: order.technicianId,
           customerId: order.customerId,
-          amount: accounting.amount,
+          amount: actualAmount,
           recognizedAt: actualEnd,
-          status: accounting.status,
+          status: 'confirmed',
         },
+        update: { amount: actualAmount, recognizedAt: actualEnd, status: 'confirmed' },
       });
 
       if (this.referralQualification) {
@@ -1105,7 +1101,11 @@ export class OrdersService {
     return revenue;
   }
 
-  async cancel(id: number, cancelReason?: string) {
+  async cancel(
+    id: number,
+    cancelReason?: string,
+    refundDeposit?: boolean,
+  ) {
     const order = await this.findOne(id);
 
     const cancellableStatuses: OrderStatus[] = [
@@ -1115,9 +1115,13 @@ export class OrdersService {
       'pending_client_confirm',
       'pending_home',
       'pending_shop',
+      'in_progress',
     ];
     if (!cancellableStatuses.includes(order.status as OrderStatus)) {
       throw new BadRequestException('当前订单状态不支持取消');
+    }
+    if (order.isDepositPaid && refundDeposit == null) {
+      throw new BadRequestException('请选择是否退还定金');
     }
 
     let systemMessages: any[] = [];
@@ -1161,8 +1165,38 @@ export class OrdersService {
         data: {
           cancelledAt: new Date(),
           cancelReason: cancelReason ?? order.cancelReason ?? null,
+          ...(order.isDepositPaid
+            ? {
+                depositStatus: refundDeposit ? 'refunded' : 'forfeited',
+                ...(refundDeposit ? { isDepositPaid: false } : {}),
+              }
+            : {}),
         },
       });
+      if (order.isDepositPaid) {
+        const depositAmount = Math.max(
+          0,
+          order.depositAmount ?? order.paidAmount ?? 0,
+        );
+        await tx.revenue.upsert({
+          where: { orderId: id },
+          create: {
+            revenueNo: this.generateRevenueNo(),
+            orderId: id,
+            technicianId: order.technicianId,
+            customerId: order.customerId,
+            amount: refundDeposit ? 0 : depositAmount,
+            recognizedAt: order.depositConfirmedAt ?? new Date(),
+            status: refundDeposit ? 'voided' : 'confirmed',
+            voidedAt: refundDeposit ? new Date() : null,
+          },
+          update: {
+            amount: refundDeposit ? 0 : depositAmount,
+            status: refundDeposit ? 'voided' : 'confirmed',
+            voidedAt: refundDeposit ? new Date() : null,
+          },
+        });
+      }
       if (order.clientUserId) {
         const preview = '订单已取消';
         const conversation = await tx.conversation.upsert({
@@ -1226,6 +1260,28 @@ export class OrdersService {
     }
 
     return updated;
+  }
+
+  async updateActualAmount(
+    id: number,
+    technicianId: number,
+    actualAmount: number,
+  ) {
+    const order = await this.findOneForTechnician(id, technicianId);
+    if (order.status !== 'completed') {
+      throw new BadRequestException('仅已完成预约可修改实际支付金额');
+    }
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.order.update({
+        where: { id },
+        data: { actualAmount },
+      });
+      await tx.revenue.updateMany({
+        where: { orderId: id },
+        data: { amount: actualAmount, status: 'confirmed', voidedAt: null },
+      });
+      return updated;
+    });
   }
 
   // 重新发起已过期预约：仅重选预约时间，其余信息保留，恢复过期前状态。

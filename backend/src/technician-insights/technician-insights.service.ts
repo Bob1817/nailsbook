@@ -36,6 +36,25 @@ function weekKey(date: Date) {
   return local.toISOString().slice(0, 10);
 }
 
+function recognizedOrderAmount(order: {
+  status: string;
+  actualAmount: number | null;
+  quotePrice: number | null;
+  fundDiscountAmount: number;
+  depositAmount: number | null;
+  paidAmount: number;
+}) {
+  const payable = Math.max(
+    0,
+    order.actualAmount ??
+      (order.quotePrice ?? 0) - order.fundDiscountAmount,
+  );
+  if (order.status === 'completed') return payable;
+
+  const deposit = Math.max(0, order.depositAmount ?? order.paidAmount);
+  return payable > 0 ? Math.min(deposit, payable) : deposit;
+}
+
 @Injectable()
 export class TechnicianInsightsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -52,7 +71,7 @@ export class TechnicianInsightsService {
       totalCustomers,
       newCustomers,
       completedByCustomer,
-      monthRevenue,
+      recognizedOrders,
       rating,
       works,
       completedServiceDates,
@@ -98,14 +117,34 @@ export class TechnicianInsightsService {
         where: { technicianId, status: 'completed' },
         _count: { id: true },
       }),
-      this.prisma.revenue.aggregate({
+      this.prisma.order.findMany({
         where: {
           technicianId,
-          status: 'confirmed',
-          recognizedAt: { gte: monthStart, lt: nextMonthStart },
+          OR: [
+            {
+              status: 'completed',
+              completedAt: { gte: monthStart, lt: nextMonthStart },
+            },
+            {
+              isDepositPaid: true,
+              depositConfirmedAt: { gte: monthStart, lt: nextMonthStart },
+              status: { notIn: ['completed', 'cancelled', 'expired'] },
+            },
+            {
+              status: 'cancelled',
+              depositStatus: 'forfeited',
+              cancelledAt: { gte: monthStart, lt: nextMonthStart },
+            },
+          ],
         },
-        _sum: { amount: true },
-        _count: { id: true },
+        select: {
+          status: true,
+          actualAmount: true,
+          quotePrice: true,
+          fundDiscountAmount: true,
+          depositAmount: true,
+          paidAmount: true,
+        },
       }),
       this.prisma.serviceReview.aggregate({
         where: { technicianId },
@@ -187,8 +226,11 @@ export class TechnicianInsightsService {
     const repeatCustomers = completedByCustomer.filter(
       (item) => item._count.id >= 2,
     ).length;
-    const confirmedRevenue = monthRevenue._sum.amount || 0;
-    const revenueOrders = monthRevenue._count.id;
+    const confirmedRevenue = recognizedOrders.reduce(
+      (sum, order) => sum + recognizedOrderAmount(order),
+      0,
+    );
+    const revenueOrders = recognizedOrders.length;
     const byStatus = Object.fromEntries(
       orderStatuses.map((item) => [item.status, item._count.id]),
     );

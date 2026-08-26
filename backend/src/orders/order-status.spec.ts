@@ -27,8 +27,8 @@ describe('订单状态机 canTransition（纯规则）', () => {
   it('非法跨步：pending_quote → completed 拒绝', () => {
     expect(canTransition('pending_quote', 'completed')).toBe(false);
   });
-  it('进行中不可直接取消（不在可转移表）', () => {
-    expect(canTransition('in_progress', 'cancelled')).toBe(false);
+  it('进行中可由美甲师确认取消', () => {
+    expect(canTransition('in_progress', 'cancelled')).toBe(true);
   });
   it('未知状态 → false', () => {
     expect(canTransition('foo' as never, 'completed')).toBe(false);
@@ -48,15 +48,6 @@ describe('OrdersService 状态守卫（美甲师端）', () => {
     await expect(service.confirm(1)).rejects.toBeInstanceOf(BadRequestException);
   });
 
-  it('complete：尾款未支付 → BadRequest', async () => {
-    jest.spyOn(service, 'findOne').mockResolvedValue({
-      id: 1,
-      status: 'in_progress',
-      paymentStatus: 'partial',
-    } as never);
-    await expect(service.complete(1)).rejects.toThrow('请先通知客户支付剩余尾款');
-  });
-
   it('complete：未到可完成状态(pending_quote) → BadRequest', async () => {
     jest
       .spyOn(service, 'findOne')
@@ -64,13 +55,6 @@ describe('OrdersService 状态守卫（美甲师端）', () => {
     await expect(service.complete(1)).rejects.toBeInstanceOf(
       BadRequestException,
     );
-  });
-
-  it('cancel：进行中(in_progress)不可取消 → BadRequest', async () => {
-    jest
-      .spyOn(service, 'findOne')
-      .mockResolvedValue({ id: 1, status: 'in_progress' } as never);
-    await expect(service.cancel(1)).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('review：非待报价(pending_confirm)不支持报价 → BadRequest', async () => {
