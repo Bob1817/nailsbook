@@ -98,12 +98,12 @@
     <!-- + 下拉菜单 -->
     <view wx:if="{{showAddMenu}}" class="add-menu">
       <view class="add-menu-item" catchtap="onPickImage">
-        <view class="add-menu-icon menu-icon-image"></view>
+        <image class="add-menu-icon" src="/static/icons/image.svg" mode="aspectFit" />
         <text class="add-menu-text">上传图片</text>
       </view>
       <view class="add-menu-divider"></view>
       <view class="add-menu-item" catchtap="onSendBooking">
-        <view class="add-menu-icon menu-icon-booking"></view>
+        <image class="add-menu-icon" src="/static/icons/calendar.svg" mode="aspectFit" />
         <text class="add-menu-text">发送预约</text>
       </view>
       <view class="add-menu-arrow"></view>

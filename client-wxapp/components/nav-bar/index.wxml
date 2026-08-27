@@ -3,7 +3,10 @@
 
     <!-- 左侧：返回按钮 -->
     <view class="nav-left">
-      <navigator wx:if="{{showBack && backUrl}}" class="back-btn" url="{{backUrl}}" open-type="redirect" hover-class="none" bindtap="onBack">
+      <view wx:if="{{showBack && customBack}}" class="back-btn" hover-class="none" bindtap="onBack">
+        <image class="back-chevron" src="/static/icons/nav-back.svg" mode="aspectFit" />
+      </view>
+      <navigator wx:elif="{{showBack && backUrl}}" class="back-btn" url="{{backUrl}}" open-type="redirect" hover-class="none" bindtap="onBack">
         <image class="back-chevron" src="/static/icons/nav-back.svg" mode="aspectFit" />
       </navigator>
       <navigator wx:elif="{{showBack}}" class="back-btn" open-type="navigateBack" delta="1" hover-class="none" bindtap="onBack">

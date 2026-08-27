@@ -4,8 +4,8 @@ import {
   ExecutionContext,
   CallHandler,
 } from '@nestjs/common';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { defer, Observable, throwError } from 'rxjs';
+import { catchError, concatMap } from 'rxjs/operators';
 import { Reflector } from '@nestjs/core';
 import { PrismaService } from '../common/prisma/prisma.service';
 
@@ -32,36 +32,42 @@ export class OperationLogInterceptor implements NestInterceptor {
     const user = request.user;
     const params = request.params;
 
-    return next.handle().pipe(
-      tap((response) => {
-        if (user && user.userId) {
-          let targetId: number | undefined;
-          if (params.id) {
-            targetId = parseInt(params.id, 10);
-          } else if (response && response.id) {
-            targetId = response.id;
-          }
+    if (!user?.userId) return next.handle();
 
-          this.prisma.operationLog
-            .create({
-              data: {
-                adminUserId: user.userId,
-                module: options.module,
-                action: options.action,
-                targetType: options.targetType,
-                targetId,
-                beforeData: undefined,
-                afterData:
-                  options.logResponse !== false && response
-                    ? JSON.stringify(response)
-                    : undefined,
-                ip: request.ip,
-                userAgent: request.headers['user-agent'],
-              },
-            })
-            .catch(() => {});
-        }
+    // Persist intent before executing the mutation: an unavailable audit store
+    // must not silently allow an unrecorded privileged operation.
+    return defer(() => this.prisma.operationLog.create({
+      data: {
+        adminUserId: user.userId,
+        module: options.module,
+        action: options.action,
+        targetType: options.targetType,
+        targetId: params.id ? parseInt(params.id, 10) : undefined,
+        afterData: JSON.stringify({ outcome: 'started' }),
+        ip: request.ip,
+        userAgent: request.headers['user-agent'],
+      },
+    })).pipe(concatMap((log) => next.handle().pipe(
+      concatMap(async (response) => {
+        await this.prisma.operationLog.update({
+          where: { id: log.id },
+          data: {
+            targetId: params.id ? parseInt(params.id, 10) : response?.id,
+            afterData: JSON.stringify({
+              outcome: 'succeeded',
+              ...(options.logResponse !== false ? { response } : {}),
+            }),
+          },
+        });
+        return response;
       }),
-    );
+      catchError((error) => {
+        // The persisted intent remains even if updating the outcome fails.
+        return defer(() => this.prisma.operationLog.update({
+          where: { id: log.id },
+          data: { afterData: JSON.stringify({ outcome: 'failed_or_unconfirmed' }) },
+        })).pipe(concatMap(() => throwError(() => error)));
+      }),
+    )));
   }
 }

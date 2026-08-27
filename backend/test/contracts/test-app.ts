@@ -7,6 +7,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import * as jwt from 'jsonwebtoken';
 import { AvatarUrlInterceptor } from '../../src/common/avatar-url.interceptor';
 import { PrismaService } from '../../src/common/prisma/prisma.service';
+import { TRUSTED_PROXY_ADDRESSES } from '../../src/common/trusted-proxy';
 
 export interface ContractTestApp {
   app: INestApplication;
@@ -95,6 +96,8 @@ export async function createContractTestApp(
 
     if (options.applyHttpConfig ?? true) {
       mkdirSync(uploadsPath, { recursive: true });
+
+      app.set('trust proxy', TRUSTED_PROXY_ADDRESSES);
 
       app.enableCors({
         origin: true,

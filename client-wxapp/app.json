@@ -15,7 +15,8 @@
         "ai-photo/index", "public-work/index", "create-order/index", "orders/index", "order-detail/index",
         "designs/index", "create-design/index", "customize-design/index", "design-detail/index", "chat/index",
         "chat-detail/index", "profile/index", "settings/index", "my-favorites/index", "my-likes/index",
-        "feedback/index", "manual/index", "agreement/index", "help-feedback/index"
+        "feedback/index", "manual/index", "agreement/index", "help-feedback/index",
+        "shop-guidance/index"
       ]
     },
     {
@@ -26,8 +27,9 @@
         "works/index", "work-edit/index", "work-detail/index", "design-requests/index", "services/index",
         "schedule/index", "all-itineraries/index", "all-bookings/index", "chat/index", "chat-detail/index",
         "binding-applications/index", "profile/index", "profile-settings/index", "homepage-settings/index",
-        "account-security/index", "service-time/index", "shop-management/index", "tag-management/index",
-        "help-feedback/index", "about/index"
+        "account-security/index", "service-time/index",         "shop-management/index", "tag-management/index",
+        "help-feedback/index", "about/index",
+        "shop-guidance-edit/index", "edit-booking-time/index"
       ]
     }
   ],
@@ -39,6 +41,7 @@
     "backgroundColor": "#f5f5f5"
   },
   "style": "v2",
+  "requiredPrivateInfos": ["chooseLocation"],
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"
 }

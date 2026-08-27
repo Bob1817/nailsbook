@@ -58,16 +58,20 @@
       <text class="featured-kicker">本期精选</text>
       <swiper class="featured-swiper" autoplay="{{featuredWorks.length > 1}}" interval="4200" duration="520" circular="{{featuredWorks.length > 1}}" indicator-dots="{{false}}" bindchange="onFeaturedChange">
           <swiper-item wx:for="{{featuredWorks}}" wx:key="id" class="featured-slide">
-            <work-card
-              work="{{item}}"
-              variant="editorial"
-              featured
-              bind:cardtap="onWorkCardTap"
-              bind:artisttap="onArtistTap"
-              bind:liketap="onLikeTap"
-              bind:favoritetap="onFavoriteTap"
-              bind:commenttap="onWorkCardTap"
-            />
+            <view class="hero-work" bindtap="onHeroTap" data-id="{{item.id}}" role="button" aria-label="查看精选作品{{item.title}}详情">
+              <image class="hero-work-image" src="{{item.coverUrl}}" mode="aspectFill" aria-label="{{item.title}}"/>
+              <view class="hero-work-shade"></view>
+              <view class="hero-work-copy">
+                <text class="hero-work-title">{{item.title}}</text>
+                <view class="hero-work-artist">
+                  <image wx:if="{{item.technicianAvatarUrl}}" class="hero-work-avatar" src="{{item.technicianAvatarUrl}}" mode="aspectFill"/>
+                  <view wx:else class="hero-work-avatar hero-work-avatar-fallback">{{item.techInitial}}</view>
+                  <text class="hero-work-name">{{item.technicianName}}</text>
+                  <text wx:if="{{item.artistMetaText}}" class="hero-work-meta">· {{item.artistMetaText}}</text>
+                </view>
+              </view>
+              <view class="hero-work-link">查看详情</view>
+            </view>
           </swiper-item>
       </swiper>
       <view wx:if="{{featuredWorks.length > 1}}" class="featured-indicators" aria-label="第 {{featuredIndex + 1}} 张，共 {{featuredWorks.length}} 张">
@@ -77,6 +81,10 @@
           class="featured-indicator {{index === featuredIndex ? 'is-active' : ''}}"
         ></view>
       </view>
+    </view>
+    <view wx:if="{{filteredWorks.length}}" class="all-works-head">
+      <text class="all-works-title">全部作品</text>
+      <text class="all-works-count">{{resultCount}} 款</text>
     </view>
     <view class="waterfall">
       <!-- 左列 -->

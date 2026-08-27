@@ -31,9 +31,9 @@ const HomepageSettingsPage: React.FC = () => {
       setFormData({
         coverImageUrl: technician.coverImageUrl || '',
         bio: technician.bio || '',
-        servicePhilosophy: (technician as any).servicePhilosophy || '',
-        bookingNotes: (technician as any).bookingNotes || '',
-        styleTags: (technician as any).styleTags || [],
+        servicePhilosophy: technician.servicePhilosophy || '',
+        bookingNotes: technician.bookingNotes || '',
+        styleTags: technician.styleTags || [],
       });
     }
   }, [technician]);
@@ -47,7 +47,7 @@ const HomepageSettingsPage: React.FC = () => {
         servicePhilosophy: formData.servicePhilosophy,
         bookingNotes: formData.bookingNotes,
         styleTags: formData.styleTags,
-      } as any);
+      });
       toast.success('主页设置已更新');
       navigate(-1);
     } catch {
@@ -101,7 +101,6 @@ const HomepageSettingsPage: React.FC = () => {
   };
 
   const sectionTitleClassName = 'text-[18px] font-semibold text-gray-900';
-  const labelClassName = 'mb-2 block text-[13px] font-medium text-gray-700';
   const inputClassName =
     'w-full rounded-[16px] border border-[#f1e7e8] bg-[#fffdfd] px-4 py-3 text-[15px] text-gray-900 outline-none transition focus:border-pink-300 focus:bg-white focus:ring-4 focus:ring-pink-50';
 

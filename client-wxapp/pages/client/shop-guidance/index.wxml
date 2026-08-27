@@ -1,0 +1,55 @@
+<nav-bar title="到店指引" showBack/>
+
+<view class="container">
+  <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
+
+  <view wx:elif="{{loadFailed}}" class="load-error">
+    <view class="load-error-mark">!</view>
+    <text class="empty-text">指引信息加载失败</text>
+    <text class="empty-sub">请检查网络后重试</text>
+    <button class="retry-btn" bindtap="loadGuidance">重新加载</button>
+  </view>
+
+  <view wx:elif="{{!hasContent}}" class="empty">
+    <text class="empty-text">暂无到店指引</text>
+    <text class="empty-sub">美甲师尚未编辑到店指引信息</text>
+  </view>
+
+  <block wx:else>
+    <view class="public-shop-head">
+      <text class="public-shop-name">{{shopName}}</text>
+      <text class="public-shop-address">{{shopAddress}}</text>
+    </view>
+    <!-- Tab 切换 -->
+    <view class="tabs">
+      <view
+        wx:for="{{tabs}}"
+        wx:key="key"
+        class="tab {{activeTab === index ? 'tab-active' : ''}} {{!item.hasContent ? 'tab-empty' : ''}}"
+        data-idx="{{index}}"
+        bindtap="switchTab"
+      >
+        <text>{{item.label}}</text>
+      </view>
+    </view>
+
+    <!-- 按编辑顺序展示文字与图片 -->
+    <scroll-view scroll-y class="content-area">
+      <view class="section rich-guide">
+        <block wx:for="{{activeBlocks}}" wx:key="id">
+          <text wx:if="{{item.type === 'text'}}" class="section-text rich-guide-text">{{item.text}}</text>
+          <image wx:else class="guide-img rich-guide-image" src="{{item.url}}" mode="widthFix" data-idx="{{index}}" bindtap="previewImage" lazy-load />
+        </block>
+        <view wx:if="{{activeBlocks.length === 0}}" class="section-empty"><text>暂无该方式的到店指引</text></view>
+      </view>
+    </scroll-view>
+
+    <!-- 导航到店按钮 -->
+    <view class="bottom-bar">
+      <button wx:if="{{shopLocation}}" class="btn-navigate btn-secondary" bindtap="navigateToShop">
+        <text>一键导航到店</text>
+      </button>
+      <button class="btn-navigate" open-type="share"><text>分享给朋友</text></button>
+    </view>
+  </block>
+</view>

@@ -1,6 +1,6 @@
 @import '../../../styles/tokens.wxss';
 
-page { background: var(--bg-card); color: var(--text-primary); }
+page { background: var(--bg-page); color: var(--text-primary); }
 .page { padding: 0 var(--page-padding-h) calc(96rpx + env(safe-area-inset-bottom)); }
 
 /* ===== 头部 ===== */
@@ -16,10 +16,12 @@ page { background: var(--bg-card); color: var(--text-primary); }
 .filter-reset { color: var(--brand-primary); }
 
 /* ===== 时间线 ===== */
-.timeline-item { display: flex; align-items: flex-start; gap: 20rpx; padding: 34rpx 0; border-bottom: 1rpx solid var(--border-light); }
-.moment-card { flex: 1; min-width: 0; }
-.moment-head { min-height: 72rpx; display: flex; align-items: flex-start; }
-.moment-date-block { width: 72rpx; padding-top: 2rpx; flex-shrink: 0; text-align: left; }
+.timeline { margin-top: var(--space-md); }
+.timeline-item { display: flex; align-items: flex-start; gap: 24rpx; padding: 0; margin-bottom: 30rpx; }
+.timeline-item:last-child { margin-bottom: 0; }
+.moment-card { flex: 1; min-width: 0; padding: var(--space-md); border-radius: var(--radius-lg); background: var(--bg-card); box-shadow: var(--shadow-sm); }
+.moment-head { min-height: 72rpx; display: flex; align-items: flex-start; padding-bottom: var(--space-sm); border-bottom: 1rpx solid var(--border-light); }
+.moment-date-block { width: 72rpx; padding-top: 6rpx; flex-shrink: 0; text-align: left; }
 .moment-day, .moment-month { display: block; }
 .moment-day { font-size: var(--font-xl); line-height: 1; font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; }
 .moment-month { margin-top: var(--space-xs); color: var(--text-muted); font-size: var(--font-xs); }
@@ -34,25 +36,32 @@ page { background: var(--bg-card); color: var(--text-primary); }
 .moment-photo { width: 100%; height: 160rpx; background: #f2f2f2; }
 .gallery-wide .moment-photo { height: 236rpx; }
 .gallery-wide .moment-photo:only-child { grid-column: 1 / -1; width: 420rpx; height: 420rpx; }
-.moment-empty { min-height: 112rpx; margin-top: 12rpx; padding: 20rpx var(--space-md); border-radius: var(--radius-xs); display: flex; flex-direction: column; justify-content: center; background: #f7f6f7; box-sizing: border-box; }
-.moment-empty-title, .moment-empty-copy { display: block; }
-.moment-empty-title { font-size: var(--font-sm); font-weight: var(--weight-semibold); color: var(--text-body); }
-.moment-empty-copy { margin-top: 7rpx; color: var(--text-muted); font-size: var(--font-xs); line-height: var(--leading-normal); }
+.moment-empty { min-height: 160rpx; margin-top: var(--space-sm); padding: var(--space-md); border-radius: var(--radius-md); border: 2rpx dashed var(--border-default); display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg-input); gap: 10rpx; box-sizing: border-box; }
+.moment-empty-icon { width: 44rpx; height: 44rpx; }
+.moment-empty-title, .moment-empty-copy { display: block; text-align: center; }
+.moment-empty-title { font-size: var(--font-sm); font-weight: var(--weight-semibold); color: var(--brand-primary); }
+.moment-empty-copy { color: var(--text-muted); font-size: var(--font-xs); line-height: var(--leading-normal); }
 .photo-manage-hint { display: block; margin-top: 12rpx; color: var(--text-muted); font-size: var(--font-xs); line-height: var(--leading-normal); }
 .load-more { padding: var(--space-md) 0 36rpx; color: var(--text-muted); font-size: var(--font-xs); text-align: center; }
 .sync-note { display: block; margin-top: 10rpx; color: var(--brand-primary); font-size: var(--font-xs); }
-.record-note { display: flex; min-height: var(--touch-min); margin-top: 10rpx; align-items: center; gap: var(--space-sm); box-sizing: border-box; }
+.record-note { display: flex; min-height: var(--touch-min); margin-top: var(--space-sm); padding: 14rpx 16rpx; align-items: center; gap: var(--space-sm); border-radius: var(--radius-md); background: var(--bg-input); box-sizing: border-box; }
 .record-note-content { flex: 1; min-width: 0; }
 .record-note-label, .record-note-text { display: block; }
 .record-note-label { color: var(--text-muted); font-size: var(--font-xs); font-weight: var(--weight-semibold); }
 .record-note-text { margin-top: 6rpx; color: var(--text-muted); font-size: var(--font-xs); line-height: var(--leading-normal); }
-.record-note-action { color: var(--brand-primary); font-size: var(--font-xs); font-weight: var(--weight-bold); }
+.record-note-action { display: flex; align-items: center; gap: 6rpx; color: var(--brand-primary); font-size: var(--font-xs); font-weight: var(--weight-bold); }
+.record-note-action-icon { width: 24rpx; height: 24rpx; }
 .moment-tags, .tag-row { display: flex; flex-wrap: wrap; gap: 10rpx; margin-top: var(--space-sm); }
 .moment-tag, .tag { padding: 7rpx 14rpx; border-radius: var(--card-radius); color: var(--text-body); background: #f7f2f4; font-size: var(--font-xs); }
-.moment-actions { display: flex; align-items: center; margin-top: var(--space-xs); border-top: 1rpx solid var(--border-light); }
-.moment-action { min-height: var(--touch-min); flex: 1; padding: 0 var(--space-xs); display: flex; align-items: center; justify-content: center; text-align: center; color: var(--text-muted); font-size: var(--font-xs); font-weight: var(--weight-semibold); }
-.moment-action + .moment-action { border-left: 1rpx solid var(--border-light); }
-.moment-action:active { background: #faf7f8; }
+.moment-actions { display: flex; align-items: center; gap: 16rpx; margin-top: var(--space-md); }
+.moment-action { flex: 1; min-height: 72rpx; padding: 0 16rpx; border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; gap: 10rpx; font-size: var(--font-xs); font-weight: var(--weight-semibold); box-sizing: border-box; }
+.moment-action:active { opacity: 0.85; }
+.action-primary { background: var(--brand-gradient); color: var(--text-inverse); }
+.action-secondary { background: #FFF1F6; color: var(--brand-primary); }
+.action-tertiary { background: #f3f4f6; color: var(--text-body); }
+.action-icon { width: 28rpx; height: 28rpx; flex-shrink: 0; }
+.action-secondary .action-icon { filter: brightness(0) saturate(100%) invert(47%) sepia(83%) saturate(2341%) hue-rotate(318deg) brightness(101%) contrast(101%); }
+.action-tertiary .action-icon { filter: brightness(0.45); }
 
 /* ===== 空状态卡片 ===== */
 .filter-empty { margin-left: 0; }

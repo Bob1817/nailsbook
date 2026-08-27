@@ -12,7 +12,8 @@ services:
     expose:
       - "3000"
     ports:
-      - "3001:3000"
+      # 仅供宿主机运维检查；公网流量必须经过 nginx。
+      - "127.0.0.1:3001:3000"
     networks:
       - internal
 

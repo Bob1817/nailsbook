@@ -13,6 +13,7 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Throttle } from '@nestjs/throttler';
 import { ClientJwtAuthGuard } from '../client-auth/client-jwt-auth.guard';
 import {
   clientUploadMulterOptions,
@@ -22,6 +23,7 @@ import { ClientUploadService } from './client-upload.service';
 
 @Controller('client/uploads')
 @UseGuards(ClientJwtAuthGuard)
+@Throttle({ default: { ttl: 60000, limit: 30 } })
 @ApiTags('客户端-上传')
 @ApiBearerAuth()
 export class ClientUploadController {

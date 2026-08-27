@@ -6,6 +6,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as fs from 'fs';
 import * as path from 'path';
 import { AvatarUrlInterceptor } from './common/avatar-url.interceptor';
+import { TRUSTED_PROXY_ADDRESSES } from './common/trusted-proxy';
 
 function getAllowedOrigins() {
   const configuredOrigins = process.env.CORS_ORIGINS?.split(',')
@@ -57,6 +58,11 @@ async function bootstrap() {
   const uploadsPath = path.resolve(process.cwd(), 'uploads');
 
   fs.mkdirSync(uploadsPath, { recursive: true });
+
+  // Production traffic has exactly one private-network Nginx hop. Trust only
+  // local/private proxy addresses so req.ip and the throttler use the real
+  // client address without accepting forwarded headers from public peers.
+  app.set('trust proxy', TRUSTED_PROXY_ADDRESSES);
 
   app.enableCors({
     origin: getAllowedOrigins(),

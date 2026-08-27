@@ -5,6 +5,7 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Permissions } from '../auth/permission.decorator';
+import { OperationLog } from '../auth/operation-log.decorator';
 import { AdminCommentsService } from './admin-comments.service';
 
 @ApiTags('管理-评论')
@@ -35,6 +36,7 @@ export class AdminCommentsController {
 
   @Patch(':id/hide')
   @Permissions('comment:manage')
+  @OperationLog({ module: 'comment', action: 'toggle_hide', targetType: 'comment' })
   @ApiOperation({ summary: '切换评论隐藏状态' })
   toggleHide(@Param('id', ParseIntPipe) id: number) {
     return this.service.toggleHide(id);
@@ -42,6 +44,7 @@ export class AdminCommentsController {
 
   @Delete(':id')
   @Permissions('comment:manage')
+  @OperationLog({ module: 'comment', action: 'delete', targetType: 'comment' })
   @ApiOperation({ summary: '强制删除评论' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.service.remove(id);

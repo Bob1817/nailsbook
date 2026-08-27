@@ -5,7 +5,6 @@ import {
   Post,
   Query,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,7 +18,6 @@ import { CustomersService } from './customers.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Permissions } from '../auth/permission.decorator';
 import { OperationLog } from '../auth/operation-log.decorator';
-import { OperationLogInterceptor } from '../auth/operation-log.interceptor';
 
 @ApiTags('管理员-客户')
 @ApiBearerAuth()
@@ -90,7 +88,6 @@ export class CustomersController {
 
   @Post(':id/reset-password')
   @Permissions('account:reset-password')
-  @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'customer',
     action: 'reset_password',
@@ -111,7 +108,6 @@ export class CustomersController {
 
   @Get(':id/managed-password')
   @Permissions('account:reset-password')
-  @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'customer',
     action: 'view_password',

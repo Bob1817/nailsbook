@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/feedback/ToastProvider';
 import { Card } from '../components/base/Card';
-import { Button } from '../components/base/Button';
 
 interface Qualification {
   id: number;

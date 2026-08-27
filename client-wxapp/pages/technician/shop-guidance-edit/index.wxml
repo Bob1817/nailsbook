@@ -1,0 +1,63 @@
+<nav-bar title="到店指引" showBack/>
+
+<view class="container">
+  <!-- 店铺信息 -->
+  <view class="shop-info">
+    <text class="shop-name">{{shopName}}</text>
+    <text class="shop-address">{{shopAddress}}</text>
+  </view>
+
+  <!-- Tab 切换 -->
+  <view class="tabs">
+    <view
+      wx:for="{{tabs}}"
+      wx:key="key"
+      class="tab {{activeTab === index ? 'tab-active' : ''}}"
+      data-idx="{{index}}"
+      bindtap="switchTab"
+    >
+      <text>{{item.label}}</text>
+    </view>
+  </view>
+
+  <!-- 内容块编辑器 -->
+  <scroll-view scroll-y class="editor-area">
+    <view class="editor-intro">
+      <text class="editor-title">按客户行进顺序编辑</text>
+      <text class="editor-desc">文字和图片会按下方顺序交替展示，可随时上下调整。</text>
+    </view>
+
+    <view wx:if="{{activeBlocks.length === 0}}" class="editor-empty">
+      <text class="editor-empty-title">还没有{{activeLabel}}指引</text>
+      <text class="editor-empty-desc">建议先添加一段文字，再插入路口、楼栋或停车场照片。</text>
+    </view>
+
+    <view class="block-list">
+      <view wx:for="{{activeBlocks}}" wx:key="id" class="content-block content-block-{{item.type}}">
+        <view class="block-head">
+          <view class="block-kind"><text class="block-number">{{index + 1}}</text><text>{{item.type === 'text' ? '文字段' : '示意图'}}</text></view>
+          <view class="block-actions">
+            <view class="block-action {{index === 0 ? 'block-action-disabled' : ''}}" data-idx="{{index}}" data-direction="up" catchtap="moveBlock" role="button" aria-label="上移内容块"><text>↑</text></view>
+            <view class="block-action {{index === activeBlocks.length - 1 ? 'block-action-disabled' : ''}}" data-idx="{{index}}" data-direction="down" catchtap="moveBlock" role="button" aria-label="下移内容块"><text>↓</text></view>
+            <view class="block-action block-action-delete" data-idx="{{index}}" catchtap="deleteBlock" role="button" aria-label="删除内容块"><text>×</text></view>
+          </view>
+        </view>
+        <textarea wx:if="{{item.type === 'text'}}" class="block-textarea" value="{{item.text}}" data-idx="{{index}}" bindinput="onBlockTextInput" placeholder="输入这一步的行走说明…" placeholder-class="guide-ph" maxlength="-1" auto-height />
+        <image wx:else class="block-image" src="{{item.url}}" mode="widthFix" data-idx="{{index}}" bindtap="previewImage" aria-label="查看第{{index + 1}}个指引图片" />
+      </view>
+    </view>
+
+    <view class="insert-toolbar">
+      <view class="insert-action" bindtap="addTextBlock" role="button" aria-label="添加文字段"><text class="insert-plus">+</text><text>文字段</text></view>
+      <view class="insert-action insert-action-image" bindtap="addImageBlock" role="button" aria-label="添加指引图片"><text class="insert-plus">+</text><text>图片</text></view>
+    </view>
+    <view class="editor-spacer"></view>
+  </scroll-view>
+
+  <!-- 保存按钮 -->
+  <view class="bottom-bar">
+    <button class="btn-save" bindtap="save" disabled="{{saving}}">
+      <text>{{saving ? '保存中...' : '保存指引'}}</text>
+    </button>
+  </view>
+</view>

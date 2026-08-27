@@ -85,9 +85,10 @@ page { background: var(--bg-page); }
 .source-work-card { min-height: 112rpx; display: flex; align-items: center; gap: 20rpx; }
 .source-work-cover { width: 88rpx; height: 88rpx; flex-shrink: 0; border-radius: var(--radius-sm); background: #f5f0f3; }
 .source-work-copy { flex: 1; min-width: 0; }
-.source-work-label, .source-work-title { display: block; }
+.source-work-label, .source-work-title, .source-work-price { display: block; }
 .source-work-label { color: #9a8790; font-size: var(--font-xs); }
 .source-work-title { margin-top: 6rpx; overflow: hidden; color: #33282d; font-size: var(--font-sm); font-weight: var(--weight-semibold); text-overflow: ellipsis; white-space: nowrap; }
+.source-work-price { margin-top: 6rpx; color: var(--brand-primary); font-size: var(--font-sm); font-weight: var(--weight-bold); }
 .source-work-arrow { color: #ad9ca4; font-size: var(--font-xl); }
 
 .card-title {
@@ -145,46 +146,7 @@ page { background: var(--bg-page); }
 }
 .round-btn:active { background: #ffe0eb; }
 
-/* CSS icons for phone and chat */
-.btn-icon-phone {
-  width: 20rpx;
-  height: 20rpx;
-  border: 3rpx solid var(--brand-primary);
-  border-radius: 50%;
-  position: relative;
-}
-
-.btn-icon-phone::after {
-  content: '';
-  position: absolute;
-  bottom: -4rpx;
-  right: -4rpx;
-  width: 8rpx;
-  height: 8rpx;
-  background: var(--brand-primary);
-  border-radius: 50%;
-}
-
-.btn-icon-chat {
-  width: 22rpx;
-  height: 18rpx;
-  border: 3rpx solid var(--brand-primary);
-  border-radius: 4rpx;
-  position: relative;
-}
-
-.btn-icon-chat::after {
-  content: '';
-  position: absolute;
-  bottom: -8rpx;
-  left: 4rpx;
-  width: 0;
-  height: 0;
-  border-left: 6rpx solid var(--brand-primary);
-  border-right: 6rpx solid transparent;
-  border-top: 6rpx solid var(--brand-primary);
-  border-bottom: 6rpx solid transparent;
-}
+.contact-action-icon { width: 38rpx; height: 38rpx; }
 
 /* ===== 信息行 ===== */
 .info-row {
@@ -195,6 +157,7 @@ page { background: var(--bg-page); }
   gap: 24rpx;
 }
 .info-row:last-child { border-bottom: none; }
+.address-row { align-items: flex-start; }
 
 .info-label {
   flex-shrink: 0;
@@ -211,9 +174,15 @@ page { background: var(--bg-page); }
 }
 .info-value-block {
   flex: 1;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.address-main-row {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  padding-right: 88rpx;
   gap: 12rpx;
 }
 .addr-text {
@@ -222,28 +191,102 @@ page { background: var(--bg-page); }
   color: var(--text-primary);
   line-height: var(--leading-normal);
 }
-.copy-link { min-height: 88rpx;
+.copy-link {
+  width: 88rpx;
+  height: 88rpx;
+  position: absolute;
+  top: -28rpx;
+  right: 0;
   flex-shrink: 0;
-  padding: 4rpx 40rpx;
-  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+.copy-link-label {
+  min-width: 68rpx;
+  height: 48rpx;
+  padding: 0 14rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border-radius: 999rpx;
   background: #FFF1F6;
   color: var(--brand-primary);
   font-size: var(--font-xs);
   font-weight: var(--weight-semibold);
 }
-.copy-link:active { background: #ffe0eb; }
+.copy-link:active .copy-link-label { background: #ffe0eb; }
+
+/* ===== 到店指引入口 ===== */
+.guidance-row {
+  position: relative;
+  height: 48rpx;
+  margin-top: 4rpx;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 8rpx;
+  box-sizing: border-box;
+}
+.guidance-row::before { content: ''; position: absolute; top: -20rpx; right: 0; bottom: -20rpx; left: 0; }
+.guidance-row:active { opacity: 0.7; }
+.guidance-row-text {
+  font-size: var(--font-xs);
+  font-weight: var(--weight-medium);
+  color: var(--brand-primary);
+}
+.guidance-row-arrow {
+  font-size: var(--font-sm);
+  color: var(--brand-primary);
+}
+
+/* ===== 线下付款提示 ===== */
+.offline-payment-note {
+  display: block;
+  margin-top: 12rpx;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-normal);
+}
 
 /* ===== 价格 ===== */
 .price-row {
+  min-height: 96rpx;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid #f5f0f3;
 }
 .price-label { font-size: var(--font-sm); color: var(--text-muted); }
 .price-main {
-  font-size: var(--font-2xl); font-weight: var(--weight-bold); color: var(--brand-primary);
-  letter-spacing: -1rpx;
+  font-size: var(--font-xl);
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.actual-payment-row .price-label { color: var(--text-primary); font-weight: var(--weight-semibold); }
+.actual-payment-value {
+  color: var(--brand-primary);
+  font-size: var(--font-xl);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 定金标注 */
+.price-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.deposit-note {
+  display: block;
+  margin-top: 4rpx;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-normal);
 }
 
 /* 定金盒 */
@@ -385,6 +428,35 @@ page { background: var(--bg-page); }
 }
 .sheet-footer .action-btn { width: 100%; }
 
+/* ===== 更多操作列表弹层 ===== */
+.action-sheet-body {
+  padding: 12rpx 24rpx calc(12rpx + env(safe-area-inset-bottom));
+}
+.action-sheet-item {
+  min-height: 96rpx;
+  display: flex;
+  align-items: center;
+  padding: 0 24rpx;
+  border-radius: var(--radius-md);
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
+}
+.action-sheet-item + .action-sheet-item { margin-top: 12rpx; }
+.action-sheet-item:active { opacity: 0.85; }
+.action-sheet-item.action-primary {
+  background: var(--brand-gradient);
+  color: var(--text-inverse);
+}
+.action-sheet-item.action-ghost {
+  background: #FFF1F6;
+  color: var(--brand-primary);
+}
+.action-sheet-item.action-danger {
+  background: #fef2f2;
+  color: var(--text-error);
+  border: 1rpx solid #fecaca;
+}
+
 /* ===== 表单 ===== */
 .form-item { margin-bottom: 28rpx; }
 .form-label {
@@ -428,6 +500,7 @@ page { background: var(--bg-page); }
 .addr-select-active { background: #fff0f3; border-color: rgba(255,107,138,0.25) /* brand-primary-alpha */; }
 .addr-select-name { font-size: var(--font-sm); font-weight: var(--weight-medium); color: var(--text-primary); display: block; }
 .addr-select-detail { font-size: var(--font-xs); color: var(--text-muted); display: block; margin-top: 4rpx; }
+
 .fund-discount-box { margin-top: var(--space-md); padding: var(--space-md); border-radius: var(--radius-md); background:#fff5f8; }
 .fund-discount-head,.fund-input-row { min-height:88rpx; display:flex; align-items:center; justify-content:space-between; gap:20rpx; }
 .fund-max { color:#c53f70; }

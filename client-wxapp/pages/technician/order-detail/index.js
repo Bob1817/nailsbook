@@ -1,4 +1,5 @@
 const api = require('../../../services/api');
+const { normalizeSourceWorkSummary } = require('../../../utils/normalize-work');
 const { requestBookingReminder } = require('../../../utils/wechat-subscription');
 const {
   parseDate,
@@ -8,6 +9,7 @@ const {
 } = require('../../../utils/format');
 const {
   normalizeOrder,
+  normalizeDepositAmount,
   resolveOrderPresentation,
   getStatusLabel,
   getStatusTone
@@ -28,18 +30,17 @@ const STATUS_DESC = {
 // 按状态返回详情页底部应显示的动作
 function actionsForStatus(status) {
   const QUOTE  = { key: 'quote',   label: '发送报价', style: 'action-primary' };
-  const REVISE = { key: 'quote',   label: '修改报价', style: 'action-ghost' };
   const CONFIRM= { key: 'confirm', label: '确认排期', style: 'action-primary' };
-  const COMPLETE={ key: 'complete',label: '标记完成', style: 'action-primary' };
+  const COMPLETE={ key: 'complete',label: '确认完成', style: 'action-primary' };
   const CANCEL = { key: 'cancel',  label: '取消预约', style: 'action-danger' };
 
   switch (status) {
     case 'pending_quote':   return [QUOTE, CANCEL];
-    case 'pending_agree':   return [REVISE, CANCEL];
+    case 'pending_agree':   return [CANCEL];
     case 'pending_client_confirm': return [CANCEL];
-    case 'pending_confirm': return [REVISE, CANCEL, CONFIRM];
+    case 'pending_confirm': return [CANCEL, CONFIRM];
     case 'pending_shop':    return [CANCEL];
-    case 'in_progress':     return [COMPLETE];
+    case 'in_progress':     return [CANCEL, COMPLETE];
     default:                return [];
   }
 }
@@ -67,6 +68,8 @@ Page({
     loading: true,
     loadFailed: false,
     loadErrorText: '',
+    shopGuidance: null,
+    guidanceShop: null,
 
     todayDate: todayISO(),
 
@@ -91,9 +94,11 @@ Page({
     showCancel: false,
     cancelReason: '',
     cancelReasons: CANCEL_REASONS,
+    cancelRefundDeposit: null,
 
     // 服务项目编辑 sheet
     showServiceEdit: false,
+    showActionMenu: false,
     editAllServices: [],
     editSubtotalFen: 0,
     editTotalDuration: 0,
@@ -106,10 +111,10 @@ Page({
     editDepositPaid: false,
     editPriceSubmitting: false,
 
-    // 标记完成确认
-    showCompleteConfirm: false,
-    completeAmount: '',
-    completeSubmitting: false,
+    // 完成及实际支付金额
+    showActualAmount: false,
+    actualAmountInput: '',
+    actualAmountMode: 'complete',
 
     submitting: false
   },
@@ -139,10 +144,18 @@ Page({
     try {
       const result = await Promise.all([
         api.technician.orders.detail(this.orderId),
-        api.technician.services.list()
+        api.technician.services.list(),
+        api.technician.auth.getUserInfo()
       ]);
       const raw = result[0];
       const quoteServices = (result[1] || []).filter(item => item.isActive !== false);
+      const technicianProfile = result[2] || {};
+      let sourceWork = raw.sourceWork || null;
+      const sourceWorkId = raw.sourceWorkId || (sourceWork && sourceWork.id);
+      if (sourceWorkId && (!sourceWork || !normalizeSourceWorkSummary(sourceWork)._priceFen)) {
+        try { sourceWork = await api.technician.works.detail(sourceWorkId); } catch (e) {}
+      }
+      sourceWork = normalizeSourceWorkSummary(sourceWork);
       const o = normalizeOrder(raw);
 
       // 补充详情页专有字段
@@ -157,7 +170,7 @@ Page({
 
       // 是否显示价格卡
       const price = raw.quotePrice || raw.price || 0;
-      const depositAmount = raw.depositAmount || 0;
+      const depositAmount = normalizeDepositAmount(raw);
       const serviceSubtotalFen = Number(raw.serviceSubtotalFen || 0);
       const showPriceCard = price > 0 || depositAmount > 0 || serviceSubtotalFen > 0 || (raw.serviceLines && raw.serviceLines.length > 0);
 
@@ -168,6 +181,7 @@ Page({
 
       const decorated = {
         ...o,
+        techId: o.techId || raw.techId || raw.technicianId || (raw.technician && raw.technician.id),
         _statusLabel: getStatusLabel(o.status),
         _statusTone:  getStatusTone(o.status),
         _statusDesc:  STATUS_DESC[o.status] || '',
@@ -195,8 +209,21 @@ Page({
         discountAmountFen: Number(raw.discountAmountFen || 0),
         depositAmount: depositAmount,
         depositPaid: !!raw.isDepositPaid,
-        bookingType: raw.bookingType || 'legacy'
+        actualAmount: raw.actualAmount == null ? price : Number(raw.actualAmount),
+        _actualAmountText: formatMoney(raw.actualAmount == null ? price : Number(raw.actualAmount)),
+        _depositStatusText: raw.isDepositPaid
+          ? (depositAmount > 0 ? `已支付定金 ¥${depositAmount}` : '定金已支付')
+          : (depositAmount > 0 ? `待支付定金 ¥${depositAmount}` : '未支付定金'),
+        bookingType: raw.bookingType || 'legacy',
+        sourceWork
       };
+      const normalizedAddress = String(decorated.address || '').replace(/\s+/g, '');
+      const guidanceShop = (technicianProfile.shopAddresses || []).find((shop) => {
+        const fullAddress = [shop.province, shop.city, shop.district, shop.detailAddress].filter(Boolean).join('').replace(/\s+/g, '');
+        const detailAddress = String(shop.detailAddress || '').replace(/\s+/g, '');
+        return shop.enabled !== false && normalizedAddress && (fullAddress === normalizedAddress || (detailAddress && normalizedAddress.includes(detailAddress)) || fullAddress.includes(normalizedAddress));
+      }) || null;
+      const shopGuidance = guidanceShop?.guidance?.enabled ? guidanceShop.guidance : null;
 
       // 用拉到的数据预填报价表单
       const sd = start ? `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}` : '';
@@ -204,6 +231,8 @@ Page({
 
       this.setData({
         order: decorated,
+        shopGuidance,
+        guidanceShop,
         loading: false,
         loadFailed: false,
         quotePrice: o.price ? String(o.price) : '',
@@ -217,7 +246,7 @@ Page({
           return matched ? String(matched.id) : null;
         }).filter(Boolean),
         quoteDiscount: raw.discountAmountFen ? String(raw.discountAmountFen / 100) : ''
-        ,quoteDepositAmount: raw.depositAmount ? String(raw.depositAmount / 100) : ''
+        ,quoteDepositAmount: depositAmount ? String(depositAmount) : ''
         ,quoteDepositPaid: !!raw.isDepositPaid
       });
       this.recalculateQuote();
@@ -237,12 +266,21 @@ Page({
   // ---------- 操作分发 ----------
   onAction(e) {
     const key = e.currentTarget.dataset.key;
+    this.setData({ showActionMenu: false });
     switch (key) {
       case 'quote':    return this.openQuote();
       case 'confirm':  return this.confirmOrder();
       case 'complete': return this.completeOrder();
       case 'cancel':   return this.openCancel();
     }
+  },
+
+  openActionMenu() { this.setData({ showActionMenu: true }); },
+  closeActionMenu() { this.setData({ showActionMenu: false }); },
+
+  viewSourceWork() {
+    const sourceWork = this.data.order && this.data.order.sourceWork;
+    if (sourceWork && sourceWork.id) wx.navigateTo({ url: `/pages/technician/work-detail/index?id=${sourceWork.id}` });
   },
 
   // ---------- 客户操作 ----------
@@ -291,6 +329,25 @@ Page({
     }
   },
 
+  openShopGuidance() {
+    const order = this.data.order;
+    const shop = this.data.guidanceShop;
+    const techId = order && (order.techId || order.technicianId);
+    if (!techId || !shop) return;
+    wx.navigateTo({ url: `/pages/client/shop-guidance/index?techId=${techId}&shopName=${encodeURIComponent(shop.name || '')}&address=${encodeURIComponent(order.address || '')}` });
+  },
+
+  onShareAppMessage() {
+    const order = this.data.order;
+    const shop = this.data.guidanceShop;
+    const techId = order && (order.techId || order.technicianId);
+    if (!this.data.shopGuidance || !techId || !shop) return { title: '预约详情', path: `/pages/technician/order-detail/index?id=${this.orderId}` };
+    return {
+      title: `${shop.name || '美甲工作室'}到店指引`,
+      path: `/pages/client/shop-guidance/index?techId=${techId}&shopName=${encodeURIComponent(shop.name || '')}&address=${encodeURIComponent(order.address || '')}`
+    };
+  },
+
   // ---------- 报价 ----------
   openQuote() {
     const status = this.data.order && this.data.order.status;
@@ -333,6 +390,12 @@ Page({
     const discountAmountFen = Math.round(Number(quoteDiscount || 0) * 100);
     if (discountAmountFen < 0 || discountAmountFen > quoteSubtotalFen) return wx.showToast({ title: '优惠金额不能超过服务合计', icon: 'none' });
 
+    const depositAmt = this.data.quoteDepositAmount;
+    const depositFen = Math.round(Number(depositAmt || 0) * 100);
+    if (this.data.quoteDepositPaid && (!depositAmt || !Number.isFinite(depositFen) || depositFen <= 0)) {
+      return wx.showToast({ title: '定金已支付时，请填写大于 0 的定金金额', icon: 'none' });
+    }
+
     this.setData({ submitting: true });
     try {
       const payload = {
@@ -343,9 +406,8 @@ Page({
       };
       if (quoteRemark) payload.remark = quoteRemark;
       // 定金数据
-      const depositAmt = this.data.quoteDepositAmount;
       if (depositAmt !== '' && depositAmt !== undefined) {
-        payload.depositAmount = Math.round(Number(depositAmt) * 100);
+        payload.depositAmount = Number(depositAmt);
       }
       payload.isDepositPaid = !!this.data.quoteDepositPaid;
       await api.technician.orders.quote(this.orderId, payload);
@@ -388,7 +450,7 @@ Page({
     this.setData({
       showEditPrice: true,
       editQuotePrice: defaultPrice ? String(defaultPrice) : '',
-      editDepositAmount: o.depositAmount ? String(o.depositAmount / 100) : '',
+      editDepositAmount: o.depositAmount ? String(o.depositAmount) : '',
       editDepositPaid: !!o.depositPaid,
       editPriceSubmitting: false
     });
@@ -410,11 +472,14 @@ Page({
     if (depositStr && (isNaN(depositFen) || depositFen < 0)) {
       return wx.showToast({ title: '请输入有效的定金金额', icon: 'none' });
     }
+    if (this.data.editDepositPaid && depositFen <= 0) {
+      return wx.showToast({ title: '定金已支付时，请填写大于 0 的定金金额', icon: 'none' });
+    }
     this.setData({ editPriceSubmitting: true });
     try {
       var payload = {
         price: priceFen / 100,
-        depositAmount: depositFen,
+        depositAmount: Number(depositStr || 0),
         isDepositPaid: !!this.data.editDepositPaid
       };
       await api.technician.orders.update(this.orderId, payload);
@@ -427,41 +492,42 @@ Page({
     }
   },
 
-  // ---------- 标记完成 ----------
+  // ---------- 确认完成 / 修改实际支付金额 ----------
   completeOrder() {
-    var o = this.data.order;
-    if (!o) return;
-    var defaultAmount = o.price || (o.serviceSubtotalFen > 0 ? o.serviceSubtotalFen / 100 : '');
-    this.setData({
-      showCompleteConfirm: true,
-      completeAmount: defaultAmount ? String(defaultAmount) : '',
-      completeSubmitting: false
+    const order = this.data.order;
+    if (!order) return;
+    wx.navigateTo({
+      url: `/pages/technician/complete-service/index?id=${this.orderId}`
     });
   },
-  closeCompleteConfirm() { this.setData({ showCompleteConfirm: false }); },
-  onCompleteAmountInput(e) { this.setData({ completeAmount: e.detail.value }); },
-
-  async submitComplete() {
-    if (this.data.completeSubmitting) return;
-    var amount = Number(this.data.completeAmount);
-    if (isNaN(amount) || amount < 0) {
-      return wx.showToast({ title: '请输入有效的支付金额', icon: 'none' });
-    }
-    var o = this.data.order;
-    this.setData({ completeSubmitting: true });
+  openEditActualAmount() {
+    const order = this.data.order;
+    if (!order || order.status !== 'completed') return;
+    this.setData({
+      showActualAmount: true,
+      actualAmountMode: 'edit',
+      actualAmountInput: String(order.actualAmount == null ? (order.price || 0) : order.actualAmount)
+    });
+  },
+  closeActualAmount() { this.setData({ showActualAmount: false }); },
+  onActualAmountInput(e) { this.setData({ actualAmountInput: e.detail.value }); },
+  async submitActualAmount() {
+    if (this.data.submitting) return;
+    const amount = Number(this.data.actualAmountInput);
+    if (!Number.isFinite(amount) || amount < 0) return wx.showToast({ title: '请输入正确的实际支付金额', icon: 'none' });
+    this.setData({ submitting: true });
     try {
-      await api.technician.orders.complete(this.orderId, {
-        actualStartTime: o.startTime || new Date().toISOString(),
-        actualEndTime: new Date().toISOString(),
-        actualAmount: amount,
-        materialCost: 0
-      });
-      this.setData({ completeSubmitting: false, showCompleteConfirm: false });
-      wx.showToast({ title: '预约已完成', icon: 'success' });
+      if (this.data.actualAmountMode === 'edit') {
+        await api.technician.orders.updateActualAmount(this.orderId, amount);
+      } else {
+        await api.technician.orders.complete(this.orderId, { actualAmount: amount });
+      }
+      this.setData({ submitting: false, showActualAmount: false });
+      wx.showToast({ title: this.data.actualAmountMode === 'edit' ? '金额已更新' : '预约已完成', icon: 'success' });
       this.loadOrder();
     } catch (err) {
-      this.setData({ completeSubmitting: false });
-      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+      this.setData({ submitting: false });
+      wx.showToast({ title: err.message || '提交失败', icon: 'none' });
     }
   },
 
@@ -472,8 +538,17 @@ Page({
     var start = parseDate(o.startTime);
     var dateStr = start ? `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}` : '';
     var timeStr = start ? formatClock(o.startTime) : '';
+    var params = [
+      `id=${this.orderId}`,
+      `date=${dateStr}`,
+      `time=${timeStr}`,
+      `duration=${o.durationMinutes || 120}`,
+      `serviceType=${encodeURIComponent(o.serviceType || 'shop')}`,
+      `shopName=${encodeURIComponent(o.shopName || '')}`,
+      `address=${encodeURIComponent(o.address || '')}`
+    ];
     wx.navigateTo({
-      url: `/pages/technician/edit-booking-time/index?id=${this.orderId}&date=${dateStr}&time=${timeStr}`
+      url: `/pages/technician/edit-booking-time/index?${params.join('&')}`
     });
   },
 
@@ -571,18 +646,27 @@ Page({
   },
 
   // ---------- 取消 ----------
-  openCancel() { this.setData({ showCancel: true, cancelReason: '' }); },
+  openCancel() { this.setData({ showCancel: true, cancelReason: '', cancelRefundDeposit: null }); },
   closeCancel() { this.setData({ showCancel: false }); },
   onCancelReasonInput(e) { this.setData({ cancelReason: e.detail.value }); },
   onPickReason(e) {
     this.setData({ cancelReason: e.currentTarget.dataset.reason });
   },
+  onPickRefundDeposit(e) {
+    this.setData({ cancelRefundDeposit: e.currentTarget.dataset.value === 'true' });
+  },
 
   async submitCancel() {
     if (this.data.submitting) return;
+    if (this.data.order.depositPaid && this.data.cancelRefundDeposit == null) {
+      return wx.showToast({ title: '请选择是否退还定金', icon: 'none' });
+    }
     this.setData({ submitting: true });
     try {
-      await api.technician.orders.cancel(this.orderId, this.data.cancelReason || undefined);
+      await api.technician.orders.cancel(this.orderId, {
+        reason: this.data.cancelReason || undefined,
+        refundDeposit: this.data.order.depositPaid ? this.data.cancelRefundDeposit : undefined
+      });
       this.setData({ submitting: false, showCancel: false });
       wx.showToast({ title: '预约已取消', icon: 'success' });
       this.loadOrder();

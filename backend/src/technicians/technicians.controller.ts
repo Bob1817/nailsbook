@@ -8,7 +8,6 @@ import {
   Param,
   Query,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -26,7 +25,6 @@ import { UpdateTechnicianStatusDto } from './dto/update-technician-status.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Permissions } from '../auth/permission.decorator';
 import { OperationLog } from '../auth/operation-log.decorator';
-import { OperationLogInterceptor } from '../auth/operation-log.interceptor';
 
 @ApiTags('管理员-美甲师')
 @ApiBearerAuth()
@@ -89,7 +87,6 @@ export class TechniciansController {
 
   @Post()
   @Permissions('technician:create')
-  @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'technician',
     action: 'create',
@@ -105,7 +102,6 @@ export class TechniciansController {
 
   @Patch(':id')
   @Permissions('technician:update')
-  @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'technician',
     action: 'update',
@@ -121,7 +117,6 @@ export class TechniciansController {
 
   @Post(':id/invite-key')
   @Permissions('technician:update')
-  @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'technician',
     action: 'generate_invite_key',
@@ -142,7 +137,6 @@ export class TechniciansController {
 
   @Patch(':id/status')
   @Permissions('technician:disable')
-  @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'technician',
     action: 'update_status',
@@ -162,7 +156,6 @@ export class TechniciansController {
 
   @Post(':id/reset-password')
   @Permissions('account:reset-password')
-  @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'technician',
     action: 'reset_password',
@@ -183,7 +176,6 @@ export class TechniciansController {
 
   @Get(':id/managed-password')
   @Permissions('account:reset-password')
-  @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'technician',
     action: 'view_password',
@@ -197,7 +189,6 @@ export class TechniciansController {
 
   @Delete(':id')
   @Permissions('technician:delete')
-  @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'technician',
     action: 'delete',
@@ -213,7 +204,6 @@ export class TechniciansController {
 
   @Patch(':id/disable')
   @Permissions('technician:disable')
-  @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'technician',
     action: 'disable',

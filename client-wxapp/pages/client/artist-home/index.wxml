@@ -180,9 +180,15 @@
         
         <view class="shop-info">
           <text class="shop-name">{{artist.shopName || '晴日美甲工作室'}}</text>
-          <view class="shop-detail-row">
+          <view class="shop-detail-row shop-address-row">
             <image class="detail-icon-svg" src="/static/icons/pin.svg" mode="aspectFit"/>
-            <text class="detail-text">{{artist.shopAddress || '上海市静安区南京西路1515号静安嘉里中心3楼316室'}}</text>
+            <view class="shop-address-content">
+              <text class="detail-text">{{artist.shopAddress || '上海市静安区南京西路1515号静安嘉里中心3楼316室'}}</text>
+              <view wx:if="{{artist._guidance}}" class="guidance-entry-row" bindtap="openGuidance" role="button" aria-label="查看到店指引">
+                <text class="guidance-entry-text">查看到店指引</text>
+                <text class="guidance-entry-arrow">›</text>
+              </view>
+            </view>
           </view>
           <view class="shop-detail-row">
             <image class="detail-icon-svg" src="/static/icons/clock.svg" mode="aspectFit"/>
@@ -248,12 +254,12 @@
       </view>
       <!-- 点赞：无需登录；下方显示总点赞数 -->
       <view class="action-icon-btn {{isLiked ? 'liked' : ''}}" bindtap="toggleLike">
-        <image class="social-icon-svg" src="{{isLiked ? '/static/icons/social-like-active.svg' : '/static/icons/social-like.svg'}}" mode="aspectFit"/>
+        <image class="social-icon-svg" src="{{isLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}" mode="aspectFit"/>
         <text class="count-label">{{likeCount || 0}}</text>
       </view>
       <!-- 收藏：需登录；下方显示总收藏数 -->
       <view class="action-icon-btn {{isFavorited ? 'favorited' : ''}}" bindtap="toggleFavorite">
-        <image class="social-icon-svg" src="{{isFavorited ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}" mode="aspectFit"/>
+        <image class="social-icon-svg" src="{{isFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}" mode="aspectFit"/>
         <text class="count-label">{{favoriteCount || 0}}</text>
       </view>
     </view>

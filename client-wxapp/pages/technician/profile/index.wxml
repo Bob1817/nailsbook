@@ -24,7 +24,7 @@
         <text class="status-action-hint">点击切换</text>
       </view>
       <view class="status-schedule-btn">
-        <view class="status-schedule-icon-svg"></view>
+        <image class="status-schedule-icon-svg" src="/static/icons/clock-light.svg" mode="aspectFit" />
       </view>
     </view>
 
@@ -123,7 +123,7 @@
         data-status="{{item.status}}"
       >
         <view class="order-cell-badge order-bg-{{item.status}} {{item.count > 0 ? 'has-count' : ''}}">
-          <view class="order-cell-icon order-icon-{{item.status}}"></view>
+          <image class="order-cell-icon" src="{{item.icon}}" mode="aspectFit" />
           <view wx:if="{{item.count > 0}}" class="count-badge">{{item.count > 99 ? '99+' : item.count}}</view>
         </view>
         <text class="order-cell-label">{{item.label}}</text>
@@ -188,7 +188,7 @@
         data-key="{{item.key}}"
       >
         <view class="tool-icon-bg tool-bg-{{item.key}}">
-          <view class="tool-icon tool-icon-{{item.key}}"></view>
+          <image class="tool-icon" src="{{item.icon}}" mode="aspectFit" />
           <!-- 服务开启状态点 -->
           <view wx:if="{{item.key === 'shops' && shopServiceOn}}" class="tool-status-dot dot-on"></view>
         </view>

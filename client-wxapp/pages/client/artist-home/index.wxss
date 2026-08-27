@@ -498,20 +498,22 @@ page {
   transform: translate(-50%, -100%);
 }
 .map-pin-icon { width: 64rpx; height: 64rpx; filter: drop-shadow(0 4rpx 8rpx rgba(196, 147, 122, 0.35)); }
-.shop-info { padding: 32rpx; }
+.shop-info { padding: 28rpx 32rpx 24rpx; }
 .shop-name {
   font-size: 30rpx;
   font-weight: 700;
   color: var(--warm-text-primary);
   display: block;
-  margin-bottom: 10rpx;
+  margin-bottom: 18rpx;
 }
 .shop-detail-row {
   display: flex;
   align-items: flex-start;
   gap: 16rpx;
-  margin-bottom: 14rpx;
+  margin-bottom: 20rpx;
 }
+.shop-detail-row:last-of-type { margin-bottom: 0; }
+.shop-address-content { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .detail-icon-svg {
   width: 26rpx;
   height: 26rpx;
@@ -524,10 +526,33 @@ page {
   color: var(--warm-text-secondary);
   line-height: 1.6;
 }
+.guidance-entry-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8rpx;
+  height: 48rpx;
+  padding: 0;
+  box-sizing: border-box;
+  margin-top: 4rpx;
+  background: transparent;
+}
+.guidance-entry-row::before { content: ''; position: absolute; top: -20rpx; right: 0; bottom: -20rpx; left: 0; }
+.guidance-entry-row:active { opacity: 0.7; }
+.guidance-entry-text {
+  font-size: var(--font-xs);
+  font-weight: var(--weight-medium);
+  color: var(--brand-primary);
+}
+.guidance-entry-arrow {
+  font-size: var(--font-sm);
+  color: var(--brand-primary);
+}
 .shop-actions {
   display: flex;
   gap: 20rpx;
-  margin-top: 32rpx;
+  margin-top: 16rpx;
 }
 .action-btn {
   flex: 1;
@@ -535,7 +560,8 @@ page {
   align-items: center;
   justify-content: center;
   gap: 12rpx;
-  padding: 20rpx 0;
+  min-height: 88rpx;
+  padding: 0;
   background: var(--warm-accent-light);
   border-radius: 20rpx;
   font-size: 24rpx;

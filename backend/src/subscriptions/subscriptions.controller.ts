@@ -8,7 +8,6 @@ import {
   Query,
   Req,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -29,7 +28,6 @@ import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.g
 import { TouristGuard } from '../technician-auth/tourist.guard';
 import { Permissions } from '../auth/permission.decorator';
 import { OperationLog } from '../auth/operation-log.decorator';
-import { OperationLogInterceptor } from '../auth/operation-log.interceptor';
 import {
   assertMiniProgramFeatureDisabled,
   isMiniProgramLaunchMode,
@@ -109,7 +107,6 @@ export class SubscriptionPlansController {
 
   @Post()
   @Permissions('subscription:update')
-  @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'subscription',
     action: 'create_plan',
@@ -125,7 +122,6 @@ export class SubscriptionPlansController {
 
   @Patch(':id')
   @Permissions('subscription:update')
-  @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'subscription',
     action: 'update_plan',
@@ -198,7 +194,6 @@ export class TechnicianSubscriptionsController {
 
   @Patch('technicians/:technicianId')
   @Permissions('subscription:update')
-  @UseInterceptors(OperationLogInterceptor)
   @OperationLog({
     module: 'subscription',
     action: 'update_technician_subscription',

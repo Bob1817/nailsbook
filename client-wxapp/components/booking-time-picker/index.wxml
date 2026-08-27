@@ -1,0 +1,43 @@
+<!-- 预约时间选择组件 — 日历 + 时间网格 -->
+<view class="btp-calendar">
+  <view class="btp-calendar-header">
+    <view class="btp-nav-btn" bindtap="onPrevMonth">‹</view>
+    <text class="btp-calendar-title">{{calendarMonthLabel}}</text>
+    <view class="btp-nav-btn" bindtap="onNextMonth">›</view>
+  </view>
+  <view class="btp-weekdays">
+    <text wx:for="{{['日','一','二','三','四','五','六']}}" wx:key="*this" class="btp-weekday-cell">{{item}}</text>
+  </view>
+  <view class="btp-calendar-grid">
+    <view wx:for="{{calendarDays}}" wx:key="index" class="btp-day-wrap">
+      <view wx:if="{{item.empty}}" class="btp-day btp-day-empty"></view>
+      <view wx:elif="{{item.isPast || item.isRest}}" class="btp-day btp-day-disabled">
+        <text class="btp-day-text">{{item.day}}</text>
+      </view>
+      <view wx:elif="{{item.isSelected}}" class="btp-day btp-day-selected" bindtap="onSelectDate" data-date="{{item.dateStr}}">
+        <text class="btp-day-text btp-day-text-selected">{{item.day}}</text>
+      </view>
+      <view wx:elif="{{item.isToday}}" class="btp-day btp-day-today" bindtap="onSelectDate" data-date="{{item.dateStr}}">
+        <text class="btp-day-text">{{item.day}}</text>
+      </view>
+      <view wx:else class="btp-day" bindtap="onSelectDate" data-date="{{item.dateStr}}">
+        <text class="btp-day-text">{{item.day}}</text>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 提示：休息日 -->
+<view wx:if="{{serviceDate && timeSlotStatuses.length === 0}}" class="btp-warn-text">
+  所选日期暂无可预约时段，请改选其他日期
+</view>
+
+<!-- 时间网格 -->
+<view class="btp-time-grid" wx:if="{{timeSlotStatuses.length > 0}}">
+  <view wx:for="{{timeSlotStatuses}}" wx:key="time"
+    class="btp-time-item {{startTime === item.time ? 'btp-time-active' : ''}} {{item.occupied ? 'btp-time-occupied' : ''}}"
+    bindtap="selectTime" data-time="{{item.time}}">
+    <text class="btp-time-text">{{item.time}}</text>
+    <text wx:if="{{item.occupied}}" class="btp-occupied-label">已预约</text>
+  </view>
+</view>

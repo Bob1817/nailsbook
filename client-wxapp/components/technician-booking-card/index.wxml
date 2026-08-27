@@ -1,0 +1,102 @@
+<view wx:if="{{variant === 'message'}}" class="booking-card-message" bindtap="open" role="button" aria-label="查看预约详情">
+  <view class="message-head">
+    <image class="message-icon" src="/static/icons/calendar.svg" mode="aspectFit" />
+    <text class="message-title">预约通知</text>
+    <text class="message-tag">预约</text>
+  </view>
+  <text class="message-content">{{order.noticeContent}}</text>
+  <view class="message-footer">
+    <text>查看预约详情</text>
+    <image class="message-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
+  </view>
+</view>
+
+<view wx:elif="{{variant === 'hero'}}" class="booking-card-hero" bindtap="open" role="button" aria-label="查看{{order.customerName}}的预约详情">
+  <view class="hero-card-content">
+    <view class="hero-card-top hero-card-head">
+      <view class="hero-card-label-area">
+        <text class="hero-card-title">下一单</text>
+        <text class="hero-card-sub">最近的预约安排</text>
+      </view>
+      <view class="hero-status-stack">
+        <view class="hero-status-badge">{{order._heroStatusLabel || order._statusLabel}}</view>
+        <text wx:if="{{order._countdown}}" class="hero-countdown-value">{{order._countdown}}</text>
+      </view>
+    </view>
+
+    <view class="hero-card-body hero-time-section">
+      <view class="hero-date-box">
+        <text class="hero-date-month">{{order._dateMonth}}</text>
+        <text class="hero-date-day">{{order._dateDay}}</text>
+        <text class="hero-date-weekday">{{order._dateWeekday}}</text>
+      </view>
+      <view class="hero-details">
+        <view class="hero-detail-row hero-time-range-row">
+          <image class="hero-detail-icon" src="/static/icons/clock-light.svg" mode="aspectFit" />
+          <text class="hero-detail-text hero-detail-value">{{order._serviceTypeLabel || '待确认'}}</text>
+        </view>
+        <view class="hero-detail-row hero-customer-row">
+          <image class="hero-detail-icon" src="/static/icons/client-white.svg" mode="aspectFit" />
+          <text class="hero-detail-text hero-detail-value">{{order.customerName}}</text>
+        </view>
+        <view class="hero-detail-row hero-shop-row">
+          <image class="hero-detail-icon" src="/static/icons/shop.svg" mode="aspectFit" />
+          <text class="hero-detail-text hero-detail-value">{{order._shopName || order.shopName || '未设置店铺'}}</text>
+        </view>
+        <view class="hero-detail-row hero-price-row"><image class="hero-detail-icon" src="/static/icons/wallet.svg" mode="aspectFit" /><text class="hero-detail-text hero-detail-value">{{order._priceText}}</text></view>
+        <view class="hero-detail-row hero-deposit-row"><image class="hero-detail-icon" src="/static/icons/status-progress.svg" mode="aspectFit" /><text class="hero-detail-text hero-detail-value">{{order._depositText}}</text></view>
+      </view>
+    </view>
+
+    <view class="hero-card-actions">
+      <view class="hero-action-btn" catchtap="message" role="button" aria-label="给客户发消息">
+        <view class="hero-action-surface">
+          <image class="hero-action-icon hero-action-icon-chat" src="/static/icons/tab-chat.svg" mode="aspectFit" />
+          <text>发消息</text>
+        </view>
+      </view>
+      <view wx:if="{{order.customerPhone}}" class="hero-action-btn" catchtap="contact" role="button" aria-label="拨打客户电话">
+        <view class="hero-action-surface">
+          <image class="hero-action-icon" src="/static/icons/phone-white.svg" mode="aspectFit" />
+          <text>打电话</text>
+        </view>
+      </view>
+      <view class="hero-action-btn hero-action-primary" catchtap="open" role="button" aria-label="查看预约详情">
+        <view class="hero-action-surface">查看详情</view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<view wx:else class="booking-card booking-card-compact" bindtap="open" role="button" aria-label="查看{{order.customerName}}的预约详情">
+  <view class="booking-main">
+    <view class="time-col">
+      <text wx:if="{{order._dateLabel}}" class="date">{{order._dateLabel}}</text>
+      <text class="time">{{order._clock}}</text>
+    </view>
+    <view class="content">
+      <view class="title-row">
+        <text class="customer">{{order.customerName}}</text>
+        <text class="status {{order._statusTone || order._stateTone}}">{{order._statusLabel || order._stateLabel}}</text>
+      </view>
+      <text class="service">{{order._typeLabel}} · {{order.serviceName}}</text>
+      <text wx:if="{{order._priceText}}" class="price">{{order._priceText}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{order._fullAddress || order.address}}" class="address-row">
+    <image class="meta-icon" src="/static/icons/pin.svg" mode="aspectFit" />
+    <text class="address">{{order._fullAddress || order.address}}</text>
+  </view>
+
+  <view wx:if="{{order._hasConflict}}" class="conflict">与当日其他预约时间重叠</view>
+
+  <view class="actions">
+    <view class="action action-primary" catchtap="navigate" role="button" aria-label="开始导航">
+      <image class="action-icon" src="/static/icons/navigation.svg" mode="aspectFit" /><text>导航</text>
+    </view>
+    <view class="action action-secondary" catchtap="contact" role="button" aria-label="联系客户">
+      <image class="action-icon" src="/static/icons/phone-active.svg" mode="aspectFit" /><text>联系客户</text>
+    </view>
+  </view>
+</view>

@@ -2,6 +2,7 @@
   "navigationBarTitleText": "全部行程",
   "navigationStyle": "custom",
   "usingComponents": {
-    "nav-bar": "/components/nav-bar/index"
+    "nav-bar": "/components/nav-bar/index",
+    "technician-booking-card": "/components/technician-booking-card/index"
   }
 }

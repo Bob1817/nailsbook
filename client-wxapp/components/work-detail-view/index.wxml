@@ -1,0 +1,56 @@
+<view class="work-detail">
+  <view wx:if="{{loading}}" class="state-screen"><view class="loading-spinner"></view></view>
+  <view wx:elif="{{loadFailed}}" class="state-screen" aria-live="polite">
+    <text class="state-title">{{loadErrorText}}</text>
+    <button wx:if="{{canRetryLoad}}" class="state-btn" data-event="retry" bindtap="emit">重新加载</button>
+    <button class="state-btn secondary" data-event="back" bindtap="emit">返回</button>
+  </view>
+  <block wx:elif="{{work.id}}">
+    <view class="top-action top-back" style="{{topButtonStyle}}" data-event="back" bindtap="emit" role="button" aria-label="返回"><text>‹</text></view>
+    <swiper class="image-swiper" current="{{currentImageIndex}}" circular="{{imageUrls.length > 1}}" bindchange="onSwiperChange">
+      <swiper-item wx:for="{{imageUrls}}" wx:key="*this" bindtap="previewImage" data-url="{{item}}"><image class="work-image" src="{{item}}" mode="aspectFill" aria-label="{{work.title || '美甲作品'}}第{{index + 1}}张图片" /></swiper-item>
+    </swiper>
+    <view class="info-panel">
+      <view class="intro-section">
+        <view class="title-row">
+          <text class="work-title">{{work.title || '未命名作品'}}</text>
+          <view wx:if="{{isAuthor}}" class="manage-button" bindtap="manageWork" role="button" aria-label="管理作品"><image src="/static/icons/more-horizontal.svg" /></view>
+        </view>
+        <view wx:if="{{work._priceText}}" class="work-price-row">
+          <text class="work-price">{{work._priceText}}</text>
+          <text wx:if="{{work._priceDiffType === 'discount'}}" class="work-price-note discount">服务原价 ¥{{work.serviceSubtotalFen / 100}} · 优惠 ¥{{work._priceDiffFen / 100}}</text>
+          <text wx:elif="{{work._priceDiffType === 'surcharge'}}" class="work-price-note surcharge">服务原价 ¥{{work.serviceSubtotalFen / 100}} · 其他 ¥{{work._priceDiffFen / 100}}</text>
+          <text wx:elif="{{work.serviceSubtotalFen > 0}}" class="work-price-note">服务原价 ¥{{work.serviceSubtotalFen / 100}}</text>
+        </view>
+        <text wx:if="{{work.description}}" class="work-desc">{{work.description}}</text>
+        <view wx:if="{{work.tags && work.tags.length}}" class="tags"><text wx:for="{{work.tags}}" wx:key="*this" class="tag">#{{item}}</text></view>
+      </view>
+
+      <view class="engagement-section" style="display:flex;align-items:stretch;overflow:hidden;">
+        <view class="engagement-action {{work.isLiked ? 'is-active' : ''}}" style="flex:1 1 0;width:0;min-width:0;" data-event="like" bindtap="emit" role="button" aria-label="点赞"><image src="{{work.isLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}"/><text>点赞</text><text class="action-count">{{work.likeCount || 0}}</text></view>
+        <view class="engagement-action {{work.isFavorited ? 'is-active' : ''}}" style="flex:1 1 0;width:0;min-width:0;" data-event="favorite" bindtap="emit" role="button" aria-label="收藏"><image src="{{work.isFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}"/><text>收藏</text><text class="action-count">{{work.favoriteCount || 0}}</text></view>
+        <button class="engagement-action" style="flex:1 1 0;width:0;min-width:0;" open-type="share" aria-label="分享作品"><image src="/static/icons/share.svg"/><text>分享</text></button>
+        <view wx:if="{{showBookSame}}" class="engagement-action booking-action" style="flex:1 1 0;width:0;min-width:0;" bindtap="bookSame" role="button" aria-label="预约同款"><image src="/static/icons/calendar.svg"/><text>预约同款</text></view>
+      </view>
+
+      <view class="comments-section">
+        <view class="comments-header"><text class="comments-title">评论</text><text class="comments-count">{{comments.length}} 条</text></view>
+        <view wx:if="{{comments.length}}" class="comments">
+          <view wx:for="{{comments}}" wx:key="id" class="comment" data-comment="{{item}}" bindtap="replyComment">
+            <image wx:if="{{item.user.avatarUrl || item.userAvatar}}" class="avatar" src="{{item.user.avatarUrl || item.userAvatar}}" mode="aspectFill" />
+            <view wx:else class="avatar fallback">{{item.userInitial || '用'}}</view>
+            <view class="comment-body"><view class="comment-meta"><view class="comment-meta-copy"><text class="comment-name">{{item.user.name || item.userName || '匿名用户'}}</text><text wx:if="{{(item.user.role || item.userRole) === 'technician'}}" class="badge">美甲师</text><text wx:if="{{item.isPinned}}" class="badge pinned">置顶</text><text class="comment-time">{{item.createdAtText}}</text></view><view wx:if="{{isAuthor}}" class="comment-manage" data-comment="{{item}}" catchtap="manageComment" role="button" aria-label="管理评论">•••</view></view><text class="comment-text">{{item.content}}</text></view>
+          </view>
+        </view>
+        <view wx:else class="empty"><text class="empty-title">还没有评论</text><text class="empty-sub">说说你对这个作品的看法</text></view>
+        <view wx:if="{{isAuthor && hiddenComments.length}}" class="hidden-toggle" bindtap="toggleHidden">{{showHidden ? '收起隐藏评论' : '查看 ' + hiddenComments.length + ' 条隐藏评论'}}</view>
+        <view wx:if="{{isAuthor && showHidden}}" class="hidden-list"><view wx:for="{{hiddenComments}}" wx:key="id" class="hidden-comment"><text class="hidden-comment-copy">{{item.user.name || '用户'}}：{{item.content}}</text><view class="comment-manage" data-comment="{{item}}" catchtap="manageComment" role="button" aria-label="管理隐藏评论">•••</view></view></view>
+      </view>
+
+      <view class="composer-section">
+        <view wx:if="{{replyingTo}}" class="replying">回复 @{{replyingTo.name}} <text data-event="commentcancel" bindtap="emit">取消</text></view>
+        <view class="input-row"><input class="comment-input" placeholder="{{canComment ? '添加评论…' : '登录后参与评论'}}" value="{{commentText}}" focus="{{inputFocused}}" bindinput="onInput" bindconfirm="submitComment" confirm-type="send"/><view class="send {{commentText ? 'can-send' : ''}}" bindtap="submitComment">发送</view></view>
+      </view>
+    </view>
+  </block>
+</view>

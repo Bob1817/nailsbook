@@ -1,0 +1,52 @@
+services:
+  backend:
+    image: nailbook-p0-validation:20260827
+    mem_limit: 512m
+    memswap_limit: 512m
+    tmpfs:
+      - /app/data
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: file:/app/data/qa.db
+      ADMIN_JWT_SECRET: isolated-qa-admin-secret-not-for-production
+      TECHNICIAN_JWT_SECRET: isolated-qa-technician-secret-not-for-production
+      CLIENT_JWT_SECRET: isolated-qa-client-secret-not-for-production
+      WECHAT_SESSION_SECRET: isolated-qa-wechat-secret-not-for-production
+      ADMIN_INITIAL_PASSWORD: Isolated-QA-Password-2026!
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/api').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+  nginx:
+    image: nginx:1.27-alpine
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1/api/health]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+  load-a:
+    image: nailbook-p0-validation:20260827
+    entrypoint: [node, /qa/load.cjs]
+    volumes:
+      - ./load.cjs:/qa/load.cjs:ro
+    environment:
+      CLIENT: A
+      INTERVAL_MS: 150
+      EXPECT_THROTTLED: 'true'
+      DURATION_SECONDS: '${DURATION_SECONDS:-600}'
+  load-b:
+    image: nailbook-p0-validation:20260827
+    entrypoint: [node, /qa/load.cjs]
+    volumes:
+      - ./load.cjs:/qa/load.cjs:ro
+    environment:
+      CLIENT: B
+      INTERVAL_MS: 500
+      EXPECT_THROTTLED: 'false'
+      DURATION_SECONDS: '${DURATION_SECONDS:-600}'

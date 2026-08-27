@@ -24,12 +24,22 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    if (payload.userType === 'client' || payload.userType === 'technician') {
+    if (payload.tokenType === 'refresh' || payload.userType === 'client' || payload.userType === 'technician') {
       throw new UnauthorizedException('无效的管理员令牌');
     }
     const admin = await this.prisma.adminUser.findUnique({
       where: { id: payload.sub },
-      select: { tokenVersion: true, status: true },
+      select: {
+        tokenVersion: true,
+        status: true,
+        role: {
+          select: {
+            permissions: {
+              select: { permission: { select: { code: true } } },
+            },
+          },
+        },
+      },
     });
     if (!admin || admin.status !== 'active') {
       throw new UnauthorizedException('管理员账号不存在或已被禁用');
@@ -41,7 +51,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       userId: payload.sub,
       username: payload.username,
       roleId: payload.roleId,
-      permissions: payload.permissions,
+      permissions: admin.role.permissions.map((item) => item.permission.code),
     };
   }
 }

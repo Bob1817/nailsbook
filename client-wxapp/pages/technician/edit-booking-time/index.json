@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "修改预约时间",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "nav-bar": "/components/nav-bar/index",
+    "booking-time-picker": "/components/booking-time-picker/index"
+  }
+}

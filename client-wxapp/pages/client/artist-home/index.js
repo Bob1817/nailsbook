@@ -1,7 +1,6 @@
 const api = require('../../../services/api');
 const { normalizeWork } = require('../../../utils/normalize-work');
 
-const DEFAULT_TAGS = ['韩系温柔风', '轻奢法式', '简约日式', '高级手绘', '氛围感晕染'];
 const DEFAULT_TIMELINE = [
   { year: '2019', desc: '入行学习，师从日本JNA认证导师' },
   { year: '2021', desc: '获得高级美甲师认证，作品登上行业杂志' },
@@ -77,7 +76,15 @@ Page({
     if (!this.data.artistId) return this.setData({ loading: false, loadFailed: true });
     this.setData({ loading: true, loadFailed: false });
     try {
-      const res = await api.public.artists.detail(this.data.artistId);
+      const results = await Promise.all([
+        api.public.artists.detail(this.data.artistId),
+        api.client.works.list(
+          { techId: this.data.artistId },
+          { needAuth: false, silent: true }
+        ).catch(() => null)
+      ]);
+      const res = results[0];
+      const worksRes = results[1];
       const artist = res.artist || res.technician || res || {};
       
       // 基础信息
@@ -96,7 +103,6 @@ Page({
       
       // 专业标签
       artist.styleTags = (artist.styleTags || artist.specialties || []).slice(0, 5);
-      if (!artist.styleTags.length) artist.styleTags = DEFAULT_TAGS;
       artist.specialtiesText = artist.styleTags.slice(0, 2).join(' · ') || '日式专攻';
       
       // 个人简介
@@ -108,6 +114,9 @@ Page({
       artist.shopAddress = formatAddress(shop) || artist.shopAddress || '';
       artist.businessHours = formatBusinessHours(shop.businessHours) || artist.businessHours || '';
       artist.phone = shop.phone || artist.phone || '';
+      artist._shopLatitude = parseFloat(shop.latitude) || 0;
+      artist._shopLongitude = parseFloat(shop.longitude) || 0;
+      artist._guidance = (shop.guidance && shop.guidance.enabled) ? shop.guidance : null;
       
       // 服务信息
       artist.servicePhilosophy = artist.servicePhilosophy || '';
@@ -146,7 +155,13 @@ Page({
 
       // 作品列表（统一口径：美甲师主页顶部信息 ↔ 作品卡 ↔ 作品详情页 完全一致）
       const isBound = !!this.data.isBound;
-      const works = (res.works || []).map((item, index) => normalizeWork(item, techSnapshot, {
+      const sourceWorks = worksRes
+        ? (worksRes.list || worksRes.data || (Array.isArray(worksRes) ? worksRes : []))
+        : (res.works || []);
+      const featuredSource = sourceWorks.some((item) => item.isFeatured)
+        ? sourceWorks.filter((item) => item.isFeatured)
+        : sourceWorks;
+      const works = featuredSource.map((item, index) => normalizeWork(item, techSnapshot, {
         index: index,
         styleTags: techSnapshot.styleTags,
         isBound: isBound
@@ -254,16 +269,17 @@ Page({
 
   openNavigation() {
     const artist = this.data.artist;
-    if (artist.shopAddress) {
-      wx.openLocation({
-        latitude: 0,
-        longitude: 0,
-        name: artist.shopName || '工作室',
-        address: artist.shopAddress
-      });
-    } else {
-      wx.showToast({ title: '暂无地址信息', icon: 'none' });
-    }
+    if (!artist.shopAddress) { wx.showToast({ title: '暂无地址信息', icon: 'none' }); return; }
+    const lat = artist._shopLatitude || 0;
+    const lng = artist._shopLongitude || 0;
+    if (!lat && !lng) { wx.setClipboardData({ data: artist.shopAddress, success: () => wx.showToast({ title: '地址已复制，请手动导航', icon: 'none' }) }); return; }
+    wx.openLocation({
+      latitude: lat,
+      longitude: lng,
+      name: artist.shopName || '工作室',
+      address: artist.shopAddress,
+      scale: 18
+    });
   },
 
   callPhone() {
@@ -273,6 +289,15 @@ Page({
     } else {
       wx.showToast({ title: '暂无联系电话', icon: 'none' });
     }
+  },
+
+  openGuidance() {
+    var artist = this.data.artist;
+    var techId = this.data.artistId;
+    if (!techId) return;
+    wx.navigateTo({
+      url: '/pages/client/shop-guidance/index?techId=' + techId + '&shopName=' + encodeURIComponent(artist.shopName || '') + '&address=' + encodeURIComponent(artist.shopAddress || '')
+    });
   },
 
   closeBindModal() {

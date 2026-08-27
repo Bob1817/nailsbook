@@ -83,6 +83,15 @@ export class TechnicianWorksController {
     return this.technicianWorksService.createDraft(request.user.technicianId, dto);
   }
 
+  @Post('from-order/:orderId')
+  @ApiOperation({ summary: '获取或创建已完成订单的唯一作品草稿' })
+  createFromOrder(
+    @Req() request: { user: { technicianId: number } },
+    @Param('orderId', ParseIntPipe) orderId: number,
+  ) {
+    return this.technicianWorksService.createFromOrder(request.user.technicianId, orderId);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: '更新作品' })
   @ApiParam({ name: 'id', type: Number, description: '作品ID' })

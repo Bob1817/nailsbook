@@ -13,6 +13,7 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Permissions } from '../auth/permission.decorator';
+import { OperationLog } from '../auth/operation-log.decorator';
 import { AdminWorksService } from './admin-works.service';
 
 @ApiTags('管理-作品')
@@ -53,6 +54,7 @@ export class AdminWorksController {
 
   @Patch(':id/review')
   @Permissions('work:manage')
+  @OperationLog({ module: 'work', action: 'review', targetType: 'work' })
   @ApiOperation({ summary: '审核通过或驳回作品发布' })
   review(
     @Req() request: { user: { userId: number } },
@@ -76,6 +78,7 @@ export class AdminWorksController {
 
   @Patch(':id/visibility')
   @Permissions('work:manage')
+  @OperationLog({ module: 'work', action: 'toggle_visibility', targetType: 'work' })
   @ApiOperation({ summary: '切换作品可见性' })
   toggleVisibility(@Param('id', ParseIntPipe) id: number) {
     return this.service.toggleVisibility(id);
@@ -83,6 +86,7 @@ export class AdminWorksController {
 
   @Patch(':id/homepage-featured')
   @Permissions('work:manage')
+  @OperationLog({ module: 'work', action: 'toggle_homepage_featured', targetType: 'work' })
   @ApiOperation({ summary: '切换官网精选' })
   toggleHomepageFeatured(@Param('id', ParseIntPipe) id: number) {
     return this.service.toggleHomepageFeatured(id);
@@ -90,6 +94,7 @@ export class AdminWorksController {
 
   @Patch(':id/tags')
   @Permissions('work:manage')
+  @OperationLog({ module: 'work', action: 'update_tags', targetType: 'work' })
   @ApiOperation({ summary: '更新作品标签' })
   updateTags(
     @Param('id', ParseIntPipe) id: number,
@@ -100,6 +105,7 @@ export class AdminWorksController {
 
   @Delete(':id')
   @Permissions('work:manage')
+  @OperationLog({ module: 'work', action: 'delete', targetType: 'work' })
   @ApiOperation({ summary: '删除作品' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.service.remove(id);

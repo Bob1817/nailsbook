@@ -201,13 +201,7 @@ export class TechnicianOrdersController {
       parseInt(id, 10),
       request.user.technicianId,
     );
-    const hasRecordFields = Boolean(
-      body &&
-        (body.actualStartTime ||
-          body.actualEndTime ||
-          body.actualAmount != null ||
-          body.materialCost != null),
-    );
+    const hasRecordFields = Boolean(body && Object.keys(body).length > 0);
     return this.ordersService.complete(
       parseInt(id, 10),
       hasRecordFields ? body : undefined,

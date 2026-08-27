@@ -1,4 +1,5 @@
 const api = require('../../../services/api');
+const { normalizeSourceWorkSummary } = require('../../../utils/normalize-work');
 const { parseDate, formatClock, formatBookingDate, formatMoney } = require('../../../utils/format');
 const { resolveOrderPresentation, getStatusLabel, getStatusTone } = require('../../../utils/order');
 const { requestBookingReminder } = require('../../../utils/wechat-subscription');
@@ -19,21 +20,30 @@ const EDITABLE = ['pending_quote','pending_agree','pending_confirm'];
 const REJECT_REASONS = ['价格超出预算','时间不合适','想换个款式','其他'];
 const TIME_SLOTS = ['09:00','09:30','10:00','10:30','11:00','11:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30','20:00','20:30'];
 
+function timeToMin(t) { var p = t.split(':'); return parseInt(p[0]) * 60 + parseInt(p[1]); }
+
 function actionsForStatus(order) {
   const list = [];
   const s = order.status;
-  if (s === 'pending_agree') list.push({ key:'reject', label:'拒绝报价', style:'action-ghost' }, { key:'agree', label:'同意报价', style:'action-primary' });
-  if (CANCELLABLE.indexOf(s) >= 0 || EDITABLE.indexOf(s) >= 0) list.unshift({ key:'more', label:'更多操作', style:'action-ghost' });
+  if (s === 'pending_agree') {
+    list.push({ key:'reject', label:'拒绝报价', style:'action-ghost' });
+    list.push({ key:'agree', label:'同意报价', style:'action-primary' });
+  }
+  if (EDITABLE.indexOf(s) >= 0) list.push({ key:'edit', label:'修改预约', style:'action-ghost' });
+  if (CANCELLABLE.indexOf(s) >= 0) list.push({ key:'cancel', label:'取消预约', style:'action-danger' });
   return list;
 }
 
 Page({
   data: {
     order: null, orderId: '', loading: true, loadFailed: false, loadErrorText: '',
+    shopLocation: null,
+    shopGuidance: null,
     showReject: false, rejectReason: '', rejectReasons: REJECT_REASONS, submitting: false,
-    showEdit: false, editDate: '', editTime: '', editAddresses: [], editAddressId: null, editTimeSlots: TIME_SLOTS, savingEdit: false,
+    showEdit: false, editDate: '', editTime: '', editAddresses: [], editAddressId: null, savingEdit: false,
     reviewRating: 5, reviewContent: '', reviewPhotos: [], photoUseAuthorized: false, savingReview: false,
-    actionSubmitting: ''
+    actionSubmitting: '',
+    showActions: false
   },
 
   onLoad(options) {
@@ -54,6 +64,12 @@ Page({
     this.setData({ loading: true, loadFailed: false, loadErrorText: '' });
     try {
       const raw = await api.client.orders.detail(this.orderId);
+      let sourceWork = raw.sourceWork || null;
+      const sourceWorkId = raw.sourceWorkId || (sourceWork && sourceWork.id);
+      if (sourceWorkId && (!sourceWork || !normalizeSourceWorkSummary(sourceWork)._priceFen)) {
+        try { sourceWork = await api.client.works.detail(sourceWorkId); } catch (e) {}
+      }
+      sourceWork = normalizeSourceWorkSummary(sourceWork);
       const isShop = raw.serviceType === 'shop' || raw.serviceType === '到店美甲';
       let address = '';
       if (typeof raw.address === 'string') address = raw.address;
@@ -73,22 +89,46 @@ Page({
         techName: raw.technician?.name || '美甲师', techAvatar: raw.technician?.avatarUrl || '',
         techPhone: raw.technician?.phone || '', techId: raw.technician?.id || raw.technicianId,
         startTime: raw.startTime, endTime: raw.endTime,
+        shopName: raw.shopAddress?.name || '',
         _isShop: isShop, _statusLabel: getStatusLabel(raw.status), _statusTone: getStatusTone(raw.status),
         _statusDesc: STATUS_DESC[raw.status] || '', _typeLabel: pres.typeLabel,
         _dateLabel: formatBookingDate(raw.startTime),
         _timeRange: start && end ? `${formatClock(raw.startTime)} - ${formatClock(raw.endTime)}` : formatClock(raw.startTime),
         _priceText: price ? formatMoney(price) : '待报价',
+        _actualAmountText: formatMoney(raw.actualAmount == null ? price : Number(raw.actualAmount)),
         _showPriceCard: price > 0 || depositAmount > 0, _actions: null,
         review: raw.review || null,
-        sourceWork: raw.sourceWork || null,
+        sourceWork,
         serviceLines: raw.serviceLines || [],
         serviceSubtotalFen: Number(raw.serviceSubtotalFen || 0),
         discountAmountFen: Number(raw.discountAmountFen || 0),
         finalPriceFen: raw.finalPriceFen == null ? null : Number(raw.finalPriceFen)
       };
       order._actions = actionsForStatus(order);
+
+      // 店铺订单：拉取美甲师公开信息，获取坐标与指引
+      let shopLocation = null;
+      let shopGuidance = null;
+      if (order.techId) {
+        try {
+          const publicGuidance = await api.public.artists.shopGuidance(order.techId, { address: order.address || '' });
+          const matchedShop = publicGuidance.shop || {};
+          order.shopName = matchedShop.name || '';
+          if (matchedShop.latitude && matchedShop.longitude) {
+              shopLocation = {
+                latitude: parseFloat(matchedShop.latitude),
+                longitude: parseFloat(matchedShop.longitude),
+                name: matchedShop.name || order.techName,
+                address: order.address
+              };
+          }
+          shopGuidance = publicGuidance.guidance || null;
+        } catch(e) { /* non-critical */ }
+      }
+
       this.setData({
         order, loading: false, loadFailed: false,
+        shopLocation, shopGuidance,
         reviewRating: raw.review ? raw.review.rating : 5,
         reviewContent: raw.review ? raw.review.content : '',
         reviewPhotos: raw.review ? (raw.review.photos || []) : [],
@@ -102,29 +142,26 @@ Page({
   },
 
   onAction(e) {
-    if (this.data.actionSubmitting) return;
     const key = e.currentTarget.dataset.key;
+    this.handleAction(key);
+  },
+
+  handleAction(key) {
+    if (this.data.actionSubmitting) return;
+    this.setData({ showActions: false });
     if (key === 'agree') return this.agreeQuote();
     if (key === 'reject') return this.openReject();
     if (key === 'cancel') return this.cancelOrder();
     if (key === 'edit') return this.openEdit();
-    if (key === 'more') return this.showMoreActions();
   },
 
-  showMoreActions() {
-    const status = this.data.order.status;
-    const actions = [];
-    if (EDITABLE.indexOf(status) >= 0) actions.push({ key: 'edit', label: '修改预约' });
-    if (CANCELLABLE.indexOf(status) >= 0) actions.push({ key: 'cancel', label: '取消预约' });
-    if (!actions.length) return;
-    wx.showActionSheet({
-      itemList: actions.map(item => item.label),
-      success: result => {
-        const action = actions[result.tapIndex];
-        if (action && action.key === 'edit') this.openEdit();
-        if (action && action.key === 'cancel') this.cancelOrder();
-      }
-    });
+  openActionsSheet() {
+    if (this.data.actionSubmitting) return;
+    this.setData({ showActions: true });
+  },
+
+  closeActions() {
+    this.setData({ showActions: false });
   },
 
   callTech() {
@@ -147,6 +184,35 @@ Page({
   copyAddress() {
     const addr = this.data.order?.address;
     if (addr) wx.setClipboardData({ data: addr, success: () => wx.showToast({ title: '已复制', icon: 'success' }) });
+  },
+
+  navigateToShop() {
+    const loc = this.data.shopLocation;
+    if (loc && loc.latitude && loc.longitude) {
+      wx.openLocation({
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        name: loc.name || '店铺位置',
+        address: loc.address || '',
+        scale: 18
+      });
+    } else {
+      // 无坐标时复制地址，用户可粘贴到导航 app
+      const addr = this.data.order?.address;
+      if (addr) {
+        wx.setClipboardData({ data: addr, success: () => wx.showToast({ title: '地址已复制，请打开导航 App 粘贴', icon: 'none', duration: 2500 }) });
+      } else {
+        wx.showToast({ title: '暂无地址信息', icon: 'none' });
+      }
+    }
+  },
+
+  openShopGuidance() {
+    const o = this.data.order;
+    if (!o?.techId) return;
+    wx.navigateTo({
+      url: `/pages/client/shop-guidance/index?techId=${o.techId}&shopName=${encodeURIComponent(o.shopName || '')}&address=${encodeURIComponent(o.address || '')}`
+    });
   },
 
   viewSourceWork() {
@@ -252,6 +318,7 @@ Page({
     const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     const timeStr = formatClock(o.startTime);
     this.setData({ showEdit: true, editDate: dateStr, editTime: timeStr, editAddressId: null });
+    if (o._isShop) return;
     try {
       const res = await api.client.addresses.list();
       const addrs = res.list || res.data || res || [];
@@ -259,8 +326,10 @@ Page({
     } catch(e) {}
   },
   closeEdit() { this.setData({ showEdit: false }); },
-  onEditDateChange(e) { this.setData({ editDate: e.detail.value }); },
-  onEditTimeChange(e) { this.setData({ editTime: this.data.editTimeSlots[e.detail.value] }); },
+  onEditTimeChange(e) {
+    var detail = e.detail;
+    this.setData({ editDate: detail.serviceDate, editTime: detail.startTime });
+  },
   onEditAddressSelect(e) { this.setData({ editAddressId: e.currentTarget.dataset.id }); },
   async saveEdit() {
     if (this.data.savingEdit) return;

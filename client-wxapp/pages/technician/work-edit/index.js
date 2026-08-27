@@ -14,9 +14,12 @@ Page({
     price: '',
     standardPrice: '',
     availableServices: [],
+    hasInvalidServiceConfig: false,
     selectedServiceIds: [],
     serviceSubtotalFen: 0,
     totalDurationMinutes: 0,
+    priceDifferenceType: '',
+    priceDifferenceFen: 0,
     coverUrl: '',
     images: [],
     isVisible: true,
@@ -109,7 +112,20 @@ Page({
     try {
       const list = await api.technician.services.list();
       if (!this._pageActive) return;
-      this.setData({ availableServices: (list || []).filter(item => item.isActive !== false) });
+      const availableServices = (list || [])
+        .filter(item => item.isActive !== false)
+        .map(item => ({
+          ...item,
+          configurationValid:
+            Number.isFinite(Number(item.price)) &&
+            Number(item.price) >= 0 &&
+            Number.isInteger(Number(item.durationMinutes)) &&
+            Number(item.durationMinutes) >= 15
+        }));
+      this.setData({
+        availableServices,
+        hasInvalidServiceConfig: availableServices.some(item => !item.configurationValid)
+      });
       this.recalculatePricing();
     } catch (err) {
       console.error('load services error:', err);
@@ -123,7 +139,11 @@ Page({
       wx.hideLoading();
       if (!this._pageActive) return;
       let images = [];
-      try { images = JSON.parse(work.images || '[]'); } catch (e) {}
+      if (Array.isArray(work.imageUrls)) {
+        images = work.imageUrls.slice();
+      } else {
+        try { images = JSON.parse(work.images || '[]'); } catch (e) {}
+      }
       this.setData({
         title: work.title || '',
         description: work.description || '',
@@ -133,7 +153,7 @@ Page({
         tags: Array.isArray(work.tags) ? work.tags.join(',') : (work.tags || ''),
         price: work.price != null ? String(work.price) : '',
         standardPrice: work.standardPrice != null ? String(work.standardPrice) : '',
-        selectedServiceIds: (work.serviceLines || []).map(item => item.serviceId).filter(Boolean),
+        selectedServiceIds: expandServiceIds(work.serviceLines || []),
         coverUrl: work.coverUrl || '',
         images,
         isVisible: work.isVisible !== false,
@@ -149,30 +169,55 @@ Page({
   },
 
   onInput(e) {
-    this.setData({ [e.currentTarget.dataset.field]: e.detail.value });
+    const field = e.currentTarget.dataset.field;
+    this.setData({ [field]: e.detail.value }, () => {
+      if (field === 'standardPrice') this.recalculatePricing();
+    });
   },
 
-  toggleService(e) {
+  incrementService(e) {
     const id = String(e.currentTarget.dataset.id);
-    const selected = this.data.selectedServiceIds.includes(id)
-      ? this.data.selectedServiceIds.filter(item => item !== id)
-      : this.data.selectedServiceIds.concat(id);
-    this.setData({ selectedServiceIds: selected });
+    const service = this.data.availableServices.find(item => String(item.id) === id);
+    if (!service || !service.configurationValid) {
+      wx.showToast({ title: '请先完善该服务的价格和时长', icon: 'none' });
+      return;
+    }
+    const quantity = this.data.selectedServiceIds.filter(item => item === id).length;
+    if (quantity >= 20) {
+      wx.showToast({ title: '单项服务最多添加20份', icon: 'none' });
+      return;
+    }
+    this.setData({ selectedServiceIds: this.data.selectedServiceIds.concat(id) });
+    this.recalculatePricing();
+  },
+
+  decrementService(e) {
+    const id = String(e.currentTarget.dataset.id);
+    const index = this.data.selectedServiceIds.lastIndexOf(id);
+    if (index < 0) return;
+    const selectedServiceIds = this.data.selectedServiceIds.slice();
+    selectedServiceIds.splice(index, 1);
+    this.setData({ selectedServiceIds });
     this.recalculatePricing();
   },
 
   recalculatePricing() {
     const availableServices = this.data.availableServices.map(item => ({
       ...item,
-      selected: this.data.selectedServiceIds.includes(String(item.id))
+      quantity: this.data.selectedServiceIds.filter(id => id === String(item.id)).length
     }));
-    const selected = availableServices.filter(item =>
-      this.data.selectedServiceIds.includes(String(item.id))
-    );
+    const selected = availableServices.filter(item => item.quantity > 0);
+    const serviceSubtotalFen = selected.reduce((sum, item) =>
+      sum + Math.round(Number(item.price || 0) * 100) * item.quantity, 0);
+    const standardPriceFen = Math.round(Number(this.data.standardPrice || 0) * 100);
+    const differenceFen = standardPriceFen > 0 ? standardPriceFen - serviceSubtotalFen : 0;
     this.setData({
       availableServices,
-      serviceSubtotalFen: selected.reduce((sum, item) => sum + Math.round(Number(item.price || 0) * 100), 0),
-      totalDurationMinutes: selected.reduce((sum, item) => sum + Number(item.durationMinutes || 0), 0)
+      serviceSubtotalFen,
+      totalDurationMinutes: selected.reduce((sum, item) =>
+        sum + Number(item.durationMinutes || 0) * item.quantity, 0),
+      priceDifferenceType: differenceFen < 0 ? 'discount' : (differenceFen > 0 ? 'surcharge' : ''),
+      priceDifferenceFen: Math.abs(differenceFen)
     });
   },
 
@@ -217,6 +262,10 @@ Page({
     this.setData({ [`accessGrants[${index}].${field}`]: e.detail.value });
   },
   onRecommendationChange(e) { this.setData({ recommendationScore: Number(e.detail.value) + 1 }); },
+
+  goServiceManagement() {
+    wx.navigateTo({ url: '/pages/technician/services/index' });
+  },
 
   applyExistingGrants(grants) {
     const accessGrants = grants.map((grant) => {
@@ -316,8 +365,16 @@ Page({
       wx.showToast({ title: '请选择作品所需的基础服务', icon: 'none' });
       return false;
     }
-    if (!this.data.standardPrice || Number(this.data.standardPrice) <= 0) {
-      wx.showToast({ title: '请填写作品标准报价', icon: 'none' });
+    const invalidSelectedService = this.data.availableServices.find(item =>
+      this.data.selectedServiceIds.includes(String(item.id)) && !item.configurationValid
+    );
+    if (invalidSelectedService) {
+      wx.showToast({ title: '请先完善所选服务的价格和时长', icon: 'none' });
+      return false;
+    }
+    const standardPrice = Number(this.data.standardPrice);
+    if (!Number.isFinite(standardPrice) || standardPrice <= 0) {
+      wx.showToast({ title: '请填写作品综合报价', icon: 'none' });
       return false;
     }
     if (this.data.visibilityScope === 'authorized_clients' && !this.data.accessGrants.length) {
@@ -390,6 +447,17 @@ Page({
 function formatDate(value) {
   const date = new Date(value);
   return isNaN(date.getTime()) ? '未排期' : `${date.getMonth() + 1}月${date.getDate()}日`;
+}
+
+function expandServiceIds(serviceLines) {
+  const ids = [];
+  serviceLines.forEach(line => {
+    const id = line.serviceId;
+    const quantity = Math.max(1, Number(line.quantity) || 1);
+    if (!id) return;
+    for (let index = 0; index < quantity; index += 1) ids.push(String(id));
+  });
+  return ids;
 }
 
 function makeGrant(customer, orders) {

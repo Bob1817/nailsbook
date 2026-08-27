@@ -8,6 +8,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Throttle } from '@nestjs/throttler';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -26,6 +27,7 @@ import { TechnicianUploadService } from './technician-upload.service';
 @ApiBearerAuth()
 @Controller('technician/uploads')
 @UseGuards(TechnicianJwtAuthGuard, TouristGuard)
+@Throttle({ default: { ttl: 60000, limit: 30 } })
 export class TechnicianUploadController {
   constructor(
     private readonly technicianUploadService: TechnicianUploadService,

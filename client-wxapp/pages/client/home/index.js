@@ -1,5 +1,4 @@
 const api = require('../../../services/api');
-const { formatTime } = require('../../../utils/util');
 const { normalizeWork } = require('../../../utils/normalize-work');
 
 const STATUS_LABELS = {
@@ -32,6 +31,10 @@ Page({
     orderDay: '',
     orderWeekday: '',
     orderAddress: '',
+    orderLatitude: 0,
+    orderLongitude: 0,
+    orderShopGuidance: false,
+    orderShopName: '',
     worksPage: 1,
     worksHasMore: true,
     worksLoading: false,
@@ -56,6 +59,7 @@ Page({
       var app = getApp();
       var currentRole = app.globalData.role || wx.getStorageSync('role');
       var loggedIn = currentRole === 'client' && !!(app.globalData.token || wx.getStorageSync('client_token'));
+      this._clientLoggedIn = loggedIn;
       var ordersData = loggedIn
         ? await api.client.orders.list({ limit: 10 }).catch(function () { return null; })
         : null;
@@ -116,7 +120,7 @@ Page({
         if (upcoming) {
           var startDate = new Date(upcoming.startTime);
           var endStr = upcoming.endTime ? formatTimeShort(upcoming.endTime) : '';
-          var timeRange = formatTime(upcoming.startTime) + (endStr ? ' - ' + endStr : '');
+          var timeRange = formatTimeShort(upcoming.startTime) + (endStr ? '–' + endStr : '');
 
           this.setData({
             upcomingOrder: {
@@ -132,8 +136,41 @@ Page({
             orderMonth: MONTHS[startDate.getMonth()],
             orderDay: String(startDate.getDate()),
             orderWeekday: WEEKDAYS[startDate.getDay()],
-            orderAddress: upcoming.address || ''
+            orderAddress: upcoming.address || '',
+            orderLatitude: 0,
+            orderLongitude: 0,
+            orderShopGuidance: false,
+            orderShopName: upcoming.shopName || ''
           });
+
+          // 异步获取坐标用于导航（公开接口，不阻塞渲染）
+          var techId = (upcoming.technician && (upcoming.technician.id || upcoming.technician.technicianId)) || upcoming.technicianId;
+          if (techId) {
+            var self = this;
+            api.public.artists.detail(techId).then(function (result) {
+              var artist = result.artist || result;
+              var shops = (artist.shopAddresses || []).filter(function (s) { return s.enabled !== false; });
+              // 优先按地址匹配，匹配不到则取第一个有坐标的店铺
+              var normAddr = (upcoming.address || '').replace(/\s+/g, '');
+              var matched = normAddr ? shops.find(function (s) {
+                var full = ((s.province || '') + (s.city || '') + (s.district || '') + (s.detailAddress || '')).replace(/\s+/g, '');
+                return full === normAddr || normAddr.indexOf((s.detailAddress || '').replace(/\s+/g, '')) >= 0;
+              }) : null;
+              if (!matched) matched = shops.find(function (s) { return s.latitude && s.longitude; }) || null;
+              if (matched && matched.latitude && matched.longitude) {
+                self.setData({
+                  orderLatitude: parseFloat(matched.latitude),
+                  orderLongitude: parseFloat(matched.longitude)
+                });
+              }
+              if (matched) {
+                self.setData({
+                  orderShopName: matched.name || self.data.orderShopName,
+                  orderShopGuidance: !!(matched.guidance && matched.guidance.enabled)
+                });
+              }
+            }).catch(function () {});
+          }
         } else {
           this.setData({ upcomingOrder: null });
         }
@@ -153,9 +190,12 @@ Page({
     this.setData({ worksLoading: true });
 
     try {
-      // 首页瀑布流是公开内容，避免向 optional-auth 接口附带可能已失效的会话。
-      var res = await api.public.works.list({ page: page, limit: 10 });
-      var list = res.list || res.data || res || [];
+      // 首页只展示精选作品。登录时保留绑定美甲师口径，游客则匿名读取公开精选。
+      var res = await api.client.featuredWorks(
+        { page: page, limit: 10 },
+        { needAuth: !!this._clientLoggedIn, silent: true }
+      );
+      var list = res.works || res.list || res.data || (Array.isArray(res) ? res : []);
       var boundTech = this.data.technician;
       var likedIds = this._likedIds || {};
       var newWorks = list.map(function (w, index) {
@@ -187,7 +227,7 @@ Page({
       this.setData({
         featuredWorks: reset ? newWorks : this._dedupWorks(this.data.featuredWorks, newWorks),
         worksPage: page + 1,
-        worksHasMore: newWorks.length >= 10,
+        worksHasMore: typeof res.hasMore === 'boolean' ? res.hasMore : newWorks.length >= 10,
         worksLoading: false
       });
       this.splitFeaturedWorks();
@@ -207,7 +247,7 @@ Page({
 
   viewWork(e) {
     const id = e.currentTarget.dataset.id;
-    if (id) wx.navigateTo({ url: '/pages/client/public-work/index?id=' + id });
+    if (id) wx.navigateTo({ url: '/pages/client/work-detail/index?id=' + id });
   },
 
   onDotTap(e) {
@@ -225,6 +265,32 @@ Page({
   navigateToBooking() { wx.navigateTo({ url: '/pages/client/create-order/index' }); },
   navigateToOrders() { wx.navigateTo({ url: '/pages/client/orders/index' }); },
   navigateToChat() { wx.navigateTo({ url: '/pages/client/chat/index' }); },
+
+  navigateToShop() {
+    var lat = this.data.orderLatitude;
+    var lng = this.data.orderLongitude;
+    if (!lat && !lng) {
+      // 无坐标时复制地址
+      var addr = this.data.orderAddress;
+      if (addr) wx.setClipboardData({ data: addr, success: function () { wx.showToast({ title: '地址已复制，请手动导航', icon: 'none' }); } });
+      return;
+    }
+    var order = this.data.upcomingOrder || {};
+    wx.openLocation({
+      latitude: lat,
+      longitude: lng,
+      name: (order.technician && order.technician.name) || '店铺位置',
+      address: this.data.orderAddress || '',
+      scale: 18
+    });
+  },
+
+  openUpcomingGuidance() {
+    var order = this.data.upcomingOrder;
+    var techId = order && order.technician && (order.technician.id || order.technician.technicianId);
+    if (!techId) return;
+    wx.navigateTo({ url: `/pages/client/shop-guidance/index?techId=${techId}&shopName=${encodeURIComponent(this.data.orderShopName || '')}&address=${encodeURIComponent(this.data.orderAddress || '')}` });
+  },
 
   // === work-card 组件事件 ===
   onWorkCardTap(e) {

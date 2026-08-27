@@ -1,0 +1,37 @@
+<nav-bar title="修改预约时间" showBack/>
+<view class="page">
+  <!-- 当前预约信息 -->
+  <view class="section">
+    <view class="section-head">
+      <text class="section-title">当前预约时间</text>
+    </view>
+    <text class="current-value">{{originalDate}} {{originalTime}}</text>
+  </view>
+
+  <!-- 预约时间选择组件 -->
+  <view class="section">
+    <view class="section-head">
+      <text class="section-title">选择新时间</text>
+    </view>
+    <booking-time-picker
+      tech-id="{{techId}}"
+      service-date="{{selectedDate}}"
+      start-time="{{selectedTime}}"
+      service-type="{{serviceType}}"
+      shop-name="{{selectedShopName}}"
+      duration-minutes="{{durationMinutes}}"
+      exclude-order-id="{{orderId}}"
+      bindchange="onTimeChange"
+    />
+  </view>
+
+  <!-- 底部按钮 -->
+  <view class="submit-bar">
+    <view class="submit-btns">
+      <view class="submit-btn submit-btn-cancel" bindtap="goBack">暂不修改</view>
+      <view class="submit-btn submit-btn-save {{(!selectedDate || !selectedTime || saving) ? 'btn-disabled' : ''}}" bindtap="saveTime">
+        {{saving ? '保存中...' : '保存修改'}}
+      </view>
+    </view>
+  </view>
+</view>

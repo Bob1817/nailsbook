@@ -1,5 +1,147 @@
 # Design QA
 
+## 2026-08-22 美甲师首页下一单参考图还原
+
+- Source visual: `/var/folders/s4/0wvnnhl92wq7h80zc4f7cz040000gn/T/TemporaryItems/NSIRD_screencaptureui_QoiVCP/截屏2026-08-22 22.59.10.png` (748 × 980 px).
+- Implementation overview: `/Users/shibo/Documents/Codex/nailBook/client-wxapp/qa-artifacts/next-booking-card-middle.png`.
+- Implementation lower section: `/Users/shibo/Documents/Codex/nailBook/client-wxapp/qa-artifacts/next-booking-card-location.png`.
+- Runtime: WeChat DevTools, iPhone 15 Pro Max simulator, authenticated `pages/technician/home/index` with a pending in-store appointment.
+
+### Findings and fixes
+
+- P1: the previous homepage assembled date, customer, travel estimate, countdown, and large pill actions in a layout unrelated to the supplied reference. The hero variant now follows the reference's five-section information hierarchy and hairline dividers.
+- P1: appointment status was derived as a departure state. The hero now exposes only booking states (`待到店` or `进行中`) in the header.
+- P1: customer identity and contact action were not a dedicated row. They now share one row with an avatar, customer name, and the unified phone icon.
+- P1: service content, price, and deposit status lacked a stable comparison layout. The service combination is split into readable lines while price and deposit status form a right-aligned decision column.
+- P1: the location area previously emphasized route estimates. It now presents shop name, address, and a restrained navigation action matching the source.
+
+### Fidelity and verification
+
+- The source and implementation preserve the same reading order: header/status, date/time, customer/contact, booking/price/deposit, and shop/address/navigation.
+- White card surface, warm hairlines, restrained pink accent, large black appointment time, and muted secondary labels match the reference direction.
+- Phone and navigation actions use project SVG icons through `<image>` nodes, avoiding unsupported local WXSS resource URLs.
+- Runtime accessibility output confirms all required content nodes, including `PM`, the two service lines, `¥598`, `未支付定金`, shop name, address, and navigation.
+- Focused screenshots verify both upper and lower card regions after scrolling; fixed bottom navigation does not obscure the location section when it is brought into view.
+- Exact glyph metrics vary slightly with the WeChat simulator's system font and narrower device viewport; no content clipping or hierarchy regression remains.
+
+final result: passed
+
+---
+
+## 2026-08-21 作品详情全出血图片与圆弧信息卡
+
+- Source: user-provided WeChat DevTools screenshot showing black spacing around the detail image.
+- Implementation: `/Users/shibo/Documents/Codex/nailBook/client-wxapp/qa-artifacts/work-detail-20260821/full-bleed-rounded-panel.jpeg`
+- Runtime: WeChat DevTools, iPhone 15 Pro Max simulator, authenticated `pages/client/work-detail/index`.
+
+### Findings and fixes
+
+- P1: the global `.container` utility added page padding while the detail container used a black background, exposing a black frame around the image. Both authenticated and public detail pages now explicitly use zero padding, full width, and a white page surface.
+- P1: the information area had asymmetric, shallow radii and exposed the dark image container. It now overlaps the image by 40rpx with symmetric 40rpx top radii and a restrained upward shadow.
+
+### Fidelity and verification
+
+- Image: production photography remains `aspectFill` and now reaches both content edges without gutters or top spacing below the navigation bar.
+- Layout: the white information card cleanly overlaps the image and retains safe bottom padding for the fixed comment/booking controls.
+- Typography, colors, icons, and copy remain unchanged; this correction is limited to framing and transition.
+- WeChat DevTools runtime confirms the authenticated detail route renders without the black frame. The duplicated public detail stylesheet carries the same tested layout contract.
+- Targeted component contract, Mini Program static validation, and `git diff --check` passed.
+
+final result: passed
+
+---
+
+## 2026-08-21 客户端作品页 Hero 与完整作品流
+
+- Source: user-provided WeChat DevTools screenshot showing a full-width featured work above the regular work feed.
+- Implementation: `/Users/shibo/Documents/Codex/nailBook/client-wxapp/qa-artifacts/discover-hero-20260821/discover-hero-and-all-works.jpeg`
+- Runtime: WeChat DevTools, iPhone 15 Pro Max simulator, `pages/client/discover/index`, authenticated client bound to technician.
+
+### Findings and fixes
+
+- P0: the old page promoted the first three visible works and then removed them from the regular feed. With only two or three works, the regular feed appeared empty. The page now loads all bound-technician works from `/client/works`, loads selected works separately from `/client/featured-works`, and keeps every work in the regular list.
+- P1: the Hero reused the standard editorial card inside a fixed-height swiper, causing card content clipping. Replaced it with a dedicated full-width photographic Hero containing title, technician identity, a glass detail affordance, and separate carousel indicators.
+- P1: “featured” did not reflect technician selection. Hero membership now comes only from the backend featured response or `isFeatured`; it is no longer inferred from list position.
+
+### Required fidelity surfaces
+
+- Typography: Hero title uses the display stack and white overlay treatment; compact technician metadata stays secondary.
+- Layout: search and category controls remain sticky, Hero spans the content width, indicators sit below it, and `全部作品` introduces the complete two-column feed.
+- Colors: burgundy section accents and indicators remain consistent; the Hero uses a restrained dark image overlay for text contrast.
+- Images: existing production work photography is reused with `aspectFill`; no placeholders or generated assets were introduced.
+- Content: runtime exposes `本期精选`, `全部作品`, `4 款`, four appointment actions, and all bound-technician works.
+
+### Interaction and engineering verification
+
+- Runtime carousel indicator changed from `第 4 张，共 4 张` to `第 2 张，共 4 张` after five seconds, confirming autoplay and circular progression.
+- Normal feed displayed four works while the same featured works remained available in Hero.
+- Frontend targeted contract, Mini Program static validation, JavaScript syntax, and `git diff --check` passed.
+- Backend client-home tests passed 10/10 and Nest build passed.
+
+final result: passed
+
+---
+
+## 2026-08-21 技师作品卡片覆盖层与删除操作
+
+- Source: user-provided WeChat DevTools screenshot, technician home two-column work grid.
+- Card implementation: `/Users/shibo/Documents/Codex/nailBook/client-wxapp/qa-artifacts/work-card-20260821/technician-card-refinement.jpeg`
+- Action sheet: `/Users/shibo/Documents/Codex/nailBook/client-wxapp/qa-artifacts/work-card-20260821/technician-menu-delete.jpeg`
+- Delete confirmation: `/Users/shibo/Documents/Codex/nailBook/client-wxapp/qa-artifacts/work-card-20260821/technician-delete-confirm.jpeg`
+- Runtime: WeChat DevTools, iPhone 15 Pro Max simulator, technician home scrolled to `今日热门`.
+
+### Findings and fixes
+
+- P1: status pills had a bright outline competing with the photography. Removed the pill border while retaining coral fill and readable white labels.
+- P1: the management control appeared as an oversized white circle. Preserved its 88rpx touch target, removed visible background/border/shadow, and reduced the icon to 28rpx.
+- P2: the price chip was opaque, then its coral text remained too dark over black photography. Changed it to white text on a translucent charcoal glass surface with 18rpx background blur and a restrained highlight border.
+- P0: the homepage management sheet omitted deletion. Added `删除作品`, followed by a destructive-color confirmation modal explaining that deletion cannot be recovered.
+
+### Verification
+
+- Runtime screenshot confirms status pills stack vertically without outlines, the menu icon aligns with the first pill without a circular surface, and white price text remains legible over the translucent glass chip.
+- Runtime action sheet exposes hide/show, pin, recommend, edit, delete, and cancel.
+- Runtime delete selection opens the confirmation modal; QA cancelled it and did not delete data.
+- Targeted role-action test, Mini Program static validation, JavaScript syntax, and `git diff --check` passed.
+
+final result: passed
+
+---
+
+## 2026-08-21 统一作品卡片角色化重构
+
+- Client source: `/Users/shibo/.codex/generated_images/01a024a6-c96b-7112-b975-535a35c11dfa/exec-fe5b9ce7-e454-4474-86de-16ab4c3f1972.png`
+- Technician source: `/Users/shibo/.codex/generated_images/01a024a6-c96b-7112-b975-535a35c11dfa/exec-1269d96d-1002-4657-a0d1-934ec158bbc6.png`
+- Client implementation: `/Users/shibo/Documents/Codex/nailBook/client-wxapp/qa-artifacts/work-card-20260821/client-home-simulator.png`
+- Technician implementation: `/Users/shibo/Documents/Codex/nailBook/client-wxapp/qa-artifacts/work-card-20260821/technician-home-simulator.png`
+- Comparisons: `qa-artifacts/work-card-20260821/client-comparison.png`, `qa-artifacts/work-card-20260821/technician-comparison.png`
+- Runtime: WeChat DevTools, iPhone 15 Pro Max simulator, two-column client and technician home card states.
+
+### Findings and fixes
+
+- P1: the former card surface blended into the page. Added a white card surface, warm-gray hairline border, 24rpx radius, and restrained two-layer shadow while leaving the photograph as the dominant area.
+- P1: client cards did not expose the complete decision path. Added price overlay, title, technician identity/status, and a role-only action footer ordered as `点赞 / 收藏 / 预约同款`.
+- P1: technician and client actions competed in one presentation. The shared base card now switches by `manageable`: technician cards expose status pills and the existing right-top management menu; client cards expose only conversion actions.
+- P2: a generated separator pseudo-element triggered a Mini Program WXSS selector warning. Replaced it with a real text node.
+
+### Required fidelity surfaces
+
+- Work photography remains the largest surface and uses `aspectFill`; price is legible without covering the nail focal area.
+- Card edges remain visible against the warm page background in both two-column grids.
+- Artist identity stays present because a client may follow multiple technicians; compact availability or expertise metadata is secondary to title and price.
+- All primary role actions use at least 88rpx touch dimensions, with pressed states and no hover dependency.
+
+### Interaction and engineering verification
+
+- WeChat DevTools verified the technician right-top icon opens the existing action sheet: hide, pin, recommend, edit, cancel.
+- Client runtime verified distinct like, favorite, and coral appointment controls; the targeted component contract verifies appointment navigation carries `workId` to the create-order page.
+- `scripts/test-work-card-role-actions.js`, Mini Program static validation, and `git diff --check` passed.
+- No WXML compile errors were introduced. Remaining console warnings are pre-existing navigation/tab-bar selectors, deprecated WeChat system-info APIs, preload notices, and the rest-day calendar value warning.
+
+final result: passed
+
+---
+
 - Source card issue: `/var/folders/s4/0wvnnhl92wq7h80zc4f7cz040000gn/T/TemporaryItems/NSIRD_screencaptureui_chCqEW/截屏2026-08-14 21.07.18.png`
 - Artist-home design truth: `/Users/shibo/.codex/generated_images/01a00025-5da7-7be0-b9c6-05f99d7d4191/exec-42a63ead-cbd7-4773-83d6-ad8e3eb3470d.png`
 - Card implementation: `/Users/shibo/Documents/Codex/nailBook/client-wxapp/qa-artifacts/cards-responsive-implementation.png`
@@ -343,3 +485,22 @@ final result: passed
 - `git diff --check` passed.
 
 final result: blocked
+## 2026-08-22 作品卡片基础布局与账户权限统一
+
+- 基础布局：客户端与美甲师端继续复用 `components/work-card`，统一展示作品图片、价格、标题和发布美甲师；账户差异只影响状态标签与底部操作区。
+- 发布者本人：页面传入 `manageable` 时只显示右上角管理入口及作品状态，不显示点赞、收藏、预约同款。
+- 已绑定客户：当前账号不是发布者且作品发布美甲师在客户绑定列表中时，显示点赞、收藏、预约同款；非绑定发布者不显示预约操作。
+- 价格链路：客户端接口补齐 `price`、标准价与服务合计价字段，标准化层和卡片层按 `standardPriceFen → serviceSubtotalFen → priceCents → price` 顺序生成价格文案。
+- 验证：角色权限脚本、Mini Program 静态校验、后端 client-home 单测、Nest 构建及 `git diff --check` 均通过。
+- 运行态说明：最终刷新复核被 macOS 锁屏阻断；代码、接口映射与自动化验证已完成。
+
+final result: passed with runtime refresh pending
+
+### 2026-08-22 价格与底部间距复核
+
+- 价格二次根因：小程序当前连接 `https://api.lunails.cn`；生产环境的 `/api/client/works` 与 `/api/public/works` 响应均未包含价格字段。已同时补齐登录作品接口和公开作品接口的 `price`、`serviceSubtotalFen`、`standardPriceFen`、`totalDurationMinutes` 映射。
+- 底部操作：点赞与收藏操作组增加与预约按钮左侧相同的 `8rpx` 间距，点赞、收藏仍保持等宽。
+- 运行态：微信开发者工具重新编译后，截图确认点赞、收藏、预约三组操作的分隔间距一致。价格需要包含本次后端改动的版本部署到 `api.lunails.cn` 后才能在当前生产数据中显示。
+- 自动化：公开作品价格映射测试 2 项通过，Nest 构建、小程序静态检查与作品卡角色交互检查通过。
+
+---

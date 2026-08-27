@@ -3,8 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { ChatGateway } from '../chat/chat.gateway';
 import { PushService } from '../notifications/push.service';
-import * as crypto from 'crypto';
-import { ReferralQualificationService } from '../referrals/referral-qualification.service';
+import { OrdersService } from './orders.service';
 import { WechatSubscribeMessagesService } from '../wechat-subscribe-messages/wechat-subscribe-messages.service';
 
 @Injectable()
@@ -15,10 +14,9 @@ export class OrdersScheduler {
     private prisma: PrismaService,
     private chatGateway: ChatGateway,
     private push: PushService,
+    private readonly orders: OrdersService,
     @Optional()
     private readonly wechatSubscribe?: WechatSubscribeMessagesService,
-    @Optional()
-    private readonly referralQualification?: ReferralQualificationService,
   ) {}
 
   // 批处理大小，避免单次 findMany 全表扫描导致 CPU 飙高
@@ -531,112 +529,10 @@ export class OrdersScheduler {
 
     for (const order of orders) {
       try {
-        const revenueExists = await this.prisma.revenue.findUnique({
-          where: { orderId: order.id },
-        });
-
-        let systemMessage: any = null;
-        let conversationId: number | null = null;
-
-        await this.prisma.$transaction(async (tx) => {
-          const actualAmount = Math.max(
-            0,
-            order.actualAmount ??
-              (order.quotePrice ?? 0) - (order.fundDiscountAmount ?? 0),
-          );
-          await tx.order.update({
-            where: { id: order.id },
-            data: {
-              status: 'completed',
-              completedAt: now,
-              actualAmount,
-              bookingPhase: 'finished',
-            },
-          });
-
-          if (!revenueExists) {
-            await tx.revenue.create({
-              data: {
-                revenueNo: `RV${Date.now()}${crypto.randomBytes(2).toString('hex').toUpperCase()}`,
-                orderId: order.id,
-                technicianId: order.technicianId,
-                customerId: order.customerId,
-                amount: actualAmount,
-                recognizedAt: now,
-                status: 'confirmed',
-              },
-            });
-          } else {
-            await tx.revenue.update({
-              where: { orderId: order.id },
-              data: {
-                amount: actualAmount,
-                recognizedAt: now,
-                status: 'confirmed',
-                voidedAt: null,
-              },
-            });
-          }
-
-          if (this.referralQualification) {
-            await this.referralQualification.qualifyCompletedOrder(tx, order);
-          }
-
-          if (order.clientUserId) {
-            const preview = '服务已完成，感谢使用～';
-            const conversation = await tx.conversation.upsert({
-              where: {
-                clientId_techId: {
-                  clientId: order.clientUserId,
-                  techId: order.technicianId,
-                },
-              },
-              update: { lastMessage: preview, lastMessageAt: new Date() },
-              create: {
-                clientId: order.clientUserId,
-                techId: order.technicianId,
-                lastMessage: preview,
-                lastMessageAt: new Date(),
-              },
-            });
-
-            conversationId = conversation.id;
-
-            systemMessage = await tx.message.create({
-              data: {
-                conversationId: conversation.id,
-                senderType: 'system',
-                senderId: 0,
-                receiverType: 'client',
-                receiverId: order.clientUserId,
-                messageType: 'system',
-                content: preview,
-                relatedType: 'order',
-                relatedId: order.id,
-              },
-            });
-          }
-        });
-
-        if (systemMessage && conversationId) {
-          try {
-            const updatedConversation =
-              await this.prisma.conversation.findUnique({
-                where: { id: conversationId },
-              });
-            this.chatGateway.server
-              .to(`conversation:${String(conversationId)}`)
-              .emit('message:new', {
-                message: systemMessage,
-                conversation: updatedConversation,
-              });
-          } catch (e) {
-            this.logger.error(
-              `[OrdersScheduler] Failed to push notification via WebSocket for order #${order.id}:`,
-              e,
-            );
-          }
-        }
+        await this.orders.complete(order.id, {
+          actualStartTime: (order.confirmedStartTime || order.startTime).toISOString(),
+          actualEndTime: now.toISOString(),
+        }, 'automatic');
 
         this.logger.log(
           `订单 #${order.id} 自动从 in_progress 转换为 completed`,

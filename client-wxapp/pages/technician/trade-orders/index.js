@@ -16,6 +16,10 @@ function decorate(item) {
 }
 Page({
   data:{tabs:TABS,active:'all',all:[],list:[],loading:true},
+  onLoad(options){
+    const active = options && options.filter === 'pending' ? 'pending' : 'all';
+    this.setData({ active });
+  },
   onShow(){this.load();},
   async load(){
     this.setData({loading:true});

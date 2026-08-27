@@ -5,6 +5,9 @@ Component({
   data: {
     compactExpertise: '1年 · -',
     gridArtistMeta: '',
+    displayPrice: '',
+    artistStatus: '',
+    showClientActions: false,
     localLiked: false,
     localFavorited: false,
     localLikeCount: 0,
@@ -36,7 +39,7 @@ Component({
   },
 
   observers: {
-    work: function (work) {
+    'work, manageable': function (work, manageable) {
       work = work || {};
       // 作品卡展示专用精简：城市去掉末尾的"市"（杭州市→杭州）、从业文案去掉"从业"二字（从业6年→6年）
       // 注意：只在 work-card 展示层精简；normalizeWork 输出的 artistMetaText 继续与美甲师详情页口径一致（public-work 详情页用）
@@ -99,9 +102,32 @@ Component({
       var gridParts = [slimCity(cityPartRaw), yearsStr(num)].filter(Boolean);
       gridMeta = gridParts.join(' · ');
 
+      function bindingTechId(binding) {
+        if (!binding) return '';
+        var tech = binding.technician || binding;
+        return String(tech.id || tech.technicianId || binding.techId || '');
+      }
+      function formatCardPrice(w) {
+        if (w.priceText) return w.priceText;
+        var fen = Number(w.standardPriceFen || w.serviceSubtotalFen || w.priceCents || 0);
+        var value = fen > 0 ? fen / 100 : Number(w.price || 0);
+        return value > 0 ? '¥' + value : '';
+      }
+
+      var publisherId = String(work.technicianId || (work.technician && (work.technician.id || work.technician.technicianId)) || '');
+      var bindings = wx.getStorageSync('client_bindings') || [];
+      var publisherBound = !!work.isMyTechnician || bindings.some(function (binding) {
+        return publisherId && bindingTechId(binding) === publisherId;
+      });
+
       this.setData({
         compactExpertise: expertise,
         gridArtistMeta: gridMeta,
+        displayPrice: formatCardPrice(work),
+        artistStatus: manageable
+          ? (work.isVisible === false ? '已隐藏' : '已发布')
+          : (work.nextAvailableText || work.availabilityText || expertise),
+        showClientActions: !manageable && publisherBound,
         localLiked: !!work.isLiked,
         localFavorited: !!work.isFavorited,
         localLikeCount: work.likeCount || 0,
@@ -165,6 +191,11 @@ Component({
     onActionTap() {
       const work = this.data.work || {};
       this.triggerEvent('actiontap', { id: work.id, visible: work.isVisible, pinned: work.isPinned, featured: work.isFeatured });
+    },
+    onBookTap() {
+      const work = this.data.work || {};
+      if (!work.id) return;
+      wx.navigateTo({ url: '/pages/client/create-order/index?workId=' + work.id });
     }
   }
 });

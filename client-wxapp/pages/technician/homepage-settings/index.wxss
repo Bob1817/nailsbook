@@ -25,6 +25,11 @@ page { background:#faf8f9; color:#342d31; }
 .slider-scale { display:flex; justify-content:space-between; color:#9a8f94; font-size:20rpx; }
 .skill-limit { color:#8f284c; font-size:22rpx; }
 .skill-help { display:block; margin:-2rpx 0 18rpx; color:#958a90; font-size:21rpx; line-height:1.5; }
+.selected-styles { margin-bottom:20rpx; display:flex; flex-direction:column; gap:12rpx; }
+.selected-style { min-height:88rpx; padding:0 20rpx; display:flex; align-items:center; gap:16rpx; border:1rpx solid #ead8df; border-radius:16rpx; background:#fff8fa; color:#4c4146; font-size:24rpx; box-sizing:border-box; }
+.selected-style:active { opacity:.68; }
+.selected-style-order { width:40rpx; height:40rpx; display:flex; align-items:center; justify-content:center; border-radius:50%; background:#8f284c; color:#fff; font-size:20rpx; flex-shrink:0; }
+.selected-style-remove { margin-left:auto; color:#8f284c; font-size:32rpx; }
 .skill-list { display:flex; flex-wrap:wrap; gap:14rpx; }
 .skill-chip { min-height:72rpx; padding:0 24rpx; display:flex; align-items:center; justify-content:center; border:1rpx solid #ded7db; border-radius:36rpx; background:#fff; color:#6d6268; font-size:23rpx; box-sizing:border-box; }
 .skill-chip.selected { border-color:#8f284c; background:#fff5f8; color:#8f284c; font-weight:600; }

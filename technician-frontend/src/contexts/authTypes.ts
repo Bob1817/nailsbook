@@ -122,6 +122,11 @@ export interface Technician {
   province?: string;
   city?: string;
   serviceArea?: string;
+  bio?: string | null;
+  coverImageUrl?: string | null;
+  servicePhilosophy?: string | null;
+  bookingNotes?: string | null;
+  styleTags?: string[] | null;
   homeService?: boolean;
   shopService?: boolean;
   shopAddresses?: ShopAddress[];

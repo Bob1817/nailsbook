@@ -22,18 +22,32 @@
     <view class="form-item">
       <text class="label">基础服务组合 *</text>
       <text class="field-help">服务决定作品的价格基准、时长和预约占位</text>
+      <view wx:if="{{hasInvalidServiceConfig}}" class="service-config-warning">
+        <text>存在未配置有效时长的基础服务，完善后才能用于作品报价。</text>
+        <text class="service-config-action" bindtap="goServiceManagement">前往服务管理</text>
+      </view>
       <view class="service-options">
-        <view wx:for="{{availableServices}}" wx:key="id" class="service-option {{item.selected ? 'selected' : ''}}" data-id="{{item.id}}" bindtap="toggleService">
+        <view wx:for="{{availableServices}}" wx:key="id" class="service-option {{item.quantity > 0 ? 'selected' : ''}} {{item.configurationValid ? '' : 'service-option-invalid'}}">
           <view class="service-option-copy"><text class="service-option-name">{{item.name}}</text><text class="service-option-meta">¥{{item.price}} · {{item.durationMinutes}} 分钟</text></view>
-          <text class="service-check">{{item.selected ? '✓' : ''}}</text>
+          <view class="service-stepper">
+            <view class="service-stepper-button {{item.quantity <= 0 ? 'disabled' : ''}}" data-id="{{item.id}}" bindtap="decrementService" role="button" aria-label="减少{{item.name}}数量"><text class="service-stepper-symbol">−</text></view>
+            <text class="service-quantity">{{item.quantity}}</text>
+            <view class="service-stepper-button plus {{item.configurationValid ? '' : 'disabled'}}" data-id="{{item.id}}" bindtap="incrementService" role="button" aria-label="增加{{item.name}}数量"><text class="service-stepper-symbol">+</text></view>
+          </view>
         </view>
       </view>
-      <view wx:if="{{selectedServiceIds.length}}" class="pricing-summary"><text>服务合计 ¥{{serviceSubtotalFen / 100}}</text><text>预计 {{totalDurationMinutes}} 分钟</text></view>
+      <view wx:if="{{selectedServiceIds.length}}" class="pricing-summary"><text>服务原价 ¥{{serviceSubtotalFen / 100}}</text><text>预计 {{totalDurationMinutes}} 分钟</text></view>
     </view>
     <view class="form-item">
-      <text class="label">作品标准报价（元）*</text>
-      <input class="input" type="digit" placeholder="客户预约同款时的最终价格" value="{{standardPrice}}" data-field="standardPrice" bindinput="onInput" confirm-type="done" cursor-spacing="24"/>
-      <text class="field-help">可与服务合计不同，客户将同时看到价格构成与标准报价</text>
+      <text class="label">作品综合报价（元）*</text>
+      <input class="input" type="digit" placeholder="请输入美甲师综合报价" value="{{standardPrice}}" data-field="standardPrice" bindinput="onInput" confirm-type="done" cursor-spacing="24"/>
+      <text class="field-help">服务原价按各项基础服务的价格及数量累加，综合报价为客户预约同款时的最终报价</text>
+      <view wx:if="{{selectedServiceIds.length && standardPrice}}" class="price-breakdown">
+        <view class="price-breakdown-line"><text>服务原价</text><text>¥{{serviceSubtotalFen / 100}}</text></view>
+        <view wx:if="{{priceDifferenceType === 'discount'}}" class="price-breakdown-line discount"><text>优惠</text><text>-¥{{priceDifferenceFen / 100}}</text></view>
+        <view wx:elif="{{priceDifferenceType === 'surcharge'}}" class="price-breakdown-line surcharge"><text>其他</text><text>+¥{{priceDifferenceFen / 100}}</text></view>
+        <view class="price-breakdown-line final"><text>作品综合报价</text><text>¥{{standardPrice}}</text></view>
+      </view>
     </view>
     <view class="form-item">
       <text class="label">标签</text>

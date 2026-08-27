@@ -104,14 +104,14 @@
             </view>
             <view wx:if="{{activeTechMenuId === item.id}}" class="tech-more-menu">
               <view class="tech-menu-item" catchtap="viewTechnicianHome" data-id="{{item.id}}">
-                <view class="tech-menu-icon tech-menu-icon-info"></view><text>查看主页</text>
+                <image class="tech-menu-icon" src="/static/icons/info.svg" mode="aspectFit" /><text>查看主页</text>
               </view>
               <view class="tech-menu-item" catchtap="messageTechnician" data-id="{{item.id}}" data-name="{{item.name}}">
-                <view class="tech-menu-icon tech-menu-icon-message"></view><text>发送消息</text>
+                <image class="tech-menu-icon" src="/static/icons/tab-chat.svg" mode="aspectFit" /><text>发送消息</text>
               </view>
               <view class="tech-menu-divider"></view>
               <view class="tech-menu-item tech-menu-danger" catchtap="unbindTechnician" data-id="{{item.id}}" data-name="{{item.name}}">
-                <view class="tech-menu-icon tech-menu-icon-unbind"></view><text>解除绑定</text>
+                <image class="tech-menu-icon" src="/static/icons/unlink.svg" mode="aspectFit" /><text>解除绑定</text>
               </view>
             </view>
           </view>
@@ -126,27 +126,27 @@
         </view>
         <view class="menu-list">
           <view class="menu-item" bindtap="navigateToOrders">
-            <view class="menu-icon-wrap menu-icon-pink"><view class="m-icon m-icon-doc"></view></view>
+            <view class="menu-icon-wrap menu-icon-pink"><image class="m-icon" src="/static/icons/document.svg" mode="aspectFit" /></view>
             <text class="menu-label">我的订单</text>
             <text class="menu-arrow">›</text>
           </view>
           <view class="menu-item" bindtap="navigateToDesigns">
-            <view class="menu-icon-wrap menu-icon-pink"><view class="m-icon m-icon-design"></view></view>
+            <view class="menu-icon-wrap menu-icon-pink"><image class="m-icon" src="/static/icons/edit.svg" mode="aspectFit" /></view>
             <text class="menu-label">我的设计</text>
             <text class="menu-arrow">›</text>
           </view>
           <view class="menu-item" bindtap="navigateToFavorites">
-            <view class="menu-icon-wrap menu-icon-pink"><view class="m-icon m-icon-bookmark"></view></view>
+            <view class="menu-icon-wrap menu-icon-pink"><image class="m-icon" src="/static/icons/bookmark.svg" mode="aspectFit" /></view>
             <text class="menu-label">我的收藏</text>
             <text class="menu-arrow">›</text>
           </view>
           <view class="menu-item" bindtap="navigateToLikes">
-            <view class="menu-icon-wrap menu-icon-pink"><view class="m-icon m-icon-heart"></view></view>
+            <view class="menu-icon-wrap menu-icon-pink"><image class="m-icon" src="/static/icons/social-heart.svg" mode="aspectFit" /></view>
             <text class="menu-label">我的点赞</text>
             <text class="menu-arrow">›</text>
           </view>
           <view class="menu-item" bindtap="navigateToFeedback">
-            <view class="menu-icon-wrap menu-icon-pink"><view class="m-icon m-icon-chat"></view></view>
+            <view class="menu-icon-wrap menu-icon-pink"><image class="m-icon" src="/static/icons/tab-chat.svg" mode="aspectFit" /></view>
             <text class="menu-label">问题反馈</text>
             <text class="menu-arrow">›</text>
           </view>
@@ -161,43 +161,43 @@
         </view>
         <view class="menu-list">
           <view class="menu-item" bindtap="navigateToPassword">
-            <view class="menu-icon-wrap menu-icon-purple"><view class="m-icon m-icon-lock"></view></view>
+            <view class="menu-icon-wrap menu-icon-purple"><image class="m-icon" src="/static/icons/lock.svg" mode="aspectFit" /></view>
             <text class="menu-label">修改密码</text>
             <text class="menu-arrow">›</text>
           </view>
           <view class="menu-item" bindtap="navigateToManual">
-            <view class="menu-icon-wrap menu-icon-purple"><view class="m-icon m-icon-book"></view></view>
+            <view class="menu-icon-wrap menu-icon-purple"><image class="m-icon" src="/static/icons/book.svg" mode="aspectFit" /></view>
             <text class="menu-label">使用手册 · 常见问题</text>
             <text class="menu-arrow">›</text>
           </view>
           <view class="menu-item" bindtap="openAgreement" data-type="user">
-            <view class="menu-icon-wrap menu-icon-purple"><view class="m-icon m-icon-doc"></view></view>
+            <view class="menu-icon-wrap menu-icon-purple"><image class="m-icon" src="/static/icons/document.svg" mode="aspectFit" /></view>
             <text class="menu-label">用户协议</text>
             <text class="menu-arrow">›</text>
           </view>
           <view class="menu-item" bindtap="openAgreement" data-type="privacy">
-            <view class="menu-icon-wrap menu-icon-purple"><view class="m-icon m-icon-shield"></view></view>
+            <view class="menu-icon-wrap menu-icon-purple"><image class="m-icon" src="/static/icons/shield.svg" mode="aspectFit" /></view>
             <text class="menu-label">隐私政策</text>
             <text class="menu-arrow">›</text>
           </view>
-          <view class="menu-item" bindtap="navigateToAbout">
-            <view class="menu-icon-wrap menu-icon-purple"><view class="m-icon m-icon-info"></view></view>
-            <text class="menu-label">运营主体与备案信息</text>
-            <text class="menu-arrow">›</text>
-          </view>
           <view class="menu-item" bindtap="requestAccountDeletion">
-            <view class="menu-icon-wrap menu-icon-purple"><view class="m-icon m-icon-doc"></view></view>
+            <view class="menu-icon-wrap menu-icon-purple"><image class="m-icon" src="/static/icons/document.svg" mode="aspectFit" /></view>
             <text class="menu-label">账号注销申请</text>
             <text class="menu-arrow">›</text>
           </view>
           <view class="menu-item" bindtap="switchRole">
-            <view class="menu-icon-wrap menu-icon-purple"><view class="m-icon m-icon-swap"></view></view>
+            <view class="menu-icon-wrap menu-icon-purple"><image class="m-icon" src="/static/icons/switch.svg" mode="aspectFit" /></view>
             <text class="menu-label">切换身份</text>
+            <text class="menu-arrow">›</text>
+          </view>
+          <view class="menu-item" bindtap="navigateToAbout">
+            <view class="menu-icon-wrap menu-icon-purple"><image class="m-icon" src="/static/icons/info.svg" mode="aspectFit" /></view>
+            <text class="menu-label">关于我们</text>
             <text class="menu-arrow">›</text>
           </view>
         </view>
         <view class="version-row">
-          <view class="menu-icon-wrap menu-icon-gray"><view class="m-icon m-icon-info"></view></view>
+          <view class="menu-icon-wrap menu-icon-gray"><image class="m-icon" src="/static/icons/info.svg" mode="aspectFit" /></view>
           <text class="menu-label version-label">版本</text>
           <text class="version-text">1.0.0</text>
         </view>

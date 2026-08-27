@@ -5,6 +5,7 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Permissions } from '../auth/permission.decorator';
+import { OperationLog } from '../auth/operation-log.decorator';
 import { AdminReportsService } from './admin-reports.service';
 
 @ApiTags('管理-举报')
@@ -31,6 +32,7 @@ export class AdminReportsController {
 
   @Patch(':id/resolve')
   @Permissions('report:manage')
+  @OperationLog({ module: 'report', action: 'resolve', targetType: 'report' })
   @ApiOperation({ summary: '处置举报（删除评论）' })
   resolve(@Param('id', ParseIntPipe) id: number) {
     return this.service.resolve(id);
@@ -38,6 +40,7 @@ export class AdminReportsController {
 
   @Patch(':id/dismiss')
   @Permissions('report:manage')
+  @OperationLog({ module: 'report', action: 'dismiss', targetType: 'report' })
   @ApiOperation({ summary: '驳回举报' })
   dismiss(@Param('id', ParseIntPipe) id: number) {
     return this.service.dismiss(id);

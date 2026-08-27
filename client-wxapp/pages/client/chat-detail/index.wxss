@@ -384,56 +384,8 @@ page {
 }
 
 /* 菜单图标 */
-.add-menu-icon { width: 40rpx; height: 40rpx; position: relative; flex-shrink: 0; }
+.add-menu-icon { width: 40rpx; height: 40rpx; flex-shrink: 0; background: center / contain no-repeat; }
 
-/* 图片图标 */
-.menu-icon-image {
-  border: 3rpx solid #5b8def;
-  border-radius: 8rpx;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-.menu-icon-image::before {
-  content: '';
-  position: absolute;
-  top: 7rpx; left: 8rpx;
-  width: 8rpx; height: 8rpx;
-  border-radius: 50%;
-  background: #5b8def;
-}
-.menu-icon-image::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 4rpx;
-  width: 0; height: 0;
-  border-left: 12rpx solid transparent;
-  border-right: 12rpx solid transparent;
-  border-bottom: 14rpx solid #5b8def;
-}
-
-/* 预约图标：日历 */
-.menu-icon-booking {
-  border: 3rpx solid var(--brand-primary);
-  border-radius: 6rpx;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-.menu-icon-booking::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 11rpx;
-  background: var(--brand-primary);
-}
-.menu-icon-booking::after {
-  content: '';
-  position: absolute;
-  left: 50%; top: 22rpx;
-  transform: translateX(-50%);
-  width: 8rpx; height: 8rpx;
-  border-radius: 1rpx;
-  background: var(--brand-primary);
-}
 
 /* ===== 输入框（左侧内置 + 号上传图片）===== */
 .input-field-wrap {

@@ -62,7 +62,10 @@ function createPage(name) {
   return {
     ...config,
     data: JSON.parse(JSON.stringify(config.data)),
-    setData(patch) { Object.keys(patch).forEach((key) => { this.data[key] = patch[key]; }); }
+    setData(patch, callback) {
+      Object.keys(patch).forEach((key) => { this.data[key] = patch[key]; });
+      if (callback) callback();
+    }
   };
 }
 
@@ -81,10 +84,21 @@ api.technician.orders.complete = async (id, data) => { completeCalls.push({ id, 
   assert.strictEqual(page.data.actualAmount, '288', '应预填实收金额');
   assert.strictEqual(page.data.customerName, '小美', '应加载客户名用于成功视图');
 
+  api.technician.orders.detail = async () => ({
+    customerId: 9, quotePrice: 300, paidAmount: 50,
+    startTime: '2026-08-15T02:00:00.000Z'
+  });
+  await page.onLoad({ id: '12' });
+  assert.strictEqual(page.data.actualAmount, '300', '部分定金不能替代最终服务金额');
+
   // 填写服务记录并提交
   page.data.actualStartTime = '2026-08-15T14:00';
   page.data.actualEndTime = '2026-08-15T16:00';
   page.data.materials = 'OPI #H42';
+  page.data.actualEndTime = '2026-08-15T13:00';
+  await page.submit();
+  assert.strictEqual(completeCalls.length, 0, '非法时间不得调用完成接口');
+  page.data.actualEndTime = '2026-08-15T16:00';
   await page.submit();
   assert.strictEqual(completeCalls.length, 1, 'complete 应被调用一次');
   assert.strictEqual(completeCalls[0].id, 12);
@@ -97,12 +111,26 @@ api.technician.orders.complete = async (id, data) => { completeCalls.push({ id, 
   await page.submit();
   assert.strictEqual(completeCalls.length, 1, '保存成功后不允许重复提交');
 
+  page.data.saved = false;
+  api.technician.orders.complete = async () => { throw new Error('网络失败'); };
+  await page.submit();
+  assert.strictEqual(page.data.saved, false, '网络失败不能显示保存成功');
+  assert.strictEqual(page.data.submitting, false, '网络失败后应允许手动重试');
+  page.data.saved = true;
+
   // 后续行动：发布关联作品（预填订单）
-  page.goPublishWork();
+  let draftCalls = 0;
+  api.technician.works.createFromOrder = async (id) => {
+    assert.strictEqual(id, 12);
+    draftCalls++;
+    return { id: 99 };
+  };
+  await Promise.all([page.goPublishWork(), page.goPublishWork()]);
+  assert.strictEqual(draftCalls, 1, '重复点击不能创建多个关联作品');
   assert.strictEqual(
     redirects[redirects.length - 1],
-    '/pages/technician/work-edit/index?orderId=12',
-    '应携带 orderId 跳转作品发布'
+    '/pages/technician/work-edit/index?id=99',
+    '应编辑订单唯一关联的草稿'
   );
 
   // ---------- 3. 流程验证：work-edit 按 orderId 预填授权并预选关联订单 ----------
@@ -132,6 +160,23 @@ api.technician.orders.complete = async (id, data) => { completeCalls.push({ id, 
   assert.strictEqual(grant.customerOrders[grant.selectedOrderIndex - 1].id, 12, '应预选本次完成的订单');
   assert.ok(grant.selectedOrderText.includes('猫眼'), '关联预约文案应显示所选订单');
 
+  // 基础服务数量应同步累加原价与时长，综合报价差额应区分优惠/其他
+  workPage.incrementService({ currentTarget: { dataset: { id: 'basic' } } });
+  workPage.incrementService({ currentTarget: { dataset: { id: 'basic' } } });
+  assert.deepStrictEqual(workPage.data.selectedServiceIds, ['basic', 'basic'], '同一基础服务应允许多份累加');
+  assert.strictEqual(workPage.data.serviceSubtotalFen, 17600, '服务原价应按单价 × 数量累加');
+  assert.strictEqual(workPage.data.totalDurationMinutes, 120, '预计时长应按基础时长 × 数量累加');
+  workPage.data.standardPrice = '128';
+  workPage.recalculatePricing();
+  assert.strictEqual(workPage.data.priceDifferenceType, 'discount', '综合报价低于原价应显示优惠');
+  assert.strictEqual(workPage.data.priceDifferenceFen, 4800, '优惠应为原价与综合报价差额');
+  workPage.data.standardPrice = '200';
+  workPage.recalculatePricing();
+  assert.strictEqual(workPage.data.priceDifferenceType, 'surcharge', '综合报价高于原价应显示其他');
+  assert.strictEqual(workPage.data.priceDifferenceFen, 2400, '其他应为综合报价与原价差额');
+  workPage.decrementService({ currentTarget: { dataset: { id: 'basic' } } });
+  assert.strictEqual(workPage.data.selectedServiceIds.length, 1, '减少服务应仅扣减一份数量');
+
   // buildGrants 提交载荷应携带该订单
   workPage.data.title = '小美猫眼';
   workPage.data.coverUrl = '/uploads/c.jpg';
@@ -147,6 +192,32 @@ api.technician.orders.complete = async (id, data) => { completeCalls.push({ id, 
   await new Promise((r) => setTimeout(r, 20));
   assert.strictEqual(noMatch.data.accessGrants.length, 0, '找不到客户时不应生成授权');
   assert.ok(toasts.some((t) => t.includes('尚未绑定')), '应提示客户未绑定');
+
+  // 真实详情接口使用 imageUrls；编辑保存必须保留所有照片。
+  const photoUrls = ['/uploads/a.jpg', '/uploads/b.jpg'];
+  api.technician.works.detail = async () => ({
+    id: 99, title: '订单草稿', imageUrls: photoUrls, coverUrl: photoUrls[0],
+    serviceLines: [{ serviceId: 'basic', quantity: 1 }], standardPrice: 128,
+    visibilityScope: 'authorized_clients', clientAccesses: [{ ...payloadGrants[0] }],
+  });
+  workPage.setData({ isEdit: true, workId: 99, submitting: false });
+  await workPage.loadWork(99);
+  assert.deepStrictEqual(workPage.data.images, photoUrls, '加载草稿不得丢失 imageUrls');
+  let savedPhotos;
+  api.technician.works.update = async (id, payload) => {
+    savedPhotos = JSON.parse(payload.images);
+    return { id };
+  };
+  api.technician.works.updateAccess = async () => ({});
+  await workPage.handleSubmit();
+  clearTimeout(workPage._navTimer);
+  assert.deepStrictEqual(savedPhotos, photoUrls, '保存应原样传回全部照片');
+  api.technician.works.detail = async () => ({ images: JSON.stringify(photoUrls) });
+  await workPage.loadWork(99);
+  assert.deepStrictEqual(workPage.data.images, photoUrls, '兼容旧版 images 字符串');
+  api.technician.works.detail = async () => ({ imageUrls: [], images: JSON.stringify(photoUrls) });
+  await workPage.loadWork(99);
+  assert.deepStrictEqual(workPage.data.images, [], '明确空 imageUrls 不应恢复旧照片');
 
   console.log('Complete-service → publish-work flow checks passed.');
 })().catch((err) => {

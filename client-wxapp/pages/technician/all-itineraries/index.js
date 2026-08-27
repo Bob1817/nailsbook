@@ -1,5 +1,5 @@
 const api = require('../../../services/api');
-const { formatClock } = require('../../../utils/format');
+const { formatClock, formatMoney } = require('../../../utils/format');
 const {
   normalizeOrder,
   resolveOrderPresentation,
@@ -35,9 +35,10 @@ Page({
             ...o,
             _clock: formatClock(o.startTime),
             _typeLabel: pres.typeLabel,
+            _fullAddress: pres.fullAddress,
             _statusLabel: getStatusLabel(o.status),
             _statusTone: getStatusTone(o.status),
-            _avatarChar: (o.customerName && o.customerName[0]) || '客'
+            _priceText: Number(o.price) > 0 ? formatMoney(o.price) : ''
           };
         })
         .sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
@@ -47,11 +48,6 @@ Page({
     } finally {
       this.setData({ loading: false });
     }
-  },
-
-  viewOrder(e) {
-    const id = e.currentTarget.dataset.id;
-    wx.navigateTo({ url: `/pages/technician/order-detail/index?id=${id}` });
   },
 
   navigateToAddress(e) {
@@ -79,5 +75,18 @@ Page({
     const phone = e.currentTarget.dataset.phone;
     if (!phone) return wx.showToast({ title: '客户暂无电话', icon: 'none' });
     wx.makePhoneCall({ phoneNumber: String(phone) });
+  },
+
+  onBookingCardOpen(e) {
+    const id = e.detail && e.detail.id;
+    if (id) wx.navigateTo({ url: `/pages/technician/order-detail/index?id=${id}` });
+  },
+
+  onBookingCardNavigate(e) {
+    this.navigateToAddress({ currentTarget: { dataset: { id: e.detail && e.detail.id } } });
+  },
+
+  onBookingCardContact(e) {
+    this.contactCustomer({ currentTarget: { dataset: { phone: e.detail && e.detail.phone } } });
   }
 });

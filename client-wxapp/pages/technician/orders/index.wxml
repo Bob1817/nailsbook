@@ -80,49 +80,27 @@
     show-scrollbar="{{false}}"
   >
     <view class="list-area">
+      <view wx:if="{{taskFilter === 'pending'}}" class="conflict-alert">待处理预约：点击卡片进入预约详情完成报价或确认排期。</view>
       <view wx:if="{{summary.conflicts}}" class="conflict-alert">检测到 {{summary.conflicts}} 个时间重叠的预约，请逐一核对并调整。</view>
       <view wx:if="{{loading}}" class="skeleton-list">
         <view wx:for="{{[1,2]}}" wx:key="*this" class="skel-card"></view>
       </view>
 
       <view wx:elif="{{listOrders.length === 0}}" class="empty-card">
-        <text class="empty-title">{{scheduleTab === 'trips' ? '当日暂无行程' : '当日暂无预约'}}</text>
-        <text class="empty-sub">{{scheduleTab === 'trips' ? '已确认排期的预约会显示在这里' : '换个日期看看'}}</text>
+        <text class="empty-title">{{taskFilter === 'pending' ? '暂无待处理预约' : (scheduleTab === 'trips' ? '当日暂无行程' : '当日暂无预约')}}</text>
+        <text class="empty-sub">{{taskFilter === 'pending' ? '需要报价或确认排期的预约会显示在这里' : (scheduleTab === 'trips' ? '已确认排期的预约会显示在这里' : '换个日期看看')}}</text>
       </view>
 
       <view wx:else class="trip-list">
-        <view
+        <technician-booking-card
           wx:for="{{listOrders}}"
           wx:key="id"
-          class="trip-card"
-          bindtap="viewOrder"
-          data-id="{{item.id}}"
-        >
-          <view class="trip-top">
-            <text class="trip-time">{{item._clock}}</text>
-            <view class="trip-avatar">
-              <image wx:if="{{item.customerAvatar}}" src="{{item.customerAvatar}}" mode="aspectFill" class="trip-avatar-img" lazy-load aria-label="{{item.customerName || '客户'}}的头像" />
-              <text wx:else class="trip-avatar-char">{{item._avatarChar}}</text>
-            </view>
-            <view class="trip-info">
-              <text class="trip-name">{{item.customerName}}</text>
-              <text class="trip-svc">{{item._typeLabel}} · {{item.serviceName}}</text>
-            </view>
-            <text class="trip-status {{item._statusTone}}">{{item._statusLabel}}</text>
-          </view>
-
-          <view wx:if="{{item.address}}" class="trip-addr">{{item.address}}</view>
-          <view wx:if="{{item._hasConflict}}" class="trip-conflict">与当日其他预约时间重叠</view>
-
-          <view class="trip-actions">
-            <view class="trip-btn trip-primary" catchtap="navigateToAddress" data-id="{{item.id}}">
-              去导航
-            </view>
-            <view class="trip-btn trip-ghost" catchtap="contactCustomer" data-phone="{{item.customerPhone}}">
-              联系客户
-            </view>
-          </view>
-        </view>
+          order="{{item}}"
+          variant="compact"
+          bind:open="onBookingCardOpen"
+          bind:navigate="onBookingCardNavigate"
+          bind:contact="onBookingCardContact"
+        />
       </view>
     </view>
   </scroll-view>

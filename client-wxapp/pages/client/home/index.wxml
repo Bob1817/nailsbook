@@ -55,7 +55,7 @@
     </view>
     <text class="section-sub">{{upcomingOrder ? '距离最近的一次预约' : '快速发起你的下一次美甲'}}</text>
 
-    <view wx:if="{{upcomingOrder}}" class="order-card" bindtap="viewUpcomingOrder">
+    <view wx:if="{{upcomingOrder}}" class="order-card">
       <view class="order-card-content">
         <view class="order-card-top">
           <view class="order-status-badge">{{upcomingOrder.statusText}}</view>
@@ -64,15 +64,20 @@
         <view class="order-card-body">
           <view class="order-date-box"><text class="order-date-month">{{orderMonth}}</text><text class="order-date-day">{{orderDay}}</text><text class="order-date-weekday">{{orderWeekday}}</text></view>
           <view class="order-details">
-            <text class="order-service-name">{{upcomingOrder.serviceType}}</text>
-            <view class="order-detail-row"><view class="icon icon-clock"></view><text class="order-detail-text">{{upcomingOrder.timeStr}}</text></view>
-            <view wx:if="{{upcomingOrder.technician}}" class="order-detail-row"><view class="icon icon-person"></view><text class="order-detail-text order-detail-truncate">{{upcomingOrder.technician.name}}</text></view>
-            <view wx:if="{{orderAddress}}" class="order-detail-row"><view class="icon icon-pin"></view><text class="order-detail-text order-detail-address">{{orderAddress}}</text></view>
+            <text class="order-time-range">{{upcomingOrder.timeStr}}</text>
+            <text wx:if="{{orderShopName}}" class="order-shop-name">{{orderShopName}}</text>
+            <view wx:if="{{upcomingOrder.technician}}" class="order-detail-row"><image class="icon icon-person" src="/static/icons/client.svg" mode="aspectFit" /><text class="order-detail-text order-detail-truncate">{{upcomingOrder.technician.name}}</text></view>
+            <view wx:if="{{orderAddress}}" class="order-detail-row order-address-row">
+              <image class="icon icon-pin" src="/static/icons/pin.svg" mode="aspectFit" />
+              <text class="order-detail-text order-detail-address">{{orderAddress}}</text>
+              <view class="address-nav-action" catchtap="navigateToShop" role="button" aria-label="导航到店"><image class="address-nav-icon" src="/static/icons/navigation.svg" mode="aspectFit" /><text>导航</text></view>
+            </view>
+            <view wx:if="{{orderShopGuidance}}" class="order-guidance-link" catchtap="openUpcomingGuidance" role="button" aria-label="查看到店指引"><text>查看到店指引</text><text>›</text></view>
           </view>
         </view>
         <view class="order-card-actions" catchtap="">
-          <view class="order-action-btn" bindtap="navigateToChat"><view class="icon icon-chat-white"></view><text>发消息</text></view>
-          <view wx:if="{{upcomingOrder.technician.phone}}" class="order-action-btn" bindtap="callTech"><view class="icon icon-phone-white"></view><text>打电话</text></view>
+          <view class="order-action-btn" bindtap="navigateToChat"><image class="order-action-icon" src="/static/icons/tab-chat.svg" mode="aspectFit" /><text>发消息</text></view>
+          <view wx:if="{{upcomingOrder.technician.phone}}" class="order-action-btn" bindtap="callTech"><image class="order-action-icon order-action-icon-phone" src="/static/icons/phone-white.svg" mode="aspectFit" /><text>打电话</text></view>
           <view class="order-action-btn order-action-primary" bindtap="viewUpcomingOrder">查看详情</view>
         </view>
       </view>

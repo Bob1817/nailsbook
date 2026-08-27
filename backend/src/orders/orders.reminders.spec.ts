@@ -20,6 +20,7 @@ describe('OrdersScheduler reminders', () => {
       prisma as never,
       { server: { to: jest.fn() } } as never,
       {} as never,
+      {} as never,
     );
     return { scheduler, prisma };
   }

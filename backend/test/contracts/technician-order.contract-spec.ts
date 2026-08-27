@@ -2,6 +2,9 @@ import { mkdtempSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { resolve } from 'path';
 import request from 'supertest';
+import { OrdersScheduler } from '../../src/orders/orders.scheduler';
+import { SubscriptionsService } from '../../src/subscriptions/subscriptions.service';
+import { ForbiddenException } from '@nestjs/common';
 import {
   ContractTestApp,
   createContractTestApp,
@@ -277,14 +280,29 @@ describe('Technician operation HTTP contract', () => {
         data: { paymentStatus: 'paid', paidAmount: order3.quotePrice || 0 },
       });
 
+      await request(testApp.app.getHttpServer())
+        .patch(`/api/technician/orders/${order3.id}/complete`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ actualAmount: -1 })
+        .expect(400);
+      expect((await testApp.prisma.order.findUniqueOrThrow({ where: { id: order3.id } })).status).toBe('in_progress');
+      expect(await testApp.prisma.serviceRecord.count({ where: { orderId: order3.id } })).toBe(0);
+
       const completeRes = await request(testApp.app.getHttpServer())
         .patch(`/api/technician/orders/${order3.id}/complete`)
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200);
       expect(completeRes.body).toMatchObject({
         orderId: order3.id,
-        status: 'pending',
+        status: 'confirmed',
       });
+      expect((await testApp.prisma.order.findUniqueOrThrow({ where: { id: order3.id } })).status).toBe('completed');
+      await request(testApp.app.getHttpServer())
+        .patch(`/api/technician/orders/${order3.id}/complete`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(400);
+      expect(await testApp.prisma.serviceRecord.count({ where: { orderId: order3.id } })).toBe(1);
+      expect(await testApp.prisma.revenue.count({ where: { orderId: order3.id } })).toBe(1);
 
       const order4 = await seedOrder(
         technician.id,
@@ -298,6 +316,111 @@ describe('Technician operation HTTP contract', () => {
         .expect(200);
       expect(cancelRes.body).toMatchObject({ id: order4.id });
     });
+
+    it('rejects missing paired fields, foreign and cancelled orders without records', async () => {
+      const { accessToken, technician, customer } = await setupTechnicianWithCustomer('complete-denied');
+      const other = await setupTechnician('complete-other');
+      const order = await seedOrder(technician.id, customer.id, 'in_progress');
+      await request(testApp.app.getHttpServer()).patch(`/api/technician/orders/${order.id}/complete`)
+        .set('Authorization', `Bearer ${accessToken}`).send({ actualStartTime: '2026-06-15T14:00:00Z' }).expect(400);
+      await request(testApp.app.getHttpServer()).patch(`/api/technician/orders/${order.id}/complete`)
+        .set('Authorization', `Bearer ${other.accessToken}`).expect(403);
+      await testApp.prisma.order.update({ where: { id: order.id }, data: { status: 'cancelled' } });
+      await request(testApp.app.getHttpServer()).patch(`/api/technician/orders/${order.id}/complete`)
+        .set('Authorization', `Bearer ${accessToken}`).expect(400);
+      expect(await testApp.prisma.serviceRecord.count({ where: { orderId: order.id } })).toBe(0);
+      expect((await testApp.prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status).toBe('cancelled');
+    });
+
+    it('rolls back completion on record persistence failure and retains material-only input on retry', async () => {
+      const { accessToken, technician, customer } = await setupTechnicianWithCustomer('complete-rollback');
+      const order = await seedOrder(technician.id, customer.id, 'in_progress');
+      // An actual SQLite write failure inside the transaction, not a mocked rollback.
+      await testApp.prisma.$executeRawUnsafe(`CREATE TRIGGER fail_contract_record BEFORE INSERT ON ServiceRecord BEGIN SELECT RAISE(ABORT, 'contract write failure'); END`);
+      try {
+        await request(testApp.app.getHttpServer()).patch(`/api/technician/orders/${order.id}/complete`)
+          .set('Authorization', `Bearer ${accessToken}`).send({ materials: '测试材料' }).expect(500);
+      } finally {
+        await testApp.prisma.$executeRawUnsafe('DROP TRIGGER fail_contract_record');
+      }
+      expect((await testApp.prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status).toBe('in_progress');
+      expect(await testApp.prisma.serviceRecord.count({ where: { orderId: order.id } })).toBe(0);
+      expect(await testApp.prisma.revenue.count({ where: { orderId: order.id } })).toBe(0);
+      expect((await testApp.prisma.customer.findUniqueOrThrow({ where: { id: customer.id } })).completedServiceCount).toBe(0);
+      await request(testApp.app.getHttpServer()).patch(`/api/technician/orders/${order.id}/complete`)
+        .set('Authorization', `Bearer ${accessToken}`).send({ materials: '测试材料' }).expect(200);
+      expect(await testApp.prisma.serviceRecord.findFirst({ where: { orderId: order.id } })).toMatchObject({ materials: '测试材料' });
+    });
+
+    it('creates one private order work with photos and client grant across concurrent retries', async () => {
+      const { accessToken, technician, customer } = await setupTechnicianWithCustomer('order-work');
+      const other = await setupTechnician('work-other');
+      const order = await seedOrder(technician.id, customer.id, 'completed');
+      await testApp.prisma.order.update({ where: { id: order.id }, data: { clientPhotos: JSON.stringify(['/qa/photo.jpg']), actualAmount: 288 } });
+      const create = () => request(testApp.app.getHttpServer()).post(`/api/technician/works/from-order/${order.id}`)
+        .set('Authorization', `Bearer ${accessToken}`).expect(201);
+      const results = await Promise.all([create(), create()]);
+      expect(results[0].body.id).toBe(results[1].body.id);
+      expect(await testApp.prisma.nailWork.count({ where: { sourceOrderId: order.id } })).toBe(1);
+      const work = await testApp.prisma.nailWork.findUniqueOrThrow({ where: { sourceOrderId: order.id }, include: { clientAccesses: true } });
+      expect(work).toMatchObject({ isVisible: false, visibilityScope: 'authorized_clients', publicationStatus: 'draft', publicAuthorizationStatus: 'pending', price: 288, images: '["/qa/photo.jpg"]' });
+      expect(work.clientAccesses).toHaveLength(1);
+      expect(work.clientAccesses[0]).toMatchObject({ orderId: order.id, customerId: customer.id, canShare: false });
+      const quota = jest.spyOn(testApp.app.get(SubscriptionsService), 'assertCanCreateWork')
+        .mockRejectedValue(new ForbiddenException('当前套餐作品额度已用完，请升级套餐'));
+      try {
+        await request(testApp.app.getHttpServer()).patch(`/api/technician/works/${work.id}`)
+          .set('Authorization', `Bearer ${accessToken}`).send({ title: '审核作品' }).expect(403);
+        expect(quota).toHaveBeenCalledWith(technician.id);
+        expect(await testApp.prisma.nailWork.findUniqueOrThrow({ where: { id: work.id } }))
+          .toMatchObject({ publicationStatus: 'draft', title: work.title, images: work.images });
+        quota.mockResolvedValue({} as never);
+        await request(testApp.app.getHttpServer()).patch(`/api/technician/works/${work.id}`)
+          .set('Authorization', `Bearer ${accessToken}`).send({ title: '审核作品' }).expect(200);
+        expect(quota).toHaveBeenCalledTimes(2);
+        quota.mockRejectedValue(new ForbiddenException('额度已满'));
+        await request(testApp.app.getHttpServer()).patch(`/api/technician/works/${work.id}`)
+          .set('Authorization', `Bearer ${accessToken}`).send({ title: '编辑已占额度的作品' }).expect(200);
+        expect(quota).toHaveBeenCalledTimes(2);
+      } finally { quota.mockRestore(); }
+      await request(testApp.app.getHttpServer()).post(`/api/technician/works/from-order/${order.id}`)
+        .set('Authorization', `Bearer ${other.accessToken}`).expect(404);
+    });
+
+    it('auto completion retains confirmed revenue and creates a consistent service record', async () => {
+      const { technician, customer } = await setupTechnicianWithCustomer('auto-complete');
+      const order = await seedOrder(technician.id, customer.id, 'in_progress');
+      const dbOrder = await testApp.prisma.order.update({ where: { id: order.id }, data: { quotePrice: 798 } });
+      const now = new Date('2026-08-26T12:00:00Z');
+      const selectedOrders = jest.spyOn(testApp.prisma.order, 'findMany').mockResolvedValueOnce([dbOrder]);
+      try {
+        await (testApp.app.get(OrdersScheduler) as any).autoTransitionToCompleted(now);
+      } finally { selectedOrders.mockRestore(); }
+      expect(await testApp.prisma.order.findUniqueOrThrow({ where: { id: order.id } })).toMatchObject({ status: 'completed', completedAt: now, actualAmount: 798 });
+      expect(await testApp.prisma.revenue.findUniqueOrThrow({ where: { orderId: order.id } })).toMatchObject({ amount: 798, status: 'confirmed' });
+      expect(await testApp.prisma.serviceRecord.findUniqueOrThrow({ where: { orderId: order.id } })).toMatchObject({ actualAmount: 798, actualEndTime: now });
+      expect((await testApp.prisma.customer.findUniqueOrThrow({ where: { id: customer.id } })).completedServiceCount).toBe(1);
+    });
+
+    it.each([[0, 'unpaid'], [50, 'partial'], [300, 'paid']] as const)(
+      'auto completion preserves collected %s and payment status %s with existing cost', async (paidAmount, paymentStatus) => {
+        const { technician, customer } = await setupTechnicianWithCustomer('auto-accounting');
+        const order = await seedOrder(technician.id, customer.id, 'in_progress');
+        const dbOrder = await testApp.prisma.order.update({ where: { id: order.id }, data: {
+          quotePrice: 300, paidAmount, paymentStatus, materialCost: 80,
+        } });
+        const selected = jest.spyOn(testApp.prisma.order, 'findMany').mockResolvedValueOnce([dbOrder]);
+        try {
+          await (testApp.app.get(OrdersScheduler) as any).autoTransitionToCompleted(new Date('2026-08-26T12:00:00Z'));
+        } finally { selected.mockRestore(); }
+        expect(await testApp.prisma.order.findUniqueOrThrow({ where: { id: order.id } }))
+          .toMatchObject({ status: 'completed', actualAmount: 300, paidAmount, paymentStatus, materialCost: 80 });
+        expect(await testApp.prisma.serviceRecord.findUniqueOrThrow({ where: { orderId: order.id } }))
+          .toMatchObject({ materialCost: 80 });
+        expect(await testApp.prisma.customer.findUniqueOrThrow({ where: { id: customer.id } }))
+          .toMatchObject({ lifetimePaidAmount: paidAmount });
+      },
+    );
 
     it('returns trips and order detail', async () => {
       const { accessToken, technician, customer } =

@@ -1,0 +1,66 @@
+/* ===== 日历 ===== */
+.btp-calendar { margin-top: 8rpx; }
+.btp-calendar-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16rpx 0 20rpx;
+}
+.btp-calendar-title { font-size: var(--font-md); font-weight: var(--weight-semibold); color: var(--text-primary); }
+.btp-nav-btn {
+  width: 88rpx; height: 88rpx; border-radius: 50%;
+  background: var(--bg-input); display: flex; align-items: center; justify-content: center;
+  font-size: var(--font-lg); color: var(--text-body); font-weight: var(--weight-semibold);
+}
+.btp-nav-btn:active { background: #e2e8f0; }
+.btp-weekdays {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 8rpx;
+}
+.btp-weekday-cell {
+  text-align: center; font-size: var(--font-xs); color: var(--text-muted);
+  font-weight: var(--weight-medium); padding: 8rpx 0;
+}
+.btp-calendar-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 6rpx;
+}
+.btp-day-wrap {
+  display: flex; align-items: center; justify-content: center;
+  height: 88rpx;
+}
+.btp-day {
+  width: 88rpx; height: 88rpx; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.btp-day-empty { background: transparent; }
+.btp-day-disabled { opacity: 0.3; }
+.btp-day-disabled .btp-day-text { color: var(--text-muted); }
+.btp-day-selected { background: var(--brand-primary); }
+.btp-day-text-selected { color: var(--text-inverse) !important; font-weight: var(--weight-semibold); }
+.btp-day-today { border: 2rpx solid var(--brand-primary); }
+.btp-day-text { font-size: var(--font-sm); color: var(--text-primary); }
+
+/* ===== 提示 ===== */
+.btp-warn-text { font-size: var(--font-sm); color: var(--text-error); margin-top: var(--space-sm); }
+
+/* ===== 时间网格 ===== */
+.btp-time-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 16rpx; margin-top: var(--space-md);
+}
+.btp-time-item {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 88rpx; padding: 12rpx 0 8rpx; border-radius: var(--radius-sm);
+  font-size: var(--font-sm); font-weight: var(--weight-medium); background: #f8f9fa; color: var(--text-body);
+}
+.btp-time-active {
+  background: var(--brand-gradient);
+  color: var(--text-inverse); box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
+}
+.btp-time-occupied { opacity: 0.4; }
+.btp-time-item:active { background: #e2e8f0; }
+.btp-time-active:active { opacity: 0.9; }
+.btp-time-occupied .btp-time-text { text-decoration: line-through; }
+.btp-occupied-label {
+  font-size: 18rpx; color: var(--text-error); white-space: nowrap; line-height: 1; margin-top: 2rpx;
+}

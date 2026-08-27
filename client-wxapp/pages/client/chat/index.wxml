@@ -52,7 +52,11 @@
             <view class="msg-avatar-wrap" catchtap="viewArtist" data-id="{{item.techId}}" role="button" aria-label="查看{{item.name || '美甲师'}}主页">
               <image wx:if="{{item.techAvatar && item.type === 'chat'}}" src="{{item.techAvatar}}" mode="aspectFill" class="msg-avatar-img" lazy-load aria-label="{{item.name}}的头像" />
               <view wx:else class="msg-avatar-placeholder">
-                <text class="msg-avatar-char">{{item._avatarChar}}</text>
+                <image wx:if="{{item.type === 'service'}}" class="msg-semantic-icon" src="/static/icons/notification-service.svg" mode="aspectFit" aria-label="服务提醒" />
+                <image wx:elif="{{item.type === 'system'}}" class="msg-semantic-icon" src="/static/icons/notification-system.svg" mode="aspectFit" aria-label="系统通知" />
+                <image wx:elif="{{item.type === 'reminder'}}" class="msg-semantic-icon" src="/static/icons/notification-service.svg" mode="aspectFit" aria-label="系统提醒" />
+                <image wx:elif="{{item.type === 'booking'}}" class="msg-semantic-icon" src="/static/icons/notification-service.svg" mode="aspectFit" aria-label="预约提醒" />
+                <text wx:else class="msg-avatar-char">{{item._avatarChar}}</text>
               </view>
               <view wx:if="{{item.type === 'chat'}}" class="msg-online-dot"></view>
             </view>

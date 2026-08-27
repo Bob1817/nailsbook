@@ -26,45 +26,6 @@ page {
   flex-shrink: 0;
 }
 
-/* ===== Nav Bar（Phone 步骤） ===== */
-.nav-bar {
-  width: 100%;
-  height: 44px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 0;
-}
-
-.nav-back {
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.nav-back-icon {
-  width: 24rpx;
-  height: 24rpx;
-  opacity: 0.55;
-}
-
-.nav-title {
-  flex: 1;
-  text-align: center;
-  font-size: var(--font-md);
-  font-weight: var(--weight-bold);
-  color: var(--text-primary);
-}
-
-.nav-placeholder {
-  width: 44px;
-  height: 44px;
-  flex-shrink: 0;
-}
-
 /* ===== WeChat 登录屏 ===== */
 .hero {
   flex-shrink: 0;
@@ -286,26 +247,10 @@ page {
   opacity: 0.35;
 }
 
-/* ===== 忘记密码 & 注册 ===== */
-.forgot-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: var(--space-xl);
-  margin-top: calc(-1 * var(--space-xs));
-}
-
-.forgot-link {
-  font-size: var(--font-sm);
-  color: var(--brand-primary);
-  padding: var(--space-xs) 0;
-}
-
-.forgot-link:active { opacity: 0.6; }
-
 .phone-privacy-consent {
   width: 100%;
   box-sizing: border-box;
-  margin: 0 0 var(--space-md);
+  margin: 0 0 var(--space-lg);
   padding: 0;
   justify-content: flex-start;
 }
@@ -344,6 +289,33 @@ page {
 .submit-btn-active:active {
   opacity: 0.88;
   transform: scale(0.985);
+}
+
+/* ===== 登录辅助入口 ===== */
+.account-actions {
+  min-height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  margin-top: var(--space-sm);
+}
+
+.account-action {
+  min-height: 88rpx;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-sm);
+  font-size: var(--font-sm);
+  color: var(--brand-primary);
+}
+
+.account-action:active { opacity: 0.6; }
+
+.account-action-divider {
+  width: 1rpx;
+  height: 24rpx;
+  background: var(--border-default);
 }
 
 /* ===== 协议 ===== */

@@ -127,6 +127,7 @@ const MainLayout: React.FC = () => {
       key: '/invite-keys',
       icon: <KeyOutlined />,
       label: '邀请密钥',
+      permission: 'technician:create',
     },
   ];
 

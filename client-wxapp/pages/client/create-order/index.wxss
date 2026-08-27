@@ -114,6 +114,8 @@
 .addr-name { font-size: var(--font-md); font-weight: var(--weight-medium); color: var(--text-primary); }
 .addr-phone { font-size: var(--font-sm); color: var(--text-muted); }
 .addr-detail { font-size: var(--font-sm); color: var(--text-body); margin-top: 8rpx; display: block; line-height: var(--leading-normal); }
+.addr-guidance-link { min-height: 88rpx; margin-top: -2rpx; padding: 6rpx 0 0; box-sizing: border-box; display: flex; align-items: flex-start; justify-content: flex-start; gap: 8rpx; background: transparent; color: var(--brand-primary); font-size: var(--font-xs); font-weight: var(--weight-medium); }
+.addr-guidance-link:active { opacity: .65; }
 
 /* ===== Service Cards ===== */
 .service-list { display: flex; flex-direction: column; gap: 16rpx; }
@@ -198,7 +200,8 @@
 
 .time-item {
   position: relative;
-  text-align: center; padding: 16rpx 0; border-radius: var(--radius-sm);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 80rpx; padding: 12rpx 0 8rpx; border-radius: var(--radius-sm);
   font-size: var(--font-sm); font-weight: var(--weight-medium); background: #f8f9fa; color: var(--text-body);
 }
 
@@ -216,8 +219,7 @@
 }
 
 .occupied-label {
-  position: absolute; bottom: 4rpx; left: 50%; transform: translateX(-50%);
-  font-size: var(--font-xs); color: var(--text-error); white-space: nowrap;
+  font-size: 18rpx; color: var(--text-error); white-space: nowrap; line-height: 1; margin-top: 2rpx;
 }
 
 .warn-text { font-size: var(--font-sm); color: var(--text-error); margin-top: var(--space-sm); }
@@ -404,4 +406,5 @@
 .work-service-line { padding:5rpx 0; color:#69545f; font-size:25rpx; }
 .work-price-row { min-height:76rpx; display:flex; align-items:center; justify-content:space-between; gap:18rpx; color:#7d6872; font-size:24rpx; }
 .work-final-price { color:#c83470; font-size:29rpx; font-weight:700; }
+.work-pricing-missing { margin-top:18rpx; padding:18rpx 20rpx; border-radius:16rpx; background:#fff4f6; color:#a33a5f; font-size:24rpx; line-height:1.55; }
 .review-price-breakdown { padding-top:8rpx; border-top:1rpx solid #eee5e9; }

@@ -53,6 +53,15 @@ function getStatusTone(status) {
   return ORDER_STATUS_TONES[status] || 'tone-gray';
 }
 
+function normalizeDepositAmount(raw) {
+  const amount = Number(raw && raw.depositAmount || 0);
+  const quotePrice = Number(raw && (raw.quotePrice || raw.price) || 0);
+  if (amount > quotePrice && quotePrice > 0 && amount / 100 <= quotePrice) {
+    return amount / 100;
+  }
+  return amount;
+}
+
 // 把后端原始 order 转成视图层一致字段
 function normalizeOrder(raw) {
   if (!raw) return null;
@@ -68,7 +77,7 @@ function normalizeOrder(raw) {
     tradeCreatedAt: raw.tradeCreatedAt || null,
     paymentStatus: raw.paymentStatus || 'unpaid',
     paidAmount: Number(raw.paidAmount || 0),
-    depositAmount: Number(raw.depositAmount || 0),
+    depositAmount: normalizeDepositAmount(raw),
     depositPaid: !!raw.isDepositPaid,
     customerId: raw.customer?.id,
     customerName: raw.customer?.name || '客户',
@@ -193,5 +202,6 @@ module.exports = {
   ORDER_STATUS_TONES,
   ORDER_TABS,
   getStatusLabel,
-  getStatusTone
+  getStatusTone,
+  normalizeDepositAmount
 };

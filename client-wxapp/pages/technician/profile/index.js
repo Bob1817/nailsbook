@@ -5,27 +5,29 @@ const { normalizeSchedule, genId, daysSummary, DAY_KEYS, TIME_OPTIONS } = requir
 
 // 我的预约 - 状态快捷入口
 const ORDER_SHORTCUTS = [
-  { status: 'pending_quote',   label: '待报价' },
-  { status: 'pending_confirm', label: '待确认' },
-  { status: 'pending_shop',    label: '待到店' },
-  { status: 'in_progress',     label: '服务中' }
+  { status: 'pending_quote',   label: '待报价', icon: '/static/icons/tab-chat-active.svg' },
+  { status: 'pending_confirm', label: '待确认', icon: '/static/icons/clock.svg' },
+  { status: 'pending_shop',    label: '待到店', icon: '/static/icons/shop.svg' },
+  { status: 'in_progress',     label: '服务中', icon: '/static/icons/status-progress.svg' }
 ];
 
 // 工具入口（仅保留有对应页面的）
 const TOOLS = [
-  { key: 'homepage',    label: '我的主页' },
-  { key: 'services',    label: '服务管理' },
-  { key: 'works',       label: '作品管理' },
-  { key: 'designs',     label: '设计需求' },
-  { key: 'serviceTime', label: '服务时间' },
-  { key: 'shops',       label: '店铺管理' },
-  { key: 'tags',        label: '标签管理' }
+  { key: 'homepage',    label: '我的主页', icon: '/static/icons/profile-edit.svg' },
+  { key: 'services',    label: '服务管理', icon: '/static/icons/scissors.svg' },
+  { key: 'works',       label: '作品管理', icon: '/static/icons/image.svg' },
+  { key: 'styles',      label: '擅长风格', icon: '/static/icons/tag.svg' },
+  { key: 'designs',     label: '设计需求', icon: '/static/icons/edit.svg' },
+  { key: 'serviceTime', label: '服务时间', icon: '/static/icons/clock.svg' },
+  { key: 'shops',       label: '店铺管理', icon: '/static/icons/shop.svg' },
+  { key: 'tags',        label: '标签管理', icon: '/static/icons/tag.svg' }
 ];
 
 const TOOL_ROUTES = {
   homepage:     '/pages/technician/homepage-settings/index',
   services:     '/pages/technician/services/index',
   works:        '/pages/technician/works/index',
+  styles:       '/pages/technician/homepage-settings/index?section=styles',
   designs:      '/pages/technician/design-requests/index',
   serviceTime:  '/pages/technician/service-time/index',
   shops:        '/pages/technician/shop-management/index',

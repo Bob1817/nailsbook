@@ -68,6 +68,7 @@
         <view class="addr-info">
           <text class="addr-name">{{item.name}}</text>
           <text class="addr-detail">{{item.province}}{{item.city}}{{item.district}}{{item.detailAddress}}</text>
+          <view wx:if="{{item.guidance && item.guidance.enabled}}" class="addr-guidance-link" catchtap="openShopGuidance" data-idx="{{index}}" role="button" aria-label="查看{{item.name}}到店指引"><text>查看到店指引</text><text>›</text></view>
         </view>
       </view>
     </view>
@@ -96,7 +97,8 @@
         <text class="work-booking-title">{{sourceWork.customTitle}}</text>
         <text class="work-booking-meta">{{sourceWork.serviceLines.length}} 项服务 · 约 {{sourceWork.totalDurationMinutes}} 分钟</text>
         <view class="work-service-lines"><text wx:for="{{sourceWork.serviceLines}}" wx:key="name" class="work-service-line">{{item.name}} ¥{{item.subtotalFen / 100}}</text></view>
-        <view class="work-price-row"><text>服务合计 ¥{{sourceWork.serviceSubtotalFen / 100}}</text><text class="work-final-price">标准报价 ¥{{sourceWork.standardPriceFen / 100}}</text></view>
+        <view wx:if="{{sourceWork.pricingReady}}" class="work-price-row"><text>服务合计 ¥{{sourceWork.serviceSubtotalFen / 100}}</text><text class="work-final-price">标准报价 ¥{{sourceWork.standardPriceFen / 100}}</text></view>
+        <view wx:else class="work-pricing-missing">该作品尚未完善服务与标准报价，请联系美甲师更新作品</view>
       </view>
     </view>
 
@@ -168,58 +170,20 @@
     </view>
   </view>
 
-  <!-- 预约时间：日历 + 时间段 -->
+  <!-- 预约时间选择组件 -->
   <view class="section" wx:if="{{selectedTech}}">
     <view class="section-head">
       <text class="section-title">预约时间</text>
     </view>
-
-    <!-- 自定义日历 -->
-    <view class="calendar">
-      <view class="calendar-header">
-        <view class="cal-nav-btn" bindtap="onPrevMonth">‹</view>
-        <text class="calendar-title">{{calendarMonthLabel}}</text>
-        <view class="cal-nav-btn" bindtap="onNextMonth">›</view>
-      </view>
-      <view class="calendar-weekdays">
-        <text wx:for="{{['日','一','二','三','四','五','六']}}" wx:key="*this" class="weekday-cell">{{item}}</text>
-      </view>
-      <view class="calendar-grid">
-        <view wx:for="{{calendarDays}}" wx:key="index" class="day-cell-wrap">
-          <view wx:if="{{item.empty}}" class="day-cell day-empty"></view>
-          <view wx:elif="{{item.isPast || item.isRest}}"
-            class="day-cell day-disabled">
-            <text class="day-text">{{item.day}}</text>
-          </view>
-          <view wx:elif="{{item.isSelected}}"
-            class="day-cell day-selected" bindtap="onSelectDate" data-date="{{item.dateStr}}">
-            <text class="day-text day-text-selected">{{item.day}}</text>
-          </view>
-          <view wx:elif="{{item.isToday}}"
-            class="day-cell day-today" bindtap="onSelectDate" data-date="{{item.dateStr}}">
-            <text class="day-text">{{item.day}}</text>
-          </view>
-          <view wx:else
-            class="day-cell" bindtap="onSelectDate" data-date="{{item.dateStr}}">
-            <text class="day-text">{{item.day}}</text>
-          </view>
-        </view>
-      </view>
-    </view>
-
-    <view wx:if="{{serviceType === '到店美甲' && selectedShopName && timeSlotStatuses.length === 0}}" class="warn-text">
-      所选日期为店铺休息日，请改选其他日期
-    </view>
-
-    <!-- 时间段网格 -->
-    <view class="time-grid" wx:if="{{timeSlotStatuses.length > 0}}">
-      <view wx:for="{{timeSlotStatuses}}" wx:key="time"
-        class="time-item {{startTime === item.time ? 'time-item-active' : ''}} {{item.occupied ? 'time-item-occupied' : ''}}"
-        bindtap="selectTime" data-time="{{item.time}}">
-        <text class="time-text">{{item.time}}</text>
-        <text wx:if="{{item.occupied}}" class="occupied-label">已预约</text>
-      </view>
-    </view>
+    <booking-time-picker
+      tech-id="{{selectedTech.id}}"
+      service-date="{{serviceDate}}"
+      start-time="{{startTime}}"
+      service-type="{{serviceType}}"
+      shop-name="{{selectedShopName}}"
+      duration-minutes="{{selectedServiceDuration || 120}}"
+      bindchange="onBookingTimeChange"
+    />
   </view>
 
   <!-- 补充说明 -->
@@ -247,7 +211,7 @@
 
 <!-- 预约申请核对 -->
 <view wx:if="{{showApplicationReview}}" class="modal-overlay" bindtap="cancelApplicationReview">
-  <view class="modal-panel application-review" catchtap="">
+  <view class="modal-panel application-review" catchtap="preventModalClose">
     <view class="modal-handle"></view>
     <text class="modal-title">核对预约申请</text>
     <text class="application-review-tip">当前提交的是预约申请，美甲师人工确认后生效；确认前不会占用正式档期。</text>
@@ -255,7 +219,7 @@
       <view class="review-row"><text>美甲师</text><text>{{selectedTech.name}}</text></view>
       <view class="review-row"><text>期望时间</text><text>{{serviceDate}} {{startTime}}</text></view>
       <view class="review-row"><text>服务方式</text><text>{{serviceType}}</text></view>
-      <view wx:if="{{sourceWork}}" class="review-price-breakdown">
+      <view wx:if="{{sourceWork && sourceWork.pricingReady}}" class="review-price-breakdown">
         <view wx:for="{{sourceWork.serviceLines}}" wx:key="name" class="review-row"><text>{{item.name}}</text><text>¥{{item.subtotalFen / 100}}</text></view>
         <view class="review-row"><text>服务合计</text><text>¥{{sourceWork.serviceSubtotalFen / 100}}</text></view>
         <view class="review-row"><text>作品标准报价</text><text class="review-price">¥{{sourceWork.standardPriceFen / 100}}</text></view>
@@ -275,7 +239,7 @@
 
 <!-- 绑定美甲师弹窗 -->
 <view wx:if="{{showBindTech}}" class="modal-overlay" bindtap="cancelBindTech">
-  <view class="modal-panel" catchtap="">
+  <view class="modal-panel" catchtap="preventModalClose">
     <view class="modal-handle"></view>
     <text class="modal-title">绑定美甲师</text>
     <text class="bind-hint">您还未绑定美甲师，无法预约服务。请输入美甲师邀请码或邀请链接进行绑定。</text>

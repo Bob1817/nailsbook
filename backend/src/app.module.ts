@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { IsolatedThrottlerStorage } from './common/isolated-throttler-storage';
 import { APP_GUARD } from '@nestjs/core';
 import { VerificationCodeModule } from './common/verification-code/verification-code.module';
 import { SmsModule } from './common/sms/sms.module';
@@ -60,12 +61,18 @@ import { WechatSubscribeMessagesModule } from './wechat-subscribe-messages/wecha
       isGlobal: true,
       envFilePath: '.env',
     }),
-    ThrottlerModule.forRoot([
+    ThrottlerModule.forRoot({
+      storage: new IsolatedThrottlerStorage(),
+      errorMessage: (_context, detail) => `请求过于频繁，请 ${detail.timeToBlockExpire} 秒后重试`,
+      throttlers: [
       {
         ttl: 60000,
-        limit: 60,  // 2GB 服务器：降低限流阈值减少内存 Map 大小
+        // Authentication and verification endpoints define stricter local
+        // limits. This default protects normal authenticated API traffic.
+        limit: 300,
       },
-    ]),
+      ],
+    }),
     VerificationCodeModule,
     SmsModule,
     StorageModule,

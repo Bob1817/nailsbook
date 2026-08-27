@@ -7,6 +7,54 @@ const C = '/api/client';
 const T = '/api/technician';
 const P = '/api/public';
 
+function publicAssetUrl(url) {
+  if (!url || /^https?:\/\//.test(url)) return url;
+  let baseUrl = 'https://api.lunails.cn';
+  try {
+    const app = getApp();
+    baseUrl = (app && app.globalData && app.globalData.apiBaseUrl) || baseUrl;
+  } catch (e) {}
+  return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+}
+
+function guidanceFromPublicArtist(result, params = {}) {
+  const artist = result && result.artist || {};
+  const shops = (Array.isArray(artist.shopAddresses) ? artist.shopAddresses : [])
+    .filter((shop) => shop && shop.enabled !== false && shop.guidance && shop.guidance.enabled === true);
+  const normalizedAddress = String(params.address || '').replace(/\s+/g, '');
+  const shop = shops.find((item) => {
+    if (params.shopName && item.name === params.shopName) return true;
+    const fullAddress = [item.province, item.city, item.district, item.detailAddress]
+      .filter(Boolean).join('').replace(/\s+/g, '');
+    const detailAddress = String(item.detailAddress || '').replace(/\s+/g, '');
+    return normalizedAddress && (fullAddress === normalizedAddress ||
+      (detailAddress && normalizedAddress.includes(detailAddress)) ||
+      fullAddress.includes(normalizedAddress));
+  }) || (shops.length === 1 ? shops[0] : null);
+  if (!shop) return null;
+  const section = (value) => {
+    const source = value && typeof value === 'object' ? value : {};
+    return {
+      blocks: (Array.isArray(source.blocks) ? source.blocks : []).map((block) =>
+        block && block.type === 'image' ? { ...block, url: publicAssetUrl(block.url) } : block
+      ).filter(Boolean),
+      text: typeof source.text === 'string' ? source.text : '',
+      images: (Array.isArray(source.images) ? source.images : []).map(publicAssetUrl)
+    };
+  };
+  return {
+    technicianId: artist.id,
+    technicianName: artist.name,
+    shop,
+    guidance: {
+      enabled: true,
+      metro: section(shop.guidance.metro),
+      bus: section(shop.guidance.bus),
+      driving: section(shop.guidance.driving)
+    }
+  };
+}
+
 // ========== 鉴权 ==========
 const auth = {
   wechatLogin: (code, role) =>
@@ -84,6 +132,7 @@ const auth = {
 const client = {
   // 首页后端支持游客访问；始终匿名请求，避免失效 token 被 optional guard 拒绝后产生 401。
   home: () => api.get(`${C}/home`, null, { needAuth: false, silent: true }),
+  featuredWorks: (params, options) => api.get(`${C}/featured-works`, params, options),
   beautyArchive: () => api.get(`${C}/beauty-archive`),
 
   // 后端：PUT /auth/me 更新资料；PATCH /auth/password 改密
@@ -106,8 +155,8 @@ const client = {
   },
 
   works: {
-    list: (params) => api.get(`${C}/works`, params),
-    detail: (id) => api.get(`${C}/works/${id}`),
+    list: (params, options) => api.get(`${C}/works`, params, options),
+    detail: (id, options) => api.get(`${C}/works/${id}`, null, options),
     like: (id) => api.post(`${C}/works/${id}/like`),
     favorite: (id) => api.post(`${C}/works/${id}/favorite`),
     comments: (id, params) => api.get(`${C}/works/${id}/comments`, params),
@@ -229,12 +278,27 @@ const technician = {
     trips: () => api.get(`${T}/orders/trips`),
     incomeCalendar: () => api.get(`${T}/orders/income-calendar`),
     detail: (id) => api.get(`${T}/orders/${id}`),
+    // 兼容尚未部署 blocked-slots 专用路由的线上后端：从现有订单列表派生美甲师占用。
+    blockedSlots: () => api.get(`${T}/orders`).then((result) => {
+      const orders = Array.isArray(result) ? result : (result.data || []);
+      return orders
+        .filter((order) => !['cancelled', 'completed', 'expired'].includes(order.status))
+        .map((order) => ({
+          orderId: order.id,
+          startTime: order.startTime,
+          endTime: order.endTime
+        }));
+    }),
     create: (data) => api.post(`${T}/orders`, data),
     update: (id, data) => api.patch(`${T}/orders/${id}`, data),
     quote: (id, data) => api.patch(`${T}/orders/${id}/review`, data),
     confirm: (id) => api.patch(`${T}/orders/${id}/confirm`, {}),
     complete: (id, data) => api.patch(`${T}/orders/${id}/complete`, data || {}),
-    cancel: (id, reason) => api.patch(`${T}/orders/${id}/cancel`, { reason }),
+    cancel: (id, data) => api.patch(
+      `${T}/orders/${id}/cancel`,
+      typeof data === 'string' ? { reason: data } : (data || {})
+    ),
+    updateActualAmount: (id, actualAmount) => api.patch(`${T}/orders/${id}/actual-amount`, { actualAmount }),
     tradeList: (params) => api.get(`${T}/orders/trade-orders/list`, params)
   },
 
@@ -254,6 +318,7 @@ const technician = {
     list: (params) => api.get(`${T}/works`, params),
     detail: (id) => api.get(`${T}/works/${id}`),
     create: (data) => api.post(`${T}/works`, data),
+    createFromOrder: (orderId) => api.post(`${T}/works/from-order/${orderId}`, {}),
     update: (id, data) => api.patch(`${T}/works/${id}`, data),
     delete: (id) => api.del(`${T}/works/${id}`),
     toggleVisible: (id) => api.post(`${T}/works/${id}/toggle-visible`),
@@ -430,7 +495,7 @@ const upload = {
       const app = getApp();
       const token = app.globalData.token;
       const baseUrl = app.globalData.apiBaseUrl || 'https://api.lunails.cn';
-      const path = role === 'technician' ? `${T}/uploads` : `${C}/uploads`;
+      const path = role === 'technician' ? `${T}/uploads/image` : `${C}/uploads/image`;
 
       wx.uploadFile({
         url: `${baseUrl}${path}`,
@@ -470,6 +535,12 @@ const publicApi = {
   },
   artists: {
     detail: (id) => api.get(`${P}/artist/id/${id}`, null, { needAuth: false }),
+    shopGuidance: async (id, params) => {
+      const result = await api.get(`${P}/artist/id/${id}`, null, { needAuth: false, silent: true });
+      const guidance = guidanceFromPublicArtist(result, params);
+      if (!guidance) throw { statusCode: 404, code: 404, message: '到店指引不存在或未公开' };
+      return guidance;
+    },
     card: (code) => api.get(`${P}/artist/${code}`, null, { needAuth: false })
   },
   brands: {
@@ -484,6 +555,7 @@ const publicApi = {
   },
   works: {
     list: (params) => api.get(`${P}/works`, params, { needAuth: false }),
+    featured: () => api.get(`${P}/works/featured`, null, { needAuth: false }),
     detail: (id) => api.get(`${P}/works/${id}`, null, { needAuth: false }),
     shared: (token) => api.get(`${P}/works/shared/${token}`, null, { needAuth: false })
   }

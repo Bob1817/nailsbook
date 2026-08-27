@@ -180,7 +180,7 @@ Page({
     });
   },
 
-  /** 手机号 + 密码登录（统一入口：优先客户端，失败后尝试美甲师端） */
+  /** 手机号 + 密码登录：先识别账号角色，避免用 401 作为正常的角色探测机制。 */
   async doLogin() {
     if (!privacy.requireAgreement(this)) return;
     const { phone, phoneValid, password, phoneLoading } = this.data;
@@ -190,26 +190,14 @@ Page({
     wx.showLoading({ title: '登录中...', mask: true });
 
     try {
-      // 1. 先尝试客户端登录
-      let res;
-      let loginRole = 'client';
-      try {
-        res = await api.auth.login(phone, password, 'client');
-      } catch (clientErr) {
-        // 客户端登录失败，尝试美甲师端登录
-        const isNotFound = clientErr.statusCode === 401 || clientErr.code === 401;
-        if (isNotFound) {
-          try {
-            res = await api.auth.login(phone, password, 'technician');
-            loginRole = 'technician';
-          } catch (techErr) {
-            // 两端都失败，抛出客户端的错误（更通用的提示）
-            throw clientErr;
-          }
-        } else {
-          throw clientErr;
-        }
-      }
+      const accountChecks = await Promise.all([
+        api.auth.checkPhone(phone, 'client'),
+        api.auth.checkPhone(phone, 'technician')
+      ]);
+      const hasClientAccount = !!accountChecks[0].exists;
+      const hasTechnicianAccount = !!accountChecks[1].exists;
+      const loginRole = !hasClientAccount && hasTechnicianAccount ? 'technician' : 'client';
+      const res = await api.auth.login(phone, password, loginRole);
 
       // 2. 使用实际完成登录的角色。roles 仅表示账号能力，不能改变本次 JWT 的类型。
       const roles = res.roles || [loginRole];

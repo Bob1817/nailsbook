@@ -48,9 +48,15 @@
 
         <view wx:if="{{shopAddresses.length}}" class="business-section">
           <text class="business-section-title">服务地址</text>
-          <view wx:for="{{shopAddresses}}" wx:key="id" class="address-row">
-            <text class="address-name">{{item.name || '工作室'}}</text>
-            <text class="address-detail">{{item.displayAddress}}</text>
+          <view wx:for="{{shopAddresses}}" wx:key="id" class="shop-address-group">
+            <view class="address-row" bindtap="navigateToAddress" data-idx="{{index}}" role="button" aria-label="导航到{{item.name || '工作室'}}">
+              <view class="address-copy">
+                <text class="address-name">{{item.name || '工作室'}}</text>
+                <text class="address-detail">{{item.displayAddress}}</text>
+              </view>
+              <image wx:if="{{item.latitude && item.longitude}}" class="address-nav-icon" src="/static/icons/navigation.svg" mode="aspectFit" aria-hidden="true"/>
+            </view>
+            <view wx:if="{{item.guidance && item.guidance.enabled}}" class="address-guidance-link" bindtap="openShopGuidance" data-idx="{{index}}" role="button" aria-label="查看{{item.name || '工作室'}}到店指引"><text>查看到店指引</text><text>›</text></view>
           </view>
         </view>
 

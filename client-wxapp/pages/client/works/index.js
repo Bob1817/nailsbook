@@ -287,6 +287,31 @@ Page({
     });
   },
 
+  navigateToAddress: function (e) {
+    var idx = e.currentTarget.dataset.idx;
+    var shop = (this.data.shopAddresses || [])[idx];
+    if (!shop) return;
+    var lat = parseFloat(shop.latitude) || 0;
+    var lng = parseFloat(shop.longitude) || 0;
+    if (!lat && !lng) { wx.showToast({ title: '暂无导航信息', icon: 'none' }); return; }
+    wx.openLocation({
+      latitude: lat,
+      longitude: lng,
+      name: shop.name || '工作室',
+      address: shop.displayAddress || '',
+      scale: 18
+    });
+  },
+
+  openShopGuidance: function (e) {
+    var shop = (this.data.shopAddresses || [])[e.currentTarget.dataset.idx];
+    var artist = this.data.artist || {};
+    if (!shop || !artist.id) return;
+    wx.navigateTo({
+      url: '/pages/client/shop-guidance/index?techId=' + artist.id + '&shopName=' + encodeURIComponent(shop.name || '') + '&address=' + encodeURIComponent(shop.displayAddress || '')
+    });
+  },
+
   onShareAppMessage: function () {
     var artist = this.data.artist;
     if (!artist) return { title: '美甲作品', path: '/pages/client/works/index' };

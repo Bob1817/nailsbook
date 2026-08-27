@@ -83,6 +83,50 @@ function filterOrders(orders, status) {
   return orders.filter((order) => statuses.includes(order.status));
 }
 
+function compactAddress(value) {
+  return String(value || '').replace(/\s+/g, '');
+}
+
+async function enrichShopMetadata(orders) {
+  const techIds = [...new Set(orders
+    .filter((order) => order.serviceType === '到店美甲' && order.technician && order.technician.id)
+    .map((order) => order.technician.id))];
+  if (!techIds.length) return orders;
+
+  const artistEntries = await Promise.all(techIds.map(async (id) => {
+    try {
+      const result = await api.public.artists.detail(id);
+      return [String(id), (result && result.artist) || {}];
+    } catch (_) {
+      return [String(id), null];
+    }
+  }));
+  const artists = Object.fromEntries(artistEntries);
+
+  return orders.map((order) => {
+    if (order.serviceType !== '到店美甲' || !order.technician) return order;
+    const artist = artists[String(order.technician.id)];
+    const shops = artist && Array.isArray(artist.shopAddresses)
+      ? artist.shopAddresses.filter((shop) => shop && shop.enabled !== false)
+      : [];
+    const targetAddress = compactAddress(order.address);
+    const matched = shops.find((shop) => {
+      const full = compactAddress([shop.province, shop.city, shop.district, shop.detailAddress].filter(Boolean).join(''));
+      const detail = compactAddress(shop.detailAddress);
+      return targetAddress && (full === targetAddress || (detail && targetAddress.includes(detail)) || full.includes(targetAddress));
+    }) || (shops.length === 1 ? shops[0] : null);
+    if (!matched) return order;
+    return {
+      ...order,
+      shopAddress: {
+        ...(order.shopAddress || {}),
+        name: matched.name || (order.shopAddress && order.shopAddress.name) || '',
+        guidanceEnabled: matched.guidance && matched.guidance.enabled === true
+      }
+    };
+  });
+}
+
 function formatAddress(address) {
   if (!address) return '';
   return [address.province, address.city, address.district, address.detailAddress, address.doorInfo]
@@ -114,14 +158,14 @@ function decorateOrder(order) {
     isShopService = !isHomeService && Boolean(order.address || order.shopAddress);
   }
   var serviceModeText = isShopService ? '到店美甲' : (isHomeService ? '上门美甲' : '服务方式待确认');
-  var titleText = order.customTitle ||
-    (order.serviceType && order.serviceType !== '上门美甲' && order.serviceType !== '到店美甲'
-      ? order.serviceType
-      : '美甲服务');
   var addr = order.address || formatAddress(isShopService ? order.shopAddress : order.clientAddress) || order.addressDetail;
   var shopName = isShopService && order.shopAddress ? order.shopAddress.name : '';
 
   var quoteText = order.status === 'pending_quote' ? '等待美甲师报价' : '暂未提供报价';
+  var hasQuote = order.quotePrice !== null && order.quotePrice !== undefined;
+  var depositText = order.isDepositPaid && Number(order.depositAmount) > 0
+    ? '已付定金 ¥' + (Number(order.depositAmount) / 100)
+    : '未付定金';
 
   return {
     ...order,
@@ -130,15 +174,19 @@ function decorateOrder(order) {
     _monthText: monthText,
     _dayText: dayText,
     _weekdayText: weekdayText,
-    _titleText: titleText,
+    _timeTitleText: timeRangeText || '预约时间待确认',
     _serviceModeText: serviceModeText,
     _isShopService: isShopService,
-    _shopNameText: shopName || '店铺名称待确认',
+    _shopNameText: shopName,
     _timeRangeText: timeRangeText,
     _addressText: addr || '地址待确认',
     _priceText: formatMoney(order.quotePrice || order.price),
     _quoteText: quoteText,
+    _paymentSummary: hasQuote ? '¥' + formatMoney(order.quotePrice || order.price) + ' · ' + depositText : quoteText,
+    _hasShopGuidance: Boolean(isShopService && order.shopAddress && order.shopAddress.guidanceEnabled),
     _isTerminal: TERMINAL_STATUSES.has(order.status),
+    _depositAmount: order.depositAmount || 0,
+    _depositPaid: !!order.isDepositPaid,
     _countdownText: formatCountdown(order.startTime, order.status),
     _nextStepText: NEXT_STEP_MAP[order.status] || '点击查看预约详情'
   };
@@ -180,9 +228,9 @@ Page({
     try {
       const res = await api.client.orders.list();
       const rawList = res.list || res.data || (Array.isArray(res) ? res : []);
-      const allOrders = rawList
-        .filter(order => !this.data.tradeView || Boolean(order.tradeCreatedAt || order.tradeStatus))
-        .map(decorateOrder);
+      const visibleOrders = rawList.filter(order => !this.data.tradeView || Boolean(order.tradeCreatedAt || order.tradeStatus));
+      const enrichedOrders = await enrichShopMetadata(visibleOrders);
+      const allOrders = enrichedOrders.map(decorateOrder);
 
       this.setData({
         allOrders,
@@ -220,6 +268,14 @@ Page({
   viewOrder(e) {
     const id = e.currentTarget.dataset.id;
     wx.navigateTo({ url: `/pages/client/order-detail/index?id=${id}` });
+  },
+
+  openShopGuidance(e) {
+    const item = this.data.orders.find((order) => String(order.id) === String(e.currentTarget.dataset.id));
+    if (!item || !item.technician) return;
+    wx.navigateTo({
+      url: `/pages/client/shop-guidance/index?techId=${item.technician.id}&shopName=${encodeURIComponent(item._shopNameText || '')}&address=${encodeURIComponent(item._addressText || '')}`
+    });
   },
 
   createOrder() {

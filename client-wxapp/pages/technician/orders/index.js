@@ -57,6 +57,7 @@ Page({
     summary: { conflicts: 0 },
 
     loading: true,
+    taskFilter: '',
 
     // 日历弹窗
     showCalendar: false,
@@ -74,12 +75,14 @@ Page({
     this._activeDate = savedDate && !isNaN(savedDate.getTime()) ? savedDate : today;
 
     // 支持 tab 参数：all → 当日预约，trips → 今日行程
-    const scheduleTab = options && options.tab
+    const taskFilter = options && options.task === 'pending' ? 'pending' : '';
+    const scheduleTab = taskFilter ? 'all' : (options && options.tab
       ? (options.tab === 'all' ? 'all' : 'trips')
-      : (saved.scheduleTab === 'all' ? 'all' : 'trips');
+      : (saved.scheduleTab === 'all' ? 'all' : 'trips'));
 
     this.setData({
       scheduleTab,
+      taskFilter,
       todayKey: dateKey(today),
       todayDay: today.getDate(),
       activeKey: dateKey(this._activeDate),
@@ -162,6 +165,7 @@ Page({
       _typeClass: pres.typeClass,
       _statusLabel: getStatusLabel(o.status),
       _statusTone: getStatusTone(o.status),
+      _priceText: Number(o.price) > 0 ? compactMoney(o.price) : '',
       _avatarChar: (o.customerName && o.customerName[0]) || '客'
     };
   },
@@ -209,7 +213,12 @@ Page({
 
     const decoratedDayOrders = markScheduleConflicts(dayOrders);
     const decoratedTripOrders = decoratedDayOrders.filter((o) => TRIP_STATUSES.indexOf(o.status) >= 0);
-    const listOrders = this.data.scheduleTab === 'trips' ? decoratedTripOrders : decoratedDayOrders;
+    const pendingOrders = all
+      .filter((o) => o.status === 'pending_quote' || o.status === 'pending_confirm')
+      .sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
+    const listOrders = this.data.taskFilter === 'pending'
+      ? pendingOrders
+      : (this.data.scheduleTab === 'trips' ? decoratedTripOrders : decoratedDayOrders);
 
     const m = active.getMonth() + 1;
     const d = active.getDate();
@@ -420,6 +429,19 @@ Page({
     const phone = e.currentTarget.dataset.phone;
     if (!phone) return wx.showToast({ title: '客户暂无电话', icon: 'none' });
     wx.makePhoneCall({ phoneNumber: String(phone) });
+  },
+
+  onBookingCardOpen(e) {
+    const id = e.detail && e.detail.id;
+    if (id) wx.navigateTo({ url: `/pages/technician/order-detail/index?id=${id}` });
+  },
+
+  onBookingCardNavigate(e) {
+    this.navigateToAddress({ currentTarget: { dataset: { id: e.detail && e.detail.id } } });
+  },
+
+  onBookingCardContact(e) {
+    this.contactCustomer({ currentTarget: { dataset: { phone: e.detail && e.detail.phone } } });
   }
 });
 

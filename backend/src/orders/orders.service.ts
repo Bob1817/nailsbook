@@ -876,7 +876,7 @@ export class OrdersService {
     return updated;
   }
 
-  async complete(id: number, dto?: any) {
+  async complete(id: number, dto?: any, source: 'manual' | 'automatic' = 'manual') {
     const order = await this.findOne(id);
 
     if (!canTransition(order.status as OrderStatus, 'completed')) {
@@ -908,7 +908,7 @@ export class OrdersService {
         dto?.actualAmount ??
         order.actualAmount ??
         Math.max(0, (order.quotePrice ?? 0) - (order.fundDiscountAmount ?? 0)),
-      materialCost = dto?.materialCost ?? 0;
+      materialCost = dto?.materialCost ?? order.materialCost ?? 0;
     const service = order.serviceId
       ? await this.prisma.service.findUnique({
           where: { id: order.serviceId },
@@ -937,8 +937,11 @@ export class OrdersService {
           confirmedEndTime: actualEnd,
           actualAmount,
           materialCost,
-          paidAmount: actualAmount,
-          paymentStatus: order.paymentStatus,
+          // A scheduled completion is not confirmation that money was received.
+          ...(source === 'manual' ? {
+            paidAmount: actualAmount,
+            paymentStatus: order.paymentStatus,
+          } : {}),
           aftercareDeadline,
           suggestedMaintenanceAt,
         },
@@ -1018,7 +1021,7 @@ export class OrdersService {
         where: { id: order.customerId },
         data: {
           completedServiceCount: { increment: 1 },
-          lifetimePaidAmount: { increment: actualAmount },
+          lifetimePaidAmount: { increment: source === 'automatic' ? (order.paidAmount ?? 0) : actualAmount },
           lastServiceAt: actualEnd,
           suggestedMaintenanceAt,
         },

@@ -113,13 +113,17 @@ Page({
 
 
   formatMessages(msgs) {
-    return msgs.map(m => ({
-      ...m,
-      timeStr: formatTime(m.createdAt),
-      isMe: m.senderType === 'technician',
-      isSystem: ['system', 'booking', 'quote', 'order'].includes(m.messageType),
-      isOrderCard: m.messageType === 'booking' || m.messageType === 'order' || m.relatedType === 'order'
-    }));
+    return msgs.map(m => {
+      const isOrderCard = m.messageType === 'booking' || m.messageType === 'order' || m.relatedType === 'order';
+      return {
+        ...m,
+        timeStr: formatTime(m.createdAt),
+        isMe: m.senderType === 'technician',
+        isSystem: ['system', 'booking', 'quote', 'order'].includes(m.messageType),
+        isOrderCard,
+        bookingCard: isOrderCard ? { id: m.relatedId, noticeContent: m.content } : null
+      };
+    });
   },
 
   groupByDate() {
@@ -260,8 +264,8 @@ Page({
     this.setData({ clientAvatarFailed: true });
   },
 
-  viewOrder(e) {
-    var id = e.currentTarget.dataset.id;
+  onBookingCardOpen(e) {
+    var id = e.detail && e.detail.id;
     if (id) wx.navigateTo({ url: '/pages/technician/order-detail/index?id=' + id });
   }
 });

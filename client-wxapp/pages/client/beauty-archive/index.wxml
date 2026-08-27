@@ -36,6 +36,7 @@
           <image wx:for="{{item.imageUrls}}" wx:for-item="photo" wx:key="*this" wx:if="{{index < 9}}" class="moment-photo" src="{{photo}}" mode="aspectFill" catchtap="previewRecordImage" data-record-id="{{item.id}}" data-url="{{photo}}" lazy-load role="button" aria-label="{{item.dateText}}的美甲照片，点击查看和创作"/>
         </view>
         <view wx:else class="moment-empty" catchtap="addRecordPhotos" data-order-id="{{item.orderId}}">
+          <image class="moment-empty-icon" src="/static/icons/image.svg" mode="aspectFit" />
           <text class="moment-empty-title">添加这次的美甲照片</text>
           <text class="moment-empty-copy">记录颜色、款式和当时的心情</text>
         </view>
@@ -47,16 +48,26 @@
             <text class="record-note-label">我的备注</text>
             <text class="record-note-text">{{item.clientRecordNote || '记录这次的配色、手感或下次想调整的地方'}}</text>
           </view>
-          <text class="record-note-action">{{item.clientRecordNote ? '编辑' : '添加'}}</text>
+          <view class="record-note-action">
+            <image class="record-note-action-icon" src="/static/icons/edit.svg" mode="aspectFit" />
+            <text>{{item.clientRecordNote ? '编辑' : '添加'}}</text>
+          </view>
         </view>
         <view class="moment-tags"><text wx:for="{{item.tags}}" wx:key="*this" class="moment-tag">#{{item}}</text></view>
 
         <view class="moment-actions">
-          <view wx:if="{{item.orderId}}" class="moment-action" catchtap="addRecordPhotos" data-order-id="{{item.orderId}}">
-            {{uploadingOrderId === item.orderId ? '上传中…' : (item.clientPhotos.length ? '继续添加照片' : '上传美甲照片')}}
+          <view wx:if="{{item.orderId}}" class="moment-action action-secondary" catchtap="addRecordPhotos" data-order-id="{{item.orderId}}">
+            <image class="action-icon" src="/static/icons/image.svg" mode="aspectFit" />
+            <text>{{uploadingOrderId === item.orderId ? '上传中…' : (item.clientPhotos.length ? '继续添加照片' : '上传美甲照片')}}</text>
           </view>
-          <view wx:if="{{item.imageUrls.length}}" class="moment-action" catchtap="createPhoto" data-url="{{item.imageUrls[0]}}">生成分享图</view>
-          <view class="moment-action" catchtap="bookAgain" data-tech-id="{{item.technicianId}}">再次预约</view>
+          <view wx:if="{{item.imageUrls.length}}" class="moment-action action-tertiary" catchtap="createPhoto" data-url="{{item.imageUrls[0]}}">
+            <image class="action-icon" src="/static/icons/share.svg" mode="aspectFit" />
+            <text>生成分享图</text>
+          </view>
+          <view class="moment-action action-primary" catchtap="bookAgain" data-tech-id="{{item.technicianId}}">
+            <image class="action-icon" src="/static/icons/calendar.svg" mode="aspectFit" />
+            <text>再次预约</text>
+          </view>
         </view>
       </view>
     </view>

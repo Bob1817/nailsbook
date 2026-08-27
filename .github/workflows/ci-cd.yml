@@ -18,7 +18,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: backend/package-lock.json
 
@@ -42,6 +42,7 @@ jobs:
           - client-frontend
           - technician-frontend
           - landing-frontend
+          - website
     defaults:
       run:
         working-directory: ./${{ matrix.app }}
@@ -50,14 +51,47 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: ${{ matrix.app }}/package-lock.json
 
       - run: npm ci
       - run: npm run build
 
+  release-gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Test website
+        working-directory: website
+        run: |
+          npm ci
+          npm run test:run
+
+      - name: Verify mini program release gate
+        working-directory: client-wxapp
+        run: node scripts/release-gate.js
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Test Flutter app
+        working-directory: mobile-flutter
+        run: |
+          flutter pub get
+          flutter test
+
   admin-image:
+    needs: [backend, frontend, release-gates, proxy-soak]
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
@@ -93,6 +127,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   backend-image:
+    needs: [backend, frontend, release-gates, proxy-soak]
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
@@ -127,3 +162,17 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  proxy-soak:
+    needs: backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify isolated Nginx and backend for ten minutes
+        run: bash deploy/qa-p0/run.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: p0-proxy-soak
+          path: deploy/qa-p0/artifacts/

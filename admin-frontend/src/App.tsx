@@ -55,7 +55,7 @@ const App: React.FC = () => {
               <Route path="wechat-config" element={<ProtectedRoute permission="feature_flag:view"><WechatConfig /></ProtectedRoute>} />
               <Route path="launch-config" element={<ProtectedRoute permission="feature_flag:view"><LaunchConfig /></ProtectedRoute>} />
               <Route path="roles" element={<ProtectedRoute permission="role:view"><Roles /></ProtectedRoute>} />
-              <Route path="invite-keys" element={<InviteKeys />} />
+              <Route path="invite-keys" element={<ProtectedRoute permission="technician:create"><InviteKeys /></ProtectedRoute>} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

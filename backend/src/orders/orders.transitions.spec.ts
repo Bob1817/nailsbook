@@ -185,6 +185,23 @@ describe('OrdersService 流转成功路径', () => {
     );
   });
 
+  it.each([[undefined, 80], [0, 0], [30, 30]])(
+    'manual complete retains existing cost unless explicitly supplied (%s)', async (materialCost, expectedCost) => {
+      jest.spyOn(service, 'findOne').mockResolvedValue({
+        id: 1, status: 'in_progress', technicianId: 7, customerId: 3,
+        startTime: new Date('2026-08-27T00:00:00Z'), quotePrice: 300,
+        paidAmount: 50, paymentStatus: 'partial', materialCost: 80,
+      } as never);
+      await service.complete(1, { actualAmount: 280, materialCost });
+      expect(prisma.order.update).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ paidAmount: 280, materialCost: expectedCost }),
+      }));
+      expect(prisma.serviceRecord.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ materialCost: expectedCost }),
+      }));
+    },
+  );
+
   it('complete：并发请求未取得状态流转权时不生成收入', async () => {
     jest.spyOn(service, 'findOne').mockResolvedValue({
       id: 1,

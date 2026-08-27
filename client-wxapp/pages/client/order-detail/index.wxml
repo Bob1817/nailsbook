@@ -35,10 +35,10 @@
       </view>
       <view class="tech-actions">
         <view wx:if="{{order.techPhone}}" class="round-btn" catchtap="callTech" role="button" aria-label="拨打美甲师电话">
-          <view class="btn-icon-phone"></view>
+          <image class="contact-action-icon" src="/static/icons/phone.svg" mode="aspectFit" />
         </view>
         <view class="round-btn round-chat" catchtap="goChat" role="button" aria-label="联系美甲师">
-          <view class="btn-icon-chat"></view>
+          <image class="contact-action-icon" src="/static/icons/tab-chat-active.svg" mode="aspectFit" />
         </view>
       </view>
     </view>
@@ -58,11 +58,19 @@
       <text class="info-value">{{order._dateLabel}} {{order._timeRange}}</text>
     </view>
 
-    <view wx:if="{{order.address}}" class="info-row">
+    <view wx:if="{{order.address}}" class="info-row address-row">
       <text class="info-label">{{order._isShop ? '到店地址' : '上门地址'}}</text>
       <view class="info-value-block">
-        <text class="addr-text">{{order.address}}</text>
-        <view class="copy-link" catchtap="copyAddress" role="button" aria-label="复制服务地址">复制</view>
+        <view class="address-main-row">
+          <text class="addr-text">{{order.address}}</text>
+          <view class="copy-link" catchtap="navigateToShop" role="button" aria-label="导航到店">
+            <view class="copy-link-label">导航</view>
+          </view>
+        </view>
+        <view wx:if="{{shopGuidance && shopGuidance.enabled}}" class="guidance-row" catchtap="openShopGuidance" role="button" aria-label="查看到店指引">
+          <text class="guidance-row-text">查看到店指引</text>
+          <text class="guidance-row-arrow">›</text>
+        </view>
       </view>
     </view>
 
@@ -88,7 +96,14 @@
     </view>
     <view class="price-row">
       <text class="price-label">{{order.bookingType === 'work' ? '作品标准报价' : '最终价格'}}</text>
-      <text class="price-main">{{order._priceText}}</text>
+      <view class="price-right">
+        <text class="price-main">{{order._priceText}}</text>
+        <text class="deposit-note">{{order.depositPaid && order.depositAmount > 0 ? '已支付定金 ¥' + (order.depositAmount / 100) : '未支付定金'}}</text>
+      </view>
+    </view>
+    <view wx:if="{{order.status === 'completed'}}" class="price-row actual-payment-row">
+      <text class="price-label">实际支付金额</text>
+      <text class="actual-payment-value">{{order._actualAmountText}}</text>
     </view>
 
     <text class="offline-payment-note">实际付款由客户与门店线下完成，小程序不提供代收款服务。</text>
@@ -100,6 +115,7 @@
     <view class="source-work-copy">
       <text class="source-work-label">预约同款来源</text>
       <text class="source-work-title">{{order.sourceWork.title || '美甲作品'}}</text>
+      <text wx:if="{{order.sourceWork._priceFen > 0}}" class="source-work-price">¥{{order.sourceWork._priceFen / 100}}</text>
     </view>
     <text class="source-work-arrow">›</text>
   </view>
@@ -133,15 +149,20 @@
 
   <!-- ============ 底部操作栏 ============ -->
   <view wx:if="{{order._actions.length > 0}}" class="bottom-actions">
-    <view
-      wx:for="{{order._actions}}"
-      wx:key="key"
-      class="action-btn {{item.style}} {{actionSubmitting ? 'is-disabled' : ''}}"
-      bindtap="onAction"
-      data-key="{{item.key}}"
-    >
-      {{actionSubmitting === item.key ? '处理中...' : item.label}}
-    </view>
+    <!-- 操作项不足 3 个：水平展示全部 -->
+    <block wx:if="{{order._actions.length < 3}}">
+      <view
+        wx:for="{{order._actions}}"
+        wx:key="key"
+        class="action-btn {{item.style}} {{actionSubmitting ? 'is-disabled' : ''}}"
+        bindtap="onAction"
+        data-key="{{item.key}}"
+      >
+        {{actionSubmitting === item.key ? '处理中...' : item.label}}
+      </view>
+    </block>
+    <!-- 操作项 3 个及以上：仅展示「更多操作」 -->
+    <view wx:else class="action-btn action-ghost" bindtap="openActionsSheet">更多操作</view>
   </view>
 </view>
 
@@ -191,18 +212,19 @@
   </view>
   <view class="sheet-body">
     <view class="form-item">
-      <text class="form-label">预约日期</text>
-      <picker mode="date" value="{{editDate}}" bindchange="onEditDateChange">
-        <view class="picker-row"><text class="picker-value">{{editDate || '请选择'}}</text></view>
-      </picker>
+      <text class="form-label">预约日期与时间</text>
+      <booking-time-picker
+        tech-id="{{order.techId}}"
+        service-date="{{editDate}}"
+        start-time="{{editTime}}"
+        service-type="{{order._isShop ? 'shop' : 'home'}}"
+        shop-name="{{order.shopName}}"
+        duration-minutes="{{order.durationMinutes || 120}}"
+        exclude-order-id="{{orderId}}"
+        bindchange="onEditTimeChange"
+      />
     </view>
-    <view class="form-item">
-      <text class="form-label">预约时间</text>
-      <picker mode="selector" range="{{editTimeSlots}}" bindchange="onEditTimeChange">
-        <view class="picker-row"><text class="picker-value">{{editTime || '请选择'}}</text></view>
-      </picker>
-    </view>
-    <view class="form-item" wx:if="{{editAddresses.length > 0}}">
+    <view class="form-item" wx:if="{{!order._isShop && editAddresses.length > 0}}">
       <text class="form-label">上门地址</text>
       <view class="addr-select-list">
         <view wx:for="{{editAddresses}}" wx:key="id"
@@ -218,5 +240,28 @@
     <view class="action-btn action-primary {{savingEdit ? 'is-disabled' : ''}}" bindtap="saveEdit">
       {{savingEdit ? '保存中...' : '保存修改'}}
     </view>
+  </view>
+</view>
+
+<!-- ============ 更多操作底部弹层 ============ -->
+<view wx:if="{{showActions}}" class="sheet-mask" bindtap="closeActions"></view>
+<view class="sheet {{showActions ? 'sheet-show' : ''}}" catchtap="">
+  <view class="sheet-header">
+    <text class="sheet-title">更多操作</text>
+    <view class="sheet-close" bindtap="closeActions">&#x2715;</view>
+  </view>
+  <view class="sheet-body action-sheet-body">
+    <view
+      wx:for="{{order._actions}}"
+      wx:key="key"
+      class="action-sheet-item {{item.style}} {{actionSubmitting === item.key ? 'is-disabled' : ''}}"
+      bindtap="onAction"
+      data-key="{{item.key}}"
+    >
+      {{actionSubmitting === item.key ? '处理中...' : item.label}}
+    </view>
+  </view>
+  <view class="sheet-footer">
+    <view class="action-btn action-ghost" bindtap="closeActions">取消</view>
   </view>
 </view>

@@ -1,0 +1,510 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Admin authorization HTTP contract covers every admin business route with authentication, permissions and write auditing 1`] = `
+[
+  {
+    "method": "GET",
+    "path": "/api/admin/artist-applications",
+    "permissions": [
+      "application:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/artist-applications/:id",
+    "permissions": [
+      "application:view",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/artist-applications/:id/approve",
+    "permissions": [
+      "application:manage",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/artist-applications/:id/reject",
+    "permissions": [
+      "application:manage",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/comments",
+    "permissions": [
+      "comment:view",
+    ],
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/admin/comments/:id",
+    "permissions": [
+      "comment:manage",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/comments/:id/hide",
+    "permissions": [
+      "comment:manage",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/customers",
+    "permissions": [
+      "customer:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/customers/:id",
+    "permissions": [
+      "customer:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/customers/:id/managed-password",
+    "permissions": [
+      "account:reset-password",
+    ],
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/customers/:id/reset-password",
+    "permissions": [
+      "account:reset-password",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/dashboard/business-stats",
+    "permissions": [
+      "dashboard:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/dashboard/overview",
+    "permissions": [
+      "dashboard:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/feature-flags",
+    "permissions": [
+      "feature_flag:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/feature-flags/:id",
+    "permissions": [
+      "feature_flag:view",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/feature-flags/:id",
+    "permissions": [
+      "feature_flag:update",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/feature-flags/:id/toggle",
+    "permissions": [
+      "feature_flag:update",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/feedback",
+    "permissions": [
+      "feedback:view",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/feedback/:id/resolve",
+    "permissions": [
+      "feedback:manage",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/operation-logs",
+    "permissions": [
+      "log:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/operation-logs/:id",
+    "permissions": [
+      "log:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/operation-logs/actions",
+    "permissions": [
+      "log:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/operation-logs/modules",
+    "permissions": [
+      "log:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/permissions",
+    "permissions": [
+      "role:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/permissions/grouped",
+    "permissions": [
+      "role:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/reports",
+    "permissions": [
+      "report:view",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/reports/:id/dismiss",
+    "permissions": [
+      "report:manage",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/reports/:id/resolve",
+    "permissions": [
+      "report:manage",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/revenues",
+    "permissions": [
+      "revenue:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/revenues/:id",
+    "permissions": [
+      "revenue:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/revenues/export",
+    "permissions": [
+      "revenue:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/revenues/statistics",
+    "permissions": [
+      "revenue:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/roles",
+    "permissions": [
+      "role:view",
+    ],
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/roles",
+    "permissions": [
+      "role:create",
+    ],
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/admin/roles/:id",
+    "permissions": [
+      "role:delete",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/roles/:id",
+    "permissions": [
+      "role:view",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/roles/:id",
+    "permissions": [
+      "role:update",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/subscription-plans",
+    "permissions": [
+      "subscription:view",
+    ],
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/subscription-plans",
+    "permissions": [
+      "subscription:update",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/subscription-plans/:id",
+    "permissions": [
+      "subscription:view",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/subscription-plans/:id",
+    "permissions": [
+      "subscription:update",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/technician-invite-keys",
+    "permissions": [
+      "technician:create",
+    ],
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/technician-invite-keys",
+    "permissions": [
+      "technician:create",
+    ],
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/admin/technician-invite-keys/:id",
+    "permissions": [
+      "technician:delete",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/technician-subscriptions",
+    "permissions": [
+      "subscription:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/technician-subscriptions/metrics/overview",
+    "permissions": [
+      "subscription:view",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/technician-subscriptions/technicians/:technicianId",
+    "permissions": [
+      "subscription:update",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/technician-subscriptions/technicians/:technicianId/changes",
+    "permissions": [
+      "subscription:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/technicians",
+    "permissions": [
+      "technician:view",
+    ],
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/technicians",
+    "permissions": [
+      "technician:create",
+    ],
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/admin/technicians/:id",
+    "permissions": [
+      "technician:delete",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/technicians/:id",
+    "permissions": [
+      "technician:view",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/technicians/:id",
+    "permissions": [
+      "technician:update",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/technicians/:id/disable",
+    "permissions": [
+      "technician:disable",
+    ],
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/technicians/:id/invite-key",
+    "permissions": [
+      "technician:update",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/technicians/:id/managed-password",
+    "permissions": [
+      "account:reset-password",
+    ],
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/technicians/:id/reset-password",
+    "permissions": [
+      "account:reset-password",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/technicians/:id/status",
+    "permissions": [
+      "technician:disable",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/wechat-config",
+    "permissions": [
+      "feature_flag:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/wechat-config/launch",
+    "permissions": [
+      "feature_flag:view",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/wechat-config/launch",
+    "permissions": [
+      "feature_flag:update",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/wechat-config/login",
+    "permissions": [
+      "feature_flag:update",
+    ],
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/wechat-config/login/validate",
+    "permissions": [
+      "feature_flag:update",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/wechat-config/payment",
+    "permissions": [
+      "feature_flag:update",
+    ],
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/wechat-config/payment/validate",
+    "permissions": [
+      "feature_flag:update",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/works",
+    "permissions": [
+      "work:view",
+    ],
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/admin/works/:id",
+    "permissions": [
+      "work:manage",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/works/:id",
+    "permissions": [
+      "work:view",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/works/:id/homepage-featured",
+    "permissions": [
+      "work:manage",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/works/:id/review",
+    "permissions": [
+      "work:manage",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/works/:id/tags",
+    "permissions": [
+      "work:manage",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/works/:id/visibility",
+    "permissions": [
+      "work:manage",
+    ],
+  },
+]
+`;

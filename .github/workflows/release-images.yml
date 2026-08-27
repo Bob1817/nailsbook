@@ -34,11 +34,15 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: |
             backend/package-lock.json
             admin-frontend/package-lock.json
+            client-frontend/package-lock.json
+            technician-frontend/package-lock.json
+            landing-frontend/package-lock.json
+            website/package-lock.json
 
       - name: Verify backend
         working-directory: backend
@@ -59,6 +63,41 @@ jobs:
           npm ci
           npm run lint
           npm run build
+
+      - name: Verify remaining web frontends
+        run: |
+          for app in client-frontend technician-frontend landing-frontend website; do
+            npm ci --prefix "$app"
+            npm run build --prefix "$app"
+          done
+
+      - name: Test website
+        working-directory: website
+        run: npm run test:run
+
+      - name: Verify mini program release gate
+        working-directory: client-wxapp
+        run: node scripts/release-gate.js
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Test Flutter app
+        working-directory: mobile-flutter
+        run: |
+          flutter pub get
+          flutter test
+
+      - name: Verify isolated Nginx and backend for ten minutes
+        run: bash deploy/qa-p0/run.sh
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: p0-release-verification
+          path: deploy/qa-p0/artifacts/
 
   backend-image:
     needs: verify

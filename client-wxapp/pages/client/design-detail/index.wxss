@@ -117,48 +117,12 @@
   background: #fef2f2;
 }
 
-/* CSS icon: edit */
 .action-icon-edit {
-  width: 18rpx;
-  height: 18rpx;
-  border: 3rpx solid var(--text-muted);
-  border-radius: 2rpx;
-  position: relative;
-  transform: rotate(-45deg);
+  width: 28rpx; height: 28rpx;
 }
 
-.action-icon-edit::after {
-  content: '';
-  position: absolute;
-  bottom: -8rpx;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 4rpx solid transparent;
-  border-right: 4rpx solid transparent;
-  border-top: 6rpx solid #6b7280;
-}
-
-/* CSS icon: delete */
 .action-icon-delete {
-  width: 16rpx;
-  height: 18rpx;
-  border: 3rpx solid #dc2626;
-  border-radius: 0 0 3rpx 3rpx;
-  border-top: none;
-  position: relative;
-}
-
-.action-icon-delete::before {
-  content: '';
-  position: absolute;
-  top: -6rpx;
-  left: -5rpx;
-  right: -5rpx;
-  height: 3rpx;
-  background: #dc2626;
-  border-radius: 2rpx;
+  width: 28rpx; height: 28rpx;
 }
 
 /* 图片画廊 */

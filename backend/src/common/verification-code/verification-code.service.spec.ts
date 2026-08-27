@@ -58,4 +58,12 @@ describe('VerificationCodeService purpose isolation', () => {
       service.validate('13800138000', code, 'client:reset-password'),
     ).resolves.toBeUndefined();
   });
+
+  it('limits issuance by phone and purpose independently of the HTTP caller', async () => {
+    for (let index = 0; index < 3; index++) {
+      await service.generate('13800138000', 'client:login');
+    }
+    await expect(service.generate('13800138000', 'client:login')).rejects.toThrow('请求过于频繁');
+    await expect(service.generate('13800138001', 'client:login')).resolves.toMatch(/^\d{6}$/);
+  });
 });

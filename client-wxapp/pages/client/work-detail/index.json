@@ -2,6 +2,6 @@
   "navigationBarTitleText": "作品详情",
   "navigationStyle": "custom",
   "usingComponents": {
-    "nav-bar": "/components/nav-bar/index"
+    "work-detail-view": "/components/work-detail-view/index"
   }
 }

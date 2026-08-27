@@ -22,13 +22,18 @@
       <view class="slider-scale"><text>1 年</text><text>30 年以上</text></view>
     </view>
     <view class="field"><text class="label">认证展示</text><input class="input" value="{{certificationTitle}}" bindinput="onInput" data-field="certificationTitle" placeholder="如 平台认证美甲师" confirm-type="done" /></view>
-    <view class="field">
-      <view class="label-row"><text class="label">擅长领域</text><text class="skill-limit">{{specialties.length}}/3</text></view>
-      <text class="skill-help">像填写简历技能一样选择最能代表你的美甲能力</text>
+    <view class="field" id="styles-editor">
+      <view class="label-row"><text class="label">擅长风格</text><text class="skill-limit">{{specialties.length}}/5</text></view>
+      <text class="skill-help">选择最能代表你的风格，保存后将按选择顺序展示在公开主页</text>
+      <view wx:if="{{specialties.length}}" class="selected-styles" aria-label="已选择的擅长风格">
+        <view wx:for="{{specialties}}" wx:key="*this" class="selected-style" bindtap="toggleSpecialty" data-value="{{item}}" aria-label="移除{{item}}">
+          <text class="selected-style-order">{{index + 1}}</text><text>{{item}}</text><text class="selected-style-remove">×</text>
+        </view>
+      </view>
       <view class="skill-list">
         <view wx:for="{{specialtyOptions}}" wx:key="*this" class="skill-chip {{selectedSpecialtyMap[item] ? 'selected' : ''}}" bindtap="toggleSpecialty" data-value="{{item}}">{{item}}</view>
       </view>
-      <text wx:if="{{specialties.length === 0}}" class="skill-empty">-</text>
+      <text wx:if="{{specialties.length === 0}}" class="skill-empty">暂未设置，客户主页不会展示该模块</text>
     </view>
     <view class="field"><view class="label-row"><text class="label">自我介绍</text><text class="counter">{{artistIntroduction.length}}/1000</text></view><textarea class="textarea" value="{{artistIntroduction}}" bindinput="onInput" data-field="artistIntroduction" maxlength="1000" placeholder="介绍你的经历、风格和服务理念" confirm-type="done" /></view>
     <view class="field"><text class="label">审美宣言</text><textarea class="textarea compact" value="{{aestheticPhilosophy}}" bindinput="onInput" data-field="aestheticPhilosophy" maxlength="1000" placeholder="例如：让指尖成为安静但有力量的自我表达" confirm-type="done" /></view>

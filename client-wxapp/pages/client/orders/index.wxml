@@ -56,41 +56,48 @@
             </view>
             <view class="order-details">
               <view class="order-title-row">
-                <text class="order-service-name">{{item._titleText}}</text>
+                <view class="info-row order-time-row">
+                  <image class="info-icon" src="/static/icons/clock.svg" mode="aspectFit" />
+                  <text class="order-time-title">{{item._timeTitleText}}</text>
+                </view>
                 <view class="status-badge {{item._statusClass}}">{{item.statusText}}</view>
               </view>
-              <text wx:if="{{item.quotePrice}}" class="price-line">报价 ¥{{item._priceText}}</text>
-              <text wx:else class="price-pending">{{item._quoteText}}</text>
-              <view class="service-mode-row">
-                <text class="service-mode-badge">{{item._serviceModeText}}</text>
+              <view class="info-row">
+                <image class="info-icon" src="{{item._isShopService ? '/static/icons/shop.svg' : '/static/icons/tab-home.svg'}}" mode="aspectFit" />
+                <text class="info-text">{{item._serviceModeText}}</text>
               </view>
-              <view wx:if="{{item._timeRangeText}}" class="order-detail-row">
-                <view class="info-icon info-icon-time"></view>
-                <text class="order-detail-text">{{item._timeRangeText}}</text>
+              <view wx:if="{{item.technician && item.technician.name}}" class="info-row">
+                <image class="info-icon" src="/static/icons/client.svg" mode="aspectFit" />
+                <text class="info-text">美甲师 {{item.technician.name}}</text>
               </view>
-              <view wx:if="{{item._isShopService}}" class="order-detail-row">
-                <view class="info-icon info-icon-shop"></view>
-                <text class="order-detail-label">店铺</text>
-                <text class="order-detail-text order-detail-truncate">{{item._shopNameText}}</text>
+              <view wx:if="{{item._isShopService && item._shopNameText}}" class="info-row">
+                <image class="info-icon" src="/static/icons/shop.svg" mode="aspectFit" />
+                <text class="info-text info-text-strong">{{item._shopNameText}}</text>
               </view>
-              <view class="order-detail-row">
-                <view class="info-icon info-icon-loc"></view>
-                <text class="order-detail-label">{{item._isShopService ? '店址' : '上门地址'}}</text>
-                <text class="order-detail-text order-detail-truncate">{{item._addressText}}</text>
+              <view class="info-row info-row-address">
+                <image class="info-icon" src="/static/icons/pin.svg" mode="aspectFit" />
+                <text class="info-text info-text-muted order-detail-address">{{item._addressText}}</text>
+              </view>
+              <view wx:if="{{item._hasShopGuidance}}" class="info-row order-guidance-link" catchtap="openShopGuidance" data-id="{{item.id}}" role="button" aria-label="查看到店指引">
+                <image class="info-icon" src="/static/icons/navigation.svg" mode="aspectFit" />
+                <text class="info-text">查看到店指引 ›</text>
+              </view>
+              <view class="info-row payment-row">
+                <image class="info-icon" src="/static/icons/wallet.svg" mode="aspectFit" />
+                <text class="info-text payment-summary">{{item._paymentSummary}}</text>
               </view>
             </view>
           </view>
 
-          <view wx:if="{{item._isTerminal}}" class="order-footer order-footer-detail" catchtap="viewOrder" data-id="{{item.id}}">
-            <text>查看预约详细信息</text>
-            <view class="footer-chevron"></view>
-          </view>
-          <view wx:else class="order-footer order-footer-countdown">
-            <view class="countdown-info">
+          <view class="order-footer" catchtap="viewOrder" data-id="{{item.id}}" role="button" aria-label="查看预约详情">
+            <view class="footer-prompt">
               <view class="footer-clock"></view>
-              <view><text class="countdown-main">{{item._countdownText}}</text><text class="countdown-next">{{item._nextStepText}}</text></view>
+              <view class="footer-prompt-copy">
+                <text class="countdown-main">{{item._isTerminal ? item.statusText : item._countdownText}}</text>
+                <text class="countdown-next">{{item._nextStepText}}</text>
+              </view>
             </view>
-            <view class="footer-chevron"></view>
+            <view class="footer-action"><text>查看详情</text><view class="footer-chevron"></view></view>
           </view>
         </view>
       </view>

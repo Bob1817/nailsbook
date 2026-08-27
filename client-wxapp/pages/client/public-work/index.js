@@ -1,6 +1,6 @@
 const api = require('../../../services/api');
 const { buildClientLoginUrl } = require('../../../utils/artist-navigation');
-const { normalizeWork } = require('../../../utils/normalize-work');
+const { normalizeWork, normalizeWorkDetail } = require('../../../utils/normalize-work');
 
 Page({
   data: {
@@ -29,7 +29,9 @@ Page({
     try {
       const rawWork = this.shareToken
         ? await api.public.works.shared(this.shareToken)
-        : await api.public.works.detail(this.workId);
+        // 小程序内普通作品 ID 与客户端作品列表使用同一可见性口径；
+        // 只有限时分享令牌才走严格的公开分享接口。
+        : await api.client.works.detail(this.workId, { needAuth: false, silent: true });
 
       // 拉取美甲师最新详情（与美甲师主页同一接口），确保 city/experienceYears/specialtiesText 完全同步
       let techSnapshot = null;
@@ -73,7 +75,14 @@ Page({
         };
       }
 
-      const work = normalizeWork(rawWork, techSnapshot, { index: 0 });
+      const work = normalizeWorkDetail({
+        ...rawWork,
+        ...normalizeWork(rawWork, techSnapshot, { index: 0 })
+      });
+      work.comments = (work.comments || []).map((comment) => ({
+        ...comment,
+        userInitial: (((comment.user && comment.user.name) || '用')).charAt(0)
+      }));
       work.dateStr = this.formatDate(rawWork.createdAt);
 
       this.setData({

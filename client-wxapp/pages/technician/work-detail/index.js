@@ -1,4 +1,5 @@
 const api = require('../../../services/api');
+const { normalizeWorkDetail } = require('../../../utils/normalize-work');
 
 function formatTime(dateStr) {
   if (!dateStr) return '';
@@ -15,9 +16,11 @@ function formatTime(dateStr) {
 }
 
 function processComment(c) {
+  const userName = c.user && c.user.name;
   return {
     ...c,
     createdAtText: formatTime(c.createdAt),
+    userInitial: (userName || '用').charAt(0),
     replies: (c.replies || []).map(processComment)
   };
 }
@@ -69,7 +72,7 @@ Page({
     this._loadingWork = true;
     this.setData({ loading: true, loadFailed: false, loadErrorText: '', canRetryLoad: false });
     try {
-      const work = await api.technician.works.detail(this.workId);
+      const work = normalizeWorkDetail(await api.technician.works.detail(this.workId));
       work.tags = work.tags ? (typeof work.tags === 'string' ? JSON.parse(work.tags) : work.tags) : [];
       const imageUrls = work.images ? (typeof work.images === 'string' ? JSON.parse(work.images) : work.images) : [];
       if (imageUrls.length === 0 && work.coverUrl) imageUrls.push(work.coverUrl);
@@ -95,8 +98,103 @@ Page({
     }
   },
 
+  manageComment(e) {
+    const comment = e.detail.comment;
+    if (!comment || !comment.id) return;
+    wx.showActionSheet({
+      itemList: [comment.isPinned ? '取消置顶' : '置顶评论', comment.isHidden ? '显示评论' : '隐藏评论', '删除评论'],
+      success: async (result) => {
+        if (result.tapIndex === 2) return this.confirmDeleteComment(comment);
+        try {
+          if (result.tapIndex === 0) await api.technician.works.pinComment(this.workId, comment.id);
+          if (result.tapIndex === 1) await api.technician.works.hideComment(this.workId, comment.id);
+          wx.showToast({ title: result.tapIndex === 0 ? '评论置顶状态已更新' : '评论显示状态已更新', icon: 'none' });
+          await this.loadComments();
+        } catch (err) {
+          wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+        }
+      }
+    });
+  },
+
+  confirmDeleteComment(comment) {
+    wx.showModal({
+      title: '删除评论',
+      content: '删除后无法恢复，确定继续吗？',
+      confirmText: '删除',
+      confirmColor: '#dc5275',
+      success: async (result) => {
+        if (!result.confirm) return;
+        try {
+          await api.technician.works.deleteComment(this.workId, comment.id);
+          wx.showToast({ title: '评论已删除', icon: 'success' });
+          await this.loadComments();
+        } catch (err) {
+          wx.showToast({ title: err.message || '删除失败', icon: 'none' });
+        }
+      }
+    });
+  },
+
   goBack() {
     wx.navigateBack();
+  },
+
+  editWork() {
+    if (!this.workId) return;
+    wx.navigateTo({ url: `/pages/technician/work-edit/index?id=${this.workId}` });
+  },
+
+  showWorkActions(e) {
+    const source = e.detail || {};
+    const { id, visible, pinned, featured } = source;
+    if (!id) return;
+    wx.showActionSheet({
+      itemList: [
+        visible ? '隐藏作品' : '显示作品',
+        pinned ? '取消置顶' : '置顶作品',
+        featured ? '取消推荐' : '推荐作品',
+        '编辑作品',
+        '删除作品'
+      ],
+      success: async (res) => {
+        try {
+          if (res.tapIndex === 0) await api.technician.works.toggleVisible(id);
+          if (res.tapIndex === 1) await api.technician.works.togglePinned(id);
+          if (res.tapIndex === 2) await api.technician.works.toggleFeatured(id);
+          if (res.tapIndex === 3) return this.editWork();
+          if (res.tapIndex === 4) return this.confirmDeleteWork(id);
+          const messages = [visible ? '已隐藏' : '已显示', pinned ? '已取消置顶' : '已置顶', featured ? '已取消推荐' : '已推荐'];
+          wx.showToast({ title: messages[res.tapIndex], icon: 'success' });
+          this.loadWork();
+        } catch (err) {
+          wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+        }
+      }
+    });
+  },
+
+  confirmDeleteWork(id) {
+    wx.showModal({
+      title: '删除作品',
+      content: '确定删除这个作品吗？删除后无法恢复。',
+      confirmText: '删除',
+      confirmColor: '#ef4444',
+      success: (res) => { if (res.confirm) this.deleteWork(id); }
+    });
+  },
+
+  async deleteWork(id) {
+    try {
+      wx.showLoading({ title: '删除中...' });
+      await api.technician.works.delete(id);
+      wx.hideLoading();
+      wx.showToast({ title: '已删除', icon: 'success' });
+      setTimeout(() => wx.navigateBack(), 400);
+    } catch (err) {
+      wx.hideLoading();
+      wx.showToast({ title: err.message || '删除失败', icon: 'none' });
+    }
   },
 
   onImageScroll(e) {
@@ -137,6 +235,13 @@ Page({
 
   onCommentInput(e) {
     this.setData({ commentText: e.detail.value });
+  },
+
+  onSharedCommentInput(e) { this.setData({ commentText: e.detail.value }); },
+
+  onSharedCommentReply(e) {
+    const comment = e.detail.comment;
+    if (comment && comment.id) this.setData({ replyingTo: { id: comment.id, name: comment.user.name } });
   },
 
   async submitComment() {

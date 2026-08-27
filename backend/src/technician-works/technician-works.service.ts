@@ -267,6 +267,10 @@ export class TechnicianWorksService {
       throw new NotFoundException('作品不存在');
     }
 
+    if (existing.publicationStatus === 'draft') {
+      await this.subscriptions.assertCanCreateWork(technicianId);
+    }
+
     const pricing =
       dto.selectedServiceIds !== undefined || dto.standardPrice !== undefined
         ? await this.resolveWorkPricing(
@@ -426,6 +430,7 @@ export class TechnicianWorksService {
         data: {
           techId: technicianId,
           sourceOrderId: order.id,
+          visibilityScope: 'authorized_clients',
           serviceId: order.serviceId,
           title: order.service?.name
             ? `${order.service.name}服务案例`
@@ -454,6 +459,11 @@ export class TechnicianWorksService {
         },
       });
       return created;
+    }).catch(async (error) => {
+      if (error.code !== 'P2002') throw error;
+      const existing = await this.prisma.nailWork.findUnique({ where: { sourceOrderId: orderId } });
+      if (!existing || existing.techId !== technicianId) throw error;
+      return existing;
     });
     return this.findOne(technicianId, work.id);
   }

@@ -76,11 +76,18 @@ page {
   box-sizing: border-box;
 }
 .service-row { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; }
+.address-row { display: flex; align-items: center; gap: 16rpx; }
+.address-row:active { opacity: 0.7; }
+.address-copy { flex: 1; min-width: 0; }
 .service-copy { flex: 1; min-width: 0; }
 .service-name, .address-name { display: block; color: var(--text-primary); font-size: var(--font-sm); font-weight: var(--weight-semibold); }
 .service-meta, .address-detail { display: block; margin-top: 4rpx; color: var(--text-muted); font-size: var(--font-xs); }
 .service-price { flex-shrink: 0; color: #d94f70; font-size: var(--font-sm); font-weight: var(--weight-bold); }
+.address-nav-icon { width: 36rpx; height: 36rpx; flex-shrink: 0; }
 .address-row + .address-row { margin-top: 12rpx; }
+.shop-address-group + .shop-address-group { margin-top: 16rpx; }
+.address-guidance-link { min-height: 88rpx; margin-top: -4rpx; padding: 6rpx 0 0; box-sizing: border-box; display: flex; align-items: flex-start; justify-content: flex-start; gap: 8rpx; background: transparent; color: var(--brand-primary); font-size: var(--font-xs); font-weight: var(--weight-medium); }
+.address-guidance-link:active { opacity: .65; }
 .business-book-btn {
   width: 100%;
   height: 96rpx;
@@ -138,11 +145,12 @@ page {
 
 .sort-tab {
   flex: 1;
-  height: 88rpx;
+  height: 60rpx;
+  padding: 0 20rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 36rpx;
+  border-radius: 30rpx;
   font-size: var(--font-sm);
   font-weight: var(--weight-medium);
   color: var(--text-muted);
@@ -163,19 +171,22 @@ page {
 .sort-arrow {
   width: 0; height: 0;
   margin-left: 6rpx;
-  border-left: 7rpx solid transparent;
-  border-right: 7rpx solid transparent;
+  border-left: 5rpx solid transparent;
+  border-right: 5rpx solid transparent;
 }
 .sort-arrow-down {
-  border-top: 8rpx solid #9ca3af;
+  border-top: 6rpx solid var(--text-muted);
   border-bottom: none;
 }
 .sort-arrow-up {
-  border-bottom: 8rpx solid #fff;
+  border-bottom: 6rpx solid var(--text-muted);
   border-top: none;
 }
-.sort-tab:not(.sort-tab-active) .sort-arrow-up {
-  border-bottom-color: var(--text-muted);
+.sort-tab-active .sort-arrow-down {
+  border-top-color: var(--text-inverse);
+}
+.sort-tab-active .sort-arrow-up {
+  border-bottom-color: var(--text-inverse);
 }
 
 /* ===== 美甲师筛选 pills ===== */
@@ -193,9 +204,9 @@ page {
 .tech-pill {
   display: inline-flex;
   align-items: center;
-  height: 88rpx;
-  padding: 0 28rpx;
-  border-radius: 36rpx;
+  min-height: 60rpx;
+  padding: 0 20rpx;
+  border-radius: 30rpx;
   font-size: var(--font-sm);
   font-weight: var(--weight-medium);
   color: var(--text-muted);

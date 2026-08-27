@@ -460,138 +460,8 @@ page {
 .menu-icon-purple { background: linear-gradient(135deg, #F5F3FF 0%, #EEF2FF 100%); --ic: #8B7CF6; }
 .menu-icon-gray   { background: var(--bg-input); --ic: #9ca3af; }
 
-/* ===== 菜单图标（CSS 绘制，--ic 控制主色）===== */
-.m-icon { width: 36rpx; height: 36rpx; position: relative; }
-
-/* 定位 pin */
-.m-icon-pin::before {
-  content: ''; position: absolute; left: 5rpx; top: 3rpx;
-  width: 26rpx; height: 26rpx; box-sizing: border-box;
-  border: 4rpx solid var(--ic); border-radius: 50% 50% 50% 0;
-  transform: rotate(45deg);
-}
-.m-icon-pin::after {
-  content: ''; position: absolute; left: 14rpx; top: 12rpx;
-  width: 8rpx; height: 8rpx; border-radius: 50%; background: var(--ic);
-}
-
-/* 画笔 design */
-.m-icon-design::before {
-  content: ''; position: absolute; left: 14rpx; top: 2rpx;
-  width: 7rpx; height: 26rpx; background: var(--ic); border-radius: 3rpx 3rpx 0 0;
-  transform-origin: center; transform: rotate(45deg);
-}
-.m-icon-design::after {
-  content: ''; position: absolute; left: 4rpx; bottom: 3rpx;
-  width: 10rpx; height: 4rpx; background: var(--ic); border-radius: 2rpx;
-  transform: rotate(45deg);
-}
-
-/* 书签 bookmark */
-.m-icon-bookmark::before {
-  content: ''; position: absolute; left: 7rpx; top: 4rpx;
-  width: 22rpx; height: 28rpx; box-sizing: border-box;
-  border: 4rpx solid var(--ic); border-radius: 4rpx 4rpx 0 0;
-}
-.m-icon-bookmark::after {
-  content: ''; position: absolute; left: 7rpx; bottom: 4rpx;
-  width: 0; height: 0;
-  border-left: 11rpx solid transparent; border-right: 11rpx solid transparent;
-  border-bottom: 9rpx solid #fff;
-}
-
-/* 心形 heart（旋转方块 + 两圆，稳定不裂）*/
-.m-icon-heart {
-  transform: rotate(-45deg); width: 22rpx; height: 22rpx; margin: 7rpx;
-  background: var(--ic);
-}
-.m-icon-heart::before,
-.m-icon-heart::after {
-  content: ''; position: absolute; width: 22rpx; height: 22rpx;
-  border-radius: 50%; background: var(--ic);
-}
-.m-icon-heart::before { top: -11rpx; left: 0; }
-.m-icon-heart::after  { left: 11rpx; top: 0; }
-
-/* 对话气泡 chat */
-.m-icon-chat::before {
-  content: ''; position: absolute; left: 4rpx; top: 5rpx;
-  width: 28rpx; height: 22rpx; box-sizing: border-box;
-  border: 4rpx solid var(--ic); border-radius: 8rpx;
-}
-.m-icon-chat::after {
-  content: ''; position: absolute; left: 9rpx; bottom: 3rpx;
-  width: 0; height: 0;
-  border-left: 8rpx solid transparent; border-top: 8rpx solid var(--ic);
-}
-
-/* 锁 lock */
-.m-icon-lock::before {
-  content: ''; position: absolute; left: 9rpx; top: 4rpx;
-  width: 18rpx; height: 14rpx; box-sizing: border-box;
-  border: 4rpx solid var(--ic); border-bottom: 0; border-radius: 9rpx 9rpx 0 0;
-}
-.m-icon-lock::after {
-  content: ''; position: absolute; left: 5rpx; top: 16rpx;
-  width: 26rpx; height: 18rpx; background: var(--ic); border-radius: 5rpx;
-}
-
-/* 手册 book */
-.m-icon-book::before {
-  content: ''; position: absolute; left: 5rpx; top: 4rpx;
-  width: 26rpx; height: 28rpx; box-sizing: border-box;
-  border: 4rpx solid var(--ic); border-radius: 4rpx;
-}
-.m-icon-book::after {
-  content: ''; position: absolute; left: 17rpx; top: 4rpx;
-  width: 3rpx; height: 28rpx; background: var(--ic);
-}
-
-/* 文档 doc */
-.m-icon-doc::before {
-  content: ''; position: absolute; left: 7rpx; top: 3rpx;
-  width: 22rpx; height: 30rpx; box-sizing: border-box;
-  border: 4rpx solid var(--ic); border-radius: 4rpx;
-}
-.m-icon-doc::after {
-  content: ''; position: absolute; left: 12rpx; top: 13rpx;
-  width: 12rpx; height: 3rpx; background: var(--ic);
-  box-shadow: 0 7rpx 0 var(--ic);
-}
-
-/* 盾牌 shield */
-.m-icon-shield::before {
-  content: ''; position: absolute; left: 7rpx; top: 4rpx;
-  width: 22rpx; height: 22rpx; box-sizing: border-box;
-  border: 4rpx solid var(--ic); border-radius: 4rpx 4rpx 50% 50%;
-}
-.m-icon-shield::after {
-  content: ''; position: absolute; left: 16rpx; top: 9rpx;
-  width: 4rpx; height: 12rpx; background: var(--ic); border-radius: 2rpx;
-}
-
-/* 切换 swap */
-.m-icon-swap::before {
-  content: ''; position: absolute; left: 5rpx; top: 11rpx;
-  width: 26rpx; height: 3rpx; background: var(--ic);
-  box-shadow: 0 8rpx 0 var(--ic);
-}
-.m-icon-swap::after {
-  content: ''; position: absolute; left: 24rpx; top: 7rpx;
-  width: 10rpx; height: 10rpx; border-right: 3rpx solid var(--ic); border-top: 3rpx solid var(--ic);
-  transform: rotate(45deg);
-}
-
-/* 信息 info */
-.m-icon-info {
-  width: 30rpx; height: 30rpx; margin: 3rpx;
-  border: 4rpx solid var(--ic); border-radius: 50%; box-sizing: border-box;
-}
-.m-icon-info::after {
-  content: ''; position: absolute; left: 11rpx; top: 8rpx;
-  width: 4rpx; height: 4rpx; background: var(--ic); border-radius: 50%;
-  box-shadow: 0 6rpx 0 var(--ic), 0 11rpx 0 var(--ic);
-}
+/* ===== 统一静态图标系统 ===== */
+.m-icon { width: 36rpx; height: 36rpx; }
 
 .menu-label {
   flex: 1;
@@ -1003,16 +873,7 @@ page {
 .tech-menu-item:active { background: #f7f8fa; }
 .tech-menu-divider { height: 1rpx; margin: 6rpx 12rpx; background: #edf0f4; }
 .tech-menu-danger { color: #c2414f; }
-.tech-menu-icon { width: 30rpx; height: 30rpx; flex-shrink: 0; position: relative; color: var(--text-muted); }
-.tech-menu-icon-info { border: 2rpx solid currentColor; border-radius: 50%; box-sizing: border-box; }
-.tech-menu-icon-info::before { content: ''; position: absolute; left: 12rpx; top: 7rpx; width: 3rpx; height: 3rpx; border-radius: 50%; background: currentColor; }
-.tech-menu-icon-info::after { content: ''; position: absolute; left: 12rpx; top: 13rpx; width: 3rpx; height: 9rpx; border-radius: 2rpx; background: currentColor; }
-.tech-menu-icon-message { border: 2rpx solid currentColor; border-radius: 8rpx; box-sizing: border-box; }
-.tech-menu-icon-message::after { content: ''; position: absolute; left: 4rpx; bottom: -6rpx; width: 8rpx; height: 8rpx; border-left: 2rpx solid currentColor; transform: skewY(-35deg); }
-.tech-menu-icon-unbind { color: #c2414f; }
-.tech-menu-icon-unbind::before,
-.tech-menu-icon-unbind::after { content: ''; position: absolute; left: 14rpx; top: 2rpx; width: 2rpx; height: 26rpx; border-radius: 2rpx; background: currentColor; transform: rotate(45deg); }
-.tech-menu-icon-unbind::after { transform: rotate(-45deg); }
+.tech-menu-icon { width: 30rpx; height: 30rpx; flex-shrink: 0; }
 .menu-list { padding: 8rpx 16rpx 16rpx; }
 .menu-item { min-height: 104rpx; padding: 12rpx 16rpx; border-radius: var(--radius-md); }
 .logout-btn { border-radius: var(--radius-lg); box-shadow: 0 16rpx 42rpx rgba(15, 23, 42, 0.07); }

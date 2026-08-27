@@ -60,10 +60,15 @@
 
     <view wx:if="{{order.address}}" class="info-row address-row">
       <text class="info-label">服务地址</text>
-      <view class="info-value-block">
-        <text class="addr-text">{{order.address}}</text>
-        <view class="copy-link" catchtap="navigateToAddress" role="button" aria-label="导航到地址">
-          <view class="copy-link-label">导航</view>
+      <view class="address-content">
+        <view class="info-value-block">
+          <text class="addr-text">{{order.address}}</text>
+          <view class="copy-link" catchtap="navigateToAddress" role="button" aria-label="导航到地址">
+            <view class="copy-link-label">导航</view>
+          </view>
+        </view>
+        <view wx:if="{{shopGuidance}}" class="guidance-row-main" bindtap="openShopGuidance" role="button" aria-label="查看到店指引">
+          <text>查看到店指引</text><text>›</text>
         </view>
       </view>
     </view>
@@ -116,18 +121,36 @@
       <text>-¥{{0 - order._priceDiffFen / 100}}</text>
     </view>
 
-    <view class="price-row" bindtap="openEditPrice">
+    <view class="price-row" bindtap="openEditPrice" role="button" aria-label="调整作品标准报价">
       <text class="price-label">{{order.bookingType === 'work' ? '作品标准报价' : '最终价格'}}</text>
       <view class="price-right">
         <view class="price-main-wrap">
           <text class="price-main">{{order._priceText}}</text>
           <text class="price-edit-arrow">›</text>
         </view>
-        <text class="deposit-note">{{order.depositPaid && order.depositAmount > 0 ? '已支付定金 ¥' + (order.depositAmount / 100) : '未支付定金'}}</text>
+        <text class="deposit-note">{{order._depositStatusText}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{order.status === 'completed'}}" class="actual-amount-row" bindtap="openEditActualAmount" role="button" aria-label="修改实际支付金额">
+      <text class="price-label actual-amount-label">实际支付金额</text>
+      <view class="actual-amount-action">
+        <text class="actual-amount-value">{{order._actualAmountText}}</text>
+        <text class="price-edit-arrow">›</text>
       </view>
     </view>
 
     <text class="offline-payment-note">实际付款由客户与门店线下完成，小程序不提供代收款服务。</text>
+  </view>
+
+  <view wx:if="{{order.sourceWork}}" class="card source-work-card" bindtap="viewSourceWork" role="button" aria-label="查看来源作品">
+    <image wx:if="{{order.sourceWork.coverUrl}}" class="source-work-cover" src="{{order.sourceWork.coverUrl}}" mode="aspectFill" aria-label="{{order.sourceWork.title || '预约来源作品'}}"/>
+    <view class="source-work-copy">
+      <text class="source-work-label">预约同款来源</text>
+      <text class="source-work-title">{{order.sourceWork.title || '美甲作品'}}</text>
+      <text wx:if="{{order.sourceWork._priceFen > 0}}" class="source-work-price">¥{{order.sourceWork._priceFen / 100}}</text>
+    </view>
+    <text class="source-work-arrow">›</text>
   </view>
 
   <!-- ============ 备注 ============ -->
@@ -137,10 +160,9 @@
   </view>
 
   <!-- ============ 底部操作栏 ============ -->
-  <view class="bottom-actions">
-    <view class="action-btn action-danger {{submitting ? 'is-disabled' : ''}}" bindtap="openCancel">取消预约</view>
-    <view wx:if="{{order.status === 'in_progress'}}" class="action-btn action-primary {{submitting ? 'is-disabled' : ''}}" bindtap="completeOrder">标记完成</view>
-    <view wx:elif="{{order._actions.length > 0}}" class="action-btns-row">
+  <view wx:if="{{order._actions.length > 0}}" class="bottom-actions">
+    <view wx:if="{{order._actions.length === 1}}" class="action-btn {{order._actions[0].style}}" bindtap="onAction" data-key="{{order._actions[0].key}}">{{order._actions[0].label}}</view>
+    <view wx:elif="{{order._actions.length === 2}}" class="action-btns-row">
       <view
         wx:for="{{order._actions}}"
         wx:key="key"
@@ -149,6 +171,19 @@
         data-key="{{item.key}}"
       >{{item.label}}</view>
     </view>
+    <view wx:else class="action-btn action-primary" bindtap="openActionMenu">更多操作</view>
+  </view>
+</view>
+
+<!-- ============ 三项及以上操作菜单 ============ -->
+<view wx:if="{{showActionMenu}}" class="sheet-mask" bindtap="closeActionMenu"></view>
+<view class="sheet {{showActionMenu ? 'sheet-show' : ''}}" catchtap="">
+  <view class="sheet-header">
+    <text class="sheet-title">更多操作</text>
+    <view class="sheet-close" bindtap="closeActionMenu">✕</view>
+  </view>
+  <view class="sheet-body action-menu-list">
+    <view wx:for="{{order._actions}}" wx:key="key" class="action-menu-item {{item.style}}" bindtap="onAction" data-key="{{item.key}}">{{item.label}}</view>
   </view>
 </view>
 
@@ -243,11 +278,45 @@
         data-reason="{{item}}"
       >{{item}}</view>
     </view>
+
+    <view wx:if="{{order.depositPaid}}" class="form-item refund-choice">
+      <text class="form-label">定金处理 <text class="required">*</text></text>
+      <text class="form-hint">请选择取消后是否退还已支付定金</text>
+      <view class="refund-options">
+        <view class="refund-option {{cancelRefundDeposit === true ? 'selected' : ''}}" data-value="true" bindtap="onPickRefundDeposit">
+          <text class="radio-dot">{{cancelRefundDeposit === true ? '●' : '○'}}</text><text>退还定金</text>
+        </view>
+        <view class="refund-option {{cancelRefundDeposit === false ? 'selected' : ''}}" data-value="false" bindtap="onPickRefundDeposit">
+          <text class="radio-dot">{{cancelRefundDeposit === false ? '●' : '○'}}</text><text>不退定金</text>
+        </view>
+      </view>
+    </view>
   </view>
 
   <view class="sheet-footer">
     <view class="action-btn action-danger {{submitting ? 'is-disabled' : ''}}" bindtap="submitCancel">
       {{submitting ? '提交中...' : '确认取消'}}
+    </view>
+  </view>
+</view>
+
+<!-- ============ 实际支付金额确认弹层 ============ -->
+<view wx:if="{{showActualAmount}}" class="sheet-mask" bindtap="closeActualAmount"></view>
+<view class="sheet {{showActualAmount ? 'sheet-show' : ''}}" catchtap="">
+  <view class="sheet-header">
+    <text class="sheet-title">{{actualAmountMode === 'edit' ? '修改实际支付金额' : '确认完成'}}</text>
+    <view class="sheet-close" bindtap="closeActualAmount">✕</view>
+  </view>
+  <view class="sheet-body">
+    <view class="form-item">
+      <text class="form-label">本订单实际支付金额（元）</text>
+      <input class="form-input" type="digit" value="{{actualAmountInput}}" bindinput="onActualAmountInput" placeholder="请输入实际支付金额" confirm-type="done" />
+      <text class="form-hint">默认使用预约报价，可根据线下实际收款修改</text>
+    </view>
+  </view>
+  <view class="sheet-footer">
+    <view class="action-btn action-primary {{submitting ? 'is-disabled' : ''}}" bindtap="submitActualAmount">
+      {{submitting ? '提交中...' : (actualAmountMode === 'edit' ? '确认修改' : '确认完成')}}
     </view>
   </view>
 </view>
@@ -329,29 +398,6 @@
   <view class="sheet-footer">
     <view class="action-btn action-primary {{editPriceSubmitting ? 'is-disabled' : ''}}" bindtap="submitEditPrice">
       {{editPriceSubmitting ? '保存中...' : '确认调整'}}
-    </view>
-  </view>
-</view>
-
-<!-- ============ 标记完成确认弹层 ============ -->
-<view wx:if="{{showCompleteConfirm}}" class="sheet-mask" bindtap="closeCompleteConfirm"></view>
-<view class="sheet {{showCompleteConfirm ? 'sheet-show' : ''}}" catchtap="">
-  <view class="sheet-header">
-    <text class="sheet-title">确认完成</text>
-    <view class="sheet-close" bindtap="closeCompleteConfirm">✕</view>
-  </view>
-
-  <scroll-view scroll-y class="sheet-body">
-    <view class="form-item">
-      <text class="form-label">实际支付金额（元）</text>
-      <input class="form-input" type="digit" placeholder="请输入实际支付金额" value="{{completeAmount}}" bindinput="onCompleteAmountInput" confirm-type="done" />
-      <text class="form-hint">默认为作品标准报价金额，可按实际调整</text>
-    </view>
-  </scroll-view>
-
-  <view class="sheet-footer">
-    <view class="action-btn action-primary {{completeSubmitting ? 'is-disabled' : ''}}" bindtap="submitComplete">
-      {{completeSubmitting ? '提交中...' : '确认完成'}}
     </view>
   </view>
 </view>

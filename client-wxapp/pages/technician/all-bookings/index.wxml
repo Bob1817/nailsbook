@@ -41,37 +41,15 @@
       </view>
 
       <view wx:else class="trip-list">
-        <view
+        <technician-booking-card
           wx:for="{{filteredOrders}}"
           wx:key="id"
-          class="trip-card"
-          bindtap="viewOrder"
-          data-id="{{item.id}}"
-        >
-          <view class="trip-top">
-            <text class="trip-time">{{item._clock}}</text>
-            <view class="trip-avatar">
-              <image wx:if="{{item.customerAvatar}}" src="{{item.customerAvatar}}" mode="aspectFill" class="trip-avatar-img" lazy-load aria-label="{{item.customerName || '客户'}}的头像" />
-              <text wx:else class="trip-avatar-char">{{item._avatarChar}}</text>
-            </view>
-            <view class="trip-info">
-              <text class="trip-name">{{item.customerName}}</text>
-              <text class="trip-svc">{{item._typeLabel}} · {{item.serviceName}}</text>
-            </view>
-            <text class="trip-status {{item._statusTone}}">{{item._statusLabel}}</text>
-          </view>
-
-          <view wx:if="{{item.address}}" class="trip-addr">{{item.address}}</view>
-
-          <view class="trip-actions">
-            <view class="trip-btn trip-primary" catchtap="navigateToAddress" data-id="{{item.id}}">
-              去导航
-            </view>
-            <view class="trip-btn trip-ghost" catchtap="contactCustomer" data-phone="{{item.customerPhone}}">
-              联系客户
-            </view>
-          </view>
-        </view>
+          order="{{item}}"
+          variant="compact"
+          bind:open="onBookingCardOpen"
+          bind:navigate="onBookingCardNavigate"
+          bind:contact="onBookingCardContact"
+        />
       </view>
     </view>
   </scroll-view>

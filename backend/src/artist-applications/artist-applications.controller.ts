@@ -22,6 +22,8 @@ import {
 import { ArtistApplicationsService } from './artist-applications.service';
 import { CreateArtistApplicationDto } from './dto/create-artist-application.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Permissions } from '../auth/permission.decorator';
+import { OperationLog } from '../auth/operation-log.decorator';
 
 @ApiTags('管理员-艺术家申请')
 @ApiBearerAuth()
@@ -48,6 +50,7 @@ export class ArtistApplicationsController {
 
   @Get('admin/artist-applications')
   @UseGuards(JwtAuthGuard)
+  @Permissions('application:view')
   @ApiOperation({ summary: '获取艺术家申请列表' })
   @ApiQuery({
     name: 'page',
@@ -82,6 +85,7 @@ export class ArtistApplicationsController {
 
   @Get('admin/artist-applications/:id')
   @UseGuards(JwtAuthGuard)
+  @Permissions('application:view')
   @ApiOperation({ summary: '获取艺术家申请详情' })
   @ApiParam({ name: 'id', type: Number, description: '申请ID' })
   @ApiResponse({ status: 200, description: '返回申请详情' })
@@ -92,6 +96,8 @@ export class ArtistApplicationsController {
 
   @Patch('admin/artist-applications/:id/approve')
   @UseGuards(JwtAuthGuard)
+  @Permissions('application:manage')
+  @OperationLog({ module: 'artist-applications', action: 'approve', targetType: 'artist-application', logResponse: false })
   @ApiOperation({ summary: '批准艺术家申请' })
   @ApiParam({ name: 'id', type: Number, description: '申请ID' })
   @ApiResponse({ status: 200, description: '批准成功' })
@@ -105,6 +111,8 @@ export class ArtistApplicationsController {
 
   @Patch('admin/artist-applications/:id/reject')
   @UseGuards(JwtAuthGuard)
+  @Permissions('application:manage')
+  @OperationLog({ module: 'artist-applications', action: 'reject', targetType: 'artist-application', logResponse: false })
   @ApiOperation({ summary: '拒绝艺术家申请' })
   @ApiParam({ name: 'id', type: Number, description: '申请ID' })
   @ApiResponse({ status: 200, description: '拒绝成功' })

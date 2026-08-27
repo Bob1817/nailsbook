@@ -3,43 +3,37 @@
     <image wx:if="{{work.coverUrl}}" src="{{work.coverUrl}}" mode="aspectFill" class="wc-editorial-img" lazy-load aria-label="{{work.title || '美甲作品'}}"/>
     <view wx:else class="wc-editorial-img wc-img-empty"></view>
     <view wx:if="{{manageable}}" class="wc-status-icons" aria-label="作品状态">
-      <image wx:if="{{!work.isVisible}}" src="/static/icons/eye-closed.svg" class="wc-status-icon" aria-label="已隐藏"/>
-      <image wx:if="{{work.isPinned}}" src="/static/icons/status-pin.svg" class="wc-status-icon" aria-label="已置顶"/>
-      <image wx:if="{{work.isFeatured}}" src="/static/icons/status-featured.svg" class="wc-status-icon" aria-label="已推荐"/>
+      <view wx:if="{{!work.isVisible}}" class="wc-status-pill"><image src="/static/icons/eye-closed.svg" class="wc-status-icon"/><text>已隐藏</text></view>
+      <view wx:if="{{work.isPinned}}" class="wc-status-pill"><image src="/static/icons/status-pin.svg" class="wc-status-icon"/><text>已置顶</text></view>
+      <view wx:if="{{work.isFeatured}}" class="wc-status-pill"><image src="/static/icons/status-featured.svg" class="wc-status-icon"/><text>已推荐</text></view>
     </view>
     <view wx:if="{{manageable}}" class="wc-manage" catchtap="onActionTap" role="button" aria-label="管理作品"><image src="/static/icons/more-horizontal.svg" class="wc-manage-icon"/></view>
+    <text wx:if="{{displayPrice}}" class="wc-price-pill">{{displayPrice}}</text>
   </view>
   <view class="wc-editorial-copy">
-    <view class="wc-editorial-title-row">
-      <text class="wc-editorial-title">{{work.title}}</text>
-      <text wx:if="{{featured && (work.priceText || work.price)}}" class="wc-editorial-price">{{work.priceText || '¥' + work.price}}</text>
-    </view>
-    <view wx:if="{{work.tagsText || (work.tags && work.tags.length)}}" class="wc-editorial-tags">
-      <text wx:if="{{work.tagsText}}">{{work.tagsText}}</text>
-      <block wx:else><text wx:for="{{work.tags}}" wx:key="*this" wx:if="{{index < 3}}">{{index ? ' · ' : ''}}{{item}}</text></block>
-    </view>
+    <text class="wc-editorial-title">{{work.title}}</text>
     <view class="wc-editorial-artist" catchtap="onArtistTap">
       <image wx:if="{{work.technicianAvatarUrl}}" src="{{work.technicianAvatarUrl}}" mode="aspectFill" class="wc-editorial-avatar" lazy-load aria-label="{{work.technicianName || '美甲师'}}的头像"/>
       <view wx:else class="wc-editorial-avatar wc-editorial-avatar-fallback">{{work.techInitial}}</view>
       <view class="wc-editorial-artist-copy">
         <text class="wc-editorial-name">{{work.technicianName || '独立美甲师'}}</text>
-        <text class="wc-editorial-expertise wc-editorial-expertise-multi">{{compactExpertise}}</text>
-      </view>
-      <view class="wc-editorial-stats">
-        <view class="wc-stat" catchtap="onLikeTap" role="button" aria-label="{{localLiked ? '取消点赞' : '点赞'}}">
-          <image src="{{localLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}" class="wc-stat-icon"/>
-          <text>{{localLikeCount}}</text>
-        </view>
-        <view class="wc-stat" catchtap="onFavoriteTap" role="button" aria-label="{{localFavorited ? '取消收藏' : '收藏'}}">
-          <image src="{{localFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}" class="wc-stat-icon"/>
-          <text>{{localFavoriteCount}}</text>
-        </view>
-        <view class="wc-stat" catchtap="onCommentTap" role="button" aria-label="查看评论">
-          <image src="/static/icons/social-comment.svg" class="wc-stat-icon"/>
-          <text>{{localCommentCount}}</text>
-        </view>
+        <text wx:if="{{artistStatus}}" class="wc-artist-separator">·</text>
+        <text wx:if="{{artistStatus}}" class="wc-editorial-expertise">{{artistStatus}}</text>
       </view>
     </view>
+  </view>
+  <view wx:if="{{showClientActions}}" class="wc-client-actions">
+    <view class="wc-client-tools">
+      <view class="wc-client-action {{localLiked ? 'is-active' : ''}}" catchtap="onLikeTap" role="button" aria-label="{{localLiked ? '取消点赞' : '点赞'}}">
+        <image src="{{localLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}" class="wc-client-action-icon"/>
+        <text>点赞</text>
+      </view>
+      <view class="wc-client-action {{localFavorited ? 'is-active' : ''}}" catchtap="onFavoriteTap" role="button" aria-label="{{localFavorited ? '取消收藏' : '收藏'}}">
+        <image src="{{localFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}" class="wc-client-action-icon"/>
+        <text>收藏</text>
+      </view>
+    </view>
+    <view class="wc-book-same" catchtap="onBookTap" role="button" aria-label="预约同款"><text class="wc-book-label">预约同款</text></view>
   </view>
 </view>
 

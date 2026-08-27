@@ -91,14 +91,23 @@ Page({
     self.setData({ loading: true });
 
     var loggedIn = !!(getApp().globalData.token || wx.getStorageSync('client_token'));
+    var worksRequest = loggedIn
+      ? api.client.works.list({ sortBy: 'latest', sortDir: 'desc' }).catch(function () { return api.public.works.list({ limit: 50 }); })
+      : api.public.works.list({ limit: 50 });
+    var featuredRequest = loggedIn
+      ? api.client.featuredWorks({ page: 1, limit: 10 }).catch(function () { return { works: [] }; })
+      : api.public.works.featured().catch(function () { return []; });
+
     return Promise.all([
-      api.public.works.list({ limit: 50 }),
+      worksRequest,
+      featuredRequest,
       loggedIn ? api.client.likes.list().catch(function () { return []; }) : Promise.resolve([]),
       loggedIn ? api.auth.getUserInfo('client').catch(function () { return null; }) : Promise.resolve(null)
     ]).then(function (results) {
       var res = results[0];
-      var likedList = results[1] || [];
-      var profile = results[2] || {};
+      var featuredRes = results[1] || [];
+      var likedList = results[2] || [];
+      var profile = results[3] || {};
       var technicians = (profile.technicians || []).concat(getCachedTechnicians());
       var technicianById = {};
       technicians.forEach(function (tech) { if (tech && tech.id) technicianById[String(tech.id)] = tech; });
@@ -111,18 +120,10 @@ Page({
       });
 
       var list = res.list || res.data || (Array.isArray(res) ? res : []);
-      return Promise.all(boundIds.map(function (id) {
-        return api.public.works.list({ techId: id, limit: 50 }).catch(function () { return []; });
-      })).then(function (workLists) {
-        var boundWorks = [];
-        workLists.forEach(function (workList) {
-          var items = workList && (workList.list || workList.data || workList);
-          (Array.isArray(items) ? items : []).forEach(function (work) {
-            boundWorks.push(Object.assign({}, work, { isMyTechnician: true }));
-          });
-        });
-        return mergeByWorkId(boundWorks, list);
-      }).then(function (mergedList) {
+      var featuredList = featuredRes.works || featuredRes.list || featuredRes.data || (Array.isArray(featuredRes) ? featuredRes : []);
+      var featuredIds = {};
+      featuredList.forEach(function (work) { if (work && work.id) featuredIds[String(work.id)] = true; });
+      var mergedList = mergeByWorkId(list, featuredList);
       var works = mergedList.map(function (w, index) {
         var rawTags = w.tags || [];
         var tags = Array.isArray(rawTags)
@@ -155,12 +156,12 @@ Page({
         normalized.dateStr = normalized.dateStr || formatDate(w.createdAt);
         normalized.tagsText = normalized.tags.slice(0, 3).join(' · ');
         normalized.priceText = formatPrice(normalized) || formatPrice(w);
+        normalized.isFeatured = !!w.isFeatured || !!featuredIds[String(w.id)];
         return normalized;
       });
 
       self.setData({ works: works, loading: false, loadedCount: PAGE_SIZE });
       self.applyFilter();
-      });
     }).catch(function (err) {
       console.error('discover loadWorks error:', err);
       self.setData({ loading: false });
@@ -201,12 +202,12 @@ Page({
 
     var visible = filtered.slice(0, this.data.loadedCount);
 
-    var featuredWorks = visible.slice(0, 3).map(function (work) {
+    var featuredWorks = visible.filter(function (work) { return work.isFeatured; }).slice(0, 5).map(function (work) {
       return Object.assign({}, work, { aspect: 'aspect-featured' });
     });
     var featuredWork = featuredWorks[0] || null;
     var leftCol = [], rightCol = [];
-    visible.slice(featuredWorks.length).forEach(function (w, i) {
+    visible.forEach(function (w, i) {
       var isLeft = i % 2 === 0;
       var rowIdx = Math.floor(i / 2);
       if (isLeft) {
@@ -239,6 +240,11 @@ Page({
 
   onFeaturedChange: function (e) {
     this.setData({ featuredIndex: e.detail.current || 0 });
+  },
+
+  onHeroTap: function (e) {
+    var id = e.currentTarget.dataset.id;
+    if (id) wx.navigateTo({ url: '/pages/client/public-work/index?id=' + id });
   },
 
   onSearchInput: function (e) {

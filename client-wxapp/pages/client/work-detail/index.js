@@ -1,4 +1,5 @@
 const api = require('../../../services/api');
+const { normalizeWorkDetail } = require('../../../utils/normalize-work');
 
 function formatTime(dateStr) {
   if (!dateStr) return '';
@@ -15,11 +16,13 @@ function formatTime(dateStr) {
 }
 
 function processComment(c) {
+  var userName = c.user && c.user.name;
   return {
     ...c,
     createdAtText: formatTime(c.createdAt),
     userAvatar: c.user && c.user.avatarUrl,
-    userName: c.user && c.user.name,
+    userName: userName,
+    userInitial: (userName || '用').charAt(0),
     userRole: c.user && c.user.role,
     replies: (c.replies || []).map(processComment)
   };
@@ -70,7 +73,8 @@ Page({
     var self = this;
     self._loadingWork = true;
     self.setData({ loading: true, loadFailed: false, loadErrorText: '', canRetryLoad: false });
-    api.client.works.detail(self.workId).then(function (work) {
+    api.client.works.detail(self.workId).then(function (rawWork) {
+      var work = normalizeWorkDetail(rawWork);
       work.tags = work.tags ? (typeof work.tags === 'string' ? JSON.parse(work.tags) : work.tags) : [];
       var imageUrls = work.images ? (typeof work.images === 'string' ? JSON.parse(work.images) : work.images) : [];
       if (imageUrls.length === 0 && work.coverUrl) imageUrls.push(work.coverUrl);
@@ -228,6 +232,13 @@ Page({
 
   onCommentInput: function (e) {
     this.setData({ commentText: e.detail.value });
+  },
+
+  onSharedCommentInput: function (e) { this.setData({ commentText: e.detail.value }); },
+
+  onSharedCommentReply: function (e) {
+    var item = e.detail.comment;
+    if (item && item.id) this.setData({ replyingTo: { id: item.id, name: item.userName || (item.user && item.user.name) || '匿名用户' } });
   },
 
   submitComment: function () {

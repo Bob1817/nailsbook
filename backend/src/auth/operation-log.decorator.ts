@@ -1,4 +1,5 @@
-import { SetMetadata } from '@nestjs/common';
+import { applyDecorators, SetMetadata, UseInterceptors } from '@nestjs/common';
+import { OperationLogInterceptor } from './operation-log.interceptor';
 
 export interface OperationLogOptions {
   module: string;
@@ -8,4 +9,7 @@ export interface OperationLogOptions {
 }
 
 export const OperationLog = (options: OperationLogOptions) =>
-  SetMetadata('operationLog', options);
+  applyDecorators(
+    SetMetadata('operationLog', options),
+    UseInterceptors(OperationLogInterceptor),
+  );

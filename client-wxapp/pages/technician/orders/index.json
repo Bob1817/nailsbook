@@ -3,7 +3,8 @@
   "navigationStyle": "custom",
   "usingComponents": {
     "nav-bar": "/components/nav-bar/index",
-    "tab-bar": "/components/tab-bar/index"
+    "tab-bar": "/components/tab-bar/index",
+    "technician-booking-card": "/components/technician-booking-card/index"
   },
   "disableScroll": true
 }

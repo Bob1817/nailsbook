@@ -1,0 +1,52 @@
+@import '../../../styles/tokens.wxss';
+
+page { background: var(--bg-page); }
+.page {
+  padding: var(--space-md) 32rpx calc(200rpx + env(safe-area-inset-bottom));
+  min-height: 100vh;
+}
+
+/* ===== Section Cards ===== */
+.section {
+  background: rgba(255,255,255,0.88);
+  border-radius: var(--radius-md);
+  padding: 32rpx;
+  margin-bottom: var(--space-md);
+  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
+}
+.section-head { margin-bottom: var(--space-md); }
+.section-title { display: block; font-size: var(--font-md); font-weight: var(--weight-semibold); color: var(--text-primary); }
+
+.current-value {
+  display: block;
+  font-size: var(--font-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--brand-primary);
+  line-height: var(--leading-normal);
+}
+
+/* ===== Submit Bar ===== */
+.submit-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(255,255,255,0.92);
+  padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
+  box-shadow: 0 -4rpx 20rpx rgba(0,0,0,0.04);
+  z-index: 50;
+}
+.submit-btns {
+  display: flex; gap: 16rpx;
+}
+.submit-btn {
+  flex: 1; text-align: center; padding: 28rpx 0; border-radius: var(--radius-md);
+  font-size: var(--font-md); font-weight: var(--weight-semibold);
+}
+.submit-btn-save {
+  background: var(--brand-gradient); color: var(--text-inverse);
+  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
+}
+.submit-btn-save:active { opacity: 0.85; }
+.submit-btn-cancel {
+  background: var(--bg-input); color: var(--text-muted);
+}
+.submit-btn-cancel:active { opacity: 0.85; }
+.btn-disabled { opacity: 0.5; pointer-events: none; }

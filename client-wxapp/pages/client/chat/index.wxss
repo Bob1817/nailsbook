@@ -139,6 +139,10 @@ page {
   font-weight: var(--weight-semibold);
   color: var(--brand-primary);
 }
+.msg-semantic-icon {
+  width: 48rpx;
+  height: 48rpx;
+}
 
 /* 在线状态指示器 */
 .msg-online-dot {

@@ -78,6 +78,8 @@ function normalizeWork(raw, technician, options) {
   const tags = Array.isArray(raw.tags) ? raw.tags : [];
   const firstTag = tags[0] || (styleTags[index % (styleTags.length || 1)]) || '';
   const duration = raw.duration || [60, 75, 90, 120][index % 4];
+  const priceFen = Number(raw.standardPriceFen || raw.serviceSubtotalFen || raw.priceCents || 0);
+  const normalizedPrice = priceFen > 0 ? priceFen / 100 : Number(raw.price || 0);
 
   return {
     id: raw.id,
@@ -89,8 +91,11 @@ function normalizeWork(raw, technician, options) {
     styleText: firstTag || '美甲设计',
     duration: duration,
     dateStr: raw.dateStr || raw.createdAt || '',
-    price: raw.priceCents ? raw.priceCents / 100 : (raw.price || 0),
-    priceText: raw.priceText || (raw.price ? '¥' + raw.price : ''),
+    price: normalizedPrice,
+    priceText: raw.priceText || (normalizedPrice > 0 ? '¥' + normalizedPrice : ''),
+    serviceSubtotalFen: Number(raw.serviceSubtotalFen || 0),
+    standardPriceFen: raw.standardPriceFen == null ? null : Number(raw.standardPriceFen),
+    totalDurationMinutes: Number(raw.totalDurationMinutes || 0),
     likeCount: Number(raw.likeCount || 0),
     favoriteCount: Number(raw.favoriteCount || 0),
     commentCount: Number(raw.commentCount || 0),
@@ -130,4 +135,35 @@ function normalizeWork(raw, technician, options) {
   };
 }
 
-module.exports = { normalizeWork };
+function normalizeSourceWorkSummary(raw) {
+  if (!raw) return null;
+  const priceFen = Number(raw.standardPriceFen || raw.serviceSubtotalFen || raw.priceCents || 0)
+    || Math.round(Number(raw.price || 0) * 100);
+  return { ...raw, _priceFen: priceFen };
+}
+
+function normalizeWorkDetail(raw) {
+  raw = raw || {};
+  const serviceSubtotalFen = Number(raw.serviceSubtotalFen || 0);
+  const standardPriceFen = Number(raw.standardPriceFen || 0)
+    || Math.round(Number(raw.price || 0) * 100);
+  const differenceFen = standardPriceFen > 0 ? standardPriceFen - serviceSubtotalFen : 0;
+  return {
+    ...raw,
+    serviceSubtotalFen,
+    standardPriceFen: standardPriceFen || null,
+    _priceFen: standardPriceFen || serviceSubtotalFen,
+    _priceText: standardPriceFen > 0
+      ? '¥' + formatFen(standardPriceFen)
+      : (serviceSubtotalFen > 0 ? '¥' + formatFen(serviceSubtotalFen) : ''),
+    _priceDiffType: differenceFen < 0 ? 'discount' : (differenceFen > 0 ? 'surcharge' : ''),
+    _priceDiffFen: Math.abs(differenceFen)
+  };
+}
+
+function formatFen(value) {
+  const yuan = Number(value || 0) / 100;
+  return Number.isInteger(yuan) ? String(yuan) : yuan.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+}
+
+module.exports = { normalizeWork, normalizeSourceWorkSummary, normalizeWorkDetail };

@@ -4,16 +4,14 @@ const {
   parseDate,
   formatClock,
   formatBookingDate,
-  formatToday,
-  formatMoney,
-  formatDepartureCountdown
+  formatMoney
 } = require('../../../utils/format');
 const {
   normalizeOrder,
   getOrderStateMeta,
+  getStatusLabel,
+  getStatusTone,
   resolveOrderPresentation,
-  estimateSingleTravelMinutes,
-  estimateRouteDistance,
   hasAddressIssue,
   buildDashboardSummary
 } = require('../../../utils/order');
@@ -23,10 +21,9 @@ Page({
     loading: true,
     isTourist: false,
     nextOrder: null,
-    todayOrders: [],
-    todayLabel: '',
 
     todoItems: [],
+    confirmationTodos: [],
     todoTotal: 0,
     todayFollowUps: [],
     businessOverview: null,
@@ -45,7 +42,6 @@ Page({
       wx.reLaunch({ url: '/pages/login/index' });
       return;
     }
-    this.setData({ todayLabel: formatToday() });
   },
 
   onShow() {
@@ -69,8 +65,9 @@ Page({
     this.setData({ loading: true });
 
     try {
-      const [tripsResult, convResult, worksResult, followUpsResult, insights, incomeCalendar] = await Promise.all([
+      const [tripsResult, ordersResult, convResult, worksResult, followUpsResult, insights, incomeCalendar] = await Promise.all([
         api.technician.orders.trips().catch(() => []),
+        api.technician.orders.list().catch(() => []),
         api.chat.technician.conversations().catch(() => []),
         api.technician.works.list().catch(() => []),
         api.technician.customers.todayFollowUps().catch(() => []),
@@ -79,6 +76,7 @@ Page({
       ]);
 
       const tripsRaw = Array.isArray(tripsResult) ? tripsResult : (tripsResult.data || []);
+      const allOrdersRaw = Array.isArray(ordersResult) ? ordersResult : (ordersResult.data || []);
       const convs = Array.isArray(convResult) ? convResult : (convResult.data || []);
       const worksRaw = Array.isArray(worksResult) ? worksResult : (worksResult.data || []);
       const followUpsRaw = Array.isArray(followUpsResult)
@@ -91,60 +89,96 @@ Page({
       }));
 
       const orders = tripsRaw.map(normalizeOrder).filter(Boolean);
+      const allOrders = allOrdersRaw.map(normalizeOrder).filter(Boolean);
       const summary = buildDashboardSummary(orders, new Date());
 
       const unread = convs.reduce((s, c) => s + (c.unreadCount || 0), 0);
       const technicianProfile = wx.getStorageSync('userInfo') || wx.getStorageSync('technician_userInfo') || {};
+      const configuredShops = Array.isArray(technicianProfile.shopAddresses) ? technicianProfile.shopAddresses : [];
+      const configuredShop = configuredShops.find((shop) => shop && shop.enabled !== false);
 
       // 装饰每个预约（添加 _ 前缀的展示字段）
+      const MONTHS = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+      const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+      const calcCountdown = (startTime) => {
+        const start = parseDate(startTime);
+        if (!start) return '';
+        const diff = Math.floor((start - new Date()) / 60000);
+        if (diff <= 0) return '已开始';
+        const days = Math.floor(diff / (60 * 24));
+        const hours = Math.floor((diff % (60 * 24)) / 60);
+        const minutes = diff % 60;
+        if (days >= 1) return `还有 ${days}天${hours}小时`;
+        if (hours >= 1) return `还有 ${hours}小时${minutes}分`;
+        return `还有 ${minutes}分钟`;
+      };
       const decorate = (o) => {
         const pres = resolveOrderPresentation(o);
         const stateMeta = getOrderStateMeta(o.status);
+        const startDate = parseDate(o.startTime);
+        const hoursUntilStart = startDate ? (startDate.getTime() - Date.now()) / 3600000 : Infinity;
+        const depositAmount = Number(o.depositAmount || 0);
         return {
           ...o,
           _clock: formatClock(o.startTime),
           _dateLabel: formatBookingDate(o.startTime),
+          _dateMain: startDate ? `${startDate.getMonth() + 1}月${startDate.getDate()}日` : '',
+          _dateMonth: startDate ? MONTHS[startDate.getMonth()] : '',
+          _dateDay: startDate ? String(startDate.getDate()) : '',
+          _dateWeekday: startDate ? WEEKDAYS[startDate.getDay()] : '',
+          _weekday: startDate ? WEEKDAYS[startDate.getDay()] : '',
+          _periodLabel: startDate && startDate.getHours() >= 12 ? 'PM' : 'AM',
           _typeLabel: pres.typeLabel,
           _typeClass: pres.typeClass,
           _fullAddress: pres.fullAddress,
           _stateLabel: stateMeta.label,
           _stateTone: stateMeta.tone,
-          _priceText: formatMoney(o.price)
+          _statusLabel: getStatusLabel(o.status),
+          _statusTone: getStatusTone(o.status),
+          _priceText: formatMoney(o.price),
+          _shopName: o.shopName || (configuredShop && configuredShop.name) || '',
+          _urgencyLabel: hoursUntilStart > 0 && hoursUntilStart <= 24 ? '24小时内' : '',
+          _priceAmount: formatMoney(o.price).replace('¥', ''),
+          _serviceTypeLabel: formatClock(o.startTime) + ' - ' + formatClock(o.endTime),
+          _customerId: o.customerId || (o.customer && o.customer.id) || '',
+          _countdown: o.status === 'in_progress' ? '' : calcCountdown(o.startTime),
+          _depositText: depositAmount <= 0
+            ? '无需定金'
+            : (o.depositPaid
+              ? `已支付 ${formatMoney(depositAmount)}`
+              : `待支付 ${formatMoney(depositAmount)}`)
         };
       };
 
       // 下一单加额外字段
       let nextOrder = null;
       if (summary.nextOrder) {
-        const o = decorate(summary.nextOrder);
-        const travelMin = estimateSingleTravelMinutes(o);
-        const distKm = estimateRouteDistance(o);
-        const startDate = parseDate(o.startTime);
-        const departureDate = startDate ? new Date(startDate.getTime() - travelMin * 60 * 1000) : null;
-        const countdownMin = departureDate
-          ? Math.floor((departureDate.getTime() - Date.now()) / 60000)
-          : 0;
-
+        const order = decorate(summary.nextOrder);
         nextOrder = {
-          ...o,
-          _distanceText: `${distKm}km · ${travelMin}分钟`,
-          _departureClock: departureDate ? formatClock(departureDate.toISOString()) : o._clock,
-          _countdownText: countdownMin >= travelMin + 10 ? formatDepartureCountdown(countdownMin) : ''
+          ...order,
+          shopName: order.shopName || (configuredShop && configuredShop.name) || '',
+          _heroStatusLabel: order.status === 'in_progress' ? '进行中' : '待到店',
+          _heroStatusTone: order.status === 'in_progress' ? 'tone-sky' : 'tone-teal'
         };
       }
 
       // 待处理项
-      const unpaidDepositCount = orders.filter((o) => !o.depositPaid && o.status !== 'completed' && o.status !== 'cancelled').length;
-      const addressPendingCount = orders.filter((o) => hasAddressIssue(o) && o.status !== 'completed' && o.status !== 'cancelled').length;
+      const confirmationTodos = allOrders
+        .filter((o) => o.status === 'pending_confirm')
+        .map(decorate)
+        .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+      const pendingActionCount = allOrders.filter((o) => o.status === 'pending_quote').length;
+      const unpaidDepositCount = allOrders.filter((o) => !o.depositPaid && !['completed', 'cancelled', 'expired'].includes(o.status)).length;
+      const addressPendingCount = allOrders.filter((o) => hasAddressIssue(o) && !['completed', 'cancelled', 'expired'].includes(o.status)).length;
 
       const todoItemsRaw = [
-        { key: 'pending',  count: summary.pendingCount,    label: '个预约待确认',     tone: 'tone-pink'   },
-        { key: 'deposit',  count: unpaidDepositCount,      label: '个客户未支付定金', tone: 'tone-amber'  },
+        { key: 'pending',  count: pendingActionCount,      label: '个预约待处理',     tone: 'tone-pink'   },
+        { key: 'deposit',  count: unpaidDepositCount,      label: '个预约待支付定金', tone: 'tone-amber'  },
         { key: 'address',  count: addressPendingCount,     label: '个客户未确认地址', tone: 'tone-orange' },
         { key: 'messages', count: unread,                  label: '条未读消息',       tone: 'tone-blue'   }
       ];
       const todoItems = todoItemsRaw.filter((t) => t.count > 0);
-      const todoTotal = todoItems.reduce((s, t) => s + t.count, 0);
+      const todoTotal = confirmationTodos.length + todoItems.reduce((s, t) => s + t.count, 0);
 
       // 热门作品 top 6（照片墙，按热度排序）
       const featuredWorks = [...worksRaw]
@@ -157,6 +191,7 @@ Page({
         })
         .slice(0, 6)
         .map((w) => ({
+          ...w,
           id: w.id,
           likeCount: w.likeCount || 0,
           favoriteCount: w.favoriteCount || 0,
@@ -201,8 +236,8 @@ Page({
       this.setData({
         loading: false,
         nextOrder,
-        todayOrders: summary.todayOrders.map(decorate),
         todoItems,
+        confirmationTodos,
         todoTotal,
         todayFollowUps,
         businessOverview,
@@ -250,7 +285,7 @@ Page({
   findOrderById(id) {
     if (!id) return null;
     if (this.data.nextOrder && this.data.nextOrder.id === id) return this.data.nextOrder;
-    return this.data.todayOrders.find((o) => o.id === id);
+    return null;
   },
 
   // ---------- 联系客户 ----------
@@ -270,12 +305,74 @@ Page({
     wx.navigateTo({ url: `/pages/technician/order-detail/index?id=${id}` });
   },
 
-  navigateToMessages() {
-    wx.reLaunch({ url: '/pages/technician/chat/index' });
+  findConfirmationById(id) {
+    return this.data.confirmationTodos.find((item) => String(item.id) === String(id));
   },
 
-  navigateToOrders() {
-    wx.reLaunch({ url: '/pages/technician/orders/index' });
+  confirmationSummary(order) {
+    if (!order) return '';
+    return `${order._dateLabel} ${order._clock}\n${order.customerName || '客户'} · ${order._shopName || '店铺待确认'}`;
+  },
+
+  async confirmConfirmation(e) {
+    const id = e.currentTarget.dataset.id;
+    if (!id) return;
+    const order = this.findConfirmationById(id);
+    const result = await wx.showModal({ title: '确认排期', content: `${this.confirmationSummary(order)}\n\n确认接受该预约排期？`, confirmText: '确认排期' });
+    if (!result.confirm) return;
+    try {
+      wx.showLoading({ title: '处理中...' });
+      await api.technician.orders.confirm(id);
+      wx.hideLoading();
+      wx.showToast({ title: '已确认排期', icon: 'success' });
+      this.loadDashboard();
+    } catch (err) {
+      wx.hideLoading();
+      wx.showToast({ title: err.message || '确认失败', icon: 'none' });
+    }
+  },
+
+  async refuseConfirmation(e) {
+    const id = e.currentTarget.dataset.id;
+    if (!id) return;
+    const order = this.findConfirmationById(id);
+    const result = await wx.showModal({ title: '拒绝排期', content: `${this.confirmationSummary(order)}\n\n拒绝后该预约将被取消，是否继续？`, confirmText: '拒绝排期', confirmColor: '#c94f65' });
+    if (!result.confirm) return;
+    try {
+      wx.showLoading({ title: '处理中...' });
+      await api.technician.orders.cancel(id, '美甲师拒绝排期');
+      wx.hideLoading();
+      wx.showToast({ title: '已拒绝排期', icon: 'success' });
+      this.loadDashboard();
+    } catch (err) {
+      wx.hideLoading();
+      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+    }
+  },
+
+  onBookingCardOpen(e) {
+    const id = e.detail && e.detail.id;
+    if (id) wx.navigateTo({ url: `/pages/technician/order-detail/index?id=${id}` });
+  },
+
+  onBookingCardNavigate(e) {
+    this.navigateToAddress({ currentTarget: { dataset: { orderId: e.detail && e.detail.id } } });
+  },
+
+  onBookingCardContact(e) {
+    this.contactCustomer({ currentTarget: { dataset: { phone: e.detail && e.detail.phone } } });
+  },
+
+  onBookingCardMessage(e) {
+    const customerId = e.detail && e.detail.customerId;
+    const url = customerId
+      ? `/pages/technician/chat-detail/index?clientId=${customerId}`
+      : '/pages/technician/chat/index';
+    wx.navigateTo({ url });
+  },
+
+  navigateToMessages() {
+    wx.reLaunch({ url: '/pages/technician/chat/index' });
   },
 
   navigateToWorks() {
@@ -304,7 +401,8 @@ Page({
         visible ? '隐藏作品' : '显示作品',
         pinned ? '取消置顶' : '置顶作品',
         featured ? '取消推荐' : '推荐作品',
-        '编辑作品'
+        '编辑作品',
+        '删除作品'
       ],
       success: async (res) => {
         try {
@@ -313,6 +411,10 @@ Page({
           if (res.tapIndex === 2) await api.technician.works.toggleFeatured(id);
           if (res.tapIndex === 3) {
             wx.navigateTo({ url: `/pages/technician/work-edit/index?id=${id}` });
+            return;
+          }
+          if (res.tapIndex === 4) {
+            this.confirmDeleteWork(id);
             return;
           }
           const messages = [visible ? '已隐藏' : '已显示', pinned ? '已取消置顶' : '已置顶', featured ? '已取消推荐' : '已推荐'];
@@ -325,11 +427,36 @@ Page({
     });
   },
 
+  confirmDeleteWork(id) {
+    wx.showModal({
+      title: '删除作品',
+      content: '确定删除这个作品吗？删除后无法恢复。',
+      confirmText: '删除',
+      confirmColor: '#ef4444',
+      success: (res) => {
+        if (res.confirm) this.deleteWork(id);
+      }
+    });
+  },
+
+  async deleteWork(id) {
+    wx.showLoading({ title: '删除中...' });
+    try {
+      await api.technician.works.delete(id);
+      wx.hideLoading();
+      wx.showToast({ title: '已删除', icon: 'success' });
+      this.loadDashboard();
+    } catch (err) {
+      wx.hideLoading();
+      wx.showToast({ title: '删除失败', icon: 'none' });
+    }
+  },
+
   onTodoTap(e) {
     const key = e.currentTarget.dataset.key;
     const map = {
-      pending:  '/pages/technician/orders/index?filter=pending',
-      deposit:  '/pages/technician/orders/index?filter=deposit',
+      pending:  '/pages/technician/orders/index?task=pending',
+      deposit:  '/pages/technician/trade-orders/index?filter=pending',
       address:  '/pages/technician/customers/index',
       messages: '/pages/technician/chat/index'
     };

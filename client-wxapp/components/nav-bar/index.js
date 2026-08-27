@@ -37,6 +37,10 @@ Component({
       type: String,
       value: ''
     },
+    customBack: {
+      type: Boolean,
+      value: false
+    },
     transparent: {
       type: Boolean,
       value: false

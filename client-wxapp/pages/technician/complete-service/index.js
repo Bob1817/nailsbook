@@ -28,7 +28,7 @@ Page({
     this.setData({
       actualStartTime: local(new Date(order.confirmedStartTime || order.startTime)),
       actualEndTime: local(new Date()),
-      actualAmount: String(order.paidAmount || order.price || 0),
+      actualAmount: String(order.actualAmount ?? order.quotePrice ?? order.price ?? order.paidAmount ?? 0),
       customerName: order.customerName || ''
     });
   },
@@ -42,7 +42,9 @@ Page({
     if (d.submitting || d.saved) return;
     const amount = Number(d.actualAmount), cost = Number(d.materialCost);
     if (!d.actualStartTime || !d.actualEndTime) return wx.showToast({ title: '请填写实际服务时间', icon: 'none' });
-    if (Number.isNaN(amount) || amount < 0 || Number.isNaN(cost) || cost < 0) return wx.showToast({ title: '金额或材料成本不正确', icon: 'none' });
+    if (!Number.isFinite(amount) || amount < 0 || !Number.isFinite(cost) || cost < 0) return wx.showToast({ title: '金额或材料成本不正确', icon: 'none' });
+    const start = new Date(d.actualStartTime), end = new Date(d.actualEndTime);
+    if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start) return wx.showToast({ title: '结束时间须晚于开始时间', icon: 'none' });
     this.setData({ submitting: true });
     try {
       await api.technician.orders.complete(this.id, {
@@ -64,15 +66,21 @@ Page({
   },
 
   // 保存成功后的后续行动：发布关联作品（预填订单与授权信息）
-  goPublishWork() {
-    if (!this.id) return;
-    wx.redirectTo({
-      url: `/pages/technician/work-edit/index?orderId=${this.id}`
-    });
+  async goPublishWork() {
+    if (!this.id || !this.data.saved || this._openingWork) return;
+    this._openingWork = true;
+    try {
+      const work = await api.technician.works.createFromOrder(this.id);
+      wx.redirectTo({ url: `/pages/technician/work-edit/index?id=${work.id}` });
+    } catch (e) {
+      wx.showToast({ title: e.message || '创建作品草稿失败', icon: 'none' });
+    } finally {
+      this._openingWork = false;
+    }
   },
 
   finishAndBack() {
     wx.showToast({ title: '服务记录已保存', icon: 'success' });
-    setTimeout(() => wx.navigateBack({ delta: 2 }), 700);
+    setTimeout(() => wx.navigateBack({ delta: 1 }), 700);
   }
 });

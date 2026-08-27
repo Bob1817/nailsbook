@@ -45,20 +45,7 @@
           </view>
 
           <!-- 预约/预约卡片消息 -->
-          <view wx:elif="{{item.isOrderCard}}" class="order-card-msg {{item.isMe ? 'card-right' : 'card-left'}}" bindtap="viewOrder" data-id="{{item.relatedId}}">
-            <view class="card-inner">
-              <view class="card-header">
-                <view class="card-calendar-icon"><view class="card-calendar-line"></view></view>
-                <text class="card-label">预约通知</text>
-                <text class="card-kind">预约</text>
-              </view>
-              <text class="card-content">{{item.content}}</text>
-              <view class="card-footer">
-                <text class="card-action">查看预约详情</text>
-                <view class="card-chevron"></view>
-              </view>
-            </view>
-          </view>
+          <technician-booking-card wx:elif="{{item.isOrderCard}}" order="{{item.bookingCard}}" variant="message" bind:open="onBookingCardOpen" />
 
           <!-- 图片消息 -->
           <view wx:elif="{{item.messageType === 'image' && item.imageUrl}}" class="bubble bubble-{{item.isMe ? 'right' : 'left'}} bubble-img" bindtap="previewImage" data-url="{{item.imageUrl}}">

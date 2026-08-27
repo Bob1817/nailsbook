@@ -21,10 +21,10 @@
         <!-- 编辑和删除按钮（仅待报价状态） -->
         <view wx:if="{{design.status === 'pending_quote'}}" class="action-btns">
           <view class="action-btn" bindtap="showEditModal">
-            <view class="action-icon-edit"></view>
+            <image class="action-icon-edit" src="/static/icons/edit.svg" mode="aspectFit" />
           </view>
           <view class="action-btn delete" bindtap="showDeleteModal">
-            <view class="action-icon-delete"></view>
+            <image class="action-icon-delete" src="/static/icons/delete.svg" mode="aspectFit" />
           </view>
         </view>
       </view>

@@ -44,6 +44,13 @@
   z-index: 20;
   padding: 80rpx 0 16rpx 32rpx;
 }
+.header-edit-fixed {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 20;
+  padding: 80rpx 32rpx 16rpx 0;
+}
 
 .header-btn {
   width: 88rpx;
@@ -58,6 +65,8 @@
 .header-btn:active {
   background: rgba(0, 0, 0, 0.55);
 }
+.header-edit-btn { background: rgba(0, 0, 0, 0.42); }
+.header-edit-icon { width: 36rpx; height: 36rpx; filter: brightness(0) invert(1); }
 
 /* CSS close icon */
 .header-close-icon {

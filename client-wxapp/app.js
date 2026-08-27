@@ -1,3 +1,18 @@
+// === 主包共享模块注册（解决「主包未使用的 js 文件」上传报错）===
+// 以下模块被子包页面 require，必须在主包 app.js 中声明引用才能通过上传校验。
+require('./utils/format');
+require('./utils/order');
+require('./utils/normalize-work');
+require('./utils/util');
+require('./utils/permission');
+require('./utils/subscription');
+require('./utils/artist-navigation');
+require('./utils/conversion-tracking');
+require('./utils/service-pricing');
+require('./utils/wechat-auth');
+require('./utils/wechat-subscription');
+require('./utils/workSchedule');
+
 App({
   globalData: {
     userInfo: null,

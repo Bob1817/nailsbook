@@ -52,15 +52,7 @@
 
 <!-- Step 2: 手机号 + 密码登录 -->
 <view wx:if="{{step === 'phone'}}" class="login-root">
-  <view class="stub-status"></view>
-
-  <view class="nav-bar">
-    <view class="nav-back" bindtap="goBackToWechat">
-      <image class="nav-back-icon" src="/static/icons/nav-back.svg" mode="aspectFit" />
-    </view>
-    <text class="nav-title">手机号登录</text>
-    <view class="nav-placeholder"></view>
-  </view>
+  <nav-bar title="手机号登录" showBack titleCenter customBack bind:back="goBackToWechat"/>
 
   <view class="phone-content">
     <text class="phone-heading">欢迎回来</text>
@@ -102,13 +94,7 @@
       </view>
     </view>
 
-    <!-- 忘记密码 & 注册 -->
-    <view class="forgot-row">
-      <text class="forgot-link" bindtap="goForgotPassword">忘记密码？</text>
-      <text class="forgot-link" bindtap="goRegister">注册账号</text>
-    </view>
-
-    <!-- 协议同意应先于登录操作 -->
+    <!-- 协议紧随密码输入，先确认授权再执行登录 -->
     <checkbox-group class="privacy-consent phone-privacy-consent" bindchange="onPrivacyAgreementChange">
       <label><checkbox value="agree" checked="{{privacyAgreed}}"/><text>我已阅读并同意</text></label>
       <text class="privacy-link" catchtap="openUserAgreement">《用户协议》</text>
@@ -124,6 +110,13 @@
     >
       登录
     </button>
+
+    <!-- 辅助入口位于主操作之后 -->
+    <view class="account-actions">
+      <text class="account-action" bindtap="goForgotPassword">忘记密码？</text>
+      <view class="account-action-divider"></view>
+      <text class="account-action" bindtap="goRegister">注册账号</text>
+    </view>
     </view>
   </view>
 </view>

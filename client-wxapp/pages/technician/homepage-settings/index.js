@@ -1,5 +1,5 @@
 const api = require('../../../services/api');
-const SPECIALTY_OPTIONS = ['日式', '法式', '手绘', '晕染', '延长', '结构矫正', '水晶', '光疗', '新中式', '婚礼美甲', '男士美甲', '问题甲护理'];
+const SPECIALTY_OPTIONS = ['韩系温柔风', '轻奢法式', '简约日式', '高级手绘', '氛围感晕染', '新中式', '婚礼美甲', '极简风', '甜酷风', '问题甲护理'];
 
 Page({
   data: {
@@ -29,12 +29,13 @@ Page({
         selected: !!item.isFeatured,
       }));
       const featuredReviewIds = Array.isArray(brand.featuredReviewIds) ? brand.featuredReviewIds.map(String) : [];
+      const styleTags = (user.styleTags || brand.specialties || []).slice(0, 5);
       this.setData({
         works,
         heroImageUrl:brand.heroImageUrl || brand.shareCoverUrl || '', tagline:brand.tagline || '',
         experienceYears:Math.min(30, Math.max(1, Number(brand.experienceYears) || 1)),
-        specialties:(brand.specialties || []).slice(0,3),
-        selectedSpecialtyMap:(brand.specialties || []).slice(0,3).reduce((map,item)=>{map[item]=true;return map;},{}),
+        specialties:styleTags,
+        selectedSpecialtyMap:styleTags.reduce((map,item)=>{map[item]=true;return map;},{}),
         certificationTitle:brand.certificationTitle || '',
         artistIntroduction:brand.artistIntroduction || user.bio || '', aestheticPhilosophy:brand.aestheticPhilosophy || '',
         publicationStatus:brand.publicationStatus || 'draft', environmentPhotos:brand.environmentPhotos || [], faqs:brand.faqs || [],
@@ -48,7 +49,7 @@ Page({
       wx.showToast({ title: err.message || '作品加载失败', icon: 'none' });
     } finally {
       this.setData({ worksLoading: false });
-      const topMap={hero:0,profile:330,introduction:760,service:1320,works:1700,reviews:2150};
+      const topMap={hero:0,profile:330,styles:650,introduction:900,service:1460,works:1850,reviews:2300};
       setTimeout(()=>wx.pageScrollTo({scrollTop:topMap[this._targetSection] || 0,duration:280}),180);
     }
   },
@@ -61,8 +62,8 @@ Page({
     const selected=this.data.specialties.slice();
     const index=selected.indexOf(value);
     if(index >= 0) selected.splice(index,1);
-    else if(selected.length < 3) selected.push(value);
-    else return wx.showToast({title:'最多选择3项擅长领域',icon:'none'});
+    else if(selected.length < 5) selected.push(value);
+    else return wx.showToast({title:'最多展示 5 项擅长风格',icon:'none'});
     this.setData({ specialties:selected, selectedSpecialtyMap:selected.reduce((map,item)=>{map[item]=true;return map;},{}) });
   },
   chooseAvatar() {
@@ -108,11 +109,11 @@ Page({
     if (!this.data.name.trim()) return wx.showToast({ title:'请输入主页名称', icon:'none' });
     this.setData({ saving:true });
     try {
-      const payload={ name:this.data.name.trim(), avatarUrl:this.data.avatarUrl, bio:(this.data.artistIntroduction || this.data.bio).trim(), city:this.data.city, serviceArea:this.data.serviceArea };
+      const payload={ name:this.data.name.trim(), avatarUrl:this.data.avatarUrl, bio:(this.data.artistIntroduction || this.data.bio).trim(), city:this.data.city, serviceArea:this.data.serviceArea, styleTags:this.data.specialties.slice(0,5) };
       const brandPayload={
         brandName:payload.name, tagline:this.data.tagline.trim(), heroImageUrl:this.data.heroImageUrl,
         experienceYears:Number(this.data.experienceYears) || 1,
-        specialties:this.data.specialties.slice(0,3),
+        specialties:this.data.specialties.slice(0,5),
         certificationTitle:this.data.certificationTitle.trim(), featuredReviewIds:this.data.featuredReviewIds.map(Number).filter(Boolean),
         city:this.data.city, publicServiceArea:this.data.serviceArea, artistIntroduction:(this.data.artistIntroduction || this.data.bio).trim(),
         aestheticPhilosophy:this.data.aestheticPhilosophy.trim(), transportationNotes:this.data.transportationNotes,
