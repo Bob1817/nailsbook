@@ -5,7 +5,10 @@ import {
   Param,
   ParseIntPipe,
   Query,
+  Optional,
+  BadRequestException,
 } from '@nestjs/common';
+import { WorkShareCodeService } from './work-share-code.service';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { PrismaService } from '../common/prisma/prisma.service';
 import {
@@ -42,7 +45,16 @@ function parseImageUrls(
 @ApiTags('公开-作品')
 @Controller('public/works')
 export class PublicWorksController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, @Optional() private readonly shareCodes?: WorkShareCodeService) {}
+
+  @Get(':id/share-code')
+  async getShareCode(@Param('id', ParseIntPipe) id: number, @Query('shareToken') shareToken?: string) {
+    if (shareToken && !/^[a-f0-9]{48}$/.test(shareToken)) throw new BadRequestException('分享参数无效');
+    const detail = shareToken ? await this.getSharedDetail(shareToken, false) : await this.getDetail(id);
+    if (detail.id !== id) throw new NotFoundException('分享作品不匹配');
+    if (!this.shareCodes) throw new BadRequestException('分享服务暂不可用');
+    return this.shareCodes.generate(id, shareToken);
+  }
 
   @Get()
   @ApiOperation({ summary: '获取游客可浏览的公开作品流' })
@@ -207,14 +219,15 @@ export class PublicWorksController {
       id,
       isVisible: true,
       visibilityScope: 'public',
+      archivedAt: null,
       publicationStatus: 'approved',
-      technician: { status: 'active' },
+      technician: { status: { in: ['active', 'inactive'] } },
     });
   }
 
   @Get('shared/:token')
   @ApiOperation({ summary: '通过限时分享授权查看作品' })
-  async getSharedDetail(@Param('token') token: string) {
+  async getSharedDetail(@Param('token') token: string, recordOpen = true) {
     const grant = await this.prisma.nailWorkShareGrant.findFirst({
       where: {
         token,
@@ -225,7 +238,14 @@ export class PublicWorksController {
       select: { id: true, workId: true },
     });
     if (!grant) throw new NotFoundException('分享已失效或授权已撤销');
-    await this.prisma.nailWorkShareEvent.create({
+    const detail = await this.getMappedDetail({
+      id: grant.workId,
+      technician: { status: { in: ['active', 'inactive'] } },
+      isVisible: true,
+      archivedAt: null,
+      publicationStatus: 'approved',
+    });
+    if (recordOpen) await this.prisma.nailWorkShareEvent.create({
       data: {
         workId: grant.workId,
         shareGrantId: grant.id,
@@ -233,39 +253,24 @@ export class PublicWorksController {
         channel: 'wechat',
       },
     });
-    return this.getMappedDetail({ id: grant.workId, isVisible: true });
+    return detail;
   }
 
   private async getMappedDetail(where: any) {
     const work = await this.prisma.nailWork.findFirst({
       where,
       include: {
-        likes: true,
-        comments: {
-          where: { parentId: null, isHidden: false },
-          orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
-          include: {
-            client: { select: { id: true, nickname: true, avatarUrl: true } },
-            technician: { select: { id: true, name: true, avatarUrl: true } },
-            replies: {
-              orderBy: { createdAt: 'asc' },
-              include: {
-                client: {
-                  select: { id: true, nickname: true, avatarUrl: true },
-                },
-                technician: {
-                  select: { id: true, name: true, avatarUrl: true },
-                },
-              },
-            },
-          },
-        },
+        _count: { select: { likes: true, comments: true } },
         technician: {
           select: {
             id: true,
             name: true,
             avatarUrl: true,
             invitationCode: true,
+            city: true,
+            bio: true,
+            status: true,
+            shopAddresses: true,
           },
         },
         serviceLines: { orderBy: { sortOrder: 'asc' } },
@@ -283,36 +288,17 @@ export class PublicWorksController {
       .map((url) => toAbsoluteUrl(url))
       .filter((url): url is string => Boolean(url));
 
-    const mapComment = (c: any): any => {
-      const user = c.technician
-        ? {
-            id: c.technician.id,
-            name: c.technician.name,
-            avatarUrl: toAbsoluteUrl(c.technician.avatarUrl),
-            role: 'technician' as const,
-          }
-        : c.client
-          ? {
-              id: c.client.id,
-              name: c.client.nickname || '客户',
-              avatarUrl: toAbsoluteUrl(c.client.avatarUrl),
-              role: 'client' as const,
-            }
-          : {
-              id: 0,
-              name: '已删除用户',
-              avatarUrl: null,
-              role: 'unknown' as const,
-            };
-      return {
-        id: c.id,
-        content: c.content,
-        isPinned: c.isPinned ?? false,
-        user,
-        replies: (c.replies || []).map(mapComment),
-        createdAt: c.createdAt,
-      };
-    };
+    let shops: Array<{ name: string; address: string }> = [];
+    try {
+      const parsed = JSON.parse(work.technician.shopAddresses || '[]');
+      if (Array.isArray(parsed)) {
+        shops = parsed.filter((shop) => shop && shop.enabled !== false).map((shop) => ({
+          name: typeof shop.name === 'string' ? shop.name : '服务店铺',
+          address: [shop.province, shop.city, shop.district, shop.detailAddress]
+            .filter((part) => typeof part === 'string' && part.trim()).join(' '),
+        }));
+      }
+    } catch { /* 未配置有效店铺时不展示虚构地址。 */ }
 
     return {
       id: work.id,
@@ -340,15 +326,19 @@ export class PublicWorksController {
         quantity: line.quantity,
         subtotalFen: line.subtotalFen,
       })),
-      likeCount: work.likes?.length ?? 0,
-      commentCount: work.comments?.length ?? 0,
+      likeCount: work._count?.likes ?? 0,
+      commentCount: work._count?.comments ?? 0,
       technician: {
         id: work.technician.id,
         name: work.technician.name,
         avatarUrl: toAbsoluteUrl(work.technician.avatarUrl),
         invitationCode: work.technician.invitationCode,
+        city: work.technician.city,
+        bio: work.technician.bio,
+        acceptingBookings: work.technician.status === 'active',
       },
-      comments: (work.comments || []).map(mapComment),
+      shops,
+      comments: [],
       createdAt: work.createdAt,
     };
   }

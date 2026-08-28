@@ -1,3 +1,4 @@
+import { recordWorkShareRegistration } from '../common/work-share-registration';
 import {
   BadRequestException,
   BadGatewayException,
@@ -141,6 +142,8 @@ export class WechatAuthService {
         data: { appId: session.appId, openId: session.openId, unionId: session.unionId, clientUserId: client.id },
       });
     }
+
+    if (isNewClient) await recordWorkShareRegistration(this.prisma, client.id, dto);
 
     // 已有账号但未绑定微信 → 关联身份
     if (!isNewClient) await this.linkIdentity(session, 'client', client.id);

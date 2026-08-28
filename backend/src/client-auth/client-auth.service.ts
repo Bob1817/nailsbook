@@ -1,3 +1,5 @@
+import { recordWorkShareRegistration } from '../common/work-share-registration';
+import { BindSharedWorkDto } from './dto/bind-shared-work.dto';
 import {
   Injectable,
   UnauthorizedException,
@@ -130,6 +132,8 @@ export class ClientAuthService {
         status: 'active',
       },
     });
+
+    await recordWorkShareRegistration(this.prisma, client.id, dto);
 
     return {
       accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
@@ -590,6 +594,8 @@ export class ClientAuthService {
 
       return created;
     });
+
+    await recordWorkShareRegistration(this.prisma, client.id, dto);
 
     // 构建返回数据
     const result: any = {
@@ -1183,6 +1189,64 @@ export class ClientAuthService {
   }
 
   /// 申请绑定美甲师（改为审批制）：校验邀请码后创建 pending 申请并通知美甲师。
+  // 分享入口独立于人工申请，不接受客户端传入的美甲师或邀请码。
+  async bindSharedWork(clientId: number, dto: BindSharedWorkDto) {
+    if (dto.confirmed !== true) throw new BadRequestException('请先确认绑定');
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        return await this.prisma.$transaction(async (tx) => {
+          const work = await tx.nailWork.findFirst({
+            where: { id: dto.workId, isVisible: true, archivedAt: null, publicationStatus: 'approved' },
+            select: { id: true, visibilityScope: true, technician: {
+              select: { id: true, status: true },
+            } },
+          });
+          if (!work || !isLaunchTechnician(work.technician.id)) {
+            throw new NotFoundException('作品不存在或不允许分享');
+          }
+          if (dto.shareToken || work.visibilityScope !== 'public') {
+            const grant = dto.shareToken && await tx.nailWorkShareGrant.findFirst({
+              where: { token: dto.shareToken, workId: work.id, revokedAt: null,
+                expiresAt: { gt: new Date() }, access: { canView: true, canShare: true } },
+              select: { id: true },
+            });
+            if (!grant) throw new NotFoundException('分享已失效或未获授权');
+          }
+          if (work.technician.status !== 'active') {
+            throw new BadRequestException('这位美甲师暂未开启接单');
+          }
+          const techId = work.technician.id;
+          const client = await tx.clientUser.findUnique({ where: { id: clientId } });
+          if (!client) throw new UnauthorizedException('请重新登录');
+          const existing = await tx.clientTechBinding.findUnique({
+            where: { clientId_techId: { clientId, techId } },
+          });
+          if (existing?.status === 'active') return { status: 'active', techId, workId: work.id };
+          const currentDefault = await tx.clientTechBinding.findFirst({
+            where: { clientId, status: 'active', isDefault: true },
+          });
+          const data = { status: 'active', bindSource: 'work_share', isDefault: !currentDefault };
+          if (existing) await tx.clientTechBinding.update({ where: { id: existing.id }, data });
+          else await tx.clientTechBinding.create({ data: { clientId, techId, ...data } });
+          const customer = await tx.customer.findFirst({ where: { technicianId: techId, clientUserId: clientId } });
+          if (!customer) await tx.customer.create({ data: {
+            technicianId: techId, clientUserId: clientId, name: client.nickname || client.phone,
+            phone: client.phone, sourceType: 'work_share', sourceRef: String(work.id),
+          } });
+          await tx.conversionEvent.create({ data: {
+            eventId: `work-bind-${clientId}-${techId}-${Date.now()}`,
+            technicianId: techId, workId: work.id, clientUserId: clientId,
+            eventType: 'binding_created', source: 'work_share',
+          } });
+          return { status: 'active', techId, workId: work.id };
+        }, { isolationLevel: 'Serializable' });
+      } catch (error) {
+        if (attempt < 2 && ['P2034', 'P2002'].includes((error as { code?: string }).code || '')) continue;
+        throw error;
+      }
+    }
+  }
+
   async bindTechnician(clientUserId: number, dto: BindTechnicianDto) {
     if (!isLaunchTechnician(dto.techId)) {
       throw new NotFoundException('美甲师不存在');

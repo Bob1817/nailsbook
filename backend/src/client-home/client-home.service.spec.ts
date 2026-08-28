@@ -311,7 +311,7 @@ describe('ClientHomeService', () => {
       data: {
         workId: 9,
         clientUserId: 11,
-        eventType: 'share',
+        eventType: 'share_intent',
         channel: 'wechat_friend',
       },
     });

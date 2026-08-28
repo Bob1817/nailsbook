@@ -973,7 +973,7 @@ export class ClientHomeService {
       data: {
         workId,
         clientUserId,
-        eventType: 'share',
+        eventType: 'share_intent',
         channel: channel || 'wechat_friend',
       },
     });

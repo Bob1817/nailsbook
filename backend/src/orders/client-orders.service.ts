@@ -142,14 +142,24 @@ export class ClientOrdersService {
             techId: dto.techId,
             isVisible: true,
             archivedAt: null,
-            OR: [
+            ...(dto.sourceShareToken ? {
+              publicationStatus: 'approved',
+              shareGrants: {
+                some: {
+                  token: dto.sourceShareToken,
+                  revokedAt: null,
+                  expiresAt: { gt: new Date() },
+                  access: { canView: true, canShare: true },
+                },
+              },
+            } : { OR: [
               { visibilityScope: 'public' },
               {
                 clientAccesses: {
                   some: { clientUserId, canView: true },
                 },
               },
-            ],
+            ] }),
           },
           include: { serviceLines: { orderBy: { sortOrder: 'asc' } } },
         })
@@ -356,7 +366,9 @@ export class ClientOrdersService {
             workId: dto.sourceWorkId ?? null,
             clientUserId,
             eventType: 'order_created',
-            source: dto.sourceWorkId
+            source: dto.sourceWorkId && (dto.sourceShareToken || dto.attributionSource === 'work_share')
+              ? 'work_share'
+              : dto.sourceWorkId
               ? 'work_detail'
               : this.normalizeAttributionSource(dto.attributionSource),
           },

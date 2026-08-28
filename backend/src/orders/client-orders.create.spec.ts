@@ -106,6 +106,26 @@ describe('ClientOrdersService.create 下单校验', () => {
     );
   });
 
+  it('分享预约提交时校验原作品令牌，不回退到公开或永久授权', async () => {
+    prisma.clientTechBinding.findFirst.mockResolvedValue({ technician: tech() });
+    prisma.nailWork.findFirst.mockResolvedValue(null);
+    const token = 'a'.repeat(48);
+    await expect(service.create(11, {
+      ...baseDto, sourceWorkId: 88, sourceShareToken: token,
+    })).rejects.toThrow('来源作品不存在或查看授权已失效');
+    const where = prisma.nailWork.findFirst.mock.calls[0][0].where;
+    expect(where).toMatchObject({
+      id: 88, techId: 7, isVisible: true, archivedAt: null,
+      publicationStatus: 'approved',
+      shareGrants: { some: {
+        token, revokedAt: null, expiresAt: { gt: expect.any(Date) },
+        access: { canView: true, canShare: true },
+      } },
+    });
+    expect(where.OR).toBeUndefined();
+    expect(prisma.clientUser.findUnique).not.toHaveBeenCalled();
+  });
+
   it('预约同款在提交时重新校验来源作品归属与查看权', async () => {
     prisma.clientTechBinding.findFirst.mockResolvedValue({
       technician: tech(),

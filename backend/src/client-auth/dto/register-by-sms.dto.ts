@@ -1,7 +1,8 @@
+import { WorkShareRegistrationDto } from '../../common/work-share-registration';
 import { IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class RegisterBySmsDto {
+export class RegisterBySmsDto extends WorkShareRegistrationDto {
   @ApiProperty({ description: '手机号', example: '13800138000' })
   @IsString()
   @Matches(/^1\d{10}$/, { message: '手机号格式不正确' })

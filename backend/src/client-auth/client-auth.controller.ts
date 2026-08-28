@@ -1,3 +1,4 @@
+import { BindSharedWorkDto } from './dto/bind-shared-work.dto';
 import {
   Body,
   Controller,
@@ -250,6 +251,16 @@ export class ClientAuthController {
       request.user.clientUserId,
       body,
     );
+  }
+
+  @Post('bind-shared-work')
+  @UseGuards(ClientJwtAuthGuard)
+  @ApiOperation({ summary: '确认作品分享来源后直接绑定所属美甲师' })
+  bindSharedWork(
+    @Req() request: { user: { clientUserId: number } },
+    @Body() body: BindSharedWorkDto,
+  ) {
+    return this.clientAuthService.bindSharedWork(request.user.clientUserId, body);
   }
 
   @Post('binding-applications/request')

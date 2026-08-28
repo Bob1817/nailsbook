@@ -1,8 +1,9 @@
+import { WorkShareRegistrationDto } from '../../common/work-share-registration';
 import { IsIn, IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsStrongPassword } from '../../common/validators/password.validator';
 
-export class RegisterByInviteDto {
+export class RegisterByInviteDto extends WorkShareRegistrationDto {
   @ApiProperty({ description: '手机号', example: '13800138000' })
   @IsString()
   @Matches(/^1\d{10}$/, { message: '手机号格式不正确' })

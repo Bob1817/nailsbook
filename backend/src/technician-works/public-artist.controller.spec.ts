@@ -89,14 +89,14 @@ describe('PublicArtistController', () => {
     expect(result.artist).not.toHaveProperty('phone');
   });
 
-  it('does not expose inactive technicians', async () => {
+  it('excludes suspended/deleted accounts while allowing resting accounts', async () => {
     prisma.technician.findFirst.mockResolvedValue(null);
 
     await expect(controller.getBusinessPage(7)).rejects.toBeInstanceOf(
       NotFoundException,
     );
     expect(prisma.technician.findFirst).toHaveBeenCalledWith({
-      where: { id: 7, status: 'active' },
+      where: { id: 7, status: { in: ['active', 'inactive'] } },
     });
   });
 

@@ -65,4 +65,12 @@ describe('ConversionEventsService', () => {
       }),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
+  it('海报保存必须带作品，私密令牌只校验不入库', async () => {
+    await expect(service.recordPublic({ eventId: 'saved', technicianId: 7, eventType: 'poster_saved' })).rejects.toThrow();
+    const shareToken = 'a'.repeat(48);
+    await service.recordPublic({ eventId: 'saved', technicianId: 7, workId: 11, eventType: 'poster_saved', shareToken });
+    const query = prisma.nailWork.findFirst.mock.calls[0][0];
+    expect(query.where.shareGrants.some).toMatchObject({ token: shareToken, revokedAt: null, access: { canView: true, canShare: true } });
+    expect(prisma.conversionEvent.upsert.mock.calls[0][0].create).not.toHaveProperty('shareToken');
+  });
 });

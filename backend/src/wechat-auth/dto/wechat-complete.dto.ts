@@ -1,8 +1,9 @@
+import { WorkShareRegistrationDto } from '../../common/work-share-registration';
 import { IsOptional, IsString, MinLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsStrongPassword } from '../../common/validators/password.validator';
 
-class WechatPhoneBaseDto {
+class WechatPhoneBaseDto extends WorkShareRegistrationDto {
   @ApiProperty({ description: '微信登录接口返回的短期绑定凭证' })
   @IsString()
   @MinLength(1)

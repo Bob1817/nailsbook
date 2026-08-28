@@ -157,4 +157,10 @@ describe('TechnicianAuthService.setInitialPassword', () => {
     );
     expect(prisma.technician.update).not.toHaveBeenCalled();
   });
+  it.each(['suspended', 'deleted'])('拒绝 %s 账号自行恢复接单', async status => {
+    prisma.technician.findUnique.mockResolvedValue({ ...baseTechnician, status });
+    await expect(service.updateStatus(7, 'active')).rejects.toThrow('账号不可用');
+    await expect(service.updateStatus(7, 'inactive')).rejects.toThrow('账号不可用');
+    expect(prisma.technician.update).not.toHaveBeenCalled();
+  });
 });

@@ -631,6 +631,10 @@ export class TechnicianAuthService {
       throw new UnauthorizedException('美甲师不存在');
     }
 
+    if (!['active', 'inactive'].includes(technician.status)) {
+      throw new UnauthorizedException('账号不可用，不能修改接单状态');
+    }
+
     if (status === 'active') {
       const readiness = bookingReadiness({ ...technician, status: 'active' });
       if (!readiness.ready) {
@@ -639,7 +643,7 @@ export class TechnicianAuthService {
     }
 
     return this.prisma.technician.update({
-      where: { id: technicianId },
+      where: { id: technicianId, status: { in: ['active', 'inactive'] } },
       data: { status },
       select: {
         id: true,

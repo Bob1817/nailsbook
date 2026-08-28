@@ -1,3 +1,4 @@
+import { configureLaunchTechnicianId, resetLaunchTechnicianIdConfiguration } from '../common/miniprogram-launch-mode';
 import { WechatAuthService } from './wechat-auth.service';
 
 describe('WechatAuthService', () => {
@@ -30,6 +31,7 @@ describe('WechatAuthService', () => {
   let service: WechatAuthService;
 
   beforeEach(() => {
+    configureLaunchTechnicianId(7);
     prisma = {
       wechatIdentity: {
         findUnique: jest.fn(),
@@ -42,6 +44,8 @@ describe('WechatAuthService', () => {
         create: jest.fn(),
       },
       technician: { findUnique: jest.fn() },
+      nailWork: { findFirst: jest.fn().mockResolvedValue({ id: 9, techId: 7 }) },
+      conversionEvent: { upsert: jest.fn() },
     };
     clientAuth = {
       loginByWechat: jest.fn().mockResolvedValue({ accessToken: 'client-jwt' }),
@@ -62,7 +66,7 @@ describe('WechatAuthService', () => {
     );
   });
 
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => { jest.restoreAllMocks(); resetLaunchTechnicianIdConfiguration(); });
 
   it('returns a short-lived binding token for an unknown OpenID', async () => {
     global.fetch = jest.fn().mockResolvedValue({
@@ -126,8 +130,10 @@ describe('WechatAuthService', () => {
       service.completeClient({
         wechatSessionToken: 'session',
         phoneCode: 'phone-code',
+        shareWorkId: 9,
       }),
     ).resolves.toMatchObject({ authenticated: true, role: 'client' });
+    expect(prisma.conversionEvent.upsert).not.toHaveBeenCalled();
     expect(prisma.wechatIdentity.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         create: expect.objectContaining({ clientUserId: 5 }),
@@ -201,12 +207,14 @@ describe('WechatAuthService', () => {
       service.completeClient({
         wechatSessionToken: 'session',
         phoneCode: 'phone-code',
+        shareWorkId: 9,
       }),
     ).resolves.toMatchObject({
       authenticated: false,
       needsRoleSelection: true,
     });
 
+    expect(prisma.conversionEvent.upsert).toHaveBeenCalledWith(expect.objectContaining({ create: expect.objectContaining({ clientUserId: 12, eventType: 'registration_completed', workId: 9 }) }));
     // 验证新用户通过 prisma.clientUser.create 创建（而非 registerByInvite）
     expect(prisma.clientUser.create).toHaveBeenCalledWith(
       expect.objectContaining({

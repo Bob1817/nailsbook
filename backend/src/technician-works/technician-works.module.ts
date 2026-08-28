@@ -8,6 +8,7 @@ import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 import { ClientArtistFollowsController } from './client-artist-follows.controller';
 import { QualificationsController } from './qualifications.controller';
 import { ReviewsController } from './reviews.controller';
+import { WorkShareCodeService } from './work-share-code.service';
 
 @Module({
   imports: [PrismaModule, SubscriptionsModule],
@@ -19,6 +20,6 @@ import { ReviewsController } from './reviews.controller';
     QualificationsController,
     ReviewsController,
   ],
-  providers: [TechnicianWorksService],
+  providers: [TechnicianWorksService, WorkShareCodeService],
 })
 export class TechnicianWorksModule {}

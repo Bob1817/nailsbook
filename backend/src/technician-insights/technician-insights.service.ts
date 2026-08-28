@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { workShareFunnel } from './work-share-funnel';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { calculateCustomerLifecycle } from '../customers/customer-lifecycle';
 
@@ -359,13 +360,14 @@ export class TechnicianInsightsService {
           eventType: true,
           workId: true,
           visitorId: true,
+          clientUserId: true,
           source: true,
         },
       }),
       this.prisma.nailWorkShareEvent.findMany({
         where: {
           work: { techId: technicianId },
-          eventType: 'share',
+          eventType: { in: ['share', 'share_intent'] },
           createdAt: { gte: conversionSince, lte: now },
         },
         select: { workId: true },
@@ -457,6 +459,7 @@ export class TechnicianInsightsService {
       },
       reminders: reminderItems,
       conversion: {
+        workShare: workShareFunnel(conversionEvents),
         periodDays: 90,
         homepage: {
           sufficientData: artistViews >= homepageMinimum,
@@ -488,6 +491,7 @@ export class TechnicianInsightsService {
           minimumViews: worksMinimum,
           views: workViews,
           shares: shareEvents.length,
+          shareMetric: 'intent',
           bookingIntents: workBookingIntents,
           orders: workOrders,
           rates:

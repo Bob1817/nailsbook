@@ -6,6 +6,7 @@ import {
   ValidateNested,
   IsBoolean,
   MaxLength,
+  Matches,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -78,6 +79,12 @@ export class CreateClientOrderDto {
   @IsOptional()
   @IsInt()
   sourceWorkId?: number;
+
+  @ApiPropertyOptional({ description: '来源作品的限时分享授权，提交预约时重新校验' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[a-f0-9]{48}$/)
+  sourceShareToken?: string;
 
   @ApiPropertyOptional({ description: '预约发起入口，仅用于转化归因' })
   @IsOptional()

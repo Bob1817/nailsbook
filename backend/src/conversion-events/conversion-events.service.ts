@@ -12,12 +12,12 @@ export class ConversionEventsService {
 
   async recordPublic(dto: RecordConversionEventDto) {
     const technician = await this.prisma.technician.findFirst({
-      where: { id: dto.technicianId, status: 'active' },
+      where: { id: dto.technicianId, status: { in: ['active', 'inactive'] } },
       select: { id: true },
     });
     if (!technician) throw new NotFoundException('美甲师不存在或未启用');
 
-    if (dto.eventType === 'work_view' && !dto.workId) {
+    if (['work_view', 'poster_saved', 'poster_generated'].includes(dto.eventType) && !dto.workId) {
       throw new BadRequestException('作品浏览事件缺少作品');
     }
     if (dto.workId) {
@@ -27,6 +27,11 @@ export class ConversionEventsService {
           techId: dto.technicianId,
           isVisible: true,
           publicationStatus: 'approved',
+          archivedAt: null,
+          ...(dto.shareToken ? {
+            shareGrants: { some: { token: dto.shareToken, revokedAt: null,
+              expiresAt: { gt: new Date() }, access: { canView: true, canShare: true } } },
+          } : { visibilityScope: 'public' }),
         },
         select: { id: true },
       });

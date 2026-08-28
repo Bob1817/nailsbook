@@ -144,7 +144,7 @@ export class PublicArtistController {
 
   private async getPublicCard(where: { id?: number; invitationCode?: string }) {
     const technician = await this.prisma.technician.findFirst({
-      where: { ...where, status: 'active' },
+      where: { ...where, status: { in: ['active', 'inactive'] } },
     });
 
     if (!technician) {
@@ -268,6 +268,7 @@ export class PublicArtistController {
 
     return {
       artist: {
+        acceptingBookings: technician.status === 'active',
         id: technician.id,
         name: technician.name,
         avatarUrl: toAbsoluteUrl(technician.avatarUrl),
