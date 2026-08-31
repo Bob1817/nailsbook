@@ -18,6 +18,9 @@ class ShopAddressDto {
 }
 
 export class CreateClientOrderDto {
+  @IsOptional() @IsBoolean() quickBooking?: boolean;
+  @IsOptional() @IsBoolean() referenceOnly?: boolean;
+
   @ApiPropertyOptional({ description: '客户端生成的预约申请幂等键' })
   @IsOptional()
   @IsString()

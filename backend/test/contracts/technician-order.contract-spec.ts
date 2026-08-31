@@ -201,6 +201,36 @@ describe('Technician operation HTTP contract', () => {
   });
 
   describe('Technician Orders', () => {
+    it('isolates orders and income calendar by technician and rejects client tokens', async () => {
+      const owner = await setupTechnicianWithCustomer('isolation-owner');
+      const other = await setupTechnician('isolation-other');
+      const order = await seedOrder(owner.technician.id, owner.customer.id, 'pending_quote');
+      const clientToken = testApp.signClientToken(owner.client.id, '18000000000');
+      for (const endpoint of ['/api/technician/orders', '/api/technician/orders/income-calendar']) {
+        await request(testApp.app.getHttpServer()).get(endpoint).expect(401);
+        await request(testApp.app.getHttpServer()).get(endpoint)
+          .set('Authorization', `Bearer ${clientToken}`).expect(401);
+        const own = await request(testApp.app.getHttpServer()).get(endpoint)
+          .set('Authorization', `Bearer ${owner.accessToken}`).expect(200);
+        const foreign = await request(testApp.app.getHttpServer()).get(endpoint)
+          .set('Authorization', `Bearer ${other.accessToken}`).expect(200);
+        const rows = (body: any) => Array.isArray(body) ? body : body.orders || body.data;
+        expect(rows(own.body)).toHaveLength(1);
+        expect(rows(foreign.body)).toHaveLength(0);
+        if (endpoint.endsWith('income-calendar')) {
+          expect(rows(own.body)[0]).toMatchObject({ status: 'pending_quote' });
+        } else {
+          expect(rows(own.body)[0].id).toBe(order.id);
+        }
+      }
+      await request(testApp.app.getHttpServer()).get(`/api/technician/orders/${order.id}`)
+        .set('Authorization', `Bearer ${other.accessToken}`).expect(403);
+      await request(testApp.app.getHttpServer()).patch(`/api/technician/orders/${order.id}/cancel`)
+        .set('Authorization', `Bearer ${other.accessToken}`).send({ reason: 'unauthorized' }).expect(403);
+      expect((await testApp.prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status)
+        .toBe('pending_quote');
+    });
+
     it('creates an order for a customer and lists it', async () => {
       const {
         accessToken,

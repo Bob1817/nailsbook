@@ -283,4 +283,39 @@ describe('TechnicianInsightsService', () => {
     expect(result.conversion.homepage.rates).toBeNull();
     expect(result.conversion.works.rates).toBeNull();
   });
+  describe('月份选择', () => {
+    const now = new Date('2026-08-30T12:00:00Z');
+    beforeEach(() => {
+      (prisma as any).technician = { findUnique: jest.fn().mockResolvedValue({ createdAt: new Date('2025-12-31T16:00:00Z') }) };
+      prisma.order.count.mockResolvedValue(0);
+      prisma.order.groupBy.mockResolvedValue([]);
+      prisma.customer.count.mockResolvedValue(0);
+      prisma.serviceReview.aggregate.mockResolvedValue({ _avg: { rating: null }, _count: { id: 0 } });
+      prisma.nailWork.count.mockResolvedValue(0);
+    });
+    it('注册时间以北京时间归属月份，并拒绝越界和非法月份', async () => {
+      for (const month of ['2025-12', '2026-09', '2026-13', '2026-1', '']) {
+        await expect(service.getOverview(7, now, month)).rejects.toThrow();
+      }
+      expect(prisma.order.count).not.toHaveBeenCalled();
+    });
+    it('历史月份所有流量统计使用同一自然月，不混入本月数据', async () => {
+      const result = await service.getOverview(7, now, '2026-02');
+      const gte = new Date('2026-01-31T16:00:00Z');
+      const lt = new Date('2026-02-28T16:00:00Z');
+      expect(result.period).toMatchObject({ selectedMonth: '2026-02', minMonth: '2026-01', maxMonth: '2026-08', monthStart: gte.toISOString(), endExclusive: lt.toISOString() });
+      expect(prisma.order.count).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ completedAt: { gte, lt } }) }));
+      expect(prisma.serviceReview.aggregate).toHaveBeenCalledWith(expect.objectContaining({ where: { technicianId: 7, createdAt: { gte, lt } } }));
+      expect(prisma.nailWork.count).toHaveBeenCalledWith({ where: { techId: 7, createdAt: { gte, lt } } });
+      expect(prisma.customer.count).toHaveBeenCalledWith({ where: { technicianId: 7, createdAt: { lt } } });
+      expect(prisma.revenue.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ recognizedAt: { gte, lte: new Date(lt.getTime() - 1) } }) }));
+      expect(prisma.conversionEvent.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { technicianId: 7, createdAt: { gte, lte: new Date(lt.getTime() - 1) } } }));
+    });
+    it('当前月截止到当前时刻，注册当月可选', async () => {
+      const result = await service.getOverview(7, now, '2026-08');
+      expect(result.period.endExclusive).toBe(new Date(now.getTime() + 1).toISOString());
+      await expect(service.getOverview(7, now, '2026-01')).resolves.toBeDefined();
+    });
+  });
+
 });

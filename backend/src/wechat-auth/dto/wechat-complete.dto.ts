@@ -1,5 +1,5 @@
 import { WorkShareRegistrationDto } from '../../common/work-share-registration';
-import { IsOptional, IsString, MinLength } from 'class-validator';
+import { IsOptional, IsString, MinLength, IsInt, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsStrongPassword } from '../../common/validators/password.validator';
 
@@ -16,6 +16,12 @@ class WechatPhoneBaseDto extends WorkShareRegistrationDto {
 }
 
 export class WechatClientCompleteDto extends WechatPhoneBaseDto {
+  @ApiPropertyOptional({ description: '一键预约的美甲师ID，必须与邀请码匹配' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  quickBookingTechId?: number;
+
   @ApiPropertyOptional({ description: '美甲师邀请码；新客户必填' })
   @IsOptional()
   @IsString()

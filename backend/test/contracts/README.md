@@ -34,4 +34,4 @@ Seed related records in dependency order:
 
 Cleanup should delete records in reverse dependency order: messages, conversations, orders, design requests or custom service requests, addresses, bindings, customers, clients, technicians, and uploaded files. Prefer deleting by the unique values generated for the spec so cleanup does not affect unrelated data.
 
-The current Jest config uses `rootDir: "src"`, so files under `backend/test/contracts` are not picked up by `npm test` yet. Do not change Jest or package configuration as part of the harness task.
+The current Jest config includes both `src` and `test`, so `npm test -- --runInBand` includes these contract specs. Supply isolated test credentials and disable real SMS, OSS and push providers before starting: `AppModule` loads `.env`. The reproducible acceptance runner is `docs/release-readiness-2026-08-30/run-backend-tests.py` at the repository root.

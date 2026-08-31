@@ -1,4 +1,4 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -21,9 +21,11 @@ export class TechnicianInsightsController {
   @Get('overview')
   @ApiOperation({ summary: '获取美甲师经营概览' })
   @ApiResponse({ status: 200, description: '返回统一口径的经营指标' })
-  getOverview(@Req() request: { user: { technicianId: number } }) {
+  getOverview(@Req() request: { user: { technicianId: number } }, @Query('month') month?: string) {
     return this.technicianInsightsService.getOverview(
       request.user.technicianId,
+      new Date(),
+      month,
     );
   }
 }

@@ -40,6 +40,24 @@ export class WorkShareCodeService {
     return request;
   }
 
+  async generateInviteLink(inviteCode: string) {
+    try {
+      const token = await this.accessToken();
+      const configured = process.env.WECHAT_SHARE_CODE_ENV;
+      const envVersion = configured === 'trial' || configured === 'develop' ? configured : 'release';
+      const response = await fetch(`https://api.weixin.qq.com/wxa/generate_urllink?access_token=${encodeURIComponent(token)}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: 'pages/login/index', query: `invite=${encodeURIComponent(inviteCode)}&source=invite`, env_version: envVersion, expire_type: 1, expire_interval: 30 }),
+        signal: AbortSignal.timeout(8000),
+      });
+      const result = await response.json();
+      if (!response.ok || result.errcode || typeof result.url_link !== 'string' || !result.url_link.startsWith('https://')) throw new Error('link unavailable');
+      return { url: result.url_link, expiresAt: new Date(Date.now() + 30 * 86400000).toISOString() };
+    } catch {
+      throw new BadGatewayException('邀请链接暂时无法生成，请确认小程序已开通链接能力，或使用发送给微信好友');
+    }
+  }
+
   private async generateCode(scene: string, key: string, envVersion: string) {
     try {
       const token = await this.accessToken();

@@ -25,7 +25,8 @@ describe('客户端核心路径静态契约', () => {
     const navigation = readWxapp('utils/artist-navigation.js');
 
     expect(publicWorkWxml).toMatch(/bind(?:tap|:book)="bookSameStyle"/);
-    expect(publicWorkJs).toContain('buildClientLoginUrl(target');
+    expect(publicWorkJs).toContain('buildClientLoginUrl(redirect');
+    expect(publicWorkJs).toContain("'&book=1&channel='");
     expect(navigation).toContain('post_auth_redirect');
     expect(login).toContain('consumePostAuthRedirect(this.redirect)');
     expect(register).toContain('consumePostAuthRedirect(this.redirect)');

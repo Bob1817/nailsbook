@@ -120,6 +120,8 @@ export async function createContractTestApp(
     }
 
     await app.init();
+    // Keep one loopback listener per suite instead of reopening an ephemeral port for every HTTP assertion.
+    await app.listen(0, '127.0.0.1');
     const initializedApp = app;
 
     return {

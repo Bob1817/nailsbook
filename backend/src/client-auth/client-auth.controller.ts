@@ -1,3 +1,4 @@
+import { BindQuickBookingDto } from './dto/bind-quick-booking.dto';
 import { BindSharedWorkDto } from './dto/bind-shared-work.dto';
 import {
   Body,
@@ -251,6 +252,13 @@ export class ClientAuthController {
       request.user.clientUserId,
       body,
     );
+  }
+
+  @Post('bind-quick-booking')
+  @UseGuards(ClientJwtAuthGuard)
+  @ApiOperation({ summary: '确认一键预约邀请码并绑定美甲师' })
+  bindQuickBooking(@Req() request: { user: { clientUserId: number } }, @Body() body: BindQuickBookingDto) {
+    return this.clientAuthService.bindQuickBookingInvite(request.user.clientUserId, body.techId, body.inviteCode);
   }
 
   @Post('bind-shared-work')

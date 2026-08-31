@@ -1,3 +1,4 @@
+import { BookingDaysService, businessDate, quickBookingEnabled, assertBookingDate } from './booking-days.service';
 import {
   BadRequestException,
   Injectable,
@@ -65,6 +66,7 @@ export class ClientOrdersService {
     private readonly referralQualification?: ReferralQualificationService,
     @Optional() private readonly rewardFunds?: RewardFundService,
     @Optional() private readonly subscriptions?: SubscriptionsService,
+    @Optional() private readonly bookingDays?: BookingDaysService,
   ) {}
 
   async findTradeOrders(clientUserId: number, status?: string) {
@@ -96,12 +98,19 @@ export class ClientOrdersService {
         include: this.orderInclude(),
       });
       if (existing) {
-        if (existing.clientUserId !== clientUserId) {
+        if (existing.clientUserId !== clientUserId || existing.technicianId !== dto.techId) {
           throw new BadRequestException('预约申请标识已被使用');
         }
         return this.mapOrder(existing);
       }
     }
+    if (dto.referenceOnly && !dto.quickBooking) throw new BadRequestException('参考款式请通过极简预约提交');
+    if (dto.quickBooking) {
+      assertBookingDate(dto.serviceDate);
+      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(dto.startTime) || parseBusinessDateTime(dto.serviceDate, dto.startTime).getTime() <= Date.now()) throw new BadRequestException('请选择未来的预约时间');
+      if (dto.serviceType !== '到店美甲') throw new BadRequestException('极简预约目前仅支持到店服务');
+    }
+    if (dto.quickBooking && !quickBookingEnabled(dto.techId)) throw new BadRequestException('该美甲师暂未开放极简预约');
     const binding = await this.prisma.clientTechBinding.findFirst({
       where: {
         clientId: clientUserId,
@@ -142,6 +151,7 @@ export class ClientOrdersService {
             techId: dto.techId,
             isVisible: true,
             archivedAt: null,
+            ...(dto.quickBooking ? { publicationStatus: 'approved' } : {}),
             ...(dto.sourceShareToken ? {
               publicationStatus: 'approved',
               shareGrants: {
@@ -169,8 +179,8 @@ export class ClientOrdersService {
         throw new NotFoundException('来源作品不存在或查看授权已失效');
       }
       if (
-        !sourceWork.standardPriceFen ||
-        sourceWork.serviceLines.length === 0
+        !dto.referenceOnly && (!sourceWork.standardPriceFen ||
+        sourceWork.serviceLines.length === 0)
       ) {
         throw new BadRequestException('该作品尚未配置标准服务与报价');
       }
@@ -185,7 +195,7 @@ export class ClientOrdersService {
 
     // chatMode: booking initiated from chat; service details agreed verbally, no content required
     if (
-      !dto.chatMode &&
+      !dto.chatMode && !dto.quickBooking &&
       !sourceWork &&
       !isCustom &&
       (!dto.selectedServiceIds || dto.selectedServiceIds.length === 0)
@@ -193,9 +203,9 @@ export class ClientOrdersService {
       throw new BadRequestException('请选择至少一项服务内容或填写自定义需求');
     }
 
-    const bookingType = sourceWork
+    const bookingType = sourceWork && !dto.referenceOnly
       ? 'work'
-      : isCustom || dto.chatMode
+      : isCustom || dto.chatMode || dto.quickBooking
         ? 'custom'
         : 'standard';
     let serviceLines: Array<{
@@ -208,7 +218,7 @@ export class ClientOrdersService {
       subtotalFen: number;
       sortOrder: number;
     }> = [];
-    if (sourceWork) {
+    if (sourceWork && !dto.referenceOnly) {
       serviceLines = sourceWork.serviceLines.map((line) => ({
         serviceId: line.serviceId,
         servicePublicIdSnapshot: line.servicePublicIdSnapshot,
@@ -248,7 +258,9 @@ export class ClientOrdersService {
     }
     const summary = summarizeSnapshotLines(serviceLines);
     const totalDurationMinutes =
-      bookingType === 'custom' ? 120 : summary.totalDurationMinutes;
+      bookingType === 'custom' ? (dto.quickBooking ? 0 : 120) : summary.totalDurationMinutes;
+    // One minute checks only the requested start point; never a promised service duration.
+    const availabilityDuration = totalDurationMinutes || 1;
     const serviceSubtotalFen = summary.serviceSubtotalFen;
     const finalPriceFen =
       bookingType === 'work'
@@ -260,7 +272,7 @@ export class ClientOrdersService {
       binding.technician.serviceSchedule,
       dto.serviceDate,
       dto.startTime,
-      totalDurationMinutes,
+      availabilityDuration,
     );
 
     const client = await this.prisma.clientUser.findUnique({
@@ -277,7 +289,7 @@ export class ClientOrdersService {
         client,
         binding.technician,
         dto,
-        totalDurationMinutes,
+        availabilityDuration,
       );
     const startTime = this.buildStartTime(dto.serviceDate, dto.startTime);
     const endTime = new Date(
@@ -286,6 +298,8 @@ export class ClientOrdersService {
 
     const createOrder = () =>
       this.prisma.$transaction(async (tx) => {
+        await this.bookingDays?.assertOpen(tx, dto.techId, dto.serviceDate);
+        await this.assertNoBlockedConflict(tx, dto.techId, startTime, new Date(startTime.getTime() + (totalDurationMinutes || 1) * 60000));
         const customer = await tx.customer.upsert({
           where: {
             technicianId_clientUserId: {
@@ -329,6 +343,7 @@ export class ClientOrdersService {
                 : null,
             sourceWorkId: dto.sourceWorkId ?? null,
             bookingType,
+            quickBooking: dto.quickBooking === true,
             serviceSubtotalFen,
             discountAmountFen: Math.max(
               0,
@@ -417,7 +432,7 @@ export class ClientOrdersService {
       });
     let order: any;
     try {
-      order = await createOrder();
+      order = this.bookingMutex ? await this.bookingMutex.runExclusive(dto.techId, createOrder) : await createOrder();
     } catch (error) {
       if (
         dto.applicationKey &&
@@ -638,6 +653,8 @@ export class ClientOrdersService {
 
     const createOrder = () =>
       this.prisma.$transaction(async (tx) => {
+        await this.bookingDays?.assertOpen(tx, dto.techId, dto.serviceDate);
+        await this.assertNoBlockedConflict(tx, dto.techId, startTime, endTime);
         const customer = await tx.customer.upsert({
           where: {
             technicianId_clientUserId: {
@@ -693,7 +710,7 @@ export class ClientOrdersService {
       });
     let order: any;
     try {
-      order = await createOrder();
+      order = this.bookingMutex ? await this.bookingMutex.runExclusive(dto.techId, createOrder) : await createOrder();
     } catch (error) {
       if (
         dto.applicationKey &&
@@ -864,6 +881,7 @@ export class ClientOrdersService {
       throw new NotFoundException('订单不存在');
     }
 
+    if (order.quickBooking && (!order.totalDurationMinutes || order.status === 'pending_agree')) throw new BadRequestException('请先拒绝报价，联系美甲师在报价时调整安排');
     if (!this.canUpdateOrder(order)) {
       throw new BadRequestException('当前订单状态不支持修改');
     }
@@ -933,6 +951,7 @@ export class ClientOrdersService {
         ? endTime
         : new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
+      if (businessDate(order.startTime) !== dto.serviceDate) await this.bookingDays?.assertOpen(tx, order.technicianId, dto.serviceDate);
       await this.assertNoBlockedConflict(
         tx,
         order.technicianId,
@@ -1012,6 +1031,13 @@ export class ClientOrdersService {
     const nextStatus = isCustomQuote ? 'pending_shop' : 'pending_confirm';
 
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
+      if (order.quickBooking) {
+        if (!order.totalDurationMinutes || order.startTime <= new Date()) throw new BadRequestException('预约时间已失效，请联系美甲师重新安排');
+        const claimed = await tx.order.updateMany({ where: { id, clientUserId, status: order.status, updatedAt: order.updatedAt }, data: { status: nextStatus } });
+        if (!claimed.count) throw new BadRequestException('预约已更新，请刷新后确认最新安排');
+        const slot = await tx.blockedTimeSlot.findFirst({ where: { orderId: id, startTime: order.startTime, endTime: order.endTime } });
+        if (!slot) throw new BadRequestException('预约档期已失效，请联系美甲师');
+      }
       if (this.rewardFunds && !isMiniProgramLaunchMode()) {
         await this.rewardFunds.redeemForOrder(tx, {
           orderId: id,
@@ -1117,11 +1143,18 @@ export class ClientOrdersService {
     let conversationId: number | null = null;
 
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
+      if (order.quickBooking) {
+        const changed = await tx.order.updateMany({ where: { id, clientUserId, status: 'pending_agree', updatedAt: order.updatedAt }, data: { status: 'pending_quote' } });
+        if (!changed.count) throw new BadRequestException('预约已更新，请刷新后重试');
+        await tx.blockedTimeSlot.deleteMany({ where: { orderId: id } });
+        await tx.orderServiceLine.deleteMany({ where: { orderId: id } });
+      }
       const updated = await tx.order.update({
         where: { id },
         data: {
+          ...(order.quickBooking ? { totalDurationMinutes: 0, endTime: order.startTime, finalPriceFen: null, serviceSubtotalFen: 0, discountAmountFen: 0 } : {}),
           status: 'pending_quote',
-          quotePrice: 0,
+          quotePrice: order.quickBooking ? null : 0,
           quoteRemark: null,
           quotedAt: null,
         },
@@ -1337,6 +1370,7 @@ export class ClientOrdersService {
       throw new BadRequestException('仅已过期的预约可重新发起');
     }
 
+    if (order.quickBooking && !order.totalDurationMinutes) throw new BadRequestException('请重新发起预约申请，由美甲师确认时长');
     const startTime = this.buildStartTime(dto.serviceDate, dto.startTime);
     if (Number.isNaN(startTime.getTime())) {
       throw new BadRequestException('预约时间无效');
@@ -1365,6 +1399,7 @@ export class ClientOrdersService {
     const restoreStatus = order.expiredFromStatus ?? 'pending_quote';
 
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
+      await this.bookingDays?.assertOpen(tx, order.technicianId, dto.serviceDate);
       await this.assertNoBlockedConflict(
         tx,
         order.technicianId,
@@ -1535,7 +1570,9 @@ export class ClientOrdersService {
       confirmedEndTime: order.confirmedEndTime ?? null,
       source: order.source ?? null,
       startTime: order.startTime,
-      endTime: order.endTime,
+      endTime: order.quickBooking && !order.totalDurationMinutes ? null : order.endTime,
+      quickBooking: order.quickBooking === true,
+      durationPending: order.quickBooking === true && !order.totalDurationMinutes,
       serviceType: order.serviceType ?? null,
       remark: order.remark ?? null,
       address: order.address ?? null,

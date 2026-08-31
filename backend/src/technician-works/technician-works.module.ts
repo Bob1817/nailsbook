@@ -1,3 +1,5 @@
+import { ArtistInvitationController } from './artist-invitation.controller';
+import { ArtistInteractionsController } from './artist-interactions.controller';
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../common/prisma/prisma.module';
 import { TechnicianWorksController } from './technician-works.controller';
@@ -14,6 +16,8 @@ import { WorkShareCodeService } from './work-share-code.service';
   imports: [PrismaModule, SubscriptionsModule],
   controllers: [
     TechnicianWorksController,
+    ArtistInteractionsController,
+    ArtistInvitationController,
     PublicWorksController,
     PublicArtistController,
     ClientArtistFollowsController,

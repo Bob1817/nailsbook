@@ -1,3 +1,4 @@
+import { assertBookingDayOpen } from '../orders/booking-days.service';
 import {
   BadRequestException,
   Injectable,
@@ -69,6 +70,7 @@ export class CustomServiceRequestsService {
     }
 
     const customRequest = await this.prisma.$transaction(async (tx) => {
+      if (dto.serviceDate) await assertBookingDayOpen(tx, dto.techId, dto.serviceDate);
       const request = await tx.customServiceRequest.create({
         data: {
           requestNo: this.generateRequestNo(),

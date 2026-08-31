@@ -1,3 +1,5 @@
+import { BookingDaysService } from './booking-days.service';
+import { PublicBookingDaysController, TechnicianBookingDaysController } from './booking-days.controller';
 import { Module } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { ClientOrdersService } from './client-orders.service';
@@ -17,12 +19,15 @@ import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
     TechnicianOrdersController,
     ClientOrdersController,
     PublicOrdersController,
+    PublicBookingDaysController,
+    TechnicianBookingDaysController,
   ],
   providers: [
     OrdersService,
     ClientOrdersService,
     OrdersScheduler,
     BookingMutexService,
+    BookingDaysService,
   ],
   exports: [OrdersService, ClientOrdersService],
 })

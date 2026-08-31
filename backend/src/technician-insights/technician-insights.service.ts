@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, NotFoundException, Injectable } from '@nestjs/common';
 import { workShareFunnel } from './work-share-funnel';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { calculateCustomerLifecycle } from '../customers/customer-lifecycle';
@@ -60,9 +60,27 @@ function recognizedOrderAmount(order: {
 export class TechnicianInsightsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getOverview(technicianId: number, now = new Date()) {
+  async getOverview(technicianId: number, now = new Date(), month?: string) {
+    const generatedAt = now;
+    let selectable: { selectedMonth: string; minMonth: string; maxMonth: string } | null = null;
+    if (month !== undefined) {
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new BadRequestException('月份格式应为 YYYY-MM');
+      const technician = await this.prisma.technician.findUnique({ where: { id: technicianId }, select: { createdAt: true } });
+      if (!technician) throw new NotFoundException('美甲师不存在');
+      const minMonth = dateKey(technician.createdAt).slice(0, 7);
+      const maxMonth = dateKey(now).slice(0, 7);
+      if (month < minMonth || month > maxMonth) throw new BadRequestException('只能选择注册月份至当前月份');
+      selectable = { selectedMonth: month, minMonth, maxMonth };
+      if (month !== maxMonth) {
+        const [year, m] = month.split('-').map(Number);
+        now = new Date(Date.UTC(year, m, 1) - CHINA_OFFSET_MS - 1);
+      }
+    }
     const { todayStart, tomorrowStart, monthStart, nextMonthStart } =
       periodBoundaries(now);
+    const range = { gte: monthStart, lt: new Date(Math.min(nextMonthStart.getTime(), now.getTime() + 1)) };
+    const monthCreated = selectable ? { createdAt: range } : {};
+    const cutoff = selectable ? { createdAt: { lt: range.lt } } : {};
 
     const [
       todayBookings,
@@ -99,14 +117,14 @@ export class TechnicianInsightsService {
         },
       }),
       this.prisma.order.count({
-        where: { technicianId, status: { in: PENDING_STATUSES } },
+        where: { technicianId, status: { in: PENDING_STATUSES }, ...monthCreated },
       }),
       this.prisma.order.groupBy({
         by: ['status'],
-        where: { technicianId },
+        where: { technicianId, ...monthCreated },
         _count: { id: true },
       }),
-      this.prisma.customer.count({ where: { technicianId } }),
+      this.prisma.customer.count({ where: { technicianId, ...cutoff } }),
       this.prisma.customer.count({
         where: {
           technicianId,
@@ -115,7 +133,7 @@ export class TechnicianInsightsService {
       }),
       this.prisma.order.groupBy({
         by: ['customerId'],
-        where: { technicianId, status: 'completed' },
+        where: { technicianId, status: 'completed', ...(selectable ? { completedAt: range } : {}) },
         _count: { id: true },
       }),
       this.prisma.order.findMany({
@@ -148,16 +166,16 @@ export class TechnicianInsightsService {
         },
       }),
       this.prisma.serviceReview.aggregate({
-        where: { technicianId },
+        where: { technicianId, ...monthCreated },
         _avg: { rating: true },
         _count: { id: true },
       }),
-      this.prisma.nailWork.count({ where: { techId: technicianId } }),
+      this.prisma.nailWork.count({ where: { techId: technicianId, ...monthCreated } }),
       this.prisma.order.findMany({
         where: {
           technicianId,
           status: 'completed',
-          completedAt: { not: null },
+          completedAt: { not: null, ...(selectable ? { lt: range.lt } : {}) },
         },
         select: {
           customerId: true,
@@ -165,18 +183,19 @@ export class TechnicianInsightsService {
           customer: { select: { name: true } },
         },
       }),
-      this.prisma.referralRelation.count({ where: { technicianId } }),
+      this.prisma.referralRelation.count({ where: { technicianId, ...monthCreated } }),
       this.prisma.referralRelation.count({
-        where: { technicianId, status: 'qualified' },
+        where: { technicianId, status: 'qualified', ...(selectable ? { qualification: { qualifiedAt: range } } : {}) },
       }),
       this.prisma.referralQualification.aggregate({
-        where: { relation: { technicianId } },
+        where: { relation: { technicianId }, ...(selectable ? { qualifiedAt: range } : {}) },
         _sum: { paidAmount: true },
       }),
       this.prisma.rewardLedger.aggregate({
         where: {
           account: { technicianId },
           entryType: 'referral_reward',
+          ...monthCreated,
         },
         _sum: { amount: true },
       }),
@@ -184,6 +203,7 @@ export class TechnicianInsightsService {
         where: {
           account: { technicianId },
           entryType: 'fund_redemption',
+          ...monthCreated,
         },
         _sum: { amount: true },
       }),
@@ -192,7 +212,7 @@ export class TechnicianInsightsService {
           technicianId,
           status: 'confirmed',
           recognizedAt: {
-            gte: new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000),
+            gte: selectable ? monthStart : new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000),
             lte: now,
           },
         },
@@ -215,7 +235,7 @@ export class TechnicianInsightsService {
         where: {
           technicianId,
           createdAt: {
-            gte: new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000),
+            gte: selectable ? monthStart : new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000),
             lte: now,
           },
         },
@@ -345,14 +365,14 @@ export class TechnicianInsightsService {
             type: 'high_value',
             customerId,
             customerName: customer.name,
-            reason: `最近 28 天完成 ${customer.count} 次服务，确认消费 ¥${customer.amount}`,
+            reason: `${selectable ? '所选月份' : '最近 28 天'}完成 ${customer.count} 次服务，确认消费 ¥${customer.amount}`,
           });
         }
         return items;
       })
       .slice(0, 20);
 
-    const conversionSince = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    const conversionSince = selectable ? monthStart : new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
     const [conversionEvents, shareEvents] = await Promise.all([
       this.prisma.conversionEvent.findMany({
         where: { technicianId, createdAt: { gte: conversionSince, lte: now } },
@@ -405,8 +425,10 @@ export class TechnicianInsightsService {
     return {
       period: {
         timezone: BUSINESS_TIMEZONE,
+        ...selectable,
+        endExclusive: range.lt.toISOString(),
         monthStart: monthStart.toISOString(),
-        generatedAt: now.toISOString(),
+        generatedAt: generatedAt.toISOString(),
       },
       bookings: {
         today: todayBookings,
@@ -460,7 +482,7 @@ export class TechnicianInsightsService {
       reminders: reminderItems,
       conversion: {
         workShare: workShareFunnel(conversionEvents),
-        periodDays: 90,
+        periodDays: selectable ? Math.ceil((range.lt.getTime() - monthStart.getTime()) / 86400000) : 90,
         homepage: {
           sufficientData: artistViews >= homepageMinimum,
           minimumViews: homepageMinimum,

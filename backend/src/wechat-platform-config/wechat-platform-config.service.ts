@@ -348,6 +348,7 @@ export class WechatPlatformConfigService implements OnModuleInit {
       this.paymentEffective(item) &&
       loginAvailable;
     return {
+      bookingSettings: { available: true },
       wechatLogin: {
         available: loginAvailable,
         reason: loginAvailable ? null : '微信登录暂未开通',

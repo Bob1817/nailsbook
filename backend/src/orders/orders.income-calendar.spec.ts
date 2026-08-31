@@ -21,7 +21,7 @@ describe('OrdersService 收入日历', () => {
     });
     expect(prisma.order.findMany).toHaveBeenCalledWith({
       where: { technicianId: 7 },
-      select: { startTime: true, status: true, quotePrice: true },
+      select: { startTime: true, status: true, quotePrice: true, depositStatus: true },
       orderBy: { startTime: 'asc' },
     });
   });

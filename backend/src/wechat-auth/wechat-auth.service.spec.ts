@@ -225,4 +225,36 @@ describe('WechatAuthService', () => {
       }),
     );
   });
+  it('invitation registration binds through the invite flow and logs in without password setup', async () => {
+    jest.spyOn(service, 'verifySessionToken').mockResolvedValue({ appId: 'wx-test', openId: 'openid-1' });
+    jest.spyOn(service as any, 'exchangePhoneCode').mockResolvedValue('13900139000');
+    clientAuth.registerClientByWechatInvite = jest.fn().mockResolvedValue({ client: { id: 12 } });
+    prisma.clientUser.findUnique.mockResolvedValueOnce(null).mockResolvedValue({ id: 12, phone: '13900139000', passwordHash: '' });
+    await expect(service.completeClient({ wechatSessionToken: 'session', phoneCode: 'phone-code', inviteCode: 'INVITE7', source: 'invite' })).resolves.toMatchObject({ authenticated: true, role: 'client', accessToken: 'client-jwt' });
+    expect(clientAuth.registerClientByWechatInvite).toHaveBeenCalledWith({ phone: '13900139000', inviteCode: 'INVITE7', source: 'invite' }, expect.objectContaining({ openId: 'openid-1' }));
+    expect(clientAuth.createPasswordSetupToken).not.toHaveBeenCalled();
+  });
+
+  it('quick booking registers, binds and logs in without password setup', async () => {
+    jest.spyOn(service, 'verifySessionToken').mockResolvedValue({ appId: 'wx-test', openId: 'openid-1' });
+    jest.spyOn(service as any, 'exchangePhoneCode').mockResolvedValue('13900139000');
+    clientAuth.validateQuickBookingInvite = jest.fn().mockResolvedValue({ id: 7 });
+    clientAuth.bindQuickBookingInvite = jest.fn().mockResolvedValue({ status: 'active' });
+    clientAuth.registerClientByWechatInvite = jest.fn().mockResolvedValue({ client: { id: 12 } });
+    prisma.clientUser.findUnique.mockResolvedValueOnce(null).mockResolvedValue({ id: 12, phone: '13900139000', passwordHash: '' });
+    await expect(service.completeClient({ wechatSessionToken: 'session', phoneCode: 'phone-code', inviteCode: 'INVITE7', quickBookingTechId: 7 })).resolves.toMatchObject({ authenticated: true, role: 'client', accessToken: 'client-jwt' });
+    expect(clientAuth.bindQuickBookingInvite).toHaveBeenCalledWith(12, 7, 'INVITE7');
+    expect(clientAuth.createPasswordSetupToken).not.toHaveBeenCalled();
+    expect(prisma.wechatIdentity.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects disabled or mismatched quick booking invites before creating an account', async () => {
+    jest.spyOn(service, 'verifySessionToken').mockResolvedValue({ appId: 'wx-test', openId: 'openid-1' });
+    const exchange = jest.spyOn(service as any, 'exchangePhoneCode');
+    clientAuth.validateQuickBookingInvite = jest.fn().mockRejectedValue(new Error('预约邀请已失效'));
+    await expect(service.completeClient({ wechatSessionToken: 'session', phoneCode: 'phone-code', inviteCode: 'WRONG', quickBookingTechId: 7 })).rejects.toThrow('预约邀请已失效');
+    expect(exchange).not.toHaveBeenCalled();
+    expect(prisma.clientUser.create).not.toHaveBeenCalled();
+  });
+
 });

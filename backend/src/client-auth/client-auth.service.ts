@@ -1,3 +1,4 @@
+import { quickBookingEnabled } from '../orders/booking-days.service';
 import { recordWorkShareRegistration } from '../common/work-share-registration';
 import { BindSharedWorkDto } from './dto/bind-shared-work.dto';
 import {
@@ -1188,8 +1189,38 @@ export class ClientAuthService {
     };
   }
 
-  /// 申请绑定美甲师（改为审批制）：校验邀请码后创建 pending 申请并通知美甲师。
-  // 分享入口独立于人工申请，不接受客户端传入的美甲师或邀请码。
+  // 一键预约邀请必须匹配当前开放的美甲师。
+  async validateQuickBookingInvite(techId: number, inviteCode?: string) {
+    if (!inviteCode || !quickBookingEnabled(techId)) throw new BadRequestException('一键预约暂未开放');
+    const technician = await this.findActiveTechnicianByInviteCode(inviteCode, '预约邀请已失效');
+    if (technician.id !== techId) throw new BadRequestException('邀请码与美甲师不匹配');
+    return technician;
+  }
+
+  async bindQuickBookingInvite(clientId: number, techId: number, inviteCode: string) {
+    await this.validateQuickBookingInvite(techId, inviteCode);
+    return this.prisma.$transaction(async (tx) => {
+      const client = await tx.clientUser.findUnique({ where: { id: clientId } });
+      if (!client || client.status !== 'active') throw new UnauthorizedException('请重新登录');
+      const existing = await tx.clientTechBinding.findUnique({ where: { clientId_techId: { clientId, techId } } });
+      if (existing?.status === 'active') return { status: 'active', techId };
+      // 既有审核/解绑状态仍由原流程处理，分享邀请不能覆盖它们。
+      if (existing) throw new ConflictException('请联系美甲师确认已有绑定申请或重新绑定');
+      const currentDefault = await tx.clientTechBinding.findFirst({ where: { clientId, status: 'active', isDefault: true } });
+      await tx.clientTechBinding.create({ data: {
+        clientId, techId, inviteCode, bindSource: 'card', status: 'active', isDefault: !currentDefault,
+      } });
+      await tx.customer.upsert({
+        where: { technicianId_clientUserId: { technicianId: techId, clientUserId: clientId } },
+        update: {},
+        create: { technicianId: techId, clientUserId: clientId, name: client.nickname || client.phone,
+          phone: client.phone, sourceType: 'card', sourceRef: inviteCode },
+      });
+      return { status: 'active', techId };
+    }, { isolationLevel: 'Serializable' });
+  }
+
+  // 作品分享入口独立于人工申请，以作品所属美甲师为准。
   async bindSharedWork(clientId: number, dto: BindSharedWorkDto) {
     if (dto.confirmed !== true) throw new BadRequestException('请先确认绑定');
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -1414,6 +1445,7 @@ export class ClientAuthService {
           id: b.id,
           clientId: b.clientId,
           name: client?.nickname || client?.phone || '客户',
+          avatarUrl: client?.avatarUrl || null,
           phone: client?.phone || null,
           address: this.formatClientAddress(addr),
           note: b.note,
@@ -1707,11 +1739,14 @@ export class ClientAuthService {
       },
     });
 
-    // Sync nickname to Customer.name for all technicians this client is bound to
-    if (data.nickname !== undefined && data.nickname) {
+    // 同步客户资料快照，确保美甲师端客户、订单等旧关联立即显示最新资料。
+    if ((data.nickname !== undefined && data.nickname) || data.avatarUrl !== undefined) {
       await this.prisma.customer.updateMany({
         where: { clientUserId },
-        data: { name: data.nickname },
+        data: {
+          ...(data.nickname !== undefined && data.nickname && { name: data.nickname }),
+          ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl }),
+        },
       });
     }
 

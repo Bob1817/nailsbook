@@ -103,6 +103,9 @@ export class WechatAuthService {
 
   async completeClient(dto: WechatClientCompleteDto) {
     const session = await this.verifySessionToken(dto.wechatSessionToken);
+    if (dto.quickBookingTechId) {
+      await this.clientAuth.validateQuickBookingInvite(dto.quickBookingTechId, dto.inviteCode);
+    }
     const phone = await this.exchangePhoneCode(dto.phoneCode);
     let client = await this.prisma.clientUser.findUnique({ where: { phone } });
     const isNewClient = !client;
@@ -163,8 +166,12 @@ export class WechatAuthService {
       };
     }
 
-    // 检查是否已设置密码
-    if (!client.passwordHash) {
+    if (dto.quickBookingTechId) {
+      await this.clientAuth.bindQuickBookingInvite(client.id, dto.quickBookingTechId, dto.inviteCode!);
+    }
+
+    // 一键预约和邀请码新客注册已完成微信身份与手机号验证，不强制设置备用密码。
+    if (!client.passwordHash && !dto.quickBookingTechId && !(isNewClient && dto.inviteCode)) {
       return {
         authenticated: false,
         needsSetupPassword: true,

@@ -286,9 +286,20 @@ export class PublicArtistController {
         serviceItems: parseJsonArray(technician.serviceItems).filter(
           (item: any) => item && item.isActive !== false,
         ),
-        shopAddresses: parseJsonArray(technician.shopAddresses).filter(
-          (item: any) => item && item.enabled !== false,
-        ),
+        shopAddresses: parseJsonArray(technician.shopAddresses)
+          .filter((item: any) => item && item.enabled !== false)
+          .map((item: any) => ({
+            ...item,
+            photos: Array.isArray(item.photos)
+              ? item.photos.map((url: string) => toAbsoluteUrl(url)).filter(Boolean)
+              : [],
+            qualifications: Array.isArray(item.qualifications)
+              ? item.qualifications.map((qualification: any) => ({
+                  name: qualification?.name,
+                  imageUrl: toAbsoluteUrl(qualification?.imageUrl || null),
+                })).filter((qualification: any) => qualification.name)
+              : [],
+          })),
         serviceSchedule: parseJsonObject(technician.serviceSchedule),
         socialMedia: parseJsonObject(technician.socialMedia),
         followerCount,

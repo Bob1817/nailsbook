@@ -62,6 +62,7 @@ export class CustomersService {
               passwordHash: true,
               managedPasswordCiphertext: true,
               status: true,
+              bindings: { select: { techId: true, status: true } },
             },
           },
           _count: { select: { orders: true } },
@@ -103,6 +104,7 @@ export class CustomersService {
 
         return {
           ...safeCustomer,
+          bindingStatus: clientUser?.bindings?.find(binding => binding.techId === customer.technicianId)?.status ?? null,
           accountName: clientUser?.nickname || null,
           avatarUrl: this.absoluteUrl(
             clientUser?.avatarUrl || safeCustomer.avatarUrl,
@@ -219,6 +221,16 @@ export class CustomersService {
             address: true,
             customTitle: true,
             quotePrice: true,
+            serviceType: true,
+            quickBooking: true,
+            totalDurationMinutes: true,
+            endTime: true,
+            clientAddress: { select: { detailAddress: true, latitude: true, longitude: true } },
+            service: { select: { name: true } },
+            sourceWork: { select: { title: true } },
+            customServiceRequest: { select: { title: true } },
+            designRequest: { select: { title: true } },
+            serviceLines: { select: { nameSnapshot: true }, orderBy: { sortOrder: 'asc' } },
             review: {
               select: {
                 id: true,

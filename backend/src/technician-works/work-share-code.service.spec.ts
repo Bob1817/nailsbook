@@ -29,4 +29,20 @@ describe('作品小程序码', () => {
       .mockResolvedValueOnce({ ok: true, arrayBuffer: async () => Buffer.from('{"errcode":40001}') });
     await expect(new WorkShareCodeService(platform as any).generate(8)).rejects.toThrow('小程序码暂时无法生成');
   });
+  it('invitation URL carries the invite into WeChat registration and has explicit expiry', async () => {
+    const fetchMock = jest.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ access_token: 'server-token' }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ url_link: 'https://wxaurl.cn/test' }) });
+    global.fetch = fetchMock;
+    const result = await new WorkShareCodeService(platform as any).generateInviteLink('ABC&12');
+    expect(result.url).toBe('https://wxaurl.cn/test');
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toMatchObject({ path: 'pages/login/index', query: 'invite=ABC%2612&source=invite', expire_interval: 30 });
+  });
+  it('does not expose credentials or pretend that rejected invite links succeeded', async () => {
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ access_token: 'server-token' }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ errcode: 48001 }) });
+    await expect(new WorkShareCodeService(platform as any).generateInviteLink('ABC')).rejects.toThrow('邀请链接暂时无法生成');
+  });
+
 });

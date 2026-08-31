@@ -115,6 +115,7 @@ model Technician {
   customServiceRequests      CustomServiceRequest[]
   workComments               NailWorkComment[]
   blockedTimeSlots           BlockedTimeSlot[]
+  bookingDays                TechnicianBookingDay[]
   serviceReviews             ServiceReview[]
   customerFollowUps          CustomerFollowUp[]
   referralCampaign           ReferralCampaign?
@@ -451,6 +452,7 @@ model Order {
   referralRelationId     Int?
   referrerClientId       Int?
   contentPublicationTask ContentPublicationTask?
+  quickBooking           Boolean                 @default(false)
   bookingType            String                  @default("legacy")
   serviceSubtotalFen     Int                     @default(0)
   discountAmountFen      Int                     @default(0)
@@ -1704,4 +1706,17 @@ model WechatSubscriptionAuthorization {
 
   @@unique([ownerKey, templateId])
   @@index([role, status, updatedAt])
+}
+
+// Date-level intake policy, independent of occupied service time and weekly hours.
+model TechnicianBookingDay {
+  id           Int        @id @default(autoincrement())
+  technicianId Int
+  serviceDate  String
+  accepting    Boolean    @default(true)
+  version      Int        @default(1)
+  updatedAt    DateTime   @updatedAt
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@unique([technicianId, serviceDate])
 }

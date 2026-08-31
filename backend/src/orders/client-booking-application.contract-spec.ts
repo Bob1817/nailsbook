@@ -30,6 +30,8 @@ describe('P0-14 booking application contract', () => {
       service.indexOf('async createFromDesign'),
     );
     expect(createBlock).not.toContain('blockedTimeSlot.create');
+    expect(createBlock).toContain('await this.assertNoBlockedConflict(tx, dto.techId, startTime,');
+    expect(createBlock).toContain('const availabilityDuration = totalDurationMinutes || 1');
     expect(createBlock).toContain("bookingPhase: 'application'");
   });
 });

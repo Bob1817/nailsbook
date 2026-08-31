@@ -32,6 +32,7 @@ describe('ClientAuthService — 绑定审批工作流', () => {
         count: jest.fn().mockResolvedValue(0),
       },
       clientUser: {
+        update: jest.fn(),
         findUnique: jest
           .fn()
           .mockResolvedValue({ nickname: '小红', phone: '13800138001' }),
@@ -44,7 +45,7 @@ describe('ClientAuthService — 绑定审批工作流', () => {
           detailAddress: 'A 路 1 号',
         }),
       },
-      customer: { upsert: jest.fn() },
+      customer: { upsert: jest.fn(), updateMany: jest.fn() },
       conversation: {
         upsert: jest.fn().mockResolvedValue({ id: 5 }),
         findUnique: jest.fn().mockResolvedValue({ id: 5 }),
@@ -63,6 +64,25 @@ describe('ClientAuthService — 绑定审批工作流', () => {
   });
 
   const activeTech = { id: 1, status: 'active', invitationCode: 'ABC123' };
+
+  it('更新客户头像时同步所有美甲师侧客户快照', async () => {
+    prisma.clientUser.update.mockResolvedValue({
+      id: 11,
+      nickname: '小红',
+      phone: '13800138001',
+      avatarUrl: '/uploads/new-avatar.webp',
+      city: null,
+      bio: null,
+      status: 'active',
+    });
+
+    await service.updateProfile(11, { avatarUrl: '/uploads/new-avatar.webp' });
+
+    expect(prisma.customer.updateMany).toHaveBeenCalledWith({
+      where: { clientUserId: 11 },
+      data: { avatarUrl: '/uploads/new-avatar.webp' },
+    });
+  });
 
   describe('bindTechnician（申请）', () => {
     it('邀请码错误 → Unauthorized', async () => {
@@ -261,4 +281,43 @@ describe('ClientAuthService — 绑定审批工作流', () => {
       );
     });
   });
+  describe('一键预约邀请', () => {
+    let previous: string | undefined;
+    beforeEach(() => {
+      previous = process.env.QUICK_BOOKING_TECHNICIAN_IDS;
+      process.env.QUICK_BOOKING_TECHNICIAN_IDS = '1';
+      prisma.technician.findFirst = jest.fn().mockResolvedValue(activeTech);
+      prisma.clientUser.findUnique.mockResolvedValue({ id: 11, status: 'active', phone: '13800138001' });
+    });
+    afterEach(() => {
+      if (previous === undefined) delete process.env.QUICK_BOOKING_TECHNICIAN_IDS;
+      else process.env.QUICK_BOOKING_TECHNICIAN_IDS = previous;
+    });
+    it('creates an active binding and customer, preserving an existing default', async () => {
+      prisma.clientTechBinding.findFirst.mockResolvedValue({ id: 30 });
+      await expect(service.bindQuickBookingInvite(11, 1, 'ABC123')).resolves.toEqual({ status: 'active', techId: 1 });
+      expect(prisma.clientTechBinding.create).toHaveBeenCalledWith({ data: expect.objectContaining({ techId: 1, clientId: 11, status: 'active', isDefault: false }) });
+      expect(prisma.customer.upsert).toHaveBeenCalledTimes(1);
+    });
+    it('does not create duplicate active bindings', async () => {
+      prisma.clientTechBinding.findUnique.mockResolvedValue({ status: 'active' });
+      await service.bindQuickBookingInvite(11, 1, 'ABC123');
+      expect(prisma.clientTechBinding.create).not.toHaveBeenCalled();
+    });
+    it.each(['pending', 'inactive', 'rejected'])('does not override %s relationships', async (status) => {
+      prisma.clientTechBinding.findUnique.mockResolvedValue({ status });
+      await expect(service.bindQuickBookingInvite(11, 1, 'ABC123')).rejects.toThrow(ConflictException);
+      expect(prisma.clientTechBinding.update).not.toHaveBeenCalled();
+    });
+    it('rejects disabled and mismatched invitations', async () => {
+      await expect(service.validateQuickBookingInvite(2, 'ABC123')).rejects.toThrow();
+      prisma.technician.findFirst.mockResolvedValue({ ...activeTech, id: 2 });
+      await expect(service.validateQuickBookingInvite(1, 'ABC123')).rejects.toThrow('邀请码与美甲师不匹配');
+    });
+    it('rejects disabled clients', async () => {
+      prisma.clientUser.findUnique.mockResolvedValue({ id: 11, status: 'disabled' });
+      await expect(service.bindQuickBookingInvite(11, 1, 'ABC123')).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
 });

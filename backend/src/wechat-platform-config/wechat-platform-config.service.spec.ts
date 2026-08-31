@@ -43,6 +43,7 @@ describe('WechatPlatformConfigService capabilities', () => {
     );
 
     await expect(service.getCapabilities()).resolves.toEqual({
+      bookingSettings: { available: true },
       wechatLogin: { available: false, reason: '微信登录暂未开通' },
       wechatPay: { available: false, reason: '微信支付暂未开通' },
     });
