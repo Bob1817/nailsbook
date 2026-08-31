@@ -91,8 +91,8 @@ services:
 
   certbot:
     image: certbot/certbot
-    mem_limit: 16m
-    memswap_limit: 16m
+    mem_limit: 256m
+    memswap_limit: 256m
     volumes:
       - certbot_www:/var/www/certbot
       - certbot_certs:/etc/letsencrypt
