@@ -32,3 +32,7 @@
 旧版本发布目录：`/opt/nailbook-releases/f76c3fd2656fdd80f575cc178c79fd5c8187a91a`。当前快捷预约灰度名单未开启；紧急应用回退可使用该目录Compose仅重建backend并重载Nginx，保留数据库最新写入。一旦启用新预约流程或日期停单，不可直接回退到忽略新规则的旧后端，应先评估兼容性。
 
 服务器证据：source.tar、build.log、activation.log、activation-retry.log、cert-renew.log、containers-before.txt、containers-after.txt、health.json、备份及checksum.txt。
+
+## 证书入口补充检查
+
+用户报告ERR_CERT_DATE_INVALID后再次验证：API已提供有效新证书，本机及服务器检查通过；admin/m/tech三处仍引用各自过期副本。确认新API证书SAN覆盖四个域名后，将三处SSL配置及仓库模板统一引用该证书（含证书链），备份旧配置并通过nginx -t后重载。四个HTTPS入口严格校验证书均返回200。未关闭微信域名或TLS校验；用户端旧连接缓存或设备时间仍需在重新打开后确认，不能据此认定此次API报错一定来自其他三个入口。
