@@ -9,7 +9,8 @@ COPY . .
 # 使用相对路径，边缘 nginx 会将 /api/admin 反代到后端（同源，无需 CORS）
 ARG VITE_API_URL=/api/admin
 ENV VITE_API_URL=$VITE_API_URL
-RUN npm run build
+# 颜色闸门在仓库级 CI / 发布前检查执行；镜像上下文不包含仓库根目录脚本。
+RUN npm exec tsc -- -b && npm exec vite -- build
 
 # ---- production stage ----
 FROM nginx:alpine AS runner
