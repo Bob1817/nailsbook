@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 
 interface CreateFeedbackInput {
@@ -10,11 +14,21 @@ interface CreateFeedbackInput {
   attachmentUrls?: string[];
 }
 
+const FEEDBACK_STATUSES = ['pending', 'processing', 'resolved'] as const;
+
 @Injectable()
 export class FeedbackService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(input: CreateFeedbackInput) {
+    const title = (input.title ?? '').trim();
+    const content = (input.content ?? '').trim();
+    if (!title || !content)
+      throw new BadRequestException('请填写反馈标题和内容');
+    if (title.length > 30 || content.length > 500)
+      throw new BadRequestException('反馈内容超出长度限制');
+    if (input.type?.trim() === '账号注销申请')
+      throw new BadRequestException('请使用账号注销入口提交申请');
     let sourceName: string | null = null;
     let sourcePhone: string | null = null;
 
@@ -40,9 +54,9 @@ export class FeedbackService {
         sourceId: input.sourceId,
         sourceName,
         sourcePhone,
-        title: (input.title ?? '').trim(),
+        title,
         type: (input.type ?? '其他').trim(),
-        content: (input.content ?? '').trim(),
+        content,
         attachmentUrls: JSON.stringify(input.attachmentUrls ?? []),
       },
     });
@@ -83,9 +97,66 @@ export class FeedbackService {
     };
   }
 
+  async findMine(sourceType: 'client' | 'technician', sourceId: number) {
+    const list = await this.prisma.feedback.findMany({
+      where: { sourceType, sourceId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return { list: list.map((item) => this.serialize(item)) };
+  }
+
+  async findMineById(
+    id: number,
+    sourceType: 'client' | 'technician',
+    sourceId: number,
+  ) {
+    const item = await this.prisma.feedback.findFirst({
+      where: { id, sourceType, sourceId },
+    });
+    if (!item) throw new NotFoundException('反馈不存在');
+    return this.serialize(item);
+  }
+
+  async findById(id: number) {
+    const item = await this.prisma.feedback.findUnique({ where: { id } });
+    if (!item) throw new NotFoundException('反馈不存在');
+    return this.serialize(item);
+  }
+
+  async reply(id: number, input: { status: string; replyContent?: string }) {
+    const found = await this.prisma.feedback.findUnique({ where: { id } });
+    if (!found) throw new NotFoundException('反馈不存在');
+    if (
+      !FEEDBACK_STATUSES.includes(
+        input.status as (typeof FEEDBACK_STATUSES)[number],
+      )
+    ) {
+      throw new BadRequestException('反馈状态无效');
+    }
+    const replyContent = (input.replyContent ?? '').trim();
+    if (replyContent.length > 1000)
+      throw new BadRequestException('回复内容超出长度限制');
+    if (input.status === 'resolved' && !replyContent && !found.replyContent) {
+      throw new BadRequestException('完成反馈前请填写回复内容');
+    }
+    const item = await this.prisma.feedback.update({
+      where: { id },
+      data: {
+        status: input.status,
+        replyContent: replyContent || found.replyContent,
+        repliedAt: replyContent ? new Date() : found.repliedAt,
+      },
+    });
+    return this.serialize(item);
+  }
+
   async resolve(id: number) {
     const found = await this.prisma.feedback.findUnique({ where: { id } });
     if (!found) throw new NotFoundException('反馈不存在');
+    if (found.type === '账号注销申请')
+      throw new BadRequestException(
+        '请引导用户从账号注销入口提交申请，普通反馈不能执行注销',
+      );
     return this.prisma.feedback.update({
       where: { id },
       data: { status: 'resolved' },
@@ -102,5 +173,12 @@ export class FeedbackService {
     } catch {
       return [];
     }
+  }
+
+  private serialize<T extends { attachmentUrls: string | null }>(item: T) {
+    return {
+      ...item,
+      attachmentUrls: this.parseAttachmentUrls(item.attachmentUrls),
+    };
   }
 }

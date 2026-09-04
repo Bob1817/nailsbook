@@ -280,7 +280,7 @@ export class PublicArtistController {
         bookingNotes: technician.bookingNotes,
         styleTags: parseJsonArray(technician.styleTags),
         isVerified: technician.isVerified,
-        homeService: false,
+        homeService: technician.homeService,
         shopService: technician.shopService,
         invitationCode: technician.invitationCode,
         serviceItems: parseJsonArray(technician.serviceItems).filter(

@@ -76,7 +76,7 @@ const Customers: React.FC = () => {
                     {result.tempPassword}
                   </Text>
                 </p>
-                <p style={{ color: '#999', fontSize: 12, marginTop: 8 }}>
+                <p style={{ color: 'var(--nb-muted)', fontSize: 12, marginTop: 8 }}>
                   临时密码仅在本次显示，请复制后安全发送给客户。
                 </p>
               </div>
@@ -121,8 +121,8 @@ const Customers: React.FC = () => {
       key: 'account',
       render: (account: Customer['account'], record: Customer) => {
         if (!account?.linked) return <Tag>未关联账号</Tag>;
-        if (!account.passwordConfigured) return <Tag color="orange">未设置</Tag>;
-        if (!account.managedPasswordAvailable) return <Tag color="orange">用户已修改，需重置</Tag>;
+        if (!account.passwordConfigured) return <Tag color="default">未设置</Tag>;
+        if (!account.managedPasswordAvailable) return <Tag color="default">用户已修改，需重置</Tag>;
         if (!canResetPassword) return <Text code>••••••••••••</Text>;
         const password = visiblePasswords[record.id];
         return (

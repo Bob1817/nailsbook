@@ -1,3 +1,4 @@
+import { assertBookingAccountState } from './booking-account-state';
 import { BookingDaysService, businessDate } from './booking-days.service';
 import {
   BadRequestException,
@@ -46,7 +47,7 @@ export type OrderStatus =
 export const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   pending_quote: ['pending_agree', 'cancelled', 'expired'],
   pending_agree: ['pending_confirm', 'pending_quote', 'cancelled', 'expired'],
-  pending_confirm: ['pending_home', 'pending_shop', 'cancelled', 'expired'],
+  pending_confirm: ['pending_agree', 'pending_home', 'pending_shop', 'cancelled', 'expired'],
   pending_client_confirm: ['pending_confirm', 'cancelled', 'expired'],
   pending_home: ['in_progress', 'cancelled'],
   pending_shop: ['in_progress', 'cancelled'],
@@ -153,6 +154,7 @@ export class OrdersService {
 
     const createOrder = () =>
       this.prisma.$transaction(async (tx) => {
+        await assertBookingAccountState(tx, technicianId, dto.clientUserId ?? resolvedClientUserId);
         await this.bookingDays?.assertOpen(tx, technicianId, businessDate(initialStart));
         const referralAttribution = dto.sourceLeadId
           ? await tx.lead.findUnique({
@@ -403,6 +405,7 @@ export class OrdersService {
           select: { id: true, name: true, phone: true, avatarUrl: true },
         },
         revenue: true,
+        review: { select: { rating: true, content: true, photos: true, updatedAt: true } },
         designRequest: {
           select: { id: true, title: true, images: true, description: true },
         },
@@ -466,7 +469,15 @@ export class OrdersService {
       dto.startTime !== undefined || dto.endTime !== undefined;
 
     if (dto.serviceType !== undefined) updateData.serviceType = dto.serviceType;
-    if (dto.price !== undefined) updateData.quotePrice = dto.price;
+    if (dto.price !== undefined) {
+      const finalPriceFen = Math.round(dto.price * 100);
+      updateData.quotePrice = dto.price;
+      updateData.finalPriceFen = finalPriceFen;
+      updateData.discountAmountFen = Math.max(
+        0,
+        (order.serviceSubtotalFen ?? 0) - finalPriceFen,
+      );
+    }
     if (dto.note !== undefined) updateData.remark = dto.note;
     if (dto.depositAmount !== undefined)
       updateData.depositAmount = dto.depositAmount;
@@ -582,9 +593,6 @@ export class OrdersService {
       throw new BadRequestException('当前订单状态不支持报价');
     }
 
-    if (order.bookingType !== 'custom' && order.bookingType !== 'legacy') {
-      throw new BadRequestException('标准作品或基础服务预约无需重新报价');
-    }
     const manual = dto.quoteMode === 'manual';
     if (manual && !order.quickBooking) throw new BadRequestException('手工报价仅用于极简预约');
     if (order.quickBooking && (typeof dto.continueAccepting !== 'boolean' || !Number.isInteger(dto.dayVersion))) throw new BadRequestException('请确认预约当天是否继续接单');
@@ -610,10 +618,13 @@ export class OrdersService {
       unitPriceFen: dto.amountFen!, subtotalFen: dto.amountFen!, durationMinutes: dto.durationMinutes!, quantity: 1, sortOrder: 0,
     }] : buildServiceSnapshotLines(services, requested);
     const summary = summarizeSnapshotLines(serviceLines);
-    const discountAmountFen = dto.discountAmountFen ?? 0;
-    const quotedFinalPriceFen = finalPriceFen(
+    const quotedFinalPriceFen = dto.finalPriceFen ?? finalPriceFen(
       summary.serviceSubtotalFen,
-      discountAmountFen,
+      dto.discountAmountFen ?? 0,
+    );
+    const discountAmountFen = Math.max(
+      0,
+      summary.serviceSubtotalFen - quotedFinalPriceFen,
     );
     const startTime = parseBusinessDateTime(dto.serviceDate, dto.startTime);
     const endTime = new Date(
@@ -763,7 +774,7 @@ export class OrdersService {
     return updated;
   }
 
-  async confirm(id: number) {
+  async confirm(id: number, confirmedPrice?: number) {
     const order = await this.findOne(id);
 
     if (
@@ -776,6 +787,9 @@ export class OrdersService {
     const targetStatus: OrderStatus =
       order.serviceType === '上门美甲' ? 'pending_home' : 'pending_shop';
     const requiresDeposit = (order.depositAmount ?? 0) > 0;
+    const confirmedPriceFen = confirmedPrice === undefined
+      ? (order.finalPriceFen ?? Math.round((order.quotePrice ?? 0) * 100))
+      : Math.round(confirmedPrice * 100);
 
     let systemMessage: any = null;
     let conversationId: number | null = null;
@@ -800,6 +814,13 @@ export class OrdersService {
           where: { id },
           data: {
             status: targetStatus,
+            quotePrice: confirmedPriceFen / 100,
+            finalPriceFen: confirmedPriceFen,
+            quotedAt: new Date(),
+            discountAmountFen: Math.max(
+              0,
+              (order.serviceSubtotalFen ?? 0) - confirmedPriceFen,
+            ),
             bookingPhase: 'booking',
             tradeStatus: requiresDeposit ? 'deposit_pending' : 'deposit_paid',
             tradeCreatedAt: new Date(),

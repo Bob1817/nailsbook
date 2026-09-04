@@ -10,7 +10,9 @@ export interface AdminFeedback {
   type: string;
   content: string;
   attachmentUrls: string[];
-  status: 'pending' | 'resolved';
+  status: 'pending' | 'processing' | 'resolved';
+  replyContent: string | null;
+  repliedAt: string | null;
   createdAt: string;
 }
 
@@ -38,5 +40,13 @@ export const adminFeedbackService = {
   resolve: async (id: number) => {
     const response = await api.patch(`/feedback/${id}/resolve`);
     return response.data;
+  },
+  getById: async (id: number) => {
+    const response = await api.get(`/feedback/${id}`);
+    return response.data as AdminFeedback;
+  },
+  reply: async (id: number, data: { status: AdminFeedback['status']; replyContent: string }) => {
+    const response = await api.patch(`/feedback/${id}/reply`, data);
+    return response.data as AdminFeedback;
   },
 };

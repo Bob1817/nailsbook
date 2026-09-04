@@ -5,9 +5,9 @@ import { artistApplicationService } from '../services/artistApplication';
 import type { ArtistApplication, ApplicationListResponse } from '../services/artistApplication';
 
 const statusColor: Record<string, string> = {
-  pending: 'orange',
-  approved: 'green',
-  rejected: 'red',
+  pending: 'default',
+  approved: 'default',
+  rejected: 'default',
 };
 
 const statusText: Record<string, string> = {

@@ -31,6 +31,8 @@ export class ProductionSeedService implements OnModuleInit {
 
     // 2. 定义全部权限
     const permissions = [
+      { name: '注销申请查看', code: 'account-deletion:view', module: 'account-deletion', action: 'view' },
+      { name: '注销申请审核', code: 'account-deletion:manage', module: 'account-deletion', action: 'manage' },
       {
         name: '数据看板查看',
         code: 'dashboard:view',

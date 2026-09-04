@@ -244,10 +244,10 @@ describe('Technician operation HTTP contract', () => {
         .send({
           customerId: customer.id,
           serviceName: 'Basic Care',
-          startTime: '2026-06-15T14:00:00+08:00',
-          endTime: '2026-06-15T16:00:00+08:00',
+          startTime: '2027-06-15T14:00:00+08:00',
+          endTime: '2027-06-15T16:00:00+08:00',
           address: '88 Test Road',
-          serviceType: '上门服务',
+          serviceType: '上门美甲',
         })
         .expect(201);
 
@@ -255,7 +255,7 @@ describe('Technician operation HTTP contract', () => {
         id: expect.any(Number),
         orderNo: expect.any(String),
         status: expect.any(String),
-        serviceType: '上门服务',
+        serviceType: '上门美甲',
       });
       ownedOrderNos.push(createRes.body.orderNo);
 

@@ -55,6 +55,13 @@ export class ReviewOrderDto {
   @Min(0)
   discountAmountFen?: number;
 
+  @ApiPropertyOptional({ description: '美甲师确认的最终报价（分）', example: 26800 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(100000000)
+  finalPriceFen?: number;
+
   @ApiPropertyOptional({ description: '备注', example: '请准时到达' })
   @IsOptional()
   @IsString()

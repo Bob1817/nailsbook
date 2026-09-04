@@ -70,7 +70,7 @@ const Comments: React.FC = () => {
       key: 'content',
       render: (content: string, record) => {
         const text = content.length > 60 ? `${content.slice(0, 60)}…` : content;
-        return <Text style={record.isHidden ? { color: '#bbb' } : undefined}>{text}</Text>;
+        return <Text style={record.isHidden ? { color: 'var(--nb-muted)' } : undefined}>{text}</Text>;
       },
     },
     {
@@ -78,7 +78,7 @@ const Comments: React.FC = () => {
       key: 'author',
       render: (_, record) => (
         <Space size={4}>
-          <Tag color={record.authorType === 'technician' ? 'purple' : 'blue'}>
+          <Tag color={record.authorType === 'technician' ? 'default' : 'default'}>
             {record.authorType === 'technician' ? '美甲师' : '客户'}
           </Tag>
           {record.authorName}
@@ -92,7 +92,7 @@ const Comments: React.FC = () => {
         record.work ? (
           <div>
             <div style={{ fontSize: 12 }}>{record.work.title ?? '无标题'}</div>
-            <div style={{ fontSize: 11, color: '#888' }}>{record.work.technicianName}</div>
+            <div style={{ fontSize: 11, color: 'var(--nb-muted)' }}>{record.work.technicianName}</div>
           </div>
         ) : (
           '—'
@@ -102,7 +102,7 @@ const Comments: React.FC = () => {
       title: '状态',
       key: 'status',
       render: (_, record) =>
-        record.isHidden ? <Tag color="red">已隐藏</Tag> : <Tag color="green">正常</Tag>,
+        record.isHidden ? <Tag color="default">已隐藏</Tag> : <Tag color="default">正常</Tag>,
     },
     {
       title: '时间',

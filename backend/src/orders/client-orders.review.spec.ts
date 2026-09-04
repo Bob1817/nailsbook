@@ -1,21 +1,28 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { OrdersService } from './orders.service';
+import { BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ClientOrdersService } from './client-orders.service';
 
 describe('ClientOrdersService 服务评价', () => {
   let service: ClientOrdersService;
   let prisma: {
+    $transaction: jest.Mock;
+    conversation: { upsert: jest.Mock };
+    message: { create: jest.Mock };
     order: { findFirst: jest.Mock; update: jest.Mock };
     serviceReview: { findUnique: jest.Mock; upsert: jest.Mock };
   };
 
   beforeEach(() => {
     prisma = {
+      $transaction: jest.fn(fn => fn(prisma)),
+      conversation: { upsert: jest.fn().mockResolvedValue({ id: 8 }) },
+      message: { create: jest.fn().mockResolvedValue({ id: 9 }) },
       order: { findFirst: jest.fn(), update: jest.fn() },
       serviceReview: { findUnique: jest.fn(), upsert: jest.fn() },
     };
     service = new ClientOrdersService(
       prisma as never,
-      {} as never,
+      { server: { to: jest.fn().mockReturnValue({ emit: jest.fn() }) } } as never,
       {} as never,
     );
   });
@@ -103,6 +110,38 @@ describe('ClientOrdersService 服务评价', () => {
         }),
       }),
     );
+  });
+
+  it('评价与提醒同事务写入，重复内容不重复提醒，更新评分再次提醒', async () => {
+    prisma.order.findFirst.mockResolvedValue({ id: 41, status: 'completed', technicianId: 7 });
+    prisma.serviceReview.findUnique.mockResolvedValue(null);
+    prisma.serviceReview.upsert.mockImplementation(({ create }) => Promise.resolve({ id: 1, ...create }));
+    const dto = { rating: 5, content: '很满意', photos: ['/a.jpg'], photoUseAuthorized: false };
+    await service.saveReview(11, 41, dto);
+    expect(prisma.$transaction).toHaveBeenCalled();
+    expect(prisma.message.create).toHaveBeenCalledWith({ data: expect.objectContaining({
+      receiverType: 'technician', receiverId: 7, senderId: 11,
+      relatedType: 'service_review', relatedId: 41, messageType: 'system',
+    }) });
+    expect(prisma.message.create.mock.calls[0][0].data.content).not.toContain('/a.jpg');
+    prisma.serviceReview.findUnique.mockResolvedValue({ rating: 5, content: '很满意', photos: '["/a.jpg"]' });
+    await service.saveReview(11, 41, dto);
+    expect(prisma.message.create).toHaveBeenCalledTimes(1);
+    await service.saveReview(11, 41, { ...dto, rating: 4 });
+    expect(prisma.message.create).toHaveBeenCalledTimes(2);
+    expect(prisma.message.create.mock.calls[1][0].data.content).toContain('更新了');
+    prisma.message.create.mockRejectedValueOnce(new Error('message storage failed'));
+    await expect(service.saveReview(11, 41, { ...dto, rating: 3 })).rejects.toThrow('message storage failed');
+  });
+
+  it('仅订单所属美甲师能读取完整评价，未授权公开的照片仍供本人查看', async () => {
+    const reader = Object.create(OrdersService.prototype);
+    const review = { rating: 4, content: '服务很好', photos: '["/private-review.jpg"]', updatedAt: new Date() };
+    reader.prisma = { order: { findUnique: jest.fn().mockResolvedValue({ id: 41, technicianId: 7, review }) } };
+    const result = await reader.findOneForTechnician(41, 7);
+    expect(result.review).toEqual(review);
+    expect(reader.prisma.order.findUnique.mock.calls[0][0].include.review.select.photos).toBe(true);
+    await expect(reader.findOneForTechnician(41, 8)).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('仅允许为已完成订单保存去重后的客户美甲照片', async () => {

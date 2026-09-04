@@ -97,14 +97,14 @@ describe('TechnicianAuthService.setInitialPassword', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
-  it('forces shop-only service settings in mini program launch mode', async () => {
+  it('preserves the selected service settings in mini program launch mode', async () => {
     const previousLaunchMode = process.env.MINIPROGRAM_LAUNCH_MODE;
     process.env.MINIPROGRAM_LAUNCH_MODE = 'true';
     prisma.technician.findUnique.mockResolvedValue({ ...baseTechnician });
     prisma.technician.update.mockResolvedValue({
       ...baseTechnician,
-      homeService: false,
-      shopService: true,
+      homeService: true,
+      shopService: false,
     });
 
     try {
@@ -124,8 +124,8 @@ describe('TechnicianAuthService.setInitialPassword', () => {
       expect.objectContaining({
         where: { id: 7 },
         data: {
-          homeService: false,
-          shopService: true,
+          homeService: true,
+          shopService: false,
         },
       }),
     );

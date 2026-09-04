@@ -32,7 +32,7 @@ const Login: React.FC = () => {
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: 'var(--nb-action)',
     }}>
       <Card
         style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}

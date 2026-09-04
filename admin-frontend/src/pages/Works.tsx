@@ -9,7 +9,7 @@ const placeholderStyle: React.CSSProperties = {
   width: 48,
   height: 48,
   borderRadius: 4,
-  background: '#f0f0f0',
+  background: 'var(--nb-line)',
 };
 
 const Works: React.FC = () => {
@@ -277,7 +277,7 @@ const Works: React.FC = () => {
             {drawerWork.description && (
               <div style={{ marginTop: 12 }}>
                 <strong>描述：</strong>
-                <div style={{ marginTop: 4, color: '#555' }}>{drawerWork.description}</div>
+                <div style={{ marginTop: 4, color: 'var(--nb-secondary)' }}>{drawerWork.description}</div>
               </div>
             )}
           </div>

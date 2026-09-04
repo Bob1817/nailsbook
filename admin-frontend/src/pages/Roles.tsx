@@ -213,10 +213,10 @@ const Roles: React.FC = () => {
                 checkedKeys={checkedKeys}
                 onCheck={onCheck}
                 treeData={buildTreeData()}
-                style={{ background: '#fafafa', padding: 8, borderRadius: 4, maxHeight: 320, overflow: 'auto' }}
+                style={{ background: 'var(--nb-surface)', padding: 8, borderRadius: 4, maxHeight: 320, overflow: 'auto' }}
               />
             ) : (
-              <span style={{ color: '#999' }}>加载中...</span>
+              <span style={{ color: 'var(--nb-muted)' }}>加载中...</span>
             )}
           </Form.Item>
         </Form>

@@ -110,16 +110,7 @@ const Technicians: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    try {
-      await technicianService.deleteTechnician(id);
-      message.success('删除成功');
-      fetchData();
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      message.error(err.response?.data?.message || '删除失败');
-    }
-  };
+
 
   const handleDisable = async (id: number) => {
     try {
@@ -146,7 +137,7 @@ const Technicians: React.FC = () => {
                 {result.tempPassword}
               </Text>
             </p>
-            <p style={{ color: '#999', fontSize: 12, marginTop: 8 }}>请将此密码发送给美甲师，美甲师下次登录时需重新设置密码。</p>
+            <p style={{ color: 'var(--nb-muted)', fontSize: 12, marginTop: 8 }}>请将此密码发送给美甲师，美甲师下次登录时需重新设置密码。</p>
           </div>
         ),
       });
@@ -186,8 +177,8 @@ const Technicians: React.FC = () => {
                 width: 40,
                 height: 40,
                 borderRadius: '50%',
-                background: '#fde8ef',
-                color: '#ec4899',
+                background: 'var(--nb-page)',
+                color: 'var(--nb-ink)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -199,7 +190,7 @@ const Technicians: React.FC = () => {
           )}
           <div>
             <div>{record.name}</div>
-            <div style={{ color: '#999', fontSize: 12 }}>{record.phone}</div>
+            <div style={{ color: 'var(--nb-muted)', fontSize: 12 }}>{record.phone}</div>
           </div>
         </Space>
       ),
@@ -213,9 +204,9 @@ const Technicians: React.FC = () => {
       key: 'status',
       render: (status: string) => {
         const colorMap: Record<string, string> = {
-          active: 'green',
-          inactive: 'orange',
-          suspended: 'red',
+          active: 'default',
+          inactive: 'default',
+          suspended: 'default',
           deleted: 'default',
         };
         const textMap: Record<string, string> = {
@@ -234,7 +225,7 @@ const Technicians: React.FC = () => {
       key: 'passwordConfigured',
       render: (_: boolean, record: Technician) => {
         if (!record.passwordConfigured) return <Tag>未设置</Tag>;
-        if (!record.managedPasswordAvailable) return <Tag color="orange">用户已修改，需重置</Tag>;
+        if (!record.managedPasswordAvailable) return <Tag color="default">用户已修改，需重置</Tag>;
         if (!canResetPassword) return <Text code>••••••••••••</Text>;
         const password = visiblePasswords[record.id];
         return (
@@ -285,11 +276,7 @@ const Technicians: React.FC = () => {
               <Button type="link" size="small">启用</Button>
             </Popconfirm>
           )}
-          {record.status !== 'deleted' && (
-            <Popconfirm title="确定要删除该美甲师账号？" description="删除后该账号将无法登录，但历史数据将被保留。" onConfirm={() => handleDelete(record.id)}>
-              <Button type="link" size="small" danger>删除</Button>
-            </Popconfirm>
-          )}
+
         </Space>
       ),
     },
@@ -441,8 +428,8 @@ const Technicians: React.FC = () => {
         </Form>
 
         {canResetPassword && selectedTechnician && selectedTechnician.status !== 'deleted' && (
-          <div style={{ marginTop: 16, padding: 16, background: '#fff1f0', borderRadius: 8 }}>
-            <div style={{ marginBottom: 8, color: '#cf1322', fontSize: 13 }}>
+          <div style={{ marginTop: 16, padding: 16, background: 'var(--nb-page)', borderRadius: 8 }}>
+            <div style={{ marginBottom: 8, color: 'var(--nb-ink)', fontSize: 13 }}>
               美甲师忘记密码时，可在此重置。系统将生成一个一次性临时密码，请转交给美甲师并提醒其登录后尽快修改。
             </div>
             {resetPwd ? (

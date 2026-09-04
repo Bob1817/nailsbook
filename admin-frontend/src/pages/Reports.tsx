@@ -72,7 +72,7 @@ const Reports: React.FC = () => {
       title: '举报原因',
       dataIndex: 'reason',
       key: 'reason',
-      render: (reason: string) => <Tag color="orange">{REASON_MAP[reason] ?? reason}</Tag>,
+      render: (reason: string) => <Tag color="default">{REASON_MAP[reason] ?? reason}</Tag>,
     },
     {
       title: '举报时间',

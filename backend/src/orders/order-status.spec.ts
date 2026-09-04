@@ -9,6 +9,9 @@ describe('订单状态机 canTransition（纯规则）', () => {
     expect(canTransition('pending_confirm', 'pending_home')).toBe(true);
     expect(canTransition('pending_confirm', 'pending_shop')).toBe(true);
   });
+  it('调整服务或报价：pending_confirm → pending_agree', () => {
+    expect(canTransition('pending_confirm', 'pending_agree')).toBe(true);
+  });
   it('客户确认：pending_client_confirm → pending_confirm', () => {
     expect(canTransition('pending_client_confirm', 'pending_confirm')).toBe(true);
   });
@@ -57,10 +60,10 @@ describe('OrdersService 状态守卫（美甲师端）', () => {
     );
   });
 
-  it('review：非待报价(pending_confirm)不支持报价 → BadRequest', async () => {
+  it('review：终态(completed)不支持报价 → BadRequest', async () => {
     jest
       .spyOn(service, 'findOneForTechnician')
-      .mockResolvedValue({ id: 1, status: 'pending_confirm' } as never);
+      .mockResolvedValue({ id: 1, status: 'completed' } as never);
     await expect(
       service.review(1, 7, {
         serviceDate: '2026-06-10',

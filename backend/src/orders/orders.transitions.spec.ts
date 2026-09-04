@@ -97,6 +97,35 @@ describe('OrdersService 流转成功路径', () => {
     );
   });
 
+  it('confirm 覆盖最终报价并按服务合计重算优惠', async () => {
+    jest.spyOn(service, 'findOne').mockResolvedValue({
+      id: 1,
+      status: 'pending_confirm',
+      serviceType: '到店美甲',
+      clientUserId: 11,
+      technicianId: 7,
+      depositAmount: 0,
+      serviceSubtotalFen: 30000,
+      finalPriceFen: 28000,
+      quotePrice: 280,
+      startTime: new Date('2026-06-10T10:00:00Z'),
+      endTime: new Date('2026-06-10T12:00:00Z'),
+    } as never);
+
+    await service.confirm(1, 268);
+
+    expect(prisma.order.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          quotePrice: 268,
+          finalPriceFen: 26800,
+          discountAmountFen: 3200,
+          quotedAt: expect.any(Date),
+        }),
+      }),
+    );
+  });
+
   it('confirm 遇到已锁定档期时不转正式预约', async () => {
     prisma.blockedTimeSlot.findFirst.mockResolvedValue({ id: 99 });
     jest.spyOn(service, 'findOne').mockResolvedValue({

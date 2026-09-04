@@ -11,6 +11,8 @@ import { ClientArtistFollowsController } from './client-artist-follows.controlle
 import { QualificationsController } from './qualifications.controller';
 import { ReviewsController } from './reviews.controller';
 import { WorkShareCodeService } from './work-share-code.service';
+import { PublicBrandController } from './public-brand.controller';
+import { PublicBrandService } from './public-brand.service';
 
 @Module({
   imports: [PrismaModule, SubscriptionsModule],
@@ -23,7 +25,8 @@ import { WorkShareCodeService } from './work-share-code.service';
     ClientArtistFollowsController,
     QualificationsController,
     ReviewsController,
+    PublicBrandController,
   ],
-  providers: [TechnicianWorksService, WorkShareCodeService],
+  providers: [TechnicianWorksService, WorkShareCodeService, PublicBrandService],
 })
 export class TechnicianWorksModule {}

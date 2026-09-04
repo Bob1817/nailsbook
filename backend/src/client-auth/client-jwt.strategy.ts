@@ -24,9 +24,9 @@ export class ClientJwtStrategy extends PassportStrategy(Strategy, 'client-jwt') 
     }
     const client = await this.prisma.clientUser.findUnique({
       where: { id: payload.sub },
-      select: { tokenVersion: true },
+      select: { tokenVersion: true, status: true },
     });
-    if (!client) {
+    if (!client || client.status !== 'active') {
       throw new UnauthorizedException('用户不存在');
     }
     // 改密/重置后 tokenVersion 递增，旧令牌随即失效

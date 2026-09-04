@@ -97,7 +97,7 @@ const Subscriptions: React.FC = () => {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => <Tag color={status === 'active' ? 'green' : 'red'}>{status === 'active' ? '启用' : '禁用'}</Tag>,
+      render: (status: string) => <Tag color={status === 'active' ? 'default' : 'default'}>{status === 'active' ? '启用' : '禁用'}</Tag>,
     },
   ];
 
@@ -110,7 +110,7 @@ const Subscriptions: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       render: (status: string) => {
-        const colorMap: Record<string, string> = { active: 'green', expired: 'red', cancelled: 'gray' };
+        const colorMap: Record<string, string> = { active: 'default', expired: 'default', cancelled: 'gray' };
         const textMap: Record<string, string> = { active: '生效中', expired: '已过期', cancelled: '已取消' };
         return <Tag color={colorMap[status]}>{textMap[status] || status}</Tag>;
       },

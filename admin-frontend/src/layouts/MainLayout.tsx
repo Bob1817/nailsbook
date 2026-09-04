@@ -69,6 +69,7 @@ const MainLayout: React.FC = () => {
       label: '举报队列',
       permission: 'report:view',
     },
+    { key: '/account-deletions', icon: <SafetyOutlined />, label: '账号注销', permission: 'account-deletion:view' },
     {
       key: '/feedback',
       icon: <NotificationOutlined />,
@@ -164,7 +165,7 @@ const MainLayout: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#fff',
+          color: 'var(--nb-surface)',
           fontSize: collapsed ? 16 : 20,
           fontWeight: 'bold',
         }}>
@@ -185,11 +186,11 @@ const MainLayout: React.FC = () => {
       <Layout style={{ marginLeft: collapsed ? 80 : 200, transition: 'margin-left 0.2s' }}>
         <Header style={{
           padding: '0 24px',
-          background: '#fff',
+          background: 'var(--nb-surface)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          boxShadow: '0 1px 4px rgba(0,21,41,0.08)',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
         }}>
           <Button
             type="text"
@@ -204,7 +205,7 @@ const MainLayout: React.FC = () => {
             </div>
           </Dropdown>
         </Header>
-        <Content style={{ margin: 24, padding: 24, background: '#fff', borderRadius: 8, minHeight: 'calc(100vh - 112px)' }}>
+        <Content style={{ margin: 24, padding: 24, background: 'var(--nb-surface)', borderRadius: 8, minHeight: 'calc(100vh - 112px)' }}>
           <Outlet />
         </Content>
       </Layout>

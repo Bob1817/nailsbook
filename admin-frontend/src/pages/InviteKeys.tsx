@@ -125,7 +125,7 @@ export default function InviteKeys() {
         record.usedByTechnicianId ? (
           <Tag color="default">已使用</Tag>
         ) : (
-          <Tag color="green">未使用</Tag>
+          <Tag color="default">未使用</Tag>
         ),
     },
     {

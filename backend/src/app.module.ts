@@ -1,3 +1,4 @@
+import { AccountDeletionModule } from './account-deletion/account-deletion.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -54,9 +55,11 @@ import { WechatPlatformConfigModule } from './wechat-platform-config/wechat-plat
 import { ThrottlerCleanupService } from './common/throttler-cleanup.service';
 import { ConversionEventsModule } from './conversion-events/conversion-events.module';
 import { WechatSubscribeMessagesModule } from './wechat-subscribe-messages/wechat-subscribe-messages.module';
+import { BrandProfilesModule } from './brand-profiles/brand-profiles.module';
 
 @Module({
   imports: [
+    AccountDeletionModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
@@ -118,6 +121,7 @@ import { WechatSubscribeMessagesModule } from './wechat-subscribe-messages/wecha
     WechatAuthModule,
     WechatPlatformConfigModule,
     WechatSubscribeMessagesModule,
+    BrandProfilesModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,4 +1,13 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ClientJwtAuthGuard } from '../client-auth/client-jwt-auth.guard';
 import { FeedbackService } from './feedback.service';
@@ -9,6 +18,21 @@ import { FeedbackService } from './feedback.service';
 @UseGuards(ClientJwtAuthGuard)
 export class ClientFeedbackController {
   constructor(private readonly service: FeedbackService) {}
+
+  @Get()
+  @ApiOperation({ summary: '我的问题反馈列表' })
+  findMine(@Req() req: { user: { clientUserId: number } }) {
+    return this.service.findMine('client', req.user.clientUserId);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: '我的问题反馈详情' })
+  findMineById(
+    @Req() req: { user: { clientUserId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.service.findMineById(id, 'client', req.user.clientUserId);
+  }
 
   @Post()
   @ApiOperation({ summary: '提交问题反馈' })

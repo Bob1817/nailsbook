@@ -1,5 +1,5 @@
-import { quickBookingEnabled } from '../orders/booking-days.service';
 import { recordWorkShareRegistration } from '../common/work-share-registration';
+import { quickBookingEnabled } from '../orders/booking-days.service';
 import { BindSharedWorkDto } from './dto/bind-shared-work.dto';
 import {
   Injectable,
@@ -652,7 +652,7 @@ export class ClientAuthService {
       where: { phone: dto.phone },
       include: {
         bindings: {
-          where: { status: 'active' },
+          where: { status: { in: ['active', 'pending'] } },
           include: {
             technician: true,
           },
@@ -1052,7 +1052,7 @@ export class ClientAuthService {
         name: defaultBinding.technician.name,
         phone: defaultBinding.technician.phone,
         status: defaultBinding.technician.status,
-        homeService: false,
+        homeService: defaultBinding.technician.homeService,
         shopService: defaultBinding.technician.shopService,
         shopAddresses: defaultBinding.technician.shopAddresses
           ? JSON.parse(defaultBinding.technician.shopAddresses)
@@ -1069,7 +1069,7 @@ export class ClientAuthService {
         city: b.technician.city,
         serviceArea: b.technician.serviceArea,
         status: b.technician.status,
-        homeService: false,
+        homeService: b.technician.homeService,
         shopService: b.technician.shopService,
         invitationCode: b.technician.invitationCode,
         socialMedia: b.technician.socialMedia
@@ -1093,7 +1093,7 @@ export class ClientAuthService {
       where: { id: clientUserId },
       include: {
         bindings: {
-          where: { status: 'active' },
+          where: { status: { in: ['active', 'pending'] } },
           include: {
             technician: true,
           },
@@ -1149,7 +1149,7 @@ export class ClientAuthService {
               name: defaultBinding.technician.name,
               phone: defaultBinding.technician.phone,
               status: defaultBinding.technician.status,
-              homeService: false,
+              homeService: defaultBinding.technician.homeService,
               shopService: defaultBinding.technician.shopService,
               shopAddresses: defaultBinding.technician.shopAddresses
                 ? JSON.parse(defaultBinding.technician.shopAddresses)
@@ -1161,6 +1161,19 @@ export class ClientAuthService {
           }
         : null,
       pendingTechnicianIds: pendingBindings.map((b) => b.techId),
+      pendingTechnicians: pendingBindings.map((b) => ({
+        id: b.technician.id,
+        name: b.technician.name,
+        phone: b.technician.phone,
+        avatarUrl: b.technician.avatarUrl,
+        city: b.technician.city,
+        status: b.technician.status,
+        bindingStatus: 'pending',
+        shopService: b.technician.shopService,
+        shopAddresses: b.technician.shopAddresses
+          ? JSON.parse(b.technician.shopAddresses)
+          : [],
+      })),
       technicians: activeBindings.map((b) => ({
         id: b.technician.id,
         name: b.technician.name,
@@ -1169,7 +1182,7 @@ export class ClientAuthService {
         city: b.technician.city,
         serviceArea: b.technician.serviceArea,
         status: b.technician.status,
-        homeService: false,
+        homeService: b.technician.homeService,
         shopService: b.technician.shopService,
         invitationCode: b.technician.invitationCode,
         socialMedia: b.technician.socialMedia
@@ -1191,9 +1204,10 @@ export class ClientAuthService {
 
   // 一键预约邀请必须匹配当前开放的美甲师。
   async validateQuickBookingInvite(techId: number, inviteCode?: string) {
-    if (!inviteCode || !quickBookingEnabled(techId)) throw new BadRequestException('一键预约暂未开放');
+    if (!inviteCode) throw new BadRequestException('一键预约暂未开放');
     const technician = await this.findActiveTechnicianByInviteCode(inviteCode, '预约邀请已失效');
     if (technician.id !== techId) throw new BadRequestException('邀请码与美甲师不匹配');
+    if (!quickBookingEnabled(techId, technician.quickBookingEnabled)) throw new BadRequestException('一键预约暂未开放');
     return technician;
   }
 
@@ -1291,16 +1305,17 @@ export class ClientAuthService {
     if (technician.status !== 'active') {
       throw new UnauthorizedException('美甲师账号已被禁用');
     }
+    const normalizedCode = String(dto.inviteCode || '').trim().toUpperCase();
     if (
       !technician.invitationCode ||
-      technician.invitationCode !== dto.inviteCode
+      technician.invitationCode !== normalizedCode
     ) {
       throw new UnauthorizedException('邀请码无效');
     }
     return this.applyBindingPending(
       clientUserId,
       dto.techId,
-      dto.inviteCode,
+      normalizedCode,
       dto.note?.trim() || null,
       dto.source || 'manual',
     );
@@ -1691,6 +1706,20 @@ export class ClientAuthService {
     return result;
   }
 
+  async cancelPendingBinding(clientUserId: number, techId: number) {
+    const binding = await this.prisma.clientTechBinding.findUnique({
+      where: { clientId_techId: { clientId: clientUserId, techId } },
+    });
+    if (!binding || binding.status !== 'pending') {
+      throw new NotFoundException('待确认的绑定申请不存在');
+    }
+    await this.prisma.clientTechBinding.update({
+      where: { id: binding.id },
+      data: { status: 'inactive', isDefault: false },
+    });
+    return { success: true };
+  }
+
   async setDefaultTechnician(clientUserId: number, techId: number) {
     const binding = await this.prisma.clientTechBinding.findUnique({
       where: {
@@ -1828,8 +1857,12 @@ export class ClientAuthService {
   }
 
   async findTechnicianByInviteCode(inviteCode: string) {
+    const normalizedCode = String(inviteCode || '').trim().toUpperCase();
+    if (!/^[A-Z0-9]{8}$/.test(normalizedCode)) {
+      throw new NotFoundException('邀请码无效或美甲师不存在');
+    }
     const technician = await this.findActiveTechnicianByInviteCode(
-      inviteCode,
+      normalizedCode,
       '邀请码无效或美甲师不存在',
     );
 
@@ -1841,12 +1874,13 @@ export class ClientAuthService {
       city: technician.city,
       serviceArea: technician.serviceArea,
       status: technician.status,
-      homeService: false,
+      homeService: technician.homeService,
       shopService: technician.shopService,
       shopAddresses: technician.shopAddresses
         ? JSON.parse(technician.shopAddresses)
         : [],
       serviceItems: this.parseServiceItems(technician.serviceItems),
+      invitationCode: technician.invitationCode,
     };
   }
 

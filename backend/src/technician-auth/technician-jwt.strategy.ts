@@ -34,7 +34,7 @@ export class TechnicianJwtStrategy extends PassportStrategy(
       where: { id: payload.sub },
       select: { tokenVersion: true, passwordHash: true, status: true },
     });
-    if (!technician) {
+    if (!technician || ['deleted', 'suspended'].includes(technician.status)) {
       throw new UnauthorizedException('美甲师不存在');
     }
     // 改密/重置后 tokenVersion 递增，旧令牌随即失效

@@ -9,6 +9,10 @@ class UpdateBookingDayDto {
   @IsInt() @Min(0) version: number;
 }
 
+class UpdateBookingSettingsDto {
+  @IsBoolean() quickBookingEnabled: boolean;
+}
+
 @Controller('public/booking-settings')
 export class PublicBookingDaysController {
   constructor(private readonly days: BookingDaysService) {}
@@ -22,6 +26,10 @@ export class TechnicianBookingDaysController {
   constructor(private readonly days: BookingDaysService) {}
   @Get()
   settings(@Req() req: { user: { technicianId: number } }) { return this.days.settings(req.user.technicianId); }
+  @Patch('settings')
+  updateSettings(@Req() req: { user: { technicianId: number } }, @Body() dto: UpdateBookingSettingsDto) {
+    return this.days.updateSettings(req.user.technicianId, dto.quickBookingEnabled);
+  }
   @Patch(':serviceDate')
   update(@Req() req: { user: { technicianId: number } }, @Param('serviceDate') date: string, @Body() dto: UpdateBookingDayDto) {
     return this.days.update(req.user.technicianId, date, dto.accepting, dto.version);

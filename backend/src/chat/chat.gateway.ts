@@ -1,5 +1,6 @@
 import {
   WebSocketGateway,
+  WsException,
   WebSocketServer,
   SubscribeMessage,
   OnGatewayConnection,
@@ -13,6 +14,7 @@ import { ChatService } from './chat.service';
 import { PresenceService } from './presence.service';
 import { TypingService } from './typing.service';
 import { SendMessageDto } from './dto/send-message.dto';
+import { PrismaService } from '../common/prisma/prisma.service';
 
 function getWsOrigin(): string | string[] | boolean {
   const configured = process.env.CORS_ORIGINS?.split(',')
@@ -35,6 +37,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private chatService: ChatService,
     private presenceService: PresenceService,
     private typingService: TypingService,
+    private prisma: PrismaService,
   ) {}
 
   async handleConnection(client: Socket) {
@@ -50,6 +53,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       let userId: number | null = null;
       let userType: 'client' | 'technician' | null = null;
+      let tokenVersion = 0;
 
       const clientSecret =
         process.env.CLIENT_JWT_SECRET || process.env.JWT_SECRET || '';
@@ -61,6 +65,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         if (payload.userType === 'client') {
           userId = payload.sub;
           userType = 'client';
+          tokenVersion = payload.tv ?? 0;
         }
       } catch {
         // Intentionally empty - try next JWT strategy
@@ -72,6 +77,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           if (payload.userType === 'technician') {
             userId = payload.sub;
             userType = 'technician';
+            tokenVersion = payload.tv ?? 0;
           }
         } catch {
           // Intentionally empty - invalid token
@@ -84,8 +90,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
 
+      const account = userType === 'client'
+        ? await this.prisma.clientUser.findUnique({ where: { id: userId }, select: { status: true, tokenVersion: true } })
+        : await this.prisma.technician.findUnique({ where: { id: userId }, select: { status: true, tokenVersion: true } });
+      const blocked = !account || account.tokenVersion !== tokenVersion || account.status === 'deleted' || account.status === 'suspended' || (userType === 'client' && account.status !== 'active');
+      if (blocked) {
+        client.emit('error', { message: 'Account is unavailable' });
+        client.disconnect();
+        return;
+      }
       (client as any).userId = userId;
       (client as any).userType = userType;
+      (client as any).tokenVersion = tokenVersion;
+      await client.join(`account:${userType}:${userId}`);
+      await this.assertSession(client);
 
       // Join all conversation rooms
       const conversationIds = await this.chatService.getUserConversationIds(
@@ -145,11 +163,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(`[ChatGateway] ${userType} ${userId} disconnected`);
   }
 
+  private async assertSession(client: Socket) {
+    const { userId, userType, tokenVersion } = client as any;
+    const account = userType === 'client'
+      ? await this.prisma.clientUser.findUnique({ where: { id: userId || 0 }, select: { status: true, tokenVersion: true } })
+      : userType === 'technician' ? await this.prisma.technician.findUnique({ where: { id: userId || 0 }, select: { status: true, tokenVersion: true } }) : null;
+    if (!account || account.tokenVersion !== tokenVersion || ['deleted', 'suspended'].includes(account.status) || (userType === 'client' && account.status !== 'active')) {
+      client.disconnect();
+      throw new WsException('账号不可用，请重新登录');
+    }
+  }
+
   @SubscribeMessage('message:send')
   async handleMessageSend(
     @ConnectedSocket() client: Socket,
     @MessageBody() dto: SendMessageDto,
   ) {
+    await this.assertSession(client);
     const userId = (client as any).userId as number;
     const userType = (client as any).userType as 'client' | 'technician';
 
@@ -174,6 +204,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { conversationId: number },
   ) {
+    await this.assertSession(client);
     const userId = (client as any).userId as number;
     const userType = (client as any).userType as 'client' | 'technician';
 
@@ -190,10 +221,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('typing:start')
-  handleTypingStart(
+  async handleTypingStart(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { conversationId: number },
   ) {
+    await this.assertSession(client);
     const userId = (client as any).userId as number;
     const userType = (client as any).userType as 'client' | 'technician';
 
@@ -213,10 +245,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('typing:stop')
-  handleTypingStop(
+  async handleTypingStop(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { conversationId: number },
   ) {
+    await this.assertSession(client);
     const userId = (client as any).userId as number;
     const userType = (client as any).userType as 'client' | 'technician';
 

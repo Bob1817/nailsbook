@@ -1,4 +1,4 @@
-import { IsString, IsOptional, Matches } from 'class-validator';
+import { IsString, IsOptional, Matches, IsIn } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateTechnicianDto {
@@ -31,5 +31,6 @@ export class UpdateTechnicianDto {
   @ApiPropertyOptional({ description: '状态', enum: ['active', 'inactive', 'suspended'] })
   @IsOptional()
   @IsString()
+  @IsIn(['active', 'inactive', 'suspended'])
   status?: string;
 }

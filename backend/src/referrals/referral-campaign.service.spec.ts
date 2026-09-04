@@ -5,8 +5,8 @@ describe('ReferralCampaignService', () => {
   const dto = {
     rewardAmount: 30,
     minimumOrderAmount: 199,
-    validFrom: '2026-07-31T00:00:00.000Z',
-    validUntil: '2026-09-01T00:00:00.000Z',
+    validFrom: '2026-01-01T00:00:00.000Z',
+    validUntil: '2099-09-01T00:00:00.000Z',
     status: 'active' as const,
   };
 

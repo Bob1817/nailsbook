@@ -17,7 +17,8 @@ export function assertBookingDate(value: string) {
   }
 }
 
-export function quickBookingEnabled(technicianId: number) {
+export function quickBookingEnabled(technicianId: number, configured?: boolean | null) {
+  if (typeof configured === 'boolean') return configured;
   return Number.isInteger(technicianId) && technicianId > 0 && (process.env.QUICK_BOOKING_TECHNICIAN_IDS || '').split(',').some(id => Number(id.trim()) === technicianId);
 }
 
@@ -32,7 +33,10 @@ export class BookingDaysService {
   constructor(private readonly prisma: PrismaService, private readonly mutex: BookingMutexService) {}
 
   async settings(technicianId: number) {
-    if (!isLaunchTechnician(technicianId) || !await this.prisma.technician.findUnique({ where: { id: technicianId }, select: { id: true } })) {
+    const technician = isLaunchTechnician(technicianId)
+      ? await this.prisma.technician.findUnique({ where: { id: technicianId }, select: { id: true, quickBookingEnabled: true } })
+      : null;
+    if (!technician) {
       throw new NotFoundException('美甲师不存在');
     }
     const days = await this.prisma.technicianBookingDay.findMany({
@@ -41,7 +45,13 @@ export class BookingDaysService {
       orderBy: { serviceDate: 'asc' },
     });
     const blockedSlots = await this.prisma.blockedTimeSlot.findMany({ where: { techId: technicianId, endTime: { gte: new Date() } }, select: { startTime: true, endTime: true } });
-    return { quickBookingEnabled: quickBookingEnabled(technicianId), days, blockedSlots };
+    return { quickBookingEnabled: quickBookingEnabled(technicianId, technician.quickBookingEnabled), days, blockedSlots };
+  }
+
+  async updateSettings(technicianId: number, quickBookingEnabled: boolean) {
+    return this.prisma.technician.update({
+      where: { id: technicianId }, data: { quickBookingEnabled }, select: { quickBookingEnabled: true },
+    });
   }
 
   assertOpen(tx: Prisma.TransactionClient, technicianId: number, serviceDate: string) {

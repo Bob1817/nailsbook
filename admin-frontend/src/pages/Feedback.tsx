@@ -8,6 +8,9 @@ import {
   Select,
   Typography,
   message,
+  Modal,
+  Input,
+  Descriptions,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { adminFeedbackService, SOURCE_MAP } from '../services/adminFeedback';
@@ -24,11 +27,15 @@ const resolveAttachmentUrl = (url: string) => {
 
 const Feedback: React.FC = () => {
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<'pending' | 'resolved'>('pending');
+  const [status, setStatus] = useState<'pending' | 'processing' | 'resolved'>('pending');
   const [sourceType, setSourceType] = useState<string | undefined>(undefined);
   const [items, setItems] = useState<AdminFeedback[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [detail, setDetail] = useState<AdminFeedback | null>(null);
+  const [replyContent, setReplyContent] = useState('');
+  const [replyStatus, setReplyStatus] = useState<AdminFeedback['status']>('processing');
+  const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -52,13 +59,36 @@ const Feedback: React.FC = () => {
     load();
   }, [load]);
 
-  const handleResolve = async (id: number) => {
+  const openDetail = async (record: AdminFeedback) => {
+    setDetail(record);
+    setReplyContent(record.replyContent || '');
+    setReplyStatus(record.status === 'pending' ? 'processing' : record.status);
     try {
-      await adminFeedbackService.resolve(id);
-      message.success('已标记为处理完成');
+      const result = await adminFeedbackService.getById(record.id);
+      setDetail(result);
+      setReplyContent(result.replyContent || '');
+      setReplyStatus(result.status === 'pending' ? 'processing' : result.status);
+    } catch {
+      message.error('获取反馈详情失败');
+    }
+  };
+
+  const saveReply = async () => {
+    if (!detail) return;
+    if (replyStatus === 'resolved' && !replyContent.trim()) {
+      message.warning('标记已回复前请填写回复内容');
+      return;
+    }
+    setSaving(true);
+    try {
+      await adminFeedbackService.reply(detail.id, { status: replyStatus, replyContent: replyContent.trim() });
+      message.success('反馈进度已更新');
+      setDetail(null);
       load();
     } catch {
-      message.error('操作失败');
+      message.error('保存失败');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -69,7 +99,7 @@ const Feedback: React.FC = () => {
       key: 'sourceType',
       width: 90,
       render: (s: string) => (
-        <Tag color={s === 'technician' ? 'purple' : 'blue'}>
+        <Tag color={s === 'technician' ? 'default' : 'default'}>
           {SOURCE_MAP[s] ?? s}
         </Tag>
       ),
@@ -151,16 +181,11 @@ const Feedback: React.FC = () => {
       key: 'action',
       width: 120,
       render: (_, record) => {
-        if (record.status === 'resolved')
-          return <Tag color="green">已处理</Tag>;
+        if (record.type === '账号注销申请') return <Text type="secondary">历史注销反馈，请引导用户从账号注销入口提交；此记录不执行注销。</Text>;
         return (
           <Space>
-            <Button
-              type="primary"
-              size="small"
-              onClick={() => handleResolve(record.id)}
-            >
-              标记已处理
+            <Button type={record.status === 'resolved' ? 'default' : 'primary'} size="small" onClick={() => openDetail(record)}>
+              {record.status === 'resolved' ? '查看回复' : '处理反馈'}
             </Button>
           </Space>
         );
@@ -180,12 +205,13 @@ const Feedback: React.FC = () => {
         <Tabs
           activeKey={status}
           onChange={(key) => {
-            setStatus(key as 'pending' | 'resolved');
+            setStatus(key as 'pending' | 'processing' | 'resolved');
             setPage(1);
           }}
           items={[
             { key: 'pending', label: '待处理' },
-            { key: 'resolved', label: '已处理' },
+            { key: 'processing', label: '处理中' },
+            { key: 'resolved', label: '已回复' },
           ]}
         />
         <Select
@@ -216,6 +242,37 @@ const Feedback: React.FC = () => {
           onChange: (p) => setPage(p),
         }}
       />
+      <Modal title="反馈详情与回复" open={!!detail} onCancel={() => !saving && setDetail(null)}
+        onOk={saveReply} okText="保存并回传" cancelText="取消" confirmLoading={saving} width={720}>
+        {detail && (
+          <Space direction="vertical" size={20} style={{ width: '100%' }}>
+            <Descriptions bordered size="small" column={2}>
+              <Descriptions.Item label="提交人">{detail.sourceName || '—'} {detail.sourcePhone || ''}</Descriptions.Item>
+              <Descriptions.Item label="来源">{SOURCE_MAP[detail.sourceType]}</Descriptions.Item>
+              <Descriptions.Item label="类型">{detail.type}</Descriptions.Item>
+              <Descriptions.Item label="提交时间">{new Date(detail.createdAt).toLocaleString()}</Descriptions.Item>
+              <Descriptions.Item label="标题" span={2}>{detail.title}</Descriptions.Item>
+              <Descriptions.Item label="问题内容" span={2}><Paragraph style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{detail.content}</Paragraph></Descriptions.Item>
+            </Descriptions>
+            <div>
+              <Text strong>处理状态</Text>
+              <Select value={replyStatus} onChange={setReplyStatus} style={{ width: '100%', marginTop: 8 }}
+                options={[
+                  { value: 'pending', label: '待处理' },
+                  { value: 'processing', label: '处理中' },
+                  { value: 'resolved', label: '已回复' },
+                ]} />
+            </div>
+            <div>
+              <Text strong>回复用户</Text>
+              <Input.TextArea value={replyContent} onChange={(event) => setReplyContent(event.target.value)}
+                maxLength={1000} showCount rows={5}
+                placeholder="填写处理结果或需要用户补充的信息，保存后会显示在用户的反馈记录中"
+                style={{ marginTop: 8 }} />
+            </div>
+          </Space>
+        )}
+      </Modal>
     </div>
   );
 };

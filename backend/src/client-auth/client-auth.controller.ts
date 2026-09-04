@@ -12,6 +12,7 @@ import {
   UseGuards,
   Param,
   Query,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -55,11 +56,18 @@ export class ClientAuthController {
 
   @Get('find-by-invite-code')
   @ApiOperation({ summary: '通过邀请码查找美甲师' })
-  @ApiResponse({ status: 200, description: '查找成功，返回美甲师信息' })
-  @ApiResponse({ status: 404, description: '邀请码无效' })
+  @ApiResponse({ status: 200, description: '返回邀请码有效性及对应美甲师信息' })
   @ApiQuery({ name: 'code', type: String, description: '邀请码' })
   async findByInviteCode(@Query('code') code: string) {
-    return this.clientAuthService.findTechnicianByInviteCode(code);
+    try {
+      const technician = await this.clientAuthService.findTechnicianByInviteCode(code);
+      return { valid: true, technician };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return { valid: false, technician: null };
+      }
+      throw error;
+    }
   }
 
   @Post('check-phone')
@@ -307,6 +315,20 @@ export class ClientAuthController {
     @Param('techId') techId: string,
   ) {
     return this.clientAuthService.unbindTechnician(
+      request.user.clientUserId,
+      parseInt(techId, 10),
+    );
+  }
+
+  @Delete('binding-applications/:techId')
+  @UseGuards(ClientJwtAuthGuard)
+  @ApiOperation({ summary: '客户取消待确认的美甲师绑定申请' })
+  @ApiParam({ name: 'techId', type: String, description: '美甲师ID' })
+  async cancelPendingBinding(
+    @Req() request: { user: { clientUserId: number } },
+    @Param('techId') techId: string,
+  ) {
+    return this.clientAuthService.cancelPendingBinding(
       request.user.clientUserId,
       parseInt(techId, 10),
     );

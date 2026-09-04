@@ -6,6 +6,7 @@ import {
   Query,
   ParseIntPipe,
   UseGuards,
+  Body,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -37,9 +38,31 @@ export class AdminFeedbackController {
     });
   }
 
+  @Get(':id')
+  @Permissions('feedback:view')
+  @ApiOperation({ summary: '问题反馈详情' })
+  findById(@Param('id', ParseIntPipe) id: number) {
+    return this.service.findById(id);
+  }
+
+  @Patch(':id/reply')
+  @Permissions('feedback:manage')
+  @OperationLog({ module: 'feedback', action: 'reply', targetType: 'feedback' })
+  @ApiOperation({ summary: '回复反馈并更新状态' })
+  reply(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { status: string; replyContent?: string },
+  ) {
+    return this.service.reply(id, body);
+  }
+
   @Patch(':id/resolve')
   @Permissions('feedback:manage')
-  @OperationLog({ module: 'feedback', action: 'resolve', targetType: 'feedback' })
+  @OperationLog({
+    module: 'feedback',
+    action: 'resolve',
+    targetType: 'feedback',
+  })
   @ApiOperation({ summary: '标记反馈为已处理' })
   resolve(@Param('id', ParseIntPipe) id: number) {
     return this.service.resolve(id);

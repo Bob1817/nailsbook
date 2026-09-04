@@ -43,12 +43,7 @@ export function isLaunchTechnician(technicianId: number) {
 }
 
 export function assertLaunchShopService(serviceType?: string | null) {
-  if (
-    isMiniProgramLaunchMode() &&
-    serviceType &&
-    serviceType !== '到店美甲' &&
-    serviceType !== 'shop'
-  ) {
-    throw new BadRequestException('小程序首期仅支持到店美甲');
+  if (serviceType && !['到店美甲', 'shop', '上门美甲', 'home'].includes(serviceType)) {
+    throw new BadRequestException('请选择有效的服务类型');
   }
 }

@@ -1,4 +1,5 @@
 import React from 'react';
+import { colors } from './colors.generated';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
@@ -20,13 +21,26 @@ import Works from './pages/Works';
 import Comments from './pages/Comments';
 import Reports from './pages/Reports';
 import Feedback from './pages/Feedback';
+import AccountDeletions from './pages/AccountDeletions';
 import ArtistApplications from './pages/ArtistApplications';
 import WechatConfig from './pages/WechatConfig';
 import LaunchConfig from './pages/LaunchConfig';
 
 const App: React.FC = () => {
   return (
-    <ConfigProvider locale={zhCN}>
+    <ConfigProvider locale={zhCN} theme={{ token: {
+      colorPrimary: colors.action,
+      colorInfo: colors.link,
+      colorSuccess: colors.ink,
+      colorWarning: colors.ink,
+      colorError: colors.ink,
+      colorText: colors.ink,
+      colorTextSecondary: colors.secondary,
+      colorBgLayout: colors.page,
+      colorBgContainer: colors.surface,
+      colorBorder: colors.control,
+      controlHeight: 44,
+    } }}>
       <BrowserRouter>
         <AuthProvider>
           <Routes>
@@ -46,6 +60,7 @@ const App: React.FC = () => {
               <Route path="works" element={<ProtectedRoute permission="work:view"><Works /></ProtectedRoute>} />
               <Route path="comments" element={<ProtectedRoute permission="comment:view"><Comments /></ProtectedRoute>} />
               <Route path="reports" element={<ProtectedRoute permission="report:view"><Reports /></ProtectedRoute>} />
+              <Route path="account-deletions" element={<ProtectedRoute permission="account-deletion:view"><AccountDeletions /></ProtectedRoute>} />
               <Route path="feedback" element={<ProtectedRoute permission="feedback:view"><Feedback /></ProtectedRoute>} />
               <Route path="applications" element={<ProtectedRoute permission="application:view"><ArtistApplications /></ProtectedRoute>} />
               <Route path="revenues" element={<ProtectedRoute permission="revenue:view"><Revenues /></ProtectedRoute>} />

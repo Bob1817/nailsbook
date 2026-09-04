@@ -763,7 +763,7 @@ export class CustomersService {
         where: { technicianId, tags: { not: null } },
         select: { tags: true },
       }),
-      this.getTagTemplates(technicianId),
+      this.getTagTemplates(technicianId, 'customer'),
     ]);
 
     const tagSet = new Set<string>(templates.map((item) => item.name));
@@ -779,7 +779,16 @@ export class CustomersService {
     return [...tagSet].sort();
   }
 
-  async getTagTemplates(technicianId: number) {
+  async getTagTemplates(
+    technicianId: number,
+    type: 'customer' | 'work' = 'customer',
+  ) {
+    return (await this.getAllTagTemplates(technicianId)).filter(
+      (item) => item.type === type,
+    );
+  }
+
+  private async getAllTagTemplates(technicianId: number) {
     const technician = await this.prisma.technician.findUnique({
       where: { id: technicianId },
       select: { customTags: true },
@@ -788,26 +797,32 @@ export class CustomersService {
     return this.parseTagTemplates(technician.customTags);
   }
 
-  async createTagTemplate(technicianId: number, rawName: string) {
+  async createTagTemplate(
+    technicianId: number,
+    rawName: string,
+    type: 'customer' | 'work' = 'customer',
+  ) {
     const name = (rawName || '').trim();
     if (!name) throw new BadRequestException('标签名称不能为空');
     if (name.length > 12) throw new BadRequestException('标签名称最多12个字');
-    const templates = await this.getTagTemplates(technicianId);
-    if (templates.some((item) => item.name === name)) {
+    const templates = await this.getAllTagTemplates(technicianId);
+    const categoryTemplates = templates.filter((item) => item.type === type);
+    if (categoryTemplates.some((item) => item.name === name)) {
       throw new ConflictException('标签已存在');
     }
-    if (templates.length >= 30)
+    if (categoryTemplates.length >= 30)
       throw new BadRequestException('最多创建30个标签');
     const created = {
       id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
       name,
+      type,
     };
     await this.saveTagTemplates(technicianId, templates.concat(created));
     return created;
   }
 
   async deleteTagTemplate(technicianId: number, templateId: string) {
-    const templates = await this.getTagTemplates(technicianId);
+    const templates = await this.getAllTagTemplates(technicianId);
     const next = templates.filter((item) => item.id !== templateId);
     if (next.length === templates.length)
       throw new NotFoundException('标签不存在');
@@ -817,7 +832,12 @@ export class CustomersService {
 
   private parseTagTemplates(
     value: string | null,
-  ): Array<{ id: string; name: string; color?: string }> {
+  ): Array<{
+    id: string;
+    name: string;
+    type: 'customer' | 'work';
+    color?: string;
+  }> {
     if (!value) return [];
     try {
       const parsed = JSON.parse(value);
@@ -825,10 +845,11 @@ export class CustomersService {
       return parsed
         .map((item, index) =>
           typeof item === 'string'
-            ? { id: `legacy-${index}`, name: item.trim() }
+            ? { id: `legacy-${index}`, name: item.trim(), type: 'customer' as const }
             : {
                 id: String(item.id || `legacy-${index}`),
                 name: String(item.name || '').trim(),
+                type: item.type === 'work' ? ('work' as const) : ('customer' as const),
                 ...(item.color ? { color: String(item.color) } : {}),
               },
         )
@@ -840,7 +861,12 @@ export class CustomersService {
 
   private async saveTagTemplates(
     technicianId: number,
-    templates: Array<{ id: string; name: string; color?: string }>,
+    templates: Array<{
+      id: string;
+      name: string;
+      type: 'customer' | 'work';
+      color?: string;
+    }>,
   ) {
     await this.prisma.technician.update({
       where: { id: technicianId },

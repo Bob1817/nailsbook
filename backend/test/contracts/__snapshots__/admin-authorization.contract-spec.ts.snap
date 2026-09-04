@@ -4,6 +4,27 @@ exports[`Admin authorization HTTP contract covers every admin business route wit
 [
   {
     "method": "GET",
+    "path": "/api/admin/account-deletions",
+    "permissions": [
+      "account-deletion:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/account-deletions/:id",
+    "permissions": [
+      "account-deletion:view",
+    ],
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/account-deletions/:id/review",
+    "permissions": [
+      "account-deletion:manage",
+    ],
+  },
+  {
+    "method": "GET",
     "path": "/api/admin/artist-applications",
     "permissions": [
       "application:view",
@@ -126,6 +147,20 @@ exports[`Admin authorization HTTP contract covers every admin business route wit
     "path": "/api/admin/feedback",
     "permissions": [
       "feedback:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/feedback/:id",
+    "permissions": [
+      "feedback:view",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/feedback/:id/reply",
+    "permissions": [
+      "feedback:manage",
     ],
   },
   {

@@ -142,27 +142,17 @@ export class TechniciansService {
   }
 
   async updateStatus(id: number, dto: UpdateTechnicianStatusDto) {
-    const technician = await this.prisma.technician.update({
-      where: { id },
-      data: {
-        status: dto.status,
-      },
+    const changed = await this.prisma.technician.updateMany({
+      where: { id, status: { not: 'deleted' } },
+      data: { status: dto.status },
     });
+    if (!changed.count) throw new BadRequestException('账号不存在或已注销，不能恢复');
+    const technician = await this.prisma.technician.findUniqueOrThrow({ where: { id } });
     return this.mapTechnician(technician);
   }
 
   async deleteTechnician(id: number) {
-    const technician = await this.prisma.technician.findUnique({
-      where: { id },
-    });
-    if (!technician) throw new NotFoundException('美甲师不存在');
-    if (technician.status === 'deleted') return this.mapTechnician(technician);
-
-    const deleted = await this.prisma.technician.update({
-      where: { id },
-      data: { status: 'deleted' },
-    });
-    return this.mapTechnician(deleted);
+    throw new BadRequestException('请通过账号注销申请审核执行注销，不能直接删除账号');
   }
 
   async disableTechnician(id: number) {
@@ -170,11 +160,12 @@ export class TechniciansService {
       where: { id },
     });
     if (!technician) throw new NotFoundException('美甲师不存在');
+    if (technician.status === 'deleted') throw new BadRequestException('已注销账号不能操作');
     if (technician.status === 'suspended')
       return this.mapTechnician(technician);
 
     const disabled = await this.prisma.technician.update({
-      where: { id },
+      where: { id, status: { not: 'deleted' } },
       data: { status: 'suspended' },
     });
     return this.mapTechnician(disabled);
@@ -183,6 +174,7 @@ export class TechniciansService {
   async update(id: number, dto: UpdateTechnicianDto) {
     const existing = await this.prisma.technician.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Technician not found');
+    if (existing.status === 'deleted') throw new BadRequestException('已注销账号不能修改');
 
     if (dto.phone && dto.phone !== existing.phone) {
       const phoneInUse = await this.prisma.technician.findUnique({
@@ -203,7 +195,7 @@ export class TechniciansService {
     if (dto.status !== undefined) data.status = dto.status;
 
     const updated = await this.prisma.technician.update({
-      where: { id },
+      where: { id, status: { not: 'deleted' } },
       data,
       include: { subscription: true, inviteKey: true },
     });

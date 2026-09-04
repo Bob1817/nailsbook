@@ -98,6 +98,7 @@ model Technician {
   coverImageUrl              String? // Homepage cover image
   servicePhilosophy          String? // Service philosophy
   bookingNotes               String? // Booking notes/instructions
+  quickBookingEnabled        Boolean?
   styleTags                  String? // JSON array of style tags ["风格1", "风格2"]
   isVerified                 Boolean                     @default(false) // Platform verified
   verifiedAt                 DateTime?
@@ -1306,7 +1307,7 @@ model NailWorkReport {
 }
 
 model Feedback {
-  id             Int      @id @default(autoincrement())
+  id             Int       @id @default(autoincrement())
   sourceType     String // 'client' | 'technician'
   sourceId       Int
   sourceName     String?
@@ -1314,10 +1315,12 @@ model Feedback {
   title          String
   type           String
   content        String
-  attachmentUrls String   @default("[]")
-  status         String   @default("pending") // 'pending' | 'resolved'
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @default(now()) @updatedAt
+  attachmentUrls String    @default("[]")
+  status         String    @default("pending") // 'pending' | 'processing' | 'resolved'
+  replyContent   String?
+  repliedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now()) @updatedAt
 
   @@index([status])
   @@index([sourceType])
@@ -1719,4 +1722,21 @@ model TechnicianBookingDay {
   technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
 
   @@unique([technicianId, serviceDate])
+}
+
+model AccountDeletionRequest {
+  id          Int       @id @default(autoincrement())
+  accountType String
+  accountId   Int
+  status      String    @default("pending")
+  reason      String
+  decision    String?
+  reviewerId  Int?
+  requestedAt DateTime  @default(now())
+  processedAt DateTime?
+  events      String    @default("[]")
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([accountType, accountId])
+  @@index([status, requestedAt])
 }

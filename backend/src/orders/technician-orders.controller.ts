@@ -178,12 +178,13 @@ export class TechnicianOrdersController {
   async confirm(
     @Req() request: { user: { technicianId: number } },
     @Param('id') id: string,
+    @Body() body: UpdateTechnicianOrderDto,
   ) {
     await this.ordersService.findOneForTechnician(
       parseInt(id, 10),
       request.user.technicianId,
     );
-    return this.ordersService.confirm(parseInt(id, 10));
+    return this.ordersService.confirm(parseInt(id, 10), body.price);
   }
 
   @Patch(':id/complete')

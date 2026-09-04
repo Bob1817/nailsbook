@@ -1,3 +1,4 @@
+import { colors } from '../colors.generated';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Row, Col, Card, Statistic, Table, Spin, Typography } from 'antd';
 import {
@@ -53,12 +54,14 @@ const Dashboard: React.FC = () => {
     if (!data) return null;
     return {
       tooltip: { trigger: 'item' },
+      color: [colors.ink, colors.link, colors.muted, colors.control],
+      aria: { enabled: true, decal: { show: true } },
       legend: { bottom: 0 },
       series: [{
         type: 'pie',
         radius: ['40%', '70%'],
         avoidLabelOverlap: false,
-        itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
+        itemStyle: { borderRadius: 10, borderColor: colors.surface, borderWidth: 2 },
         label: { show: false },
         emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
         labelLine: { show: false },
@@ -141,7 +144,7 @@ const Dashboard: React.FC = () => {
               title="美甲师总数"
               value={data.technicianStats.total}
               prefix={<TeamOutlined />}
-              suffix={<span style={{ fontSize: 14, color: '#999' }}>活跃: {data.technicianStats.active}</span>}
+              suffix={<span style={{ fontSize: 14, color: 'var(--nb-muted)' }}>活跃: {data.technicianStats.active}</span>}
             />
           </Card>
         </Col>
@@ -151,7 +154,7 @@ const Dashboard: React.FC = () => {
               title="客户总数"
               value={data.customerStats.total}
               prefix={<UserOutlined />}
-              styles={{ content: { color: '#3f8600' } }}
+              styles={{ content: { color: 'var(--nb-ink)' } }}
             />
           </Card>
         </Col>
@@ -161,7 +164,7 @@ const Dashboard: React.FC = () => {
               title="订单总数"
               value={data.orderStats.total}
               prefix={<CalendarOutlined />}
-              suffix={<span style={{ fontSize: 14, color: '#999' }}>待上门: {data.orderStats.pendingHome}</span>}
+              suffix={<span style={{ fontSize: 14, color: 'var(--nb-muted)' }}>待上门: {data.orderStats.pendingHome}</span>}
             />
           </Card>
         </Col>
@@ -172,7 +175,7 @@ const Dashboard: React.FC = () => {
               value={data.revenueStats.total}
               prefix={<DollarOutlined />}
               precision={2}
-              styles={{ content: { color: '#cf1322' } }}
+              styles={{ content: { color: 'var(--nb-ink)' } }}
             />
           </Card>
         </Col>
@@ -185,7 +188,7 @@ const Dashboard: React.FC = () => {
               title="近30天新增美甲师"
               value={data.technicianStats.newLast30Days}
               prefix={<RiseOutlined />}
-              styles={{ content: { color: '#1890ff' } }}
+              styles={{ content: { color: 'var(--nb-ink)' } }}
             />
           </Card>
         </Col>
@@ -195,7 +198,7 @@ const Dashboard: React.FC = () => {
               title="近30天新增客户"
               value={data.customerStats.newLast30Days}
               prefix={<RiseOutlined />}
-              styles={{ content: { color: '#52c41a' } }}
+              styles={{ content: { color: 'var(--nb-ink)' } }}
             />
           </Card>
         </Col>
@@ -215,7 +218,7 @@ const Dashboard: React.FC = () => {
               value={data.revenueStats.last30Days}
               prefix={<DollarOutlined />}
               precision={2}
-              styles={{ content: { color: '#faad14' } }}
+              styles={{ content: { color: 'var(--nb-ink)' } }}
             />
           </Card>
         </Col>

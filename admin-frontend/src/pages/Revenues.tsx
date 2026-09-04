@@ -73,7 +73,7 @@ const Revenues: React.FC = () => {
       title: '金额', 
       dataIndex: 'amount', 
       key: 'amount',
-      render: (amount: number) => <span style={{ color: '#f5222d', fontWeight: 'bold' }}>¥{amount.toFixed(2)}</span>,
+      render: (amount: number) => <span style={{ color: 'var(--nb-ink)', fontWeight: 'bold' }}>¥{amount.toFixed(2)}</span>,
     },
     { title: '美甲师', dataIndex: ['technician', 'name'], key: 'technician' },
     { title: '客户', dataIndex: ['customer', 'name'], key: 'customer' },
@@ -83,7 +83,7 @@ const Revenues: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       render: (status: string) => (
-        <Tag color={status === 'confirmed' ? 'green' : 'red'}>
+        <Tag color={status === 'confirmed' ? 'default' : 'default'}>
           {status === 'confirmed' ? '已确认' : '已作废'}
         </Tag>
       ),
@@ -108,7 +108,7 @@ const Revenues: React.FC = () => {
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
         <Col xs={24} sm={8}>
           <Card>
-            <Statistic title="总收入" value={statistics?.totalRevenue || 0} precision={2} prefix="¥" styles={{ content: { color: '#f5222d' } }} />
+            <Statistic title="总收入" value={statistics?.totalRevenue || 0} precision={2} prefix="¥" styles={{ content: { color: 'var(--nb-ink)' } }} />
           </Card>
         </Col>
         <Col xs={24} sm={8}>

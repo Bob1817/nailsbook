@@ -1,3 +1,4 @@
+import { assertBookingAccountState } from './booking-account-state';
 import { BookingDaysService, businessDate, quickBookingEnabled, assertBookingDate } from './booking-days.service';
 import {
   BadRequestException,
@@ -110,7 +111,6 @@ export class ClientOrdersService {
       if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(dto.startTime) || parseBusinessDateTime(dto.serviceDate, dto.startTime).getTime() <= Date.now()) throw new BadRequestException('请选择未来的预约时间');
       if (dto.serviceType !== '到店美甲') throw new BadRequestException('极简预约目前仅支持到店服务');
     }
-    if (dto.quickBooking && !quickBookingEnabled(dto.techId)) throw new BadRequestException('该美甲师暂未开放极简预约');
     const binding = await this.prisma.clientTechBinding.findFirst({
       where: {
         clientId: clientUserId,
@@ -128,6 +128,9 @@ export class ClientOrdersService {
 
     if (binding.technician.status !== 'active') {
       throw new BadRequestException('该美甲师当前未开启接单');
+    }
+    if (dto.quickBooking && !quickBookingEnabled(dto.techId, binding.technician.quickBookingEnabled)) {
+      throw new BadRequestException('该美甲师暂未开放极简预约');
     }
     const readiness = bookingReadiness(
       binding.technician,
@@ -298,6 +301,7 @@ export class ClientOrdersService {
 
     const createOrder = () =>
       this.prisma.$transaction(async (tx) => {
+        await assertBookingAccountState(tx, dto.techId, clientUserId);
         await this.bookingDays?.assertOpen(tx, dto.techId, dto.serviceDate);
         await this.assertNoBlockedConflict(tx, dto.techId, startTime, new Date(startTime.getTime() + (totalDurationMinutes || 1) * 60000));
         const customer = await tx.customer.upsert({
@@ -653,6 +657,7 @@ export class ClientOrdersService {
 
     const createOrder = () =>
       this.prisma.$transaction(async (tx) => {
+        await assertBookingAccountState(tx, dto.techId, clientUserId);
         await this.bookingDays?.assertOpen(tx, dto.techId, dto.serviceDate);
         await this.assertNoBlockedConflict(tx, dto.techId, startTime, endTime);
         const customer = await tx.customer.upsert({
@@ -776,36 +781,61 @@ export class ClientOrdersService {
     if (order.status !== 'completed')
       throw new BadRequestException('服务完成后才能评价');
 
-    const existing = await this.prisma.serviceReview.findUnique({
-      where: { orderId },
+    const { review, message, conversation } = await this.prisma.$transaction(async (tx) => {
+      const existing = await tx.serviceReview.findUnique({
+        where: { orderId },
+      });
+      const authorizedAt = dto.photoUseAuthorized
+        ? existing?.photoUseAuthorizedAt || new Date()
+        : null;
+      const review = await tx.serviceReview.upsert({
+        where: { orderId },
+        create: {
+          orderId,
+          clientUserId,
+          technicianId: order.technicianId,
+          rating: dto.rating,
+          content: dto.content?.trim() || null,
+          photos: dto.photos.length
+            ? JSON.stringify(dto.photos.slice(0, 6))
+            : null,
+          photoUseAuthorized: dto.photoUseAuthorized,
+          photoUseAuthorizedAt: authorizedAt,
+        },
+        update: {
+          rating: dto.rating,
+          content: dto.content?.trim() || null,
+          photos: dto.photos.length
+            ? JSON.stringify(dto.photos.slice(0, 6))
+            : null,
+          photoUseAuthorized: dto.photoUseAuthorized,
+          photoUseAuthorizedAt: authorizedAt,
+        },
+      });
+      const changed = !existing || existing.rating !== review.rating
+        || existing.content !== review.content || existing.photos !== review.photos;
+      if (!changed) return { review, message: null, conversation: null };
+      const content = `客户${existing ? '更新了' : '提交了'}服务评价：${review.rating}分，点击查看评价详情`;
+      const conversation = await tx.conversation.upsert({
+        where: { clientId_techId: { clientId: clientUserId, techId: order.technicianId } },
+        create: { clientId: clientUserId, techId: order.technicianId, lastMessage: content, lastMessageAt: new Date() },
+        update: { lastMessage: content, lastMessageAt: new Date() },
+      });
+      const message = await tx.message.create({ data: {
+        conversationId: conversation.id,
+        senderType: 'client', senderId: clientUserId,
+        receiverType: 'technician', receiverId: order.technicianId,
+        messageType: 'system', content, relatedType: 'service_review', relatedId: orderId,
+      } });
+      return { review, message, conversation };
     });
-    const authorizedAt = dto.photoUseAuthorized
-      ? existing?.photoUseAuthorizedAt || new Date()
-      : null;
-    const review = await this.prisma.serviceReview.upsert({
-      where: { orderId },
-      create: {
-        orderId,
-        clientUserId,
-        technicianId: order.technicianId,
-        rating: dto.rating,
-        content: dto.content?.trim() || null,
-        photos: dto.photos.length
-          ? JSON.stringify(dto.photos.slice(0, 6))
-          : null,
-        photoUseAuthorized: dto.photoUseAuthorized,
-        photoUseAuthorizedAt: authorizedAt,
-      },
-      update: {
-        rating: dto.rating,
-        content: dto.content?.trim() || null,
-        photos: dto.photos.length
-          ? JSON.stringify(dto.photos.slice(0, 6))
-          : null,
-        photoUseAuthorized: dto.photoUseAuthorized,
-        photoUseAuthorizedAt: authorizedAt,
-      },
-    });
+    if (message && conversation) {
+      try {
+        this.chatGateway.server.to(`conversation:${conversation.id}`).emit('message:new', { message, conversation });
+      } catch (error) {
+        console.error('[ClientOrdersService] 评价提醒实时推送失败，系统消息已保存');
+      }
+    }
     return this.mapReview(review);
   }
 

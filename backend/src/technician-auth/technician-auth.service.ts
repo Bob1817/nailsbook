@@ -846,16 +846,11 @@ export class TechnicianAuthService {
 
     // 局部更新：只写入本次提交的字段，未提交的保持不变
     const updateData: any = {};
-    if (isMiniProgramLaunchMode()) {
-      updateData.homeService = false;
-      updateData.shopService = true;
-    } else {
-      if (dto.homeService !== undefined) {
-        updateData.homeService = dto.homeService;
-      }
-      if (dto.shopService !== undefined) {
-        updateData.shopService = dto.shopService;
-      }
+    if (dto.homeService !== undefined) {
+      updateData.homeService = dto.homeService;
+    }
+    if (dto.shopService !== undefined) {
+      updateData.shopService = dto.shopService;
     }
 
     if (dto.shopAddresses !== undefined) {
@@ -906,7 +901,7 @@ export class TechnicianAuthService {
       where: { id: payload.sub },
     });
 
-    if (!technician || technician.status === 'suspended') {
+    if (!technician || ['suspended', 'deleted'].includes(technician.status)) {
       throw new UnauthorizedException('美甲师不存在或已被禁用');
     }
     if ((payload.tv ?? 0) !== technician.tokenVersion) {

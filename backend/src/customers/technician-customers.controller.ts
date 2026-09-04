@@ -71,19 +71,26 @@ export class TechnicianCustomersController {
 
   @Get('tag-templates')
   @ApiOperation({ summary: '获取客户标签模板' })
-  getTagTemplates(@Req() request: { user: { technicianId: number } }) {
-    return this.customersService.getTagTemplates(request.user.technicianId);
+  getTagTemplates(
+    @Req() request: { user: { technicianId: number } },
+    @Query('type') type?: 'customer' | 'work',
+  ) {
+    return this.customersService.getTagTemplates(
+      request.user.technicianId,
+      type === 'work' ? 'work' : 'customer',
+    );
   }
 
   @Post('tag-templates')
   @ApiOperation({ summary: '新增客户标签模板' })
   createTagTemplate(
     @Req() request: { user: { technicianId: number } },
-    @Body() body: { name: string },
+    @Body() body: { name: string; type?: 'customer' | 'work' },
   ) {
     return this.customersService.createTagTemplate(
       request.user.technicianId,
       body.name,
+      body.type === 'work' ? 'work' : 'customer',
     );
   }
 
