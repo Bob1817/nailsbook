@@ -62,7 +62,7 @@ const make = status => ({ ...page, data: { ...page.data, userInfo: { status }, c
   assert.equal(ctx.data.showInviteDetail, true);
   ctx.closeProfileDetail();
   assert.equal(ctx.data.showInviteDetail, false);
-  assert.equal(ctx.data.tools.length, 7);
+  assert.equal(ctx.data.tools.length, 8);
   assert(!ctx.data.tools.some(item => item.key === 'styles'), '擅长风格应归入我的主页管理，不应在经营工具中重复展示');
   assert(ctx.data.tools.some(item => item.key === 'homepage'), '经营工具应保留我的主页入口');
   assert(!ctx.data.tools.some(item => item.key === 'serviceTime'));
