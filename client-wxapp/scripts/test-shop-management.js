@@ -39,9 +39,9 @@ assert(wxml.includes('<page-meta page-style="{{showAddModal ? \'overflow: hidden
 assert(/\.container \{[^}]*box-sizing: border-box;/.test(wxss), '页面最小高度必须包含底部留白，避免单卡片页面产生空白滚动');
 assert(js.includes("wx.pageScrollTo({ scrollTop: 0, duration: 0 })"), '关闭弹窗后必须恢复店铺卡片的可见位置');
 assert(wxml.includes('class="card-settings"') && wxml.includes('class="shop-guidance-link"'), '开启指引后必须在店铺地址下方显示入口');
-assert(/\.shop-guidance-link\s*\{[^}]*height:40rpx;[^}]*margin:4rpx 0 0 40rpx;[^}]*color:var\(--nb-link\)/.test(wxss), '地址与到店指引使用 4rpx 标准间距及蓝色链接样式');
+assert(/\.shop-guidance-link\s*\{[^}]*height:40rpx;[^}]*margin:4rpx 0 0 40rpx;[^}]*color:var\(--nb-text-link\)/.test(wxss), '地址与到店指引使用 4rpx 标准间距及蓝色链接样式');
 assert(/\.card-settings\s*\{[^}]*margin-top:\s*20rpx;/.test(wxss) && /\.card-actions\s*\{[^}]*margin-top:\s*20rpx;/.test(wxss), '店铺卡片模块间距必须统一为 20rpx');
-assert(/\.shop-guidance-link\s*\{[^}]*height:40rpx;[^}]*margin:4rpx 0 0 40rpx;[^}]*color:var\(--nb-link\);/.test(wxss), '地址与到店指引链接必须使用标准间距和蓝色链接色');
+assert(/\.shop-guidance-link\s*\{[^}]*height:40rpx;[^}]*margin:4rpx 0 0 40rpx;[^}]*color:var\(--nb-text-link\);/.test(wxss), '地址与到店指引链接必须使用标准间距和蓝色链接色');
 assert(wxml.includes('class="shop-icon-wrap"') && wxml.includes('接受到店预约'), '店铺卡片必须分开展示店铺身份与预约状态');
 assert(/\.shop-enabled-sub\s*\{[^}]*width:\s*100%;[^}]*white-space:\s*nowrap;/.test(wxss), '店铺开关说明必须保持单行展示');
 assert(wxml.includes('class="fab" bindtap="openAdd" role="button" aria-label="添加店铺"'), '添加店铺悬浮按钮必须提供无障碍标签');
