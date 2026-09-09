@@ -38,7 +38,6 @@ describe('TechniciansService', () => {
       serviceArea: 'Pudong',
     });
 
-    // 超管直建账号：初始默认密码 123456，首次登录强制改密
     expect(prisma.technician.create).toHaveBeenCalledWith({
       data: {
         name: 'Anna',
@@ -55,6 +54,15 @@ describe('TechniciansService', () => {
     expect(result.invitationCode).toMatch(/^[A-F0-9]{8}$/);
     expect(result).not.toHaveProperty('passwordHash');
     expect(result.passwordConfigured).toBe(true);
+    const createData = prisma.technician.create.mock.calls[0][0].data;
+    const initialPassword = decryptManagedPassword(
+      createData.managedPasswordCiphertext,
+    );
+    expect(initialPassword).toMatch(/^[A-Za-z2-9]{12}$/);
+    expect(initialPassword).not.toBe('123456');
+    await expect(
+      bcrypt.compare(initialPassword, createData.passwordHash),
+    ).resolves.toBe(true);
   });
 
   it('rejects duplicate technician phone numbers', async () => {

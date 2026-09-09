@@ -125,15 +125,16 @@ export class TechniciansService {
 
     const invitationCode = this.generateInvitationCode();
 
-    // 超管直建账号：设初始默认密码 123456，并标记首次登录强制改密
-    const passwordHash = await bcrypt.hash('123456', 10);
+    // 超管直建账号使用独立随机临时密码，并标记首次登录强制改密。
+    const initialPassword = generateRandomPassword();
+    const passwordHash = await bcrypt.hash(initialPassword, 10);
     const technician = await this.prisma.technician.create({
       data: {
         ...dto,
         invitationCode,
         status: 'active',
         passwordHash,
-        managedPasswordCiphertext: encryptManagedPassword('123456'),
+        managedPasswordCiphertext: encryptManagedPassword(initialPassword),
         mustChangePassword: true,
       },
     });
