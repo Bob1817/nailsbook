@@ -90,17 +90,6 @@
           <text class="label">详细地址</text>
           <input class="input" value="{{detailAddress}}" bindinput="onDetailAddressInput" placeholder="街道、楼栋、门牌号" placeholder-class="ph" confirm-type="done" />
         </view>
-        <view class="form-item form-item-last">
-          <text class="label">地图定位</text>
-          <view class="location-picker {{locationText ? 'location-selected' : ''}} {{locating ? 'location-loading' : ''}}" bindtap="chooseLocation" role="button" aria-label="选择店铺地图位置">
-            <view class="location-icon-wrap"><image class="location-icon" src="/static/icons/pin.svg" mode="aspectFit" /></view>
-            <view class="location-copy">
-              <text class="location-picker-text">{{locating ? '正在打开地图…' : (locationText || '在地图上选择店铺位置')}}</text>
-              <text class="location-picker-sub">{{locationText ? '已保存经纬度，点击可重新选择' : '用于客户一键导航，不会替换上方详细地址'}}</text>
-            </view>
-            <text class="location-picker-arrow">›</text>
-          </view>
-        </view>
       </view>
 
       <view class="form-section">

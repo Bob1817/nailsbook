@@ -1,6 +1,5 @@
 const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
-const privacy = require('../../../utils/privacy');
 
 // 营业时间默认配置
 const DEFAULT_BUSINESS_HOURS = [
@@ -44,8 +43,7 @@ Page({
     editingDayIndex: -1,
     timeOptions: TIME_OPTIONS,
     weekdayNames: WEEKDAY_NAMES,
-    saving: false,
-    locating: false
+    saving: false
   },
 
   onLoad(options) {
@@ -129,64 +127,6 @@ Page({
 
   toggleEnabled(e) {
     this.setData({ enabled: e.detail.value });
-  },
-
-  // 地图选址
-  async chooseLocation() {
-    if (this.data.locating) return;
-    this.setData({ locating: true });
-    try {
-      await privacy.requireWechatPrivacyAuthorization();
-      const res = await new Promise((resolve, reject) => {
-        wx.chooseLocation({ success: resolve, fail: reject });
-      });
-      const locationText = [res.name, res.address].filter(Boolean).join(' · ') || '已选择地图位置';
-      this.setData({
-        latitude: String(res.latitude),
-        longitude: String(res.longitude),
-        locationText
-      });
-      wx.showToast({ title: '地图位置已更新', icon: 'success' });
-    } catch (err) {
-      this.handleLocationFailure(err);
-    } finally {
-      this.setData({ locating: false });
-    }
-  },
-
-  handleLocationFailure(err) {
-    const message = String((err && err.errMsg) || (err && err.message) || '').toLowerCase();
-    if (message.indexOf('cancel') >= 0) return;
-    if (message.indexOf('privacy') >= 0) {
-      wx.showModal({
-        title: '需要隐私授权',
-        content: '选择店铺地图位置前，需要先同意小程序隐私保护指引。',
-        confirmText: '查看指引',
-        success: (res) => { if (res.confirm) privacy.openPrivacyContract(); }
-      });
-      return;
-    }
-    if (message.indexOf('auth deny') >= 0 || message.indexOf('auth denied') >= 0 || message.indexOf('permission') >= 0) {
-      wx.showModal({
-        title: '需要位置权限',
-        content: '请在微信设置中允许使用位置信息，然后重新选择店铺位置。',
-        confirmText: '去设置',
-        success: (res) => {
-          if (!res.confirm) return;
-          wx.openSetting({
-            success: (setting) => {
-              if (setting.authSetting && setting.authSetting['scope.userLocation']) this.chooseLocation();
-            }
-          });
-        }
-      });
-      return;
-    }
-    wx.showModal({
-      title: '无法打开地图',
-      content: '请确认系统定位服务已开启，并在真机或微信开发者工具中重试。',
-      showCancel: false
-    });
   },
 
   // 地址指引开关

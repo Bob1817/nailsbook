@@ -2,8 +2,6 @@ const api = require('../../../services/api');
 const { requestBookingReminder } = require('../../../utils/wechat-subscription');
 const { summarizeServices } = require('../../../utils/service-pricing');
 const { buildClientLoginUrl } = require('../../../utils/artist-navigation');
-const privacy = require('../../../utils/privacy');
-const { evaluateBookingCity } = require('../../../utils/booking-location');
 const DRAFT_KEY='client_booking_application_draft';
 
 function selectionMap(ids) {
@@ -30,10 +28,8 @@ Page({
     availableServiceTypes: [],
     shopAddresses: [],
     selectedShopName: '',
-    clientAddresses: [],
     serviceOptions: [],
     selectedServiceOptionKey: '',
-    selectedClientAddressId: null,
     activeServiceItems: [],
     selectedServiceIds: [], selectedServiceMap: {},
     selectedServiceCount: 0,
@@ -63,9 +59,7 @@ Page({
     bindChecking: false,
     bindTechName: '',
     bindTechId: 0,
-    bindError: '',
-    locationStatus: 'locating', currentLocationCity: '', serviceLocationCity: '', cityMismatch: false,
-    cityMismatchConfirmed: false, locationDistance: 0, locationInferred: false
+    bindError: ''
   },
 
   onLoad: function (options) {
@@ -86,7 +80,6 @@ Page({
       remark: draft.remark || ''
     });
     this._bookingDraft = draft;
-    if (this.isClientLoggedIn()) this.loadClientAddresses();
     if (options.resume === '1') this._attributionSource = draft.attributionSource || this._attributionSource;
     // 从聊天「快速发起预约」进入：锁定美甲师为对话对象
     var presetTechId = options.techId || options.tech_id;
@@ -96,7 +89,6 @@ Page({
     }
     this._resumeDraft = options.resume === '1';
     this.loadTechnicians();
-    this.requestCurrentLocation();
     if (options.design_id) this.loadDesign(options.design_id);
     // 从作品详情「预约同款」进入：以该作品作为预约服务内容
     if (options.workId || (options.resume === '1' && !options.design_id && draft.sourceWorkId)) {
@@ -106,59 +98,8 @@ Page({
     }
   },
 
-  requestCurrentLocation: async function () {
-    if (this._locating) return;
-    this._locating = true;
-    this.setData({ locationStatus: 'locating' });
-    try {
-      await privacy.requireWechatPrivacyAuthorization();
-      const location = await new Promise(function (resolve, reject) {
-        wx.getLocation({ type: 'gcj02', isHighAccuracy: true, success: resolve, fail: reject });
-      });
-      this._currentLocation = location;
-      this.setData({ locationStatus: 'ready' });
-      this.updateBookingCityCheck();
-    } catch (err) {
-      this.setData({ locationStatus: 'failed', cityMismatch: false, cityMismatchConfirmed: false });
-    } finally {
-      this._locating = false;
-    }
-  },
-
-  updateBookingCityCheck: function () {
-    if (!this._currentLocation || !this.data.selectedTech) return;
-    const result = evaluateBookingCity(this._currentLocation, this.data.selectedTech);
-    this.setData({
-      currentLocationCity: result.currentCity,
-      serviceLocationCity: result.serviceCity,
-      cityMismatch: result.mismatch,
-      cityMismatchConfirmed: false,
-      locationDistance: result.distance,
-      locationInferred: result.inferred
-    });
-  },
-
-  confirmCityMismatchBeforeSubmit: async function () {
-    var d = this.data;
-    if (!d.cityMismatch || d.cityMismatchConfirmed) return true;
-    var locationLabel = d.currentLocationCity
-      ? '你当前位于' + d.currentLocationCity
-      : '你当前位置距服务地点约 ' + d.locationDistance + ' 公里';
-    var serviceLabel = d.serviceLocationCity ? '，美甲师服务城市为' + d.serviceLocationCity : '';
-    var result = await wx.showModal({
-      title: '当前城市与服务城市不一致',
-      content: locationLabel + serviceLabel + '。跨城前往可能影响预约，请确认行程无误后再继续。',
-      cancelText: '返回检查',
-      confirmText: '仍要预约'
-    });
-    if (!result.confirm) return false;
-    this.setData({ cityMismatchConfirmed: true });
-    return true;
-  },
-
   onShow: function () {
     this._pageActive = true;
-    if (this._hasShown && this.isClientLoggedIn()) this.loadClientAddresses();
     this._hasShown = true;
     if (this._submittedWhileHidden) {
       this._submittedWhileHidden = false;
@@ -259,19 +200,6 @@ Page({
       // 作品预填：美甲师加载完成后应用
       if (self._pendingWorkPrefill) self.applyWorkPrefill();
     }).catch(function (e) { console.error(e); });
-  },
-
-  loadClientAddresses: function () {
-    var self = this;
-    if (!api.client || !api.client.addresses || !api.client.addresses.list) return Promise.resolve();
-    return api.client.addresses.list().then(function (res) {
-      var addresses = res.list || res.data || res || [];
-      self.setData({ clientAddresses: addresses });
-      if (self.data.selectedTech) self.refreshServiceOptions(self.data.selectedTech, true);
-    }).catch(function () {
-      self.setData({ clientAddresses: [] });
-      if (self.data.selectedTech) self.refreshServiceOptions(self.data.selectedTech, true);
-    });
   },
 
   viewArtist: function (e) {
@@ -404,7 +332,7 @@ Page({
       bookingReady: false, bookingPaused: tech.status === 'inactive',
       serviceType: '', availableServiceTypes: [],
       shopAddresses: shopAddrs, selectedShopName: '',
-      serviceOptions: [], selectedServiceOptionKey: '', selectedClientAddressId: null,
+      serviceOptions: [], selectedServiceOptionKey: '',
       activeServiceItems: serviceItems,
       selectedServiceIds: [], selectedServiceMap: {}, selectedWorkIds: [],
       selectedServiceCount: 0, selectedServiceTotal: 0, selectedServiceDuration: 0,
@@ -413,7 +341,6 @@ Page({
       startTime: ''
     });
     this.refreshServiceOptions(tech, false);
-    this.updateBookingCityCheck();
     this.setData({ quickMode: false, quickAvailable: false });
     if (api.public.bookingSettings) api.public.bookingSettings(id).then(settings => {
       if (this.data.selectedTechId !== id) return;
@@ -467,24 +394,13 @@ Page({
         detail: formatAddr(shop), guidance: shop.guidance
       };
     });
-    if (tech.homeService) {
-      options = options.concat(this.data.clientAddresses.map(function (address) {
-        return {
-          key: 'home:' + address.id, type: '上门美甲', addressId: address.id,
-          title: '上门美甲' + (address.isDefault ? ' · 默认地址' : ''),
-          detail: formatAddr(address) + (address.doorInfo ? ' ' + address.doorInfo : ''),
-          contact: [address.contactName, address.contactPhone].filter(Boolean).join(' ')
-        };
-      }));
-    }
     var selectedKey = preserveSelection ? this.data.selectedServiceOptionKey : '';
     var draftOption = null;
     if (preserveSelection && this._bookingDraft) {
       var draft = this._bookingDraft;
       draftOption = options.find(function (item) {
         return item.key === draft.selectedServiceOptionKey ||
-          (item.type === '到店美甲' && item.title === '到店美甲 · ' + draft.selectedShopName) ||
-          (item.type === '上门美甲' && String(item.addressId) === String(draft.selectedClientAddressId));
+          (item.type === '到店美甲' && item.title === '到店美甲 · ' + draft.selectedShopName);
       });
       if (!selectedKey && draftOption) selectedKey = draftOption.key;
     }
@@ -499,8 +415,7 @@ Page({
       serviceOptions: options, availableServiceTypes: types,
       selectedServiceOptionKey: selectedKey,
       serviceType: selected ? selected.type : '',
-      selectedShopName: selected && selected.type === '到店美甲' ? shops[selected.shopIndex].name : '',
-      selectedClientAddressId: selected && selected.type === '上门美甲' ? selected.addressId : null
+      selectedShopName: selected && selected.type === '到店美甲' ? shops[selected.shopIndex].name : ''
     });
   },
 
@@ -514,7 +429,6 @@ Page({
       selectedServiceOptionKey: key,
       serviceType: option.type,
       selectedShopName: shop ? shop.name : '',
-      selectedClientAddressId: option.type === '上门美甲' ? option.addressId : null,
       startTime: ''
     });
   },
@@ -643,7 +557,6 @@ Page({
       serviceType: d.serviceType,
       selectedShopName: d.selectedShopName,
       selectedServiceOptionKey: d.selectedServiceOptionKey,
-      selectedClientAddressId: d.selectedClientAddressId,
       selectedServiceIds: d.selectedServiceIds,
       isCustomService: d.isCustomService,
       customTitle: d.customTitle,
@@ -663,15 +576,13 @@ Page({
       this.selectTechById(draft.selectedTechId);
       var restoredOption = this.data.serviceOptions.find(function (item) {
         return item.key === draft.selectedServiceOptionKey ||
-          (item.type === '到店美甲' && item.title === '到店美甲 · ' + draft.selectedShopName) ||
-          (item.type === '上门美甲' && String(item.addressId) === String(draft.selectedClientAddressId));
+          (item.type === '到店美甲' && item.title === '到店美甲 · ' + draft.selectedShopName);
       });
       if (restoredOption) this._serviceOptionTouched = true;
       this.setData({
         serviceType: restoredOption ? restoredOption.type : this.data.serviceType,
         selectedServiceOptionKey: restoredOption ? restoredOption.key : this.data.selectedServiceOptionKey,
         selectedShopName: restoredOption && restoredOption.type === '到店美甲' ? draft.selectedShopName : this.data.selectedShopName,
-        selectedClientAddressId: restoredOption && restoredOption.type === '上门美甲' ? restoredOption.addressId : this.data.selectedClientAddressId,
         selectedServiceIds: draft.selectedServiceIds || [],
         selectedServiceMap: selectionMap(draft.selectedServiceIds),
         isCustomService: Boolean(draft.isCustomService),
@@ -701,11 +612,9 @@ Page({
     if (!d.serviceDate) { wx.showToast({ title: '请选择日期', icon: 'none' }); return; }
     if (!d.startTime) { wx.showToast({ title: '请选择时间', icon: 'none' }); return; }
     if (d.serviceType === '到店美甲' && !d.selectedShopName) { wx.showToast({ title: '请选择门店', icon: 'none' }); return; }
-    if (d.serviceType === '上门美甲' && !d.selectedClientAddressId) { wx.showToast({ title: '请选择上门地址', icon: 'none' }); return; }
     if (!d.quickMode && !this.sourceWorkId && d.isCustomService && !d.customTitle.trim()) { wx.showToast({ title: '请输入服务名称', icon: 'none' }); return; }
     if (!d.quickMode && !this.sourceWorkId && !d.isCustomService && d.selectedServiceIds.length === 0) { wx.showToast({ title: '请选择服务内容', icon: 'none' }); return; }
     if (this.sourceWorkId && (!d.sourceWork || (!d.sourceWork.pricingReady && !d.quickMode))) { wx.showToast({ title: '该作品尚未完善服务与标准报价', icon: 'none' }); return; }
-    if (!(await this.confirmCityMismatchBeforeSubmit())) return;
 
     this.saveDraft();
     if (d.quickMode) { this.doSubmit(); return; }
@@ -773,7 +682,6 @@ Page({
       var shop = d.shopAddresses.find(function (s) { return s.name === d.selectedShopName; });
       if (shop) payload.shopAddress = shop;
     }
-    if (d.serviceType === '上门美甲') payload.addressId = d.selectedClientAddressId;
     if (self.sourceWorkId) {
       // 作品预约的服务与价格均由后端按作品快照生成。
     } else if (d.isCustomService || d.quickMode) {

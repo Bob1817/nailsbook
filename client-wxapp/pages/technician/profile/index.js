@@ -41,7 +41,7 @@ Page({
     isAccepting: false,
     acceptingEnabled: false,
     savingAccepting: false,
-    canAcceptOrders: false,  // 是否满足接单前置条件（已开启上门或到店服务）
+    canAcceptOrders: false,  // 是否满足接单前置条件（已配置到店服务）
     stats: { todayOrders: 0, monthOrders: 0, pendingTotal: 0, customers: 0, newCustomers: 0, works: 0, monthlyRevenue: '¥0', rating: '待积累' },
     orderShortcuts: ORDER_SHORTCUTS.map((s) => ({ ...s, count: 0 })),
     tools: ['services', 'works', 'shops', 'designs', 'tags', 'marketingMaterials', 'homepage', 'quickBooking'].map(key => TOOLS.find(item => item.key === key)),
@@ -233,7 +233,7 @@ Page({
   closeProfileDetail() { this.setData({ showStatsDetail: false, showInviteDetail: false }); },
 
   // 根据工作时间方案和休息日自动判断接单状态
-  // 前置条件：必须开启上门服务或到店服务
+  // 前置条件：必须配置并开启到店服务
   // 无生效方案 → 24小时全程接单（仅受其他预约占用限制）
   computeAccepting() {
     const userInfo = this.data.userInfo || {};

@@ -1,9 +1,4 @@
 {
-  "permission": {
-    "scope.userLocation": {
-      "desc": "用于在预约时判断您与美甲师的服务城市是否一致"
-    }
-  },
   "pages": [
     "pages/login/index",
     "pages/register/index",
@@ -51,7 +46,6 @@
     "nb-switch": "/components/nb-switch/index"
   },
   "style": "v2",
-  "requiredPrivateInfos": ["chooseLocation"],
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"
 }

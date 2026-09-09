@@ -187,7 +187,7 @@
   <view class="section" wx:if="{{selectedTech}}">
     <view class="section-head">
       <text class="section-title">服务形式</text>
-      <text class="section-sub">{{serviceOptions.length === 1 ? '已为你选中唯一可用服务形式' : '单选 · 请选择一种服务形式及地址'}}</text>
+      <text class="section-sub">{{serviceOptions.length === 1 ? '已为你选中唯一可用门店' : '单选 · 请选择到店门店'}}</text>
     </view>
     <radio-group wx:if="{{serviceOptions.length > 0}}" class="addr-list" bindchange="selectServiceOption">
       <label wx:for="{{serviceOptions}}" wx:key="key"
@@ -204,8 +204,7 @@
       </label>
     </radio-group>
     <view wx:else class="empty-hint">
-      <text>{{selectedTech.homeService ? '暂无可用上门地址，请先添加地址' : '该美甲师暂未配置可用服务形式'}}</text>
-      <button wx:if="{{selectedTech.homeService}}" class="add-service-address booking-action" bindtap="openAddressManager">添加上门地址</button>
+      <text>该美甲师暂未配置可用门店</text>
     </view>
   </view>
 

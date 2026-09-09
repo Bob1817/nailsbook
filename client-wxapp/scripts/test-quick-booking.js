@@ -7,13 +7,13 @@ const { buildSlotStatuses } = require('../utils/booking-time-engine');
 
 const storage = { role: 'client', client_token: 'test-token' };
 const toasts = [], requests = [], modals = [];
-let destination = '', enabled = true, modalConfirmed = true;
+let destination = '', enabled = true;
 const wx = {
   getStorageSync: key => storage[key], setStorageSync: (key, value) => { storage[key] = value; },
   removeStorageSync: key => { delete storage[key]; },
   showToast: value => toasts.push(value.title), showLoading() {}, hideLoading() {},
   navigateTo: value => { destination = value.url; }, reLaunch() {},
-  showModal: async options => { modals.push(options); return { confirm: modalConfirmed }; }
+  showModal: async options => { modals.push(options); return { confirm: true }; }
 };
 global.wx = wx;
 const api = {
@@ -51,26 +51,6 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   assert.equal(requests[0].selectedServiceIds, undefined);
   assert.equal(modals.length, 0, '同城无需弹出城市确认');
 
-  booking.applicationKey = 'cross-city-unit';
-  modalConfirmed = false;
-  booking.data.cityMismatch = true;
-  booking.data.cityMismatchConfirmed = false;
-  booking.data.currentLocationCity = '上海市';
-  booking.data.serviceLocationCity = '杭州市';
-  booking.handleSubmit();
-  await flush();
-  assert.equal(requests.length, 1, '跨城未确认时必须拦截提交');
-  assert.equal(booking.data.cityMismatchConfirmed, false);
-  assert.equal(modals.length, 1);
-  assert.ok(modals[0].content.includes('上海市') && modals[0].content.includes('杭州市'), '异城提醒必须明确展示两个城市');
-  modalConfirmed = true;
-  booking.handleSubmit();
-  await flush();
-  assert.equal(requests.length, 2, '客户确认跨城提醒后允许继续');
-  assert.equal(modals.length, 2, '取消后再次提交必须重新确认');
-  assert.equal(booking.data.cityMismatchConfirmed, true);
-  booking.data.cityMismatch = false;
-
   enabled = false; booking.selectTechById(7); await flush();
   assert.equal(booking.data.quickMode, false, '未开放美甲师保留原模式');
   enabled = true; booking._fullMode = true; booking.selectTechById(7); await flush();
@@ -104,5 +84,5 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   assert.equal(requests.at(-1).durationMinutes, 90);
   assert.equal(requests.at(-1).continueAccepting, false);
   assert.equal(requests.at(-1).services, undefined, '手工报价不污染服务目录');
-  console.log('极简提交、开关兼容、授权草稿、未知时长和美甲师三项确认检查通过');
+  console.log('极简提交、开关兼容、登录草稿、未知时长和美甲师三项确认检查通过');
 })().catch(error => { console.error(error); process.exitCode = 1; });

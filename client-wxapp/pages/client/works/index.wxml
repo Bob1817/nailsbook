@@ -29,7 +29,6 @@
 
         <view class="business-tags">
           <text wx:if="{{artist.shopService}}" class="business-tag">到店服务</text>
-          <text wx:if="{{artist.homeService}}" class="business-tag">上门服务</text>
           <text class="business-tag business-tag-muted">{{availabilityText}}</text>
         </view>
 

@@ -11,7 +11,7 @@ const cases = [
   ['预约提交结果', 'pages/client/booking-success', 2, '.primary,.secondary'],
   ['公开服务空态', 'pages/client/brand-services', 1, '.state button.booking-action'],
   ['公开作品空态', 'pages/client/brand-works', 1, '.state button.booking-action'],
-  ['创建预约操作', 'pages/client/create-order', 3, '.submit-btn.booking-action'],
+  ['创建预约操作', 'pages/client/create-order', 2, '.submit-btn.booking-action'],
   ['美甲师主页操作', 'pages/client/artist-home', 9, '.btn-book-now'],
   ['客户端作品列表操作', 'pages/client/works', 3, '.business-book-btn.booking-action'],
   ['美甲师资料营销操作', 'pages/technician/profile', 3, '.invite-action.booking-action'],

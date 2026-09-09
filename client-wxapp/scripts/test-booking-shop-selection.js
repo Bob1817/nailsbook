@@ -8,7 +8,7 @@ let definition;
 vm.runInNewContext(fs.readFileSync(file, 'utf8'), {
   Page: value => { definition = value; }, require: name => name.includes('services/api') ? { public: {} } : createRequire(file)(name), console
 });
-const page = { ...definition, data: { ...definition.data, clientAddresses: [] },
+const page = { ...definition, data: { ...definition.data },
   setData(value) { Object.assign(this.data, value); }, loadTechWorks() {} };
 function choose(shops) {
   page.data.technicians = [{ id: 7, shopService: true, shopAddresses: shops, serviceItems: [] }];
@@ -18,11 +18,6 @@ choose([{ name: '唯一店' }, { name: '停用店', enabled: false }]);
 assert.equal(page.data.selectedShopName, '唯一店');
 assert.equal(page.data.serviceType, '到店美甲');
 assert.equal(page.data.selectedServiceOptionKey, 'shop:0:唯一店');
-page.data.clientAddresses = [{ id: 11, province: '浙江省', city: '杭州市', detailAddress: '文二路 2 号' }];
-page.data.selectedTech.homeService = true;
-page.refreshServiceOptions(page.data.selectedTech, true);
-assert.equal(page.data.selectedServiceOptionKey, '', '异步加载上门地址后形成多个选项时取消自动选择');
-page.data.clientAddresses = [];
 choose([{ name: '唯一店' }]);
 page.data.startTime = '10:00';
 page.selectServiceType({ currentTarget: { dataset: { value: '到店美甲' } } });
@@ -76,14 +71,10 @@ assert.match(css, /\.service-option-radio-dot\s*\{[^}]*width:\s*10rpx;[^}]*heigh
 assert.match(css, /\.addr-card-active\s*\{[^}]*background:\s*var\(--nb-active-surface\);/s, '服务形式选中状态应提供背景反馈');
 assert.doesNotMatch(css, /\.addr-card-active\s*\{[^}]*border(?:-color)?:/s, '服务形式选中状态不应显示卡片描边');
 assert(template.includes('{{item.title}}') && template.includes('{{item.detail}}'), '每个服务形式同时展示类型和对应地址');
-page.data.clientAddresses = [{ id: 12, isDefault: true, contactName: '小美', province: '浙江省', city: '杭州市', detailAddress: '文一路 1 号' }];
 page.data.technicians = [{ id: 8, shopService: true, homeService: true, shopAddresses: [{ name: '门店 A' }], serviceItems: [] }];
 page.selectTech({ currentTarget: { dataset: { id: 8 } } });
-assert.equal(page.data.serviceOptions.length, 2, '门店与上门地址进入同一单选组');
-assert.equal(page.data.selectedServiceOptionKey, '', '多个服务形式不默认代替客户选择');
-page.selectServiceOption({ detail: { value: 'home:12' } });
-assert.equal(page.data.serviceType, '上门美甲');
-assert.equal(page.data.selectedClientAddressId, 12);
-assert.equal(page.data.selectedShopName, '');
+assert.equal(page.data.serviceOptions.length, 1, '首发版忽略后端遗留的上门服务标记');
+assert.equal(page.data.serviceType, '到店美甲');
+assert.equal(page.data.selectedShopName, '门店 A');
 assert(/\.addr-guidance-link\s*\{[^}]*min-height: 88rpx;[^}]*margin: -16rpx 0 -16rpx;/.test(css));
-console.log('唯一门店、多门店、草稿恢复和选择标记检查通过');
+console.log('首发到店门店、草稿恢复和选择标记检查通过');
