@@ -54,6 +54,21 @@ call('/technician/orders', token=tokens['technician'])
 call('/technician/orders/income-calendar', token=tokens['technician'])
 call('/technician/orders', token=tokens['client'], expected=401)
 checks.append('orders/calendar available; wrong role rejected')
+works = call('/technician/works', token=tokens['technician'])
+assert len(works) == 1 and works[0]['publicationStatus'] == 'approved'
+work_id = works[0]['id']
+public_work = call('/public/works/' + str(work_id))
+assert public_work['id'] == work_id
+current_hero = call('/technician/works/hero-recommendations', token=tokens['technician'])
+current_ids = [item['id'] for item in current_hero['works']]
+saved_hero = call('/technician/works/hero-recommendations', 'PUT', {
+    'workIds': [work_id], 'expectedWorkIds': current_ids,
+}, tokens['technician'])
+assert [item['id'] for item in saved_hero['works']] == [work_id]
+client_home = call('/client/home', token=tokens['client'])
+assert client_home['technician']['id'] == 1
+assert [item['id'] for item in client_home['works']] == [work_id]
+checks.append('approved work public detail, technician Hero save and bound client Hero display')
 payload = {
     'techId': 1, 'applicationKey': 'qa-smoke-' + str(time.time_ns()),
     'serviceDate': (datetime.date.today() + datetime.timedelta(days=3)).isoformat(),
@@ -65,10 +80,18 @@ order = call('/client/orders', 'POST', payload, tokens['client'], 201)
 assert order['status'] == 'pending_confirm' and order['quotePrice'] == 128
 repeat = call('/client/orders', 'POST', payload, tokens['client'], 201)
 assert repeat['id'] == order['id']
+confirmed = call('/technician/orders/' + str(order['id']) + '/confirm', 'PATCH', {
+    'price': 150, 'depositAmount': 50, 'isDepositPaid': True,
+}, tokens['technician'])
+assert confirmed['status'] == 'pending_shop'
+confirmed_detail = call('/technician/orders/' + str(order['id']), token=tokens['technician'])
+assert confirmed_detail['quotePrice'] == 150
+assert confirmed_detail['depositAmount'] == 50
+assert confirmed_detail['isDepositPaid'] is True
 call('/client/orders/' + str(order['id']) + '/status', 'PATCH', {'status': 'cancelled'}, tokens['client'])
 detail = call('/technician/orders/' + str(order['id']), token=tokens['technician'])
 assert detail['status'] == 'cancelled'
-checks.append('QA booking creation, idempotent retry and cancellation')
+checks.append('QA booking creation, idempotent retry, final price/deposit confirmation and cancellation')
 manifest = json.loads((private / 'wxapp/qa-build.json').read_text())
 assert manifest['appid'] == 'touristappid' and manifest['apiBaseUrl'] == base.removesuffix('/api')
 assert all('https://api.lunails.cn' not in file.read_text() for file in (private / 'wxapp').rglob('*.js'))
