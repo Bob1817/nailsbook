@@ -95,10 +95,9 @@ for (const legacySelector of ['.btn-icon-phone::', '.btn-icon-chat::', '.m-icon-
 
 console.log('图标系统专项检查通过');
 
-// 消息通知：实心按钮白字，链接只用于浅色卡片内导航。
+// 消息通知：实心按钮由容器统一提供白色前景，链接只用于浅色卡片内导航。
 const semanticActions = read('styles/semantic-actions.wxss');
 assert(/\.semantic-primary \{[^}]*color: #FFFFFF !important/.test(semanticActions));
-assert(/\.semantic-primary text[^}]*color: #FFFFFF !important/.test(semanticActions));
 for (const role of ['client', 'technician']) {
   const chat = read(`pages/${role}/chat/index.wxml`);
   assert(!chat.includes('modal-btn-primary-text semantic-link'));
