@@ -1,3 +1,4 @@
+const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
 const RECORD_PAGE_SIZE = 8;
 
@@ -27,7 +28,11 @@ Page({
     savingNote: false
   },
 
-  onLoad() { this._pageActive = true; this.loadRecords(); },
+  onLoad(options = {}) {
+    this._recordOrderId = Number(options.orderId) || null;
+    this._pageActive = true;
+    this.loadRecords();
+  },
   onShow() {
     this._pageActive = true;
     if (this._refreshOnShow) {
@@ -41,9 +46,13 @@ Page({
 
   async loadRecords() {
     if (this._pageActive) this.setData({ loading: true, loadFailed: false });
+    const selectedYear = this.data.yearOptions[this.data.selectedYearIndex];
+    const selectedStyle = this.data.styleOptions[this.data.selectedStyleIndex];
+    const selectedTechnician = this.data.technicianOptions[this.data.selectedTechnicianIndex];
     try {
       const res = await api.client.beautyArchive();
-      const records = (res.records || []).map(normalizeRecord);
+      const records = (res.records || []).map(normalizeRecord)
+        .filter(item => !this._recordOrderId || Number(item.orderId) === this._recordOrderId);
       const summary = res.summary || {};
       const styleTags = summary.styleTags || [];
       if (!this._pageActive) return;
@@ -65,6 +74,11 @@ Page({
         })),
         loading: false
       });
+      this.setData({
+        selectedYearIndex: Math.max(0, this.data.yearOptions.indexOf(selectedYear)),
+        selectedStyleIndex: Math.max(0, this.data.styleOptions.indexOf(selectedStyle)),
+        selectedTechnicianIndex: Math.max(0, this.data.technicianOptions.indexOf(selectedTechnician))
+      }, () => this.applyRecordFilters());
     } catch (err) {
       console.error('load beauty archive error:', err);
       if (!this._pageActive) return;
@@ -110,16 +124,14 @@ Page({
     if (!record) return;
     const current = e.currentTarget.dataset.url;
     const isClientPhoto = record.clientPhotos.indexOf(current) >= 0;
-    const itemList = ['查看大图', '用这张生成朋友圈分享图'];
+    const itemList = ['查看大图'];
     if (isClientPhoto) itemList.push('从本次记录中移除');
     wx.showActionSheet({
       itemList,
       success: result => {
         if (result.tapIndex === 0) {
           wx.previewImage({ current, urls: record.imageUrls });
-        } else if (result.tapIndex === 1) {
-          wx.navigateTo({ url: '/pages/client/ai-photo/index?source=' + encodeURIComponent(current) });
-        } else if (result.tapIndex === 2 && isClientPhoto) {
+        } else if (result.tapIndex === 1 && isClientPhoto) {
           this.removeRecordPhoto(record, current);
         }
       }
@@ -130,7 +142,7 @@ Page({
       title: '移除照片',
       content: '只会从你的美甲记录中移除，不影响美甲师发布的作品。',
       confirmText: '确认移除',
-      confirmColor: '#DC4C58'
+      confirmColor: uiColors.action
     });
     if (!result.confirm || this.data.uploadingOrderId) return;
     this.setData({ uploadingOrderId: record.orderId });
@@ -182,7 +194,7 @@ Page({
           if (this._pageActive) wx.showToast({ title: err.message || '照片保存失败', icon: 'none' });
         } finally {
           wx.hideLoading();
-          if (this._pageActive) this.setData({ uploadingOrderId: null });
+          this.setData({ uploadingOrderId: null });
         }
       }
     });
@@ -215,15 +227,15 @@ Page({
     } catch (err) {
       if (this._pageActive) wx.showToast({ title: err.message || '备注保存失败', icon: 'none' });
     } finally {
-      if (this._pageActive) this.setData({ savingNote: false });
+      this.setData({ savingNote: false });
     }
   },
   noop() {},
   discoverWorks() { wx.navigateTo({ url: '/pages/client/works/index' }); },
   createPhoto(e) {
-    const source = e && e.currentTarget ? e.currentTarget.dataset.url : '';
-    const query = source ? '?source=' + encodeURIComponent(source) : '';
-    wx.navigateTo({ url: '/pages/client/ai-photo/index' + query });
+    const record = this.data.records.find(item => item.id === e.currentTarget.dataset.recordId);
+    if (!record || !record.workId || !record.canShare) return;
+    wx.navigateTo({ url: '/pages/client/work-detail/index?id=' + record.workId });
   },
   bookAgain(e) {
     const techId = Number(e.currentTarget.dataset.techId);
@@ -246,6 +258,8 @@ function normalizeRecord(item) {
     clientPhotos,
     clientRecordNote: item.clientRecordNote || '',
     orderId: item.orderId || null,
+    workId: item.workId || (item.targetType === 'work' ? item.targetId : null),
+    canShare: !!(item.permissions && item.permissions.canShare),
     linkedWorkPhotoCount: item.linkedWorkPhotoCount || 0,
     technicianId: item.technicianId || null,
     technicianName: item.technicianName || 'Luna',

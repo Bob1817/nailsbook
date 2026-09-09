@@ -1,3 +1,4 @@
+const { consumePostAuthRedirect } = require('../../utils/artist-navigation');
 /**
  * NailBook 统一注册页
  * 支持三种注册模式：
@@ -257,7 +258,7 @@ Page({
     const homePage = role === 'technician'
       ? '/pages/technician/home/index'
       : '/pages/client/home/index';
-    wx.reLaunch({ url: homePage });
+    wx.reLaunch({ url: role === 'client' ? consumePostAuthRedirect(homePage) : homePage });
   },
 
   // ========== 辅助 ==========

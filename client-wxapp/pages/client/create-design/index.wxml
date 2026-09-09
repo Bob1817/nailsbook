@@ -84,7 +84,7 @@
   <!-- 提交按钮 -->
   <view class="submit-section">
     <button
-      class="submit-btn {{submitting || images.length === 0 ? 'disabled' : ''}}"
+      class="submit-btn booking-action {{submitting || images.length === 0 ? 'disabled' : ''}}"
       disabled="{{submitting || images.length === 0}}"
       bindtap="handleSubmit"
     >

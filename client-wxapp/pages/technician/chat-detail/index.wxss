@@ -1,5 +1,5 @@
 page {
-  background: linear-gradient(180deg, #FFFDFD 0%, #F8F3F6 46%, #F4F6FB 100%);
+  background: var(--nb-page);
   height: 100%;
   overflow: hidden;
 }
@@ -26,7 +26,7 @@ page {
 .loading-spinner, .sending-spinner {
   width: 40rpx;
   height: 40rpx;
-  border: 4rpx solid rgba(255,107,138,0.25) /* brand-primary-alpha */;
+  border: 4rpx solid rgba(0, 0, 0, 0.25) /* brand-primary-alpha */;
   border-top-color: var(--brand-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -55,8 +55,8 @@ page {
   background: rgba(255, 255, 255, 0.8);
   padding: 6rpx 24rpx;
   border-radius: var(--radius-md);
-  border: 1rpx solid rgba(0, 0, 0, 0.03);
-  box-shadow: 0 4rpx 12rpx rgba(15, 23, 42, 0.04);
+  border: 0;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.04);
 }
 
 /* ===== 消息列表 ===== */
@@ -77,7 +77,7 @@ page {
   width: 128rpx;
   height: 128rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #FFE2EA 0%, #F4F6FB 100%);
+  background: var(--nb-page);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -130,8 +130,8 @@ page {
   width: 68rpx;
   height: 68rpx;
   border-radius: 50%;
-  background: #f0f0f0;
-  border: 1rpx solid rgba(0, 0, 0, 0.03);
+  background: var(--nb-page);
+  border: 0;
 }
 
 .avatar-placeholder, .avatar-self {
@@ -143,11 +143,11 @@ page {
   justify-content: center;
   font-size: var(--font-sm);
   font-weight: var(--weight-semibold);
-  border: 1rpx solid rgba(0, 0, 0, 0.03);
+  border: 0;
 }
 
 .avatar-placeholder {
-  background: linear-gradient(135deg, #FFE0EA, #F4F7FB);
+  background: var(--nb-page);
   color: var(--brand-primary);
 }
 
@@ -182,20 +182,20 @@ page {
 .bubble-right {
   background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-light) 100%);
   border-bottom-right-radius: 8rpx;
-  box-shadow: 0 6rpx 18rpx rgba(255,107,138,0.13);
+  box-shadow: 0 6rpx 18rpx rgba(0, 0, 0, 0.13);
 }
 
 .bubble-left {
-  background: #ffffff;
+  background: var(--nb-surface);
   border-bottom-left-radius: 8rpx;
-  border: 1rpx solid rgba(0, 0, 0, 0.03);
-  box-shadow: 0 6rpx 18rpx rgba(54, 42, 49, 0.07);
+  border: 0;
+  box-shadow: 0 6rpx 18rpx rgba(0, 0, 0, 0.07);
 }
 
 .bubble-img {
   padding: 8rpx;
   background: rgba(255, 255, 255, 0.9);
-  border: 1rpx solid rgba(0, 0, 0, 0.03);
+  border: 0;
 }
 
 .msg-text {
@@ -252,7 +252,7 @@ page {
   background: rgba(255, 255, 255, 0.7);
   padding: 8rpx 32rpx;
   border-radius: var(--radius-md);
-  border: 1rpx solid rgba(0, 0, 0, 0.03);
+  border: 0;
 }
 
 /* ===== 底部输入栏 ===== */
@@ -263,19 +263,19 @@ page {
   padding: 12rpx 20rpx;
   padding-bottom: calc(12rpx + env(safe-area-inset-bottom));
   background: var(--bg-page);
-  border-top: 1rpx solid #efefef;
+  border-top: 0;
   gap: 12rpx;
 }
 
 .input-field-wrap {
   flex: 1;
   height: 72rpx;
-  background: var(--bg-card);
+  background: var(--nb-soft-surface);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   padding: 0 24rpx;
-  border: 1rpx solid #e5e5e5;
+  border: 0;
 }
 
 .input-field {
@@ -294,7 +294,7 @@ page {
   min-width: 128rpx;
   padding: 0 24rpx;
   border-radius: var(--radius-sm);
-  background: #c9c9c9;
+  background: var(--nb-page);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -303,7 +303,7 @@ page {
 
 .send-btn:active { opacity: 0.92; }
 
-.send-btn-active { background: #07c160; }
+.send-btn-active { background: var(--nb-action); }
 
 .send-btn-text {
   font-size: var(--font-md);
@@ -313,3 +313,32 @@ page {
 }
 
 .send-btn::after { border: none; }
+/* ===== Conversation surface refinement ===== */
+.empty-chat { padding: 72rpx 32rpx; }
+.empty-chat-card { width: 100%; padding: 48rpx 36rpx; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; border-radius: 28rpx; background: var(--nb-surface); }
+.empty-avatar { width: 96rpx; height: 96rpx; margin-bottom: 24rpx; overflow: hidden; border-radius: 50%; background: var(--nb-soft-surface); }
+.empty-avatar-image { width: 100%; height: 100%; display: block; }
+.empty-title { margin-bottom: 8rpx; font-size: var(--font-md); }
+.empty-desc { max-width: 500rpx; font-size: var(--font-xs); }
+.empty-actions { width: 100%; margin-top: 32rpx; display: flex; justify-content: center; gap: 16rpx; }
+.empty-action { flex: 1; min-width: 0; min-height: 88rpx; padding: 0 24rpx; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 10rpx; border-radius: var(--radius-md); background: var(--nb-soft-surface); color: var(--nb-secondary); font-size: var(--font-sm); font-weight: var(--weight-medium); }
+.empty-action-icon { width: 28rpx; height: 28rpx; }
+.empty-action-primary { background: var(--nb-active-surface); color: var(--nb-ink); }
+.input-bar { padding-top: 12rpx; background: var(--nb-surface); box-shadow: 0 -6rpx 20rpx rgba(0, 0, 0, .04); }
+.input-field-wrap { height: 88rpx; border-radius: 22rpx; }
+.input-field { height: 88rpx; font-size: var(--font-sm); }
+.input-placeholder { font-size: var(--font-sm); }
+.toolbar-icon { width: 32rpx; height: 32rpx; display: block; }
+.send-btn { height: 88rpx; min-width: 96rpx; padding: 0 24rpx; border-radius: 22rpx; }
+.send-btn-text { font-size: var(--font-sm); font-weight: var(--weight-semibold); color: var(--nb-muted); }
+.send-btn-active .send-btn-text { color: var(--nb-inverse); }
+.attachment-btn, .booking-btn, .field-add-btn { width: 88rpx; height: 88rpx; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 22rpx; background: var(--nb-soft-surface); }
+.msg-list { padding: 12rpx 0 24rpx; }
+.msg-row { padding: 10rpx 28rpx; gap: 14rpx; }
+.avatar-img, .avatar-placeholder, .avatar-self { width: 64rpx; height: 64rpx; }
+.msg-content-wrap { max-width: 72%; }
+.bubble { padding: 16rpx 22rpx 14rpx; border-radius: 20rpx; }
+.bubble-left { background: var(--nb-surface); box-shadow: none; }
+.bubble-right { background: var(--nb-action); box-shadow: none; }
+.msg-text { font-size: var(--font-sm); }
+.send-btn-active { background: var(--nb-action); box-shadow: none; }

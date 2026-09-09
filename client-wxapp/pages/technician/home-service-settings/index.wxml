@@ -9,7 +9,7 @@
     <view class="load-error-mark">!</view>
     <text class="load-error-title">上门设置加载失败</text>
     <text class="load-error-desc">请检查网络后重试</text>
-    <button class="retry-btn" bindtap="loadConfig">重新加载</button>
+    <button class="retry-btn booking-action" bindtap="loadConfig">重新加载</button>
   </view>
 
   <view wx:else>
@@ -27,7 +27,7 @@
           </text>
         </view>
       </view>
-      <switch checked="{{enabled}}" bindchange="toggleEnabled" color="#FF6B8A" />
+      <nb-switch checked="{{enabled}}" bindchange="toggleEnabled" label="开启上门服务"/>
     </view>
 
     <!-- ===== 快速开启引导（仅未开启时显示）===== -->
@@ -136,7 +136,7 @@
             <input class="pricing-input" type="digit" value="{{item.price}}" bindinput="onPricingPriceInput" data-idx="{{index}}" placeholder="0" confirm-type="done" />
             <text class="pricing-unit">元</text>
             <view wx:if="{{pricing.length > 1}}" class="pricing-remove" bindtap="removePricingTier" data-idx="{{index}}">
-              <text>删除</text>
+              <text class="semantic-danger">删除</text>
             </view>
           </view>
         </view>

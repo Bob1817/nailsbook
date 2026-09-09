@@ -4,6 +4,19 @@ var { normalizeWork } = require('../../../utils/normalize-work');
 var CATEGORIES = ['全部', '法式', '渐变', '日系', 'ins风', '简约', '可爱', '水晶', '炫彩'];
 var PAGE_SIZE = 10;
 
+function isClientLoggedIn() {
+  var data = getApp().globalData;
+  var role = data.role || wx.getStorageSync('role');
+  return role === 'client' && !!(wx.getStorageSync('client_token') || data.token);
+}
+
+function openWork(id, publicOnly) {
+  if (!id) return;
+  var page = isClientLoggedIn() && !publicOnly ? 'work-detail' : 'public-work';
+  wx.navigateTo({ url: '/pages/client/' + page + '/index?id=' + encodeURIComponent(id) });
+}
+
+
 // 宽高比循环分配，左右列各自错开
 var ASPECTS_LEFT  = ['aspect-4-5', 'aspect-3-4', 'aspect-5-6', 'aspect-2-3'];
 var ASPECTS_RIGHT = ['aspect-3-4', 'aspect-5-6', 'aspect-4-5', 'aspect-3-4'];
@@ -90,9 +103,10 @@ Page({
     var self = this;
     self.setData({ loading: true });
 
-    var loggedIn = !!(getApp().globalData.token || wx.getStorageSync('client_token'));
+    var loggedIn = isClientLoggedIn();
+    var worksFromClient = loggedIn;
     var worksRequest = loggedIn
-      ? api.client.works.list({ sortBy: 'latest', sortDir: 'desc' }).catch(function () { return api.public.works.list({ limit: 50 }); })
+      ? api.client.works.list({ sortBy: 'latest', sortDir: 'desc' }).catch(function () { worksFromClient = false; return api.public.works.list({ limit: 50 }); })
       : api.public.works.list({ limit: 50 });
     var featuredRequest = loggedIn
       ? api.client.featuredWorks({ page: 1, limit: 10 }).catch(function () { return { works: [] }; })
@@ -123,6 +137,10 @@ Page({
       var featuredList = featuredRes.works || featuredRes.list || featuredRes.data || (Array.isArray(featuredRes) ? featuredRes : []);
       var featuredIds = {};
       featuredList.forEach(function (work) { if (work && work.id) featuredIds[String(work.id)] = true; });
+      self._publicOnlyWorkIds = {};
+      if (!worksFromClient) list.forEach(function (work) {
+        if (work && work.id && !(loggedIn && featuredIds[String(work.id)])) self._publicOnlyWorkIds[String(work.id)] = true;
+      });
       var mergedList = mergeByWorkId(list, featuredList);
       var works = mergedList.map(function (w, index) {
         var rawTags = w.tags || [];
@@ -244,7 +262,7 @@ Page({
 
   onHeroTap: function (e) {
     var id = e.currentTarget.dataset.id;
-    if (id) wx.navigateTo({ url: '/pages/client/public-work/index?id=' + id });
+    openWork(id, this._publicOnlyWorkIds && this._publicOnlyWorkIds[String(id)]);
   },
 
   onSearchInput: function (e) {
@@ -264,7 +282,7 @@ Page({
   // === work-card 组件事件 ===
   onWorkCardTap: function (e) {
     var id = e.detail && e.detail.id;
-    if (id) wx.navigateTo({ url: '/pages/client/public-work/index?id=' + id });
+    openWork(id, this._publicOnlyWorkIds && this._publicOnlyWorkIds[String(id)]);
   },
 
   onArtistTap: function (e) {

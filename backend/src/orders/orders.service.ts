@@ -426,6 +426,7 @@ export class OrdersService {
             standardPriceFen: true,
           },
         },
+        promotion: true,
         serviceLines: { orderBy: { sortOrder: 'asc' } },
       },
     });
@@ -618,9 +619,18 @@ export class OrdersService {
       unitPriceFen: dto.amountFen!, subtotalFen: dto.amountFen!, durationMinutes: dto.durationMinutes!, quantity: 1, sortOrder: 0,
     }] : buildServiceSnapshotLines(services, requested);
     const summary = summarizeSnapshotLines(serviceLines);
-    const quotedFinalPriceFen = dto.finalPriceFen ?? finalPriceFen(
+    const promotionDiscountFen = order.promotion && order.promotion.enabled &&
+      (!order.promotion.startsAt || order.promotion.startsAt <= new Date()) &&
+      (!order.promotion.endsAt || order.promotion.endsAt > new Date())
+      ? Math.min(order.promotion.discountAmountFen, summary.serviceSubtotalFen)
+      : 0;
+    const requestedDiscountFen = dto.discountAmountFen ?? 0;
+    const effectiveDiscountFen = requestedDiscountFen > 0 ? requestedDiscountFen : promotionDiscountFen;
+    const quotedFinalPriceFen = (dto.finalPriceFen != null && requestedDiscountFen > 0)
+      ? dto.finalPriceFen
+      : finalPriceFen(
       summary.serviceSubtotalFen,
-      dto.discountAmountFen ?? 0,
+      effectiveDiscountFen,
     );
     const discountAmountFen = Math.max(
       0,
@@ -676,7 +686,7 @@ export class OrdersService {
           discountAmountFen,
           finalPriceFen: quotedFinalPriceFen,
           totalDurationMinutes: summary.totalDurationMinutes,
-          quotePrice: quotedFinalPriceFen / 100,
+      quotePrice: quotedFinalPriceFen / 100,
           quoteRemark: dto.remark || null,
           quotedAt: new Date(),
           status: 'pending_agree',
@@ -774,7 +784,12 @@ export class OrdersService {
     return updated;
   }
 
-  async confirm(id: number, confirmedPrice?: number) {
+  async confirm(
+    id: number,
+    confirmedPrice?: number,
+    confirmedDeposit?: number,
+    confirmedDepositPaid?: boolean,
+  ) {
     const order = await this.findOne(id);
 
     if (
@@ -786,16 +801,86 @@ export class OrdersService {
 
     const targetStatus: OrderStatus =
       order.serviceType === '上门美甲' ? 'pending_home' : 'pending_shop';
-    const requiresDeposit = (order.depositAmount ?? 0) > 0;
+    const depositAmount = confirmedDeposit ?? order.depositAmount ?? 0;
+    const isDepositPaid =
+      depositAmount > 0 &&
+      (confirmedDepositPaid ?? order.isDepositPaid ?? false);
+    for (const amount of [confirmedPrice, depositAmount]) {
+      if (
+        amount !== undefined &&
+        (!Number.isFinite(amount) ||
+          amount < 0 ||
+          amount > 1000000 ||
+          Math.abs(amount * 100 - Math.round(amount * 100)) > 0.000001)
+      ) {
+        throw new BadRequestException('金额需在 0 至 100 万元之间，最多两位小数');
+      }
+    }
+    if (confirmedPrice !== undefined && confirmedPrice <= 0)
+      throw new BadRequestException('最终总价必须大于 0');
+    const requiresDeposit = depositAmount > 0 && !isDepositPaid;
     const confirmedPriceFen = confirmedPrice === undefined
       ? (order.finalPriceFen ?? Math.round((order.quotePrice ?? 0) * 100))
       : Math.round(confirmedPrice * 100);
+
+    const totalAmount = Math.max(
+      0,
+      Math.round(
+        confirmedPriceFen - (order.fundDiscountAmount ?? 0) * 100,
+      ) / 100,
+    );
+    if (depositAmount > totalAmount)
+      throw new BadRequestException('定金不能超过优惠后的应付总价');
 
     let systemMessage: any = null;
     let conversationId: number | null = null;
 
     const confirmBooking = () =>
       this.prisma.$transaction(async (tx) => {
+        const claimed = await tx.order.updateMany({
+          where: { id, status: order.status },
+          data: { status: targetStatus },
+        });
+        if (claimed.count !== 1)
+          throw new BadRequestException('预约状态已变化，请刷新后重试');
+        const paid = await tx.paymentOrder.aggregate({
+          where: { orderId: id, status: 'paid' }, _sum: { amountCents: true },
+        });
+        const paidDeposit = await tx.paymentOrder.aggregate({
+          where: { orderId: id, status: 'paid', paymentType: 'deposit' }, _sum: { amountCents: true },
+        });
+        const recordedDeposit = (paidDeposit._sum.amountCents ?? 0) / 100;
+        if (
+          recordedDeposit > depositAmount ||
+          (recordedDeposit > 0 && !isDepositPaid)
+        ) {
+          throw new BadRequestException(
+            '已有定金收款记录，不能在确认排期时减少或取消，请先处理退款',
+          );
+        }
+        const offlineDeposit = isDepositPaid
+          ? Math.max(0, Math.round((depositAmount - recordedDeposit) * 100))
+          : 0;
+        const paidAmount = ((paid._sum.amountCents ?? 0) + offlineDeposit) / 100;
+        if (paidAmount > totalAmount)
+          throw new BadRequestException('总价不能低于已收款金额');
+        if (offlineDeposit > 0) {
+          const receiptId = crypto.randomUUID();
+          await tx.paymentOrder.create({
+            data: {
+              paymentNo: `OFFLINE_${receiptId}`,
+              idempotencyKey: `offline-confirm-deposit:${id}:${receiptId}`,
+              orderId: id,
+              clientUserId: order.clientUserId,
+              technicianId: order.technicianId,
+              paymentType: 'deposit',
+              amountCents: offlineDeposit,
+              channel: 'offline',
+              status: 'paid',
+              paidAt: new Date(),
+            },
+          });
+        }
         const conflict = await tx.blockedTimeSlot.findFirst({
           where: {
             techId: order.technicianId,
@@ -814,6 +899,18 @@ export class OrdersService {
           where: { id },
           data: {
             status: targetStatus,
+            depositAmount,
+            isDepositPaid,
+            depositStatus: isDepositPaid ? 'paid' : 'pending',
+            depositConfirmedAt: isDepositPaid ? (order.depositConfirmedAt ?? new Date()) : null,
+            paidAmount,
+            paymentStatus:
+              paidAmount >= totalAmount
+                ? 'paid'
+                : paidAmount > 0
+                  ? 'partial'
+                  : 'unpaid',
+            paidAt: paidAmount >= totalAmount ? new Date() : null,
             quotePrice: confirmedPriceFen / 100,
             finalPriceFen: confirmedPriceFen,
             quotedAt: new Date(),
@@ -832,28 +929,32 @@ export class OrdersService {
         });
 
         if (order.clientUserId) {
-          const totalAmount = Math.max(
-            0,
-            (order.quotePrice ?? 0) - (order.fundDiscountAmount ?? 0),
-          );
           await tx.bookingTradeOrder.upsert({
             where: { bookingId: id },
-            update: {},
+            update: {
+              totalAmount,
+              depositAmount,
+              balanceAmount: Math.max(0, totalAmount - depositAmount),
+              paidAmount,
+              status: paidAmount >= totalAmount ? 'completed' : 'pending',
+              currentPayStage: requiresDeposit ? 'deposit' : 'balance',
+              completedAt: paidAmount >= totalAmount ? new Date() : null,
+            },
             create: {
               tradeNo: `TRADE${Date.now()}${id}`,
               bookingId: id,
               clientUserId: order.clientUserId,
               technicianId: order.technicianId,
               totalAmount,
-              depositAmount: Math.min(totalAmount, order.depositAmount ?? 0),
+              depositAmount,
               balanceAmount: Math.max(
                 0,
-                totalAmount - (order.depositAmount ?? 0),
+                totalAmount - depositAmount,
               ),
-              paidAmount: 0,
-              status: totalAmount > 0 ? 'pending' : 'completed',
+              paidAmount,
+              status: paidAmount >= totalAmount ? 'completed' : 'pending',
               currentPayStage: requiresDeposit ? 'deposit' : 'balance',
-              completedAt: totalAmount > 0 ? null : new Date(),
+              completedAt: paidAmount >= totalAmount ? new Date() : null,
             },
           });
         }
@@ -871,7 +972,7 @@ export class OrdersService {
 
         if (order.clientUserId) {
           const preview = requiresDeposit
-            ? `双方已确认预约，订单已生成，请支付定金 ¥${Number(order.depositAmount).toFixed(2)}`
+            ? `双方已确认预约，订单已生成，请支付定金 ¥${Number(depositAmount).toFixed(2)}`
             : targetStatus === 'pending_home'
               ? '美甲师已确认订单，届时将上门服务～'
               : '美甲师已确认订单，请准时到店～';

@@ -32,6 +32,7 @@
           bind:open="onBookingCardOpen"
           bind:navigate="onBookingCardNavigate"
           bind:contact="onBookingCardContact"
+          bind:message="onBookingCardMessage"
         />
       </view>
     </view>

@@ -8,7 +8,7 @@
     <view class="load-error-mark">!</view>
     <text class="empty-text">套餐信息加载失败</text>
     <text class="empty-sub">请检查网络后重试</text>
-    <button class="retry-btn" bindtap="loadSubscription">重新加载</button>
+    <button class="retry-btn booking-action" bindtap="loadSubscription">重新加载</button>
   </view>
 
   <view wx:else>
@@ -47,7 +47,7 @@
           <text class="plan-quota">{{item.quotaText}}</text>
         </view>
         <view class="plan-actions">
-          <button class="plan-btn" open-type="contact" show-message-card="true" send-message-title="咨询{{item.name}}套餐">
+          <button class="plan-btn booking-action" open-type="contact" show-message-card="true" send-message-title="咨询{{item.name}}套餐">
             <text>了解升级</text>
           </button>
         </view>
@@ -59,7 +59,7 @@
       <view class="empty-icon"><view class="empty-icon-ring"></view></view>
       <text class="empty-text">暂无可选套餐</text>
       <text class="empty-sub">请联系平台了解套餐详情</text>
-      <button class="contact-btn" open-type="contact" show-message-card="true" send-message-title="咨询订阅套餐">联系客服</button>
+      <button class="contact-btn booking-action" open-type="contact" show-message-card="true" send-message-title="咨询订阅套餐">联系客服</button>
     </view>
   </view>
 </view>

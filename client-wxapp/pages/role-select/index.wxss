@@ -25,7 +25,7 @@
   align-items: center;
   justify-content: center;
   margin-bottom: var(--space-md);
-  box-shadow: 0 12rpx 32rpx rgba(139, 92, 246, 0.24);
+  box-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.24);
 }
 
 .hero-icon {
@@ -61,7 +61,7 @@
   display: flex;
   align-items: center;
   background: var(--bg-card);
-  border: 2rpx solid var(--border-light);
+  border: 0;
   border-radius: var(--card-radius);
   padding: 28rpx var(--space-lg);
   box-sizing: border-box;
@@ -71,8 +71,8 @@
 
 .role-card-active {
   border-color: var(--brand-primary);
-  background: linear-gradient(135deg, rgba(255, 107, 138, 0.06), rgba(168, 85, 247, 0.06));
-  box-shadow: 0 4rpx 20rpx rgba(139, 92, 246, 0.14);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.06));
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.14);
 }
 
 .role-card-hover {
@@ -96,7 +96,7 @@
 }
 
 .role-icon-purple {
-  background: linear-gradient(135deg, var(--brand-accent), #6366f1);
+  background: var(--nb-action);
 }
 
 .role-icon-img {
@@ -130,7 +130,7 @@
   width: 44rpx;
   height: 44rpx;
   border-radius: 22rpx;
-  border: 3rpx solid var(--border-light);
+  border: 0;
   margin-left: var(--space-md);
   flex-shrink: 0;
   display: flex;
@@ -140,8 +140,8 @@
 }
 
 .role-check-active {
-  border-color: var(--brand-primary);
-  background: var(--brand-primary);
+  border-color: var(--nb-success);
+  background: var(--nb-success);
 }
 
 .role-check-dot {
@@ -187,8 +187,8 @@
 .input {
   flex: 1;
   height: 88rpx;
-  background: var(--bg-input);
-  border: 2rpx solid var(--border-light);
+  background: var(--nb-soft-surface);
+  border: 0;
   border-radius: 16rpx;
   padding: 0 var(--space-lg);
   font-size: var(--font-md);
@@ -199,10 +199,11 @@
 
 .input:focus {
   border-color: var(--brand-primary);
+  background: var(--nb-soft-surface);
 }
 
 .input-success {
-  border-color: #22c55e;
+  border-color: var(--nb-link);
 }
 
 .input-placeholder {
@@ -232,8 +233,8 @@
   width: 44rpx;
   height: 44rpx;
   border-radius: 50%;
-  background: #22c55e;
-  color: #fff;
+  background: var(--nb-action);
+  color: var(--nb-surface);
   font-size: var(--font-md);
   font-weight: var(--weight-bold);
   display: flex;
@@ -253,8 +254,8 @@
 .found-card {
   display: flex;
   align-items: center;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.06), rgba(255, 107, 138, 0.06));
-  border: 1rpx solid rgba(139, 92, 246, 0.15);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.06));
+  border: 0;
   border-radius: 16rpx;
   padding: 20rpx var(--space-lg);
   margin-bottom: 24rpx;
@@ -332,13 +333,13 @@
 .btn-primary {
   background: var(--brand-gradient);
   color: var(--text-inverse);
-  box-shadow: 0 8rpx 24rpx rgba(139, 92, 246, 0.28);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.28);
 }
 
 .btn-secondary {
-  background: var(--bg-input);
+  background: var(--nb-soft-surface);
   color: var(--text-muted);
-  border: 2rpx solid var(--border-light);
+  border: 0;
 }
 
 .btn-disabled {
@@ -348,7 +349,7 @@
 
 /* ===== 提示文本 ===== */
 .hint {
-  background: rgba(139, 92, 246, 0.06);
+  background: rgba(0, 0, 0, 0.06);
   border-radius: 12rpx;
   padding: 16rpx var(--space-md);
   margin-bottom: 24rpx;
@@ -367,3 +368,9 @@
   color: var(--text-error);
   padding: var(--space-md) 0;
 }
+
+@import '../../styles/booking-actions.wxss';
+.input { height: var(--input-height); min-height: 44px; font-size: var(--font-sm); }
+.btn.booking-action { height: var(--control-hit-height); min-height: 44px; border-radius: 8px; font-size: var(--font-sm); box-shadow: none; }
+.btn-primary.booking-action { background: var(--nb-action); }
+.btn-secondary.booking-action { background: var(--nb-soft-surface); color: var(--nb-ink); }

@@ -1,4 +1,5 @@
 const api = require('../../../services/api');
+const { syncSessionAvatar } = require('../../../utils/avatar');
 const SPECIALTY_OPTIONS = ['韩系温柔风', '轻奢法式', '简约日式', '高级手绘', '氛围感晕染', '新中式', '婚礼美甲', '极简风', '甜酷风', '问题甲护理'];
 
 Page({
@@ -8,7 +9,7 @@ Page({
     artistIntroduction:'', aestheticPhilosophy:'', publicationStatus:'draft', environmentPhotos:[], faqs:[],
     shareTitle:'', shareDescription:'', shareCoverUrl:'', transportationNotes:'', hygieneStandards:'',
     materialStandards:'', allergyNotice:'', latePolicy:'', cancellationPolicy:'', aftercarePolicy:'',
-    featuredReviewIds:[], reviews:[], works:[], worksLoading:true
+    featuredReviewIds:[], reviews:[], works:[], worksLoading:true, heroUploading:false
   },
   async onLoad(options) {
     this._targetSection=(options && options.section) || 'profile';
@@ -75,12 +76,32 @@ Page({
     }});
   },
   chooseHero() {
-    wx.chooseMedia({ count:1, mediaType:['image'], success:async(res) => {
-      wx.showLoading({ title:'上传中' });
-      try { const uploaded=await api.upload.image(res.tempFiles[0].tempFilePath,'technician'); this.setData({ heroImageUrl:uploaded.url, shareCoverUrl:uploaded.url }); }
-      catch (err) { wx.showToast({ title:err.message || '上传失败', icon:'none' }); }
-      finally { wx.hideLoading(); }
-    }});
+    if (this.data.heroUploading) return;
+    const onSelected = async (res) => {
+      const filePath = res && res.tempFiles && res.tempFiles[0] && (res.tempFiles[0].tempFilePath || res.tempFiles[0].path);
+      if (!filePath) return wx.showToast({ title:'未能读取所选图片', icon:'none' });
+      this.setData({ heroUploading:true });
+      wx.showLoading({ title:'上传中...' });
+      try {
+        const uploaded = await api.upload.image(filePath, 'technician');
+        this.setData({ heroImageUrl:uploaded.url, shareCoverUrl:uploaded.url });
+      } catch (err) {
+        wx.showToast({ title:err.message || '背景图上传失败', icon:'none' });
+      } finally {
+        wx.hideLoading();
+        this.setData({ heroUploading:false });
+      }
+    };
+    const onChooseFail = (err) => {
+      if (!String(err && err.errMsg || '').includes('cancel')) {
+        wx.showToast({ title:'无法打开图片选择器', icon:'none' });
+      }
+    };
+    if (typeof wx.chooseMedia === 'function') {
+      wx.chooseMedia({ count:1, mediaType:['image'], sourceType:['album','camera'], sizeType:['compressed'], success:onSelected, fail:onChooseFail });
+      return;
+    }
+    wx.chooseImage({ count:1, sourceType:['album','camera'], sizeType:['compressed'], success:(res) => onSelected({ tempFiles:(res.tempFilePaths || []).map((path) => ({ tempFilePath:path })) }), fail:onChooseFail });
   },
   toggleReview(e) {
     const id=String(e.currentTarget.dataset.id);
@@ -91,7 +112,7 @@ Page({
   },
   openSection(e) { const url=e.currentTarget.dataset.url; if(url) wx.navigateTo({url}); },
   togglePublication() { this.setData({ publicationStatus:this.data.publicationStatus === 'published' ? 'draft' : 'published' }); },
-  preview() { if(this.data.technicianId) wx.navigateTo({url:'/pages/client/artist-home/index?id='+this.data.technicianId+'&preview=1'}); },
+  preview() { if(this.data.technicianId) wx.navigateTo({url:'/pages/client/artist-home/index?id='+this.data.technicianId+'&preview=1&owner=1'}); },
   async toggleHomepageWork(e) {
     const id = e.currentTarget.dataset.id;
     const item = this.data.works.find((work) => String(work.id) === String(id));
@@ -103,9 +124,10 @@ Page({
       this.setData({ works: this.data.works.map((work) => String(work.id) === String(id) ? { ...work, selected: !work.selected } : work) });
     } catch (err) { wx.showToast({ title:err.message || '设置失败', icon:'none' }); }
   },
+  goHeroRecommendations() { wx.navigateTo({ url:'/pages/technician/hero-recommendations/index' }); },
   goWorks() { wx.navigateTo({ url:'/pages/technician/works/index' }); },
   async save() {
-    if (this.data.saving) return;
+    if (this.data.saving || this.data.heroUploading) return;
     if (!this.data.name.trim()) return wx.showToast({ title:'请输入主页名称', icon:'none' });
     this.setData({ saving:true });
     try {
@@ -126,6 +148,7 @@ Page({
       await Promise.all([api.technician.auth.updateProfile(payload),api.technician.brandProfile.update(brandPayload)]);
       const user=wx.getStorageSync('technician_userInfo') || wx.getStorageSync('userInfo') || {};
       Object.assign(user,payload); wx.setStorageSync('technician_userInfo',user); wx.setStorageSync('userInfo',user);
+      syncSessionAvatar('technician', payload.avatarUrl);
       wx.showToast({ title:'主页已更新', icon:'success' });
     } catch (err) { wx.showToast({ title:err.message || '保存失败', icon:'none' }); }
     finally { this.setData({ saving:false }); }

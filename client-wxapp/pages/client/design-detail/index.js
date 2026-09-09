@@ -1,3 +1,4 @@
+const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
 const app = getApp();
 
@@ -140,7 +141,7 @@ Page({
 
   async rejectQuote() {
     if (this.data.processingQuote) return;
-    const result = await wx.showModal({ title: '拒绝报价', content: '拒绝后美甲师可以根据沟通结果重新报价。', confirmText: '确认拒绝', confirmColor: '#DC4C58' });
+    const result = await wx.showModal({ title: '拒绝报价', content: '拒绝后美甲师可以根据沟通结果重新报价。', confirmText: '确认拒绝', confirmColor: uiColors.danger });
     if (!result.confirm) return;
     this.setData({ processingQuote: true });
     try {

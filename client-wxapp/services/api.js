@@ -2,6 +2,15 @@
 // 客户端：/api/client/...   技师端：/api/technician/...
 
 const api = require('../utils/request');
+const { readShareRegistration, clearShareRegistration } = require('../utils/work-share-registration');
+const { filterTagTemplates } = require('../utils/tag-templates');
+
+function registerWithShare(path, payload) {
+  return api.post(path, { ...payload, ...readShareRegistration() }, { needAuth: false }).then(result => {
+    clearShareRegistration();
+    return result;
+  });
+}
 
 const C = '/api/client';
 const T = '/api/technician';
@@ -63,7 +72,7 @@ const auth = {
   wechatSession: (code) =>
     api.post('/api/wechat/auth/login', { code }, { needAuth: false, silent: true }),
   completeWechatClient: (data) =>
-    api.post('/api/wechat/auth/client/complete', data, { needAuth: false }),
+    registerWithShare('/api/wechat/auth/client/complete', data),
   completeWechatTechnician: (data) =>
     api.post('/api/wechat/auth/technician/complete', data, { needAuth: false }),
 
@@ -73,11 +82,11 @@ const auth = {
   },
 
   registerClient: (phone, password, inviteCode, source) =>
-    api.post(`${C}/auth/register-by-invite`, { phone, password, inviteCode, source }, { needAuth: false }),
+    registerWithShare(`${C}/auth/register-by-invite`, { phone, password, inviteCode, source: source || undefined }),
 
   /** 新流程：SMS 免邀请码注册 */
   registerBySms: (phone, smsCode) =>
-    api.post(`${C}/auth/register-by-sms`, { phone, smsCode }, { needAuth: false }),
+    registerWithShare(`${C}/auth/register-by-sms`, { phone, smsCode }),
 
   /** 新流程：SMS 验证码直接登录 */
   loginBySms: (phone, code) =>
@@ -142,12 +151,20 @@ const client = {
       api.patch(`${C}/auth/password`, { oldPassword, newPassword }),
 
     findTechByInviteCode: (code) =>
-      api.get(`${C}/auth/find-by-invite-code`, { inviteCode: code }),
+      api.get(`${C}/auth/find-by-invite-code`, { code }).then(result => {
+        if (result && result.valid === true) return result.technician;
+        if (result && result.valid === false) return null;
+        return result || null;
+      }),
     bindTechnician: (techId, inviteCode, note, source) =>
       api.post(`${C}/auth/bind-technician`, { techId, inviteCode, note, source }),
+    bindQuickBooking: (techId, inviteCode) => api.post(`${C}/auth/bind-quick-booking`, { techId, inviteCode, confirmed: true }),
+    bindSharedWork: (workId, shareToken) => api.post(`${C}/auth/bind-shared-work`, { workId, shareToken, confirmed: true }),
     followedTechnicians: () => api.get(`${C}/auth/followed-technicians`),
     requestBinding: (techId, note) =>
       api.post(`${C}/auth/binding-applications/request`, { techId, note }),
+    cancelBindingApplication: (techId) =>
+      api.del(`${C}/auth/binding-applications/${techId}`),
     unbindTechnician: (techId) =>
       api.del(`${C}/auth/unbind-technician/${techId}`),
     setDefaultTechnician: (techId) =>
@@ -227,6 +244,8 @@ const client = {
   },
 
   feedback: {
+    list: () => api.get(`${C}/feedback`),
+    detail: (id) => api.get(`${C}/feedback/${id}`),
     create: (data) => api.post(`${C}/feedback`, data)
   },
 
@@ -246,12 +265,14 @@ const client = {
 
 // ========== 技师端 ==========
 const technician = {
+  invitationLink: () => api.post(`${T}/invitation/link`, {}),
+  artistInteractions: (params) => api.get(`${T}/artist-interactions`, params),
   brandProfile: {
     get: () => api.get(`${T}/brand-profile`),
     update: (data) => api.put(`${T}/brand-profile`, data)
   },
   insights: {
-    overview: () => api.get(`${T}/insights/overview`)
+    overview: (params) => api.get(`${T}/insights/overview`, params)
   },
   wechatSubscriptions: {
     record: (decisions) => api.post(`${T}/wechat-subscriptions/authorization`, { decisions })
@@ -268,6 +289,7 @@ const technician = {
     sendInitialPasswordCode: (phone) => api.post(`${T}/auth/set-initial-password/send-code`, { phone }, { needAuth: false }),
     setInitialPassword: (phone, code, newPassword) => api.post(`${T}/auth/set-initial-password`, { phone, code, newPassword }, { needAuth: false }),
     setPassword: (newPassword) => api.post(`${T}/auth/set-password`, { newPassword }),
+    switchToClient: () => api.post(`${T}/auth/switch-to-client`, {}),
     bindingApplications: () => api.get(`${T}/auth/binding-applications`),
     approveBinding: (id) => api.post(`${T}/auth/binding-applications/${id}/approve`, {}),
     rejectBinding: (id, reason) => api.post(`${T}/auth/binding-applications/${id}/reject`, { reason })
@@ -292,7 +314,7 @@ const technician = {
     create: (data) => api.post(`${T}/orders`, data),
     update: (id, data) => api.patch(`${T}/orders/${id}`, data),
     quote: (id, data) => api.patch(`${T}/orders/${id}/review`, data),
-    confirm: (id) => api.patch(`${T}/orders/${id}/confirm`, {}),
+    confirm: (id, data) => api.patch(`${T}/orders/${id}/confirm`, data || {}),
     complete: (id, data) => api.patch(`${T}/orders/${id}/complete`, data || {}),
     cancel: (id, data) => api.patch(
       `${T}/orders/${id}/cancel`,
@@ -317,12 +339,16 @@ const technician = {
   works: {
     list: (params) => api.get(`${T}/works`, params),
     detail: (id) => api.get(`${T}/works/${id}`),
+    promotion: (id) => api.get(`${T}/works/${id}/promotion`),
+    savePromotion: (id, data) => api.put(`${T}/works/${id}/promotion`, data),
     create: (data) => api.post(`${T}/works`, data),
     createFromOrder: (orderId) => api.post(`${T}/works/from-order/${orderId}`, {}),
     update: (id, data) => api.patch(`${T}/works/${id}`, data),
     delete: (id) => api.del(`${T}/works/${id}`),
     toggleVisible: (id) => api.post(`${T}/works/${id}/toggle-visible`),
     togglePinned: (id) => api.post(`${T}/works/${id}/toggle-pinned`),
+    heroRecommendations: () => api.get(`${T}/works/hero-recommendations`),
+    saveHeroRecommendations: (workIds, expectedWorkIds) => api.put(`${T}/works/hero-recommendations`, { workIds, expectedWorkIds }),
     toggleFeatured: (id) => api.post(`${T}/works/${id}/toggle-featured`),
     like: (id) => api.post(`${T}/works/${id}/like`),
     favorite: (id) => api.post(`${T}/works/${id}/favorite`),
@@ -418,7 +444,8 @@ const technician = {
   },
 
   tagTemplates: {
-    list: () => api.get(`${T}/customers/tag-templates`),
+    list: (type = 'customer') => api.get(`${T}/customers/tag-templates`, { type })
+      .then((result) => filterTagTemplates(result, type)),
     create: (data) => api.post(`${T}/customers/tag-templates`, data),
     delete: (id) => api.del(`${T}/customers/tag-templates/${id}`)
   }
@@ -493,25 +520,36 @@ const upload = {
   image: (filePath, role = 'client') => {
     return new Promise((resolve, reject) => {
       const app = getApp();
-      const token = app.globalData.token;
+      const currentRole = app.globalData.role || wx.getStorageSync('role');
+      const roleToken = wx.getStorageSync(`${role}_token`);
+      const token = roleToken || (currentRole === role ? app.globalData.token : '');
       const baseUrl = app.globalData.apiBaseUrl || 'https://api.lunails.cn';
       const path = role === 'technician' ? `${T}/uploads/image` : `${C}/uploads/image`;
+
+      if (!token) {
+        reject({ code:401, message:role === 'technician' ? '美甲师登录状态已失效，请重新登录' : '登录状态已失效，请重新登录' });
+        return;
+      }
 
       wx.uploadFile({
         url: `${baseUrl}${path}`,
         filePath,
         name: 'file',
         header: token ? { 'Authorization': `Bearer ${token}` } : {},
+        timeout: 30000,
         success: (res) => {
           try {
-            const data = JSON.parse(res.data);
+            const data = res.data ? JSON.parse(res.data) : {};
             if (res.statusCode >= 200 && res.statusCode < 300 && data.url) {
               resolve(data);
             } else {
+              const responseMessage = Array.isArray(data.message) ? data.message[0] : data.message;
               reject({
                 ...data,
                 code: data.code || res.statusCode,
-                message: data.message || (res.statusCode >= 500 ? '上传服务暂时不可用' : '图片上传失败')
+                message: responseMessage || (res.statusCode === 401
+                  ? '登录状态已失效，请重新登录'
+                  : (res.statusCode >= 500 ? '上传服务暂时不可用' : '图片上传失败'))
               });
             }
           } catch (e) {
@@ -519,8 +557,15 @@ const upload = {
           }
         },
         fail: (err) => {
-          const isTimeout = String(err && err.errMsg || '').toLowerCase().includes('timeout');
-          reject({ code: isTimeout ? -2 : -1, message: isTimeout ? '上传超时，请重试' : '网络错误，图片上传失败' });
+          const detail = String(err && err.errMsg || '').toLowerCase();
+          const isTimeout = detail.includes('timeout');
+          const isDomainBlocked = detail.includes('domain') || detail.includes('url not in domain list');
+          reject({
+            code: isTimeout ? -2 : -1,
+            message: isDomainBlocked
+              ? '上传域名未配置，请在小程序后台添加 uploadFile 合法域名'
+              : (isTimeout ? '上传超时，请重试' : '网络错误，图片上传失败')
+          });
         }
       });
     });
@@ -557,8 +602,43 @@ const publicApi = {
     list: (params) => api.get(`${P}/works`, params, { needAuth: false }),
     featured: () => api.get(`${P}/works/featured`, null, { needAuth: false }),
     detail: (id) => api.get(`${P}/works/${id}`, null, { needAuth: false }),
-    shared: (token) => api.get(`${P}/works/shared/${token}`, null, { needAuth: false })
+    shared: (token) => api.get(`${P}/works/shared/${token}`, null, { needAuth: false }),
+    shareCode: (id, shareToken) => api.get(`${P}/works/${id}/share-code`, shareToken ? { shareToken } : null, { needAuth: false })
   }
 };
 
+// 新前端可以连接旧后端：先协商接口能力，避免请求尚未部署的路由。
+let bookingCapabilityPromise = null;
+let bookingCapabilityExpires = 0;
+async function requireBookingSettings() {
+  if (!bookingCapabilityPromise || Date.now() >= bookingCapabilityExpires) {
+    bookingCapabilityExpires = Date.now() + 60000;
+    bookingCapabilityPromise = api.get(`${P}/capabilities`, null, { needAuth: false, silent: true }).catch(err => {
+      bookingCapabilityPromise = null;
+      throw err;
+    });
+  }
+  const capabilities = await bookingCapabilityPromise;
+  if (!capabilities.bookingSettings || capabilities.bookingSettings.available !== true) {
+    throw { code: 404, bookingSettingsUnsupported: true, message: '一键预约尚未上线，请稍后再试' };
+  }
+}
+publicApi.bookingSettings = async (id) => {
+  await requireBookingSettings();
+  return api.get(`${P}/booking-settings/${id}`, null, { needAuth: false, silent: true });
+};
+technician.bookingDays = {
+  list: async () => {
+    await requireBookingSettings();
+    return api.get(`${T}/booking-days`, null, { silent: true });
+  },
+  update: async (date, data) => {
+    await requireBookingSettings();
+    return api.patch(`${T}/booking-days/${date}`, data);
+  },
+  updateSettings: async (data) => {
+    await requireBookingSettings();
+    return api.patch(`${T}/booking-days/settings`, data);
+  }
+};
 module.exports = { auth, client, technician, chat, upload, public: publicApi };

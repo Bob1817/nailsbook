@@ -41,13 +41,13 @@ page {
   background: var(--bg-card);
   border-radius: var(--radius-md);
   padding: 12rpx 28rpx;
-  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
 }
 .guide {
   display: flex;
   gap: 20rpx;
   padding: var(--space-md) 0;
-  border-bottom: 1rpx solid var(--border-card);
+  border-bottom: 0;
 }
 .guide:last-child { border-bottom: none; }
 .guide-num {
@@ -83,11 +83,11 @@ page {
   background: var(--bg-card);
   border-radius: var(--radius-md);
   padding: 4rpx 28rpx;
-  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
 }
 .faq {
   padding: 28rpx 0;
-  border-bottom: 1rpx solid var(--border-card);
+  border-bottom: 0;
 }
 .faq:last-child { border-bottom: none; }
 .faq-q-row {
@@ -138,12 +138,13 @@ page {
   height: 80rpx;
   padding: 0 56rpx;
   border-radius: 999rpx;
-  background: #fff1f5;
-  color: var(--brand-primary);
+  background: var(--nb-page);
+  color: var(--nb-text-link);
   font-size: var(--font-md);
   font-weight: var(--weight-semibold);
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.more-btn:active { background: #ffe0ea; }
+.more-btn:active { background: var(--nb-page); }
+.content{padding:32rpx 32rpx calc(48rpx + env(safe-area-inset-bottom))}.block-head{padding:24rpx 8rpx 14rpx}.block-title{display:block;margin:0;font-size:var(--font-lg);font-weight:var(--weight-semibold)}.block-sub{display:block;margin-top:4rpx;font-size:var(--font-xs)}.guides,.faqs{padding:4rpx 28rpx;border-radius:24rpx;background:var(--nb-surface);box-shadow:none}.guide{min-height:104rpx;padding:22rpx 0;box-sizing:border-box;border-bottom:1rpx solid var(--nb-border)}.guide:last-child{border-bottom:0}.guide-num{width:44rpx;height:44rpx;background:var(--nb-action);font-size:var(--font-xs)}.guide-t{margin-bottom:5rpx;font-size:var(--font-sm);font-weight:var(--weight-medium)}.guide-d{font-size:var(--font-xs);line-height:1.6}.faq{min-height:96rpx;padding:26rpx 0;box-sizing:border-box;border-bottom:1rpx solid var(--nb-border)}.faq:last-child{border-bottom:0}.faq-q{font-size:var(--font-sm);font-weight:var(--weight-medium)}.faq-a-wrap{background:var(--nb-soft-surface)}.faq-a{font-size:var(--font-xs)}.more{padding-top:40rpx}.more-btn{min-height:88rpx;height:auto;border-radius:16rpx;background:var(--nb-surface);color:var(--nb-text-link);font-size:var(--font-sm)}

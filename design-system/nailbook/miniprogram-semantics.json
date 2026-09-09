@@ -1,0 +1,14 @@
+{
+  "danger": "#B42332",
+  "money": "#B42332",
+  "like": "#B42332",
+  "favorite": "#D4A017",
+  "workPinned": "#79B8FF",
+  "workFeatured": "#F4C95D",
+  "textLink": "#245EA8",
+  "success": "#287A4B",
+  "successSurface": "#EAF4EE",
+  "softSurface": "#EDF3FA",
+  "dangerSurface": "#FAECEE",
+  "customerDue": "#526B5B"
+}

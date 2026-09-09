@@ -1,3 +1,4 @@
+const { consumePostAuthRedirect } = require('../../utils/artist-navigation');
 /**
  * NailBook 设置登录密码页
  * 微信授权注册后，用户必须设置登录密码才能继续
@@ -83,7 +84,7 @@ Page({
         if (res.needsOnboarding) {
           wx.reLaunch({ url: '/pages/onboarding/index' });
         } else {
-          wx.reLaunch({ url: '/pages/client/home/index' });
+          wx.reLaunch({ url: consumePostAuthRedirect('/pages/client/home/index') });
         }
       }, 1200);
     } catch (err) {

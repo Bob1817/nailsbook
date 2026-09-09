@@ -13,15 +13,16 @@
       <text class="logo-text">N</text>
     </view>
     <text class="app-name">NailBook</text>
-    <text class="tagline">让美丽更简单</text>
+    <text class="tagline">{{invitationRegistration ? '微信授权注册，成为美甲师的专属客户' : '让美丽更简单'}}</text>
   </view>
 
   <view class="spacer"></view>
 
   <view class="btn-area">
+    <text wx:if="{{invitationRegistration}}" class="invite-registration-note">通过此邀请首次注册后，将自动绑定邀请你的美甲师。已有账号将正常登录，不更改默认美甲师。</text>
     <!-- 微信授权登录按钮 -->
     <button
-      class="wechat-btn"
+      class="wechat-btn booking-action"
       wx:if="{{wechatAvailable}}"
       open-type="getPhoneNumber"
       bindgetphonenumber="onWechatPhone"
@@ -44,7 +45,7 @@
 
   <!-- 协议 -->
   <checkbox-group class="privacy-consent" bindchange="onPrivacyAgreementChange">
-    <label><checkbox value="agree" checked="{{privacyAgreed}}"/><text>我已阅读并同意</text></label>
+    <label><checkbox color="#287A4B" value="agree" checked="{{privacyAgreed}}"/><text>我已阅读并同意</text></label>
     <text class="privacy-link" catchtap="openUserAgreement">《用户协议》</text>
     <text>和</text><text class="privacy-link" catchtap="openPrivacyPolicy">《隐私政策》</text>
   </checkbox-group>
@@ -96,14 +97,14 @@
 
     <!-- 协议紧随密码输入，先确认授权再执行登录 -->
     <checkbox-group class="privacy-consent phone-privacy-consent" bindchange="onPrivacyAgreementChange">
-      <label><checkbox value="agree" checked="{{privacyAgreed}}"/><text>我已阅读并同意</text></label>
+      <label><checkbox color="#287A4B" value="agree" checked="{{privacyAgreed}}"/><text>我已阅读并同意</text></label>
       <text class="privacy-link" catchtap="openUserAgreement">《用户协议》</text>
       <text>和</text><text class="privacy-link" catchtap="openPrivacyPolicy">《隐私政策》</text>
     </checkbox-group>
 
     <!-- 登录按钮 -->
     <button
-      class="submit-btn {{canLogin ? 'submit-btn-active' : ''}}"
+      class="submit-btn booking-action {{canLogin ? 'submit-btn-active' : ''}}"
       disabled="{{!canLogin || phoneLoading}}"
       loading="{{phoneLoading}}"
       bindtap="doLogin"
@@ -113,7 +114,7 @@
 
     <!-- 辅助入口位于主操作之后 -->
     <view class="account-actions">
-      <text class="account-action" bindtap="goForgotPassword">忘记密码？</text>
+      <text class="account-action semantic-link" bindtap="goForgotPassword">忘记密码？</text>
       <view class="account-action-divider"></view>
       <text class="account-action" bindtap="goRegister">注册账号</text>
     </view>

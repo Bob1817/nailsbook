@@ -1,3 +1,4 @@
+const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
 const privacy = require('../../../utils/privacy');
 
@@ -190,13 +191,7 @@ Page({
 
   // 地址指引开关
   toggleGuidanceEnabled(e) {
-    const value = e.detail.value;
-    if (value && !this.data.detailAddress) {
-      wx.showToast({ title: '请先填写详细地址', icon: 'none' });
-      this.setData({ guidanceEnabled: false });
-      return;
-    }
-    this.setData({ guidanceEnabled: value });
+    this.setData({ guidanceEnabled: e.detail.value });
   },
 
   // 打开指引内容编辑页
@@ -377,7 +372,7 @@ Page({
     wx.showModal({
       title: '删除店铺',
       content: `确定删除"${name}"吗？`,
-      confirmColor: '#ff4d4f',
+      confirmColor: uiColors.danger,
       success: async (res) => {
         if (!res.confirm) return;
         try {

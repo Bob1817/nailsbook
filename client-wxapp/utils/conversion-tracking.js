@@ -1,7 +1,7 @@
 const api = require('../services/api');
 
 const VISITOR_KEY = 'conversion_visitor_id';
-const EVENT_TYPES = ['homepage_view', 'work_view', 'price_view', 'consult_click', 'consult_submit', 'booking_click', 'booking_submit', 'artist_view', 'booking_intent'];
+const EVENT_TYPES = ['homepage_view', 'work_view', 'price_view', 'consult_click', 'consult_submit', 'booking_click', 'booking_submit', 'artist_view', 'booking_intent', 'poster_saved', 'poster_generated'];
 const CHANNELS = ['direct', 'xiaohongshu', 'douyin', 'wechat_moments', 'wechat_share', 'repeat_customer', 'customer_referral', 'offline_qr', 'organic', 'unknown'];
 const ALIASES = { xhs:'xiaohongshu', red:'xiaohongshu', tiktok_cn:'douyin', moments:'wechat_moments', share_card:'wechat_share', wechat_friend:'wechat_share', repurchase:'repeat_customer', referral:'customer_referral', qr:'offline_qr' };
 
@@ -19,7 +19,7 @@ function attributionFrom(options, fallbackTouchpoint) {
 function buildConversionEvent(options) {
   const technicianId=Number(options&&options.technicianId), workId=Number(options&&options.workId);
   if(!Number.isInteger(technicianId)||technicianId<=0||!EVENT_TYPES.includes(options.eventType))return null;
-  return { eventId:randomId('event'), technicianId, workId:Number.isInteger(workId)&&workId>0?workId:undefined, eventType:options.eventType, ...attributionFrom(options,options.touchpoint) };
+  return { eventId:randomId('event'), technicianId, workId:Number.isInteger(workId)&&workId>0?workId:undefined, eventType:options.eventType, ...(options.shareToken ? { shareToken: options.shareToken } : {}), ...attributionFrom(options,options.touchpoint) };
 }
 function trackConversion(options) { const event=buildConversionEvent(options); if(!event)return Promise.resolve(false); return api.public.conversionEvents.record(event).then(()=>true).catch(()=>false); }
 

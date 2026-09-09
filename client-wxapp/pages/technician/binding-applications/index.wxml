@@ -3,7 +3,7 @@
   <view wx:if="{{loading}}" class="state"><view class="spinner"></view><text>正在加载申请</text></view>
   <view wx:elif="{{loadFailed}}" class="state">
     <text class="state-title">申请加载失败</text>
-    <button class="retry" bindtap="loadApplications">重新加载</button>
+    <button class="retry booking-action" bindtap="loadApplications">重新加载</button>
   </view>
   <view wx:elif="{{applications.length === 0}}" class="state">
     <text class="state-title">暂无待处理申请</text>
@@ -12,7 +12,10 @@
   <view wx:else class="list">
     <view wx:for="{{applications}}" wx:key="id" class="card">
       <view class="customer">
-        <view class="avatar fallback">{{item.initial}}</view>
+        <view class="avatar fallback">
+          <image wx:if="{{item.avatarUrl}}" src="{{item.avatarUrl}}" mode="aspectFill" class="nb-default-avatar" aria-label="{{item.name || '客户'}}的头像" />
+          <image wx:else src="/static/icons/client.svg" mode="aspectFit" class="nb-default-avatar" aria-label="客户默认头像" />
+        </view>
         <view class="info">
           <text class="name">{{item.name || '新客户'}}</text>
           <text class="meta">{{item.phone || '微信客户'}}</text>
@@ -21,8 +24,8 @@
         </view>
       </view>
       <view class="actions">
-        <button class="button secondary" disabled="{{processingId === item.id}}" bindtap="reject" data-id="{{item.id}}">拒绝</button>
-        <button class="button primary" disabled="{{processingId === item.id}}" bindtap="approve" data-id="{{item.id}}" data-name="{{item.name}}">通过</button>
+        <button class="button secondary booking-action" disabled="{{processingId === item.id}}" bindtap="reject" data-id="{{item.id}}">拒绝</button>
+        <button class="button primary booking-action" disabled="{{processingId === item.id}}" bindtap="approve" data-id="{{item.id}}" data-name="{{item.name}}">通过</button>
       </view>
     </view>
   </view>

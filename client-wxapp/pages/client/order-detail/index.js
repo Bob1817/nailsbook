@@ -1,3 +1,4 @@
+const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
 const { normalizeSourceWorkSummary } = require('../../../utils/normalize-work');
 const { parseDate, formatClock, formatBookingDate, formatMoney } = require('../../../utils/format');
@@ -55,6 +56,10 @@ Page({
   async prepareAndLoad() {
     return this.loadOrder();
   },
+  openServiceRecord() {
+    if (!this.data.order || this.data.order.status !== 'completed') return;
+    wx.navigateTo({ url: '/pages/client/beauty-archive/index?orderId=' + encodeURIComponent(this.orderId) });
+  },
   onShow() { if (this.orderId && !this.data.loading) this.loadOrder(); },
   onPullDownRefresh() { this.loadOrder().finally(() => wx.stopPullDownRefresh()); },
 
@@ -78,6 +83,11 @@ Page({
       const start = parseDate(raw.startTime), end = parseDate(raw.endTime);
       const durationMinutes = start && end ? Math.round((end.getTime()-start.getTime())/60000) : 0;
       const price = raw.quotePrice || raw.price || 0;
+      const serviceSubtotalFen = Number(raw.serviceSubtotalFen || 0);
+      const finalPriceFen = raw.finalPriceFen == null ? Math.round(price * 100) : Number(raw.finalPriceFen);
+      const priceDifferenceFen = finalPriceFen - serviceSubtotalFen;
+      const workPriceFen = sourceWork && sourceWork.standardPriceFen ? Number(sourceWork.standardPriceFen) : 0;
+      const hasTechnicianQuote = !!raw.quotedAt;
       const depositAmount = raw.depositAmount || 0;
       const depositPaid = !!raw.isDepositPaid;
       const pres = resolveOrderPresentation({ serviceType: isShop ? 'shop' : 'home', address });
@@ -88,7 +98,7 @@ Page({
         remark: raw.remark || raw.note || '', durationMinutes, price, depositAmount, depositPaid,
         techName: raw.technician?.name || '美甲师', techAvatar: raw.technician?.avatarUrl || '',
         techPhone: raw.technician?.phone || '', techId: raw.technician?.id || raw.technicianId,
-        startTime: raw.startTime, endTime: raw.endTime,
+        startTime: raw.startTime, endTime: raw.endTime, durationPending: raw.durationPending === true,
         shopName: raw.shopAddress?.name || '',
         _isShop: isShop, _statusLabel: getStatusLabel(raw.status), _statusTone: getStatusTone(raw.status),
         _statusDesc: STATUS_DESC[raw.status] || '', _typeLabel: pres.typeLabel,
@@ -100,9 +110,15 @@ Page({
         review: raw.review || null,
         sourceWork,
         serviceLines: raw.serviceLines || [],
-        serviceSubtotalFen: Number(raw.serviceSubtotalFen || 0),
+        serviceSubtotalFen,
         discountAmountFen: Number(raw.discountAmountFen || 0),
-        finalPriceFen: raw.finalPriceFen == null ? null : Number(raw.finalPriceFen)
+        finalPriceFen,
+        priceDifferenceFen,
+        workPriceFen,
+        hasTechnicianQuote,
+        priceLabel: hasTechnicianQuote ? '最终报价' : (raw.bookingType === 'work' ? '作品报价' : raw.bookingType === 'standard' ? '组合价格' : '待报价'),
+        servicePriceSuperseded: finalPriceFen > 0 && finalPriceFen !== serviceSubtotalFen,
+        workPriceSuperseded: hasTechnicianQuote && workPriceFen > 0 && finalPriceFen !== workPriceFen
       };
       order._actions = actionsForStatus(order);
 
@@ -299,7 +315,7 @@ Page({
       title: '取消预约',
       content: '确定要取消这个预约吗？如已与门店线下结算，请同时与门店沟通处理。',
       confirmText: '确认取消',
-      confirmColor: '#DC4C58'
+      confirmColor: uiColors.danger
     });
     if (!r.confirm) return;
     this.setData({ actionSubmitting: 'cancel' });

@@ -1,0 +1,18 @@
+<nav-bar title="{{label}}记录" showBack/>
+<view class="records-page">
+  <text class="summary">{{type === 'follow' ? '当前关注你的用户' : '你的作品收到的' + label + '，含非公开作品'}} · 按时间倒序</text>
+  <view wx:for="{{list}}" wx:key="id" class="record">
+    <view class="person">
+      <image class="avatar" src="{{item.avatarUrl || '/static/icons/client.svg'}}" mode="aspectFill" aria-label="{{item.name}}的头像"/>
+      <view class="person-info"><text class="name">{{item.name}}</text><text class="time">{{item.time}}</text></view>
+      <text class="action">{{type === 'follow' ? '关注了你' : label + '了作品'}}</text>
+    </view>
+    <view wx:if="{{item.workId}}" class="work" bindtap="viewWork" data-id="{{item.workId}}" role="button" aria-label="查看{{item.workTitle}}" hover-class="pressed">
+      <text class="work-title">{{item.workTitle || '未命名作品'}}</text><text>›</text>
+    </view>
+  </view>
+  <view wx:if="{{error}}" class="state"><text>{{error}}</text><button class="retry booking-action" bindtap="retry" hover-class="pressed">重新加载</button></view>
+  <view wx:elif="{{loading}}" class="state">正在加载…</view>
+  <view wx:elif="{{!list.length}}" class="state">暂无{{label}}记录</view>
+  <view wx:elif="{{!hasMore}}" class="state">已显示全部记录</view>
+</view>

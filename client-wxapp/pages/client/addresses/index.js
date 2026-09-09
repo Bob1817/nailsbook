@@ -1,3 +1,4 @@
+const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
 
 Page({
@@ -67,7 +68,7 @@ Page({
     wx.showModal({
       title: '删除地址',
       content: '确定删除该地址吗？',
-      confirmColor: '#ff4d4f',
+      confirmColor: uiColors.danger,
       success: async (res) => {
         if (!res.confirm) return;
         wx.showLoading({ title: '删除中...' });

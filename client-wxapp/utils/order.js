@@ -1,6 +1,6 @@
 // 技师预约数据加工：规范化 + 行程展示元数据
 
-const { parseDate, isSameDay } = require('./format');
+const { parseDate, isSameDay, formatBookingDate } = require('./format');
 
 // ========== 状态映射 ==========
 const ORDER_STATUS_LABELS = {
@@ -65,11 +65,18 @@ function normalizeDepositAmount(raw) {
 // 把后端原始 order 转成视图层一致字段
 function normalizeOrder(raw) {
   if (!raw) return null;
+  const dateParts = formatBookingDate(raw.startTime).split(' ');
+  const serviceNames = (Array.isArray(raw.serviceLines) ? raw.serviceLines : [])
+    .map(line => line.nameSnapshot || line.name).filter(Boolean);
   return {
+    _cardDate: dateParts[0] || '',
+    _cardWeekday: dateParts[1] || '',
     id: raw.id,
     status: raw.status,
     startTime: raw.startTime,
-    endTime: raw.endTime,
+    endTime: raw.quickBooking && !raw.totalDurationMinutes ? null : raw.endTime,
+    quickBooking: raw.quickBooking === true,
+    durationPending: raw.quickBooking === true && !raw.totalDurationMinutes,
     address: raw.address || raw.clientAddress?.detailAddress || '',
     serviceType: raw.serviceType || 'shop',     // 'home' | 'shop'
     price: raw.quotePrice || 0,
@@ -80,10 +87,11 @@ function normalizeOrder(raw) {
     depositAmount: normalizeDepositAmount(raw),
     depositPaid: !!raw.isDepositPaid,
     customerId: raw.customer?.id,
+    clientUserId: raw.clientUserId || raw.customer?.clientUserId || null,
     customerName: raw.customer?.name || '客户',
     customerPhone: raw.customer?.phone || '',
     customerAvatar: raw.customer?.avatarUrl || '',
-    serviceName: raw.customTitle || raw.customServiceRequest?.title || raw.designRequest?.title || '预约服务',
+    serviceName: raw.sourceWork?.title || raw.customTitle || raw.customServiceRequest?.title || raw.designRequest?.title || serviceNames.join('、') || raw.service?.name || raw.serviceName || (raw.quickBooking ? '快捷预约 · 款式待沟通' : '预约服务'),
     latitude: raw.clientAddress?.latitude,
     longitude: raw.clientAddress?.longitude,
     shopName: raw.shopName || ''

@@ -1,3 +1,4 @@
+const { consumePostAuthRedirect } = require('../../utils/artist-navigation');
 /**
  * 注册后角色选择页
  * 新用户（无邀请码注册）在微信授权并获取手机号后进入此页
@@ -148,7 +149,7 @@ Page({
       app.setLogin('client', res.accessToken || res.token, res.client || res.userInfo, roles);
       if (res.refreshToken) wx.setStorageSync('client_refreshToken', res.refreshToken);
       wx.setStorageSync('client_bindings', res.technicians || []);
-      wx.reLaunch({ url: '/pages/client/home/index' });
+      wx.reLaunch({ url: consumePostAuthRedirect('/pages/client/home/index') });
     } else if (role === 'technician') {
       app.setLogin('technician', res.accessToken || res.token, res.technician || res.userInfo, ['technician'], res.isTourist);
       if (res.refreshToken) wx.setStorageSync('technician_refreshToken', res.refreshToken);

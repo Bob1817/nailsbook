@@ -1,3 +1,5 @@
+@import '../../../styles/booking-actions.wxss';
+
 .container {
   min-height: 100vh;
   background: var(--bg-page);
@@ -22,7 +24,7 @@
   box-sizing: border-box;
 }
 .day-cell.selected {
-  background: #ff6b9d;
+  background: var(--nb-action);
 }
 .day-dow {
   font-size: var(--font-xs);
@@ -55,14 +57,11 @@
 }
 .empty-text { font-size: var(--font-md); color: var(--text-faint); }
 .retry-button {
-  display: flex;
-  min-height: 88rpx;
   margin-top: var(--space-md);
-  padding: 0 40rpx;
-  align-items: center;
-  border-radius: var(--radius-xl);
+  padding: 0 24rpx;
+  min-width: 112px;
   background: var(--bg-tag);
-  color: #a34f75;
+  color: var(--nb-ink);
 }
 
 .order-list { padding: 0 16rpx; }
@@ -84,7 +83,7 @@
 .order-time {
   font-size: var(--font-lg);
   font-weight: var(--weight-semibold);
-  color: #ff6b9d;
+  color: var(--nb-ink);
 }
 
 .order-body {
@@ -112,10 +111,10 @@
   color: var(--text-faint);
 }
 .order-status.tone-orange,
-.order-status.tone-yellow { background: #fff7e6; color: #a45100; }
-.order-status.tone-purple { background: #f5efff; color: #6f45a8; }
-.order-status.tone-sky { background: #e8f6ff; color: #176ca4; }
+.order-status.tone-yellow,
+.order-status.tone-purple,
+.order-status.tone-sky { background: var(--nb-soft-surface); color: var(--nb-text-link); }
 .order-status.tone-emerald,
-.order-status.tone-teal { background: #eaf8f1; color: #267558; }
+.order-status.tone-teal { background: var(--nb-success-surface); color: var(--nb-success); }
 .order-status.tone-gray { background: var(--bg-page); color: var(--text-muted); }
-.order-status.tone-red { background: #fff0f0; color: #a53c3c; }
+.order-status.tone-red { background: var(--nb-danger-surface); color: var(--nb-danger); }

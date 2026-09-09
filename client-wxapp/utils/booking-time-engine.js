@@ -8,10 +8,10 @@ function timeToMinutes(value) {
 }
 
 function activeScheduleForDate(serviceSchedule, serviceDate) {
+  if (serviceSchedule && (serviceSchedule.restDays || []).indexOf(serviceDate) >= 0) return null;
   if (!serviceSchedule || !(serviceSchedule.schemes || []).length) {
     return { days: DAY_KEYS, startTime: '10:00', endTime: '21:00' };
   }
-  if ((serviceSchedule.restDays || []).indexOf(serviceDate) >= 0) return null;
   var schemes = serviceSchedule.schemes || [];
   var active = schemes.find(function (item) {
     return item.id === serviceSchedule.activeSchemeId;
@@ -33,7 +33,7 @@ function intervalsOverlap(startA, endA, startB, endB) {
 }
 
 function buildSlotStatuses(options) {
-  var durationMinutes = Math.max(1, Number(options.durationMinutes) || 120);
+  var durationMinutes = options.durationPending ? 1 : Math.max(1, Number(options.durationMinutes) || 120);
   var schedule = activeScheduleForDate(options.serviceSchedule, options.serviceDate);
   if (!schedule) return [];
 

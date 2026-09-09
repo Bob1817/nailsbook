@@ -1,7 +1,9 @@
 @import '../../../styles/tokens.wxss';
+@import '../../../styles/booking-actions.wxss';
 
 page { background: var(--bg-page); }
 .page {
+  box-sizing: border-box;
   padding: var(--space-md) 32rpx calc(200rpx + env(safe-area-inset-bottom));
   min-height: 100vh;
 }
@@ -12,7 +14,7 @@ page { background: var(--bg-page); }
   border-radius: var(--radius-md);
   padding: 32rpx;
   margin-bottom: var(--space-md);
-  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
+  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
 }
 .section-head { margin-bottom: var(--space-md); }
 .section-title { display: block; font-size: var(--font-md); font-weight: var(--weight-semibold); color: var(--text-primary); }
@@ -37,12 +39,11 @@ page { background: var(--bg-page); }
   display: flex; gap: 16rpx;
 }
 .submit-btn {
-  flex: 1; text-align: center; padding: 28rpx 0; border-radius: var(--radius-md);
-  font-size: var(--font-md); font-weight: var(--weight-semibold);
+  flex: 1; text-align: center; padding: 12rpx 16rpx;
 }
 .submit-btn-save {
   background: var(--brand-gradient); color: var(--text-inverse);
-  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
+  box-shadow: none;
 }
 .submit-btn-save:active { opacity: 0.85; }
 .submit-btn-cancel {

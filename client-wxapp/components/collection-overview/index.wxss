@@ -1,0 +1,14 @@
+.collection-overview {
+  min-height: 144rpx;
+  padding: 28rpx 40rpx 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24rpx;
+  box-sizing: border-box;
+  background: var(--nb-surface);
+}
+.collection-overview-copy { flex: 1; min-width: 0; }
+.collection-overview-title { display: block; color: var(--nb-ink); font-size: var(--font-lg); font-weight: var(--weight-semibold); line-height: 1.4; }
+.collection-overview-subtitle { display: block; margin-top: 4rpx; color: var(--nb-muted); font-size: var(--font-xs); line-height: 1.5; }
+.collection-overview-count { flex-shrink: 0; padding: 8rpx 14rpx; border-radius: 14rpx; background: var(--nb-page); color: var(--nb-secondary); font-size: var(--font-xs); }

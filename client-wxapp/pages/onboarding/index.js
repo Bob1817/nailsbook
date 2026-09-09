@@ -1,3 +1,5 @@
+const { consumePostAuthRedirect } = require('../../utils/artist-navigation');
+const uiColors = require('../../utils/colors');
 /**
  * NailBook 新用户引导页
  * 注册后：选择"绑定美甲师"或"我是美甲师"或"稍后再说"
@@ -157,7 +159,7 @@ Page({
       content: '你可以在"我的"页面随时绑定美甲师或开通美甲师账户',
       confirmText: '先去逛逛',
       cancelText: '继续设置',
-      confirmColor: '#ff6b8a',
+      confirmColor: uiColors.action,
       success: (res) => {
         if (res.confirm) this._goHome();
       }
@@ -165,6 +167,6 @@ Page({
   },
 
   _goHome() {
-    wx.reLaunch({ url: '/pages/client/home/index' });
+    wx.reLaunch({ url: consumePostAuthRedirect('/pages/client/home/index') });
   }
 });

@@ -1,59 +1,68 @@
 const api = require('../../../services/api');
+const { formatMoney } = require('../../../utils/format');
+
+const STATUS_TEXT = {
+  pending_first_order: '待好友完成首单',
+  qualified: '已形成有效推荐',
+  rejected: '未满足条件'
+};
 
 Page({
   data: {
     loading: true,
     loadFailed: false,
-    fundTotals: { available: '0.00', pending: '0.00', used: '0.00' },
-    transactions: []
+    stats: {
+      total: 0,
+      qualified: 0,
+      conversionRate: '待积累',
+      qualifiedRevenue: '¥0'
+    },
+    relations: [],
+    relationDataUnavailable: false
   },
 
   onLoad() {
-    this.loadCampaign();
+    this.loadReferrals();
   },
 
   onPullDownRefresh() {
-    this.loadCampaign().finally(() => wx.stopPullDownRefresh());
+    this.loadReferrals().finally(() => wx.stopPullDownRefresh());
   },
 
-  async loadCampaign() {
+  async loadReferrals() {
     this.setData({ loading: true, loadFailed: false });
+    const month = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 7);
     try {
-      const funds = await api.technician.referralCampaign.fundSummary();
-      const transactions = (funds.accounts || []).reduce((result, account) => {
-        const clientName = account.client && account.client.nickname ? account.client.nickname : '客户';
-        return result.concat((account.ledger || []).map((entry) => {
-          const isExpense = entry.entryType === 'fund_redemption' || entry.status === 'expired';
-          const sourceMap = {
-            referral_reward: '客户首单邀请奖励',
-            fund_redemption: '预约订单基金抵扣',
-            fund_redemption_reversal: '预约取消基金退回'
-          };
-          const statusMap = {
-            pending: '待生效', available: '已入账', used: '已使用', expired: '已过期', reversed: '已冲正'
-          };
-          return {
-            id: entry.id,
-            title: sourceMap[entry.entryType] || '基金账户变动',
-            clientName,
-            date: String(entry.createdAt || '').slice(0, 10),
-            statusText: statusMap[entry.status] || entry.status,
-            amountText: `${isExpense ? '-' : '+'}¥${Math.abs(Number(entry.amount || 0)).toFixed(2)}`,
-            type: isExpense ? 'expense' : 'income',
-            timestamp: new Date(entry.createdAt || 0).getTime()
-          };
+      const overview = await api.technician.insights.overview({ month });
+      const referralStats = overview.referrals || {};
+      let relations = [];
+      let relationDataUnavailable = false;
+      try {
+        const result = await api.technician.referralCampaign.relations();
+        relations = (Array.isArray(result) ? result : []).map((item) => ({
+          id: item.id,
+          referrerName: item.referrer && item.referrer.nickname || '客户',
+          referredName: item.referred && item.referred.nickname || '新客户',
+          statusText: STATUS_TEXT[item.status] || '推荐处理中',
+          date: String(item.createdAt || '').slice(0, 10)
         }));
-      }, []).sort((a, b) => b.timestamp - a.timestamp);
+      } catch (error) {
+        relationDataUnavailable = true;
+      }
       this.setData({
         loading: false,
-        fundTotals: {
-          available: Number((funds.totals || {}).available || 0).toFixed(2),
-          pending: Number((funds.totals || {}).pending || 0).toFixed(2),
-          used: Number((funds.totals || {}).used || 0).toFixed(2)
+        stats: {
+          total: referralStats.total || 0,
+          qualified: referralStats.qualified || 0,
+          conversionRate: referralStats.conversionRate == null
+            ? '待积累'
+            : `${Math.round(referralStats.conversionRate * 100)}%`,
+          qualifiedRevenue: formatMoney(referralStats.qualifiedRevenue || 0)
         },
-        transactions
+        relations,
+        relationDataUnavailable
       });
-    } catch (err) {
+    } catch (error) {
       this.setData({ loading: false, loadFailed: true });
     }
   }

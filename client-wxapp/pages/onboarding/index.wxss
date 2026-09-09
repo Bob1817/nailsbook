@@ -2,7 +2,7 @@
 @import '../../styles/tokens.wxss';
 
 page {
-  background: #FFFFFF;
+  background: var(--nb-surface);
   min-height: 100vh;
 }
 
@@ -23,7 +23,7 @@ page {
   width: 80rpx;
   height: 80rpx;
   border-radius: 22rpx;
-  background: linear-gradient(135deg, #FFF0F5 0%, #F5F3FF 100%);
+  background: var(--nb-page);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -66,13 +66,13 @@ page {
 }
 
 .option-card-pink {
-  background: linear-gradient(135deg, #FFF0F5 0%, #FFF5F7 100%);
-  border: 2rpx solid rgba(255, 107, 138, 0.12);
+  background: var(--nb-page);
+  border: 0;
 }
 
 .option-card-purple {
-  background: linear-gradient(135deg, #F5F3FF 0%, #F8F6FF 100%);
-  border: 2rpx solid rgba(139, 92, 246, 0.12);
+  background: var(--nb-page);
+  border: 0;
 }
 
 .option-icon {
@@ -86,11 +86,11 @@ page {
 }
 
 .option-icon-pink {
-  background: rgba(255, 107, 138, 0.12);
+  background: rgba(0, 0, 0, 0.12);
 }
 
 .option-icon-purple {
-  background: rgba(139, 92, 246, 0.12);
+  background: rgba(0, 0, 0, 0.12);
 }
 
 .option-icon-img {
@@ -155,7 +155,7 @@ page {
 
 .flow-panel {
   width: 100%;
-  background: #FFFFFF;
+  background: var(--nb-surface);
   border-radius: 32rpx 32rpx 0 0;
   padding: 32rpx 40rpx calc(env(safe-area-inset-bottom) + 32rpx);
   animation: panelUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
@@ -169,7 +169,7 @@ page {
 .flow-handle {
   width: 48rpx;
   height: 6rpx;
-  background: #E5E7EB;
+  background: var(--nb-page);
   border-radius: 3rpx;
   margin: 0 auto 24rpx;
 }
@@ -200,8 +200,8 @@ page {
 .flow-input {
   width: 100%;
   height: 96rpx;
-  background: var(--bg-input);
-  border: 2rpx solid var(--border-default);
+  background: var(--nb-soft-surface);
+  border: 0;
   border-radius: var(--radius-sm);
   padding: 0 40rpx 0 24rpx;
   font-size: var(--font-md);
@@ -212,11 +212,11 @@ page {
 
 .flow-input:focus {
   border-color: var(--border-focus);
-  background: #FFFFFF;
+  background: var(--nb-surface);
 }
 
 .flow-input-success {
-  border-color: #10b981;
+  border-color: var(--nb-link);
 }
 
 .flow-input-error {
@@ -235,7 +235,7 @@ page {
   transform: translateY(-50%);
   width: 32rpx;
   height: 32rpx;
-  border: 3rpx solid rgba(255, 107, 138, 0.2);
+  border: 3rpx solid rgba(0, 0, 0, 0.2);
   border-top-color: var(--brand-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -252,9 +252,9 @@ page {
   transform: translateY(-50%);
   width: 32rpx;
   height: 32rpx;
-  background: #10b981;
+  background: var(--nb-action);
   border-radius: 50%;
-  color: #FFFFFF;
+  color: var(--nb-surface);
   font-size: 18rpx;
   display: flex;
   align-items: center;
@@ -278,7 +278,7 @@ page {
   align-items: center;
   gap: 16rpx;
   padding: 20rpx;
-  background: #F0FDF4;
+  background: var(--nb-page);
   border-radius: var(--radius-sm);
   margin-bottom: 16rpx;
 }
@@ -287,7 +287,7 @@ page {
   width: 56rpx;
   height: 56rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ff6b8a, #8b5cf6);
+  background: var(--nb-action);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -303,7 +303,7 @@ page {
 .found-av-char {
   font-size: var(--font-lg);
   font-weight: var(--weight-bold);
-  color: #FFFFFF;
+  color: var(--nb-surface);
 }
 
 .found-card-info {
@@ -315,13 +315,13 @@ page {
   display: block;
   font-size: var(--font-md);
   font-weight: var(--weight-semibold);
-  color: #065f46;
+  color: var(--nb-ink);
 }
 
 .found-card-city {
   display: block;
   font-size: var(--font-sm);
-  color: #10b981;
+  color: var(--nb-ink);
   margin-top: 2rpx;
 }
 
@@ -329,8 +329,8 @@ page {
 .flow-textarea {
   width: 100%;
   min-height: 120rpx;
-  background: var(--bg-input);
-  border: 2rpx solid var(--border-default);
+  background: var(--nb-soft-surface);
+  border: 0;
   border-radius: var(--radius-sm);
   padding: 20rpx 24rpx;
   font-size: var(--font-sm);
@@ -353,7 +353,7 @@ page {
   align-items: flex-start;
   gap: 10rpx;
   padding: 16rpx;
-  background: #FFF7ED;
+  background: var(--nb-page);
   border-radius: var(--radius-sm);
   margin-bottom: 24rpx;
 }
@@ -366,7 +366,7 @@ page {
 
 .flow-hint text {
   font-size: var(--font-xs);
-  color: #92400e;
+  color: var(--nb-ink);
   line-height: 1.5;
 }
 
@@ -374,14 +374,14 @@ page {
 .flow-btn {
   width: 100%;
   height: 96rpx;
-  background: linear-gradient(135deg, #ff6b8a 0%, #8b5cf6 100%);
+  background: var(--nb-action);
   border-radius: 48rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: var(--font-md);
   font-weight: var(--weight-semibold);
-  color: #FFFFFF;
+  color: var(--nb-surface);
   margin-bottom: 16rpx;
   transition: opacity 0.15s;
 }
@@ -397,3 +397,8 @@ page {
   color: var(--text-muted);
   padding: 16rpx 0;
 }
+
+@import '../../styles/booking-actions.wxss';
+.flow-input { height: var(--input-height); min-height: 44px; font-size: var(--font-sm); }
+.flow-placeholder { font-size: var(--font-sm); }
+.flow-btn.booking-action { height: var(--control-hit-height); min-height: 44px; border-radius: 8px; font-size: var(--font-sm); box-shadow: none; }

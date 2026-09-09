@@ -7,7 +7,7 @@
     <view class="load-error-mark">!</view>
     <text class="empty-text">地址加载失败</text>
     <text class="empty-sub">请检查网络后重试</text>
-    <button class="retry-btn" bindtap="loadAddresses">重新加载</button>
+    <button class="retry-btn booking-action" bindtap="loadAddresses">重新加载</button>
   </view>
 
   <!-- 空状态 -->
@@ -47,7 +47,7 @@
           </view>
           <view class="op-btn danger" catchtap="deleteAddress" data-id="{{item.id}}">
             <view class="op-icon op-del"></view>
-            <text>删除</text>
+            <text class="semantic-danger">删除</text>
           </view>
         </view>
       </view>
@@ -56,7 +56,7 @@
 
   <!-- 新增 -->
   <view class="footer">
-    <button class="btn-add" bindtap="addAddress">+ 新增地址</button>
+    <button class="btn-add booking-action" bindtap="addAddress">+ 新增地址</button>
   </view>
 
 </view>

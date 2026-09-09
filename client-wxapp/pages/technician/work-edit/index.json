@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "编辑作品",
+  "navigationBarTitleText": "上传作品",
   "navigationStyle": "custom",
   "usingComponents": {
     "nav-bar": "/components/nav-bar/index"

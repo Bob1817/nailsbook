@@ -184,7 +184,12 @@ export class TechnicianOrdersController {
       parseInt(id, 10),
       request.user.technicianId,
     );
-    return this.ordersService.confirm(parseInt(id, 10), body.price);
+    return this.ordersService.confirm(
+      parseInt(id, 10),
+      body.price,
+      body.depositAmount,
+      body.isDepositPaid,
+    );
   }
 
   @Patch(':id/complete')

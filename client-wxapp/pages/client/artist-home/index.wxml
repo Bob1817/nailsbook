@@ -7,7 +7,7 @@
   </view>
   <view wx:elif="{{loadFailed}}" class="state">
     <text class="state-title">主页加载失败</text>
-    <view class="retry-btn" bindtap="loadHome">重新加载</view>
+    <view class="retry-btn booking-action" bindtap="loadHome">重新加载</view>
   </view>
   <block wx:else>
 
@@ -24,7 +24,7 @@
           <!-- 头像 -->
           <view class="avatar-wrap">
             <image wx:if="{{artist.avatarUrl}}" src="{{artist.avatarUrl}}" class="avatar-img" mode="aspectFill"/>
-            <view wx:else class="avatar-fallback">{{artist.initial}}</view>
+            <view wx:else class="avatar-fallback"><image src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" /></view>
             <view wx:if="{{artist.isOnline}}" class="online-dot"></view>
           </view>
           
@@ -43,7 +43,7 @@
               <text class="meta-divider">|</text>
               <text>{{artist.specialtiesText || '日式专攻'}}</text>
             </view>
-            <button class="btn-book-now" bindtap="bookArtist">
+            <button wx:if="{{!isOwner}}" class="btn-book-now booking-action" style="width:100%;max-width:184px;height:44px;min-height:44px;padding:0 16px;box-sizing:border-box;" bindtap="bookArtist">
               <image class="btn-icon-svg" src="/static/icons/calendar.svg" mode="aspectFit"/>
               <text class="btn-text">立即预约</text>
             </button>
@@ -154,7 +154,7 @@
                   <image class="duration-icon-svg" src="/static/icons/clock.svg" mode="aspectFit"/>
                   <text>约{{item.duration}}</text>
                 </view>
-                <text class="service-price">¥{{item.price}}起</text>
+                <text class="service-price semantic-money">¥{{item.price}}起</text>
               </view>
             </view>
             <text class="service-desc">{{item.desc}}</text>
@@ -196,11 +196,11 @@
           </view>
           
           <view class="shop-actions">
-            <button class="action-btn" bindtap="openNavigation">
+            <button class="action-btn booking-action" style="flex:1 1 0%;width:0;min-width:0;height:44px;min-height:44px;padding:0 16px;box-sizing:border-box;" bindtap="openNavigation">
               <image class="action-icon-svg" src="/static/icons/navigation.svg" mode="aspectFit"/>
               <text>一键导航</text>
             </button>
-            <button class="action-btn" bindtap="callPhone">
+            <button class="action-btn booking-action" style="flex:1 1 0%;width:0;min-width:0;height:44px;min-height:44px;padding:0 16px;box-sizing:border-box;" bindtap="callPhone">
               <image class="action-icon-svg" src="/static/icons/phone.svg" mode="aspectFit"/>
               <text>一键拨号</text>
             </button>
@@ -222,7 +222,7 @@
         <view wx:for="{{reviews}}" wx:key="id" class="review-card">
           <view class="review-header">
             <image wx:if="{{item.clientAvatarUrl}}" src="{{item.clientAvatarUrl}}" class="review-avatar" mode="aspectFill"/>
-            <view wx:else class="review-avatar-fallback">{{item.initial}}</view>
+            <view wx:else class="review-avatar-fallback"><image src="/static/icons/client.svg" mode="aspectFit" class="nb-default-avatar" aria-label="客户默认头像" /></view>
             <view class="review-meta">
               <view class="review-name-row">
                 <text class="review-name">{{item.clientName}}</text>
@@ -246,6 +246,10 @@
 <!-- ===== 9. 底部操作栏 ===== -->
 <view wx:if="{{!loading && !loadFailed}}" class="bottom-bar">
   <view class="bottom-bar-inner">
+    <button wx:if="{{isOwner}}" class="btn-edit-homepage booking-action" bindtap="editHomepage">
+      <image class="btn-icon-svg" src="/static/icons/profile-edit.svg" mode="aspectFit"/><text>编辑主页</text>
+    </button>
+    <block wx:else>
     <view class="bottom-actions">
       <!-- 关注：需登录；下方显示美甲师粉丝总数（不受登录态影响） -->
       <view class="action-icon-btn {{isFollowed ? 'followed' : ''}}" bindtap="toggleFollow">
@@ -263,10 +267,11 @@
         <text class="count-label">{{favoriteCount || 0}}</text>
       </view>
     </view>
-    <button class="btn-book-main" bindtap="bookArtist">
+    <button class="btn-book-main booking-action" style="flex:1 1 0%;width:0;min-width:0;height:44px;min-height:44px;padding:0 16px;box-sizing:border-box;" bindtap="bookArtist">
       <image class="btn-icon-svg" src="/static/icons/calendar.svg" mode="aspectFit"/>
       <text class="btn-text">{{isBound ? '立即预约' : '绑定预约'}}</text>
     </button>
+    </block>
   </view>
   <view class="safe-area-bottom"></view>
 </view>
@@ -278,16 +283,16 @@
     <text class="modal-title">绑定 {{artist.name}}</text>
     <text class="modal-desc">请输入美甲师提供的邀请码。申请通过后，你的预约会默认归属给这位美甲师。</text>
     <view class="modal-input-row">
-      <input class="modal-input" value="{{bindInviteCode}}" bindinput="onBindInviteInput" placeholder="邀请码或邀请链接" disabled="{{bindChecking}}" confirm-type="done" />
-      <view class="modal-verify-btn" bindtap="verifyInviteCode">{{bindChecking ? '验证中' : '验证'}}</view>
+      <input class="modal-input" value="{{bindInviteCode}}" bindinput="onBindInviteInput" placeholder="邀请码或邀请链接" placeholder-class="modal-placeholder" aria-label="美甲师邀请码或邀请链接" disabled="{{bindChecking}}" confirm-type="done" />
+      <view class="modal-verify-btn booking-action" bindtap="verifyInviteCode" role="button" aria-disabled="{{bindChecking}}">{{bindChecking ? '验证中' : '验证'}}</view>
     </view>
     <view wx:if="{{bindCandidate}}" class="modal-success">
       <text>✓ 已确认：{{bindCandidate.name}}</text>
     </view>
     <text wx:if="{{bindError}}" class="modal-error">{{bindError}}</text>
     <view class="modal-actions">
-      <view class="modal-cancel" bindtap="closeBindModal">取消</view>
-      <view class="modal-confirm {{!bindCandidate || bindChecking ? 'is-disabled' : ''}}" bindtap="submitBinding">提交绑定申请</view>
+      <view class="modal-cancel booking-action" bindtap="closeBindModal" role="button">取消</view>
+      <view class="modal-confirm booking-action {{!bindCandidate || bindChecking ? 'is-disabled' : ''}}" bindtap="submitBinding" role="button" aria-disabled="{{!bindCandidate || bindChecking}}">提交绑定申请</view>
     </view>
   </view>
 </view>

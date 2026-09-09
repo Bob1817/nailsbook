@@ -85,7 +85,7 @@
 
     <!-- 注册按钮 -->
     <button
-      class="btn-primary {{canSubmit ? 'btn-active' : ''}}"
+      class="btn-primary booking-action {{canSubmit ? 'btn-active' : ''}}"
       disabled="{{!canSubmit || loading}}"
       loading="{{loading}}"
       bindtap="handleSubmit"

@@ -1,6 +1,6 @@
 const api = require('../../../services/api');
-const { formatMoney, formatBookingDate, parseDate } = require('../../../utils/format');
-const { getStatusLabel, getStatusTone } = require('../../../utils/order');
+const { formatMoney, formatBookingDate, formatClock, parseDate } = require('../../../utils/format');
+const { normalizeOrder, resolveOrderPresentation, getStatusLabel, getStatusTone } = require('../../../utils/order');
 
 const LIFECYCLE_LABELS = {
   new: '新客',
@@ -93,9 +93,11 @@ Page({
     showRemarkEdit: false,
     remarkDraft: '',
     savingRemark: false,
+    archiving: false,
     followUpContent: '',
     followUpDate: todayDateValue(),
-    savingFollowUp: false
+    savingFollowUp: false,
+    completingFollowUpId: ''
   },
 
   onLoad(options) {
@@ -124,14 +126,15 @@ Page({
 
   // ---------- 详情 ----------
   async loadCustomer() {
-    if (this._loadingCustomer || !this.customerId) return;
-    this._loadingCustomer = true;
+    if (!this.customerId) return;
+    const requestId = this._detailRequestId = (this._detailRequestId || 0) + 1;
     this.setData({ loading: true, loadFailed: false, loadErrorText: '' });
     try {
       const [detail, conversations] = await Promise.all([
         api.technician.customers.detail(this.customerId),
         api.chat.technician.conversations({ timeout: 10000, silent: true }).catch(() => [])
       ]);
+      if (requestId !== this._detailRequestId) return;
       const conversationClient = findConversationClient(conversations, detail.clientUserId) || {};
       const raw = {
         ...detail,
@@ -139,19 +142,19 @@ Page({
         avatarUrl: detail.avatarUrl || conversationClient.avatarUrl || ''
       };
 
-      const orders = (raw.orders || []).map((o) => ({
-        ...o,
-        _statusLabel: getStatusLabel(o.status),
-        _statusTone: getStatusTone(o.status),
-        _dateStr: formatBookingDate(o.startTime || o.createdAt),
-        _priceText: o.quotePrice ? formatMoney(o.quotePrice) : '待报价',
-        _serviceTypeLabel: o.serviceType === 'shop' ? '到店' : '上门',
-        _serviceTypeClass: o.serviceType === 'shop' ? 'type-shop' : 'type-home',
-        _serviceName: o.customTitle
-          || (o.customServiceRequest && o.customServiceRequest.title)
-          || (o.designRequest && o.designRequest.title)
-          || '预约服务'
-      }));
+      const orders = (raw.orders || []).map((item) => {
+        const order = normalizeOrder({ ...item, customer: { id: raw.id, name: buildCustomerIdentity(raw).displayName || raw.name, phone: raw.phone, clientUserId: raw.clientUserId } });
+        const presentation = resolveOrderPresentation(order);
+        return {
+          ...order,
+          _clock: formatClock(order.startTime),
+          _typeLabel: presentation.typeLabel,
+          _fullAddress: presentation.fullAddress,
+          _statusLabel: getStatusLabel(order.status),
+          _statusTone: getStatusTone(order.status),
+          _priceText: Number(order.price) > 0 ? formatMoney(order.price) : ''
+        };
+      });
 
       const revenues = raw.revenues || [];
       const summary = raw.businessSummary || {};
@@ -226,9 +229,8 @@ Page({
 
       this.setData({ customer, loading: false, loadFailed: false });
     } catch (err) {
+      if (requestId !== this._detailRequestId) return;
       this.setData({ loading: false, loadFailed: true, loadErrorText: '客户资料暂时无法加载' });
-    } finally {
-      this._loadingCustomer = false;
     }
   },
 
@@ -253,6 +255,7 @@ Page({
   },
 
   openRemarkEdit() {
+    if (this.data.savingRemark) return;
     this.setData({
       showRemarkEdit: true,
       remarkDraft: this.data.customer._remarkName || ''
@@ -265,6 +268,7 @@ Page({
   },
 
   onRemarkInput(e) {
+    if (this.data.savingRemark) return;
     this.setData({ remarkDraft: e.detail.value });
   },
 
@@ -287,9 +291,33 @@ Page({
     }
   },
 
-  goOrderDetail(e) {
-    const id = e.currentTarget.dataset.id;
-    wx.navigateTo({ url: `/pages/technician/order-detail/index?id=${id}` });
+  onBookingCardOpen(e) {
+    const id = e.detail && e.detail.id;
+    if (id) wx.navigateTo({ url: `/pages/technician/order-detail/index?id=${id}` });
+  },
+
+  onBookingCardContact(e) {
+    const phone = e.detail && e.detail.phone;
+    if (!phone) return wx.showToast({ title: '客户暂无电话', icon: 'none' });
+    wx.makePhoneCall({ phoneNumber: String(phone) });
+  },
+
+  onBookingCardMessage(e) {
+    const clientId = e.detail && e.detail.clientId;
+    if (!clientId) return wx.showToast({ title: '客户尚未关联小程序账号，请拨打电话', icon: 'none' });
+    wx.navigateTo({ url: `/pages/technician/chat-detail/index?clientId=${clientId}` });
+  },
+
+  onBookingCardNavigate(e) {
+    const order = (this.data.customer.orders || []).find(item => item.id === e.detail.id);
+    if (!order) return;
+    if (order.latitude && order.longitude) {
+      wx.openLocation({ latitude: Number(order.latitude), longitude: Number(order.longitude), name: order.shopName || '预约地点', address: order.address || '', scale: 16 });
+    } else if (order.address) {
+      wx.setClipboardData({ data: order.address });
+    } else {
+      wx.showToast({ title: '暂无地址', icon: 'none' });
+    }
   },
 
   goWorkDetail(e) {
@@ -302,27 +330,47 @@ Page({
 
   newOrder() {
     const customer = this.data.customer;
+    if (!customer || !customer.clientUserId) {
+      wx.showToast({ title: '客户尚未关联小程序账号，请拨打电话', icon: 'none' });
+      return;
+    }
     wx.navigateTo({
-      url: `/pages/technician/chat-detail/index?clientId=${this.customerId}&clientName=${encodeURIComponent(customer._displayName)}`
+      url: `/pages/technician/chat-detail/index?clientId=${customer.clientUserId}&clientName=${encodeURIComponent(customer._displayName || customer.name || '客户')}`
     });
   },
 
   archiveCustomer() {
+    if (this.data.archiving) return;
+    this.setData({ archiving: true });
     wx.showModal({
       title: '归档客户',
       content: '归档后客户资料和历史记录仍会保留；客户再次预约时会自动恢复。',
       confirmText: '确认归档',
       success: async (result) => {
-        if (!result.confirm) return;
+        if (!result.confirm) {
+          this.setData({ archiving: false });
+          return;
+        }
         try {
           await api.technician.customers.archive(this.customerId);
           wx.showToast({ title: '客户已归档', icon: 'success' });
-          setTimeout(() => wx.navigateBack(), 600);
+          this._archiveTimer = setTimeout(() => wx.navigateBack({
+            fail: () => this.setData({ archiving: false })
+          }), 600);
         } catch (err) {
+          this.setData({ archiving: false });
           wx.showToast({ title: err.message || '归档失败', icon: 'none' });
         }
+      },
+      fail: () => {
+        this.setData({ archiving: false });
       }
     });
+  },
+
+  onUnload() {
+    this._detailRequestId = (this._detailRequestId || 0) + 1;
+    if (this._archiveTimer) clearTimeout(this._archiveTimer);
   },
 
   onFollowUpInput(e) {
@@ -334,6 +382,8 @@ Page({
   },
 
   async createFollowUp() {
+    const draft = this.data.followUpContent;
+    const plannedDate = this.data.followUpDate;
     const content = (this.data.followUpContent || '').trim();
     if (!content) {
       wx.showToast({ title: '请输入跟进内容', icon: 'none' });
@@ -344,36 +394,46 @@ Page({
     try {
       await api.technician.customers.createFollowUp(this.customerId, {
         content,
-        plannedAt: `${this.data.followUpDate}T09:00:00+08:00`
+        plannedAt: `${plannedDate}T09:00:00+08:00`
       });
-      this.setData({ followUpContent: '', savingFollowUp: false });
+      if (this.data.followUpContent === draft && this.data.followUpDate === plannedDate) {
+        this.setData({ followUpContent: '' });
+      }
       wx.showToast({ title: '跟进计划已创建', icon: 'success' });
-      this.loadCustomer();
+      await this.loadCustomer();
     } catch (err) {
-      this.setData({ savingFollowUp: false });
       wx.showToast({ title: err.message || '创建失败', icon: 'none' });
+    } finally {
+      this.setData({ savingFollowUp: false });
     }
   },
 
   async completeFollowUp(e) {
     const id = e.currentTarget.dataset.id;
-    if (!id) return;
+    if (!id || this.data.completingFollowUpId) return;
+    this.setData({ completingFollowUpId: id });
     try {
       await api.technician.customers.completeFollowUp(this.customerId, id);
       wx.showToast({ title: '已完成跟进', icon: 'success' });
-      this.loadCustomer();
+      await this.loadCustomer();
     } catch (err) {
       wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+    } finally {
+      this.setData({ completingFollowUpId: '' });
     }
   },
 
   // ---------- 标签编辑 ----------
   openTagEdit() {
+    if (this.data.savingTags) return;
     const editTags = [...this.data.customer._tags];
     this.setData({ showTagEdit: true, editTags, newTag: '' });
     this._recalcAvailable(editTags);
   },
-  closeTagEdit() { this.setData({ showTagEdit: false }); },
+  closeTagEdit() {
+    if (this.data.savingTags) return;
+    this.setData({ showTagEdit: false });
+  },
 
   _recalcAvailable(editTags) {
     const available = this.data.allTags.filter((t) => editTags.indexOf(t) < 0);
@@ -381,6 +441,7 @@ Page({
   },
 
   removeTag(e) {
+    if (this.data.savingTags) return;
     const tag = e.currentTarget.dataset.tag;
     const editTags = this.data.editTags.filter((t) => t !== tag);
     this.setData({ editTags });
@@ -388,6 +449,7 @@ Page({
   },
 
   addExistingTag(e) {
+    if (this.data.savingTags) return;
     const tag = e.currentTarget.dataset.tag;
     if (this.data.editTags.indexOf(tag) >= 0) return;
     const editTags = [...this.data.editTags, tag];
@@ -395,9 +457,13 @@ Page({
     this._recalcAvailable(editTags);
   },
 
-  onNewTagInput(e) { this.setData({ newTag: e.detail.value }); },
+  onNewTagInput(e) {
+    if (this.data.savingTags) return;
+    this.setData({ newTag: e.detail.value });
+  },
 
   addNewTag() {
+    if (this.data.savingTags) return;
     const tag = (this.data.newTag || '').trim();
     if (!tag) return;
     if (this.data.editTags.indexOf(tag) >= 0) {
@@ -411,15 +477,22 @@ Page({
 
   async saveTags() {
     if (this.data.savingTags) return;
+    const submittedTags = [...this.data.editTags];
     this.setData({ savingTags: true });
     // 后端 tags 字段是 String，传逗号分隔字符串
-    const tagString = this.data.editTags.join(',');
+    const tagString = submittedTags.join(',');
     try {
+      await Promise.all(submittedTags.map((name) =>
+        api.technician.tagTemplates.create({ name, type: 'customer' }).catch((err) => {
+          if (String(err && err.message || '').includes('已存在')) return;
+          throw err;
+        })
+      ));
       await api.technician.customers.updateTags(this.customerId, tagString);
       this.setData({
         savingTags: false,
         showTagEdit: false,
-        'customer._tags': [...this.data.editTags],
+        'customer._tags': submittedTags,
         'customer.tags': tagString
       });
       wx.showToast({ title: '标签已更新', icon: 'success' });

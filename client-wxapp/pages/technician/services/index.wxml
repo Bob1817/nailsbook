@@ -8,7 +8,7 @@
     <view class="load-error-mark">!</view>
     <text class="empty-text">服务项目加载失败</text>
     <text class="empty-sub">请检查网络后重试</text>
-    <button class="retry-btn" bindtap="loadServices">重新加载</button>
+    <button class="booking-action retry-btn" bindtap="loadServices">重新加载</button>
   </view>
 
   <!-- 空状态 -->
@@ -16,7 +16,7 @@
     <view class="service-empty-mark"><view></view><view></view><view></view></view>
     <text class="empty-text">还没有服务项目</text>
       <text class="empty-sub">至少添加一项有效服务和价格，才能开启接单</text>
-    <button class="btn-add-first" bindtap="openCreate">添加第一个服务</button>
+    <button class="booking-action btn-add-first" bindtap="openCreate">添加第一个服务</button>
   </view>
 
   <!-- 服务列表 -->
@@ -38,7 +38,7 @@
               <view class="action-menu-arrow"></view>
               <view class="action-menu-item action-edit" catchtap="openEdit" data-id="{{item.id}}" role="button">编辑</view>
               <view class="action-menu-item action-toggle" catchtap="toggleService" data-id="{{item.id}}" role="button">{{item.isActive ? '下架' : '上架'}}</view>
-              <view class="action-menu-item action-delete" catchtap="confirmDelete" data-id="{{item.id}}" role="button">删除</view>
+              <view class="action-menu-item action-delete semantic-danger" catchtap="confirmDelete" data-id="{{item.id}}" role="button">删除</view>
             </view>
           </view>
         </view>
@@ -55,7 +55,7 @@
         <view class="svc-meta">
           <view class="svc-meta-group">
             <text class="svc-meta-label">服务价格</text>
-            <text class="svc-price">¥{{item.price != null ? item.price : '待设置'}}</text>
+            <text class="svc-price semantic-money">¥{{item.price != null ? item.price : '待设置'}}</text>
           </view>
           <view class="svc-meta-group">
             <text class="svc-meta-label">预计时长</text>
@@ -83,13 +83,13 @@
 
     <view class="form-item">
       <text class="label">服务名称 *</text>
-      <input class="input" placeholder="例：法式美甲" value="{{form.name}}" data-field="name" bindinput="onFormInput" confirm-type="done" />
+      <input placeholder-class="form-placeholder" class="input form-input" placeholder="例：法式美甲" value="{{form.name}}" data-field="name" bindinput="onFormInput" confirm-type="done" />
     </view>
 
     <view class="form-item">
       <text class="label">分类</text>
       <picker mode="selector" range="{{categories}}" range-key="label" value="{{categoryIndex}}" bindchange="onCategoryChange">
-        <view class="picker-view">
+        <view class="picker-view form-input">
           <text>{{categories[categoryIndex].label}}</text>
           <text class="picker-arrow">›</text>
         </view>
@@ -97,18 +97,18 @@
     </view>
 
     <view class="form-pair">
-      <view class="form-item form-half"><text class="label">服务价格（元）*</text><input class="input" type="digit" placeholder="例如 168" value="{{form.price}}" data-field="price" bindinput="onFormInput" confirm-type="done" /></view>
-      <view class="form-item form-half"><text class="label">预计时长（分钟）*</text><input class="input" type="number" placeholder="60" value="{{form.durationMinutes}}" data-field="durationMinutes" bindinput="onFormInput" confirm-type="done" /></view>
+      <view class="form-item form-half"><text class="label">服务价格（元）*</text><input placeholder-class="form-placeholder" class="input form-input" type="digit" placeholder="例如 168" value="{{form.price}}" data-field="price" bindinput="onFormInput" confirm-type="done" /></view>
+      <view class="form-item form-half"><text class="label">预计时长（分钟）*</text><input placeholder-class="form-placeholder" class="input form-input" type="number" placeholder="60" value="{{form.durationMinutes}}" data-field="durationMinutes" bindinput="onFormInput" confirm-type="done" /></view>
     </view>
 
     <text class="form-helper">客户预约时可多选服务，系统会按这里的价格自动累加。</text>
 
     <view class="form-item">
       <text class="label">描述（选填）</text>
-      <textarea class="textarea" placeholder="服务详细说明" value="{{form.description}}" data-field="description" bindinput="onFormInput" confirm-type="done" />
+      <textarea placeholder-class="form-placeholder" class="form-textarea textarea" placeholder="服务详细说明" value="{{form.description}}" data-field="description" bindinput="onFormInput" confirm-type="done" />
     </view>
 
-    <button class="btn-save" bindtap="handleSubmit" disabled="{{submitting}}">
+    <button class="booking-action btn-save" bindtap="handleSubmit" disabled="{{submitting}}">
       {{submitting ? '保存中...' : '保存'}}
     </button>
   </view>

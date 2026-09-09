@@ -1,0 +1,30 @@
+.filter-trigger {
+  min-height: var(--touch-min);
+  padding: 0 18rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  box-sizing: border-box;
+  border: 1rpx solid var(--nb-border);
+  border-radius: 16rpx;
+  background: var(--nb-soft-surface);
+  color: var(--nb-secondary);
+}
+.filter-trigger:active { background: var(--nb-pressed); }
+.filter-trigger-label { font-size: var(--font-xs); line-height: 1; white-space: nowrap; }
+.filter-trigger-arrow {
+  width: 10rpx;
+  height: 10rpx;
+  margin-top: -4rpx;
+  flex-shrink: 0;
+  border-right: 2rpx solid currentColor;
+  border-bottom: 2rpx solid currentColor;
+  transform: rotate(45deg);
+}
+.filter-trigger-active {
+  border-color: var(--nb-action);
+  background: var(--nb-surface);
+  color: var(--nb-link);
+  font-weight: var(--weight-semibold);
+}

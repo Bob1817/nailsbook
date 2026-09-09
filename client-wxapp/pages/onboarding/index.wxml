@@ -81,7 +81,7 @@
     <view wx:if="{{foundTech}}" class="found-card">
       <view class="found-card-av">
         <image wx:if="{{foundTech.avatarUrl}}" src="{{foundTech.avatarUrl}}" mode="aspectFill" class="found-av-img" />
-        <text wx:else class="found-av-char">{{foundTech.name ? foundTech.name[0] : '?'}}</text>
+        <image wx:else src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" />
       </view>
       <view class="found-card-info">
         <text class="found-card-name">{{foundTech.name}}</text>
@@ -103,7 +103,7 @@
     <view class="flow-error" wx:if="{{bindError}}">{{bindError}}</view>
 
     <view
-      class="flow-btn {{!foundTech || binding ? 'flow-btn-disabled' : ''}}"
+      class="flow-btn booking-action {{!foundTech || binding ? 'flow-btn-disabled' : ''}}"
       bindtap="submitBind"
     >
       <text>{{binding ? '绑定中...' : (foundTech ? '确认绑定' : '输入邀请码后自动查找')}}</text>
@@ -144,7 +144,7 @@
     </view>
 
     <view
-      class="flow-btn {{!activateKey.trim() || activating ? 'flow-btn-disabled' : ''}}"
+      class="flow-btn booking-action {{!activateKey.trim() || activating ? 'flow-btn-disabled' : ''}}"
       bindtap="submitActivate"
     >
       <text>{{activating ? '激活中...' : '激活美甲师账户'}}</text>

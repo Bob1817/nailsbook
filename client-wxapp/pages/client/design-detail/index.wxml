@@ -7,7 +7,7 @@
 
   <view wx:elif="{{!design}}" class="error-wrap">
     <text class="error-text">设计不存在</text>
-    <button class="btn-back" bindtap="goBack">返回</button>
+    <button class="btn-back booking-action" bindtap="goBack">返回</button>
   </view>
 
   <view wx:else class="content">
@@ -69,7 +69,7 @@
         <view wx:if="{{design.technician}}" class="tech-info">
           <view class="tech-avatar-wrap" bindtap="viewArtist" role="button" aria-label="查看{{design.technician.name || '美甲师'}}主页">
             <image wx:if="{{design.technician.avatarUrl}}" src="{{design.technician.avatarUrl}}" mode="aspectFill" class="tech-avatar" aria-label="{{design.technician.name || '美甲师'}}的头像" />
-            <text wx:else class="tech-avatar-text">{{design.technician.name[0]}}</text>
+            <image wx:else src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" />
           </view>
           <view class="tech-detail">
             <text class="tech-name">{{design.technician.name}}</text>
@@ -79,7 +79,7 @@
 
         <view wx:if="{{design.quotePrice}}" class="price-wrap">
           <text class="price-label">报价金额</text>
-          <text class="price-value">¥{{design.quotePrice}}</text>
+          <text class="price-value semantic-money">¥{{design.quotePrice}}</text>
         </view>
 
         <view wx:if="{{design.quoteRemark}}" class="remark-wrap">
@@ -94,24 +94,24 @@
   <view wx:if="{{design}}" class="bottom-bar">
     <!-- 待报价状态 -->
     <view wx:if="{{design.status === 'pending_quote'}}" class="btn-group">
-      <button class="btn-quote" bindtap="showQuoteModal">发起报价</button>
-      <button class="btn-book" bindtap="goToCreateOrder">发起预约</button>
+      <button class="btn-quote booking-action" bindtap="showQuoteModal">发起报价</button>
+      <button class="btn-book booking-action" bindtap="goToCreateOrder">发起预约</button>
     </view>
 
     <!-- 已报价状态 -->
     <view wx:if="{{design.status === 'quoted'}}" class="btn-group">
-      <button class="btn-book" disabled="{{processingQuote}}" bindtap="rejectQuote">拒绝报价</button>
-      <button class="btn-quote" disabled="{{processingQuote}}" bindtap="acceptQuote">{{processingQuote ? '处理中...' : '接受报价'}}</button>
+      <button class="btn-book semantic-danger booking-action" disabled="{{processingQuote}}" bindtap="rejectQuote">拒绝报价</button>
+      <button class="btn-quote booking-action" disabled="{{processingQuote}}" bindtap="acceptQuote">{{processingQuote ? '处理中...' : '接受报价'}}</button>
     </view>
 
     <!-- 已接受状态 -->
     <view wx:if="{{design.status === 'accepted'}}" class="btn-group">
-      <button class="btn-book full" bindtap="goToCreateOrder">发起预约</button>
+      <button class="btn-book full booking-action" bindtap="goToCreateOrder">发起预约</button>
     </view>
 
     <!-- 已转预约状态 -->
     <view wx:if="{{design.status === 'converted'}}" class="btn-group">
-      <button class="btn-view-order full" bindtap="goToOrders">查看预约</button>
+      <button class="btn-view-order full semantic-primary booking-action" bindtap="goToOrders">查看预约</button>
     </view>
   </view>
 
@@ -129,7 +129,7 @@
       <view wx:if="{{design.technician}}" class="modal-tech">
         <view class="modal-tech-avatar-wrap" bindtap="viewArtist" role="button" aria-label="查看{{design.technician.name || '美甲师'}}主页">
           <image wx:if="{{design.technician.avatarUrl}}" src="{{design.technician.avatarUrl}}" mode="aspectFill" class="modal-tech-avatar" aria-label="{{design.technician.name || '美甲师'}}的头像" />
-          <text wx:else class="modal-tech-avatar-text">{{design.technician.name[0]}}</text>
+          <image wx:else src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" />
         </view>
         <view class="modal-tech-info">
           <text class="modal-tech-name">{{design.technician.name}}</text>
@@ -138,8 +138,8 @@
       </view>
 
       <view class="modal-actions">
-        <button class="btn-cancel" bindtap="hideQuoteModal">取消</button>
-        <button class="btn-confirm {{requestingQuote ? 'disabled' : ''}}" disabled="{{requestingQuote}}" bindtap="requestQuote">
+        <button class="btn-cancel booking-action" bindtap="hideQuoteModal">取消</button>
+        <button class="btn-confirm booking-action {{requestingQuote ? 'disabled' : ''}}" disabled="{{requestingQuote}}" bindtap="requestQuote">
           {{requestingQuote ? '发送中...' : '确认发送'}}
         </button>
       </view>
@@ -206,8 +206,8 @@
       </view>
 
       <view class="modal-actions">
-        <button class="btn-cancel" bindtap="hideEditModal">取消</button>
-        <button class="btn-confirm {{savingEdit ? 'disabled' : ''}}" disabled="{{savingEdit}}" bindtap="saveEdit">
+        <button class="btn-cancel booking-action" bindtap="hideEditModal">取消</button>
+        <button class="btn-confirm booking-action {{savingEdit ? 'disabled' : ''}}" disabled="{{savingEdit}}" bindtap="saveEdit">
           {{savingEdit ? '保存中...' : '保存'}}
         </button>
       </view>
@@ -221,13 +221,13 @@
         <view class="modal-icon-wrap danger">
           <view class="modal-icon-dot danger"></view>
         </view>
-        <text class="modal-title">确认删除</text>
-        <text class="modal-desc">删除后无法恢复，是否确认删除该设计？</text>
+        <text class="modal-title semantic-danger">确认删除</text>
+        <text class="modal-desc semantic-danger">删除后无法恢复，是否确认删除该设计？</text>
       </view>
 
       <view class="modal-actions">
-        <button class="btn-cancel" bindtap="hideDeleteModal">取消</button>
-        <button class="btn-danger {{deleting ? 'disabled' : ''}}" disabled="{{deleting}}" bindtap="deleteDesign">
+        <button class="btn-cancel booking-action" bindtap="hideDeleteModal">取消</button>
+        <button class="btn-danger booking-action {{deleting ? 'disabled' : ''}}" disabled="{{deleting}}" bindtap="deleteDesign">
           {{deleting ? '删除中...' : '确认删除'}}
         </button>
       </view>

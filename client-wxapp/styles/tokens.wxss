@@ -1,3 +1,5 @@
+@import './colors.generated.wxss';
+@import './semantics.generated.wxss';
 /**
  * NailBook 设计令牌体系
  * 
@@ -7,68 +9,68 @@
  * 对齐：docs/UI-DESIGN-GUIDELINES.md
  *
  * == 图标色规则（必读）==
- * - 浅色/白色背景 → 图标用 --text-muted（#6b7280，非纯黑），激活态用 --brand-primary
+ * - 浅色/白色背景 → 图标用 --text-muted（中性灰），激活态用 --brand-primary
  * - 深色/彩色背景 → 图标用 --text-inverse（#fff），保持通体白色减轻视觉压力
- * - 禁止在任何背景上用纯黑(#000/#1a1a1a)作为图标色
+ * - 选中使用石墨色；深色背景使用反白图标
  */
 
 page {
   /* ===== 品牌色 ===== */
-  --brand-primary: #ff6b8a;
-  --brand-primary-light: #ff8fa3;
-  --brand-accent: #8b5cf6;
-  --brand-accent-light: #a78bfa;
-  --brand-blue: #667eea;
-  --brand-gradient: linear-gradient(135deg, #ff6b8a 0%, #8b5cf6 100%);
-  --brand-gradient-light: linear-gradient(135deg, #ff8fa3 0%, #a78bfa 100%);
+  --brand-primary: var(--nb-action);
+  --brand-primary-light: var(--nb-action-pressed);
+  --brand-accent: var(--nb-action);
+  --brand-accent-light: var(--nb-action-pressed);
+  --brand-blue: var(--nb-link);
+  --brand-gradient: var(--nb-action);
+  --brand-gradient-light: var(--nb-action);
 
   /* ===== 文本色 ===== */
-  --text-primary: #1f2937;
-  --text-body: #374151;
-  --text-muted: #6b7280;
-  --text-faint: #9ca3af;
-  --text-error: #dc2626;
-  --text-inverse: #ffffff;
+  --text-primary: var(--nb-ink);
+  --text-body: var(--nb-ink);
+  --text-muted: var(--nb-muted);
+  --text-faint: var(--nb-muted);
+  --text-error: var(--nb-danger);
+  --text-inverse: var(--nb-inverse);
 
   /* ===== 背景色 ===== */
-  --bg-page: #f8f9fc;
-  --bg-page-alt: #f0f0f4;
-  --bg-card: #ffffff;
-  --bg-input: #f9fafb;
-  --bg-input-focus: #ffffff;
-  --bg-tag: #fff0f5;
+  --bg-page: var(--nb-page);
+  --bg-page-alt: var(--nb-page);
+  --bg-card: var(--nb-surface);
+  --bg-input: var(--nb-soft-surface);
+  --bg-input-focus: var(--nb-active-surface, #EEF1F5);
+  --bg-tag: var(--nb-page);
   --bg-overlay: rgba(0, 0, 0, 0.45);
 
   /* ===== 品牌背景渐变（入口页专用） ===== */
-  --bg-gradient-entry: linear-gradient(180deg, #fff8fb 0%, #ffffff 34%, #f8f9fc 100%);
+  --bg-gradient-entry: var(--nb-page);
 
   /* ===== 边框色 ===== */
-  --border-default: #e5e7eb;
-  --border-light: rgba(255, 107, 138, 0.08);
-  --border-focus: #ff6b8a;
-  --border-error: #dc2626;
-  --border-card: rgba(0, 0, 0, 0.06);
-  --border-neutral: rgba(15, 23, 42, 0.08);
+  --border-default: var(--nb-line);
+  --border-light: var(--nb-line);
+  --border-focus: var(--nb-link);
+  --border-error: var(--nb-danger);
+  --border-card: var(--nb-line);
+  --border-neutral: var(--nb-line);
 
   /* ===== 状态色：统一订单/客户标签用 ===== */
-  --tone-amber-bg: #fff2dc;
-  --tone-amber-text: #b56f12;
-  --tone-blue-bg: #ebf4ff;
-  --tone-blue-text: #3b82f6;
-  --tone-emerald-bg: #e3f6ec;
-  --tone-emerald-text: #067b4a;
-  --tone-purple-bg: #f0e9ff;
-  --tone-purple-text: #7c5dd4;
-  --tone-rose-bg: #ffe5e6;
-  --tone-rose-text: #c5333d;
-  --tone-gray-bg: #f4f5f7;
-  --tone-gray-text: #8a8f98;
-  --tone-sky-bg: #dbecff;
-  --tone-sky-text: #1f6dd6;
-  --tone-teal-bg: #d8f1ee;
-  --tone-teal-text: #107d70;
-  --tone-yellow-bg: #fff8d6;
-  --tone-yellow-text: #a48313;
+  --tone-amber-bg: var(--nb-soft-surface);
+  --tone-amber-text: var(--nb-text-link);
+  --tone-blue-bg: var(--nb-soft-surface);
+  --tone-blue-text: var(--nb-text-link);
+  --tone-emerald-bg: var(--nb-success-surface);
+  --tone-emerald-text: var(--nb-success);
+  --tone-purple-bg: var(--nb-soft-surface);
+  --tone-purple-text: var(--nb-text-link);
+  --tone-rose-bg: var(--nb-danger-surface);
+  --tone-rose-text: var(--nb-danger);
+  --tone-gray-bg: var(--nb-page);
+  --tone-gray-text: var(--nb-secondary);
+  --tone-sky-bg: var(--nb-soft-surface);
+  --tone-sky-text: var(--nb-text-link);
+  --tone-teal-bg: var(--nb-success-surface);
+  --tone-teal-text: var(--nb-success);
+  --tone-yellow-bg: var(--nb-soft-surface);
+  --tone-yellow-text: var(--nb-text-link);
 
   /* ===== 圆角 ===== */
   --radius-xs: 8rpx;
@@ -81,9 +83,9 @@ page {
 
   /* ===== 阴影 ===== */
   --shadow-sm: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4rpx 24rpx rgba(15, 23, 42, 0.06);
-  --shadow-lg: 0 10rpx 26rpx rgba(15, 23, 42, 0.05);
-  --shadow-elevated: 0 12rpx 32rpx rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 4rpx 24rpx rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10rpx 26rpx rgba(0, 0, 0, 0.05);
+  --shadow-elevated: 0 12rpx 32rpx rgba(0, 0, 0, 0.08);
 
   /* ===== 字体：系统无衬线负责信息效率，宋体/衬线负责作品与主页展示感 ===== */
   --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Source Han Sans SC', sans-serif;
@@ -127,7 +129,7 @@ page {
   --space-3xl: 64rpx;
 
   /* ===== 触控尺寸 ===== */
-  --touch-min: 88rpx;
+  --touch-min: 44px;
   --touch-tap: 44rpx;
 
   /* ===== 卡片 ===== */
@@ -137,7 +139,7 @@ page {
 
   /* ===== 按钮 ===== */
   --control-visual-height: 64rpx;
-  --control-hit-height: 88rpx;
+  --control-hit-height: 44px;
   --control-visual-inset: 12rpx;
   --btn-height: var(--control-hit-height);
   --btn-radius: 48rpx;

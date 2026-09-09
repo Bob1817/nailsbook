@@ -1,12 +1,15 @@
 .container {
   min-height: 100vh;
-  background: #f6f7f9;
+  background: var(--nb-page);
   padding-bottom: calc(200rpx + env(safe-area-inset-bottom));
 }
 
+@import '../../../styles/booking-form.wxss';
+@import '../../../styles/booking-actions.wxss';
+
 /* ===== 加载与空状态 ===== */
 .loading-wrap { display:flex; justify-content:center; padding:200rpx 0; }
-.loading-spinner { width:60rpx; height:60rpx; border:4rpx solid #ffd0de; border-top-color: var(--brand-primary); border-radius:50%; animation:spin .8s linear infinite; }
+.loading-spinner { width:60rpx; height:60rpx; border:4rpx solid var(--nb-line); border-top-color: var(--brand-primary); border-radius:50%; animation:spin .8s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
 .empty, .load-error {
   display: flex;
@@ -14,9 +17,9 @@
   align-items: center;
   padding: 160rpx 40rpx 80rpx;
 }
-.service-empty-mark { width:88rpx; height:88rpx; box-sizing:border-box; padding:18rpx 16rpx; margin-bottom:32rpx; border:4rpx solid #d9a0b9; border-radius: var(--radius-sm); }
-.service-empty-mark view { height:4rpx; margin-bottom:12rpx; border-radius:4rpx; background:#d9a0b9; }
-.load-error-mark { width:88rpx; height:88rpx; margin-bottom:32rpx; border-radius:50%; background:#fff0f4; color:#c75b83; font-size: var(--font-xl); line-height:88rpx; text-align:center; }
+.service-empty-mark { width:88rpx; height:88rpx; box-sizing:border-box; padding:18rpx 16rpx; margin-bottom:32rpx; border: 0; border-radius: var(--radius-sm); }
+.service-empty-mark view { height:4rpx; margin-bottom:12rpx; border-radius:4rpx; background:var(--nb-action); }
+.load-error-mark { width:88rpx; height:88rpx; margin-bottom:32rpx; border-radius:50%; background:var(--nb-page); color:var(--nb-ink); font-size: var(--font-xl); line-height:88rpx; text-align:center; }
 .empty-text {
   font-size: var(--font-lg);
   color: var(--text-body);
@@ -30,7 +33,7 @@
 .btn-add-first {
   height: 88rpx;
   padding: 0 72rpx;
-  background: linear-gradient(135deg, #ff6b8a, #a855f7);
+  background: var(--nb-action);
   color: var(--text-inverse);
   border-radius: var(--radius-xl);
   font-size: var(--font-md);
@@ -38,7 +41,7 @@
   border: none;
   line-height: 88rpx;
 }
-.retry-btn { min-height:88rpx; margin:0; padding:0 56rpx; border:0; border-radius: var(--radius-xl); background:#1f2937; color: var(--text-inverse); font-size: var(--font-md); line-height:88rpx; }
+.retry-btn { min-height:88rpx; margin:0; padding:0 56rpx; border:0; border-radius: var(--radius-xl); background:var(--nb-ink); color: var(--text-inverse); font-size: var(--font-md); line-height:88rpx; }
 .retry-btn::after { border:0; }
 
 /* ===== 服务列表 ===== */
@@ -50,7 +53,7 @@
 .svc-card {
   position: relative;
   background: var(--bg-card);
-  border: 1rpx solid #e9e6e8;
+  border: 0;
   border-radius: 28rpx;
   margin-bottom: 24rpx;
   box-shadow: 0 6rpx 20rpx rgba(34, 34, 34, 0.035);
@@ -77,9 +80,9 @@
   justify-content: center;
   border-radius: 50%;
 }
-.card-menu-trigger:active { background: #f7f5f6; }
+.card-menu-trigger:active { background: var(--nb-page); }
 .more-icon { display:flex; align-items:center; gap:6rpx; }
-.more-icon view { width:7rpx; height:7rpx; border-radius:50%; background:#6f696c; }
+.more-icon view { width:7rpx; height:7rpx; border-radius:50%; background:var(--nb-muted); }
 .action-menu-scrim { position:fixed; top:0; right:0; bottom:0; left:0; z-index:25; background:transparent; }
 .action-menu {
   position: absolute;
@@ -88,9 +91,9 @@
   width: 220rpx;
   padding: 8rpx;
   box-sizing: border-box;
-  border: 1rpx solid #e7e2e5;
+  border: 0;
   border-radius: 20rpx;
-  background: #fff;
+  background: var(--nb-surface);
   box-shadow: 0 18rpx 48rpx rgba(34,34,34,.14);
   z-index: 32;
 }
@@ -100,9 +103,9 @@
   right:32rpx;
   width:18rpx;
   height:18rpx;
-  background:#fff;
-  border-left:1rpx solid #e7e2e5;
-  border-top:1rpx solid #e7e2e5;
+  background:var(--nb-surface);
+  border-left:1rpx solid var(--nb-line);
+  border-top:1rpx solid var(--nb-line);
   transform:rotate(45deg);
 }
 .action-menu-item {
@@ -116,10 +119,10 @@
   font-size:var(--font-sm);
   font-weight:var(--weight-medium);
 }
-.action-menu-item:active { background:#f7f5f6; }
+.action-menu-item:active { background:var(--nb-page); }
 .action-menu .action-edit { color:var(--text-primary); font-weight:var(--weight-semibold); }
-.action-menu .action-toggle { color:#5f5a5c; }
-.action-menu .action-delete { color:#a24e4e; }
+.action-menu .action-toggle { color:var(--nb-secondary); }
+.action-menu .action-delete { color:var(--nb-danger); }
 .svc-title-row {
   display:flex;
   align-items:center;
@@ -134,7 +137,7 @@
   display: block;
   font-size: 34rpx;
   font-weight: var(--weight-semibold);
-  color: var(--text-primary);
+  color: var(--nb-ink);
   line-height: 1.35;
   letter-spacing: -0.5rpx;
 }
@@ -161,12 +164,12 @@
   border-radius: var(--radius-full);
 }
 .badge-active {
-  color: #397a62;
-  background:#edf7f2;
+  color: var(--nb-success);
+  background:var(--nb-success-surface);
 }
 .badge-inactive {
-  color: #8f898c;
-  background:#f3f1f2;
+  color: var(--nb-muted);
+  background:var(--nb-page);
 }
 .badge-dot {
   width: 10rpx;
@@ -174,10 +177,10 @@
   border-radius: 50%;
 }
 .dot-active {
-  background: #4f9a7d;
+  background: var(--nb-action);
 }
 .dot-inactive {
-  background: #b9b4b6;
+  background: var(--nb-control);
 }
 
 /* 描述 */
@@ -202,13 +205,13 @@
   padding:20rpx 22rpx;
   box-sizing:border-box;
   border-radius:18rpx;
-  background:#faf8f9;
+  background:var(--nb-page);
 }
 .svc-meta-label { display:block; color:var(--text-muted); font-size:22rpx; line-height:1.2; }
 .svc-price {
   display:block;
   margin-top:10rpx;
-  color: var(--text-primary);
+  color: var(--nb-money);
   font-size: 36rpx;
   line-height: 1;
   font-weight: var(--weight-semibold);
@@ -228,12 +231,12 @@
   bottom: calc(32rpx + env(safe-area-inset-bottom));
   width: 108rpx;
   height: 108rpx;
-  background: linear-gradient(135deg, #ff6b8a, #a855f7);
+  background: var(--nb-action);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 32rpx rgba(255,107,138,0.35) /* brand-primary-alpha */;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.35) /* brand-primary-alpha */;
   z-index: 20;
 }
 .fab:active {
@@ -344,7 +347,7 @@
 .btn-save {
   width: 100%;
   height: 96rpx;
-  background: linear-gradient(135deg, #ff6b8a, #a855f7);
+  background: var(--nb-action);
   color: var(--text-inverse);
   border-radius: var(--btn-radius);
   font-size: var(--font-md);

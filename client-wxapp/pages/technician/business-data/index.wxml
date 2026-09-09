@@ -1,25 +1,30 @@
 <nav-bar title="经营数据" show-back />
 <view class="page">
+  <picker mode="date" fields="month" value="{{selectedMonth}}" start="{{minMonth}}" end="{{maxMonth}}" bindchange="onMonthChange" disabled="{{exporting}}">
+    <view class="month-selector" hover-class="month-pressed" role="button" aria-label="选择经营数据月份，当前{{selectedMonth}}"><text>统计月份</text><view><text class="month-value">{{selectedMonth}}</text><text class="month-change">切换月份 ›</text></view></view>
+  </picker>
+  <text class="period-note">可选注册月份至当前月份 · 按北京时间统计</text>
+  <view wx:if="{{error}}" class="loading-card"><text>{{error}}</text><button class="month-retry booking-action" bindtap="loadOverview">重新加载</button></view>
   <view wx:if="{{loading}}" class="loading-card">经营数据加载中...</view>
   <block wx:elif="{{overview}}">
     <view class="summary-hero">
-      <text class="hero-caption">本月确认收入</text>
-      <text class="hero-value">{{overview.revenue}}</text>
+      <text class="hero-caption">{{selectedMonth}} 确认收入</text>
+      <text class="hero-value semantic-money">{{overview.revenue}}</text>
       <text class="hero-note">按已完成并确认入账的订单统计</text>
       <view class="hero-grid">
         <view bindtap="openOrders"><text>{{overview.monthCompleted}}</text><text>完成订单</text></view>
-        <view bindtap="openCustomers"><text>{{overview.newCustomers}}</text><text>本月新客</text></view>
-        <view bindtap="openCustomers"><text>{{overview.repeatRate}}</text><text>客户复购率</text></view>
+        <view bindtap="openCustomers"><text>{{overview.newCustomers}}</text><text>当月新客</text></view>
+        <view bindtap="openCustomers"><text>{{overview.repeatRate}}</text><text>当月复购率</text></view>
       </view>
     </view>
 
     <view class="section-card">
       <text class="section-title">核心指标</text>
       <view class="metric-grid">
-        <view class="metric" bindtap="openOrders"><text class="metric-value">{{overview.averageTicket}}</text><text class="metric-label">平均客单价</text><text class="metric-note">确认收入 ÷ 完成订单数</text></view>
-        <view class="metric" bindtap="openCustomers"><text class="metric-value">{{overview.totalCustomers}}</text><text class="metric-label">客户总数</text><text class="metric-note">当前客户档案</text></view>
-        <view class="metric"><text class="metric-value">{{overview.rating}}</text><text class="metric-label">客户评分</text><text class="metric-note">{{overview.ratingCount}} 条评价</text></view>
-        <view class="metric"><text class="metric-value">{{overview.works}}</text><text class="metric-label">作品数量</text><text class="metric-note">当前已发布作品</text></view>
+        <view class="metric" bindtap="openOrders"><text class="metric-value {{overview.averageTicket === '待积累' ? 'text-muted' : 'semantic-money'}}">{{overview.averageTicket}}</text><text class="metric-label">平均客单价</text><text class="metric-note">确认收入 ÷ 收入订单数</text></view>
+        <view class="metric" bindtap="openCustomers"><text class="metric-value">{{overview.totalCustomers}}</text><text class="metric-label">客户总数</text><text class="metric-note">截至所选月份的客户档案</text></view>
+        <view class="metric"><text class="metric-value">{{overview.rating}}</text><text class="metric-label">当月客户评分</text><text class="metric-note">{{overview.ratingCount}} 条评价</text></view>
+        <view class="metric"><text class="metric-value">{{overview.works}}</text><text class="metric-label">作品数量</text><text class="metric-note">当月创建作品</text></view>
       </view>
     </view>
 
@@ -27,37 +32,65 @@
       <view class="section-head trend-head">
         <text class="section-title">收入趋势</text>
         <view class="export-actions">
-          <button class="export-button" disabled="{{exporting}}" bindtap="exportRevenue">收入 CSV</button>
-          <button class="export-button" loading="{{exporting}}" disabled="{{exporting}}" bindtap="exportFullData">完整数据</button>
+          <button class="export-button booking-action" disabled="{{exporting}}" bindtap="exportRevenue">收入 CSV</button>
+          <button class="export-button booking-action" loading="{{exporting}}" disabled="{{exporting}}" bindtap="exportFullData">完整数据</button>
         </view>
       </view>
-      <text class="sub-title">近 7 日</text>
-      <view wx:if="{{overview.dailyTrend.length}}" class="trend-list"><view wx:for="{{overview.dailyTrend}}" wx:key="period" class="trend-row"><text>{{item.label}}</text><text>{{item.orders}} 单 · +{{item.newCustomers}} 客</text><text>{{item.revenueText}}</text></view></view>
-      <text wx:else class="empty">最近 7 日暂无确认收入</text>
-      <text class="sub-title sub-title-gap">近 4 周</text>
-      <view wx:if="{{overview.weeklyTrend.length}}" class="trend-list"><view wx:for="{{overview.weeklyTrend}}" wx:key="period" class="trend-row"><text>{{item.label}}</text><text>{{item.orders}} 单 · +{{item.newCustomers}} 客</text><text>{{item.revenueText}}</text></view></view>
-      <text wx:else class="empty">最近 4 周暂无确认收入</text>
+      <text class="sub-title">按日统计</text>
+      <view wx:if="{{overview.dailyTrend.length}}" class="trend-list"><view wx:for="{{overview.dailyTrend}}" wx:key="period" class="trend-row"><text>{{item.label}}</text><text>{{item.orders}} 单 · +{{item.newCustomers}} 客</text><text class="semantic-money">{{item.revenueText}}</text></view></view>
+      <text wx:else class="empty">所选月份暂无日统计数据</text>
+      <text class="sub-title sub-title-gap">按周统计</text>
+      <view wx:if="{{overview.weeklyTrend.length}}" class="trend-list"><view wx:for="{{overview.weeklyTrend}}" wx:key="period" class="trend-row"><text>{{item.label}}</text><text>{{item.orders}} 单 · +{{item.newCustomers}} 客</text><text class="semantic-money">{{item.revenueText}}</text></view></view>
+      <text wx:else class="empty">所选月份暂无周统计数据</text>
     </view>
 
     <view class="section-card">
       <text class="section-title">服务与时段表现</text>
       <block wx:if="{{overview.performanceReady}}">
-        <view wx:for="{{overview.topServices}}" wx:key="name" class="rank-row"><view><text class="rank-label">{{index + 1}}</text><text>{{item.name}}</text></view><text>{{item.orders}} 单 · {{item.revenueText}}</text></view>
+        <view wx:for="{{overview.topServices}}" wx:key="name" class="rank-row"><view><text class="rank-label">{{index + 1}}</text><text>{{item.name}}</text></view><text class="semantic-money">{{item.orders}} 单 · {{item.revenueText}}</text></view>
         <view class="divider"></view>
-        <view wx:for="{{overview.topTimeSlots}}" wx:key="name" class="rank-row"><text>{{item.name}}</text><text>{{item.orders}} 单 · {{item.revenueText}}</text></view>
+        <view wx:for="{{overview.topTimeSlots}}" wx:key="name" class="rank-row"><text>{{item.name}}</text><text class="semantic-money">{{item.orders}} 单 · {{item.revenueText}}</text></view>
       </block>
       <text wx:else class="empty">至少需要 {{overview.performanceMinimum}} 笔完成订单后生成表现结论</text>
     </view>
 
     <view class="section-card">
       <view class="section-head"><text class="section-title">推荐与客户经营</text><text class="section-link" bindtap="openReferrals">查看推荐 ›</text></view>
-      <view class="data-row" bindtap="openDueCustomers"><view><text>待复购客户</text><text>已达到预计复购日期</text></view><text>{{overview.dueCustomers}} ›</text></view>
+      <view class="data-row" bindtap="openDueCustomers"><view><text>待复购客户</text><text>截至统计期末预计待复购</text></view><text>{{overview.dueCustomers}} ›</text></view>
       <view class="data-row" bindtap="openReferrals"><view><text>有效推荐</text><text>共 {{overview.referrals}} 次推荐</text></view><text>{{overview.qualifiedReferrals}} ›</text></view>
       <view class="data-row" bindtap="openReferrals"><view><text>有效推荐收入</text><text>基金发放 {{overview.fundsIssued}} · 抵扣 {{overview.fundsRedeemed}}</text></view><text>{{overview.referralRevenue}} ›</text></view>
     </view>
 
+    <view wx:if="{{overview.workShare}}" class="section-card">
+      <text class="section-title">作品分享获客</text>
+      <text class="share-note">所选月份 · 各阶段独立统计</text>
+      <view class="share-metrics">
+        <view><text>{{overview.workShare.uniqueWorkVisitors}}</text><text>访客与作品组合数</text></view>
+        <view><text>{{overview.workShare.bookingIntents}}</text><text>去重预约意向</text></view>
+        <view><text>{{overview.workShare.postersSaved}}</text><text>海报保存次数</text></view>
+        <view><text>{{overview.workShare.postersGenerated || 0}}</text><text>海报生成次数</text></view>
+        <view><text>{{overview.workShare.registeredCustomers || 0}}</text><text>新注册客户</text></view>
+        <view><text>{{overview.workShare.boundCustomers}}</text><text>新增绑定客户</text></view>
+        <view><text>{{overview.workShare.ordersCreated}}</text><text>预约创建数</text></view>
+        <view><text>{{overview.workShare.views}}</text><text>作品访问次数</text></view>
+      </view>
+      <view wx:for="{{overview.workShare.channels}}" wx:key="source" class="share-channel"><text>{{item.source === 'wechat_share' ? '好友分享入口' : '海报扫码入口'}}</text><text>{{item.views}} 次访问</text></view>
+      <text class="share-note">同一访客访问同一作品计为一组；海报保存不代表已发布朋友圈。绑定与预约为服务端成功记录，尚不计算跨身份转化率。</text>
+    </view>
+
+    <view wx:if="{{overview.promotions}}" class="section-card">
+      <text class="section-title">作品分享优惠</text>
+      <text class="share-note">优惠配置→分享来源→预约→报价兑现</text>
+      <view class="share-metrics">
+        <view><text>{{overview.promotions.active}}</text><text>进行中活动</text></view>
+        <view><text>{{overview.promotions.attributedBookings}}</text><text>来源预约</text></view>
+        <view><text>{{overview.promotions.quoted}}</text><text>已报价兑现</text></view>
+        <view><text class="semantic-money">{{overview.promotions.discountsRedeemed}}</text><text>已兑现优惠</text></view>
+      </view>
+    </view>
+
     <view wx:if="{{overview.reminders.length}}" class="section-card">
-      <text class="section-title">经营提醒</text>
+      <text class="section-title">期末经营提醒</text>
       <view wx:for="{{overview.reminders}}" wx:key="key" class="reminder-row" bindtap="openCustomer" data-id="{{item.customerId}}"><view><text>{{item.typeText}} · {{item.customerName}}</text><text>{{item.reason}}</text></view><text>›</text></view>
     </view>
   </block>

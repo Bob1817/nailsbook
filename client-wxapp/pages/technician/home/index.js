@@ -1,3 +1,4 @@
+const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
 const { isTouristTechnician } = require('../../../utils/permission');
 const {
@@ -168,12 +169,13 @@ Page({
         .map(decorate)
         .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
       const pendingActionCount = allOrders.filter((o) => o.status === 'pending_quote').length;
-      const unpaidDepositCount = allOrders.filter((o) => !o.depositPaid && !['completed', 'cancelled', 'expired'].includes(o.status)).length;
+      const unpaidDepositOrders = allOrders.filter((o) => Number(o.depositAmount || 0) > 0 && !o.depositPaid && !['completed', 'cancelled', 'expired'].includes(o.status));
+      const unpaidDepositCount = unpaidDepositOrders.length;
       const addressPendingCount = allOrders.filter((o) => hasAddressIssue(o) && !['completed', 'cancelled', 'expired'].includes(o.status)).length;
 
       const todoItemsRaw = [
         { key: 'pending',  count: pendingActionCount,      label: '个预约待处理',     tone: 'tone-pink'   },
-        { key: 'deposit',  count: unpaidDepositCount,      label: '个预约待支付定金', tone: 'tone-amber'  },
+        { key: 'deposit',  count: unpaidDepositCount,      label: '个预约待支付定金', tone: 'tone-amber', targetId: unpaidDepositCount === 1 ? unpaidDepositOrders[0].id : '' },
         { key: 'address',  count: addressPendingCount,     label: '个客户未确认地址', tone: 'tone-orange' },
         { key: 'messages', count: unread,                  label: '条未读消息',       tone: 'tone-blue'   }
       ];
@@ -314,29 +316,20 @@ Page({
     return `${order._dateLabel} ${order._clock}\n${order.customerName || '客户'} · ${order._shopName || '店铺待确认'}`;
   },
 
-  async confirmConfirmation(e) {
-    const id = e.currentTarget.dataset.id;
-    if (!id) return;
+  confirmConfirmation(e) {
+    if (this.data.confirmationOrder) return;
+    const id = (e.detail && e.detail.id) || e.currentTarget.dataset.id;
     const order = this.findConfirmationById(id);
-    const result = await wx.showModal({ title: '确认排期', content: `${this.confirmationSummary(order)}\n\n确认接受该预约排期？`, confirmText: '确认排期' });
-    if (!result.confirm) return;
-    try {
-      wx.showLoading({ title: '处理中...' });
-      await api.technician.orders.confirm(id);
-      wx.hideLoading();
-      wx.showToast({ title: '已确认排期', icon: 'success' });
-      this.loadDashboard();
-    } catch (err) {
-      wx.hideLoading();
-      wx.showToast({ title: err.message || '确认失败', icon: 'none' });
-    }
+    if (order) this.setData({ confirmationOrder: order });
   },
+  closeConfirmation() { this.setData({ confirmationOrder: null }); },
+  confirmationSaved() { this.closeConfirmation(); this.loadDashboard(); },
 
   async refuseConfirmation(e) {
-    const id = e.currentTarget.dataset.id;
+    const id = (e.detail && e.detail.id) || e.currentTarget.dataset.id;
     if (!id) return;
     const order = this.findConfirmationById(id);
-    const result = await wx.showModal({ title: '拒绝排期', content: `${this.confirmationSummary(order)}\n\n拒绝后该预约将被取消，是否继续？`, confirmText: '拒绝排期', confirmColor: '#c94f65' });
+    const result = await wx.showModal({ title: '拒绝排期', content: `${this.confirmationSummary(order)}\n\n拒绝后该预约将被取消，是否继续？`, confirmText: '拒绝排期', confirmColor: uiColors.danger });
     if (!result.confirm) return;
     try {
       wx.showLoading({ title: '处理中...' });
@@ -394,30 +387,32 @@ Page({
       return;
     }
     const source = e.detail || {};
-    const { id, visible, pinned, featured } = source;
+    const { id, visible, pinned, featured, heroSlot } = source;
     if (!id) return;
     wx.showActionSheet({
       itemList: [
         visible ? '隐藏作品' : '显示作品',
-        pinned ? '取消置顶' : '置顶作品',
-        featured ? '取消推荐' : '推荐作品',
+        pinned ? '取消作品置顶' : '置顶作品',
+        featured ? '移出主页精选' : '加入主页精选',
+        heroSlot ? '取消客户首页推荐' : '推荐至客户首页',
         '编辑作品',
         '删除作品'
       ],
       success: async (res) => {
         try {
+          if (res.tapIndex === 3) return wx.navigateTo({ url: '/pages/technician/hero-recommendations/index?' + (heroSlot ? 'removeWorkId=' : 'workId=') + id });
           if (res.tapIndex === 0) await api.technician.works.toggleVisible(id);
           if (res.tapIndex === 1) await api.technician.works.togglePinned(id);
           if (res.tapIndex === 2) await api.technician.works.toggleFeatured(id);
-          if (res.tapIndex === 3) {
+          if (res.tapIndex === 4) {
             wx.navigateTo({ url: `/pages/technician/work-edit/index?id=${id}` });
             return;
           }
-          if (res.tapIndex === 4) {
+          if (res.tapIndex === 5) {
             this.confirmDeleteWork(id);
             return;
           }
-          const messages = [visible ? '已隐藏' : '已显示', pinned ? '已取消置顶' : '已置顶', featured ? '已取消推荐' : '已推荐'];
+          const messages = [visible ? '作品已隐藏' : '作品已显示', pinned ? '已取消作品置顶' : '作品已置顶', featured ? '已移出主页精选' : '已加入主页精选'];
           wx.showToast({ title: messages[res.tapIndex], icon: 'success' });
           this.loadDashboard();
         } catch (err) {
@@ -432,7 +427,7 @@ Page({
       title: '删除作品',
       content: '确定删除这个作品吗？删除后无法恢复。',
       confirmText: '删除',
-      confirmColor: '#ef4444',
+      confirmColor: uiColors.danger,
       success: (res) => {
         if (res.confirm) this.deleteWork(id);
       }
@@ -454,9 +449,16 @@ Page({
 
   onTodoTap(e) {
     const key = e.currentTarget.dataset.key;
+    const todo = (this.data.todoItems || []).find((item) => item.key === key);
+    if (key === 'deposit') {
+      const url = todo && todo.count === 1 && todo.targetId
+        ? `/pages/technician/order-detail/index?id=${todo.targetId}`
+        : '/pages/technician/all-bookings/index?filter=unpaid_deposit';
+      wx.navigateTo({ url });
+      return;
+    }
     const map = {
       pending:  '/pages/technician/orders/index?task=pending',
-      deposit:  '/pages/technician/trade-orders/index?filter=pending',
       address:  '/pages/technician/customers/index',
       messages: '/pages/technician/chat/index'
     };

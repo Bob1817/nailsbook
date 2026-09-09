@@ -13,13 +13,13 @@
 
   <view wx:if="{{wechatFeatureVisible && loginMethod === 'wechat'}}" class="form">
     <text class="wechat-hint">微信仅用于识别登录身份；首次绑定时需主动授权手机号，美甲师入驻仍需邀请码。</text>
-    <button wx:if="{{wechatLinked}}" class="btn-primary" bindtap="handleWechatLogin" disabled="{{loading || wechatChecking}}">
+    <button wx:if="{{wechatLinked}}" class="btn-primary booking-action" bindtap="handleWechatLogin" disabled="{{loading || wechatChecking}}">
       {{loading ? '登录中...' : '微信授权登录'}}
     </button>
-    <button wx:elif="{{wechatReady}}" class="btn-primary" open-type="getPhoneNumber" bindgetphonenumber="handleWechatPhone" disabled="{{loading}}">
+    <button wx:elif="{{wechatReady}}" class="btn-primary booking-action" open-type="getPhoneNumber" bindgetphonenumber="handleWechatPhone" disabled="{{loading}}">
       授权手机号并登录
     </button>
-    <button wx:else class="btn-primary" bindtap="handleWechatLogin" disabled="{{wechatChecking}}">
+    <button wx:else class="btn-primary booking-action" bindtap="handleWechatLogin" disabled="{{wechatChecking}}">
       {{wechatChecking ? '正在检查微信登录...' : '重新获取微信登录状态'}}
     </button>
     <view class="link-row"><text class="link" data-method="phone" bindtap="selectLoginMethod">改用手机号登录</text></view>
@@ -32,7 +32,7 @@
       <input class="input {{phoneError ? 'input-error' : ''}}" type="number" maxlength="11" placeholder="请输入手机号"
         value="{{phone}}" data-field="phone" bindinput="onInput" confirm-type="done" />
     </view>
-    <button class="btn-primary" bindtap="handlePhoneNext" disabled="{{loading}}">
+    <button class="btn-primary booking-action" bindtap="handlePhoneNext" disabled="{{loading}}">
       {{loading ? '检查中...' : '下一步'}}
     </button>
     <view class="link-row">
@@ -55,11 +55,11 @@
       <input class="input" type="text" password placeholder="请输入密码"
         value="{{password}}" data-field="password" bindinput="onInput" confirm-type="done" />
     </view>
-    <button class="btn-primary" bindtap="handleLogin" disabled="{{loading}}">
+    <button class="btn-primary booking-action" bindtap="handleLogin" disabled="{{loading}}">
       {{loading ? '登录中...' : '登录'}}
     </button>
     <view class="link-row">
-      <text class="link" bindtap="goForgotPassword">忘记密码？</text>
+      <text class="link semantic-link" bindtap="goForgotPassword">忘记密码？</text>
       <text class="link-sep">|</text>
       <text class="link" bindtap="goRoleSelect">返回选择身份</text>
     </view>
@@ -99,10 +99,10 @@
       <input class="input" type="text" password placeholder="再次输入密码"
         value="{{confirmPassword}}" data-field="confirmPassword" bindinput="onInput" confirm-type="done" />
     </view>
-    <button class="btn-primary" bindtap="handleRegister" disabled="{{loading}}">
+    <button class="btn-primary booking-action" bindtap="handleRegister" disabled="{{loading}}">
       {{loading ? '注册中...' : '注册并登录'}}
     </button>
-    <button wx:if="{{wechatReady}}" class="btn-secondary" open-type="getPhoneNumber" bindgetphonenumber="handleWechatPhone" disabled="{{loading}}">
+    <button wx:if="{{wechatReady}}" class="btn-secondary booking-action" open-type="getPhoneNumber" bindgetphonenumber="handleWechatPhone" disabled="{{loading}}">
       授权微信手机号并注册
     </button>
     <view class="register-links">
@@ -111,7 +111,7 @@
   </view>
 
   <checkbox-group class="privacy-consent" bindchange="onPrivacyAgreementChange">
-    <label><checkbox value="agree" checked="{{privacyAgreed}}"/><text>我已阅读并同意</text></label>
+    <label><checkbox color="#287A4B" value="agree" checked="{{privacyAgreed}}"/><text>我已阅读并同意</text></label>
     <text class="privacy-link" catchtap="openUserAgreement">《用户协议》</text>
     <text>和</text><text class="privacy-link" catchtap="openPrivacyPolicy">《隐私政策》</text>
   </checkbox-group>

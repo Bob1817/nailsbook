@@ -44,7 +44,7 @@ page {
   align-items: center;
   justify-content: center;
   margin-bottom: var(--space-md);
-  box-shadow: 0 16rpx 48rpx rgba(255, 107, 138, 0.28);
+  box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.28);
 }
 
 .logo-text {
@@ -89,16 +89,16 @@ page {
   width: 100%;
   height: var(--btn-height);
   border-radius: var(--btn-radius);
-  background: transparent;
-  border: 2rpx solid #07C160;
+  background: var(--nb-soft-surface);
+  border: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10rpx;
   font-size: var(--font-md);
   font-weight: var(--weight-bold);
-  color: #07C160;
-  box-shadow: 0 6rpx 24rpx rgba(7, 193, 96, 0.18);
+  color: var(--nb-ink);
+  box-shadow: 0 6rpx 24rpx rgba(0, 0, 0, 0.18);
   transition: all 0.16s;
 }
 
@@ -132,7 +132,7 @@ page {
   padding: var(--space-sm);
 }
 
-.guest-entry { min-height:88rpx; display:flex; align-items:center; justify-content:center; color:#6a6065; font-size:28rpx; }
+.guest-entry { min-height:88rpx; display:flex; align-items:center; justify-content:center; color:var(--nb-secondary); font-size:28rpx; }
 
 .alt-login:active { opacity: 0.6; }
 
@@ -173,9 +173,9 @@ page {
   height: 56px;
   display: flex;
   align-items: center;
-  background: var(--bg-input);
+  background: var(--nb-soft-surface);
   border-radius: 14px;
-  border: 1.5rpx solid var(--border-default);
+  border: 0;
   padding: 0 28rpx;
   margin-bottom: var(--space-md);
   transition: border-color 0.2s;
@@ -283,7 +283,7 @@ page {
 .submit-btn-active {
   background: var(--brand-gradient);
   color: var(--text-inverse);
-  box-shadow: 0 8rpx 28rpx rgba(255, 107, 138, 0.3);
+  box-shadow: 0 8rpx 28rpx rgba(0, 0, 0, 0.3);
 }
 
 .submit-btn-active:active {
@@ -307,7 +307,7 @@ page {
   align-items: center;
   padding: 0 var(--space-sm);
   font-size: var(--font-sm);
-  color: var(--brand-primary);
+  color: var(--nb-text-link);
 }
 
 .account-action:active { opacity: 0.6; }
@@ -328,3 +328,11 @@ page {
   padding-bottom: env(safe-area-inset-bottom, 40rpx);
   padding-top: var(--space-md);
 }
+
+.invite-registration-note { display: block; margin-bottom: 24rpx; font-size: 24rpx; line-height: 1.6; color: var(--nb-secondary); text-align: center; }
+
+@import '../../styles/booking-actions.wxss';
+.wechat-btn.booking-action,
+.submit-btn.booking-action { height: var(--control-hit-height); min-height: 44px; border-radius: 8px; font-size: var(--font-sm); box-shadow: none; }
+.submit-btn.booking-action { background: var(--nb-soft-surface); color: var(--nb-secondary); }
+.submit-btn.booking-action.submit-btn-active { background: var(--nb-action); color: var(--text-inverse); }

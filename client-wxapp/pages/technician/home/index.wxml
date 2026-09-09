@@ -20,12 +20,12 @@
         <text class="business-hero-kicker">本月经营信息</text>
         <text class="business-hero-caption">数据更新至今日</text>
       </view>
-      <view class="business-hero-more">详情 <text>›</text></view>
+      <view class="business-hero-more semantic-link">详情 <text>›</text></view>
     </view>
     <view wx:if="{{businessOverview}}" class="business-hero-content">
-      <view class="business-hero-primary"><text class="business-hero-value">{{businessOverview.revenue}}</text><text class="business-hero-label">已完成确认收入</text></view>
+      <view class="business-hero-primary"><text class="business-hero-value semantic-money">{{businessOverview.revenue}}</text><text class="business-hero-label">已完成确认收入</text></view>
       <view class="business-hero-grid">
-        <view class="business-hero-metric business-hero-estimated"><text class="business-hero-number">{{businessOverview.estimatedRevenue}}</text><text class="business-hero-label">预计收入</text></view>
+        <view class="business-hero-metric business-hero-estimated"><text class="semantic-money business-hero-number">{{businessOverview.estimatedRevenue}}</text><text class="business-hero-label">预计收入</text></view>
         <view class="business-hero-metric"><text class="business-hero-number">{{businessOverview.monthCompleted}}</text><text class="business-hero-label">完成订单</text></view>
         <view class="business-hero-metric"><text class="business-hero-number">{{businessOverview.monthBookings}}</text><text class="business-hero-label">本月预约</text></view>
         <view class="business-hero-metric"><text class="business-hero-number">{{businessOverview.newCustomers}}</text><text class="business-hero-label">本月新增</text></view>
@@ -57,22 +57,7 @@
     </view>
 
     <view wx:if="{{confirmationTodos.length > 0}}" class="confirmation-todo-list">
-      <view wx:for="{{confirmationTodos}}" wx:key="id" class="confirmation-todo">
-        <view class="confirmation-todo-head">
-          <view class="confirmation-todo-status-row"><text class="confirmation-todo-status">待我确认</text><text wx:if="{{item._urgencyLabel}}" class="confirmation-todo-urgency">{{item._urgencyLabel}}</text></view>
-          <text class="confirmation-todo-time">{{item._dateLabel}} {{item._clock}}</text>
-        </view>
-        <view class="confirmation-todo-primary">
-          <view class="confirmation-todo-field"><text class="confirmation-todo-label">客户</text><text class="confirmation-todo-value">{{item.customerName || '客户'}}</text></view>
-          <view class="confirmation-todo-field confirmation-todo-price"><text class="confirmation-todo-label">预约金额</text><text class="confirmation-todo-value">{{item._priceText}}</text></view>
-        </view>
-        <view class="confirmation-todo-shop"><text class="confirmation-todo-label">店铺</text><text class="confirmation-todo-value">{{item._shopName || '店铺待确认'}}</text></view>
-        <view class="confirmation-todo-actions">
-          <view class="confirmation-action-hit" catchtap="refuseConfirmation" data-id="{{item.id}}" role="button" aria-label="拒绝排期"><text class="confirmation-action confirmation-action-reject">拒绝排期</text></view>
-          <view class="confirmation-action-hit" catchtap="confirmConfirmation" data-id="{{item.id}}" role="button" aria-label="确认排期"><text class="confirmation-action confirmation-action-confirm">确认排期</text></view>
-          <view class="confirmation-action-hit" catchtap="openOrderDetail" data-id="{{item.id}}" role="button" aria-label="查看预约详情"><text class="confirmation-action confirmation-action-detail">查看详情</text></view>
-        </view>
-      </view>
+      <technician-booking-card wx:for="{{confirmationTodos}}" wx:key="id" order="{{item}}" variant="confirmation" bind:open="onBookingCardOpen" bind:refuse="refuseConfirmation" bind:confirm="confirmConfirmation" />
     </view>
 
     <view wx:if="{{todoItems.length > 0}}" class="todo-list">
@@ -119,7 +104,7 @@
         <text class="card-title">今日热门</text>
         <text class="card-sub">最近受欢迎的款式和客户收藏</text>
       </view>
-      <view class="card-more pink" bindtap="navigateToWorks">更多</view>
+      <view class="card-more pink semantic-link" bindtap="navigateToWorks">更多</view>
     </view>
 
     <view wx:if="{{featuredWorks.length}}" class="hw-wall">
@@ -139,3 +124,5 @@
   </view>
 </view>
 <tab-bar selected="home" />
+
+<booking-confirm wx:if="{{confirmationOrder}}" order="{{confirmationOrder}}" bindclose="closeConfirmation" bindsaved="confirmationSaved" />

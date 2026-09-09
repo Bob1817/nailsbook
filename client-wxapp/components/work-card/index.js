@@ -114,6 +114,17 @@ Component({
         return value > 0 ? '¥' + value : '';
       }
 
+      function publicationStatusText(w) {
+        var statusText = {
+          draft: '草稿',
+          pending: '待审核',
+          rejected: '已驳回'
+        }[w.publicationStatus];
+        if (statusText) return statusText;
+        if (w.publicationStatus === 'approved') return w.isVisible === false ? '已隐藏' : '已发布';
+        return w.isVisible === false ? '已隐藏' : '待审核';
+      }
+
       var publisherId = String(work.technicianId || (work.technician && (work.technician.id || work.technician.technicianId)) || '');
       var bindings = wx.getStorageSync('client_bindings') || [];
       var publisherBound = !!work.isMyTechnician || bindings.some(function (binding) {
@@ -125,7 +136,7 @@ Component({
         gridArtistMeta: gridMeta,
         displayPrice: formatCardPrice(work),
         artistStatus: manageable
-          ? (work.isVisible === false ? '已隐藏' : '已发布')
+          ? publicationStatusText(work)
           : (work.nextAvailableText || work.availabilityText || expertise),
         showClientActions: !manageable && publisherBound,
         localLiked: !!work.isLiked,
@@ -190,7 +201,7 @@ Component({
     },
     onActionTap() {
       const work = this.data.work || {};
-      this.triggerEvent('actiontap', { id: work.id, visible: work.isVisible, pinned: work.isPinned, featured: work.isFeatured });
+      this.triggerEvent('actiontap', { id: work.id, visible: work.isVisible, pinned: work.isPinned, featured: work.isFeatured, heroSlot: work.heroSlot || null });
     },
     onBookTap() {
       const work = this.data.work || {};

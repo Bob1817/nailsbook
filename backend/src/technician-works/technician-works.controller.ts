@@ -24,6 +24,8 @@ import { TouristGuard } from '../technician-auth/tourist.guard';
 import { TechnicianWorksService } from './technician-works.service';
 import { CreateWorkDto, UpdateWorkDto } from './dto/create-work.dto';
 import { UpdateWorkAccessDto } from './dto/work-access.dto';
+import { SaveHeroRecommendationsDto } from './dto/hero-recommendations.dto';
+import { SaveWorkPromotionDto } from './dto/work-promotion.dto';
 
 @ApiTags('美甲师-作品')
 @ApiBearerAuth()
@@ -48,6 +50,19 @@ export class TechnicianWorksController {
     return this.technicianWorksService.getAccessOptions(request.user.technicianId);
   }
 
+  @Get('hero-recommendations')
+  getHeroRecommendations(@Req() request: { user: { technicianId: number } }) {
+    return this.technicianWorksService.getHeroRecommendations(request.user.technicianId);
+  }
+
+  @Put('hero-recommendations')
+  saveHeroRecommendations(
+    @Req() request: { user: { technicianId: number } },
+    @Body() dto: SaveHeroRecommendationsDto,
+  ) {
+    return this.technicianWorksService.saveHeroRecommendations(request.user.technicianId, dto);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: '获取作品详情' })
   @ApiParam({ name: 'id', type: Number, description: '作品ID' })
@@ -59,6 +74,23 @@ export class TechnicianWorksController {
     @Param('id', ParseIntPipe) id: number,
   ) {
     return this.technicianWorksService.findOne(request.user.technicianId, id);
+  }
+
+  @Get(':id/promotion')
+  getPromotion(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.technicianWorksService.getPromotion(request.user.technicianId, id);
+  }
+
+  @Put(':id/promotion')
+  savePromotion(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: SaveWorkPromotionDto,
+  ) {
+    return this.technicianWorksService.savePromotion(request.user.technicianId, id, dto);
   }
 
   @Post()

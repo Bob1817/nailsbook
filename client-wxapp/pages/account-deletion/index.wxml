@@ -1,0 +1,33 @@
+<nav-bar title="账号注销" showBack />
+<view class="deletion-page">
+  <view class="deletion-card">
+    <text class="deletion-title">注销{{roleLabel}}身份</text>
+    <text class="deletion-copy">注销仅针对当前{{roleLabel}}身份，不影响同一微信的另一身份。审核执行前可撤回申请。</text>
+    <text class="deletion-copy">完成后将无法登录此账号，解绑微信并匿名化主要账号资料；重新注册不会恢复原账号。历史交易、服务记录和审核记录保留，不代表所有历史图片和记录被永久删除。</text>
+    <text class="deletion-copy">请先结束未完成预约、处理待结算事项。运营人员核验身份并再次检查后，才会执行注销。</text>
+  </view>
+  <view wx:if="{{loading}}" class="deletion-card">正在加载…</view>
+  <view wx:elif="{{error}}" class="deletion-card"><text class="deletion-copy">{{error}}</text><button class="deletion-button secondary booking-action" bindtap="load">重新加载</button></view>
+  <block wx:else>
+    <view wx:if="{{record}}" class="deletion-card">
+      <text class="deletion-title">{{statusText}}</text>
+      <text class="deletion-copy">申请编号：{{record.id}}</text>
+      <text class="deletion-copy">申请时间：{{record.requestedAtText}}</text>
+      <text wx:if="{{record.processedAtText}}" class="deletion-copy">处理时间：{{record.processedAtText}}</text>
+      <text class="deletion-copy">注销原因：{{record.reason}}</text>
+      <text wx:if="{{record.decision}}" class="deletion-copy">处理说明：{{record.decision}}</text>
+      <button wx:if="{{record.status === 'pending'}}" class="deletion-button secondary booking-action" bindtap="cancel" disabled="{{busy}}">撤回申请</button>
+    </view>
+    <view wx:if="{{blockers.length}}" class="deletion-card">
+      <text class="deletion-title">请先处理以下事项</text>
+      <text wx:for="{{blockers}}" wx:key="*this" class="deletion-copy">{{item}}</text>
+      <button class="deletion-button secondary booking-action" bindtap="load">刷新检查</button>
+    </view>
+    <view wx:if="{{!record || record.status === 'cancelled' || record.status === 'rejected'}}" class="deletion-card">
+      <text class="deletion-title">注销原因</text>
+      <textarea class="deletion-input" maxlength="500" value="{{reason}}" bindinput="onReason" placeholder="请填写原因（最多500字）" />
+      <checkbox-group bindchange="onConfirm"><label class="deletion-check"><checkbox value="confirmed" checked="{{confirmed}}" color="#202020" /><text>我已了解注销影响，申请注销当前{{roleLabel}}身份</text></label></checkbox-group>
+      <button class="deletion-button booking-action" bindtap="submit" disabled="{{busy || !confirmed || !reason || blockers.length > 0}}" loading="{{busy}}">提交注销申请</button>
+    </view>
+  </block>
+</view>

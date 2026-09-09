@@ -7,7 +7,7 @@
     <view class="load-error-mark">!</view>
     <text class="empty-text">指引信息加载失败</text>
     <text class="empty-sub">请检查网络后重试</text>
-    <button class="retry-btn" bindtap="loadGuidance">重新加载</button>
+    <button class="retry-btn booking-action" bindtap="loadGuidance">重新加载</button>
   </view>
 
   <view wx:elif="{{!hasContent}}" class="empty">
@@ -35,6 +35,7 @@
 
     <!-- 按编辑顺序展示文字与图片 -->
     <scroll-view scroll-y class="content-area">
+      <view class="content-inner">
       <view class="section rich-guide">
         <block wx:for="{{activeBlocks}}" wx:key="id">
           <text wx:if="{{item.type === 'text'}}" class="section-text rich-guide-text">{{item.text}}</text>
@@ -42,14 +43,15 @@
         </block>
         <view wx:if="{{activeBlocks.length === 0}}" class="section-empty"><text>暂无该方式的到店指引</text></view>
       </view>
+      </view>
     </scroll-view>
 
     <!-- 导航到店按钮 -->
     <view class="bottom-bar">
-      <button wx:if="{{shopLocation}}" class="btn-navigate btn-secondary" bindtap="navigateToShop">
+      <button wx:if="{{shopLocation}}" class="btn-navigate btn-secondary booking-action" bindtap="navigateToShop">
         <text>一键导航到店</text>
       </button>
-      <button class="btn-navigate" open-type="share"><text>分享给朋友</text></button>
+      <button class="btn-navigate booking-action" open-type="share"><text>分享给朋友</text></button>
     </view>
   </block>
 </view>

@@ -72,6 +72,8 @@ Page({
     if (this._loadingWork || !this.workId) return;
     var self = this;
     self._loadingWork = true;
+    self.setData({ sharePath: '' });
+    wx.hideShareMenu();
     self.setData({ loading: true, loadFailed: false, loadErrorText: '', canRetryLoad: false });
     api.client.works.detail(self.workId).then(function (rawWork) {
       var work = normalizeWorkDetail(rawWork);
@@ -134,31 +136,39 @@ Page({
   bookSameStyle: function () {
     var work = this.data.work;
     if (!work || !work.id) return;
-    if (!work.technicianId) {
+    var technicianId = work.technicianId || (work.technician && work.technician.id);
+    if (!technicianId) {
       wx.showToast({ title: '暂无法获取美甲师信息', icon: 'none' });
       return;
     }
-    wx.navigateTo({ url: '/pages/client/create-order/index?workId=' + work.id });
+    wx.navigateTo({ url: '/pages/client/create-order/index?workId=' + work.id + '&techId=' + technicianId });
   },
 
   onShareAppMessage: function () {
     var work = this.data.work || {};
+    if (!this.data.sharePath) return { title: '美甲作品', path: '/pages/client/works/index' };
     if (work.id) api.client.works.recordShare(work.id, 'wechat_friend').catch(function () {});
     return {
       title: '我的美甲灵感｜' + (work.title || 'LunaNails 私人美甲'),
-      path: this.data.sharePath || '/pages/client/public-work/index?id=' + (work.id || this.workId),
+      path: this.data.sharePath,
       imageUrl: this.data.imageUrls[0] || ''
     };
   },
 
   prepareSharePath: function () {
+    if (this._sharePreparing) return;
+    this.setData({ sharePath: '' });
+    wx.hideShareMenu();
     if (!this.data.permissions.canShare) return;
-    api.client.works.createShareGrant(this.workId).then((grant) => {
+    this._sharePreparing = true;
+    return api.client.works.createShareGrant(this.workId).then((grant) => {
+      if (!grant.public && !/^[a-f0-9]{48}$/.test(grant.token || '')) throw new Error('分享授权无效');
       const path = grant.public
         ? '/pages/client/public-work/index?id=' + this.workId
         : '/pages/client/public-work/index?shareToken=' + grant.token;
       this.setData({ sharePath: path });
-    }).catch(() => this.setData({ sharePath: '' }));
+      wx.showShareMenu({ menus: ['shareAppMessage'] });
+    }).catch(() => this.setData({ sharePath: '' })).finally(() => { this._sharePreparing = false; });
   },
 
   // ── 图片轮播 / 预览 ──────────────────────
@@ -253,7 +263,9 @@ Page({
 
     self.setData({ submittingComment: true });
     api.client.works.addComment(self.workId, payload).then(function () {
-      self.setData({ commentText: '', replyingTo: null });
+      if (self.data.commentText === commentText && (self.data.replyingTo || {}).id === (replyingTo || {}).id) {
+        self.setData({ commentText: '', replyingTo: null });
+      }
       wx.showToast({ title: '评论已发布', icon: 'success' });
       self.loadComments();
     }).catch(function (err) {

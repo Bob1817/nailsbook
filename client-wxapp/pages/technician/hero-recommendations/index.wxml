@@ -1,0 +1,36 @@
+<view class="page">
+  <nav-bar title="客户首页推荐" showBack />
+  <view class="content">
+    <view class="heading"><text class="title">首页推荐 {{selected.length}}/3</text><text class="hint">客户首页会结合其绑定的美甲师分配展示，推荐不代表每次全部展示。顺序靠前的作品优先展示。</text></view>
+    <view wx:if="{{loading}}" class="state">加载中…</view>
+    <view wx:elif="{{loadFailed}}" class="state"><text>推荐作品加载失败</text><button class="booking-action" bindtap="load">重新加载</button></view>
+    <block wx:else>
+      <view wx:if="{{!selected.length}}" class="state">尚未设置首页推荐</view>
+      <view wx:for="{{selected}}" wx:key="id" class="work-row">
+        <view class="work-main"><image class="cover" src="{{item.coverUrl}}" mode="aspectFill"/><view class="work-info"><text class="work-title">{{index + 1}} · {{item.title || '未命名作品'}}</text><text class="hint">客户首页推荐</text></view></view>
+        <view class="actions"><button class="booking-action" disabled="{{saving}}" data-index="{{index}}" bindtap="choose">替换</button><button class="booking-action" disabled="{{saving}}" data-id="{{item.id}}" bindtap="remove">取消推荐</button><button class="booking-action" disabled="{{saving || index === 0}}" data-index="{{index}}" data-direction="-1" bindtap="move">上移</button><button class="booking-action" disabled="{{saving || index === selected.length - 1}}" data-index="{{index}}" data-direction="1" bindtap="move">下移</button></view>
+      </view>
+      <button wx:if="{{selected.length < 3}}" class="booking-action add" disabled="{{saving}}" bindtap="choose">添加推荐作品</button>
+      <text class="hint">仅支持公开可见、审核通过、未归档且有封面的作品。隐藏、转为私密或重新提交审核后会移出首页推荐。</text>
+    </block>
+  </view>
+  <view wx:if="{{choosing}}" class="mask" bindtap="closeChooser">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet-head">
+        <text class="title">{{directReplace ? '选择要替换的作品' : (replaceIndex >= 0 ? '选择替换作品' : '选择推荐作品')}}</text>
+        <button class="booking-action sheet-close" disabled="{{saving}}" bindtap="closeChooser">关闭</button>
+      </view>
+      <scroll-view scroll-y class="choices">
+        <view wx:if="{{!candidates.length}}" class="state">暂无可选作品，请先发布作品并等待审核通过</view>
+        <button wx:for="{{candidates}}" wx:key="id" class="choice" disabled="{{saving}}" data-id="{{item.id}}" bindtap="selectWork" aria-label="选择{{item.title || '未命名作品'}}">
+          <image class="choice-cover" src="{{item.coverUrl}}" mode="aspectFill"/>
+          <view class="choice-copy">
+            <text class="choice-title">{{item.title || '未命名作品'}}</text>
+            <text class="choice-meta">{{directReplace ? '当前推荐作品，点击后替换' : '已审核通过，可推荐至客户首页'}}</text>
+          </view>
+          <text class="choice-arrow">›</text>
+        </button>
+      </scroll-view>
+    </view>
+  </view>
+</view>

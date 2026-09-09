@@ -4,6 +4,7 @@
   "enablePullDownRefresh": true,
   "backgroundColor": "#FFF9F8",
   "usingComponents": {
-    "nav-bar": "/components/nav-bar/index"
+    "nav-bar": "/components/nav-bar/index",
+    "technician-booking-card": "/components/technician-booking-card/index"
   }
 }

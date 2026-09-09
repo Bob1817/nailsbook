@@ -70,7 +70,7 @@
       <text wx:if="{{confirmPasswordError}}" class="error-text">{{confirmPasswordError}}</text>
     </view>
 
-    <button class="btn-primary" bindtap="handleRegister" disabled="{{loading}}">
+    <button class="btn-primary booking-action" bindtap="handleRegister" disabled="{{loading}}">
       {{loading ? '注册中...' : '注册并登录'}}
     </button>
 

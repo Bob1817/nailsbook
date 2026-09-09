@@ -1,3 +1,4 @@
+const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
 const { createBlockId, normalizeGuidanceSection, serializeGuidanceSection } = require('../../../utils/shop-guidance');
 
@@ -21,7 +22,11 @@ Page({
     metro: emptySection(),
     bus: emptySection(),
     driving: emptySection(),
-    saving: false
+    saving: false,
+    uploading: false,
+    loading: false,
+    loaded: false,
+    loadError: ''
   },
 
   onLoad(options) {
@@ -33,6 +38,8 @@ Page({
   },
 
   async loadGuidance() {
+    if (this.data.loading || this.data.loaded) return;
+    this.setData({ loading: true, loadError: '' });
     wx.showLoading({ title: '加载中...' });
     try {
       const userInfo = await api.technician.auth.getUserInfo();
@@ -42,9 +49,7 @@ Page({
       );
 
       if (!shop) {
-        wx.hideLoading();
-        wx.showToast({ title: '未找到店铺信息', icon: 'none' });
-        return;
+        throw new Error('未找到店铺信息');
       }
 
       const g = (shop.guidance && typeof shop.guidance === 'object') ? shop.guidance : {};
@@ -56,26 +61,33 @@ Page({
         metro,
         bus,
         driving,
-        activeBlocks: metro.blocks
+        activeBlocks: metro.blocks,
+        loaded: true
       });
       wx.hideLoading();
     } catch (err) {
-      wx.hideLoading();
+      this.setData({ loadError: err.message || '加载失败' });
       wx.showToast({ title: err.message || '加载失败', icon: 'none' });
+    } finally {
+      wx.hideLoading();
+      this.setData({ loading: false });
     }
   },
 
   switchTab(e) {
+    if (this.data.saving || this.data.uploading) return;
     const idx = parseInt(e.currentTarget.dataset.idx);
     const mode = TABS[idx].key;
     this.setData({ activeTab: idx, activeMode: mode, activeLabel: TABS[idx].label, activeBlocks: this.data[mode].blocks });
   },
 
   updateBlocks(mode, blocks) {
+    if (!this.data.loaded || this.data.saving || this.data.uploading) return;
     this.setData({ [`${mode}.blocks`]: blocks, activeBlocks: blocks });
   },
 
   addTextBlock() {
+    if (this.data.saving || this.data.uploading) return;
     const mode = this.data.activeMode;
     const blocks = [...this.data[mode].blocks, { id: createBlockId(mode, this.data[mode].blocks.length), type: 'text', text: '' }];
     this.updateBlocks(mode, blocks);
@@ -89,6 +101,7 @@ Page({
   },
 
   addImageBlock() {
+    if (!this.data.loaded || this.data.saving || this.data.uploading) return;
     const mode = this.data.activeMode;
     const current = this.data[mode].blocks;
     const imageCount = current.filter((block) => block.type === 'image').length;
@@ -98,6 +111,7 @@ Page({
       return;
     }
 
+    this.setData({ uploading: true });
     wx.chooseMedia({
       count: remaining,
       mediaType: ['image'],
@@ -110,19 +124,23 @@ Page({
             const result = await api.upload.image(file.tempFilePath, 'technician');
             urls.push(result.url);
           }
-          wx.hideLoading();
           const blocks = [...this.data[mode].blocks];
           urls.forEach((url, index) => blocks.push({ id: createBlockId(mode, blocks.length + index), type: 'image', url }));
-          this.updateBlocks(mode, blocks);
+          this.setData({ [`${mode}.blocks`]: blocks, activeBlocks: blocks });
         } catch (err) {
-          wx.hideLoading();
           wx.showToast({ title: err.message || '上传失败', icon: 'none' });
         }
+        wx.hideLoading();
+        this.setData({ uploading: false });
+      },
+      fail: () => {
+        this.setData({ uploading: false });
       }
     });
   },
 
   deleteBlock(e) {
+    if (this.data.saving || this.data.uploading) return;
     const idx = parseInt(e.currentTarget.dataset.idx);
     const mode = this.data.activeMode;
     const block = this.data[mode].blocks[idx];
@@ -130,7 +148,7 @@ Page({
       title: block && block.type === 'image' ? '删除图片' : '删除文字段',
       content: '删除后无法恢复，确定继续吗？',
       confirmText: '删除',
-      confirmColor: '#dc2626',
+      confirmColor: uiColors.danger,
       success: (res) => {
         if (!res.confirm) return;
         const blocks = [...this.data[mode].blocks];
@@ -141,6 +159,7 @@ Page({
   },
 
   moveBlock(e) {
+    if (this.data.saving || this.data.uploading) return;
     const idx = parseInt(e.currentTarget.dataset.idx);
     const direction = e.currentTarget.dataset.direction;
     const mode = this.data.activeMode;
@@ -163,7 +182,7 @@ Page({
   },
 
   async save() {
-    if (this.data.saving) return;
+    if (!this.data.loaded || this.data.saving || this.data.uploading) return;
     this.setData({ saving: true });
     wx.showLoading({ title: '保存中...' });
 

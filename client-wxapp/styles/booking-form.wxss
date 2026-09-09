@@ -1,0 +1,8 @@
+/* 预约表单统一规格；仅由已治理页面显式导入。 */
+.section-title { font-size: var(--font-md); font-weight: var(--weight-semibold); line-height: 1.4; }
+.section-sub { font-size: var(--font-sm); line-height: 1.5; }
+.form-input { height: var(--input-height); min-height: 44px; padding: 0 var(--input-padding-h); border-radius: var(--input-radius); font-size: var(--font-sm); box-sizing: border-box; }
+.form-placeholder { font-size: var(--font-sm); color: var(--nb-muted); }
+.form-textarea, .remark-input { font-size: var(--font-sm); line-height: 1.5; border-radius: var(--input-radius); }
+.submit-btn { min-height: 44px; padding: 0 24rpx; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: var(--font-sm); font-weight: var(--weight-semibold); line-height: 1.4; box-shadow: none; }
+.submit-btn:active { opacity: .78; }

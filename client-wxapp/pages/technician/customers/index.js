@@ -1,3 +1,4 @@
+const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
 
 const LIFECYCLE_TABS = [
@@ -12,19 +13,21 @@ const LIFECYCLE_LABELS = {
   new: '新客',
   active: '活跃',
   due: '待复购',
-  dormant: '沉睡'
+  dormant: '沉睡',
+  deleted: '已注销',
+  unbound: '已解绑'
 };
 
 const TAG_COLORS = {
-  '常客': { bg: '#FFE9F0', text: '#FF5E93' },
-  '新客': { bg: '#EBF4FF', text: '#3B82F6' },
-  '高频': { bg: '#FFF1E5', text: '#C9792A' },
-  '简约': { bg: '#EEF9F1', text: '#31B46C' },
-  '裸色系': { bg: '#FFF8E6', text: '#C9860A' },
+  '常客': { bg: uiColors.page, text: uiColors.action },
+  '新客': { bg: uiColors.page, text: uiColors.action },
+  '高频': { bg: uiColors.page, text: uiColors.action },
+  '简约': { bg: uiColors.page, text: uiColors.action },
+  '裸色系': { bg: uiColors.page, text: uiColors.action },
 };
 
 function getTagColor(tag) {
-  return TAG_COLORS[tag] || { bg: '#F2F0F3', text: '#6D6570' };
+  return TAG_COLORS[tag] || { bg: uiColors.page, text: uiColors.secondary };
 }
 
 function parseTags(raw) {
@@ -63,20 +66,32 @@ function formatMoney(value) {
   return '¥' + Math.round(value);
 }
 
-function formatDateLabel(dateStr) {
+function formatDateLabel(dateStr, now = new Date()) {
   if (!dateStr) return '';
-  const d = new Date(dateStr);
-  const now = new Date();
-  const diff = now - d;
-  if (diff < 86400000) return '今天';
-  if (diff < 172800000) return '昨天';
-  if (diff < 604800000) return Math.floor(diff / 86400000) + '天前';
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
+  const d = dateOnly
+    ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
+    : new Date(dateStr);
+  if (!Number.isFinite(d.getTime())) return '';
+  if (dateOnly && (d.getFullYear() !== Number(dateOnly[1]) || d.getMonth() + 1 !== Number(dateOnly[2]) || d.getDate() !== Number(dateOnly[3]))) return '';
+  const calendarDay = value => Date.UTC(value.getFullYear(), value.getMonth(), value.getDate());
+  const days = (calendarDay(now) - calendarDay(d)) / 86400000;
+  if (days === 0) return '今天';
+  if (days === 1) return '昨天';
+  if (days === -1) return '明天';
+  if (days > 1 && days < 7) return days + '天前';
   const m = d.getMonth() + 1;
   const day = d.getDate();
-  return m + '月' + day + '日';
+  const year = d.getFullYear() === now.getFullYear() ? '' : d.getFullYear() + '年';
+  return year + m + '月' + day + '日';
 }
 
 function decorateCustomer(c) {
+  const accountDeleted = c.account && c.account.status === 'deleted';
+  const lifecycleStatus = accountDeleted ? 'deleted'
+    : c.bindingStatus === 'inactive' ? 'unbound'
+    : (c.lifecycle && c.lifecycle.status) || 'new';
+  const terminal = lifecycleStatus === 'deleted' || lifecycleStatus === 'unbound';
   const tags = parseTags(c.tags);
   const accountName = isPhoneLikeName(c.accountName) ? '' : String(c.accountName || '').trim();
   const savedName = isPhoneLikeName(c.name) ? '' : String(c.name || '').trim();
@@ -96,10 +111,11 @@ function decorateCustomer(c) {
     _initial: initial,
     _totalSpentText: formatMoney(c.totalSpent),
     _recentServiceText: formatDateLabel(c.recentServiceAt),
-    _lifecycleLabel: LIFECYCLE_LABELS[c.lifecycle && c.lifecycle.status] || '新客',
-    _lifecycleClass: `lifecycle-${(c.lifecycle && c.lifecycle.status) || 'new'}`,
-    _lifecycleReason: (c.lifecycle && c.lifecycle.reason) || '尚未完成首次服务',
-    _expectedServiceText: c.lifecycle && c.lifecycle.expectedNextServiceAt
+    _lifecycleLabel: LIFECYCLE_LABELS[lifecycleStatus] || '新客',
+    _lifecycleClass: `lifecycle-${lifecycleStatus}`,
+    _lifecycleStatus: lifecycleStatus,
+    _lifecycleReason: terminal ? (accountDeleted ? '客户账号已注销，保留历史服务记录' : '客户已解除绑定，保留历史服务记录') : (c.lifecycle && c.lifecycle.reason) || '尚未完成首次服务',
+    _expectedServiceText: !terminal && c.lifecycle && c.lifecycle.expectedNextServiceAt
       ? formatDateLabel(c.lifecycle.expectedNextServiceAt)
       : ''
   };
@@ -137,6 +153,7 @@ Page({
   },
 
   async loadCustomers() {
+    const requestId = this._customerRequestId = (this._customerRequestId || 0) + 1;
     this.setData({ loading: true, loadFailed: false });
     const params = {};
     if (this.data.keyword) params.search = this.data.keyword;
@@ -146,6 +163,7 @@ Page({
         api.technician.customers.list(params),
         api.chat.technician.conversations({ timeout: 10000, silent: true }).catch(() => [])
       ]);
+      if (requestId !== this._customerRequestId) return;
       const clientsById = conversationClients(conversations);
       const rawList = Array.isArray(res) ? res : (res.data || res.list || []);
       const customers = rawList.map((customer) => {
@@ -165,6 +183,7 @@ Page({
       this.setData({ customers, tabs, activeTab, loading: false });
       this.filterCustomers();
     } catch (err) {
+      if (requestId !== this._customerRequestId) return;
       this.setData({ loading: false, loadFailed: true });
     }
   },
@@ -174,7 +193,7 @@ Page({
     let visibleCustomers = customers;
     if (activeLifecycle !== 'all') {
       visibleCustomers = visibleCustomers.filter(
-        c => c.lifecycle && c.lifecycle.status === activeLifecycle
+        c => c._lifecycleStatus === activeLifecycle
       );
     }
     if (activeTab !== '全部') {
@@ -200,6 +219,7 @@ Page({
   },
 
   onKeywordInput(e) {
+    this._customerRequestId = (this._customerRequestId || 0) + 1;
     const keyword = e.detail.value;
     this.setData({ keyword });
     if (this._searchTimer) clearTimeout(this._searchTimer);
@@ -214,6 +234,7 @@ Page({
   },
 
   clearKeyword() {
+    if (this._searchTimer) clearTimeout(this._searchTimer);
     this.setData({ keyword: '' });
     this.loadCustomers();
   },
@@ -226,6 +247,7 @@ Page({
 
   onUnload() {
     if (this._searchTimer) clearTimeout(this._searchTimer);
+    this._customerRequestId = (this._customerRequestId || 0) + 1;
   },
 
   viewCustomer(e) {

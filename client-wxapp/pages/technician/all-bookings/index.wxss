@@ -1,3 +1,5 @@
+@import '../../../styles/booking-actions.wxss';
+
 page {
   background: var(--bg-gradient-entry);
   height: 100vh;
@@ -19,7 +21,7 @@ page {
   flex-shrink: 0;
   background: rgba(255,255,255,0.72);
   backdrop-filter: blur(12rpx);
-  border-bottom: 1rpx solid rgba(0,0,0,0.04);
+  border-bottom: 0;
   padding: 16rpx 0;
 }
 .filter-scroll { white-space: nowrap; }
@@ -76,12 +78,12 @@ page {
   flex-direction: column;
   align-items: center;
   gap: 12rpx;
-  border: 2rpx solid rgba(255,107,138,0.08) /* brand-primary-alpha */;
+  border: 0;
   box-shadow: var(--shadow-lg);
 }
 .empty-title { font-size: var(--font-md); font-weight: var(--weight-semibold); color: var(--text-primary); }
 .empty-sub { font-size: var(--font-sm); color: var(--text-muted); text-align: center; }
-.retry-btn { display:flex; min-height:88rpx; margin-top:22rpx; padding:0 38rpx; align-items:center; justify-content:center; border-radius: var(--radius-xl); background: var(--bg-tag); color:#9e496f; font-size: var(--font-sm); font-weight: var(--weight-semibold); }
+.retry-btn { min-width:112px; margin-top:22rpx; padding:0 24rpx; background: var(--bg-tag); color:var(--nb-ink); }
 
 /* ===== 行程卡片 ===== */
 .trip-list { display: flex; flex-direction: column; gap: 16rpx; }

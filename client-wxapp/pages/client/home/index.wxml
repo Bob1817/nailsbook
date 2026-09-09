@@ -4,7 +4,7 @@
 
   <!-- 轮播 - 最新作品 -->
   <view class="hero-section">
-    <swiper wx:if="{{recentWorks.length > 0}}" class="hero-swiper" autoplay interval="4000" circular current="{{swiperIndex}}" bindchange="onSwiperChange">
+    <swiper wx:if="{{recentWorks.length > 0}}" class="hero-swiper" autoplay="{{recentWorks.length > 1}}" interval="4000" circular="{{recentWorks.length > 1}}" current="{{swiperIndex}}" bindchange="onSwiperChange">
       <swiper-item wx:for="{{recentWorks}}" wx:key="id" bindtap="viewWork" data-id="{{item.id}}">
         <view class="hero-item">
           <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="hero-img" aria-label="{{item.title || '精选美甲作品'}}" />
@@ -18,8 +18,8 @@
                     <text>{{item.technicianName}}</text>
                   </view>
                 </view>
-                <view class="hero-cta-btn" catchtap="viewWork" data-id="{{item.id}}">
-                  <text>查看详情</text>
+                <view class="hero-cta-btn booking-action" catchtap="viewWork" data-id="{{item.id}}">
+                  <text class="hero-cta-label">查看详情</text>
                   <text class="hero-cta-arrow">›</text>
                 </view>
               </view>
@@ -33,7 +33,8 @@
       <view class="icon-placeholder-circle">
         <view class="icon-placeholder-inner"></view>
       </view>
-      <text class="hero-placeholder-text">绑定美甲师后查看最新作品</text>
+      <text class="hero-placeholder-text">{{heroLoadFailed ? '推荐作品加载失败' : (technicianCount > 0 ? '美甲师暂未设置首页推荐' : (clientLoggedIn ? '绑定美甲师后查看首页推荐' : '暂无公开推荐作品'))}}</text>
+      <view class="booking-action hero-empty-action" bindtap="{{heroLoadFailed ? 'loadData' : 'navigateToWorks'}}" role="button">{{heroLoadFailed ? '重新加载' : '浏览作品'}}</view>
     </view>
 
     <view wx:if="{{recentWorks.length > 1}}" class="hero-dots">
@@ -51,7 +52,7 @@
   <view class="section booking-section booking-section-primary">
     <view class="section-header">
       <text class="section-title">我的预约</text>
-      <view wx:if="{{upcomingOrder}}" class="section-more" bindtap="navigateToOrders">查看全部 ›</view>
+      <view wx:if="{{upcomingOrder}}" class="section-more semantic-link" bindtap="navigateToOrders">查看全部 ›</view>
     </view>
     <text class="section-sub">{{upcomingOrder ? '距离最近的一次预约' : '快速发起你的下一次美甲'}}</text>
 
@@ -76,9 +77,9 @@
           </view>
         </view>
         <view class="order-card-actions" catchtap="">
-          <view class="order-action-btn" bindtap="navigateToChat"><image class="order-action-icon" src="/static/icons/tab-chat.svg" mode="aspectFit" /><text>发消息</text></view>
-          <view wx:if="{{upcomingOrder.technician.phone}}" class="order-action-btn" bindtap="callTech"><image class="order-action-icon order-action-icon-phone" src="/static/icons/phone-white.svg" mode="aspectFit" /><text>打电话</text></view>
-          <view class="order-action-btn order-action-primary" bindtap="viewUpcomingOrder">查看详情</view>
+          <view class="order-action-btn booking-action" bindtap="navigateToChat"><image class="order-action-icon" src="/static/icons/tab-chat.svg" mode="aspectFit" /><text>发消息</text></view>
+          <view wx:if="{{upcomingOrder.technician.phone}}" class="order-action-btn booking-action" bindtap="callTech"><image class="order-action-icon order-action-icon-phone" src="/static/icons/phone-white.svg" mode="aspectFit" /><text>打电话</text></view>
+          <view class="order-action-btn order-action-primary booking-action" bindtap="viewUpcomingOrder" role="button" aria-label="查看预约详情">查看详情</view>
         </view>
       </view>
     </view>
@@ -86,29 +87,7 @@
     <view wx:else class="no-order-card" bindtap="navigateToBooking">
       <view class="no-order-content">
         <view class="no-order-copy"><text class="no-order-title">当前暂无预约</text><text class="no-order-sub">挑选喜欢的款式，快速预约美甲师</text></view>
-        <view class="book-btn"><text>去预约</text><text class="book-btn-arrow">›</text></view>
-      </view>
-    </view>
-  </view>
-
-  <view class="section asset-section">
-    <view class="section-header">
-      <text class="section-title">我的美甲记录</text>
-      <view class="section-more" bindtap="navigateToArchive">查看全部 ›</view>
-    </view>
-    <text class="section-sub">按时间记录每一次完成的美甲和照片</text>
-    <view class="asset-grid">
-      <view class="asset-card archive-card" bindtap="navigateToArchive" role="button" aria-label="查看我的美甲记录">
-        <text class="asset-eyebrow">NAIL MOMENTS</text>
-        <text class="asset-title">我的美甲记录</text>
-        <text class="asset-desc">上传照片，也会同步美甲师关联的作品</text>
-        <text class="asset-link">查看时间记录 →</text>
-      </view>
-      <view class="asset-card ai-card" bindtap="navigateToAiPhoto" role="button" aria-label="生成朋友圈分享图">
-        <text class="asset-eyebrow">SHARE PHOTO</text>
-        <text class="asset-title">生成朋友圈分享图</text>
-        <text class="asset-desc">从记录中选图，生成适合分享的画面</text>
-        <text class="asset-link">选择照片 →</text>
+        <view class="book-btn booking-action"><text>去预约</text><text class="book-btn-arrow">›</text></view>
       </view>
     </view>
   </view>
@@ -116,7 +95,7 @@
   <view class="section style-section">
     <view class="section-header">
       <text class="section-title">热门风格</text>
-      <view class="section-more" bindtap="navigateToWorks">查看全部 ›</view>
+      <view class="section-more semantic-link" bindtap="navigateToWorks">查看全部 ›</view>
     </view>
     <text class="section-sub">按你的场景，快速找到下一款灵感</text>
     <scroll-view class="style-scroll" scroll-x enhanced show-scrollbar="{{false}}">
@@ -130,7 +109,7 @@
   <view class="section">
     <view class="section-header">
       <text class="section-title">精选作品</text>
-      <view class="section-more" bindtap="navigateToWorks">查看全部 ›</view>
+      <view class="section-more semantic-link" bindtap="navigateToWorks">查看全部 ›</view>
     </view>
     <text class="section-sub">设计能力、审美理念与适合你的场景</text>
 

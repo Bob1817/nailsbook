@@ -1,3 +1,5 @@
+@import '../../../styles/booking-actions.wxss';
+
 .container {
   min-height: 100vh;
   background: var(--bg-page);
@@ -14,7 +16,7 @@
   display: flex;
   align-items: center;
   min-height: 96rpx;
-  border-bottom: 1rpx solid var(--border-card);
+  border-bottom: 0;
 }
 .form-item:last-child { border-bottom: none; }
 
@@ -30,7 +32,7 @@
   height: 96rpx;
   font-size: var(--font-md);
   color: var(--text-primary);
- padding:0 18rpx; background: var(--bg-input); border:2rpx solid transparent; border-radius: var(--radius-sm); box-sizing:border-box;}
+ padding:0 18rpx; background: var(--nb-soft-surface); border: 0; border-radius: var(--radius-sm); box-sizing:border-box;}
 .input:focus { border-color: var(--brand-primary); background: var(--bg-card); }
 
 .location-row {
@@ -45,7 +47,7 @@
 }
 .location-hint {
   font-size: var(--font-sm);
-  color: var(--brand-primary);
+  color: var(--nb-text-link);
 }
 
 .default-row {
@@ -75,12 +77,13 @@
 }
 .btn-save {
   width: 100%;
-  height: 96rpx;
+  height: 44px;
+  min-height: 44px;
   background: var(--brand-gradient);
   color: var(--text-inverse);
-  border-radius: var(--radius-md);
-  font-size: var(--font-md);
-  font-weight: var(--weight-medium);
+  border-radius: 8px;
+  font-size: var(--font-sm);
+  font-weight: var(--weight-semibold);
   display: flex;
   align-items: center;
   justify-content: center;

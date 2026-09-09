@@ -13,7 +13,12 @@
     <view class="section-head">
       <text class="section-title">选择新时间</text>
     </view>
-    <booking-time-picker
+    <text wx:if="{{loading}}">正在加载可预约时间…</text>
+    <view wx:elif="{{loadError}}">
+      <text>{{loadError}}</text>
+      <button class="booking-action" bindtap="_loadTechInfo">重新加载</button>
+    </view>
+    <booking-time-picker wx:elif="{{techId}}"
       tech-id="{{techId}}"
       service-date="{{selectedDate}}"
       start-time="{{selectedTime}}"
@@ -28,9 +33,9 @@
   <!-- 底部按钮 -->
   <view class="submit-bar">
     <view class="submit-btns">
-      <view class="submit-btn submit-btn-cancel" bindtap="goBack">暂不修改</view>
-      <view class="submit-btn submit-btn-save {{(!selectedDate || !selectedTime || saving) ? 'btn-disabled' : ''}}" bindtap="saveTime">
-        {{saving ? '保存中...' : '保存修改'}}
+      <view class="submit-btn submit-btn-cancel booking-action {{saving ? 'btn-disabled' : ''}}" role="button" aria-disabled="{{saving}}" bindtap="goBack">{{saved ? '返回预约' : '暂不修改'}}</view>
+      <view class="submit-btn submit-btn-save booking-action {{(!selectedDate || !selectedTime || !techId || loading || loadError || saving || saved) ? 'btn-disabled' : ''}}" role="button" aria-disabled="{{!selectedDate || !selectedTime || !techId || loading || !!loadError || saving || saved}}" bindtap="saveTime">
+        {{saved ? '已保存' : (saving ? '保存中...' : '保存修改')}}
       </view>
     </view>
   </view>

@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "美照工作台",
+  "navigationBarTitleText": "美甲记录",
   "navigationStyle": "custom",
   "usingComponents": {
     "nav-bar": "/components/nav-bar/index"

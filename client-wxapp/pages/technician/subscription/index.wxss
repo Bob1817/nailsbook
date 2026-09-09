@@ -1,6 +1,6 @@
 .container {
   min-height: 100vh;
-  background: #f6f7f9;
+  background: var(--nb-page);
   padding-bottom: 140rpx;
 }
 
@@ -23,10 +23,10 @@
 /* ===== 当前套餐卡片 ===== */
 .current-card {
   margin: 0 24rpx 20rpx;
-  background: linear-gradient(135deg, #ff6b8a, #a855f7);
+  background: var(--nb-action);
   border-radius: var(--radius-md);
   padding: 40rpx 32rpx;
-  box-shadow: 0 8rpx 32rpx rgba(255,107,138,0.25) /* brand-primary-alpha */;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.25) /* brand-primary-alpha */;
 }
 .current-label {
   display: block;
@@ -86,7 +86,7 @@
   display: block;
   font-size: var(--font-lg);
   font-weight: var(--weight-bold);
-  color: var(--brand-primary);
+  color: var(--nb-money);
   margin-bottom: 6rpx;
 }
 .plan-cycle {
@@ -111,7 +111,7 @@
 .plan-btn {
   min-height: 88rpx;
   padding: 0 32rpx;
-  background: rgba(255,107,138,0.08) /* brand-primary-alpha */;
+  background: rgba(0, 0, 0, 0.08) /* brand-primary-alpha */;
   color: var(--brand-primary);
   border-radius: var(--radius-lg);
   font-size: var(--font-sm);
@@ -134,9 +134,9 @@
   min-height: 88rpx;
   margin: 0;
   padding: 0 24rpx;
-  border: 2rpx solid var(--border-default);
+  border: 0;
   border-radius: var(--radius-lg);
-  background: var(--bg-card);
+  background: var(--nb-soft-surface);
   color: var(--text-primary);
   font-size: var(--font-sm);
   line-height: 84rpx;
@@ -155,15 +155,15 @@
   align-items: center;
   padding: 160rpx 40rpx 80rpx;
 }
-.load-error-mark { width:88rpx; height:88rpx; margin-bottom:32rpx; border-radius:50%; background:#fff0f4; color:#c75b83; font-size: var(--font-xl); line-height:88rpx; text-align:center; }
-.retry-btn { min-height:88rpx; margin:0; padding:0 56rpx; border:0; border-radius: var(--radius-xl); background:#1f2937; color: var(--text-inverse); font-size: var(--font-md); line-height:88rpx; }
+.load-error-mark { width:88rpx; height:88rpx; margin-bottom:32rpx; border-radius:50%; background:var(--nb-page); color:var(--nb-ink); font-size: var(--font-xl); line-height:88rpx; text-align:center; }
+.retry-btn { min-height:88rpx; margin:0; padding:0 56rpx; border:0; border-radius: var(--radius-xl); background:var(--nb-ink); color: var(--text-inverse); font-size: var(--font-md); line-height:88rpx; }
 .retry-btn::after { border:0; }
 .empty-icon {
   width: 112rpx;
   height: 112rpx;
   margin-bottom: 32rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #FFE2EA, #EDE9FE);
+  background: var(--nb-page);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -182,7 +182,7 @@
 .contact-btn {
   min-height: 88rpx;
   padding: 0 72rpx;
-  background: linear-gradient(135deg, #ff6b8a, #a855f7);
+  background: var(--nb-action);
   color: var(--text-inverse);
   border-radius: var(--radius-xl);
   font-size: var(--font-md);
@@ -226,9 +226,9 @@
   background: var(--bg-card);
   transition: width 200ms ease;
 }
-.usage-item--notice .usage-progress { background: #fde68a; }
-.usage-item--warning .usage-progress { background: #fdba74; }
-.usage-item--limit .usage-progress { background: #fecaca; }
+.usage-item--notice .usage-progress { background: var(--nb-action); }
+.usage-item--warning .usage-progress { background: var(--nb-action); }
+.usage-item--limit .usage-progress { background: var(--nb-page); }
 .usage-hint {
   display: block;
   margin-top: 10rpx;
@@ -236,3 +236,6 @@
   font-size: var(--font-xs);
   line-height: 1.4;
 }
+@import '../../../styles/booking-actions.wxss';
+.retry-btn.booking-action { min-height:44px; height:44px; margin:0; padding:0 24rpx; border-radius:8px; font-size:var(--font-sm); line-height:1.4; }
+.plan-btn.booking-action,.contact-btn.booking-action { min-height:44px; height:44px; padding:0 24rpx; border-radius:8px; font-size:var(--font-sm); line-height:1.4; }

@@ -1,0 +1,6 @@
+<button class="action-button action-button-{{variant}} {{block ? 'is-block' : ''}} {{disabled || loading ? 'is-disabled' : ''}}"
+  disabled="{{disabled || loading}}" loading="{{loading}}" hover-class="is-pressed"
+  aria-label="{{ariaLabel || label}}" bindtap="onTap">
+  <slot name="icon"></slot>
+  <text>{{label}}</text>
+</button>

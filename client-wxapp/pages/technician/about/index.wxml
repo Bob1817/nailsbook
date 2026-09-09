@@ -1,51 +1,23 @@
-<nav-bar title="关于" showBack/>
-<view class="container">
-  <view class="logo-section">
-    <view class="logo"><view class="logo-mark"></view></view>
-    <text class="app-name">LunaNails</text>
-    <text class="version">版本 {{version}}</text>
+<nav-bar title="关于我们" showBack/>
+<view class="settings-page">
+  <view class="brand-hero"><view class="logo"><text class="logo-letter">N</text></view><text class="app-name">LunaNails</text><text class="brand-slogan">让创作、预约与客户关系更简单</text><text class="version">版本 {{version}}</text></view>
+  <view class="mission-card">
+    <view class="mission-heading"><text class="mission-kicker">产品定位</text><text class="mission-index">01</text></view>
+    <text class="mission-title">美甲师的日常经营工作台</text>
+    <text class="mission-copy">连接作品、预约与客户关系，让日常经营更清晰、更高效。</text>
+    <view class="feature-row">
+      <view class="feature-item"><text class="feature-number">01</text><text class="feature-name">展示作品</text></view>
+      <view class="feature-item"><text class="feature-number">02</text><text class="feature-name">管理预约</text></view>
+      <view class="feature-item"><text class="feature-number">03</text><text class="feature-name">维护客户</text></view>
+    </view>
   </view>
-
+  <view class="section-heading"><text class="section-title">平台信息</text></view>
   <view class="info-card">
-    <view class="info-item">
-      <text class="info-label">产品定位</text>
-      <text class="info-value">专为美甲师与客户打造的一对一预约管理平台</text>
-    </view>
-    <view class="info-item info-item-border">
-      <text class="info-label">核心功能</text>
-      <text class="info-value">作品展示、在线预约、预约管理、客户沟通</text>
-    </view>
-    <view class="info-item">
-      <text class="info-label">服务对象</text>
-      <text class="info-value">独立美甲师及其私域客户</text>
-    </view>
-    <view class="info-item info-item-border">
-      <text class="info-label">运营主体</text>
-      <text class="info-value">{{operatorName}}</text>
-    </view>
-    <view class="info-item info-item-border">
-      <text class="info-label">服务门店</text>
-      <text class="info-value">{{storeName}}</text>
-    </view>
-    <view wx:if="{{storeAddress}}" class="info-item info-item-border">
-      <text class="info-label">门店地址</text>
-      <text class="info-value">{{storeAddress}}</text>
-    </view>
-    <view wx:if="{{storePhone}}" class="info-item info-item-border">
-      <text class="info-label">门店电话</text>
-      <text class="info-value">{{storePhone}}</text>
-    </view>
-    <view class="info-item info-item-border">
-      <text class="info-label">小程序备案号</text>
-      <text class="info-value">{{filingNumber}}</text>
-    </view>
-    <view class="info-item info-item-border">
-      <text class="info-label">隐私联系方式</text>
-      <text class="info-value">{{privacyContact}}</text>
-    </view>
-    <view class="agreement-row" bindtap="openAgreement" data-type="user">用户服务协议<text>›</text></view>
-    <view class="agreement-row" bindtap="openAgreement" data-type="privacy">隐私政策<text>›</text></view>
+    <view class="info-item"><text class="info-label">运营主体</text><text class="info-value">{{operatorName}}</text></view><view class="info-item"><text class="info-label">服务门店</text><text class="info-value">{{storeName}}</text></view>
+    <view wx:if="{{storeAddress}}" class="info-item"><text class="info-label">门店地址</text><text class="info-value">{{storeAddress}}</text></view><view wx:if="{{storePhone}}" class="info-item"><text class="info-label">门店电话</text><text class="info-value">{{storePhone}}</text></view>
+    <view class="info-item"><text class="info-label">小程序备案号</text><text class="info-value">{{filingNumber}}</text></view><view class="info-item"><text class="info-label">隐私联系方式</text><text class="info-value">{{privacyContact}}</text></view>
   </view>
-
-  <text class="copyright">© {{currentYear}} LunaNails</text>
+  <view class="section-heading"><text class="section-title">协议与政策</text></view>
+  <view class="agreement-card"><view class="agreement-row" bindtap="openAgreement" data-type="user" role="button"><text>用户服务协议</text><text class="chevron">›</text></view><view class="agreement-row" bindtap="openAgreement" data-type="privacy" role="button"><text>隐私政策</text><text class="chevron">›</text></view></view>
+  <text class="copyright">© {{currentYear}} LunaNails · 保留所有权利</text>
 </view>

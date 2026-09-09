@@ -1,0 +1,6 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "互动记录",
+  "enablePullDownRefresh": true,
+  "usingComponents": { "nav-bar": "/components/nav-bar/index" }
+}

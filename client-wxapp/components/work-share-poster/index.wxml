@@ -1,0 +1,4 @@
+<button class="poster-button" bindtap="savePoster" loading="{{busy}}" disabled="{{busy}}">{{busy ? '正在生成海报' : '保存作品分享海报'}}</button>
+<button class="copy-button" bindtap="copyCaption" disabled="{{busy}}">复制分享文案</button>
+<text class="poster-hint">{{shareToken ? '分享授权有效期内可扫码查看作品及预约' : '扫码查看作品、美甲师及预约信息'}}</text>
+<canvas canvas-id="work-poster" class="poster-canvas" style="width:600px;height:800px" />

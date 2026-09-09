@@ -6,6 +6,7 @@ describe('TechnicianInsightsService', () => {
       count: jest.fn(),
       groupBy: jest.fn(),
       findMany: jest.fn(),
+      aggregate: jest.fn(),
     },
     customer: {
       count: jest.fn(),
@@ -19,6 +20,9 @@ describe('TechnicianInsightsService', () => {
       aggregate: jest.fn(),
     },
     nailWork: {
+      count: jest.fn(),
+    },
+    workPromotion: {
       count: jest.fn(),
     },
     referralRelation: {
@@ -52,6 +56,8 @@ describe('TechnicianInsightsService', () => {
     prisma.customer.findMany.mockResolvedValue([]);
     prisma.conversionEvent.findMany.mockResolvedValue([]);
     prisma.nailWorkShareEvent.findMany.mockResolvedValue([]);
+    prisma.workPromotion.count.mockResolvedValue(0);
+    prisma.order.aggregate.mockResolvedValue({ _sum: { discountAmountFen: null } });
     service = new TechnicianInsightsService(prisma as never);
   });
 
@@ -102,6 +108,13 @@ describe('TechnicianInsightsService', () => {
       _count: { id: 8 },
     });
     prisma.nailWork.count.mockResolvedValue(10);
+    prisma.workPromotion.count.mockResolvedValue(2);
+    prisma.order.count
+      .mockResolvedValueOnce(2)
+      .mockResolvedValueOnce(4)
+      .mockResolvedValueOnce(3)
+      .mockResolvedValueOnce(6)
+      .mockResolvedValueOnce(4);
     prisma.referralRelation.count
       .mockResolvedValueOnce(5)
       .mockResolvedValueOnce(2);

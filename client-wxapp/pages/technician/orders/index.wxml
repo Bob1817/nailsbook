@@ -8,10 +8,9 @@
         class="date-cell today-cell {{activeIsToday ? 'date-cell-active' : ''}}"
         bindtap="resetToday"
       >
-        <text class="date-week">今天</text>
+        <view class="date-week-row"><text class="date-week">今天</text><view class="date-statuses"><view wx:for="{{todayIncome.statuses}}" wx:for-item="status" wx:key="tone" class="date-status-dot status-{{status.tone}}" aria-label="{{status.label}}"></view></view></view>
         <text class="date-day">{{todayDay}}</text>
         <text wx:if="{{todayIncome.text}}" class="date-income {{todayIncome.type === 'actual' ? 'date-income-actual' : 'date-income-estimated'}}">{{todayIncome.text}}</text>
-        <view wx:if="{{markedKeys[todayKey]}}" class="date-dot {{activeIsToday ? 'dot-light' : ''}}"></view>
       </view>
       <scroll-view scroll-x class="date-scroll" enhanced show-scrollbar="{{false}}">
         <view class="date-scroll-inner">
@@ -22,15 +21,14 @@
             bindtap="onPickDate"
             data-key="{{item.key}}"
           >
-            <text class="date-week">周{{item.week}}</text>
-            <text class="date-day">{{item.day}}</text>
+            <view class="date-week-row"><text class="date-week">周{{item.week}}</text><view class="date-statuses"><view wx:for="{{item.income.statuses}}" wx:for-item="status" wx:key="tone" class="date-status-dot status-{{status.tone}}" aria-label="{{status.label}}"></view></view></view>
+        <text class="date-day">{{item.day}}</text>
             <text wx:if="{{item.income.text}}" class="date-income {{item.income.type === 'actual' ? 'date-income-actual' : 'date-income-estimated'}}">{{item.income.text}}</text>
-            <view wx:if="{{markedKeys[item.key]}}" class="date-dot {{activeKey === item.key ? 'dot-light' : ''}}"></view>
           </view>
         </view>
       </scroll-view>
       <view class="more-btn" bindtap="openCalendar">
-        <text class="more-text">更多</text>
+        <text class="more-text semantic-link">更多</text>
       </view>
     </view>
 
@@ -56,7 +54,7 @@
       </view>
       <view class="tab-more-wrap">
         <view class="tab-more-btn" bindtap="toggleMoreMenu">
-          <text class="tab-more-text">更多</text>
+          <text class="tab-more-text semantic-link">更多</text>
           <view class="tab-more-arrow {{showMoreMenu ? 'tab-more-arrow-up' : ''}}"></view>
         </view>
         <view wx:if="{{showMoreMenu}}" class="tab-more-dropdown">
@@ -80,6 +78,22 @@
     show-scrollbar="{{false}}"
   >
     <view class="list-area">
+      <view wx:if="{{bookingDayReady && activeKey >= todayKey}}"
+        class="booking-day-control {{dayAccepting ? '' : 'booking-day-control-paused'}} {{daySaving ? 'booking-day-control-saving' : ''}}"
+        bindtap="toggleBookingDay" hover-class="booking-day-pressed" role="switch"
+        aria-checked="{{dayAccepting}}" aria-label="{{activeLabel}}当日接单，当前{{dayAccepting ? '已开放' : '已关闭'}}">
+        <view class="booking-day-icon-wrap"><image class="booking-day-icon" src="/static/icons/calendar.svg" mode="aspectFit" /></view>
+        <view class="booking-day-copy">
+          <view class="booking-day-title-row">
+            <text class="booking-day-title">当日接单</text>
+            <text class="booking-day-status">{{dayAccepting ? '已开放' : '已关闭'}}</text>
+          </view>
+          <text class="booking-day-description">{{daySaving ? '正在更新设置…' : (dayAccepting ? activeLabel + '，客户可提交新的预约申请' : activeLabel + '，暂停接收新的预约申请')}}</text>
+        </view>
+        <view class="booking-day-switch {{dayAccepting ? 'booking-day-switch-on' : ''}}">
+          <view class="booking-day-switch-knob"></view>
+        </view>
+      </view>
       <view wx:if="{{taskFilter === 'pending'}}" class="conflict-alert">待处理预约：点击卡片进入预约详情完成报价或确认排期。</view>
       <view wx:if="{{summary.conflicts}}" class="conflict-alert">检测到 {{summary.conflicts}} 个时间重叠的预约，请逐一核对并调整。</view>
       <view wx:if="{{loading}}" class="skeleton-list">
@@ -100,6 +114,7 @@
           bind:open="onBookingCardOpen"
           bind:navigate="onBookingCardNavigate"
           bind:contact="onBookingCardContact"
+          bind:message="onBookingCardMessage"
         />
       </view>
     </view>
@@ -110,7 +125,7 @@
 <view wx:if="{{showCalendar}}" class="calendar-overlay" bindtap="closeCalendar">
   <view class="calendar-panel" catchtap="noop">
     <view class="calendar-header">
-      <view class="calendar-legend"><text class="legend-actual">实际收入</text><text class="legend-estimated">预计收入</text></view>
+      <view class="calendar-legend"><text class="legend-actual">实际收入</text><text class="legend-estimated">预计收入</text><text class="legend-cancelled">取消</text><text class="legend-refunded">退款</text></view>
       <view class="calendar-close-icon" bindtap="closeCalendar">×</view>
     </view>
 
@@ -137,9 +152,8 @@
           <view class="calendar-days">
             <view wx:for="{{month.days}}" wx:for-item="day" wx:key="key" class="calendar-day {{day.empty ? 'calendar-day-empty' : ''}} {{day.isToday ? 'calendar-today' : ''}} {{day.isSelected ? 'calendar-selected' : ''}} {{day.isBeforeRegistration ? 'calendar-before-registration' : ''}}" bindtap="onCalendarDayTap" data-date="{{day.date}}">
               <block wx:if="{{!day.empty}}">
-                <text class="calendar-day-num">{{day.day}}</text>
+                <view class="date-number-row"><text class="calendar-day-num">{{day.day}}</text><view class="date-statuses"><view wx:for="{{day.income.statuses}}" wx:for-item="status" wx:key="tone" class="date-status-dot status-{{status.tone}}" aria-label="{{status.label}}"></view></view></view>
                 <text wx:if="{{day.income.text}}" class="calendar-income {{day.income.type === 'actual' ? 'calendar-income-actual' : 'calendar-income-estimated'}}">{{day.income.text}}</text>
-                <view wx:if="{{day.hasOrder}}" class="calendar-day-dot"></view>
               </block>
             </view>
           </view>

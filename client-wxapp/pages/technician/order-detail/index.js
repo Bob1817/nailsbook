@@ -1,6 +1,5 @@
 const api = require('../../../services/api');
 const { normalizeSourceWorkSummary } = require('../../../utils/normalize-work');
-const { requestBookingReminder } = require('../../../utils/wechat-subscription');
 const {
   parseDate,
   formatClock,
@@ -14,6 +13,14 @@ const {
   getStatusLabel,
   getStatusTone
 } = require('../../../utils/order');
+
+function parseReviewPhotos(value) {
+  try {
+    const photos = typeof value === 'string' ? JSON.parse(value) : value;
+    const base = getApp().globalData.apiBaseUrl;
+    return Array.isArray(photos) ? photos.filter(url => typeof url === 'string').map(url => url.startsWith('/') ? base + url : url) : [];
+  } catch (e) { return []; }
+}
 
 // 状态描述 - 帮助技师理解预约当前阶段
 const STATUS_DESC = {
@@ -38,7 +45,7 @@ function actionsForStatus(status) {
     case 'pending_quote':   return [QUOTE, CANCEL];
     case 'pending_agree':   return [CANCEL];
     case 'pending_client_confirm': return [CANCEL];
-    case 'pending_confirm': return [CANCEL, CONFIRM];
+    case 'pending_confirm': return [QUOTE, CANCEL, CONFIRM];
     case 'pending_shop':    return [CANCEL];
     case 'in_progress':     return [CANCEL, COMPLETE];
     default:                return [];
@@ -76,6 +83,11 @@ Page({
     // 报价 sheet
     showQuote: false,
     quoteIsRevise: false,
+    quickBooking: false,
+    quoteContinue: '',
+    quoteDayVersion: null,
+    quoteDayWasClosed: false,
+    quoteEnd: '',
     quotePrice: '',
     quoteDate: '',
     quoteTime: '',
@@ -83,6 +95,7 @@ Page({
     quoteRemark: '',
     quoteServices: [],
     quoteSelectedServiceIds: [],
+    quoteServiceQuantities: {},
     quoteSubtotalFen: 0,
     quoteDiscount: '',
     quoteFinalFen: 0,
@@ -148,6 +161,7 @@ Page({
         api.technician.auth.getUserInfo()
       ]);
       const raw = result[0];
+      this.setData({ quickBooking: raw.quickBooking === true });
       const quoteServices = (result[1] || []).filter(item => item.isActive !== false);
       const technicianProfile = result[2] || {};
       let sourceWork = raw.sourceWork || null;
@@ -178,9 +192,12 @@ Page({
       // 未设置报价时默认=服务合计，差额为0
       const effectivePriceFen = quotePriceFen > 0 ? quotePriceFen : serviceSubtotalFen;
       const priceDiffFen = quotePriceFen > 0 ? (quotePriceFen - serviceSubtotalFen) : 0;
+      const workPriceFen = sourceWork && sourceWork.standardPriceFen ? Number(sourceWork.standardPriceFen) : 0;
+      const hasTechnicianQuote = !!raw.quotedAt;
 
       const decorated = {
         ...o,
+        review: raw.review ? { ...raw.review, photos: parseReviewPhotos(raw.review.photos) } : null,
         techId: o.techId || raw.techId || raw.technicianId || (raw.technician && raw.technician.id),
         _statusLabel: getStatusLabel(o.status),
         _statusTone:  getStatusTone(o.status),
@@ -204,6 +221,11 @@ Page({
           servicePublicIdSnapshot: line.servicePublicIdSnapshot || null,
         })),
         serviceSubtotalFen: serviceSubtotalFen,
+        workPriceFen,
+        hasTechnicianQuote,
+        priceLabel: hasTechnicianQuote ? '最终报价' : (raw.bookingType === 'work' ? '作品报价' : raw.bookingType === 'standard' ? '组合价格' : '待报价'),
+        servicePriceSuperseded: effectivePriceFen > 0 && effectivePriceFen !== serviceSubtotalFen,
+        workPriceSuperseded: hasTechnicianQuote && workPriceFen > 0 && effectivePriceFen !== workPriceFen,
         _priceDiffFen: priceDiffFen,
         _priceDiffType: priceDiffFen > 0 ? 'surcharge' : (priceDiffFen < 0 ? 'discount' : ''),
         discountAmountFen: Number(raw.discountAmountFen || 0),
@@ -216,6 +238,7 @@ Page({
           : (depositAmount > 0 ? `待支付定金 ¥${depositAmount}` : '未支付定金'),
         bookingType: raw.bookingType || 'legacy',
         sourceWork
+        ,promotion: raw.promotion || null
       };
       const normalizedAddress = String(decorated.address || '').replace(/\s+/g, '');
       const guidanceShop = (technicianProfile.shopAddresses || []).find((shop) => {
@@ -238,13 +261,18 @@ Page({
         quotePrice: o.price ? String(o.price) : '',
         quoteDate: sd,
         quoteTime: st,
-        quoteDuration: decorated.durationMinutes > 0 ? String(decorated.durationMinutes) : '120',
+        quoteDuration: decorated.durationMinutes > 0 ? String(decorated.durationMinutes) : (raw.quickBooking ? '' : '120'),
         quoteRemark: o.remark || ''
         ,        quoteServices,
         quoteSelectedServiceIds: (raw.serviceLines || []).map(line => {
           const matched = quoteServices.find(s => s.publicId === line.servicePublicIdSnapshot || s.name === line.nameSnapshot);
           return matched ? String(matched.id) : null;
         }).filter(Boolean),
+        quoteServiceQuantities: (raw.serviceLines || []).reduce((map, line) => {
+          const matched = quoteServices.find(s => s.publicId === line.servicePublicIdSnapshot || s.name === line.nameSnapshot);
+          if (matched) map[String(matched.id)] = Math.max(1, Number(line.quantity) || 1);
+          return map;
+        }, {}),
         quoteDiscount: raw.discountAmountFen ? String(raw.discountAmountFen / 100) : ''
         ,quoteDepositAmount: depositAmount ? String(depositAmount) : ''
         ,quoteDepositPaid: !!raw.isDepositPaid
@@ -273,6 +301,11 @@ Page({
       case 'complete': return this.completeOrder();
       case 'cancel':   return this.openCancel();
     }
+  },
+
+  previewReviewPhoto(e) {
+    const urls = this.data.order.review.photos;
+    wx.previewImage({ current: e.currentTarget.dataset.url, urls });
   },
 
   openActionMenu() { this.setData({ showActionMenu: true }); },
@@ -351,6 +384,8 @@ Page({
   // ---------- 报价 ----------
   openQuote() {
     const status = this.data.order && this.data.order.status;
+    this.setData({ quoteContinue: '', quoteDayVersion: null });
+    if (this.data.quickBooking) this.loadQuoteDay();
     this.setData({
       showQuote: true,
       quoteIsRevise: status !== 'pending_quote'
@@ -358,23 +393,52 @@ Page({
   },
   closeQuote() { this.setData({ showQuote: false }); },
 
-  onQuoteDateChange(e)    { this.setData({ quoteDate: e.detail.value }); },
-  onQuoteTimeChange(e)    { this.setData({ quoteTime: e.detail.value }); },
+  onQuoteDateChange(e)    { this.setData({ quoteDate: e.detail.value, quoteContinue: '', quoteDayVersion: null }); if (this.data.quickBooking) this.loadQuoteDay(); },
+  onQuoteTimeChange(e)    { this.setData({ quoteTime: e.detail.value }); this.updateQuoteEnd(); },
+  onManualPrice(e) { this.setData({ quotePrice: e.detail.value }); },
+  onManualDuration(e) { this.setData({ quoteDuration: e.detail.value }); this.updateQuoteEnd(); },
+  onQuoteContinue(e) { this.setData({ quoteContinue: e.detail.value }); },
+  updateQuoteEnd() {
+    const parts = this.data.quoteTime.split(':').map(Number);
+    const minutes = parts[0] * 60 + parts[1] + Number(this.data.quoteDuration);
+    this.setData({ quoteEnd: Number.isFinite(minutes) && minutes < 1440 && Number(this.data.quoteDuration) > 0 ? String(Math.floor(minutes / 60)).padStart(2, '0') + ':' + String(minutes % 60).padStart(2, '0') : '' });
+  },
+  async loadQuoteDay() {
+    const date = this.data.quoteDate;
+    try {
+      const result = await api.technician.bookingDays.list();
+      if (date !== this.data.quoteDate) return;
+      const day = result.days.find(item => item.serviceDate === date);
+      this.setData({ quoteDayVersion: day ? day.version : 0, quoteDayWasClosed: !!day && !day.accepting });
+      this.updateQuoteEnd();
+    } catch (err) { wx.showToast({ title: '接单设置加载失败，请重试', icon: 'none' }); }
+  },
   toggleQuoteService(e) {
     const id = String(e.currentTarget.dataset.id);
-    const ids = this.data.quoteSelectedServiceIds.includes(id)
-      ? this.data.quoteSelectedServiceIds.filter(item => item !== id)
-      : this.data.quoteSelectedServiceIds.concat(id);
-    this.setData({ quoteSelectedServiceIds: ids });
+    const quantities = { ...this.data.quoteServiceQuantities };
+    quantities[id] = quantities[id] > 0 ? 0 : 1;
+    const ids = Object.keys(quantities).filter(key => quantities[key] > 0);
+    this.setData({ quoteSelectedServiceIds: ids, quoteServiceQuantities: quantities });
+    this.recalculateQuote();
+  },
+  changeQuoteServiceQuantity(e) {
+    const id = String(e.currentTarget.dataset.id);
+    const delta = Number(e.currentTarget.dataset.delta);
+    const quantities = { ...this.data.quoteServiceQuantities };
+    quantities[id] = Math.max(0, Math.min(20, Number(quantities[id] || 0) + delta));
+    const ids = Object.keys(quantities).filter(key => quantities[key] > 0);
+    this.setData({ quoteSelectedServiceIds: ids, quoteServiceQuantities: quantities });
     this.recalculateQuote();
   },
   onQuoteDiscountInput(e) { this.setData({ quoteDiscount: e.detail.value }); this.recalculateQuote(e.detail.value); },
+  onQuoteFinalPriceInput(e) { this.setData({ quotePrice: e.detail.value }); this.recalculateQuote(); },
   recalculateQuote(discountValue) {
-    const selected = this.data.quoteServices.filter(item => this.data.quoteSelectedServiceIds.includes(String(item.id)));
-    const subtotal = selected.reduce((sum, item) => sum + Math.round(Number(item.price || 0) * 100), 0);
-    const duration = selected.reduce((sum, item) => sum + Number(item.durationMinutes || 0), 0);
+    const selected = this.data.quoteServices.filter(item => Number(this.data.quoteServiceQuantities[String(item.id)] || 0) > 0);
+    const subtotal = selected.reduce((sum, item) => sum + Math.round(Number(item.price || 0) * 100) * this.data.quoteServiceQuantities[String(item.id)], 0);
+    const duration = selected.reduce((sum, item) => sum + Number(item.durationMinutes || 0) * this.data.quoteServiceQuantities[String(item.id)], 0);
+    const manualFinalFen = Math.round(Number(this.data.quotePrice || 0) * 100);
     const discountFen = Math.max(0, Math.round(Number(discountValue !== undefined ? discountValue : this.data.quoteDiscount || 0) * 100));
-    this.setData({ quoteSubtotalFen: subtotal, quoteFinalFen: Math.max(0, subtotal - discountFen), quoteTotalDuration: duration });
+    this.setData({ quoteSubtotalFen: subtotal, quoteFinalFen: manualFinalFen > 0 ? manualFinalFen : Math.max(0, subtotal - discountFen), quoteTotalDuration: duration });
   },
   onQuoteRemarkInput(e)   { this.setData({ quoteRemark: e.detail.value }); },
   onQuoteDepositAmountInput(e) { this.setData({ quoteDepositAmount: e.detail.value }); },
@@ -383,12 +447,17 @@ Page({
   async submitQuote() {
     if (this.data.submitting) return;
     const { quoteDate, quoteTime, quoteRemark, quoteSelectedServiceIds, quoteDiscount, quoteSubtotalFen } = this.data;
-    if (!quoteSelectedServiceIds.length) return wx.showToast({ title: '请选择至少一项基础服务', icon: 'none' });
+    if (!this.data.quickBooking && !quoteSelectedServiceIds.length) return wx.showToast({ title: '请选择至少一项基础服务', icon: 'none' });
     if (!quoteDate) return wx.showToast({ title: '请选择服务日期', icon: 'none' });
     if (!quoteTime) return wx.showToast({ title: '请选择服务时间', icon: 'none' });
 
-    const discountAmountFen = Math.round(Number(quoteDiscount || 0) * 100);
-    if (discountAmountFen < 0 || discountAmountFen > quoteSubtotalFen) return wx.showToast({ title: '优惠金额不能超过服务合计', icon: 'none' });
+    if (this.data.quickBooking) {
+      if (!/^(0|[1-9]\d*)(\.\d{1,2})?$/.test(this.data.quotePrice) || Number(this.data.quotePrice) <= 0) return wx.showToast({ title: '请填写有效报价', icon: 'none' });
+      if (!/^\d+$/.test(this.data.quoteDuration) || Number(this.data.quoteDuration) < 1 || !this.data.quoteEnd) return wx.showToast({ title: '请填写有效时长', icon: 'none' });
+      if (!this.data.quoteContinue || this.data.quoteDayVersion === null) return wx.showToast({ title: '请确认当日是否继续接单', icon: 'none' });
+    }
+    const discountAmountFen = this.data.quickBooking ? 0 : Math.round(Number(quoteDiscount || 0) * 100);
+    if (!this.data.quickBooking && (!/^(0|[1-9]\d*)(\.\d{1,2})?$/.test(this.data.quotePrice) || Number(this.data.quotePrice) <= 0)) return wx.showToast({ title: '请填写有效的最终报价', icon: 'none' });
 
     const depositAmt = this.data.quoteDepositAmount;
     const depositFen = Math.round(Number(depositAmt || 0) * 100);
@@ -399,11 +468,24 @@ Page({
     this.setData({ submitting: true });
     try {
       const payload = {
-        services: quoteSelectedServiceIds.map(servicePublicId => ({ servicePublicId, quantity: 1 })),
+        services: quoteSelectedServiceIds.map(serviceId => {
+          const service = this.data.quoteServices.find(item => String(item.id) === serviceId);
+          return { servicePublicId: service ? service.publicId : serviceId, quantity: this.data.quoteServiceQuantities[serviceId] || 1 };
+        }),
         serviceDate: quoteDate,
         startTime: quoteTime,
-        discountAmountFen
+        discountAmountFen,
+        finalPriceFen: Math.round(Number(this.data.quotePrice) * 100)
       };
+      if (this.data.quickBooking) {
+        delete payload.services;
+        delete payload.finalPriceFen;
+        payload.quoteMode = 'manual';
+        payload.amountFen = Math.round(Number(this.data.quotePrice) * 100);
+        payload.durationMinutes = Number(this.data.quoteDuration);
+        payload.continueAccepting = this.data.quoteContinue === 'yes';
+        payload.dayVersion = this.data.quoteDayVersion;
+      }
       if (quoteRemark) payload.remark = quoteRemark;
       // 定金数据
       if (depositAmt !== '' && depositAmt !== undefined) {
@@ -416,34 +498,22 @@ Page({
       this.loadOrder();
     } catch (err) {
       this.setData({ submitting: false });
+      if (this.data.quickBooking) { this.setData({ quoteContinue: '', quoteDayVersion: null }); this.loadQuoteDay(); }
       wx.showToast({ title: err.message || '报价失败', icon: 'none' });
     }
   },
 
   // ---------- 确认 ----------
-  async confirmOrder() {
-    const r = await wx.showModal({
-      title: '确认排期',
-      content: '确认接此到店预约？实际付款由门店与客户线下完成。',
-      confirmText: '已确认'
-    });
-    if (!r.confirm) return;
-    await requestBookingReminder('technician');
-
-    try {
-      wx.showLoading({ title: '处理中...' });
-      await api.technician.orders.confirm(this.orderId);
-      wx.hideLoading();
-      wx.showToast({ title: '已确认', icon: 'success' });
-      this.loadOrder();
-    } catch (err) {
-      wx.hideLoading();
-      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
-    }
+  confirmOrder() {
+    if (this.data.confirmationOrder || !this.data.order) return;
+    this.setData({ confirmationOrder: this.data.order });
   },
+  closeConfirmation() { this.setData({ confirmationOrder: null }); },
+  confirmationSaved() { this.closeConfirmation(); this.loadOrder(); },
 
   // ---------- 报价调整 ----------
   openEditPrice() {
+    if (this.data.quickBooking) return wx.showToast({ title: '调整报价需先由客户拒绝，再重新报价', icon: 'none' });
     var o = this.data.order;
     if (!o) return;
     var defaultPrice = o.price || (o.serviceSubtotalFen > 0 ? o.serviceSubtotalFen / 100 : '');
@@ -554,6 +624,7 @@ Page({
 
   // ---------- 编辑服务项目 ----------
   openServiceEdit() {
+    if (this.data.quickBooking) return;
     var o = this.data.order;
     if (!o) return;
     // 统计当前预约中每个服务的数量

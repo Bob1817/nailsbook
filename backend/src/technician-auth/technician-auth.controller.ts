@@ -88,6 +88,17 @@ export class TechnicianAuthController {
     return this.technicianAuthService.refreshAccessToken(body.refreshToken);
   }
 
+  @Post('switch-to-client')
+  @UseGuards(TechnicianJwtAuthGuard, TouristGuard)
+  @ApiOperation({ summary: '将当前美甲师账号切换到同手机号客户身份' })
+  async switchToClient(
+    @Req() request: { user: { technicianId: number } },
+  ) {
+    return this.clientAuthService.loginAsClientForTechnician(
+      request.user.technicianId,
+    );
+  }
+
   @Post('check-phone')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: '检查手机号是否已注册' })

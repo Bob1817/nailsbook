@@ -6,7 +6,7 @@
     <view class="load-error-mark">!</view>
     <text class="load-error-title">服务时间加载失败</text>
     <text class="load-error-desc">为避免覆盖已有设置，请重新加载后再编辑</text>
-    <button class="retry-btn" bindtap="loadSchedule">重新加载</button>
+    <button class="retry-btn booking-action" bindtap="loadSchedule">重新加载</button>
   </view>
 
   <view wx:else>
@@ -17,7 +17,7 @@
           <text wx:if="{{item.enabled}}" class="day-time">{{item.startTime}} - {{item.endTime}}</text>
           <text wx:else class="day-off">休息</text>
         </view>
-        <switch checked="{{item.enabled}}" bindchange="toggleDay" data-idx="{{index}}" color="#FF6B8A" />
+        <nb-switch checked="{{item.enabled}}" bindchange="toggleDay" data-idx="{{index}}" label="{{item.label}}营业状态"/>
       </view>
     </view>
 

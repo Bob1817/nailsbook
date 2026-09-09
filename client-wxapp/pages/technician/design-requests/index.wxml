@@ -8,7 +8,7 @@
       <view class="card-head"><view><text class="title">{{item.title || '未命名设计'}}</text><text class="meta">{{item.clientName}} · {{item.dateText}}</text></view><text class="status">{{item.statusText}}</text></view>
       <text wx:if="{{item.description}}" class="description">{{item.description}}</text>
       <scroll-view wx:if="{{item.imageUrls.length}}" scroll-x class="photos"><view class="photo-row"><image wx:for="{{item.imageUrls}}" wx:for-item="photo" wx:key="*this" src="{{photo}}" class="photo" mode="aspectFill" bindtap="previewImages" data-id="{{item.id}}" data-url="{{photo}}" lazy-load aria-label="{{item.title || '设计需求'}}参考图"/></view></scroll-view>
-      <view wx:if="{{item.quotePrice}}" class="quote-summary"><text>当前报价</text><text class="price">¥{{item.quotePrice}}</text></view>
+      <view wx:if="{{item.quotePrice}}" class="quote-summary"><text>当前报价</text><text class="price semantic-money">¥{{item.quotePrice}}</text></view>
       <view wx:if="{{item.status === 'pending_quote' || item.status === 'rejected' || item.status === 'quoted'}}" class="quote-btn" bindtap="openQuote" data-id="{{item.id}}">{{item.status === 'quoted' ? '修改报价' : '立即报价'}}</view>
     </view>
   </view>

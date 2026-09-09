@@ -1,0 +1,22 @@
+/* Meaningful emphasis only. Shared by pages and isolated components. */
+.semantic-money { color: var(--nb-money, #B42332) !important; }
+.semantic-link { color: var(--nb-text-link, #245EA8) !important; background: transparent !important; border-color: transparent !important; box-shadow: none !important; }
+.semantic-link:active { opacity: .7; background: transparent !important; }
+.semantic-danger, .action-danger, .btn-danger { color: var(--nb-danger, #B42332) !important; background: var(--nb-danger-surface) !important; border: 0 !important; }
+.semantic-danger:active, .action-danger:active, .btn-danger:active { opacity: .7; }
+.semantic-danger.is-disabled, .action-danger.is-disabled, .btn-danger.disabled { color: var(--nb-control) !important; border: 0 !important; background: var(--nb-pressed) !important; }
+
+/* Filled actions and text links must never share the same color role. */
+.semantic-primary { background: var(--nb-action, #1D1D1F) !important; color: #FFFFFF !important; }
+.semantic-primary .semantic-link { color: var(--nb-inverse) !important; }
+.semantic-primary:active { opacity: .85; }
+
+/* State classes also work inside isolated components (no tag/attribute selectors). */
+.semantic-primary.disabled, .semantic-primary.is-disabled,
+.semantic-danger.disabled, .action-danger.disabled, .btn-danger.is-disabled {
+  color: var(--nb-control) !important;
+  background: var(--nb-pressed) !important;
+  opacity: 1;
+}
+.semantic-primary.disabled .semantic-link,
+.semantic-primary.is-disabled .semantic-link { color: var(--nb-control) !important; }

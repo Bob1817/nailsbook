@@ -79,6 +79,15 @@ api.technician.orders.complete = async (id, data) => { completeCalls.push({ id, 
 
 (async () => {
   const page = createPage('../pages/technician/complete-service/index');
+  const detail = api.technician.orders.detail;
+  api.technician.orders.detail = async () => { throw new Error('网络失败'); };
+  await page.onLoad({ id: '12' });
+  assert.strictEqual(page.data.loaded, false);
+  assert.strictEqual(page.data.loading, false);
+  assert.strictEqual(page.data.loadError, '网络失败');
+  await page.submit();
+  assert.strictEqual(completeCalls.length, 0, '加载失败不允许提交');
+  api.technician.orders.detail = detail;
   await page.onLoad({ id: '12' });
   assert.strictEqual(page.id, 12);
   assert.strictEqual(page.data.actualAmount, '288', '应预填实收金额');
@@ -91,6 +100,23 @@ api.technician.orders.complete = async (id, data) => { completeCalls.push({ id, 
   await page.onLoad({ id: '12' });
   assert.strictEqual(page.data.actualAmount, '300', '部分定金不能替代最终服务金额');
 
+  const selectTime = (field, value) => page.changeTime({ currentTarget: { dataset: { field } }, detail: { value } });
+  selectTime('startDate', '2026-08-15');
+  selectTime('startTime', '23:30');
+  selectTime('endDate', '2026-08-16');
+  selectTime('endTime', '01:00');
+  assert.strictEqual(page.data.actualStartTime, '2026-08-15T23:30');
+  assert.strictEqual(page.data.actualEndTime, '2026-08-16T01:00');
+  page.data.submitting = true;
+  selectTime('endTime', '02:00');
+  assert.strictEqual(page.data.endTime, '01:00', '提交期间不能修改时间');
+  page.data.submitting = false;
+  await page.submit();
+  assert.strictEqual(completeCalls.length, 1, '跨日服务可以正常保存');
+  assert.strictEqual(new Date(completeCalls[0].data.actualEndTime) - new Date(completeCalls[0].data.actualStartTime), 90 * 60000);
+  completeCalls.length = 0;
+  page.data.saved = false;
+
   // 填写服务记录并提交
   page.data.actualStartTime = '2026-08-15T14:00';
   page.data.actualEndTime = '2026-08-15T16:00';
@@ -99,6 +125,14 @@ api.technician.orders.complete = async (id, data) => { completeCalls.push({ id, 
   await page.submit();
   assert.strictEqual(completeCalls.length, 0, '非法时间不得调用完成接口');
   page.data.actualEndTime = '2026-08-15T16:00';
+  page.data.actualAmount = '';
+  await page.submit();
+  assert.strictEqual(completeCalls.length, 0, '空金额不能按零元提交');
+  page.data.actualAmount = '300';
+  page.data.materialCost = '';
+  await page.submit();
+  assert.strictEqual(completeCalls.length, 0, '空成本不能按零元提交');
+  page.data.materialCost = '0';
   await page.submit();
   assert.strictEqual(completeCalls.length, 1, 'complete 应被调用一次');
   assert.strictEqual(completeCalls[0].id, 12);

@@ -93,6 +93,10 @@ export class TechnicianInsightsService {
       recognizedOrders,
       rating,
       works,
+      activePromotions,
+      promotionOrders,
+      promotionQuotes,
+      promotionDiscount,
       completedServiceDates,
       referralTotal,
       referralQualified,
@@ -171,6 +175,13 @@ export class TechnicianInsightsService {
         _count: { id: true },
       }),
       this.prisma.nailWork.count({ where: { techId: technicianId, ...monthCreated } }),
+      this.prisma.workPromotion.count({ where: { technicianId, enabled: true } }),
+      this.prisma.order.count({ where: { technicianId, promotionId: { not: null }, ...monthCreated } }),
+      this.prisma.order.count({ where: { technicianId, promotionId: { not: null }, quotedAt: range } }),
+      this.prisma.order.aggregate({
+        where: { technicianId, promotionId: { not: null }, quotedAt: range },
+        _sum: { discountAmountFen: true },
+      }),
       this.prisma.order.findMany({
         where: {
           technicianId,
@@ -456,6 +467,12 @@ export class TechnicianInsightsService {
       },
       works: {
         total: works,
+      },
+      promotions: {
+        active: activePromotions,
+        attributedBookings: promotionOrders,
+        quoted: promotionQuotes,
+        discountsRedeemedFen: promotionDiscount._sum.discountAmountFen || 0,
       },
       referrals: {
         total: referralTotal,

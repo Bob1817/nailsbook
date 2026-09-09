@@ -36,8 +36,8 @@ describe('ClientHomeService', () => {
     service = new ClientHomeService(prisma as never);
   });
 
-  it('getHome：返回默认绑定美甲师的精品作品 + 最近预约', async () => {
-    prisma.clientTechBinding.findFirst.mockResolvedValueOnce({
+  it('getHome：返回有效绑定美甲师的Hero推荐 + 最近预约', async () => {
+    prisma.clientTechBinding.findMany.mockResolvedValueOnce([{
       clientId: 11,
       techId: 7,
       technician: {
@@ -48,7 +48,7 @@ describe('ClientHomeService', () => {
         city: 'Shanghai',
         serviceArea: 'Pudong',
       },
-    });
+    }]);
     prisma.nailWork.findMany.mockResolvedValueOnce([
       {
         id: 3,
@@ -78,11 +78,11 @@ describe('ClientHomeService', () => {
     expect(prisma.nailWork.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          techId: 7,
+          techId: { in: [7] },
           isVisible: true,
-          isFeatured: true,
+          heroSlot: { not: null },
+          publicationStatus: 'approved',
         }),
-        take: 6,
       }),
     );
     expect(result).toMatchObject({
@@ -99,9 +99,9 @@ describe('ClientHomeService', () => {
     });
   });
 
-  it('getHome：客户无绑定 → 抛 NotFoundException', async () => {
-    prisma.clientTechBinding.findFirst.mockResolvedValue(null);
-    await expect(service.getHome(11)).rejects.toBeInstanceOf(NotFoundException);
+  it('getHome：客户无绑定返回明确空态', async () => {
+    prisma.clientTechBinding.findMany.mockResolvedValue([]);
+    await expect(service.getHome(11)).resolves.toMatchObject({ works: [], technician: null, technicianCount: 0 });
   });
 
   it('getWorks：按全部 active 绑定的美甲师筛选可见作品，并映射字段', async () => {

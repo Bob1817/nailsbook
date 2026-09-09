@@ -25,6 +25,11 @@ assert(editor.includes('bindtap="addImageBlock"'));
 assert(editor.includes('catchtap="moveBlock"'));
 
 const display = read('pages/client/shop-guidance/index.wxml');
+const displayStyle = read('pages/client/shop-guidance/index.wxss');
+assert(/<scroll-view[^>]*class="content-area"[^>]*>\s*<view class="content-inner">/.test(display), '滚动区通过内部容器保留左右留白');
+const innerStyle = displayStyle.match(/\.content-inner\s*\{([^}]+)\}/)[1];
+assert(innerStyle.includes('box-sizing: border-box') && innerStyle.includes('padding: 24rpx 32rpx 160rpx'), '内部容器宽度必须包含对称内边距');
+assert(!/padding\s*:/.test(displayStyle.match(/\.content-area\s*\{([^}]+)\}/)[1]), '不能给满宽scroll-view叠加外部内边距');
 assert(display.includes('wx:for="{{activeBlocks}}"'));
 assert(display.includes("item.type === 'text'"));
 assert(display.includes('open-type="share"'), '分享按钮必须仅在公开到店指引页面展示');

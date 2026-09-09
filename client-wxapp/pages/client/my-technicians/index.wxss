@@ -1,0 +1,22 @@
+@import '../profile/index.wxss';
+@import '../../../styles/booking-actions.wxss';
+.manager-page { min-height:100vh; background:var(--nb-page); color:var(--nb-ink); }
+.manager-content { padding:24rpx 32rpx calc(32rpx + env(safe-area-inset-bottom)); }
+.manager-header { display:flex; align-items:center; justify-content:space-between; gap:20rpx; }
+.manager-header .booking-action { width:auto; }
+.manager-hint { display:block; font-size:var(--font-xs); color:var(--nb-muted); line-height:1.6; margin-top:10rpx; }
+.manager-state { padding:48rpx 0; font-size:var(--font-sm); color:var(--nb-muted); }
+.manager-card { margin-top:24rpx; padding:24rpx; background:var(--nb-surface); border-radius:20rpx; }
+.manager-main { display:flex; align-items:center; gap:20rpx; min-height:44px; }
+.manager-main:active { opacity:.7; }
+.manager-avatar { width:88rpx; height:88rpx; border-radius:50%; flex-shrink:0; background:var(--nb-page); }
+.manager-info { min-width:0; }
+.manager-name { display:block; font-size:var(--font-sm); font-weight:var(--weight-semibold); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.manager-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12rpx; margin-top:24rpx; }
+.booking-action { margin:0; width:100%; background:var(--nb-soft-surface); color:var(--nb-secondary); }
+.booking-action::after { border:0; }
+.booking-action:active { background:var(--nb-pressed); }
+.booking-action[disabled] { background:var(--nb-pressed); color:var(--nb-control); }
+.danger-action { color:var(--nb-danger); background:var(--nb-danger-surface); }
+.modal-content { max-height:85vh; overflow-y:auto; padding-bottom:calc(24rpx + env(safe-area-inset-bottom)); }
+.modal-close,.bind-mode-tab,.followed-item { min-height:44px; }

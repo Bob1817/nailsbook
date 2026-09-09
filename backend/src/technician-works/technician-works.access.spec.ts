@@ -206,6 +206,58 @@ describe('TechnicianWorksService work access', () => {
     });
   });
 
+  it('相同创建幂等键直接返回已有作品，不重复扣额度或创建记录', async () => {
+    const existing = {
+      id: 18,
+      techId: 7,
+      title: '已保存作品',
+      coverUrl: '/cover.jpg',
+      images: '[]',
+      description: null,
+      designIdea: null,
+      suitableScene: null,
+      recommendationScore: 5,
+      tags: null,
+      isVisible: false,
+      isPinned: false,
+      isFeatured: false,
+      sortOrder: 0,
+      price: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      likes: [],
+      favorites: [],
+      comments: [],
+      clientAccesses: [],
+      serviceLines: [],
+    };
+    const prisma = {
+      nailWork: {
+        findFirst: jest.fn()
+          .mockResolvedValueOnce({ id: 18 })
+          .mockResolvedValueOnce(existing),
+        create: jest.fn(),
+      },
+    };
+    const subscriptions = { assertCanCreateWork: jest.fn() };
+    const service = new TechnicianWorksService(
+      prisma as never,
+      subscriptions as never,
+      {} as never,
+    );
+
+    const result = await service.create(7, {
+      createRequestId: 'work-request-18',
+      title: '重复提交',
+      selectedServiceIds: [],
+      standardPrice: 128,
+    });
+
+    expect(result.id).toBe(18);
+    expect(prisma.nailWork.create).not.toHaveBeenCalled();
+    expect(subscriptions.assertCanCreateWork).not.toHaveBeenCalled();
+  });
+
   it('删除作品时清理已追踪图片并释放存储额度', async () => {
     const prisma = {
       nailWork: {

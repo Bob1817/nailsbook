@@ -150,7 +150,10 @@ describe('ClientOrdersService.create 下单校验', () => {
           },
         ],
       },
-      include: { serviceLines: { orderBy: { sortOrder: 'asc' } } },
+      include: {
+        serviceLines: { orderBy: { sortOrder: 'asc' } },
+        promotion: true,
+      },
     });
     expect(prisma.clientUser.findUnique).not.toHaveBeenCalled();
   });

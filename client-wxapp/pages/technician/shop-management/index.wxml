@@ -8,7 +8,7 @@
     <view class="load-error-mark">!</view>
     <text class="empty-text">店铺信息加载失败</text>
     <text class="empty-sub">请检查网络后重试</text>
-    <button class="retry-btn" bindtap="loadShops">重新加载</button>
+    <button class="retry-btn booking-action" bindtap="loadShops">重新加载</button>
   </view>
 
   <view wx:else>
@@ -17,36 +17,44 @@
       <view class="shop-empty-mark"><view class="shop-awning"></view><view class="shop-door"></view></view>
       <text class="empty-text">还没有店铺</text>
       <text class="empty-sub">添加你的店铺信息，方便客户到店</text>
-      <button class="btn-add-first" bindtap="openAdd">添加第一个店铺</button>
+      <button class="btn-add-first booking-action" bindtap="openAdd">添加第一个店铺</button>
     </view>
 
     <!-- 店铺列表 -->
     <view wx:else class="list">
       <view wx:for="{{shops}}" wx:key="name" class="shop-card {{item.enabled ? 'shop-card-active' : 'shop-card-disabled'}}">
         <view class="card-header">
+          <view class="shop-icon-wrap"><image class="shop-icon" src="/static/icons/shop.svg" mode="aspectFit" /></view>
           <view class="card-title-area">
             <text class="shop-name">{{item.name}}</text>
             <view class="shop-status {{item.enabled ? 'status-on' : 'status-off'}}">
               <view class="status-dot"></view><text>{{item.enabled ? '营业中' : '已停用'}}</text>
             </view>
           </view>
-          <view class="card-edit" bindtap="openEdit" data-shop="{{item}}" role="button" aria-label="编辑{{item.name}}"><text>编辑</text></view>
         </view>
-        <view class="shop-location-row">
-          <image class="shop-location-icon" src="/static/icons/pin.svg" mode="aspectFit" />
-          <text class="shop-address">{{item.province}}{{item.city}}{{item.district}}{{item.detailAddress}}</text>
+        <view class="shop-meta">
+          <view class="shop-location-row">
+            <image class="shop-location-icon" src="/static/icons/pin.svg" mode="aspectFit" />
+            <text class="shop-address">{{item.province}}{{item.city}}{{item.district}}{{item.detailAddress}}</text>
+          </view>
+          <view wx:if="{{item.guidance && item.guidance.enabled}}" class="shop-guidance-link" catchtap="openGuidanceEdit" data-name="{{item.name}}" data-address="{{item.detailAddress}}" role="button" aria-label="查看或编辑{{item.name}}的到店指引">
+            <text>到店指引</text><text class="shop-guidance-arrow">›</text>
+          </view>
+          <view wx:if="{{item.phone}}" class="shop-phone-row">
+            <image class="shop-phone-icon" src="/static/icons/phone-active.svg" mode="aspectFit" />
+            <text class="shop-phone">{{item.phone}}</text>
+          </view>
         </view>
-        <text wx:if="{{item.phone}}" class="shop-phone">{{item.phone}}</text>
         <view class="card-settings">
-          <view class="shop-enabled-copy"><text class="shop-enabled-title">启用店铺</text><text class="shop-enabled-sub">可作为客户预约的到店地点</text></view>
-          <switch checked="{{item.enabled}}" bindchange="toggleShopEnabled" data-name="{{item.name}}" data-address="{{item.detailAddress}}" color="#FF6B8A" class="shop-switch"/>
+          <view class="shop-enabled-copy"><text class="shop-enabled-title">接受到店预约</text><text class="shop-enabled-sub">{{item.enabled ? '客户可选择此店铺作为服务地点' : '此店铺暂不会出现在预约选项中'}}</text></view>
+          <nb-switch checked="{{item.enabled}}" bindchange="toggleShopEnabled" data-name="{{item.name}}" data-address="{{item.detailAddress}}" label="启用{{item.name}}"/>
         </view>
         <view class="card-actions">
-          <view wx:if="{{item.guidance && item.guidance.enabled}}" class="guidance-card-action" catchtap="openGuidanceEdit" data-name="{{item.name}}" data-address="{{item.detailAddress}}" role="button" aria-label="编辑{{item.name}}的到店指引">
-            <text>到店指引</text><text class="action-arrow">›</text>
+          <view class="card-edit booking-action" bindtap="openEdit" data-shop="{{item}}" role="button" aria-label="编辑{{item.name}}" hover-class="is-pressed">
+            <text>编辑店铺</text>
           </view>
-          <view class="delete-card-action" bindtap="deleteShop" data-name="{{item.name}}" data-address="{{item.detailAddress}}" role="button" aria-label="删除{{item.name}}">
-            <text>删除</text>
+          <view class="delete-card-action booking-action semantic-danger" bindtap="deleteShop" data-name="{{item.name}}" data-address="{{item.detailAddress}}" role="button" aria-label="删除{{item.name}}" hover-class="is-pressed">
+            <text>删除店铺</text>
           </view>
         </view>
       </view>
@@ -54,8 +62,8 @@
   </view>
 
   <!-- FAB 添加按钮 -->
-  <view wx:if="{{shops.length > 0 && !loadFailed}}" class="fab" bindtap="openAdd">
-    <text class="fab-icon">+</text>
+  <view wx:if="{{shops.length > 0 && !loadFailed}}" class="fab" bindtap="openAdd" role="button" aria-label="添加店铺">
+    <view class="fab-icon"></view>
   </view>
 
   <!-- 底部表单 -->
@@ -63,9 +71,6 @@
   <view class="form-sheet {{showAddModal ? 'show' : ''}}">
     <view class="sheet-header">
       <text class="sheet-title">{{editShop ? '编辑店铺' : '添加店铺'}}</text>
-      <view class="sheet-close" bindtap="closeModal" role="button" aria-label="关闭店铺编辑弹窗">
-        <text class="sheet-close-icon">×</text>
-      </view>
     </view>
 
     <scroll-view scroll-y class="form-scroll">
@@ -106,7 +111,7 @@
         </view>
         <view class="form-item form-item-switch">
           <view class="label-group"><text class="switch-title">启用店铺</text><text class="label-sub">启用后可作为预约到店地点</text></view>
-          <switch checked="{{enabled}}" bindchange="toggleEnabled" color="#FF6B8A"/>
+          <nb-switch checked="{{enabled}}" bindchange="toggleEnabled" label="启用店铺"/>
         </view>
 
         <view class="form-item disclosure-item">
@@ -128,7 +133,7 @@
                 </picker>
               </view>
               <text wx:else class="bh-closed">休息</text>
-              <switch checked="{{!item.closed}}" bindchange="toggleDayClosed" data-idx="{{index}}" color="#FF6B8A" class="bh-switch"/>
+              <nb-switch checked="{{!item.closed}}" bindchange="toggleDayClosed" data-idx="{{index}}" label="{{item.label}}营业状态"/>
             </view>
           </view>
         </view>
@@ -140,7 +145,7 @@
             <text class="switch-title">到店指引</text>
             <text class="label-sub">开启后客户可查看地铁、公交和开车指引</text>
           </view>
-          <switch checked="{{guidanceEnabled}}" bindchange="toggleGuidanceEnabled" color="#FF6B8A" disabled="{{!detailAddress}}"/>
+          <nb-switch checked="{{guidanceEnabled}}" bindchange="toggleGuidanceEnabled" label="启用到店指引"/>
         </view>
         <view wx:if="{{guidanceEnabled}}" class="guidance-entry" catchtap="openGuidanceEdit" role="button" aria-label="编辑到店指引">
           <view class="guidance-entry-copy">
@@ -154,6 +159,9 @@
       <view class="form-scroll-spacer"></view>
     </scroll-view>
 
-    <view class="sheet-footer"><button class="btn-save" bindtap="save" disabled="{{saving}}"><text>{{saving ? '保存中…' : '保存店铺'}}</text></button></view>
+    <view class="sheet-footer">
+      <button class="btn-cancel" bindtap="closeModal" disabled="{{saving}}">取消</button>
+      <button class="btn-save booking-action" bindtap="save" disabled="{{saving}}"><text>{{saving ? '保存中…' : '保存店铺'}}</text></button>
+    </view>
   </view>
 </view>

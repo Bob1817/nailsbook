@@ -1,3 +1,4 @@
+const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
 const { normalizeWorkDetail } = require('../../../utils/normalize-work');
 
@@ -27,6 +28,7 @@ function processComment(c) {
 
 Page({
   data: {
+    sharePath: '',
     work: {},
     imageUrls: [],
     comments: [],
@@ -42,6 +44,7 @@ Page({
     viewerCloseTop: 48,
     showHidden: false,
     commentText: '',
+    submittingComment: false,
     replyingTo: null,
     scrollTarget: '',
     socialLoading: false
@@ -69,6 +72,8 @@ Page({
 
   async loadWork() {
     if (this._loadingWork || !this.workId) return;
+    this.setData({ sharePath: '' });
+    wx.hideShareMenu();
     this._loadingWork = true;
     this.setData({ loading: true, loadFailed: false, loadErrorText: '', canRetryLoad: false });
     try {
@@ -78,6 +83,7 @@ Page({
       if (imageUrls.length === 0 && work.coverUrl) imageUrls.push(work.coverUrl);
 
       this.setData({ work, imageUrls, loading: false, loadFailed: false });
+      this.prepareSharePath();
       this.loadComments();
     } catch (err) {
       this.setData({ loading: false, loadFailed: true, loadErrorText: '作品暂时无法加载', canRetryLoad: true });
@@ -96,6 +102,40 @@ Page({
     } catch (err) {
       console.error('loadComments error:', err);
     }
+  },
+
+  async prepareSharePath() {
+    if (this._sharePreparing) return;
+    const work = this.data.work || {};
+    const canSharePublicly = work.publicationStatus === 'approved'
+      && work.isVisible !== false
+      && work.visibilityScope === 'public'
+      && !work.archivedAt;
+    if (!canSharePublicly) {
+      this.setData({ sharePath: '' });
+      wx.hideShareMenu();
+      return;
+    }
+    this._sharePreparing = true;
+    try {
+      // 服务端确认该作品当前可公开访问，不能把私密作品按普通 ID 分享。
+      await api.public.works.detail(this.workId);
+      this.setData({ sharePath: '/pages/client/public-work/index?id=' + this.workId });
+      wx.showShareMenu({ menus: ['shareAppMessage'] });
+    } catch (err) {
+      this.setData({ sharePath: '' });
+    } finally {
+      this._sharePreparing = false;
+    }
+  },
+
+  onShareAppMessage() {
+    if (!this.data.sharePath) return { title: '美甲作品', path: '/pages/client/works/index' };
+    return {
+      title: this.data.work.title || '美甲作品',
+      path: this.data.sharePath,
+      imageUrl: this.data.imageUrls[0] || ''
+    };
   },
 
   manageComment(e) {
@@ -122,7 +162,7 @@ Page({
       title: '删除评论',
       content: '删除后无法恢复，确定继续吗？',
       confirmText: '删除',
-      confirmColor: '#dc5275',
+      confirmColor: uiColors.danger,
       success: async (result) => {
         if (!result.confirm) return;
         try {
@@ -147,24 +187,26 @@ Page({
 
   showWorkActions(e) {
     const source = e.detail || {};
-    const { id, visible, pinned, featured } = source;
+    const { id, visible, pinned, featured, heroSlot } = source;
     if (!id) return;
     wx.showActionSheet({
       itemList: [
         visible ? '隐藏作品' : '显示作品',
-        pinned ? '取消置顶' : '置顶作品',
-        featured ? '取消推荐' : '推荐作品',
+        pinned ? '取消作品置顶' : '置顶作品',
+        featured ? '移出主页精选' : '加入主页精选',
+        heroSlot ? '取消客户首页推荐' : '推荐至客户首页',
         '编辑作品',
         '删除作品'
       ],
       success: async (res) => {
         try {
+          if (res.tapIndex === 3) return wx.navigateTo({ url: '/pages/technician/hero-recommendations/index?' + (heroSlot ? 'removeWorkId=' : 'workId=') + id });
           if (res.tapIndex === 0) await api.technician.works.toggleVisible(id);
           if (res.tapIndex === 1) await api.technician.works.togglePinned(id);
           if (res.tapIndex === 2) await api.technician.works.toggleFeatured(id);
-          if (res.tapIndex === 3) return this.editWork();
-          if (res.tapIndex === 4) return this.confirmDeleteWork(id);
-          const messages = [visible ? '已隐藏' : '已显示', pinned ? '已取消置顶' : '已置顶', featured ? '已取消推荐' : '已推荐'];
+          if (res.tapIndex === 4) return this.editWork();
+          if (res.tapIndex === 5) return this.confirmDeleteWork(id);
+          const messages = [visible ? '作品已隐藏' : '作品已显示', pinned ? '已取消作品置顶' : '作品已置顶', featured ? '已移出主页精选' : '已加入主页精选'];
           wx.showToast({ title: messages[res.tapIndex], icon: 'success' });
           this.loadWork();
         } catch (err) {
@@ -179,7 +221,7 @@ Page({
       title: '删除作品',
       content: '确定删除这个作品吗？删除后无法恢复。',
       confirmText: '删除',
-      confirmColor: '#ef4444',
+      confirmColor: uiColors.danger,
       success: (res) => { if (res.confirm) this.deleteWork(id); }
     });
   },
@@ -245,19 +287,24 @@ Page({
   },
 
   async submitComment() {
+    if (this.data.submittingComment) return;
     const { commentText, replyingTo } = this.data;
     if (!commentText.trim()) return;
-
+    this.setData({ submittingComment: true });
     try {
       const data = { content: commentText.trim() };
       if (replyingTo) data.parentId = replyingTo.id;
       await api.technician.works.addComment(this.workId, data);
-      this.setData({ commentText: '', replyingTo: null });
+      if (this.data.commentText === commentText && (this.data.replyingTo || {}).id === (replyingTo || {}).id) {
+        this.setData({ commentText: '', replyingTo: null });
+      }
       wx.showToast({ title: replyingTo ? '回复已发布' : '评论已发布', icon: 'success' });
       await this.loadComments();
       this.loadWork();
     } catch (err) {
       wx.showToast({ title: '评论失败', icon: 'none' });
+    } finally {
+      this.setData({ submittingComment: false });
     }
   },
 

@@ -1,44 +1,82 @@
-<view class="work-detail">
+<view class="work-detail {{!visitorInfo && !loading && !loadFailed ? 'has-composer' : ''}}">
   <view wx:if="{{loading}}" class="state-screen"><view class="loading-spinner"></view></view>
-  <view wx:elif="{{loadFailed}}" class="state-screen" aria-live="polite">
-    <text class="state-title">{{loadErrorText}}</text>
-    <button wx:if="{{canRetryLoad}}" class="state-btn" data-event="retry" bindtap="emit">重新加载</button>
-    <button class="state-btn secondary" data-event="back" bindtap="emit">返回</button>
+  <view wx:elif="{{loadFailed}}" class="state-screen error-screen" aria-live="polite">
+    <view class="error-card">
+      <view class="error-symbol" aria-hidden="true">!</view>
+      <text class="state-title">{{loadErrorText || '作品暂时无法加载'}}</text>
+      <text class="state-description">{{loadErrorDescription || '暂时无法打开这件作品。你可以返回继续浏览，或稍后重新尝试。'}}</text>
+      <view class="error-actions">
+        <button class="state-btn" hover-class="state-pressed" data-event="back" bindtap="emit">返回浏览</button>
+        <button wx:if="{{canRetryLoad}}" class="state-btn secondary" hover-class="state-pressed" data-event="retry" bindtap="emit">重新加载</button>
+      </view>
+      <view class="error-support">
+        <text class="support-title">需要帮助？联系开发运维</text>
+        <text class="support-description">请附上此页截图、出错时间及操作步骤，方便我们排查。</text>
+        <block wx:if="{{supportWechat}}">
+          <text class="support-account" user-select="true">微信号：{{supportWechat}}</text>
+          <button class="state-btn secondary" hover-class="state-pressed" bindtap="copySupportWechat">复制运维微信号</button>
+        </block>
+        <button wx:else class="state-btn secondary" hover-class="state-pressed" open-type="contact" binderror="onSupportError" send-message-title="作品页面加载异常" show-message-card="true">联系平台客服</button>
+      </view>
+    </view>
   </view>
   <block wx:elif="{{work.id}}">
     <view class="top-action top-back" style="{{topButtonStyle}}" data-event="back" bindtap="emit" role="button" aria-label="返回"><text>‹</text></view>
     <swiper class="image-swiper" current="{{currentImageIndex}}" circular="{{imageUrls.length > 1}}" bindchange="onSwiperChange">
       <swiper-item wx:for="{{imageUrls}}" wx:key="*this" bindtap="previewImage" data-url="{{item}}"><image class="work-image" src="{{item}}" mode="aspectFill" aria-label="{{work.title || '美甲作品'}}第{{index + 1}}张图片" /></swiper-item>
     </swiper>
-    <view class="info-panel">
+    <view class="info-panel {{visitorInfo ? 'visitor-panel' : ''}}">
       <view class="intro-section">
         <view class="title-row">
           <text class="work-title">{{work.title || '未命名作品'}}</text>
+          <view wx:if="{{!visitorInfo && showBookSame}}" class="booking-action" bindtap="bookSame" role="button" aria-label="预约同款"><view class="booking-action-face"><image src="/static/icons/calendar.svg"/><text>预约同款</text></view></view>
           <view wx:if="{{isAuthor}}" class="manage-button" bindtap="manageWork" role="button" aria-label="管理作品"><image src="/static/icons/more-horizontal.svg" /></view>
         </view>
         <view wx:if="{{work._priceText}}" class="work-price-row">
-          <text class="work-price">{{work._priceText}}</text>
+          <text class="work-price semantic-money">{{work._priceText}}</text>
           <text wx:if="{{work._priceDiffType === 'discount'}}" class="work-price-note discount">服务原价 ¥{{work.serviceSubtotalFen / 100}} · 优惠 ¥{{work._priceDiffFen / 100}}</text>
           <text wx:elif="{{work._priceDiffType === 'surcharge'}}" class="work-price-note surcharge">服务原价 ¥{{work.serviceSubtotalFen / 100}} · 其他 ¥{{work._priceDiffFen / 100}}</text>
           <text wx:elif="{{work.serviceSubtotalFen > 0}}" class="work-price-note">服务原价 ¥{{work.serviceSubtotalFen / 100}}</text>
+        </view>
+        <view wx:if="{{work.promotion}}" class="work-promotion" aria-label="{{work.promotion.title}}，优惠{{work.promotion.discountAmount}}元">
+          <text class="work-promotion-title">{{work.promotion.title}}</text>
+          <text class="work-promotion-amount">立减 ¥{{work.promotion.discountAmount}}</text>
+          <text class="work-promotion-note">从此作品入口预约，报价时兑现</text>
         </view>
         <text wx:if="{{work.description}}" class="work-desc">{{work.description}}</text>
         <view wx:if="{{work.tags && work.tags.length}}" class="tags"><text wx:for="{{work.tags}}" wx:key="*this" class="tag">#{{item}}</text></view>
       </view>
 
-      <view class="engagement-section" style="display:flex;align-items:stretch;overflow:hidden;">
-        <view class="engagement-action {{work.isLiked ? 'is-active' : ''}}" style="flex:1 1 0;width:0;min-width:0;" data-event="like" bindtap="emit" role="button" aria-label="点赞"><image src="{{work.isLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}"/><text>点赞</text><text class="action-count">{{work.likeCount || 0}}</text></view>
-        <view class="engagement-action {{work.isFavorited ? 'is-active' : ''}}" style="flex:1 1 0;width:0;min-width:0;" data-event="favorite" bindtap="emit" role="button" aria-label="收藏"><image src="{{work.isFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}"/><text>收藏</text><text class="action-count">{{work.favoriteCount || 0}}</text></view>
-        <button class="engagement-action" style="flex:1 1 0;width:0;min-width:0;" open-type="share" aria-label="分享作品"><image src="/static/icons/share.svg"/><text>分享</text></button>
-        <view wx:if="{{showBookSame}}" class="engagement-action booking-action" style="flex:1 1 0;width:0;min-width:0;" bindtap="bookSame" role="button" aria-label="预约同款"><image src="/static/icons/calendar.svg"/><text>预约同款</text></view>
+      <view wx:if="{{visitorInfo && visitorInfo.id}}" class="visitor-section">
+        <view class="visitor-artist" data-event="artist" bindtap="emit" role="button" aria-label="查看{{visitorInfo.name}}的主页">
+          <image wx:if="{{visitorInfo.avatarUrl}}" class="visitor-avatar" src="{{visitorInfo.avatarUrl}}" mode="aspectFill" />
+          <view wx:else class="visitor-avatar"><image src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" /></view>
+          <view class="visitor-copy"><text class="visitor-name">{{visitorInfo.name}}</text><text wx:if="{{visitorInfo.city}}" class="visitor-description">{{visitorInfo.city}}</text></view>
+          <text class="visitor-link">查看主页 ›</text>
+        </view>
+        <text wx:if="{{visitorInfo.bio}}" class="visitor-description">{{visitorInfo.bio}}</text>
+        <view wx:for="{{visitorInfo.shops}}" wx:key="index" class="visitor-shop">
+          <text class="visitor-name">{{item.name}}</text>
+          <text wx:if="{{item.address}}" class="visitor-description">{{item.address}}</text>
+        </view>
+        <text wx:if="{{!visitorInfo.shops.length}}" class="visitor-description">店铺信息待完善，预约前请确认服务地点</text>
+        <text class="visitor-booking-note">{{visitorInfo.acceptingBookings === false ? '美甲师暂未开启接单，可先浏览作品' : '点击预约同款，登录并确认绑定美甲师后选择服务时间'}}</text>
       </view>
 
-      <view class="comments-section">
+      <view wx:if="{{!visitorInfo}}" class="engagement-section" style="display:flex;align-items:stretch;overflow:hidden;">
+        <view class="engagement-action {{work.isLiked ? 'is-active' : ''}}" style="flex:1 1 0;width:0;min-width:0;" data-event="like" bindtap="emit" role="button" aria-label="点赞，{{work.likeCount || 0}}次"><image src="{{work.isLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}"/><text class="action-count">{{work.likeCount || 0}}</text></view>
+        <view class="engagement-action {{work.isFavorited ? 'is-active' : ''}}" style="flex:1 1 0;width:0;min-width:0;" data-event="favorite" bindtap="emit" role="button" aria-label="收藏，{{work.favoriteCount || 0}}次"><image src="{{work.isFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}"/><text class="action-count">{{work.favoriteCount || 0}}</text></view>
+        <button class="engagement-action" style="flex:1 1 0;width:0;min-width:0;" disabled="{{!canShare && !canRetryShare}}" open-type="{{canShare ? 'share' : ''}}" bindtap="retryShare" aria-label="{{canShare ? '分享作品' : (canRetryShare ? '重新检查作品分享状态' : '此作品暂不可分享')}}"><image src="/static/icons/share.svg"/></button>
+      </view>
+
+      <button wx:if="{{visitorInfo && sharePath}}" class="visitor-share" open-type="share">发给微信好友</button>
+
+      <view wx:if="{{!visitorInfo}}" class="comments-section">
         <view class="comments-header"><text class="comments-title">评论</text><text class="comments-count">{{comments.length}} 条</text></view>
         <view wx:if="{{comments.length}}" class="comments">
           <view wx:for="{{comments}}" wx:key="id" class="comment" data-comment="{{item}}" bindtap="replyComment">
             <image wx:if="{{item.user.avatarUrl || item.userAvatar}}" class="avatar" src="{{item.user.avatarUrl || item.userAvatar}}" mode="aspectFill" />
-            <view wx:else class="avatar fallback">{{item.userInitial || '用'}}</view>
+            <view wx:else class="avatar fallback"><image src="{{(item.user.role || item.userRole) === 'technician' ? '/static/icons/technician.svg' : '/static/icons/client.svg'}}" mode="aspectFit" class="nb-default-avatar" aria-label="默认头像" /></view>
             <view class="comment-body"><view class="comment-meta"><view class="comment-meta-copy"><text class="comment-name">{{item.user.name || item.userName || '匿名用户'}}</text><text wx:if="{{(item.user.role || item.userRole) === 'technician'}}" class="badge">美甲师</text><text wx:if="{{item.isPinned}}" class="badge pinned">置顶</text><text class="comment-time">{{item.createdAtText}}</text></view><view wx:if="{{isAuthor}}" class="comment-manage" data-comment="{{item}}" catchtap="manageComment" role="button" aria-label="管理评论">•••</view></view><text class="comment-text">{{item.content}}</text></view>
           </view>
         </view>
@@ -47,10 +85,13 @@
         <view wx:if="{{isAuthor && showHidden}}" class="hidden-list"><view wx:for="{{hiddenComments}}" wx:key="id" class="hidden-comment"><text class="hidden-comment-copy">{{item.user.name || '用户'}}：{{item.content}}</text><view class="comment-manage" data-comment="{{item}}" catchtap="manageComment" role="button" aria-label="管理隐藏评论">•••</view></view></view>
       </view>
 
-      <view class="composer-section">
+    </view>
+    <view wx:if="{{!visitorInfo}}" class="composer-section" style="bottom:{{keyboardHeight}}px;{{keyboardHeight ? 'padding-bottom:20rpx;' : ''}}">
         <view wx:if="{{replyingTo}}" class="replying">回复 @{{replyingTo.name}} <text data-event="commentcancel" bindtap="emit">取消</text></view>
-        <view class="input-row"><input class="comment-input" placeholder="{{canComment ? '添加评论…' : '登录后参与评论'}}" value="{{commentText}}" focus="{{inputFocused}}" bindinput="onInput" bindconfirm="submitComment" confirm-type="send"/><view class="send {{commentText ? 'can-send' : ''}}" bindtap="submitComment">发送</view></view>
-      </view>
+        <view class="input-row"><input class="comment-input" style="flex:1 1 0%;width:0;min-width:0;" placeholder="{{canComment ? '添加评论…' : '登录后参与评论'}}" value="{{commentText}}" focus="{{inputFocused}}" adjust-position="{{false}}" hold-keyboard="{{true}}" bindkeyboardheightchange="onKeyboardHeightChange" bindblur="onInputBlur" bindinput="onInput" bindconfirm="submitComment" confirm-type="send"/><button disabled="{{submittingComment}}" loading="{{submittingComment}}" class="send" size="mini" style="flex:0 0 72px;width:72px;min-width:72px;max-width:72px;height:44px;line-height:44px;display:block;text-align:center;font-size:14px;margin:0;padding:0;background:var(--nb-action);color:var(--nb-inverse);" hover-class="send-pressed" bindtap="submitComment" aria-label="{{submittingComment ? '正在发送评论' : '发送评论'}}">{{submittingComment ? '发送中' : '发送'}}</button></view>
+    </view>
+    <view wx:if="{{visitorInfo}}" class="visitor-booking-bar">
+      <button class="visitor-booking-button booking-action" disabled="{{visitorInfo.acceptingBookings === false}}" bindtap="bookSame">{{visitorInfo.acceptingBookings === false ? '美甲师暂未开启接单' : '预约这位美甲师'}}</button>
     </view>
   </block>
 </view>

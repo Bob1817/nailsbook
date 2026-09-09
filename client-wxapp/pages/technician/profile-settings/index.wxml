@@ -1,55 +1,20 @@
 <nav-bar title="个人资料" showBack/>
-<view class="container">
-  <view class="avatar-section" bindtap="chooseAvatar">
-    <view class="avatar-wrap">
-      <image wx:if="{{avatarUrl}}" src="{{avatarUrl}}" mode="aspectFill" class="avatar" aria-label="当前头像" />
-      <view wx:else class="avatar-placeholder"><view class="profile-avatar-mark"></view></view>
-      <view wx:if="{{uploading}}" class="avatar-uploading"><view class="upload-spinner"></view></view>
-    </view>
-    <text class="avatar-hint">点击更换头像</text>
-  </view>
-
-  <view class="form">
-    <!-- 姓名 -->
-    <view class="field">
-      <text class="label">姓名</text>
-      <input class="input" value="{{name}}" bindinput="onNameInput" placeholder="请输入姓名" placeholder-class="ph" confirm-type="done" cursor-spacing="24" />
-    </view>
-
-    <!-- 城市：省市二级联动选择 -->
-    <view class="field">
-      <text class="label">城市</text>
-      <picker mode="region" value="{{cityRegion}}" bindchange="onCityChange">
-        <view class="picker-row">
-          <text class="picker-val {{cityDisplay ? '' : 'ph'}}">{{cityDisplay || '请选择城市'}}</text>
-          <view class="picker-chevron"></view>
-        </view>
-      </picker>
-    </view>
-
-    <!-- 服务区域：省市区三级联动，与预约接单范围关联 -->
-    <view class="field">
-      <view class="field-label-row">
-        <text class="label">服务区域</text>
-        <text class="label-badge">预约服务范围</text>
-      </view>
-      <picker mode="region" value="{{serviceAreaRegion}}" bindchange="onServiceAreaChange">
-        <view class="picker-row">
-          <text class="picker-val {{serviceAreaDisplay ? '' : 'ph'}}">{{serviceAreaDisplay || '请选择服务区域'}}</text>
-          <view class="picker-chevron"></view>
-        </view>
-      </picker>
-      <text class="field-hint">此区域将关联客户预约时的可选范围</text>
-    </view>
-
-    <!-- 个人简介 -->
-    <view class="field field-textarea">
-      <text class="label">个人简介</text>
-      <textarea class="textarea" value="{{bio}}" bindinput="onBioInput" placeholder="介绍一下自己吧" placeholder-class="ph" maxlength="200" adjust-position cursor-spacing="120" confirm-type="done" />
+<view class="page">
+  <secondary-page-header title="完善你的公开资料" subtitle="这些信息会用于预约、客户沟通和个人主页展示。" />
+  <view class="settings-page has-footer">
+  <view class="profile-card">
+    <view class="avatar-section {{uploading ? 'uploading' : ''}}" catchtap="chooseAvatar" role="button" aria-disabled="{{uploading}}" aria-label="更换个人头像">
+      <view class="avatar-wrap"><image wx:if="{{avatarUrl}}" src="{{avatarUrl}}" mode="aspectFill" class="avatar" aria-label="当前头像"/><view wx:else class="avatar-placeholder"><image src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像"/></view><view wx:if="{{uploading}}" class="avatar-uploading"><view class="upload-spinner"></view></view></view>
+      <view class="avatar-copy"><text class="avatar-title">个人头像</text><text class="field-hint">{{uploading ? '正在上传头像...' : '建议使用清晰、真实的正面照片'}}</text></view><text class="edit-link">{{uploading ? '上传中' : '更换 ›'}}</text>
     </view>
   </view>
-
-  <view class="save-btn {{saving ? 'btn-disabled' : ''}}" bindtap="saveProfile">
-    <text>{{saving ? '保存中...' : '保存'}}</text>
+  <view class="section-heading"><text class="section-title">基本信息</text><text class="section-note">用于客户识别你</text></view>
+  <view class="form-card">
+    <view class="field"><text class="label">姓名</text><input class="input form-input" value="{{name}}" bindinput="onNameInput" placeholder="请输入姓名" placeholder-class="ph" confirm-type="done" cursor-spacing="24"/></view>
+    <view class="field"><text class="label">所在城市</text><picker mode="region" value="{{cityRegion}}" bindchange="onCityChange"><view class="picker-row form-input"><text class="picker-val {{cityDisplay ? '' : 'ph'}}">{{cityDisplay || '请选择城市'}}</text><view class="picker-chevron"></view></view></picker></view>
+    <view class="field"><view class="field-label-row"><text class="label">服务区域</text><text class="label-badge">预约范围</text></view><picker mode="region" value="{{serviceAreaRegion}}" bindchange="onServiceAreaChange"><view class="picker-row"><text class="picker-val {{serviceAreaDisplay ? '' : 'ph'}}">{{serviceAreaDisplay || '请选择服务区域'}}</text><view class="picker-chevron"></view></view></picker><text class="field-hint">客户预约时将根据此区域匹配服务范围</text></view>
+    <view class="field field-textarea"><view class="field-label-row"><text class="label">个人简介</text><text class="field-count">{{bio.length}}/200</text></view><textarea class="form-textarea textarea" value="{{bio}}" bindinput="onBioInput" placeholder="介绍你的经验、风格和服务理念" placeholder-class="ph" maxlength="200" adjust-position cursor-spacing="120" confirm-type="done"/></view>
   </view>
+  <view class="footer-bar"><view class="booking-action save-btn {{saving ? 'btn-disabled' : ''}}" bindtap="saveProfile"><text>{{saving ? '保存中...' : '保存个人资料'}}</text></view></view>
+</view>
 </view>

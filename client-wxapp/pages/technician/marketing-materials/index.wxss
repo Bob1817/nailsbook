@@ -1,27 +1,32 @@
 page { background: var(--bg-page); }
 .page { min-height: 100vh; box-sizing: border-box; padding: var(--space-md) 24rpx calc(48rpx + env(safe-area-inset-bottom)); }
-.intro-card, .editor-card, .history-card { margin-bottom: var(--space-md); border: 2rpx solid var(--border-default); border-radius: var(--radius-lg); background: var(--bg-card); padding: 32rpx; }
-.intro-card { background: linear-gradient(135deg, #fff1f6, #f5edff); border-color: #fbcfe8; }
-.intro-title, .section-title { display: block; color: var(--text-primary); font-size: var(--font-lg); font-weight: var(--weight-bold); }
+.intro-card, .editor-card, .history-card { margin-bottom: var(--space-md); border: 0; border-radius: var(--radius-lg); background: var(--bg-card); padding: 32rpx; }
+.intro-card { background: var(--nb-page); border-color: var(--nb-line); }
+.intro-title, .section-title { display: block; color: var(--text-primary); font-size: var(--font-md); font-weight: var(--weight-semibold); }
 .intro-desc { display: block; margin-top: 12rpx; color: var(--text-muted); font-size: var(--font-sm); line-height: 1.6; }
 .section-head { display: flex; align-items: center; justify-content: space-between; gap: 24rpx; }
-.text-btn { min-height: 88rpx; margin: 0; padding: 0 24rpx; border: 0; background: transparent; color: #ec4899; font-size: var(--font-sm); line-height: 88rpx; }
+.text-btn { min-height: 88rpx; margin: 0; padding: 0 24rpx; border: 0; background: transparent; color: var(--nb-ink); font-size: var(--font-sm); line-height: 88rpx; }
 .text-btn::after, .secondary-btn::after, .primary-btn::after, .material-row::after { border: 0; }
 .field-label { display: block; margin: 28rpx 0 12rpx; color: var(--text-body); font-size: var(--font-sm); font-weight: var(--weight-semibold); }
-.field-input { height: 88rpx; box-sizing: border-box; border: 2rpx solid var(--border-default); border-radius: var(--radius-sm); background: var(--bg-card); padding: 0 24rpx; color: var(--text-primary); font-size: var(--font-md); }
+.field-input { height: var(--input-height); min-height:44px; box-sizing: border-box; border: 0; border-radius: var(--input-radius); background: var(--nb-soft-surface); padding: 0 var(--input-padding-h); color: var(--text-primary); font-size: var(--font-sm); }
 .field-row { display: flex; gap: 20rpx; }
 .field-half { flex: 1; min-width: 0; }
 .poster-preview { display: block; width: 100%; margin-top: 28rpx; border-radius: var(--radius-md); background: var(--bg-page); }
 .editor-actions { display: flex; gap: 20rpx; margin-top: 32rpx; }
 .secondary-btn, .primary-btn { flex: 1; min-height: 96rpx; margin: 0; border-radius: var(--radius-sm); font-size: var(--font-md); font-weight: var(--weight-semibold); line-height: 96rpx; }
-.secondary-btn { border: 2rpx solid var(--border-default); background: var(--bg-card); color: var(--text-primary); }
-.primary-btn { border: 0; background: #ec4899; color: var(--text-inverse); }
+.secondary-btn { border: 0; background: var(--nb-soft-surface); color: var(--text-primary); }
+.primary-btn { border: 0; background: var(--nb-action); color: var(--text-inverse); }
 .secondary-btn:active { background: var(--bg-page); }
-.primary-btn:active { background: #db2777; }
+.primary-btn:active { background: var(--nb-action); }
 .history-card .section-title { margin-bottom: 20rpx; }
-.material-row { width: 100%; min-height: 104rpx; margin: 0; padding: 16rpx 0; border: 0; border-top: 2rpx solid #eeeeee; border-radius: 0; background: var(--bg-card); display: flex; align-items: center; justify-content: space-between; text-align: left; }
+.material-row { width: 100%; min-height: 104rpx; margin: 0; padding: 16rpx 0; border: 0; border-top: 0; border-radius: 0; background: var(--bg-card); display: flex; align-items: center; justify-content: space-between; text-align: left; }
 .material-main { flex: 1; min-width: 0; }
 .material-title { display: block; overflow: hidden; color: var(--text-primary); font-size: var(--font-sm); font-weight: var(--weight-semibold); text-overflow: ellipsis; white-space: nowrap; }
 .material-meta, .empty-text { display: block; margin-top: 8rpx; color: var(--text-muted); font-size: var(--font-sm); }
-.material-edit { margin-left: 20rpx; color: #ec4899; font-size: var(--font-sm); }
+.material-edit { margin-left: 20rpx; color: var(--nb-ink); font-size: var(--font-sm); }
 @media (max-width: 360px) { .field-row { flex-direction: column; gap: 0; } }
+
+@import '../../../styles/booking-actions.wxss';
+.form-placeholder { font-size:var(--font-sm); color:var(--nb-muted); }
+.text-btn { min-height:44px; color:var(--nb-text-link); }
+.material-edit { color:var(--nb-text-link); }

@@ -12,6 +12,11 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateWorkDto {
+  @ApiPropertyOptional({ description: '客户端创建请求幂等键' })
+  @IsOptional()
+  @IsString()
+  createRequestId?: string;
+
   @ApiProperty({ description: '作品标题', example: '夏日樱花美甲' })
   @IsString()
   title: string;

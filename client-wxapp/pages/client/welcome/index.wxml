@@ -29,7 +29,7 @@
 
     <!-- 提交按钮 -->
     <button
-      class="btn-submit {{loading ? 'disabled' : ''}}"
+      class="btn-submit booking-action {{loading ? 'disabled' : ''}}"
       disabled="{{loading}}"
       bindtap="handleSubmit"
     >
@@ -37,7 +37,7 @@
     </button>
 
     <!-- 跳过按钮 -->
-    <button class="btn-skip" bindtap="handleSkip">跳过，使用默认称呼</button>
+    <button class="btn-skip booking-action" bindtap="handleSkip">跳过，使用默认称呼</button>
   </view>
 
   <!-- 功能介绍 -->

@@ -50,7 +50,7 @@
         <view class="load-error-mark">!</view>
         <text class="empty-title">消息加载失败</text>
         <text class="empty-sub">请检查网络后重试</text>
-        <button class="retry-btn" bindtap="loadInbox">重新加载</button>
+        <button class="retry-btn booking-action" bindtap="loadInbox">重新加载</button>
       </view>
 
       <block wx:else>
@@ -59,7 +59,9 @@
           <view
             wx:for="{{filteredItems}}"
             wx:key="id"
-            class="msg-card msg-card-{{item.type}}"
+            class="msg-card msg-card-{{item.type}} {{item.unread ? 'is-unread' : 'is-read'}}"
+            role="button"
+            aria-label="{{item.name}}，{{item.unread ? '未读' : '已读'}}，{{item.unreadCount || 0}}条未读"
             bindtap="onItemClick"
             data-index="{{index}}"
           >
@@ -68,25 +70,20 @@
               <view wx:else class="msg-avatar-placeholder {{item._avatarBgClass}}">
                 <image wx:if="{{item.type === 'service'}}" class="msg-semantic-icon" src="/static/icons/notification-service.svg" mode="aspectFit" aria-label="服务提醒" />
                 <image wx:elif="{{item.type === 'system'}}" class="msg-semantic-icon" src="/static/icons/notification-system.svg" mode="aspectFit" aria-label="系统通知" />
+                <image wx:elif="{{item.type === 'chat'}}" src="/static/icons/client.svg" mode="aspectFit" class="nb-default-avatar" aria-label="客户默认头像" />
                 <text wx:else class="msg-avatar-char">{{item._avatarChar}}</text>
               </view>
             </view>
             <view class="msg-body">
               <view class="msg-top-row">
-                <text class="msg-name">{{item.name}}</text>
-                <view class="msg-type-badge {{item._badgeClass}}">
-                  <text class="msg-type-badge-text">{{item.badge}}</text>
+                <view class="msg-title-group">
+                  <view wx:if="{{item.unread}}" class="msg-unread-dot" aria-hidden="true"></view>
+                  <text class="msg-name">{{item.name}}</text>
+                  <text wx:if="{{item.type === 'chat' && item.unreadCount > 1}}" class="msg-unread-count">{{item.unreadCount > 99 ? '99+' : item.unreadCount}}</text>
                 </view>
+                <text class="msg-time">{{item._timeText}}</text>
               </view>
               <text class="msg-preview">{{item.preview}}</text>
-            </view>
-            <view class="msg-right">
-              <text class="msg-time">{{item._timeText}}</text>
-              <text wx:if="{{item._actionLabel}}" class="msg-action {{item._actionClass}}">{{item._actionLabel}}</text>
-              <block wx:if="{{item.unread}}">
-                <view wx:if="{{item.unreadCount > 1}}" class="msg-unread-badge unread-{{item.type}}">{{item.unreadCount > 99 ? '99+' : item.unreadCount}}</view>
-                <view wx:else class="msg-unread-dot unread-{{item.type}}"></view>
-              </block>
             </view>
           </view>
         </view>
@@ -129,16 +126,16 @@
       <view class="modal-btn modal-btn-close" bindtap="closeNotification">
         <text class="modal-btn-close-text">关闭</text>
       </view>
-      <view wx:if="{{selectedNotification.relatedType === 'binding'}}" class="modal-btn modal-btn-primary" bindtap="viewBindingApplications">
+      <view wx:if="{{selectedNotification.relatedType === 'binding'}}" class="modal-btn modal-btn-primary semantic-primary" bindtap="viewBindingApplications">
         <text class="modal-btn-primary-text">处理绑定申请</text>
       </view>
-      <view wx:elif="{{selectedNotification.type === 'pending'}}" class="modal-btn modal-btn-primary" bindtap="viewRelatedOrder">
+      <view wx:elif="{{selectedNotification.type === 'pending'}}" class="modal-btn modal-btn-primary semantic-primary" bindtap="viewRelatedOrder">
         <text class="modal-btn-primary-text">去处理</text>
       </view>
-      <view wx:elif="{{selectedNotification.type === 'service'}}" class="modal-btn modal-btn-primary" bindtap="viewRelatedOrder">
+      <view wx:elif="{{selectedNotification.type === 'service'}}" class="modal-btn modal-btn-primary semantic-primary" bindtap="viewRelatedOrder">
         <text class="modal-btn-primary-text">查看行程</text>
       </view>
-      <view wx:elif="{{selectedNotification.relatedId}}" class="modal-btn modal-btn-primary" bindtap="viewRelatedOrder">
+      <view wx:elif="{{selectedNotification.relatedId}}" class="modal-btn modal-btn-primary semantic-primary" bindtap="viewRelatedOrder">
         <text class="modal-btn-primary-text">查看预约</text>
       </view>
     </view>
@@ -168,7 +165,7 @@
       </view>
       <view wx:elif="{{customerLoadFailed}}" class="customer-empty" aria-live="polite">
         <text class="customer-empty-text">客户列表加载失败</text>
-        <button class="retry-btn customer-retry" bindtap="loadCustomers">重新加载</button>
+        <button class="retry-btn customer-retry booking-action" bindtap="loadCustomers">重新加载</button>
       </view>
       <view wx:elif="{{filteredCustomers.length === 0}}" class="customer-empty">
         <text class="customer-empty-text">暂无客户</text>
@@ -182,7 +179,8 @@
           data-index="{{index}}"
         >
           <view class="customer-avatar">
-            <text class="customer-avatar-char">{{item._avatarChar}}</text>
+            <image wx:if="{{item.clientAvatar}}" src="{{item.clientAvatar}}" mode="aspectFill" class="nb-default-avatar" aria-label="{{item.name || '客户'}}的头像" />
+            <image wx:else src="/static/icons/client.svg" mode="aspectFit" class="nb-default-avatar" aria-label="客户默认头像" />
           </view>
           <view class="customer-info">
             <text class="customer-name">{{item.name}}</text>

@@ -105,7 +105,7 @@
           bindtap="toggleColor"
           data-id="{{item.id}}"
         >
-          <view class="color-circle" style="background-color: {{item.hex}}; {{item.id === 'white' ? 'border: 2rpx solid #e5e7eb;' : ''}}">
+          <view class="color-circle" style="background-color: {{item.hex}}; {{item.id === 'white' ? 'border: 2rpx solid #6E6E73;' : ''}}">
             <view wx:if="{{item._selected}}" class="color-check">
               <text class="check-mark">✓</text>
             </view>
@@ -175,7 +175,7 @@
               wx:for="{{selectedColorItems}}"
               wx:key="*this"
               class="tag color-tag"
-              style="background-color: {{item.hex}}; color: {{item.lightText ? '#1f2937' : '#fff'}}"
+              style="background-color: {{item.hex}}; color: {{item.lightText ? '#1D1D1F' : '#FFFFFF'}}"
             >
               <text>{{item.name}}</text>
             </view>
@@ -205,9 +205,9 @@
   <!-- 底部操作栏 -->
   <view class="bottom-bar">
     <view class="bottom-actions">
-      <button wx:if="{{currentStep > 1}}" class="btn-prev" bindtap="prevStep">上一步</button>
-      <button wx:if="{{currentStep < 5}}" class="btn-next" bindtap="nextStep">下一步</button>
-      <button wx:else class="btn-submit {{submitting ? 'disabled' : ''}}" disabled="{{submitting}}" bindtap="handleSubmit">
+      <button wx:if="{{currentStep > 1}}" class="btn-prev booking-action" bindtap="prevStep">上一步</button>
+      <button wx:if="{{currentStep < 5}}" class="btn-next booking-action" bindtap="nextStep">下一步</button>
+      <button wx:else class="btn-submit booking-action {{submitting ? 'disabled' : ''}}" disabled="{{submitting}}" bindtap="handleSubmit">
         {{submitting ? '保存中...' : '保存设计'}}
       </button>
     </view>

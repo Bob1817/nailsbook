@@ -28,7 +28,7 @@
 }
 
 .faq-border {
-  border-bottom: 1rpx solid var(--border-card);
+  border-bottom: 0;
 }
 
 .faq-header {

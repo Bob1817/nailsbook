@@ -27,12 +27,18 @@ out/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+__pycache__/
+*.py[cod]
 
 # Misc
 *.tsbuildinfo
+*.tar.gz
 .superpowers/
 .claude/settings.local.json
 .trae/
+.playwright-cli/
+.workbuddy/
+output/
 
 # Database files
 *.db
@@ -52,3 +58,5 @@ build/
 
 # Client-WxApp (微信小程序编译产物)
 client-wxapp/.DS_Store
+client-wxapp/preview/*-review/
+.qa-local/

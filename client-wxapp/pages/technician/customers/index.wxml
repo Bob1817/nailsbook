@@ -8,15 +8,16 @@
         <view class="search-icon"></view>
         <input
           class="search-input"
+          placeholder-class="search-placeholder"
         placeholder="搜索姓名或联系方式"
           confirm-type="search"
           value="{{keyword}}"
           bindinput="onKeywordInput"
           bindconfirm="onSearchConfirm"
         />
-        <view wx:if="{{keyword}}" class="search-clear" bindtap="clearKeyword"><view class="clear-line"></view></view>
+        <view wx:if="{{keyword}}" class="search-clear" bindtap="clearKeyword" role="button" aria-label="清空搜索"><view class="clear-line"></view></view>
       </view>
-      <view class="btn-invite" bindtap="handleInvite">
+      <view class="btn-invite booking-action" bindtap="handleInvite" role="button" aria-label="复制客户邀请码">
         <text class="invite-icon">+</text>
         <text class="invite-text">邀请</text>
       </view>
@@ -65,7 +66,7 @@
     <view wx:elif="{{loadFailed}}" class="empty-card" aria-live="polite">
       <text class="empty-title">客户列表加载失败</text>
       <text class="empty-sub">请检查网络后重试</text>
-      <view class="empty-reset" bindtap="loadCustomers" role="button">重新加载</view>
+      <view class="empty-reset booking-action" bindtap="loadCustomers" role="button">重新加载</view>
     </view>
 
     <!-- 空状态 -->
@@ -73,7 +74,7 @@
       <view class="empty-icon"><view class="empty-avatar-mark"></view></view>
       <text class="empty-title">{{keyword || activeTab !== '全部' || activeLifecycle !== 'all' ? '没有找到匹配的客户' : '还没有客户'}}</text>
       <text class="empty-sub">{{keyword || activeTab !== '全部' || activeLifecycle !== 'all' ? '换个关键词、生命周期或标签试试' : '客户预约后会自动出现在这里'}}</text>
-      <view wx:if="{{keyword || activeTab !== '全部' || activeLifecycle !== 'all'}}" class="empty-reset" bindtap="resetFilters">清除筛选</view>
+      <view wx:if="{{keyword || activeTab !== '全部' || activeLifecycle !== 'all'}}" class="empty-reset booking-action" bindtap="resetFilters" role="button">清除筛选</view>
     </view>
 
     <!-- 客户卡片列表 -->
@@ -86,7 +87,7 @@
         <view class="customer-card-header">
           <view class="avatar">
             <image wx:if="{{item.avatarUrl && !item._avatarFailed}}" src="{{item.avatarUrl}}" mode="aspectFill" class="avatar-img" lazy-load binderror="onAvatarError" data-id="{{item.id}}" aria-label="{{item.name || item.nickname || '客户'}}的头像" />
-            <text wx:else class="avatar-char">{{item._initial}}</text>
+            <image wx:else src="/static/icons/client.svg" mode="aspectFit" class="nb-default-avatar" aria-label="客户默认头像" />
           </view>
           <view class="identity-area">
             <view class="identity-title-row">
@@ -116,7 +117,7 @@
         <view class="stats-grid">
           <view class="stat-item stat-item-primary">
             <text class="stat-label">累计消费</text>
-            <text class="stat-value stat-price">{{item._totalSpentText}}</text>
+            <text class="semantic-money stat-value stat-price">{{item._totalSpentText}}</text>
           </view>
           <view class="stat-item">
             <text class="stat-label">服务次数</text>

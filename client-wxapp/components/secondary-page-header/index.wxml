@@ -1,0 +1,8 @@
+<view class="secondary-page-header">
+  <view class="secondary-page-header-copy">
+    <text class="secondary-page-header-title">{{title}}</text>
+    <text wx:if="{{subtitle}}" class="secondary-page-header-subtitle">{{subtitle}}</text>
+  </view>
+  <text wx:if="{{metaText}}" class="secondary-page-header-meta">{{metaText}}</text>
+  <slot name="action"></slot>
+</view>

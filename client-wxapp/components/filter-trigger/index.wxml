@@ -1,0 +1,4 @@
+<view class="filter-trigger {{active ? 'filter-trigger-active' : ''}}">
+  <text class="filter-trigger-label">{{label}}</text>
+  <view class="filter-trigger-arrow"></view>
+</view>

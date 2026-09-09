@@ -1,0 +1,16 @@
+/* 与全部预约卡片操作一致。使用显式类，不影响其他页面。 */
+.booking-action.booking-action {
+  min-height: 44px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  font-size: var(--font-sm);
+  font-weight: var(--weight-semibold);
+  line-height: 1.4;
+  box-shadow: none;
+}
+.booking-action::after { border: 0; }
+.booking-action:active { opacity: .82; }

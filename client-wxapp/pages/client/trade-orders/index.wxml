@@ -13,11 +13,11 @@
       <text class="order-title">{{item._title}}</text>
       <text class="order-meta">{{item._artist}} · 创建于 {{item._created}}</text>
       <view class="amount-grid">
-        <view><text>订单金额</text><text class="amount-value">¥{{item._total}}</text></view>
-        <view><text>定金</text><text class="amount-value">¥{{item._deposit}}</text></view>
-        <view><text>尾款</text><text class="amount-value">¥{{item._balance}}</text></view>
+        <view><text>订单金额</text><text class="amount-value semantic-money">¥{{item._total}}</text></view>
+        <view><text>定金</text><text class="amount-value semantic-money">¥{{item._deposit}}</text></view>
+        <view><text>尾款</text><text class="amount-value semantic-money">¥{{item._balance}}</text></view>
       </view>
-      <view class="order-foot"><text>已支付 ¥{{item._paid}}</text><text wx:if="{{item.status === 'pending'}}" class="pay-link">待支付 ¥{{item._remaining}} ›</text><text wx:else>查看详情 ›</text></view>
+      <view class="order-foot"><text>已支付 ¥{{item._paid}}</text><text wx:if="{{item.status === 'pending'}}" class="pay-link">待支付 ¥{{item._remaining}} ›</text><text wx:else class="semantic-link">查看详情 ›</text></view>
     </view>
   </view>
 </view>

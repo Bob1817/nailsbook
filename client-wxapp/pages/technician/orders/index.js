@@ -41,6 +41,9 @@ function periodTotals(relation, totals) {
 
 Page({
   data: {
+    bookingDayReady: false,
+    dayAccepting: true,
+    daySaving: false,
     scheduleTab: 'trips',           // trips | all
     showMoreMenu: false,
 
@@ -102,7 +105,13 @@ Page({
 
   // ---------- 数据加载 ----------
   async loadOrders() {
+    if (wx.getStorageSync('role') !== 'technician') {
+      this.setData({ loading: false });
+      wx.reLaunch({ url: '/pages/login/index' });
+      return;
+    }
     this.setData({ loading: true });
+    this.loadBookingDays();
     try {
       const [res, calendarResult] = await Promise.all([
         api.technician.orders.list({}),
@@ -118,9 +127,10 @@ Page({
         ? calendarResult.orders.map(order => ({
           startTime: order.startTime,
           status: order.status,
+          depositStatus: order.depositStatus,
           price: order.quotePrice || 0
         }))
-        : this._allOrders;
+        : raw.map(order => ({ ...normalizeOrder(order), depositStatus: order.depositStatus }));
       const registeredAt = parseDate(calendarResult && calendarResult.registeredAt);
       const earliestOrder = incomeOrders
         .map(order => parseDate(order.startTime))
@@ -132,13 +142,17 @@ Page({
       incomeOrders.forEach((o) => {
         const t = parseDate(o.startTime);
         if (t && t > this._calendarEndDate) this._calendarEndDate = t;
-        if (!t || INVALID_INCOME_STATUSES.includes(o.status)) return;
+        if (!t) return;
         const key = dateKey(t);
         const income = this._incomeByDate[key] || { estimated: 0, actual: 0 };
-        income.estimated += Number(o.price) || 0;
-        if (o.status === 'completed') income.actual += Number(o.price) || 0;
+        if (o.depositStatus === 'refunded') income.refunded = true;
+        else if (o.status === 'cancelled') income.cancelled = true;
+        if (!INVALID_INCOME_STATUSES.includes(o.status) && o.depositStatus !== 'refunded') {
+          income.estimated += Number(o.price) || 0;
+          if (o.status === 'completed') income.actual += Number(o.price) || 0;
+          marked[key] = true;
+        }
         this._incomeByDate[key] = income;
-        marked[key] = true;
       });
       this._markedKeys = marked;
 
@@ -194,9 +208,11 @@ Page({
     const income = (this._incomeByDate && this._incomeByDate[key]) || { estimated: 0, actual: 0 };
     const isPast = key < dateKey(this._today || new Date());
     const amount = isPast ? income.actual : income.estimated;
-    return amount > 0
-      ? { type: isPast ? 'actual' : 'estimated', text: compactMoney(amount) }
-      : { type: isPast ? 'actual' : 'estimated', text: '' };
+    const statuses = [];
+    if (amount > 0) statuses.push({ tone: 'income', label: isPast ? '有收入' : '有预计收入' });
+    if (income.cancelled) statuses.push({ tone: 'cancelled', label: '有取消预约' });
+    if (income.refunded) statuses.push({ tone: 'refunded', label: '有退款' });
+    return { type: isPast ? 'actual' : 'estimated', text: amount > 0 ? compactMoney(amount) : '', statuses };
   },
 
   // ---------- 重算当前视图 ----------
@@ -229,11 +245,34 @@ Page({
       summary: {
         conflicts: decoratedDayOrders.filter(order => order._hasConflict).length
       },
+      dayAccepting: ((this._bookingDays || []).find(day => day.serviceDate === dateKey(active)) || {}).accepting !== false,
       activeKey: dateKey(active),
       activeIsToday: isSameDay(active, this._today),
       activeLabel: label,
       dateStrip: this._buildDateStrip(this._today)
     });
+  },
+
+  async loadBookingDays() {
+    if (!api.technician.bookingDays) return;
+    try {
+      const settings = await api.technician.bookingDays.list();
+      this._bookingDays = settings.days;
+      this.setData({ bookingDayReady: true, dayAccepting: (settings.days.find(day => day.serviceDate === this.data.activeKey) || {}).accepting !== false });
+    } catch (_) { this.setData({ bookingDayReady: false }); }
+  },
+  async toggleBookingDay() {
+    if (this.data.daySaving || !this.data.bookingDayReady || this.data.activeKey < this.data.todayKey) return;
+    const date = this.data.activeKey;
+    const day = (this._bookingDays || []).find(item => item.serviceDate === date);
+    const accepting = !this.data.dayAccepting;
+    const result = await wx.showModal({ title: (accepting ? '重新开放 ' : '停止接单 ') + date,
+      content: accepting ? '重新开放后，客户可在工作时间内未占用的时段发起申请。全局暂停和休息日设置仍然生效。' : '该日期将不再接受新申请，已有预约和待处理申请不受影响。' });
+    if (!result.confirm) return;
+    this.setData({ daySaving: true });
+    try { await api.technician.bookingDays.update(date, { accepting, version: day ? day.version : 0 }); }
+    catch (err) { wx.showToast({ title: err.message || '更新失败', icon: 'none' }); }
+    finally { await this.loadBookingDays(); this.setData({ daySaving: false }); }
   },
 
   // ---------- 交互 ----------
@@ -438,6 +477,12 @@ Page({
 
   onBookingCardNavigate(e) {
     this.navigateToAddress({ currentTarget: { dataset: { id: e.detail && e.detail.id } } });
+  },
+
+  onBookingCardMessage(e) {
+    const clientId = e.detail && e.detail.clientId;
+    if (!clientId) return wx.showToast({ title: '客户尚未关联小程序账号，请拨打电话', icon: 'none' });
+    wx.navigateTo({ url: `/pages/technician/chat-detail/index?clientId=${clientId}` });
   },
 
   onBookingCardContact(e) {

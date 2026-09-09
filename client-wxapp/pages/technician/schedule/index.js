@@ -52,9 +52,11 @@ Page({
   },
 
   async loadOrders(date) {
+    const requestId = this._requestId = (this._requestId || 0) + 1;
     this.setData({ loading: true, loadFailed: false });
     try {
       const res = await api.technician.orders.list({ date });
+      if (requestId !== this._requestId) return;
       const all = Array.isArray(res) ? res : (res.list || res.data || []);
       const dayOrders = all
         .map(normalizeOrder)
@@ -73,10 +75,15 @@ Page({
         .sort((a, b) => (a.timeStr > b.timeStr ? 1 : -1));
       this.setData({ dayOrders });
     } catch (err) {
+      if (requestId !== this._requestId) return;
       this.setData({ loadFailed: true });
     } finally {
-      this.setData({ loading: false });
+      if (requestId === this._requestId) this.setData({ loading: false });
     }
+  },
+
+  onUnload() {
+    this._requestId = (this._requestId || 0) + 1;
   },
 
   retryLoad() {

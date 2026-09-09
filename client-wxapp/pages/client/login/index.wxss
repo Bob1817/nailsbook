@@ -32,9 +32,9 @@
   color: var(--text-primary);
 }
 
-.login-tabs { display: flex; padding: 8rpx; margin-bottom: 32rpx; border-radius: var(--card-radius); background: #eef0f4; }
+.login-tabs { display: flex; padding: 8rpx; margin-bottom: 32rpx; border-radius: var(--card-radius); background: var(--nb-page); }
 .login-tab { flex: 1; min-height: 88rpx; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); color: var(--text-muted); font-size: var(--font-sm); }
-.login-tab-active { color: var(--text-primary); background: var(--bg-card); font-weight: var(--weight-semibold); box-shadow: 0 4rpx 14rpx rgba(31, 41, 55, 0.08); }
+.login-tab-active { color: var(--text-primary); background: var(--bg-card); font-weight: var(--weight-semibold); box-shadow: 0 4rpx 14rpx rgba(0, 0, 0, 0.08); }
 .wechat-hint { display: block; color: var(--text-muted); font-size: var(--font-sm); line-height: 1.6; text-align: center; }
 
 .form-item {
@@ -57,16 +57,16 @@
   font-size: var(--font-md);
   color: var(--text-primary);
   box-sizing: border-box;
-  border: 2rpx solid #ddd8dc;
-  box-shadow: 0 2rpx 8rpx rgba(54, 43, 49, 0.035), inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
+  border: 0;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.035), inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
   transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
 }
-.input:focus { border-color:#bd587d; background: var(--bg-card); box-shadow:0 0 0 6rpx rgba(189,88,125,.08); }
+.input:focus { border-color:var(--nb-link); background: var(--bg-card); box-shadow:0 0 0 6rpx rgba(0, 0, 0, .08); }
 
 .readonly {
   width: 100%;
   height: 96rpx;
-  background: #f0f0f0;
+  background: var(--nb-page);
   border-radius: var(--radius-sm);
   padding: 0 32rpx;
   font-size: var(--font-md);
@@ -75,7 +75,7 @@
   align-items: center;
   justify-content: space-between;
   box-sizing: border-box;
-  border: 2rpx solid #e5e1e4;
+  border: 0;
 }
 
 .readonly-phone {
@@ -89,13 +89,13 @@
 .readonly-action {
   flex-shrink: 0;
   font-size: var(--font-sm);
-  color: var(--brand-primary);
+  color: var(--nb-text-link);
   margin-left: 16rpx;
 }
 
 .hint-banner {
-  background: #fff7e6;
-  color: #fa8c16;
+  background: var(--nb-page);
+  color: var(--nb-ink);
   font-size: var(--font-sm);
   padding: 20rpx 40rpx;
   border-radius: var(--radius-sm);
@@ -125,7 +125,7 @@
   min-height:88rpx;
   align-items:center;
   font-size: var(--font-sm);
-  color: var(--brand-primary);
+  color: var(--nb-text-link);
 }
 
 .link-row {
@@ -154,3 +154,8 @@
   font-size: var(--font-sm);
   color: var(--text-muted);
 }
+
+@import '../../../styles/booking-actions.wxss';
+.input { height: var(--input-height); min-height: 44px; background: var(--bg-input); border-radius: var(--input-radius); padding: 0 var(--input-padding-h); font-size: var(--font-sm); }
+.readonly { height: var(--input-height); min-height: 44px; border-radius: var(--input-radius); padding: 0 var(--input-padding-h); font-size: var(--font-sm); }
+.btn-primary.booking-action { height: var(--control-hit-height); min-height: 44px; margin-top: 32rpx; border-radius: 8px; background: var(--nb-action); font-size: var(--font-sm); box-shadow: none; }

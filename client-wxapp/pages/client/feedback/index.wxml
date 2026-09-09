@@ -1,62 +1,42 @@
-<nav-bar title="问题反馈" showBack/>
-<view class="page">
-  <scroll-view scroll-y class="content">
-
-    <view class="intro">
-      <text class="intro-title">遇到问题或有建议？</text>
-      <text class="intro-sub">告诉我们，我们会尽快处理并改进</text>
+<nav-bar title="问题反馈" showBack />
+<scroll-view scroll-y class="page" enhanced show-scrollbar="{{false}}">
+  <secondary-page-header title="反馈记录" subtitle="问题进度与平台回复会保留在这里" metaText="{{list.length}} 条" />
+  <view class="section-title">我的反馈</view>
+  <view wx:if="{{loading}}" class="state">正在加载…</view>
+  <view wx:elif="{{loadError}}" class="state"><text>暂时无法加载反馈记录</text><button class="retry booking-action" bindtap="load">重新加载</button></view>
+  <view wx:elif="{{!list.length}}" class="empty"><text class="empty-title">还没有反馈记录</text><text class="empty-sub">遇到问题或有建议，可点击右下角新增反馈</text><view class="empty-action"><action-button label="新增反馈" block="{{false}}" bind:tap="openCreate" /></view></view>
+  <view wx:else class="records">
+    <view class="record" wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="openDetail">
+      <view class="record-head"><text class="record-type">{{item.type}}</text><text class="status {{item.statusClass}}">{{item.statusText}}</text></view>
+      <text class="record-title">{{item.title}}</text><text class="record-content">{{item.content}}</text>
+      <view class="record-foot"><text>{{item.dateText}}</text><text class="result">{{item.replyContent ? '查看回复' : '查看进度'}} ›</text></view>
     </view>
-
-    <view class="card">
-      <!-- 标题 -->
-      <view class="field">
-        <text class="field-label">问题标题</text>
-        <input
-          class="field-input"
-          value="{{title}}"
-          maxlength="{{titleMax}}"
-          placeholder="一句话描述你的问题"
-          placeholder-class="ph"
-          bindinput="onTitleInput"
-          confirm-type="done"
-          cursor-spacing="24"
-        />
-        <text class="field-count">{{title.length}}/{{titleMax}}</text>
-      </view>
-
-      <!-- 类型 -->
-      <view class="field">
-        <text class="field-label">问题类型</text>
-        <picker class="picker" mode="selector" range="{{types}}" value="{{typeIndex}}" bindchange="onTypeChange">
-          <view class="picker-row">
-            <text class="picker-value">{{types[typeIndex]}}</text>
-            <text class="picker-arrow">›</text>
-          </view>
-        </picker>
-      </view>
-
-      <!-- 内容 -->
-      <view class="field field-textarea">
-        <text class="field-label">问题内容</text>
-        <textarea
-          class="field-area"
-          value="{{content}}"
-          maxlength="{{contentMax}}"
-          placeholder="请详细描述你遇到的问题或建议，便于我们快速定位"
-          placeholder-class="ph"
-          bindinput="onContentInput"
-          auto-height
-          adjust-position
-          cursor-spacing="120" confirm-type="done" />
-        <text class="field-count">{{content.length}}/{{contentMax}}</text>
-      </view>
-    </view>
-
-  </scroll-view>
-
-  <view class="footer">
-    <button class="submit-btn {{submitting ? 'disabled' : ''}}" bindtap="submit" disabled="{{submitting}}">
-      {{submitting ? '提交中...' : '提交反馈'}}
-    </button>
+  </view>
+</scroll-view>
+<view class="floating-add booking-action" bindtap="openCreate" aria-role="button" aria-label="新增反馈">
+  <text class="floating-add-icon">＋</text>
+  <text>新增反馈</text>
+</view>
+<view wx:if="{{showCreate}}" class="overlay" bindtap="closeCreate">
+  <view class="sheet" catchtap="stopBubble">
+    <view class="sheet-handle"></view>
+    <view class="sheet-head"><view><text class="sheet-title">新增反馈</text><text class="sheet-sub">请描述你遇到的问题或建议</text></view><view class="close" bindtap="closeCreate">×</view></view>
+    <scroll-view scroll-y class="form-scroll">
+      <view class="field"><view class="label-row"><text>问题标题</text><text>{{title.length}}/{{titleMax}}</text></view><input value="{{title}}" maxlength="{{titleMax}}" placeholder="一句话描述你的问题" placeholder-class="ph" bindinput="onTitleInput" /></view>
+      <view class="field"><text class="label">问题类型</text><picker mode="selector" range="{{types}}" value="{{typeIndex}}" bindchange="onTypeChange"><view class="picker-row"><text>{{types[typeIndex]}}</text><text class="chevron">⌄</text></view></picker></view>
+      <view class="field"><view class="label-row"><text>问题内容</text><text>{{content.length}}/{{contentMax}}</text></view><textarea value="{{content}}" maxlength="{{contentMax}}" placeholder="请详细描述问题，便于我们快速定位" placeholder-class="ph" bindinput="onContentInput" /></view>
+    </scroll-view>
+    <view class="sheet-footer"><action-button label="{{submitting ? '提交中…' : '提交反馈'}}" loading="{{submitting}}" bind:tap="submit" /></view>
+  </view>
+</view>
+<view wx:if="{{selected}}" class="overlay" bindtap="closeDetail">
+  <view class="sheet detail-sheet" catchtap="stopBubble">
+    <view class="sheet-handle"></view>
+    <view class="sheet-head"><view><text class="sheet-title">反馈详情</text><text class="sheet-sub">提交于 {{selected.dateText}}</text></view><view class="close" bindtap="closeDetail">×</view></view>
+    <scroll-view scroll-y class="detail-scroll">
+      <view class="detail-status"><text class="status {{selected.statusClass}}">{{selected.statusText}}</text><text>{{selected.type}}</text></view>
+      <text class="detail-title">{{selected.title}}</text><text class="detail-content">{{selected.content}}</text>
+      <view class="reply-box {{selected.replyContent ? 'has-reply' : ''}}"><text class="reply-label">平台回复</text><text class="reply-content">{{selected.replyContent || '我们已收到反馈，处理进度会在这里更新。'}}</text><text wx:if="{{selected.replyDateText}}" class="reply-date">{{selected.replyDateText}}</text></view>
+    </scroll-view>
   </view>
 </view>

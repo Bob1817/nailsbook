@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "components": {
+    "action-button": { "layer": "foundation", "status": "stable", "purpose": "统一主次、文字和危险操作按钮" },
+    "form-field": { "layer": "foundation", "status": "stable", "purpose": "统一单行输入框、标签、提示及尾部操作" },
+    "filter-trigger": { "layer": "foundation", "status": "stable", "purpose": "统一列表筛选触发器" },
+    "nb-switch": { "layer": "foundation", "status": "stable", "purpose": "统一布尔开关" },
+    "nav-bar": { "layer": "navigation", "status": "stable", "purpose": "统一页面导航栏" },
+    "tab-bar": { "layer": "navigation", "status": "stable", "purpose": "统一客户端与美甲师端底部导航" },
+    "collection-overview": { "layer": "pattern", "status": "stable", "purpose": "统一集合页顶部主层级" },
+    "secondary-page-header": { "layer": "pattern", "status": "stable", "purpose": "统一二三级页面全宽主信息区" },
+    "booking-time-picker": { "layer": "business", "status": "stable", "purpose": "预约日期与时段选择" },
+    "booking-confirm": { "layer": "business", "status": "stable", "purpose": "确认排期、最终总价及定金收款状态" },
+    "rest-day-calendar": { "layer": "business", "status": "stable", "purpose": "休息日选择弹层" },
+    "technician-booking-card": { "layer": "business", "status": "stable", "purpose": "美甲师预约摘要与操作卡片" },
+    "work-card": { "layer": "business", "status": "stable", "purpose": "作品流卡片" },
+    "work-detail-view": { "layer": "business", "status": "stable", "purpose": "共享作品详情" },
+    "work-share-poster": { "layer": "business", "status": "stable", "purpose": "作品分享海报" }
+  }
+}

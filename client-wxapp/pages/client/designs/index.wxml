@@ -50,7 +50,7 @@
       <view class="load-error-mark">!</view>
       <text class="empty-title">设计记录加载失败</text>
       <text class="empty-desc">请检查网络后重试</text>
-      <button class="retry-btn" bindtap="loadDesigns">重新加载</button>
+      <button class="retry-btn booking-action" bindtap="loadDesigns">重新加载</button>
     </view>
 
     <!-- 空状态 -->

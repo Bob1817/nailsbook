@@ -1,0 +1,61 @@
+<view class="booking-page">
+  <nav-bar title="一键预约" showBack/>
+  <view wx:if="{{loading}}" class="state">正在加载预约主页…</view>
+  <view wx:elif="{{error}}" class="card state">
+    <text class="state-title">预约主页暂时无法打开</text><text class="state-copy">{{error}}</text>
+    <button class="booking-button secondary retry booking-action" bindtap="loadArtist" hover-class="pressed">重新加载</button>
+  </view>
+  <block wx:else>
+    <scroll-view class="page-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+      <view class="content">
+        <view class="hero-copy">
+          <text class="eyebrow">NAILBOOK 专属预约</text>
+          <text class="title">{{owner ? '分享你的预约主页' : '把喜欢，约进日程里'}}</text>
+          <text class="lead">{{owner ? '客户打开后可直接选择时间，减少来回沟通。' : '选好时间提交需求，价格与时长确认后预约正式成立。'}}</text>
+        </view>
+        <view class="card artist-card">
+          <view class="artist-header">
+            <image wx:if="{{artist.avatarUrl}}" class="avatar" src="{{artist.avatarUrl}}" mode="aspectFill" aria-label="{{artist.name}}的头像"/>
+            <image wx:else class="avatar avatar-default" src="/static/icons/technician.svg" mode="aspectFit" aria-label="美甲师默认头像"/>
+            <view class="artist-info"><text class="artist-kicker">你的专属美甲师</text><text class="name">{{artist.name}}</text><text class="artist-meta">{{artist.city || '服务城市待确认'}}</text></view>
+            <view class="status-pill {{enabled ? 'is-open' : ''}}"><view class="status-dot"></view><text>{{enabled ? '可预约' : '未开放'}}</text></view>
+          </view>
+          <text wx:if="{{artist.bio}}" class="bio">{{artist.bio}}</text>
+          <view wx:if="{{artist.styleTags.length}}" class="tags"><text wx:for="{{artist.styleTags}}" wx:key="*this" class="tag">{{item}}</text></view>
+          <view class="value-strip">
+            <view class="value-item"><text class="value-title">先选时间</text><text class="value-copy">款式稍后沟通</text></view><view class="value-divider"></view>
+            <view class="value-item"><text class="value-title">确认后生效</text><text class="value-copy">价格时长透明</text></view>
+          </view>
+        </view>
+        <view wx:if="{{owner}}" class="owner-setting">
+          <view class="owner-setting-copy">
+            <text class="owner-setting-title">开放客户自助选时间</text>
+            <text class="owner-setting-help">开启后，客户可从分享页选择时间并提交预约申请</text>
+            <text wx:if="{{quickBookingEnabled && !acceptingBookings}}" class="owner-setting-warning">当前已暂停接单，请先在“我的”页开启接受新预约</text>
+          </view>
+          <nb-switch checked="{{quickBookingEnabled}}" disabled="{{savingAvailability}}" label="开放一键预约" bind:change="onAvailabilityChange"/>
+        </view>
+        <view class="section-block">
+          <view class="section-heading"><view><text class="section-title">预约很简单</text><text class="section-sub">3 步完成，不用反复确认信息</text></view><text class="section-index">01</text></view>
+          <view class="steps-card">
+            <view class="step"><view class="step-marker"><text>1</text></view><view class="step-copy"><text class="step-title">选择合适时间</text><text class="step-description">没想好款式也可以先占时间</text></view></view><view class="step-line"></view>
+            <view class="step"><view class="step-marker"><text>2</text></view><view class="step-copy"><text class="step-title">美甲师确认方案</text><text class="step-description">沟通需求、报价和服务时长</text></view></view><view class="step-line"></view>
+            <view class="step"><view class="step-marker"><text>3</text></view><view class="step-copy"><text class="step-title">确认预约</text><text class="step-description">双方确认后正式进入行程</text></view></view>
+          </view>
+        </view>
+        <view wx:if="{{owner}}" class="invite-card"><view><text class="invite-label">分享识别码</text><text class="invite-help">分享时自动携带，客户无需填写</text></view><text class="invite-code">{{artist.invitationCode}}</text></view>
+        <view wx:if="{{!enabled}}" class="availability" role="status"><view class="notice-icon">!</view><view><text class="availability-title">暂未开放预约</text><text class="availability-copy">{{owner ? (quickBookingEnabled ? '一键预约已开启，但当前处于暂停接单状态。' : '打开上方开关后，客户即可选择时间并提交预约申请。') : '这位美甲师暂未开放预约，请稍后再试。'}}</text></view></view>
+      </view>
+    </scroll-view>
+    <view class="action-bar">
+      <view wx:if="{{owner}}" class="share-actions"><button class="booking-button booking-action primary" open-type="share" hover-class="primary-pressed">发给微信好友</button><button class="booking-button booking-action secondary" bindtap="shareTimeline" hover-class="pressed">分享到朋友圈</button></view>
+      <block wx:else>
+        <view class="guest-actions">
+          <button class="booking-button booking-action primary {{!enabled || submitting ? 'is-disabled' : ''}}" bindtap="bookNow" disabled="{{!enabled || submitting}}" loading="{{submitting}}" hover-class="primary-pressed">{{enabled ? '立即预约' : '暂未开放预约'}}</button>
+          <button class="booking-button booking-action secondary" bindtap="viewArtistHome" hover-class="pressed">查看美甲师主页</button>
+        </view>
+        <text class="consent">预约时将绑定{{artist.name}}；只需选择时间，款式与价格可由美甲师后续完善。</text>
+      </block>
+    </view>
+  </block>
+</view>

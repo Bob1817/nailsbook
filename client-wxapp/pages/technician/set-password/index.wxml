@@ -15,7 +15,7 @@
       <view class="code-row">
         <input class="input code-input" type="number" maxlength="6" placeholder="请输入验证码"
           value="{{code}}" bindinput="onCodeInput" confirm-type="done" />
-        <button class="code-btn" bindtap="handleSendCode" disabled="{{sending || countdown > 0}}">
+        <button class="code-btn booking-action" bindtap="handleSendCode" disabled="{{sending || countdown > 0}}">
           {{countdown > 0 ? countdown + 's' : sending ? '发送中' : '发送验证码'}}
         </button>
       </view>
@@ -33,7 +33,7 @@
 
     <text wx:if="{{error}}" class="error-text">{{error}}</text>
 
-    <button class="btn-primary" bindtap="handleSubmit" disabled="{{loading}}">
+    <button class="btn-primary booking-action" bindtap="handleSubmit" disabled="{{loading}}">
       {{loading ? '设置中...' : '确认设置并登录'}}
     </button>
   </view>

@@ -1,0 +1,99 @@
+<view class="manager-page">
+  <nav-bar title="我的美甲师" showBack />
+  <view class="manager-content">
+    <view class="manager-header"><text class="section-title">已绑定 {{activeCount}} 位</text><button class="booking-action" disabled="{{loading || loadFailed || technicians.length >= 5}}" bindtap="openBindModal">绑定新美甲师</button></view>
+    <text class="manager-hint">名额 {{technicians.length}}/5 · 待确认申请也占名额；仅关注不占名额。</text>
+    <text wx:if="{{technicians.length > 5}}" class="manager-hint">已有关系予以保留。减少至 5 位以下后可新增绑定。</text>
+    <view wx:if="{{loading}}" class="manager-state">加载中…</view>
+    <view wx:elif="{{loadFailed}}" class="manager-state"><text>美甲师加载失败</text><button class="booking-action" bindtap="loadProfile">重新加载</button></view>
+    <view wx:elif="{{!technicians.length}}" class="manager-state">暂无绑定或待确认申请</view>
+    <block wx:else>
+      <view wx:for="{{technicians}}" wx:key="id" class="manager-card">
+        <view class="manager-main" bindtap="viewTechnicianHome" data-id="{{item.id}}" role="button" aria-label="查看{{item.name}}主页"><image class="manager-avatar" src="{{item.avatar || '/static/icons/technician.svg'}}" mode="aspectFill"/><view class="manager-info"><text class="manager-name">{{item.name}}</text><text class="manager-hint">{{item.bindingStatus === 'pending' ? '待确认申请' : (item.isDefault ? '默认美甲师' : '已绑定')}}{{item.city ? ' · ' + item.city : ''}}</text></view></view>
+        <view class="manager-actions" wx:if="{{item.bindingStatus === 'pending'}}"><button class="booking-action" bindtap="cancelBindingApplication" data-id="{{item.id}}">取消申请</button><button class="booking-action" bindtap="viewTechnicianHome" data-id="{{item.id}}">查看主页</button></view>
+        <view class="manager-actions" wx:else><button class="booking-action" bindtap="bookTechnician" data-id="{{item.id}}">预约</button><button class="booking-action" bindtap="messageTechnician" data-id="{{item.id}}" data-name="{{item.name}}">发消息</button><button class="booking-action" bindtap="callTechnician" data-phone="{{item.phone}}">拨打电话</button><button class="booking-action" disabled="{{item.isDefault}}" bindtap="setDefaultTech" data-id="{{item.id}}">{{item.isDefault ? '已设为默认' : '设为默认'}}</button><button class="booking-action danger-action" bindtap="unbindTechnician" data-id="{{item.id}}" data-name="{{item.name}}">解除绑定</button></view>
+      </view>
+    </block>
+  </view>
+</view>
+<!-- 绑定美甲师弹窗 -->
+<view wx:if="{{showBindModal}}" class="modal-mask" bindtap="closeBindModal">
+  <view class="modal-content" catchtap="preventBubble">
+    <view class="modal-header">
+      <text class="modal-title">绑定美甲师</text>
+      <view class="modal-close" bindtap="closeBindModal">×</view>
+    </view>
+
+    <view class="bind-mode-tabs">
+      <view class="bind-mode-tab {{bindMode === 'invite' ? 'bind-mode-tab-active' : ''}}" bindtap="switchBindMode" data-mode="invite">填写邀请码</view>
+      <view class="bind-mode-tab {{bindMode === 'followed' ? 'bind-mode-tab-active' : ''}}" bindtap="switchBindMode" data-mode="followed">从已关注中选择</view>
+    </view>
+
+    <view wx:if="{{bindMode === 'invite'}}" class="modal-body">
+      <form-field
+        label="邀请码"
+        icon="/static/icons/key.svg"
+        value="{{inviteCode}}"
+        maxlength="{{8}}"
+        placeholder="请输入美甲师提供的邀请码"
+        hint="输入美甲师邀请码，提交绑定申请，待其通过后生效"
+        error="{{inviteError}}"
+        bind:input="onInviteCodeInput"
+      >
+        <view slot="suffix" wx:if="{{checkingCode}}" class="code-spinner"></view>
+      </form-field>
+
+      <view wx:if="{{foundTech}}" class="found-tech">
+        <view class="found-avatar" bindtap="viewTechnicianHome" data-id="{{foundTech.id}}" role="button" aria-label="查看{{foundTech.name || '美甲师'}}主页">
+          <image wx:if="{{foundTech.avatarUrl}}" src="{{foundTech.avatarUrl}}" mode="aspectFill" class="found-avatar-img" aria-label="{{foundTech.name || '美甲师'}}的头像"/>
+          <image wx:else src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" />
+        </view>
+        <view class="found-info">
+          <text class="found-name">{{foundTech.name}}</text>
+          <text class="found-city">{{foundTech.city || '未知城市'}}</text>
+        </view>
+      </view>
+
+      <textarea
+        wx:if="{{foundTech}}"
+        class="bind-note-input"
+        value="{{bindNote}}"
+        bindinput="onBindNoteInput"
+        placeholder="给美甲师留言（可选，如：我是老顾客小红）"
+        maxlength="100" confirm-type="done" />
+    </view>
+
+    <view wx:else class="modal-body">
+      <view wx:if="{{followedLoading}}" class="followed-state">正在加载已关注美甲师…</view>
+      <view wx:elif="{{followedTechnicians.length === 0}}" class="followed-state">暂无可申请绑定的已关注美甲师</view>
+      <view wx:else class="followed-list">
+        <view wx:for="{{followedTechnicians}}" wx:key="id" class="followed-item {{selectedFollowedTech && selectedFollowedTech.id === item.id ? 'followed-item-active' : ''}} {{item.bindingStatus === 'pending' ? 'followed-item-pending' : ''}}" bindtap="selectFollowedTech" data-id="{{item.id}}">
+          <image wx:if="{{item.avatarUrl}}" class="followed-avatar" src="{{item.avatarUrl}}" mode="aspectFill"/>
+          <view wx:else class="followed-avatar followed-avatar-fallback"><image src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" /></view>
+          <view class="followed-info"><text class="found-name">{{item.name}}</text><text class="found-city">{{item.city || '暂未填写服务城市'}}</text></view>
+          <text class="followed-status">{{item.bindingStatus === 'pending' ? '审核中' : (selectedFollowedTech && selectedFollowedTech.id === item.id ? '已选择' : '选择')}}</text>
+        </view>
+      </view>
+      <textarea wx:if="{{selectedFollowedTech}}" class="bind-note-input" value="{{bindNote}}" bindinput="onBindNoteInput" placeholder="给美甲师留言（可选）" maxlength="100" confirm-type="done" />
+      <text class="field-hint">提交后将发送系统提醒，美甲师可在消息中同意或拒绝。</text>
+    </view>
+
+    <view class="bind-modal-actions">
+      <action-button
+        wx:if="{{bindMode === 'invite'}}"
+        label="申请绑定"
+        loading="{{binding}}"
+        disabled="{{!foundTech}}"
+        bind:tap="bindTechnician"
+      />
+      <action-button
+        wx:else
+        label="申请绑定"
+        loading="{{binding}}"
+        disabled="{{!selectedFollowedTech}}"
+        bind:tap="requestFollowedBinding"
+      />
+    </view>
+  </view>
+</view>
+<tab-bar selected="profile"/>

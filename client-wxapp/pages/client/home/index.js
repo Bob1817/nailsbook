@@ -26,7 +26,9 @@ Page({
     featuredRightCol: [],
     loading: true,
     swiperIndex: 0,
-    technicianCount: 1,
+    technicianCount: 0,
+    heroLoadFailed: false,
+    clientLoggedIn: false,
     orderMonth: '',
     orderDay: '',
     orderWeekday: '',
@@ -56,10 +58,12 @@ Page({
 
     try {
       var homeData = await api.client.home().catch(function () { return null; });
+      this.setData({ heroLoadFailed: !homeData, recentWorks: [], swiperIndex: 0 });
       var app = getApp();
       var currentRole = app.globalData.role || wx.getStorageSync('role');
       var loggedIn = currentRole === 'client' && !!(app.globalData.token || wx.getStorageSync('client_token'));
       this._clientLoggedIn = loggedIn;
+      this.setData({ clientLoggedIn: loggedIn });
       var ordersData = loggedIn
         ? await api.client.orders.list({ limit: 10 }).catch(function () { return null; })
         : null;
@@ -75,9 +79,7 @@ Page({
 
       if (homeData) {
         var techFromHome = homeData.technician;
-        if (techFromHome) {
-          this.setData({ technician: techFromHome });
-        }
+        this.setData({ technician: techFromHome || null });
 
         var boundTech = techFromHome || tech;
         var works = (homeData.works || []).slice(0, 5).map(function (w, index) {
@@ -103,12 +105,7 @@ Page({
           return normalized;
         });
 
-        var uniqueTechs = {};
-        works.forEach(function (w) { if (w.technicianName) uniqueTechs[w.technicianName] = true; });
-        var techCount = Object.keys(uniqueTechs).length;
-        if (techCount === 0 && boundTech) techCount = 1;
-
-        this.setData({ recentWorks: works, technicianCount: techCount });
+        this.setData({ recentWorks: works, technicianCount: homeData.technicianCount || 0 });
       }
 
       if (ordersData) {
@@ -256,8 +253,6 @@ Page({
   },
 
   navigateToWorks() { wx.navigateTo({ url: '/pages/client/works/index' }); },
-  navigateToArchive() { wx.navigateTo({ url: '/pages/client/beauty-archive/index' }); },
-  navigateToAiPhoto() { wx.navigateTo({ url: '/pages/client/ai-photo/index' }); },
   viewStyle(e) {
     var style = e.currentTarget.dataset.style;
     wx.navigateTo({ url: '/pages/client/works/index?keyword=' + encodeURIComponent(style) });

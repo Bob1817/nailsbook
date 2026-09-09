@@ -56,8 +56,8 @@
 .form-input {
   width: 100%;
   height: var(--input-height);
-  background: var(--bg-input);
-  border: 2rpx solid transparent;
+  background: var(--nb-soft-surface);
+  border: 0;
   border-radius: var(--input-radius);
   padding: 0 var(--space-lg);
   font-size: var(--font-md);
@@ -132,7 +132,7 @@
 
 .menu-icon {
   width: 36rpx; height: 36rpx; border-radius: 50%;
-  background: linear-gradient(135deg, #FFF0F3 0%, #F5F3FF 100%);
+  background: var(--nb-page);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
@@ -154,3 +154,10 @@
   display: block;
   font-size: var(--font-sm); color: var(--text-muted);
 }
+
+@import '../../../styles/booking-actions.wxss';
+.form-input { height: var(--input-height); min-height: 44px; font-size: var(--font-sm); }
+.btn-submit.booking-action,
+.btn-skip.booking-action { height: var(--control-hit-height); min-height: 44px; border-radius: 8px; font-size: var(--font-sm); box-shadow: none; }
+.btn-submit.booking-action { background: var(--nb-action); }
+.btn-skip.booking-action { background: var(--nb-soft-surface); color: var(--nb-ink); }

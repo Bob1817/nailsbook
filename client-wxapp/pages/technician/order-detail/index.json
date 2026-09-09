@@ -4,6 +4,7 @@
   "backgroundColor": "#FFF9F8",
   "navigationStyle": "custom",
   "usingComponents": {
-    "nav-bar": "/components/nav-bar/index"
+    "nav-bar": "/components/nav-bar/index",
+    "booking-confirm": "/components/booking-confirm/index"
   }
 }

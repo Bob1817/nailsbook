@@ -1,0 +1,7 @@
+.poster-button { min-height: 88rpx; padding: 16rpx 24rpx; font-size: 26rpx; line-height: 1.5; color: var(--nb-text-link); background: var(--nb-page); border: 0; border-radius: 20rpx; }
+.poster-button::after { border: 0; }
+.copy-button { min-height: 88rpx; font-size: 24rpx; color: var(--nb-text-link); background: transparent; border: 0; }
+.copy-button::after { border: 0; }
+.poster-button:active { opacity: .7; }
+.poster-hint { display: block; margin: 12rpx 0 24rpx; text-align: center; font-size: 22rpx; color: var(--nb-secondary); }
+.poster-canvas { position: fixed; left: -2000px; top: 0; pointer-events: none; }

@@ -1,6 +1,30 @@
 <nav-bar title="完成服务" showBack/><view class="page">
+  <view wx:if="{{loading}}" class="card">正在加载预约信息…</view>
+  <view wx:elif="{{loadError}}" class="card">
+    <text>{{loadError}}</text>
+    <button class="ghost booking-action" bindtap="loadOrder">重新加载</button>
+  </view>
+  <block wx:elif="{{loaded}}">
   <block wx:if="{{!saved}}">
-    <view class="card"><text class="title">实际服务信息</text><label>开始时间 *</label><input type="text" data-field="actualStartTime" value="{{actualStartTime}}" bindinput="input" confirm-type="done" /><label>结束时间 *</label><input type="text" data-field="actualEndTime" value="{{actualEndTime}}" bindinput="input" confirm-type="done" /><label>实际支付金额 *</label><input type="digit" data-field="actualAmount" value="{{actualAmount}}" bindinput="input" confirm-type="done" /><label>材料成本 *</label><input type="digit" data-field="materialCost" value="{{materialCost}}" bindinput="input" confirm-type="done" /></view><view class="card"><text class="title">服务记录</text><label>使用材料</label><textarea data-field="materials" bindinput="input" placeholder="色号、品牌和材料" confirm-type="done" /><label>工艺记录</label><textarea data-field="techniques" bindinput="input" placeholder="本次使用的工艺" confirm-type="done" /><label>指甲状况</label><textarea data-field="nailCondition" bindinput="input" placeholder="甲面、甲型和敏感情况" confirm-type="done" /><label>客户反馈</label><textarea data-field="customerFeedback" bindinput="input" confirm-type="done" /><label>护理建议</label><textarea data-field="careAdvice" bindinput="input" confirm-type="done" /></view><button class="primary" loading="{{submitting}}" bindtap="submit">确认完成并保存记录</button>
+    <view class="card"><text class="title">实际服务信息</text><label>开始时间 *</label>
+      <view class="time-fields">
+        <picker class="date-picker" mode="date" value="{{startDate}}" data-field="startDate" bindchange="changeTime" disabled="{{submitting}}" aria-label="选择开始日期">
+          <view class="form-input picker-value {{!startDate ? 'form-placeholder' : ''}}"><text>{{startDate || '选择日期'}}</text><text class="picker-arrow">›</text></view>
+        </picker>
+        <picker class="time-picker" mode="time" value="{{startTime}}" data-field="startTime" bindchange="changeTime" disabled="{{submitting}}" aria-label="选择开始时间">
+          <view class="form-input picker-value {{!startTime ? 'form-placeholder' : ''}}"><text>{{startTime || '选择时间'}}</text><text class="picker-arrow">›</text></view>
+        </picker>
+      </view>
+<label>结束时间 *</label>
+      <view class="time-fields">
+        <picker class="date-picker" mode="date" value="{{endDate}}" data-field="endDate" bindchange="changeTime" disabled="{{submitting}}" aria-label="选择结束日期">
+          <view class="form-input picker-value {{!endDate ? 'form-placeholder' : ''}}"><text>{{endDate || '选择日期'}}</text><text class="picker-arrow">›</text></view>
+        </picker>
+        <picker class="time-picker" mode="time" value="{{endTime}}" data-field="endTime" bindchange="changeTime" disabled="{{submitting}}" aria-label="选择结束时间">
+          <view class="form-input picker-value {{!endTime ? 'form-placeholder' : ''}}"><text>{{endTime || '选择时间'}}</text><text class="picker-arrow">›</text></view>
+        </picker>
+      </view>
+<label>实际支付金额 *</label><input class="form-input" disabled="{{submitting}}" placeholder-class="form-placeholder" type="digit" data-field="actualAmount" value="{{actualAmount}}" bindinput="input" confirm-type="done" /><label>材料成本 *</label><input class="form-input" disabled="{{submitting}}" placeholder-class="form-placeholder" type="digit" data-field="materialCost" value="{{materialCost}}" bindinput="input" confirm-type="done" /></view><view class="card"><text class="title">服务记录</text><label>使用材料</label><textarea class="form-textarea" disabled="{{submitting}}" placeholder-class="form-placeholder" value="{{materials}}" data-field="materials" bindinput="input" placeholder="色号、品牌和材料" confirm-type="done" /><label>工艺记录</label><textarea class="form-textarea" disabled="{{submitting}}" placeholder-class="form-placeholder" value="{{techniques}}" data-field="techniques" bindinput="input" placeholder="本次使用的工艺" confirm-type="done" /><label>指甲状况</label><textarea class="form-textarea" disabled="{{submitting}}" placeholder-class="form-placeholder" value="{{nailCondition}}" data-field="nailCondition" bindinput="input" placeholder="甲面、甲型和敏感情况" confirm-type="done" /><label>客户反馈</label><textarea class="form-textarea" disabled="{{submitting}}" placeholder-class="form-placeholder" value="{{customerFeedback}}" data-field="customerFeedback" bindinput="input" confirm-type="done" /><label>护理建议</label><textarea class="form-textarea" disabled="{{submitting}}" placeholder-class="form-placeholder" value="{{careAdvice}}" data-field="careAdvice" bindinput="input" confirm-type="done" /></view><button class="primary booking-action" disabled="{{submitting}}" loading="{{submitting}}" bindtap="submit">确认完成并保存记录</button>
   </block>
   <block wx:else>
     <view class="card success-card">
@@ -8,8 +32,9 @@
       <text class="success-title">服务记录已保存</text>
       <text class="success-desc">{{customerName ? '客户：' + customerName : '本次服务已完成'}}</text>
       <text class="success-tip">趁手上的款式还在，马上发布关联作品吧</text>
-      <button class="primary" bindtap="goPublishWork">发布关联作品</button>
-      <button class="ghost" bindtap="finishAndBack">暂不发布，返回订单</button>
+      <button class="primary booking-action" loading="{{openingWork}}" disabled="{{openingWork}}" bindtap="goPublishWork">{{openingWork ? '准备作品草稿…' : '发布关联作品'}}</button>
+      <button class="ghost booking-action" disabled="{{openingWork}}" bindtap="finishAndBack">暂不发布，返回订单</button>
     </view>
+  </block>
   </block>
 </view>

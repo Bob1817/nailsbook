@@ -60,7 +60,7 @@
     <text wx:if="{{error}}" class="error-text">{{error}}</text>
 
     <button
-      class="submit-btn {{canSubmit ? 'submit-btn-active' : ''}}"
+      class="submit-btn booking-action {{canSubmit ? 'submit-btn-active' : ''}}"
       disabled="{{!canSubmit || loading}}"
       loading="{{loading}}"
       bindtap="handleSubmit"

@@ -13,13 +13,13 @@
 
   <view wx:if="{{wechatFeatureVisible && loginMethod === 'wechat'}}" class="form">
     <text class="wechat-hint">微信登录不会自动获取手机号；仅在首次绑定时由您主动授权。</text>
-    <button wx:if="{{wechatLinked}}" class="btn-primary" bindtap="handleWechatLogin" disabled="{{loading || wechatChecking}}">
+    <button wx:if="{{wechatLinked}}" class="btn-primary booking-action" bindtap="handleWechatLogin" disabled="{{loading || wechatChecking}}">
       {{loading ? '登录中...' : '微信授权登录'}}
     </button>
-    <button wx:elif="{{wechatReady}}" class="btn-primary" open-type="getPhoneNumber" bindgetphonenumber="handleWechatPhone" disabled="{{loading}}">
+    <button wx:elif="{{wechatReady}}" class="btn-primary booking-action" open-type="getPhoneNumber" bindgetphonenumber="handleWechatPhone" disabled="{{loading}}">
       授权手机号并登录
     </button>
-    <button wx:else class="btn-primary" bindtap="handleWechatLogin" disabled="{{wechatChecking}}">
+    <button wx:else class="btn-primary booking-action" bindtap="handleWechatLogin" disabled="{{wechatChecking}}">
       {{wechatChecking ? '正在检查微信登录...' : '重新获取微信登录状态'}}
     </button>
     <view class="link-row"><text class="link" data-method="phone" bindtap="selectLoginMethod">改用手机号登录</text></view>
@@ -33,7 +33,7 @@
       <input class="input" type="number" maxlength="11" placeholder="请输入手机号" confirm-type="done" cursor-spacing="24"
         value="{{phone}}" data-field="phone" bindinput="onInput"/>
     </view>
-    <button class="btn-primary" bindtap="handlePhoneNext">下一步</button>
+    <button class="btn-primary booking-action" bindtap="handlePhoneNext">下一步</button>
     <view class="link-row">
       <text class="link" bindtap="goRoleSelect">返回身份选择</text>
     </view>
@@ -54,11 +54,11 @@
       <input class="input" type="text" password placeholder="请输入密码" confirm-type="done" cursor-spacing="24"
         value="{{password}}" data-field="password" bindinput="onInput"/>
     </view>
-    <button class="btn-primary" bindtap="handleLogin" disabled="{{loading}}">
+    <button class="btn-primary booking-action" bindtap="handleLogin" disabled="{{loading}}">
       {{loading ? '登录中...' : '登录'}}
     </button>
     <view class="link-row">
-      <text class="link" bindtap="goForgotPassword">忘记密码？</text>
+      <text class="link semantic-link" bindtap="goForgotPassword">忘记密码？</text>
       <text class="link-sep">|</text>
       <text class="link" bindtap="goRoleSelect">返回选择身份</text>
     </view>
@@ -66,7 +66,7 @@
   </view>
 
   <checkbox-group class="privacy-consent" bindchange="onPrivacyAgreementChange">
-    <label><checkbox value="agree" checked="{{privacyAgreed}}"/><text>我已阅读并同意</text></label>
+    <label><checkbox color="#287A4B" value="agree" checked="{{privacyAgreed}}"/><text>我已阅读并同意</text></label>
     <text class="privacy-link" catchtap="openUserAgreement">《用户协议》</text>
     <text>和</text><text class="privacy-link" catchtap="openPrivacyPolicy">《隐私政策》</text>
   </checkbox-group>

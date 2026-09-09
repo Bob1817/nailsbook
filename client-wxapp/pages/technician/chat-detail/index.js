@@ -27,9 +27,11 @@ Page({
     this._pageActive = true;
     this.calcNavHeight();
     const { conversationId, clientName, clientId, clientAvatar } = options;
+    const parsedConversationId = parsePositiveId(conversationId);
+    const parsedClientId = parsePositiveId(clientId);
     this.setData({
-      conversationId: conversationId ? parseInt(conversationId) : null,
-      clientId: clientId ? parseInt(clientId) : null,
+      conversationId: parsedConversationId,
+      clientId: parsedClientId,
       clientAvatar: clientAvatar ? decodeURIComponent(clientAvatar) : ''
     });
     if (clientName) {
@@ -37,7 +39,7 @@ Page({
       wx.setNavigationBarTitle({ title: name });
       this.setData({ clientName: name });
     }
-    this.loadMessages();
+    this.prepareConversation();
 
     /* 横竖屏 / 分屏适配 */
     this._resizeHandler = () => {
@@ -81,7 +83,37 @@ Page({
   },
 
   /* ===== 消息加载 ===== */
+  async prepareConversation() {
+    if (this.data.conversationId) {
+      await this.loadMessages();
+      return;
+    }
+    if (!this.data.clientId) {
+      this.setData({ loading: false });
+      wx.showToast({ title: '客户信息无效，请返回重试', icon: 'none' });
+      return;
+    }
+    try {
+      const conversations = await api.chat.technician.conversations();
+      const list = Array.isArray(conversations) ? conversations : (conversations.list || conversations.data || []);
+      const existing = list.find((item) => Number(item.client && item.client.id) === this.data.clientId);
+      if (existing && parsePositiveId(existing.id)) {
+        this.setData({ conversationId: parsePositiveId(existing.id) });
+        await this.loadMessages(false);
+        return;
+      }
+      this.setData({ loading: false, messages: [], groupedMessages: [] });
+    } catch (err) {
+      console.error('Prepare conversation error:', err);
+      this.setData({ loading: false });
+    }
+  },
+
   async loadMessages(showLoading = true, isPolling = false) {
+    if (!this.data.conversationId) {
+      if (showLoading) this.setData({ loading: false });
+      return;
+    }
     if (showLoading) this.setData({ loading: true });
     try {
       const reqOpts = isPolling ? { timeout: 10000, silent: true } : {};
@@ -195,7 +227,8 @@ Page({
       else payload.clientId = this.data.clientId;
       var res = await api.chat.technician.sendMessage(payload);
       if (!this._pageActive) { this._sendFinishedWhileHidden = true; return; }
-      if (res.conversationId && !this.data.conversationId) this.setData({ conversationId: res.conversationId });
+      const conversationId = parsePositiveId(res.conversationId || (res.message && res.message.conversationId));
+      if (conversationId && !this.data.conversationId) this.setData({ conversationId });
       if (res.message) {
         var msgs = [...this.data.messages, {
           ...res.message,
@@ -232,7 +265,8 @@ Page({
           else payload.clientId = this.data.clientId;
           var msgRes = await api.chat.technician.sendMessage(payload);
           if (!this._pageActive) { this._sendFinishedWhileHidden = true; return; }
-          if (msgRes.conversationId && !this.data.conversationId) this.setData({ conversationId: msgRes.conversationId });
+          const conversationId = parsePositiveId(msgRes.conversationId || (msgRes.message && msgRes.message.conversationId));
+          if (conversationId && !this.data.conversationId) this.setData({ conversationId });
           if (msgRes.message) {
             var msgs = [...this.data.messages, {
               ...msgRes.message,
@@ -274,6 +308,14 @@ function formatTime(time) {
   if (!time) return '';
   var d = new Date(time);
   return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+
+function parsePositiveId(value) {
+  if (value === null || value === undefined || value === '') return null;
+  var text = String(value);
+  if (!/^\d+$/.test(text)) return null;
+  var id = Number(text);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
 }
 
 function getDateKey(time) {

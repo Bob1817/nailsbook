@@ -1,3 +1,4 @@
+const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
 
 const CATEGORIES = {
@@ -159,7 +160,7 @@ Page({
     wx.showModal({
       title: '删除服务',
       content: '确定删除该服务项目吗？',
-      confirmColor: '#ef4444',
+      confirmColor: uiColors.danger,
       success: (res) => {
         if (res.confirm) this.deleteService(id);
       }

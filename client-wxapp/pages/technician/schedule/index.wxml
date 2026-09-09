@@ -26,7 +26,7 @@
 
   <view wx:elif="{{loadFailed}}" class="empty">
     <text class="empty-text">预约加载失败</text>
-    <view class="retry-button" bindtap="retryLoad">重新加载</view>
+    <view class="retry-button booking-action" bindtap="retryLoad">重新加载</view>
   </view>
 
   <view wx:elif="{{dayOrders.length === 0}}" class="empty">

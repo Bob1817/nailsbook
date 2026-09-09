@@ -1,0 +1,3 @@
+<button class="switch-hitbox" role="switch" aria-checked="{{checked}}" aria-label="{{label}}" disabled="{{disabled}}" bindtap="onTap">
+  <view class="switch-track {{checked ? 'is-on' : ''}} {{disabled ? 'is-disabled' : ''}}"><view class="switch-thumb"></view></view>
+</button>

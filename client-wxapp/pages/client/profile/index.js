@@ -1,9 +1,12 @@
 const api = require('../../../services/api');
+const { syncSessionAvatar } = require('../../../utils/avatar');
+const { normalizeBindings, bindingSummary } = require('../../../utils/client-bindings');
 const { phoneMask } = require('../../../utils/util');
 
 Page({
   data: {
     avatar: '',
+    avatarUploading: false,
     nickname: '',
     phone: '',
     rawPhone: '',
@@ -17,7 +20,7 @@ Page({
     roleCardSub: '',
     roleSwitchLabel: '切换身份',
     technicians: [],
-    activeTechMenuId: null,
+    previewTechnicians: [], activeCount: 0, pendingCount: 0,
 
     // 角色能力（由 /client/auth/me 返回）
     capabilities: {
@@ -25,18 +28,6 @@ Page({
       isTechnician: false,
       isTechnicianActivated: false
     },
-
-    // 原绑定美甲师弹窗
-    showBindModal: false,
-    inviteCode: '',
-    bindNote: '',
-    foundTech: null,
-    checkingCode: false,
-    binding: false,
-    bindMode: 'invite',
-    followedTechnicians: [],
-    followedLoading: false,
-    selectedFollowedTech: null,
 
     // 客户 → 美甲师：确认弹窗
     showSwitchConfirmModal: false,
@@ -57,6 +48,8 @@ Page({
     switchLoading: false
   },
 
+  onUnload() { this._avatarUnloaded = true; },
+
   onLoad() {
     this.loadProfile();
   },
@@ -68,7 +61,7 @@ Page({
   async loadProfile() {
     try {
       const userInfo = wx.getStorageSync('userInfo') || wx.getStorageSync('client_userInfo');
-      const bindings = wx.getStorageSync('client_bindings') || [];
+      let bindings = wx.getStorageSync('client_bindings') || [];
       const currentRole = wx.getStorageSync('role') || 'client';
       const roles = wx.getStorageSync('roles') || ['client'];
       const isTourist = getApp().getIsTourist();
@@ -85,7 +78,13 @@ Page({
           const me = await api.auth.getUserInfo('client');
           if (me && me.capabilities) {
             capabilities = me.capabilities;
-            if (me.technicians) wx.setStorageSync('client_bindings', me.technicians);
+            if (me.technicians) {
+              bindings = [
+                ...me.technicians,
+                ...(me.pendingTechnicians || [])
+              ];
+              wx.setStorageSync('client_bindings', bindings);
+            }
             if (me.phone) wx.setStorageSync('client_userInfo', Object.assign({}, userInfo || {}, { phone: me.phone }));
           }
         } catch (e) {
@@ -113,15 +112,7 @@ Page({
           return capabilities.isTechnicianActivated ? '可切换为美甲师模式' : '注册成为美甲师';
         })(),
         roleSwitchLabel: currentRole === 'technician' ? '切换为客户' : '切换身份',
-        technicians: bindings.map(b => ({
-          id: b.technician?.id || b.id,
-          name: b.technician?.name || b.name || '美甲师',
-          avatar: b.technician?.avatarUrl || b.avatarUrl || '',
-          city: b.technician?.city || b.city || '',
-          status: b.technician?.status || b.status || 'active',
-          shopService: b.technician?.shopService || b.shopService || false,
-          isDefault: b.isDefault || false
-        })),
+        ...bindingSummary(normalizeBindings(bindings)),
         capabilities
       });
     } catch (err) {
@@ -129,9 +120,62 @@ Page({
     }
   },
 
+  async chooseAvatar(e) {
+    if (this._avatarBusy) return;
+    this._avatarBusy = true;
+    try {
+      // 使用微信原生头像选择能力，避免 wx.chooseImage 因隐私 API 未声明而被直接拦截。
+      const filePath = e?.detail?.avatarUrl;
+      if (!filePath) throw new Error('未读取到所选图片，请重新选择');
+      const selectedFile = await new Promise((resolve, reject) => wx.getFileSystemManager().getFileInfo({
+        filePath,
+        success: resolve,
+        fail: error => reject(new Error(error.errMsg || '无法读取所选头像'))
+      }));
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        throw new Error('头像不能超过5MB，请选择较小的图片');
+      }
+      const info = await new Promise((resolve, reject) => wx.getImageInfo({
+        src: filePath,
+        success: resolve,
+        fail: error => reject(new Error(error.errMsg || '无法读取图片，请选择有效的 JPG、PNG 或 WebP 图片'))
+      }));
+      if (!['jpeg', 'jpg', 'png', 'webp'].includes(String(info.type).toLowerCase())) {
+        throw new Error('头像仅支持 JPG、PNG、WebP 格式，请转换后重试');
+      }
+      if (this._avatarUnloaded) return;
+      this.setData({ avatarUploading: true });
+      const uploaded = await api.upload.image(filePath, 'client');
+      if (!uploaded.url) throw new Error('头像上传未成功，请重试');
+      await api.client.profile.update({ avatarUrl: uploaded.url });
+      syncSessionAvatar('client', uploaded.url);
+      if (!this._avatarUnloaded) {
+        this.setData({ avatar: uploaded.url });
+        wx.showToast({ title: '头像已更新', icon: 'success' });
+      }
+    } catch (error) {
+      if (!this._avatarUnloaded && !/cancel/i.test(error.errMsg || '')) {
+        const detail = error.message || error.errMsg || '无法选择或上传图片';
+        const content = /privacy agreement|api scope/i.test(detail)
+          ? '头像选择功能暂不可用，请更新小程序隐私保护指引后重试'
+          : /auth deny|permission|authorize/i.test(detail)
+          ? '没有相册访问权限，请在微信设置中允许访问照片后重试'
+          : detail.replace(/^(chooseImage|chooseAvatar):fail\s*/i, '') || '无法选择或上传图片，请重试';
+        wx.showModal({ title: '未能更换头像', content, showCancel: false });
+      }
+    } finally {
+      this._avatarBusy = false;
+      if (!this._avatarUnloaded) this.setData({ avatarUploading: false });
+    }
+  },
+
+  preventBubble() {},
+
   editProfile() {
     wx.navigateTo({ url: '/pages/client/settings/index' });
   },
+
+  navigateToArchive() { wx.navigateTo({ url: '/pages/client/beauty-archive/index' }); },
 
   navigateToOrders() {
     wx.navigateTo({ url: '/pages/client/orders/index' });
@@ -153,16 +197,8 @@ Page({
     wx.navigateTo({ url: '/pages/client/feedback/index' });
   },
 
-  async requestAccountDeletion() {
-    const result = await wx.showModal({
-      title: '申请注销账号',
-      content: '提交后需要运营方核验身份并处理未完成预约。注销完成后相关账号信息将按法律要求删除或匿名化。',
-      confirmText: '继续申请',
-      confirmColor: '#DC4C58'
-    });
-    if (result.confirm) {
-      wx.navigateTo({ url: '/pages/client/feedback/index?action=account-deletion' });
-    }
+  requestAccountDeletion() {
+    wx.navigateTo({ url: '/pages/account-deletion/index' });
   },
 
   navigateToManual() {
@@ -351,165 +387,23 @@ Page({
     }
   },
 
-  // ===== 我的美甲师相关 =====
-  toggleTechMenu(e) {
-    const id = Number(e.currentTarget.dataset.id);
-    this.setData({ activeTechMenuId: this.data.activeTechMenuId === id ? null : id });
-  },
-
-  closeTechMenu() {
-    if (this.data.activeTechMenuId !== null) this.setData({ activeTechMenuId: null });
-  },
-
+  manageTechnicians() { wx.navigateTo({ url: '/pages/client/my-technicians/index' }); },
   viewTechnicianHome(e) {
-    const { id } = e.currentTarget.dataset;
-    this.setData({ activeTechMenuId: null });
-    if (id) wx.navigateTo({ url: `/pages/client/artist-home/index?id=${id}` });
+    const id = e.currentTarget.dataset.id;
+    if (id) wx.navigateTo({ url: '/pages/client/artist-home/index?id=' + id });
   },
 
-  messageTechnician(e) {
-    const { id, name } = e.currentTarget.dataset;
-    this.setData({ activeTechMenuId: null });
-    wx.navigateTo({ url: `/pages/client/chat-detail/index?techId=${id}&techName=${encodeURIComponent(name || '美甲师')}` });
-  },
-
-  // 绑定美甲师
-  openBindModal() {
-    this.setData({ showBindModal: true, bindMode: 'invite', inviteCode: '', bindNote: '', foundTech: null, selectedFollowedTech: null });
-  },
-
-  closeBindModal() {
-    this.setData({ showBindModal: false, inviteCode: '', bindNote: '', foundTech: null, selectedFollowedTech: null });
-  },
-
-  async switchBindMode(e) {
-    const mode = e.currentTarget.dataset.mode;
-    this.setData({ bindMode: mode, bindNote: '', selectedFollowedTech: null });
-    if (mode !== 'followed' || this.data.followedLoading) return;
-    this.setData({ followedLoading: true });
-    try {
-      const result = await api.client.profile.followedTechnicians();
-      this.setData({ followedTechnicians: Array.isArray(result) ? result : (result.items || []) });
-    } catch (error) {
-      wx.showToast({ title: error.message || '关注列表加载失败', icon: 'none' });
-    } finally {
-      this.setData({ followedLoading: false });
-    }
-  },
-
-  selectFollowedTech(e) {
-    const id = Number(e.currentTarget.dataset.id);
-    const selected = this.data.followedTechnicians.find((item) => Number(item.id) === id) || null;
-    if (selected && selected.bindingStatus === 'pending') {
-      wx.showToast({ title: '绑定申请审核中', icon: 'none' });
-      return;
-    }
-    this.setData({ selectedFollowedTech: selected });
-  },
-
-  onBindNoteInput(e) {
-    this.setData({ bindNote: e.detail.value });
-  },
-
-  async onInviteCodeInput(e) {
-    const code = e.detail.value.trim();
-    this.setData({ inviteCode: code, foundTech: null });
-
-    if (code.length >= 4) {
-      this.setData({ checkingCode: true });
-      try {
-        const tech = await api.client.profile.findTechByInviteCode(code);
-        this.setData({ foundTech: tech });
-      } catch {
-        this.setData({ foundTech: null });
-      } finally {
-        this.setData({ checkingCode: false });
-      }
-    }
-  },
-
-  async bindTechnician() {
-    const { foundTech, inviteCode, bindNote, binding } = this.data;
-    if (!foundTech || binding) return;
-
-    this.setData({ binding: true });
-    wx.showLoading({ title: '申请中...' });
-
-    try {
-      await api.client.profile.bindTechnician(foundTech.id, inviteCode, bindNote);
-      wx.hideLoading();
-      wx.showToast({ title: '申请已提交，待通过', icon: 'none' });
-      this.setData({ showBindModal: false, inviteCode: '', bindNote: '', foundTech: null });
-
-      // 刷新用户数据
-      const res = await api.auth.getUserInfo('client');
-      if (res.bindings || res.technicians) {
-        wx.setStorageSync('client_bindings', res.bindings || res.technicians);
-      }
-      this.loadProfile();
-    } catch (err) {
-      wx.hideLoading();
-      wx.showToast({ title: err.message || '绑定失败', icon: 'none' });
-    } finally {
-      this.setData({ binding: false });
-    }
-  },
-
-  async requestFollowedBinding() {
-    const { selectedFollowedTech, bindNote, binding } = this.data;
-    if (!selectedFollowedTech || binding) return;
-    this.setData({ binding: true });
-    wx.showLoading({ title: '申请中...' });
-    try {
-      await api.client.profile.requestBinding(selectedFollowedTech.id, bindNote);
-      wx.hideLoading();
-      wx.showToast({ title: '申请已发送', icon: 'success' });
-      this.closeBindModal();
-    } catch (error) {
-      wx.hideLoading();
-      wx.showToast({ title: error.message || '申请提交失败', icon: 'none' });
-    } finally {
-      this.setData({ binding: false });
-    }
-  },
-
-  async unbindTechnician(e) {
-    const { id, name } = e.currentTarget.dataset;
-    this.setData({ activeTechMenuId: null });
+  switchAccount() {
     wx.showModal({
-      title: '解除绑定',
-      content: `确定要解除与"${name}"的绑定吗？`,
-      confirmText: '解除',
-      confirmColor: '#ff4d4f',
-      success: async (res) => {
+      title: '切换账号',
+      content: '将退出当前账号并返回登录页，是否继续？',
+      confirmText: '继续切换',
+      success: (res) => {
         if (!res.confirm) return;
-        wx.showLoading({ title: '处理中...' });
-        try {
-          await api.client.profile.unbindTechnician(id);
-          wx.hideLoading();
-          wx.showToast({ title: '已解除绑定', icon: 'success' });
-          const refreshed = await api.auth.getUserInfo('client');
-          if (refreshed.bindings || refreshed.technicians) wx.setStorageSync('client_bindings', refreshed.bindings || refreshed.technicians);
-          this.loadProfile();
-        } catch (err) {
-          wx.hideLoading();
-          wx.showToast({ title: err.message || '操作失败', icon: 'none' });
-        }
+        getApp().logout();
+        wx.reLaunch({ url: '/pages/login/index' });
       }
     });
-  },
-
-  async setDefaultTech(e) {
-    const { id } = e.currentTarget.dataset;
-    try {
-      await api.client.profile.setDefaultTechnician(id);
-      wx.showToast({ title: '已设为默认', icon: 'success' });
-      const res = await api.auth.getUserInfo('client');
-      if (res.bindings || res.technicians) wx.setStorageSync('client_bindings', res.bindings || res.technicians);
-      this.loadProfile();
-    } catch (err) {
-      wx.showToast({ title: err.message || '设置失败', icon: 'none' });
-    }
   },
 
   logout() {

@@ -11,6 +11,9 @@ export interface AdminWork {
   isVisible: boolean;
   isHomepageFeatured: boolean;
   isFeatured: boolean;
+  publicationStatus: 'draft' | 'pending' | 'approved' | 'rejected';
+  reviewNote: string | null;
+  publishedAt: string | null;
   viewCount: number;
   likeCount: number;
   commentCount: number;
@@ -27,6 +30,7 @@ export const adminWorkService = {
     keyword?: string;
     isVisible?: boolean;
     isHomepageFeatured?: boolean;
+    publicationStatus?: string;
   }) => {
     const response = await api.get('/works', { params });
     return response.data as { items: AdminWork[]; total: number; page: number; pageSize: number };
@@ -44,6 +48,15 @@ export const adminWorkService = {
 
   toggleHomepageFeatured: async (id: number): Promise<{ id: number; isHomepageFeatured: boolean }> => {
     const response = await api.patch(`/works/${id}/homepage-featured`);
+    return response.data;
+  },
+
+  review: async (
+    id: number,
+    decision: 'approved' | 'rejected',
+    note?: string,
+  ): Promise<{ id: number; publicationStatus: string; reviewNote: string | null; publishedAt: string | null }> => {
+    const response = await api.patch(`/works/${id}/review`, { decision, note });
     return response.data;
   },
 

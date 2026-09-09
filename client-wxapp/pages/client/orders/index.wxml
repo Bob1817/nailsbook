@@ -91,13 +91,13 @@
 
           <view class="order-footer" catchtap="viewOrder" data-id="{{item.id}}" role="button" aria-label="查看预约详情">
             <view class="footer-prompt">
-              <view class="footer-clock"></view>
+              <image class="footer-clock" src="/static/icons/clock.svg" mode="aspectFit" aria-hidden="true" />
               <view class="footer-prompt-copy">
                 <text class="countdown-main">{{item._isTerminal ? item.statusText : item._countdownText}}</text>
                 <text class="countdown-next">{{item._nextStepText}}</text>
               </view>
             </view>
-            <view class="footer-action"><text>查看详情</text><view class="footer-chevron"></view></view>
+            <view class="footer-action"><text class="semantic-link">查看详情</text><view class="footer-chevron"></view></view>
           </view>
         </view>
       </view>

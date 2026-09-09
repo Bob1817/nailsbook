@@ -86,6 +86,12 @@ Page({
     this.navigateToAddress({ currentTarget: { dataset: { id: e.detail && e.detail.id } } });
   },
 
+  onBookingCardMessage(e) {
+    const clientId = e.detail && e.detail.clientId;
+    if (!clientId) return wx.showToast({ title: '客户尚未关联小程序账号，请拨打电话', icon: 'none' });
+    wx.navigateTo({ url: `/pages/technician/chat-detail/index?clientId=${clientId}` });
+  },
+
   onBookingCardContact(e) {
     this.contactCustomer({ currentTarget: { dataset: { phone: e.detail && e.detail.phone } } });
   }

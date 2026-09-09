@@ -9,9 +9,14 @@ require('./utils/subscription');
 require('./utils/artist-navigation');
 require('./utils/conversion-tracking');
 require('./utils/service-pricing');
+require('./utils/shop-guidance');
 require('./utils/wechat-auth');
 require('./utils/wechat-subscription');
 require('./utils/workSchedule');
+require('./utils/work-share-scene');
+require('./utils/work-share-registration');
+require('./utils/avatar');
+require('./utils/booking-location');
 
 App({
   globalData: {
@@ -24,7 +29,7 @@ App({
     launchConfig: null
   },
 
-  onLaunch() {
+  onLaunch(options = {}) {
     console.log('App launched');
     this.loadCapabilities();
     this.loadLaunchConfig();
@@ -46,20 +51,27 @@ App({
         technician: '/pages/technician/home/index'
       };
       const homePage = homePages[role] || homePages.client;
+      const preserveSharePage = (options.path === 'pages/login/index' && options.query && options.query.invite) || options.path === 'pages/client/quick-booking/index' || options.path === 'pages/client/public-work/index' || options.path === 'pages/client/create-order/index';
 
       // 先校验 token 是否有效，避免带失效 token 跳首页导致 401
       this.verifyToken(token, role)
         .then((valid) => {
           if (valid) {
-            setTimeout(() => wx.reLaunch({ url: homePage }), 300);
+            if (!preserveSharePage) setTimeout(() => wx.reLaunch({ url: homePage }), 300);
           }
         })
         .catch(() => {
           // 网络错误等，保守起见仍跳转（home 接口已改为公开）
-          setTimeout(() => wx.reLaunch({ url: homePage }), 300);
+          if (!preserveSharePage) setTimeout(() => wx.reLaunch({ url: homePage }), 300);
         });
     }
     // 无 token → 保持 app.json 的公开发现页，允许游客先浏览再转化
+  },
+
+  onShow() {
+    const token = this.globalData.token || wx.getStorageSync('token');
+    const expiresAt = this.getTokenExpiresAt(token);
+    if (expiresAt > 0 && expiresAt <= Date.now()) require('./utils/request').handleUnauthorized();
   },
 
   /** 修复旧版本曾把客户端 JWT 存入 technician 会话槽位的问题。 */
@@ -89,9 +101,28 @@ App({
 
   /** 用一次轻量请求校验 token 是否仍有效 */
   verifyToken(token, role) {
+    const tokenExpiresAt = this.getTokenExpiresAt(token);
+    if (tokenExpiresAt > 0 && tokenExpiresAt <= Date.now()) {
+      require('./utils/request').handleUnauthorized();
+      return Promise.resolve(false);
+    }
+    const shouldRefresh = tokenExpiresAt > 0 && tokenExpiresAt <= Date.now() + 60000;
+    if (shouldRefresh) {
+      const request = require('./utils/request');
+      return request.refreshAccessToken(this.globalData.apiBaseUrl)
+        .then(() => true)
+        .catch((error) => {
+          if (Number(error?.code) === 401) {
+            console.warn('[App] 登录凭证已过期，退出登录');
+            request.handleUnauthorized();
+          }
+          return false;
+        });
+    }
+
     const mePath = role === 'technician'
-      ? `${this.globalData.apiBaseUrl}/api/technician/insights/overview`  // 技师端轻量接口
-      : `${this.globalData.apiBaseUrl}/api/client/home`;                   // 客户端公开接口（不抛 401）
+      ? `${this.globalData.apiBaseUrl}/api/technician/auth/me`
+      : `${this.globalData.apiBaseUrl}/api/client/auth/me`;
     return new Promise((resolve) => {
       wx.request({
         url: mePath,
@@ -99,14 +130,18 @@ App({
         header: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         timeout: 5000,
         success: (res) => {
-          // 200/非401 = token 有效（或接口已公开不要求认证）
+          // 受保护的身份接口返回非 401，说明当前角色令牌仍可使用
           if (res.statusCode !== 401) {
             resolve(true);
           } else {
-            // 401 = token 已失效，清除登录态
-            console.warn('[App] token 已失效，清除登录态');
-            this.clearInvalidAuth();
-            resolve(false);
+            // access token 失效时先尝试刷新；refresh token 也失效才退出登录。
+            const request = require('./utils/request');
+            request.refreshAccessToken(this.globalData.apiBaseUrl)
+              .then(() => resolve(true))
+              .catch((error) => {
+                if (Number(error?.code) === 401) request.handleUnauthorized();
+                resolve(false);
+              });
           }
         },
         fail: () => {
@@ -115,6 +150,24 @@ App({
         }
       });
     });
+  },
+
+  /** 从 JWT 中读取过期时间；旧格式或异常 token 继续交给服务端校验。 */
+  getTokenExpiresAt(token) {
+    if (!token || typeof token !== 'string') return 0;
+    try {
+      const payloadPart = token.split('.')[1];
+      if (!payloadPart) return 0;
+      const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = normalized + '='.repeat((4 - normalized.length % 4) % 4);
+      const bytes = wx.base64ToArrayBuffer(padded);
+      const payload = JSON.parse(decodeURIComponent(Array.prototype.map.call(new Uint8Array(bytes), function (byte) {
+        return '%' + ('00' + byte.toString(16)).slice(-2);
+      }).join('')));
+      return Number(payload.exp) > 0 ? Number(payload.exp) * 1000 : 0;
+    } catch (err) {
+      return 0;
+    }
   },
 
   /** 清除失效的登录态 */
@@ -182,6 +235,7 @@ App({
   },
 
   setLogin(role, token, userInfo, roles, isTourist) {
+    require('./utils/request').resetUnauthorized();
     this.globalData.role = role;
     this.globalData.token = token;
     this.globalData.userInfo = userInfo;
@@ -205,22 +259,17 @@ App({
   },
 
   logout() {
-    const role = this.globalData.role || wx.getStorageSync('role');
     this.globalData.role = null;
     this.globalData.token = null;
     this.globalData.userInfo = null;
     this.globalData.isTourist = false;
+    this.globalData.roles = [];
 
-    wx.removeStorageSync('role');
-    wx.removeStorageSync('token');
-    wx.removeStorageSync('userInfo');
-    wx.removeStorageSync('isTourist');
-    wx.removeStorageSync('defaultTechId');
-    if (role) {
-      wx.removeStorageSync(`${role}_token`);
-      wx.removeStorageSync(`${role}_refreshToken`);
-      wx.removeStorageSync(`${role}_userInfo`);
-    }
+    [
+      'role', 'roles', 'token', 'userInfo', 'isTourist', 'defaultTechId',
+      'client_token', 'client_refreshToken', 'client_userInfo', 'client_bindings',
+      'technician_token', 'technician_refreshToken', 'technician_userInfo'
+    ].forEach((key) => wx.removeStorageSync(key));
   },
 
   switchRole(role) {

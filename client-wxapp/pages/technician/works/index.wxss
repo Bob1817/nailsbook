@@ -1,7 +1,7 @@
 .container {
   min-height: 100vh;
   background: var(--bg-page);
-  padding-bottom: 160rpx;
+  padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
 }
 
 /* 加载中 */
@@ -14,7 +14,7 @@
 .spinner {
   width: 48rpx;
   height: 48rpx;
-  border: 4rpx solid rgba(255,107,138,0.3) /* brand-primary-alpha */;
+  border: 4rpx solid rgba(0, 0, 0, 0.3) /* brand-primary-alpha */;
   border-top-color: var(--brand-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -48,7 +48,7 @@
   width: 52rpx;
   height: 52rpx;
   border-radius: 50%;
-  background: rgba(255,107,138,0.32);
+  background: rgba(0, 0, 0, 0.32);
 }
 
 .empty-title {
@@ -76,7 +76,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.3) /* brand-primary-alpha */;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.3) /* brand-primary-alpha */;
   border: none;
 }
 
@@ -106,8 +106,8 @@
   padding-bottom: 133.33%;
   overflow: hidden;
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
-  border: 1rpx solid rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
+  border: 0;
   box-sizing: border-box;
 }
 .col:first-child .card-img-wrap:nth-child(3n + 1) { padding-bottom: 140%; }
@@ -129,7 +129,7 @@
   position: absolute;
   top: 0; left: 0;
   width: 100%; height: 100%;
-  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+  background: var(--nb-page);
 }
 
 /* 渐变遮罩 */
@@ -179,12 +179,12 @@
 }
 
 .tag-pin {
-  background: rgba(255,107,138,0.85) /* brand-primary-alpha */;
+  background: rgba(0, 0, 0, 0.85) /* brand-primary-alpha */;
   color: var(--text-inverse);
 }
 
 .tag-feat {
-  background: rgba(167, 139, 250, 0.85);
+  background: rgba(0, 0, 0, 0.85);
   color: var(--text-inverse);
 }
 
@@ -272,7 +272,7 @@
   right: 0;
   z-index: 50;
   padding: 20rpx 40rpx calc(20rpx + env(safe-area-inset-bottom));
-  background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 30%, #ffffff 100%);
+  background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 30%, var(--nb-surface) 100%);
   backdrop-filter: blur(10px);
 }
 
@@ -287,8 +287,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.3) /* brand-primary-alpha */;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.3) /* brand-primary-alpha */;
   border: none;
 }
 
 .btn-publish::after { border: none; }
+
+@import '../../../styles/booking-actions.wxss';
+.btn-add-first,.btn-publish { background:var(--nb-action); }
+.btn-add-first.booking-action,
+.btn-publish.booking-action { min-height:44px; height:44px; border-radius:8px; font-size:var(--font-sm); line-height:1.4; box-shadow:none; }

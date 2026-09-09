@@ -1,50 +1,5 @@
-.container {
-  min-height: 100vh;
-  background: var(--bg-page);
-  padding: 60rpx 40rpx 40rpx;
-}
-.header { margin-bottom: 48rpx; }
-.title { display: block; font-size: var(--font-2xl); font-weight: var(--weight-bold); color: var(--text-primary); margin-bottom: 12rpx; }
-.subtitle { display: block; font-size: var(--font-md); color: var(--text-muted); }
-.form {
-  background: transparent;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  margin-bottom: 40rpx;
-}
-.field { padding: 20rpx 0; border-bottom: none; }
-.field:last-child { border-bottom: none; }
-.label { display: block; font-size: var(--font-sm); color: var(--text-body); margin-bottom: 12rpx; }
-.input  { width: 100%; font-size: var(--font-md); color: var(--text-primary); height: 92rpx; padding:0 24rpx; background:rgba(255,255,255,.96); border:2rpx solid #ddd8dc; border-radius: var(--radius-sm); box-sizing:border-box; box-shadow:0 2rpx 8rpx rgba(54,43,49,.035); transition:border-color 180ms ease,box-shadow 180ms ease,background-color 180ms ease;}
-.input:focus { border-color:#bd587d; background: var(--bg-card); box-shadow:0 0 0 6rpx rgba(189,88,125,.08); }
-.placeholder { color: var(--text-muted); }
-.code-row { display: flex; align-items: center; gap: 16rpx; }
-.code-input  { flex: 1; min-width:0; }
-.code-btn {
-  flex-shrink: 0;
-  background: #fff0f3;
-  color: var(--brand-primary);
-  font-size: var(--font-sm);
-  font-weight: var(--weight-semibold);
-  min-height: 92rpx;
-  padding: 0 30rpx;
-  border:2rpx solid #f1d9e2;
-  border-radius: var(--radius-sm);
-  display:flex;
-  align-items:center;
-  white-space: nowrap;
-}
-.code-btn:active { opacity: 0.8; }
-.code-btn-disabled { opacity: 0.5; }
-.submit-btn {
-  background: var(--brand-gradient);
-  color: var(--text-inverse);
-  font-size: var(--font-md);
-  font-weight: var(--weight-semibold);
-  text-align: center;
-  padding: 28rpx;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
-}
-.submit-btn:active { opacity: 0.85; }
-.btn-disabled { opacity: 0.6; }
+page { min-height: 100%; background: var(--nb-page); color: var(--nb-ink); }
+.page { min-height: 100vh; background: var(--nb-page); }
+.container { padding: 24rpx 32rpx calc(40rpx + env(safe-area-inset-bottom)); box-sizing: border-box; }
+.form { padding: 28rpx 28rpx 4rpx; border-radius: 24rpx; background: var(--nb-surface); }
+.submit-wrap { margin-top: 24rpx; }

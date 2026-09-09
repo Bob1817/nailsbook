@@ -44,7 +44,7 @@ page {
   flex-direction: column;
   align-items: center;
   gap: 12rpx;
-  border: 2rpx solid var(--border-light);
+  border: 0;
   box-shadow: var(--shadow-lg);
 }
 .empty-title { font-size: var(--font-md); font-weight: var(--weight-semibold); color: var(--text-primary); }

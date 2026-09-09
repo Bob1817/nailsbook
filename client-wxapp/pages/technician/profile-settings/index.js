@@ -1,4 +1,5 @@
 const api = require('../../../services/api');
+const { syncSessionAvatar } = require('../../../utils/avatar');
 
 Page({
   data: {
@@ -69,21 +70,34 @@ Page({
   },
 
   chooseAvatar() {
-    wx.chooseMedia({
-      count: 1, mediaType: ['image'],
-      success: async (res) => {
-        this.setData({ uploading: true });
-        try {
-          const uploadRes = await api.upload.image(res.tempFiles[0].tempFilePath, 'technician');
-          if (!this._pageActive) { this._uploadFinishedWhileHidden = true; return; }
-          this.setData({ avatarUrl: uploadRes.url, uploading: false });
-        } catch {
-          if (!this._pageActive) { this._uploadFinishedWhileHidden = true; return; }
-          this.setData({ uploading: false });
-          wx.showToast({ title: '上传失败', icon: 'none' });
-        }
+    if (this.data.uploading) return;
+    const onSelected = async (res) => {
+      const file = res && res.tempFiles && res.tempFiles[0];
+      const filePath = file && (file.tempFilePath || file.path);
+      if (!filePath) return wx.showToast({ title:'未能读取所选图片', icon:'none' });
+      this.setData({ uploading:true });
+      try {
+        const uploadRes = await api.upload.image(filePath, 'technician');
+        if (!this._pageActive) { this._uploadFinishedWhileHidden = true; return; }
+        this.setData({ avatarUrl:uploadRes.url });
+      } catch (err) {
+        if (!this._pageActive) { this._uploadFinishedWhileHidden = true; return; }
+        wx.showToast({ title:err.message || '头像上传失败', icon:'none' });
+      } finally {
+        if (this._pageActive) this.setData({ uploading:false });
+        else this._uploadFinishedWhileHidden = true;
       }
-    });
+    };
+    const onChooseFail = (err) => {
+      if (!String(err && err.errMsg || '').includes('cancel')) {
+        wx.showToast({ title:'无法打开图片选择器', icon:'none' });
+      }
+    };
+    if (typeof wx.chooseMedia === 'function') {
+      wx.chooseMedia({ count:1, mediaType:['image'], sourceType:['album','camera'], sizeType:['compressed'], success:onSelected, fail:onChooseFail });
+      return;
+    }
+    wx.chooseImage({ count:1, sourceType:['album','camera'], sizeType:['compressed'], success:(res) => onSelected({ tempFiles:(res.tempFilePaths || []).map((path) => ({ tempFilePath:path })) }), fail:onChooseFail });
   },
 
   async saveProfile() {
@@ -116,6 +130,7 @@ Page({
       });
       wx.setStorageSync('userInfo', userInfo);
       wx.setStorageSync('technician_userInfo', userInfo);
+      syncSessionAvatar('technician', avatarUrl);
 
       wx.showToast({ title: '保存成功', icon: 'success' });
       this._navTimer = setTimeout(() => {

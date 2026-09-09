@@ -1,0 +1,15 @@
+{
+  "page": "#F5F5F7",
+  "surface": "#FFFFFF",
+  "pressed": "#ECECEF",
+  "ink": "#1D1D1F",
+  "secondary": "#48484D",
+  "muted": "#6E6E73",
+  "line": "#E5E5EA",
+  "control": "#8A8A8F",
+  "link": "#526477",
+  "activeSurface": "#EEF1F5",
+  "action": "#1D1D1F",
+  "actionPressed": "#343438",
+  "inverse": "#FFFFFF"
+}

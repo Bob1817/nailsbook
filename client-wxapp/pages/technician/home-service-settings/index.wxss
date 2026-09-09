@@ -1,6 +1,6 @@
 .page {
   min-height: 100vh;
-  background: #f6f7f9;
+  background: var(--nb-page);
   padding-bottom: 160rpx;
 }
 
@@ -12,17 +12,17 @@
 }
 .loading-spinner {
   width: 60rpx; height: 60rpx;
-  border: 4rpx solid #ffd0de;
+  border: 4rpx solid var(--nb-line);
   border-top-color: var(--brand-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 .load-error { display:flex; flex-direction:column; align-items:center; padding:160rpx 40rpx 80rpx; }
-.load-error-mark { width:88rpx; height:88rpx; margin-bottom:32rpx; border-radius:50%; background:#fff0f4; color:#c75b83; font-size: var(--font-xl); line-height:88rpx; text-align:center; }
+.load-error-mark { width:88rpx; height:88rpx; margin-bottom:32rpx; border-radius:50%; background:var(--nb-page); color:var(--nb-ink); font-size: var(--font-xl); line-height:88rpx; text-align:center; }
 .load-error-title { margin-bottom:12rpx; color: var(--text-body); font-size: var(--font-lg); }
 .load-error-desc { margin-bottom:56rpx; color: var(--text-muted); font-size: var(--font-sm); }
-.retry-btn { min-height:88rpx; margin:0; padding:0 56rpx; border:0; border-radius: var(--radius-xl); background:#1f2937; color: var(--text-inverse); font-size: var(--font-md); line-height:88rpx; }
+.retry-btn { min-height:88rpx; margin:0; padding:0 56rpx; border:0; border-radius: var(--radius-xl); background:var(--nb-ink); color: var(--text-inverse); font-size: var(--font-md); line-height:88rpx; }
 .retry-btn::after { border:0; }
 
 /* ===== Hero 状态卡 ===== */
@@ -35,12 +35,12 @@
   justify-content: space-between;
 }
 .hero-on {
-  background: linear-gradient(135deg, #fff0f4 0%, #fdf4ff 100%);
-  border: 1rpx solid #fde0ea;
+  background: var(--nb-page);
+  border: 0;
 }
 .hero-off {
   background: var(--bg-card);
-  border: 1rpx solid #f0f0f0;
+  border: 0;
 }
 .hero-left {
   display: flex;
@@ -50,13 +50,13 @@
 .hero-icon-wrap {
   width: 88rpx; height: 88rpx;
   border-radius: var(--radius-md);
-  background: rgba(255,107,138,0.1) /* brand-primary-alpha */;
+  background: rgba(0, 0, 0, 0.1) /* brand-primary-alpha */;
   display: flex; align-items: center; justify-content: center;
 }
 .hero-icon { position:relative; width:54rpx; height:40rpx; }
-.car-body { position:absolute; left:4rpx; right:4rpx; top:10rpx; height:22rpx; border:4rpx solid #d77b9f; border-radius:10rpx 12rpx 6rpx 6rpx; box-sizing:border-box; }
-.car-body::before { content:''; position:absolute; left:10rpx; top:-12rpx; width:24rpx; height:12rpx; border:4rpx solid #d77b9f; border-bottom:0; border-radius:8rpx 8rpx 0 0; box-sizing:border-box; }
-.car-wheel { position:absolute; bottom:2rpx; width:10rpx; height:10rpx; border-radius:50%; background:#d77b9f; }
+.car-body { position:absolute; left:4rpx; right:4rpx; top:10rpx; height:22rpx; border: 0; border-radius:10rpx 12rpx 6rpx 6rpx; box-sizing:border-box; }
+.car-body::before { content:''; position:absolute; left:10rpx; top:-12rpx; width:24rpx; height:12rpx; border: 0; border-bottom:0; border-radius:8rpx 8rpx 0 0; box-sizing:border-box; }
+.car-wheel { position:absolute; bottom:2rpx; width:10rpx; height:10rpx; border-radius:50%; background:var(--nb-action); }
 .wheel-left { left:10rpx; } .wheel-right { right:10rpx; }
 .hero-text {
   display: flex;
@@ -74,13 +74,13 @@
   padding: 4rpx 16rpx;
   border-radius: 999rpx;
 }
-.label-on  { background: #dcfce7; color: #16a34a; }
+.label-on  { background: var(--nb-page); color: var(--nb-ink); }
 .label-off { background: var(--bg-input); color: var(--text-muted); }
 
 /* ===== 快速开启横幅 ===== */
 .quick-banner {
   margin: 0 24rpx 20rpx;
-  background: linear-gradient(135deg, #ff6b8a 0%, #a855f7 100%);
+  background: var(--nb-action);
   border-radius: var(--radius-md);
   padding: 28rpx 32rpx;
 }
@@ -150,7 +150,7 @@
 }
 .config-card-tip {
   font-size: var(--font-xs);
-  color: #16a34a;
+  color: var(--nb-ink);
   font-weight: var(--weight-medium);
 }
 
@@ -159,7 +159,7 @@
   display: flex;
   align-items: center;
   gap: 10rpx;
-  background: #f0fdf4;
+  background: var(--nb-page);
   margin: 0 32rpx 20rpx;
   border-radius: var(--radius-xs);
   padding: 14rpx 20rpx;
@@ -167,12 +167,12 @@
 .tip-dot {
   width: 12rpx; height: 12rpx;
   border-radius: 50%;
-  background: #22c55e;
+  background: var(--nb-action);
   flex-shrink: 0;
 }
 .tip-text {
   font-size: var(--font-sm);
-  color: #166534;
+  color: var(--nb-ink);
   line-height: 1.4;
 }
 
@@ -259,17 +259,18 @@
 .pricing-input {
   flex: 1;
   height: 88rpx;
-  background: var(--bg-card);
+  background: var(--nb-soft-surface);
   border-radius: var(--radius-xs);
   padding: 0 16rpx;
   font-size: var(--font-md);
   color: var(--text-primary);
   text-align: center;
   box-sizing: border-box;
-  border: 1rpx solid #e5e7eb;
+  border: 0;
 }
 .pricing-input:focus {
   border-color: var(--brand-primary);
+  background: var(--nb-soft-surface);
 }
 .pricing-dash {
   font-size: var(--font-sm);
@@ -284,13 +285,13 @@
 }
 .pricing-remove {
   padding: 8rpx 20rpx;
-  background: #fef2f2;
+  background: var(--nb-page);
   border-radius: 8rpx;
   flex-shrink: 0;
 }
 .pricing-remove text {
   font-size: var(--font-sm);
-  color: #ef4444;
+  color: var(--nb-ink);
 }
 .add-pricing-btn {
   display: flex;
@@ -300,7 +301,7 @@
   height: 80rpx;
   margin: 0 32rpx 24rpx;
   background: var(--bg-card);
-  border: 2rpx dashed #e5e7eb;
+  border: 2rpx dashed var(--nb-line);
   border-radius: var(--radius-sm);
 }
 .add-pricing-btn:active {
@@ -320,7 +321,7 @@
 .btn-save {
   margin: 0 24rpx 16rpx;
   height: 96rpx;
-  background: linear-gradient(135deg, #ff6b8a, #a855f7);
+  background: var(--nb-action);
   color: var(--text-inverse);
   border-radius: var(--btn-radius);
   font-size: var(--font-md);
@@ -328,7 +329,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.28) /* brand-primary-alpha */;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.28) /* brand-primary-alpha */;
 }
 .btn-save:active { opacity: 0.85; }
 .btn-disabled { opacity: 0.45; }
@@ -338,6 +339,8 @@
   padding: 0 40rpx;
   text-align: center;
   font-size: var(--font-xs);
-  color: #c0bcc1;
+  color: var(--nb-muted);
   line-height: var(--leading-normal);
 }
+@import '../../../styles/booking-actions.wxss';
+.retry-btn.booking-action { min-height:44px; height:44px; margin:0; padding:0 24rpx; border-radius:8px; font-size:var(--font-sm); line-height:1.4; }

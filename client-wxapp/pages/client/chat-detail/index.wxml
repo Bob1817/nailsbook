@@ -8,11 +8,18 @@
   <!-- 消息列表 -->
   <scroll-view wx:else scroll-y class="msg-list" scroll-into-view="{{scrollToId}}" scroll-with-animation enhanced show-scrollbar="{{false}}" bindscroll="onScroll">
     <view wx:if="{{groupedMessages.length === 0}}" class="empty-chat">
-      <view class="empty-icon-wrap">
-        <view class="empty-icon-dot"></view>
+      <view class="empty-chat-card">
+        <view class="empty-avatar" bindtap="viewArtist" role="button" aria-label="查看{{techName || '美甲师'}}主页">
+          <image wx:if="{{techAvatar}}" src="{{techAvatar}}" mode="aspectFill" class="empty-avatar-image" />
+          <image wx:else src="/static/icons/technician.svg" mode="aspectFit" class="empty-avatar-image" />
+        </view>
+        <text class="empty-title">开始和{{techName || '美甲师'}}沟通</text>
+        <text class="empty-desc">可以发送款式图片、沟通服务细节，或直接发起预约</text>
+        <view class="empty-actions">
+          <view class="empty-action" bindtap="onPickImage" role="button"><image class="empty-action-icon" src="/static/icons/image.svg" mode="aspectFit" />发送图片</view>
+          <view class="empty-action empty-action-primary" bindtap="goCreateBooking" role="button"><image class="empty-action-icon" src="/static/icons/calendar.svg" mode="aspectFit" />发起预约</view>
+        </view>
       </view>
-      <text class="empty-title">开始和{{techName || '美甲师'}}沟通</text>
-      <text class="empty-desc">把你的款式灵感、预约想法发给美甲师</text>
     </view>
 
     <block wx:for="{{groupedMessages}}" wx:key="date" wx:for-item="group">
@@ -26,7 +33,7 @@
         <!-- 对方头像 -->
         <view wx:if="{{!item.isClient}}" class="msg-avatar" bindtap="viewArtist" role="button" aria-label="查看{{techName || '美甲师'}}主页">
           <image wx:if="{{techAvatar}}" src="{{techAvatar}}" mode="aspectFill" class="avatar-img" aria-label="{{techName || '美甲师'}}的头像" />
-          <view wx:else class="avatar-placeholder"><text>{{techName[0] || '师'}}</text></view>
+          <view wx:else class="avatar-placeholder"><image src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" /></view>
         </view>
 
         <view class="msg-content-wrap">
@@ -39,13 +46,13 @@
           <view wx:elif="{{item.isOrderCard}}" class="order-card-msg {{item.isClient ? 'card-right' : 'card-left'}}" bindtap="viewOrder" data-id="{{item.relatedId}}">
             <view class="card-inner">
               <view class="card-header">
-                <view class="card-calendar-icon"><view class="card-calendar-line"></view></view>
+                <image class="card-calendar-icon" src="/static/icons/booking-calendar.svg" mode="aspectFit" aria-hidden="true" />
                 <text class="card-label">预约通知</text>
                 <text class="card-kind">预约</text>
               </view>
               <text class="card-content">{{item.content}}</text>
               <view class="card-footer">
-                <text class="card-action">查看预约详情</text>
+                <text class="card-action semantic-link">查看预约详情</text>
                 <text class="card-chevron">›</text>
               </view>
             </view>
@@ -81,18 +88,18 @@
     <!-- 信息输入框：左侧内置 + 号（下拉菜单）-->
     <view class="input-field-wrap">
       <view class="field-add-btn {{showAddMenu ? 'field-add-active' : ''}}" catchtap="toggleAddMenu">
-        <view class="icon-add"></view>
+        <image class="toolbar-icon" src="/static/icons/more-horizontal.svg" mode="aspectFit" />
       </view>
       <input class="input-field" type="text" value="{{inputText}}" bindinput="onInputChange" placeholder="发消息..." placeholder-class="input-placeholder" confirm-type="send" bindconfirm="sendText" cursor-spacing="16" />
     </view>
     <!-- 发送按钮：紧邻输入框 -->
     <view class="send-btn {{inputText.length > 0 ? 'send-btn-active' : ''}}" bindtap="sendText">
-      <view wx:if="{{!sending}}" class="icon-send"></view>
+      <text wx:if="{{!sending}}" class="send-btn-text">发送</text>
       <view wx:else class="sending-spinner"></view>
     </view>
     <!-- 快速发起预约：美甲师固定为对话对象 -->
     <view class="booking-btn" bindtap="goCreateBooking">
-      <view class="icon-calendar"></view>
+      <image class="toolbar-icon" src="/static/icons/calendar.svg" mode="aspectFit" />
     </view>
 
     <!-- + 下拉菜单 -->
@@ -137,7 +144,7 @@
     <view wx:else class="empty-orders">
       <view class="empty-orders-icon"></view>
       <text class="empty-orders-text">暂无预约记录</text>
-      <view class="go-booking-btn" bindtap="goBooking">去预约</view>
+      <view class="go-booking-btn booking-action" bindtap="goBooking">去预约</view>
     </view>
   </view>
 </view>

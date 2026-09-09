@@ -18,6 +18,7 @@ Page({
   data: {
     artistId: '',
     previewMode: false,
+    isOwner: false,
     artist: {},
     works: [],
     displayWorks: [],
@@ -46,18 +47,24 @@ Page({
       'https://images.unsplash.com/photo-1632345031435-8727f6897d53?w=300&h=200&fit=crop&auto=format&q=60'
     ],
     styleBgs: [
-      'linear-gradient(135deg, #E8C4B8 0%, #D4A29C 100%)',
-      'linear-gradient(135deg, #F5E6DC 0%, #E8D5C4 100%)',
-      'linear-gradient(135deg, #D4A29C 0%, #C4937A 100%)',
-      'linear-gradient(135deg, #C4937A 0%, #A87B63 100%)',
-      'linear-gradient(135deg, #F0DDD6 0%, #E8C4B8 100%)'
+      'var(--nb-action)',
+      'var(--nb-page)',
+      'var(--nb-action)',
+      'var(--nb-action)',
+      'var(--nb-page)'
     ]
   },
 
   onLoad(options) {
-    this.setData({ artistId: options.id || options.techId || '', previewMode: options.preview === '1' });
+    const artistId = options.id || options.techId || '';
+    const role = wx.getStorageSync('role') || (getApp().globalData && getApp().globalData.role);
+    const user = wx.getStorageSync('technician_userInfo') || {};
+    const isOwner = options.owner === '1' || (role === 'technician' && user.id && String(user.id) === String(artistId));
+    this.setData({ artistId, previewMode: options.preview === '1' || isOwner, isOwner });
     this.loadHome();
   },
+
+  editHomepage() { wx.navigateTo({ url: '/pages/technician/homepage-settings/index' }); },
 
   onShow() {
     if (this.data.artistId && !this.data.previewMode) this.loadRelationship();
@@ -217,7 +224,17 @@ Page({
     }
   },
 
+  openOwnInteractions(type) {
+    const app = getApp();
+    const role = wx.getStorageSync('role') || app.globalData.role;
+    const user = wx.getStorageSync('technician_userInfo') || wx.getStorageSync('userInfo') || {};
+    if (role !== 'technician' || !user.id || String(user.id) !== String(this.data.artistId)) return false;
+    wx.navigateTo({ url: '/pages/technician/artist-interactions/index?type=' + type });
+    return true;
+  },
+
   toggleFollow() {
+    if (this.openOwnInteractions('follow')) return;
     const app = getApp();
     if (!app.globalData.token) {
       wx.showToast({ title: '登录后即可关注', icon: 'none' });
@@ -229,6 +246,7 @@ Page({
   },
 
   toggleLike() {
+    if (this.openOwnInteractions('like')) return;
     // 点赞无需登录，本地乐观更新；同时累计点赞计数
     const isLiked = !this.data.isLiked;
     const delta = isLiked ? 1 : -1;
@@ -238,6 +256,7 @@ Page({
   },
 
   toggleFavorite() {
+    if (this.openOwnInteractions('favorite')) return;
     const app = getApp();
     if (!app.globalData.token) {
       wx.showToast({ title: '登录后即可收藏', icon: 'none' });
@@ -248,7 +267,13 @@ Page({
     wx.showToast({ title: isFavorited ? '已收藏' : '已取消收藏', icon: 'none' });
   },
 
-  bookArtist() {
+  async bookArtist() {
+    if (api.public && api.public.bookingSettings) {
+      try {
+        const settings = await api.public.bookingSettings(this.data.artistId);
+        if (settings.quickBookingEnabled) { wx.navigateTo({ url: '/pages/client/create-order/index?techId=' + this.data.artistId + '&mode=quick&source=artist_home' }); return; }
+      } catch (_) {}
+    }
     const app = getApp();
     const token = app.globalData.token;
     const role = app.globalData.role || wx.getStorageSync('role');

@@ -10,7 +10,7 @@
   background: var(--bg-input); display: flex; align-items: center; justify-content: center;
   font-size: var(--font-lg); color: var(--text-body); font-weight: var(--weight-semibold);
 }
-.btp-nav-btn:active { background: #e2e8f0; }
+.btp-nav-btn:active { background: var(--nb-page); }
 .btp-weekdays {
   display: grid; grid-template-columns: repeat(7, 1fr);
   margin-bottom: 8rpx;
@@ -32,11 +32,13 @@
   display: flex; align-items: center; justify-content: center;
 }
 .btp-day-empty { background: transparent; }
-.btp-day-disabled { opacity: 0.3; }
+.btp-day-disabled { flex-direction: column; }
+.btp-day-label { font-size: 18rpx; line-height: 1.2; color: var(--text-muted); }
+.btp-contact { min-height: 88rpx; display: flex; align-items: center; color: var(--nb-text-link); }
 .btp-day-disabled .btp-day-text { color: var(--text-muted); }
 .btp-day-selected { background: var(--brand-primary); }
 .btp-day-text-selected { color: var(--text-inverse) !important; font-weight: var(--weight-semibold); }
-.btp-day-today { border: 2rpx solid var(--brand-primary); }
+.btp-day-today { border: 0; }
 .btp-day-text { font-size: var(--font-sm); color: var(--text-primary); }
 
 /* ===== 提示 ===== */
@@ -51,16 +53,42 @@
   position: relative;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   min-height: 88rpx; padding: 12rpx 0 8rpx; border-radius: var(--radius-sm);
-  font-size: var(--font-sm); font-weight: var(--weight-medium); background: #f8f9fa; color: var(--text-body);
+  font-size: var(--font-sm); font-weight: var(--weight-medium); background: var(--nb-page); color: var(--text-body);
 }
 .btp-time-active {
   background: var(--brand-gradient);
-  color: var(--text-inverse); box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
+  color: var(--text-inverse); box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
 }
 .btp-time-occupied { opacity: 0.4; }
-.btp-time-item:active { background: #e2e8f0; }
+.btp-time-item:active { background: var(--nb-page); }
 .btp-time-active:active { opacity: 0.9; }
 .btp-time-occupied .btp-time-text { text-decoration: line-through; }
 .btp-occupied-label {
   font-size: 18rpx; color: var(--text-error); white-space: nowrap; line-height: 1; margin-top: 2rpx;
 }
+
+.btp-contact:active { opacity: .65; }
+
+.btp-date-strip { width: 100%; }
+.btp-date-row { display: flex; gap: 16rpx; padding: 4rpx 0; }
+.btp-date-card { flex: 0 0 112rpx; min-width: 44px; min-height: 124rpx; box-sizing: border-box; padding: 20rpx 8rpx; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8rpx; border-radius: 24rpx; background: var(--nb-surface); color: var(--nb-ink); }
+.btp-date-week { font-size: 24rpx; }
+.btp-date-number { font-size: 30rpx; font-weight: 600; }
+.btp-date-active { background: var(--nb-ink); color: var(--nb-inverse); }
+.btp-date-disabled { background: var(--nb-pressed); color: var(--nb-control); }
+.btp-date-pressed { opacity: .75; }
+.btp-slot-title { display: block; margin-top: 32rpx; font-size: var(--font-md); font-weight: 600; color: var(--nb-ink); }
+.btp-empty-slots { display: block; padding: 24rpx 0; font-size: var(--font-sm); color: var(--nb-muted); }
+.btp-time-grid-horizontal .btp-time-item { background: var(--nb-surface); border-radius: 999rpx; min-height: 44px; box-sizing: border-box; }
+.btp-time-grid-horizontal .btp-time-active { background: var(--nb-ink); color: var(--nb-inverse); box-shadow: none; }
+
+ .btp-date-heading { display: block; margin-bottom: 24rpx; font-size: var(--font-md); font-weight: 600; color: var(--nb-ink); }
+.btp-strip-layout { display: flex; align-items: stretch; gap: 12rpx; height: 126rpx; }
+.btp-date-strip { flex: 1; min-width: 0; width: auto; height: 126rpx; white-space: nowrap; }
+.btp-date-row { display: inline-flex; height: 126rpx; gap: 12rpx; padding: 0; }
+.btp-date-card { width: 96rpx; height: 126rpx; min-height: 126rpx; flex: 0 0 96rpx; padding: 14rpx 0; gap: 4rpx; border-radius: var(--radius-lg); background: var(--nb-page); overflow: hidden; }
+.btp-date-active { background: var(--nb-action); }
+.btp-date-disabled { color: var(--nb-control); }
+.btp-time-grid-horizontal { gap: 12rpx; }
+.btp-time-grid-horizontal .btp-time-item { background: var(--nb-page); padding: 8rpx 0; }
+.btp-time-grid-horizontal .btp-time-active { background: var(--nb-action); }

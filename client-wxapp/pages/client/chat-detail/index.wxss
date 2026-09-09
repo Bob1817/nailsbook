@@ -1,5 +1,5 @@
 page {
-  background: linear-gradient(180deg, #FFFDFD 0%, #F8F3F6 46%, #F4F6FB 100%);
+  background: var(--nb-page);
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -24,7 +24,7 @@ page {
 .loading-spinner, .sending-spinner {
   width: 40rpx;
   height: 40rpx;
-  border: 4rpx solid rgba(255,107,138,0.25) /* brand-primary-alpha */;
+  border: 4rpx solid rgba(0, 0, 0, 0.25) /* brand-primary-alpha */;
   border-top-color: var(--brand-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -53,8 +53,8 @@ page {
   background: rgba(255, 255, 255, 0.8);
   padding: 6rpx 24rpx;
   border-radius: var(--radius-md);
-  border: 1rpx solid rgba(0, 0, 0, 0.03);
-  box-shadow: 0 4rpx 12rpx rgba(15, 23, 42, 0.04);
+  border: 0;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.04);
 }
 
 /* ===== 消息列表 ===== */
@@ -75,7 +75,7 @@ page {
   width: 128rpx;
   height: 128rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #FFE2EA 0%, #F4F6FB 100%);
+  background: var(--nb-page);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -127,8 +127,8 @@ page {
   width: 64rpx;
   height: 64rpx;
   border-radius: 50%;
-  background: #f0f0f0;
-  border: 1rpx solid rgba(0, 0, 0, 0.03);
+  background: var(--nb-page);
+  border: 0;
 }
 
 .avatar-placeholder, .avatar-self {
@@ -140,11 +140,11 @@ page {
   justify-content: center;
   font-size: var(--font-sm);
   font-weight: var(--weight-semibold);
-  border: 1rpx solid rgba(0, 0, 0, 0.03);
+  border: 0;
 }
 
 .avatar-placeholder {
-  background: linear-gradient(135deg, #FFE0EA, #F4F7FB);
+  background: var(--nb-page);
   color: var(--brand-primary);
 }
 
@@ -179,20 +179,20 @@ page {
 .bubble-right {
   background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-light) 100%);
   border-bottom-right-radius: 8rpx;
-  box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.15) /* brand-primary-alpha */, 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.15) /* brand-primary-alpha */, 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
 }
 
 .bubble-left {
   background: rgba(255, 255, 255, 0.9);
   border-bottom-left-radius: 8rpx;
-  border: 1rpx solid rgba(0, 0, 0, 0.03);
-  box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, 0.06), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
+  border: 0;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.06), 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
 }
 
 .bubble-img {
   padding: 8rpx;
   background: rgba(255, 255, 255, 0.9);
-  border: 1rpx solid rgba(0, 0, 0, 0.03);
+  border: 0;
 }
 
 .msg-text {
@@ -249,65 +249,33 @@ page {
   background: rgba(255, 255, 255, 0.7);
   padding: 8rpx 32rpx;
   border-radius: var(--radius-md);
-  border: 1rpx solid rgba(0, 0, 0, 0.03);
+  border: 0;
 }
 
 /* ===== 预约卡片消息 ===== */
 .order-card-msg {
   border-radius: var(--radius-md);
   overflow: hidden;
-  background: linear-gradient(180deg, #ffffff 0%, #fcfafb 100%);
-  box-shadow: 0 8rpx 22rpx rgba(47, 34, 42, 0.055);
-  border: 1rpx solid #eee8eb;
-  width: 500rpx;
+  background: var(--nb-surface);
+  box-shadow: 0 8rpx 22rpx rgba(0, 0, 0, 0.055);
+  border: 0;
+  width: 460rpx;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-.order-card-msg:active { background:#faf6f8; }
-.card-right { border-color:#eadfe4; }
+.order-card-msg:active { background:var(--nb-page); }
+.card-right { border-color:var(--nb-line); }
 
-.card-inner {
-  padding: var(--space-md) 26rpx 0;
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-  margin-bottom: 18rpx;
-}
-
-.card-calendar-icon {
-  position:relative;
-  width:36rpx;
-  height:36rpx;
-  border:3rpx solid #81757b;
-  border-radius:8rpx;
-  box-sizing:border-box;
-  flex-shrink:0;
-}
-.card-calendar-icon::before,.card-calendar-icon::after { content:''; position:absolute; top:-7rpx; width:3rpx; height:10rpx; border-radius:2rpx; background:#81757b; }
-.card-calendar-icon::before { left:7rpx; }.card-calendar-icon::after { right:7rpx; }
-.card-calendar-line { position:absolute; left:0; right:0; top:9rpx; height:3rpx; background:#81757b; }
-
-.card-kind { margin-left:auto; padding:4rpx 12rpx; border-radius:999rpx; background:#f4eff2; color:#8b7d85; font-size: var(--font-xs); line-height:1.4; }
-
-.card-label {
-  font-size: var(--font-sm);
-  font-weight: var(--weight-bold);
-  color: #332d31;
-}
-
-.card-content {
-  font-size: var(--font-sm);
-  color: #625961;
-  line-height: 1.65;
-  display: block;
-  white-space: pre-line;
-}
-
-.card-footer { min-height:88rpx; margin-top:18rpx; border-top:1rpx solid #f0ebed; display:flex; align-items:center; justify-content:space-between; }
-.card-action { font-size: var(--font-sm); color:#7b6d75; font-weight: var(--weight-semibold); }
-.card-chevron { color:#a89da3; font-size: var(--font-lg); line-height:1; }
+.card-inner { padding: 24rpx 24rpx 0; }
+.card-header { display: flex; align-items: center; gap: 10rpx; margin-bottom: 12rpx; }
+.card-calendar-icon { width: 30rpx; height: 30rpx; flex-shrink: 0; }
+.card-label { font-size: 28rpx; font-weight: 600; color: var(--nb-ink); line-height: 1.4; }
+.card-kind { margin-left: auto; padding: 2rpx 10rpx; border-radius: 8rpx; background: var(--nb-page); color: var(--nb-secondary); font-size: 22rpx; line-height: 1.4; }
+.card-content { display: block; font-size: 26rpx; color: var(--nb-secondary); line-height: 1.55; white-space: pre-line; overflow-wrap: break-word; }
+.card-footer { min-height: 88rpx; margin-top: 12rpx; border-top: 0; display: flex; align-items: center; justify-content: space-between; }
+.card-action { font-size: 26rpx; color: var(--nb-text-link); font-weight: 500; }
+.card-chevron { color: var(--nb-text-link); font-size: 30rpx; line-height: 1; }
 
 /* ===== 底部输入栏 ===== */
 .input-bar {
@@ -318,7 +286,7 @@ page {
   padding: 16rpx 32rpx;
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
   background: rgba(255, 255, 255, 0.88);
-  border-top: 1rpx solid rgba(255, 255, 255, 0.6);
+  border-top: 0;
   gap: 12rpx;
 }
 
@@ -329,7 +297,7 @@ page {
   z-index: 20;
 }
 
-.field-add-active .icon-add { transform: rotate(45deg); transition: transform 0.18s; }
+.field-add-active { background: var(--nb-active-surface); }
 
 .add-menu {
   position: absolute;
@@ -341,7 +309,7 @@ page {
   border-radius: var(--radius-md);
   padding: 8rpx 0;
   min-width: 248rpx;
-  box-shadow: 0 12rpx 36rpx rgba(15, 23, 42, 0.16), 0 2rpx 8rpx rgba(15, 23, 42, 0.06);
+  box-shadow: 0 12rpx 36rpx rgba(0, 0, 0, 0.16), 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
   animation: menuPop 0.16s ease-out;
 }
 
@@ -360,7 +328,7 @@ page {
 
 .add-menu-divider {
   height: 1rpx;
-  background: #f0f1f4;
+  background: var(--nb-page);
   margin: 0 20rpx;
 }
 
@@ -380,7 +348,7 @@ page {
   background: var(--bg-card);
   transform: rotate(45deg);
   border-radius: 0 0 6rpx 0;
-  box-shadow: 4rpx 4rpx 10rpx rgba(15, 23, 42, 0.06);
+  box-shadow: 4rpx 4rpx 10rpx rgba(0, 0, 0, 0.06);
 }
 
 /* 菜单图标 */
@@ -411,35 +379,6 @@ page {
 
 .field-add-btn:active { opacity: 0.55; }
 
-/* + 号图标 */
-.icon-add {
-  position: relative;
-  width: 34rpx;
-  height: 34rpx;
-}
-
-.icon-add::before,
-.icon-add::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  background: #8a93a3;
-  border-radius: 3rpx;
-}
-
-.icon-add::before {
-  width: 30rpx;
-  height: 5rpx;
-  transform: translate(-50%, -50%);
-}
-
-.icon-add::after {
-  width: 5rpx;
-  height: 30rpx;
-  transform: translate(-50%, -50%);
-}
-
 .input-field {
   flex: 1;
   min-width: 0;
@@ -463,7 +402,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #e5e7eb;
+  background: var(--nb-page);
   border: none;
   padding: 0;
   line-height: 1;
@@ -475,43 +414,8 @@ page {
 
 .send-btn-active {
   background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-light) 100%);
-  box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.3) /* brand-primary-alpha */;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.3) /* brand-primary-alpha */;
 }
-
-/* 发送图标：向上箭头（直观表达「发送」）*/
-.icon-send {
-  position: relative;
-  width: 34rpx;
-  height: 34rpx;
-}
-
-.icon-send::before {
-  content: '';
-  position: absolute;
-  top: 3rpx;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 12rpx solid transparent;
-  border-right: 12rpx solid transparent;
-  border-bottom: 14rpx solid #9ca3af;
-}
-
-.icon-send::after {
-  content: '';
-  position: absolute;
-  top: 15rpx;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 6rpx;
-  height: 16rpx;
-  background: #9ca3af;
-  border-radius: 0 0 3rpx 3rpx;
-}
-
-.send-btn-active .icon-send::before { border-bottom-color: var(--text-inverse); }
-.send-btn-active .icon-send::after { background: var(--bg-card); }
 
 /* ===== 预约快捷入口 ===== */
 .booking-btn {
@@ -522,43 +426,10 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #FFF0F3;
+  background: var(--nb-page);
 }
 
-.booking-btn:active { background: #ffe0e7; }
-
-/* 日历图标：表头 + 框体 + 日期点，直观表达「预约」*/
-.icon-calendar {
-  position: relative;
-  width: 36rpx;
-  height: 34rpx;
-  border: 3rpx solid var(--brand-primary);
-  border-radius: 6rpx;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-.icon-calendar::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 9rpx;
-  background: var(--brand-primary);
-}
-
-.icon-calendar::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 19rpx;
-  transform: translateX(-50%);
-  width: 7rpx;
-  height: 7rpx;
-  border-radius: 1rpx;
-  background: var(--brand-primary);
-}
+.booking-btn:active { background: var(--nb-page); }
 
 /* ===== 预约卡片弹层 ===== */
 .sheet-mask {
@@ -597,7 +468,7 @@ page {
   width: 64rpx;
   height: 8rpx;
   border-radius: 4rpx;
-  background: #e5e7eb;
+  background: var(--nb-page);
 }
 
 .sheet-header {
@@ -605,7 +476,7 @@ page {
   justify-content: space-between;
   align-items: center;
   padding: 16rpx 40rpx 24rpx;
-  border-bottom: 1rpx solid rgba(0, 0, 0, 0.04);
+  border-bottom: 0;
 }
 
 .sheet-title {
@@ -624,7 +495,7 @@ page {
   background: var(--bg-input);
 }
 
-.sheet-close:active { background: #e5e7eb; }
+.sheet-close:active { background: var(--nb-page); }
 
 .sheet-close-icon {
   width: 18rpx;
@@ -640,7 +511,7 @@ page {
   left: 50%;
   width: 18rpx;
   height: 3rpx;
-  background: #6b7280;
+  background: var(--nb-muted);
   border-radius: 2rpx;
 }
 
@@ -673,12 +544,12 @@ page {
   overflow: hidden;
 }
 
-.order-select-item:active { background: #f0f1f5; }
+.order-select-item:active { background: var(--nb-page); }
 
 .order-select-accent {
   width: 6rpx;
   align-self: stretch;
-  background: linear-gradient(180deg, #FF6B8A 0%, #A78BFA 100%);
+  background: var(--nb-action);
   border-radius: 3rpx;
   margin-right: 20rpx;
 }
@@ -705,7 +576,7 @@ page {
 
 .order-select-send {
   font-size: var(--font-sm);
-  color: var(--brand-primary);
+  color: var(--nb-text-link);
   font-weight: var(--weight-semibold);
   flex-shrink: 0;
   padding: 0 24rpx;
@@ -724,7 +595,7 @@ page {
   width: 64rpx;
   height: 64rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #FFE2EA 0%, #F4F6FB 100%);
+  background: var(--nb-page);
   margin-bottom: 8rpx;
 }
 
@@ -741,5 +612,37 @@ page {
   font-weight: var(--weight-medium);
   padding: 16rpx 48rpx;
   border-radius: var(--radius-xl);
-  box-shadow: 0 8rpx 24rpx rgba(255,107,138,0.25) /* brand-primary-alpha */;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.25) /* brand-primary-alpha */;
 }
+/* ===== Conversation surface refinement ===== */
+.empty-chat { padding: 72rpx 32rpx; }
+.empty-chat-card { width: 100%; padding: 48rpx 36rpx; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; border-radius: 28rpx; background: var(--nb-surface); }
+
+@import '../../../styles/booking-actions.wxss';
+.go-booking-btn.booking-action { min-height: 44px; height: var(--control-hit-height); padding: 0 24rpx; border-radius: 8px; font-size: var(--font-sm); box-shadow: none; }
+.empty-avatar { width: 96rpx; height: 96rpx; margin-bottom: 24rpx; overflow: hidden; border-radius: 50%; background: var(--nb-soft-surface); }
+.empty-avatar-image { width: 100%; height: 100%; display: block; }
+.empty-title { margin-bottom: 8rpx; font-size: var(--font-md); }
+.empty-desc { max-width: 500rpx; font-size: var(--font-xs); }
+.empty-actions { width: 100%; margin-top: 32rpx; display: flex; justify-content: center; gap: 16rpx; }
+.empty-action { flex: 1; min-width: 0; min-height: 88rpx; padding: 0 24rpx; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 10rpx; border-radius: var(--radius-md); background: var(--nb-soft-surface); color: var(--nb-secondary); font-size: var(--font-sm); font-weight: var(--weight-medium); }
+.empty-action-icon { width: 28rpx; height: 28rpx; }
+.empty-action-primary { background: var(--nb-active-surface); color: var(--nb-ink); }
+.input-bar { padding-top: 12rpx; background: var(--nb-surface); box-shadow: 0 -6rpx 20rpx rgba(0, 0, 0, .04); }
+.input-field-wrap { height: 88rpx; border-radius: 22rpx; }
+.input-field { height: 88rpx; font-size: var(--font-sm); }
+.input-placeholder { font-size: var(--font-sm); }
+.toolbar-icon { width: 32rpx; height: 32rpx; display: block; }
+.send-btn { width: auto; height: 88rpx; min-width: 96rpx; padding: 0 24rpx; border-radius: 22rpx; }
+.send-btn-text { font-size: var(--font-sm); font-weight: var(--weight-semibold); color: var(--nb-muted); }
+.send-btn-active .send-btn-text { color: var(--nb-inverse); }
+.attachment-btn, .booking-btn, .field-add-btn { width: 88rpx; height: 88rpx; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 22rpx; background: var(--nb-soft-surface); }
+.msg-list { padding: 12rpx 0 24rpx; }
+.msg-row { padding: 10rpx 28rpx; gap: 14rpx; }
+.avatar-img, .avatar-placeholder, .avatar-self { width: 64rpx; height: 64rpx; }
+.msg-content-wrap { max-width: 72%; }
+.bubble { padding: 16rpx 22rpx 14rpx; border-radius: 20rpx; }
+.bubble-left { background: var(--nb-surface); box-shadow: none; }
+.bubble-right { background: var(--nb-action); box-shadow: none; }
+.msg-text { font-size: var(--font-sm); }
+.send-btn-active { background: var(--nb-action); box-shadow: none; }

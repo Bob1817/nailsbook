@@ -9,7 +9,7 @@
   width: 36rpx;
   height: 36rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #FFF0F3 0%, #F5F3FF 100%);
+  background: var(--nb-page);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -41,7 +41,7 @@
   font-size: var(--font-2xl);
   font-weight: var(--weight-bold);
   color: var(--text-inverse);
-  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
+  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
 }
 
 .title {
@@ -61,10 +61,10 @@
 /* 表单 */
 .form {
   background: rgba(255, 255, 255, 0.92);
-  border: 2rpx solid #ebe6e9;
+  border: 0;
   border-radius: var(--radius-md);
   padding: 32rpx;
-  box-shadow: 0 8rpx 28rpx rgba(54, 43, 49, 0.045);
+  box-shadow: 0 8rpx 28rpx rgba(0, 0, 0, 0.045);
 }
 
 /* 提示横幅 */
@@ -72,7 +72,7 @@
   display: flex;
   align-items: center;
   gap: 12rpx;
-  background: #fff7ed;
+  background: var(--nb-page);
   border-radius: var(--radius-sm);
   padding: 20rpx;
   margin-bottom: var(--space-md);
@@ -85,7 +85,7 @@
 
 .hint-text {
   font-size: var(--font-sm);
-  color: #92400e;
+  color: var(--nb-ink);
   line-height: 1.4;
 }
 
@@ -109,21 +109,21 @@
 .input  {
   width: 100%;
   height: 88rpx;
-  background: var(--bg-card);
+  background: var(--nb-soft-surface);
   border-radius: var(--radius-sm);
   padding: 0 24rpx;
   font-size: var(--font-md);
   color: var(--text-primary);
   box-sizing: border-box;
-  border: 2rpx solid #ddd8dc;
-  box-shadow: 0 2rpx 8rpx rgba(54, 43, 49, 0.035);
+  border: 0;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.035);
   transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
 }
 
 .input:focus  {
-  border-color: #bd587d;
+  border-color: var(--nb-link);
   background: var(--bg-card);
-  box-shadow: 0 0 0 6rpx rgba(189, 88, 125, 0.08);
+  box-shadow: 0 0 0 6rpx rgba(0, 0, 0, 0.08);
 }
 
 .input-error  {
@@ -141,7 +141,7 @@
   display: flex;
   align-items: center;
   box-sizing: border-box;
-  border: 2rpx solid #e5e1e4;
+  border: 0;
 }
 
 .spinner {
@@ -151,7 +151,7 @@
   transform: translateY(-50%);
   width: 32rpx;
   height: 32rpx;
-  border: 3rpx solid rgba(255,107,138,0.3) /* brand-primary-alpha */;
+  border: 3rpx solid rgba(0, 0, 0, 0.3) /* brand-primary-alpha */;
   border-top-color: var(--brand-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -174,7 +174,7 @@
   align-items: center;
   gap: 8rpx;
   font-size: var(--font-sm);
-  color: #10b981;
+  color: var(--nb-ink);
   margin-top: 8rpx;
 }
 
@@ -195,7 +195,7 @@
   align-items: center;
   justify-content: center;
   margin-top: 32rpx;
-  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
+  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
   border: none;
 }
 
@@ -218,7 +218,7 @@
 
 .link {
   font-size: var(--font-md);
-  color: var(--brand-primary);
+  color: var(--nb-text-link);
   font-weight: var(--weight-medium);
 }
 
@@ -231,3 +231,8 @@
   font-size: var(--font-md);
   color: var(--text-muted);
 }
+
+@import '../../../styles/booking-actions.wxss';
+.input { height: var(--input-height); min-height: 44px; background: var(--bg-input); border-radius: var(--input-radius); padding: 0 var(--input-padding-h); font-size: var(--font-sm); }
+.readonly { height: var(--input-height); min-height: 44px; border-radius: var(--input-radius); padding: 0 var(--input-padding-h); font-size: var(--font-sm); }
+.btn-primary.booking-action { height: var(--control-hit-height); min-height: 44px; margin-top: 24rpx; border-radius: 8px; background: var(--nb-action); font-size: var(--font-sm); box-shadow: none; }

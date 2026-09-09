@@ -1,0 +1,7 @@
+<view class="collection-overview">
+  <view class="collection-overview-copy">
+    <text class="collection-overview-title">{{title}}</text>
+    <text class="collection-overview-subtitle">{{subtitle}}</text>
+  </view>
+  <text wx:if="{{showCount}}" class="collection-overview-count">{{count}} 个作品</text>
+</view>

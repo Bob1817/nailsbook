@@ -4,6 +4,17 @@ const assert = require('assert');
 
 const root = path.join(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+const semantic = JSON.parse(read('../design-system/nailbook/miniprogram-semantics.json'));
+assert(read('static/icons/check-circle.svg').includes(`fill="${semantic.success}"`), '已选择标记必须使用绿色');
+const palette = JSON.parse(read('../design-system/nailbook/colors.json'));
+for (const [name, color] of [['social-heart-active', semantic.like], ['social-star-active', semantic.favorite]]) {
+  const svg = read(`static/icons/${name}.svg`);
+  assert(svg.includes(`fill="${color}"`), `${name} 必须使用对应语义色实心填充`);
+  assert(!/fill="none"/.test(svg), `${name} 选中态不得退回空心`);
+  const inactive = read(`static/icons/${name.replace('-active', '')}.svg`);
+  assert(inactive.includes('fill="none"'), `${name} 未选中态必须保持空心`);
+  assert.notStrictEqual(color, palette.muted, '选中态不能使用灰色');
+}
 
 const workDetail = read('pages/client/work-detail/index.wxml');
 const publicWork = read('pages/client/public-work/index.wxml');
@@ -14,6 +25,13 @@ const clientHome = read('pages/client/home/index.wxml');
 const technicianOrder = read('pages/technician/order-detail/index.wxml');
 const technicianHome = read('pages/technician/home/index.wxml');
 const technicianBookingCard = read('components/technician-booking-card/index.wxml');
+assert(read('pages/client/orders/index.wxml').includes('class="footer-clock" src="/static/icons/clock.svg"'), '预约卡片底部必须使用完整时钟SVG');
+assert(!read('pages/client/orders/index.wxss').includes('.footer-clock::'), '不得用边框和伪元素拼接时钟');
+for (const tab of ['home', 'calendar', 'compass', 'chat', 'profile', 'customers']) {
+  const svg = read(`static/icons/tab-${tab}-active.svg`);
+  assert(svg.slice(0, svg.indexOf('>')).includes(`fill="${semantic.textLink}"`), `${tab}选中图标必须为实心蓝色`);
+  assert(read(`static/icons/tab-${tab}.svg`).includes('fill="none"'), `${tab}未选中图标必须保持线框`);
+}
 const sourceFiles = [];
 const collect = (dir) => {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -34,6 +52,12 @@ for (const content of [sharedWorkDetail]) {
 
 assert(artistHome.includes("social-heart-active.svg' : '/static/icons/social-heart.svg"), '美甲师主页点赞语义必须是爱心');
 assert(artistHome.includes("social-star-active.svg' : '/static/icons/social-star.svg"), '美甲师主页收藏语义必须是星标');
+for (const file of ['components/work-card/index.wxml', 'components/work-detail-view/index.wxml', 'pages/client/artist-home/index.wxml']) {
+  const content = read(file);
+  for (const icon of ['heart', 'star']) {
+    assert(content.includes(`social-${icon}-active.svg' : '/static/icons/social-${icon}.svg`), `${file} 必须根据状态切换${icon}图标`);
+  }
+}
 assert(clientOrder.includes('/static/icons/phone.svg'), '客户端预约详情必须使用统一电话图标');
 assert(clientOrder.includes('/static/icons/tab-chat-active.svg'), '客户端预约详情必须使用统一消息图标');
 assert(clientHome.includes('/static/icons/phone-white.svg'), '客户端首页电话操作必须使用统一电话图标');
@@ -70,3 +94,25 @@ for (const legacySelector of ['.btn-icon-phone::', '.btn-icon-chat::', '.m-icon-
 }
 
 console.log('图标系统专项检查通过');
+
+// 消息通知：实心按钮白字，链接只用于浅色卡片内导航。
+const semanticActions = read('styles/semantic-actions.wxss');
+assert(/\.semantic-primary \{[^}]*color: #FFFFFF !important/.test(semanticActions));
+assert(/\.semantic-primary text[^}]*color: #FFFFFF !important/.test(semanticActions));
+for (const role of ['client', 'technician']) {
+  const chat = read(`pages/${role}/chat/index.wxml`);
+  assert(!chat.includes('modal-btn-primary-text semantic-link'));
+  for (const button of chat.matchAll(/class="([^"\n]*modal-btn-primary[^"\n]*)"/g)) {
+    if (!button[1].includes('modal-btn-primary-text')) assert(button[1].includes('semantic-primary'));
+  }
+}
+assert(read('pages/client/design-detail/index.wxml').includes('btn-view-order full semantic-primary'));
+const chatStyles = read('pages/client/chat/index.wxss');
+const statusDot = chatStyles.match(/\.msg-online-dot \{([^}]+)\}/)[1];
+assert(statusDot.includes('width: 14rpx'));
+assert(statusDot.includes('border: 0'));
+assert(statusDot.includes('box-shadow: none'));
+assert(read('pages/client/chat-detail/index.wxml').includes('/static/icons/booking-calendar.svg'));
+assert(!read('pages/client/chat-detail/index.wxss').includes('.card-calendar-icon::'));
+assert(fs.existsSync(path.join(root, 'static/icons/booking-calendar.svg')));
+console.log('通知按钮白字、状态圆点和预约卡片图标检查通过');

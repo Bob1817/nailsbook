@@ -4,23 +4,22 @@ page { background: var(--bg-page); color: var(--text-primary); }
 .page { padding: 0 var(--page-padding-h) calc(96rpx + env(safe-area-inset-bottom)); }
 
 /* ===== 头部 ===== */
-.record-header { min-height: var(--touch-min); display: flex; align-items: center; justify-content: space-between; padding: 0 4rpx; border-bottom: 1rpx solid var(--border-light); }
+.record-header { min-height: var(--touch-min); display: flex; align-items: center; justify-content: space-between; padding: 0 4rpx; border-bottom: 0; }
 .record-header-copy { color: var(--text-muted); font-size: var(--font-sm); }
 .record-count { color: var(--text-muted); font-size: var(--font-xs); }
 .record-count-value { color: var(--text-body); font-size: var(--font-sm); font-weight: var(--weight-bold); }
 .state-text { display: block; padding: 120rpx 0; text-align: center; color: var(--text-muted); font-size: var(--font-sm); }
 
 /* ===== 筛选 ===== */
-.filter-card { min-height: 96rpx; display: flex; flex-wrap: nowrap; align-items: center; gap: var(--space-xs); overflow: hidden; border-bottom: 1rpx solid var(--border-light); }
-.filter-chip, .filter-reset { display: flex; min-height: var(--touch-min); padding: 0 18rpx; align-items: center; justify-content: center; gap: var(--space-xs); color: var(--text-muted); font-size: var(--font-xs); white-space: nowrap; box-sizing: border-box; }
-.filter-reset { color: var(--brand-primary); }
+.filter-card { min-height: 96rpx; display: flex; flex-wrap: nowrap; align-items: center; gap: var(--space-xs); overflow: hidden; border-bottom: 0; }
+.filter-reset { display: flex; min-height: var(--touch-min); padding: 0 18rpx; align-items: center; justify-content: center; gap: var(--space-xs); color: var(--nb-text-link); font-size: var(--font-xs); white-space: nowrap; box-sizing: border-box; }
 
 /* ===== 时间线 ===== */
 .timeline { margin-top: var(--space-md); }
 .timeline-item { display: flex; align-items: flex-start; gap: 24rpx; padding: 0; margin-bottom: 30rpx; }
 .timeline-item:last-child { margin-bottom: 0; }
 .moment-card { flex: 1; min-width: 0; padding: var(--space-md); border-radius: var(--radius-lg); background: var(--bg-card); box-shadow: var(--shadow-sm); }
-.moment-head { min-height: 72rpx; display: flex; align-items: flex-start; padding-bottom: var(--space-sm); border-bottom: 1rpx solid var(--border-light); }
+.moment-head { min-height: 72rpx; display: flex; align-items: flex-start; padding-bottom: var(--space-sm); border-bottom: 0; }
 .moment-date-block { width: 72rpx; padding-top: 6rpx; flex-shrink: 0; text-align: left; }
 .moment-day, .moment-month { display: block; }
 .moment-day { font-size: var(--font-xl); line-height: 1; font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; }
@@ -33,7 +32,7 @@ page { background: var(--bg-page); color: var(--text-primary); }
 .moment-gallery { display: grid; gap: 6rpx; margin-top: 12rpx; overflow: hidden; border-radius: var(--radius-xs); }
 .gallery-wide { grid-template-columns: repeat(2, 1fr); }
 .gallery-grid { grid-template-columns: repeat(3, 1fr); }
-.moment-photo { width: 100%; height: 160rpx; background: #f2f2f2; }
+.moment-photo { width: 100%; height: 160rpx; background: var(--nb-page); }
 .gallery-wide .moment-photo { height: 236rpx; }
 .gallery-wide .moment-photo:only-child { grid-column: 1 / -1; width: 420rpx; height: 420rpx; }
 .moment-empty { min-height: 160rpx; margin-top: var(--space-sm); padding: var(--space-md); border-radius: var(--radius-md); border: 2rpx dashed var(--border-default); display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg-input); gap: 10rpx; box-sizing: border-box; }
@@ -43,31 +42,31 @@ page { background: var(--bg-page); color: var(--text-primary); }
 .moment-empty-copy { color: var(--text-muted); font-size: var(--font-xs); line-height: var(--leading-normal); }
 .photo-manage-hint { display: block; margin-top: 12rpx; color: var(--text-muted); font-size: var(--font-xs); line-height: var(--leading-normal); }
 .load-more { padding: var(--space-md) 0 36rpx; color: var(--text-muted); font-size: var(--font-xs); text-align: center; }
-.sync-note { display: block; margin-top: 10rpx; color: var(--brand-primary); font-size: var(--font-xs); }
+.sync-note { display: block; margin-top: 10rpx; color: var(--nb-success); font-size: var(--font-xs); }
 .record-note { display: flex; min-height: var(--touch-min); margin-top: var(--space-sm); padding: 14rpx 16rpx; align-items: center; gap: var(--space-sm); border-radius: var(--radius-md); background: var(--bg-input); box-sizing: border-box; }
 .record-note-content { flex: 1; min-width: 0; }
 .record-note-label, .record-note-text { display: block; }
 .record-note-label { color: var(--text-muted); font-size: var(--font-xs); font-weight: var(--weight-semibold); }
 .record-note-text { margin-top: 6rpx; color: var(--text-muted); font-size: var(--font-xs); line-height: var(--leading-normal); }
-.record-note-action { display: flex; align-items: center; gap: 6rpx; color: var(--brand-primary); font-size: var(--font-xs); font-weight: var(--weight-bold); }
+.record-note-action { display: flex; align-items: center; gap: 6rpx; color: var(--nb-text-link); font-size: var(--font-xs); font-weight: var(--weight-bold); }
 .record-note-action-icon { width: 24rpx; height: 24rpx; }
 .moment-tags, .tag-row { display: flex; flex-wrap: wrap; gap: 10rpx; margin-top: var(--space-sm); }
-.moment-tag, .tag { padding: 7rpx 14rpx; border-radius: var(--card-radius); color: var(--text-body); background: #f7f2f4; font-size: var(--font-xs); }
+.moment-tag, .tag { padding: 7rpx 14rpx; border-radius: var(--card-radius); color: var(--text-body); background: var(--nb-page); font-size: var(--font-xs); }
 .moment-actions { display: flex; align-items: center; gap: 16rpx; margin-top: var(--space-md); }
 .moment-action { flex: 1; min-height: 72rpx; padding: 0 16rpx; border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; gap: 10rpx; font-size: var(--font-xs); font-weight: var(--weight-semibold); box-sizing: border-box; }
 .moment-action:active { opacity: 0.85; }
 .action-primary { background: var(--brand-gradient); color: var(--text-inverse); }
-.action-secondary { background: #FFF1F6; color: var(--brand-primary); }
-.action-tertiary { background: #f3f4f6; color: var(--text-body); }
+.action-secondary { background: var(--nb-page); color: var(--brand-primary); }
+.action-tertiary { background: var(--nb-page); color: var(--text-body); }
 .action-icon { width: 28rpx; height: 28rpx; flex-shrink: 0; }
 .action-secondary .action-icon { filter: brightness(0) saturate(100%) invert(47%) sepia(83%) saturate(2341%) hue-rotate(318deg) brightness(101%) contrast(101%); }
 .action-tertiary .action-icon { filter: brightness(0.45); }
 
 /* ===== 空状态卡片 ===== */
 .filter-empty { margin-left: 0; }
-.empty-card, .portrait-card { margin-top: 22rpx; padding: 42rpx 34rpx; border-radius: var(--radius-lg); background: var(--bg-card); border: 1rpx solid var(--border-default); }
+.empty-card, .portrait-card { margin-top: 22rpx; padding: 42rpx 34rpx; border-radius: var(--radius-lg); background: var(--bg-card); border: 0; }
 .empty-card { display: flex; flex-direction: column; align-items: center; text-align: center; }
-.empty-mark { width: 72rpx; height: 72rpx; border-radius: 50%; background: #fbcfe8; box-shadow: inset 0 0 0 15rpx var(--bg-card); }
+.empty-mark { width: 72rpx; height: 72rpx; border-radius: 50%; background: var(--nb-page); box-shadow: inset 0 0 0 15rpx var(--bg-card); }
 .empty-title { margin-top: 22rpx; font-size: var(--font-md); font-weight: var(--weight-bold); }
 .empty-copy { margin-top: 12rpx; color: var(--text-muted); font-size: var(--font-sm); line-height: 1.6; }
 .primary-btn { min-height: var(--touch-min); margin-top: var(--space-lg); padding: 0 34rpx; border-radius: var(--card-radius); display: flex; align-items: center; justify-content: center; color: var(--text-inverse); background: var(--brand-gradient); font-size: var(--font-sm); font-weight: var(--weight-bold); }
@@ -85,13 +84,13 @@ page { background: var(--bg-page); color: var(--text-primary); }
 .recommend-sub { display: block; margin-top: 7rpx; color: var(--text-muted); font-size: var(--font-xs); }
 .recommend-scroll { width: 100%; white-space: nowrap; }
 .recommend-row { display: inline-flex; gap: 18rpx; padding: 2rpx 2rpx 12rpx; }
-.recommend-card { width: 300rpx; padding: 14rpx; border-radius: var(--radius-md); background: var(--bg-card); border: 1rpx solid var(--border-default); box-sizing: border-box; }
+.recommend-card { width: 300rpx; padding: 14rpx; border-radius: var(--radius-md); background: var(--bg-card); border: 0; box-sizing: border-box; }
 .recommend-card:active { background: var(--bg-tag); }
 .recommend-image { display: block; width: 272rpx; height: 310rpx; border-radius: 17rpx; }
-.placeholder { background: #f2f2f2; }
+.placeholder { background: var(--nb-page); }
 .recommend-title, .recommend-tags, .recommend-reason { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .recommend-title { margin-top: 15rpx; font-size: var(--font-sm); font-weight: var(--weight-bold); }
-.recommend-tags { margin-top: 7rpx; color: var(--brand-primary); font-size: var(--font-xs); }
+.recommend-tags { margin-top: 7rpx; color: var(--nb-secondary); font-size: var(--font-xs); }
 .recommend-reason { margin-top: var(--space-xs); color: var(--text-muted); font-size: var(--font-xs); }
 
 /* ===== 备注弹窗 ===== */
@@ -99,11 +98,65 @@ page { background: var(--bg-page); color: var(--text-primary); }
 .note-sheet { width: 100%; padding: var(--space-lg) 30rpx calc(30rpx + env(safe-area-inset-bottom)); border-radius: 30rpx 30rpx 0 0; background: var(--bg-card); box-sizing: border-box; }
 .note-sheet-title { display: block; color: var(--text-primary); font-size: var(--font-lg); font-weight: var(--weight-bold); }
 .note-field-label { display: block; margin-top: 26rpx; color: var(--text-body); font-size: var(--font-sm); font-weight: var(--weight-semibold); }
-.note-textarea { width: 100%; height: 220rpx; margin-top: 12rpx; padding: 20rpx; border: 1rpx solid var(--border-default); border-radius: var(--card-radius); background: var(--bg-input); color: var(--text-primary); font-size: var(--font-sm); line-height: 1.6; box-sizing: border-box; }
+.note-textarea { width: 100%; height: 220rpx; margin-top: 12rpx; padding: 20rpx; border: 0; border-radius: var(--card-radius); background: var(--nb-soft-surface); color: var(--text-primary); font-size: var(--font-sm); line-height: 1.6; box-sizing: border-box; }
 .note-counter { display: block; margin-top: var(--space-xs); color: var(--text-muted); font-size: var(--font-xs); text-align: right; }
 .note-actions { display: flex; gap: var(--space-sm); margin-top: var(--space-md); }
 .note-button { display: flex; min-height: var(--touch-min); flex: 1; margin: 0; padding: 0 20rpx; align-items: center; justify-content: center; border: 0; border-radius: var(--radius-xl); font-size: var(--font-sm); font-weight: var(--weight-bold); line-height: 1; }
 .note-button::after { border: 0; }
-.note-cancel { background: #f2edef; color: var(--text-body); }
+.note-cancel { background: var(--nb-page); color: var(--text-body); }
 .note-save { background: var(--brand-gradient); color: var(--text-inverse); }
 .note-button[disabled] { opacity: 0.48; }
+/* 记录照片与作品分享授权是独立能力。 */
+.record-share-hint { display: block; margin: 16rpx 0; color: var(--nb-muted); font-size: 24rpx; line-height: 1.6; }
+
+/* 记录页采用统一的白色内容卡与清晰的主次信息。 */
+.record-header { min-height: 88rpx; padding: 0 8rpx; }
+.record-header-copy { color: var(--nb-ink); font-size: var(--font-md); font-weight: var(--weight-semibold); }
+.filter-card { min-height: 88rpx; gap: 8rpx; }
+.filter-reset { min-height: 72rpx; padding: 0 16rpx; border-radius: 18rpx; background: var(--nb-surface); }
+.timeline { margin-top: 16rpx; }
+.timeline-item { gap: 16rpx; margin-bottom: 16rpx; }
+.moment-card { padding: 24rpx; border-radius: 24rpx; box-shadow: none; }
+.moment-head { align-items: center; padding-bottom: 12rpx; }
+.moment-date-block { width: 68rpx; }
+.moment-title { color: var(--nb-ink); font-size: var(--font-md); font-weight: var(--weight-semibold); }
+.moment-tech,.record-note-text,.photo-manage-hint { font-size: var(--font-xs); }
+.moment-arrow { width: 32rpx; color: var(--nb-muted); }
+.record-note { border-radius: 18rpx; background: var(--nb-page); }
+.moment-action { min-height: 88rpx; border-radius: 22rpx; }
+.empty-card,.portrait-card { margin-top: 16rpx; padding: 32rpx 28rpx; border-radius: 24rpx; }
+.recommend-section { margin-top: 28rpx; }
+.recommend-card { border-radius: 20rpx; }
+
+/* 概览与筛选合并成块；日期进入记录卡，释放横向内容空间。 */
+.record-overview { margin: 0 calc(0rpx - var(--page-padding-h)); padding: 28rpx calc(var(--page-padding-h) + 8rpx) 24rpx; background: var(--nb-surface); }
+.record-header { min-height: 72rpx; padding: 0; }
+.record-heading { flex: 1; min-width: 0; }
+.record-title { display: block; color: var(--nb-ink); font-size: var(--font-lg); font-weight: var(--weight-semibold); line-height: 1.4; }
+.record-header-copy { display: block; margin-top: 4rpx; color: var(--nb-muted); font-size: var(--font-xs); font-weight: var(--weight-normal); }
+.record-count { flex-shrink: 0; padding: 8rpx 14rpx; border-radius: 14rpx; background: var(--nb-surface); }
+.record-count-value { color: var(--nb-ink); font-size: var(--font-sm); font-weight: var(--weight-semibold); }
+.record-overview .filter-card { min-height: 72rpx; margin-top: 16rpx; gap: 10rpx; }
+.record-overview .filter-reset { min-height: 64rpx; padding: 0 12rpx; color: var(--nb-text-link); background: transparent; }
+.timeline-item { display: block; }
+.moment-card { width: 100%; box-sizing: border-box; }
+.moment-head { gap: 16rpx; }
+.moment-date-block { display: flex; width: 76rpx; min-height: 80rpx; padding: 8rpx; flex-direction: column; align-items: center; justify-content: center; gap: 4rpx; border-radius: 16rpx; background: var(--nb-page); box-sizing: border-box; text-align: center; }
+.moment-month { order: 1; margin-top: 0; color: var(--nb-muted); font-size: var(--font-xs); line-height: 1.2; }
+.moment-day { order: 2; font-size: var(--font-lg); line-height: 1; }
+
+/* 操作尺寸与美甲师预约卡统一为 44px，深色按钮图标使用反白处理。 */
+.moment-actions { gap: 12rpx; margin-top: 16rpx; }
+.moment-action { min-height: 44px; height: 44px; padding: 0 12rpx; border-radius: 8px; gap: 6rpx; font-size: 24rpx; }
+.action-icon { width: 14px; height: 14px; }
+.action-primary { background: var(--nb-action); color: var(--nb-inverse); }
+.action-primary .action-icon { filter: brightness(0) invert(1); }
+.action-secondary { background: var(--nb-soft-surface); color: var(--nb-ink); }
+.action-secondary .action-icon { filter: none; }
+.action-tertiary { background: var(--nb-soft-surface); color: var(--nb-secondary); }
+.action-tertiary .action-icon { filter: none; }
+
+@import '../../../styles/booking-actions.wxss';
+.moment-action.booking-action,
+.note-button.booking-action,
+.primary-btn.booking-action { min-height: 44px; height: 44px; border-radius: 8px; font-size: var(--font-sm); box-shadow: none; }

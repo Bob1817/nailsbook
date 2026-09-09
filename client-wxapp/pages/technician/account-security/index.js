@@ -12,6 +12,8 @@ Page({
   onNewInput(e) { this.setData({ newPassword: e.detail.value }); },
   onConfirmInput(e) { this.setData({ confirmPassword: e.detail.value }); },
 
+  requestAccountDeletion() { wx.navigateTo({ url: '/pages/account-deletion/index' }); },
+
   async changePassword() {
     const { oldPassword, newPassword, confirmPassword, saving } = this.data;
     if (saving) return;

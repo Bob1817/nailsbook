@@ -10,8 +10,8 @@ const editorView = read('pages/technician/homepage-settings/index.wxml');
 const editorStyle = read('pages/technician/homepage-settings/index.wxss');
 const publicHome = read('pages/client/artist-home/index.js');
 
-if (!profile.includes("label: '擅长风格'")) throw new Error('technician profile is missing the style management entry');
-if (!profile.includes('homepage-settings/index?section=styles')) throw new Error('style management entry does not deep-link to the editor');
+if (profile.includes("label: '擅长风格'")) throw new Error('style management must not duplicate the homepage entry');
+if (!profile.includes('&preview=1&owner=1')) throw new Error('homepage entry must open the owner preview first');
 if (!editor.includes('styleTags:this.data.specialties.slice(0,5)')) throw new Error('homepage editor does not persist public styleTags');
 if (!editor.includes("最多展示 5 项擅长风格")) throw new Error('style selection limit feedback is missing');
 if (!editorView.includes('id="styles-editor"') || !editorView.includes('selected-styles')) throw new Error('ordered style selection UI is missing');

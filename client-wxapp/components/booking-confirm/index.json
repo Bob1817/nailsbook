@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "nb-switch": "/components/nb-switch/index"
+  }
+}

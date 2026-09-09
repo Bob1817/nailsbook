@@ -36,7 +36,7 @@
         <view class="load-error-mark">!</view>
         <text class="empty-title">消息加载失败</text>
         <text class="empty-sub">请检查网络后重试</text>
-        <button class="retry-btn" bindtap="loadInbox">重新加载</button>
+        <button class="retry-btn booking-action" bindtap="loadInbox">重新加载</button>
       </view>
 
       <block wx:else>
@@ -56,9 +56,10 @@
                 <image wx:elif="{{item.type === 'system'}}" class="msg-semantic-icon" src="/static/icons/notification-system.svg" mode="aspectFit" aria-label="系统通知" />
                 <image wx:elif="{{item.type === 'reminder'}}" class="msg-semantic-icon" src="/static/icons/notification-service.svg" mode="aspectFit" aria-label="系统提醒" />
                 <image wx:elif="{{item.type === 'booking'}}" class="msg-semantic-icon" src="/static/icons/notification-service.svg" mode="aspectFit" aria-label="预约提醒" />
+                <image wx:elif="{{item.type === 'chat'}}" src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" />
                 <text wx:else class="msg-avatar-char">{{item._avatarChar}}</text>
               </view>
-              <view wx:if="{{item.type === 'chat'}}" class="msg-online-dot"></view>
+              <view wx:if="{{item.type === 'chat'}}" class="msg-online-dot {{item.isOnline === true ? 'is-online' : 'is-offline'}}" aria-label="{{item.isOnline === true ? '在线' : '在线状态未知'}}"></view>
             </view>
             <view class="msg-body">
               <view class="msg-top-row">
@@ -113,13 +114,13 @@
     </view>
 
     <view class="modal-actions">
-      <view class="modal-btn modal-btn-close" bindtap="closeNotification">
+      <view class="modal-btn modal-btn-close booking-action" bindtap="closeNotification">
         <text class="modal-btn-close-text">关闭</text>
       </view>
-      <view wx:if="{{selectedNotification.relatedType === 'order'}}" class="modal-btn modal-btn-primary" bindtap="viewRelatedOrder">
+      <view wx:if="{{selectedNotification.relatedType === 'order'}}" class="modal-btn modal-btn-primary semantic-primary booking-action" bindtap="viewRelatedOrder">
         <text class="modal-btn-primary-text">查看预约详情</text>
       </view>
-      <view wx:elif="{{selectedNotification.relatedType === 'comment' || selectedNotification.relatedType === 'work_comment'}}" class="modal-btn modal-btn-primary" bindtap="viewRelatedWork">
+      <view wx:elif="{{selectedNotification.relatedType === 'comment' || selectedNotification.relatedType === 'work_comment'}}" class="modal-btn modal-btn-primary semantic-primary booking-action" bindtap="viewRelatedWork">
         <text class="modal-btn-primary-text">查看作品</text>
       </view>
     </view>

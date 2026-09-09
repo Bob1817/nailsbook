@@ -28,10 +28,11 @@ export class ClientHomeService {
         isVisible: true,
         isFeatured: true,
         visibilityScope: 'public',
+        publicationStatus: 'approved', archivedAt: null, technician: { status: 'active' },
         ...(technicianId ? { techId: technicianId } : {}),
       },
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
-      take: 6,
+      take: 5,
       include: {
         likes: true,
         comments: true,
@@ -43,33 +44,36 @@ export class ClientHomeService {
   }
 
   async getHome(clientUserId: number) {
-    const binding = await this.getDefaultBinding(clientUserId);
-    const [works, latestBooking] = await Promise.all([
-      this.prisma.nailWork.findMany({
-        where: {
-          techId: binding.techId,
-          isVisible: true,
-          isFeatured: true, // 只显示精品作品
-          ...this.visibilityWhere(clientUserId),
-        },
-        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
-        take: 6,
-        include: {
-          likes: true,
-          comments: true,
-          technician: {
-            select: { name: true, id: true, avatarUrl: true },
-          },
-        },
-      }),
-      this.prisma.order.findFirst({
-        where: {
-          clientUserId,
-          technicianId: binding.techId,
-        },
-        orderBy: [{ startTime: 'desc' }, { createdAt: 'desc' }],
-      }),
-    ]);
+    const bindings = await this.prisma.clientTechBinding.findMany({
+      where: { clientId: clientUserId, status: 'active', technician: { status: 'active' } },
+      orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }],
+      include: { technician: true },
+    });
+    const binding = bindings[0];
+    if (!binding) return { technician: null, works: [], latestOrder: null, technicianCount: 0 };
+    // Legacy over-limit accounts keep their relationships. Only five artists
+    // with eligible recommendations participate in this compact carousel.
+    const candidates = await this.prisma.nailWork.findMany({
+      where: {
+        techId: { in: bindings.map((item) => item.techId) },
+        heroSlot: { not: null }, isVisible: true, visibilityScope: 'public',
+        publicationStatus: 'approved', archivedAt: null, coverUrl: { not: null },
+      },
+      orderBy: [{ heroSlot: 'asc' }, { id: 'desc' }],
+      include: { likes: true, comments: true, technician: { select: { name: true, id: true, avatarUrl: true } } },
+    });
+    const groups = bindings.map((item) => candidates.filter((work) => work.techId === item.techId && work.coverUrl?.trim()).slice(0, 3))
+      .filter((items) => items.length).slice(0, 5);
+    const works: typeof candidates = [];
+    for (let slot = 0; slot < 3 && works.length < 5; slot++) {
+      for (const items of groups) {
+        if (items[slot] && works.length < 5) works.push(items[slot]);
+      }
+    }
+    const latestBooking = await this.prisma.order.findFirst({
+      where: { clientUserId, technicianId: binding.techId },
+      orderBy: [{ startTime: 'desc' }, { createdAt: 'desc' }],
+    });
 
     const UPLOAD_BASE_URL =
       process.env.UPLOAD_BASE_URL || 'http://localhost:3000';
@@ -80,6 +84,7 @@ export class ClientHomeService {
     };
 
     return {
+      technicianCount: bindings.length,
       technician: {
         id: binding.technician.id,
         name: binding.technician.name,

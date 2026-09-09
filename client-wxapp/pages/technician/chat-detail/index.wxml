@@ -17,11 +17,15 @@
     bindscroll="onScroll"
   >
     <view wx:if="{{groupedMessages.length === 0}}" class="empty-chat">
-      <view class="empty-icon-wrap">
-        <view class="empty-icon-dot"></view>
+      <view class="empty-chat-card">
+        <view class="empty-avatar">
+          <image wx:if="{{clientAvatar && !clientAvatarFailed}}" src="{{clientAvatar}}" mode="aspectFill" class="empty-avatar-image" binderror="onClientAvatarError" />
+          <image wx:else src="/static/icons/client.svg" mode="aspectFit" class="empty-avatar-image" />
+        </view>
+        <text class="empty-title">开始和{{clientName || '客户'}}沟通</text>
+        <text class="empty-desc">可以发送款式参考、确认报价和到店安排</text>
+        <view class="empty-actions"><view class="empty-action empty-action-primary" bindtap="sendImage" role="button"><image class="empty-action-icon" src="/static/icons/image.svg" mode="aspectFit" />发送图片</view></view>
       </view>
-      <text class="empty-title">开始和{{clientName || '客户'}}沟通</text>
-      <text class="empty-desc">把报价、到店安排、款式参考发给客户</text>
     </view>
 
     <block wx:for="{{groupedMessages}}" wx:key="date" wx:for-item="group">
@@ -35,7 +39,7 @@
         <!-- 对方头像 -->
         <view wx:if="{{!item.isMe}}" class="msg-avatar">
           <image wx:if="{{clientAvatar && !clientAvatarFailed}}" class="avatar-img" src="{{clientAvatar}}" mode="aspectFill" lazy-load binderror="onClientAvatarError" aria-label="{{clientName || '客户'}}的头像" />
-          <view wx:else class="avatar-placeholder"><text>{{clientName[0] || '客'}}</text></view>
+          <view wx:else class="avatar-placeholder"><image src="/static/icons/client.svg" mode="aspectFit" class="nb-default-avatar" aria-label="客户默认头像" /></view>
         </view>
 
         <view class="msg-content-wrap">
@@ -72,6 +76,7 @@
 
   <!-- 底部输入栏：键盘弹出时 fixed 到键盘上方 -->
   <view class="input-bar {{keyboardHeight > 0 ? 'input-bar-keyboard' : ''}}" style="bottom: {{keyboardHeight > 0 ? keyboardHeight : 0}}px;">
+    <view class="attachment-btn" bindtap="sendImage" role="button" aria-label="发送图片"><image class="toolbar-icon" src="/static/icons/image.svg" mode="aspectFit" /></view>
     <view class="input-field-wrap">
       <input
         class="input-field"

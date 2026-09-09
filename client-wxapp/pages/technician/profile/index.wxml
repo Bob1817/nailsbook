@@ -6,145 +6,37 @@
       <view class="avatar-wrap" bindtap="editProfile">
         <image wx:if="{{userInfo.avatarUrl}}" src="{{userInfo.avatarUrl}}" mode="aspectFill" class="avatar" aria-label="{{userInfo.name || '美甲师'}}的头像" />
         <view wx:else class="avatar-placeholder">
-          <text class="avatar-char">{{userInfo.name ? userInfo.name[0] : '美'}}</text>
+          <image src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" />
         </view>
       </view>
       <view class="user-info" bindtap="editProfile">
-        <text class="name">{{userInfo.name || '美甲师'}}</text>
+        <view class="name-row">
+          <text class="name">{{userInfo.name || '美甲师'}}</text>
+          <text class="role-tag">美甲师</text>
+        </view>
         <text class="phone">{{userInfo.phoneDisplay}}</text>
       </view>
-      <button class="profile-share-btn" open-type="share" aria-label="分享名片"><view class="profile-share-icon"></view><text>分享名片</text></button>
+      <button class="profile-share-btn booking-action" hover-class="profile-share-pressed" open-type="share" aria-label="分享名片"><image class="profile-share-icon" src="/static/icons/share.svg" mode="aspectFit" aria-hidden="true" /><text>分享名片</text></button>
     </view>
 
-    <!-- 接单状态 -->
-    <view class="status-bar" bindtap="toggleAccepting" role="button" aria-label="{{userInfo.status === 'active' ? '暂停接单' : '开启接单'}}">
-      <view class="status-left">
-        <view class="status-dot {{isAccepting ? 'dot-on' : 'dot-off'}}"></view>
-        <text class="status-label">{{isAccepting ? '接单中' : '已暂停接单'}}</text>
-        <text class="status-action-hint">点击切换</text>
-      </view>
-      <view class="status-schedule-btn">
-        <image class="status-schedule-icon-svg" src="/static/icons/clock-light.svg" mode="aspectFit" />
-      </view>
-    </view>
 
-    <!-- 数据概览（悬浮卡 · 双行） -->
-    <view class="stats-card">
-      <!-- 第一行：预约维度 -->
-      <view class="stats-row">
-        <view class="stat-item" bindtap="goStatsOrders">
-          <text class="stat-value">{{stats.todayOrders}}</text>
-          <text class="stat-label">今日预约</text>
-        </view>
-        <view class="stat-divider"></view>
-        <view class="stat-item" bindtap="goStatsOrders">
-          <text class="stat-value">{{stats.monthOrders}}</text>
-          <text class="stat-label">本月预约</text>
-        </view>
-        <view class="stat-divider"></view>
-        <view class="stat-item" bindtap="goStatsPending">
-          <text class="stat-value {{stats.pendingTotal > 0 ? 'stat-value-alert' : ''}}">{{stats.pendingTotal}}</text>
-          <text class="stat-label">待处理</text>
-        </view>
-      </view>
-
-      <view class="stats-h-divider"></view>
-
-      <view class="stats-row business-row">
-        <view class="stat-item">
-          <text class="stat-value business-value">{{stats.monthlyRevenue}}</text>
-          <text class="stat-label">本月已完成收入</text>
-        </view>
-        <view class="stat-divider"></view>
-        <view class="stat-item">
-          <text class="stat-value business-value">{{stats.rating}}</text>
-          <text class="stat-label">客户评分</text>
-        </view>
-      </view>
-
-      <view class="stats-h-divider"></view>
-
-      <view class="stats-row business-row">
-        <view class="stat-item">
-          <text class="stat-value business-value">{{stats.averageTicket || '待积累'}}</text>
-          <text class="stat-label">平均客单价</text>
-        </view>
-        <view class="stat-divider"></view>
-        <view class="stat-item">
-          <text class="stat-value business-value">{{stats.repeatRate || '待积累'}}</text>
-          <text class="stat-label">客户复购率</text>
-        </view>
-      </view>
-
-      <view class="stats-h-divider"></view>
-
-      <!-- 第二行：客户与作品维度 -->
-      <view class="stats-row">
-        <view class="stat-item" bindtap="goStatsCustomers">
-          <text class="stat-value">{{stats.customers}}</text>
-          <text class="stat-label">总客户</text>
-        </view>
-        <view class="stat-divider"></view>
-        <view class="stat-item" bindtap="goStatsCustomers">
-          <text class="stat-value">{{stats.newCustomers}}</text>
-          <text class="stat-label">本月新客</text>
-        </view>
-        <view class="stat-divider"></view>
-        <view class="stat-item" bindtap="goStatsWorks">
-          <text class="stat-value">{{stats.works}}</text>
-          <text class="stat-label">总作品</text>
-        </view>
-      </view>
-    </view>
   </view>
 
-  <!-- ============ 我的预约 ============ -->
-  <view class="card card-gap card-order-entry" bindtap="goTradeOrders" role="button" aria-label="查看我的订单">
-    <view class="card-head">
-      <view>
-        <text class="card-title">我的订单</text>
-        <text class="invite-sub">查看报价、排期与服务状态</text>
+  <view class="card availability-card">
+    <text class="card-title availability-title">预约设置</text>
+    <view class="availability-row availability-module">
+      <view class="status-copy">
+        <text class="status-label">接受新预约</text>
+        <text class="profile-helper accepting-helper">{{savingAccepting ? '正在保存…' : acceptingHint}}</text>
       </view>
-      <view class="card-more">全部订单 ›</view>
+      <nb-switch checked="{{acceptingEnabled}}" disabled="{{savingAccepting}}" bindchange="onAcceptingChange" label="接受新预约，{{acceptingEnabled ? '已开启，点击暂停' : '已关闭，点击开启'}}"/>
     </view>
-  </view>
-
-  <view class="card card-gap">
-    <view class="card-head">
-      <text class="card-title">我的预约</text>
-      <view class="card-more" bindtap="goAllOrders">全部预约 ›</view>
-    </view>
-    <view class="order-grid">
-      <view
-        wx:for="{{orderShortcuts}}"
-        wx:key="status"
-        class="order-cell"
-        bindtap="goOrderStatus"
-        data-status="{{item.status}}"
-      >
-        <view class="order-cell-badge order-bg-{{item.status}} {{item.count > 0 ? 'has-count' : ''}}">
-          <image class="order-cell-icon" src="{{item.icon}}" mode="aspectFit" />
-          <view wx:if="{{item.count > 0}}" class="count-badge">{{item.count > 99 ? '99+' : item.count}}</view>
-        </view>
-        <text class="order-cell-label">{{item.label}}</text>
+    <view class="profile-schedule-row availability-module" bindtap="openScheduleModal" role="button" aria-label="设置工作时间" hover-class="profile-pressed">
+      <view class="status-copy">
+        <text class="status-label">工作时间</text>
+        <text class="profile-helper">{{scheduleSummary}}</text>
       </view>
-    </view>
-  </view>
-
-  <!-- ============ 邀请码 ============ -->
-  <view class="card invite-card">
-    <view class="invite-head">
-      <view>
-        <text class="card-title">邀请码分享</text>
-        <text class="invite-sub">发给客户，绑定到你的账号</text>
-      </view>
-    </view>
-    <view class="invite-code-row">
-      <view class="invite-code-block">
-        <text class="invite-code-cap">我的邀请码</text>
-        <text class="invite-code">{{userInfo.invitationCode || '暂无'}}</text>
-      </view>
-      <view wx:if="{{userInfo.invitationCode}}" class="invite-copy" bindtap="copyInvite">复制</view>
+      <text class="semantic-link profile-link">修改 ›</text>
     </view>
   </view>
 
@@ -176,14 +68,58 @@
     </view>
   </view>
 
+  <!-- ============ 我的预约 ============ -->
+  <view class="card card-gap">
+    <view class="card-head">
+      <text class="card-title">预约管理</text>
+      <view class="card-more semantic-link" bindtap="goAllOrders">全部预约 ›</view>
+    </view>
+    <view class="order-grid">
+      <view
+        wx:for="{{orderShortcuts}}"
+        wx:key="status"
+        class="order-cell" role="button" hover-class="profile-tile-pressed"
+        bindtap="goOrderStatus"
+        data-status="{{item.status}}"
+      >
+        <view class="order-cell-badge order-bg-{{item.status}} {{item.count > 0 ? 'has-count' : ''}}">
+          <image class="order-cell-icon" src="{{item.icon}}" mode="aspectFit" />
+        </view>
+        <view wx:if="{{item.count > 0}}" class="count-badge">{{item.count > 99 ? '99+' : item.count}}</view>
+        <text class="order-cell-label">{{item.label}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="card-head">
+      <text class="card-title">经营概览</text>
+      <view class="card-more semantic-link" bindtap="openStatsDetail" role="button">查看详情 ›</view>
+    </view>
+    <view class="profile-summary">
+      <view class="stat-item" bindtap="openStatsDetail" role="button">
+        <text class="stat-value semantic-money">{{stats.monthlyRevenue}}</text>
+        <text class="stat-label">本月已完成收入</text>
+      </view>
+      <view class="stat-item" bindtap="goStatsOrders" role="button">
+        <text class="stat-value">{{stats.monthOrders}}</text>
+        <text class="stat-label">本月预约</text>
+      </view>
+      <view class="stat-item" bindtap="goStatsCustomers" role="button">
+        <text class="stat-value">{{stats.customers}}</text>
+        <text class="stat-label">总客户</text>
+      </view>
+    </view>
+  </view>
+
   <!-- ============ 工具 ============ -->
   <view class="card">
-    <text class="card-title">工具</text>
+    <text class="card-title">经营工具</text>
     <view class="tool-grid">
       <view
         wx:for="{{tools}}"
         wx:key="key"
-        class="tool-cell"
+        class="tool-cell" role="button" hover-class="profile-tile-pressed"
         bindtap="onTool"
         data-key="{{item.key}}"
       >
@@ -197,31 +133,147 @@
     </view>
   </view>
 
+  <view class="card profile-invite-entry" bindtap="openInviteDetail" role="button" hover-class="profile-pressed">
+    <view><text class="status-label">邀请客户</text><text class="profile-helper">通过邀请码建立客户绑定</text></view>
+    <text class="menu-arrow">›</text>
+  </view>
+
   <!-- ============ 设置 ============ -->
   <view class="card">
-    <text class="card-title">设置</text>
+    <text class="card-title">账号与设置</text>
     <view class="menu-list">
       <view class="menu-item" bindtap="editProfile">
-        <view class="menu-icon icon-settings"></view><text class="menu-label">个人设置</text><text class="menu-arrow">›</text>
+        <image class="menu-icon" src="/static/icons/tab-profile.svg" mode="aspectFit" aria-hidden="true" /><text class="menu-label">个人资料</text><text class="menu-arrow">›</text>
       </view>
       <view class="menu-item" bindtap="navigateToAccountSecurity">
-        <view class="menu-icon icon-lock"></view><text class="menu-label">账号与安全</text><text class="menu-arrow">›</text>
+        <image class="menu-icon" src="/static/icons/shield.svg" mode="aspectFit" aria-hidden="true" /><text class="menu-label">账号与安全</text><text class="menu-arrow">›</text>
       </view>
       <view class="menu-item" bindtap="navigateToHelp">
-        <view class="menu-icon icon-help"></view><text class="menu-label">帮助与反馈</text><text class="menu-arrow">›</text>
+        <image class="menu-icon" src="/static/icons/tab-chat.svg" mode="aspectFit" aria-hidden="true" /><text class="menu-label">帮助与反馈</text><text class="menu-arrow">›</text>
       </view>
       <view class="menu-item" bindtap="navigateToAbout">
-        <view class="menu-icon icon-about"></view><text class="menu-label">关于我们</text><text class="menu-arrow">›</text>
+        <image class="menu-icon" src="/static/icons/info.svg" mode="aspectFit" aria-hidden="true" /><text class="menu-label">关于我们</text><text class="menu-arrow">›</text>
       </view>
       <view class="menu-item" bindtap="switchRole">
-        <view class="menu-icon icon-switch"></view><text class="menu-label">切换身份</text><text class="menu-arrow">›</text>
+        <image class="menu-icon" src="/static/icons/switch.svg" mode="aspectFit" aria-hidden="true" /><text class="menu-label">切换角色</text><text class="menu-value">当前：美甲师</text><text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-item" bindtap="switchAccount">
+        <image class="menu-icon" src="/static/icons/tab-profile.svg" mode="aspectFit" aria-hidden="true" /><text class="menu-label">切换账号</text><text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-item account-logout" bindtap="logout">
+        <image class="menu-icon" src="/static/icons/lock.svg" mode="aspectFit" aria-hidden="true" /><text class="menu-label">退出登录</text><text class="menu-arrow">›</text>
       </view>
     </view>
   </view>
 
-  <!-- 退出 -->
-  <view class="logout-btn" bindtap="logout">退出登录</view>
   <text class="version">NailBook v1.0.0</text>
+</view>
+
+<!-- 低频信息按需展开，保留全部原有指标及邀请码操作。 -->
+<view wx:if="{{showStatsDetail || showInviteDetail}}" class="ws-overlay" bindtap="closeProfileDetail">
+  <view class="ws-sheet profile-detail-sheet" catchtap="preventBubble">
+    <view class="ws-header">
+      <text class="ws-title">{{showStatsDetail ? '经营详情' : '邀请客户'}}</text>
+      <view class="ws-close semantic-link" bindtap="closeProfileDetail" role="button" aria-label="关闭详情">关闭</view>
+    </view>
+    <scroll-view scroll-y class="profile-detail-body">
+      <block wx:if="{{showStatsDetail}}">
+    <view class="profile-detail-stats">
+      <!-- 第一行：预约维度 -->
+      <view class="stats-row">
+        <view class="stat-item" bindtap="goStatsOrders">
+          <text class="stat-value">{{stats.todayOrders}}</text>
+          <text class="stat-label">今日预约</text>
+        </view>
+
+        <view class="stat-item" bindtap="goStatsOrders">
+          <text class="stat-value">{{stats.monthOrders}}</text>
+          <text class="stat-label">本月预约</text>
+        </view>
+
+        <view class="stat-item" bindtap="goStatsPending">
+          <text class="stat-value {{stats.pendingTotal > 0 ? 'stat-value-alert' : ''}}">{{stats.pendingTotal}}</text>
+          <text class="stat-label">待处理</text>
+        </view>
+      </view>
+
+
+
+      <view class="stats-row business-row">
+        <view class="stat-item">
+          <text class="semantic-money stat-value business-value">{{stats.monthlyRevenue}}</text>
+          <text class="stat-label">本月已完成收入</text>
+        </view>
+
+        <view class="stat-item">
+          <text class="stat-value business-value">{{stats.rating}}</text>
+          <text class="stat-label">客户评分</text>
+        </view>
+      </view>
+
+
+
+      <view class="stats-row business-row">
+        <view class="stat-item">
+          <text class="stat-value business-value {{stats.averageTicket && stats.averageTicket !== '待积累' ? 'semantic-money' : 'profile-muted'}}">{{stats.averageTicket || '待积累'}}</text>
+          <text class="stat-label">平均客单价</text>
+        </view>
+
+        <view class="stat-item">
+          <text class="stat-value business-value">{{stats.repeatRate || '待积累'}}</text>
+          <text class="stat-label">客户复购率</text>
+        </view>
+      </view>
+
+
+
+      <!-- 第二行：客户与作品维度 -->
+      <view class="stats-row">
+        <view class="stat-item" bindtap="goStatsCustomers">
+          <text class="stat-value">{{stats.customers}}</text>
+          <text class="stat-label">总客户</text>
+        </view>
+
+        <view class="stat-item" bindtap="goStatsCustomers">
+          <text class="stat-value">{{stats.newCustomers}}</text>
+          <text class="stat-label">本月新客</text>
+        </view>
+
+        <view class="stat-item" bindtap="goStatsWorks">
+          <text class="stat-value">{{stats.works}}</text>
+          <text class="stat-label">总作品</text>
+        </view>
+      </view>
+    </view>
+      </block>
+      <block wx:else>
+  <!-- ============ 邀请码 ============ -->
+  <view class="profile-invite-content">
+    <view class="invite-head">
+      <view>
+        <text class="card-title">邀请客户</text>
+        <text class="invite-sub">客户打开邀请后，微信授权注册即可自动绑定你</text>
+      </view>
+    </view>
+    <view wx:if="{{userInfo.invitationCode}}" class="invite-actions">
+      <button class="invite-action invite-primary booking-action" open-type="share" data-invite="client" hover-class="profile-pressed">发送给微信好友</button>
+      <button class="invite-action invite-secondary booking-action" bindtap="copyInviteLink" loading="{{inviteLinkLoading}}" disabled="{{inviteLinkLoading}}" hover-class="profile-pressed">复制专属邀请链接</button>
+      <text wx:if="{{inviteLink}}" class="profile-helper">链接有效至 {{inviteLinkExpires}}，过期后可重新生成</text>
+      <text class="profile-helper">新客户注册后自动绑定；已有客户的默认美甲师不会被更换。</text>
+    </view>
+    <view class="invite-code-row">
+      <view class="invite-code-block">
+        <text class="invite-code-cap">我的邀请码</text>
+        <text class="invite-code">{{userInfo.invitationCode || '暂无'}}</text>
+      </view>
+      <view wx:if="{{userInfo.invitationCode}}" class="invite-copy semantic-link" bindtap="copyInvite">复制</view>
+    </view>
+  </view>
+
+
+      </block>
+    </scroll-view>
+  </view>
 </view>
 
 <!-- ========== 工作时间设置弹窗 ========== -->
@@ -261,15 +313,7 @@
               </view>
               <text class="ws-scheme-summary">{{item._summary}}</text>
             </view>
-            <view
-              class="ws-switch"
-              catchtap="toggleSchemeActive"
-              data-id="{{item.id}}"
-            >
-              <view class="ws-switch-track {{item.id === schedule.activeSchemeId ? 'ws-switch-on' : ''}}">
-                <view class="ws-switch-knob"></view>
-              </view>
-            </view>
+            <nb-switch checked="{{item.id === schedule.activeSchemeId}}" catchchange="toggleSchemeActive" data-id="{{item.id}}" label="{{item.label}}，{{item.id === schedule.activeSchemeId ? '当前启用' : '点击启用'}}"/>
           </view>
         </view>
       </view>
@@ -371,8 +415,8 @@
 
     <!-- Footer -->
     <view class="se-footer">
-      <view wx:if="{{editingScheme.days.length > 0}}" class="se-delete-btn" bindtap="deleteScheme">
-        <text class="se-delete-text">删除</text>
+      <view wx:if="{{editingScheme.days.length > 0}}" class="se-delete-btn semantic-danger" bindtap="deleteScheme">
+        <text class="se-delete-text semantic-danger">删除</text>
       </view>
       <view class="se-footer-right">
         <view class="se-cancel-btn" bindtap="closeSchemeEditor">
@@ -388,6 +432,7 @@
 
 <!-- 休息日日历 -->
 <rest-day-calendar
+  wx:if="{{showScheduleModal}}"
   show="{{showRestDayCalendar}}"
   value="{{schedule.restDays}}"
   bindconfirm="onRestDayConfirm"
@@ -425,7 +470,7 @@
               </view>
               <view class="st-shop-actions">
                 <view class="st-shop-edit" bindtap="openShopForm" data-shop="{{item}}">编辑</view>
-                <view class="st-shop-delete" bindtap="deleteShop" data-name="{{item.name}}" data-address="{{item.detailAddress || item.address}}">删除</view>
+                <view class="st-shop-delete semantic-danger" bindtap="deleteShop" data-name="{{item.name}}" data-address="{{item.detailAddress || item.address}}">删除</view>
               </view>
             </view>
           </view>

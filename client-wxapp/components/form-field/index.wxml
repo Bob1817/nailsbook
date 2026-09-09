@@ -1,0 +1,27 @@
+<view class="form-field">
+  <text wx:if="{{label}}" class="form-field-label">{{label}}</text>
+  <view class="form-field-control {{focused ? 'is-focused' : ''}} {{error ? 'has-error' : ''}} {{disabled ? 'is-disabled' : ''}}">
+    <image wx:if="{{icon}}" class="form-field-icon" src="{{icon}}" mode="aspectFit" aria-hidden="true" />
+    <input
+      class="form-field-input"
+      value="{{value}}"
+      type="{{type}}"
+      password="{{password}}"
+      maxlength="{{maxlength}}"
+      placeholder="{{placeholder}}"
+      placeholder-class="form-field-placeholder"
+      disabled="{{disabled}}"
+      confirm-type="done"
+      cursor-spacing="24"
+      bindinput="onInput"
+      bindfocus="onFocus"
+      bindblur="onBlur"
+      bindconfirm="onConfirm"
+    />
+    <view wx:if="{{actionText}}" class="form-field-action {{actionDisabled ? 'is-disabled' : ''}}" bindtap="onAction">
+      <text>{{actionText}}</text>
+    </view>
+    <slot name="suffix"></slot>
+  </view>
+  <text wx:if="{{error || hint}}" class="form-field-message {{error ? 'is-error' : ''}}">{{error || hint}}</text>
+</view>

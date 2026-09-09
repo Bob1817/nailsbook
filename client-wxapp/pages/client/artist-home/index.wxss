@@ -2,20 +2,20 @@
 
 /* ===== 设计稿暖色调系统 ===== */
 page {
-  --warm-primary: #C4937A;
-  --warm-primary-dark: #A87B63;
-  --warm-accent: #D4A29C;
-  --warm-accent-light: #F0DDD6;
-  --warm-cream: #FDF8F5;
-  --warm-surface: #FFFFFF;
-  --warm-text-primary: #3D2C23;
-  --warm-text-secondary: #8C7B72;
-  --warm-text-muted: #B5A69E;
-  --warm-divider: #F0E6E0;
-  --warm-gold: #C9A96E;
-  --warm-gold-light: #F5ECD7;
-  --warm-green: #6DBE7B;
-  --warm-star: #E8B945;
+  --warm-primary: var(--nb-action);
+  --warm-primary-dark: var(--nb-action);
+  --warm-accent: var(--nb-action);
+  --warm-accent-light: var(--nb-line);
+  --warm-cream: var(--nb-page);
+  --warm-surface: var(--nb-surface);
+  --warm-text-primary: var(--nb-ink);
+  --warm-text-secondary: var(--nb-muted);
+  --warm-text-muted: var(--nb-muted);
+  --warm-divider: var(--nb-line);
+  --warm-gold: var(--nb-action);
+  --warm-gold-light: var(--nb-line);
+  --warm-green: var(--nb-action);
+  --warm-star: var(--nb-action);
   
   background: var(--warm-cream);
   color: var(--warm-text-primary);
@@ -53,13 +53,19 @@ page {
 @keyframes spin { to { transform: rotate(360deg); } }
 .state-title { font-size: 32rpx; font-weight: 600; color: var(--warm-text-primary); }
 .retry-btn {
-  padding: 16rpx 48rpx;
-  border: 2rpx solid var(--warm-primary);
-  border-radius: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;  height: 44px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1;
+  box-sizing: border-box;
+  border: 0;
   color: var(--warm-primary);
-  font-size: 28rpx;
   font-weight: 500;
-}
+ background: var(--nb-soft-surface);}
 
 /* ===== Banner 区域 ===== */
 .banner-section {
@@ -80,12 +86,12 @@ page {
 .banner-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(196, 147, 122, 0.25);
+  background: rgba(0, 0, 0, 0.25);
 }
 .banner-gradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(253,248,245,0.1) 0%, rgba(253,248,245,0.05) 40%, rgba(253,248,245,0.6) 100%);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.05) 40%, rgba(0, 0, 0, 0.6) 100%);
 }
 .banner-content {
   position: relative;
@@ -112,14 +118,14 @@ page {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  border: 6rpx solid rgba(255,255,255,0.9);
+  border: 0;
   box-shadow: 0 8rpx 32rpx rgba(0,0,0,0.15);
 }
 .avatar-fallback {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  border: 6rpx solid rgba(255,255,255,0.9);
+  border: 0;
   background: var(--warm-accent-light);
   display: flex;
   align-items: center;
@@ -134,9 +140,9 @@ page {
   right: 8rpx;
   width: 28rpx;
   height: 28rpx;
-  background: var(--warm-green);
+  background: var(--nb-success);
   border-radius: 50%;
-  border: 5rpx solid #fff;
+  border: 5rpx solid var(--nb-surface);
 }
 .artist-detail {
   flex: 1;
@@ -152,7 +158,7 @@ page {
 .artist-name {
   font-size: 40rpx;
   font-weight: 700;
-  color: #fff;
+  color: var(--nb-surface);
   text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2);
 }
 .badge-gold {
@@ -160,8 +166,8 @@ page {
   align-items: center;
   gap: 6rpx;
   padding: 6rpx 16rpx;
-  background: linear-gradient(135deg, #F5ECD7 0%, #E8D5B0 100%);
-  color: #9A7D4E;
+  background: var(--nb-action);
+  color: var(--nb-inverse);
   font-size: 20rpx;
   font-weight: 600;
   border-radius: 24rpx;
@@ -179,21 +185,28 @@ page {
 .meta-icon { width: 28rpx; height: 28rpx; filter: drop-shadow(0 1rpx 2rpx rgba(0,0,0,0.25)); }
 .meta-divider { opacity: 0.6; margin: 0 4rpx; }
 .btn-book-now {
+  height: 44px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1;
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10rpx;
-  padding: 16rpx 32rpx;
-  background: linear-gradient(135deg, #C4937A 0%, #D4A29C 100%);
-  color: #fff;
-  font-size: 26rpx;
+  background: var(--nb-action);
+  color: var(--nb-surface);
   font-weight: 600;
-  border-radius: 48rpx;
   border: none;
-  min-width: 220rpx;
-  box-shadow: 0 4rpx 16rpx rgba(196, 147, 122, 0.35);
+  width: 100%;
+  max-width: 184px;
+  min-width: 0;
+  margin: 0;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.35);
 }
-.btn-icon-svg { width: 30rpx; height: 30rpx; flex-shrink: 0; }
+.btn-icon-svg { width: 18px; height: 18px; flex-shrink: 0; filter: brightness(0) invert(1); }
 .btn-text { line-height: 1; }
 
 /* ===== 统计概览 ===== */
@@ -204,10 +217,10 @@ page {
   z-index: 20;
 }
 .stats-card {
-  background: #fff;
+  background: var(--nb-surface);
   border-radius: 32rpx;
   padding: 32rpx 16rpx;
-  box-shadow: 0 4rpx 24rpx rgba(61, 44, 35, 0.08);
+  box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
 }
@@ -256,15 +269,15 @@ page {
 }
 .section-more {
   font-size: 24rpx;
-  color: var(--warm-text-muted);
+  color: var(--nb-text-link);
 }
 
 /* ===== 关于我 ===== */
 .about-card {
-  background: #fff;
+  background: var(--nb-surface);
   border-radius: 32rpx;
   padding: 40rpx;
-  box-shadow: 0 4rpx 24rpx rgba(61, 44, 35, 0.06);
+  box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.06);
 }
 .bio-text {
   font-size: 26rpx;
@@ -274,7 +287,7 @@ page {
 .timeline-section {
   margin-top: 40rpx;
   padding-top: 32rpx;
-  border-top: 1rpx solid var(--warm-divider);
+  border-top: 0;
 }
 .timeline-label {
   font-size: 22rpx;
@@ -382,7 +395,7 @@ page {
 .style-card-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 30%, rgba(61, 44, 35, 0.55) 100%);
+  background: linear-gradient(180deg, transparent 30%, rgba(0, 0, 0, 0.55) 100%);
 }
 .style-card-text {
   position: absolute;
@@ -390,7 +403,7 @@ page {
   left: 0;
   right: 0;
   padding: 20rpx;
-  color: #fff;
+  color: var(--nb-surface);
   font-size: 24rpx;
   font-weight: 600;
 }
@@ -402,10 +415,10 @@ page {
   gap: 20rpx;
 }
 .service-card {
-  background: #fff;
+  background: var(--nb-surface);
   border-radius: 32rpx;
   padding: 32rpx;
-  box-shadow: 0 4rpx 24rpx rgba(61, 44, 35, 0.06);
+  box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.06);
   display: flex;
   align-items: flex-start;
   gap: 28rpx;
@@ -448,7 +461,7 @@ page {
 .service-price {
   font-size: 30rpx;
   font-weight: 700;
-  color: var(--warm-primary);
+  color: var(--nb-money);
   letter-spacing: 0.2rpx;
 }
 .service-desc {
@@ -470,15 +483,15 @@ page {
 
 /* ===== 店铺信息 ===== */
 .shop-card {
-  background: #fff;
+  background: var(--nb-surface);
   border-radius: 32rpx;
   overflow: hidden;
-  box-shadow: 0 4rpx 24rpx rgba(61, 44, 35, 0.06);
+  box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.06);
 }
 .map-placeholder {
   height: 256rpx;
   position: relative;
-  background: linear-gradient(135deg, #F5E6DC 0%, #E8D5C4 50%, #F0DDD6 100%);
+  background: var(--nb-page);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -497,7 +510,7 @@ page {
   left: 50%;
   transform: translate(-50%, -100%);
 }
-.map-pin-icon { width: 64rpx; height: 64rpx; filter: drop-shadow(0 4rpx 8rpx rgba(196, 147, 122, 0.35)); }
+.map-pin-icon { width: 64rpx; height: 64rpx; filter: drop-shadow(0 4rpx 8rpx rgba(0, 0, 0, 0.35)); }
 .shop-info { padding: 28rpx 32rpx 24rpx; }
 .shop-name {
   font-size: 30rpx;
@@ -543,11 +556,11 @@ page {
 .guidance-entry-text {
   font-size: var(--font-xs);
   font-weight: var(--weight-medium);
-  color: var(--brand-primary);
+  color: var(--nb-text-link);
 }
 .guidance-entry-arrow {
   font-size: var(--font-sm);
-  color: var(--brand-primary);
+  color: var(--nb-text-link);
 }
 .shop-actions {
   display: flex;
@@ -555,21 +568,26 @@ page {
   margin-top: 16rpx;
 }
 .action-btn {
+  width: 0;
+  min-width: 0;
+  margin: 0;  height: 44px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1;
+  box-sizing: border-box;
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12rpx;
-  min-height: 88rpx;
-  padding: 0;
   background: var(--warm-accent-light);
-  border-radius: 20rpx;
-  font-size: 24rpx;
   color: var(--warm-primary);
   font-weight: 600;
   border: none;
 }
-.action-icon-svg { width: 30rpx; height: 30rpx; flex-shrink: 0; }
+.action-icon-svg { width: 18px; height: 18px; flex-shrink: 0; }
 
 /* ===== 客户评价 ===== */
 .review-list {
@@ -578,10 +596,10 @@ page {
   gap: 20rpx;
 }
 .review-card {
-  background: #fff;
+  background: var(--nb-surface);
   border-radius: 32rpx;
   padding: 32rpx;
-  box-shadow: 0 4rpx 24rpx rgba(61, 44, 35, 0.06);
+  box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.06);
 }
 .review-header {
   display: flex;
@@ -628,7 +646,7 @@ page {
   gap: 4rpx;
   margin-top: 8rpx;
 }
-.star { font-size: 20rpx; color: #ddd; }
+.star { font-size: 20rpx; color: var(--nb-muted); }
 .star-filled { color: var(--warm-star); }
 .review-content {
   font-size: 24rpx;
@@ -645,7 +663,7 @@ page {
   z-index: 100;
   background: rgba(255,255,255,0.95);
   backdrop-filter: blur(40rpx);
-  box-shadow: 0 -4rpx 24rpx rgba(61, 44, 35, 0.08);
+  box-shadow: 0 -4rpx 24rpx rgba(0, 0, 0, 0.08);
 }
 .bottom-bar-inner {
   display: flex;
@@ -661,7 +679,7 @@ page {
   gap: 18rpx;
 }
 .action-icon-btn {
-  position: relative;
+  min-height: 44px;  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -688,25 +706,32 @@ page {
   color: var(--warm-text-muted);
   line-height: 1;
 }
-.action-icon-btn.favorited .count-label { color: #e74c3c; font-weight: 600; }
+.action-icon-btn.favorited .count-label { color: var(--nb-ink); font-weight: 600; }
 .action-icon-btn.followed .count-label { color: var(--warm-primary); font-weight: 600; }
-.action-icon-btn.liked .count-label { color: #f59e0b; font-weight: 600; }
+.action-icon-btn.liked .count-label { color: var(--nb-ink); font-weight: 600; }
 .btn-book-main {
+  width: 0;
+  min-width: 0;
+  margin: 0;  height: 44px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1;
+  box-sizing: border-box;
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10rpx;
-  padding: 20rpx 32rpx;
-  background: linear-gradient(135deg, #C4937A 0%, #D4A29C 100%);
-  color: #fff;
-  font-size: 28rpx;
+  background: var(--nb-action);
+  color: var(--nb-surface);
   font-weight: 700;
-  border-radius: 48rpx;
   border: none;
-  min-height: 88rpx;
-  box-shadow: 0 8rpx 24rpx rgba(196, 147, 122, 0.35);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.35);
 }
+.btn-edit-homepage { width:100%; min-height:88rpx; margin:0; padding:0 32rpx; border:0; border-radius:var(--btn-radius); background:var(--nb-action); color:var(--text-inverse); display:flex; align-items:center; justify-content:center; gap:12rpx; font-size:var(--font-md); font-weight:var(--weight-medium); box-sizing:border-box; }
+.btn-edit-homepage::after { border:0; }.btn-edit-homepage:active { background:var(--nb-action-pressed); }
 .safe-area-bottom {
   height: env(safe-area-inset-bottom, 0px);
 }
@@ -730,14 +755,14 @@ page {
 }
 .modal-panel {
   width: 100%;
-  background: #fff;
+  background: var(--nb-surface);
   border-radius: 40rpx 40rpx 0 0;
   padding: 32rpx 48rpx calc(48rpx + env(safe-area-inset-bottom, 0px));
 }
 .modal-handle {
   width: 64rpx;
   height: 8rpx;
-  background: #ddd;
+  background: var(--nb-page);
   border-radius: 4rpx;
   margin: 0 auto 32rpx;
 }
@@ -761,22 +786,31 @@ page {
 }
 .modal-input {
   flex: 1;
-  height: 88rpx;
-  padding: 0 24rpx;
-  border: 2rpx solid var(--warm-divider);
-  border-radius: 16rpx;
-  font-size: 28rpx;
-}
+  min-width: 0;
+  height: var(--input-height);
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 0 var(--input-padding-h);
+  border: 0;
+  border-radius: var(--input-radius);
+  font-size: var(--font-sm);
+ background: var(--nb-soft-surface);}
+.modal-placeholder { font-size: var(--font-sm); color: var(--nb-muted); }
 .modal-verify-btn {
+  height: 44px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1;
+  box-sizing: border-box;
   width: 160rpx;
-  height: 88rpx;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--warm-accent-light);
-  border-radius: 16rpx;
   color: var(--warm-primary);
-  font-size: 28rpx;
   font-weight: 600;
 }
 .modal-success {
@@ -787,7 +821,7 @@ page {
 .modal-error {
   display: block;
   margin-top: 16rpx;
-  color: #e74c3c;
+  color: var(--nb-ink);
   font-size: 24rpx;
 }
 .modal-actions {
@@ -796,22 +830,29 @@ page {
   margin-top: 32rpx;
 }
 .modal-cancel, .modal-confirm {
-  height: 88rpx;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 16rpx;
-  font-size: 28rpx;
   font-weight: 600;
 }
 .modal-cancel {
   width: 30%;
-  border: 2rpx solid var(--warm-divider);
+  border: 0;
   color: var(--warm-text-muted);
 }
 .modal-confirm {
   flex: 1;
-  background: linear-gradient(135deg, #C4937A 0%, #D4A29C 100%);
-  color: #fff;
+  background: var(--nb-action);
+  color: var(--nb-surface);
 }
 .is-disabled { opacity: 0.5; }
+
+.btn-book-now:active, .btn-book-main:active, .action-btn:active, .retry-btn:active, .modal-verify-btn:active, .modal-cancel:active, .modal-confirm:active { opacity: 0.85; }
+@import '../../../styles/booking-actions.wxss';

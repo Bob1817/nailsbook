@@ -70,7 +70,7 @@
     <view wx:if="{{foundTech}}" class="found-card">
       <view class="found-avatar">
         <image wx:if="{{foundTech.avatarUrl}}" src="{{foundTech.avatarUrl}}" mode="aspectFill" />
-        <text wx:else>{{foundTech.name ? foundTech.name[0] : '?'}}</text>
+        <image wx:else src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" />
       </view>
       <view class="found-info">
         <text class="found-name">{{foundTech.name}}</text>
@@ -79,8 +79,8 @@
     </view>
 
     <view class="btn-group">
-      <view class="btn btn-secondary" bindtap="submitClient" data-skip="true">跳过，先去逛逛</view>
-      <view class="btn btn-primary {{loading ? 'btn-disabled' : ''}}" bindtap="submitClient">
+      <view class="btn btn-secondary booking-action" bindtap="submitClient" data-skip="true">跳过，先去逛逛</view>
+      <view class="btn btn-primary booking-action {{loading ? 'btn-disabled' : ''}}" bindtap="submitClient">
         <text>{{loading ? '处理中...' : (foundTech ? '确认绑定并进入' : '进入客户版')}}</text>
       </view>
     </view>
@@ -109,8 +109,8 @@
     </view>
 
     <view class="btn-group">
-      <view class="btn btn-secondary" bindtap="submitTechnician" data-skip="true">游客模式体验</view>
-      <view class="btn btn-primary {{!activationKey || loading ? 'btn-disabled' : ''}}" bindtap="submitTechnician">
+      <view class="btn btn-secondary booking-action" bindtap="submitTechnician" data-skip="true">游客模式体验</view>
+      <view class="btn btn-primary booking-action {{!activationKey || loading ? 'btn-disabled' : ''}}" bindtap="submitTechnician">
         <text>{{loading ? '激活中...' : '激活并进入'}}</text>
       </view>
     </view>

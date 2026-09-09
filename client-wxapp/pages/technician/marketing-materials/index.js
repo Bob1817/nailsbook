@@ -15,6 +15,8 @@ Page({
     loading: true,
     saving: false,
     exporting: false,
+    previewing: false,
+    loadFailed: false,
     materials: [],
     editingId: null,
     title: '',
@@ -29,22 +31,23 @@ Page({
   },
 
   async loadMaterials() {
-    this.setData({ loading: true });
+    this.setData({ loading: true, loadFailed: false });
     try {
       const result = await api.technician.marketingMaterials.list();
       this.setData({ materials: result.list || result.data || result || [], loading: false });
     } catch {
-      this.setData({ loading: false });
+      this.setData({ loading: false, loadFailed: true });
       wx.showToast({ title: '物料加载失败', icon: 'none' });
     }
   },
 
-  onTitleInput(e) { this.setData({ title: e.detail.value }); },
-  onSubtitleInput(e) { this.setData({ subtitle: e.detail.value }); },
-  onPriceInput(e) { this.setData({ price: e.detail.value }); },
-  onContactInput(e) { this.setData({ contact: e.detail.value }); },
+  onTitleInput(e) { this.setData({ title: e.detail.value, previewUrl: '' }); },
+  onSubtitleInput(e) { this.setData({ subtitle: e.detail.value, previewUrl: '' }); },
+  onPriceInput(e) { this.setData({ price: e.detail.value, previewUrl: '' }); },
+  onContactInput(e) { this.setData({ contact: e.detail.value, previewUrl: '' }); },
 
   editMaterial(e) {
+    if (this.data.saving || this.data.previewing || this.data.exporting) return;
     const material = this.data.materials.find(item => String(item.id) === String(e.currentTarget.dataset.id));
     if (!material) return;
     const content = material.content || {};
@@ -59,6 +62,7 @@ Page({
   },
 
   newMaterial() {
+    if (this.data.saving || this.data.previewing || this.data.exporting) return;
     this.setData({ editingId: null, title: '', subtitle: '', price: '', contact: '', previewUrl: '' });
   },
 
@@ -93,22 +97,26 @@ Page({
   },
 
   async previewMaterial() {
-    const material = await this.saveDraft();
-    if (!material) return;
+    if (this.data.saving || this.data.previewing || this.data.exporting) return;
+    this.setData({ previewing: true, previewUrl: '' });
     try {
+      const material = await this.saveDraft();
+      if (!material) return;
       const result = await api.technician.marketingMaterials.preview(material.id);
       this.setData({ previewUrl: writePreviewFile(material.id, result.imageBase64) });
     } catch {
       wx.showToast({ title: '预览生成失败', icon: 'none' });
+    } finally {
+      this.setData({ previewing: false });
     }
   },
 
   async exportMaterial() {
-    if (this.data.exporting) return;
-    const material = await this.saveDraft();
-    if (!material) return;
+    if (this.data.saving || this.data.previewing || this.data.exporting) return;
     this.setData({ exporting: true });
     try {
+      const material = await this.saveDraft();
+      if (!material) return;
       const result = await api.technician.marketingMaterials.export(
         material.id,
         idempotencyKey(material.id)

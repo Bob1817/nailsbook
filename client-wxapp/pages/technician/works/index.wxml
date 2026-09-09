@@ -9,7 +9,7 @@
   <view wx:elif="{{loadFailed}}" class="empty" aria-live="polite">
     <text class="empty-title">作品列表加载失败</text>
     <text class="empty-sub">请检查网络后重试</text>
-    <button class="btn-add-first" bindtap="loadWorks">重新加载</button>
+    <button class="btn-add-first booking-action" bindtap="loadWorks">重新加载</button>
   </view>
 
   <!-- 空状态 -->
@@ -21,7 +21,7 @@
     </view>
     <text class="empty-title">还没有作品</text>
     <text class="empty-sub">上传你的美甲作品，吸引更多客户</text>
-    <button class="btn-add-first" bindtap="goCreate">上传第一个作品</button>
+    <button class="btn-add-first booking-action" bindtap="goCreate">上传第一个作品</button>
   </view>
 
   <!-- 瀑布流 -->
@@ -44,5 +44,5 @@
 
 <!-- 固定底部发布按钮 -->
 <view wx:if="{{works.length > 0}}" class="fixed-bottom">
-  <button class="btn-publish" bindtap="goCreate">+ 上传作品</button>
+  <button class="btn-publish booking-action" bindtap="goCreate">+ 上传作品</button>
 </view>

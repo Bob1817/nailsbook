@@ -1,0 +1,105 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const { createRequire } = require('node:module');
+const file = path.resolve(__dirname, '../pages/technician/profile/index.js');
+const localRequire = createRequire(file);
+let page, fail = false, calls = 0, navigatedTo = '';
+vm.runInNewContext(fs.readFileSync(file, 'utf8'), {
+  require: name => name === '../../../services/api' ? { technician: { auth: { updateStatus: async status => {
+    calls++; if (fail) throw Error('保存失败'); return { status };
+  } } } } : localRequire(name),
+  Page: value => { page = value; },
+  wx: { setStorageSync() {}, showToast() {}, showModal() {}, navigateTo({ url }) { navigatedTo = url; } }, Date
+});
+const make = status => ({ ...page, data: { ...page.data, userInfo: { status }, canAcceptOrders: true, setupSteps: [] }, setData(value) { Object.assign(this.data, value); } });
+(async () => {
+  const ctx = make('inactive');
+  await ctx.onAcceptingChange({ detail: { value: true } });
+  assert.equal(ctx.data.userInfo.status, 'active');
+  assert.equal(ctx.data.acceptingEnabled, true);
+  await ctx.onAcceptingChange({ detail: { value: false } });
+  assert.equal(ctx.data.acceptingEnabled, false);
+  fail = true;
+  await ctx.onAcceptingChange({ detail: { value: true } });
+  assert.equal(ctx.data.acceptingEnabled, false);
+  assert.equal(ctx.data.savingAccepting, false);
+  fail = false;
+  ctx.data.canAcceptOrders = false;
+  const before = calls;
+  await ctx.onAcceptingChange({ detail: { value: true } });
+  assert.equal(calls, before);
+  assert.equal(ctx.data.acceptingEnabled, false);
+  ctx.data.savingAccepting = true;
+  await ctx.onAcceptingChange({ detail: { value: true } });
+  assert.equal(calls, before);
+  ctx.data.savingAccepting = false;
+  ctx.openScheduleModal();
+  assert.equal(ctx.data.showScheduleModal, true, '未完成接单设置仍可编辑工作时间');
+  assert.equal(ctx.data.showServiceTypeModal, false);
+  ctx.closeScheduleModal();
+  assert.equal(ctx.data.showScheduleModal, false);
+  const today = new Date();
+  const todayKey = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+  ctx.data.userInfo = { status: 'active', serviceSchedule: {
+    schemes: [{ id: 'work', days: ['mon','tue','wed','thu','fri','sat','sun'], startTime: '10:00', endTime: '20:00' }],
+    activeSchemeId: 'work', restDays: [todayKey]
+  } };
+  ctx.data.canAcceptOrders = true;
+  ctx.computeAccepting();
+  assert.equal(ctx.data.acceptingEnabled, true);
+  assert.equal(ctx.data.isAccepting, false);
+  assert.equal(ctx.data.acceptingHint, '已开启 · 今日为休息日');
+  assert.equal(ctx.data.scheduleSummary, '每天 · 10:00–20:00');
+  ctx.data.userInfo.status = 'inactive';
+  ctx.updateAvailabilitySummary();
+  assert.equal(ctx.data.acceptingHint, '已暂停接收新预约');
+  ctx.openStatsDetail();
+  assert.equal(ctx.data.showStatsDetail, true);
+  ctx.openInviteDetail();
+  assert.equal(ctx.data.showStatsDetail, false);
+  assert.equal(ctx.data.showInviteDetail, true);
+  ctx.closeProfileDetail();
+  assert.equal(ctx.data.showInviteDetail, false);
+  assert.equal(ctx.data.tools.length, 7);
+  assert(!ctx.data.tools.some(item => item.key === 'styles'), '擅长风格应归入我的主页管理，不应在经营工具中重复展示');
+  assert(ctx.data.tools.some(item => item.key === 'homepage'), '经营工具应保留我的主页入口');
+  assert(!ctx.data.tools.some(item => item.key === 'serviceTime'));
+  ctx.data.userInfo.id = 12;
+  ctx.onTool({ currentTarget: { dataset: { key: 'homepage' } } });
+  assert.equal(navigatedTo, '/pages/client/artist-home/index?id=12&preview=1&owner=1', '我的主页应先进入本人公开主页预览');
+  const wxml = fs.readFileSync(file.replace('.js', '.wxml'), 'utf8');
+  const wxss = fs.readFileSync(file.replace('.js', '.wxss'), 'utf8');
+  assert.match(wxss, /\.menu-label\s*\{[^}]*font-size:\s*var\(--font-sm\)/s, '账号与设置正文与经营工具统一使用小号正文');
+  assert.match(wxss, /\.tool-label\s*\{[^}]*font-size:\s*var\(--font-sm\)/s, '经营工具正文使用相同字号');
+  assert(wxml.includes('open-type="share"'));
+  assert(wxml.includes('src="/static/icons/share.svg"'));
+  assert(wxml.includes('<nb-switch checked="{{acceptingEnabled}}"'));
+  assert(!wxml.includes('class="status-dot'));
+  assert(!wxml.includes('class="accepting-track-label"'));
+  const css = fs.readFileSync(file.replace('.js', '.wxss'), 'utf8');
+  const switchCss = fs.readFileSync(path.resolve(__dirname, '../components/nb-switch/index.wxss'), 'utf8');
+  assert(switchCss.includes('width:72rpx; height:40rpx;'));
+  assert(switchCss.includes('width:32rpx; height:32rpx;'));
+  assert(switchCss.includes('translateX(32rpx)'));
+  assert(switchCss.includes('background:var(--nb-success)'));
+  assert(wxml.includes('availability-title">预约设置'));
+  assert.match(css, /\.availability-card \.status-label\s*\{[^}]*font-size:\s*var\(--font-sm\)[^}]*font-weight:\s*var\(--weight-medium\)/s, '预约设置必须复用模块标题规格，并让正文与其他功能入口保持相同字号层级');
+  assert.doesNotMatch(css, /\.availability-title\s*\{[^}]*font-size:/s, '预约设置标题不得脱离通用 card-title 单独定义字号');
+  assert.match(css, /\.availability-card \.profile-helper\s*\{[^}]*margin-top:\s*0;[^}]*font-size:\s*var\(--font-xs\)[^}]*line-height:\s*1\.35/s, '两项标题与提示必须使用相同的紧凑间距');
+  assert(wxml.includes('<view class="status-copy">\n        <text class="status-label">接受新预约</text>'), '预约状态标题与提示必须在同一文字容器中，避免被开关触控高度撑开');
+  assert.match(css, /\.availability-row, \.profile-schedule-row\s*\{[^}]*min-height:\s*112rpx;[^}]*background:\s*var\(--nb-soft-surface\)/s, '预约状态与工作时间必须使用两个一致的独立信息模块');
+  assert.match(css, /\.profile-schedule-row\s*\{[^}]*margin-top:\s*12rpx;[^}]*align-items:center/s, '两个信息模块之间必须保持紧凑间距');
+  assert(wxml.includes('<text class="semantic-link profile-link">修改 ›</text>'));
+  assert(wxss.includes('.availability-card .accepting-helper { white-space:nowrap; }'));
+  assert.match(css, /\.order-cell\s*\{[^}]*position:\s*relative;[^}]*gap:\s*16rpx/s, '预约入口必须为数量角标预留空间并统一图文间距');
+  assert.match(css, /\.tool-cell\s*\{[^}]*gap:\s*16rpx/s, '经营工具与预约入口必须使用相同图文间距');
+  assert.match(css, /\.count-badge\s*\{[^}]*top:\s*8rpx;\s*right:\s*8rpx;[^}]*background:\s*var\(--nb-danger\)/s, '预约数量必须使用独立且醒目的角标，不能覆盖图标');
+  assert(wxml.includes('class="profile-schedule-row availability-module" bindtap="openScheduleModal"'));
+  assert(!wxml.includes('bindtap="toggleAccepting"'));
+  assert(wxml.includes('wx:if="{{showScheduleModal}}"'));
+  assert(!wxml.includes('bindtap="goTradeOrders"'));
+  for (const key of ['todayOrders','monthOrders','pendingTotal','monthlyRevenue','rating','averageTicket','repeatRate','customers','newCustomers','works']) assert(wxml.includes('stats.' + key));
+  console.log('Profile switch save, rollback, prerequisites and independent schedule link checks passed.');
+})().catch(err => { console.error(err); process.exitCode = 1; });

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Table, Button, Space, Modal, Input, Select, Tag, message, Card, Switch, Image, Drawer } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { DeleteOutlined, EyeOutlined, StarOutlined } from '@ant-design/icons';
+import { CheckOutlined, CloseOutlined, DeleteOutlined, EyeOutlined, StarOutlined } from '@ant-design/icons';
 import { adminWorkService } from '../services/adminWork';
 import type { AdminWork } from '../services/adminWork';
 
@@ -12,6 +12,13 @@ const placeholderStyle: React.CSSProperties = {
   background: 'var(--nb-line)',
 };
 
+const publicationLabels: Record<AdminWork['publicationStatus'], string> = {
+  draft: '草稿',
+  pending: '待审核',
+  approved: '已通过',
+  rejected: '已驳回',
+};
+
 const Works: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<AdminWork[]>([]);
@@ -20,6 +27,7 @@ const Works: React.FC = () => {
   const [keyword, setKeyword] = useState('');
   const [isVisible, setIsVisible] = useState<boolean | undefined>(undefined);
   const [isHomepageFeatured, setIsHomepageFeatured] = useState<boolean | undefined>(undefined);
+  const [publicationStatus, setPublicationStatus] = useState<string | undefined>(undefined);
   const [drawerWork, setDrawerWork] = useState<AdminWork | null>(null);
 
   const pageSize = 20;
@@ -33,6 +41,7 @@ const Works: React.FC = () => {
         keyword: keyword || undefined,
         isVisible,
         isHomepageFeatured,
+        publicationStatus,
       });
       setItems(result.items);
       setTotal(result.total);
@@ -41,7 +50,7 @@ const Works: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, keyword, isVisible, isHomepageFeatured]);
+  }, [page, keyword, isVisible, isHomepageFeatured, publicationStatus]);
 
   useEffect(() => {
     load();
@@ -66,6 +75,55 @@ const Works: React.FC = () => {
     } catch {
       message.error('操作失败');
     }
+  };
+
+  const reviewWork = async (id: number, decision: 'approved' | 'rejected', note?: string) => {
+    try {
+      await adminWorkService.review(id, decision, note);
+      message.success(decision === 'approved' ? '作品已审核通过' : '作品已驳回');
+      setDrawerWork(null);
+      await load();
+    } catch {
+      message.error('审核操作失败');
+      throw new Error('review failed');
+    }
+  };
+
+  const handleApprove = (record: AdminWork) => {
+    Modal.confirm({
+      title: '审核通过作品',
+      content: `通过后“${record.title || '无标题作品'}”将可被客户公开查看和分享。`,
+      okText: '确认通过',
+      cancelText: '取消',
+      onOk: () => reviewWork(record.id, 'approved'),
+    });
+  };
+
+  const handleReject = (record: AdminWork) => {
+    let note = '';
+    Modal.confirm({
+      title: '驳回作品',
+      content: (
+        <Input.TextArea
+          autoFocus
+          rows={4}
+          maxLength={300}
+          showCount
+          placeholder="请填写驳回原因，供美甲师修改"
+          onChange={(event) => { note = event.target.value; }}
+        />
+      ),
+      okText: '确认驳回',
+      cancelText: '取消',
+      okButtonProps: { danger: true },
+      onOk: () => {
+        if (!note.trim()) {
+          message.error('请填写驳回原因');
+          return Promise.reject();
+        }
+        return reviewWork(record.id, 'rejected', note.trim());
+      },
+    });
   };
 
   const handleDelete = (id: number) => {
@@ -129,6 +187,12 @@ const Works: React.FC = () => {
       render: (_, record) => `${record.likeCount} / ${record.commentCount}`,
     },
     {
+      title: '发布状态',
+      key: 'publicationStatus',
+      width: 96,
+      render: (_, record) => <Tag>{publicationLabels[record.publicationStatus] || record.publicationStatus}</Tag>,
+    },
+    {
       title: '可见',
       key: 'visible',
       render: (_, record) => (
@@ -160,6 +224,16 @@ const Works: React.FC = () => {
           <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => setDrawerWork(record)}>
             详情
           </Button>
+          {record.publicationStatus !== 'approved' && record.publicationStatus !== 'draft' && (
+            <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => handleApprove(record)}>
+              通过
+            </Button>
+          )}
+          {record.publicationStatus !== 'rejected' && record.publicationStatus !== 'draft' && (
+            <Button type="link" size="small" danger icon={<CloseOutlined />} onClick={() => handleReject(record)}>
+              驳回
+            </Button>
+          )}
           <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
             删除
           </Button>
@@ -194,6 +268,21 @@ const Works: React.FC = () => {
               options={[
                 { value: true, label: '可见' },
                 { value: false, label: '已下架' },
+              ]}
+            />
+            <Select
+              placeholder="发布状态"
+              allowClear
+              style={{ width: 120 }}
+              value={publicationStatus}
+              onChange={(value) => {
+                setPublicationStatus(value);
+                setPage(1);
+              }}
+              options={[
+                { value: 'pending', label: '待审核' },
+                { value: 'approved', label: '已通过' },
+                { value: 'rejected', label: '已驳回' },
               ]}
             />
             <Select
@@ -261,6 +350,18 @@ const Works: React.FC = () => {
             </div>
 
             <div style={{ marginTop: 12 }}>
+              <strong>发布状态：</strong>
+              <Tag style={{ marginLeft: 8 }}>{publicationLabels[drawerWork.publicationStatus] || drawerWork.publicationStatus}</Tag>
+            </div>
+
+            {drawerWork.reviewNote && (
+              <div style={{ marginTop: 12 }}>
+                <strong>审核说明：</strong>
+                <div style={{ marginTop: 4, color: 'var(--nb-secondary)' }}>{drawerWork.reviewNote}</div>
+              </div>
+            )}
+
+            <div style={{ marginTop: 12 }}>
               <Space>
                 <StarOutlined />
                 <span>官网精选</span>
@@ -273,6 +374,17 @@ const Works: React.FC = () => {
                 />
               </Space>
             </div>
+
+            {drawerWork.publicationStatus !== 'draft' && (
+              <Space style={{ marginTop: 20 }}>
+                {drawerWork.publicationStatus !== 'approved' && (
+                  <Button icon={<CheckOutlined />} onClick={() => handleApprove(drawerWork)}>审核通过</Button>
+                )}
+                {drawerWork.publicationStatus !== 'rejected' && (
+                  <Button danger icon={<CloseOutlined />} onClick={() => handleReject(drawerWork)}>驳回</Button>
+                )}
+              </Space>
+            )}
 
             {drawerWork.description && (
               <div style={{ marginTop: 12 }}>

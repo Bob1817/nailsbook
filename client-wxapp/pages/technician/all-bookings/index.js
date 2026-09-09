@@ -21,17 +21,27 @@ Page({
 
   onLoad(options) {
     const tradeView = options && options.view === 'trade';
-    this.setData({ tradeView });
-    if (options && options.status) {
+    const depositOnly = options && options.filter === 'unpaid_deposit';
+    this.setData({
+      tradeView,
+      filterTabs: depositOnly
+        ? [{ label: '待支付定金', value: 'unpaid_deposit' }, ...ORDER_TABS]
+        : ORDER_TABS
+    });
+    if (depositOnly) {
+      this.setData({ activeFilter: 'unpaid_deposit' });
+    } else if (options && options.status) {
       this.setData({ activeFilter: options.status });
     }
     this.loadOrders();
   },
 
   async loadOrders() {
+    const requestId = this._requestId = (this._requestId || 0) + 1;
     this.setData({ loading: true, loadFailed: false });
     try {
       const res = await api.technician.orders.list({});
+      if (requestId !== this._requestId) return;
       const raw = Array.isArray(res) ? res : (res.list || res.data || []);
       const allOrders = raw
         .filter(o => !this.data.tradeView || Boolean(o.tradeCreatedAt || o.tradeStatus))
@@ -53,10 +63,15 @@ Page({
       this.setData({ allOrders });
       this.applyFilter(this.data.activeFilter);
     } catch (err) {
+      if (requestId !== this._requestId) return;
       this.setData({ loadFailed: true });
     } finally {
-      this.setData({ loading: false });
+      if (requestId === this._requestId) this.setData({ loading: false });
     }
+  },
+
+  onUnload() {
+    this._requestId = (this._requestId || 0) + 1;
   },
 
   selectFilter(e) {
@@ -69,7 +84,9 @@ Page({
     const { allOrders } = this.data;
     const filtered = !value
       ? allOrders
-      : allOrders.filter(o => o.status === value);
+      : allOrders.filter(o => value === 'unpaid_deposit'
+        ? Number(o.depositAmount || 0) > 0 && !o.depositPaid && !['completed', 'cancelled', 'expired'].includes(o.status)
+        : o.status === value);
     this.setData({ filteredOrders: filtered });
   },
 
@@ -107,6 +124,12 @@ Page({
 
   onBookingCardNavigate(e) {
     this.navigateToAddress({ currentTarget: { dataset: { id: e.detail && e.detail.id } } });
+  },
+
+  onBookingCardMessage(e) {
+    const clientId = e.detail && e.detail.clientId;
+    if (!clientId) return wx.showToast({ title: '客户尚未关联小程序账号，请拨打电话', icon: 'none' });
+    wx.navigateTo({ url: `/pages/technician/chat-detail/index?clientId=${clientId}` });
   },
 
   onBookingCardContact(e) {

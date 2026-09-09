@@ -1,3 +1,4 @@
+const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
 
 Page({
@@ -8,19 +9,26 @@ Page({
     this.loadApplications().finally(() => wx.stopPullDownRefresh());
   },
 
+  onUnload() {
+    this._requestId = (this._requestId || 0) + 1;
+  },
+
   async loadApplications() {
+    const requestId = this._requestId = (this._requestId || 0) + 1;
     this.setData({ loading: true, loadFailed: false });
     try {
       const result = await api.technician.auth.bindingApplications();
+      if (requestId !== this._requestId) return;
       const applications = (Array.isArray(result) ? result : (result.items || [])).map(item => ({
         ...item,
         initial: String(item.name || '客').charAt(0)
       }));
       this.setData({ applications });
     } catch (error) {
+      if (requestId !== this._requestId) return;
       this.setData({ loadFailed: true });
     } finally {
-      this.setData({ loading: false });
+      if (requestId === this._requestId) this.setData({ loading: false });
     }
   },
 
@@ -43,7 +51,7 @@ Page({
       editable: true,
       placeholderText: '原因（选填）',
       confirmText: '确认拒绝',
-      confirmColor: '#b42318',
+      confirmColor: uiColors.danger,
       success: (result) => {
         if (result.confirm) this.submit(id, 'reject', result.content || '');
       }

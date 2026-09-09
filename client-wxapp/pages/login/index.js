@@ -1,3 +1,4 @@
+const { consumePostAuthRedirect, rememberPostAuthRedirect, normalizeInternalPath } = require('../../utils/artist-navigation');
 /**
  * NailBook 统一登录页
  * 流程：微信授权（默认）→ 手机号 + 密码登录
@@ -17,13 +18,20 @@ Page({
     wechatChecking: true,
     showPassword: false,
     canLogin: false,
-    privacyAgreed: false
+    privacyAgreed: false,
+    invitationRegistration: false
   },
 
   onLoad(options) {
-    this.redirect = options.redirect ? decodeURIComponent(options.redirect) : '';
+    if (options.sessionExpired === '1') {
+      wx.showModal({ title: '登录已过期', content: '长时间未登录已退出账号，请重新登录', showCancel: false, confirmText: '知道了' });
+    }
+    this.redirect = normalizeInternalPath(options.redirect ? decodeURIComponent(options.redirect) : '');
+    if (this.redirect) rememberPostAuthRedirect(this.redirect);
     this.inviteCode = options.invite ? decodeURIComponent(options.invite) : '';
+    this.setData({ invitationRegistration: !!this.inviteCode });
     this.registrationSource = options.source === 'card' ? 'card' : 'invite';
+    this.quickBookingTechId = options.quickBookingTechId ? Number(options.quickBookingTechId) : undefined;
     if (options.referral) {
       this.referralToken = options.referral;
       wx.setStorageSync('pending_referral_token', options.referral);
@@ -77,7 +85,8 @@ Page({
         wechatSessionToken: wxSession,
         phoneCode,
         inviteCode: this.inviteCode || undefined,
-        source: this.registrationSource
+        source: this.registrationSource,
+        quickBookingTechId: this.quickBookingTechId
       });
 
       // ★ 需要选择角色 → 跳转角色选择页
@@ -259,6 +268,10 @@ Page({
       wx.setStorageSync(activeRole + '_refreshToken', res.refreshToken);
     }
 
+    if (activeRole === 'client' && this.quickBookingTechId) {
+      await api.client.profile.bindQuickBooking(this.quickBookingTechId, this.inviteCode);
+    }
+
     // 处理美甲师绑定信息（客户端角色时）
     if (activeRole === 'client' && res.technician) {
       wx.setStorageSync('client_bindings', res.technicians || [res.technician]);
@@ -283,6 +296,6 @@ Page({
     const homePage = activeRole === 'technician'
       ? '/pages/technician/home/index'
       : '/pages/client/home/index';
-    wx.reLaunch({ url: this.redirect || homePage });
+    wx.reLaunch({ url: activeRole === 'client' ? consumePostAuthRedirect(this.redirect || homePage) : homePage });
   }
 });

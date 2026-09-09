@@ -69,8 +69,8 @@
   border-radius: var(--radius-md);
   padding: 32rpx;
   margin-bottom: var(--space-md);
-  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
-  border: 1rpx solid rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
+  border: 0;
 }
 
 .card-header {
@@ -114,7 +114,7 @@
 }
 
 .action-btn.delete {
-  background: #fef2f2;
+  background: var(--nb-page);
 }
 
 .action-icon-edit {
@@ -161,8 +161,8 @@
   border-radius: var(--radius-md);
   padding: 32rpx;
   margin-bottom: var(--space-md);
-  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
-  border: 1rpx solid rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
+  border: 0;
 }
 
 .status-header {
@@ -182,19 +182,19 @@
 }
 
 .status-icon-wrap.status-pending {
-  background: #fff7ed;
+  background: var(--nb-page);
 }
 
 .status-icon-wrap.status-quoted {
-  background: #eff6ff;
+  background: var(--nb-page);
 }
 
 .status-icon-wrap.status-accepted {
-  background: #ecfdf5;
+  background: var(--nb-page);
 }
 
 .status-icon-wrap.status-converted {
-  background: #faf5ff;
+  background: var(--nb-page);
 }
 
 .status-icon-wrap.status-cancelled {
@@ -226,28 +226,28 @@
 }
 
 .status-value.status-pending {
-  color: #d97706;
+  color: var(--nb-text-link);
 }
 
 .status-value.status-quoted {
-  color: #2563eb;
+  color: var(--nb-text-link);
 }
 
 .status-value.status-accepted {
-  color: #059669;
+  color: var(--nb-success);
 }
 
 .status-value.status-converted {
-  color: #9333ea;
+  color: var(--nb-success);
 }
 
 .status-value.status-cancelled {
-  color: var(--text-body);
+  color: var(--nb-danger);
 }
 
 /* 报价信息 */
 .quote-section {
-  border-top: 1rpx solid #f3f4f6;
+  border-top: 0;
   padding-top: 24rpx;
 }
 
@@ -304,7 +304,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 20rpx;
-  background: #fff5f7;
+  background: var(--nb-page);
   border-radius: var(--radius-sm);
   margin-bottom: var(--space-sm);
 }
@@ -317,7 +317,7 @@
 .price-value {
   font-size: var(--font-lg);
   font-weight: var(--weight-bold);
-  color: var(--brand-primary);
+  color: var(--nb-money);
 }
 
 .remark-wrap {
@@ -345,7 +345,7 @@
   left: 0;
   right: 0;
   background: rgba(255, 255, 255, 0.95);
-  border-top: 1rpx solid rgba(0, 0, 0, 0.05);
+  border-top: 0;
   padding: 20rpx 40rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
 }
@@ -366,7 +366,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
+  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
   border: none;
 }
 
@@ -385,7 +385,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
+  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
   border: none;
 }
 
@@ -408,7 +408,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
+  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
   border: none;
 }
 
@@ -454,7 +454,7 @@
   width: 96rpx;
   height: 96rpx;
   border-radius: 50%;
-  background: #fff1f5;
+  background: var(--nb-page);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -462,7 +462,7 @@
 }
 
 .modal-icon-wrap.danger {
-  background: #fef2f2;
+  background: var(--nb-page);
 }
 
 .modal-icon-dot {
@@ -473,7 +473,7 @@
 }
 
 .modal-icon-dot.danger {
-  background: #dc2626;
+  background: var(--nb-action);
 }
 
 .modal-title {
@@ -591,9 +591,9 @@
 .btn-danger {
   flex: 1;
   height: 88rpx;
-  background: #fef2f2;
+  background: var(--nb-page);
   color: var(--text-error);
-  border: 1rpx solid #fecaca;
+  border: 0;
   font-size: var(--font-md);
   font-weight: var(--weight-medium);
   border-radius: 36rpx;
@@ -702,7 +702,7 @@
   width: 120rpx;
   height: 120rpx;
   border-radius: var(--radius-sm);
-  border: 3rpx dashed #d1d5db;
+  border: 3rpx dashed var(--nb-line);
   background: var(--bg-input);
   display: flex;
   align-items: center;
@@ -717,3 +717,19 @@
   font-size: var(--font-xl);
   color: var(--text-muted);
 }
+@import '../../../styles/booking-actions.wxss';
+.btn-back.booking-action,.btn-quote.booking-action,.btn-book.booking-action,.btn-view-order.booking-action,.btn-cancel.booking-action,.btn-confirm.booking-action,.btn-danger.booking-action { min-height:44px; height:44px; border-radius:8px; font-size:var(--font-sm); line-height:1.4; box-shadow:none; }
+.btn-cancel.booking-action { background:var(--nb-soft-surface); color:var(--nb-ink); }
+.btn-danger.booking-action { background:var(--nb-danger-surface); color:var(--nb-danger); }
+.status-icon-wrap.status-pending,
+.status-icon-wrap.status-quoted { background:var(--nb-soft-surface); }
+.status-icon-wrap.status-accepted,
+.status-icon-wrap.status-converted { background:var(--nb-success-surface); }
+.status-icon-wrap.status-cancelled { background:var(--nb-danger-surface); }
+.status-icon-wrap.status-pending .status-dot-icon,
+.status-icon-wrap.status-quoted .status-dot-icon { background:var(--nb-text-link); }
+.status-icon-wrap.status-accepted .status-dot-icon,
+.status-icon-wrap.status-converted .status-dot-icon { background:var(--nb-success); }
+.status-icon-wrap.status-cancelled .status-dot-icon { background:var(--nb-danger); }
+.form-input,.form-textarea { border-radius:var(--input-radius); font-size:var(--font-sm); }
+.form-input { min-height:var(--input-height); }

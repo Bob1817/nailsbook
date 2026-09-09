@@ -1,3 +1,5 @@
+@import '../../../styles/booking-actions.wxss';
+
 .container {
   min-height: 100vh;
   background: var(--bg-page);
@@ -6,7 +8,7 @@
 
 /* ===== 加载、错误与空状态 ===== */
 .loading-wrap { display:flex; justify-content:center; padding:200rpx 0; }
-.loading-spinner { width:60rpx; height:60rpx; border:4rpx solid #ffd0de; border-top-color: var(--brand-primary); border-radius:50%; animation:spin .8s linear infinite; }
+.loading-spinner { width:60rpx; height:60rpx; border:4rpx solid var(--nb-line); border-top-color: var(--brand-primary); border-radius:50%; animation:spin .8s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
 .empty, .load-error {
   display: flex;
@@ -14,14 +16,14 @@
   align-items: center;
   padding: 180rpx 0;
 }
-.load-error-mark { width:88rpx; height:88rpx; margin-bottom:28rpx; border-radius:50%; background:#fff0f4; color:#c75b83; font-size: var(--font-xl); line-height:88rpx; text-align:center; }
-.retry-btn { min-height:88rpx; margin:48rpx 0 0; padding:0 56rpx; border:0; border-radius: var(--radius-xl); background:#1f2937; color: var(--text-inverse); font-size: var(--font-md); line-height:88rpx; }
+.load-error-mark { width:88rpx; height:88rpx; margin-bottom:28rpx; border-radius:50%; background:var(--nb-page); color:var(--nb-ink); font-size: var(--font-xl); line-height:88rpx; text-align:center; }
+.retry-btn { min-height:44px; height:44px; margin:48rpx 0 0; padding:0 24rpx; border:0; border-radius:8px; background:var(--nb-ink); color: var(--text-inverse); font-size: var(--font-sm); line-height:1.4; }
 .retry-btn::after { border:0; }
 .empty-icon {
   width: 140rpx;
   height: 140rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #FFE2EA, #EDE9FE);
+  background: var(--nb-page);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -67,12 +69,12 @@
   background: var(--bg-card);
   border-radius: var(--radius-md);
   padding: 28rpx 28rpx 0;
-  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05), 0 1rpx 3rpx rgba(15, 23, 42, 0.03);
-  border: 2rpx solid transparent;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05), 0 1rpx 3rpx rgba(0, 0, 0, 0.03);
+  border: 0;
 }
 .addr-card.is-default {
-  border-color: rgba(255,107,138,0.35) /* brand-primary-alpha */;
-  box-shadow: 0 8rpx 28rpx rgba(255,107,138,0.12) /* brand-primary-alpha */;
+  border-color: rgba(0, 0, 0, 0.35) /* brand-primary-alpha */;
+  box-shadow: 0 8rpx 28rpx rgba(0, 0, 0, 0.12) /* brand-primary-alpha */;
 }
 
 .addr-card:active { opacity: 0.97; }
@@ -114,7 +116,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-top: 1rpx solid var(--border-card);
+  border-top: 0;
   padding: 18rpx 0;
 }
 
@@ -131,14 +133,14 @@
   width: 34rpx;
   height: 34rpx;
   border-radius: 50%;
-  border: 3rpx solid #d1d5db;
+  border: 3rpx solid var(--nb-line);
   box-sizing: border-box;
   flex-shrink: 0;
 }
 .radio-on {
-  border-color: var(--brand-primary);
+  border-color: var(--nb-success);
   background:
-    radial-gradient(circle at center, var(--brand-primary) 0, var(--brand-primary) 9rpx, transparent 10rpx);
+    radial-gradient(circle at center, var(--nb-success) 0, var(--nb-success) 9rpx, transparent 10rpx);
 }
 .radio-label {
   font-size: var(--font-sm);
@@ -165,9 +167,11 @@
   border-radius: 999rpx;
   background: var(--bg-input);
 }
-.op-btn:active { background: #e5e7eb; }
-.op-btn.danger { color: var(--text-error); background: #fef2f2; }
-.op-btn.danger:active { background: #fde4e4; }
+.op-btn:active { background: var(--nb-page); }
+.op-btn.danger { color: var(--text-error); background: var(--nb-page); }
+.op-btn.danger:active { background: var(--nb-page); }
+
+.btn-add { width:100%; height:44px; background:var(--nb-ink); color:var(--text-inverse); font-size:var(--font-sm); }
 
 .op-icon { width: 26rpx; height: 26rpx; position: relative; }
 
@@ -182,7 +186,7 @@
   top: 6rpx;
   width: 18rpx;
   height: 6rpx;
-  background: #374151;
+  background: var(--nb-secondary);
   border-radius: 2rpx;
   transform: rotate(45deg);
 }
@@ -193,8 +197,8 @@
   bottom: 2rpx;
   width: 0;
   height: 0;
-  border-left: 6rpx solid transparent;
-  border-top: 6rpx solid #374151;
+  border-left: 0;
+  border-top: 0;
 }
 
 /* 删除图标：垃圾桶 */
@@ -205,7 +209,7 @@
   top: 6rpx;
   width: 18rpx;
   height: 16rpx;
-  border: 2rpx solid #dc2626;
+  border: 0;
   border-top: 0;
   border-radius: 0 0 4rpx 4rpx;
   box-sizing: border-box;
@@ -217,8 +221,8 @@
   top: 3rpx;
   width: 22rpx;
   height: 2rpx;
-  background: #dc2626;
-  box-shadow: 0 -4rpx 0 0 #dc2626;
+  background: var(--nb-action);
+  box-shadow: 0 -4rpx 0 0 var(--nb-action);
 }
 
 /* ===== 新增按钮 ===== */

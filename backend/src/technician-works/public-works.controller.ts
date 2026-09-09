@@ -81,6 +81,7 @@ export class PublicWorksController {
         },
         _count: { select: { likes: true, comments: true } },
         serviceLines: { orderBy: { sortOrder: 'asc' } },
+        promotion: true,
       },
       orderBy: [
         { isHomepageFeatured: 'desc' },
@@ -143,6 +144,7 @@ export class PublicWorksController {
           },
         },
         serviceLines: { orderBy: { sortOrder: 'asc' } },
+        promotion: true,
       },
       orderBy: { createdAt: 'desc' },
       take: 20,
@@ -274,6 +276,7 @@ export class PublicWorksController {
           },
         },
         serviceLines: { orderBy: { sortOrder: 'asc' } },
+        promotion: true,
       },
     });
 
@@ -326,6 +329,7 @@ export class PublicWorksController {
         quantity: line.quantity,
         subtotalFen: line.subtotalFen,
       })),
+      promotion: this.mapActivePromotion(work.promotion),
       likeCount: work._count?.likes ?? 0,
       commentCount: work._count?.comments ?? 0,
       technician: {
@@ -340,6 +344,21 @@ export class PublicWorksController {
       shops,
       comments: [],
       createdAt: work.createdAt,
+    };
+  }
+
+  private mapActivePromotion(promotion: any) {
+    if (!promotion || !promotion.enabled) return null;
+    const now = Date.now();
+    const startsAt = promotion.startsAt ? new Date(promotion.startsAt).getTime() : null;
+    const endsAt = promotion.endsAt ? new Date(promotion.endsAt).getTime() : null;
+    if ((startsAt && startsAt > now) || (endsAt && endsAt <= now)) return null;
+    return {
+      title: promotion.title,
+      discountAmountFen: promotion.discountAmountFen,
+      discountAmount: promotion.discountAmountFen / 100,
+      startsAt: promotion.startsAt,
+      endsAt: promotion.endsAt,
     };
   }
 }

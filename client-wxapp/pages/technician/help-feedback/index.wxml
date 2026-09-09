@@ -1,19 +1,13 @@
-<nav-bar title="帮助" showBack/>
-<view class="container">
-  <view class="section">
-    <text class="section-title">常见问题</text>
-    <view class="faq-card">
-      <view wx:for="{{faqs}}" wx:key="q" class="faq-item {{index < faqs.length - 1 ? 'faq-border' : ''}}">
-        <view class="faq-header" bindtap="toggleFaq" data-idx="{{index}}">
-          <text class="faq-q">{{item.q}}</text>
-          <text class="faq-arrow {{item.open ? 'arrow-open' : ''}}">›</text>
-        </view>
-        <view wx:if="{{item.open}}" class="faq-answer">
-          <text class="faq-a">{{item.a}}</text>
-        </view>
-      </view>
+<nav-bar title="帮助与反馈" showBack/>
+<view class="settings-page">
+  <view class="help-hero"><text class="hero-kicker">NAILBOOK SUPPORT</text><text class="hero-title">需要什么帮助？</text><text class="hero-copy">常见操作可以在下方快速找到答案，产品问题也可以直接联系平台客服。</text></view>
+  <view class="support-card"><view class="support-mark">?</view><view class="support-copy"><text class="support-title">平台在线客服</text><text class="support-sub">产品使用、账号与功能问题</text></view><button class="support-btn" open-type="contact" show-message-card="true" send-message-title="美甲师使用问题">联系客服</button></view>
+  <view class="section-heading"><text class="section-title">常见问题</text><text class="section-note">{{faqs.length}} 个解答</text></view>
+  <view class="faq-card">
+    <view wx:for="{{faqs}}" wx:key="q" class="faq-item {{item.open ? 'is-open' : ''}}">
+      <view class="faq-header" bindtap="toggleFaq" data-idx="{{index}}" role="button" aria-expanded="{{item.open}}"><view class="question-index">{{index + 1}}</view><text class="faq-q">{{item.q}}</text><text class="faq-arrow {{item.open ? 'arrow-open' : ''}}">›</text></view>
+      <view wx:if="{{item.open}}" class="faq-answer"><text class="faq-a">{{item.a}}</text></view>
     </view>
   </view>
-  <button class="support-btn" open-type="contact" show-message-card="true" send-message-title="美甲师使用问题">联系平台客服</button>
-  <text class="tip">业务预约问题可通过消息与客户沟通；产品使用问题可联系平台客服。</text>
+  <view class="contact-tip"><text class="tip-title">预约业务问题</text><text class="tip-copy">订单、报价或到店安排，请优先通过消息页面与客户直接沟通。</text></view>
 </view>

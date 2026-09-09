@@ -1,11 +1,14 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CreateWorkDto, UpdateWorkDto } from './dto/create-work.dto';
 import { UpdateWorkAccessDto } from './dto/work-access.dto';
+import { SaveHeroRecommendationsDto } from './dto/hero-recommendations.dto';
+import { SaveWorkPromotionDto } from './dto/work-promotion.dto';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { StorageService } from '../common/storage/storage.service';
 import {
@@ -54,6 +57,7 @@ export class TechnicianWorksService {
         },
         _count: { select: { shareEvents: true } },
         serviceLines: { orderBy: { sortOrder: 'asc' } },
+        promotion: true,
       },
     });
 
@@ -84,6 +88,7 @@ export class TechnicianWorksService {
         },
         _count: { select: { shareEvents: true } },
         serviceLines: { orderBy: { sortOrder: 'asc' } },
+        promotion: true,
       },
     });
 
@@ -94,7 +99,107 @@ export class TechnicianWorksService {
     return this.mapWork(work, technicianId);
   }
 
+  async getHeroRecommendations(technicianId: number) {
+    const works = await this.prisma.nailWork.findMany({
+      where: { techId: technicianId, heroSlot: { not: null } },
+      orderBy: { heroSlot: 'asc' },
+      select: { id: true, title: true, coverUrl: true, heroSlot: true },
+    });
+    return { works: works.map(work => ({ ...work, coverUrl: work.coverUrl?.startsWith('/') ? `${UPLOAD_BASE_URL}${work.coverUrl}` : work.coverUrl })), limit: 3 };
+  }
+
+  async saveHeroRecommendations(technicianId: number, dto: SaveHeroRecommendationsDto) {
+    if (dto.workIds.length > 3 || new Set(dto.workIds).size !== dto.workIds.length) {
+      throw new BadRequestException('客户首页最多推荐 3 个不同作品');
+    }
+    await this.prisma.$transaction(async (tx) => {
+      const current = await tx.nailWork.findMany({
+        where: { techId: technicianId, heroSlot: { not: null } },
+        orderBy: { heroSlot: 'asc' },
+        select: { id: true },
+      });
+      const ids = current.map((work) => work.id);
+      if (JSON.stringify(ids) === JSON.stringify(dto.workIds)) return;
+      if (JSON.stringify(ids) !== JSON.stringify(dto.expectedWorkIds)) {
+        throw new ConflictException('推荐作品已变更，请刷新后重试');
+      }
+      const eligible = await tx.nailWork.count({ where: {
+        id: { in: dto.workIds }, techId: technicianId, isVisible: true,
+        visibilityScope: 'public', publicationStatus: 'approved', archivedAt: null,
+        coverUrl: { not: null },
+      } });
+      if (eligible !== dto.workIds.length) {
+        throw new BadRequestException('仅可推荐本人公开可见、审核通过、未归档且有封面的作品');
+      }
+      await tx.nailWork.updateMany({
+        where: { techId: technicianId, heroSlot: { not: null } }, data: { heroSlot: null },
+      });
+      for (const [index, id] of dto.workIds.entries()) {
+        await tx.nailWork.update({ where: { id }, data: { heroSlot: index + 1 } });
+      }
+    });
+    return this.getHeroRecommendations(technicianId);
+  }
+
+  async getPromotion(technicianId: number, workId: number) {
+    const work = await this.prisma.nailWork.findFirst({
+      where: { id: workId, techId: technicianId },
+      select: { id: true },
+    });
+    if (!work) throw new NotFoundException('作品不存在');
+    const promotion = await this.prisma.workPromotion.findUnique({ where: { workId } });
+    return this.mapPromotion(promotion);
+  }
+
+  async savePromotion(technicianId: number, workId: number, dto: SaveWorkPromotionDto) {
+    const work = await this.prisma.nailWork.findFirst({
+      where: { id: workId, techId: technicianId },
+      select: { id: true, standardPriceFen: true },
+    });
+    if (!work) throw new NotFoundException('作品不存在');
+    if (dto.enabled === true && dto.discountAmountFen <= 0) {
+      throw new BadRequestException('开启优惠时请填写大于 0 的优惠金额');
+    }
+    if (dto.discountAmountFen > (work.standardPriceFen || 0)) {
+      throw new BadRequestException('优惠金额不能超过作品综合报价');
+    }
+    const startsAt = dto.startsAt ? new Date(dto.startsAt) : null;
+    const endsAt = dto.endsAt ? new Date(dto.endsAt) : null;
+    if ((startsAt && Number.isNaN(startsAt.getTime())) || (endsAt && Number.isNaN(endsAt.getTime()))) {
+      throw new BadRequestException('优惠时间格式无效');
+    }
+    if (startsAt && endsAt && endsAt <= startsAt) throw new BadRequestException('优惠结束时间必须晚于开始时间');
+    const promotion = await this.prisma.workPromotion.upsert({
+      where: { workId },
+      create: {
+        workId,
+        technicianId,
+        title: dto.title?.trim() || '作品分享优惠',
+        discountAmountFen: dto.discountAmountFen,
+        enabled: dto.enabled === true,
+        startsAt,
+        endsAt,
+      },
+      update: {
+        title: dto.title?.trim() || '作品分享优惠',
+        discountAmountFen: dto.discountAmountFen,
+        enabled: dto.enabled === true,
+        startsAt,
+        endsAt,
+      },
+    });
+    return this.mapPromotion(promotion);
+  }
+
   async create(technicianId: number, dto: CreateWorkDto) {
+    const createRequestId = dto.createRequestId?.trim() || undefined;
+    if (createRequestId) {
+      const existing = await this.prisma.nailWork.findFirst({
+        where: { techId: technicianId, createRequestId },
+        select: { id: true },
+      });
+      if (existing) return this.findOne(technicianId, existing.id);
+    }
     await this.subscriptions.assertCanCreateWork(technicianId);
     this.assertImageLimit(dto.images);
     const pricing = await this.resolveWorkPricing(
@@ -102,35 +207,49 @@ export class TechnicianWorksService {
       dto.selectedServiceIds,
       dto.standardPrice,
     );
-    const work = await this.prisma.nailWork.create({
-      data: {
-        techId: technicianId,
-        title: dto.title,
-        coverUrl: dto.coverUrl ?? null,
-        images: dto.images ?? null,
-        description: dto.description ?? null,
-        designIdea: dto.designIdea ?? null,
-        suitableScene: dto.suitableScene ?? null,
-        recommendationScore: dto.recommendationScore ?? null,
-        tags: dto.tags ?? null,
-        price: dto.price ?? null,
-        serviceSubtotalFen: pricing.serviceSubtotalFen,
-        standardPriceFen: pricing.standardPriceFen,
-        totalDurationMinutes: pricing.totalDurationMinutes,
-        serviceLines: {
-          create: pricing.lines,
+    let work;
+    try {
+      work = await this.prisma.nailWork.create({
+        data: {
+          techId: technicianId,
+          createRequestId,
+          title: dto.title,
+          coverUrl: dto.coverUrl ?? null,
+          images: dto.images ?? null,
+          description: dto.description ?? null,
+          designIdea: dto.designIdea ?? null,
+          suitableScene: dto.suitableScene ?? null,
+          recommendationScore: dto.recommendationScore ?? null,
+          tags: dto.tags ?? null,
+          price: dto.price ?? null,
+          serviceSubtotalFen: pricing.serviceSubtotalFen,
+          standardPriceFen: pricing.standardPriceFen,
+          totalDurationMinutes: pricing.totalDurationMinutes,
+          serviceLines: {
+            create: pricing.lines,
+          },
+          isVisible: dto.isVisible ?? true,
+          sortOrder: dto.sortOrder ?? 0,
+          publicationStatus: 'pending',
         },
-        isVisible: dto.isVisible ?? true,
-        sortOrder: dto.sortOrder ?? 0,
-        publicationStatus: 'pending',
-      },
-      include: {
-        likes: true,
-        favorites: true,
-        comments: true,
-        serviceLines: { orderBy: { sortOrder: 'asc' } },
-      },
-    });
+        include: {
+          likes: true,
+          favorites: true,
+          comments: true,
+          serviceLines: { orderBy: { sortOrder: 'asc' } },
+        },
+      });
+    } catch (error) {
+      // 并发重试可能先命中唯一约束；回读同一美甲师的作品即可恢复原结果。
+      if (createRequestId && error && typeof error === 'object' && (error as { code?: string }).code === 'P2002') {
+        const existing = await this.prisma.nailWork.findFirst({
+          where: { techId: technicianId, createRequestId },
+          select: { id: true },
+        });
+        if (existing) return this.findOne(technicianId, existing.id);
+      }
+      throw error;
+    }
 
     return this.mapWork(work, technicianId);
   }
@@ -1012,6 +1131,8 @@ export class TechnicianWorksService {
       isVisible: boolean;
       isPinned?: boolean;
       isFeatured?: boolean;
+      heroSlot?: number | null;
+      archivedAt?: Date | null;
       sortOrder: number;
       price?: number | null;
       viewCount?: number;
@@ -1041,6 +1162,7 @@ export class TechnicianWorksService {
       standardPriceFen?: number | null;
       totalDurationMinutes?: number;
       serviceLines?: any[];
+      promotion?: any;
     },
     currentTechnicianId?: number,
   ) {
@@ -1093,9 +1215,12 @@ export class TechnicianWorksService {
         quantity: line.quantity,
         subtotalFen: line.subtotalFen,
       })),
+      promotion: this.mapPromotion(work.promotion),
       isVisible: work.isVisible,
       isPinned: work.isPinned ?? false,
       isFeatured: work.isFeatured ?? false,
+      heroSlot: work.heroSlot ?? null,
+      archivedAt: work.archivedAt ?? null,
       visibilityScope: work.visibilityScope ?? 'public',
       publicationStatus: work.publicationStatus ?? 'pending',
       reviewNote: work.reviewNote ?? null,
@@ -1115,6 +1240,23 @@ export class TechnicianWorksService {
       technicianName: work.technician?.name ?? '美甲师',
       createdAt: work.createdAt,
       updatedAt: work.updatedAt,
+    };
+  }
+
+  private mapPromotion(promotion: any) {
+    if (!promotion) return null;
+    const now = Date.now();
+    const startsAt = promotion.startsAt ? new Date(promotion.startsAt) : null;
+    const endsAt = promotion.endsAt ? new Date(promotion.endsAt) : null;
+    return {
+      id: promotion.id,
+      title: promotion.title,
+      discountAmountFen: promotion.discountAmountFen,
+      discountAmount: promotion.discountAmountFen / 100,
+      enabled: promotion.enabled,
+      startsAt: promotion.startsAt,
+      endsAt: promotion.endsAt,
+      isActive: promotion.enabled && (!startsAt || startsAt.getTime() <= now) && (!endsAt || endsAt.getTime() > now),
     };
   }
 

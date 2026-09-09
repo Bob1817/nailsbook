@@ -1,3 +1,4 @@
+const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
 const { phoneMask } = require('../../../utils/util');
 const { parseDate, isSameDay } = require('../../../utils/format');
@@ -13,35 +14,44 @@ const ORDER_SHORTCUTS = [
 
 // 工具入口（仅保留有对应页面的）
 const TOOLS = [
+  { key: 'quickBooking', label: '一键预约', icon: '/static/icons/calendar.svg' },
   { key: 'homepage',    label: '我的主页', icon: '/static/icons/profile-edit.svg' },
   { key: 'services',    label: '服务管理', icon: '/static/icons/scissors.svg' },
   { key: 'works',       label: '作品管理', icon: '/static/icons/image.svg' },
-  { key: 'styles',      label: '擅长风格', icon: '/static/icons/tag.svg' },
   { key: 'designs',     label: '设计需求', icon: '/static/icons/edit.svg' },
-  { key: 'serviceTime', label: '服务时间', icon: '/static/icons/clock.svg' },
   { key: 'shops',       label: '店铺管理', icon: '/static/icons/shop.svg' },
-  { key: 'tags',        label: '标签管理', icon: '/static/icons/tag.svg' }
+  { key: 'tags',        label: '标签管理', icon: '/static/icons/tag.svg' },
+  { key: 'marketingMaterials', label: '宣传物料', icon: '/static/icons/share.svg' }
 ];
 
 const TOOL_ROUTES = {
   homepage:     '/pages/technician/homepage-settings/index',
   services:     '/pages/technician/services/index',
   works:        '/pages/technician/works/index',
-  styles:       '/pages/technician/homepage-settings/index?section=styles',
   designs:      '/pages/technician/design-requests/index',
   serviceTime:  '/pages/technician/service-time/index',
   shops:        '/pages/technician/shop-management/index',
-  tags:         '/pages/technician/tag-management/index'
+  tags:         '/pages/technician/tag-management/index',
+  marketingMaterials: '/pages/technician/marketing-materials/index'
 };
 
 Page({
   data: {
     userInfo: {},
     isAccepting: false,
+    acceptingEnabled: false,
+    savingAccepting: false,
     canAcceptOrders: false,  // 是否满足接单前置条件（已开启上门或到店服务）
     stats: { todayOrders: 0, monthOrders: 0, pendingTotal: 0, customers: 0, newCustomers: 0, works: 0, monthlyRevenue: '¥0', rating: '待积累' },
     orderShortcuts: ORDER_SHORTCUTS.map((s) => ({ ...s, count: 0 })),
-    tools: TOOLS,
+    tools: ['services', 'works', 'shops', 'designs', 'tags', 'marketingMaterials', 'homepage', 'quickBooking'].map(key => TOOLS.find(item => item.key === key)),
+    showStatsDetail: false,
+    showInviteDetail: false,
+    inviteLinkLoading: false,
+    inviteLink: '',
+    inviteLinkExpires: '',
+    acceptingHint: '接单设置加载中',
+    scheduleSummary: '工作时间加载中',
 
     // 新手引导
     needsSetup: false,       // shopService 未配置时显示引导卡
@@ -121,7 +131,7 @@ Page({
     const activeScheme = (schedule.schemes || []).find((item) => item.id === schedule.activeSchemeId);
     const serviceReady = activeServices.length > 0;
     const shopReady = shopServiceOn && (userInfo.shopAddresses || []).some((item) => item.enabled !== false && (item.detailAddress || item.address));
-    const scheduleReady = !!(activeScheme && activeScheme.days && activeScheme.days.length && activeScheme.startTime < activeScheme.endTime);
+    const scheduleReady = !!(userInfo.serviceSchedule && activeScheme && activeScheme.days && activeScheme.days.length && activeScheme.startTime < activeScheme.endTime);
     const setupSteps = [
       { key: 'services', label: '完善服务与定价', hint: serviceReady ? '已配置有效服务' : '添加服务名称、价格和预计时长', done: serviceReady, route: 'services' },
       { key: 'shop', label: '完善到店门店', hint: shopReady ? '已配置可用门店' : '添加客户到店地址', done: shopReady, route: 'shops' },
@@ -137,6 +147,24 @@ Page({
     if (route === 'schedule') return this.openScheduleModal();
     if (route === 'shops') return wx.navigateTo({ url: '/pages/technician/shop-management/index' });
     wx.navigateTo({ url: '/pages/technician/services/index' });
+  },
+
+  async onAcceptingChange(e) {
+    if (this.data.savingAccepting) return;
+    const enabled = !!e.detail.value;
+    const previous = this.data.userInfo.status === 'active';
+    this.setData({ acceptingEnabled: enabled });
+    if (enabled === previous) return;
+    this.setData({ savingAccepting: true });
+    try {
+      await this.toggleAccepting();
+    } finally {
+      this.setData({
+        acceptingEnabled: this.data.userInfo.status === 'active',
+        savingAccepting: false
+      });
+      this.updateAvailabilitySummary();
+    }
   },
 
   async toggleAccepting() {
@@ -181,11 +209,36 @@ Page({
     }
   },
 
+  updateAvailabilitySummary() {
+    const userInfo = this.data.userInfo || {};
+    const schedule = normalizeSchedule(userInfo.serviceSchedule);
+    const active = schedule.schemes.find(item => item.id === schedule.activeSchemeId);
+    const now = new Date();
+    const date = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+    const day = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][now.getDay()];
+    const rest = schedule.restDays.includes(date) || (active && !active.days.includes(day));
+    let acceptingHint = '已暂停接收新预约';
+    if (!this.data.canAcceptOrders) acceptingHint = '完善接单设置后可开启';
+    else if (userInfo.status === 'active') acceptingHint = rest ? '已开启 · 今日为休息日' : '已开启，按工作时间安排服务';
+    this.setData({
+      acceptingHint,
+      scheduleSummary: userInfo.serviceSchedule && active
+        ? daysSummary(active.days) + ' · ' + active.startTime + '–' + active.endTime
+        : '尚未设置，点击完善'
+    });
+  },
+
+  openStatsDetail() { this.setData({ showStatsDetail: true, showInviteDetail: false }); },
+  openInviteDetail() { this.setData({ showInviteDetail: true, showStatsDetail: false }); },
+  closeProfileDetail() { this.setData({ showStatsDetail: false, showInviteDetail: false }); },
+
   // 根据工作时间方案和休息日自动判断接单状态
   // 前置条件：必须开启上门服务或到店服务
   // 无生效方案 → 24小时全程接单（仅受其他预约占用限制）
   computeAccepting() {
     const userInfo = this.data.userInfo || {};
+    this.setData({ acceptingEnabled: userInfo.status === 'active' });
+    this.updateAvailabilitySummary();
     // 未开启任何服务类型，无法接单
     if (!this.data.canAcceptOrders) {
       this.setData({ isAccepting: false });
@@ -360,9 +413,24 @@ Page({
     });
   },
 
-  onShareAppMessage() {
+  async copyInviteLink() {
+    if (this.data.inviteLinkLoading) return;
+    this.setData({ inviteLinkLoading: true });
+    try {
+      const result = await api.technician.invitationLink();
+      this.setData({ inviteLink: result.url, inviteLinkExpires: result.expiresAt.slice(0, 10) });
+      wx.setClipboardData({ data: result.url });
+    } catch (err) {
+      wx.showModal({ title: '邀请链接暂不可用', content: err.message || '请稍后重试，或使用发送给微信好友', showCancel: false });
+    } finally { this.setData({ inviteLinkLoading: false }); }
+  },
+
+  onShareAppMessage(e) {
     const u = this.data.userInfo || {};
     const code = u.invitationCode || '';
+    if (e && e.target && e.target.dataset.invite === 'client' && code) {
+      return { title: `${u.name || '美甲师'}邀请你成为专属客户`, path: `/pages/login/index?invite=${encodeURIComponent(code)}&source=invite`, imageUrl: u.avatarUrl || '' };
+    }
     return {
       title: `美甲师 ${u.name || '小美'} 的名片`,
       path: u.id ? `/pages/client/works/index?techId=${u.id}&source=card` : (code ? `/pages/client/login/index?invite=${code}` : '/pages/login/index'),
@@ -378,10 +446,15 @@ Page({
   // ---------- 工具 ----------
   onTool(e) {
     const key = e.currentTarget.dataset.key;
+    if (key === 'quickBooking') {
+      const user = this.data.userInfo || {};
+      if (!user.id || !user.invitationCode) return wx.showToast({ title: '邀请码加载中，请稍后重试', icon: 'none' });
+      return wx.navigateTo({ url: `/pages/client/quick-booking/index?techId=${user.id}&invite=${encodeURIComponent(user.invitationCode)}&tool=1` });
+    }
     if (key === 'homepage') {
       const user = this.data.userInfo || wx.getStorageSync('technician_userInfo') || wx.getStorageSync('userInfo') || {};
       if (!user.id) return wx.showToast({ title:'账号信息加载中', icon:'none' });
-      return wx.navigateTo({ url:'/pages/client/artist-home/index?id=' + user.id + '&preview=1' });
+      return wx.navigateTo({ url:'/pages/client/artist-home/index?id=' + user.id + '&preview=1&owner=1' });
     }
     if (key === 'serviceTime') return this.openScheduleModal();
     const url = TOOL_ROUTES[key];
@@ -474,7 +547,7 @@ Page({
     wx.showModal({
       title: '删除店铺',
       content: `确定删除"${name}"吗？`,
-      confirmColor: '#ff4d4f',
+      confirmColor: uiColors.danger,
       success: async (res) => {
         if (!res.confirm) return;
         try {
@@ -500,11 +573,6 @@ Page({
 
   // ---------- 工作时间设置 ----------
   openScheduleModal() {
-    // 前置条件检查：必须开启到店服务
-    if (!this.data.canAcceptOrders) {
-      this.openServiceTypeModal('shop');
-      return;
-    }
     const userInfo = this.data.userInfo || {};
     const schedule = normalizeSchedule(userInfo.serviceSchedule);
     // 为每个方案生成摘要
@@ -518,6 +586,7 @@ Page({
   },
 
   closeScheduleModal() {
+    if (this.data.savingSchedule) return;
     this.setData({ showScheduleModal: false, schedule: null });
   },
 
@@ -708,6 +777,7 @@ Page({
 
   // --- 保存工作时间 ---
   async saveSchedule() {
+    if (this.data.savingSchedule) return;
     const { schedule } = this.data;
     if (!schedule || !schedule.schemes || schedule.schemes.length === 0) {
       return wx.showToast({ title: '请至少添加一个工作时间方案', icon: 'none' });
@@ -726,7 +796,7 @@ Page({
       wx.setStorageSync('userInfo', userInfo);
       wx.setStorageSync('technician_userInfo', userInfo);
       this.setData({ userInfo, savingSchedule: false, showScheduleModal: false, schedule: null });
-      this.computeAccepting();
+      this.applyUserInfo();
       wx.showToast({ title: '工作时间已保存', icon: 'success' });
     } catch (err) {
       this.setData({ savingSchedule: false });
@@ -743,8 +813,38 @@ Page({
   navigateToHelp() { wx.navigateTo({ url: '/pages/technician/help-feedback/index' }); },
   navigateToAbout() { wx.navigateTo({ url: '/pages/technician/about/index' }); },
 
-  switchRole() {
-    wx.reLaunch({ url: '/pages/login/index' });
+  async switchRole() {
+    if (this._switchingRole) return;
+    this._switchingRole = true;
+    const app = getApp();
+    try {
+      if (!app.switchRole('client')) {
+        wx.showLoading({ title: '切换中...' });
+        const res = await api.technician.auth.switchToClient();
+        app.setLogin('client', res.accessToken, res.client, res.roles || ['client', 'technician']);
+        if (res.refreshToken) wx.setStorageSync('client_refreshToken', res.refreshToken);
+      }
+      wx.hideLoading();
+      wx.reLaunch({ url: '/pages/client/home/index' });
+    } catch (err) {
+      wx.hideLoading();
+      wx.showToast({ title: err.message || '切换失败，请重试', icon: 'none' });
+    } finally {
+      this._switchingRole = false;
+    }
+  },
+
+  switchAccount() {
+    wx.showModal({
+      title: '切换账号',
+      content: '将退出当前账号并返回登录页，是否继续？',
+      confirmText: '继续切换',
+      success: (res) => {
+        if (!res.confirm) return;
+        getApp().logout();
+        wx.reLaunch({ url: '/pages/login/index' });
+      }
+    });
   },
 
   logout() {

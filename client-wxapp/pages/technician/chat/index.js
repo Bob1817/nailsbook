@@ -151,7 +151,7 @@ Page({
           for (var n = 0; n < messages.length; n++) {
             var m = messages[n];
             var isNotifType = m.messageType === 'system' || m.messageType === 'booking' || m.messageType === 'quote' || m.messageType === 'order';
-            var isNotifRelated = m.relatedType === 'order' || m.relatedType === 'booking' || m.relatedType === 'comment' || m.relatedType === 'work_comment' || m.relatedType === 'binding';
+            var isNotifRelated = m.relatedType === 'order' || m.relatedType === 'booking' || m.relatedType === 'comment' || m.relatedType === 'work_comment' || m.relatedType === 'binding' || m.relatedType === 'service_review';
             if (isNotifType && isNotifRelated) {
               var nType = categorizeNotification(m);
               var actionLabel = '';
@@ -163,7 +163,7 @@ Page({
               notifItems.push({
                 id: 'notif-' + conv.id + '-' + m.id,
                 type: nType,
-                name: getNotificationName(nType),
+                name: m.relatedType === 'service_review' ? '客户评价' : getNotificationName(nType),
                 preview: m.content || '系统通知',
                 time: m.createdAt,
                 unread: !m.isRead,
@@ -177,7 +177,7 @@ Page({
                 badge: getNotificationName(nType),
                 _avatarChar: clientName2[0] || '客',
                 _avatarBgClass: getAvatarBgClass(nType),
-                _actionLabel: actionLabel,
+                _actionLabel: m.relatedType === 'service_review' ? '查看评价' : actionLabel,
                 _actionClass: actionClass
               });
             }
@@ -284,6 +284,9 @@ Page({
     if (item.relatedType === 'binding') {
       api.chat.technician.markRead(item.conversationId).catch(function() {});
       wx.navigateTo({ url: '/pages/technician/binding-applications/index' });
+    } else if (item.relatedType === 'service_review') {
+      api.chat.technician.markRead(item.conversationId).catch(function() {});
+      wx.navigateTo({ url: '/pages/technician/order-detail/index?id=' + item.relatedId });
     } else if (item.type === 'chat') {
       wx.navigateTo({
         url: '/pages/technician/chat-detail/index?conversationId=' + item.conversationId

@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "设置",
+  "navigationBarTitleText": "编辑资料",
   "navigationStyle": "custom",
   "usingComponents": {
     "nav-bar": "/components/nav-bar/index"

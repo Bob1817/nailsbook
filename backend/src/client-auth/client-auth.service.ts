@@ -1021,6 +1021,33 @@ export class ClientAuthService {
     };
   }
 
+  async loginAsClientForTechnician(technicianId: number) {
+    const technician = await this.prisma.technician.findUnique({
+      where: { id: technicianId },
+    });
+    if (!technician || ['deleted', 'suspended'].includes(technician.status)) {
+      throw new UnauthorizedException('美甲师账号不存在或已被禁用');
+    }
+
+    let client = await this.prisma.clientUser.findUnique({
+      where: { phone: technician.phone },
+    });
+    if (!client) {
+      client = await this.prisma.clientUser.create({
+        data: {
+          phone: technician.phone,
+          passwordHash: technician.passwordHash,
+          managedPasswordCiphertext: technician.managedPasswordCiphertext,
+          nickname: technician.name,
+          avatarUrl: technician.avatarUrl,
+          city: technician.city,
+          status: 'active',
+        },
+      });
+    }
+    return this.loginByWechat(client.id);
+  }
+
   private buildLoginResult(client: ClientWithBindings) {
     const launchBindings = client.bindings.filter((binding) =>
       isLaunchTechnician(binding.techId),
@@ -1169,6 +1196,7 @@ export class ClientAuthService {
         city: b.technician.city,
         status: b.technician.status,
         bindingStatus: 'pending',
+        boundAt: b.createdAt,
         shopService: b.technician.shopService,
         shopAddresses: b.technician.shopAddresses
           ? JSON.parse(b.technician.shopAddresses)
@@ -1198,6 +1226,7 @@ export class ClientAuthService {
         isDefault: b.isDefault,
         bindSource: b.bindSource,
         bindId: b.id,
+        boundAt: b.createdAt,
       })),
     };
   }

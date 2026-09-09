@@ -1,4 +1,4 @@
-<view class="tab-bar">
+<view class="nb-theme tab-bar">
   <view
     wx:for="{{tabs}}"
     wx:key="key"
@@ -6,7 +6,7 @@
     bindtap="onTabTap"
     data-key="{{item.key}}"
     role="button"
-    aria-label="{{item.label}}"
+    aria-label="{{item.label}}{{item.key === selected ? '，当前页面' : ''}}"
   >
     <view class="tab-icon-wrap">
       <image class="tab-icon" src="/static/icons/tab-{{item.icon}}{{item.key === selected ? '-active' : ''}}.svg" mode="aspectFit" aria-hidden="true" />
@@ -14,4 +14,4 @@
     <text class="tab-label">{{item.label}}</text>
   </view>
 </view>
-<view class="tab-bar-placeholder"></view>
+<view class="nb-theme tab-bar-placeholder"></view>

@@ -32,7 +32,7 @@
       <view wx:elif="{{loadFailed}}" class="empty-card" aria-live="polite">
         <text class="empty-title">预约列表加载失败</text>
         <text class="empty-sub">请检查网络后重试</text>
-        <view class="retry-btn" bindtap="loadOrders" role="button">重新加载</view>
+        <view class="retry-btn booking-action" bindtap="loadOrders" role="button">重新加载</view>
       </view>
 
       <view wx:elif="{{filteredOrders.length === 0}}" class="empty-card">
@@ -49,6 +49,7 @@
           bind:open="onBookingCardOpen"
           bind:navigate="onBookingCardNavigate"
           bind:contact="onBookingCardContact"
+          bind:message="onBookingCardMessage"
         />
       </view>
     </view>

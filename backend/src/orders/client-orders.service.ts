@@ -174,7 +174,10 @@ export class ClientOrdersService {
               },
             ] }),
           },
-          include: { serviceLines: { orderBy: { sortOrder: 'asc' } } },
+          include: {
+            serviceLines: { orderBy: { sortOrder: 'asc' } },
+            promotion: true,
+          },
         })
       : null;
     if (dto.sourceWorkId) {
@@ -271,6 +274,12 @@ export class ClientOrdersService {
         : bookingType === 'standard'
           ? serviceSubtotalFen
           : null;
+    const now = new Date();
+    const sourcePromotion = !dto.referenceOnly && sourceWork?.promotion && sourceWork.promotion.enabled &&
+      (!sourceWork.promotion.startsAt || sourceWork.promotion.startsAt <= now) &&
+      (!sourceWork.promotion.endsAt || sourceWork.promotion.endsAt > now)
+      ? sourceWork.promotion
+      : null;
     assertWithinServiceSchedule(
       binding.technician.serviceSchedule,
       dto.serviceDate,
@@ -346,6 +355,7 @@ export class ClientOrdersService {
                 ? JSON.stringify(dto.customImages)
                 : null,
             sourceWorkId: dto.sourceWorkId ?? null,
+            promotionId: sourcePromotion?.id ?? null,
             bookingType,
             quickBooking: dto.quickBooking === true,
             serviceSubtotalFen,
@@ -390,6 +400,8 @@ export class ClientOrdersService {
               : dto.sourceWorkId
               ? 'work_detail'
               : this.normalizeAttributionSource(dto.attributionSource),
+            campaign: sourcePromotion ? 'work_share_promotion' : null,
+            content: sourcePromotion ? sourcePromotion.title : null,
           },
         });
 
@@ -1566,6 +1578,7 @@ export class ClientOrdersService {
           totalDurationMinutes: true,
         },
       },
+      promotion: true,
       serviceLines: { orderBy: { sortOrder: 'asc' as const } },
     };
   }
@@ -1677,6 +1690,7 @@ export class ClientOrdersService {
       clientAddress: order.clientAddress ?? null,
       review: order.review ? this.mapReview(order.review) : null,
       sourceWork: order.sourceWork ?? null,
+      promotion: order.promotion ?? null,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
     };

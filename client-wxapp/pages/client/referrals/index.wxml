@@ -2,20 +2,20 @@
   <view class="card">
     <text class="title">把喜欢的美甲服务分享给好友</text>
     <text class="notice">{{rewardNotice}}</text>
-    <button wx:if="{{!sharePath}}" class="primary" bindtap="prepareShare">生成推荐链接</button>
-    <button wx:else class="primary" open-type="share">分享给好友</button>
+    <button wx:if="{{!sharePath}}" class="primary booking-action" bindtap="prepareShare">生成推荐链接</button>
+    <button wx:else class="primary booking-action" open-type="share">分享给好友</button>
   </view>
 
   <view class="fund-card">
     <text class="fund-label">可用美甲基金</text>
-    <text class="fund-balance">¥{{fundTotals.available}}</text>
+    <text class="fund-balance semantic-money">¥{{fundTotals.available}}</text>
     <view class="fund-summary">
       <text>待生效 ¥{{fundTotals.pending}}</text>
       <text>已使用 ¥{{fundTotals.used}}</text>
     </view>
     <view wx:for="{{fundAccounts}}" wx:key="id" class="fund-account">
       <text>{{item.technician.name}}</text>
-      <text>可用 ¥{{item.totals.available}}</text>
+      <text class="semantic-money">可用 ¥{{item.totals.available}}</text>
     </view>
     <block wx:for="{{fundAccounts}}" wx:key="id" wx:for-item="account">
       <view wx:for="{{account.ledger}}" wx:key="id" wx:for-item="entry" class="ledger-row">
@@ -24,7 +24,7 @@
           <text class="ledger-date">{{entry.createdDate}} · {{account.technician.name}}</text>
         </view>
         <view class="ledger-amount-wrap">
-          <text class="ledger-amount">{{entry.amount > 0 ? '+' : ''}}¥{{entry.amount}}</text>
+          <text class="semantic-money ledger-amount">{{entry.amount > 0 ? '+' : ''}}¥{{entry.amount}}</text>
           <text class="ledger-status">{{entry.statusText}}</text>
         </view>
       </view>

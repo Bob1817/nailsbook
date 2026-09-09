@@ -7,6 +7,7 @@
     "nav-bar": "/components/nav-bar/index",
     "tab-bar": "/components/tab-bar/index",
     "work-card": "/components/work-card/index",
-    "technician-booking-card": "/components/technician-booking-card/index"
+    "technician-booking-card": "/components/technician-booking-card/index",
+    "booking-confirm": "/components/booking-confirm/index"
   }
 }

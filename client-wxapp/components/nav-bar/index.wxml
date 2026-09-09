@@ -1,4 +1,4 @@
-<view class="nav-bar {{transparent ? 'transparent' : ''}} {{light ? 'light' : ''}}" style="padding-top: {{statusBarHeight}}px;">
+<view class="nb-theme nav-bar {{transparent ? 'transparent' : ''}} {{light ? 'light' : ''}}" style="padding-top: {{statusBarHeight}}px;">
   <view class="nav-content" style="height: {{navBarHeight - statusBarHeight}}px;">
 
     <!-- 左侧：返回按钮 -->
@@ -27,4 +27,4 @@
 
   </view>
 </view>
-<view class="nav-placeholder" style="height: {{navBarHeight}}px;"></view>
+<view class="nb-theme nav-placeholder" style="height: {{navBarHeight}}px;"></view>

@@ -1,11 +1,11 @@
-@import '../../styles/tokens.wxss';
+@import '../../styles/component-tokens.generated.wxss';
 
 /* ===== 导航栏容器 ===== */
 .nav-bar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(20px);
-  border-bottom: 1rpx solid rgba(0, 0, 0, 0.06);
+  border-bottom: 0;
 }
 .nav-bar.transparent { background: transparent; border-bottom: none; backdrop-filter: none; }
 .nav-bar.light { background: transparent; border-bottom: none; backdrop-filter: blur(20px); }

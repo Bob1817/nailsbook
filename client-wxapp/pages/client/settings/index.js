@@ -3,8 +3,7 @@ const api = require('../../../services/api');
 Page({
   data: {
     nickname: '',
-    avatarUrl: '',
-    uploading: false,
+    phone: '',
     saving: false
   },
 
@@ -13,15 +12,14 @@ Page({
     const userInfo = wx.getStorageSync('userInfo');
     this.setData({
       nickname: userInfo?.nickname || '',
-      avatarUrl: userInfo?.avatarUrl || ''
+      phone: userInfo?.phone ? String(userInfo.phone).replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2') : '未绑定'
     });
   },
 
   onShow() {
     this._pageActive = true;
-    if (this._uploadFinishedWhileHidden || this._saveFinishedWhileHidden) {
-      this.setData({ uploading: false, saving: false });
-      this._uploadFinishedWhileHidden = false;
+    if (this._saveFinishedWhileHidden) {
+      this.setData({ saving: false });
       this._saveFinishedWhileHidden = false;
     }
   },
@@ -35,31 +33,11 @@ Page({
     this.setData({ nickname: e.detail.value });
   },
 
-  chooseAvatar() {
-    wx.chooseMedia({
-      count: 1,
-      mediaType: ['image'],
-      success: async (res) => {
-        const filePath = res.tempFiles[0].tempFilePath;
-        this.setData({ uploading: true });
-        try {
-          const uploadRes = await api.upload.image(filePath, 'client');
-          if (!this._pageActive) { this._uploadFinishedWhileHidden = true; return; }
-          this.setData({ avatarUrl: uploadRes.url, uploading: false });
-        } catch (err) {
-          if (!this._pageActive) { this._uploadFinishedWhileHidden = true; return; }
-          this.setData({ uploading: false });
-          wx.showToast({ title: '上传失败', icon: 'none' });
-        }
-      }
-    });
-  },
-
   async saveProfile() {
     if (this.data.saving) return;
-    const { nickname, avatarUrl } = this.data;
+    const nickname = this.data.nickname.trim();
     if (!nickname.trim()) {
-      wx.showToast({ title: '请输入昵称', icon: 'none' });
+      wx.showToast({ title: '请输入名称', icon: 'none' });
       return;
     }
 
@@ -67,12 +45,11 @@ Page({
     wx.showLoading({ title: '保存中...' });
 
     try {
-      await api.client.profile.update({ nickname, avatarUrl });
+      await api.client.profile.update({ nickname });
       wx.hideLoading();
       if (!this._pageActive) return;
       const userInfo = wx.getStorageSync('userInfo') || {};
       userInfo.nickname = nickname;
-      userInfo.avatarUrl = avatarUrl;
       wx.setStorageSync('userInfo', userInfo);
       wx.setStorageSync('client_userInfo', userInfo);
 
@@ -88,18 +65,5 @@ Page({
       if (this._pageActive) this.setData({ saving: false });
       else this._saveFinishedWhileHidden = true;
     }
-  },
-
-  logout() {
-    wx.showModal({
-      title: '确认退出',
-      content: '确定要退出登录吗？',
-      success: (res) => {
-        if (res.confirm) {
-          getApp().logout();
-          wx.redirectTo({ url: '/pages/login/index' });
-        }
-      }
-    });
   }
 });

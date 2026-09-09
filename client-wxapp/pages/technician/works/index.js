@@ -1,3 +1,4 @@
+const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
 const { guardTourist } = require('../../../utils/permission');
 
@@ -52,13 +53,14 @@ Page({
   /* ===== 操作菜单 ===== */
   showActions(e) {
     const source = e.detail || e.currentTarget.dataset;
-    const { id, visible, pinned, featured } = source;
+    const { id, visible, pinned, featured, heroSlot } = source;
     this.setData({ selectedWorkId: id });
 
     const itemList = [
       visible ? '隐藏作品' : '显示作品',
-      pinned ? '取消置顶' : '置顶作品',
-      featured ? '取消推荐' : '推荐作品',
+      pinned ? '取消作品置顶' : '置顶作品',
+      featured ? '移出主页精选' : '加入主页精选',
+      heroSlot ? '取消客户首页推荐' : '推荐至客户首页',
       '编辑作品',
       '删除作品'
     ];
@@ -70,8 +72,9 @@ Page({
           case 0: this.toggleVisible(id); break;
           case 1: this.togglePinned(id); break;
           case 2: this.toggleFeatured(id); break;
-          case 3: this.goEditById(id); break;
-          case 4: this.confirmDelete(id); break;
+          case 3: wx.navigateTo({ url: '/pages/technician/hero-recommendations/index?' + (heroSlot ? 'removeWorkId=' : 'workId=') + id }); break;
+          case 4: this.goEditById(id); break;
+          case 5: this.confirmDelete(id); break;
         }
       }
     });
@@ -90,8 +93,8 @@ Page({
       const works = this.data.works.map(w => w.id === id ? { ...w, isVisible: !w.isVisible } : w );
       this.setData({ works });
       this.splitIntoColumns(works);
-      wx.showToast({ title: works.find(w => w.id === id)?.isVisible ? '已显示' : '已隐藏', icon: 'success' });
-    } catch (err) { wx.showToast({ title: '操作失败', icon: 'none' }); }
+      wx.showToast({ title: works.find(w => w.id === id)?.isVisible ? '作品已显示' : '作品已隐藏', icon: 'success' });
+    } catch (err) { wx.showToast({ title: err.message || '操作失败', icon: 'none' }); }
   },
 
   async togglePinned(id) {
@@ -100,8 +103,8 @@ Page({
       const works = this.data.works.map(w => w.id === id ? { ...w, isPinned: !w.isPinned } : w );
       this.setData({ works });
       this.splitIntoColumns(works);
-      wx.showToast({ title: works.find(w => w.id === id)?.isPinned ? '已置顶' : '已取消置顶', icon: 'success' });
-    } catch (err) { wx.showToast({ title: '操作失败', icon: 'none' }); }
+      wx.showToast({ title: works.find(w => w.id === id)?.isPinned ? '作品已置顶' : '已取消作品置顶', icon: 'success' });
+    } catch (err) { wx.showToast({ title: err.message || '操作失败', icon: 'none' }); }
   },
 
   async toggleFeatured(id) {
@@ -110,8 +113,8 @@ Page({
       const works = this.data.works.map(w => w.id === id ? { ...w, isFeatured: !w.isFeatured } : w );
       this.setData({ works });
       this.splitIntoColumns(works);
-      wx.showToast({ title: works.find(w => w.id === id)?.isFeatured ? '已推荐' : '已取消推荐', icon: 'success' });
-    } catch (err) { wx.showToast({ title: '操作失败', icon: 'none' }); }
+      wx.showToast({ title: works.find(w => w.id === id)?.isFeatured ? '已加入主页精选' : '已移出主页精选', icon: 'success' });
+    } catch (err) { wx.showToast({ title: err.message || '操作失败', icon: 'none' }); }
   },
 
   confirmDelete(id) {
@@ -119,7 +122,7 @@ Page({
       title: '删除作品',
       content: '确定删除这个作品吗？删除后无法恢复。',
       confirmText: '删除',
-      confirmColor: '#ef4444',
+      confirmColor: uiColors.danger,
       success: (res) => { if (res.confirm) this.deleteWork(id); }
     });
   },

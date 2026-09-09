@@ -1,0 +1,10 @@
+@import '../../styles/component-tokens.generated.wxss';
+.action-button { min-width: 176rpx; min-height: var(--btn-height); margin: 0; padding: 0 28rpx; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 10rpx; border: 0; border-radius: var(--btn-radius); font-size: var(--btn-font-size); font-weight: var(--btn-font-weight); line-height: 1.2; }
+.action-button::after { border: 0; }
+.action-button.is-block { width: 100%; }
+.action-button-primary { background: var(--nb-action); color: var(--nb-inverse); }
+.action-button-secondary { background: var(--nb-soft-surface); color: var(--nb-ink); }
+.action-button-text { background: transparent; color: var(--nb-text-link); }
+.action-button-danger { background: var(--nb-danger); color: var(--nb-inverse); }
+.action-button.is-pressed { opacity: .78; }
+.action-button.is-disabled { opacity: .5; }

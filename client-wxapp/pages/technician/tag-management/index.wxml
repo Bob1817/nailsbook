@@ -1,39 +1,36 @@
 <nav-bar title="标签管理" showBack/>
-<view class="container">
+<view class="page">
+  <view class="category-tabs" role="tablist">
+    <view class="category-tab {{activeType === 'customer' ? 'active' : ''}}" role="tab" aria-selected="{{activeType === 'customer'}}" data-type="customer" bindtap="switchType"><text>客户标签</text><text class="tab-count">{{customerTags.length}}</text></view>
+    <view class="category-tab {{activeType === 'work' ? 'active' : ''}}" role="tab" aria-selected="{{activeType === 'work'}}" data-type="work" bindtap="switchType"><text>作品标签</text><text class="tab-count">{{workTags.length}}</text></view>
+  </view>
 
-
-  <!-- 添加标签 -->
-  <view class="add-card">
-    <input class="tag-input" value="{{newTag}}" bindinput="onNewTagInput" placeholder="输入标签名（最多12字）" maxlength="12" placeholder-class="ph" confirm-type="done" bindconfirm="addTag" />
-    <view class="add-btn {{adding ? 'btn-disabled' : ''}}" bindtap="addTag">
-      <text>{{adding ? '添加中' : '添加'}}</text>
+  <view class="section-card">
+    <view class="section-head">
+      <view class="section-copy"><text class="section-title">{{activeType === 'customer' ? '客户标签' : '作品标签'}}</text><text class="section-sub">{{activeType === 'customer' ? '用于客户分组、筛选和关系维护' : '用于描述作品风格、款式和适合场景'}}</text></view>
+      <view wx:if="{{currentTags.length}}" class="organize-action semantic-link" role="button" bindtap="toggleOrganizing">{{organizing ? '完成' : '整理'}}</view>
     </view>
-  </view>
 
-  <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
-
-  <view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
-    <view class="load-error-mark">!</view>
-    <text class="empty-text">标签加载失败</text>
-    <text class="empty-sub">请检查网络后重试</text>
-    <button class="retry-btn" bindtap="loadTags">重新加载</button>
-  </view>
-
-  <!-- 空状态 -->
-  <view wx:elif="{{tags.length === 0}}" class="empty">
-    <view class="empty-icon"><view class="tag-outline"></view></view>
-    <text class="empty-text">还没有标签</text>
-    <text class="empty-sub">在上方输入框添加标签，用于客户分类</text>
-  </view>
-
-  <!-- 标签列表 -->
-  <view wx:else class="tag-list">
-    <view wx:for="{{tags}}" wx:key="id" class="tag-card">
-      <text class="tag-name"># {{item.name}}</text>
-      <view class="tag-del" bindtap="deleteTag" data-id="{{item.id}}" data-name="{{item.name}}">
-        <text class="tag-del-icon">×</text>
+    <view wx:if="{{loading}}" class="state-wrap"><view class="loading-spinner"></view><text class="state-sub">正在加载标签</text></view>
+    <view wx:elif="{{loadFailed}}" class="state-wrap" aria-live="polite"><text class="state-title">标签加载失败</text><text class="state-sub">请检查网络后重试</text><button class="retry-btn booking-action" bindtap="loadTags">重新加载</button></view>
+    <view wx:elif="{{currentTags.length === 0}}" class="state-wrap empty-state"><view class="empty-symbol">#</view><text class="state-title">还没有{{activeType === 'customer' ? '客户' : '作品'}}标签</text><text class="state-sub">在下方创建第一个常用标签</text></view>
+    <view wx:else class="tag-cloud {{organizing ? 'organizing' : ''}}">
+      <view wx:for="{{currentTags}}" wx:key="id" class="tag-chip">
+        <text class="tag-hash">#</text><text class="tag-name">{{item.name}}</text>
+        <view wx:if="{{organizing}}" class="tag-remove semantic-danger" role="button" aria-label="删除{{item.name}}" bindtap="deleteTag" data-id="{{item.id}}" data-name="{{item.name}}">×</view>
       </view>
     </view>
+    <view wx:if="{{organizing}}" class="organize-tip">点击标签右侧的 × 删除。删除模板不会影响已经使用该标签的{{activeType === 'customer' ? '客户' : '作品'}}。</view>
   </view>
-  <text wx:if="{{tags.length}}" class="tag-note">删除模板不会移除已经添加到客户资料中的标签。</text>
+
+  <view class="section-card create-card">
+    <view class="section-head create-head"><view class="section-copy"><text class="section-title">创建新标签</text><text class="section-sub">保存后会出现在{{activeType === 'customer' ? '客户' : '作品'}}编辑页面</text></view><text class="input-count">{{newTag.length}}/12</text></view>
+    <view class="input-shell">
+      <text class="input-prefix">#</text>
+      <input class="tag-input" value="{{newTag}}" bindinput="onNewTagInput" placeholder="输入简短、明确的标签名称" maxlength="12" placeholder-class="ph" confirm-type="done" bindconfirm="addTag"/>
+    </view>
+    <button class="create-btn booking-action" disabled="{{!canAddTag || adding}}" bindtap="addTag">{{adding ? '正在添加...' : '添加到' + (activeType === 'customer' ? '客户标签' : '作品标签')}}</button>
+  </view>
+
+  <view class="usage-note"><text class="usage-title">使用说明</text><text class="usage-text">编辑{{activeType === 'customer' ? '客户资料' : '作品'}}时也可以直接输入新标签，保存后会自动同步到这里。</text></view>
 </view>

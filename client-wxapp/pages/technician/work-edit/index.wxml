@@ -1,26 +1,34 @@
-<nav-bar title="编辑作品" showBack/>
+<nav-bar title="{{isEdit ? '编辑作品' : '上传作品'}}" showBack/>
 <view class="container">
 
-  <view class="section">
+  <view class="section cover-section">
+    <view class="section-heading">
+      <view><text class="section-title">作品封面</text><text class="section-subtitle">选择一张最能代表作品效果的图片</text></view>
+      <text class="required-mark">必填</text>
+    </view>
     <view class="form-item">
-      <text class="label">封面图片 *</text>
-      <view class="cover-picker" bindtap="chooseCover">
+      <button class="cover-picker {{uploading ? 'uploading' : ''}}" catchtap="chooseCover" disabled="{{uploading}}" aria-label="{{coverUrl ? '更换作品封面' : '上传作品封面'}}">
     <image wx:if="{{coverUrl}}" class="cover-preview" src="{{coverUrl}}" mode="aspectFill" aria-label="作品封面预览"/>
         <view wx:else class="cover-placeholder">
-          <text class="cover-icon">+</text>
-          <text class="cover-hint">点击上传封面</text>
+          <view class="cover-icon-wrap"><text class="cover-icon">+</text></view>
+          <text class="cover-hint">{{uploading ? '正在上传...' : '上传作品封面'}}</text>
+          <text class="cover-subhint">建议使用清晰的竖版或方形图片</text>
         </view>
-      </view>
+      </button>
     </view>
   </view>
 
   <view class="section">
-    <view class="form-item">
-      <text class="label">作品标题 *</text>
-      <input class="input" placeholder="给作品起个名字" value="{{title}}" data-field="title" bindinput="onInput" confirm-type="done" cursor-spacing="24"/>
+    <view class="section-heading">
+      <view><text class="section-title">基本信息</text><text class="section-subtitle">填写作品名称与预约同款所需信息</text></view>
+      <text class="required-mark">必填</text>
     </view>
     <view class="form-item">
-      <text class="label">基础服务组合 *</text>
+      <text class="label">作品标题</text>
+      <input placeholder-class="form-placeholder" class="input" placeholder="给作品起个名字" value="{{title}}" data-field="title" bindinput="onInput" confirm-type="done" cursor-spacing="24"/>
+    </view>
+    <view class="form-item service-form-item">
+      <view class="field-heading"><text class="label">基础服务组合</text><text wx:if="{{selectedServiceIds.length}}" class="selection-count">已选 {{selectedServiceIds.length}} 项</text></view>
       <text class="field-help">服务决定作品的价格基准、时长和预约占位</text>
       <view wx:if="{{hasInvalidServiceConfig}}" class="service-config-warning">
         <text>存在未配置有效时长的基础服务，完善后才能用于作品报价。</text>
@@ -39,31 +47,45 @@
       <view wx:if="{{selectedServiceIds.length}}" class="pricing-summary"><text>服务原价 ¥{{serviceSubtotalFen / 100}}</text><text>预计 {{totalDurationMinutes}} 分钟</text></view>
     </view>
     <view class="form-item">
-      <text class="label">作品综合报价（元）*</text>
-      <input class="input" type="digit" placeholder="请输入美甲师综合报价" value="{{standardPrice}}" data-field="standardPrice" bindinput="onInput" confirm-type="done" cursor-spacing="24"/>
+      <text class="label">作品综合报价（元）</text>
+      <input placeholder-class="form-placeholder" class="input" type="digit" placeholder="请输入美甲师综合报价" value="{{standardPrice}}" data-field="standardPrice" bindinput="onInput" confirm-type="done" cursor-spacing="24"/>
       <text class="field-help">服务原价按各项基础服务的价格及数量累加，综合报价为客户预约同款时的最终报价</text>
-      <view wx:if="{{selectedServiceIds.length && standardPrice}}" class="price-breakdown">
-        <view class="price-breakdown-line"><text>服务原价</text><text>¥{{serviceSubtotalFen / 100}}</text></view>
-        <view wx:if="{{priceDifferenceType === 'discount'}}" class="price-breakdown-line discount"><text>优惠</text><text>-¥{{priceDifferenceFen / 100}}</text></view>
-        <view wx:elif="{{priceDifferenceType === 'surcharge'}}" class="price-breakdown-line surcharge"><text>其他</text><text>+¥{{priceDifferenceFen / 100}}</text></view>
-        <view class="price-breakdown-line final"><text>作品综合报价</text><text>¥{{standardPrice}}</text></view>
+    <view wx:if="{{selectedServiceIds.length && standardPrice}}" class="price-breakdown">
+        <view class="price-breakdown-line"><text>服务原价</text><text class="semantic-money">¥{{serviceSubtotalFen / 100}}</text></view>
+        <view wx:if="{{priceDifferenceType === 'discount'}}" class="price-breakdown-line discount"><text>优惠</text><text class="semantic-money">-¥{{priceDifferenceFen / 100}}</text></view>
+        <view wx:elif="{{priceDifferenceType === 'surcharge'}}" class="price-breakdown-line surcharge"><text>其他</text><text class="semantic-money">+¥{{priceDifferenceFen / 100}}</text></view>
+        <view class="price-breakdown-line final"><text>作品综合报价</text><text class="semantic-money">¥{{standardPrice}}</text></view>
       </view>
     </view>
+    <view class="promotion-box">
+      <view class="field-heading"><view><text class="label">作品分享优惠</text><text class="field-help">客户从作品分享入口预约时，报价会自动带出该优惠。</text></view><nb-switch checked="{{promotionEnabled}}" bindchange="onPromotionEnabledChange" label="启用作品分享优惠"/></view>
+      <view wx:if="{{promotionEnabled}}" class="promotion-fields">
+        <input placeholder-class="form-placeholder" class="input" type="digit" placeholder="优惠金额，例如 30" value="{{promotionDiscount}}" data-field="promotionDiscount" bindinput="onPromotionInput" confirm-type="done" />
+        <input placeholder-class="form-placeholder" class="input" maxlength="24" placeholder="优惠名称，例如分享专享" value="{{promotionTitle}}" data-field="promotionTitle" bindinput="onPromotionInput" confirm-type="done" />
+        <picker mode="date" value="{{promotionEndsAt}}" start="{{promotionEndsAt}}" bindchange="onPromotionEndChange"><view class="picker-field">{{promotionEndsAt ? '有效期至 ' + promotionEndsAt : '选择结束日期'}}<text class="picker-arrow">›</text></view></picker>
+      </view>
+    </view>
+    <view class="form-divider"></view>
+    <view class="subsection-heading"><text class="subsection-title">作品详情</text><text class="subsection-note">选填</text></view>
     <view class="form-item">
-      <text class="label">标签</text>
-      <input class="input" placeholder="例：法式,渐变,春季（逗号分隔）" value="{{tags}}" data-field="tags" bindinput="onInput" confirm-type="done" />
+      <text class="label">作品标签</text>
+      <text class="field-help">选择常用标签，或直接输入新标签并用逗号分隔；新标签将在发布时自动保存。</text>
+      <view wx:if="{{workTagTemplates.length}}" class="template-tags">
+        <view wx:for="{{workTagTemplates}}" wx:key="id" class="template-tag {{selectedWorkTagMap[item.name] ? 'selected' : ''}}" role="button" aria-label="{{item.name}}，{{selectedWorkTagMap[item.name] ? '已选中' : '未选中'}}" bindtap="toggleWorkTag" data-name="{{item.name}}">{{item.name}}</view>
+      </view>
+      <input placeholder-class="form-placeholder" class="input" placeholder="例：法式,渐变,春季" value="{{tags}}" data-field="tags" bindinput="onInput" confirm-type="done" />
     </view>
     <view class="form-item">
       <text class="label">描述</text>
-      <textarea class="textarea" placeholder="作品介绍（选填）" value="{{description}}" data-field="description" bindinput="onInput" adjust-position cursor-spacing="120" confirm-type="done" />
+      <textarea placeholder-class="form-placeholder" class="textarea" placeholder="作品介绍（选填）" value="{{description}}" data-field="description" bindinput="onInput" adjust-position cursor-spacing="120" confirm-type="done" />
     </view>
     <view class="form-item">
       <text class="label">设计理念</text>
-      <textarea class="textarea aesthetic-textarea" placeholder="例如：以莫奈花园色彩为灵感，通过低饱和蓝绿色营造春日高级感" value="{{designIdea}}" data-field="designIdea" bindinput="onInput" maxlength="300" adjust-position cursor-spacing="120" confirm-type="done" />
+      <textarea placeholder-class="form-placeholder" class="textarea aesthetic-textarea" placeholder="例如：以莫奈花园色彩为灵感，通过低饱和蓝绿色营造春日高级感" value="{{designIdea}}" data-field="designIdea" bindinput="onInput" maxlength="300" adjust-position cursor-spacing="120" confirm-type="done" />
     </view>
     <view class="form-item">
       <text class="label">适合场景</text>
-      <input class="input" placeholder="例如：职场、约会、婚礼（逗号分隔）" value="{{suitableScene}}" data-field="suitableScene" bindinput="onInput" confirm-type="done" />
+      <input placeholder-class="form-placeholder" class="input" placeholder="例如：职场、约会、婚礼（逗号分隔）" value="{{suitableScene}}" data-field="suitableScene" bindinput="onInput" confirm-type="done" />
     </view>
     <view class="form-item">
       <text class="label">推荐指数</text>
@@ -74,16 +96,19 @@
   </view>
 
   <view class="section">
+    <view class="section-heading">
+      <view><text class="section-title">作品相册</text><text class="section-subtitle">补充不同角度和细节图片，最多上传 9 张</text></view>
+      <text class="section-count">{{images.length}}/9</text>
+    </view>
     <view class="form-item">
-      <text class="label">更多图片（最多9张）</text>
       <view class="image-grid">
         <view class="img-wrap" wx:for="{{images}}" wx:key="index">
         <image class="img-thumb" src="{{item}}" mode="aspectFill" aria-label="作品图片"/>
-          <view class="img-remove" bindtap="removeImage" data-index="{{index}}">×</view>
+          <view class="img-remove" bindtap="removeImage" data-index="{{index}}" role="button" aria-label="移除第{{index + 1}}张作品图片"><text class="img-remove-symbol">×</text></view>
         </view>
-        <view wx:if="{{images.length < 9}}" class="img-add" bindtap="addImage">
+        <button wx:if="{{images.length < 9}}" class="img-add {{uploading ? 'uploading' : ''}}" catchtap="addImage" disabled="{{uploading}}" aria-label="添加作品相册图片">
           <text class="img-add-icon">+</text>
-        </view>
+        </button>
       </view>
     </view>
   </view>
@@ -91,10 +116,10 @@
   <view class="section access-section">
     <view class="access-heading">
       <view class="access-copy">
-        <text class="access-title">关联客户作品</text>
+        <text class="access-title">客户关联与权限</text>
         <text class="access-sub">从已完成预约关联客户照片，并为客户设置查看与互动权限</text>
       </view>
-      <switch checked="{{visibilityScope === 'authorized_clients'}}" bindchange="onScopeChange" color="#ec4899"/>
+      <nb-switch checked="{{visibilityScope === 'authorized_clients'}}" bindchange="onScopeChange" label="启用客户关联与权限"/>
     </view>
 
     <view wx:if="{{visibilityScope === 'authorized_clients'}}" class="access-fields">
@@ -113,7 +138,7 @@
         <view wx:for="{{accessGrants}}" wx:key="customerId" wx:for-item="grant" wx:for-index="grantIndex" class="grant-card">
           <view class="grant-head">
             <view><text class="grant-name">{{grant.customerName}}</text><text class="grant-index">授权客户 {{grantIndex + 1}}</text></view>
-            <view class="grant-remove" bindtap="removeGrant" data-index="{{grantIndex}}">移除</view>
+            <view class="grant-remove semantic-danger booking-action" bindtap="removeGrant" data-index="{{grantIndex}}" role="button" aria-label="移除{{grant.customerName}}的授权">移除授权</view>
           </view>
           <view class="form-item grant-order">
             <text class="label">关联预约（已完成优先）</text>
@@ -122,10 +147,10 @@
             </picker>
           </view>
           <view class="permission-list">
-            <view class="permission-row"><view><text class="permission-name">允许分享</text><text class="permission-desc">客户可生成限时分享链接</text></view><switch checked="{{grant.canShare}}" data-index="{{grantIndex}}" data-field="canShare" bindchange="onGrantPermissionChange" color="#ec4899"/></view>
-            <view class="permission-row"><view><text class="permission-name">允许收藏</text><text class="permission-desc">加入客户个人收藏</text></view><switch checked="{{grant.canFavorite}}" data-index="{{grantIndex}}" data-field="canFavorite" bindchange="onGrantPermissionChange" color="#ec4899"/></view>
-            <view class="permission-row"><view><text class="permission-name">允许点赞</text><text class="permission-desc">对作品表达喜欢</text></view><switch checked="{{grant.canLike}}" data-index="{{grantIndex}}" data-field="canLike" bindchange="onGrantPermissionChange" color="#ec4899"/></view>
-            <view class="permission-row"><view><text class="permission-name">允许评论</text><text class="permission-desc">在作品下留言交流</text></view><switch checked="{{grant.canComment}}" data-index="{{grantIndex}}" data-field="canComment" bindchange="onGrantPermissionChange" color="#ec4899"/></view>
+            <view class="permission-row"><view><text class="permission-name">允许分享</text><text class="permission-desc">客户可生成限时分享链接</text></view><nb-switch checked="{{grant.canShare}}" data-index="{{grantIndex}}" data-field="canShare" bindchange="onGrantPermissionChange" label="允许分享"/></view>
+            <view class="permission-row"><view><text class="permission-name">允许收藏</text><text class="permission-desc">加入客户个人收藏</text></view><nb-switch checked="{{grant.canFavorite}}" data-index="{{grantIndex}}" data-field="canFavorite" bindchange="onGrantPermissionChange" label="允许收藏"/></view>
+            <view class="permission-row"><view><text class="permission-name">允许点赞</text><text class="permission-desc">对作品表达喜欢</text></view><nb-switch checked="{{grant.canLike}}" data-index="{{grantIndex}}" data-field="canLike" bindchange="onGrantPermissionChange" label="允许点赞"/></view>
+            <view class="permission-row"><view><text class="permission-name">允许评论</text><text class="permission-desc">在作品下留言交流</text></view><nb-switch checked="{{grant.canComment}}" data-index="{{grantIndex}}" data-field="canComment" bindchange="onGrantPermissionChange" label="允许评论"/></view>
           </view>
           <view class="grant-summary">
             <text class="grant-summary-title">关联与授权摘要</text>
@@ -138,12 +163,12 @@
   </view>
 
   <view class="section visible-row">
-    <text class="label">公开展示</text>
-    <switch checked="{{isVisible}}" bindchange="onVisibleChange" color="#ff6b9d"/>
+    <view><text class="access-title">公开展示</text><text class="access-sub">开启后作品会展示在你的主页与作品列表</text></view>
+    <nb-switch checked="{{isVisible}}" bindchange="onVisibleChange" label="公开展示作品"/>
   </view>
 
   <view class="footer">
-    <button class="btn-save" bindtap="handleSubmit" disabled="{{submitting || uploading}}">
+    <button class="btn-save booking-action" bindtap="handleSubmit" disabled="{{submitting || uploading}}">
       {{submitting ? '保存中...' : (isEdit ? '保存修改' : '发布作品')}}
     </button>
   </view>

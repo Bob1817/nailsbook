@@ -1,5 +1,11 @@
 @import './styles/tokens.wxss';
 
+.nb-default-avatar {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 page {
   background-color: var(--bg-page);
   font-family: var(--font-body);
@@ -13,6 +19,13 @@ button,
 input,
 textarea {
   font-family: var(--font-body);
+}
+
+/* Native checkbox glyphs follow adjacent text; labels retain the 44px hit area. */
+checkbox {
+  transform: scale(.64);
+  transform-origin: center;
+  margin: 0 -6rpx;
 }
 
 /* ===== 布局工具类 ===== */
@@ -85,21 +98,21 @@ textarea {
 }
 
 .btn-primary:active {
-  opacity: 0.8;
+  background: var(--nb-action-pressed);
 }
 
 .btn-primary[disabled] {
-  background: var(--text-faint);
-  color: var(--text-inverse);
-  opacity: 0.5;
+  background: var(--nb-pressed);
+  color: var(--nb-control);
+  opacity: 1;
 }
 
 .btn-outline {
   height: var(--btn-height);
   line-height: var(--btn-height);
-  background-color: transparent;
+  background-color: var(--nb-soft-surface);
   color: var(--brand-primary);
-  border: 2rpx solid var(--brand-primary);
+  border: 0;
   border-radius: var(--btn-radius);
   font-size: var(--btn-font-size);
   font-weight: var(--btn-font-weight);
@@ -118,8 +131,8 @@ textarea {
 .input {
   height: var(--input-height);
   min-height: var(--input-height);
-  background-color: var(--bg-input);
-  border: 2rpx solid transparent;
+  background-color: var(--nb-soft-surface);
+  border: 0;
   border-radius: var(--input-radius);
   padding: 0 var(--input-padding-h);
   font-size: var(--font-md);
@@ -144,7 +157,7 @@ textarea {
   padding: var(--card-padding);
   margin-bottom: var(--card-gap);
   box-shadow: var(--shadow-sm);
-  border: 2rpx solid var(--border-light);
+  border: 0;
 }
 
 /* ===== 头像 ===== */
@@ -190,7 +203,7 @@ textarea {
 
 .tag-outline {
   background: transparent;
-  border: 2rpx solid var(--brand-primary);
+  border: 0;
 }
 
 /* ===== 空状态 ===== */
@@ -256,7 +269,7 @@ textarea {
   gap: 6rpx;
   padding: 12rpx 28rpx calc(12rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
-  color: #756c70;
+  color: var(--nb-secondary);
   font-size: 24rpx;
 }
 
@@ -266,10 +279,13 @@ textarea {
   align-items: center;
 }
 
-.privacy-consent checkbox {
-  transform: scale(.82);
-}
+.privacy-consent checkbox { transform: scale(.64); }
 
 .privacy-link {
-  color: #9b6155;
+  color: var(--nb-ink);
 }
+
+@import './styles/semantic-actions.wxss';
+
+/* Native button hairlines are not part of the surface-based design. */
+button::after { border:0; }

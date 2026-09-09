@@ -1,42 +1,15 @@
-<nav-bar title="设置" showBack/>
-<view class="container">
-  <!-- 头像 -->
-  <view class="avatar-section" bindtap="chooseAvatar">
-    <view class="avatar-wrap">
-      <image wx:if="{{avatarUrl}}" src="{{avatarUrl}}" mode="aspectFill" class="avatar" aria-label="当前头像" />
-      <view wx:else class="avatar-placeholder">
-        <view class="menu-icon"></view>
-      </view>
-      <view wx:if="{{uploading}}" class="avatar-uploading">
-        <view class="upload-spinner"></view>
-      </view>
+<nav-bar title="编辑资料" showBack/>
+<view class="profile-editor">
+  <view class="editor-card">
+    <view class="editor-row">
+      <text class="editor-label">名称</text>
+      <input class="editor-input" type="nickname" value="{{nickname}}" bindinput="onNicknameInput" placeholder="请输入名称" placeholder-class="editor-placeholder" maxlength="20" confirm-type="done" cursor-spacing="24" aria-label="名称" />
     </view>
-    <text class="avatar-hint">点击更换头像</text>
-  </view>
-
-  <!-- 表单 -->
-  <view class="form-section">
-    <view class="form-item">
-      <text class="form-label">昵称</text>
-      <input
-        class="form-input"
-        type="nickname"
-        value="{{nickname}}"
-        bindinput="onNicknameInput"
-        placeholder="请输入昵称"
-        placeholder-class="form-placeholder"
-        maxlength="20"
-        confirm-type="done"
-        cursor-spacing="24"
-      />
+    <view class="editor-row editor-row-last">
+      <text class="editor-label">手机号码</text>
+      <text class="editor-phone">{{phone}}</text>
     </view>
   </view>
-
-  <!-- 保存按钮 -->
-  <button class="save-btn {{saving ? 'saving' : ''}}" bindtap="saveProfile" disabled="{{saving || uploading}}">
-    <text>{{saving ? '保存中...' : '保存'}}</text>
-  </button>
-
-  <!-- 退出登录 -->
-  <view class="logout-btn" bindtap="logout">退出登录</view>
+  <text class="editor-note">手机号码用于账号登录，换绑功能暂未开放。</text>
+  <button class="booking-action editor-save" bindtap="saveProfile" disabled="{{saving}}" loading="{{saving}}">{{saving ? '保存中' : '保存修改'}}</button>
 </view>

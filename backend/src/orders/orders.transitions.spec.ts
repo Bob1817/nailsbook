@@ -32,7 +32,7 @@ describe('OrdersService 流转成功路径', () => {
         upsert: jest.fn().mockResolvedValue({ id: 20 }),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
-      paymentOrder: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      paymentOrder: { updateMany: jest.fn().mockResolvedValue({ count: 1 }), aggregate: jest.fn().mockResolvedValue({ _sum: { amountCents: 0 } }), create: jest.fn().mockResolvedValue({ id: 30 }) },
       orderReminder: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
       revenue: {
         findUnique: jest.fn().mockResolvedValue(null),
@@ -150,6 +150,7 @@ describe('OrdersService 流转成功路径', () => {
       serviceType: '上门美甲',
       clientUserId: 11,
       technicianId: 7,
+      quotePrice: 200,
       depositAmount: 50,
       isDepositPaid: false,
       startTime: new Date('2026-06-10T10:00:00Z'),
@@ -165,6 +166,61 @@ describe('OrdersService 流转成功路径', () => {
       }),
     }));
     expect(prisma.blockedTimeSlot.create).toHaveBeenCalledTimes(1);
+  });
+
+  describe('确认时同步报价和定金', () => {
+    beforeEach(() => {
+      jest.spyOn(service, 'findOne').mockResolvedValue({
+        id: 1, status: 'pending_confirm', serviceType: '到店美甲', clientUserId: 11,
+        technicianId: 7, quotePrice: 696, depositAmount: 60, isDepositPaid: false,
+        startTime: new Date('2026-09-10T10:00:00Z'), endTime: new Date('2026-09-10T12:00:00Z'),
+      } as never);
+    });
+    it('新总价和已收定金同步到预约、交易和线下收款记录', async () => {
+      await service.confirm(1, 598, 100, true);
+      expect(prisma.order.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({
+        quotePrice: 598, finalPriceFen: 59800, depositAmount: 100, isDepositPaid: true,
+        tradeStatus: 'deposit_paid', paidAmount: 100, paymentStatus: 'partial',
+      }) }));
+      expect(prisma.bookingTradeOrder.upsert).toHaveBeenCalledWith(expect.objectContaining({ create: expect.objectContaining({
+        totalAmount: 598, depositAmount: 100, balanceAmount: 498, paidAmount: 100, currentPayStage: 'balance',
+      }) }));
+      expect(prisma.paymentOrder.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({
+        channel: 'offline', amountCents: 10000, status: 'paid', paymentType: 'deposit',
+      }) }));
+    });
+    it('未收定金使用新金额提示客户支付', async () => {
+      await service.confirm(1, 598, 80, false);
+      expect(prisma.order.update.mock.calls[0][0].data.tradeStatus).toBe('deposit_pending');
+      expect(prisma.message.create.mock.calls[0][0].data.content).toContain('80.00');
+      expect(prisma.paymentOrder.create).not.toHaveBeenCalled();
+    });
+    it.each([[0, 0], [-1, 0], [598.001, 0], [598, -1], [598, 599], [598, 0.001]])('拒绝无效总价 %s 或定金 %s', async (price, deposit) => {
+      await expect(service.confirm(1, price, deposit, false)).rejects.toThrow(BadRequestException);
+      expect(prisma.order.update).not.toHaveBeenCalled();
+    });
+    it('无定金时不会记录虚假收款', async () => {
+      await service.confirm(1, 598, 0, true);
+      expect(prisma.order.update.mock.calls[0][0].data.isDepositPaid).toBe(false);
+      expect(prisma.paymentOrder.create).not.toHaveBeenCalled();
+    });
+    it('已有支付凭据的定金不能取消或降低', async () => {
+      prisma.paymentOrder.aggregate.mockResolvedValue({ _sum: { amountCents: 10000 } });
+      await expect(service.confirm(1, 598, 100, false)).rejects.toThrow('已有定金收款记录');
+      await expect(service.confirm(1, 598, 50, true)).rejects.toThrow('已有定金收款记录');
+    });
+    it('已有定金凭据不重复记录收款', async () => {
+      prisma.paymentOrder.aggregate.mockResolvedValue({ _sum: { amountCents: 10000 } });
+      await service.confirm(1, 598, 100, true);
+      expect(prisma.paymentOrder.create).not.toHaveBeenCalled();
+      expect(prisma.order.update.mock.calls[0][0].data.paidAmount).toBe(100);
+    });
+    it('重复确认不重复写入或发送通知', async () => {
+      prisma.order.updateMany.mockResolvedValue({ count: 0 });
+      await expect(service.confirm(1, 598, 100, true)).rejects.toThrow('预约状态已变化');
+      expect(prisma.paymentOrder.create).not.toHaveBeenCalled();
+      expect(prisma.message.create).not.toHaveBeenCalled();
+    });
   });
 
   it('complete：in_progress → completed，并生成收入记录', async () => {
@@ -256,6 +312,7 @@ describe('OrdersService 流转成功路径', () => {
       customerId: 3,
       clientUserId: null,
       isDepositPaid: true,
+      quotePrice: 200,
       depositAmount: 50,
       paidAmount: 50,
       depositConfirmedAt: new Date('2026-08-01T00:00:00Z'),
@@ -283,6 +340,7 @@ describe('OrdersService 流转成功路径', () => {
       customerId: 3,
       clientUserId: null,
       isDepositPaid: true,
+      quotePrice: 200,
       depositAmount: 50,
       paidAmount: 50,
     } as never);
