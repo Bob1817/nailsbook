@@ -44,7 +44,7 @@ struct LoginView: View {
                             roleTab(.client, title: "我是顾客")
                             roleTab(.technician, title: "我是美甲师")
                         }
-                        .background(Color(hex: "EEF0F4"))
+                        .background(NBColors.page)
                         .cornerRadius(9)
                         .padding(.horizontal, Spacing.xxl)
 

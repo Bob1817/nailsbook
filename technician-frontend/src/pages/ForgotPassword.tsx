@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth';
 
 const inputClass =
-  'h-14 w-full rounded-2xl border border-[#ece8ec] bg-white px-4 text-base focus:outline-none focus:ring-2 focus:ring-[#ff7ea9]/30';
+  'h-14 w-full rounded-2xl border border-[var(--nb-line)] bg-white px-4 text-base focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]/30';
 
 const ForgotPassword: React.FC = () => {
   const navigate = useNavigate();
@@ -63,15 +63,15 @@ const ForgotPassword: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-[#fff9f8] px-6 pt-[max(3rem,env(safe-area-inset-top)+1rem)]">
+    <div className="min-h-[100dvh] bg-[var(--nb-page)] px-6 pt-[max(3rem,env(safe-area-inset-top)+1rem)]">
       <button onClick={() => navigate(-1)} className="mb-6 flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-black/5" aria-label="返回">
-        <svg className="h-5 w-5 text-[#3c3440]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="h-5 w-5 text-[var(--nb-ink)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
       </button>
 
-      <h1 className="text-2xl font-bold text-[#1f2230]">找回密码</h1>
-      <p className="mt-2 text-sm text-[#8d8590]">通过注册手机号验证后重置登录密码</p>
+      <h1 className="text-2xl font-bold text-[var(--nb-ink)]">找回密码</h1>
+      <p className="mt-2 text-sm text-[var(--nb-muted)]">通过注册手机号验证后重置登录密码</p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
         <input type="tel" inputMode="numeric" placeholder="请输入手机号" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={11} className={inputClass} />
@@ -81,21 +81,21 @@ const ForgotPassword: React.FC = () => {
             type="button"
             onClick={handleSend}
             disabled={sending || countdown > 0}
-            className="h-14 shrink-0 rounded-2xl bg-[#fff0f5] px-4 text-sm font-semibold text-[#ff607b] disabled:opacity-50"
+            className="h-14 shrink-0 rounded-2xl bg-[var(--nb-page)] px-4 text-sm font-semibold text-[var(--nb-ink)] disabled:opacity-50"
           >
             {countdown > 0 ? `${countdown}s` : sending ? '发送中' : '发送验证码'}
           </button>
         </div>
-        {devCode && <p className="text-xs text-[#a08e98]">开发环境验证码：{devCode}</p>}
+        {devCode && <p className="text-xs text-[var(--nb-muted)]">开发环境验证码：{devCode}</p>}
         <input type="password" placeholder="新密码（至少 8 位，含字母和数字）" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoComplete="new-password" className={inputClass} />
         <input type="password" placeholder="确认新密码" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" className={inputClass} />
 
-        {error && <p className="text-sm text-[#ff4d4f]">{error}</p>}
+        {error && <p className="text-sm text-[var(--nb-ink)]">{error}</p>}
 
         <button
           type="submit"
           disabled={submitting}
-          className="h-14 w-full rounded-2xl bg-gradient-to-r from-[#ff636e] to-[#ff71aa] text-base font-semibold text-white shadow-lg active:scale-[0.99] disabled:opacity-50"
+          className="h-14 w-full rounded-2xl bg-[var(--nb-action)] text-base font-semibold text-white shadow-lg active:scale-[0.99] disabled:opacity-50"
         >
           {submitting ? '提交中...' : '重置密码'}
         </button>

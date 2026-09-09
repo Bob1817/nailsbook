@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { authService } from '../services/auth';
-import nailLoginBg from '../assets/nail-login-bg.png';
 
 type Step = 'phone' | 'login' | 'register';
 
@@ -118,32 +117,31 @@ const Login: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen bg-cover bg-center"
-      style={{ backgroundImage: `url(${nailLoginBg})` }}
+      className="min-h-screen bg-[var(--nb-page)]"
     >
-      <div className="min-h-screen bg-white/80 backdrop-blur-sm">
+      <div className="min-h-screen">
         <div className="mx-auto flex max-w-md flex-col px-6 pt-16 pb-12">
           <div className="mb-12 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 to-rose-400 text-2xl font-bold text-white shadow-lg">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--nb-action)] text-2xl font-bold text-white shadow-lg">
               N
             </div>
-            <h1 className="text-2xl font-extrabold text-gray-900">NailBook</h1>
-            <p className="mt-1 text-sm text-gray-500">美甲预约，让美丽更简单</p>
+            <h1 className="text-2xl font-extrabold text-[var(--nb-ink)]">NailBook</h1>
+            <p className="mt-1 text-sm text-[var(--nb-secondary)]">美甲预约，让美丽更简单</p>
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-2xl font-bold text-[var(--nb-ink)]">
             {step === 'phone' && '欢迎使用'}
             {step === 'login' && '欢迎回来'}
             {step === 'register' && '完成注册'}
           </h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-[var(--nb-secondary)]">
             {step === 'phone' && '输入手机号开始'}
             {step === 'login' && '请输入密码登录'}
             {step === 'register' && '使用美甲师邀请码完成注册'}
           </p>
 
           {error && (
-            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+            <div id="login-error" role="alert" className="mt-4 rounded-lg border border-[var(--nb-line)] bg-[var(--nb-page)] px-3 py-2 text-sm text-[var(--nb-secondary)]">
               {error}
             </div>
           )}
@@ -152,16 +150,19 @@ const Login: React.FC = () => {
             <div className="mt-6 space-y-4">
               <input
                 type="tel"
+                aria-label="手机号"
+                aria-invalid={error === '请输入正确的手机号'}
+                aria-describedby={error ? 'login-error' : undefined}
                 placeholder="请输入手机号"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
                 maxLength={11}
-                className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-base placeholder:text-gray-400 focus:border-pink-400 focus:outline-none focus:ring-2 focus:ring-pink-200"
+                className="h-12 w-full rounded-xl border border-[var(--nb-line)] bg-white px-4 text-base placeholder:text-[var(--nb-muted)] focus:border-[var(--nb-control)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-line)]"
               />
               <button
                 onClick={handlePhoneNext}
                 disabled={loading}
-                className="h-12 w-full rounded-xl bg-gradient-to-r from-pink-500 to-rose-400 font-semibold text-white shadow-md active:scale-[0.98] disabled:opacity-50"
+                className="h-12 w-full rounded-xl bg-[var(--nb-action)] font-semibold text-white shadow-md active:scale-[0.98] disabled:opacity-50"
               >
                 {loading ? '检查中...' : '下一步'}
               </button>
@@ -170,12 +171,12 @@ const Login: React.FC = () => {
 
           {step === 'login' && (
             <form onSubmit={handleLogin} className="mt-6 space-y-4">
-              <div className="flex items-center justify-between rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-600">
+              <div className="flex items-center justify-between rounded-xl bg-[var(--nb-page)] px-4 py-3 text-sm text-[var(--nb-secondary)]">
                 <span>手机号：{phone}</span>
                 <button
                   type="button"
                   onClick={() => setStep('phone')}
-                  className="text-pink-500"
+                  className="text-[var(--nb-secondary)]"
                 >
                   换个号
                 </button>
@@ -185,18 +186,18 @@ const Login: React.FC = () => {
                 placeholder="请输入密码"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-base focus:border-pink-400 focus:outline-none focus:ring-2 focus:ring-pink-200"
+                className="h-12 w-full rounded-xl border border-[var(--nb-line)] bg-white px-4 text-base focus:border-[var(--nb-control)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-line)]"
               />
               <AgreementCheckbox agreed={agreed} setAgreed={setAgreed} />
               <button
                 type="submit"
                 disabled={loading}
-                className="h-12 w-full rounded-xl bg-gradient-to-r from-pink-500 to-rose-400 font-semibold text-white shadow-md active:scale-[0.98] disabled:opacity-50"
+                className="h-12 w-full rounded-xl bg-[var(--nb-action)] font-semibold text-white shadow-md active:scale-[0.98] disabled:opacity-50"
               >
                 {loading ? '登录中...' : '登录'}
               </button>
               <div className="text-center">
-                <button type="button" onClick={() => navigate('/forgot-password')} className="text-sm text-pink-500">
+                <button type="button" onClick={() => navigate('/forgot-password')} className="text-sm text-[var(--nb-secondary)]">
                   忘记密码？
                 </button>
               </div>
@@ -205,15 +206,15 @@ const Login: React.FC = () => {
 
           {step === 'register' && (
             <form onSubmit={handleRegister} className="mt-6 space-y-4">
-              <div className="rounded-xl bg-orange-50 px-3 py-2 text-sm text-orange-600">
+              <div className="rounded-xl bg-[var(--nb-page)] px-3 py-2 text-sm text-[var(--nb-secondary)]">
                 该手机号未注册，请使用美甲师邀请码完成注册
               </div>
-              <div className="flex items-center justify-between rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-600">
+              <div className="flex items-center justify-between rounded-xl bg-[var(--nb-page)] px-4 py-3 text-sm text-[var(--nb-secondary)]">
                 <span>手机号：{phone}</span>
                 <button
                   type="button"
                   onClick={() => setStep('phone')}
-                  className="text-pink-500"
+                  className="text-[var(--nb-secondary)]"
                 >
                   换个号
                 </button>
@@ -223,27 +224,27 @@ const Login: React.FC = () => {
                 placeholder="美甲师邀请码"
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value)}
-                className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-base focus:border-pink-400 focus:outline-none focus:ring-2 focus:ring-pink-200"
+                className="h-12 w-full rounded-xl border border-[var(--nb-line)] bg-white px-4 text-base focus:border-[var(--nb-control)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-line)]"
               />
               <input
                 type="password"
                 placeholder="设置密码（至少 8 位，含字母和数字）"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-base focus:border-pink-400 focus:outline-none focus:ring-2 focus:ring-pink-200"
+                className="h-12 w-full rounded-xl border border-[var(--nb-line)] bg-white px-4 text-base focus:border-[var(--nb-control)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-line)]"
               />
               <input
                 type="password"
                 placeholder="确认密码"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-base focus:border-pink-400 focus:outline-none focus:ring-2 focus:ring-pink-200"
+                className="h-12 w-full rounded-xl border border-[var(--nb-line)] bg-white px-4 text-base focus:border-[var(--nb-control)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-line)]"
               />
               <AgreementCheckbox agreed={agreed} setAgreed={setAgreed} />
               <button
                 type="submit"
                 disabled={loading}
-                className="h-12 w-full rounded-xl bg-gradient-to-r from-pink-500 to-rose-400 font-semibold text-white shadow-md active:scale-[0.98] disabled:opacity-50"
+                className="h-12 w-full rounded-xl bg-[var(--nb-action)] font-semibold text-white shadow-md active:scale-[0.98] disabled:opacity-50"
               >
                 {loading ? '注册中...' : '注册并登录'}
               </button>
@@ -264,7 +265,7 @@ const AgreementCheckbox: React.FC<{ agreed: boolean; setAgreed: (v: boolean) => 
       type="button"
       onClick={() => setAgreed(!agreed)}
       className={`mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border ${
-        agreed ? 'border-pink-500 bg-pink-500' : 'border-gray-300 bg-white'
+        agreed ? 'border-[var(--nb-ink)] bg-[var(--nb-action)]' : 'border-[var(--nb-control)] bg-white'
       }`}
     >
       {agreed && (
@@ -273,9 +274,9 @@ const AgreementCheckbox: React.FC<{ agreed: boolean; setAgreed: (v: boolean) => 
         </svg>
       )}
     </button>
-    <span className="text-xs text-gray-500">
-      我已阅读并同意<span className="text-pink-500">《用户协议》</span>和
-      <span className="text-pink-500">《隐私政策》</span>
+    <span className="text-xs text-[var(--nb-secondary)]">
+      我已阅读并同意<span className="text-[var(--nb-secondary)]">《用户协议》</span>和
+      <span className="text-[var(--nb-secondary)]">《隐私政策》</span>
     </span>
   </div>
 );

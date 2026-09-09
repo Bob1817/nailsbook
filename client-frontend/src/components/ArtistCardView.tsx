@@ -64,6 +64,7 @@ interface ArtistCardViewProps {
   onPrimary: () => void;
   onShare: () => void;
   onWorkClick: (workId: number) => void;
+  onShopClick?: () => void;
   onLike?: () => void;
   onFavorite?: () => void;
   onClose?: () => void;
@@ -72,11 +73,11 @@ interface ArtistCardViewProps {
 }
 
 const QUALIFICATION_CONFIG: Record<string, { icon: string; label: string; bgColor: string }> = {
-  education: { icon: '🎓', label: '教育经历', bgColor: '#f8f4f6' },
-  training: { icon: '📚', label: '培训经历', bgColor: '#f8f4f6' },
-  certificate: { icon: '📜', label: '证书资质', bgColor: '#f8f4f6' },
-  certification: { icon: '✅', label: '行业认证', bgColor: '#f8f4f6' },
-  award: { icon: '🏆', label: '获奖记录', bgColor: '#fff8e1' },
+  education: { icon: '🎓', label: '教育经历', bgColor: 'var(--nb-inverse)' },
+  training: { icon: '📚', label: '培训经历', bgColor: 'var(--nb-inverse)' },
+  certificate: { icon: '📜', label: '证书资质', bgColor: 'var(--nb-inverse)' },
+  certification: { icon: '✅', label: '行业认证', bgColor: 'var(--nb-inverse)' },
+  award: { icon: '🏆', label: '获奖记录', bgColor: 'var(--nb-muted)' },
 };
 
 const ICON = 'h-4 w-4 shrink-0';
@@ -112,7 +113,7 @@ const CalendarIcon = () => (
   </svg>
 );
 const VerifiedIcon = () => (
-  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="#4fc3f7" aria-hidden>
+  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="var(--nb-ink)" aria-hidden>
     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
   </svg>
 );
@@ -150,6 +151,7 @@ const ArtistCardView: React.FC<ArtistCardViewProps> = ({
   onPrimary,
   onShare,
   onWorkClick,
+  onShopClick,
   onLike,
   onFavorite,
   onClose,
@@ -169,7 +171,7 @@ const ArtistCardView: React.FC<ArtistCardViewProps> = ({
         {coverImageUrl ? (
           <img src={coverImageUrl} alt="封面图" className="h-full w-full object-cover" />
         ) : (
-          <div className="h-full w-full" style={{ background: 'linear-gradient(135deg, #2d1b3d 0%, #1a1a2e 50%, #16213e 100%)' }}>
+          <div className="h-full w-full" style={{ background: 'var(--nb-action)' }}>
             <div className="absolute top-5 right-5 h-20 w-20 rounded-full border border-white/10" />
             <div className="absolute top-10 right-10 h-10 w-10 rounded-full border border-white/10" />
           </div>
@@ -195,11 +197,11 @@ const ArtistCardView: React.FC<ArtistCardViewProps> = ({
         {/* Avatar and basic info */}
         <div className="absolute bottom-6 left-6 right-6">
           <div className="flex items-end gap-4">
-            <div className="flex h-22 w-22 shrink-0 items-center justify-center overflow-hidden rounded-full border-3 border-white bg-gradient-to-br from-pink-200 to-pink-300 shadow-lg" style={{ width: '88px', height: '88px' }}>
+            <div className="flex h-22 w-22 shrink-0 items-center justify-center overflow-hidden rounded-full border-3 border-white bg-[var(--nb-page)] shadow-lg" style={{ width: '88px', height: '88px' }}>
               {avatarUrl ? (
                 <img src={avatarUrl} alt={`${name}的头像`} className="h-full w-full object-cover" />
               ) : (
-                <span className="text-3xl font-bold text-pink-700">{name.slice(0, 1)}</span>
+                <span className="text-3xl font-bold text-[var(--nb-ink)]">{name.slice(0, 1)}</span>
               )}
             </div>
             <div className="min-w-0 flex-1">
@@ -213,7 +215,7 @@ const ArtistCardView: React.FC<ArtistCardViewProps> = ({
                 {city || '专业美甲师'} · {isAccepting ? '可预约' : '休息中'}
               </p>
               <div className="flex items-center gap-2">
-                <div className={`h-2 w-2 rounded-full ${isAccepting ? 'bg-green-400 animate-pulse' : 'bg-white/50'}`} />
+                <div className={`h-2 w-2 rounded-full ${isAccepting ? 'bg-[var(--nb-action)] animate-pulse' : 'bg-white/50'}`} />
                 <span className="text-xs text-white/80">{isAccepting ? '可预约' : '休息中'}</span>
               </div>
             </div>
@@ -225,10 +227,10 @@ const ArtistCardView: React.FC<ArtistCardViewProps> = ({
       <div className="min-h-0 flex-1 overflow-y-auto">
         {/* Professional Tags */}
         {displayStyleTags.length > 0 && (
-          <div className="px-5 py-4 bg-gray-50 border-b border-gray-100">
+          <div className="px-5 py-4 bg-[var(--nb-page)] border-b border-[var(--nb-line)]">
             <div className="flex flex-wrap gap-2">
               {displayStyleTags.map((tag) => (
-                <span key={tag} className="px-3 py-1 bg-gray-800 text-white text-xs rounded-full font-medium">
+                <span key={tag} className="px-3 py-1 bg-[var(--nb-action)] text-white text-xs rounded-full font-medium">
                   {tag}
                 </span>
               ))}
@@ -237,74 +239,74 @@ const ArtistCardView: React.FC<ArtistCardViewProps> = ({
         )}
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-0 text-center py-5 border-b border-gray-100">
+        <div className="grid grid-cols-4 gap-0 text-center py-5 border-b border-[var(--nb-line)]">
           <div className="py-2">
-            <div className="text-lg font-semibold text-gray-900">{formatCount(stats?.followerCount || 0)}</div>
-            <div className="text-xs text-gray-500 mt-1">关注</div>
+            <div className="text-lg font-semibold text-[var(--nb-ink)]">{formatCount(stats?.followerCount || 0)}</div>
+            <div className="text-xs text-[var(--nb-secondary)] mt-1">关注</div>
           </div>
-          <div className="py-2 border-l border-r border-gray-100">
-            <div className="text-lg font-semibold text-gray-900">{formatCount(stats?.likeCount || 0)}</div>
-            <div className="text-xs text-gray-500 mt-1">点赞</div>
+          <div className="py-2 border-l border-r border-[var(--nb-line)]">
+            <div className="text-lg font-semibold text-[var(--nb-ink)]">{formatCount(stats?.likeCount || 0)}</div>
+            <div className="text-xs text-[var(--nb-secondary)] mt-1">点赞</div>
           </div>
-          <div className="py-2 border-r border-gray-100">
-            <div className="text-lg font-semibold text-gray-900">{formatCount(stats?.favoriteCount || 0)}</div>
-            <div className="text-xs text-gray-500 mt-1">收藏</div>
+          <div className="py-2 border-r border-[var(--nb-line)]">
+            <div className="text-lg font-semibold text-[var(--nb-ink)]">{formatCount(stats?.favoriteCount || 0)}</div>
+            <div className="text-xs text-[var(--nb-secondary)] mt-1">收藏</div>
           </div>
           <div className="py-2">
-            <div className="text-lg font-semibold text-pink-500">{stats?.rating || '暂无'}</div>
-            <div className="text-xs text-gray-500 mt-1">评分</div>
+            <div className="text-lg font-semibold text-[var(--nb-secondary)]">{stats?.rating || '暂无'}</div>
+            <div className="text-xs text-[var(--nb-secondary)] mt-1">评分</div>
           </div>
         </div>
 
         {/* About Me */}
-        <div className="px-5 py-5 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">关于我</h3>
-          <p className="text-sm text-gray-600 leading-relaxed">{displayBio}</p>
+        <div className="px-5 py-5 border-b border-[var(--nb-line)]">
+          <h3 className="text-sm font-semibold text-[var(--nb-ink)] mb-3">关于我</h3>
+          <p className="text-sm text-[var(--nb-secondary)] leading-relaxed">{displayBio}</p>
         </div>
 
         {/* Service Info */}
-        <div className="px-5 py-5 bg-gray-50 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-900 mb-4">服务信息</h3>
+        <div className="px-5 py-5 bg-[var(--nb-page)] border-b border-[var(--nb-line)]">
+          <h3 className="text-sm font-semibold text-[var(--nb-ink)] mb-4">服务信息</h3>
           
           <div className="flex gap-3 mb-4">
             {homeService && (
-              <div className="flex-1 p-3 bg-white rounded-lg text-center border border-gray-100">
+              <div className="flex-1 p-3 bg-white rounded-lg text-center border border-[var(--nb-line)]">
                 <HomeIcon />
-                <div className="text-xs text-gray-600 mt-1">可上门</div>
+                <div className="text-xs text-[var(--nb-secondary)] mt-1">可上门</div>
               </div>
             )}
             {shopService && (
-              <div className="flex-1 p-3 bg-white rounded-lg text-center border border-gray-100">
+              <button type="button" onClick={onShopClick} className="flex min-h-11 flex-1 flex-col items-center justify-center rounded-lg border border-[var(--nb-line)] bg-white p-3 text-center active:bg-[var(--nb-pressed)]">
                 <StoreIcon />
-                <div className="text-xs text-gray-600 mt-1">可到店</div>
-              </div>
+                <div className="mt-1 text-xs text-[var(--nb-secondary)]">{onShopClick ? '查看店铺' : '可到店'}</div>
+              </button>
             )}
           </div>
 
           {serviceArea && (
             <div className="mb-3">
-              <div className="text-xs text-gray-500 mb-1">服务范围</div>
-              <div className="text-sm text-gray-700">{serviceArea}</div>
+              <div className="text-xs text-[var(--nb-secondary)] mb-1">服务范围</div>
+              <div className="text-sm text-[var(--nb-ink)]">{serviceArea}</div>
             </div>
           )}
 
           <div className="mb-3">
-            <div className="text-xs text-gray-500 mb-1">服务理念</div>
-            <div className="text-sm text-gray-700 italic">"{displayPhilosophy}"</div>
+            <div className="text-xs text-[var(--nb-secondary)] mb-1">服务理念</div>
+            <div className="text-sm text-[var(--nb-ink)] italic">"{displayPhilosophy}"</div>
           </div>
 
           <div>
-            <div className="text-xs text-gray-500 mb-1">预约说明</div>
-            <div className="text-sm text-gray-700">{displayBookingNotes}</div>
+            <div className="text-xs text-[var(--nb-secondary)] mb-1">预约说明</div>
+            <div className="text-sm text-[var(--nb-ink)]">{displayBookingNotes}</div>
           </div>
         </div>
 
         {/* Qualifications */}
         {qualifications && qualifications.length > 0 && (
-          <div className="px-5 py-5 border-b border-gray-100">
+          <div className="px-5 py-5 border-b border-[var(--nb-line)]">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-900">专业资质</h3>
-              <span className="text-xs text-gray-500">全部 →</span>
+              <h3 className="text-sm font-semibold text-[var(--nb-ink)]">专业资质</h3>
+              <span className="text-xs text-[var(--nb-secondary)]">全部 →</span>
             </div>
             <div className="space-y-4">
               {qualifications.slice(0, 3).map((qual) => {
@@ -315,12 +317,12 @@ const ArtistCardView: React.FC<ArtistCardViewProps> = ({
                       <span className="text-lg">{config.icon}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900">{qual.title}</div>
-                      <div className="text-xs text-gray-500 mt-1">{qual.detail} · {qual.year}</div>
+                      <div className="text-sm font-medium text-[var(--nb-ink)]">{qual.title}</div>
+                      <div className="text-xs text-[var(--nb-secondary)] mt-1">{qual.detail} · {qual.year}</div>
                     </div>
                     {qual.isVerified && (
-                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-100">
-                        <svg className="h-3 w-3 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--nb-page)]">
+                        <svg className="h-3 w-3 text-[var(--nb-secondary)]" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
                         </svg>
                       </div>
@@ -333,15 +335,15 @@ const ArtistCardView: React.FC<ArtistCardViewProps> = ({
         )}
 
         {/* Featured Works */}
-        <div className="px-5 py-5 border-b border-gray-100">
+        <div className="px-5 py-5 border-b border-[var(--nb-line)]">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-gray-900">精选作品</h3>
-            <span className="text-xs text-pink-500 font-medium">查看全部 →</span>
+            <h3 className="text-sm font-semibold text-[var(--nb-ink)]">精选作品</h3>
+            <span className="text-xs text-[var(--nb-secondary)] font-medium">查看全部 →</span>
           </div>
           {loadingWorks ? (
             <div className="grid grid-cols-3 gap-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="aspect-square rounded-lg bg-gray-100 animate-pulse" />
+                <div key={i} className="aspect-square rounded-lg bg-[var(--nb-page)] animate-pulse" />
               ))}
             </div>
           ) : works.length > 0 ? (
@@ -351,12 +353,12 @@ const ArtistCardView: React.FC<ArtistCardViewProps> = ({
                   key={work.id}
                   type="button"
                   onClick={() => onWorkClick(work.id)}
-                  className="aspect-square rounded-lg overflow-hidden bg-gray-100"
+                  className="aspect-square rounded-lg overflow-hidden bg-[var(--nb-page)]"
                 >
                   {work.coverUrl || work.imageUrls?.[0] ? (
                     <img src={work.coverUrl || work.imageUrls[0]} alt={work.title || '作品'} className="h-full w-full object-cover" />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-gray-400">
+                    <div className="flex h-full w-full items-center justify-center text-[var(--nb-muted)]">
                       <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
@@ -366,36 +368,36 @@ const ArtistCardView: React.FC<ArtistCardViewProps> = ({
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-sm text-gray-400">暂无作品</div>
+            <div className="text-center py-8 text-sm text-[var(--nb-muted)]">暂无作品</div>
           )}
         </div>
 
         {/* Customer Reviews */}
-        <div className="px-5 py-5 bg-gray-50">
+        <div className="px-5 py-5 bg-[var(--nb-page)]">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-gray-900">客户评价</h3>
-            <span className="text-xs text-gray-500">{stats?.reviewCount || 0}条评价</span>
+            <h3 className="text-sm font-semibold text-[var(--nb-ink)]">客户评价</h3>
+            <span className="text-xs text-[var(--nb-secondary)]">{stats?.reviewCount || 0}条评价</span>
           </div>
           {featuredReviews && featuredReviews.length > 0 ? (
             <div className="space-y-3">
               {featuredReviews.slice(0, 3).map((review) => (
-                <div key={review.id} className="bg-white rounded-xl p-4 border border-gray-100">
+                <div key={review.id} className="bg-white rounded-xl p-4 border border-[var(--nb-line)]">
                   <div className="flex items-center gap-2.5 mb-2.5">
-                    <div className="h-8 w-8 overflow-hidden rounded-full bg-gray-100">
+                    <div className="h-8 w-8 overflow-hidden rounded-full bg-[var(--nb-page)]">
                       {review.client.avatarUrl ? (
                         <img src={review.client.avatarUrl} alt="" className="h-full w-full object-cover" />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-xs font-medium text-pink-500">
+                        <div className="flex h-full w-full items-center justify-center text-xs font-medium text-[var(--nb-secondary)]">
                           {review.client.name.slice(0, 1)}
                         </div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <p className="text-[13px] font-medium text-gray-900 truncate">{review.client.name}</p>
+                        <p className="text-[13px] font-medium text-[var(--nb-ink)] truncate">{review.client.name}</p>
                         <div className="flex items-center gap-0.5">
                           {Array.from({ length: 5 }, (_, i) => (
-                            <svg key={i} className={`h-3 w-3 ${i < review.rating ? 'text-yellow-400' : 'text-gray-200'}`} fill="currentColor" viewBox="0 0 24 24">
+                            <svg key={i} className={`h-3 w-3 ${i < review.rating ? 'text-[var(--nb-muted)]' : 'text-[var(--nb-inverse)]'}`} fill="currentColor" viewBox="0 0 24 24">
                               <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
                             </svg>
                           ))}
@@ -403,23 +405,23 @@ const ArtistCardView: React.FC<ArtistCardViewProps> = ({
                       </div>
                     </div>
                   </div>
-                  <p className="text-[12px] text-gray-600 leading-relaxed">{review.content}</p>
+                  <p className="text-[12px] text-[var(--nb-secondary)] leading-relaxed">{review.content}</p>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-sm text-gray-400">暂无评价</div>
+            <div className="text-center py-8 text-sm text-[var(--nb-muted)]">暂无评价</div>
           )}
         </div>
       </div>
 
       {/* Bottom Action Bar */}
-      <div className="shrink-0 border-t border-gray-100 bg-white px-4 py-3 safe-area-bottom">
+      <div className="shrink-0 border-t border-[var(--nb-line)] bg-white px-4 py-3 safe-area-bottom">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onShare}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition-colors active:bg-gray-200"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--nb-page)] text-[var(--nb-secondary)] transition-colors active:bg-[var(--nb-pressed)]"
             aria-label="分享"
           >
             <ShareIcon />
@@ -428,7 +430,7 @@ const ArtistCardView: React.FC<ArtistCardViewProps> = ({
             type="button"
             onClick={onLike}
             className={`flex h-11 w-11 items-center justify-center rounded-full transition-colors ${
-              isLiked ? 'bg-pink-100 text-pink-500' : 'bg-gray-100 text-gray-600 active:bg-gray-200'
+              isLiked ? 'bg-[var(--nb-page)] text-[var(--nb-secondary)]' : 'bg-[var(--nb-page)] text-[var(--nb-secondary)] active:bg-[var(--nb-pressed)]'
             }`}
             aria-label="点赞"
           >
@@ -438,7 +440,7 @@ const ArtistCardView: React.FC<ArtistCardViewProps> = ({
             type="button"
             onClick={onFavorite}
             className={`flex h-11 w-11 items-center justify-center rounded-full transition-colors ${
-              isFavorited ? 'bg-yellow-100 text-yellow-600' : 'bg-gray-100 text-gray-600 active:bg-gray-200'
+              isFavorited ? 'bg-[var(--nb-page)] text-[var(--nb-secondary)]' : 'bg-[var(--nb-page)] text-[var(--nb-secondary)] active:bg-[var(--nb-pressed)]'
             }`}
             aria-label="收藏"
           >
@@ -447,7 +449,7 @@ const ArtistCardView: React.FC<ArtistCardViewProps> = ({
           <button
             type="button"
             onClick={onPrimary}
-            className="flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-gray-900 text-sm font-semibold text-white shadow-sm transition-colors active:bg-gray-800"
+            className="flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--nb-action)] text-sm font-semibold text-white shadow-sm transition-colors active:bg-[var(--nb-action-pressed)]"
           >
             <CalendarIcon />
             {primaryLabel}

@@ -81,22 +81,22 @@ export const orderStatusLabels: Record<OrderStatus, string> = {
   pending_confirm: '待确认',
   pending_home: '待上门',
   pending_shop: '待到店',
-  in_progress: '进行中',
+  in_progress: 'bg-[var(--nb-active-surface)] text-[var(--nb-link)]',
   completed: '已完成',
   cancelled: '已取消',
   expired: '已过期',
 };
 
 export const orderStatusClasses: Record<OrderStatus, string> = {
-  pending_quote: 'bg-orange-100 text-orange-700',
-  pending_agree: 'bg-purple-100 text-purple-700',
-  pending_confirm: 'bg-yellow-100 text-yellow-700',
-  pending_home: 'bg-emerald-100 text-emerald-700',
-  pending_shop: 'bg-teal-100 text-teal-700',
-  in_progress: 'bg-sky-100 text-sky-700',
-  completed: 'bg-gray-100 text-gray-600',
-  cancelled: 'bg-red-100 text-red-600',
-  expired: 'bg-gray-100 text-gray-500',
+  pending_quote: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+  pending_agree: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+  pending_confirm: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+  pending_home: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+  pending_shop: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+  in_progress: 'bg-[var(--nb-active-surface)] text-[var(--nb-link)]',
+  completed: 'bg-[var(--nb-page)] text-[var(--nb-secondary)]',
+  cancelled: 'bg-[var(--nb-page)] text-[var(--nb-secondary)]',
+  expired: 'bg-[var(--nb-page)] text-[var(--nb-secondary)]',
 };
 
 export const orderStatusActions: Record<OrderStatus, OrderStatus[]> = {

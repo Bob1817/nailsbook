@@ -33,8 +33,8 @@ export const ActionConfirmDialog: React.FC<ActionConfirmDialogProps> = ({
 
   const confirmBg =
     variant === 'danger'
-      ? 'bg-red-500 active:bg-red-600'
-      : 'bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3]';
+      ? 'bg-[var(--nb-action)] active:bg-[var(--nb-action-pressed)]'
+      : 'bg-[var(--nb-action)]';
 
   return (
     <div
@@ -46,13 +46,13 @@ export const ActionConfirmDialog: React.FC<ActionConfirmDialogProps> = ({
         onClick={(e) => e.stopPropagation()}
         style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
       >
-        <h2 className="text-[18px] font-semibold text-gray-900">{title}</h2>
+        <h2 className="text-[18px] font-semibold text-[var(--nb-ink)]">{title}</h2>
         {description && (
-          <p className="mt-2 text-sm leading-6 text-gray-500">{description}</p>
+          <p className="mt-2 text-sm leading-6 text-[var(--nb-secondary)]">{description}</p>
         )}
 
         {price != null && (
-          <div className="mt-4 rounded-2xl bg-gradient-to-br from-[#FF6B8A] to-[#FF8FA3] px-5 py-5 text-white shadow-md">
+          <div className="mt-4 rounded-2xl bg-[var(--nb-action)] px-5 py-5 text-white shadow-md">
             <p className="text-[11px] uppercase tracking-[0.18em] text-white/72">
               报价金额
             </p>
@@ -61,11 +61,11 @@ export const ActionConfirmDialog: React.FC<ActionConfirmDialogProps> = ({
         )}
 
         {details && details.length > 0 && (
-          <div className="mt-4 space-y-2 rounded-2xl bg-gray-50 p-4">
+          <div className="mt-4 space-y-2 rounded-2xl bg-[var(--nb-page)] p-4">
             {details.map((d, i) => (
               <div key={i} className="flex items-start justify-between gap-3 text-sm">
-                <span className="text-gray-500">{d.label}</span>
-                <span className="text-right font-medium text-gray-900">{d.value}</span>
+                <span className="text-[var(--nb-secondary)]">{d.label}</span>
+                <span className="text-right font-medium text-[var(--nb-ink)]">{d.value}</span>
               </div>
             ))}
           </div>
@@ -76,7 +76,7 @@ export const ActionConfirmDialog: React.FC<ActionConfirmDialogProps> = ({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="flex-1 rounded-full bg-gray-100 px-4 py-3 text-sm font-medium text-gray-700 active:scale-[0.98] disabled:opacity-60"
+            className="flex-1 rounded-full bg-[var(--nb-page)] px-4 py-3 text-sm font-medium text-[var(--nb-ink)] active:scale-[0.98] disabled:opacity-60"
           >
             {cancelText}
           </button>

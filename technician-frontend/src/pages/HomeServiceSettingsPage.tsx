@@ -153,35 +153,35 @@ const HomeServiceSettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-[#fff9f8]">
+    <div className="flex h-[100dvh] flex-col bg-[var(--nb-page)]">
       {/* Header */}
-      <div className="shrink-0 flex items-center gap-3 bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[#f2e6ec]">
+      <div className="shrink-0 flex items-center gap-3 bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[var(--nb-line)]">
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f7f3f5] transition-colors active:bg-[#eee5e9]"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-page)] transition-colors active:bg-[var(--nb-page)]"
         >
-          <svg className="h-5 w-5 text-[#3c3440]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-5 w-5 text-[var(--nb-ink)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h1 className="text-[17px] font-semibold text-[#1f2230]">上门设置</h1>
+        <h1 className="text-[17px] font-semibold text-[var(--nb-ink)]">上门设置</h1>
       </div>
 
       {/* Enable Toggle */}
       <div className="flex-1 overflow-y-auto pb-32">
       <div className="px-5 py-4">
-        <div className="rounded-2xl bg-white p-4 shadow-sm border border-gray-100">
+        <div className="rounded-2xl bg-white p-4 shadow-sm border border-[var(--nb-line)]">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-semibold text-gray-900">开启上门服务</h3>
-              <p className="text-sm text-gray-500 mt-1">开启后用户可在预约时选择上门美甲</p>
+              <h3 className="font-semibold text-[var(--nb-ink)]">开启上门服务</h3>
+              <p className="text-sm text-[var(--nb-secondary)] mt-1">开启后用户可在预约时选择上门美甲</p>
             </div>
             <button
               onClick={handleToggleEnabled}
               disabled={loading}
               className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
-                settings.enabled ? 'bg-pink-500' : 'bg-gray-300'
+                settings.enabled ? 'bg-[var(--nb-action)]' : 'bg-[var(--nb-pressed)]'
               }`}
             >
               <span
@@ -198,13 +198,13 @@ const HomeServiceSettingsPage: React.FC = () => {
         <>
           {/* Tabs */}
           <div className="px-5 mb-4">
-            <div className="flex rounded-xl bg-gray-100 p-1">
+            <div className="flex rounded-xl bg-[var(--nb-page)] p-1">
               <button
                 onClick={() => setActiveTab('basic')}
                 className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
                   activeTab === 'basic'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500'
+                    ? 'bg-white text-[var(--nb-ink)] shadow-sm'
+                    : 'text-[var(--nb-secondary)]'
                 }`}
               >
                 基础设置
@@ -213,8 +213,8 @@ const HomeServiceSettingsPage: React.FC = () => {
                 onClick={() => setActiveTab('fee')}
                 className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
                   activeTab === 'fee'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500'
+                    ? 'bg-white text-[var(--nb-ink)] shadow-sm'
+                    : 'text-[var(--nb-secondary)]'
                 }`}
               >
                 费用设置
@@ -226,27 +226,27 @@ const HomeServiceSettingsPage: React.FC = () => {
           {activeTab === 'basic' && (
             <div className="px-5 space-y-4">
               {/* Base Address */}
-              <div className="rounded-2xl bg-white p-4 shadow-sm border border-gray-100">
-                <h3 className="font-semibold text-gray-900 mb-3">服务起点地址</h3>
-                <p className="text-sm text-gray-500 mb-4">用户预约时将基于该地址计算距离</p>
+              <div className="rounded-2xl bg-white p-4 shadow-sm border border-[var(--nb-line)]">
+                <h3 className="font-semibold text-[var(--nb-ink)] mb-3">服务起点地址</h3>
+                <p className="text-sm text-[var(--nb-secondary)] mb-4">用户预约时将基于该地址计算距离</p>
 
                 {settings.baseAddress?.detailAddress ? (
-                  <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                  <div className="bg-[var(--nb-page)] rounded-xl p-4 mb-4">
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="font-medium text-gray-900">{settings.baseAddress.name || '常用地址'}</p>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="font-medium text-[var(--nb-ink)]">{settings.baseAddress.name || '常用地址'}</p>
+                        <p className="text-sm text-[var(--nb-secondary)] mt-1">
                           {[settings.baseAddress.province, settings.baseAddress.city, settings.baseAddress.district, settings.baseAddress.detailAddress]
                             .filter(Boolean)
                             .join(' ')}
                         </p>
                         {settings.baseAddress.doorInfo && (
-                          <p className="text-xs text-gray-500 mt-1">{settings.baseAddress.doorInfo}</p>
+                          <p className="text-xs text-[var(--nb-secondary)] mt-1">{settings.baseAddress.doorInfo}</p>
                         )}
                       </div>
                       <button
                         onClick={handleOpenAddressForm}
-                        className="text-sm text-pink-500 font-medium"
+                        className="text-sm text-[var(--nb-secondary)] font-medium"
                       >
                         修改
                       </button>
@@ -255,7 +255,7 @@ const HomeServiceSettingsPage: React.FC = () => {
                 ) : (
                   <button
                     onClick={handleOpenAddressForm}
-                    className="w-full py-4 border-2 border-dashed border-gray-200 rounded-xl text-gray-500 flex items-center justify-center gap-2"
+                    className="w-full py-4 border-2 border-dashed border-[var(--nb-line)] rounded-xl text-[var(--nb-secondary)] flex items-center justify-center gap-2"
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -266,8 +266,8 @@ const HomeServiceSettingsPage: React.FC = () => {
               </div>
 
               {/* Service Radius */}
-              <div className="rounded-2xl bg-white p-4 shadow-sm border border-gray-100">
-                <h3 className="font-semibold text-gray-900 mb-3">服务范围</h3>
+              <div className="rounded-2xl bg-white p-4 shadow-sm border border-[var(--nb-line)]">
+                <h3 className="font-semibold text-[var(--nb-ink)] mb-3">服务范围</h3>
                 <div className="flex items-center gap-4">
                   <input
                     type="range"
@@ -275,13 +275,13 @@ const HomeServiceSettingsPage: React.FC = () => {
                     max="50"
                     value={settings.serviceRadius}
                     onChange={(e) => setSettings({ ...settings, serviceRadius: parseInt(e.target.value) })}
-                    className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-pink-500"
+                    className="flex-1 h-2 bg-[var(--nb-pressed)] rounded-lg appearance-none cursor-pointer accent-pink-500"
                   />
-                  <span className="text-sm font-medium text-gray-900 w-16 text-right">
+                  <span className="text-sm font-medium text-[var(--nb-ink)] w-16 text-right">
                     {settings.serviceRadius} km
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">超出此范围的用户将无法预约上门服务</p>
+                <p className="text-xs text-[var(--nb-secondary)] mt-2">超出此范围的用户将无法预约上门服务</p>
               </div>
             </div>
           )}
@@ -290,12 +290,12 @@ const HomeServiceSettingsPage: React.FC = () => {
           {activeTab === 'fee' && (
             <div className="px-5 space-y-4">
               {/* Distance-based Fees */}
-              <div className="rounded-2xl bg-white p-4 shadow-sm border border-gray-100">
+              <div className="rounded-2xl bg-white p-4 shadow-sm border border-[var(--nb-line)]">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900">距离费用</h3>
+                  <h3 className="font-semibold text-[var(--nb-ink)]">距离费用</h3>
                   <button
                     onClick={handleAddDistanceRange}
-                    className="text-sm text-pink-500 font-medium flex items-center gap-1"
+                    className="text-sm text-[var(--nb-secondary)] font-medium flex items-center gap-1"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -306,9 +306,9 @@ const HomeServiceSettingsPage: React.FC = () => {
 
                 <div className="space-y-3">
                   {settings.feeConfig.distanceRanges.map((range, index) => (
-                    <div key={index} className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
+                    <div key={index} className="flex items-center gap-3 bg-[var(--nb-page)] rounded-xl p-3">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2 text-sm text-[var(--nb-secondary)]">
                           <span>{range.minDistance}km</span>
                           <span>~</span>
                           <span>{range.maxDistance === -1 ? '不限' : `${range.maxDistance}km`}</span>
@@ -319,14 +319,14 @@ const HomeServiceSettingsPage: React.FC = () => {
                           type="number"
                           value={range.baseFee}
                           onChange={(e) => handleUpdateDistanceRange(index, 'baseFee', parseInt(e.target.value) || 0)}
-                          className="w-16 px-2 py-1 text-sm border border-gray-200 rounded-lg text-center"
+                          className="w-16 px-2 py-1 text-sm border border-[var(--nb-line)] rounded-lg text-center"
                         />
-                        <span className="text-sm text-gray-500">元</span>
+                        <span className="text-sm text-[var(--nb-secondary)]">元</span>
                       </div>
                       {settings.feeConfig.distanceRanges.length > 1 && (
                         <button
                           onClick={() => handleRemoveDistanceRange(index)}
-                          className="p-1 text-gray-400 hover:text-red-500"
+                          className="p-1 text-[var(--nb-muted)] hover:text-[var(--nb-secondary)]"
                         >
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -339,20 +339,20 @@ const HomeServiceSettingsPage: React.FC = () => {
               </div>
 
               {/* Time-based Fees */}
-              <div className="rounded-2xl bg-white p-4 shadow-sm border border-gray-100">
-                <h3 className="font-semibold text-gray-900 mb-4">时段费用</h3>
+              <div className="rounded-2xl bg-white p-4 shadow-sm border border-[var(--nb-line)]">
+                <h3 className="font-semibold text-[var(--nb-ink)] mb-4">时段费用</h3>
 
                 <div className="space-y-4">
                   {/* Daytime */}
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">白天时段</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-sm font-medium text-[var(--nb-ink)]">白天时段</p>
+                      <p className="text-xs text-[var(--nb-secondary)]">
                         {settings.feeConfig.timeSlotFees.daytime.start} - {settings.feeConfig.timeSlotFees.daytime.end}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-500">额外费用</span>
+                      <span className="text-sm text-[var(--nb-secondary)]">额外费用</span>
                       <input
                         type="number"
                         value={settings.feeConfig.timeSlotFees.daytime.fee}
@@ -363,22 +363,22 @@ const HomeServiceSettingsPage: React.FC = () => {
                           };
                           handleUpdateFeeConfig({ timeSlotFees: newTimeSlotFees });
                         }}
-                        className="w-16 px-2 py-1 text-sm border border-gray-200 rounded-lg text-center"
+                        className="w-16 px-2 py-1 text-sm border border-[var(--nb-line)] rounded-lg text-center"
                       />
-                      <span className="text-sm text-gray-500">元</span>
+                      <span className="text-sm text-[var(--nb-secondary)]">元</span>
                     </div>
                   </div>
 
                   {/* Nighttime */}
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">夜间时段</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-sm font-medium text-[var(--nb-ink)]">夜间时段</p>
+                      <p className="text-xs text-[var(--nb-secondary)]">
                         {settings.feeConfig.timeSlotFees.nighttime.start} - {settings.feeConfig.timeSlotFees.nighttime.end}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-500">额外费用</span>
+                      <span className="text-sm text-[var(--nb-secondary)]">额外费用</span>
                       <input
                         type="number"
                         value={settings.feeConfig.timeSlotFees.nighttime.fee}
@@ -389,27 +389,27 @@ const HomeServiceSettingsPage: React.FC = () => {
                           };
                           handleUpdateFeeConfig({ timeSlotFees: newTimeSlotFees });
                         }}
-                        className="w-16 px-2 py-1 text-sm border border-gray-200 rounded-lg text-center"
+                        className="w-16 px-2 py-1 text-sm border border-[var(--nb-line)] rounded-lg text-center"
                       />
-                      <span className="text-sm text-gray-500">元</span>
+                      <span className="text-sm text-[var(--nb-secondary)]">元</span>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Holiday Fee */}
-              <div className="rounded-2xl bg-white p-4 shadow-sm border border-gray-100">
-                <h3 className="font-semibold text-gray-900 mb-3">节假日费用</h3>
+              <div className="rounded-2xl bg-white p-4 shadow-sm border border-[var(--nb-line)]">
+                <h3 className="font-semibold text-[var(--nb-ink)] mb-3">节假日费用</h3>
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-600">节假日额外费用</p>
+                  <p className="text-sm text-[var(--nb-secondary)]">节假日额外费用</p>
                   <div className="flex items-center gap-2">
                     <input
                       type="number"
                       value={settings.feeConfig.holidayFee}
                       onChange={(e) => handleUpdateFeeConfig({ holidayFee: parseInt(e.target.value) || 0 })}
-                      className="w-16 px-2 py-1 text-sm border border-gray-200 rounded-lg text-center"
+                      className="w-16 px-2 py-1 text-sm border border-[var(--nb-line)] rounded-lg text-center"
                     />
-                    <span className="text-sm text-gray-500">元</span>
+                    <span className="text-sm text-[var(--nb-secondary)]">元</span>
                   </div>
                 </div>
               </div>
@@ -422,13 +422,13 @@ const HomeServiceSettingsPage: React.FC = () => {
       {showAddressForm && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">设置服务起点地址</h2>
+            <div className="px-6 py-5 border-b border-[var(--nb-line)] flex items-center justify-between">
+              <h2 className="text-lg font-bold text-[var(--nb-ink)]">设置服务起点地址</h2>
               <button
                 onClick={() => setShowAddressForm(false)}
-                className="p-2 rounded-full hover:bg-gray-100"
+                className="p-2 rounded-full hover:bg-[var(--nb-page)]"
               >
-                <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-[var(--nb-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -436,21 +436,21 @@ const HomeServiceSettingsPage: React.FC = () => {
 
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">地址名称</label>
+                <label className="block text-sm font-medium text-[var(--nb-ink)] mb-2">地址名称</label>
                 <input
                   type="text"
                   value={settings.baseAddress?.name || ''}
                   onChange={(e) => handleUpdateBaseAddress('name', e.target.value)}
                   placeholder="如：工作室、家"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-pink-500 focus:outline-none"
+                  className="w-full px-4 py-3 rounded-xl border border-[var(--nb-line)] focus:border-[var(--nb-ink)] focus:outline-none"
                 />
               </div>
 
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-[var(--nb-ink)] mb-2">
                     所在城市
-                    <span className="ml-2 text-xs font-normal text-pink-400">与个人资料城市联动</span>
+                    <span className="ml-2 text-xs font-normal text-[var(--nb-muted)]">与个人资料城市联动</span>
                   </label>
                   <RegionSelect
                     province={settings.baseAddress?.province || ''}
@@ -459,52 +459,52 @@ const HomeServiceSettingsPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">区县（服务区域）</label>
+                  <label className="block text-sm font-medium text-[var(--nb-ink)] mb-2">区县（服务区域）</label>
                   <input
                     type="text"
                     value={settings.baseAddress?.district || ''}
                     onChange={(e) => handleUpdateBaseAddress('district', e.target.value)}
                     placeholder="区县，如：朝阳区"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-pink-500 focus:outline-none text-sm"
+                    className="w-full px-4 py-3 rounded-xl border border-[var(--nb-line)] focus:border-[var(--nb-ink)] focus:outline-none text-sm"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">详细地址 <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-[var(--nb-ink)] mb-2">详细地址 <span className="text-[var(--nb-secondary)]">*</span></label>
                 <input
                   type="text"
                   value={settings.baseAddress?.detailAddress || ''}
                   onChange={(e) => handleUpdateBaseAddress('detailAddress', e.target.value)}
                   placeholder="街道、门牌号"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-pink-500 focus:outline-none"
+                  className="w-full px-4 py-3 rounded-xl border border-[var(--nb-line)] focus:border-[var(--nb-ink)] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">门牌/房间号</label>
+                <label className="block text-sm font-medium text-[var(--nb-ink)] mb-2">门牌/房间号</label>
                 <input
                   type="text"
                   value={settings.baseAddress?.doorInfo || ''}
                   onChange={(e) => handleUpdateBaseAddress('doorInfo', e.target.value)}
                   placeholder="如：A座 1201室"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-pink-500 focus:outline-none"
+                  className="w-full px-4 py-3 rounded-xl border border-[var(--nb-line)] focus:border-[var(--nb-ink)] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">联系电话</label>
+                <label className="block text-sm font-medium text-[var(--nb-ink)] mb-2">联系电话</label>
                 <input
                   type="tel"
                   value={settings.baseAddress?.phone || ''}
                   onChange={(e) => handleUpdateBaseAddress('phone', e.target.value)}
                   placeholder="联系电话"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-pink-500 focus:outline-none"
+                  className="w-full px-4 py-3 rounded-xl border border-[var(--nb-line)] focus:border-[var(--nb-ink)] focus:outline-none"
                 />
               </div>
             </div>
 
-            <div className="px-6 py-5 border-t border-gray-100">
+            <div className="px-6 py-5 border-t border-[var(--nb-line)]">
               <button
                 onClick={() => {
                   if (!settings.baseAddress?.detailAddress) {
@@ -513,7 +513,7 @@ const HomeServiceSettingsPage: React.FC = () => {
                   }
                   setShowAddressForm(false);
                 }}
-                className="w-full py-3.5 bg-gradient-to-r from-pink-500 to-pink-600 text-white font-medium rounded-xl active:scale-95 transition-transform"
+                className="w-full py-3.5 bg-[var(--nb-action)] text-white font-medium rounded-xl active:scale-95 transition-transform"
               >
                 确认地址
               </button>
@@ -524,12 +524,12 @@ const HomeServiceSettingsPage: React.FC = () => {
 
       {/* Save Button */}
       {settings.enabled && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-5 py-4 safe-area-bottom">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[var(--nb-line)] px-5 py-4 safe-area-bottom">
           <div className="mx-auto max-w-md">
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="w-full rounded-full bg-gradient-to-r from-pink-400 to-pink-500 py-3.5 font-medium text-white shadow-lg disabled:opacity-50"
+              className="w-full rounded-full bg-[var(--nb-action)] py-3.5 font-medium text-white shadow-lg disabled:opacity-50"
             >
               {loading ? '保存中...' : '保存设置'}
             </button>

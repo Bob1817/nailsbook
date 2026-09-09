@@ -1,12 +1,13 @@
+@import "./colors.generated.css";
 @import "tailwindcss";
 
 /* ─── Seed Tokens (for Nudge controls) ─── */
 :root {
-  --seed-bg: #FFF7F5;
-  --seed-fg: #2B2023;
-  --seed-primary: #EF7F98;
-  --seed-accent: #F5B16E;
-  --seed-surface: #FFFFFF;
+  --seed-bg: var(--nb-page);
+  --seed-fg: var(--nb-ink);
+  --seed-primary: var(--nb-action);
+  --seed-accent: var(--nb-action);
+  --seed-surface: var(--nb-surface);
   --seed-radius: 28px;
   --seed-spacing: 1;
   --seed-motion: 1;
@@ -15,17 +16,17 @@
 /* ─── Tailwind v4 Theme ─── */
 @theme {
   --color-brand: var(--seed-primary);
-  --color-brand-deep: #e96f8b;
-  --color-brand-soft: #ffb8c6;
-  --color-brand-mist: #fff0f3;
+  --color-brand-deep: var(--nb-action);
+  --color-brand-soft: var(--nb-action);
+  --color-brand-mist: var(--nb-page);
   --color-brand-bg: var(--seed-bg);
   --color-ink: var(--seed-fg);
-  --color-ink-muted: #6d5c60;
-  --color-ink-soft: #a57972;
-  --color-line: #f7dce0;
+  --color-ink-muted: var(--nb-secondary);
+  --color-ink-soft: var(--nb-ink);
+  --color-line: var(--nb-line);
   --color-surface: var(--seed-surface);
   --color-accent-warm: var(--seed-accent);
-  --color-soft-pink: #ffe8ec;
+  --color-soft-pink: var(--nb-muted);
 }
 
 :root {
@@ -188,7 +189,7 @@
   }
 
   .glass-dark {
-    background: rgba(43, 32, 35, 0.6);
+    background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }

@@ -1,3 +1,4 @@
+import '../../../core/theme/colors.generated.dart';
 import '../auth/technician_auth_service.dart';
 import 'technician_work_detail_screen.dart';
 import 'technician_work_share_sheet.dart';
@@ -341,21 +342,21 @@ class _TechnicianWorksScreenState extends State<TechnicianWorksScreen> {
                   imageUrl: ossThumb(url),
                   fit: BoxFit.cover,
                   placeholder: (_, __) =>
-                      Container(color: const Color(0xFF2A241E)),
+                      Container(color: NBColors.surface),
                   errorWidget: (_, __, ___) => Container(
-                      color: const Color(0xFF2A241E),
+                      color: NBColors.surface,
                       child: const Center(
                           child: Text('暂无图片',
                               style: TextStyle(
-                                  fontSize: 12, color: Color(0xFF9CA3AF))))),
+                                  fontSize: 12, color: NBColors.control)))),
                 )
               else
                 Container(
-                    color: const Color(0xFF2A241E),
+                    color: NBColors.surface,
                     child: const Center(
                         child: Text('暂无作品图片',
                             style: TextStyle(
-                                fontSize: 12, color: Color(0xFF9CA3AF))))),
+                                fontSize: 12, color: NBColors.control)))),
               const DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -401,7 +402,7 @@ class _TechnicianWorksScreenState extends State<TechnicianWorksScreen> {
                                 style: const TextStyle(
                                     fontSize: 10.5,
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xFFFFD700),
+                                    color: NBColors.action,
                                     height: 1.2)),
                           ],
                         ],
@@ -424,8 +425,8 @@ class _TechnicianWorksScreenState extends State<TechnicianWorksScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (isPinned) _badge('置顶', DT.primary),
-                    if (isFeatured) _badge('推荐', const Color(0xFFF59E0B)),
-                    if (!isVisible) _badge('隐藏', const Color(0xCC6B7280)),
+                    if (isFeatured) _badge('推荐', NBColors.action),
+                    if (!isVisible) _badge('隐藏', const Color(0xCC000000)),
                   ],
                 ),
               ),
@@ -882,7 +883,7 @@ class _WorkFormSheetState extends State<WorkFormSheet> {
             width: 48,
             height: 28,
             decoration: BoxDecoration(
-                color: _isVisible ? DT.primary : const Color(0xFFD1D1D6),
+                color: _isVisible ? DT.primary : NBColors.line,
                 borderRadius: BorderRadius.circular(999)),
             child: AnimatedAlign(
               duration: const Duration(milliseconds: 180),

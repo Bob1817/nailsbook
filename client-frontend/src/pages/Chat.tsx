@@ -217,14 +217,14 @@ const Chat: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-full bg-[linear-gradient(180deg,#FFFDFD_0%,#F7F3F6_48%,#F2F6FB_100%)]">
+      <div className="min-h-full bg-[var(--nb-page)]">
         <div className="border-b border-white/60 bg-white/76 px-5 app-header-safe pb-2 backdrop-blur-xl">
           <div className="flex min-h-11 items-center justify-between">
-            <h1 className="text-[17px] font-semibold text-slate-900">消息</h1>
+            <h1 className="text-[17px] font-semibold text-[var(--nb-ink)]">消息</h1>
           </div>
         </div>
         <div className="px-5 pb-24 pt-6">
-          <div className="rounded-[32px] bg-white/86 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
+          <div className="rounded-[32px] bg-white/86 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.08)] ring-1 ring-black/5 backdrop-blur">
             <ChatListSkeleton />
           </div>
         </div>
@@ -233,15 +233,15 @@ const Chat: React.FC = () => {
   }
 
   return (
-    <div className="min-h-full bg-[linear-gradient(180deg,#FFFDFD_0%,#F7F3F6_48%,#F2F6FB_100%)]">
+    <div className="min-h-full bg-[var(--nb-page)]">
       <div className="border-b border-white/60 bg-white/76 px-5 app-header-safe pb-2 backdrop-blur-xl">
         <div className="flex min-h-11 items-center justify-between gap-4">
-          <h1 className="text-[17px] font-semibold text-slate-900">消息</h1>
+          <h1 className="text-[17px] font-semibold text-[var(--nb-ink)]">消息</h1>
           <button
             type="button"
             onClick={() => setShowSearch(true)}
             aria-label="搜索消息"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white/88 text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.08)] ring-1 ring-black/5 active:scale-95"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white/88 text-[var(--nb-secondary)] shadow-[0_10px_24px_rgba(0,0,0,0.08)] ring-1 ring-black/5 active:scale-95"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -259,7 +259,7 @@ const Chat: React.FC = () => {
             className="mx-auto flex max-w-md items-center gap-2 rounded-[24px] bg-white p-2 shadow-2xl ring-1 ring-black/5"
             onClick={(e) => e.stopPropagation()}
           >
-            <svg className="ml-2 h-5 w-5 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="ml-2 h-5 w-5 shrink-0 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
@@ -267,14 +267,14 @@ const Chat: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="搜索消息、通知、美甲师"
-              className="floating-search-input h-11 min-w-0 flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400 focus-visible:outline-none"
+              className="floating-search-input h-11 min-w-0 flex-1 bg-transparent text-sm text-[var(--nb-ink)] outline-none placeholder:text-[var(--nb-muted)] focus-visible:outline-none"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
                 aria-label="清空搜索"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-gray-500"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-page)] text-[var(--nb-secondary)]"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -304,12 +304,12 @@ const Chat: React.FC = () => {
                 onClick={() => setActiveTab(tab.value)}
                 className={`flex min-h-[40px] flex-shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
                   activeTab === tab.value
-                    ? 'border-[#efc3d0] bg-[#fdecef] text-[var(--color-primary)]'
-                    : 'border-[#efe4e8] bg-white text-gray-600 active:bg-[#f8edf1]'
+                    ? 'border-[var(--nb-line)] bg-[var(--nb-page)] text-[var(--color-primary)]'
+                    : 'border-[var(--nb-line)] bg-white text-[var(--nb-secondary)] active:bg-[var(--nb-page)]'
                 }`}
               >
                 <span>{tab.label}</span>
-                <span className={`rounded-full px-2 py-0.5 text-[11px] ${activeTab === tab.value ? 'bg-white text-[var(--color-primary)]' : 'bg-[#f7f2f5] text-gray-500'}`}>
+                <span className={`rounded-full px-2 py-0.5 text-[11px] ${activeTab === tab.value ? 'bg-white text-[var(--color-primary)]' : 'bg-[var(--nb-page)] text-[var(--nb-secondary)]'}`}>
                   {tab.count}
                 </span>
               </button>
@@ -324,9 +324,9 @@ const Chat: React.FC = () => {
                 key={item.id}
                 type="button"
                 onClick={() => handleItemClick(item)}
-                className="flex w-full items-start gap-3 rounded-[28px] bg-white/86 px-4 py-4 text-left shadow-[0_20px_60px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur transition-colors active:bg-slate-50"
+                className="flex w-full items-start gap-3 rounded-[28px] bg-white/86 px-4 py-4 text-left shadow-[0_20px_60px_rgba(0,0,0,0.08)] ring-1 ring-black/5 backdrop-blur transition-colors active:bg-[var(--nb-page)]"
               >
-                <div className="relative mt-0.5 flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-[16px] bg-[linear-gradient(135deg,#FFE0EA_0%,#F4F7FB_100%)]">
+                <div className="relative mt-0.5 flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-[16px] bg-[var(--nb-page)]">
                   {item.type !== 'chat' ? (
                     getNotificationIcon(item)
                   ) : item.techAvatar ? (
@@ -335,36 +335,36 @@ const Chat: React.FC = () => {
                     <span className="text-lg font-semibold text-[var(--color-primary)]">{item.techName.slice(0, 1)}</span>
                   )}
                   {item.type === 'chat' && isOnline(item.techId, 'technician') && (
-                    <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-green-500" />
+                    <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-[var(--nb-action)]" />
                   )}
                 </div>
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="truncate text-sm font-semibold text-slate-900">{item.name}</p>
+                    <p className="truncate text-sm font-semibold text-[var(--nb-ink)]">{item.name}</p>
                     <span className={`flex-shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-medium ${getBadgeClasses(item)}`}>
                       {item.badge || getBadgeLabel(item)}
                     </span>
                   </div>
-                  <p className="mt-1.5 text-[13px] leading-5 text-slate-500 line-clamp-2">{item.preview}</p>
+                  <p className="mt-1.5 text-[13px] leading-5 text-[var(--nb-secondary)] line-clamp-2">{item.preview}</p>
                 </div>
 
                 <div className="flex flex-shrink-0 flex-col items-end gap-1.5 pt-0.5">
-                  <span className="text-xs text-slate-400">{formatListTime(item.time)}</span>
+                  <span className="text-xs text-[var(--nb-muted)]">{formatListTime(item.time)}</span>
                   {item.unread && <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-primary)]" />}
                 </div>
               </button>
             ))}
           </div>
         ) : (
-          <div className="rounded-[32px] bg-white/86 px-6 py-12 text-center shadow-[0_20px_60px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[linear-gradient(135deg,#FFE2EA_0%,#F4F6FB_100%)]">
+          <div className="rounded-[32px] bg-white/86 px-6 py-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.08)] ring-1 ring-black/5 backdrop-blur">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--nb-page)]">
               <svg className="h-7 w-7 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5l-1 4 4-1h8a4 4 0 004-4V7a4 4 0 00-4-4H8a4 4 0 00-4 4v4a4 4 0 004 4h1z" />
               </svg>
             </div>
-            <h3 className="mt-4 text-lg font-semibold text-slate-900">消息会在这里聚合</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-500">预约提醒和服务通知会统一显示在消息页</p>
+            <h3 className="mt-4 text-lg font-semibold text-[var(--nb-ink)]">消息会在这里聚合</h3>
+            <p className="mt-2 text-sm leading-6 text-[var(--nb-secondary)]">预约提醒和服务通知会统一显示在消息页</p>
           </div>
         )}
       </div>
@@ -381,13 +381,13 @@ const Chat: React.FC = () => {
             style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
           >
             <div className="mb-3 flex items-center justify-between">
-              <span className="inline-flex items-center rounded-full bg-pink-50 px-3 py-1 text-xs font-medium text-pink-600">
+              <span className="inline-flex items-center rounded-full bg-[var(--nb-page)] px-3 py-1 text-xs font-medium text-[var(--nb-secondary)]">
                 {selectedNotification.name}
               </span>
               <button
                 type="button"
                 onClick={handleCloseNotification}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--nb-page)] text-[var(--nb-secondary)]"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
@@ -395,9 +395,9 @@ const Chat: React.FC = () => {
               </button>
             </div>
 
-            <p className="whitespace-pre-wrap text-sm leading-6 text-slate-800">{selectedNotification.preview}</p>
+            <p className="whitespace-pre-wrap text-sm leading-6 text-[var(--nb-ink)]">{selectedNotification.preview}</p>
 
-            <div className="mt-4 flex items-center gap-2 text-xs text-slate-400">
+            <div className="mt-4 flex items-center gap-2 text-xs text-[var(--nb-muted)]">
               <span>{selectedNotification.techName}</span>
               <span>·</span>
               <span>{formatListTime(selectedNotification.time)}</span>
@@ -407,7 +407,7 @@ const Chat: React.FC = () => {
               <button
                 type="button"
                 onClick={handleCloseNotification}
-                className="flex-1 rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-700"
+                className="flex-1 rounded-full bg-[var(--nb-page)] px-4 py-3 text-sm font-medium text-[var(--nb-ink)]"
               >
                 关闭
               </button>
@@ -418,7 +418,7 @@ const Chat: React.FC = () => {
                     setDetailOrderId(selectedNotification.relatedId!);
                     handleCloseNotification();
                   }}
-                  className="flex-1 rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] px-4 py-3 text-sm font-semibold text-white shadow-md"
+                  className="flex-1 rounded-full bg-[var(--nb-action)] px-4 py-3 text-sm font-semibold text-white shadow-md"
                 >
                   查看预约详情
                 </button>
@@ -430,7 +430,7 @@ const Chat: React.FC = () => {
                     navigate(`/works/${selectedNotification.relatedId}`);
                     handleCloseNotification();
                   }}
-                  className="flex-1 rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] px-4 py-3 text-sm font-semibold text-white shadow-md"
+                  className="flex-1 rounded-full bg-[var(--nb-action)] px-4 py-3 text-sm font-semibold text-white shadow-md"
                 >
                   查看作品
                 </button>
@@ -442,7 +442,7 @@ const Chat: React.FC = () => {
                     navigate(`/designs/${selectedNotification.relatedId}`);
                     handleCloseNotification();
                   }}
-                  className="flex-1 rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] px-4 py-3 text-sm font-semibold text-white shadow-md"
+                  className="flex-1 rounded-full bg-[var(--nb-action)] px-4 py-3 text-sm font-semibold text-white shadow-md"
                 >
                   查看设计
                 </button>
@@ -482,7 +482,7 @@ const getNotificationName = (type: UnifiedItem['type']) => {
 const getNotificationIcon = (item: UnifiedItem) => {
   if (item.relatedType === 'order' || item.relatedType === 'booking') {
     return (
-      <svg className="h-5 w-5 text-[#B85C1B]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg className="h-5 w-5 text-[var(--nb-ink)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
       </svg>
     );
@@ -495,7 +495,7 @@ const getNotificationIcon = (item: UnifiedItem) => {
     );
   }
   return (
-    <svg className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className="h-5 w-5 text-[var(--nb-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
   );
@@ -509,10 +509,10 @@ const getBadgeLabel = (item: UnifiedItem) => {
 };
 
 const getBadgeClasses = (item: UnifiedItem) => {
-  if (item.type === 'chat') return 'bg-[#ffe9f0] text-[#ea5e93]';
-  if (item.type === 'booking') return 'bg-[#fff3e8] text-[#c96c1a]';
-  if (item.type === 'service') return 'bg-[#eef6ff] text-[#3f6dbe]';
-  return 'bg-[#f3f4f6] text-[#6b7280]';
+  if (item.type === 'chat') return 'bg-[var(--nb-page)] text-[var(--nb-ink)]';
+  if (item.type === 'booking') return 'bg-[var(--nb-page)] text-[var(--nb-ink)]';
+  if (item.type === 'service') return 'bg-[var(--nb-page)] text-[var(--nb-ink)]';
+  return 'bg-[var(--nb-page)] text-[var(--nb-secondary)]';
 };
 
 const formatListTime = (time: string) => {

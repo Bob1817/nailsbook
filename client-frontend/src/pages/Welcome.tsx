@@ -44,17 +44,17 @@ const Welcome: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-[100dvh] overflow-hidden bg-gradient-to-br from-[#FFF0F3] to-white flex flex-col">
+    <div className="relative min-h-[100dvh] overflow-hidden bg-gradient-to-br from-[var(--nb-page)] to-white flex flex-col">
       <div
         className="pointer-events-none absolute inset-y-0 right-[-24%] w-[90%] bg-contain bg-right-bottom bg-no-repeat opacity-90"
         style={{ backgroundImage: `url(${nailLoginBg})` }}
       />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,247,249,0.98)_0%,rgba(255,247,249,0.94)_38%,rgba(255,247,249,0.8)_62%,rgba(255,247,249,0.28)_100%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,246,248,0.96)_0%,rgba(255,246,248,0.74)_34%,rgba(255,246,248,0.7)_62%,rgba(255,246,248,0.94)_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.98)_0%,rgba(0,0,0,0.94)_38%,rgba(0,0,0,0.8)_62%,rgba(0,0,0,0.28)_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.96)_0%,rgba(0,0,0,0.74)_34%,rgba(0,0,0,0.7)_62%,rgba(0,0,0,0.94)_100%)]" />
       {/* Header */}
       <div className="relative z-10 px-6 app-hero-safe pb-8">
         <div className="flex items-center justify-center mb-8">
-          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#FF6B8A] to-[#FF8FA3] flex items-center justify-center shadow-xl shadow-pink-200">
+          <div className="w-20 h-20 rounded-3xl bg-[var(--nb-action)] flex items-center justify-center shadow-xl shadow-black/5">
             <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
             </svg>
@@ -98,7 +98,7 @@ const Welcome: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] text-white rounded-full text-body font-medium shadow-lg shadow-pink-200 active:scale-[0.98] transition-transform disabled:opacity-70"
+            className="w-full py-4 bg-[var(--nb-action)] text-white rounded-full text-body font-medium shadow-lg shadow-black/5 active:scale-[0.98] transition-transform disabled:opacity-70"
           >
             {loading ? '保存中...' : '开始使用'}
           </button>

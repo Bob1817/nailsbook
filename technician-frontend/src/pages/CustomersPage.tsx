@@ -1,3 +1,4 @@
+import { neutralTagColors } from '../styles/tagColors';
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/base/Card';
@@ -15,24 +16,19 @@ import type { CustomTag } from '../contexts/authTypes';
 const customerTabs = ['全部', '常客', '新客', '高频'];
 
 const TAG_FALLBACK_COLORS: Record<string, { bg: string; text: string }> = {
-  '常客': { bg: '#FFE9F0', text: '#FF5E93' },
-  '新客': { bg: '#EBF4FF', text: '#3B82F6' },
-  '高频': { bg: '#FFF1E5', text: '#C9792A' },
-  '简约': { bg: '#EEF9F1', text: '#31B46C' },
-  '裸色系': { bg: '#FFF8E6', text: '#C9860A' },
+  '常客': { bg: 'var(--nb-page)', text: 'var(--nb-action)' },
+  '新客': { bg: 'var(--nb-page)', text: 'var(--nb-action)' },
+  '高频': { bg: 'var(--nb-page)', text: 'var(--nb-action)' },
+  '简约': { bg: 'var(--nb-page)', text: 'var(--nb-action)' },
+  '裸色系': { bg: 'var(--nb-page)', text: 'var(--nb-action)' },
 };
 
 function getTagColor(tag: string, customTags: CustomTag[]): { bg: string; text: string } {
   const custom = customTags.find((t) => t.name === tag);
   if (custom) {
-    const PRESET: Record<string, string> = {
-      '#FF5E93': '#FFE9F0', '#C9792A': '#FFF1E5', '#31B46C': '#EEF9F1',
-      '#3B82F6': '#EBF4FF', '#7C3AED': '#F5F0FF', '#C9860A': '#FFF8E6',
-      '#6D6570': '#F2F0F3', '#E53E3E': '#FFE4E4',
-    };
-    return { bg: PRESET[custom.color] ?? '#F2F0F3', text: custom.color };
+    return neutralTagColors(custom.color);
   }
-  return TAG_FALLBACK_COLORS[tag] ?? { bg: '#F2F0F3', text: '#6D6570' };
+  return TAG_FALLBACK_COLORS[tag] ?? { bg: 'var(--nb-page)', text: 'var(--nb-muted)' };
 }
 
 function getCustomerAvatar(name: string) {
@@ -147,18 +143,18 @@ export const CustomersPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-full flex-col bg-[#fff9f8]">
+    <div className="flex h-full flex-col bg-[var(--nb-page)]">
       {/* 固定头部：标题 + 搜索框 + 分类标签 */}
       <div className="shrink-0 px-5 pt-5 pb-3 space-y-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-semibold text-gray-900">客户</h1>
-            <p className="mt-1 text-sm text-gray-400">管理客户档案、标签与服务记录</p>
+            <h1 className="text-xl font-semibold text-[var(--nb-ink)]">客户</h1>
+            <p className="mt-1 text-sm text-[var(--nb-muted)]">管理客户档案、标签与服务记录</p>
           </div>
           <button
             type="button"
             onClick={handleInvite}
-            className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full bg-[#ffe9f0] px-4 py-2 text-sm font-medium text-pink-500 transition-colors active:bg-[#f2d2dc]"
+            className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full bg-[var(--nb-page)] px-4 py-2 text-sm font-medium text-[var(--nb-secondary)] transition-colors active:bg-[var(--nb-page)]"
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.25 8.25h7.5a1.5 1.5 0 011.5 1.5v7.5a1.5 1.5 0 01-1.5 1.5h-7.5a1.5 1.5 0 01-1.5-1.5v-7.5a1.5 1.5 0 011.5-1.5zm2.25-3h7.5m-3.75 0V3m0 2.25v3" />
@@ -168,7 +164,7 @@ export const CustomersPage: React.FC = () => {
         </div>
 
         <div className="relative">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--nb-muted)]">
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
@@ -176,7 +172,7 @@ export const CustomersPage: React.FC = () => {
           <input
             type="text"
             placeholder="搜索客户姓名或联系方式"
-            className="h-11 w-full rounded-[16px] border border-[#efe6ea] bg-[#fcf8f9] pl-10 pr-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500"
+            className="h-11 w-full rounded-[16px] border border-[var(--nb-line)] bg-[var(--nb-page)] pl-10 pr-4 text-[var(--nb-ink)] placeholder-[var(--nb-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-ink)]"
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
           />
@@ -189,8 +185,8 @@ export const CustomersPage: React.FC = () => {
               onClick={() => setActiveTab(tab)}
               className={`min-h-[44px] flex-shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                 activeTab === tab
-                  ? 'bg-pink-500 text-white'
-                  : 'border border-[#efe6ea] bg-white text-gray-600 active:bg-[#f8edf1]'
+                  ? 'bg-[var(--nb-action)] text-white'
+                  : 'border border-[var(--nb-line)] bg-white text-[var(--nb-secondary)] active:bg-[var(--nb-page)]'
               }`}
             >
               {tab}
@@ -223,7 +219,7 @@ export const CustomersPage: React.FC = () => {
                 }}
                 className="w-full text-left cursor-pointer"
               >
-                <Card className="px-lg py-lg transition-colors active:bg-rose-50">
+                <Card className="px-lg py-lg transition-colors active:bg-[var(--nb-page)]">
                   <div className="flex items-start gap-4">
                     <div className="relative">
                       <button
@@ -232,14 +228,14 @@ export const CustomersPage: React.FC = () => {
                           e.stopPropagation();
                           setAvatarTagCustomerId(avatarTagCustomerId === customer.id ? null : customer.id);
                         }}
-                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#fdecef] text-sm font-semibold text-[#e86b8f] active:opacity-80"
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--nb-page)] text-sm font-semibold text-[var(--nb-ink)] active:opacity-80"
                       >
                         {isPhoneNumberAsName(customer.name) ? (
-                          <svg className="h-6 w-6 text-[#e86b8f]/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="h-6 w-6 text-[var(--nb-ink)]/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
                           </svg>
                         ) : (
-                          <span className="text-sm font-semibold text-[#e86b8f]">{getCustomerAvatar(customer.name)}</span>
+                          <span className="text-sm font-semibold text-[var(--nb-ink)]">{getCustomerAvatar(customer.name)}</span>
                         )}
                       </button>
                       {avatarTagCustomerId === customer.id && customer.tags.length > 0 && (
@@ -275,12 +271,12 @@ export const CustomersPage: React.FC = () => {
                                     if (e.key === 'Enter') handleUpdateName(customer.id);
                                     if (e.key === 'Escape') { setEditingCustomerId(null); setEditingName(''); }
                                   }}
-                                  className="w-28 rounded-lg border border-pink-300 px-2 py-1 text-sm focus:border-pink-500 focus:outline-none"
+                                  className="w-28 rounded-lg border border-[var(--nb-control)] px-2 py-1 text-sm focus:border-[var(--nb-ink)] focus:outline-none"
                                   autoFocus
                                 />
                                 <button
                                   onClick={() => handleUpdateName(customer.id)}
-                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-pink-500 text-white active:bg-pink-600"
+                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--nb-action)] text-white active:bg-[var(--nb-action-pressed)]"
                                 >
                                   <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -288,7 +284,7 @@ export const CustomersPage: React.FC = () => {
                                 </button>
                                 <button
                                   onClick={() => { setEditingCustomerId(null); setEditingName(''); }}
-                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 text-gray-500 active:bg-gray-300"
+                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--nb-pressed)] text-[var(--nb-secondary)] active:bg-[var(--nb-pressed)]"
                                 >
                                   <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -297,7 +293,7 @@ export const CustomersPage: React.FC = () => {
                               </div>
                             ) : (
                               <>
-                                <p className="truncate text-sm font-semibold text-gray-900">
+                                <p className="truncate text-sm font-semibold text-[var(--nb-ink)]">
                                   {isPhoneNumberAsName(customer.name) ? '未设置名称' : customer.name}
                                 </p>
                                 <button
@@ -306,22 +302,22 @@ export const CustomersPage: React.FC = () => {
                                     setEditingCustomerId(customer.id);
                                     setEditingName(isPhoneNumberAsName(customer.name) ? '' : customer.name);
                                   }}
-                                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-gray-300 hover:text-pink-500 active:text-pink-600"
+                                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[var(--nb-muted)] hover:text-[var(--nb-secondary)] active:text-[var(--nb-secondary)]"
                                 >
                                   <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                   </svg>
                                 </button>
-                                <svg className="h-4 w-4 shrink-0 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="h-4 w-4 shrink-0 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>
                               </>
                             )}
                           </div>
                           {customer.address ? (
-                            <p className="mt-1 truncate text-xs text-gray-500">{customer.address}</p>
+                            <p className="mt-1 truncate text-xs text-[var(--nb-secondary)]">{customer.address}</p>
                           ) : (
-                            <p className="mt-1 text-xs text-gray-400">暂无地址</p>
+                            <p className="mt-1 text-xs text-[var(--nb-muted)]">暂无地址</p>
                           )}
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -336,20 +332,20 @@ export const CustomersPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="mt-3 grid grid-cols-2 gap-2 rounded-[18px] bg-[#fcf7f8] p-3 min-[391px]:grid-cols-3">
+                      <div className="mt-3 grid grid-cols-2 gap-2 rounded-[18px] bg-[var(--nb-page)] p-3 min-[391px]:grid-cols-3">
                         <div className="min-w-0">
-                          <p className="text-[11px] text-gray-400">最近服务</p>
-                          <p className="mt-1 text-xs font-medium text-gray-700">
+                          <p className="text-[11px] text-[var(--nb-muted)]">最近服务</p>
+                          <p className="mt-1 text-xs font-medium text-[var(--nb-ink)]">
                             {customer.recentServiceAt ? formatDateLabel(customer.recentServiceAt) : '暂无记录'}
                           </p>
                         </div>
                         <div className="min-w-0">
-                          <p className="text-[11px] text-gray-400">累计消费</p>
-                          <p className="mt-1 text-xs font-semibold text-pink-500">{formatMoney(customer.totalSpent)}</p>
+                          <p className="text-[11px] text-[var(--nb-muted)]">累计消费</p>
+                          <p className="mt-1 text-xs font-semibold text-[var(--nb-secondary)]">{formatMoney(customer.totalSpent)}</p>
                         </div>
                         <div className="col-span-2 min-w-0 min-[391px]:col-span-1">
-                          <p className="text-[11px] text-gray-400">服务次数</p>
-                          <p className="mt-1 text-xs font-medium text-gray-700">{customer.totalOrders} 次</p>
+                          <p className="text-[11px] text-[var(--nb-muted)]">服务次数</p>
+                          <p className="mt-1 text-xs font-medium text-[var(--nb-ink)]">{customer.totalOrders} 次</p>
                         </div>
                       </div>
                     </div>
@@ -359,7 +355,7 @@ export const CustomersPage: React.FC = () => {
             ))}
           </div>
         ) : (
-          <Card className="px-lg py-xl text-center text-sm text-gray-400">没有找到匹配的客户</Card>
+          <Card className="px-lg py-xl text-center text-sm text-[var(--nb-muted)]">没有找到匹配的客户</Card>
         )}
       </div>
     </div>

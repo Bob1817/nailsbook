@@ -40,7 +40,7 @@ const ArtistWorksPage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-pink-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--nb-ink)] border-t-transparent" />
       </div>
     );
   }
@@ -48,8 +48,8 @@ const ArtistWorksPage: React.FC = () => {
   if (error || !data) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-white px-8 text-center">
-        <p className="text-base font-medium text-gray-900">页面不存在</p>
-        <p className="text-sm text-gray-500">请检查链接是否正确</p>
+        <p className="text-base font-medium text-[var(--nb-ink)]">页面不存在</p>
+        <p className="text-sm text-[var(--nb-secondary)]">请检查链接是否正确</p>
       </div>
     );
   }
@@ -62,28 +62,28 @@ const ArtistWorksPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-gray-100">
+      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-[var(--nb-line)]">
         <div className="flex items-center justify-between px-5 py-3.5">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 transition-colors active:bg-gray-200"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-page)] transition-colors active:bg-[var(--nb-pressed)]"
             >
-              <svg className="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 text-[var(--nb-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             <div>
-              <h1 className="text-[17px] font-semibold text-gray-900">{artist.name}的作品集</h1>
-              <p className="text-[12px] text-gray-500">{works.length}件作品</p>
+              <h1 className="text-[17px] font-semibold text-[var(--nb-ink)]">{artist.name}的作品集</h1>
+              <p className="text-[12px] text-[var(--nb-secondary)]">{works.length}件作品</p>
             </div>
           </div>
           <button
             type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 transition-colors active:bg-gray-200"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-page)] transition-colors active:bg-[var(--nb-pressed)]"
           >
-            <svg className="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-5 w-5 text-[var(--nb-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
           </button>
@@ -96,8 +96,8 @@ const ArtistWorksPage: React.FC = () => {
             onClick={() => setActiveFilter('all')}
             className={`shrink-0 rounded-full px-4 py-1.5 text-[13px] font-medium transition-colors ${
               activeFilter === 'all'
-                ? 'bg-gray-900 text-white'
-                : 'bg-gray-100 text-gray-600 active:bg-gray-200'
+                ? 'bg-[var(--nb-action)] text-white'
+                : 'bg-[var(--nb-page)] text-[var(--nb-secondary)] active:bg-[var(--nb-pressed)]'
             }`}
           >
             全部
@@ -115,7 +115,7 @@ const ArtistWorksPage: React.FC = () => {
                 key={work.id}
                 type="button"
                 onClick={() => navigate(`/works/${work.id}`)}
-                className="group overflow-hidden rounded-xl bg-gray-50 transition-transform active:scale-[0.98]"
+                className="group overflow-hidden rounded-xl bg-[var(--nb-page)] transition-transform active:scale-[0.98]"
               >
                 <div className="aspect-square overflow-hidden">
                   {work.coverUrl || work.imageUrls?.[0] ? (
@@ -126,8 +126,8 @@ const ArtistWorksPage: React.FC = () => {
                       loading="lazy"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gray-100">
-                      <svg className="h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex h-full w-full items-center justify-center bg-[var(--nb-page)]">
+                      <svg className="h-12 w-12 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
@@ -135,7 +135,7 @@ const ArtistWorksPage: React.FC = () => {
                 </div>
                 {work.title && (
                   <div className="px-3 py-2.5">
-                    <p className="text-[13px] font-medium text-gray-900 truncate">{work.title}</p>
+                    <p className="text-[13px] font-medium text-[var(--nb-ink)] truncate">{work.title}</p>
                   </div>
                 )}
               </button>
@@ -143,11 +143,11 @@ const ArtistWorksPage: React.FC = () => {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20">
-            <svg className="h-16 w-16 text-gray-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-16 w-16 text-[var(--nb-inverse)] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <p className="text-[15px] font-medium text-gray-400">暂无作品</p>
-            <p className="text-[13px] text-gray-400 mt-1">该美甲师还未发布作品</p>
+            <p className="text-[15px] font-medium text-[var(--nb-muted)]">暂无作品</p>
+            <p className="text-[13px] text-[var(--nb-muted)] mt-1">该美甲师还未发布作品</p>
           </div>
         )}
       </div>

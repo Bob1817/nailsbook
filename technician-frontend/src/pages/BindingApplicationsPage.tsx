@@ -61,7 +61,7 @@ export const BindingApplicationsPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-full flex-col bg-[#faf7f8]">
+    <div className="flex h-full flex-col bg-[var(--nb-page)]">
       <SubPageHeader title="绑定申请" />
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {loading ? (
@@ -75,7 +75,7 @@ export const BindingApplicationsPage: React.FC = () => {
             {apps.map((app) => (
               <Card key={app.id} className="p-4">
                 <div className="flex items-start justify-between">
-                  <span className="text-[16px] font-semibold text-[#1f2230]">
+                  <span className="text-[16px] font-semibold text-[var(--nb-ink)]">
                     {app.name}
                   </span>
                   <span className="text-[12px] text-text-secondary">

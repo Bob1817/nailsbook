@@ -91,10 +91,10 @@ export const RestDayCalendar: React.FC<RestDayCalendarProps> = ({
         onClick={() => toggleDate(day)}
         className={`h-11 w-11 rounded-lg text-sm font-medium transition-colors ${
           isPast
-            ? 'text-gray-300 cursor-not-allowed'
+            ? 'text-[var(--nb-muted)] cursor-not-allowed'
             : isSelected
-            ? 'bg-[#FF5E93] text-white'
-            : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200'
+            ? 'bg-[var(--nb-action)] text-white'
+            : 'text-[var(--nb-ink)] hover:bg-[var(--nb-page)] active:bg-[var(--nb-pressed)]'
         }`}
       >
         {day}
@@ -106,22 +106,22 @@ export const RestDayCalendar: React.FC<RestDayCalendarProps> = ({
     <div className="fixed inset-0 bg-black/60 z-[200] flex items-end sm:items-center justify-center">
       <div className="w-full max-w-md bg-white sm:rounded-3xl rounded-t-3xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-gray-100">
+        <div className="px-6 py-5 border-b border-[var(--nb-line)]">
           <div className="flex items-center justify-between">
             <button
               onClick={prevMonth}
-              className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200"
+              className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-[var(--nb-page)] active:bg-[var(--nb-pressed)]"
             >
-              <svg className="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 text-[var(--nb-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <h2 className="text-lg font-bold text-gray-900">{monthName}</h2>
+            <h2 className="text-lg font-bold text-[var(--nb-ink)]">{monthName}</h2>
             <button
               onClick={nextMonth}
-              className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200"
+              className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-[var(--nb-page)] active:bg-[var(--nb-pressed)]"
             >
-              <svg className="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 text-[var(--nb-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
@@ -133,7 +133,7 @@ export const RestDayCalendar: React.FC<RestDayCalendarProps> = ({
           {/* Week headers */}
           <div className="grid grid-cols-7 gap-1 mb-3">
             {weekDays.map((day) => (
-              <div key={day} className="h-8 flex items-center justify-center text-xs font-medium text-gray-500">
+              <div key={day} className="h-8 flex items-center justify-center text-xs font-medium text-[var(--nb-secondary)]">
                 {day}
               </div>
             ))}
@@ -146,17 +146,17 @@ export const RestDayCalendar: React.FC<RestDayCalendarProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-5 border-t border-gray-100">
+        <div className="px-6 py-5 border-t border-[var(--nb-line)]">
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 min-h-[44px] rounded-xl bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 active:bg-gray-300"
+              className="flex-1 min-h-[44px] rounded-xl bg-[var(--nb-page)] text-[var(--nb-ink)] text-sm font-medium hover:bg-[var(--nb-pressed)] active:bg-[var(--nb-pressed)]"
             >
               取消
             </button>
             <button
               onClick={() => onConfirm(selected)}
-              className="flex-1 min-h-[44px] rounded-xl bg-[#FF5E93] text-white text-sm font-medium hover:bg-[#e54e82] active:bg-[#d1457a]"
+              className="flex-1 min-h-[44px] rounded-xl bg-[var(--nb-action)] text-white text-sm font-medium hover:bg-[var(--nb-action)] active:bg-[var(--nb-action-pressed)]"
             >
               设置为休息日
             </button>

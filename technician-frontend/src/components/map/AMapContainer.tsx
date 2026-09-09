@@ -133,7 +133,7 @@ export const AMapContainer: React.FC<AMapContainerProps> = ({
       const path = markers.map((m) => m.position);
       const polyline = new AMap.Polyline({
         path,
-        strokeColor: '#FF7C7F',
+        strokeColor: getComputedStyle(document.documentElement).getPropertyValue('--nb-link').trim(),
         strokeWeight: 4,
         strokeStyle: 'dashed',
         strokeDasharray: [10, 8],
@@ -151,10 +151,10 @@ export const AMapContainer: React.FC<AMapContainerProps> = ({
   if (error) {
     return (
       <div
-        className={`flex items-center justify-center bg-gray-100 ${className}`}
+        className={`flex items-center justify-center bg-[var(--nb-page)] ${className}`}
         style={style}
       >
-        <p className="text-sm text-gray-500">{error}</p>
+        <p className="text-sm text-[var(--nb-secondary)]">{error}</p>
       </div>
     );
   }
@@ -162,12 +162,12 @@ export const AMapContainer: React.FC<AMapContainerProps> = ({
   if (!isLoaded) {
     return (
       <div
-        className={`flex items-center justify-center bg-gray-100 ${className}`}
+        className={`flex items-center justify-center bg-[var(--nb-page)] ${className}`}
         style={style}
       >
         <div className="flex flex-col items-center gap-2">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-pink-500 border-t-transparent" />
-          <p className="text-sm text-gray-500">地图加载中...</p>
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--nb-ink)] border-t-transparent" />
+          <p className="text-sm text-[var(--nb-secondary)]">地图加载中...</p>
         </div>
       </div>
     );

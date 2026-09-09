@@ -18,7 +18,7 @@ const RegionSelect: React.FC<RegionSelectProps> = ({ province, city, onChange })
           const list = PROVINCE_CITY[p] || [];
           onChange({ province: p, city: list.includes(city) ? city : (list[0] || '') });
         }}
-        className="h-12 flex-1 rounded-xl bg-gray-100 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
+        className="h-12 flex-1 rounded-xl bg-[var(--nb-page)] px-3 text-sm text-[var(--nb-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]"
       >
         <option value="">选择省份</option>
         {PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -27,7 +27,7 @@ const RegionSelect: React.FC<RegionSelectProps> = ({ province, city, onChange })
         value={city}
         disabled={!province}
         onChange={(e) => onChange({ province, city: e.target.value })}
-        className="h-12 flex-1 rounded-xl bg-gray-100 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FF5A66] disabled:opacity-60"
+        className="h-12 flex-1 rounded-xl bg-[var(--nb-page)] px-3 text-sm text-[var(--nb-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)] disabled:opacity-60"
       >
         <option value="">选择城市</option>
         {cities.map((c) => <option key={c} value={c}>{c}</option>)}

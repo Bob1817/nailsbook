@@ -21,7 +21,7 @@ struct ClientOrdersView: View {
             ZStack {
                 // wxapp: linear-gradient(180deg, #fff8fa 0%, #f8f9fc 24%, #f5f6f8 100%)
                 LinearGradient(
-                    colors: [Color(hex: "FFF8FA"), Color(hex: "F8F9FC"), Color(hex: "F5F6F8")],
+                    colors: [NBColors.page, NBColors.page, NBColors.page],
                     startPoint: .top,
                     endPoint: .bottom
                 )
@@ -78,10 +78,10 @@ struct ClientOrdersView: View {
         Text(title)
             .font(NBFont.captionLarge)
             .fontWeight(isSelected ? .semibold : .regular)
-            .foregroundColor(isSelected ? .white : Color(hex: "718096"))
+            .foregroundColor(isSelected ? .white : NBColors.action)
             .padding(.horizontal, Spacing.md)
             .frame(height: 44)
-            .background(isSelected ? Color.nbPrimary : Color(hex: "F5F6F8"))
+            .background(isSelected ? Color.nbPrimary : NBColors.page)
             .cornerRadius(Radius.pill)
     }
 
@@ -104,7 +104,7 @@ struct ClientOrdersView: View {
             .frame(width: 64)
             .frame(minHeight: 84)
             .background(
-                LinearGradient(colors: [Color(hex: "FFF5F7"), Color(hex: "FFE8EE")], startPoint: .top, endPoint: .bottom)
+                LinearGradient(colors: [NBColors.page, NBColors.page], startPoint: .top, endPoint: .bottom)
             )
             .cornerRadius(Radius.xl)
 
@@ -156,7 +156,7 @@ struct ClientOrdersView: View {
         .padding(Spacing.cardPadding)
         .background(Color.white)
         .cornerRadius(Radius.hero)
-        .shadow(color: Color(hex: "0F172A").opacity(0.06), radius: 12, y: 2)
+        .shadow(color: NBColors.ink.opacity(0.06), radius: 12, y: 2)
     }
 
     // MARK: - Status Badge

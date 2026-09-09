@@ -113,10 +113,10 @@ const WorkScheduleModal: React.FC<WorkScheduleModalProps> = ({ onClose, technici
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="shrink-0 flex items-center justify-between border-b border-gray-100 bg-white px-5 py-3.5">
-          <h2 className="text-lg font-bold text-gray-900">工作时间设置</h2>
-          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
-            <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="shrink-0 flex items-center justify-between border-b border-[var(--nb-line)] bg-white px-5 py-3.5">
+          <h2 className="text-lg font-bold text-[var(--nb-ink)]">工作时间设置</h2>
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--nb-page)]">
+            <svg className="h-4 w-4 text-[var(--nb-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -128,7 +128,7 @@ const WorkScheduleModal: React.FC<WorkScheduleModalProps> = ({ onClose, technici
           <button
             type="button"
             onClick={handleAddScheme}
-            className="w-full min-h-[48px] rounded-[16px] bg-[#f7f3f5] text-[14px] font-semibold text-[#6d6570] active:bg-[#ece8eb] flex items-center justify-center gap-2"
+            className="w-full min-h-[48px] rounded-[16px] bg-[var(--nb-page)] text-[14px] font-semibold text-[var(--nb-secondary)] active:bg-[var(--nb-page)] flex items-center justify-center gap-2"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -137,32 +137,32 @@ const WorkScheduleModal: React.FC<WorkScheduleModalProps> = ({ onClose, technici
           </button>
 
           {/* Schemes List */}
-          <Card className="p-0 overflow-hidden shadow-[0_12px_28px_rgba(36,27,41,0.05)]">
+          <Card className="p-0 overflow-hidden shadow-[0_12px_28px_rgba(0,0,0,0.05)]">
             {(schedule.schemes || []).map((scheme, index) => {
               const isActive = scheme.id === schedule.activeSchemeId;
               return (
                 <div
                   key={scheme.id}
-                  className={`${index < (schedule.schemes?.length || 0) - 1 ? 'border-b border-gray-50' : ''}`}
+                  className={`${index < (schedule.schemes?.length || 0) - 1 ? 'border-b border-[var(--nb-line)]' : ''}`}
                 >
                   <button
                     type="button"
                     onClick={() => setEditingScheme(scheme)}
-                    className="w-full px-4 py-3.5 text-left hover:bg-gray-50 active:bg-gray-100"
+                    className="w-full px-4 py-3.5 text-left hover:bg-[var(--nb-page)] active:bg-[var(--nb-page)]"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3">
-                          <span className="text-[15px] font-semibold text-[#1f2230]">
+                          <span className="text-[15px] font-semibold text-[var(--nb-ink)]">
                             {scheme.label}
                           </span>
                           {isActive && (
-                            <span className="rounded-full bg-[#EEF9F1] px-2 py-0.5 text-[10px] font-semibold text-[#31B46C]">
+                            <span className="rounded-full bg-[var(--nb-page)] px-2 py-0.5 text-[10px] font-semibold text-[var(--nb-ink)]">
                               当前
                             </span>
                           )}
                         </div>
-                        <div className="mt-1 text-[13px] text-[#7f7681]">
+                        <div className="mt-1 text-[13px] text-[var(--nb-secondary)]">
                           {scheme.startTime}–{scheme.endTime} · {daysSummary(scheme.days)}
                         </div>
                       </div>
@@ -173,7 +173,7 @@ const WorkScheduleModal: React.FC<WorkScheduleModalProps> = ({ onClose, technici
                           handleSetActive(scheme.id);
                         }}
                         className={`relative h-7 w-12 rounded-full transition-colors ${
-                          isActive ? 'bg-[#31B46C]' : 'bg-[#ddd8de]'
+                          isActive ? 'bg-[var(--nb-action)]' : 'bg-[var(--nb-page)]'
                         }`}
                       >
                         <span
@@ -190,13 +190,13 @@ const WorkScheduleModal: React.FC<WorkScheduleModalProps> = ({ onClose, technici
           </Card>
 
           {/* Rest Days Section */}
-          <Card className="p-4 shadow-[0_12px_28px_rgba(36,27,41,0.05)]">
+          <Card className="p-4 shadow-[0_12px_28px_rgba(0,0,0,0.05)]">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-[15px] font-semibold text-[#1f2230]">休息日设置</h3>
+              <h3 className="text-[15px] font-semibold text-[var(--nb-ink)]">休息日设置</h3>
               <button
                 type="button"
                 onClick={() => setShowRestDayCalendar(true)}
-                className="text-[13px] font-medium text-[#FF5E93] hover:text-[#e54e82] active:text-[#d1457a]"
+                className="text-[13px] font-medium text-[var(--nb-ink)] hover:text-[var(--nb-ink)] active:text-[var(--nb-ink)]"
               >
                 设置休息日
               </button>
@@ -207,13 +207,13 @@ const WorkScheduleModal: React.FC<WorkScheduleModalProps> = ({ onClose, technici
                 {schedule.restDays!.map((date) => (
                   <span
                     key={date}
-                    className="inline-flex items-center gap-1 rounded-full bg-[#f2f0f3] px-2.5 py-1 text-[11px] font-medium text-[#8d8590]"
+                    className="inline-flex items-center gap-1 rounded-full bg-[var(--nb-page)] px-2.5 py-1 text-[11px] font-medium text-[var(--nb-muted)]"
                   >
                     {date}
                     <button
                       type="button"
                       onClick={() => removeRestDay(date)}
-                      className="ml-1 text-[#b0aab4] hover:text-[#8d8590]"
+                      className="ml-1 text-[var(--nb-muted)] hover:text-[var(--nb-muted)]"
                     >
                       ×
                     </button>
@@ -221,21 +221,21 @@ const WorkScheduleModal: React.FC<WorkScheduleModalProps> = ({ onClose, technici
                 ))}
               </div>
             ) : (
-              <p className="text-[13px] text-[#7f7681]">暂无设置休息日</p>
+              <p className="text-[13px] text-[var(--nb-secondary)]">暂无设置休息日</p>
             )}
           </Card>
         </div>
 
         {/* Sticky Footer Save Button */}
         <div
-          className="shrink-0 px-5 pt-3 border-t border-gray-50 bg-white"
+          className="shrink-0 px-5 pt-3 border-t border-[var(--nb-line)] bg-white"
           style={{ paddingBottom: 'max(20px, env(safe-area-inset-bottom, 20px))' }}
         >
           <button
             type="button"
             disabled={saving}
             onClick={handleSave}
-            className="w-full min-h-[52px] rounded-[18px] bg-[#FF5E93] text-[15px] font-semibold text-white shadow-[0_8px_20px_rgba(255,94,147,0.25)] active:bg-[#e54e82] disabled:opacity-60"
+            className="w-full min-h-[52px] rounded-[18px] bg-[var(--nb-action)] text-[15px] font-semibold text-white shadow-[0_8px_20px_rgba(0,0,0,0.25)] active:bg-[var(--nb-action-pressed)] disabled:opacity-60"
           >
             {saving ? '保存中...' : '保存工作时间'}
           </button>
@@ -301,7 +301,7 @@ export const MePage: React.FC = () => {
   const bookingReady = !!(technician?.homeService || technician?.shopService);
   const moduleClassName = 'mb-4 p-4';
   const moduleHeaderClassName = 'mb-4 flex items-center justify-between gap-3';
-  const iconPlateClassName = 'flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#ffe9f0] text-lg ring-1 ring-black/[0.03]';
+  const iconPlateClassName = 'flex h-10 w-10 items-center justify-center rounded-[14px] bg-[var(--nb-page)] text-lg ring-1 ring-black/[0.03]';
 
   useEffect(() => {
     let cancelled = false;
@@ -390,8 +390,8 @@ export const MePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-full overflow-x-hidden bg-[#fff9f8] pb-[calc(3.5rem+env(safe-area-inset-bottom)+1.5rem)]">
-      <div className="relative overflow-hidden bg-[linear-gradient(135deg,#ff8aa0_0%,#ff9ab0_52%,#ffc8b2_100%)] px-5 pb-10 pt-12">
+    <div className="min-h-full overflow-x-hidden bg-[var(--nb-page)] pb-[calc(3.5rem+env(safe-area-inset-bottom)+1.5rem)]">
+      <div className="relative overflow-hidden bg-[var(--nb-action)] px-5 pb-10 pt-12">
         <div className="absolute inset-y-0 right-[-14%] w-48 rounded-full bg-white/[0.08] blur-3xl" />
         <div className="absolute left-[-18%] top-10 h-24 w-40 rounded-full bg-white/[0.08] blur-3xl" />
         <div className="mb-5 flex items-start justify-between gap-3">
@@ -443,7 +443,7 @@ export const MePage: React.FC = () => {
         <div className="rounded-[22px] border border-white/[0.14] bg-white/10 p-3.5 backdrop-blur">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className={`h-2 w-2 rounded-full ${isAcceptingOrders ? 'animate-pulse bg-emerald-300' : 'bg-white/70'}`}></div>
+              <div className={`h-2 w-2 rounded-full ${isAcceptingOrders ? 'animate-pulse bg-[var(--nb-pressed)]' : 'bg-white/70'}`}></div>
               <span className="text-sm font-medium text-white">{isAcceptingOrders ? '当前接单中' : '当前已暂停接单'}</span>
             </div>
             <div className="flex items-center gap-2">
@@ -470,19 +470,19 @@ export const MePage: React.FC = () => {
 
       <div className="px-5 pt-0">
         {/* Data card - 核心展示 */}
-        <Card className="relative z-10 -mt-5 mb-4 p-4 shadow-[0_14px_32px_rgba(29,35,53,0.08)]">
+        <Card className="relative z-10 -mt-5 mb-4 p-4 shadow-[0_14px_32px_rgba(0,0,0,0.08)]">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-2xl font-bold text-gray-900">{summary.todayOrders.length}</p>
-              <p className="mt-1 text-xs text-gray-500">今日预约</p>
+              <p className="text-2xl font-bold text-[var(--nb-ink)]">{summary.todayOrders.length}</p>
+              <p className="mt-1 text-xs text-[var(--nb-secondary)]">今日预约</p>
             </div>
-            <div className="border-x border-gray-100">
-              <p className="text-2xl font-bold text-gray-900">{weekOrders.length}</p>
-              <p className="mt-1 text-xs text-gray-500">本周预约</p>
+            <div className="border-x border-[var(--nb-line)]">
+              <p className="text-2xl font-bold text-[var(--nb-ink)]">{weekOrders.length}</p>
+              <p className="mt-1 text-xs text-[var(--nb-secondary)]">本周预约</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-pink-500">{customers.length}</p>
-              <p className="mt-1 text-xs text-gray-500">客户总数</p>
+              <p className="text-2xl font-bold text-[var(--nb-secondary)]">{customers.length}</p>
+              <p className="mt-1 text-xs text-[var(--nb-secondary)]">客户总数</p>
             </div>
           </div>
         </Card>
@@ -490,36 +490,36 @@ export const MePage: React.FC = () => {
         {/* Income card - 核心展示 */}
         <Card className={moduleClassName}>
           <div className={moduleHeaderClassName}>
-            <h2 className="text-[18px] font-semibold text-gray-900">收入统计</h2>
-            <span className="text-xs text-gray-400">按当前预约数据汇总</span>
+            <h2 className="text-[18px] font-semibold text-[var(--nb-ink)]">收入统计</h2>
+            <span className="text-xs text-[var(--nb-muted)]">按当前预约数据汇总</span>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-[18px] bg-[#ffe9f0] p-3.5 ring-1 ring-[#ffe6ec]">
-              <p className="text-xs text-gray-500">今日已完成收入</p>
-              <p className="mt-1 text-[1.65rem] font-semibold tracking-[-0.03em] text-pink-500">{formatMoney(summary.todayIncome)}</p>
+            <div className="rounded-[18px] bg-[var(--nb-page)] p-3.5 ring-1 ring-[var(--nb-line)]">
+              <p className="text-xs text-[var(--nb-secondary)]">今日已完成收入</p>
+              <p className="mt-1 text-[1.65rem] font-semibold tracking-[-0.03em] text-[var(--nb-secondary)]">{formatMoney(summary.todayIncome)}</p>
             </div>
-            <div className="rounded-[18px] bg-[#fbfbfc] p-3.5 ring-1 ring-black/[0.03]">
-              <p className="text-xs text-gray-500">今日预计收入</p>
-              <p className="mt-1 text-[1.65rem] font-semibold tracking-[-0.03em] text-gray-900">{formatMoney(summary.expectedIncome)}</p>
+            <div className="rounded-[18px] bg-[var(--nb-surface)] p-3.5 ring-1 ring-black/[0.03]">
+              <p className="text-xs text-[var(--nb-secondary)]">今日预计收入</p>
+              <p className="mt-1 text-[1.65rem] font-semibold tracking-[-0.03em] text-[var(--nb-ink)]">{formatMoney(summary.expectedIncome)}</p>
             </div>
-            <div className="rounded-[18px] bg-[#fbfbfc] p-3.5 ring-1 ring-black/[0.03]">
-              <p className="text-xs text-gray-500">本月预约金额</p>
-              <p className="mt-1 text-[1.65rem] font-semibold tracking-[-0.03em] text-gray-900">{formatMoney(monthRevenue)}</p>
+            <div className="rounded-[18px] bg-[var(--nb-surface)] p-3.5 ring-1 ring-black/[0.03]">
+              <p className="text-xs text-[var(--nb-secondary)]">本月预约金额</p>
+              <p className="mt-1 text-[1.65rem] font-semibold tracking-[-0.03em] text-[var(--nb-ink)]">{formatMoney(monthRevenue)}</p>
             </div>
-            <div className="rounded-[18px] bg-[#fbfbfc] p-3.5 ring-1 ring-black/[0.03]">
-              <p className="text-xs text-gray-500">累计完成单量</p>
-              <p className="mt-1 text-[1.65rem] font-semibold tracking-[-0.03em] text-pink-500">{completedCount}</p>
+            <div className="rounded-[18px] bg-[var(--nb-surface)] p-3.5 ring-1 ring-black/[0.03]">
+              <p className="text-xs text-[var(--nb-secondary)]">累计完成单量</p>
+              <p className="mt-1 text-[1.65rem] font-semibold tracking-[-0.03em] text-[var(--nb-secondary)]">{completedCount}</p>
             </div>
           </div>
         </Card>
 
         <Card className={moduleClassName}>
           <div className={moduleHeaderClassName}>
-            <h2 className="text-[18px] font-semibold text-gray-900">我的预约</h2>
+            <h2 className="text-[18px] font-semibold text-[var(--nb-ink)]">我的预约</h2>
             <button
               type="button"
               onClick={() => navigate('/orders')}
-              className="text-xs text-pink-500 font-medium"
+              className="text-xs text-[var(--nb-secondary)] font-medium"
             >
               全部预约
             </button>
@@ -536,17 +536,17 @@ export const MePage: React.FC = () => {
                 key={item.label}
                 type="button"
                 onClick={() => navigate(`/orders?status=${item.status}`)}
-                className="relative flex flex-col items-center gap-1.5 rounded-[18px] bg-[#fff9f8] px-1 py-3 ring-1 ring-[#f2e6ec] transition-colors active:bg-gray-50 min-h-[44px]"
+                className="relative flex flex-col items-center gap-1.5 rounded-[18px] bg-[var(--nb-page)] px-1 py-3 ring-1 ring-[var(--nb-line)] transition-colors active:bg-[var(--nb-page)] min-h-[44px]"
               >
-                <div className="relative flex h-10 w-10 items-center justify-center rounded-[14px] bg-white text-lg shadow-[0_6px_14px_rgba(29,35,53,0.04)] ring-1 ring-black/[0.03]">
+                <div className="relative flex h-10 w-10 items-center justify-center rounded-[14px] bg-white text-lg shadow-[0_6px_14px_rgba(0,0,0,0.04)] ring-1 ring-black/[0.03]">
                   <span>{item.icon}</span>
                   {item.value > 0 && (
-                    <span className="absolute -right-2 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
+                    <span className="absolute -right-2 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--nb-action)] text-[10px] text-white">
                       {item.value}
                     </span>
                   )}
                 </div>
-                <span className="text-center text-[11px] text-gray-600">{item.label}</span>
+                <span className="text-center text-[11px] text-[var(--nb-secondary)]">{item.label}</span>
               </button>
             ))}
           </div>
@@ -554,18 +554,18 @@ export const MePage: React.FC = () => {
 
         <Card className={moduleClassName}>
           <div className={moduleHeaderClassName}>
-            <h2 className="text-[18px] font-semibold text-gray-900">常用工具</h2>
-            <span className="text-xs text-gray-400">常用配置入口</span>
+            <h2 className="text-[18px] font-semibold text-[var(--nb-ink)]">常用工具</h2>
+            <span className="text-xs text-[var(--nb-muted)]">常用配置入口</span>
           </div>
           <div className="grid grid-cols-4 gap-4">
             {tools.map((tool) => (
               <button
                 key={tool.label}
                 onClick={() => tool.path && navigate(tool.path)}
-                className="flex flex-col items-center gap-2 rounded-[18px] bg-[#fff9f8] px-1 py-3 ring-1 ring-[#f2e6ec] transition-colors active:bg-gray-50 min-h-[44px]"
+                className="flex flex-col items-center gap-2 rounded-[18px] bg-[var(--nb-page)] px-1 py-3 ring-1 ring-[var(--nb-line)] transition-colors active:bg-[var(--nb-page)] min-h-[44px]"
               >
-                <div className={`${iconPlateClassName} text-gray-700`}>{tool.icon}</div>
-                <span className="text-center text-xs text-gray-600">{tool.label}</span>
+                <div className={`${iconPlateClassName} text-[var(--nb-ink)]`}>{tool.icon}</div>
+                <span className="text-center text-xs text-[var(--nb-secondary)]">{tool.label}</span>
               </button>
             ))}
           </div>
@@ -574,30 +574,30 @@ export const MePage: React.FC = () => {
         <Card className={moduleClassName}>
           <div className={moduleHeaderClassName}>
             <div>
-              <h2 className="text-[18px] font-semibold text-gray-900">邀请码分享</h2>
-              <p className="mt-1 text-xs text-gray-500">把邀请码或链接发给客户，客户可直接进入绑定流程。</p>
+              <h2 className="text-[18px] font-semibold text-[var(--nb-ink)]">邀请码分享</h2>
+              <p className="mt-1 text-xs text-[var(--nb-secondary)]">把邀请码或链接发给客户，客户可直接进入绑定流程。</p>
             </div>
             {bookingReady && (
               <button
                 type="button"
                 onClick={() => invitationCode && navigator.clipboard.writeText(invitationCode).then(() => toast.success('邀请码已复制'))}
-                className="shrink-0 whitespace-nowrap rounded-full bg-[#ffe9f0] px-3.5 py-1.5 text-[12px] font-semibold text-pink-500 min-h-[32px] active:bg-[#ffd6e4]"
+                className="shrink-0 whitespace-nowrap rounded-full bg-[var(--nb-page)] px-3.5 py-1.5 text-[12px] font-semibold text-[var(--nb-secondary)] min-h-[32px] active:bg-[var(--nb-page)]"
               >
                 邀请客户
               </button>
             )}
           </div>
           {!bookingReady ? (
-            <div className="rounded-[20px] bg-[#fff7fa] px-4 py-5 text-center">
-              <p className="text-sm font-medium text-gray-700">开启上门或到店服务后，才能生成并分享邀请链接</p>
-              <p className="mt-1 text-xs text-gray-400">请前往「服务类型」开启服务</p>
+            <div className="rounded-[20px] bg-[var(--nb-page)] px-4 py-5 text-center">
+              <p className="text-sm font-medium text-[var(--nb-ink)]">开启上门或到店服务后，才能生成并分享邀请链接</p>
+              <p className="mt-1 text-xs text-[var(--nb-muted)]">请前往「服务类型」开启服务</p>
             </div>
           ) : (
-          <div className="rounded-[20px] bg-[#fff7fa] p-3.5">
+          <div className="rounded-[20px] bg-[var(--nb-page)] p-3.5">
             <div className="flex items-center justify-between gap-3 rounded-[16px] bg-white px-3.5 py-3">
               <div className="min-w-0 flex-1">
-                <p className="text-xs text-gray-400">邀请码</p>
-                <p className="mt-1 text-[1.1rem] font-bold tracking-[0.18em] text-gray-900">
+                <p className="text-xs text-[var(--nb-muted)]">邀请码</p>
+                <p className="mt-1 text-[1.1rem] font-bold tracking-[0.18em] text-[var(--nb-ink)]">
                   {invitationCode || '暂未生成'}
                 </p>
               </div>
@@ -605,9 +605,9 @@ export const MePage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => navigator.clipboard.writeText(invitationCode).then(() => toast.success('邀请码已复制'))}
-                  className="shrink-0 flex h-9 w-9 items-center justify-center rounded-full bg-[#fff1f6] active:bg-[#ffe4ee]"
+                  className="shrink-0 flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-page)] active:bg-[var(--nb-page)]"
                 >
-                  <svg className="h-4 w-4 text-[#FF5E93]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-4 w-4 text-[var(--nb-ink)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
                 </button>
@@ -615,25 +615,25 @@ export const MePage: React.FC = () => {
             </div>
             <div className="mt-3 flex items-center justify-between gap-3 rounded-[16px] bg-white px-3.5 py-3">
               <div className="min-w-0 flex-1">
-                <p className="text-xs text-gray-400">分享链接</p>
+                <p className="text-xs text-[var(--nb-muted)]">分享链接</p>
                 {inviteLink ? (
                   <a
                     href={inviteLink}
-                    className="mt-1 block truncate text-sm leading-6 text-pink-500"
+                    className="mt-1 block truncate text-sm leading-6 text-[var(--nb-secondary)]"
                   >
                     {inviteLink}
                   </a>
                 ) : (
-                  <p className="mt-1 text-sm leading-6 text-gray-500">暂无可用分享链接</p>
+                  <p className="mt-1 text-sm leading-6 text-[var(--nb-secondary)]">暂无可用分享链接</p>
                 )}
               </div>
               {inviteLink && (
                 <button
                   type="button"
                   onClick={() => navigator.clipboard.writeText(inviteLink).then(() => toast.success('分享链接已复制'))}
-                  className="shrink-0 flex h-9 w-9 items-center justify-center rounded-full bg-[#fff1f6] active:bg-[#ffe4ee]"
+                  className="shrink-0 flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-page)] active:bg-[var(--nb-page)]"
                 >
-                  <svg className="h-4 w-4 text-[#FF5E93]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-4 w-4 text-[var(--nb-ink)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
                 </button>
@@ -647,8 +647,8 @@ export const MePage: React.FC = () => {
           <div className="px-4 pt-4">
             <div className={moduleHeaderClassName}>
               <div>
-                <h2 className="text-[18px] font-semibold text-gray-900">设置</h2>
-                <p className="mt-1 text-xs text-gray-500">账号、服务类型与常用偏好入口</p>
+                <h2 className="text-[18px] font-semibold text-[var(--nb-ink)]">设置</h2>
+                <p className="mt-1 text-xs text-[var(--nb-secondary)]">账号、服务类型与常用偏好入口</p>
               </div>
             </div>
           </div>
@@ -656,11 +656,11 @@ export const MePage: React.FC = () => {
             <button
               key={item.label}
               onClick={() => item.path && navigate(item.path)}
-              className="flex w-full items-center gap-3 border-b border-gray-50 px-4 py-3.5 text-left transition-colors active:bg-gray-50 last:border-0"
+              className="flex w-full items-center gap-3 border-b border-[var(--nb-line)] px-4 py-3.5 text-left transition-colors active:bg-[var(--nb-page)] last:border-0"
             >
               <span className={iconPlateClassName}>{item.icon}</span>
-              <span className="flex-1 text-left text-gray-700">{item.label}</span>
-              <svg className="h-5 w-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span className="flex-1 text-left text-[var(--nb-ink)]">{item.label}</span>
+              <svg className="h-5 w-5 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
@@ -669,7 +669,7 @@ export const MePage: React.FC = () => {
 
         <button
           onClick={logout}
-          className="w-full rounded-[24px] bg-white py-3 font-medium text-red-500 shadow-[0_8px_24px_rgba(29,35,53,0.04)] ring-1 ring-black/[0.04] transition-colors active:bg-red-50 min-h-[48px]"
+          className="w-full rounded-[24px] bg-white py-3 font-medium text-[var(--nb-secondary)] shadow-[0_8px_24px_rgba(0,0,0,0.04)] ring-1 ring-black/[0.04] transition-colors active:bg-[var(--nb-page)] min-h-[48px]"
         >
           退出登录
         </button>

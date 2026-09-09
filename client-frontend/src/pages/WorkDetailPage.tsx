@@ -38,7 +38,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
       ) : (
         <div
           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white ${
-            comment.user.role === 'technician' ? 'bg-[#FF6B8A]' : 'bg-gray-400'
+            comment.user.role === 'technician' ? 'bg-[var(--nb-action)]' : 'bg-[var(--nb-action)]'
           }`}
         >
           {comment.user.name.slice(0, 1)}
@@ -46,22 +46,22 @@ const CommentItem: React.FC<CommentItemProps> = ({
       )}
 
       <div className="min-w-0 flex-1">
-        <div className="rounded-2xl bg-gray-50 px-3 py-2">
+        <div className="rounded-2xl bg-[var(--nb-page)] px-3 py-2">
           {/* Name row */}
-          <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
-            <span className="font-medium text-gray-700">{comment.user.name}</span>
+          <div className="flex items-center gap-1.5 text-[11px] text-[var(--nb-muted)]">
+            <span className="font-medium text-[var(--nb-ink)]">{comment.user.name}</span>
             {comment.user.role === 'technician' && (
-              <span className="rounded-full bg-pink-100 px-1.5 py-px text-[10px] font-medium text-pink-500">
+              <span className="rounded-full bg-[var(--nb-page)] px-1.5 py-px text-[10px] font-medium text-[var(--nb-secondary)]">
                 美甲师
               </span>
             )}
             {comment.isPinned && (
-              <span className="rounded-full bg-amber-100 px-1.5 py-px text-[10px] font-medium text-amber-600">
+              <span className="rounded-full bg-[var(--nb-page)] px-1.5 py-px text-[10px] font-medium text-[var(--nb-secondary)]">
                 置顶
               </span>
             )}
             {comment.isHidden && (
-              <span className="rounded-full bg-gray-200 px-1.5 py-px text-[10px] font-medium text-gray-500">
+              <span className="rounded-full bg-[var(--nb-pressed)] px-1.5 py-px text-[10px] font-medium text-[var(--nb-secondary)]">
                 已隐藏
               </span>
             )}
@@ -75,7 +75,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   e.stopPropagation();
                   setActionMenuId(comment.id);
                 }}
-                className="-mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-gray-400 active:bg-gray-200"
+                className="-mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[var(--nb-muted)] active:bg-[var(--nb-pressed)]"
               >
                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M6 12a2 2 0 11-4 0 2 2 0 014 0zm8 0a2 2 0 11-4 0 2 2 0 014 0zm6 2a2 2 0 100-4 2 2 0 000 4z" />
@@ -86,7 +86,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
 
           {/* Content — click to reply */}
           <p
-            className={`mt-1 text-sm leading-5 ${isDeleted ? 'italic text-gray-400' : 'cursor-pointer text-gray-800 active:opacity-70'}`}
+            className={`mt-1 text-sm leading-5 ${isDeleted ? 'italic text-[var(--nb-muted)]' : 'cursor-pointer text-[var(--nb-ink)] active:opacity-70'}`}
             onClick={() => !isDeleted && onReply(comment)}
           >
             {comment.content}
@@ -109,7 +109,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                     setActionMenuId(null);
                     onDelete(comment.id);
                   }}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-red-500 active:bg-red-50"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-[var(--nb-secondary)] active:bg-[var(--nb-page)]"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -122,7 +122,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                     setActionMenuId(null);
                     onReport(comment.id);
                   }}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-orange-500 active:bg-orange-50"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-[var(--nb-secondary)] active:bg-[var(--nb-page)]"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 2H21l-3 6 3 6h-8.5l-1-2H5a2 2 0 00-2 2z" />
@@ -130,10 +130,10 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   举报
                 </button>
               )}
-              <div className="my-1 h-px bg-gray-100" />
+              <div className="my-1 h-px bg-[var(--nb-page)]" />
               <button
                 onClick={() => setActionMenuId(null)}
-                className="w-full rounded-xl py-3.5 text-sm font-medium text-gray-500 active:bg-gray-50"
+                className="w-full rounded-xl py-3.5 text-sm font-medium text-[var(--nb-secondary)] active:bg-[var(--nb-page)]"
               >
                 取消
               </button>
@@ -143,7 +143,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
 
         {/* Replies */}
         {comment.replies && comment.replies.length > 0 && (
-          <div className="mt-2 space-y-2 pl-2 border-l-2 border-gray-100">
+          <div className="mt-2 space-y-2 pl-2 border-l-2 border-[var(--nb-line)]">
             {comment.replies.map((reply) => (
               <CommentItem
                 key={reply.id}
@@ -173,17 +173,17 @@ interface ConfirmDialogProps {
 const ConfirmDialog: React.FC<ConfirmDialogProps> = ({ message, onConfirm, onCancel }) => (
   <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 px-6">
     <div className="w-full max-w-xs rounded-2xl bg-white p-6 shadow-xl">
-      <p className="text-center text-sm leading-6 text-gray-700">{message}</p>
+      <p className="text-center text-sm leading-6 text-[var(--nb-ink)]">{message}</p>
       <div className="mt-5 flex gap-3">
         <button
           onClick={onCancel}
-          className="flex-1 rounded-full border border-gray-200 py-2.5 text-sm font-medium text-gray-600"
+          className="flex-1 rounded-full border border-[var(--nb-line)] py-2.5 text-sm font-medium text-[var(--nb-secondary)]"
         >
           取消
         </button>
         <button
           onClick={onConfirm}
-          className="flex-1 rounded-full bg-red-500 py-2.5 text-sm font-medium text-white"
+          className="flex-1 rounded-full bg-[var(--nb-action)] py-2.5 text-sm font-medium text-white"
         >
           确认
         </button>
@@ -210,10 +210,10 @@ const HiddenCommentsSection: React.FC<HiddenCommentsSectionProps> = ({
   if (comments.length === 0) return null;
 
   return (
-    <div className="mt-4 border-t border-dashed border-gray-200 pt-3">
+    <div className="mt-4 border-t border-dashed border-[var(--nb-line)] pt-3">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-1.5 text-xs text-gray-400"
+        className="flex items-center gap-1.5 text-xs text-[var(--nb-muted)]"
       >
         <svg
           className={`h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`}
@@ -668,7 +668,7 @@ const WorkDetailPage: React.FC = () => {
       </div>
 
       {/* Work Info Panel */}
-      <div className="relative z-10 -mt-6 flex min-h-0 flex-1 flex-col rounded-t-[28px] bg-white shadow-[0_-12px_40px_rgba(15,23,42,0.06)]">
+      <div className="relative z-10 -mt-6 flex min-h-0 flex-1 flex-col rounded-t-[28px] bg-white shadow-[0_-12px_40px_rgba(0,0,0,0.06)]">
         {/* Grabber handle */}
         <div
           className="flex shrink-0 cursor-grab touch-none items-center justify-center pt-2 pb-1 active:cursor-grabbing"
@@ -677,22 +677,22 @@ const WorkDetailPage: React.FC = () => {
           onPointerUp={onGrabberUp}
           onPointerCancel={onGrabberUp}
         >
-          <div className="h-1.5 w-10 rounded-full bg-gray-300" />
+          <div className="h-1.5 w-10 rounded-full bg-[var(--nb-pressed)]" />
         </div>
         {/* 标题 + 评论：统一滚动流，标题随评论一起滚动，评论获得完整高度 */}
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {/* Title block */}
         <div className="px-5 pt-3 pb-4">
-          <h2 className="text-[1.35rem] font-bold leading-tight tracking-[-0.02em] text-gray-900">
+          <h2 className="text-[1.35rem] font-bold leading-tight tracking-[-0.02em] text-[var(--nb-ink)]">
             {work.title || '未命名作品'}
           </h2>
           {work.description && (
-            <p className="mt-2 text-sm leading-6 text-gray-500">{work.description}</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--nb-secondary)]">{work.description}</p>
           )}
           {work.tags.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
               {work.tags.map((tag) => (
-                <span key={tag} className="rounded-full bg-pink-50 px-2.5 py-0.5 text-[11px] font-medium text-[var(--color-primary)]">
+                <span key={tag} className="rounded-full bg-[var(--nb-page)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--color-primary)]">
                   #{tag}
                 </span>
               ))}
@@ -701,10 +701,10 @@ const WorkDetailPage: React.FC = () => {
         </div>
 
         {/* Comments */}
-        <div className="border-t border-gray-100 px-5 py-4">
+        <div className="border-t border-[var(--nb-line)] px-5 py-4">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900">评论</h3>
-            <span className="text-xs text-gray-400">{visibleComments.length} 条</span>
+            <h3 className="text-sm font-semibold text-[var(--nb-ink)]">评论</h3>
+            <span className="text-xs text-[var(--nb-muted)]">{visibleComments.length} 条</span>
           </div>
 
           {visibleComments.length > 0 ? (
@@ -722,7 +722,7 @@ const WorkDetailPage: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl bg-gray-50 px-4 py-6 text-center text-sm text-gray-400">
+            <div className="rounded-2xl bg-[var(--nb-page)] px-4 py-6 text-center text-sm text-[var(--nb-muted)]">
               暂无评论，欢迎添加第一条评论
             </div>
           )}
@@ -739,21 +739,21 @@ const WorkDetailPage: React.FC = () => {
         </div>
 
         {/* Comment input bar */}
-        <div className="shrink-0 border-t border-gray-100 bg-white px-5 pt-3 pb-[max(0.875rem,env(safe-area-inset-bottom)+0.5rem)]">
+        <div className="shrink-0 border-t border-[var(--nb-line)] bg-white px-5 pt-3 pb-[max(0.875rem,env(safe-area-inset-bottom)+0.5rem)]">
           {/* 预约同款 — 常驻主行动入口（原在标题块，移至此处腾出评论空间并常驻可见） */}
           <button
             onClick={handleBookSame}
-            className="mb-2.5 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(255,107,138,0.3)] active:scale-[0.99] transition-transform"
+            className="mb-2.5 flex w-full items-center justify-center gap-2 rounded-full bg-[var(--nb-action)] py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(0,0,0,0.3)] active:scale-[0.99] transition-transform"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
             预约同款
           </button>
           {replyingTo && (
-            <div className="mb-2 flex items-center gap-2 text-xs text-gray-500">
+            <div className="mb-2 flex items-center gap-2 text-xs text-[var(--nb-secondary)]">
               <span>回复 <span className="font-medium text-[var(--color-primary)]">@{replyingTo.name}</span></span>
               <button
                 onClick={() => setReplyingTo(null)}
-                className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-100"
+                className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--nb-page)]"
               >
                 <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -770,7 +770,7 @@ const WorkDetailPage: React.FC = () => {
               onFocus={() => setInputFocused(true)}
               onBlur={() => setInputFocused(false)}
               placeholder={replyingTo ? `回复 @${replyingTo.name}...` : '添加评论...'}
-              className="h-11 flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 text-sm focus:border-[var(--color-primary)] focus:bg-white focus:outline-none"
+              className="h-11 flex-1 rounded-full border border-[var(--nb-line)] bg-[var(--nb-page)] px-4 text-sm focus:border-[var(--color-primary)] focus:bg-white focus:outline-none"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -783,29 +783,29 @@ const WorkDetailPage: React.FC = () => {
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={handleAddComment}
                 disabled={!commentText.trim()}
-                className="h-11 shrink-0 rounded-full bg-[#FF6B8A] px-5 text-sm font-medium text-white disabled:opacity-40"
+                className="h-11 shrink-0 rounded-full bg-[var(--nb-action)] px-5 text-sm font-medium text-white disabled:opacity-40"
               >
                 发送
               </button>
             ) : (
               <div className="flex shrink-0 items-center gap-1">
-                <button onClick={handleLike} className="flex h-11 items-center gap-1 px-2 text-gray-600" aria-label="点赞">
+                <button onClick={handleLike} className="flex h-11 items-center gap-1 px-2 text-[var(--nb-secondary)]" aria-label="点赞">
                   {work.isLiked ? (
-                    <svg className="h-6 w-6 text-[#FF6B8A]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
+                    <svg className="h-6 w-6 text-[var(--nb-ink)]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
                   ) : (
                     <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
                   )}
-                  {(work.likeCount || 0) > 0 && <span className="text-xs text-gray-500">{work.likeCount}</span>}
+                  {(work.likeCount || 0) > 0 && <span className="text-xs text-[var(--nb-secondary)]">{work.likeCount}</span>}
                 </button>
-                <button onClick={handleFavorite} className="flex h-11 items-center gap-1 px-2 text-gray-600" aria-label="收藏">
+                <button onClick={handleFavorite} className="flex h-11 items-center gap-1 px-2 text-[var(--nb-secondary)]" aria-label="收藏">
                   {work.isFavorited ? (
-                    <svg className="h-6 w-6 text-amber-500" fill="currentColor" viewBox="0 0 24 24"><path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118L2.49 9.901c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+                    <svg className="h-6 w-6 text-[var(--nb-secondary)]" fill="currentColor" viewBox="0 0 24 24"><path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118L2.49 9.901c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
                   ) : (
                     <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118L2.49 9.901c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
                   )}
-                  {(work.favoriteCount || 0) > 0 && <span className="text-xs text-gray-500">{work.favoriteCount}</span>}
+                  {(work.favoriteCount || 0) > 0 && <span className="text-xs text-[var(--nb-secondary)]">{work.favoriteCount}</span>}
                 </button>
-                <button onClick={handleContactTech} className="flex h-11 items-center px-2 text-gray-600" aria-label="联系美甲师">
+                <button onClick={handleContactTech} className="flex h-11 items-center px-2 text-[var(--nb-secondary)]" aria-label="联系美甲师">
                   <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
                 </button>
               </div>
@@ -846,7 +846,7 @@ const WorkDetailPage: React.FC = () => {
             className="rounded-t-2xl bg-white p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="py-2 text-center text-sm font-medium text-gray-900">举报原因</p>
+            <p className="py-2 text-center text-sm font-medium text-[var(--nb-ink)]">举报原因</p>
             {([
               { value: 'spam', label: '广告/垃圾信息' },
               { value: 'inappropriate', label: '不雅内容' },
@@ -856,15 +856,15 @@ const WorkDetailPage: React.FC = () => {
               <button
                 key={item.value}
                 onClick={() => handleReport(item.value)}
-                className="w-full rounded-xl py-3.5 text-sm font-medium text-gray-700 active:bg-gray-50"
+                className="w-full rounded-xl py-3.5 text-sm font-medium text-[var(--nb-ink)] active:bg-[var(--nb-page)]"
               >
                 {item.label}
               </button>
             ))}
-            <div className="my-1 h-px bg-gray-100" />
+            <div className="my-1 h-px bg-[var(--nb-page)]" />
             <button
               onClick={() => setReportTarget(null)}
-              className="w-full rounded-xl py-3.5 text-sm font-medium text-gray-500 active:bg-gray-50"
+              className="w-full rounded-xl py-3.5 text-sm font-medium text-[var(--nb-secondary)] active:bg-[var(--nb-page)]"
             >
               取消
             </button>

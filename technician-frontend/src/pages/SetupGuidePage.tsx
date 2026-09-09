@@ -25,10 +25,10 @@ const SetupGuidePage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 px-5 pb-28 pt-6">
+    <div className="min-h-screen bg-[var(--nb-page)] px-5 pb-28 pt-6">
       <div className="mx-auto w-full max-w-sm">
-        <h1 className="text-xl font-semibold text-gray-900">开启接单前配置</h1>
-        <p className="mt-1.5 text-sm leading-6 text-gray-500">
+        <h1 className="text-xl font-semibold text-[var(--nb-ink)]">开启接单前配置</h1>
+        <p className="mt-1.5 text-sm leading-6 text-[var(--nb-secondary)]">
           至少开启「上门」或「到店」服务，才能邀请客户、生成邀请链接并接单。
         </p>
 
@@ -38,21 +38,21 @@ const SetupGuidePage: React.FC = () => {
               key={`${s.title}-${i}`}
               type="button"
               onClick={() => navigate(s.path)}
-              className="flex w-full items-center gap-3.5 rounded-2xl border bg-white p-4 text-left transition-colors active:bg-gray-50"
-              style={{ borderColor: s.done ? 'rgba(34,197,94,0.45)' : 'rgba(0,0,0,0.06)' }}
+              className="flex w-full items-center gap-3.5 rounded-2xl border bg-white p-4 text-left transition-colors active:bg-[var(--nb-page)]"
+              style={{ borderColor: s.done ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.06)' }}
             >
               <span
                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
-                  s.done ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-500'
+                  s.done ? 'bg-[var(--nb-action)] text-white' : 'bg-[var(--nb-page)] text-[var(--nb-secondary)]'
                 }`}
               >
                 {s.done ? '✓' : s.n}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-[15px] font-semibold text-gray-900">{s.title}</span>
-                <span className="mt-0.5 block text-xs text-gray-400">{s.subtitle}</span>
+                <span className="block text-[15px] font-semibold text-[var(--nb-ink)]">{s.title}</span>
+                <span className="mt-0.5 block text-xs text-[var(--nb-muted)]">{s.subtitle}</span>
               </span>
-              <svg className="h-4 w-4 shrink-0 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-4 w-4 shrink-0 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
@@ -60,13 +60,13 @@ const SetupGuidePage: React.FC = () => {
         </div>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 border-t border-gray-100 bg-white px-5 py-3">
+      <div className="fixed inset-x-0 bottom-0 border-t border-[var(--nb-line)] bg-white px-5 py-3">
         <div className="mx-auto w-full max-w-sm">
           <button
             type="button"
             disabled={!ready}
             onClick={() => navigate('/', { replace: true })}
-            className="w-full min-h-[48px] rounded-xl bg-[#FF5A66] text-sm font-medium text-white disabled:opacity-50"
+            className="w-full min-h-[48px] rounded-xl bg-[var(--nb-action)] text-sm font-medium text-white disabled:opacity-50"
           >
             {ready ? '完成，进入工作台' : '请先开启一种服务类型'}
           </button>

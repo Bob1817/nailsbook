@@ -71,7 +71,7 @@ function IconBadge({ children, dark = false }: { children: string; dark?: boolea
   return (
     <span
       className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl text-xl ${
-        dark ? 'bg-white/15 text-white' : 'bg-[#FFE8EC] text-[#EF7F98]'
+        dark ? 'bg-white/15 text-white' : 'bg-[var(--nb-page)] text-[var(--nb-ink)]'
       }`}
     >
       {children}
@@ -81,29 +81,29 @@ function IconBadge({ children, dark = false }: { children: string; dark?: boolea
 
 function AppPreview() {
   return (
-    <div className="relative mx-auto w-[320px] rounded-[44px] border-[10px] border-[#2B2023] bg-[#FFF8F6] p-4 shadow-2xl">
-      <div className="absolute left-1/2 top-2 h-6 w-24 -translate-x-1/2 rounded-full bg-[#2B2023]" />
-      <div className="mt-6 rounded-[30px] bg-gradient-to-b from-[#FFE8EC] to-[#FFFDFB] p-4">
+    <div className="relative mx-auto w-[320px] rounded-[44px] border-[10px] border-[var(--nb-ink)] bg-[var(--nb-page)] p-4 shadow-2xl">
+      <div className="absolute left-1/2 top-2 h-6 w-24 -translate-x-1/2 rounded-full bg-[var(--nb-ink)]" />
+      <div className="mt-6 rounded-[30px] bg-[var(--nb-page)] p-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs text-[#A57972]">今日经营</p>
-            <h3 className="mt-1 text-xl font-bold text-[#2B2023]">Hi，Anna</h3>
+            <p className="text-xs text-[var(--nb-ink)]">今日经营</p>
+            <h3 className="mt-1 text-xl font-bold text-[var(--nb-ink)]">Hi，Anna</h3>
           </div>
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#EF7F98] text-xl text-white">✨</div>
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--nb-action)] text-xl text-white">✨</div>
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-white p-3 shadow-sm">
-            <p className="text-xs text-[#A57972]">今日预约</p>
-            <p className="mt-2 text-2xl font-bold text-[#2B2023]">4</p>
+            <p className="text-xs text-[var(--nb-ink)]">今日预约</p>
+            <p className="mt-2 text-2xl font-bold text-[var(--nb-ink)]">4</p>
           </div>
           <div className="rounded-2xl bg-white p-3 shadow-sm">
-            <p className="text-xs text-[#A57972]">本月收入</p>
-            <p className="mt-2 text-2xl font-bold text-[#2B2023]">¥8.6k</p>
+            <p className="text-xs text-[var(--nb-ink)]">本月收入</p>
+            <p className="mt-2 text-2xl font-bold text-[var(--nb-ink)]">¥8.6k</p>
           </div>
         </div>
 
-        <div className="mt-4 rounded-3xl bg-[#2B2023] p-4 text-white">
+        <div className="mt-4 rounded-3xl bg-[var(--nb-ink)] p-4 text-white">
           <div className="flex items-center justify-between">
             <span className="text-sm opacity-80">下一单</span>
             <span className="rounded-full bg-white/15 px-3 py-1 text-xs">待出发</span>
@@ -114,8 +114,8 @@ function AppPreview() {
 
         <div className="mt-4 space-y-3">
           {['客户发来新设计需求', '待确认报价 ¥268', '明日还有 3 个预约'].map((item) => (
-            <div key={item} className="flex items-center gap-3 rounded-2xl bg-white p-3 text-sm text-[#4B3B3D] shadow-sm">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FFE8EC] text-xs text-[#EF7F98]">✓</span>
+            <div key={item} className="flex items-center gap-3 rounded-2xl bg-white p-3 text-sm text-[var(--nb-ink)] shadow-sm">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--nb-page)] text-xs text-[var(--nb-ink)]">✓</span>
               {item}
             </div>
           ))}
@@ -126,7 +126,7 @@ function AppPreview() {
 }
 
 const focusVisibleClass =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EF7F98] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FFF7F5]'
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nb-control)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--nb-page)]'
 
 const sectionScrollMargin = 'calc(6.75rem + env(safe-area-inset-top))'
 
@@ -136,10 +136,10 @@ const LandingPage = () => {
   }
 
   return (
-    <main id="top" className="min-h-screen bg-[#FFF7F5] text-[#2B2023]">
+    <main id="top" className="min-h-screen bg-[var(--nb-page)] text-[var(--nb-ink)]">
       <section className="relative overflow-hidden px-5 py-5 md:px-10 lg:px-16">
-        <div className="absolute left-0 top-0 h-[520px] w-[520px] rounded-full bg-[#FFDDE5] blur-3xl" />
-        <div className="absolute right-0 top-20 h-[420px] w-[420px] rounded-full bg-[#FFEACB] blur-3xl" />
+        <div className="absolute left-0 top-0 h-[520px] w-[520px] rounded-full bg-[var(--nb-page)] blur-3xl" />
+        <div className="absolute right-0 top-20 h-[420px] w-[420px] rounded-full bg-[var(--nb-page)] blur-3xl" />
 
         <div
           className="sticky top-0 z-40 pt-2"
@@ -149,16 +149,16 @@ const LandingPage = () => {
             <button
               type="button"
               onClick={() => scrollToSection('top')}
-              className={`flex min-h-11 items-center gap-3 rounded-full transition active:scale-[0.98] active:bg-[#FFF0F3] ${focusVisibleClass}`}
+              className={`flex min-h-11 items-center gap-3 rounded-full transition active:scale-[0.98] active:bg-[var(--nb-page)] ${focusVisibleClass}`}
             >
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#EF7F98] text-xl text-white">✦</div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--nb-action)] text-xl text-white">✦</div>
               <div className="text-left">
                 <div className="text-lg font-black tracking-[0.18em]">NAILBOOK</div>
-                <div className="text-xs text-[#A57972]">独立美甲师经营工具</div>
+                <div className="text-xs text-[var(--nb-ink)]">独立美甲师经营工具</div>
               </div>
             </button>
 
-            <div className="hidden items-center gap-9 text-sm font-medium text-[#69565A] md:flex">
+            <div className="hidden items-center gap-9 text-sm font-medium text-[var(--nb-secondary)] md:flex">
               <button
                 type="button"
                 onClick={() => scrollToSection('audience')}
@@ -191,7 +191,7 @@ const LandingPage = () => {
 
             <Link
               to="/role-select"
-              className={`inline-flex min-h-11 items-center rounded-full bg-[#EF7F98] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-pink-200 transition hover:-translate-y-0.5 active:scale-[0.98] active:bg-[#e96f8b] ${focusVisibleClass}`}
+              className={`inline-flex min-h-11 items-center rounded-full bg-[var(--nb-action)] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-black/5 transition hover:-translate-y-0.5 active:scale-[0.98] active:bg-[var(--nb-action-pressed)] ${focusVisibleClass}`}
             >
               立即登录
             </Link>
@@ -200,32 +200,32 @@ const LandingPage = () => {
 
         <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-12 py-20 lg:grid-cols-[1.05fr_0.95fr] lg:py-24">
           <div>
-            <div className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#F6C6D0] bg-white/70 px-4 py-2 text-sm font-bold text-[#EF6F8B]">
+            <div className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--nb-line)] bg-white/70 px-4 py-2 text-sm font-bold text-[var(--nb-ink)]">
               <Sparkles className="h-4 w-4" />
               不抽成 · 不强制线上支付 · 订阅制工具
             </div>
 
             <h1 className="mt-7 max-w-3xl text-5xl font-black leading-[1.08] tracking-tight md:text-7xl">
               给独立上门美甲师的
-              <span className="text-[#EF7F98]">客户预约</span>
+              <span className="text-[var(--nb-ink)]">客户预约</span>
               与私域经营系统
             </h1>
 
-            <p className="mt-6 max-w-2xl text-lg leading-9 text-[#6D5C60]">
+            <p className="mt-6 max-w-2xl text-lg leading-9 text-[var(--nb-secondary)]">
               从作品展示、客户预约、设计沟通、报价确认，到上门行程与收入统计，帮你把微信里的零散客户沉淀成长期客户资产。
             </p>
 
             <div className="mt-9 flex flex-wrap items-center gap-4">
               <Link
                 to="/artist-join"
-                className={`group inline-flex min-h-12 items-center gap-2 rounded-full bg-[#2B2023] px-7 py-4 text-base font-bold text-white shadow-xl transition hover:-translate-y-0.5 active:scale-[0.98] active:bg-[#1f1719] ${focusVisibleClass}`}
+                className={`group inline-flex min-h-12 items-center gap-2 rounded-full bg-[var(--nb-ink)] px-7 py-4 text-base font-bold text-white shadow-xl transition hover:-translate-y-0.5 active:scale-[0.98] active:bg-[var(--nb-ink)] ${focusVisibleClass}`}
               >
                 创建我的美甲师名片
                 <span className="transition group-hover:translate-x-1">→</span>
               </Link>
               <Link
                 to="/showcase"
-                className={`inline-flex min-h-12 items-center rounded-full border border-[#F1CDD1] bg-white/70 px-7 py-4 text-base font-bold text-[#2B2023] transition active:scale-[0.98] active:bg-white active:border-[#e7bbc3] ${focusVisibleClass}`}
+                className={`inline-flex min-h-12 items-center rounded-full border border-[var(--nb-line)] bg-white/70 px-7 py-4 text-base font-bold text-[var(--nb-ink)] transition active:scale-[0.98] active:bg-white active:border-[var(--nb-line)] ${focusVisibleClass}`}
               >
                 查看功能演示
               </Link>
@@ -233,7 +233,7 @@ const LandingPage = () => {
 
             <div className="mt-10 grid max-w-xl grid-cols-3 gap-4">
               {['预约不漏单', '报价有记录', '客户可复购'].map((item) => (
-                <div key={item} className="rounded-2xl bg-white/70 p-4 text-center text-sm font-bold text-[#6D5C60] shadow-sm">
+                <div key={item} className="rounded-2xl bg-white/70 p-4 text-center text-sm font-bold text-[var(--nb-secondary)] shadow-sm">
                   {item}
                 </div>
               ))}
@@ -252,16 +252,16 @@ const LandingPage = () => {
         style={{ scrollMarginTop: sectionScrollMargin }}
       >
         <div className="mx-auto max-w-7xl rounded-[40px] bg-white p-8 shadow-sm md:p-12">
-          <p className="text-sm font-black tracking-[0.28em] text-[#EF7F98]">WHY NAILBOOK</p>
+          <p className="text-sm font-black tracking-[0.28em] text-[var(--nb-ink)]">WHY NAILBOOK</p>
           <h2 className="mt-4 max-w-3xl text-3xl font-black leading-tight md:text-5xl">
             不是再做一个平台，而是帮美甲师管理自己的客户。
           </h2>
 
           <div className="mt-10 grid gap-5 md:grid-cols-5">
             {pains.map((pain) => (
-              <div key={pain} className="rounded-3xl border border-[#F8DCE1] bg-[#FFF8F6] p-5">
+              <div key={pain} className="rounded-3xl border border-[var(--nb-line)] bg-[var(--nb-page)] p-5">
                 <IconBadge>☆</IconBadge>
-                <p className="mt-4 font-bold text-[#4B3B3D]">{pain}</p>
+                <p className="mt-4 font-bold text-[var(--nb-ink)]">{pain}</p>
               </div>
             ))}
           </div>
@@ -276,10 +276,10 @@ const LandingPage = () => {
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
             <div>
-              <p className="text-sm font-black tracking-[0.28em] text-[#EF7F98]">FEATURES</p>
+              <p className="text-sm font-black tracking-[0.28em] text-[var(--nb-ink)]">FEATURES</p>
               <h2 className="mt-4 text-3xl font-black md:text-5xl">围绕上门美甲真实流程设计</h2>
             </div>
-            <p className="max-w-xl text-base leading-8 text-[#6D5C60]">
+            <p className="max-w-xl text-base leading-8 text-[var(--nb-secondary)]">
               从接单前的门面建立，到收款后的复购沉淀，每个模块都服务于独立美甲师的日常经营。
             </p>
           </div>
@@ -288,11 +288,11 @@ const LandingPage = () => {
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="rounded-[32px] border border-[#F7DCE0] bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
+                className="rounded-[32px] border border-[var(--nb-line)] bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
               >
                 <IconBadge>{feature.icon}</IconBadge>
                 <h3 className="mt-6 text-xl font-black">{feature.title}</h3>
-                <p className="mt-3 leading-7 text-[#6D5C60]">{feature.desc}</p>
+                <p className="mt-3 leading-7 text-[var(--nb-secondary)]">{feature.desc}</p>
               </div>
             ))}
           </div>
@@ -304,14 +304,14 @@ const LandingPage = () => {
         className="px-5 py-12 md:px-10 lg:px-16"
         style={{ scrollMarginTop: sectionScrollMargin }}
       >
-        <div className="mx-auto max-w-7xl rounded-[44px] bg-[#2B2023] p-8 text-white md:p-12">
-          <p className="text-sm font-black tracking-[0.28em] text-[#FFB8C6]">FLOW</p>
+        <div className="mx-auto max-w-7xl rounded-[44px] bg-[var(--nb-ink)] p-8 text-white md:p-12">
+          <p className="text-sm font-black tracking-[0.28em] text-[var(--nb-ink)]">FLOW</p>
           <h2 className="mt-4 text-3xl font-black md:text-5xl">从一次分享，到一次稳定复购</h2>
 
           <div className="mt-10 grid gap-4 md:grid-cols-6">
             {steps.map((step, index) => (
               <div key={step} className="rounded-3xl bg-white/10 p-5 backdrop-blur">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#EF7F98] text-sm font-black">{index + 1}</div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-action)] text-sm font-black">{index + 1}</div>
                 <p className="mt-5 text-sm font-bold leading-6 text-white/90">{step}</p>
               </div>
             ))}
@@ -326,9 +326,9 @@ const LandingPage = () => {
       >
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
-            <p className="text-sm font-black tracking-[0.28em] text-[#EF7F98]">PRICING</p>
+            <p className="text-sm font-black tracking-[0.28em] text-[var(--nb-ink)]">PRICING</p>
             <h2 className="mt-4 text-3xl font-black md:text-5xl">订阅制，不抽成</h2>
-            <p className="mx-auto mt-4 max-w-2xl leading-8 text-[#6D5C60]">
+            <p className="mx-auto mt-4 max-w-2xl leading-8 text-[var(--nb-secondary)]">
               前期不强制平台支付，客户定金与尾款可通过微信等线下方式完成，系统负责管理预约、报价、客户和收入记录。
             </p>
           </div>
@@ -338,22 +338,22 @@ const LandingPage = () => {
               <div
                 key={plan.name}
                 className={`relative rounded-[34px] border bg-white p-7 shadow-sm ${
-                  plan.hot ? 'border-[#EF7F98] ring-4 ring-[#FFE1E8]' : 'border-[#F7DCE0]'
+                  plan.hot ? 'border-[var(--nb-control)] ring-4 ring-[var(--nb-line)]' : 'border-[var(--nb-line)]'
                 }`}
               >
                 {plan.hot ? (
-                  <div className="absolute right-6 top-6 rounded-full bg-[#EF7F98] px-3 py-1 text-xs font-bold text-white">
+                  <div className="absolute right-6 top-6 rounded-full bg-[var(--nb-action)] px-3 py-1 text-xs font-bold text-white">
                     推荐
                   </div>
                 ) : null}
                 <h3 className="text-2xl font-black">{plan.name}</h3>
-                <p className="mt-2 text-sm text-[#A57972]">{plan.note}</p>
+                <p className="mt-2 text-sm text-[var(--nb-ink)]">{plan.note}</p>
                 <div className="mt-6 text-4xl font-black">{plan.price}</div>
 
                 <div className="mt-7 space-y-3">
                   {plan.items.map((item) => (
-                    <div key={item} className="flex items-center gap-3 text-sm text-[#5D4B4E]">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FFE8EC] text-xs text-[#EF7F98]">
+                    <div key={item} className="flex items-center gap-3 text-sm text-[var(--nb-secondary)]">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--nb-page)] text-xs text-[var(--nb-ink)]">
                         ✓
                       </span>
                       {item}
@@ -365,8 +365,8 @@ const LandingPage = () => {
                   to={plan.name === '体验版' ? '/role-select' : '/artist-join'}
                   className={`mt-8 inline-flex min-h-12 w-full items-center justify-center rounded-full px-5 py-4 font-bold transition active:scale-[0.98] ${
                     plan.hot
-                      ? `bg-[#EF7F98] text-white active:bg-[#e96f8b] ${focusVisibleClass}`
-                      : `bg-[#FFF1F4] text-[#2B2023] active:bg-[#ffe6ec] ${focusVisibleClass}`
+                      ? `bg-[var(--nb-action)] text-white active:bg-[var(--nb-action-pressed)] ${focusVisibleClass}`
+                      : `bg-[var(--nb-page)] text-[var(--nb-ink)] active:bg-[var(--nb-page)] ${focusVisibleClass}`
                   }`}
                 >
                   开始使用
@@ -378,14 +378,14 @@ const LandingPage = () => {
       </section>
 
       <section className="px-5 pb-16 pt-12 md:px-10 lg:px-16">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 rounded-[44px] bg-gradient-to-r from-[#EF7F98] to-[#F5B16E] p-8 text-white md:flex-row md:p-12">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 rounded-[44px] bg-[var(--nb-action)] p-8 text-white md:flex-row md:p-12">
           <div>
             <p className="flex items-center gap-2 text-sm font-bold opacity-90">📱 WebApp 优先，手机端体验优先</p>
             <h2 className="mt-4 text-3xl font-black md:text-5xl">现在开始，把客户经营变简单。</h2>
           </div>
           <Link
             to="/artist-join"
-            className={`inline-flex min-h-12 items-center rounded-full bg-white px-7 py-4 font-black text-[#EF7F98] shadow-lg transition active:scale-[0.98] active:bg-[#fff6f8] ${focusVisibleClass}`}
+            className={`inline-flex min-h-12 items-center rounded-full bg-white px-7 py-4 font-black text-[var(--nb-ink)] shadow-lg transition active:scale-[0.98] active:bg-[var(--nb-page)] ${focusVisibleClass}`}
           >
             立即创建名片
           </Link>

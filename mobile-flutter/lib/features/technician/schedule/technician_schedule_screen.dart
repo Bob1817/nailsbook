@@ -1,3 +1,4 @@
+import '../../../core/theme/colors.generated.dart';
 import '../../../core/maps/map_service.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../shared/chat/chat_screen.dart';
@@ -383,7 +384,7 @@ class _TechnicianScheduleScreenState extends State<TechnicianScheduleScreen> {
                   color: active
                       ? Colors.white
                       : (hasOrders
-                          ? const Color(0xFF22C55E)
+                          ? NBColors.action
                           : Colors.transparent),
                   shape: BoxShape.circle,
                 ),
@@ -763,7 +764,7 @@ class _CalendarSheetState extends State<_CalendarSheet> {
                     color: selected
                         ? DT.onCream
                         : (hasOrders
-                            ? const Color(0xFF22C55E)
+                            ? NBColors.action
                             : Colors.transparent),
                     shape: BoxShape.circle,
                   ),

@@ -7,6 +7,12 @@ export interface ShopBusinessHour {
 
 export interface ShopAddress {
   name: string;
+  description?: string;
+  photos?: string[];
+  qualifications?: Array<{
+    name: string;
+    imageUrl?: string;
+  }>;
   phone?: string;
   province?: string;
   city?: string;

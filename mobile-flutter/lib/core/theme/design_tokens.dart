@@ -1,3 +1,4 @@
+import 'colors.generated.dart';
 import 'package:flutter/material.dart';
 
 import 'editorial_tokens.dart';
@@ -5,15 +6,15 @@ import 'editorial_tokens.dart';
 /// Design tokens for NailBook — Apple-inspired neutral system + iOS 26 Liquid Glass.
 ///
 /// 设计基调：图片优先的编辑式排版（image-first editorial），界面保持中性，
-/// 视觉张力来自美甲作品照片本身。强调色仅作点缀（Warm Rose）。
+/// 视觉张力来自美甲作品照片本身。强调色统一为石墨与低饱和蓝灰。
 ///
 /// 实现说明：本次仅替换调色板与材质系统，**保留全部既有 token 名**以兼容现有页面；
-/// 粉色渐变/阴影已改为中性或暖玫瑰版本，后续按屏逐步细化。
+/// 颜色由 colors.json 统一生成，既有命名仅作兼容适配。
 class DT {
   DT._();
 
   // ──────────────────────────────────────────────────────────────
-  // COLORS - Primary (Warm Rose accent)
+  // COLORS - Primary (Neutral action)
   // ──────────────────────────────────────────────────────────────
 
   static const Color primary = ET.accent;
@@ -21,66 +22,66 @@ class DT {
   // 主操作填充：奶油色 + 深色文字（对比度优于 accent + 白字）
   static const Color cream = ET.cream;
   static const Color onCream = ET.onCream;
-  static const Color primaryLight = ET.accentOnDark;
-  static const Color primaryPale = ET.accentOnDark;
+  static const Color primaryLight = NBColors.action;
+  static const Color primaryPale = NBColors.action;
   static const Color primarySoft = ET.accentSoft;
 
   // ──────────────────────────────────────────────────────────────
   // COLORS - Secondary (Apple neutral grays)
   // ──────────────────────────────────────────────────────────────
 
-  static const Color secondary = Color(0xFF6E6E73);
-  static const Color secondaryDark = Color(0xFF48484A);
-  static const Color secondaryLight = Color(0xFF8E8E93);
+  static const Color secondary = NBColors.muted;
+  static const Color secondaryDark = NBColors.secondary;
+  static const Color secondaryLight = NBColors.muted;
   static const Color secondarySoft = ET.bgElevated;
 
   // ──────────────────────────────────────────────────────────────
   // COLORS - Success
   // ──────────────────────────────────────────────────────────────
 
-  static const Color success = Color(0xFF34C759); // Apple green
-  static const Color successDark = Color(0xFF248A3D);
-  static const Color successLight = Color(0xFF6EE7B7);
-  static const Color successSoft = Color(0xFFEEF9F1);
-  static const Color successBg = Color(0xFFF0FDF4);
-  static const Color successBorder = Color(0xFFBBF7D0);
-  static const Color successText = Color(0xFF248A3D);
+  static const Color success = NBColors.action; // Neutral success
+  static const Color successDark = NBColors.action;
+  static const Color successLight = NBColors.action;
+  static const Color successSoft = NBColors.page;
+  static const Color successBg = NBColors.page;
+  static const Color successBorder = NBColors.page;
+  static const Color successText = NBColors.action;
 
   // ──────────────────────────────────────────────────────────────
   // COLORS - Warning
   // ──────────────────────────────────────────────────────────────
 
-  static const Color warning = Color(0xFFFF9500); // Apple orange
-  static const Color warningDark = Color(0xFFC93400);
-  static const Color warningLight = Color(0xFFFCD34D);
-  static const Color warningSoft = Color(0xFFFFF4E5);
-  static const Color warningBg = Color(0xFFFFF7ED);
-  static const Color warningBorder = Color(0xFFFEF3C7);
-  static const Color warningText = Color(0xFFC93400);
+  static const Color warning = NBColors.action; // Neutral attention
+  static const Color warningDark = NBColors.action;
+  static const Color warningLight = NBColors.action;
+  static const Color warningSoft = NBColors.page;
+  static const Color warningBg = NBColors.page;
+  static const Color warningBorder = NBColors.page;
+  static const Color warningText = NBColors.action;
 
   // ──────────────────────────────────────────────────────────────
   // COLORS - Error
   // ──────────────────────────────────────────────────────────────
 
-  static const Color error = Color(0xFFFF3B30); // Apple red
-  static const Color errorDark = Color(0xFFD70015);
-  static const Color errorLight = Color(0xFFFCA5A5);
-  static const Color errorSoft = Color(0xFFFEF2F2);
-  static const Color errorBg = Color(0xFFFEF2F2);
-  static const Color errorBorder = Color(0xFFFECACA);
-  static const Color errorText = Color(0xFFD70015);
+  static const Color error = NBColors.action; // Neutral error
+  static const Color errorDark = NBColors.action;
+  static const Color errorLight = NBColors.action;
+  static const Color errorSoft = NBColors.page;
+  static const Color errorBg = NBColors.page;
+  static const Color errorBorder = NBColors.page;
+  static const Color errorText = NBColors.action;
 
   // ──────────────────────────────────────────────────────────────
   // COLORS - Info
   // ──────────────────────────────────────────────────────────────
 
-  static const Color info = Color(0xFF007AFF); // Apple blue
-  static const Color infoDark = Color(0xFF0040DD);
-  static const Color infoLight = Color(0xFF93C5FD);
-  static const Color infoSoft = Color(0xFFEDF3FF);
-  static const Color infoBg = Color(0xFFEFF6FF);
-  static const Color infoBorder = Color(0xFFBFDBFE);
-  static const Color infoText = Color(0xFF0040DD);
+  static const Color info = NBColors.link;
+  static const Color infoDark = NBColors.link;
+  static const Color infoLight = NBColors.activeSurface;
+  static const Color infoSoft = NBColors.activeSurface;
+  static const Color infoBg = NBColors.activeSurface;
+  static const Color infoBorder = NBColors.page;
+  static const Color infoText = NBColors.link;
 
   // ──────────────────────────────────────────────────────────────
   // COLORS - Neutral / Text (Apple ink scale)
@@ -113,19 +114,19 @@ class DT {
   // COLORS - Extended (widely used across technician screens)
   // ──────────────────────────────────────────────────────────────
 
-  static const Color borderPink = Color(0x40C4627A); // 柔和暖玫瑰边缘（输入框等）
+  static const Color borderPink = Color(0x40000000); // 柔和暖玫瑰边缘（输入框等）
   static const Color fillWarm = ET.surface;
-  static const Color dividerWarm = Color(0x1FC4627A); // 暖色分割线
-  static const Color borderGrey = Color(0x243C3C43); // 灰色边框
+  static const Color dividerWarm = Color(0x1F000000); // 暖色分割线
+  static const Color borderGrey = Color(0x24000000); // 灰色边框
   static const Color fillGrey = ET.surface;
   static const Color fillGreyLight = ET.surface;
   static const Color textDarkGrey = ET.ink;
   static const Color textMidGrey = ET.inkSecondary;
   static const Color textLightGrey = ET.inkMuted;
   static const Color iconGrey = ET.inkMuted;
-  static const Color actionOrange = Color(0xFFEA580C); // 操作橙色
-  static const Color actionGreen = Color(0xFF059669); // 操作绿色
-  static const Color actionBlue = Color(0xFF2563EB); // 操作蓝色
+  static const Color actionOrange = NBColors.action; // 操作橙色
+  static const Color actionGreen = NBColors.action; // 操作绿色
+  static const Color actionBlue = NBColors.action; // 操作蓝色
   static const Color avatarBorder = ET.hairline;
 
   // ──────────────────────────────────────────────────────────────
@@ -135,8 +136,8 @@ class DT {
   static const Color border = ET.hairline;
   static const Color borderStrong = ET.hairlineStrong;
   static const Color borderLight = ET.hairlineFaint;
-  static const Color borderPrimary = Color(0x33C4627A);
-  static const Color primaryBorder = Color(0x2EC4627A);
+  static const Color borderPrimary = Color(0x33000000);
+  static const Color primaryBorder = Color(0x2E000000);
   static const Color hairline = ET.hairline;
   static const Color divider = ET.hairlineFaint;
 
@@ -168,10 +169,10 @@ class DT {
   // COLORS - Status specific
   // ──────────────────────────────────────────────────────────────
 
-  static const Color statusBlue = Color(0xFF007AFF);
-  static const Color statusBlueBg = Color(0xFFEBF4FF);
-  static const Color statusCompleted = Color(0xFF8A8F98);
-  static const Color statusCompletedBg = Color(0xFFF2F2F4);
+  static const Color statusBlue = NBColors.link;
+  static const Color statusBlueBg = NBColors.activeSurface;
+  static const Color statusCompleted = NBColors.muted;
+  static const Color statusCompletedBg = NBColors.page;
 
   // ──────────────────────────────────────────────────────────────
   // COLORS - Quick action backgrounds（中性化）
@@ -183,7 +184,7 @@ class DT {
   static const Color green50 = ET.surface;
   static const Color pink50 = ET.accentSoft;
   static const Color disabledBg = ET.surface;
-  static const Color iconPlaceholder = Color(0xFFB8B0B4);
+  static const Color iconPlaceholder = NBColors.control;
 
   // ──────────────────────────────────────────────────────────────
   // GRADIENTS（去粉化：强调色用暖玫瑰单色，页面底用中性灰）
@@ -203,7 +204,7 @@ class DT {
 
   /// 个人页头部：深色 sophisticated 渐变（替换原粉色）
   static const LinearGradient profileGradient = LinearGradient(
-    colors: [Color(0xFF1D1D1F), Color(0xFF48484A)],
+    colors: [NBColors.ink, NBColors.secondary],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -413,7 +414,7 @@ class DT {
 
   static List<BoxShadow> get shadowPrimary => const [
         BoxShadow(
-            color: Color(0x24C4627A), blurRadius: 34, offset: Offset(0, 16)),
+            color: Color(0x24000000), blurRadius: 34, offset: Offset(0, 16)),
       ];
 
   static List<BoxShadow> get shadowCard => const [
@@ -433,17 +434,17 @@ class DT {
 
   static List<BoxShadow> get shadowButton => const [
         BoxShadow(
-            color: Color(0x20C4627A), blurRadius: 18, offset: Offset(0, 8)),
+            color: Color(0x20000000), blurRadius: 18, offset: Offset(0, 8)),
       ];
 
   static List<BoxShadow> get shadowButtonLg => const [
         BoxShadow(
-            color: Color(0x24C4627A), blurRadius: 28, offset: Offset(0, 14)),
+            color: Color(0x24000000), blurRadius: 28, offset: Offset(0, 14)),
       ];
 
   static List<BoxShadow> get shadowButtonOutline => const [
         BoxShadow(
-            color: Color(0x14C4627A), blurRadius: 16, offset: Offset(0, 8)),
+            color: Color(0x14000000), blurRadius: 16, offset: Offset(0, 8)),
       ];
 
   static List<BoxShadow> get shadowTile => const [
@@ -507,28 +508,28 @@ class DT {
   // ORDER STATUS COLORS - Unified mapping (iOS HIG compliant)
   // ──────────────────────────────────────────────────────────────
 
-  static const Color statusPendingQuoteBg = Color(0xFFFFF3E0);
-  static const Color statusPendingQuoteText = Color(0xFFC93400);
+  static const Color statusPendingQuoteBg = NBColors.page;
+  static const Color statusPendingQuoteText = NBColors.action;
 
-  static const Color statusPendingAgreeBg = Color(0xFFFFF7ED);
-  static const Color statusPendingAgreeText = Color(0xFFC2410C);
+  static const Color statusPendingAgreeBg = NBColors.page;
+  static const Color statusPendingAgreeText = NBColors.action;
 
-  static const Color statusPendingConfirmBg = Color(0xFFEEF9F1);
-  static const Color statusPendingConfirmText = Color(0xFF248A3D);
+  static const Color statusPendingConfirmBg = NBColors.page;
+  static const Color statusPendingConfirmText = NBColors.action;
 
-  static const Color statusPendingHomeBg = Color(0xFFEFF6FF);
-  static const Color statusPendingHomeText = Color(0xFF0040DD);
+  static const Color statusPendingHomeBg = NBColors.page;
+  static const Color statusPendingHomeText = NBColors.action;
 
-  static const Color statusPendingShopBg = Color(0xFFEFF6FF);
-  static const Color statusPendingShopText = Color(0xFF0040DD);
+  static const Color statusPendingShopBg = NBColors.page;
+  static const Color statusPendingShopText = NBColors.action;
 
-  static const Color statusInProgressBg = Color(0xFFEFF6FF);
-  static const Color statusInProgressText = Color(0xFF0040DD);
+  static const Color statusInProgressBg = NBColors.page;
+  static const Color statusInProgressText = NBColors.action;
 
-  static const Color statusCompletedText = Color(0xFF6E6E73);
+  static const Color statusCompletedText = NBColors.muted;
 
-  static const Color statusCancelledBg = Color(0xFFFEF2F2);
-  static const Color statusCancelledText = Color(0xFFD70015);
+  static const Color statusCancelledBg = NBColors.page;
+  static const Color statusCancelledText = NBColors.action;
 
   // ──────────────────────────────────────────────────────────────
   // MONOSPACE / TABULAR FIGURES - For numbers, prices, times

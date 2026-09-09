@@ -12,6 +12,12 @@ export interface ClientUser {
 
 export interface ShopAddress {
   name: string;
+  description?: string;
+  photos?: string[];
+  qualifications?: Array<{
+    name: string;
+    imageUrl?: string;
+  }>;
   phone?: string;
   province?: string;
   city?: string;
@@ -73,6 +79,8 @@ export interface Technician {
   isDefault?: boolean;
   bindSource?: string;
   bindId?: number;
+  boundAt?: string;
+  bindingStatus?: string;
   invitationCode?: string | null;
   socialMedia?: Record<string, string> | null;
   homeService?: boolean;
@@ -144,6 +152,7 @@ export const authService = {
       technician: Technician;
     } | null;
     technicians: Technician[];
+    pendingTechnicians?: Technician[];
   }> {
     const response = await api.get('/auth/me');
     return response.data;
@@ -153,6 +162,10 @@ export const authService = {
   async bindTechnician(data: BindTechnicianDto): Promise<{ status: string; bindingId: number }> {
     const response = await api.post('/auth/bind-technician', data);
     return response.data;
+  },
+
+  async cancelBindingApplication(techId: number): Promise<void> {
+    await api.delete(`/auth/binding-applications/${techId}`);
   },
 
   async unbindTechnician(techId: number): Promise<void> {

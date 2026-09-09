@@ -70,7 +70,7 @@ const OrderCardMessage: React.FC<OrderCardMessageProps> = ({ message, isClient, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [message.relatedId]);
 
-  const muted = isClient ? 'text-pink-100' : 'text-slate-400';
+  const muted = isClient ? 'text-[var(--nb-inverse)]' : 'text-[var(--nb-muted)]';
   const serviceLabel = serviceLabelOf(card.serviceType);
   const resolved = Boolean(card.orderNo);
 
@@ -106,7 +106,7 @@ const OrderCardMessage: React.FC<OrderCardMessageProps> = ({ message, isClient, 
         </div>
       ) : loading ? (
         <div className="mt-2 flex items-center gap-2 text-[13px]">
-          <div className={`h-3.5 w-3.5 animate-spin rounded-full border-2 border-t-transparent ${isClient ? 'border-pink-100' : 'border-slate-300'}`} />
+          <div className={`h-3.5 w-3.5 animate-spin rounded-full border-2 border-t-transparent ${isClient ? 'border-[var(--nb-line)]' : 'border-[var(--nb-control)]'}`} />
           <span className={muted}>加载预约信息...</span>
         </div>
       ) : (
@@ -117,7 +117,7 @@ const OrderCardMessage: React.FC<OrderCardMessageProps> = ({ message, isClient, 
         <button
           type="button"
           onClick={() => onViewDetail(message.relatedId!)}
-          className={`mt-2.5 w-full rounded-lg py-1.5 text-xs font-medium active:opacity-80 ${isClient ? 'bg-white/20 text-white' : 'bg-pink-50 text-[#FF6B8A]'}`}
+          className={`mt-2.5 w-full rounded-lg py-1.5 text-xs font-medium active:opacity-80 ${isClient ? 'bg-white/20 text-white' : 'bg-[var(--nb-page)] text-[var(--nb-ink)]'}`}
         >
           查看预约详情 →
         </button>

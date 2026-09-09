@@ -303,10 +303,10 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
         onClick={() => selectDate(day)}
         className={`h-11 w-11 rounded-lg text-sm font-medium transition-colors ${
           isDisabled
-            ? 'text-gray-300 cursor-not-allowed'
+            ? 'text-[var(--nb-muted)] cursor-not-allowed'
             : isSelected
-            ? 'bg-[#FF5A66] text-white'
-            : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200'
+            ? 'bg-[var(--nb-action)] text-white'
+            : 'text-[var(--nb-ink)] hover:bg-[var(--nb-page)] active:bg-[var(--nb-pressed)]'
         }`}
       >
         {day}
@@ -321,14 +321,14 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
     <div className="fixed inset-0 z-[100] bg-black/30">
       <div className="absolute bottom-0 left-0 right-0 flex max-h-[90vh] flex-col rounded-t-3xl bg-white">
         {/* 固定标题栏（不随内容滚动） */}
-        <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 pb-3 pt-5">
+        <div className="flex shrink-0 items-center justify-between border-b border-[var(--nb-line)] px-5 pb-3 pt-5">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">新建预约</h2>
-            <p className="text-xs text-gray-400">创建后会直接写入系统并同步到行程、首页和客户记录</p>
+            <h2 className="text-lg font-bold text-[var(--nb-ink)]">新建预约</h2>
+            <p className="text-xs text-[var(--nb-muted)]">创建后会直接写入系统并同步到行程、首页和客户记录</p>
           </div>
           <button
             onClick={onClose}
-            className="rounded-full bg-gray-100 px-3 py-2 text-sm text-gray-600 min-h-[44px]"
+            className="rounded-full bg-[var(--nb-page)] px-3 py-2 text-sm text-[var(--nb-secondary)] min-h-[44px]"
           >
             关闭
           </button>
@@ -341,7 +341,7 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
             value={selectedCustomerId}
             onChange={(e) => setSelectedCustomerId(e.target.value)}
             disabled={!!presetCustomerId}
-            className="h-12 w-full rounded-xl bg-gray-100 px-4 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FF5A66] disabled:opacity-60"
+            className="h-12 w-full rounded-xl bg-[var(--nb-page)] px-4 text-sm text-[var(--nb-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)] disabled:opacity-60"
           >
             <option value="">选择客户</option>
             {customers.map((customer) => (
@@ -356,29 +356,29 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
             value={serviceName}
             onChange={(e) => setServiceName(e.target.value)}
             placeholder="服务内容"
-            className="h-12 w-full rounded-xl bg-gray-100 px-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
+            className="h-12 w-full rounded-xl bg-[var(--nb-page)] px-4 text-sm text-[var(--nb-ink)] placeholder-[var(--nb-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]"
           />
 
           {/* Calendar Section */}
-          <div className="bg-gray-50 rounded-xl p-4">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">选择日期</h3>
+          <div className="bg-[var(--nb-page)] rounded-xl p-4">
+            <h3 className="text-sm font-medium text-[var(--nb-ink)] mb-3">选择日期</h3>
 
             {/* Calendar Header */}
             <div className="flex items-center justify-between mb-3">
               <button
                 onClick={prevMonth}
-                className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-gray-200 active:bg-gray-300"
+                className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--nb-pressed)] active:bg-[var(--nb-pressed)]"
               >
-                <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-4 w-4 text-[var(--nb-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <h4 className="text-sm font-medium text-gray-900">{monthName}</h4>
+              <h4 className="text-sm font-medium text-[var(--nb-ink)]">{monthName}</h4>
               <button
                 onClick={nextMonth}
-                className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-gray-200 active:bg-gray-300"
+                className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--nb-pressed)] active:bg-[var(--nb-pressed)]"
               >
-                <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-4 w-4 text-[var(--nb-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </button>
@@ -387,7 +387,7 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
             {/* Week Headers */}
             <div className="grid grid-cols-7 gap-1 mb-2">
               {weekDays.map((day) => (
-                <div key={day} className="h-6 flex items-center justify-center text-xs font-medium text-gray-500">
+                <div key={day} className="h-6 flex items-center justify-center text-xs font-medium text-[var(--nb-secondary)]">
                   {day}
                 </div>
               ))}
@@ -400,12 +400,12 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
 
             {/* Date Hint */}
             {/* 图例 */}
-            <p className="mb-2 text-xs text-gray-400">灰色日期为休息日，不可预约</p>
+            <p className="mb-2 text-xs text-[var(--nb-muted)]">灰色日期为休息日，不可预约</p>
 
             {/* Time Slots */}
             {serviceDate && (
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">选择时间</h4>
+                <h4 className="text-sm font-medium text-[var(--nb-ink)] mb-2">选择时间</h4>
                 {slotStatuses.length > 0 ? (
                   <div className="grid grid-cols-3 gap-2">
                     {slotStatuses.map(({ slot, occupied }) => (
@@ -416,10 +416,10 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
                         onClick={() => !occupied && setStartClock(slot)}
                         className={`flex h-10 flex-col items-center justify-center rounded-lg text-sm font-medium transition-colors ${
                           occupied
-                            ? 'cursor-not-allowed bg-gray-100 text-gray-400'
+                            ? 'cursor-not-allowed bg-[var(--nb-page)] text-[var(--nb-muted)]'
                             : startClock === slot
-                            ? 'bg-[#FF5A66] text-white'
-                            : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 active:bg-gray-100'
+                            ? 'bg-[var(--nb-action)] text-white'
+                            : 'bg-white border border-[var(--nb-line)] text-[var(--nb-ink)] hover:bg-[var(--nb-page)] active:bg-[var(--nb-page)]'
                         }`}
                       >
                         <span className={occupied ? 'text-xs leading-none line-through' : ''}>{slot}</span>
@@ -428,7 +428,7 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500 py-2">该美甲师休息中</p>
+                  <p className="text-sm text-[var(--nb-secondary)] py-2">该美甲师休息中</p>
                 )}
               </div>
             )}
@@ -440,13 +440,13 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
               value={durationMinutes}
               onChange={(e) => setDurationMinutes(e.target.value.replace(/\D/g, ''))}
               placeholder="服务时长(分钟)"
-              className="h-12 w-full rounded-xl bg-gray-100 px-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
+              className="h-12 w-full rounded-xl bg-[var(--nb-page)] px-4 text-sm text-[var(--nb-ink)] placeholder-[var(--nb-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]"
             />
             <input
               value={price}
               onChange={(e) => setPrice(e.target.value.replace(/[^\d.]/g, ''))}
               placeholder="价格"
-              className="h-12 w-full rounded-xl bg-gray-100 px-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
+              className="h-12 w-full rounded-xl bg-[var(--nb-page)] px-4 text-sm text-[var(--nb-ink)] placeholder-[var(--nb-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]"
             />
           </div>
 
@@ -455,7 +455,7 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             placeholder="服务地址"
-            className="h-12 w-full rounded-xl bg-gray-100 px-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
+            className="h-12 w-full rounded-xl bg-[var(--nb-page)] px-4 text-sm text-[var(--nb-ink)] placeholder-[var(--nb-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]"
           />
 
           {/* Note */}
@@ -463,18 +463,18 @@ export const CreateBookingSheet: React.FC<CreateBookingSheetProps> = ({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="备注（可选）"
-            className="min-h-[96px] w-full rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
+            className="min-h-[96px] w-full rounded-xl bg-[var(--nb-page)] px-4 py-3 text-sm text-[var(--nb-ink)] placeholder-[var(--nb-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]"
           />
 
         </div>
 
         {/* 固定底部：创建按钮（不随内容滚动） */}
-        <div className="shrink-0 border-t border-gray-100 px-5 pb-8 pt-3">
-          {formError && <p className="mb-2 text-sm text-red-500">{formError}</p>}
+        <div className="shrink-0 border-t border-[var(--nb-line)] px-5 pb-8 pt-3">
+          {formError && <p className="mb-2 text-sm text-[var(--nb-secondary)]">{formError}</p>}
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="w-full rounded-xl bg-[#FF5A66] py-3 text-sm font-medium text-white min-h-[48px] disabled:opacity-60"
+            className="w-full rounded-xl bg-[var(--nb-action)] py-3 text-sm font-medium text-white min-h-[48px] disabled:opacity-60"
           >
             {isSubmitting ? '创建中...' : '创建预约'}
           </button>

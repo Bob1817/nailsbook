@@ -4,9 +4,9 @@ type ButtonVariant = 'primary' | 'secondary' | 'outline';
 
 const buttonClassName: Record<ButtonVariant, string> = {
   primary:
-    'h-12 rounded-button bg-primary px-lg text-title-sm font-semibold text-white shadow-[0_10px_24px_rgba(255,90,102,0.18)] active:bg-primary-hover',
-  secondary: 'h-11 rounded-button bg-primary-light px-lg text-body font-medium text-primary',
-  outline: 'h-11 rounded-button border border-border bg-white px-lg text-body font-medium text-text-secondary',
+    'h-12 rounded-button bg-primary px-lg text-title-sm font-semibold text-white active:bg-primary-hover',
+  secondary: 'h-11 rounded-button bg-primary-light px-lg text-body font-medium text-text-secondary active:bg-[var(--nb-pressed)]',
+  outline: 'h-11 rounded-button border border-[var(--nb-control)] bg-white px-lg text-body font-medium text-text-secondary active:bg-[var(--nb-pressed)]',
 };
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -16,7 +16,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 export function Button({ variant = 'primary', className = '', style, ...props }: ButtonProps) {
   return (
     <button
-      className={`inline-flex items-center justify-center whitespace-nowrap border-0 ${buttonClassName[variant]} ${className}`.trim()}
+      className={`inline-flex min-h-[44px] items-center justify-center whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--nb-link)] disabled:cursor-not-allowed disabled:bg-[var(--nb-pressed)] disabled:text-[var(--nb-control)] ${buttonClassName[variant]} ${className}`.trim()}
       style={style}
       {...props}
     />

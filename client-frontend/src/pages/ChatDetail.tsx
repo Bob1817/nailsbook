@@ -267,38 +267,38 @@ const ChatDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-full flex items-center justify-center bg-gray-50">
-        <div className="w-8 h-8 border-2 border-[#FF6B8A] border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-full flex items-center justify-center bg-[var(--nb-page)]">
+        <div className="w-8 h-8 border-2 border-[var(--nb-control)] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="h-full bg-[linear-gradient(180deg,#FFFDFD_0%,#F8F3F6_46%,#F4F6FB_100%)] flex flex-col">
+    <div className="h-full bg-[var(--nb-page)] flex flex-col">
       <div className="shrink-0 border-b border-white/60 bg-white/78 px-5 app-header-safe pb-4 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/chat')}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white/80 text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.08)] ring-1 ring-black/5"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white/80 text-[var(--nb-ink)] shadow-[0_10px_24px_rgba(0,0,0,0.08)] ring-1 ring-black/5"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
 
-          <div className="flex min-w-0 flex-1 items-center gap-3 rounded-[24px] bg-white/82 px-3 py-2 shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
-            <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-[linear-gradient(135deg,#FFE0EA_0%,#F4F7FB_100%)]">
+          <div className="flex min-w-0 flex-1 items-center gap-3 rounded-[24px] bg-white/82 px-3 py-2 shadow-[0_10px_30px_rgba(0,0,0,0.08)] ring-1 ring-black/5 backdrop-blur">
+            <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-[var(--nb-page)]">
               {currentTechnician?.avatarUrl ? (
                 <img src={currentTechnician.avatarUrl} alt="" className="h-full w-full object-cover" />
               ) : (
-                <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-5 w-5 text-[var(--nb-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               )}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <h1 className="truncate text-base font-semibold text-slate-900">{currentTechnician?.name || '消息详情'}</h1>
+                <h1 className="truncate text-base font-semibold text-[var(--nb-ink)]">{currentTechnician?.name || '消息详情'}</h1>
                 {technicians.length > 1 && (
                   <button
                     onClick={() => setShowTechSelector(true)}
@@ -308,14 +308,14 @@ const ChatDetail: React.FC = () => {
                   </button>
                 )}
               </div>
-              <p className="text-xs text-slate-500">一对一沟通与服务提醒</p>
+              <p className="text-xs text-[var(--nb-secondary)]">一对一沟通与服务提醒</p>
             </div>
           </div>
 
           {currentTechnician && (
             <button
               onClick={() => setShowBookingSheet(true)}
-              className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[linear-gradient(135deg,#FF6B8A_0%,#FF8FA3_100%)] px-3.5 py-2 text-[13px] font-semibold text-white shadow-[0_10px_24px_rgba(255,107,138,0.3)]"
+              className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[var(--nb-action)] px-3.5 py-2 text-[13px] font-semibold text-white shadow-[0_10px_24px_rgba(0,0,0,0.3)]"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -328,14 +328,14 @@ const ChatDetail: React.FC = () => {
 
       <div className="flex-1 min-h-0 overflow-y-auto px-4 py-5">
         {messages.length === 0 ? (
-          <div className="rounded-[28px] bg-white/88 px-6 py-12 text-center shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[linear-gradient(135deg,#FFE2EA_0%,#F4F6FB_100%)]">
+          <div className="rounded-[28px] bg-white/88 px-6 py-12 text-center shadow-[0_18px_50px_rgba(0,0,0,0.08)] ring-1 ring-black/5 backdrop-blur">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--nb-page)]">
               <svg className="h-7 w-7 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5l-1 4 4-1h8a4 4 0 004-4V7a4 4 0 00-4-4H8a4 4 0 00-4 4v4a4 4 0 004 4h1z" />
               </svg>
             </div>
-            <h3 className="mt-4 text-lg font-semibold text-slate-900">开始和美甲师沟通</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
+            <h3 className="mt-4 text-lg font-semibold text-[var(--nb-ink)]">开始和美甲师沟通</h3>
+            <p className="mt-2 text-sm leading-6 text-[var(--nb-secondary)]">
               {currentTechnician ? `把你的款式灵感、预约想法发给 ${currentTechnician.name}` : '选择一位已绑定的美甲师开始沟通'}
             </p>
           </div>
@@ -344,7 +344,7 @@ const ChatDetail: React.FC = () => {
             {Object.entries(groupedMessages).map(([date, dateMessages]) => (
               <div key={date}>
                 <div className="mb-4 flex justify-center">
-                  <span className="rounded-full bg-white/80 px-3 py-1 text-xs text-slate-400 shadow-[0_10px_20px_rgba(15,23,42,0.06)] ring-1 ring-black/5 backdrop-blur">
+                  <span className="rounded-full bg-white/80 px-3 py-1 text-xs text-[var(--nb-muted)] shadow-[0_10px_20px_rgba(0,0,0,0.06)] ring-1 ring-black/5 backdrop-blur">
                     {date}
                   </span>
                 </div>
@@ -363,13 +363,13 @@ const ChatDetail: React.FC = () => {
                             {!isClient && currentTechnician?.avatarUrl ? (
                               <img src={currentTechnician.avatarUrl} alt="" className="h-full w-full object-cover" />
                             ) : (
-                              <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <svg className="h-4 w-4 text-[var(--nb-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                               </svg>
                             )}
                           </div>
 
-                          <div className={`${isClient ? 'bg-[linear-gradient(135deg,#FF6B8A_0%,#FF8FA3_100%)] text-white' : 'bg-white/90 text-slate-900'} rounded-[24px] px-4 py-3 shadow-[0_12px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur`}>
+                          <div className={`${isClient ? 'bg-[var(--nb-action)] text-white' : 'bg-white/90 text-[var(--nb-ink)]'} rounded-[24px] px-4 py-3 shadow-[0_12px_30px_rgba(0,0,0,0.08)] ring-1 ring-black/5 backdrop-blur`}>
                             {message.messageType === 'image' && message.imageUrl ? (
                               <img
                                 src={message.imageUrl}
@@ -390,12 +390,12 @@ const ChatDetail: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => setDetailOrderId(message.relatedId!)}
-                                className={`mt-1.5 text-xs font-medium ${isClient ? 'text-pink-200' : 'text-[#FF6B8A]'} active:opacity-70`}
+                                className={`mt-1.5 text-xs font-medium ${isClient ? 'text-[var(--nb-inverse)]' : 'text-[var(--nb-ink)]'} active:opacity-70`}
                               >
                                 查看预约 →
                               </button>
                             )}
-                            <span className={`mt-1.5 block text-xs ${isClient ? 'text-pink-100' : 'text-slate-400'}`}>
+                            <span className={`mt-1.5 block text-xs ${isClient ? 'text-[var(--nb-inverse)]' : 'text-[var(--nb-muted)]'}`}>
                               {formatTime(message.createdAt)}
                             </span>
                           </div>
@@ -412,7 +412,7 @@ const ChatDetail: React.FC = () => {
       </div>
 
       {isOtherTyping && (
-        <div className="px-4 py-1 text-xs text-gray-400 animate-pulse shrink-0">
+        <div className="px-4 py-1 text-xs text-[var(--nb-muted)] animate-pulse shrink-0">
           对方正在输入...
         </div>
       )}
@@ -422,7 +422,7 @@ const ChatDetail: React.FC = () => {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={sending || !currentTechnician}
-            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600"
+            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[var(--nb-page)] text-[var(--nb-secondary)]"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -437,14 +437,14 @@ const ChatDetail: React.FC = () => {
             className="hidden"
           />
 
-          <div className="flex-1 rounded-full bg-slate-100/90 px-4 shadow-inner">
+          <div className="flex-1 rounded-full bg-[var(--nb-page)]/90 px-4 shadow-inner">
             <input
               type="text"
               value={inputText}
               onChange={(e) => { setInputText(e.target.value); emitTyping(); }}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
               placeholder={currentTechnician ? `给${currentTechnician.name}发消息...` : '选择一位美甲师后开始沟通'}
-              className="h-11 w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+              className="h-11 w-full bg-transparent text-sm text-[var(--nb-ink)] outline-none placeholder:text-[var(--nb-muted)]"
             />
           </div>
 
@@ -453,8 +453,8 @@ const ChatDetail: React.FC = () => {
             disabled={!inputText.trim() || sending || !currentTechnician}
             className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full ${
               inputText.trim() && !sending && currentTechnician
-                ? 'bg-[linear-gradient(135deg,#FF6B8A_0%,#FF8FA3_100%)] text-white shadow-[0_12px_24px_rgba(255,107,138,0.3)]'
-                : 'bg-slate-100 text-slate-400'
+                ? 'bg-[var(--nb-action)] text-white shadow-[0_12px_24px_rgba(0,0,0,0.3)]'
+                : 'bg-[var(--nb-page)] text-[var(--nb-muted)]'
             }`}
           >
             {sending ? (
@@ -474,16 +474,16 @@ const ChatDetail: React.FC = () => {
           onClick={() => setShowTechSelector(false)}
         >
           <div
-            className="w-full max-w-md rounded-t-[32px] bg-white p-6 shadow-[0_-20px_50px_rgba(15,23,42,0.18)] sm:rounded-[32px]"
+            className="w-full max-w-md rounded-t-[32px] bg-white p-6 shadow-[0_-20px_50px_rgba(0,0,0,0.18)] sm:rounded-[32px]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-slate-900">切换会话对象</h3>
+              <h3 className="text-lg font-semibold text-[var(--nb-ink)]">切换会话对象</h3>
               <button
                 onClick={() => setShowTechSelector(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-page)]"
               >
-                <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-4 w-4 text-[var(--nb-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -495,22 +495,22 @@ const ChatDetail: React.FC = () => {
                   onClick={() => handleSwitchTechnician(tech)}
                   className={`flex w-full items-center gap-3 rounded-2xl p-3 ${
                     currentTechnician?.id === tech.id
-                      ? 'bg-[linear-gradient(135deg,#FFF1F5_0%,#F8FAFF_100%)] ring-1 ring-[#FF6B8A]/30'
-                      : 'bg-slate-50'
+                      ? 'bg-[var(--nb-page)] ring-1 ring-[var(--nb-control)]/30'
+                      : 'bg-[var(--nb-page)]'
                   }`}
                 >
                   <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white">
                     {tech.avatarUrl ? (
                       <img src={tech.avatarUrl} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <svg className="h-6 w-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="h-6 w-6 text-[var(--nb-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     )}
                   </div>
                   <div className="flex-1 text-left">
-                    <p className="text-sm font-medium text-slate-900">{tech.name}</p>
-                    <p className="text-xs text-slate-500">{tech.city || '服务中'}</p>
+                    <p className="text-sm font-medium text-[var(--nb-ink)]">{tech.name}</p>
+                    <p className="text-xs text-[var(--nb-secondary)]">{tech.city || '服务中'}</p>
                   </div>
                   {currentTechnician?.id === tech.id && (
                     <svg className="h-5 w-5 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -544,7 +544,7 @@ const ChatDetail: React.FC = () => {
                 className="w-full max-w-md rounded-t-[32px] bg-white p-6 text-center sm:rounded-[32px]"
                 onClick={(e) => e.stopPropagation()}
               >
-                <p className="text-sm text-slate-500">无法获取该美甲师的服务信息，请稍后重试</p>
+                <p className="text-sm text-[var(--nb-secondary)]">无法获取该美甲师的服务信息，请稍后重试</p>
               </div>
             </div>
           );

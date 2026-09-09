@@ -256,22 +256,22 @@ export const OrdersPage: React.FC = () => {
   const allowedActions = selectedOrder ? ordersService.getAllowedActions(selectedOrder.status) : [];
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-gray-50">
+    <div className="flex h-[100dvh] flex-col bg-[var(--nb-page)]">
       {/* Fixed header + tabs */}
       <div className="shrink-0">
-        <div className="flex items-center justify-between bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[#f2e6ec]">
+        <div className="flex items-center justify-between bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[var(--nb-line)]">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => { setCustomerNameFilter(''); navigate('/', { replace: true }); }}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f7f3f5] transition-colors active:bg-[#eee5e9]"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-page)] transition-colors active:bg-[var(--nb-page)]"
             >
-              <svg className="h-5 w-5 text-[#3c3440]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 text-[var(--nb-ink)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             <div>
-              <h1 className="text-[17px] font-semibold text-[#1f2230]">预约</h1>
+              <h1 className="text-[17px] font-semibold text-[var(--nb-ink)]">预约</h1>
               {customerNameFilter && (
                 <button
                   type="button"
@@ -279,7 +279,7 @@ export const OrdersPage: React.FC = () => {
                     setCustomerNameFilter('');
                     setSearchParams({}, { replace: true });
                   }}
-                  className="inline-flex items-center gap-1 text-[12px] text-[#FF5A66] font-medium active:opacity-70"
+                  className="inline-flex items-center gap-1 text-[12px] text-[var(--nb-ink)] font-medium active:opacity-70"
                 >
                   筛选：{customerNameFilter}
                   <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -292,20 +292,20 @@ export const OrdersPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setShowCreateSheet(true)}
-            className="shrink-0 whitespace-nowrap rounded-full bg-[#FF5A66] px-4 py-2 text-[13px] font-semibold text-white min-h-[36px] active:scale-[0.97]"
+            className="shrink-0 whitespace-nowrap rounded-full bg-[var(--nb-action)] px-4 py-2 text-[13px] font-semibold text-white min-h-[36px] active:scale-[0.97]"
           >
             新建预约
           </button>
         </div>
 
-        <div className="bg-white px-5 py-3 border-b border-gray-100">
+        <div className="bg-white px-5 py-3 border-b border-[var(--nb-line)]">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide">
             {orderTabs.map((tab) => (
               <button
                 key={tab.value}
                 onClick={() => setActiveTab(tab.value)}
                 className={`flex-shrink-0 rounded-full px-4 py-2 text-sm font-medium min-h-[44px] ${
-                  activeTab === tab.value ? 'bg-[#FF5A66] text-white' : 'bg-gray-100 text-gray-600'
+                  activeTab === tab.value ? 'bg-[var(--nb-action)] text-white' : 'bg-[var(--nb-page)] text-[var(--nb-secondary)]'
                 }`}
               >
                 {tab.label}
@@ -333,30 +333,30 @@ export const OrdersPage: React.FC = () => {
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-gray-900">{order.customerName}</p>
+                    <p className="text-sm font-semibold text-[var(--nb-ink)]">{order.customerName}</p>
                     {order.isLocalDraft ? (
-                      <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] text-orange-500">本地草稿</span>
+                      <span className="rounded-full bg-[var(--nb-page)] px-2 py-0.5 text-[10px] text-[var(--nb-secondary)]">本地草稿</span>
                     ) : null}
                   </div>
-                  <p className="mt-1 text-xs text-gray-400">{order.orderNo}</p>
+                  <p className="mt-1 text-xs text-[var(--nb-muted)]">{order.orderNo}</p>
                 </div>
                 <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${orderStatusClasses[order.status]}`}>
                   {orderStatusLabels[order.status]}
                 </span>
               </div>
-              <div className="space-y-1.5 text-sm text-gray-600">
+              <div className="space-y-1.5 text-sm text-[var(--nb-secondary)]">
                 <p>{order.serviceName}</p>
                 <p>{formatDateLabel(order.startTime)} · {formatClock(order.startTime)} - {formatClock(order.endTime)}</p>
                 <p className="truncate">{order.address}</p>
               </div>
               <div className="mt-3 flex items-center justify-between">
-                <span className="text-xs text-gray-400">{order.depositPaid ? '已确认定金' : '待确认定金'}</span>
-                <span className="text-base font-bold text-pink-500">{formatMoney(order.price)}</span>
+                <span className="text-xs text-[var(--nb-muted)]">{order.depositPaid ? '已确认定金' : '待确认定金'}</span>
+                <span className="text-base font-bold text-[var(--nb-secondary)]">{formatMoney(order.price)}</span>
               </div>
             </button>
           ))
         ) : (
-          <div className="rounded-2xl bg-white p-6 text-center text-sm text-gray-400 shadow-sm">当前筛选下暂无预约</div>
+          <div className="rounded-2xl bg-white p-6 text-center text-sm text-[var(--nb-muted)] shadow-sm">当前筛选下暂无预约</div>
         )}
       </div>
 
@@ -370,13 +370,13 @@ export const OrdersPage: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-5 pt-5 pb-4 flex items-center justify-between">
-              <h3 className="text-[17px] font-semibold text-[#1f2230]">预约详情</h3>
+              <h3 className="text-[17px] font-semibold text-[var(--nb-ink)]">预约详情</h3>
               <button
                 type="button"
                 onClick={() => setShowDetailSheet(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f2f0f3] active:bg-[#e5e2e6]"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--nb-page)] active:bg-[var(--nb-page)]"
               >
-                <svg className="h-4 w-4 text-[#6d6570]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-4 w-4 text-[var(--nb-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -386,12 +386,12 @@ export const OrdersPage: React.FC = () => {
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <p className="text-[16px] font-bold text-gray-900">{selectedOrder.customerName}</p>
+                  <p className="text-[16px] font-bold text-[var(--nb-ink)]">{selectedOrder.customerName}</p>
                   {selectedOrder.isLocalDraft ? (
-                    <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] text-orange-500">待同步</span>
+                    <span className="rounded-full bg-[var(--nb-page)] px-2 py-0.5 text-[10px] text-[var(--nb-secondary)]">待同步</span>
                   ) : null}
                 </div>
-                <p className="mt-1 text-[13px] text-gray-500">{selectedOrder.customerPhone || '未填写联系电话'}</p>
+                <p className="mt-1 text-[13px] text-[var(--nb-secondary)]">{selectedOrder.customerPhone || '未填写联系电话'}</p>
               </div>
               <span className={`rounded-full px-3 py-1 text-[12px] font-medium ${orderStatusClasses[selectedOrder.status]}`}>
                 {orderStatusLabels[selectedOrder.status]}
@@ -399,32 +399,32 @@ export const OrdersPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-              <div className="rounded-2xl bg-[#ffe9f0] p-3">
-                <p className="text-[12px] text-gray-500">预约时间</p>
-                <p className="mt-1 text-[14px] font-medium text-gray-900">{formatTimeRange(selectedOrder.startTime, selectedOrder.endTime)}</p>
+              <div className="rounded-2xl bg-[var(--nb-page)] p-3">
+                <p className="text-[12px] text-[var(--nb-secondary)]">预约时间</p>
+                <p className="mt-1 text-[14px] font-medium text-[var(--nb-ink)]">{formatTimeRange(selectedOrder.startTime, selectedOrder.endTime)}</p>
               </div>
-              <div className="rounded-2xl bg-gray-50 p-3">
-                <p className="text-[12px] text-gray-500">预约金额</p>
-                <p className="mt-1 text-[14px] font-medium text-pink-500">{formatMoney(selectedOrder.price)}</p>
+              <div className="rounded-2xl bg-[var(--nb-page)] p-3">
+                <p className="text-[12px] text-[var(--nb-secondary)]">预约金额</p>
+                <p className="mt-1 text-[14px] font-medium text-[var(--nb-secondary)]">{formatMoney(selectedOrder.price)}</p>
               </div>
             </div>
 
-            <div className="rounded-2xl bg-gray-50 p-4 text-sm text-gray-700 mb-4">
-              <p className="font-medium text-gray-900">服务信息</p>
+            <div className="rounded-2xl bg-[var(--nb-page)] p-4 text-sm text-[var(--nb-ink)] mb-4">
+              <p className="font-medium text-[var(--nb-ink)]">服务信息</p>
               <p className="mt-2">{selectedOrder.serviceName}</p>
               <p className="mt-2">{selectedOrder.address}</p>
-              {selectedOrder.note ? <p className="mt-2 text-gray-500">备注：{selectedOrder.note}</p> : null}
+              {selectedOrder.note ? <p className="mt-2 text-[var(--nb-secondary)]">备注：{selectedOrder.note}</p> : null}
             </div>
             </div>
 
             {/* 操作按钮 */}
-            <div className="shrink-0 px-5 pb-5 pt-3 border-t border-gray-100">
+            <div className="shrink-0 px-5 pb-5 pt-3 border-t border-[var(--nb-line)]">
             {!selectedOrder.isLocalDraft ? (() => {
               const statusBtns: React.ReactNode[] = [];
               if (allowedActions.includes('pending_agree')) {
                 statusBtns.push(
                   <button key="pa" type="button" onClick={openReviewSheet} disabled={isUpdatingStatus || isReviewing}
-                    className="flex-1 min-w-0 h-12 rounded-[18px] bg-[#FF5A66] text-[15px] font-medium text-white shadow-none disabled:opacity-50 active:opacity-80">
+                    className="flex-1 min-w-0 h-12 rounded-[18px] bg-[var(--nb-action)] text-[15px] font-medium text-white shadow-none disabled:opacity-50 active:opacity-80">
                     提交报价
                   </button>
                 );
@@ -432,7 +432,7 @@ export const OrdersPage: React.FC = () => {
               if (selectedOrder.status === 'pending_agree') {
                 statusBtns.push(
                   <button key="wait" type="button" disabled
-                    className="flex-1 min-w-0 h-12 rounded-[18px] bg-gray-100 text-[15px] font-medium text-gray-400 cursor-not-allowed">
+                    className="flex-1 min-w-0 h-12 rounded-[18px] bg-[var(--nb-page)] text-[15px] font-medium text-[var(--nb-muted)] cursor-not-allowed">
                     待用户确认
                   </button>
                 );
@@ -440,7 +440,7 @@ export const OrdersPage: React.FC = () => {
               if (selectedOrder.status === 'pending_home' || selectedOrder.status === 'pending_shop') {
                 statusBtns.push(
                   <button key="wait" type="button" disabled
-                    className="flex-1 min-w-0 h-12 rounded-[18px] bg-gray-100 text-[15px] font-medium text-gray-400 cursor-not-allowed">
+                    className="flex-1 min-w-0 h-12 rounded-[18px] bg-[var(--nb-page)] text-[15px] font-medium text-[var(--nb-muted)] cursor-not-allowed">
                     {selectedOrder.status === 'pending_home' ? '待上门' : '待到店'}
                   </button>
                 );
@@ -448,7 +448,7 @@ export const OrdersPage: React.FC = () => {
               if (allowedActions.includes('pending_confirm')) {
                 statusBtns.push(
                   <button key="pc" type="button" onClick={() => requestStatusChange('pending_confirm')} disabled={isUpdatingStatus}
-                    className="flex-1 min-w-0 h-12 rounded-[18px] bg-emerald-500 text-[15px] font-medium text-white shadow-none disabled:opacity-50 active:opacity-80">
+                    className="flex-1 min-w-0 h-12 rounded-[18px] bg-[var(--nb-action)] text-[15px] font-medium text-white shadow-none disabled:opacity-50 active:opacity-80">
                     {isUpdatingStatus ? '处理中...' : '确认预约'}
                   </button>
                 );
@@ -460,7 +460,7 @@ export const OrdersPage: React.FC = () => {
                     onClick={() => { const ns: OrderStatus = selectedOrder.serviceType === 'home' ? 'pending_home' : 'pending_shop'; requestStatusChange(ns); }}
                     disabled={isUpdatingStatus || needsDeposit}
                     title={needsDeposit ? '客户尚未确认支付定金' : undefined}
-                    className="flex-1 min-w-0 h-12 rounded-[18px] bg-emerald-500 text-[15px] font-medium text-white shadow-none disabled:opacity-50 active:opacity-80">
+                    className="flex-1 min-w-0 h-12 rounded-[18px] bg-[var(--nb-action)] text-[15px] font-medium text-white shadow-none disabled:opacity-50 active:opacity-80">
                     {isUpdatingStatus ? '处理中...' : needsDeposit ? '等待客户付定金' : '确认预约'}
                   </button>
                 );
@@ -468,7 +468,7 @@ export const OrdersPage: React.FC = () => {
               if (allowedActions.includes('completed')) {
                 statusBtns.push(
                   <button key="comp" type="button" onClick={() => requestStatusChange('completed')} disabled={isUpdatingStatus}
-                    className="flex-1 min-w-0 h-12 rounded-[18px] bg-emerald-500 text-[15px] font-medium text-white shadow-none disabled:opacity-50 active:opacity-80">
+                    className="flex-1 min-w-0 h-12 rounded-[18px] bg-[var(--nb-action)] text-[15px] font-medium text-white shadow-none disabled:opacity-50 active:opacity-80">
                     {isUpdatingStatus ? '处理中...' : '确认完成'}
                   </button>
                 );
@@ -476,7 +476,7 @@ export const OrdersPage: React.FC = () => {
               if (allowedActions.includes('cancelled')) {
                 statusBtns.push(
                   <button key="cancel" type="button" onClick={() => requestStatusChange('cancelled')} disabled={isUpdatingStatus}
-                    className="flex-1 min-w-0 h-12 rounded-[18px] border border-red-100 bg-white text-[15px] font-medium text-red-500 disabled:opacity-50 active:opacity-80">
+                    className="flex-1 min-w-0 h-12 rounded-[18px] border border-[var(--nb-line)] bg-white text-[15px] font-medium text-[var(--nb-secondary)] disabled:opacity-50 active:opacity-80">
                     {isUpdatingStatus ? '处理中...' : '取消预约'}
                   </button>
                 );
@@ -490,7 +490,7 @@ export const OrdersPage: React.FC = () => {
                       if (result.conversationId) { setShowDetailSheet(false); navigate(`/chat?conversation_id=${result.conversationId}`); }
                     } catch (err: unknown) { toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || '发送失败，请重试'); }
                   }}
-                  className="flex-1 min-w-0 h-12 rounded-[18px] bg-slate-800 text-[15px] font-semibold text-white shadow-none active:opacity-80">
+                  className="flex-1 min-w-0 h-12 rounded-[18px] bg-[var(--nb-action)] text-[15px] font-semibold text-white shadow-none active:opacity-80">
                   发给 {selectedOrder.customerName}
                 </button>
               );
@@ -503,7 +503,7 @@ export const OrdersPage: React.FC = () => {
                   <div className="flex gap-2">
                     {allBtns[0]}{allBtns[1]}
                     <button type="button" onClick={() => setShowMoreActions(!showMoreActions)}
-                      className="flex-1 min-w-0 h-12 rounded-[18px] border border-gray-200 bg-white text-[15px] font-medium text-gray-600 active:opacity-80">
+                      className="flex-1 min-w-0 h-12 rounded-[18px] border border-[var(--nb-line)] bg-white text-[15px] font-medium text-[var(--nb-secondary)] active:opacity-80">
                       {showMoreActions ? '收起操作 ↑' : '更多操作 ↓'}
                     </button>
                   </div>
@@ -521,12 +521,12 @@ export const OrdersPage: React.FC = () => {
           <div className="absolute bottom-0 left-0 right-0 rounded-t-3xl bg-white px-5 pb-8 pt-5">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">核实预约</h2>
-                <p className="text-xs text-gray-400">修改预约时间、费用和预估用时后，客户会收到确认提醒</p>
+                <h2 className="text-lg font-bold text-[var(--nb-ink)]">核实预约</h2>
+                <p className="text-xs text-[var(--nb-muted)]">修改预约时间、费用和预估用时后，客户会收到确认提醒</p>
               </div>
               <button
                 onClick={() => setShowReviewSheet(false)}
-                className="rounded-full bg-gray-100 px-3 py-2 text-sm text-gray-600 min-h-[44px]"
+                className="rounded-full bg-[var(--nb-page)] px-3 py-2 text-sm text-[var(--nb-secondary)] min-h-[44px]"
               >
                 关闭
               </button>
@@ -538,13 +538,13 @@ export const OrdersPage: React.FC = () => {
                   type="date"
                   value={reviewDate}
                   onChange={(event) => setReviewDate(event.target.value)}
-                  className="h-12 w-full rounded-xl bg-gray-100 px-4 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
+                  className="h-12 w-full rounded-xl bg-[var(--nb-page)] px-4 text-sm text-[var(--nb-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]"
                 />
                 <input
                   type="time"
                   value={reviewStartClock}
                   onChange={(event) => setReviewStartClock(event.target.value)}
-                  className="h-12 w-full rounded-xl bg-gray-100 px-4 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
+                  className="h-12 w-full rounded-xl bg-[var(--nb-page)] px-4 text-sm text-[var(--nb-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -552,26 +552,26 @@ export const OrdersPage: React.FC = () => {
                   value={reviewDurationMinutes}
                   onChange={(event) => setReviewDurationMinutes(event.target.value.replace(/\D/g, ''))}
                   placeholder="预估用时(分钟)"
-                  className="h-12 w-full rounded-xl bg-gray-100 px-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
+                  className="h-12 w-full rounded-xl bg-[var(--nb-page)] px-4 text-sm text-[var(--nb-ink)] placeholder-[var(--nb-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]"
                 />
                 <input
                   value={reviewPrice}
                   onChange={(event) => setReviewPrice(event.target.value.replace(/[^\d.]/g, ''))}
                   placeholder="美甲费用"
-                  className="h-12 w-full rounded-xl bg-gray-100 px-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
+                  className="h-12 w-full rounded-xl bg-[var(--nb-page)] px-4 text-sm text-[var(--nb-ink)] placeholder-[var(--nb-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]"
                 />
                 <input
                   value={reviewDepositAmount}
                   onChange={(event) => setReviewDepositAmount(event.target.value.replace(/[^\d.]/g, ''))}
                   placeholder="定金金额（选填，线下收取）"
-                  className="h-12 w-full rounded-xl bg-gray-100 px-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
+                  className="h-12 w-full rounded-xl bg-[var(--nb-page)] px-4 text-sm text-[var(--nb-ink)] placeholder-[var(--nb-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]"
                 />
               </div>
-              {reviewError ? <p className="text-sm text-red-500">{reviewError}</p> : null}
+              {reviewError ? <p className="text-sm text-[var(--nb-secondary)]">{reviewError}</p> : null}
               <button
                 onClick={requestReviewSubmit}
                 disabled={isReviewing}
-                className="w-full rounded-xl bg-[#FF5A66] py-3 text-sm font-medium text-white min-h-[48px] disabled:opacity-60"
+                className="w-full rounded-xl bg-[var(--nb-action)] py-3 text-sm font-medium text-white min-h-[48px] disabled:opacity-60"
               >
                 {isReviewing ? '提交中...' : '提交核实结果'}
               </button>

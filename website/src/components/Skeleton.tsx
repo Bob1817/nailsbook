@@ -8,7 +8,7 @@ interface SkeletonProps {
 }
 
 export function Skeleton({ className = '', variant = 'rect', width, height }: SkeletonProps) {
-  const baseClass = 'animate-pulse bg-gray-200'
+  const baseClass = 'animate-pulse bg-[var(--nb-pressed)]'
   
   let variantClass = ''
   switch (variant) {

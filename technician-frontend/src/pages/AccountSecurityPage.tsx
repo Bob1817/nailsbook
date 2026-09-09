@@ -47,25 +47,25 @@ const AccountSecurityPage: React.FC = () => {
   };
 
   const inputClassName =
-    'h-12 w-full rounded-[16px] border border-[#f2e6ec] bg-[#fff9f8] px-4 text-sm text-[#1f2230] placeholder-[#b7aeb7] focus:border-[#FF5E93] focus:bg-white focus:outline-none';
+    'h-12 w-full rounded-[16px] border border-[var(--nb-line)] bg-[var(--nb-page)] px-4 text-sm text-[var(--nb-ink)] placeholder-[var(--nb-muted)] focus:border-[var(--nb-control)] focus:bg-white focus:outline-none';
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-[#fff9f8]">
+    <div className="flex h-[100dvh] flex-col bg-[var(--nb-page)]">
       <SubPageHeader title="账号与安全" />
       <div className="flex-1 overflow-y-auto px-5 py-4">
         {/* 账号信息 */}
-        <section className="rounded-[24px] bg-white p-5 shadow-[0_18px_36px_rgba(36,27,41,0.05)]">
+        <section className="rounded-[24px] bg-white p-5 shadow-[0_18px_36px_rgba(0,0,0,0.05)]">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-[#716776]">登录手机号</span>
-            <span className="text-sm font-medium text-[#1f2230]">{maskPhone(technician?.phone)}</span>
+            <span className="text-sm text-[var(--nb-secondary)]">登录手机号</span>
+            <span className="text-sm font-medium text-[var(--nb-ink)]">{maskPhone(technician?.phone)}</span>
           </div>
-          <p className="mt-2 text-xs text-[#a89ba3]">如需更换手机号，请联系平台客服处理。</p>
+          <p className="mt-2 text-xs text-[var(--nb-muted)]">如需更换手机号，请联系平台客服处理。</p>
         </section>
 
         {/* 修改密码 */}
-        <section className="mt-4 rounded-[24px] bg-white p-5 shadow-[0_18px_36px_rgba(36,27,41,0.05)]">
-          <h2 className="text-[16px] font-semibold text-[#1f2230]">修改密码</h2>
-          <p className="mt-1 text-xs text-[#a89ba3]">密码至少 8 位，需同时包含字母和数字</p>
+        <section className="mt-4 rounded-[24px] bg-white p-5 shadow-[0_18px_36px_rgba(0,0,0,0.05)]">
+          <h2 className="text-[16px] font-semibold text-[var(--nb-ink)]">修改密码</h2>
+          <p className="mt-1 text-xs text-[var(--nb-muted)]">密码至少 8 位，需同时包含字母和数字</p>
           <div className="mt-4 space-y-3">
             <input
               type="password"
@@ -96,7 +96,7 @@ const AccountSecurityPage: React.FC = () => {
             type="button"
             onClick={handleSubmit}
             disabled={submitting}
-            className="mt-5 min-h-[48px] w-full rounded-[16px] bg-[#FF5E93] text-sm font-semibold text-white transition-colors active:bg-[#e54e82] disabled:opacity-50"
+            className="mt-5 min-h-[48px] w-full rounded-[16px] bg-[var(--nb-action)] text-sm font-semibold text-white transition-colors active:bg-[var(--nb-action-pressed)] disabled:opacity-50"
           >
             {submitting ? '提交中…' : '确认修改'}
           </button>

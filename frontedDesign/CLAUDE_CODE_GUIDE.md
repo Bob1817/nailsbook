@@ -1,3 +1,5 @@
+> 颜色规范已于 2026-08-27 更新：以项目根目录 `design-system/nailbook/COLOR-STANDARD.md` 和 `colors.json` 为准。下文历史配色示例不再适用于新开发；非颜色规则继续有效。
+
 # NailBook UI Redesign — Claude Code Implementation Guide
 
 ## Context

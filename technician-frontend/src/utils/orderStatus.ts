@@ -6,22 +6,22 @@ export const ORDER_STATUS_LABEL: Record<string, string> = {
   pending_confirm: '待确认',
   pending_home: '待上门',
   pending_shop: '待到店',
-  in_progress: '进行中',
+  in_progress: 'bg-[var(--nb-active-surface)] text-[var(--nb-link)]',
   completed: '已完成',
   cancelled: '已取消',
   expired: '已过期',
 };
 
 export const ORDER_STATUS_PILL: Record<string, string> = {
-  pending_quote: 'bg-[#fff6eb] text-[#b87425]',
-  pending_agree: 'bg-[#eef1ff] text-[#4f6cbb]',
-  pending_confirm: 'bg-[#f3ecff] text-[#7a4ebd]',
-  pending_home: 'bg-[#e8f5e9] text-[#2e7d32]',
-  pending_shop: 'bg-[#e3f2fd] text-[#1565c0]',
-  in_progress: 'bg-orange-100 text-orange-700',
-  completed: 'bg-gray-100 text-gray-600',
-  cancelled: 'bg-red-100 text-red-600',
-  expired: 'bg-gray-100 text-gray-500',
+  pending_quote: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+  pending_agree: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+  pending_confirm: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+  pending_home: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+  pending_shop: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+  in_progress: 'bg-[var(--nb-active-surface)] text-[var(--nb-link)]',
+  completed: 'bg-[var(--nb-page)] text-[var(--nb-secondary)]',
+  cancelled: 'bg-[var(--nb-page)] text-[var(--nb-secondary)]',
+  expired: 'bg-[var(--nb-page)] text-[var(--nb-secondary)]',
 };
 
 /** 美甲师端等待对方操作时按钮文案 */

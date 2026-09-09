@@ -58,7 +58,7 @@ function resolveOrderPresentation(order: TechnicianOrder, shops: ShopAddress[] =
       compactAddressLabel: shopName
         ? `${shopName} · ${compactAddress(order.address)}`
         : compactAddress(order.address),
-      accentClasses: 'bg-[#ffe9f0] text-pink-500',
+      accentClasses: 'bg-[var(--nb-page)] text-[var(--nb-secondary)]',
     };
   }
 
@@ -66,7 +66,7 @@ function resolveOrderPresentation(order: TechnicianOrder, shops: ShopAddress[] =
     serviceTypeLabel: '上门美甲',
     fullAddressLabel: `上门 · ${order.address}`,
     compactAddressLabel: `上门 · ${compactAddress(order.address)}`,
-    accentClasses: 'bg-[#fff1e5] text-[#c9792a]',
+    accentClasses: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
   };
 }
 
@@ -122,21 +122,21 @@ function hasAddressIssue(order: TechnicianOrder) {
 function getOrderStateMeta(status: TechnicianOrder['status']) {
   if (status === 'in_progress') {
     return {
-      tone: 'bg-[#ebf4ff] text-[#3b82f6]',
-      dot: 'bg-[#69a7ff]',
+      tone: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+      dot: 'bg-[var(--nb-action)]',
       actionLabel: '服务中',
     };
   }
   if (status === 'completed') {
     return {
-      tone: 'bg-[#f4f5f7] text-[#8a8f98]',
-      dot: 'bg-[#b7bcc5]',
+      tone: 'bg-[var(--nb-page)] text-[var(--nb-muted)]',
+      dot: 'bg-[var(--nb-control)]',
       actionLabel: '已完成',
     };
   }
   return {
-    tone: 'bg-[#ffe9f0] text-pink-500',
-    dot: 'bg-[#FF5A66]',
+    tone: 'bg-[var(--nb-page)] text-[var(--nb-secondary)]',
+    dot: 'bg-[var(--nb-action)]',
     actionLabel: '待出发',
   };
 }
@@ -266,32 +266,32 @@ export const HomePage: React.FC = () => {
       count: summary.pendingCount,
       label: '个预约待确认',
       to: '/schedule?filter=pending',
-      accent: 'text-pink-500',
-      badge: 'bg-[#ffe9f0]',
+      accent: 'text-[var(--nb-secondary)]',
+      badge: 'bg-[var(--nb-page)]',
     },
     {
       key: 'deposit',
       count: unpaidDepositCount,
       label: '个客户未支付定金',
       to: '/orders',
-      accent: 'text-[#d08b26]',
-      badge: 'bg-[#fff2dc]',
+      accent: 'text-[var(--nb-ink)]',
+      badge: 'bg-[var(--nb-page)]',
     },
     {
       key: 'address',
       count: addressPendingCount,
       label: '个客户未确认地址',
       to: '/customers',
-      accent: 'text-[#f06f4b]',
-      badge: 'bg-[#fff0ea]',
+      accent: 'text-[var(--nb-ink)]',
+      badge: 'bg-[var(--nb-page)]',
     },
     {
       key: 'messages',
       count: unreadMessageCount,
       label: '条未读消息',
       to: '/messages',
-      accent: 'text-[#4f7ddb]',
-      badge: 'bg-[#edf3ff]',
+      accent: 'text-[var(--nb-ink)]',
+      badge: 'bg-[var(--nb-page)]',
     },
   ];
   const activePendingItems = pendingItems.filter((item) => item.count > 0);
@@ -378,8 +378,8 @@ export const HomePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-full overflow-x-hidden bg-[#FFF9F8] pb-28">
-      <div className="relative overflow-hidden bg-[linear-gradient(145deg,#FF6FA2_0%,#FF6B9B_34%,#FF81A4_68%,#FFB387_100%)] px-5 pb-10 pt-11">
+    <div className="min-h-full overflow-x-hidden bg-[var(--nb-page)] pb-28">
+      <div className="relative overflow-hidden bg-[var(--nb-action)] px-5 pb-10 pt-11">
         <div className="absolute -left-10 top-2 h-32 w-32 rounded-full bg-white/14 blur-3xl" />
         <div className="absolute right-[-10%] top-[-6%] h-48 w-48 rounded-full bg-white/18 blur-3xl" />
         <div className="absolute left-1/2 top-6 h-44 w-44 -translate-x-1/2 rounded-full bg-white/12 blur-[100px]" />
@@ -397,7 +397,7 @@ export const HomePage: React.FC = () => {
               <h1 className="truncate text-[2rem] font-semibold tracking-[-0.03em] text-white">
                 {technician?.name || '美甲师'}
               </h1>
-              <p className="mt-1 whitespace-nowrap text-[14px] font-medium leading-6 text-white [text-shadow:0_1px_2px_rgba(112,35,71,0.16)]">
+              <p className="mt-1 whitespace-nowrap text-[14px] font-medium leading-6 text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.16)]">
                 今日 {todayOrders.length} 单 · 预估 {formatMoney(summary.expectedIncome)}
               </p>
             </div>
@@ -414,7 +414,7 @@ export const HomePage: React.FC = () => {
                 }
                 setShowShareSheet(true);
               }}
-              className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-[20px] border border-white/[0.18] bg-[linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.1)_100%)] px-5 py-2.5 text-[13px] font-semibold text-white shadow-[0_16px_32px_rgba(61,27,49,0.14),inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-md transition-colors active:bg-white/[0.18]"
+              className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-[20px] border border-white/[0.18] bg-[linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.1)_100%)] px-5 py-2.5 text-[13px] font-semibold text-white shadow-[0_16px_32px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-md transition-colors active:bg-white/[0.18]"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8.25 8.25h7.5a1.5 1.5 0 011.5 1.5v7.5a1.5 1.5 0 01-1.5 1.5h-7.5a1.5 1.5 0 01-1.5-1.5v-7.5a1.5 1.5 0 011.5-1.5zm2.25-3h7.5m-3.75 0V3m0 2.25v3" />
@@ -428,23 +428,23 @@ export const HomePage: React.FC = () => {
 
       <div className="relative z-10 -mt-6 px-5">
         <section
-          className="rounded-[30px] bg-[#FFFDFD] p-4 shadow-[0_24px_50px_rgba(57,30,43,0.09)] cursor-pointer"
+          className="rounded-[30px] bg-[var(--nb-surface)] p-4 shadow-[0_24px_50px_rgba(0,0,0,0.09)] cursor-pointer"
           onClick={nextOrder ? () => setDetailOrderId(nextOrder.id) : undefined}
         >
           <div>
-            <p className="text-[15px] font-semibold text-[#FF5E93]">下一单</p>
+            <p className="text-[15px] font-semibold text-[var(--nb-ink)]">下一单</p>
             {nextOrder ? (
               <>
                 <div className="mt-2.5 flex items-start gap-3">
                   <div className="shrink-0">
-                    <p className="text-[13px] font-medium text-[#a08e98]">{formatBookingDate(nextOrder.startTime)}</p>
-                    <p className="mt-0.5 text-[1.95rem] font-semibold tracking-[-0.04em] text-[#1f2230]">
+                    <p className="text-[13px] font-medium text-[var(--nb-muted)]">{formatBookingDate(nextOrder.startTime)}</p>
+                    <p className="mt-0.5 text-[1.95rem] font-semibold tracking-[-0.04em] text-[var(--nb-ink)]">
                       {formatClock(nextOrder.startTime)}
                     </p>
                   </div>
                   <div className="min-w-0 pt-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-[1.25rem] font-semibold text-[#1f2230]">
+                      <p className="truncate text-[1.25rem] font-semibold text-[var(--nb-ink)]">
                         {nextOrder.customerName}
                       </p>
                       {nextPresentation ? (
@@ -453,29 +453,29 @@ export const HomePage: React.FC = () => {
                         </span>
                       ) : null}
                     </div>
-                    <p className="mt-1 line-clamp-1 text-[14px] font-medium text-[#4d4652]">
+                    <p className="mt-1 line-clamp-1 text-[14px] font-medium text-[var(--nb-secondary)]">
                       {nextOrder.serviceName || '预约服务'}
                     </p>
                   </div>
                 </div>
                 <div className="mt-2.5 flex items-start gap-2">
-                  <svg className="mt-[2px] h-4 w-4 shrink-0 text-[#c1b5bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="mt-[2px] h-4 w-4 shrink-0 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 21s-6-4.35-6-10a6 6 0 1112 0c0 5.65-6 10-6 10zm0-8.25a1.75 1.75 0 100-3.5 1.75 1.75 0 000 3.5z" />
                   </svg>
-                  <span className="text-[13px] leading-6 text-[#716776] break-words">
+                  <span className="text-[13px] leading-6 text-[var(--nb-secondary)] break-words">
                     {nextPresentation?.fullAddressLabel || nextOrder.address}
                   </span>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  <div className="rounded-[16px] border border-[#f2e6ec] bg-[#FFFFFF] px-3 py-2.5">
-                    <p className="text-[11px] text-[#a08e98]">预计路程</p>
-                    <p className="mt-1 text-[14px] font-semibold text-[#1f2230]">
+                  <div className="rounded-[16px] border border-[var(--nb-line)] bg-[var(--nb-surface)] px-3 py-2.5">
+                    <p className="text-[11px] text-[var(--nb-muted)]">预计路程</p>
+                    <p className="mt-1 text-[14px] font-semibold text-[var(--nb-ink)]">
                       {`${estimateRouteDistance([nextOrder])}km · ${nextTravelMinutes}分钟`}
                     </p>
                   </div>
-                  <div className="rounded-[16px] border border-[#f2e6ec] bg-[#FFFFFF] px-3 py-2.5">
-                    <p className="text-[11px] text-[#a08e98]">建议出发时间</p>
-                    <p className="mt-1 text-[14px] font-semibold text-[#1f2230]">
+                  <div className="rounded-[16px] border border-[var(--nb-line)] bg-[var(--nb-surface)] px-3 py-2.5">
+                    <p className="text-[11px] text-[var(--nb-muted)]">建议出发时间</p>
+                    <p className="mt-1 text-[14px] font-semibold text-[var(--nb-ink)]">
                       {formatClock(
                         suggestedDepartureDate
                           ? suggestedDepartureDate.toISOString()
@@ -487,17 +487,17 @@ export const HomePage: React.FC = () => {
               </>
             ) : (
               <div className="mt-3">
-                <p className="text-[1.2rem] font-semibold text-[#1f2230]">暂无行程安排</p>
-                <p className="mt-2 text-[14px] leading-6 text-[#7b7480]">当前没有待上门、待到店或服务中的预约，可以安排新预约。</p>
+                <p className="text-[1.2rem] font-semibold text-[var(--nb-ink)]">暂无行程安排</p>
+                <p className="mt-2 text-[14px] leading-6 text-[var(--nb-secondary)]">当前没有待上门、待到店或服务中的预约，可以安排新预约。</p>
               </div>
             )}
           </div>
 
           {nextOrder && departureCountdownMinutes >= nextTravelMinutes + 10 ? (
             <div className="mt-3">
-              <div className="rounded-[22px] border border-[#F6E8EE] bg-[linear-gradient(180deg,#FFF7FA_0%,#FFFDFC_100%)] px-4 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.92)]">
-                <p className="text-[10px] font-medium tracking-[0.06em] text-[#C69AAF]">距出发还有</p>
-                <p className="mt-1 text-[1.4rem] font-semibold tracking-[-0.03em] text-[#1f2230]">
+              <div className="rounded-[22px] border border-[var(--nb-line)] bg-[var(--nb-page)] px-4 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.92)]">
+                <p className="text-[10px] font-medium tracking-[0.06em] text-[var(--nb-muted)]">距出发还有</p>
+                <p className="mt-1 text-[1.4rem] font-semibold tracking-[-0.03em] text-[var(--nb-ink)]">
                   {formatDepartureCountdown(departureCountdownMinutes)}
                 </p>
               </div>
@@ -509,7 +509,7 @@ export const HomePage: React.FC = () => {
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); handleNavigateToAddress(nextOrder.address); }}
-                className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-[linear-gradient(135deg,#FF4D84_0%,#FF6E8D_100%)] px-4 py-3 text-[14px] font-semibold text-white shadow-[0_12px_20px_rgba(255,95,134,0.22)]"
+                className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-[var(--nb-action)] px-4 py-3 text-[14px] font-semibold text-white shadow-[0_12px_20px_rgba(0,0,0,0.22)]"
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/18 ring-1 ring-white/20">
                   <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
@@ -521,9 +521,9 @@ export const HomePage: React.FC = () => {
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); handleContactCustomer(nextOrder.customerPhone); }}
-                className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-[16px] border border-[#F2D5DE] bg-white px-4 py-3 text-[14px] font-semibold text-[#FF5E93] shadow-[0_8px_16px_rgba(255,110,141,0.08)]"
+                className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-[16px] border border-[var(--nb-line)] bg-white px-4 py-3 text-[14px] font-semibold text-[var(--nb-ink)] shadow-[0_8px_16px_rgba(0,0,0,0.08)]"
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FFF1F6] ring-1 ring-[#FFD9E6]">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--nb-page)] ring-1 ring-[var(--nb-line)]">
                   <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 5.5C3 4.67 3.67 4 4.5 4h2.62a1 1 0 01.95.68l1.18 3.54a1 1 0 01-.5 1.2l-1.7.85a13.05 13.05 0 006.47 6.47l.85-1.7a1 1 0 011.2-.5l3.54 1.18a1 1 0 01.68.95v2.62c0 .83-.67 1.5-1.5 1.5h-.75C9.86 21 3 14.14 3 5.5z" />
                   </svg>
@@ -537,14 +537,14 @@ export const HomePage: React.FC = () => {
 
       <div className="space-y-3 px-5 pt-3">
         <div className="grid grid-cols-1 gap-3">
-          <section className="rounded-[30px] bg-[#FFFDFD] p-5 shadow-[0_18px_36px_rgba(36,27,41,0.05)]">
+          <section className="rounded-[30px] bg-[var(--nb-surface)] p-5 shadow-[0_18px_36px_rgba(0,0,0,0.05)]">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-[16px] font-semibold text-[#1f2230]">待处理事项</h2>
-                <p className="mt-1 text-[12px] text-[#8d8590]">高优先级工作提醒</p>
+                <h2 className="text-[16px] font-semibold text-[var(--nb-ink)]">待处理事项</h2>
+                <p className="mt-1 text-[12px] text-[var(--nb-muted)]">高优先级工作提醒</p>
               </div>
               {activePendingItems.length > 0 ? (
-                <span className="inline-flex h-7 min-w-[28px] items-center justify-center rounded-full bg-[#FF5A66] px-2 text-[12px] font-semibold text-white">
+                <span className="inline-flex h-7 min-w-[28px] items-center justify-center rounded-full bg-[var(--nb-action)] px-2 text-[12px] font-semibold text-white">
                   {activePendingItems.reduce((total, item) => total + item.count, 0)}
                 </span>
               ) : null}
@@ -556,33 +556,33 @@ export const HomePage: React.FC = () => {
                     key={item.key}
                     type="button"
                     onClick={() => navigate(item.to)}
-                    className="flex min-h-[44px] w-full items-center justify-between rounded-[18px] bg-[#FFF8FA] px-3.5 py-3 text-left transition-colors active:bg-[#FFF1F6]"
+                    className="flex min-h-[44px] w-full items-center justify-between rounded-[18px] bg-[var(--nb-page)] px-3.5 py-3 text-left transition-colors active:bg-[var(--nb-page)]"
                   >
                     <div className="flex min-w-0 items-center gap-2.5">
                       <span className={`inline-flex h-7 min-w-[30px] items-center justify-center rounded-full px-2 text-[12px] font-semibold ${item.badge} ${item.accent}`}>
                         {item.count}
                       </span>
-                      <p className="truncate text-[14px] font-medium text-[#3c3440]">{item.label}</p>
+                      <p className="truncate text-[14px] font-medium text-[var(--nb-ink)]">{item.label}</p>
                     </div>
-                    <svg className="h-4 w-4 shrink-0 text-[#c9bec6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-4 w-4 shrink-0 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 6l6 6-6 6" />
                     </svg>
                   </button>
                 ))}
               </div>
             ) : (
-              <div className="rounded-[22px] bg-[#fff9f8] px-4 py-5 text-center text-[14px] text-[#8d8590]">
+              <div className="rounded-[22px] bg-[var(--nb-page)] px-4 py-5 text-center text-[14px] text-[var(--nb-muted)]">
                 今日待办已清空，可以专心服务客户。
               </div>
             )}
           </section>
         </div>
 
-        <section className="rounded-[30px] bg-white p-5 shadow-[0_16px_34px_rgba(36,27,41,0.06)]">
+        <section className="rounded-[30px] bg-white p-5 shadow-[0_16px_34px_rgba(0,0,0,0.06)]">
           <div className="mb-4 flex items-end justify-between">
             <div>
-              <h2 className="text-[16px] font-semibold text-[#1f2230]">今日行程</h2>
-              <p className="mt-1 text-[13px] text-[#8d8590]">
+              <h2 className="text-[16px] font-semibold text-[var(--nb-ink)]">今日行程</h2>
+              <p className="mt-1 text-[13px] text-[var(--nb-muted)]">
                 {new Intl.DateTimeFormat('zh-CN', {
                   month: 'numeric',
                   day: 'numeric',
@@ -592,7 +592,7 @@ export const HomePage: React.FC = () => {
             </div>
             <Link
               to="/schedule"
-              className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[#f2e6ec] bg-[#FFFFFF] px-4 text-[13px] font-semibold text-[#8d8590]"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[var(--nb-line)] bg-[var(--nb-surface)] px-4 text-[13px] font-semibold text-[var(--nb-muted)]"
             >
               查看全部
             </Link>
@@ -601,7 +601,7 @@ export const HomePage: React.FC = () => {
           {isLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="rounded-[18px] bg-white p-4 shadow-[0_8px_20px_rgba(36,27,41,0.05)]">
+                <div key={i} className="rounded-[18px] bg-white p-4 shadow-[0_8px_20px_rgba(0,0,0,0.05)]">
                   <div className="flex items-center gap-3">
                     <div className="w-[52px] shrink-0">
                       <Skeleton className="h-5 w-12 mb-1.5" />
@@ -629,20 +629,20 @@ export const HomePage: React.FC = () => {
                 return (
                   <div
                     key={order.id}
-                    className="rounded-[18px] bg-white p-4 shadow-[0_8px_20px_rgba(36,27,41,0.05)] cursor-pointer"
+                    className="rounded-[18px] bg-white p-4 shadow-[0_8px_20px_rgba(0,0,0,0.05)] cursor-pointer"
                     onClick={() => navigate(`/orders/${order.id}`)}
                   >
                     <div className="flex justify-between items-start gap-3">
                       <div className="flex min-w-0 items-start gap-3">
                         <div className="w-[52px] shrink-0">
-                          <div className="text-[18px] font-bold text-[#1f2230]">
+                          <div className="text-[18px] font-bold text-[var(--nb-ink)]">
                             {formatClock(order.startTime)}
                           </div>
                           <span className={`mt-1 inline-flex rounded-md px-2 py-0.5 text-[10px] font-semibold ${stateMeta.tone}`}>
                             {stateMeta.actionLabel}
                           </span>
                         </div>
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#f8dce7] text-[1rem] font-semibold text-[#ea5e93]">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--nb-page)] text-[1rem] font-semibold text-[var(--nb-ink)]">
                           {order.customerAvatar ? (
                             <img src={order.customerAvatar} alt={order.customerName} className="h-full w-full object-cover" />
                           ) : (
@@ -651,28 +651,28 @@ export const HomePage: React.FC = () => {
                         </div>
                         <div className="min-w-0">
                           <div className="flex min-w-0 items-center gap-2">
-                            <span className="truncate text-[15px] font-semibold text-[#1f2230]">{order.customerName}</span>
+                            <span className="truncate text-[15px] font-semibold text-[var(--nb-ink)]">{order.customerName}</span>
                             <span className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${presentation.accentClasses}`}>
                               {presentation.serviceTypeLabel}
                             </span>
                           </div>
-                          <div className="text-xs text-[#8d8590] mt-0.5">
+                          <div className="text-xs text-[var(--nb-muted)] mt-0.5">
                             {order.serviceName || '预约服务'}
                           </div>
                         </div>
                       </div>
-                      <span className="shrink-0 text-[15px] font-semibold text-[#1f2230]">
+                      <span className="shrink-0 text-[15px] font-semibold text-[var(--nb-ink)]">
                         {formatMoney(order.price)}
                       </span>
                     </div>
-                    <div className="mt-2 ml-[76px] text-xs leading-5 text-[#8d8590]">
+                    <div className="mt-2 ml-[76px] text-xs leading-5 text-[var(--nb-muted)]">
                       {presentation.fullAddressLabel}
                     </div>
                     <div className="flex gap-2 mt-3 ml-[76px]">
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); handleNavigateToAddress(order.address); }}
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-[#ffe9f0] text-pink-500 rounded-lg py-2 text-[13px] font-semibold min-h-[40px]"
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-[var(--nb-page)] text-[var(--nb-secondary)] rounded-lg py-2 text-[13px] font-semibold min-h-[40px]"
                       >
                         <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M2.93 2.93a.75.75 0 01.82-.17l12.5 5a.75.75 0 01-.04 1.41l-4.88 1.63-1.63 4.88a.75.75 0 01-1.4.04l-5-12.5a.75.75 0 01.17-.82z" />
@@ -682,7 +682,7 @@ export const HomePage: React.FC = () => {
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); handleContactCustomer(order.customerPhone); }}
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-[#f5f5f5] text-[#1f2230] rounded-lg py-2 text-[13px] font-semibold min-h-[40px]"
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-[var(--nb-page)] text-[var(--nb-ink)] rounded-lg py-2 text-[13px] font-semibold min-h-[40px]"
                       >
                         <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 5.5C3 4.67 3.67 4 4.5 4h2.62a1 1 0 01.95.68l1.18 3.54a1 1 0 01-.5 1.2l-1.7.85a13.05 13.05 0 006.47 6.47l.85-1.7a1 1 0 011.2-.5l3.54 1.18a1 1 0 01.68.95v2.62c0 .83-.67 1.5-1.5 1.5h-.75C9.86 21 3 14.14 3 5.5z" />
@@ -695,20 +695,20 @@ export const HomePage: React.FC = () => {
               })}
             </div>
           ) : (
-            <p className="rounded-[22px] bg-[#fff9f8] px-4 py-8 text-center text-sm text-[#b7aeb7]">今天还没有新的预约安排</p>
+            <p className="rounded-[22px] bg-[var(--nb-page)] px-4 py-8 text-center text-sm text-[var(--nb-muted)]">今天还没有新的预约安排</p>
           )}
         </section>
 
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.15fr_1fr]">
-          <section className="rounded-[30px] bg-[#FFFDFD] p-5 shadow-[0_18px_36px_rgba(36,27,41,0.05)]">
+          <section className="rounded-[30px] bg-[var(--nb-surface)] p-5 shadow-[0_18px_36px_rgba(0,0,0,0.05)]">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <h2 className="text-[18px] font-semibold text-[#1f2230]">今日热门作品</h2>
+                <h2 className="text-[18px] font-semibold text-[var(--nb-ink)]">今日热门作品</h2>
                 {hasUnreadWorkActivity && (
-                  <span className="flex h-2 w-2 rounded-full bg-red-500"></span>
+                  <span className="flex h-2 w-2 rounded-full bg-[var(--nb-action)]"></span>
                 )}
               </div>
-              <Link to="/works" className="text-[13px] font-semibold text-pink-500">
+              <Link to="/works" className="text-[13px] font-semibold text-[var(--nb-secondary)]">
                 更多
               </Link>
             </div>
@@ -716,7 +716,7 @@ export const HomePage: React.FC = () => {
               <div className="columns-2 gap-2.5 space-y-2.5">
                 {featuredWorks.map((work) => {
                   return (
-                    <Link key={work.id} to={`/works?workId=${work.id}`} className="group relative block break-inside-avoid overflow-hidden rounded-[14px] bg-gray-100">
+                    <Link key={work.id} to={`/works?workId=${work.id}`} className="group relative block break-inside-avoid overflow-hidden rounded-[14px] bg-[var(--nb-page)]">
                       {work.coverUrl ? (
                         <img
                           src={work.coverUrl}
@@ -725,18 +725,18 @@ export const HomePage: React.FC = () => {
                           loading="lazy"
                         />
                       ) : (
-                        <div className="flex aspect-[0.82] items-center justify-center bg-gradient-to-br from-rose-50 to-pink-50 text-sm text-gray-400">作品</div>
+                        <div className="flex aspect-[0.82] items-center justify-center bg-[var(--nb-page)] text-sm text-[var(--nb-muted)]">作品</div>
                       )}
                       {/* 未读提醒 */}
                       {(work.commentCount > 0 || work.unreadLikes > 0 || work.unreadFavorites > 0) && (
-                        <div className="absolute right-1.5 top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white shadow-sm">
+                        <div className="absolute right-1.5 top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--nb-action)] px-1 text-[10px] font-semibold text-white shadow-sm">
                           {work.commentCount + work.unreadLikes + work.unreadFavorites}
                         </div>
                       )}
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent px-2.5 pb-2 pt-6">
                         <p className="truncate text-[12px] font-medium leading-4 text-white">{work.title || '未命名'}</p>
                         <div className="mt-1 flex items-center gap-1">
-                          <svg className="h-3 w-3 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                          <svg className="h-3 w-3 text-[var(--nb-muted)]" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
                           </svg>
                           <span className="text-[10px] text-white/80">{work.favoriteCount || work.likeCount || 0}</span>
@@ -747,7 +747,7 @@ export const HomePage: React.FC = () => {
                 })}
               </div>
             ) : (
-              <div className="rounded-[22px] bg-[#fff9f8] px-4 py-8 text-center text-[14px] text-[#b7aeb7]">
+              <div className="rounded-[22px] bg-[var(--nb-page)] px-4 py-8 text-center text-[14px] text-[var(--nb-muted)]">
                 还没有推荐作品，去作品管理把好看的款式设为推荐吧。
               </div>
             )}
@@ -759,21 +759,21 @@ export const HomePage: React.FC = () => {
       {showShareSheet ? (
         <div className="fixed inset-0 z-[100] bg-black/40 px-4 pb-4 pt-16">
           <div className="mx-auto flex h-full w-full max-w-md flex-col rounded-[28px] bg-white">
-            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+            <div className="flex items-center justify-between border-b border-[var(--nb-line)] px-5 py-4">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">分享我的美甲名片</h2>
-                <p className="mt-1 text-sm text-gray-500">优先分享链接，也可以直接截图保存名片卡</p>
+                <h2 className="text-lg font-bold text-[var(--nb-ink)]">分享我的美甲名片</h2>
+                <p className="mt-1 text-sm text-[var(--nb-secondary)]">优先分享链接，也可以直接截图保存名片卡</p>
               </div>
               <button
                 onClick={() => setShowShareSheet(false)}
-                className="min-h-[44px] rounded-full bg-gray-100 px-3 py-2 text-sm font-medium text-gray-600"
+                className="min-h-[44px] rounded-full bg-[var(--nb-page)] px-3 py-2 text-sm font-medium text-[var(--nb-secondary)]"
               >
                 关闭
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto px-5 py-5">
-              <div className="mb-6 rounded-2xl bg-gradient-to-br from-pink-500 to-pink-600 p-6 text-white shadow-lg">
+              <div className="mb-6 rounded-2xl bg-[var(--nb-action)] p-6 text-white shadow-lg">
                 <div className="mb-4 flex items-center gap-4">
                   <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-white/30 bg-white/20">
                     {technician?.avatar ? (
@@ -873,30 +873,30 @@ export const HomePage: React.FC = () => {
                 )}
               </div>
 
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-sm font-medium text-gray-900">分享链接</p>
-                <p className="mt-1 text-xs text-gray-500">把主页链接发给客户，客户可查看名片并继续预约。</p>
+              <div className="rounded-2xl bg-[var(--nb-page)] p-4">
+                <p className="text-sm font-medium text-[var(--nb-ink)]">分享链接</p>
+                <p className="mt-1 text-xs text-[var(--nb-secondary)]">把主页链接发给客户，客户可查看名片并继续预约。</p>
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   <button
                     onClick={() => void handleShare()}
-                    className="min-h-[48px] rounded-2xl bg-[#FF5A66] px-4 py-3 text-sm font-medium text-white"
+                    className="min-h-[48px] rounded-2xl bg-[var(--nb-action)] px-4 py-3 text-sm font-medium text-white"
                   >
                     立即分享
                   </button>
                   <button
                     onClick={() => void copyShareUrl()}
-                    className="min-h-[48px] rounded-2xl bg-gray-900 px-4 py-3 text-sm font-medium text-white"
+                    className="min-h-[48px] rounded-2xl bg-[var(--nb-action)] px-4 py-3 text-sm font-medium text-white"
                   >
                     复制链接
                   </button>
                 </div>
-                <div className="mt-4 rounded-2xl border border-dashed border-gray-200 bg-white p-3">
-                  <p className="text-xs text-gray-400">分享链接</p>
-                  <p className="mt-1 break-all text-sm text-gray-700">{shareUrl}</p>
+                <div className="mt-4 rounded-2xl border border-dashed border-[var(--nb-line)] bg-white p-3">
+                  <p className="text-xs text-[var(--nb-muted)]">分享链接</p>
+                  <p className="mt-1 break-all text-sm text-[var(--nb-ink)]">{shareUrl}</p>
                   {technician?.invitationCode && (
-                    <div className="mt-2 border-t border-gray-100 pt-2">
-                      <p className="text-xs text-gray-400">邀请码</p>
-                      <p className="mt-1 text-sm font-mono text-pink-500">{technician.invitationCode}</p>
+                    <div className="mt-2 border-t border-[var(--nb-line)] pt-2">
+                      <p className="text-xs text-[var(--nb-muted)]">邀请码</p>
+                      <p className="mt-1 text-sm font-mono text-[var(--nb-secondary)]">{technician.invitationCode}</p>
                     </div>
                   )}
                 </div>

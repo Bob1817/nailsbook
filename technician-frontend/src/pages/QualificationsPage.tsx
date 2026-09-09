@@ -80,25 +80,25 @@ const QualificationsPage: React.FC = () => {
   }));
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-[#fff9f8]">
+    <div className="flex h-[100dvh] flex-col bg-[var(--nb-page)]">
       {/* Header */}
-      <div className="shrink-0 flex items-center justify-between bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[#f2e6ec]">
+      <div className="shrink-0 flex items-center justify-between bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[var(--nb-line)]">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f7f3f5] transition-colors active:bg-[#eee5e9]"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-page)] transition-colors active:bg-[var(--nb-page)]"
           >
-            <svg className="h-5 w-5 text-[#3c3440]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-5 w-5 text-[var(--nb-ink)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <h1 className="text-[17px] font-semibold text-[#1f2230]">资质管理</h1>
+          <h1 className="text-[17px] font-semibold text-[var(--nb-ink)]">资质管理</h1>
         </div>
         <button
           type="button"
           onClick={() => setShowAddModal(true)}
-          className="rounded-full bg-[#FF5E93] px-4 py-2 text-[13px] font-medium text-white active:bg-[#e54e82]"
+          className="rounded-full bg-[var(--nb-action)] px-4 py-2 text-[13px] font-medium text-white active:bg-[var(--nb-action-pressed)]"
         >
           + 添加资质
         </button>
@@ -106,15 +106,15 @@ const QualificationsPage: React.FC = () => {
 
       <div className="flex-1 overflow-y-auto px-5 py-5">
         {/* Info Banner */}
-        <div className="mb-5 rounded-[18px] bg-[#fff7fa] p-4 ring-1 ring-[#f2e6ec]">
-          <p className="text-[13px] text-[#831843]">
+        <div className="mb-5 rounded-[18px] bg-[var(--nb-page)] p-4 ring-1 ring-[var(--nb-line)]">
+          <p className="text-[13px] text-[var(--nb-ink)]">
             资质信息将展示在您的主页，帮助客户更好地了解您的专业背景，提升信任度。
           </p>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#FF5E93] border-t-transparent" />
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--nb-control)] border-t-transparent" />
           </div>
         ) : (
           <div className="space-y-4">
@@ -123,44 +123,44 @@ const QualificationsPage: React.FC = () => {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <span className="text-lg">{group.icon}</span>
-                    <h2 className="text-[15px] font-semibold text-gray-900">{group.label}</h2>
-                    <span className="text-xs text-gray-400">({group.items.length})</span>
+                    <h2 className="text-[15px] font-semibold text-[var(--nb-ink)]">{group.label}</h2>
+                    <span className="text-xs text-[var(--nb-muted)]">({group.items.length})</span>
                   </div>
                 </div>
 
                 {group.items.length > 0 ? (
                   <div className="space-y-3">
                     {group.items.map((item) => (
-                      <div key={item.id} className="rounded-[14px] bg-[#fafafa] p-3.5">
+                      <div key={item.id} className="rounded-[14px] bg-[var(--nb-surface)] p-3.5">
                         <div className="flex items-start justify-between">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <p className="text-[14px] font-medium text-gray-900">{item.title}</p>
+                              <p className="text-[14px] font-medium text-[var(--nb-ink)]">{item.title}</p>
                               {item.isVerified && (
-                                <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-600">
+                                <span className="rounded-full bg-[var(--nb-page)] px-2 py-0.5 text-[10px] font-medium text-[var(--nb-secondary)]">
                                   已验证
                                 </span>
                               )}
                             </div>
-                            <p className="mt-1 text-[12px] text-gray-500">
+                            <p className="mt-1 text-[12px] text-[var(--nb-secondary)]">
                               {item.detail} · {item.year}{item.month ? `.${item.month}` : ''}
                             </p>
                             {item.organization && (
-                              <p className="mt-1 text-[12px] text-gray-400">{item.organization}</p>
+                              <p className="mt-1 text-[12px] text-[var(--nb-muted)]">{item.organization}</p>
                             )}
                           </div>
                           <div className="flex gap-2 ml-3">
                             <button
                               type="button"
                               onClick={() => setEditingQual(item)}
-                              className="rounded-full bg-white px-3 py-1.5 text-[12px] text-gray-600 ring-1 ring-gray-200 active:bg-gray-50"
+                              className="rounded-full bg-white px-3 py-1.5 text-[12px] text-[var(--nb-secondary)] ring-1 ring-[var(--nb-line)] active:bg-[var(--nb-page)]"
                             >
                               编辑
                             </button>
                             <button
                               type="button"
                               onClick={() => handleDelete(item.id)}
-                              className="rounded-full bg-white px-3 py-1.5 text-[12px] text-red-500 ring-1 ring-red-200 active:bg-red-50"
+                              className="rounded-full bg-white px-3 py-1.5 text-[12px] text-[var(--nb-secondary)] ring-1 ring-[var(--nb-line)] active:bg-[var(--nb-page)]"
                             >
                               删除
                             </button>
@@ -170,8 +170,8 @@ const QualificationsPage: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-[14px] bg-[#fafafa] p-4 text-center">
-                    <p className="text-[13px] text-gray-400">暂无{group.label}信息</p>
+                  <div className="rounded-[14px] bg-[var(--nb-surface)] p-4 text-center">
+                    <p className="text-[13px] text-[var(--nb-muted)]">暂无{group.label}信息</p>
                   </div>
                 )}
               </Card>
@@ -259,7 +259,7 @@ const QualificationFormModal: React.FC<QualificationFormModalProps> = ({ qualifi
   };
 
   const inputClassName =
-    'w-full rounded-[14px] border border-[#f1e7e8] bg-[#fffdfd] px-4 py-3 text-[15px] text-gray-900 outline-none transition focus:border-pink-300 focus:bg-white focus:ring-4 focus:ring-pink-50';
+    'w-full rounded-[14px] border border-[var(--nb-line)] bg-[var(--nb-surface)] px-4 py-3 text-[15px] text-[var(--nb-ink)] outline-none transition focus:border-[var(--nb-control)] focus:bg-white focus:ring-4 focus:ring-[var(--nb-line)]';
 
   return (
     <div className="fixed inset-0 z-[300] flex items-end justify-center bg-black/50" onClick={onClose}>
@@ -268,12 +268,12 @@ const QualificationFormModal: React.FC<QualificationFormModalProps> = ({ qualifi
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="shrink-0 flex items-center justify-between border-b border-gray-100 bg-white px-5 py-3.5">
-          <h2 className="text-lg font-bold text-gray-900">
+        <div className="shrink-0 flex items-center justify-between border-b border-[var(--nb-line)] bg-white px-5 py-3.5">
+          <h2 className="text-lg font-bold text-[var(--nb-ink)]">
             {qualification ? '编辑资质' : '添加资质'}
           </h2>
-          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
-            <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--nb-page)]">
+            <svg className="h-4 w-4 text-[var(--nb-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -283,7 +283,7 @@ const QualificationFormModal: React.FC<QualificationFormModalProps> = ({ qualifi
         <div className="flex-1 overflow-y-auto px-5 pt-5 pb-4 space-y-4">
           {/* Type */}
           <div>
-            <label className="mb-2 block text-[13px] font-medium text-gray-700">资质类型 *</label>
+            <label className="mb-2 block text-[13px] font-medium text-[var(--nb-ink)]">资质类型 *</label>
             <div className="flex flex-wrap gap-2">
               {QUALIFICATION_TYPES.map((type) => (
                 <button
@@ -292,8 +292,8 @@ const QualificationFormModal: React.FC<QualificationFormModalProps> = ({ qualifi
                   onClick={() => setFormData({ ...formData, type: type.value })}
                   className={`rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors ${
                     formData.type === type.value
-                      ? 'bg-[#FF5E93] text-white'
-                      : 'bg-gray-100 text-gray-600 active:bg-gray-200'
+                      ? 'bg-[var(--nb-action)] text-white'
+                      : 'bg-[var(--nb-page)] text-[var(--nb-secondary)] active:bg-[var(--nb-pressed)]'
                   }`}
                 >
                   {type.icon} {type.label}
@@ -304,7 +304,7 @@ const QualificationFormModal: React.FC<QualificationFormModalProps> = ({ qualifi
 
           {/* Title */}
           <div>
-            <label className="mb-2 block text-[13px] font-medium text-gray-700">标题 *</label>
+            <label className="mb-2 block text-[13px] font-medium text-[var(--nb-ink)]">标题 *</label>
             <input
               type="text"
               value={formData.title}
@@ -316,7 +316,7 @@ const QualificationFormModal: React.FC<QualificationFormModalProps> = ({ qualifi
 
           {/* Detail */}
           <div>
-            <label className="mb-2 block text-[13px] font-medium text-gray-700">详情信息 *</label>
+            <label className="mb-2 block text-[13px] font-medium text-[var(--nb-ink)]">详情信息 *</label>
             <input
               type="text"
               value={formData.detail}
@@ -328,7 +328,7 @@ const QualificationFormModal: React.FC<QualificationFormModalProps> = ({ qualifi
 
           {/* Organization */}
           <div>
-            <label className="mb-2 block text-[13px] font-medium text-gray-700">颁发机构</label>
+            <label className="mb-2 block text-[13px] font-medium text-[var(--nb-ink)]">颁发机构</label>
             <input
               type="text"
               value={formData.organization}
@@ -341,7 +341,7 @@ const QualificationFormModal: React.FC<QualificationFormModalProps> = ({ qualifi
           {/* Year & Month */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-2 block text-[13px] font-medium text-gray-700">年份 *</label>
+              <label className="mb-2 block text-[13px] font-medium text-[var(--nb-ink)]">年份 *</label>
               <input
                 type="number"
                 value={formData.year}
@@ -352,7 +352,7 @@ const QualificationFormModal: React.FC<QualificationFormModalProps> = ({ qualifi
               />
             </div>
             <div>
-              <label className="mb-2 block text-[13px] font-medium text-gray-700">月份（选填）</label>
+              <label className="mb-2 block text-[13px] font-medium text-[var(--nb-ink)]">月份（选填）</label>
               <select
                 value={formData.month || ''}
                 onChange={(e) => setFormData({ ...formData, month: e.target.value ? parseInt(e.target.value) : undefined })}
@@ -369,14 +369,14 @@ const QualificationFormModal: React.FC<QualificationFormModalProps> = ({ qualifi
 
         {/* Footer */}
         <div
-          className="shrink-0 px-5 pt-3 border-t border-gray-50 bg-white"
+          className="shrink-0 px-5 pt-3 border-t border-[var(--nb-line)] bg-white"
           style={{ paddingBottom: 'max(20px, env(safe-area-inset-bottom, 20px))' }}
         >
           <div className="flex gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 min-h-[48px] rounded-[16px] bg-gray-100 text-[15px] font-medium text-gray-600 active:bg-gray-200"
+              className="flex-1 min-h-[48px] rounded-[16px] bg-[var(--nb-page)] text-[15px] font-medium text-[var(--nb-secondary)] active:bg-[var(--nb-pressed)]"
             >
               取消
             </button>
@@ -384,7 +384,7 @@ const QualificationFormModal: React.FC<QualificationFormModalProps> = ({ qualifi
               type="button"
               disabled={loading}
               onClick={handleSubmit}
-              className="flex-1 min-h-[48px] rounded-[16px] bg-[#FF5E93] text-[15px] font-semibold text-white shadow-sm active:bg-[#e54e82] disabled:opacity-60"
+              className="flex-1 min-h-[48px] rounded-[16px] bg-[var(--nb-action)] text-[15px] font-semibold text-white shadow-sm active:bg-[var(--nb-action-pressed)] disabled:opacity-60"
             >
               {loading ? '保存中...' : '保存'}
             </button>

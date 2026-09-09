@@ -13,14 +13,14 @@ const RoleSelectPage = () => {
           <button
             type="button"
             onClick={() => navigate('/')}
-            className={`glass flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-medium text-[var(--color-ink-muted)] transition active:scale-[0.98] active:bg-white/92 active:shadow-[0_10px_24px_rgba(192,136,148,0.14)] ${focusVisibleClass}`}
+            className={`glass flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-medium text-[var(--color-ink-muted)] transition active:scale-[0.98] active:bg-white/92 active:shadow-[0_10px_24px_rgba(0,0,0,0.14)] ${focusVisibleClass}`}
           >
             <ArrowLeft className="h-4 w-4" />
             返回首页
           </button>
 
-          <div className="flex items-center gap-3 rounded-full bg-white/78 px-4 py-2 shadow-[0_12px_26px_rgba(192,136,148,0.08)]">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--color-brand),var(--color-brand-soft))] text-white shadow-[0_12px_24px_rgba(255,107,138,0.22)]">
+          <div className="flex items-center gap-3 rounded-full bg-white/78 px-4 py-2 shadow-[0_12px_26px_rgba(0,0,0,0.08)]">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--color-brand),var(--color-brand-soft))] text-white shadow-[0_12px_24px_rgba(0,0,0,0.22)]">
               <Sparkles className="h-4 w-4" />
             </span>
             <span className="text-sm font-semibold tracking-[0.16em] text-[var(--color-ink)] uppercase">
@@ -46,11 +46,11 @@ const RoleSelectPage = () => {
             <section className="mx-auto mt-8 grid max-w-5xl gap-4 lg:grid-cols-2">
               <a
                 href={import.meta.env.VITE_TECHNICIAN_LOGIN_URL || '/login'}
-                className={`relative block overflow-hidden rounded-[2rem] border border-white/85 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,244,246,0.9))] p-6 text-left shadow-[0_28px_58px_rgba(192,136,148,0.12)] transition active:scale-[0.99] active:border-[rgba(255,107,138,0.26)] active:bg-[linear-gradient(180deg,rgba(255,248,249,0.98),rgba(255,236,240,0.96))] active:shadow-[0_16px_34px_rgba(192,136,148,0.18)] sm:p-8 ${focusVisibleClass}`}
+                className={`relative block overflow-hidden rounded-[2rem] border border-white/85 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(0,0,0,0.9))] p-6 text-left shadow-[0_28px_58px_rgba(0,0,0,0.12)] transition active:scale-[0.99] active:border-[rgba(0,0,0,0.26)] active:bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(0,0,0,0.96))] active:shadow-[0_16px_34px_rgba(0,0,0,0.18)] sm:p-8 ${focusVisibleClass}`}
               >
-                <div className="absolute right-0 top-0 h-36 w-36 rounded-full bg-[radial-gradient(circle,rgba(255,143,163,0.28),transparent_68%)]" />
+                <div className="absolute right-0 top-0 h-36 w-36 rounded-full bg-[radial-gradient(circle,rgba(0,0,0,0.28),transparent_68%)]" />
                 <div className="relative">
-                  <span className="flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-[linear-gradient(135deg,var(--color-brand),var(--color-brand-soft))] text-white shadow-[0_16px_34px_rgba(255,107,138,0.24)]">
+                  <span className="flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-[linear-gradient(135deg,var(--color-brand),var(--color-brand-soft))] text-white shadow-[0_16px_34px_rgba(0,0,0,0.24)]">
                     <Briefcase className="h-6 w-6" />
                   </span>
                   <div className="mt-6 flex items-start justify-between gap-4">
@@ -62,7 +62,7 @@ const RoleSelectPage = () => {
                         我是美甲师
                       </h2>
                     </div>
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/88 text-[var(--color-brand)] shadow-[0_12px_24px_rgba(192,136,148,0.12)]">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/88 text-[var(--color-brand)] shadow-[0_12px_24px_rgba(0,0,0,0.12)]">
                       <ArrowUpRight className="h-4 w-4" />
                     </span>
                   </div>
@@ -79,11 +79,11 @@ const RoleSelectPage = () => {
 
               <a
                 href={import.meta.env.VITE_CLIENT_LOGIN_URL || '/client-login'}
-                className={`relative block overflow-hidden rounded-[2rem] border border-white/85 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,249,0.9))] p-6 text-left shadow-[0_28px_58px_rgba(192,136,148,0.1)] transition active:scale-[0.99] active:border-[rgba(255,107,138,0.22)] active:bg-[linear-gradient(180deg,rgba(255,250,251,0.98),rgba(255,240,244,0.96))] active:shadow-[0_16px_34px_rgba(192,136,148,0.16)] sm:p-8 ${focusVisibleClass}`}
+                className={`relative block overflow-hidden rounded-[2rem] border border-white/85 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,255,255,0.9))] p-6 text-left shadow-[0_28px_58px_rgba(0,0,0,0.1)] transition active:scale-[0.99] active:border-[rgba(0,0,0,0.22)] active:bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(0,0,0,0.96))] active:shadow-[0_16px_34px_rgba(0,0,0,0.16)] sm:p-8 ${focusVisibleClass}`}
               >
-                <div className="absolute bottom-0 right-0 h-36 w-36 rounded-full bg-[radial-gradient(circle,rgba(255,107,138,0.18),transparent_68%)]" />
+                <div className="absolute bottom-0 right-0 h-36 w-36 rounded-full bg-[radial-gradient(circle,rgba(0,0,0,0.18),transparent_68%)]" />
                 <div className="relative">
-                  <span className="flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-[linear-gradient(135deg,#ff9fb3,#ffc2ce)] text-white shadow-[0_16px_34px_rgba(255,159,179,0.22)]">
+                  <span className="flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-[var(--nb-action)] text-white shadow-[0_16px_34px_rgba(0,0,0,0.22)]">
                     <User className="h-6 w-6" />
                   </span>
                   <div className="mt-6 flex items-start justify-between gap-4">
@@ -95,7 +95,7 @@ const RoleSelectPage = () => {
                         我是美甲客户
                       </h2>
                     </div>
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/88 text-[var(--color-brand)] shadow-[0_12px_24px_rgba(192,136,148,0.12)]">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/88 text-[var(--color-brand)] shadow-[0_12px_24px_rgba(0,0,0,0.12)]">
                       <ArrowUpRight className="h-4 w-4" />
                     </span>
                   </div>

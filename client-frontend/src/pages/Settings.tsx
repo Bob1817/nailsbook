@@ -4,9 +4,9 @@ import { useToast } from '../components/ToastProvider';
 import SubHeader from '../components/SubHeader';
 import { uploadService } from '../services/upload';
 
-const cardClass = 'rounded-[24px] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5';
+const cardClass = 'rounded-[24px] bg-white p-5 shadow-[0_12px_32px_rgba(0,0,0,0.06)] ring-1 ring-black/5';
 const inputClass =
-  'w-full rounded-2xl bg-gray-50 px-4 py-3 text-[15px] text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-[#FF6B8A]/20';
+  'w-full rounded-2xl bg-[var(--nb-page)] px-4 py-3 text-[15px] text-[var(--nb-ink)] outline-none focus:bg-white focus:ring-2 focus:ring-[var(--nb-control)]/20';
 
 const Settings: React.FC = () => {
   const { user, updateProfile } = useAuth();
@@ -66,25 +66,25 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-[linear-gradient(180deg,#FFFDFD_0%,#F7F3F6_48%,#F2F6FB_100%)]">
+    <div className="flex h-[100dvh] flex-col bg-[var(--nb-page)]">
       <SubHeader title="资料编辑" />
       <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5 pb-28">
         {/* 头像 */}
         <section className={cardClass}>
           <div className="flex items-center gap-4">
-            <div className="h-20 w-20 overflow-hidden rounded-full bg-gradient-to-br from-pink-200 to-pink-100 ring-2 ring-white shadow-md">
+            <div className="h-20 w-20 overflow-hidden rounded-full bg-[var(--nb-page)] ring-2 ring-white shadow-md">
               {avatarUrl ? (
                 <img src={avatarUrl} alt="头像" className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-[28px] font-semibold text-[#FF6B8A]">
+                <div className="flex h-full w-full items-center justify-center text-[28px] font-semibold text-[var(--nb-ink)]">
                   {(nickname || user?.phone || '我').slice(0, 1)}
                 </div>
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-base font-semibold text-gray-900">头像</p>
-              <p className="mt-1 text-xs text-gray-400">建议使用清晰的人像照片</p>
-              <label className="mt-3 inline-flex cursor-pointer items-center rounded-full bg-[#fff0f5] px-4 py-2 text-[13px] font-medium text-[#FF6B8A]">
+              <p className="text-base font-semibold text-[var(--nb-ink)]">头像</p>
+              <p className="mt-1 text-xs text-[var(--nb-muted)]">建议使用清晰的人像照片</p>
+              <label className="mt-3 inline-flex cursor-pointer items-center rounded-full bg-[var(--nb-page)] px-4 py-2 text-[13px] font-medium text-[var(--nb-ink)]">
                 {uploading ? '上传中...' : '更换头像'}
                 <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} disabled={uploading} />
               </label>
@@ -95,25 +95,25 @@ const Settings: React.FC = () => {
         {/* 基本资料 */}
         <section className={`${cardClass} space-y-5`}>
           <div>
-            <label className="mb-2 block text-[13px] font-medium text-gray-700">
-              昵称 <span className="text-red-500">*</span>
+            <label className="mb-2 block text-[13px] font-medium text-[var(--nb-ink)]">
+              昵称 <span className="text-[var(--nb-secondary)]">*</span>
             </label>
             <input type="text" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="给自己起一个昵称" maxLength={20} className={inputClass} />
-            <p className="mt-1 text-xs text-gray-400">{nickname.length}/20</p>
+            <p className="mt-1 text-xs text-[var(--nb-muted)]">{nickname.length}/20</p>
           </div>
           <div>
-            <label className="mb-2 block text-[13px] font-medium text-gray-700">手机号</label>
-            <input type="tel" value={user?.phone || ''} disabled className="w-full rounded-2xl bg-gray-100 px-4 py-3 text-[15px] text-gray-400" />
-            <p className="mt-1 text-xs text-gray-400">如需修改手机号请联系客服</p>
+            <label className="mb-2 block text-[13px] font-medium text-[var(--nb-ink)]">手机号</label>
+            <input type="tel" value={user?.phone || ''} disabled className="w-full rounded-2xl bg-[var(--nb-page)] px-4 py-3 text-[15px] text-[var(--nb-muted)]" />
+            <p className="mt-1 text-xs text-[var(--nb-muted)]">如需修改手机号请联系客服</p>
           </div>
           <div>
-            <label className="mb-2 block text-[13px] font-medium text-gray-700">常驻城市</label>
+            <label className="mb-2 block text-[13px] font-medium text-[var(--nb-ink)]">常驻城市</label>
             <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="例如：上海" maxLength={20} className={inputClass} />
           </div>
           <div>
-            <label className="mb-2 block text-[13px] font-medium text-gray-700">个人简介</label>
+            <label className="mb-2 block text-[13px] font-medium text-[var(--nb-ink)]">个人简介</label>
             <textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="介绍一下你自己吧～" maxLength={100} rows={3} className={`${inputClass} resize-none`} />
-            <p className="mt-1 text-xs text-gray-400">{bio.length}/100</p>
+            <p className="mt-1 text-xs text-[var(--nb-muted)]">{bio.length}/100</p>
           </div>
         </section>
 
@@ -121,7 +121,7 @@ const Settings: React.FC = () => {
           type="button"
           onClick={handleSaveProfile}
           disabled={savingProfile}
-          className="min-h-[48px] w-full rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] text-base font-semibold text-white shadow-md transition-opacity disabled:opacity-50"
+          className="min-h-[48px] w-full rounded-full bg-[var(--nb-action)] text-base font-semibold text-white shadow-md transition-opacity disabled:opacity-50"
         >
           {savingProfile ? '保存中...' : '保存资料'}
         </button>

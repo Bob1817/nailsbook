@@ -1,3 +1,4 @@
+import '../../../core/theme/colors.generated.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -214,7 +215,7 @@ class _TechnicianLoginScreenState extends State<TechnicianLoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF16120E),
+      backgroundColor: NBColors.page,
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => FocusScope.of(context).unfocus(),
@@ -268,7 +269,7 @@ class _TechnicianLoginScreenState extends State<TechnicianLoginScreen> {
           height: 48,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [Color(0xFFFF6889), Color(0xFFF55684)]),
+            gradient: const LinearGradient(colors: [NBColors.action, NBColors.action]),
             borderRadius: BorderRadius.circular(14),
           ),
           child: const Text('N', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
@@ -307,9 +308,9 @@ class _TechnicianLoginScreenState extends State<TechnicianLoginScreen> {
   List<Widget> _registerStep() => [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(color: const Color(0xFFFFF7E6), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(color: NBColors.page, borderRadius: BorderRadius.circular(12)),
           child: const Text('该手机号未注册，请使用邀请密钥完成注册',
-              style: TextStyle(fontSize: 13, color: Color(0xFFFA8C16))),
+              style: TextStyle(fontSize: 13, color: NBColors.action)),
         ),
         const SizedBox(height: 12),
         _phoneBadge(),
@@ -345,7 +346,7 @@ class _TechnicianLoginScreenState extends State<TechnicianLoginScreen> {
   Widget _phoneBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(color: const Color(0xFF2A241E), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: NBColors.surface, borderRadius: BorderRadius.circular(12)),
       child: Row(
         children: [
           Expanded(child: Text('手机号：${_phoneCtl.text}', style: const TextStyle(fontSize: 13, color: DT.textSecondary))),
@@ -403,8 +404,8 @@ class _TechnicianLoginScreenState extends State<TechnicianLoginScreen> {
       child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(colors: [
-            const Color(0xFFFF636E).withValues(alpha: dim ? 0.5 : 1),
-            const Color(0xFFD58197).withValues(alpha: dim ? 0.5 : 1),
+            NBColors.action.withValues(alpha: dim ? 0.5 : 1),
+            NBColors.action.withValues(alpha: dim ? 0.5 : 1),
           ]),
           borderRadius: BorderRadius.circular(12),
         ),
@@ -436,7 +437,7 @@ class _TechnicianLoginScreenState extends State<TechnicianLoginScreen> {
             decoration: BoxDecoration(
               color: _agreed ? DT.primary : Colors.white,
               shape: BoxShape.circle,
-              border: Border.all(color: _agreed ? DT.primary : const Color(0xFFC6CEDA), width: 1.5),
+              border: Border.all(color: _agreed ? DT.primary : NBColors.line, width: 1.5),
             ),
             child: _agreed ? const Icon(Icons.check, size: 12, color: Colors.white) : null,
           ),
@@ -444,7 +445,7 @@ class _TechnicianLoginScreenState extends State<TechnicianLoginScreen> {
           const Expanded(
             child: Text.rich(
               TextSpan(
-                style: TextStyle(fontSize: 12, color: Color(0xFF8F96A5)),
+                style: TextStyle(fontSize: 12, color: NBColors.control),
                 children: [
                   TextSpan(text: '我已阅读并同意'),
                   TextSpan(text: '《用户协议》', style: TextStyle(color: DT.primary)),

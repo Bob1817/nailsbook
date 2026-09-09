@@ -1,58 +1,51 @@
 import 'package:flutter/material.dart';
+import 'colors.generated.dart';
 
-/// Editorial Tokens (ET) — 暖调深色编辑风设计令牌。
-///
-/// 设计基调：暖黑底 + 大地暖棕（caramel / bronze）强调 + 奶油浮层卡 +
-/// 编辑感衬线标题（iOS 内置 Songti SC 宋体），图片优先的瀑布流。
-/// 参考：Nailtastic Studio 风格稿。
-///
-/// 迁移说明：这是项目正在切换的**新设计方向**（替换原 Apple 浅色 liquid glass）。
-/// 当前阶段先以本套令牌完成「客户端发现页」样板验证，确认后再把全局 DT
-/// 切到这套值并逐屏迁移。新页面请优先使用 ET。
+/// Existing editorial layout API, adapted to COLOR-STANDARD.md neutral light surfaces.
 class ET {
   ET._();
 
-  // ── Surfaces（暖黑层级）──
-  static const Color bg = Color(0xFF16120E); // 页面底：暖近黑
-  static const Color bgElevated = Color(0xFF211C17); // 抬升底（区块）
-  static const Color surface = Color(0xFF2A241E); // 卡片表面
-  static const Color surfaceGlass = Color(0x14FFFFFF); // 暗底玻璃填充 ~8%
+  // ── Surfaces（中性浅色层级）──
+  static const Color bg = NBColors.page;
+  static const Color bgElevated = NBColors.page;
+  static const Color surface = NBColors.surface;
+  static const Color surfaceGlass = NBColors.surface;
   static const Color overlay = Color(0xCC000000); // 图片暗部覆盖
 
-  // ── Cream（奶油浮层卡 / 主操作）──
-  static const Color cream = Color(0xFFEDE5D8);
-  static const Color creamDim = Color(0xFFDED4C3);
-  static const Color onCream = Color(0xFF2A241E); // 奶油卡上的深色文字
+  // ── Cream（主操作兼容接口）──
+  static const Color cream = NBColors.action;
+  static const Color creamDim = NBColors.actionPressed;
+  static const Color onCream = NBColors.inverse;
 
-  // ── Text（暖白阶）──
-  static const Color ink = Color(0xFFF3ECE1); // 主文本
-  static const Color inkSecondary = Color(0xFFB7AC9B); // 次要文本
-  static const Color inkMuted = Color(0xFF8B8073); // 弱化文本/占位
-  static const Color inkFaint = Color(0xFF635B50); // 极弱
+  // ── Text（文字层级）──
+  static const Color ink = NBColors.ink;
+  static const Color inkSecondary = NBColors.secondary;
+  static const Color inkMuted = NBColors.muted;
+  static const Color inkFaint = NBColors.muted;
 
-  // ── Accent（大地暖棕 / 焦糖）──
-  static const Color accent = Color(0xFFC9A57C); // 主强调：caramel/bronze
-  static const Color accentDeep = Color(0xFFA8855C);
-  static const Color accentSoft = Color(0xFF3A2F23); // 暖棕浅染暗填充
-  static const Color accentOnDark = Color(0xFFE6C9A3); // 暗底上的高光暖棕
+  // ── Accent（石墨与蓝灰）──
+  static const Color accent = NBColors.action;
+  static const Color accentDeep = NBColors.action;
+  static const Color accentSoft = NBColors.page;
+  static const Color accentOnDark = NBColors.link;
 
   // ── 统一玻璃标准（以发现页顶栏为基准，全端玻璃面统一）──
   /// BackdropFilter 模糊半径。
   static const double glassBlur = 30;
-  /// 玻璃填充：暖黑底 @ ~60%（直接用于 BackdropFilter 之上的 Container）。
-  static const Color glassFill = Color(0x9916120E);
+  /// 玻璃填充：白色表面 @ ~96%（直接用于 BackdropFilter 之上的 Container）。
+  static const Color glassFill = NBColors.surface;
   /// 给 GlassContainer 用的等价参数（tint + opacity）。
-  static const Color glassTint = bg; // #16120E
-  static const double glassOpacity = 0.6;
+  static const Color glassTint = bg; // neutral page
+  static const double glassOpacity = 0.96;
 
-  // ── Lines / hairlines（暖白描边）──
-  static const Color hairline = Color(0x1FFFFFFF); // ~12% white
-  static const Color hairlineStrong = Color(0x33FFFFFF); // ~20% white
-  static const Color hairlineFaint = Color(0x14FFFFFF); // ~8% white
+  // ── Lines / hairlines（中性描边）──
+  static const Color hairline = NBColors.line;
+  static const Color hairlineStrong = NBColors.control;
+  static const Color hairlineFaint = NBColors.line;
 
   // ── States ──
-  static const Color like = Color(0xFFE08A7B); // 收藏/喜欢（暖珊瑚）
-  static const Color success = Color(0xFF8FB98A);
+  static const Color like = NBColors.ink;
+  static const Color success = NBColors.ink;
 
   // ── Radius ──
   static const double rChip = 999;

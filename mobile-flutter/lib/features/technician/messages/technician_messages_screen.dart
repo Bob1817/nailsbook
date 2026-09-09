@@ -1,3 +1,4 @@
+import '../../../core/theme/colors.generated.dart';
 import 'dart:async';
 
 
@@ -529,11 +530,11 @@ class _TechnicianMessagesScreenState extends State<TechnicianMessagesScreen> {
   (Color, Color) _badgeColor(_T type) {
     switch (type) {
       case _T.pending:
-        return (const Color(0xFFFFF1E5), DT.actionOrange);
+        return (NBColors.page, DT.actionOrange);
       case _T.service:
-        return (const Color(0xFFEEF9F1), DT.actionGreen);
+        return (NBColors.page, DT.actionGreen);
       case _T.system:
-        return (const Color(0xFFEBF4FF), DT.actionBlue);
+        return (NBColors.page, DT.actionBlue);
       default:
         return (DT.primarySoft, DT.primary);
     }

@@ -521,12 +521,12 @@ const CreateOrder: React.FC = () => {
   };
 
   return (
-    <div className="min-h-full bg-[linear-gradient(180deg,#FFFDFD_0%,#F7F3F6_48%,#F2F6FB_100%)]">
+    <div className="min-h-full bg-[var(--nb-page)]">
       <div className="sticky top-0 z-10 border-b border-white/60 bg-white/78 px-5 app-header-safe pb-5 backdrop-blur-xl">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white/80 text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.08)] ring-1 ring-black/5"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white/80 text-[var(--nb-ink)] shadow-[0_10px_24px_rgba(0,0,0,0.08)] ring-1 ring-black/5"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -534,33 +534,33 @@ const CreateOrder: React.FC = () => {
           </button>
           <div className="min-w-0">
             <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--color-text-muted)]">Create Booking</p>
-            <h1 className="mt-0.5 text-lg font-semibold text-gray-900">创建预约</h1>
+            <h1 className="mt-0.5 text-lg font-semibold text-[var(--nb-ink)]">创建预约</h1>
           </div>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4 px-5 pb-28 pt-6">
-        <section className="rounded-[28px] bg-white/88 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
+        <section className="rounded-[28px] bg-white/88 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.08)] ring-1 ring-black/5 backdrop-blur">
           <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">选择美甲师</h3>
+            <h3 className="text-lg font-semibold text-[var(--nb-ink)]">选择美甲师</h3>
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">
               {bookableTechnicians.length > 1 ? '请选择当前已开启接单的美甲师' : '当前仅有 1 位可预约的美甲师'}
             </p>
           </div>
           {bookableTechnicians.length === 0 ? (
-            <div className="rounded-[24px] bg-slate-50 px-5 py-8 text-center">
-              <p className="text-sm font-medium text-slate-700">
+            <div className="rounded-[24px] bg-[var(--nb-page)] px-5 py-8 text-center">
+              <p className="text-sm font-medium text-[var(--nb-ink)]">
                 {technicians.length === 1 ? '美甲师未开启美甲服务' : '当前暂无可预约的美甲师'}
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-400">
+              <p className="mt-2 text-sm leading-6 text-[var(--nb-muted)]">
                 {technicians.length === 1
                   ? '请联系美甲师开启服务'
                   : '请等待美甲师开启接单并配置可用服务后再发起预约'}
               </p>
             </div>
           ) : bookableTechnicians.length === 1 ? (
-            <div className="flex items-center gap-3 rounded-[24px] bg-slate-50/80 p-4 ring-1 ring-black/5">
-              <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-[18px] bg-[linear-gradient(135deg,#FFE0EA_0%,#F4F7FB_100%)]">
+            <div className="flex items-center gap-3 rounded-[24px] bg-[var(--nb-page)]/80 p-4 ring-1 ring-black/5">
+              <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-[18px] bg-[var(--nb-page)]">
                 {bookableTechnicians[0].avatarUrl ? (
                   <img src={bookableTechnicians[0].avatarUrl} alt="" className="h-full w-full object-cover" />
                 ) : (
@@ -569,12 +569,12 @@ const CreateOrder: React.FC = () => {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-900">{bookableTechnicians[0].name}</span>
+                  <span className="text-sm font-medium text-[var(--nb-ink)]">{bookableTechnicians[0].name}</span>
                   {bookableTechnicians[0].isDefault && (
                     <span className="rounded-full bg-[var(--color-primary-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-primary)]">默认</span>
                   )}
                 </div>
-                <p className="mt-1 text-xs text-gray-500">{bookableTechnicians[0].city || bookableTechnicians[0].serviceArea || '暂未设置服务区域'}</p>
+                <p className="mt-1 text-xs text-[var(--nb-secondary)]">{bookableTechnicians[0].city || bookableTechnicians[0].serviceArea || '暂未设置服务区域'}</p>
               </div>
             </div>
           ) : (
@@ -588,12 +588,12 @@ const CreateOrder: React.FC = () => {
                   onClick={() => handleTechnicianSelect(tech.id)}
                   className={`flex w-full items-center gap-3 rounded-[24px] p-4 text-left ring-1 transition ${
                     isSelected
-                      ? 'bg-[linear-gradient(135deg,#FFF0F5_0%,#FAFBFF_100%)] ring-[#FF6B8A]/25'
-                      : 'bg-slate-50/80 ring-black/5'
+                      ? 'bg-[var(--nb-page)] ring-[var(--nb-control)]/25'
+                      : 'bg-[var(--nb-page)]/80 ring-black/5'
                   }`}
                 >
                   <div className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${
-                    isSelected ? 'border-[#FF6B8A] bg-[#FF6B8A]' : 'border-slate-300'
+                    isSelected ? 'border-[var(--nb-control)] bg-[var(--nb-action)]' : 'border-[var(--nb-control)]'
                   }`}>
                     {isSelected && (
                       <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -601,33 +601,33 @@ const CreateOrder: React.FC = () => {
                       </svg>
                     )}
                   </div>
-                  <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-[18px] bg-[linear-gradient(135deg,#FFE0EA_0%,#F4F7FB_100%)]">
+                  <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-[18px] bg-[var(--nb-page)]">
                     {tech.avatarUrl ? (
                       <img src={tech.avatarUrl} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="h-5 w-5 text-[var(--nb-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-medium text-gray-900">{tech.name}</span>
+                      <span className="text-sm font-medium text-[var(--nb-ink)]">{tech.name}</span>
                       {tech.isDefault && (
                         <span className="rounded-full bg-[var(--color-primary-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-primary)]">
                           默认
                         </span>
                       )}
                     </div>
-                    <p className="mt-1 text-xs text-gray-500">{tech.city || tech.serviceArea || '暂未设置服务区域'}</p>
+                    <p className="mt-1 text-xs text-[var(--nb-secondary)]">{tech.city || tech.serviceArea || '暂未设置服务区域'}</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {tech.homeService && (
-                        <span className="rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-black/5">
+                        <span className="rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-medium text-[var(--nb-secondary)] ring-1 ring-black/5">
                           上门美甲
                         </span>
                       )}
                       {tech.shopService && (
-                        <span className="rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-black/5">
+                        <span className="rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-medium text-[var(--nb-secondary)] ring-1 ring-black/5">
                           到店美甲
                         </span>
                       )}
@@ -640,15 +640,15 @@ const CreateOrder: React.FC = () => {
           )}
         </section>
 
-        <section className="rounded-[28px] bg-white/88 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
+        <section className="rounded-[28px] bg-white/88 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.08)] ring-1 ring-black/5 backdrop-blur">
           <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">服务类型</h3>
+            <h3 className="text-lg font-semibold text-[var(--nb-ink)]">服务类型</h3>
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">
               {selectedTechnician ? '根据当前美甲师的服务能力选择本次预约方式' : '请先选择美甲师，再继续选择服务类型'}
             </p>
           </div>
           {!canChooseServiceType ? (
-            <div className="rounded-[24px] bg-slate-50 px-5 py-6 text-sm text-slate-400">选择美甲师后，这里会显示可预约的服务类型</div>
+            <div className="rounded-[24px] bg-[var(--nb-page)] px-5 py-6 text-sm text-[var(--nb-muted)]">选择美甲师后，这里会显示可预约的服务类型</div>
           ) : (
             <div className="space-y-3">
               {availableServiceTypes.map((option) => {
@@ -662,23 +662,23 @@ const CreateOrder: React.FC = () => {
                     disabled={isForced}
                     className={`flex w-full items-start justify-between gap-3 rounded-[24px] p-4 text-left ring-1 transition ${
                       isSelected
-                        ? 'bg-[linear-gradient(135deg,#FFF0F5_0%,#FAFBFF_100%)] ring-[#FF6B8A]/25'
-                        : 'bg-slate-50/80 ring-black/5'
+                        ? 'bg-[var(--nb-page)] ring-[var(--nb-control)]/25'
+                        : 'bg-[var(--nb-page)]/80 ring-black/5'
                     }`}
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900">{option.label}</span>
+                        <span className="text-sm font-medium text-[var(--nb-ink)]">{option.label}</span>
                         {isForced && (
                           <span className="rounded-full bg-[var(--color-primary-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-primary)]">
                             固定服务
                           </span>
                         )}
                       </div>
-                      <p className="mt-1 text-sm leading-6 text-gray-500">{option.description}</p>
+                      <p className="mt-1 text-sm leading-6 text-[var(--nb-secondary)]">{option.description}</p>
                     </div>
                     <div className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 ${
-                      isSelected ? 'border-[#FF6B8A] bg-[#FF6B8A]' : 'border-slate-300'
+                      isSelected ? 'border-[var(--nb-control)] bg-[var(--nb-action)]' : 'border-[var(--nb-control)]'
                     }`}>
                       {isSelected && (
                         <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -693,24 +693,24 @@ const CreateOrder: React.FC = () => {
           )}
         </section>
 
-        <section className="rounded-[28px] bg-white/88 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
+        <section className="rounded-[28px] bg-white/88 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.08)] ring-1 ring-black/5 backdrop-blur">
           <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">服务内容</h3>
+            <h3 className="text-lg font-semibold text-[var(--nb-ink)]">服务内容</h3>
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">
               {selectedTechnician ? '选择本次预约需要的具体服务内容，可多选' : '请先选择美甲师，再选择她当前开放的服务内容'}
             </p>
           </div>
           {!selectedTechnician ? (
-            <div className="rounded-[24px] bg-slate-50 px-5 py-6 text-sm text-slate-400">选择美甲师后，这里会显示她在服务管理里设置的服务内容</div>
+            <div className="rounded-[24px] bg-[var(--nb-page)] px-5 py-6 text-sm text-[var(--nb-muted)]">选择美甲师后，这里会显示她在服务管理里设置的服务内容</div>
           ) : (
             <div className="space-y-3">
               {/* Segmented control: 选服务项目 | 自定义需求 */}
-              <div className="mb-3 grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1">
+              <div className="mb-3 grid grid-cols-2 gap-2 rounded-2xl bg-[var(--nb-page)] p-1">
                 <button
                   type="button"
                   onClick={() => { setIsCustomService(false); }}
                   className={`rounded-xl py-2.5 text-sm font-medium transition ${
-                    !isCustomService ? 'bg-white text-gray-900 shadow-sm' : 'text-slate-500'
+                    !isCustomService ? 'bg-white text-[var(--nb-ink)] shadow-sm' : 'text-[var(--nb-secondary)]'
                   }`}
                 >
                   选服务项目
@@ -719,7 +719,7 @@ const CreateOrder: React.FC = () => {
                   type="button"
                   onClick={() => { setIsCustomService(true); setFormData((prev) => ({ ...prev, selectedServiceIds: [] })); }}
                   className={`rounded-xl py-2.5 text-sm font-medium transition ${
-                    isCustomService ? 'bg-white text-gray-900 shadow-sm' : 'text-slate-500'
+                    isCustomService ? 'bg-white text-[var(--nb-ink)] shadow-sm' : 'text-[var(--nb-secondary)]'
                   }`}
                 >
                   自定义需求
@@ -728,34 +728,34 @@ const CreateOrder: React.FC = () => {
 
               {/* Custom Service Form */}
               {isCustomService && (
-                <div className="rounded-[24px] bg-slate-50/80 p-4 space-y-4">
+                <div className="rounded-[24px] bg-[var(--nb-page)]/80 p-4 space-y-4">
                   {/* Title Input */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-2">服务名称</label>
+                    <label className="block text-sm font-medium text-[var(--nb-ink)] mb-2">服务名称</label>
                     <input
                       type="text"
                       value={customServiceTitle}
                       onChange={(e) => setCustomServiceTitle(e.target.value)}
                       placeholder="例如：法式渐变美甲"
-                      className="w-full rounded-2xl bg-white px-4 py-3 text-gray-900 outline-none ring-1 ring-slate-200 focus:ring-[#FF6B8A]/20"
+                      className="w-full rounded-2xl bg-white px-4 py-3 text-[var(--nb-ink)] outline-none ring-1 ring-[var(--nb-line)] focus:ring-[var(--nb-control)]/20"
                     />
                   </div>
 
                   {/* Description Input */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-2">详细描述</label>
+                    <label className="block text-sm font-medium text-[var(--nb-ink)] mb-2">详细描述</label>
                     <textarea
                       value={customServiceDescription}
                       onChange={(e) => setCustomServiceDescription(e.target.value)}
                       placeholder="描述你的具体需求，如颜色、款式、特殊要求等..."
                       rows={3}
-                      className="w-full resize-none rounded-2xl bg-white px-4 py-3 text-gray-900 outline-none ring-1 ring-slate-200 focus:ring-[#FF6B8A]/20"
+                      className="w-full resize-none rounded-2xl bg-white px-4 py-3 text-[var(--nb-ink)] outline-none ring-1 ring-[var(--nb-line)] focus:ring-[var(--nb-control)]/20"
                     />
                   </div>
 
                   {/* Image Upload */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-2">参考图片（可选）</label>
+                    <label className="block text-sm font-medium text-[var(--nb-ink)] mb-2">参考图片（可选）</label>
                     <div className="flex flex-wrap gap-2">
                       {customServiceImages.map((image, index) => (
                         <div key={index} className="relative">
@@ -767,7 +767,7 @@ const CreateOrder: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => removeImage(index)}
-                            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
+                            className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--nb-action)] text-white rounded-full flex items-center justify-center text-xs"
                           >
                             ×
                           </button>
@@ -778,7 +778,7 @@ const CreateOrder: React.FC = () => {
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
                           disabled={uploadingImage}
-                          className="w-20 h-20 rounded-xl bg-white border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:border-[#FF6B8A] hover:text-[#FF6B8A] transition"
+                          className="w-20 h-20 rounded-xl bg-white border-2 border-dashed border-[var(--nb-control)] flex flex-col items-center justify-center text-[var(--nb-muted)] hover:border-[var(--nb-control)] hover:text-[var(--nb-ink)] transition"
                         >
                           {uploadingImage ? (
                             <span className="text-xs">上传中...</span>
@@ -800,17 +800,17 @@ const CreateOrder: React.FC = () => {
                         className="hidden"
                       />
                     </div>
-                    <p className="mt-1 text-xs text-slate-400">最多可上传3张图片</p>
+                    <p className="mt-1 text-xs text-[var(--nb-muted)]">最多可上传3张图片</p>
                   </div>
 
                   {/* Reference Works Selection */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="block text-sm font-medium text-gray-900">参考作品（可选）</label>
+                      <label className="block text-sm font-medium text-[var(--nb-ink)]">参考作品（可选）</label>
                       <button
                         type="button"
                         onClick={() => setShowWorkSelector(!showWorkSelector)}
-                        className="text-xs text-[#FF6B8A] font-medium"
+                        className="text-xs text-[var(--nb-ink)] font-medium"
                       >
                         {showWorkSelector ? '收起' : '选择作品'}
                       </button>
@@ -829,7 +829,7 @@ const CreateOrder: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => removeSelectedWork(work.id)}
-                              className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
+                              className="absolute -top-1 -right-1 w-4 h-4 bg-[var(--nb-action)] text-white rounded-full flex items-center justify-center text-xs"
                             >
                               ×
                             </button>
@@ -851,7 +851,7 @@ const CreateOrder: React.FC = () => {
                                   type="button"
                                   onClick={() => toggleWorkSelection(work)}
                                   className={`relative rounded-lg overflow-hidden ${
-                                    isSelected ? 'ring-2 ring-[#FF6B8A]' : ''
+                                    isSelected ? 'ring-2 ring-[var(--nb-control)]' : ''
                                   }`}
                                 >
                                   <img
@@ -860,7 +860,7 @@ const CreateOrder: React.FC = () => {
                                     className="w-full h-20 object-cover"
                                   />
                                   {isSelected && (
-                                    <div className="absolute inset-0 bg-[#FF6B8A]/20 flex items-center justify-center">
+                                    <div className="absolute inset-0 bg-[var(--nb-action)]/20 flex items-center justify-center">
                                       <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                                       </svg>
@@ -871,11 +871,11 @@ const CreateOrder: React.FC = () => {
                             })}
                           </div>
                         ) : (
-                          <p className="text-sm text-slate-400 text-center py-4">该美甲师暂无作品</p>
+                          <p className="text-sm text-[var(--nb-muted)] text-center py-4">该美甲师暂无作品</p>
                         )}
                       </div>
                     )}
-                    <p className="mt-1 text-xs text-slate-400">最多可选择3个参考作品</p>
+                    <p className="mt-1 text-xs text-[var(--nb-muted)]">最多可选择3个参考作品</p>
                   </div>
                 </div>
               )}
@@ -900,12 +900,12 @@ const CreateOrder: React.FC = () => {
                           }
                           className={`flex w-full items-start gap-3 rounded-[24px] p-4 text-left ring-1 transition ${
                             isSelected
-                              ? 'bg-[linear-gradient(135deg,#FFF0F5_0%,#FAFBFF_100%)] ring-[#FF6B8A]/25'
-                              : 'bg-slate-50/80 ring-black/5'
+                              ? 'bg-[var(--nb-page)] ring-[var(--nb-control)]/25'
+                              : 'bg-[var(--nb-page)]/80 ring-black/5'
                           }`}
                         >
                           <div className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-md border-2 ${
-                            isSelected ? 'border-[#FF6B8A] bg-[#FF6B8A]' : 'border-slate-300'
+                            isSelected ? 'border-[var(--nb-control)] bg-[var(--nb-action)]' : 'border-[var(--nb-control)]'
                           }`}>
                             {isSelected && (
                               <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -914,9 +914,9 @@ const CreateOrder: React.FC = () => {
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <span className="text-sm font-medium text-gray-900">{service.name}</span>
+                            <span className="text-sm font-medium text-[var(--nb-ink)]">{service.name}</span>
                             {service.description && (
-                              <p className="mt-1 text-sm leading-6 text-gray-500">{service.description}</p>
+                              <p className="mt-1 text-sm leading-6 text-[var(--nb-secondary)]">{service.description}</p>
                             )}
                           </div>
                         </button>
@@ -924,7 +924,7 @@ const CreateOrder: React.FC = () => {
                     })}
                   </div>
                 ) : (
-                  <div className="rounded-[24px] bg-slate-50 px-5 py-6 text-sm text-slate-400">该美甲师暂未设置可预约的服务内容</div>
+                  <div className="rounded-[24px] bg-[var(--nb-page)] px-5 py-6 text-sm text-[var(--nb-muted)]">该美甲师暂未设置可预约的服务内容</div>
                 )
               )}
             </div>
@@ -932,10 +932,10 @@ const CreateOrder: React.FC = () => {
         </section>
 
         {isHomeService && (
-          <section className="rounded-[28px] bg-white/88 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
+          <section className="rounded-[28px] bg-white/88 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.08)] ring-1 ring-black/5 backdrop-blur">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">上门服务地址</h3>
+                <h3 className="text-lg font-semibold text-[var(--nb-ink)]">上门服务地址</h3>
                 <p className="mt-1 text-sm text-[var(--color-text-muted)]">美甲师会按你选择的地址安排上门服务</p>
               </div>
               <button
@@ -949,19 +949,19 @@ const CreateOrder: React.FC = () => {
             {addresses.length === 0 || useInlineAddr ? (
               <div className="space-y-3">
                 {(selectedTechnician?.province || selectedTechnician?.city) && (
-                  <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                  <div className="rounded-2xl bg-[var(--nb-page)] px-4 py-3 text-sm text-[var(--nb-secondary)]">
                     服务城市：{[selectedTechnician?.province, selectedTechnician?.city].filter(Boolean).join(' ')}（仅支持同城上门）
                   </div>
                 )}
                 <input value={inlineName} onChange={(e) => setInlineName(e.target.value)} placeholder="联系人姓名"
-                  className="w-full rounded-2xl bg-slate-50 px-4 py-3 text-sm text-gray-900 outline-none ring-1 ring-slate-200 focus:ring-[#FF6B8A]/20" />
+                  className="w-full rounded-2xl bg-[var(--nb-page)] px-4 py-3 text-sm text-[var(--nb-ink)] outline-none ring-1 ring-[var(--nb-line)] focus:ring-[var(--nb-control)]/20" />
                 <input value={inlinePhone} onChange={(e) => setInlinePhone(e.target.value)} placeholder="联系电话（选填）" type="tel"
-                  className="w-full rounded-2xl bg-slate-50 px-4 py-3 text-sm text-gray-900 outline-none ring-1 ring-slate-200 focus:ring-[#FF6B8A]/20" />
+                  className="w-full rounded-2xl bg-[var(--nb-page)] px-4 py-3 text-sm text-[var(--nb-ink)] outline-none ring-1 ring-[var(--nb-line)] focus:ring-[var(--nb-control)]/20" />
                 <DistrictSelect city={selectedTechnician?.city || ''} value={inlineDistrict} onChange={setInlineDistrict} />
                 <input value={inlineAddr} onChange={(e) => setInlineAddr(e.target.value)} placeholder="街道、村、道路、小区、门牌等详细地址"
-                  className="w-full rounded-2xl bg-slate-50 px-4 py-3 text-sm text-gray-900 outline-none ring-1 ring-slate-200 focus:ring-[#FF6B8A]/20" />
+                  className="w-full rounded-2xl bg-[var(--nb-page)] px-4 py-3 text-sm text-[var(--nb-ink)] outline-none ring-1 ring-[var(--nb-line)] focus:ring-[var(--nb-control)]/20" />
                 {addresses.length > 0 && (
-                  <button type="button" onClick={() => setUseInlineAddr(false)} className="text-xs text-slate-400">取消，使用已有地址</button>
+                  <button type="button" onClick={() => setUseInlineAddr(false)} className="text-xs text-[var(--nb-muted)]">取消，使用已有地址</button>
                 )}
               </div>
             ) : (
@@ -982,15 +982,15 @@ const CreateOrder: React.FC = () => {
                       }}
                       className={`w-full rounded-[24px] p-4 text-left ring-1 transition ${
                         !cityOk
-                          ? 'bg-slate-50/80 ring-black/5 opacity-50'
+                          ? 'bg-[var(--nb-page)]/80 ring-black/5 opacity-50'
                           : isSelected
-                          ? 'bg-[linear-gradient(135deg,#FFF0F5_0%,#FAFBFF_100%)] ring-[#FF6B8A]/25'
-                          : 'bg-slate-50/80 ring-black/5'
+                          ? 'bg-[var(--nb-page)] ring-[var(--nb-control)]/25'
+                          : 'bg-[var(--nb-page)]/80 ring-black/5'
                       }`}
                     >
                       <div className="flex items-start gap-3">
                         <div className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 ${
-                          isSelected ? 'border-[#FF6B8A] bg-[#FF6B8A]' : 'border-slate-300'
+                          isSelected ? 'border-[var(--nb-control)] bg-[var(--nb-action)]' : 'border-[var(--nb-control)]'
                         }`}>
                           {isSelected && (
                             <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1000,20 +1000,20 @@ const CreateOrder: React.FC = () => {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm font-medium text-gray-900">{address.contactName || '未命名'}</span>
-                            <span className="text-sm text-gray-500">{address.contactPhone}</span>
+                            <span className="text-sm font-medium text-[var(--nb-ink)]">{address.contactName || '未命名'}</span>
+                            <span className="text-sm text-[var(--nb-secondary)]">{address.contactPhone}</span>
                             {address.isDefault && (
                               <span className="rounded-full bg-[var(--color-primary-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-primary)]">
                                 默认
                               </span>
                             )}
                             {!cityOk && (
-                              <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-500">
+                              <span className="rounded-full bg-[var(--nb-pressed)] px-2.5 py-1 text-[11px] font-medium text-[var(--nb-secondary)]">
                                 跨城不可用
                               </span>
                             )}
                           </div>
-                          <p className="mt-2 text-sm leading-6 text-gray-600">{formatClientAddress(address)}</p>
+                          <p className="mt-2 text-sm leading-6 text-[var(--nb-secondary)]">{formatClientAddress(address)}</p>
                         </div>
                       </div>
                     </button>
@@ -1022,7 +1022,7 @@ const CreateOrder: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setUseInlineAddr(true)}
-                  className="w-full rounded-[24px] border-2 border-dashed border-slate-200 py-3 text-sm font-medium text-[var(--color-primary)]"
+                  className="w-full rounded-[24px] border-2 border-dashed border-[var(--nb-line)] py-3 text-sm font-medium text-[var(--color-primary)]"
                 >
                   + 新增同城地址
                 </button>
@@ -1032,9 +1032,9 @@ const CreateOrder: React.FC = () => {
         )}
 
         {isShopService && (
-          <section className="rounded-[28px] bg-white/88 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
+          <section className="rounded-[28px] bg-white/88 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.08)] ring-1 ring-black/5 backdrop-blur">
             <div className="mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">到店门店地址</h3>
+              <h3 className="text-lg font-semibold text-[var(--nb-ink)]">到店门店地址</h3>
               <p className="mt-1 text-sm text-[var(--color-text-muted)]">请选择本次要前往的具体门店地址</p>
             </div>
             {availableShopAddresses.length > 0 ? (
@@ -1048,13 +1048,13 @@ const CreateOrder: React.FC = () => {
                       onClick={() => setFormData((prev) => ({ ...prev, shopAddressName: address.name }))}
                       className={`w-full rounded-[24px] p-4 text-left ring-1 transition ${
                         isSelected
-                          ? 'bg-[linear-gradient(135deg,#FFF0F5_0%,#FAFBFF_100%)] ring-[#FF6B8A]/25'
-                          : 'bg-slate-50/80 ring-black/5'
+                          ? 'bg-[var(--nb-page)] ring-[var(--nb-control)]/25'
+                          : 'bg-[var(--nb-page)]/80 ring-black/5'
                       }`}
                     >
                       <div className="flex items-start gap-3">
                         <div className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 ${
-                          isSelected ? 'border-[#FF6B8A] bg-[#FF6B8A]' : 'border-slate-300'
+                          isSelected ? 'border-[var(--nb-control)] bg-[var(--nb-action)]' : 'border-[var(--nb-control)]'
                         }`}>
                           {isSelected && (
                             <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1064,10 +1064,10 @@ const CreateOrder: React.FC = () => {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm font-medium text-gray-900">{address.name}</span>
-                            {address.phone && <span className="text-sm text-gray-500">{address.phone}</span>}
+                            <span className="text-sm font-medium text-[var(--nb-ink)]">{address.name}</span>
+                            {address.phone && <span className="text-sm text-[var(--nb-secondary)]">{address.phone}</span>}
                           </div>
-                          <p className="mt-2 text-sm leading-6 text-gray-600">{formatShopAddress(address)}</p>
+                          <p className="mt-2 text-sm leading-6 text-[var(--nb-secondary)]">{formatShopAddress(address)}</p>
                         </div>
                       </div>
                     </button>
@@ -1075,44 +1075,44 @@ const CreateOrder: React.FC = () => {
                 })}
               </div>
             ) : (
-              <div className="rounded-[24px] bg-slate-50 px-5 py-8 text-center">
-                <p className="text-sm font-medium text-slate-700">该美甲师暂未配置可预约门店</p>
-                <p className="mt-2 text-sm leading-6 text-slate-400">请改选上门服务，或联系美甲师补充门店地址后再预约</p>
+              <div className="rounded-[24px] bg-[var(--nb-page)] px-5 py-8 text-center">
+                <p className="text-sm font-medium text-[var(--nb-ink)]">该美甲师暂未配置可预约门店</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--nb-muted)]">请改选上门服务，或联系美甲师补充门店地址后再预约</p>
               </div>
             )}
           </section>
         )}
 
-        <section className="rounded-[28px] bg-white/88 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
+        <section className="rounded-[28px] bg-white/88 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.08)] ring-1 ring-black/5 backdrop-blur">
           <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">预约时间</h3>
+            <h3 className="text-lg font-semibold text-[var(--nb-ink)]">预约时间</h3>
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">确认服务方式后，选择你方便的预约时间段</p>
           </div>
             <div className="space-y-4">
               {/* 自定义月历：休息日/非工作日置灰不可选 */}
-              <div className="rounded-2xl bg-slate-50 p-4">
+              <div className="rounded-2xl bg-[var(--nb-page)] p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <button
                     type="button"
                     onClick={() => setCalendarMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-200"
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--nb-secondary)] hover:bg-[var(--nb-pressed)]"
                   >
                     ‹
                   </button>
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="text-sm font-medium text-[var(--nb-ink)]">
                     {calendarMonth.getFullYear()}年{calendarMonth.getMonth() + 1}月
                   </span>
                   <button
                     type="button"
                     onClick={() => setCalendarMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-200"
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--nb-secondary)] hover:bg-[var(--nb-pressed)]"
                   >
                     ›
                   </button>
                 </div>
                 <div className="mb-1 grid grid-cols-7 gap-1">
                   {['日', '一', '二', '三', '四', '五', '六'].map((w) => (
-                    <div key={w} className="flex h-6 items-center justify-center text-xs text-slate-400">
+                    <div key={w} className="flex h-6 items-center justify-center text-xs text-[var(--nb-muted)]">
                       {w}
                     </div>
                   ))}
@@ -1141,10 +1141,10 @@ const CreateOrder: React.FC = () => {
                           onClick={() => setFormData((prev) => ({ ...prev, serviceDate: dateStr, startTime: '' }))}
                           className={`h-10 rounded-lg text-sm font-medium transition ${
                             disabled
-                              ? 'cursor-not-allowed text-slate-300'
+                              ? 'cursor-not-allowed text-[var(--nb-muted)]'
                               : selected
-                              ? 'bg-[#FF6B8A] text-white'
-                              : 'text-slate-700 hover:bg-slate-100'
+                              ? 'bg-[var(--nb-action)] text-white'
+                              : 'text-[var(--nb-ink)] hover:bg-[var(--nb-page)]'
                           }`}
                         >
                           {day}
@@ -1154,15 +1154,15 @@ const CreateOrder: React.FC = () => {
                     return cells;
                   })()}
                 </div>
-                <p className="mt-2 text-xs text-slate-400">灰色日期为休息日，不可预约</p>
+                <p className="mt-2 text-xs text-[var(--nb-muted)]">灰色日期为休息日，不可预约</p>
               </div>
               {selectedTechnician?.serviceSchedule?.selectedDates && selectedTechnician.serviceSchedule.selectedDates.length > 0 && (
-                <div className="rounded-2xl bg-pink-50 px-4 py-3 text-sm text-pink-600">
+                <div className="rounded-2xl bg-[var(--nb-page)] px-4 py-3 text-sm text-[var(--nb-secondary)]">
                   该美甲师仅在特定日期接单，请选择可预约日期
                 </div>
               )}
               {isShopService && selectedShopAddress && (
-                <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                <div className="rounded-2xl bg-[var(--nb-page)] px-4 py-3 text-sm text-[var(--nb-secondary)]">
                   {slotStatuses.length > 0
                     ? `店铺营业时间：${selectedShopHours?.start} - ${selectedShopHours?.end}`
                     : '所选日期为该店铺休息日，请改选其他日期'}
@@ -1177,10 +1177,10 @@ const CreateOrder: React.FC = () => {
                     onClick={() => !occupied && setFormData((prev) => ({ ...prev, startTime: time }))}
                     className={`flex flex-col items-center justify-center rounded-2xl py-2 text-sm font-medium transition ${
                       occupied
-                        ? 'cursor-not-allowed bg-slate-100 text-slate-400'
+                        ? 'cursor-not-allowed bg-[var(--nb-page)] text-[var(--nb-muted)]'
                         : formData.startTime === time
-                        ? 'bg-[linear-gradient(135deg,#FF6B8A_0%,#FF8FA3_100%)] text-white shadow-lg shadow-pink-200/80'
-                        : 'bg-slate-50 text-slate-600'
+                        ? 'bg-[var(--nb-action)] text-white shadow-lg shadow-black/80'
+                        : 'bg-[var(--nb-page)] text-[var(--nb-secondary)]'
                     }`}
                   >
                     <span className={occupied ? 'text-xs leading-none line-through' : ''}>{time}</span>
@@ -1191,9 +1191,9 @@ const CreateOrder: React.FC = () => {
           </div>
         </section>
 
-        <section className="rounded-[28px] bg-white/88 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
+        <section className="rounded-[28px] bg-white/88 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.08)] ring-1 ring-black/5 backdrop-blur">
           <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">补充说明</h3>
+            <h3 className="text-lg font-semibold text-[var(--nb-ink)]">补充说明</h3>
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">填写特殊需求，方便美甲师提前准备</p>
           </div>
           <textarea
@@ -1201,7 +1201,7 @@ const CreateOrder: React.FC = () => {
             onChange={(e) => setFormData((prev) => ({ ...prev, remark: e.target.value }))}
             placeholder="请输入你的特殊需求，如：想做粉色渐变、需要自带卸甲等..."
             rows={4}
-            className="w-full resize-none rounded-2xl bg-slate-50 px-4 py-3 text-gray-900 outline-none ring-1 ring-transparent focus:ring-[#FF6B8A]/20"
+            className="w-full resize-none rounded-2xl bg-[var(--nb-page)] px-4 py-3 text-[var(--nb-ink)] outline-none ring-1 ring-transparent focus:ring-[var(--nb-control)]/20"
           />
         </section>
       </form>
@@ -1211,7 +1211,7 @@ const CreateOrder: React.FC = () => {
           <button
             onClick={() => handleSubmit()}
             disabled={submitting || !canSubmit}
-            className="w-full rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-4 font-medium text-white shadow-lg shadow-pink-200 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-full bg-[var(--nb-action)] py-4 font-medium text-white shadow-lg shadow-black/5 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? '提交中...' : isCustomService ? '提交需求等待报价' : '提交预约'}
           </button>
@@ -1221,15 +1221,15 @@ const CreateOrder: React.FC = () => {
       {showShopConfirm && selectedShopAddress && (
         <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/40 sm:items-center" onClick={() => setShowShopConfirm(false)}>
           <div className="w-full max-w-md rounded-t-[28px] bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:max-w-sm sm:rounded-[28px] sm:pb-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-base font-semibold text-gray-900">确认到店地址</h3>
-            <p className="mt-1 text-sm text-gray-500">请确认前往的美甲师店铺地址：</p>
-            <div className="mt-3 rounded-xl bg-slate-50 px-4 py-3 text-sm text-gray-800">
+            <h3 className="text-base font-semibold text-[var(--nb-ink)]">确认到店地址</h3>
+            <p className="mt-1 text-sm text-[var(--nb-secondary)]">请确认前往的美甲师店铺地址：</p>
+            <div className="mt-3 rounded-xl bg-[var(--nb-page)] px-4 py-3 text-sm text-[var(--nb-ink)]">
               <div className="font-medium">{selectedShopAddress.name}</div>
-              <div className="mt-1 text-gray-600">{[selectedShopAddress.province, selectedShopAddress.city, selectedShopAddress.district, selectedShopAddress.detailAddress].filter(Boolean).join(' ')}</div>
+              <div className="mt-1 text-[var(--nb-secondary)]">{[selectedShopAddress.province, selectedShopAddress.city, selectedShopAddress.district, selectedShopAddress.detailAddress].filter(Boolean).join(' ')}</div>
             </div>
             <div className="mt-4 flex gap-3">
-              <button onClick={() => setShowShopConfirm(false)} className="flex-1 rounded-full bg-slate-100 py-3 text-sm font-medium text-gray-600 min-h-[48px]">取消</button>
-              <button onClick={async () => { setShowShopConfirm(false); await doCreate(); }} className="flex-1 rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-3 text-sm font-medium text-white min-h-[48px]">确认预约</button>
+              <button onClick={() => setShowShopConfirm(false)} className="flex-1 rounded-full bg-[var(--nb-page)] py-3 text-sm font-medium text-[var(--nb-secondary)] min-h-[48px]">取消</button>
+              <button onClick={async () => { setShowShopConfirm(false); await doCreate(); }} className="flex-1 rounded-full bg-[var(--nb-action)] py-3 text-sm font-medium text-white min-h-[48px]">确认预约</button>
             </div>
           </div>
         </div>

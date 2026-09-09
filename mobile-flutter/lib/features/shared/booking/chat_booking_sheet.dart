@@ -1,3 +1,4 @@
+import '../../../core/theme/colors.generated.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -406,7 +407,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
                 margin: const EdgeInsets.only(right: 8),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: sel ? DT.cream : const Color(0xFF211C17),
+                  color: sel ? DT.cream : NBColors.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: sel ? DT.cream : Colors.white.withValues(alpha: 0.06)),
                 ),
@@ -433,7 +434,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
           _label('门店地址'),
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: const Color(0xFF211C17), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: NBColors.surface, borderRadius: BorderRadius.circular(12)),
             child: Row(children: [
               const Icon(Icons.store_rounded, color: DT.primary, size: 16),
               const SizedBox(width: 8),
@@ -455,7 +456,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
         onChanged: (v) => setState(() => _techAddressText = v),
         decoration: InputDecoration(
           hintText: '输入客户上门地址...',
-          filled: true, fillColor: const Color(0xFF211C17),
+          filled: true, fillColor: NBColors.surface,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         ),
       ));
@@ -480,7 +481,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFF211C17), borderRadius: BorderRadius.circular(12),
+            color: NBColors.surface, borderRadius: BorderRadius.circular(12),
             border: Border.all(color: DT.primary.withValues(alpha: 0.2)),
           ),
           child: const Row(children: [
@@ -495,7 +496,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
       return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-          decoration: BoxDecoration(color: const Color(0xFF211C17), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(color: NBColors.surface, borderRadius: BorderRadius.circular(12)),
           child: DropdownButton<int>(
             value: _selectedAddressId,
             isExpanded: true, underline: const SizedBox(),
@@ -522,7 +523,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
     final addr = _addresses[0];
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: const Color(0xFF211C17), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: NBColors.surface, borderRadius: BorderRadius.circular(12)),
       child: Row(children: [
         const Icon(Icons.location_on_rounded, color: DT.primary, size: 16),
         const SizedBox(width: 8),
@@ -564,7 +565,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
             child: Container(
               width: 56,
               decoration: BoxDecoration(
-                color: selected ? DT.cream : const Color(0xFF211C17),
+                color: selected ? DT.cream : NBColors.surface,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: selected ? DT.cream : Colors.white.withValues(alpha: 0.06)),
               ),
@@ -593,7 +594,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 14),
-        decoration: BoxDecoration(color: const Color(0xFF211C17), borderRadius: BorderRadius.circular(12)),
+        decoration: BoxDecoration(color: NBColors.surface, borderRadius: BorderRadius.circular(12)),
         child: Text(_chatShopMode ? '所选日期店铺休息，请改选日期' : '该美甲师当天暂无可预约时段，请改选日期',
             style: const TextStyle(fontSize: 13, color: DT.textMuted)),
       );
@@ -612,7 +613,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
           child: Container(
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: sel ? DT.cream : (s.occupied ? const Color(0xFF2A241E) : const Color(0xFF211C17)),
+              color: sel ? DT.cream : (s.occupied ? NBColors.surface : NBColors.surface),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Column(
@@ -640,7 +641,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
       decoration: InputDecoration(
         hintText: '输入服务价格',
         prefixText: '¥ ',
-        filled: true, fillColor: const Color(0xFF211C17),
+        filled: true, fillColor: NBColors.surface,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -655,7 +656,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
       onChanged: (v) => _customDescription = v,
       decoration: InputDecoration(
         hintText: '简短描述美甲需求，或上传参考图片...',
-        filled: true, fillColor: const Color(0xFF211C17),
+        filled: true, fillColor: NBColors.surface,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -682,7 +683,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
               }),
               child: Container(
                 width: 18, height: 18,
-                decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
+                decoration: const BoxDecoration(color: NBColors.action, shape: BoxShape.circle),
                 child: const Icon(Icons.close, color: Colors.white, size: 10),
               ),
             ),
@@ -714,7 +715,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: _shareToClient ? DT.primarySoft : const Color(0xFF211C17),
+          color: _shareToClient ? DT.primarySoft : NBColors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
               color: _shareToClient ? DT.primary.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.06)),
@@ -779,7 +780,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-                color: const Color(0xFF211C17), borderRadius: BorderRadius.circular(12),
+                color: NBColors.surface, borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: DT.primary.withValues(alpha: 0.2))),
             child: Row(children: [
               Expanded(
@@ -806,7 +807,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
     padding: const EdgeInsets.symmetric(vertical: 12),
     child: Container(
         width: 40, height: 4,
-        decoration: BoxDecoration(color: const Color(0xFF3A2F23), borderRadius: BorderRadius.circular(999))),
+        decoration: BoxDecoration(color: NBColors.activeSurface, borderRadius: BorderRadius.circular(999))),
   );
 
   /// 顶部条：居中拖拽手柄 + 右上角关闭按钮（整行铺满宽度）。
@@ -845,7 +846,7 @@ class _ChatBookingSheetState extends State<ChatBookingSheet> {
       onChanged: (_) => setState(() {}),
       decoration: InputDecoration(
         hintText: hint,
-        filled: true, fillColor: const Color(0xFF211C17),
+        filled: true, fillColor: NBColors.surface,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),

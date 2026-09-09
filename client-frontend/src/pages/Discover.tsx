@@ -74,7 +74,7 @@ const Discover: React.FC = () => {
   };
 
   return (
-    <div className="min-h-full bg-[linear-gradient(180deg,#fff8fa_0%,#f6f7fb_28%,#f5f6f8_100%)] pb-6">
+    <div className="min-h-full bg-[var(--nb-page)] pb-6">
       <div className="sticky top-0 z-10 border-b border-white/60 bg-white/88 px-5 app-header-safe pb-2 backdrop-blur-md">
         <div className="flex min-h-11 items-center justify-between">
           <h1 className="text-[17px] font-semibold text-[var(--color-text)]">发现</h1>
@@ -100,8 +100,8 @@ const Discover: React.FC = () => {
                 onClick={() => setActiveCategory(cat)}
                 className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                   active
-                    ? 'bg-[linear-gradient(135deg,#FF6B8A_0%,#A78BFA_100%)] text-white shadow-[0_4px_16px_rgba(255,107,138,0.28)]'
-                    : 'bg-[#f5f6fa] text-gray-500'
+                    ? 'bg-[var(--nb-action)] text-white shadow-[0_4px_16px_rgba(0,0,0,0.28)]'
+                    : 'bg-[var(--nb-page)] text-[var(--nb-secondary)]'
                 }`}
               >
                 {cat}
@@ -120,7 +120,7 @@ const Discover: React.FC = () => {
             className="mx-auto flex max-w-md items-center gap-2 rounded-[24px] bg-white p-2 shadow-2xl ring-1 ring-black/5"
             onClick={(e) => e.stopPropagation()}
           >
-            <svg className="ml-2 h-5 w-5 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="ml-2 h-5 w-5 shrink-0 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
@@ -128,14 +128,14 @@ const Discover: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="搜索美甲风格、美甲师"
-              className="floating-search-input h-11 min-w-0 flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400 focus-visible:outline-none"
+              className="floating-search-input h-11 min-w-0 flex-1 bg-transparent text-sm text-[var(--nb-ink)] outline-none placeholder:text-[var(--nb-muted)] focus-visible:outline-none"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
                 aria-label="清空搜索"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-gray-500"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-page)] text-[var(--nb-secondary)]"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -163,8 +163,8 @@ const Discover: React.FC = () => {
           /* 空状态：无任何作品 → 引导绑定美甲师 */
           <div className="flex flex-col items-center gap-4 px-8 py-16 text-center">
             <div className="relative h-20 w-20">
-              <div className="absolute inset-0 rounded-full bg-[linear-gradient(135deg,#FFE2EA,#EDE9FE)]" />
-              <div className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[linear-gradient(135deg,#FF6B8A,#A78BFA)] opacity-60" />
+              <div className="absolute inset-0 rounded-full bg-[var(--nb-page)]" />
+              <div className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--nb-action)] opacity-60" />
             </div>
             <p className="text-lg font-bold text-[var(--color-text)]">还没有作品可以刷</p>
             <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
@@ -172,7 +172,7 @@ const Discover: React.FC = () => {
             </p>
             <button
               onClick={() => navigate('/profile')}
-              className="mt-2 rounded-full bg-[linear-gradient(135deg,#FF6B8A_0%,#A78BFA_100%)] px-12 py-3 text-base font-semibold text-white shadow-[0_8px_24px_rgba(255,107,138,0.30)] active:opacity-85"
+              className="mt-2 rounded-full bg-[var(--nb-action)] px-12 py-3 text-base font-semibold text-white shadow-[0_8px_24px_rgba(0,0,0,0.30)] active:opacity-85"
             >
               绑定美甲师
             </button>

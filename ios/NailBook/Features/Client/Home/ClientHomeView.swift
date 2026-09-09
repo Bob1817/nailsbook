@@ -481,7 +481,7 @@ struct WorkCardWX: View {
         }
         .cornerRadius(Radius.md)
         .clipped()
-        .shadow(color: Color(hex: "0F172A").opacity(0.08), radius: 8, y: 2)
+        .shadow(color: NBColors.ink.opacity(0.08), radius: 8, y: 2)
     }
 
     private func formatShortDate(_ iso: String) -> String {

@@ -16,7 +16,7 @@ const DistrictSelect: React.FC<DistrictSelectProps> = ({ city, value, onChange, 
       onChange={(e) => onChange(e.target.value)}
       className={
         className ||
-        'w-full rounded-2xl bg-slate-50 px-4 py-3 text-sm text-gray-900 outline-none ring-1 ring-slate-200 focus:ring-[#FF6B8A]/20'
+        'w-full rounded-2xl bg-[var(--nb-page)] px-4 py-3 text-sm text-[var(--nb-ink)] outline-none ring-1 ring-[var(--nb-line)] focus:ring-[var(--nb-control)]/20'
       }
     >
       <option value="">选择区/县</option>

@@ -180,7 +180,7 @@ export default function HomePage() {
               return (
                 <article
                   key={feature.title}
-                  className="group rounded-[20px] border border-line bg-surface p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:shadow-pink-100/30 sm:rounded-[24px] sm:p-7"
+                  className="group rounded-[20px] border border-line bg-surface p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:shadow-black/30 sm:rounded-[24px] sm:p-7"
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-soft-pink to-brand-mist transition group-hover:from-brand/20 group-hover:to-accent-warm/15 sm:h-12 sm:w-12" aria-hidden="true">

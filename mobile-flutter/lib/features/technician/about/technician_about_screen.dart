@@ -1,3 +1,4 @@
+import '../../../core/theme/colors.generated.dart';
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
 class TechnicianAboutScreen extends StatefulWidget {
@@ -51,16 +52,16 @@ class _TechnicianAboutScreenState extends State<TechnicianAboutScreen> {
                     borderRadius: BorderRadius.circular(DT.xxl),
                     gradient: const LinearGradient(
                       colors: [
-                        Color(0xFFFF6FA2),
-                        Color(0xFFFF81A4),
-                        Color(0xFFFFB387)
+                        NBColors.action,
+                        NBColors.action,
+                        NBColors.action
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     boxShadow: const [
                       BoxShadow(
-                          color: Color(0x40FF5F86),
+                          color: Color(0x40000000),
                           blurRadius: 32,
                           offset: Offset(0, DT.lg))
                     ],

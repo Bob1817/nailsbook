@@ -135,8 +135,8 @@ struct NBCard<Content: View>: View {
             .padding(padding)
             .background(Color.nbSurfaceGlass)
             .cornerRadius(Radius.card)
-            .shadow(color: Color(hex: "0F172A").opacity(0.06), radius: 12, y: 2)
-            .shadow(color: Color(hex: "0F172A").opacity(0.03), radius: 2, y: 1)
+            .shadow(color: NBColors.ink.opacity(0.06), radius: 12, y: 2)
+            .shadow(color: NBColors.ink.opacity(0.03), radius: 2, y: 1)
     }
 }
 

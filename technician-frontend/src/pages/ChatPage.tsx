@@ -339,50 +339,50 @@ const ChatPage: React.FC = () => {
 
   if (loading && !currentClient) {
     return (
-      <div className="min-h-full flex items-center justify-center bg-[#fff9f8]">
-        <div className="w-8 h-8 border-2 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-full flex items-center justify-center bg-[var(--nb-page)]">
+        <div className="w-8 h-8 border-2 border-[var(--nb-ink)] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-full flex-col bg-[#fff9f8]">
+    <div className="flex h-full flex-col bg-[var(--nb-page)]">
       {/* Header */}
-      <div className="shrink-0 z-10 flex items-center gap-3 bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[#f2e6ec]">
+      <div className="shrink-0 z-10 flex items-center gap-3 bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[var(--nb-line)]">
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f7f3f5] transition-colors active:bg-[#eee5e9]"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--nb-page)] transition-colors active:bg-[var(--nb-page)]"
         >
-          <svg className="h-5 w-5 text-[#3c3440]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-5 w-5 text-[var(--nb-ink)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="w-9 h-9 shrink-0 rounded-full bg-pink-50 flex items-center justify-center overflow-hidden">
+          <div className="w-9 h-9 shrink-0 rounded-full bg-[var(--nb-page)] flex items-center justify-center overflow-hidden">
             {currentClient?.avatarUrl ? (
               <img src={currentClient.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
             ) : (
-              <span className="text-pink-500 font-semibold text-[14px]">
+              <span className="text-[var(--nb-secondary)] font-semibold text-[14px]">
                 {(currentClient?.nickname || currentClient?.phone || '?').charAt(0)}
               </span>
             )}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="text-[15px] font-semibold text-[#1f2230] truncate">
+              <h1 className="text-[15px] font-semibold text-[var(--nb-ink)] truncate">
                 {currentClient?.nickname || currentClient?.phone || '客户'}
               </h1>
               {conversations.length > 0 && (
                 <button
                   onClick={() => setShowClientSelector(true)}
-                  className="shrink-0 text-[12px] text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full"
+                  className="shrink-0 text-[12px] text-[var(--nb-secondary)] bg-[var(--nb-page)] px-2 py-0.5 rounded-full"
                 >
                   切换
                 </button>
               )}
             </div>
-            <p className="text-[12px] text-gray-400">在线</p>
+            <p className="text-[12px] text-[var(--nb-muted)]">在线</p>
           </div>
         </div>
       </div>
@@ -393,7 +393,7 @@ const ChatPage: React.FC = () => {
           <div key={date}>
             {/* Date Separator */}
             <div className="flex justify-center mb-4">
-              <span className="text-xs text-gray-400 bg-gray-200 px-3 py-1 rounded-full">
+              <span className="text-xs text-[var(--nb-muted)] bg-[var(--nb-pressed)] px-3 py-1 rounded-full">
                 {date}
               </span>
             </div>
@@ -410,20 +410,20 @@ const ChatPage: React.FC = () => {
                   >
                     <div className={`max-w-[75%] ${isTechnician ? 'flex-row-reverse' : 'flex-row'} flex items-end gap-2`}>
                       {/* Avatar */}
-                      <div className="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                      <div className="w-8 h-8 rounded-full bg-[var(--nb-pressed)] flex-shrink-0 flex items-center justify-center overflow-hidden">
                         {!isTechnician ? (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-[var(--nb-secondary)]">
                             {(currentClient?.nickname || currentClient?.phone || '?').charAt(0)}
                           </span>
                         ) : technician?.avatar ? (
                           <img src={technician.avatar} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          <span className="text-xs text-gray-500">我</span>
+                          <span className="text-xs text-[var(--nb-secondary)]">我</span>
                         )}
                       </div>
 
                       {/* Message Content */}
-                      <div className={`${isTechnician ? 'bg-pink-500 text-white' : 'bg-white text-gray-900'} rounded-2xl px-4 py-2.5 shadow-sm`}>
+                      <div className={`${isTechnician ? 'bg-[var(--nb-action)] text-white' : 'bg-white text-[var(--nb-ink)]'} rounded-2xl px-4 py-2.5 shadow-sm`}>
                         {message.messageType === 'image' && message.imageUrl ? (
                           <img
                             src={message.imageUrl}
@@ -475,7 +475,7 @@ const ChatPage: React.FC = () => {
                               card = {};
                             }
                             const hasData = Boolean(card.orderNo);
-                            const muted = isTechnician ? 'text-pink-100' : 'text-gray-400';
+                            const muted = isTechnician ? 'text-[var(--nb-inverse)]' : 'text-[var(--nb-muted)]';
                             const serviceLabel =
                               card.serviceType === 'home'
                                 ? '上门美甲'
@@ -518,7 +518,7 @@ const ChatPage: React.FC = () => {
                                   <button
                                     type="button"
                                     onClick={() => setDetailOrderId(message.relatedId!)}
-                                    className={`mt-2.5 w-full rounded-lg py-1.5 text-xs font-medium active:opacity-80 ${isTechnician ? 'bg-white/20 text-white' : 'bg-pink-50 text-pink-500'}`}
+                                    className={`mt-2.5 w-full rounded-lg py-1.5 text-xs font-medium active:opacity-80 ${isTechnician ? 'bg-white/20 text-white' : 'bg-[var(--nb-page)] text-[var(--nb-secondary)]'}`}
                                   >
                                     查看预约详情 →
                                   </button>
@@ -533,12 +533,12 @@ const ChatPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => setDetailOrderId(message.relatedId!)}
-                            className="mt-1.5 text-xs font-medium text-pink-400 active:opacity-70"
+                            className="mt-1.5 text-xs font-medium text-[var(--nb-muted)] active:opacity-70"
                           >
                             查看预约 →
                           </button>
                         )}
-                        <span className={`text-xs mt-1 block ${isTechnician ? 'text-pink-100' : 'text-gray-400'}`}>
+                        <span className={`text-xs mt-1 block ${isTechnician ? 'text-[var(--nb-inverse)]' : 'text-[var(--nb-muted)]'}`}>
                           {formatClock(message.createdAt)}
                         </span>
                       </div>
@@ -554,21 +554,21 @@ const ChatPage: React.FC = () => {
 
       {/* Typing indicator */}
       {isOtherTyping && (
-        <div className="fixed bottom-[5rem] left-0 right-0 z-20 px-4 py-1 text-xs text-gray-400 animate-pulse">
+        <div className="fixed bottom-[5rem] left-0 right-0 z-20 px-4 py-1 text-xs text-[var(--nb-muted)] animate-pulse">
           对方正在输入...
         </div>
       )}
 
       {/* Input Area */}
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-gray-100 bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] shadow-[0_-6px_18px_rgba(29,35,53,0.06)]">
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--nb-line)] bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] shadow-[0_-6px_18px_rgba(0,0,0,0.06)]">
         <div className="mx-auto flex max-w-[32rem] items-center gap-3">
           {/* Image Button */}
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={sending}
-            className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 active:bg-gray-200"
+            className="w-10 h-10 rounded-full bg-[var(--nb-page)] flex items-center justify-center flex-shrink-0 active:bg-[var(--nb-pressed)]"
           >
-            <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5 text-[var(--nb-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </button>
@@ -584,9 +584,9 @@ const ChatPage: React.FC = () => {
           <button
             onClick={() => setShowSocialShare(true)}
             disabled={sending || !currentClient}
-            className="w-10 h-10 rounded-full bg-pink-50 flex items-center justify-center flex-shrink-0 active:bg-pink-100"
+            className="w-10 h-10 rounded-full bg-[var(--nb-page)] flex items-center justify-center flex-shrink-0 active:bg-[var(--nb-page)]"
           >
-            <svg className="w-5 h-5 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5 text-[var(--nb-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
             </svg>
           </button>
@@ -599,7 +599,7 @@ const ChatPage: React.FC = () => {
               onChange={(e) => { setInputText(e.target.value); emitTyping(); }}
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
               placeholder={currentClient ? `给${currentClient.nickname || '客户'}发消息...` : '输入消息...'}
-              className="w-full px-4 py-2.5 bg-gray-100 rounded-full text-sm text-gray-900 outline-none focus:ring-2 focus:ring-pink-500/20"
+              className="w-full px-4 py-2.5 bg-[var(--nb-page)] rounded-full text-sm text-[var(--nb-ink)] outline-none focus:ring-2 focus:ring-[var(--nb-ink)]/20"
             />
           </div>
 
@@ -609,8 +609,8 @@ const ChatPage: React.FC = () => {
             disabled={!inputText.trim() || sending || !currentClient}
             className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
               inputText.trim() && !sending && currentClient
-                ? 'bg-pink-500 text-white'
-                : 'bg-gray-100 text-gray-400'
+                ? 'bg-[var(--nb-action)] text-white'
+                : 'bg-[var(--nb-page)] text-[var(--nb-muted)]'
             }`}
           >
             {sending ? (
@@ -629,12 +629,12 @@ const ChatPage: React.FC = () => {
         <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 sm:items-center">
           <div className="w-full max-w-md rounded-t-3xl bg-white p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] animate-slide-up sm:rounded-3xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">分享社交媒体</h3>
+              <h3 className="text-lg font-semibold text-[var(--nb-ink)]">分享社交媒体</h3>
               <button
                 onClick={() => setShowSocialShare(false)}
-                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
+                className="w-8 h-8 rounded-full bg-[var(--nb-page)] flex items-center justify-center"
               >
-                <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 text-[var(--nb-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -642,18 +642,18 @@ const ChatPage: React.FC = () => {
             <div className="space-y-3">
               {technician?.socialMedia && Object.entries(technician.socialMedia).some(([_, value]) => value) ? (
                 <>
-                  <p className="text-sm text-gray-500 mb-3">选择要分享的社交媒体账号：</p>
+                  <p className="text-sm text-[var(--nb-secondary)] mb-3">选择要分享的社交媒体账号：</p>
                   {technician.socialMedia.weibo && (
                     <button
                       onClick={() => handleSendSocialMedia('weibo', technician.socialMedia!.weibo!)}
-                      className="w-full flex items-center gap-3 p-4 rounded-xl bg-red-50 hover:bg-red-100 transition-colors"
+                      className="w-full flex items-center gap-3 p-4 rounded-xl bg-[var(--nb-page)] hover:bg-[var(--nb-page)] transition-colors"
                     >
                       <span className="text-2xl">🔴</span>
                       <div className="flex-1 text-left">
-                        <p className="font-medium text-gray-900">微博</p>
-                        <p className="text-sm text-gray-500 truncate">{technician.socialMedia.weibo}</p>
+                        <p className="font-medium text-[var(--nb-ink)]">微博</p>
+                        <p className="text-sm text-[var(--nb-secondary)] truncate">{technician.socialMedia.weibo}</p>
                       </div>
-                      <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-5 h-5 text-[var(--nb-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
@@ -661,14 +661,14 @@ const ChatPage: React.FC = () => {
                   {technician.socialMedia.xiaohongshu && (
                     <button
                       onClick={() => handleSendSocialMedia('xiaohongshu', technician.socialMedia!.xiaohongshu!)}
-                      className="w-full flex items-center gap-3 p-4 rounded-xl bg-red-50 hover:bg-red-100 transition-colors"
+                      className="w-full flex items-center gap-3 p-4 rounded-xl bg-[var(--nb-page)] hover:bg-[var(--nb-page)] transition-colors"
                     >
                       <span className="text-2xl">📕</span>
                       <div className="flex-1 text-left">
-                        <p className="font-medium text-gray-900">小红书</p>
-                        <p className="text-sm text-gray-500 truncate">{technician.socialMedia.xiaohongshu}</p>
+                        <p className="font-medium text-[var(--nb-ink)]">小红书</p>
+                        <p className="text-sm text-[var(--nb-secondary)] truncate">{technician.socialMedia.xiaohongshu}</p>
                       </div>
-                      <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-5 h-5 text-[var(--nb-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
@@ -676,14 +676,14 @@ const ChatPage: React.FC = () => {
                   {technician.socialMedia.douyin && (
                     <button
                       onClick={() => handleSendSocialMedia('douyin', technician.socialMedia!.douyin!)}
-                      className="w-full flex items-center gap-3 p-4 rounded-xl bg-gray-900 hover:bg-gray-800 transition-colors"
+                      className="w-full flex items-center gap-3 p-4 rounded-xl bg-[var(--nb-action)] hover:bg-[var(--nb-action)] transition-colors"
                     >
                       <span className="text-2xl">🎵</span>
                       <div className="flex-1 text-left">
                         <p className="font-medium text-white">抖音</p>
-                        <p className="text-sm text-gray-300 truncate">{technician.socialMedia.douyin}</p>
+                        <p className="text-sm text-[var(--nb-muted)] truncate">{technician.socialMedia.douyin}</p>
                       </div>
-                      <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-5 h-5 text-[var(--nb-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
@@ -691,14 +691,14 @@ const ChatPage: React.FC = () => {
                   {technician.socialMedia.kuaishou && (
                     <button
                       onClick={() => handleSendSocialMedia('kuaishou', technician.socialMedia!.kuaishou!)}
-                      className="w-full flex items-center gap-3 p-4 rounded-xl bg-orange-50 hover:bg-orange-100 transition-colors"
+                      className="w-full flex items-center gap-3 p-4 rounded-xl bg-[var(--nb-page)] hover:bg-[var(--nb-page)] transition-colors"
                     >
                       <span className="text-2xl">📱</span>
                       <div className="flex-1 text-left">
-                        <p className="font-medium text-gray-900">快手</p>
-                        <p className="text-sm text-gray-500 truncate">{technician.socialMedia.kuaishou}</p>
+                        <p className="font-medium text-[var(--nb-ink)]">快手</p>
+                        <p className="text-sm text-[var(--nb-secondary)] truncate">{technician.socialMedia.kuaishou}</p>
                       </div>
-                      <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-5 h-5 text-[var(--nb-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
@@ -706,14 +706,14 @@ const ChatPage: React.FC = () => {
                   {technician.socialMedia.wechat && (
                     <button
                       onClick={() => handleSendSocialMedia('wechat', technician.socialMedia!.wechat!)}
-                      className="w-full flex items-center gap-3 p-4 rounded-xl bg-green-50 hover:bg-green-100 transition-colors"
+                      className="w-full flex items-center gap-3 p-4 rounded-xl bg-[var(--nb-page)] hover:bg-[var(--nb-page)] transition-colors"
                     >
                       <span className="text-2xl">💬</span>
                       <div className="flex-1 text-left">
-                        <p className="font-medium text-gray-900">微信</p>
-                        <p className="text-sm text-gray-500 truncate">{technician.socialMedia.wechat}</p>
+                        <p className="font-medium text-[var(--nb-ink)]">微信</p>
+                        <p className="text-sm text-[var(--nb-secondary)] truncate">{technician.socialMedia.wechat}</p>
                       </div>
-                      <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-5 h-5 text-[var(--nb-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
@@ -721,13 +721,13 @@ const ChatPage: React.FC = () => {
                 </>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-gray-500 mb-4">您还没有设置社交媒体账号</p>
+                  <p className="text-[var(--nb-secondary)] mb-4">您还没有设置社交媒体账号</p>
                   <button
                     onClick={() => {
                       setShowSocialShare(false);
                       navigate('/profile-settings');
                     }}
-                    className="px-6 py-2 bg-pink-500 text-white rounded-full text-sm font-medium"
+                    className="px-6 py-2 bg-[var(--nb-action)] text-white rounded-full text-sm font-medium"
                   >
                     去设置
                   </button>
@@ -743,12 +743,12 @@ const ChatPage: React.FC = () => {
         <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 sm:items-center">
           <div className="w-full max-w-md rounded-t-3xl bg-white p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] animate-slide-up sm:rounded-3xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">选择客户</h3>
+              <h3 className="text-lg font-semibold text-[var(--nb-ink)]">选择客户</h3>
               <button
                 onClick={() => setShowClientSelector(false)}
-                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
+                className="w-8 h-8 rounded-full bg-[var(--nb-page)] flex items-center justify-center"
               >
-                <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 text-[var(--nb-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -759,33 +759,33 @@ const ChatPage: React.FC = () => {
                   key={conv.id}
                   onClick={() => handleSwitchClient(conv.client)}
                   className={`w-full flex items-center gap-3 p-3 rounded-xl ${
-                    currentClient?.id === conv.client.id ? 'bg-pink-50 border border-pink-500' : 'bg-gray-50'
+                    currentClient?.id === conv.client.id ? 'bg-[var(--nb-page)] border border-[var(--nb-ink)]' : 'bg-[var(--nb-page)]'
                   }`}
                 >
                   <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center overflow-hidden">
                     {conv.client.avatarUrl ? (
                       <img src={conv.client.avatarUrl} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-lg text-gray-400">
+                      <span className="text-lg text-[var(--nb-muted)]">
                         {(conv.client.nickname || conv.client.phone || '?').charAt(0)}
                       </span>
                     )}
                   </div>
                   <div className="flex-1 min-w-0 text-left">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="truncate font-medium text-gray-900">{conv.client.nickname || conv.client.phone || '未知客户'}</p>
+                      <p className="truncate font-medium text-[var(--nb-ink)]">{conv.client.nickname || conv.client.phone || '未知客户'}</p>
                       {!!conv.unreadCount && conv.unreadCount > 0 && (
-                        <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-pink-500 px-1.5 text-[10px] font-semibold text-white">
+                        <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--nb-action)] px-1.5 text-[10px] font-semibold text-white">
                           {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
                         </span>
                       )}
                     </div>
-                    <p className="truncate text-sm text-gray-500">
+                    <p className="truncate text-sm text-[var(--nb-secondary)]">
                       {conv.lastMessage || conv.client.phone || ''}
                     </p>
                   </div>
                   {currentClient?.id === conv.client.id && (
-                    <svg className="w-5 h-5 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-5 h-5 text-[var(--nb-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   )}

@@ -87,7 +87,7 @@ const tabs: TabItem[] = [
 
 export const TabBar: React.FC = () => {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-100 bg-white/95 pb-safe backdrop-blur-lg">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--nb-line)] bg-white/95 pb-safe backdrop-blur-lg">
       <div className="mx-auto flex h-14 max-w-[32rem] items-center justify-around">
         {tabs.map((tab) => (
           <NavLink
@@ -96,14 +96,14 @@ export const TabBar: React.FC = () => {
             end={tab.path === '/'}
             className={({ isActive }) =>
               `flex min-w-[3.5rem] min-h-[44px] flex-col items-center justify-center transition-colors ${
-                isActive ? 'text-[#FF5A66]' : 'text-gray-400'
+                isActive ? 'text-[var(--nb-ink)]' : 'text-[var(--nb-muted)]'
               }`
             }
           >
             {({ isActive }) => (
               <>
                 {isActive ? tab.activeIcon : tab.icon}
-                <span className={`mt-0.5 text-[11px] font-medium ${isActive ? 'text-[#FF5A66]' : 'text-gray-400'}`}>{tab.label}</span>
+                <span className={`mt-0.5 text-[11px] font-medium ${isActive ? 'text-[var(--nb-ink)]' : 'text-[var(--nb-muted)]'}`}>{tab.label}</span>
               </>
             )}
           </NavLink>

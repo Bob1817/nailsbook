@@ -61,32 +61,32 @@ function getMessageAccentClasses(message: MessageItem) {
   switch (message.type) {
     case 'chat':
       return {
-        avatar: 'bg-[#ffe9f0] text-pink-500',
-        badge: 'bg-[#ffe9f0] text-[#ea5e93]',
-        action: 'text-[#ea5e93]',
-        dot: 'bg-[#e86b8f]',
+        avatar: 'bg-[var(--nb-page)] text-[var(--nb-secondary)]',
+        badge: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+        action: 'text-[var(--nb-ink)]',
+        dot: 'bg-[var(--nb-action)]',
       };
     case 'pending':
       return {
-        avatar: 'bg-[#fff3e8] text-[#d47a2a]',
-        badge: 'bg-[#fff3e8] text-[#c96c1a]',
-        action: 'text-[#c96c1a]',
-        dot: 'bg-[#f08c2e]',
+        avatar: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+        badge: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+        action: 'text-[var(--nb-ink)]',
+        dot: 'bg-[var(--nb-action)]',
       };
     case 'service':
       return {
-        avatar: 'bg-[#eef6ff] text-[#4c7ccf]',
-        badge: 'bg-[#eef6ff] text-[#3f6dbe]',
-        action: 'text-[#3f6dbe]',
-        dot: 'bg-[#4c7ccf]',
+        avatar: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+        badge: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+        action: 'text-[var(--nb-ink)]',
+        dot: 'bg-[var(--nb-action)]',
       };
     case 'system':
     default:
       return {
-        avatar: 'bg-[#f3f4f6] text-[#6b7280]',
-        badge: 'bg-[#f3f4f6] text-[#6b7280]',
-        action: 'text-[#6b7280]',
-        dot: 'bg-[#6b7280]',
+        avatar: 'bg-[var(--nb-page)] text-[var(--nb-secondary)]',
+        badge: 'bg-[var(--nb-page)] text-[var(--nb-secondary)]',
+        action: 'text-[var(--nb-secondary)]',
+        dot: 'bg-[var(--nb-muted)]',
       };
   }
 }
@@ -360,17 +360,17 @@ export const MessagesPage: React.FC = () => {
   );
 
   return (
-    <div className="flex h-full flex-col bg-[#fff9f8]">
+    <div className="flex h-full flex-col bg-[var(--nb-page)]">
       {/* 固定头部：标题 + 搜索 + 标签 */}
       <div className="shrink-0 space-y-4 px-5 pt-5 pb-3">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-gray-900">消息</h1>
-            <p className="mt-1 text-sm text-gray-400">查看预约提醒，与客户即时沟通</p>
+            <h1 className="text-xl font-semibold text-[var(--nb-ink)]">消息</h1>
+            <p className="mt-1 text-sm text-[var(--nb-muted)]">查看预约提醒，与客户即时沟通</p>
           </div>
           <button
             onClick={() => setShowNewChatModal(true)}
-            className="flex min-h-[44px] items-center gap-2 rounded-full bg-[#ffe9f0] px-4 py-2 text-sm font-medium text-pink-500 transition-colors active:bg-[#f2d2dc]"
+            className="flex min-h-[44px] items-center gap-2 rounded-full bg-[var(--nb-page)] px-4 py-2 text-sm font-medium text-[var(--nb-secondary)] transition-colors active:bg-[var(--nb-page)]"
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -380,7 +380,7 @@ export const MessagesPage: React.FC = () => {
         </div>
 
         <div className="relative">
-          <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+          <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--nb-muted)]">
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
@@ -388,7 +388,7 @@ export const MessagesPage: React.FC = () => {
           <input
             type="text"
             placeholder="搜索消息、客户或提醒内容"
-            className="h-11 w-full rounded-[16px] bg-[#f7f2f5] pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
+            className="h-11 w-full rounded-[16px] bg-[var(--nb-page)] pl-10 pr-4 text-sm text-[var(--nb-ink)] placeholder-[var(--nb-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]"
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
           />
@@ -401,12 +401,12 @@ export const MessagesPage: React.FC = () => {
               onClick={() => setActiveTab(tab.value)}
               className={`flex min-h-[44px] flex-shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
                 activeTab === tab.value
-                  ? 'border-[#efc3d0] bg-[#fdecef] text-pink-500'
-                  : 'border-[#efe4e8] bg-white text-gray-600 active:bg-[#f8edf1]'
+                  ? 'border-[var(--nb-line)] bg-[var(--nb-page)] text-[var(--nb-secondary)]'
+                  : 'border-[var(--nb-line)] bg-white text-[var(--nb-secondary)] active:bg-[var(--nb-page)]'
               }`}
             >
               <span>{tab.label}</span>
-              <span className={`rounded-full px-2 py-0.5 text-[11px] ${activeTab === tab.value ? 'bg-white text-pink-500' : 'bg-[#f7f2f5] text-gray-500'}`}>
+              <span className={`rounded-full px-2 py-0.5 text-[11px] ${activeTab === tab.value ? 'bg-white text-[var(--nb-secondary)]' : 'bg-[var(--nb-page)] text-[var(--nb-secondary)]'}`}>
                 {tab.count}
               </span>
             </button>
@@ -418,13 +418,13 @@ export const MessagesPage: React.FC = () => {
       <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-[calc(3.5rem+env(safe-area-inset-bottom)+1.5rem)]">
         <div className="space-y-3">
           {isLoading ? (
-            <Card className="px-lg py-xl text-center text-sm text-gray-400">提醒加载中...</Card>
+            <Card className="px-lg py-xl text-center text-sm text-[var(--nb-muted)]">提醒加载中...</Card>
           ) : filteredMessages.length > 0 ? (
             filteredMessages.map((message) => {
               const accent = getMessageAccentClasses(message);
 
               return (
-                <Card key={message.id} className="transition-colors active:bg-[#fdf3f6]">
+                <Card key={message.id} className="transition-colors active:bg-[var(--nb-page)]">
                   <button
                     onClick={() => handleMessageAction(message)}
                     className="flex min-h-[96px] w-full items-start gap-3 px-lg py-lg text-left"
@@ -434,29 +434,29 @@ export const MessagesPage: React.FC = () => {
                         {getMessageAvatarLabel(message)}
                       </div>
                       {message.type === 'chat' && message.clientId && isOnline(message.clientId, 'client') && (
-                        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white" />
+                        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[var(--nb-action)] rounded-full border-2 border-white" />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2 pr-1">
-                        <p className="truncate text-sm font-semibold text-gray-900">{message.name}</p>
+                        <p className="truncate text-sm font-semibold text-[var(--nb-ink)]">{message.name}</p>
                         <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${accent.badge}`}>
                           {getMessageBadgeLabel(message)}
                         </span>
                       </div>
-                      <p className="mt-1.5 break-words pr-1 text-[13px] leading-5 text-gray-500">
+                      <p className="mt-1.5 break-words pr-1 text-[13px] leading-5 text-[var(--nb-secondary)]">
                         {message.lastMessage}
                       </p>
                     </div>
                     <div className="flex w-[4.25rem] shrink-0 flex-col items-end gap-2 pt-0.5 text-right">
-                      <p className="text-xs text-gray-400">{message.time}</p>
+                      <p className="text-xs text-[var(--nb-muted)]">{message.time}</p>
                       <div className="flex min-h-[24px] items-center gap-2">
                         {message.actionLabel ? (
                           <span className={`text-[11px] font-medium ${accent.action}`}>{message.actionLabel}</span>
                         ) : null}
                         {message.unread > 0 ? (
                           message.unread > 1 ? (
-                            <span className="inline-flex min-w-[20px] items-center justify-center rounded-full bg-[#e85d75] px-1.5 py-0.5 text-[11px] font-medium text-white">
+                            <span className="inline-flex min-w-[20px] items-center justify-center rounded-full bg-[var(--nb-action)] px-1.5 py-0.5 text-[11px] font-medium text-white">
                               {message.unread}
                             </span>
                           ) : (
@@ -470,7 +470,7 @@ export const MessagesPage: React.FC = () => {
               );
             })
           ) : (
-            <Card className="px-lg py-xl text-center text-sm text-gray-400">没有匹配的消息提醒</Card>
+            <Card className="px-lg py-xl text-center text-sm text-[var(--nb-muted)]">没有匹配的消息提醒</Card>
           )}
         </div>
       </div>
@@ -482,16 +482,16 @@ export const MessagesPage: React.FC = () => {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="flex max-h-[85vh] w-full flex-col overflow-hidden rounded-t-[28px] bg-white px-5 pt-5 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] shadow-[0_-12px_40px_rgba(15,23,42,0.12)] animate-slide-up sm:max-w-md sm:rounded-[28px] sm:pb-5"
+            className="flex max-h-[85vh] w-full flex-col overflow-hidden rounded-t-[28px] bg-white px-5 pt-5 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] shadow-[0_-12px_40px_rgba(0,0,0,0.12)] animate-slide-up sm:max-w-md sm:rounded-[28px] sm:pb-5"
           >
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">选择客户发起对话</h3>
-                <p className="mt-1 text-sm text-gray-400">搜索客户后直接进入已有对话或新建聊天</p>
+                <h3 className="text-lg font-semibold text-[var(--nb-ink)]">选择客户发起对话</h3>
+                <p className="mt-1 text-sm text-[var(--nb-muted)]">搜索客户后直接进入已有对话或新建聊天</p>
               </div>
               <button
                 onClick={() => setShowNewChatModal(false)}
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-[#efe4e8] bg-white text-gray-500 transition-colors active:bg-[#f8edf1]"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--nb-line)] bg-white text-[var(--nb-secondary)] transition-colors active:bg-[var(--nb-page)]"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -500,7 +500,7 @@ export const MessagesPage: React.FC = () => {
             </div>
 
             <div className="relative mb-4 shrink-0">
-              <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--nb-muted)]">
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
@@ -508,7 +508,7 @@ export const MessagesPage: React.FC = () => {
               <input
                 type="text"
                 placeholder="搜索客户姓名或手机号"
-                className="h-11 w-full rounded-[16px] bg-[#f7f2f5] pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5A66]"
+                className="h-11 w-full rounded-[16px] bg-[var(--nb-page)] pl-10 pr-4 text-sm text-[var(--nb-ink)] placeholder-[var(--nb-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]"
                 value={customerSearchQuery}
                 onChange={(e) => setCustomerSearchQuery(e.target.value)}
               />
@@ -523,27 +523,27 @@ export const MessagesPage: React.FC = () => {
                     <button
                       key={customer.id}
                       onClick={() => handleStartNewChat(customer.id)}
-                      className="flex min-h-[72px] w-full items-center gap-3 rounded-[18px] bg-[#fcf7f8] px-4 py-3 text-left transition-colors active:bg-[#f8edf1]"
+                      className="flex min-h-[72px] w-full items-center gap-3 rounded-[18px] bg-[var(--nb-page)] px-4 py-3 text-left transition-colors active:bg-[var(--nb-page)]"
                     >
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-base font-semibold text-pink-500">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-base font-semibold text-[var(--nb-secondary)]">
                         {customer.name.charAt(0)}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="truncate text-sm font-semibold text-gray-900">{customer.name}</p>
+                          <p className="truncate text-sm font-semibold text-[var(--nb-ink)]">{customer.name}</p>
                           {hasConversation ? (
-                            <span className="rounded-full bg-[#ffe9f0] px-2.5 py-1 text-[11px] font-medium text-pink-500">
+                            <span className="rounded-full bg-[var(--nb-page)] px-2.5 py-1 text-[11px] font-medium text-[var(--nb-secondary)]">
                               已有对话
                             </span>
                           ) : null}
                         </div>
-                        <p className="mt-1 text-sm text-gray-500">{customer.phone}</p>
+                        <p className="mt-1 text-sm text-[var(--nb-secondary)]">{customer.phone}</p>
                       </div>
                     </button>
                   );
                 })
               ) : (
-                <div className="rounded-[18px] bg-[#fcf7f8] px-4 py-6 text-center text-sm text-gray-400">没有找到匹配的客户</div>
+                <div className="rounded-[18px] bg-[var(--nb-page)] px-4 py-6 text-center text-sm text-[var(--nb-muted)]">没有找到匹配的客户</div>
               )}
             </div>
           </div>
@@ -568,7 +568,7 @@ export const MessagesPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSelectedMessage(null)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--nb-page)] text-[var(--nb-secondary)]"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
@@ -576,10 +576,10 @@ export const MessagesPage: React.FC = () => {
               </button>
             </div>
 
-            <p className="text-[15px] font-semibold text-gray-900">{selectedMessage.name}</p>
-            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{selectedMessage.lastMessage}</p>
+            <p className="text-[15px] font-semibold text-[var(--nb-ink)]">{selectedMessage.name}</p>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--nb-ink)]">{selectedMessage.lastMessage}</p>
 
-            <div className="mt-3 flex items-center gap-2 text-xs text-slate-400">
+            <div className="mt-3 flex items-center gap-2 text-xs text-[var(--nb-muted)]">
               <span>{selectedMessage.time}</span>
             </div>
 
@@ -587,7 +587,7 @@ export const MessagesPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSelectedMessage(null)}
-                className="flex-1 rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-700"
+                className="flex-1 rounded-full bg-[var(--nb-page)] px-4 py-3 text-sm font-medium text-[var(--nb-ink)]"
               >
                 关闭
               </button>
@@ -595,7 +595,7 @@ export const MessagesPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleModalAction(selectedMessage)}
-                  className="flex-1 rounded-full bg-gradient-to-r from-[#FF5E93] to-[#FF8AA0] px-4 py-3 text-sm font-semibold text-white shadow-md"
+                  className="flex-1 rounded-full bg-[var(--nb-action)] px-4 py-3 text-sm font-semibold text-white shadow-md"
                 >
                   {selectedMessage.actionLabel}
                 </button>

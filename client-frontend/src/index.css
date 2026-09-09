@@ -1,36 +1,37 @@
+@import "./colors.generated.css";
 @import "tailwindcss";
 
 @theme {
   /* Primary Colors */
-  --color-primary: #FF6B8A;
-  --color-primary-light: #FF8FA3;
-  --color-primary-dark: #E85A75;
-  --color-primary-soft: #FFF0F3;
+  --color-primary: var(--nb-action);
+  --color-primary-light: var(--nb-page);
+  --color-primary-dark: var(--nb-action-pressed);
+  --color-primary-soft: var(--nb-page);
 
   /* Background Colors */
-  --color-bg: #F5F6F8;
-  --color-surface: #FFFFFF;
-  --color-surface-elevated: #FFFFFF;
+  --color-bg: var(--nb-page);
+  --color-surface: var(--nb-surface);
+  --color-surface-elevated: var(--nb-surface);
 
   /* Text Colors - WCAG AA compliant */
-  --color-text: #1A1A2E;
-  --color-text-secondary: #4A5568;
-  --color-text-muted: #718096;
-  --color-text-placeholder: #A0AEC0;
+  --color-text: var(--nb-ink);
+  --color-text-secondary: var(--nb-secondary);
+  --color-text-muted: var(--nb-muted);
+  --color-text-placeholder: var(--nb-muted);
 
   /* Border & Divider */
-  --color-border: #E2E8F0;
-  --color-border-light: #EDF2F7;
+  --color-border: var(--nb-line);
+  --color-border-light: var(--nb-line);
 
   /* Status Colors */
-  --color-success: #10B981;
-  --color-success-soft: #D1FAE5;
-  --color-warning: #F59E0B;
-  --color-warning-soft: #FEF3C7;
-  --color-error: #EF4444;
-  --color-error-soft: #FEE2E2;
-  --color-info: #3B82F6;
-  --color-info-soft: #DBEAFE;
+  --color-success: var(--nb-ink);
+  --color-success-soft: var(--nb-page);
+  --color-warning: var(--nb-ink);
+  --color-warning-soft: var(--nb-page);
+  --color-error: var(--nb-ink);
+  --color-error-soft: var(--nb-page);
+  --color-info: var(--nb-link);
+  --color-info-soft: var(--nb-active-surface);
 }
 
 * {
@@ -168,11 +169,11 @@ body {
 
 /* Gradient background */
 .gradient-primary {
-  background: linear-gradient(135deg, #FF6B8A 0%, #FF8FA3 100%);
+  background: var(--nb-action);
 }
 
 .gradient-primary-soft {
-  background: linear-gradient(135deg, rgba(255, 107, 138, 0.1) 0%, rgba(255, 143, 163, 0.1) 100%);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.1) 100%);
 }
 
 /* Status badges */
@@ -212,7 +213,7 @@ input:focus-visible {
 
 .floating-search-input:focus,
 .floating-search-input:focus-visible {
-  outline: none !important;
+  outline: 2px solid var(--nb-link) !important;
   box-shadow: none !important;
 }
 
@@ -241,4 +242,15 @@ input:focus-visible {
 
 .animate-slide-up {
   animation: slide-up 0.3s ease-out forwards;
+}
+
+/* Shared neutral interaction contract. */
+button:focus-visible, a:focus-visible, input:focus-visible,
+textarea:focus-visible, select:focus-visible {
+  outline: 2px solid var(--nb-link);
+  outline-offset: 2px;
+}
+button { min-height: 44px; }
+input:not([type="checkbox"]):not([type="radio"]), textarea, select {
+  border-color: var(--nb-control);
 }

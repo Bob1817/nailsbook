@@ -23,15 +23,15 @@ const serviceTypeLabels: Record<string, string> = {
 };
 
 const statusPillClass: Record<OrderStatus, string> = {
-  pending_quote: 'bg-[#fff6eb] text-[#b87425]',
-  pending_agree: 'bg-[#fff4df] text-[#c8892f]',
-  pending_confirm: 'bg-[#fff6eb] text-[#b87425]',
-  pending_home: 'bg-[#e8f5e9] text-[#2e7d32]',
-  pending_shop: 'bg-[#e3f2fd] text-[#1565c0]',
-  in_progress: 'bg-[#ffe9f0] text-pink-500',
-  completed: 'bg-[#edf8f1] text-[#3b9460]',
-  cancelled: 'bg-[#f4f4f5] text-[#8f8f95]',
-  expired: 'bg-[#f4f4f5] text-[#8f8f95]',
+  pending_quote: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+  pending_agree: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+  pending_confirm: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+  pending_home: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+  pending_shop: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+  in_progress: 'bg-[var(--nb-page)] text-[var(--nb-secondary)]',
+  completed: 'bg-[var(--nb-page)] text-[var(--nb-ink)]',
+  cancelled: 'bg-[var(--nb-page)] text-[var(--nb-muted)]',
+  expired: 'bg-[var(--nb-page)] text-[var(--nb-muted)]',
 };
 
 function sameCalendarDay(left: Date, right: Date) {
@@ -91,10 +91,10 @@ function CustomerAvatar({ name, avatarUrl, size = 36 }: { name: string; avatarUr
   }
 
   const bgColors = [
-    'linear-gradient(135deg, #FFDCE4 0%, #FFC8D6 100%)',
-    'linear-gradient(135deg, #FFF0D8 0%, #FFE3B8 100%)',
-    'linear-gradient(135deg, #EEE7FF 0%, #DCD0FF 100%)',
-    'linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%)',
+    'var(--nb-page)',
+    'var(--nb-page)',
+    'var(--nb-page)',
+    'var(--nb-page)',
   ];
   const bg = bgColors[name.charCodeAt(0) % bgColors.length];
 
@@ -107,7 +107,7 @@ function CustomerAvatar({ name, avatarUrl, size = 36 }: { name: string; avatarUr
         backgroundImage: bg,
         fontSize: size * 0.4,
         fontWeight: 600,
-        color: '#666',
+        color: 'var(--nb-secondary)',
       }}
     >
       {name.slice(0, 1)}
@@ -257,7 +257,7 @@ export const SchedulePage: React.FC = () => {
             type="button"
             onClick={() => setShowCalendar(true)}
             aria-label="打开日历"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff1f6] text-[#FF5E93] active:bg-[#ffe4ee]"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--nb-page)] text-[var(--nb-ink)] active:bg-[var(--nb-page)]"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -274,7 +274,7 @@ export const SchedulePage: React.FC = () => {
           className={`shrink-0 w-[56px] text-center rounded-[14px] cursor-pointer transition-colors ${
             isTodayActive
               ? 'bg-primary text-white py-2.5'
-              : 'bg-[#f8f8f8] text-text-primary py-2.5'
+              : 'bg-[var(--nb-page)] text-text-primary py-2.5'
           }`}
         >
           <div className={`text-[11px] ${isTodayActive ? 'text-white/80' : 'text-text-tertiary'}`}>
@@ -291,7 +291,7 @@ export const SchedulePage: React.FC = () => {
               isTodayActive
                 ? 'bg-white'
                 : todayHasOrders
-                  ? 'bg-[#22c55e]'
+                  ? 'bg-[var(--nb-action)]'
                   : 'bg-transparent'
             }`}
           />
@@ -316,7 +316,7 @@ export const SchedulePage: React.FC = () => {
                 className={`shrink-0 w-[56px] text-center rounded-[14px] cursor-pointer transition-colors ${
                   isActive
                     ? 'bg-primary text-white py-2.5'
-                    : 'bg-[#f8f8f8] text-text-primary py-2.5'
+                    : 'bg-[var(--nb-page)] text-text-primary py-2.5'
                 }`}
               >
                 <div className={`text-[11px] ${isActive ? 'text-white/80' : 'text-text-tertiary'}`}>
@@ -333,7 +333,7 @@ export const SchedulePage: React.FC = () => {
                     isActive
                       ? 'bg-white'
                       : hasOrders
-                        ? 'bg-[#22c55e]'
+                        ? 'bg-[var(--nb-action)]'
                         : 'bg-transparent'
                   }`}
                 />
@@ -352,7 +352,7 @@ export const SchedulePage: React.FC = () => {
             { value: `¥${summary.amount}`, unit: '', label: '预计收入' },
             { value: `${summary.completed}/${summary.count}`, unit: '', label: '已完成' },
           ].map((item) => (
-            <div key={item.label} className="flex-1 bg-[#f8f8f8] rounded-xl p-3 text-center">
+            <div key={item.label} className="flex-1 bg-[var(--nb-page)] rounded-xl p-3 text-center">
               <div className="text-[20px] font-bold text-text-primary">
                 {item.value}
                 {item.unit && <span className="text-[11px] font-medium text-text-secondary ml-0.5">{item.unit}</span>}
@@ -368,7 +368,7 @@ export const SchedulePage: React.FC = () => {
       {/* ===== 可滚动区域：行程列表（底部留出 TabBar 高度 + 安全区，避免最后一条被遮挡） ===== */}
       <div className="flex-1 min-h-0 overflow-y-auto px-lg pb-[calc(3.5rem+env(safe-area-inset-bottom)+1.5rem)]">
       {/* ===== Section 3: 行程/预约列表 ===== */}
-      <div className="mb-3 flex gap-6 border-b border-gray-100">
+      <div className="mb-3 flex gap-6 border-b border-[var(--nb-line)]">
         {([['trips', '今日行程'], ['all', '今日预约']] as const).map(([key, label]) => (
           <button
             key={key}
@@ -435,7 +435,7 @@ export const SchedulePage: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  className="flex-1 flex items-center justify-center gap-1.5 bg-[#f5f5f5] text-text-primary rounded-lg py-2 text-[13px] min-h-[44px]"
+                  className="flex-1 flex items-center justify-center gap-1.5 bg-[var(--nb-page)] text-text-primary rounded-lg py-2 text-[13px] min-h-[44px]"
                   onClick={(e) => { e.stopPropagation(); handleContactCustomer(order.customerPhone); }}
                 >
                   <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

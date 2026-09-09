@@ -30,7 +30,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
       ) : (
         <div
           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white ${
-            comment.user.role === 'technician' ? 'bg-[#FF5E93]' : 'bg-gray-400'
+            comment.user.role === 'technician' ? 'bg-[var(--nb-action)]' : 'bg-[var(--nb-action)]'
           }`}
         >
           {comment.user.name.slice(0, 1)}
@@ -38,18 +38,18 @@ const CommentItem: React.FC<CommentItemProps> = ({
       )}
 
       <div className="min-w-0 flex-1">
-        <div className="rounded-2xl bg-gray-50 px-3 py-2">
+        <div className="rounded-2xl bg-[var(--nb-page)] px-3 py-2">
           {/* Name row */}
-          <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
-            <span className="font-medium text-gray-700">{comment.user.name}</span>
+          <div className="flex items-center gap-1.5 text-[11px] text-[var(--nb-muted)]">
+            <span className="font-medium text-[var(--nb-ink)]">{comment.user.name}</span>
             {comment.user.role === 'technician' && (
-              <span className="rounded-full bg-pink-100 px-1.5 py-px text-[10px] font-medium text-pink-500">美甲师</span>
+              <span className="rounded-full bg-[var(--nb-page)] px-1.5 py-px text-[10px] font-medium text-[var(--nb-secondary)]">美甲师</span>
             )}
             {comment.isPinned && (
-              <span className="rounded-full bg-amber-100 px-1.5 py-px text-[10px] font-medium text-amber-600">置顶</span>
+              <span className="rounded-full bg-[var(--nb-page)] px-1.5 py-px text-[10px] font-medium text-[var(--nb-secondary)]">置顶</span>
             )}
             {comment.isHidden && (
-              <span className="rounded-full bg-gray-200 px-1.5 py-px text-[10px] font-medium text-gray-500">已隐藏</span>
+              <span className="rounded-full bg-[var(--nb-pressed)] px-1.5 py-px text-[10px] font-medium text-[var(--nb-secondary)]">已隐藏</span>
             )}
             <span className="ml-auto whitespace-nowrap">{new Date(comment.createdAt).toLocaleDateString()}</span>
             {/* More button — always available for technician (owns the work) */}
@@ -59,7 +59,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   e.stopPropagation();
                   setActionMenuId(comment.id);
                 }}
-                className="-mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-gray-400 active:bg-gray-200"
+                className="-mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[var(--nb-muted)] active:bg-[var(--nb-pressed)]"
               >
                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M6 12a2 2 0 11-4 0 2 2 0 014 0zm8 0a2 2 0 11-4 0 2 2 0 014 0zm6 2a2 2 0 100-4 2 2 0 000 4z" />
@@ -70,7 +70,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
 
           {/* Content — click to reply */}
           <p
-            className={`mt-1 text-sm leading-5 ${isDeleted ? 'italic text-gray-400' : 'cursor-pointer text-gray-800 active:opacity-70'}`}
+            className={`mt-1 text-sm leading-5 ${isDeleted ? 'italic text-[var(--nb-muted)]' : 'cursor-pointer text-[var(--nb-ink)] active:opacity-70'}`}
             onClick={() => !isDeleted && onReply(comment)}
           >
             {comment.content}
@@ -89,19 +89,19 @@ const CommentItem: React.FC<CommentItemProps> = ({
             >
               <button
                 onClick={() => onPin(comment.id)}
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-gray-700 active:bg-gray-50"
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-[var(--nb-ink)] active:bg-[var(--nb-page)]"
               >
-                <svg className="h-4 w-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-4 w-4 text-[var(--nb-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                 </svg>
                 {comment.isPinned ? '取消置顶' : '置顶'}
               </button>
-              <div className="my-1 h-px bg-gray-100" />
+              <div className="my-1 h-px bg-[var(--nb-page)]" />
               <button
                 onClick={() => onHide(comment.id)}
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-gray-700 active:bg-gray-50"
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-[var(--nb-ink)] active:bg-[var(--nb-page)]"
               >
-                <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-4 w-4 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={comment.isHidden
                     ? 'M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
                     : 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21'
@@ -109,20 +109,20 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 </svg>
                 {comment.isHidden ? '取消隐藏' : '隐藏'}
               </button>
-              <div className="my-1 h-px bg-gray-100" />
+              <div className="my-1 h-px bg-[var(--nb-page)]" />
               <button
                 onClick={() => onDelete(comment.id)}
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-red-500 active:bg-red-50"
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-[var(--nb-secondary)] active:bg-[var(--nb-page)]"
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
                 删除
               </button>
-              <div className="my-1 h-px bg-gray-100" />
+              <div className="my-1 h-px bg-[var(--nb-page)]" />
               <button
                 onClick={() => setActionMenuId(null)}
-                className="w-full rounded-xl py-3.5 text-sm font-medium text-gray-500 active:bg-gray-50"
+                className="w-full rounded-xl py-3.5 text-sm font-medium text-[var(--nb-secondary)] active:bg-[var(--nb-page)]"
               >
                 取消
               </button>
@@ -132,7 +132,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
 
         {/* Replies */}
         {comment.replies && comment.replies.length > 0 && (
-          <div className="mt-2 space-y-2 border-l-2 border-gray-100 pl-2">
+          <div className="mt-2 space-y-2 border-l-2 border-[var(--nb-line)] pl-2">
             {comment.replies.map((reply) => (
               <CommentItem
                 key={reply.id}
@@ -169,10 +169,10 @@ const HiddenCommentsSection: React.FC<HiddenCommentsSectionProps> = (props) => {
   if (props.comments.length === 0) return null;
 
   return (
-    <div className="mt-4 border-t border-dashed border-gray-200 pt-3">
+    <div className="mt-4 border-t border-dashed border-[var(--nb-line)] pt-3">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-1.5 text-xs text-gray-400"
+        className="flex items-center gap-1.5 text-xs text-[var(--nb-muted)]"
       >
         <svg
           className={`h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`}
@@ -496,7 +496,7 @@ const WorksPage: React.FC = () => {
       loadWorks();
     } catch (error) {
       console.error('Failed to toggle featured:', error);
-      toast.error('操作失败');
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || '操作失败');
     }
   };
 
@@ -710,23 +710,23 @@ const WorksPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-[#fff9f8]">
+    <div className="flex h-[100dvh] flex-col bg-[var(--nb-page)]">
       {/* Header */}
-      <div className="shrink-0 flex items-center gap-3 bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[#f2e6ec]">
+      <div className="shrink-0 flex items-center gap-3 bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[var(--nb-line)]">
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f7f3f5] transition-colors active:bg-[#eee5e9]"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-page)] transition-colors active:bg-[var(--nb-page)]"
         >
-          <svg className="h-5 w-5 text-[#3c3440]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-5 w-5 text-[var(--nb-ink)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h1 className="text-[17px] font-semibold text-[#1f2230]">作品管理</h1>
+        <h1 className="text-[17px] font-semibold text-[var(--nb-ink)]">作品管理</h1>
         <button
           type="button"
           onClick={() => setShowCreateModal(true)}
-          className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-[#FF5E93] text-white active:bg-[#e54e82]"
+          className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-action)] text-white active:bg-[var(--nb-action-pressed)]"
         >
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -740,10 +740,10 @@ const WorksPage: React.FC = () => {
         {loading ? (
           <div className="p-1"><GridSkeleton /></div>
         ) : works.length === 0 ? (
-          <div className="rounded-[24px] bg-white p-8 text-center shadow-[0_8px_24px_rgba(29,35,53,0.04)]">
+          <div className="rounded-[24px] bg-white p-8 text-center shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
             <div className="mb-4 text-4xl">🎨</div>
-            <p className="text-gray-500">还没有作品</p>
-            <p className="mt-1 text-sm text-gray-400">点击右上角添加您的第一个作品</p>
+            <p className="text-[var(--nb-secondary)]">还没有作品</p>
+            <p className="mt-1 text-sm text-[var(--nb-muted)]">点击右上角添加您的第一个作品</p>
           </div>
         ) : (
           <div className="columns-2 gap-2 space-y-2">
@@ -751,7 +751,7 @@ const WorksPage: React.FC = () => {
               <div
                 key={work.id}
                 onClick={() => openWorkDetail(work)}
-                className="relative break-inside-avoid overflow-hidden rounded-[12px] bg-gray-100 cursor-pointer shadow-[0_2px_8px_rgba(29,35,53,0.06)] active:scale-[0.97] transition-transform"
+                className="relative break-inside-avoid overflow-hidden rounded-[12px] bg-[var(--nb-page)] cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.06)] active:scale-[0.97] transition-transform"
               >
                 {/* Image */}
                 {work.coverUrl || work.imageUrls?.[0] ? (
@@ -771,7 +771,7 @@ const WorksPage: React.FC = () => {
                 ) : null}
                 <div
                   data-placeholder="true"
-                  className={`min-h-[7rem] w-full items-center justify-center bg-gradient-to-br from-rose-50 via-white to-pink-50 text-sm text-gray-400 ${
+                  className={`min-h-[7rem] w-full items-center justify-center bg-gradient-to-br from-[var(--nb-page)] via-white to-[var(--nb-page)] text-sm text-[var(--nb-muted)] ${
                     work.coverUrl || work.imageUrls?.[0] ? 'hidden' : 'flex'
                   }`}
                 >
@@ -784,7 +784,7 @@ const WorksPage: React.FC = () => {
                   <div className="mt-1 flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
                       {work.price != null && work.price > 0 && (
-                        <span className="text-[10px] font-semibold text-[#FFD700]">¥{work.price}</span>
+                        <span className="text-[10px] font-semibold text-[var(--nb-ink)]">¥{work.price}</span>
                       )}
                       <span className="text-[10px] text-white/70">{work.technicianName}</span>
                     </div>
@@ -800,13 +800,13 @@ const WorksPage: React.FC = () => {
                 {/* Left-top badges */}
                 <div className="absolute left-1.5 top-1.5 flex flex-col gap-1">
                   {work.isPinned && (
-                    <span className="rounded-full bg-pink-500 px-1.5 py-0.5 text-[9px] text-white">置顶</span>
+                    <span className="rounded-full bg-[var(--nb-action)] px-1.5 py-0.5 text-[9px] text-white">置顶</span>
                   )}
                   {work.isFeatured && (
-                    <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] text-white">推荐</span>
+                    <span className="rounded-full bg-[var(--nb-action)] px-1.5 py-0.5 text-[9px] text-white">推荐</span>
                   )}
                   {!work.isVisible && (
-                    <span className="rounded-full bg-gray-500/80 px-1.5 py-0.5 text-[9px] text-white">隐藏</span>
+                    <span className="rounded-full bg-[var(--nb-action)]/80 px-1.5 py-0.5 text-[9px] text-white">隐藏</span>
                   )}
                 </div>
 
@@ -821,7 +821,7 @@ const WorksPage: React.FC = () => {
                     </svg>
                   </button>
                   {(work.commentCount > 0 || work.unreadLikes > 0 || work.unreadFavorites > 0) && (
-                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-semibold text-white shadow-sm">
+                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--nb-action)] px-1 text-[9px] font-semibold text-white shadow-sm">
                       {work.commentCount + work.unreadLikes + work.unreadFavorites}
                     </span>
                   )}
@@ -844,46 +844,47 @@ const WorksPage: React.FC = () => {
           >
             {/* 拖拽指示条 */}
             <div className="flex justify-center pt-2.5 pb-1">
-              <div className="h-1 w-9 rounded-full bg-gray-300" />
+              <div className="h-1 w-9 rounded-full bg-[var(--nb-pressed)]" />
             </div>
             {/* 作品名称 */}
-            <div className="px-5 py-2 border-b border-gray-100">
-              <p className="text-sm font-medium text-gray-900 truncate">{cardActionWork.title || '未命名作品'}</p>
+            <div className="px-5 py-2 border-b border-[var(--nb-line)]">
+              <p className="text-sm font-medium text-[var(--nb-ink)] truncate">{cardActionWork.title || '未命名作品'}</p>
             </div>
             {/* 操作列表 */}
             <div className="px-2 py-1.5">
               <button
                 onClick={() => { handleEdit(cardActionWork); setCardActionWork(null); }}
-                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] text-gray-700 active:bg-gray-50"
+                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] text-[var(--nb-ink)] active:bg-[var(--nb-page)]"
               >
-                <svg className="h-5 w-5 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-5 w-5 shrink-0 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
                 编辑作品
               </button>
               <button
                 onClick={() => { handleTogglePinned(cardActionWork); setCardActionWork(null); }}
-                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] text-gray-700 active:bg-gray-50"
+                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] text-[var(--nb-ink)] active:bg-[var(--nb-page)]"
               >
-                <svg className="h-5 w-5 shrink-0 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-5 w-5 shrink-0 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                 </svg>
                 {cardActionWork.isPinned ? '取消置顶' : '置顶作品'}
               </button>
               <button
                 onClick={() => { handleToggleFeatured(cardActionWork); setCardActionWork(null); }}
-                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] text-gray-700 active:bg-gray-50"
+                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] text-[var(--nb-ink)] active:bg-[var(--nb-page)]"
               >
-                <svg className="h-5 w-5 shrink-0 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-5 w-5 shrink-0 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                 </svg>
-                {cardActionWork.isFeatured ? '取消推荐' : '推荐作品'}
+                {cardActionWork.isFeatured ? '取消个人主页精选' : '设为个人主页精选'}
               </button>
+              <button type="button" onClick={() => navigate('/hero-recommendations?workId=' + cardActionWork.id)} className="flex min-h-11 w-full items-center px-5 py-3 text-sm text-[var(--nb-ink)] active:bg-[var(--nb-page)] focus-visible:outline">推荐到客户首页</button>
               <button
                 onClick={() => { handleToggleVisible(cardActionWork); setCardActionWork(null); }}
-                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] text-gray-700 active:bg-gray-50"
+                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] text-[var(--nb-ink)] active:bg-[var(--nb-page)]"
               >
-                <svg className="h-5 w-5 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-5 w-5 shrink-0 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d={cardActionWork.isVisible
                     ? 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21'
                     : 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
@@ -893,14 +894,14 @@ const WorksPage: React.FC = () => {
               </button>
             </div>
             {/* 分隔线 */}
-            <div className="mx-4 my-1 h-px bg-gray-100" />
+            <div className="mx-4 my-1 h-px bg-[var(--nb-page)]" />
             {/* 危险操作 */}
             <div className="px-2 py-1.5">
               <button
                 onClick={() => { handleDelete(cardActionWork); setCardActionWork(null); }}
-                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] text-red-500 active:bg-red-50"
+                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] text-[var(--nb-secondary)] active:bg-[var(--nb-page)]"
               >
-                <svg className="h-5 w-5 shrink-0 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-5 w-5 shrink-0 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
                 删除作品
@@ -910,7 +911,7 @@ const WorksPage: React.FC = () => {
             <div className="mx-2 mb-1">
               <button
                 onClick={() => setCardActionWork(null)}
-                className="w-full rounded-xl bg-gray-50 py-3 text-[15px] font-medium text-gray-500 active:bg-gray-100"
+                className="w-full rounded-xl bg-[var(--nb-page)] py-3 text-[15px] font-medium text-[var(--nb-secondary)] active:bg-[var(--nb-page)]"
               >
                 取消
               </button>
@@ -951,7 +952,7 @@ const WorksPage: React.FC = () => {
                 <div className="absolute right-0 top-12 w-40 bg-white rounded-xl shadow-lg py-2 z-30">
                   <button
                     onClick={() => handleEdit(selectedWork)}
-                    className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                    className="w-full px-4 py-3 text-left text-sm text-[var(--nb-ink)] hover:bg-[var(--nb-page)] flex items-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -960,7 +961,7 @@ const WorksPage: React.FC = () => {
                   </button>
                   <button
                     onClick={() => handleTogglePinned(selectedWork)}
-                    className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                    className="w-full px-4 py-3 text-left text-sm text-[var(--nb-ink)] hover:bg-[var(--nb-page)] flex items-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
@@ -969,26 +970,27 @@ const WorksPage: React.FC = () => {
                   </button>
                   <button
                     onClick={() => handleToggleFeatured(selectedWork)}
-                    className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                    className="w-full px-4 py-3 text-left text-sm text-[var(--nb-ink)] hover:bg-[var(--nb-page)] flex items-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                     </svg>
-                    {selectedWork.isFeatured ? '取消精品' : '设为精品'}
+                    {selectedWork.isFeatured ? '取消个人主页精选' : '设为个人主页精选'}
                   </button>
+                  <button onClick={() => navigate('/hero-recommendations?workId=' + selectedWork.id)} className="min-h-11 w-full px-5 py-3 text-left text-sm active:bg-[var(--nb-page)] focus-visible:outline">推荐到客户首页</button>
                   <button
                     onClick={() => handleToggleVisible(selectedWork)}
-                    className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                    className="w-full px-4 py-3 text-left text-sm text-[var(--nb-ink)] hover:bg-[var(--nb-page)] flex items-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={selectedWork.isVisible ? 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21' : 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'} />
                     </svg>
                     {selectedWork.isVisible ? '隐藏' : '显示'}
                   </button>
-                  <div className="border-t border-gray-100 my-1"></div>
+                  <div className="border-t border-[var(--nb-line)] my-1"></div>
                   <button
                     onClick={() => handleDelete(selectedWork)}
-                    className="w-full px-4 py-3 text-left text-sm text-red-500 hover:bg-red-50 flex items-center gap-2"
+                    className="w-full px-4 py-3 text-left text-sm text-[var(--nb-secondary)] hover:bg-[var(--nb-page)] flex items-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1066,7 +1068,7 @@ const WorksPage: React.FC = () => {
           </div>
 
           {/* Work Info */}
-          <div className="relative z-10 -mt-6 flex min-h-0 flex-1 flex-col rounded-t-[28px] bg-white shadow-[0_-12px_40px_rgba(15,23,42,0.06)]">
+          <div className="relative z-10 -mt-6 flex min-h-0 flex-1 flex-col rounded-t-[28px] bg-white shadow-[0_-12px_40px_rgba(0,0,0,0.06)]">
             {/* Grabber handle — drag up to expand comments */}
             <div
               className="flex shrink-0 cursor-grab touch-none items-center justify-center pt-2 pb-1 active:cursor-grabbing"
@@ -1075,27 +1077,27 @@ const WorksPage: React.FC = () => {
               onPointerUp={onGrabberUp}
               onPointerCancel={onGrabberUp}
             >
-              <div className="h-1.5 w-10 rounded-full bg-gray-300" />
+              <div className="h-1.5 w-10 rounded-full bg-[var(--nb-pressed)]" />
             </div>
             {/* 标题 + 评论：统一滚动流，标题随评论一起滚动，评论获得完整高度 */}
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             {/* Title block */}
             <div className="px-5 pt-3 pb-4">
               <div className="flex items-baseline gap-2">
-                <h2 className="text-[1.35rem] font-bold leading-tight tracking-[-0.02em] text-gray-900">
+                <h2 className="text-[1.35rem] font-bold leading-tight tracking-[-0.02em] text-[var(--nb-ink)]">
                   {selectedWork.title || '未命名作品'}
                 </h2>
                 {selectedWork.price != null && selectedWork.price > 0 && (
-                  <span className="shrink-0 text-[15px] font-semibold text-pink-500">¥{selectedWork.price}</span>
+                  <span className="shrink-0 text-[15px] font-semibold text-[var(--nb-secondary)]">¥{selectedWork.price}</span>
                 )}
               </div>
               {selectedWork.description && (
-                <p className="mt-2 text-sm leading-6 text-gray-500">{selectedWork.description}</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--nb-secondary)]">{selectedWork.description}</p>
               )}
               {selectedWork.tags.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {selectedWork.tags.map((tag) => (
-                    <span key={tag} className="rounded-full bg-pink-50 px-2.5 py-0.5 text-[11px] font-medium text-pink-500">
+                    <span key={tag} className="rounded-full bg-[var(--nb-page)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--nb-secondary)]">
                       #{tag}
                     </span>
                   ))}
@@ -1104,15 +1106,15 @@ const WorksPage: React.FC = () => {
             </div>
 
             {/* Comments */}
-            <div className="border-t border-gray-100 px-5 py-4">
+            <div className="border-t border-[var(--nb-line)] px-5 py-4">
               {(() => {
                 const visibleComments = comments.filter((c) => !c.isHidden);
                 const hiddenComments = comments.filter((c) => c.isHidden);
                 return (
                   <>
                     <div className="mb-3 flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-gray-900">评论</h3>
-                      <span className="text-xs text-gray-400">{visibleComments.length} 条</span>
+                      <h3 className="text-sm font-semibold text-[var(--nb-ink)]">评论</h3>
+                      <span className="text-xs text-[var(--nb-muted)]">{visibleComments.length} 条</span>
                     </div>
 
                     {visibleComments.length > 0 ? (
@@ -1131,7 +1133,7 @@ const WorksPage: React.FC = () => {
                         ))}
                       </div>
                     ) : (
-                      <div className="rounded-2xl bg-gray-50 px-4 py-6 text-center text-sm text-gray-400">
+                      <div className="rounded-2xl bg-[var(--nb-page)] px-4 py-6 text-center text-sm text-[var(--nb-muted)]">
                         暂无评论
                       </div>
                     )}
@@ -1152,13 +1154,13 @@ const WorksPage: React.FC = () => {
             </div>
 
             {/* Comment input bar */}
-            <div className="shrink-0 border-t border-gray-100 bg-white px-5 pt-3 pb-[max(0.875rem,env(safe-area-inset-bottom)+0.5rem)]">
+            <div className="shrink-0 border-t border-[var(--nb-line)] bg-white px-5 pt-3 pb-[max(0.875rem,env(safe-area-inset-bottom)+0.5rem)]">
               {replyingTo && (
-                <div className="mb-2 flex items-center gap-2 text-xs text-gray-500">
-                  <span>回复 <span className="font-medium text-pink-500">@{replyingTo.name}</span></span>
+                <div className="mb-2 flex items-center gap-2 text-xs text-[var(--nb-secondary)]">
+                  <span>回复 <span className="font-medium text-[var(--nb-secondary)]">@{replyingTo.name}</span></span>
                   <button
                     onClick={() => setReplyingTo(null)}
-                    className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-100"
+                    className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--nb-page)]"
                   >
                     <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1175,7 +1177,7 @@ const WorksPage: React.FC = () => {
                   onFocus={() => setInputFocused(true)}
                   onBlur={() => setInputFocused(false)}
                   placeholder={replyingTo ? `回复 @${replyingTo.name}...` : '添加评论...'}
-                  className="h-11 flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 text-sm focus:border-pink-500 focus:bg-white focus:outline-none"
+                  className="h-11 flex-1 rounded-full border border-[var(--nb-line)] bg-[var(--nb-page)] px-4 text-sm focus:border-[var(--nb-ink)] focus:bg-white focus:outline-none"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
@@ -1188,7 +1190,7 @@ const WorksPage: React.FC = () => {
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={handleAddComment}
                     disabled={!commentText.trim()}
-                    className="h-11 shrink-0 rounded-full bg-pink-500 px-5 text-sm font-medium text-white disabled:opacity-40"
+                    className="h-11 shrink-0 rounded-full bg-[var(--nb-action)] px-5 text-sm font-medium text-white disabled:opacity-40"
                   >
                     发送
                   </button>
@@ -1196,31 +1198,31 @@ const WorksPage: React.FC = () => {
                   <div className="flex shrink-0 items-center gap-1">
                     <button
                       onClick={() => handleLike(selectedWork)}
-                      className="flex h-11 items-center gap-1 px-2 text-gray-600"
+                      className="flex h-11 items-center gap-1 px-2 text-[var(--nb-secondary)]"
                       aria-label="点赞"
                     >
                       {selectedWork.isLiked ? (
-                        <svg className="h-6 w-6 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
+                        <svg className="h-6 w-6 text-[var(--nb-secondary)]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
                       ) : (
                         <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
                       )}
-                      {(selectedWork.likeCount || 0) > 0 && <span className="text-xs text-gray-500">{selectedWork.likeCount}</span>}
+                      {(selectedWork.likeCount || 0) > 0 && <span className="text-xs text-[var(--nb-secondary)]">{selectedWork.likeCount}</span>}
                     </button>
                     <button
                       onClick={() => handleFavorite(selectedWork)}
-                      className="flex h-11 items-center gap-1 px-2 text-gray-600"
+                      className="flex h-11 items-center gap-1 px-2 text-[var(--nb-secondary)]"
                       aria-label="收藏"
                     >
                       {selectedWork.isFavorited ? (
-                        <svg className="h-6 w-6 text-amber-500" fill="currentColor" viewBox="0 0 24 24"><path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118L2.49 9.901c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+                        <svg className="h-6 w-6 text-[var(--nb-secondary)]" fill="currentColor" viewBox="0 0 24 24"><path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118L2.49 9.901c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
                       ) : (
                         <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118L2.49 9.901c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
                       )}
-                      {(selectedWork.favoriteCount || 0) > 0 && <span className="text-xs text-gray-500">{selectedWork.favoriteCount}</span>}
+                      {(selectedWork.favoriteCount || 0) > 0 && <span className="text-xs text-[var(--nb-secondary)]">{selectedWork.favoriteCount}</span>}
                     </button>
                     <button
                       onClick={() => handleShare(selectedWork)}
-                      className="flex h-11 items-center px-2 text-gray-600"
+                      className="flex h-11 items-center px-2 text-[var(--nb-secondary)]"
                       aria-label="分享"
                     >
                       <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
@@ -1247,7 +1249,7 @@ const WorksPage: React.FC = () => {
         <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 sm:items-center">
           <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white p-6 sm:rounded-3xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">
+              <h2 className="text-lg font-bold text-[var(--nb-ink)]">
                 {editingWork ? '编辑作品' : '新建作品'}
               </h2>
               <button
@@ -1256,9 +1258,9 @@ const WorksPage: React.FC = () => {
                   setEditingWork(null);
                   setFormData({ title: '', description: '', tags: '', price: '', images: [], isVisible: true });
                 }}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--nb-page)]"
               >
-                <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-4 w-4 text-[var(--nb-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -1268,45 +1270,45 @@ const WorksPage: React.FC = () => {
             <div className="space-y-4">
               {/* Title */}
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">作品标题</label>
+                <label className="mb-1 block text-sm font-medium text-[var(--nb-ink)]">作品标题</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
                   placeholder="例如：法式渐变美甲"
-                  className="w-full rounded-[16px] border border-gray-200 px-4 py-3 text-sm focus:border-pink-500 focus:outline-none"
+                  className="w-full rounded-[16px] border border-[var(--nb-line)] px-4 py-3 text-sm focus:border-[var(--nb-ink)] focus:outline-none"
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">作品说明</label>
+                <label className="mb-1 block text-sm font-medium text-[var(--nb-ink)]">作品说明</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
                   placeholder="描述作品的特点、风格等"
                   rows={3}
-                  className="w-full rounded-[16px] border border-gray-200 px-4 py-3 text-sm focus:border-pink-500 focus:outline-none resize-none"
+                  className="w-full rounded-[16px] border border-[var(--nb-line)] px-4 py-3 text-sm focus:border-[var(--nb-ink)] focus:outline-none resize-none"
                 />
               </div>
 
               {/* Tags */}
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">标签（用逗号分隔）</label>
+                <label className="mb-1 block text-sm font-medium text-[var(--nb-ink)]">标签（用逗号分隔）</label>
                 <input
                   type="text"
                   value={formData.tags}
                   onChange={(e) => setFormData((prev) => ({ ...prev, tags: e.target.value }))}
                   placeholder="例如：法式,渐变,简约"
-                  className="w-full rounded-[16px] border border-gray-200 px-4 py-3 text-sm focus:border-pink-500 focus:outline-none"
+                  className="w-full rounded-[16px] border border-[var(--nb-line)] px-4 py-3 text-sm focus:border-[var(--nb-ink)] focus:outline-none"
                 />
               </div>
 
               {/* Price */}
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">作品价格</label>
+                <label className="mb-1 block text-sm font-medium text-[var(--nb-ink)]">作品价格</label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">¥</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-[var(--nb-muted)]">¥</span>
                   <input
                     type="number"
                     value={formData.price}
@@ -1314,15 +1316,15 @@ const WorksPage: React.FC = () => {
                     placeholder="输入价格（可选）"
                     min="0"
                     step="0.01"
-                    className="w-full rounded-[16px] border border-gray-200 py-3 pl-8 pr-4 text-sm focus:border-pink-500 focus:outline-none"
+                    className="w-full rounded-[16px] border border-[var(--nb-line)] py-3 pl-8 pr-4 text-sm focus:border-[var(--nb-ink)] focus:outline-none"
                   />
                 </div>
               </div>
 
               {/* Images */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  作品图片 <span className="text-gray-400">({formData.images.length}/5)</span>
+                <label className="mb-2 block text-sm font-medium text-[var(--nb-ink)]">
+                  作品图片 <span className="text-[var(--nb-muted)]">({formData.images.length}/5)</span>
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {formData.images.map((url, index) => (
@@ -1330,7 +1332,7 @@ const WorksPage: React.FC = () => {
                       <img src={url} alt={`作品图片${index + 1}`} className="h-full w-full object-cover" />
                       <button
                         onClick={() => handleRemoveImage(index)}
-                        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white"
+                        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--nb-action)] text-white"
                       >
                         <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1339,7 +1341,7 @@ const WorksPage: React.FC = () => {
                     </div>
                   ))}
                   {formData.images.length < 5 && (
-                    <label className="flex aspect-square cursor-pointer items-center justify-center rounded-[12px] border-2 border-dashed border-gray-300 bg-gray-50">
+                    <label className="flex aspect-square cursor-pointer items-center justify-center rounded-[12px] border-2 border-dashed border-[var(--nb-control)] bg-[var(--nb-page)]">
                       <input
                         type="file"
                         accept="image/*"
@@ -1349,9 +1351,9 @@ const WorksPage: React.FC = () => {
                         className="hidden"
                       />
                       {uploading ? (
-                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-pink-500 border-t-transparent" />
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--nb-ink)] border-t-transparent" />
                       ) : (
-                        <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-8 w-8 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                         </svg>
                       )}
@@ -1362,10 +1364,10 @@ const WorksPage: React.FC = () => {
 
               {/* Visibility */}
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">立即显示</span>
+                <span className="text-sm font-medium text-[var(--nb-ink)]">立即显示</span>
                 <button
                   onClick={() => setFormData((prev) => ({ ...prev, isVisible: !prev.isVisible }))}
-                  className={`relative h-7 w-12 rounded-full transition-colors ${formData.isVisible ? 'bg-pink-500' : 'bg-gray-300'}`}
+                  className={`relative h-7 w-12 rounded-full transition-colors ${formData.isVisible ? 'bg-[var(--nb-action)]' : 'bg-[var(--nb-pressed)]'}`}
                 >
                   <span
                     className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform ${formData.isVisible ? 'left-6' : 'left-1'}`}
@@ -1377,7 +1379,7 @@ const WorksPage: React.FC = () => {
             {/* Submit */}
             <button
               onClick={handleSubmit}
-              className="mt-6 w-full rounded-[20px] bg-pink-500 py-3 font-medium text-white active:bg-pink-600"
+              className="mt-6 w-full rounded-[20px] bg-[var(--nb-action)] py-3 font-medium text-white active:bg-[var(--nb-action-pressed)]"
             >
               {editingWork ? '保存修改' : '创建作品'}
             </button>
@@ -1389,17 +1391,17 @@ const WorksPage: React.FC = () => {
       {confirmDeleteCommentId !== null && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 px-6">
           <div className="w-full max-w-xs rounded-2xl bg-white p-6 shadow-xl">
-            <p className="text-center text-sm leading-6 text-gray-700">确定要删除这条评论吗？</p>
+            <p className="text-center text-sm leading-6 text-[var(--nb-ink)]">确定要删除这条评论吗？</p>
             <div className="mt-5 flex gap-3">
               <button
                 onClick={() => setConfirmDeleteCommentId(null)}
-                className="flex-1 rounded-full border border-gray-200 py-2.5 text-sm font-medium text-gray-600"
+                className="flex-1 rounded-full border border-[var(--nb-line)] py-2.5 text-sm font-medium text-[var(--nb-secondary)]"
               >
                 取消
               </button>
               <button
                 onClick={confirmDeleteComment}
-                className="flex-1 rounded-full bg-red-500 py-2.5 text-sm font-medium text-white"
+                className="flex-1 rounded-full bg-[var(--nb-action)] py-2.5 text-sm font-medium text-white"
               >
                 删除
               </button>
@@ -1412,17 +1414,17 @@ const WorksPage: React.FC = () => {
       {confirmHideCommentId !== null && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 px-6">
           <div className="w-full max-w-xs rounded-2xl bg-white p-6 shadow-xl">
-            <p className="text-center text-sm leading-6 text-gray-700">确定要隐藏这条评论吗？隐藏后该评论将折叠在评论区底部。</p>
+            <p className="text-center text-sm leading-6 text-[var(--nb-ink)]">确定要隐藏这条评论吗？隐藏后该评论将折叠在评论区底部。</p>
             <div className="mt-5 flex gap-3">
               <button
                 onClick={() => setConfirmHideCommentId(null)}
-                className="flex-1 rounded-full border border-gray-200 py-2.5 text-sm font-medium text-gray-600"
+                className="flex-1 rounded-full border border-[var(--nb-line)] py-2.5 text-sm font-medium text-[var(--nb-secondary)]"
               >
                 取消
               </button>
               <button
                 onClick={confirmHideComment}
-                className="flex-1 rounded-full bg-gray-700 py-2.5 text-sm font-medium text-white"
+                className="flex-1 rounded-full bg-[var(--nb-action)] py-2.5 text-sm font-medium text-white"
               >
                 隐藏
               </button>

@@ -201,16 +201,16 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
       onClick={onClose}
     >
       <div
-        className="flex max-h-[88vh] w-full max-w-md flex-col rounded-t-[32px] bg-white shadow-[0_-20px_50px_rgba(15,23,42,0.18)] sm:rounded-[32px]"
+        className="flex max-h-[88vh] w-full max-w-md flex-col rounded-t-[32px] bg-white shadow-[0_-20px_50px_rgba(0,0,0,0.18)] sm:rounded-[32px]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 pt-5 pb-2">
-          <h3 className="text-lg font-semibold text-slate-900">📅 发起预约</h3>
+          <h3 className="text-lg font-semibold text-[var(--nb-ink)]">📅 发起预约</h3>
           <button
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-page)]"
           >
-            <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-4 w-4 text-[var(--nb-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -219,7 +219,7 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
         <div className="flex-1 space-y-5 overflow-y-auto px-6 pb-2">
           {/* Service type */}
           {availableTypes.length === 0 ? (
-            <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
+            <p className="rounded-2xl bg-[var(--nb-page)] px-4 py-3 text-sm text-[var(--nb-secondary)]">
               该美甲师暂未开启可预约的服务方式
             </p>
           ) : availableTypes.length === 1 ? (
@@ -245,7 +245,7 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
                       className={`flex-1 rounded-xl py-3 text-sm font-medium ${
                         sel
                           ? 'bg-[var(--color-primary-soft)] text-[var(--color-primary)] ring-1 ring-[var(--color-primary)]/30'
-                          : 'bg-slate-50 text-slate-600'
+                          : 'bg-[var(--nb-page)] text-[var(--nb-secondary)]'
                       }`}
                     >
                       {t}
@@ -263,7 +263,7 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
               {showInlineForm ? (
                 <div className="space-y-2">
                   {(lockedProvince || lockedCity) && (
-                    <div className="rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-500">
+                    <div className="rounded-xl bg-[var(--nb-page)] px-4 py-3 text-sm text-[var(--nb-secondary)]">
                       服务城市：{[lockedProvince, lockedCity].filter(Boolean).join(' ')}（仅支持同城上门）
                     </div>
                   )}
@@ -274,7 +274,7 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
                   {addresses.length > 0 && (
                     <button
                       onClick={() => setShowInlineForm(false)}
-                      className="text-xs text-slate-400"
+                      className="text-xs text-[var(--nb-muted)]"
                     >
                       取消，使用已有地址
                     </button>
@@ -283,26 +283,26 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
               ) : addresses.length === 0 ? (
                 <button
                   onClick={() => setShowInlineForm(true)}
-                  className="flex w-full items-center gap-2 rounded-xl bg-slate-50 px-4 py-3 text-sm font-medium text-[var(--color-primary)] ring-1 ring-[var(--color-primary)]/20"
+                  className="flex w-full items-center gap-2 rounded-xl bg-[var(--nb-page)] px-4 py-3 text-sm font-medium text-[var(--color-primary)] ring-1 ring-[var(--color-primary)]/20"
                 >
                   + 添加上门地址
                 </button>
               ) : addresses.length === 1 ? (
                 !sameCity(addresses[0], technician) ? (
                   <div className="space-y-2">
-                    <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                    <p className="rounded-xl bg-[var(--nb-page)] px-4 py-3 text-sm text-[var(--nb-ink)]">
                       该地址非美甲师所在城市，不支持跨城上门
                     </p>
                     <button
                       onClick={() => setShowInlineForm(true)}
-                      className="flex w-full items-center gap-2 rounded-xl bg-slate-50 px-4 py-3 text-sm font-medium text-[var(--color-primary)] ring-1 ring-[var(--color-primary)]/20"
+                      className="flex w-full items-center gap-2 rounded-xl bg-[var(--nb-page)] px-4 py-3 text-sm font-medium text-[var(--color-primary)] ring-1 ring-[var(--color-primary)]/20"
                     >
                       + 添加同城地址
                     </button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-4 py-3">
-                    <span className="flex-1 text-sm text-slate-900">{fullAddress(addresses[0])}</span>
+                  <div className="flex items-center gap-2 rounded-xl bg-[var(--nb-page)] px-4 py-3">
+                    <span className="flex-1 text-sm text-[var(--nb-ink)]">{fullAddress(addresses[0])}</span>
                     <button
                       onClick={() => setShowInlineForm(true)}
                       className="text-xs text-[var(--color-primary)]"
@@ -324,7 +324,7 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
                       }
                       setSelectedAddressId(id);
                     }}
-                    className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
+                    className="w-full rounded-xl bg-[var(--nb-page)] px-4 py-3 text-sm text-[var(--nb-ink)] outline-none"
                   >
                     {addresses.map((a) => (
                       <option key={a.id} value={a.id} disabled={!sameCity(a, technician)}>
@@ -351,7 +351,7 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
           {isShop && enabledShopAddresses.length > 0 && (
             <div>
               <Label>门店地址</Label>
-              <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900">
+              <div className="rounded-xl bg-[var(--nb-page)] px-4 py-3 text-sm text-[var(--nb-ink)]">
                 {[
                   enabledShopAddresses[0].province,
                   enabledShopAddresses[0].city,
@@ -367,15 +367,15 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
           {/* Date — 自定义月历，置灰休息日/非工作日 */}
           <div>
             <Label>预约日期</Label>
-            <div className="rounded-xl bg-slate-50 p-3">
+            <div className="rounded-xl bg-[var(--nb-page)] p-3">
               <div className="mb-2 flex items-center justify-between">
-                <button type="button" onClick={() => setCalendarMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1))} className="flex h-7 w-7 items-center justify-center rounded-full text-slate-500 hover:bg-slate-200">‹</button>
-                <span className="text-sm font-medium text-slate-900">{calendarMonth.getFullYear()}年{calendarMonth.getMonth() + 1}月</span>
-                <button type="button" onClick={() => setCalendarMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1))} className="flex h-7 w-7 items-center justify-center rounded-full text-slate-500 hover:bg-slate-200">›</button>
+                <button type="button" onClick={() => setCalendarMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1))} className="flex h-7 w-7 items-center justify-center rounded-full text-[var(--nb-secondary)] hover:bg-[var(--nb-pressed)]">‹</button>
+                <span className="text-sm font-medium text-[var(--nb-ink)]">{calendarMonth.getFullYear()}年{calendarMonth.getMonth() + 1}月</span>
+                <button type="button" onClick={() => setCalendarMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1))} className="flex h-7 w-7 items-center justify-center rounded-full text-[var(--nb-secondary)] hover:bg-[var(--nb-pressed)]">›</button>
               </div>
               <div className="mb-1 grid grid-cols-7 gap-1">
                 {['日', '一', '二', '三', '四', '五', '六'].map((w) => (
-                  <div key={w} className="flex h-6 items-center justify-center text-[11px] text-slate-400">{w}</div>
+                  <div key={w} className="flex h-6 items-center justify-center text-[11px] text-[var(--nb-muted)]">{w}</div>
                 ))}
               </div>
               <div className="grid grid-cols-7 gap-1">
@@ -401,7 +401,7 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
                         disabled={disabled}
                         onClick={() => { setServiceDate(dateStr); setStartTime(''); }}
                         className={`h-9 rounded-lg text-[13px] font-medium transition ${
-                          disabled ? 'cursor-not-allowed text-slate-300' : selected ? 'bg-[#FF6B8A] text-white' : 'text-slate-700 hover:bg-slate-200'
+                          disabled ? 'cursor-not-allowed text-[var(--nb-muted)]' : selected ? 'bg-[var(--nb-action)] text-white' : 'text-[var(--nb-ink)] hover:bg-[var(--nb-pressed)]'
                         }`}
                       >
                         {day}
@@ -411,7 +411,7 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
                   return cells;
                 })()}
               </div>
-              <p className="mt-2 text-[11px] text-slate-400">灰色日期为休息日，不可预约</p>
+              <p className="mt-2 text-[11px] text-[var(--nb-muted)]">灰色日期为休息日，不可预约</p>
             </div>
           </div>
 
@@ -430,10 +430,10 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
                       onClick={() => !occupied && setStartTime(time)}
                       className={`flex flex-col items-center justify-center rounded-lg py-1.5 text-[13px] font-medium ${
                         occupied
-                          ? 'cursor-not-allowed bg-slate-100 text-slate-400'
+                          ? 'cursor-not-allowed bg-[var(--nb-page)] text-[var(--nb-muted)]'
                           : sel
-                          ? 'bg-[linear-gradient(135deg,#FF6B8A_0%,#FF8FA3_100%)] text-white shadow-[0_8px_18px_rgba(255,107,138,0.3)]'
-                          : 'bg-slate-100 text-slate-600'
+                          ? 'bg-[var(--nb-action)] text-white shadow-[0_8px_18px_rgba(0,0,0,0.3)]'
+                          : 'bg-[var(--nb-page)] text-[var(--nb-secondary)]'
                       }`}
                     >
                       <span className={occupied ? 'text-xs leading-none line-through' : ''}>{time}</span>
@@ -443,7 +443,7 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
                 })}
               </div>
             ) : (
-              <p className="py-2 text-sm text-slate-400">该美甲师休息中</p>
+              <p className="py-2 text-sm text-[var(--nb-muted)]">该美甲师休息中</p>
             )}
           </div>
 
@@ -455,7 +455,7 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
               onChange={(e) => setNote(e.target.value)}
               rows={3}
               placeholder="简短描述美甲需求，或上传参考图片..."
-              className="w-full resize-none rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400"
+              className="w-full resize-none rounded-xl bg-[var(--nb-page)] px-4 py-3 text-sm text-[var(--nb-ink)] outline-none placeholder:text-[var(--nb-muted)]"
             />
             <div className="mt-2 flex flex-wrap gap-2">
               {images.map((url, i) => (
@@ -463,7 +463,7 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
                   <img src={url} alt="" className="h-16 w-16 rounded-lg object-cover" />
                   <button
                     onClick={() => setImages((prev) => prev.filter((_, idx) => idx !== i))}
-                    className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white"
+                    className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--nb-action)] text-white"
                   >
                     <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M6 18L18 6M6 6l12 12" />
@@ -472,7 +472,7 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
                 </div>
               ))}
               {images.length < 3 && (
-                <label className="flex h-16 w-16 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-slate-300 text-slate-400">
+                <label className="flex h-16 w-16 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[var(--nb-control)] text-[var(--nb-muted)]">
                   {uploading ? (
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-primary)] border-t-transparent" />
                   ) : (
@@ -490,14 +490,14 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
           </div>
         </div>
 
-        <div className="border-t border-slate-100 px-6 py-4 safe-area-bottom">
+        <div className="border-t border-[var(--nb-line)] px-6 py-4 safe-area-bottom">
           <button
             onClick={handleSubmit}
             disabled={!canSubmit || submitting}
             className={`flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold ${
               canSubmit && !submitting
-                ? 'bg-[linear-gradient(135deg,#FF6B8A_0%,#FF8FA3_100%)] text-white shadow-[0_12px_24px_rgba(255,107,138,0.3)]'
-                : 'bg-slate-100 text-slate-400'
+                ? 'bg-[var(--nb-action)] text-white shadow-[0_12px_24px_rgba(0,0,0,0.3)]'
+                : 'bg-[var(--nb-page)] text-[var(--nb-muted)]'
             }`}
           >
             {submitting ? (
@@ -512,15 +512,15 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
       {showShopConfirm && (
         <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/40 sm:items-center" onClick={() => setShowShopConfirm(false)}>
           <div className="w-full max-w-md rounded-t-[28px] bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:max-w-sm sm:rounded-[28px] sm:pb-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-base font-semibold text-slate-900">确认到店地址</h3>
-            <p className="mt-1 text-sm text-slate-500">请确认前往的美甲师店铺地址：</p>
-            <div className="mt-3 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-800">
+            <h3 className="text-base font-semibold text-[var(--nb-ink)]">确认到店地址</h3>
+            <p className="mt-1 text-sm text-[var(--nb-secondary)]">请确认前往的美甲师店铺地址：</p>
+            <div className="mt-3 rounded-xl bg-[var(--nb-page)] px-4 py-3 text-sm text-[var(--nb-ink)]">
               <div className="font-medium">{shopForConfirm?.name}</div>
-              <div className="mt-1 text-slate-600">{[shopForConfirm?.province, shopForConfirm?.city, shopForConfirm?.district, shopForConfirm?.detailAddress].filter(Boolean).join(' ')}</div>
+              <div className="mt-1 text-[var(--nb-secondary)]">{[shopForConfirm?.province, shopForConfirm?.city, shopForConfirm?.district, shopForConfirm?.detailAddress].filter(Boolean).join(' ')}</div>
             </div>
             <div className="mt-4 flex gap-3">
-              <button onClick={() => setShowShopConfirm(false)} className="flex-1 rounded-full bg-slate-100 py-3 text-sm font-medium text-slate-600 min-h-[48px]">取消</button>
-              <button onClick={async () => { setShowShopConfirm(false); await doCreate(); }} className="flex-1 rounded-full bg-[linear-gradient(135deg,#FF6B8A_0%,#FF8FA3_100%)] py-3 text-sm font-medium text-white min-h-[48px]">确认预约</button>
+              <button onClick={() => setShowShopConfirm(false)} className="flex-1 rounded-full bg-[var(--nb-page)] py-3 text-sm font-medium text-[var(--nb-secondary)] min-h-[48px]">取消</button>
+              <button onClick={async () => { setShowShopConfirm(false); await doCreate(); }} className="flex-1 rounded-full bg-[var(--nb-action)] py-3 text-sm font-medium text-white min-h-[48px]">确认预约</button>
             </div>
           </div>
         </div>
@@ -530,7 +530,7 @@ const BookingSheet: React.FC<BookingSheetProps> = ({ technician, prefill, mode =
 };
 
 const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <p className="mb-2 text-[13px] font-semibold text-slate-900">{children}</p>
+  <p className="mb-2 text-[13px] font-semibold text-[var(--nb-ink)]">{children}</p>
 );
 
 const Field: React.FC<{
@@ -544,7 +544,7 @@ const Field: React.FC<{
     value={value}
     onChange={(e) => onChange(e.target.value)}
     placeholder={placeholder}
-    className="w-full rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400"
+    className="w-full rounded-xl bg-[var(--nb-page)] px-4 py-3 text-sm text-[var(--nb-ink)] outline-none placeholder:text-[var(--nb-muted)]"
   />
 );
 

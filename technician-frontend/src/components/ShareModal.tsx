@@ -139,17 +139,17 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
       // Draw Background
       const gradient = ctx.createLinearGradient(0, 0, 0, H);
-      gradient.addColorStop(0, '#FFFFFF');
-      gradient.addColorStop(1, '#FFF5F7');
+      gradient.addColorStop(0, 'var(--nb-surface)');
+      gradient.addColorStop(1, 'var(--nb-page)');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, W, H);
 
       // Draw Main Card Area
-      ctx.shadowColor = 'rgba(255, 94, 147, 0.08)';
+      ctx.shadowColor = 'rgba(0,0,0,0.08)';
       ctx.shadowBlur = 30;
       ctx.shadowOffsetX = 0;
       ctx.shadowOffsetY = 15;
-      ctx.fillStyle = '#FFFFFF';
+      ctx.fillStyle = 'var(--nb-surface)';
       drawRoundedImage(ctx, new Image(), 35, 35, W - 70, H - 70, 24); // just creates path clip
       ctx.fillRect(35, 35, W - 70, H - 70);
 
@@ -211,22 +211,22 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       }
 
       // Draw Title
-      ctx.fillStyle = '#1f2230';
+      ctx.fillStyle = 'var(--nb-ink)';
       ctx.font = 'bold 32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
       const textY = drawWrappedText(ctx, work.title || '款式设计', 60, 640, W - 120, 44, 2);
 
       // Draw Price Tag if available
       if (work.price && work.price > 0) {
-        ctx.fillStyle = '#FF5E93';
+        ctx.fillStyle = 'var(--nb-action)';
         ctx.font = 'bold 36px monospace';
         ctx.fillText(`¥${work.price}`, 60, textY + 60);
 
         // draw tag badge
-        ctx.fillStyle = '#FFE9F0';
+        ctx.fillStyle = 'var(--nb-page)';
         ctx.beginPath();
         ctx.roundRect(190, textY + 24, 100, 44, 8);
         ctx.fill();
-        ctx.fillStyle = '#FF5E93';
+        ctx.fillStyle = 'var(--nb-action)';
         ctx.font = '20px sans-serif';
         ctx.fillText('专属价', 210, textY + 53);
       }
@@ -259,11 +259,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
         if (!hasAvatar) {
           // generic avatar circle
-          ctx.fillStyle = '#FF5E93';
+          ctx.fillStyle = 'var(--nb-action)';
           ctx.beginPath();
           ctx.arc(100, 850, 40, 0, Math.PI * 2);
           ctx.fill();
-          ctx.fillStyle = '#FFFFFF';
+          ctx.fillStyle = 'var(--nb-surface)';
           ctx.font = 'bold 32px sans-serif';
           ctx.textAlign = 'center';
           ctx.fillText(techName.slice(0, 1), 100, 861);
@@ -271,10 +271,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
         // Draw tech name
         ctx.textAlign = 'left';
-        ctx.fillStyle = '#1f2230';
+        ctx.fillStyle = 'var(--nb-ink)';
         ctx.font = 'bold 26px sans-serif';
         ctx.fillText(techName, 160, 848);
-        ctx.fillStyle = '#8f8691';
+        ctx.fillStyle = 'var(--nb-muted)';
         ctx.font = '20px sans-serif';
         ctx.fillText('为您定制精美指甲设计', 160, 878);
       };
@@ -292,15 +292,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
       if (qrImg.complete && qrImg.naturalWidth > 0) {
         ctx.drawImage(qrImg, W - 200, 780, 140, 140);
-        ctx.fillStyle = '#8f8691';
+        ctx.fillStyle = 'var(--nb-muted)';
         ctx.font = '16px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('长按识别预约', W - 130, 940);
       } else {
         // Fallback text QR Code representation
-        ctx.fillStyle = '#f0f0f0';
+        ctx.fillStyle = 'var(--nb-line)';
         ctx.fillRect(W - 200, 780, 140, 140);
-        ctx.fillStyle = '#8f8691';
+        ctx.fillStyle = 'var(--nb-muted)';
         ctx.font = '14px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('二维码载入中', W - 130, 860);
@@ -375,15 +375,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         style={{ touchAction: 'pan-y' }}
       >
         {/* Header */}
-        <div className="mb-5 flex items-center justify-between border-b border-gray-100 pb-3">
-          <h3 className="text-lg font-bold text-gray-900">
+        <div className="mb-5 flex items-center justify-between border-b border-[var(--nb-line)] pb-3">
+          <h3 className="text-lg font-bold text-[var(--nb-ink)]">
             {view === 'options' && '款式推广与分享'}
             {view === 'poster' && '朋友圈宣传海报'}
             {view === 'xiaohongshu' && '小红书分发助手'}
           </h3>
           <button 
             onClick={onClose} 
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-500 min-h-[44px]"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-page)] text-[var(--nb-secondary)] min-h-[44px]"
           >
             ✕
           </button>
@@ -395,37 +395,37 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             {/* Option A: WeChat Link */}
             <button
               onClick={handleCopyLink}
-              className="flex flex-col items-center gap-2 rounded-2xl bg-pink-50/50 p-4 transition active:bg-pink-100 min-h-[44px]"
+              className="flex flex-col items-center gap-2 rounded-2xl bg-[var(--nb-page)]/50 p-4 transition active:bg-[var(--nb-page)] min-h-[44px]"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500 text-2xl text-white">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--nb-action)] text-2xl text-white">
                 💬
               </div>
-              <span className="text-xs font-semibold text-gray-700">发送到聊天</span>
-              <span className="text-[10px] text-gray-400">复制裂变链接</span>
+              <span className="text-xs font-semibold text-[var(--nb-ink)]">发送到聊天</span>
+              <span className="text-[10px] text-[var(--nb-muted)]">复制裂变链接</span>
             </button>
 
             {/* Option B: WeChat Poster */}
             <button
               onClick={handleGeneratePoster}
-              className="flex flex-col items-center gap-2 rounded-2xl bg-pink-50/50 p-4 transition active:bg-pink-100 min-h-[44px]"
+              className="flex flex-col items-center gap-2 rounded-2xl bg-[var(--nb-page)]/50 p-4 transition active:bg-[var(--nb-page)] min-h-[44px]"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-pink-500 text-2xl text-white">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--nb-action)] text-2xl text-white">
                 🖼️
               </div>
-              <span className="text-xs font-semibold text-gray-700">朋友圈海报</span>
-              <span className="text-[10px] text-gray-400">带码卡片宣传图</span>
+              <span className="text-xs font-semibold text-[var(--nb-ink)]">朋友圈海报</span>
+              <span className="text-[10px] text-[var(--nb-muted)]">带码卡片宣传图</span>
             </button>
 
             {/* Option C: Xiaohongshu Sync */}
             <button
               onClick={handleXiaohongshuAssist}
-              className="flex flex-col items-center gap-2 rounded-2xl bg-pink-50/50 p-4 transition active:bg-pink-100 min-h-[44px]"
+              className="flex flex-col items-center gap-2 rounded-2xl bg-[var(--nb-page)]/50 p-4 transition active:bg-[var(--nb-page)] min-h-[44px]"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-600 text-2xl text-white">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--nb-action)] text-2xl text-white">
                 📕
               </div>
-              <span className="text-xs font-semibold text-gray-700">同步小红书</span>
-              <span className="text-[10px] text-gray-400">素材打包+文案</span>
+              <span className="text-xs font-semibold text-[var(--nb-ink)]">同步小红书</span>
+              <span className="text-[10px] text-[var(--nb-muted)]">素材打包+文案</span>
             </button>
           </div>
         )}
@@ -434,9 +434,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         {view === 'poster' && (
           <div className="flex flex-col items-center gap-4">
             {generatingPoster ? (
-              <div className="flex h-72 w-full flex-col items-center justify-center gap-3 rounded-2xl bg-gray-50 border border-dashed border-gray-200">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#FF5E93] border-t-transparent" />
-                <p className="text-sm text-gray-500">正在生成精美海报图...</p>
+              <div className="flex h-72 w-full flex-col items-center justify-center gap-3 rounded-2xl bg-[var(--nb-page)] border border-dashed border-[var(--nb-line)]">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--nb-control)] border-t-transparent" />
+                <p className="text-sm text-[var(--nb-secondary)]">正在生成精美海报图...</p>
               </div>
             ) : (
               <div className="flex flex-col items-center w-full">
@@ -445,26 +445,26 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
                 {/* Poster Preview */}
                 {posterUrl && (
-                  <div className="relative max-h-[45vh] overflow-y-auto rounded-2xl border border-gray-100 shadow-md">
+                  <div className="relative max-h-[45vh] overflow-y-auto rounded-2xl border border-[var(--nb-line)] shadow-md">
                     <img src={posterUrl} alt="海报预览" className="w-64 object-contain" />
                   </div>
                 )}
 
-                <p className="mt-3 text-center text-xs text-gray-400">
+                <p className="mt-3 text-center text-xs text-[var(--nb-muted)]">
                   💡 手机用户建议<strong>“长按图片保存”</strong>，或点击下方按钮下载海报
                 </p>
 
                 <div className="mt-4 flex w-full gap-3">
                   <button
                     onClick={() => setView('options')}
-                    className="flex-1 rounded-xl bg-gray-100 py-3 text-sm font-semibold text-gray-600 min-h-[44px] active:bg-gray-200"
+                    className="flex-1 rounded-xl bg-[var(--nb-page)] py-3 text-sm font-semibold text-[var(--nb-secondary)] min-h-[44px] active:bg-[var(--nb-pressed)]"
                   >
                     返回
                   </button>
                   <button
                     onClick={handleDownloadPoster}
                     disabled={!posterUrl}
-                    className="flex-1 rounded-xl bg-[#FF5E93] py-3 text-sm font-semibold text-white min-h-[44px] shadow-sm active:bg-[#e54e82] disabled:opacity-50"
+                    className="flex-1 rounded-xl bg-[var(--nb-action)] py-3 text-sm font-semibold text-white min-h-[44px] shadow-sm active:bg-[var(--nb-action-pressed)] disabled:opacity-50"
                   >
                     下载海报
                   </button>
@@ -477,20 +477,20 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         {/* View 3: Xiaohongshu assistant */}
         {view === 'xiaohongshu' && (
           <div className="space-y-4">
-            <div className="rounded-2xl bg-red-50 p-4 border border-red-100 text-sm text-red-800 space-y-2">
+            <div className="rounded-2xl bg-[var(--nb-page)] p-4 border border-[var(--nb-line)] text-sm text-[var(--nb-ink)] space-y-2">
               <p className="font-bold flex items-center gap-1.5 text-base">
                 <span>📌</span> 素材提取指引：
               </p>
-              <ol className="list-decimal pl-4 space-y-1.5 text-xs text-red-700">
+              <ol className="list-decimal pl-4 space-y-1.5 text-xs text-[var(--nb-ink)]">
                 <li>本款式全部原图（无水印）已保存到您的本地相册中。</li>
                 <li>小红书风格的推广文案（标题+话题标签）已自动复制到您的系统剪贴板。</li>
                 <li>点击下方按钮跳转小红书发布，直接从相册选图并在输入框<b>“粘贴”</b>即可。</li>
               </ol>
             </div>
 
-            <div className="rounded-2xl bg-gray-50 p-3.5 border border-gray-200 text-xs">
-              <p className="font-bold text-gray-500 mb-1">复制的内容预览：</p>
-              <div className="max-h-24 overflow-y-auto font-mono text-gray-700 whitespace-pre-wrap break-all p-2 bg-white rounded-lg">
+            <div className="rounded-2xl bg-[var(--nb-page)] p-3.5 border border-[var(--nb-line)] text-xs">
+              <p className="font-bold text-[var(--nb-secondary)] mb-1">复制的内容预览：</p>
+              <div className="max-h-24 overflow-y-auto font-mono text-[var(--nb-ink)] whitespace-pre-wrap break-all p-2 bg-white rounded-lg">
                 {work.title || '今日美甲分享'}{'\n'}
                 {work.description || ''}{'\n'}
                 {work.tags.map(t => `#${t.trim()}`).join(' ')} #美甲分享 #预约美甲
@@ -500,13 +500,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             <div className="flex gap-3">
               <button
                 onClick={() => setView('options')}
-                className="flex-1 rounded-xl bg-gray-100 py-3 text-sm font-semibold text-gray-600 min-h-[44px] active:bg-gray-200"
+                className="flex-1 rounded-xl bg-[var(--nb-page)] py-3 text-sm font-semibold text-[var(--nb-secondary)] min-h-[44px] active:bg-[var(--nb-pressed)]"
               >
                 返回
               </button>
               <button
                 onClick={handleLaunchXiaohongshu}
-                className="flex-1 rounded-xl bg-red-600 py-3 text-sm font-semibold text-white min-h-[44px] active:bg-red-700 shadow-md"
+                className="flex-1 rounded-xl bg-[var(--nb-action)] py-3 text-sm font-semibold text-white min-h-[44px] active:bg-[var(--nb-action-pressed)] shadow-md"
               >
                 去小红书发帖
               </button>

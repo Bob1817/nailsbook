@@ -153,14 +153,14 @@ const DesignDetail: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     const colorMap: Record<string, string> = {
-      'pending_quote': 'text-amber-600 bg-amber-50',
-      'quoted': 'text-blue-600 bg-blue-50',
-      'accepted': 'text-emerald-600 bg-emerald-50',
-      'rejected': 'text-red-600 bg-red-50',
-      'converted': 'text-purple-600 bg-purple-50',
-      'cancelled': 'text-slate-400 bg-slate-100',
+      'pending_quote': 'text-[var(--nb-secondary)] bg-[var(--nb-page)]',
+      'quoted': 'text-[var(--nb-secondary)] bg-[var(--nb-page)]',
+      'accepted': 'text-[var(--nb-secondary)] bg-[var(--nb-page)]',
+      'rejected': 'text-[var(--nb-secondary)] bg-[var(--nb-page)]',
+      'converted': 'text-[var(--nb-secondary)] bg-[var(--nb-page)]',
+      'cancelled': 'text-[var(--nb-muted)] bg-[var(--nb-page)]',
     };
-    return colorMap[status] || 'text-slate-600 bg-slate-100';
+    return colorMap[status] || 'text-[var(--nb-secondary)] bg-[var(--nb-page)]';
   };
 
   const getStatusIcon = (status: string) => {
@@ -373,7 +373,7 @@ const DesignDetail: React.FC = () => {
   }
 
   return (
-    <div className="min-h-full bg-[linear-gradient(180deg,#fff8fa_0%,#f8f9fc_24%,#f5f6f8_100%)] pb-28">
+    <div className="min-h-full bg-[var(--nb-page)] pb-28">
       {/* Header */}
       <div className="sticky top-0 z-10 border-b border-white/60 bg-white/82 px-5 app-header-safe pb-4 backdrop-blur-md">
         <div className="flex items-center justify-between gap-4">
@@ -407,7 +407,7 @@ const DesignDetail: React.FC = () => {
                 onClick={() => setShowDeleteModal(true)}
                 className="w-10 h-10 rounded-full bg-white shadow-sm ring-1 ring-black/5 flex items-center justify-center active:scale-95 transition-transform"
               >
-                <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-[var(--nb-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
               </button>
@@ -419,7 +419,7 @@ const DesignDetail: React.FC = () => {
       {/* Content - Main Design View */}
       <div className="p-5 space-y-4">
         {/* Main Design Card - Title, Images, Description */}
-        <div className="bg-white rounded-[28px] p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
+        <div className="bg-white rounded-[28px] p-5 shadow-[0_12px_32px_rgba(0,0,0,0.06)] ring-1 ring-black/5">
           {/* Title */}
           <div className="mb-4">
             <h2 className="text-heading-2 text-[var(--color-text)] font-semibold">
@@ -435,7 +435,7 @@ const DesignDetail: React.FC = () => {
             <div className="mb-4">
               <div className="grid grid-cols-3 gap-2">
                 {design.imageUrls.map((url, index) => (
-                  <div key={index} className="aspect-square rounded-xl overflow-hidden bg-slate-100">
+                  <div key={index} className="aspect-square rounded-xl overflow-hidden bg-[var(--nb-page)]">
                     <img
                       src={url}
                       alt={`设计图片${index + 1}`}
@@ -449,14 +449,14 @@ const DesignDetail: React.FC = () => {
 
           {/* Description */}
           {design.description && (
-            <div className="p-4 bg-slate-50 rounded-xl">
+            <div className="p-4 bg-[var(--nb-page)] rounded-xl">
               <p className="text-body-sm text-[var(--color-text)]">{design.description}</p>
             </div>
           )}
         </div>
 
         {/* Quote Status & Info */}
-        <div className="bg-white rounded-[28px] p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
+        <div className="bg-white rounded-[28px] p-5 shadow-[0_12px_32px_rgba(0,0,0,0.06)] ring-1 ring-black/5">
           {/* Status Header */}
           <div className="flex items-center gap-4 mb-4">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${getStatusColor(design.status)}`}>
@@ -472,13 +472,13 @@ const DesignDetail: React.FC = () => {
 
           {/* Quote Info - When quoted or accepted */}
           {(design.quotePrice || design.status === 'quoted' || design.status === 'accepted' || design.status === 'converted') && design.technician && (
-            <div className="border-t border-slate-100 pt-4">
+            <div className="border-t border-[var(--nb-line)] pt-4">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden">
+                <div className="w-10 h-10 rounded-full bg-[var(--nb-page)] flex items-center justify-center overflow-hidden">
                   {design.technician.avatarUrl ? (
                     <img src={design.technician.avatarUrl} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-5 h-5 text-[var(--nb-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   )}
@@ -490,14 +490,14 @@ const DesignDetail: React.FC = () => {
               </div>
               
               {design.quotePrice && (
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-[#FF6B8A]/10 to-[#FF8FA3]/10 rounded-xl mb-3">
+                <div className="flex items-center justify-between p-4 bg-[var(--nb-action)] rounded-xl mb-3">
                   <span className="text-body text-[var(--color-text)]">报价金额</span>
                   <span className="text-heading-1 text-[var(--color-primary)]">¥{design.quotePrice}</span>
                 </div>
               )}
               
               {design.quoteRemark && (
-                <div className="p-3 bg-slate-50 rounded-xl">
+                <div className="p-3 bg-[var(--nb-page)] rounded-xl">
                   <p className="text-caption text-[var(--color-text-muted)] mb-1">报价说明</p>
                   <p className="text-body-sm text-[var(--color-text)]">{design.quoteRemark}</p>
                 </div>
@@ -509,20 +509,20 @@ const DesignDetail: React.FC = () => {
       </div>
 
       {/* Bottom Action Buttons - Fixed at bottom with safe area */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-100 px-5 py-4 pb-safe">
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-[var(--nb-line)] px-5 py-4 pb-safe">
         <div className="max-w-md mx-auto space-y-3">
           {/* Pending Quote - Request Quote & Create Booking side by side */}
           {design.status === 'pending_quote' && (
             <div className="flex gap-3">
               <button
                 onClick={() => setShowQuoteModal(true)}
-                className="flex-1 py-4 bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-pink-200"
+                className="flex-1 py-4 bg-[var(--nb-action)] text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-black/5"
               >
                 发起报价
               </button>
               <button
                 onClick={handleOpenBooking}
-                className="flex-1 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-emerald-200"
+                className="flex-1 py-4 bg-[var(--nb-action)] text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-black/5"
               >
                 发起预约
               </button>
@@ -534,13 +534,13 @@ const DesignDetail: React.FC = () => {
             <div className="flex gap-3">
               <button
                 onClick={handleOpenBooking}
-                className="flex-1 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-emerald-200"
+                className="flex-1 py-4 bg-[var(--nb-action)] text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-black/5"
               >
                 发起预约
               </button>
               <button
                 onClick={handleAcceptQuote}
-                className="flex-1 py-4 bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-pink-200"
+                className="flex-1 py-4 bg-[var(--nb-action)] text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-black/5"
               >
                 接受报价
               </button>
@@ -551,7 +551,7 @@ const DesignDetail: React.FC = () => {
           {design.status === 'accepted' && (
             <button
               onClick={handleOpenBooking}
-              className="w-full py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-emerald-200"
+              className="w-full py-4 bg-[var(--nb-action)] text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-black/5"
             >
               发起预约
             </button>
@@ -561,7 +561,7 @@ const DesignDetail: React.FC = () => {
           {design.status === 'converted' && (
             <button
               onClick={() => navigate('/orders')}
-              className="w-full py-4 bg-purple-500 text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-purple-200"
+              className="w-full py-4 bg-[var(--nb-action)] text-white text-body font-medium rounded-full active:scale-95 transition-transform shadow-lg shadow-black/5"
             >
               查看预约
             </button>
@@ -608,14 +608,14 @@ const DesignDetail: React.FC = () => {
                     className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
                       selectedTechsForQuote.includes(tech.id)
                         ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]'
-                        : 'border-slate-100 bg-white hover:border-slate-200'
+                        : 'border-[var(--nb-line)] bg-white hover:border-[var(--nb-line)]'
                     }`}
                   >
-                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden">
+                    <div className="w-10 h-10 rounded-full bg-[var(--nb-page)] flex items-center justify-center overflow-hidden">
                       {tech.avatarUrl ? (
                         <img src={tech.avatarUrl} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-5 h-5 text-[var(--nb-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                       )}
@@ -627,7 +627,7 @@ const DesignDetail: React.FC = () => {
                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                       selectedTechsForQuote.includes(tech.id)
                         ? 'border-[var(--color-primary)] bg-[var(--color-primary)]'
-                        : 'border-slate-300'
+                        : 'border-[var(--nb-control)]'
                     }`}>
                       {selectedTechsForQuote.includes(tech.id) && (
                         <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -639,13 +639,13 @@ const DesignDetail: React.FC = () => {
                 ))}
               </div>
             ) : technicians && technicians.length === 1 ? (
-              <div className="mb-6 p-4 bg-slate-50 rounded-xl">
+              <div className="mb-6 p-4 bg-[var(--nb-page)] rounded-xl">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden">
+                  <div className="w-10 h-10 rounded-full bg-[var(--nb-page)] flex items-center justify-center overflow-hidden">
                     {technicians[0].avatarUrl ? (
                       <img src={technicians[0].avatarUrl} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-5 h-5 text-[var(--nb-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     )}
@@ -661,14 +661,14 @@ const DesignDetail: React.FC = () => {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowQuoteModal(false)}
-                className="flex-1 py-3 bg-slate-100 text-[var(--color-text)] text-body font-medium rounded-full active:scale-95 transition-transform"
+                className="flex-1 py-3 bg-[var(--nb-page)] text-[var(--color-text)] text-body font-medium rounded-full active:scale-95 transition-transform"
               >
                 取消
               </button>
               <button
                 onClick={handleRequestQuote}
                 disabled={requestingQuote || (technicians && technicians.length > 1 && selectedTechsForQuote.length === 0)}
-                className="flex-1 py-3 bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] text-white text-body font-medium rounded-full active:scale-95 transition-transform disabled:opacity-50"
+                className="flex-1 py-3 bg-[var(--nb-action)] text-white text-body font-medium rounded-full active:scale-95 transition-transform disabled:opacity-50"
               >
                 {requestingQuote ? '发送中...' : `确认发送${selectedTechsForQuote.length > 0 ? `(${selectedTechsForQuote.length})` : ''}`}
               </button>
@@ -707,7 +707,7 @@ const DesignDetail: React.FC = () => {
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
                   placeholder="输入设计标题"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[var(--color-primary)] focus:outline-none text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-[var(--nb-line)] focus:border-[var(--color-primary)] focus:outline-none text-sm"
                 />
               </div>
               <div>
@@ -717,7 +717,7 @@ const DesignDetail: React.FC = () => {
                   onChange={(e) => setEditDescription(e.target.value)}
                   placeholder="输入设计描述"
                   rows={4}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[var(--color-primary)] focus:outline-none text-sm resize-none"
+                  className="w-full px-4 py-3 rounded-xl border border-[var(--nb-line)] focus:border-[var(--color-primary)] focus:outline-none text-sm resize-none"
                 />
               </div>
               <div>
@@ -733,7 +733,7 @@ const DesignDetail: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleRemoveEditImage(index)}
-                        className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
+                        className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--nb-action)] text-white rounded-full flex items-center justify-center text-xs"
                       >
                         ×
                       </button>
@@ -744,7 +744,7 @@ const DesignDetail: React.FC = () => {
                       type="button"
                       onClick={() => editFileInputRef.current?.click()}
                       disabled={uploadingImage}
-                      className="w-20 h-20 rounded-xl bg-slate-50 border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:border-[#FF6B8A] hover:text-[#FF6B8A] transition"
+                      className="w-20 h-20 rounded-xl bg-[var(--nb-page)] border-2 border-dashed border-[var(--nb-control)] flex flex-col items-center justify-center text-[var(--nb-muted)] hover:border-[var(--nb-control)] hover:text-[var(--nb-ink)] transition"
                     >
                       {uploadingImage ? (
                         <span className="text-xs">上传中...</span>
@@ -766,21 +766,21 @@ const DesignDetail: React.FC = () => {
                     className="hidden"
                   />
                 </div>
-                <p className="text-xs text-slate-400">最多可上传5张图片</p>
+                <p className="text-xs text-[var(--nb-muted)]">最多可上传5张图片</p>
               </div>
             </div>
 
             <div className="flex gap-3">
               <button
                 onClick={() => setShowEditModal(false)}
-                className="flex-1 py-3 bg-slate-100 text-[var(--color-text)] text-body font-medium rounded-full active:scale-95 transition-transform"
+                className="flex-1 py-3 bg-[var(--nb-page)] text-[var(--color-text)] text-body font-medium rounded-full active:scale-95 transition-transform"
               >
                 取消
               </button>
               <button
                 onClick={handleEdit}
                 disabled={savingEdit}
-                className="flex-1 py-3 bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] text-white text-body font-medium rounded-full active:scale-95 transition-transform disabled:opacity-50"
+                className="flex-1 py-3 bg-[var(--nb-action)] text-white text-body font-medium rounded-full active:scale-95 transition-transform disabled:opacity-50"
               >
                 {savingEdit ? '保存中...' : '保存'}
               </button>
@@ -800,8 +800,8 @@ const DesignDetail: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-center mb-6">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center">
-                <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[var(--nb-page)] flex items-center justify-center">
+                <svg className="w-8 h-8 text-[var(--nb-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
               </div>
@@ -814,14 +814,14 @@ const DesignDetail: React.FC = () => {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 py-3 bg-slate-100 text-[var(--color-text)] text-body font-medium rounded-full active:scale-95 transition-transform"
+                className="flex-1 py-3 bg-[var(--nb-page)] text-[var(--color-text)] text-body font-medium rounded-full active:scale-95 transition-transform"
               >
                 取消
               </button>
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="flex-1 py-3 bg-red-500 text-white text-body font-medium rounded-full active:scale-95 transition-transform disabled:opacity-50"
+                className="flex-1 py-3 bg-[var(--nb-action)] text-white text-body font-medium rounded-full active:scale-95 transition-transform disabled:opacity-50"
               >
                 {deleting ? '删除中...' : '确认删除'}
               </button>
@@ -837,18 +837,18 @@ const DesignDetail: React.FC = () => {
         <div className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-white rounded-3xl max-h-[90vh] overflow-hidden flex flex-col">
             {/* Header */}
-            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+            <div className="px-6 py-5 border-b border-[var(--nb-line)] flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">发起预约</h2>
-                <p className="text-sm text-gray-500 mt-1">
+                <h2 className="text-lg font-bold text-[var(--nb-ink)]">发起预约</h2>
+                <p className="text-sm text-[var(--nb-secondary)] mt-1">
                   为「{design.title || '设计作品'}」创建预约
                 </p>
               </div>
               <button
                 onClick={() => setShowBookingModal(false)}
-                className="p-2 rounded-full hover:bg-gray-100"
+                className="p-2 rounded-full hover:bg-[var(--nb-page)]"
               >
-                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-[var(--nb-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -857,7 +857,7 @@ const DesignDetail: React.FC = () => {
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6">
               {bookingError && (
-                <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-xl">
+                <div className="mb-4 p-3 bg-[var(--nb-page)] text-[var(--nb-secondary)] text-sm rounded-xl">
                   {bookingError}
                 </div>
               )}
@@ -865,7 +865,7 @@ const DesignDetail: React.FC = () => {
               {/* Step 1: Service Type */}
               {bookingStep === 'type' && (
                 <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-gray-700">选择服务类型</h3>
+                  <h3 className="text-sm font-medium text-[var(--nb-ink)]">选择服务类型</h3>
                   <div className="space-y-3">
                     {getAvailableServiceTypes().map((type) => (
                       <button
@@ -876,19 +876,19 @@ const DesignDetail: React.FC = () => {
                         }}
                         className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${
                           selectedServiceType === type.type
-                            ? 'border-pink-500 bg-pink-50'
-                            : 'border-gray-200 hover:border-gray-300'
+                            ? 'border-[var(--nb-ink)] bg-[var(--nb-page)]'
+                            : 'border-[var(--nb-line)] hover:border-[var(--nb-control)]'
                         }`}
                       >
                         <span className="text-3xl">{type.icon}</span>
                         <div className="flex-1 text-left">
-                          <p className="font-medium text-gray-900">{type.label}</p>
-                          <p className="text-xs text-gray-500">
+                          <p className="font-medium text-[var(--nb-ink)]">{type.label}</p>
+                          <p className="text-xs text-[var(--nb-secondary)]">
                             {type.type === 'home' ? '美甲师上门为您服务' : '到美甲师店铺接受服务'}
                           </p>
                         </div>
                         <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                          selectedServiceType === type.type ? 'border-pink-500 bg-pink-500' : 'border-gray-300'
+                          selectedServiceType === type.type ? 'border-[var(--nb-ink)] bg-[var(--nb-action)]' : 'border-[var(--nb-control)]'
                         }`}>
                           {selectedServiceType === type.type && (
                             <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -906,18 +906,18 @@ const DesignDetail: React.FC = () => {
               {bookingStep === 'datetime' && (
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">选择日期</h3>
+                    <h3 className="text-sm font-medium text-[var(--nb-ink)] mb-3">选择日期</h3>
                     <input
                       type="date"
                       value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
                       min={dayjs().format('YYYY-MM-DD')}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-pink-500 focus:outline-none"
+                      className="w-full px-4 py-3 rounded-xl border border-[var(--nb-line)] focus:border-[var(--nb-ink)] focus:outline-none"
                     />
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">选择时间</h3>
+                    <h3 className="text-sm font-medium text-[var(--nb-ink)] mb-3">选择时间</h3>
                     <div className="grid grid-cols-4 gap-2">
                       {['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'].map((time) => (
                         <button
@@ -925,8 +925,8 @@ const DesignDetail: React.FC = () => {
                           onClick={() => setSelectedTime(time)}
                           className={`py-2 rounded-lg text-sm font-medium transition-all ${
                             selectedTime === time
-                              ? 'bg-pink-500 text-white'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              ? 'bg-[var(--nb-action)] text-white'
+                              : 'bg-[var(--nb-page)] text-[var(--nb-ink)] hover:bg-[var(--nb-pressed)]'
                           }`}
                         >
                           {time}
@@ -938,7 +938,7 @@ const DesignDetail: React.FC = () => {
                   <button
                     onClick={() => setBookingStep(selectedServiceType === 'shop' ? 'address' : 'address')}
                     disabled={!selectedDate || !selectedTime}
-                    className="w-full py-3.5 bg-gradient-to-r from-pink-500 to-pink-600 text-white font-medium rounded-xl disabled:opacity-50"
+                    className="w-full py-3.5 bg-[var(--nb-action)] text-white font-medium rounded-xl disabled:opacity-50"
                   >
                     下一步
                   </button>
@@ -950,7 +950,7 @@ const DesignDetail: React.FC = () => {
                 <div className="space-y-4">
                   {selectedServiceType === 'shop' ? (
                     <>
-                      <h3 className="text-sm font-medium text-gray-700">选择店铺地址</h3>
+                      <h3 className="text-sm font-medium text-[var(--nb-ink)]">选择店铺地址</h3>
                       <div className="space-y-3">
                         {getEnabledShopAddresses(design.technician?.shopAddresses).map((address, index) => (
                           <button
@@ -958,23 +958,23 @@ const DesignDetail: React.FC = () => {
                             onClick={() => setSelectedShopAddress(address)}
                             className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
                               selectedShopAddress === address
-                                ? 'border-pink-500 bg-pink-50'
-                                : 'border-gray-200 hover:border-gray-300'
+                                ? 'border-[var(--nb-ink)] bg-[var(--nb-page)]'
+                                : 'border-[var(--nb-line)] hover:border-[var(--nb-control)]'
                             }`}
                           >
                             <div className="flex items-start gap-3">
-                              <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center flex-shrink-0">
-                                <span className="text-pink-500 text-sm">{index + 1}</span>
+                              <div className="w-8 h-8 rounded-full bg-[var(--nb-page)] flex items-center justify-center flex-shrink-0">
+                                <span className="text-[var(--nb-secondary)] text-sm">{index + 1}</span>
                               </div>
                               <div className="flex-1">
-                                <p className="font-medium text-gray-900">{address.name}</p>
-                                <p className="text-sm text-gray-500 mt-1">
+                                <p className="font-medium text-[var(--nb-ink)]">{address.name}</p>
+                                <p className="text-sm text-[var(--nb-secondary)] mt-1">
                                   {[address.province, address.city, address.district, address.detailAddress]
                                     .filter(Boolean)
                                     .join(' ')}
                                 </p>
                                 {address.phone && (
-                                  <p className="text-xs text-gray-400 mt-1">{address.phone}</p>
+                                  <p className="text-xs text-[var(--nb-muted)] mt-1">{address.phone}</p>
                                 )}
                               </div>
                             </div>
@@ -982,14 +982,14 @@ const DesignDetail: React.FC = () => {
                         ))}
                       </div>
                       {selectedShopAddress && selectedDate && selectedShopHours && (
-                        <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                        <div className="rounded-xl bg-[var(--nb-page)] px-4 py-3 text-sm text-[var(--nb-secondary)]">
                           {selectedShopHours.closed
                             ? '所选日期为该店铺休息日，请改选其他日期'
                             : `店铺营业时间：${selectedShopHours.start} - ${selectedShopHours.end}`}
                         </div>
                       )}
                       {getEnabledShopAddresses(design.technician?.shopAddresses).length === 0 && (
-                        <div className="rounded-xl bg-slate-50 px-4 py-5 text-center text-sm text-slate-400">
+                        <div className="rounded-xl bg-[var(--nb-page)] px-4 py-5 text-center text-sm text-[var(--nb-muted)]">
                           该美甲师当前没有可预约的启用门店
                         </div>
                       )}
@@ -997,10 +997,10 @@ const DesignDetail: React.FC = () => {
                   ) : (
                     <>
                       <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-medium text-gray-700">选择上门地址</h3>
+                        <h3 className="text-sm font-medium text-[var(--nb-ink)]">选择上门地址</h3>
                         <button
                           onClick={() => navigate('/addresses')}
-                          className="text-sm text-pink-500 font-medium"
+                          className="text-sm text-[var(--nb-secondary)] font-medium"
                         >
                           管理地址
                         </button>
@@ -1008,10 +1008,10 @@ const DesignDetail: React.FC = () => {
                       <div className="space-y-3">
                         {clientAddresses.length === 0 ? (
                           <div className="text-center py-8">
-                            <p className="text-gray-500 mb-4">暂无地址，请先添加地址</p>
+                            <p className="text-[var(--nb-secondary)] mb-4">暂无地址，请先添加地址</p>
                             <button
                               onClick={() => navigate('/addresses')}
-                              className="px-6 py-2 bg-pink-500 text-white rounded-full text-sm"
+                              className="px-6 py-2 bg-[var(--nb-action)] text-white rounded-full text-sm"
                             >
                               去添加地址
                             </button>
@@ -1023,31 +1023,31 @@ const DesignDetail: React.FC = () => {
                               onClick={() => setSelectedClientAddress(address)}
                               className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
                                 selectedClientAddress?.id === address.id
-                                  ? 'border-pink-500 bg-pink-50'
-                                  : 'border-gray-200 hover:border-gray-300'
+                                  ? 'border-[var(--nb-ink)] bg-[var(--nb-page)]'
+                                  : 'border-[var(--nb-line)] hover:border-[var(--nb-control)]'
                               }`}
                             >
                               <div className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center flex-shrink-0">
-                                  <svg className="w-4 h-4 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <div className="w-8 h-8 rounded-full bg-[var(--nb-page)] flex items-center justify-center flex-shrink-0">
+                                  <svg className="w-4 h-4 text-[var(--nb-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                   </svg>
                                 </div>
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2">
-                                    <p className="font-medium text-gray-900">{address.contactName || '未命名地址'}</p>
+                                    <p className="font-medium text-[var(--nb-ink)]">{address.contactName || '未命名地址'}</p>
                                     {address.isDefault && (
-                                      <span className="text-[10px] px-1.5 py-0.5 bg-pink-100 text-pink-600 rounded">默认</span>
+                                      <span className="text-[10px] px-1.5 py-0.5 bg-[var(--nb-page)] text-[var(--nb-secondary)] rounded">默认</span>
                                     )}
                                   </div>
-                                  <p className="text-sm text-gray-500 mt-1">
+                                  <p className="text-sm text-[var(--nb-secondary)] mt-1">
                                     {[address.province, address.city, address.district, address.detailAddress]
                                       .filter(Boolean)
                                       .join(' ')}
                                   </p>
                                   {address.contactPhone && (
-                                    <p className="text-xs text-gray-400 mt-1">{address.contactPhone}</p>
+                                    <p className="text-xs text-[var(--nb-muted)] mt-1">{address.contactPhone}</p>
                                   )}
                                 </div>
                               </div>
@@ -1065,7 +1065,7 @@ const DesignDetail: React.FC = () => {
                       (selectedServiceType === 'shop' && !selectedShopAddress) ||
                       (selectedServiceType === 'home' && !selectedClientAddress)
                     }
-                    className="w-full py-3.5 bg-gradient-to-r from-pink-500 to-pink-600 text-white font-medium rounded-xl disabled:opacity-50 mt-6"
+                    className="w-full py-3.5 bg-[var(--nb-action)] text-white font-medium rounded-xl disabled:opacity-50 mt-6"
                   >
                     {creatingBooking ? '创建中...' : '确认预约'}
                   </button>
@@ -1074,23 +1074,23 @@ const DesignDetail: React.FC = () => {
             </div>
 
             {/* Progress Indicator */}
-            <div className="px-6 py-4 border-t border-gray-100">
+            <div className="px-6 py-4 border-t border-[var(--nb-line)]">
               <div className="flex items-center justify-center gap-2">
                 {['type', 'datetime', 'address'].map((step, index) => (
                   <React.Fragment key={step}>
                     <div
                       className={`w-2 h-2 rounded-full ${
                         bookingStep === step
-                          ? 'bg-pink-500 w-6'
+                          ? 'bg-[var(--nb-action)] w-6'
                           : ['type', 'datetime', 'address'].indexOf(bookingStep) > index
-                          ? 'bg-pink-300'
-                          : 'bg-gray-200'
+                          ? 'bg-[var(--nb-pressed)]'
+                          : 'bg-[var(--nb-pressed)]'
                       }`}
                     />
                   </React.Fragment>
                 ))}
               </div>
-              <p className="text-center text-xs text-gray-400 mt-2">
+              <p className="text-center text-xs text-[var(--nb-muted)] mt-2">
                 步骤 {['type', 'datetime', 'address'].indexOf(bookingStep) + 1} / 3
               </p>
             </div>

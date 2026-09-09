@@ -8,8 +8,8 @@ const ProtectedRoute: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-8 h-8 border-2 border-[#FF6B8A] border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[var(--nb-page)]">
+        <div className="w-8 h-8 border-2 border-[var(--nb-control)] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }

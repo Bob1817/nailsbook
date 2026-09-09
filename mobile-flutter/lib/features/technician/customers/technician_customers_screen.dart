@@ -1,3 +1,4 @@
+import '../../../core/theme/colors.generated.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/technician_glass_header.dart';
@@ -20,11 +21,11 @@ const _clientBaseUrl = 'https://m.lunails.cn';
 
 // 标签兜底色板（与 webapp 一致）
 const _tagFallbackColors = <String, ({Color bg, Color text})>{
-  '常客': (bg: Color(0xFFFCE7EE), text: Color(0xFFE86B8F)),
-  '新客': (bg: Color(0xFFE8F4FE), text: Color(0xFF4A90C2)),
-  '高频': (bg: Color(0xFFFFF4E5), text: Color(0xFFC8892F)),
+  '常客': (bg: NBColors.page, text: NBColors.action),
+  '新客': (bg: NBColors.page, text: NBColors.action),
+  '高频': (bg: NBColors.page, text: NBColors.action),
 };
-const _tagDefaultColor = (bg: Color(0xFF2A241E), text: Color(0xFF6D6570));
+const _tagDefaultColor = (bg: NBColors.surface, text: NBColors.muted);
 
 bool _isPhoneAsName(String s) => RegExp(r'^1[3-9]\d{9}$').hasMatch(s);
 
@@ -248,7 +249,7 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
         constraints: const BoxConstraints(minHeight: 36),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-            color: const Color(0xFF3A2F23),
+            color: NBColors.activeSurface,
             borderRadius: BorderRadius.circular(999)),
         child: const Row(
           mainAxisSize: MainAxisSize.min,
@@ -494,7 +495,7 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                  color: const Color(0xFF16120E),
+                  color: NBColors.page,
                   borderRadius: BorderRadius.circular(14)),
               child: Row(
                 children: [
@@ -536,7 +537,7 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
           width: 44,
           height: 44,
           fit: BoxFit.cover,
-          placeholder: (_, __) => Container(color: const Color(0xFFFCE7EE)),
+          placeholder: (_, __) => Container(color: NBColors.page),
           errorWidget: (_, __, ___) => _avatarFallback(name, phoneAsName),
         ),
       );
@@ -550,15 +551,15 @@ class _TechnicianCustomersScreenState extends State<TechnicianCustomersScreen> {
       height: 44,
       alignment: Alignment.center,
       decoration:
-          const BoxDecoration(color: Color(0xFFFCE7EE), shape: BoxShape.circle),
+          const BoxDecoration(color: NBColors.page, shape: BoxShape.circle),
       child: phoneAsName
           ? const Icon(CupertinoIcons.person_fill,
-              size: 22, color: Color(0xFFE86B8F))
+              size: 22, color: NBColors.action)
           : Text(name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?',
               style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFFE86B8F))),
+                  color: NBColors.action)),
     );
   }
 

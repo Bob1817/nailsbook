@@ -1,3 +1,4 @@
+import '../../../core/theme/colors.generated.dart';
 import '../../../core/media/image_pick.dart';
 import '../../../core/auth/auth_session.dart';
 import '../../../core/widgets/glass_container.dart';
@@ -416,7 +417,7 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: active
-                          ? const Color(0xFF6EE7A8)
+                          ? NBColors.action
                           : Colors.white.withValues(alpha: 0.7),
                     ),
                   ),

@@ -11,11 +11,11 @@ const LegalDoc: React.FC = () => {
   const { type } = useParams<{ type: string }>();
   const doc = DOCS[type || 'terms'] || DOCS.terms;
   return (
-    <div className="flex h-[100dvh] flex-col bg-[linear-gradient(180deg,#FFFDFD_0%,#F7F3F6_48%,#F2F6FB_100%)]">
+    <div className="flex h-[100dvh] flex-col bg-[var(--nb-page)]">
       <SubHeader title={doc.title} />
       <div className="flex-1 overflow-y-auto px-5 py-5 pb-28">
-        <section className="rounded-[24px] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
-          <p className="text-sm leading-7 text-gray-600 whitespace-pre-line">{doc.body}</p>
+        <section className="rounded-[24px] bg-white p-5 shadow-[0_12px_32px_rgba(0,0,0,0.06)] ring-1 ring-black/5">
+          <p className="text-sm leading-7 text-[var(--nb-secondary)] whitespace-pre-line">{doc.body}</p>
         </section>
       </div>
     </div>

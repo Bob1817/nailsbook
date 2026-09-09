@@ -37,31 +37,31 @@ const HelpFeedbackPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-[#fff9f8]">
+    <div className="flex h-[100dvh] flex-col bg-[var(--nb-page)]">
       <SubPageHeader title="帮助与反馈" />
       <div className="flex-1 overflow-y-auto px-5 py-4">
         {/* 常见问题 */}
-        <h2 className="px-1 text-[15px] font-semibold text-[#1f2230]">常见问题</h2>
-        <section className="mt-3 overflow-hidden rounded-[24px] bg-white shadow-[0_18px_36px_rgba(36,27,41,0.05)]">
+        <h2 className="px-1 text-[15px] font-semibold text-[var(--nb-ink)]">常见问题</h2>
+        <section className="mt-3 overflow-hidden rounded-[24px] bg-white shadow-[0_18px_36px_rgba(0,0,0,0.05)]">
           {FAQS.map((faq, index) => {
             const open = openIndex === index;
             return (
-              <div key={faq.q} className={index === FAQS.length - 1 ? '' : 'border-b border-[#f6eef2]'}>
+              <div key={faq.q} className={index === FAQS.length - 1 ? '' : 'border-b border-[var(--nb-line)]'}>
                 <button
                   type="button"
                   onClick={() => setOpenIndex(open ? null : index)}
-                  className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left active:bg-[#fff7fa]"
+                  className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left active:bg-[var(--nb-page)]"
                 >
-                  <span className="text-[15px] text-[#3c3440]">{faq.q}</span>
+                  <span className="text-[15px] text-[var(--nb-ink)]">{faq.q}</span>
                   <svg
-                    className={`h-4 w-4 shrink-0 text-[#c9bec6] transition-transform ${open ? 'rotate-180' : ''}`}
+                    className={`h-4 w-4 shrink-0 text-[var(--nb-muted)] transition-transform ${open ? 'rotate-180' : ''}`}
                     fill="none" stroke="currentColor" viewBox="0 0 24 24"
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
                 {open && (
-                  <p className="px-5 pb-4 text-sm leading-6 text-[#716776]">{faq.a}</p>
+                  <p className="px-5 pb-4 text-sm leading-6 text-[var(--nb-secondary)]">{faq.a}</p>
                 )}
               </div>
             );
@@ -69,37 +69,37 @@ const HelpFeedbackPage: React.FC = () => {
         </section>
 
         {/* 联系客服 */}
-        <h2 className="mt-6 px-1 text-[15px] font-semibold text-[#1f2230]">联系客服</h2>
-        <section className="mt-3 overflow-hidden rounded-[24px] bg-white shadow-[0_18px_36px_rgba(36,27,41,0.05)]">
+        <h2 className="mt-6 px-1 text-[15px] font-semibold text-[var(--nb-ink)]">联系客服</h2>
+        <section className="mt-3 overflow-hidden rounded-[24px] bg-white shadow-[0_18px_36px_rgba(0,0,0,0.05)]">
           <a
             href={`tel:${SUPPORT_PHONE}`}
-            className="flex items-center justify-between gap-3 border-b border-[#f6eef2] px-5 py-4 active:bg-[#fff7fa]"
+            className="flex items-center justify-between gap-3 border-b border-[var(--nb-line)] px-5 py-4 active:bg-[var(--nb-page)]"
           >
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#fff1f6] text-lg">📞</span>
+              <span className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[var(--nb-page)] text-lg">📞</span>
               <div>
-                <p className="text-[15px] text-[#3c3440]">客服电话</p>
-                <p className="mt-0.5 text-xs text-[#a89ba3]">{SUPPORT_PHONE}</p>
+                <p className="text-[15px] text-[var(--nb-ink)]">客服电话</p>
+                <p className="mt-0.5 text-xs text-[var(--nb-muted)]">{SUPPORT_PHONE}</p>
               </div>
             </div>
-            <span className="text-xs font-medium text-[#FF5E93]">拨打</span>
+            <span className="text-xs font-medium text-[var(--nb-ink)]">拨打</span>
           </a>
           <button
             type="button"
             onClick={copyWechat}
-            className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left active:bg-[#fff7fa]"
+            className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left active:bg-[var(--nb-page)]"
           >
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#fff1f6] text-lg">💬</span>
+              <span className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[var(--nb-page)] text-lg">💬</span>
               <div>
-                <p className="text-[15px] text-[#3c3440]">客服微信</p>
-                <p className="mt-0.5 text-xs text-[#a89ba3]">{SUPPORT_WECHAT}</p>
+                <p className="text-[15px] text-[var(--nb-ink)]">客服微信</p>
+                <p className="mt-0.5 text-xs text-[var(--nb-muted)]">{SUPPORT_WECHAT}</p>
               </div>
             </div>
-            <span className="text-xs font-medium text-[#FF5E93]">复制</span>
+            <span className="text-xs font-medium text-[var(--nb-ink)]">复制</span>
           </button>
         </section>
-        <p className="mt-3 px-1 text-xs leading-5 text-[#a89ba3]">客服工作时间：每日 9:00 - 21:00</p>
+        <p className="mt-3 px-1 text-xs leading-5 text-[var(--nb-muted)]">客服工作时间：每日 9:00 - 21:00</p>
       </div>
     </div>
   );

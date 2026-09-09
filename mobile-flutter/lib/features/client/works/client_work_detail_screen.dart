@@ -1,3 +1,4 @@
+import '../../../core/theme/colors.generated.dart';
 
 import '../../../core/media/oss_image.dart';
 import '../../../core/widgets/fullscreen_gallery.dart';
@@ -249,7 +250,7 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
                 right: 0,
                 height: galleryH,
                 child: images.isEmpty
-                    ? Container(color: const Color(0xFF1A1A1A))
+                    ? Container(color: NBColors.ink)
                     : PageView.builder(
                         itemCount: images.length,
                         onPageChanged: (i) => setState(() => _imageIndex = i),
@@ -259,9 +260,9 @@ class _ClientWorkDetailScreenState extends State<ClientWorkDetailScreen> {
                             imageUrl: ossDetail(images[index]),
                             fit: BoxFit.cover,
                             placeholder: (_, __) =>
-                                Container(color: const Color(0xFF1A1A1A)),
+                                Container(color: NBColors.ink),
                             errorWidget: (_, __, ___) => Container(
-                                color: const Color(0xFF1A1A1A),
+                                color: NBColors.ink,
                                 child: const Icon(Icons.image_not_supported,
                                     color: Colors.white24)),
                           ),

@@ -14,6 +14,10 @@ export interface Work {
   isVisible: boolean;
   isPinned: boolean;
   isFeatured: boolean;
+  heroSlot?: number | null;
+  visibilityScope?: string;
+  publicationStatus?: string;
+  archivedAt?: string | null;
   sortOrder: number;
   viewCount: number;
   likeCount: number;

@@ -18,9 +18,9 @@ type ToastContextValue = {
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 const toneClasses: Record<ToastTone, string> = {
-  success: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
-  warning: 'bg-orange-50 text-orange-600 ring-orange-100',
-  error: 'bg-red-50 text-red-600 ring-red-100',
+  success: 'bg-[var(--nb-page)] text-[var(--nb-ink)] ring-[var(--nb-line)]',
+  warning: 'bg-[var(--nb-page)] text-[var(--nb-secondary)] ring-[var(--nb-line)]',
+  error: 'bg-[var(--nb-page)] text-[var(--nb-secondary)] ring-[var(--nb-line)]',
 };
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -63,7 +63,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto flex min-h-[44px] w-full max-w-sm items-center justify-between rounded-[18px] px-4 py-3 text-sm shadow-[0_8px_24px_rgba(29,35,53,0.08)] ring-1 backdrop-blur ${toneClasses[toast.tone]}`}
+            className={`pointer-events-auto flex min-h-[44px] w-full max-w-sm items-center justify-between rounded-[18px] px-4 py-3 text-sm shadow-[0_8px_24px_rgba(0,0,0,0.08)] ring-1 backdrop-blur ${toneClasses[toast.tone]}`}
           >
             <span className="pr-3">{toast.message}</span>
             <button

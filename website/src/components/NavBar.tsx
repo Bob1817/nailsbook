@@ -29,7 +29,7 @@ export default function NavBar() {
       <nav
         className={`relative z-40 mx-auto flex max-w-6xl items-center justify-between rounded-full border px-3 py-2 transition-shadow duration-300 sm:px-5 sm:py-3 ${
           scrolled
-            ? 'border-white/60 bg-white/80 shadow-lg shadow-pink-100/40 backdrop-blur-xl'
+            ? 'border-white/60 bg-white/80 shadow-lg shadow-black/40 backdrop-blur-xl'
             : 'border-white/80 bg-white/80 backdrop-blur-xl'
         }`}
         aria-label="main-navigation"
@@ -41,7 +41,7 @@ export default function NavBar() {
           className="flex min-h-9 items-center gap-2 rounded-full px-1 transition active:scale-[0.98] sm:min-h-11 sm:gap-2.5"
           aria-label="贝美甲 home"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-accent-warm text-white font-bold text-base select-none shadow-md shadow-pink-200/50 sm:h-10 sm:w-10 sm:text-lg" aria-hidden="true">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-accent-warm text-white font-bold text-base select-none shadow-md shadow-black/50 sm:h-10 sm:w-10 sm:text-lg" aria-hidden="true">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path d="M10 2L12.09 7.26L18 8.27L14 12.14L14.18 18L10 15.77L5.82 18L6 12.14L2 8.27L7.91 7.26L10 2Z" fill="currentColor" />
             </svg>

@@ -27,8 +27,8 @@ struct TechnicianProfileView: View {
                         menuCard(items: [
                             MenuItem(icon: "person.text.rectangle", title: "个人设置", iconBg: .nbPrimarySoft, destination: AnyView(TechProfileSettingsView())),
                             MenuItem(icon: "lock.fill", title: "账号安全", iconBg: .nbPurpleSoft, destination: AnyView(ChangePasswordView(role: .technician))),
-                            MenuItem(icon: "questionmark.circle.fill", title: "帮助反馈", iconBg: Color(hex: "ECFDF5"), destination: AnyView(HelpFeedbackView(role: .technician))),
-                            MenuItem(icon: "info.circle.fill", title: "关于", iconBg: Color(hex: "EFF6FF"), destination: AnyView(AboutView()))
+                            MenuItem(icon: "questionmark.circle.fill", title: "帮助反馈", iconBg: NBColors.page, destination: AnyView(HelpFeedbackView(role: .technician))),
+                            MenuItem(icon: "info.circle.fill", title: "关于", iconBg: NBColors.page, destination: AnyView(AboutView()))
                         ])
 
                         // Logout
@@ -62,7 +62,7 @@ struct TechnicianProfileView: View {
     private var heroHeader: some View {
         ZStack(alignment: .bottomLeading) {
             LinearGradient(
-                colors: [Color(hex: "FF6B8A"), Color(hex: "FF8FA3")],
+                colors: [NBColors.action, NBColors.action],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -133,7 +133,7 @@ struct TechnicianProfileView: View {
         }
         .background(Color.nbSurfaceGlass)
         .cornerRadius(Radius.card)
-        .shadow(color: Color(hex: "0F172A").opacity(0.06), radius: 12, y: 2)
+        .shadow(color: NBColors.ink.opacity(0.06), radius: 12, y: 2)
     }
 
     private func statRow(_ l1: String, _ v1: String, _ l2: String, _ v2: String) -> some View {
@@ -185,7 +185,7 @@ struct TechnicianProfileView: View {
         .padding(Spacing.cardPadding)
         .background(Color.nbSurfaceGlass)
         .cornerRadius(Radius.card)
-        .shadow(color: Color(hex: "0F172A").opacity(0.06), radius: 12, y: 2)
+        .shadow(color: NBColors.ink.opacity(0.06), radius: 12, y: 2)
     }
 
     // MARK: - Tools Grid
@@ -194,11 +194,11 @@ struct TechnicianProfileView: View {
         let tools: [(String, String, Color, AnyView)] = [
             ("photo.on.rectangle.angled", "作品管理", .nbPrimarySoft, AnyView(TechnicianWorksView())),
             ("list.bullet.rectangle", "服务项目", .nbPurpleSoft, AnyView(TechnicianServicesView())),
-            ("building.2.fill", "门店管理", Color(hex: "ECFDF5"), AnyView(ShopManagementView())),
-            ("car.fill", "上门服务", Color(hex: "FFF7ED"), AnyView(HomeServiceSettingsView())),
-            ("calendar.badge.clock", "服务时间", Color(hex: "EFF6FF"), AnyView(Text("服务时间"))),
-            ("tag.fill", "标签管理", Color(hex: "FEF2F2"), AnyView(Text("标签管理"))),
-            ("crown.fill", "订阅计划", Color(hex: "FFF4E6"), AnyView(SubscriptionView())),
+            ("building.2.fill", "门店管理", NBColors.page, AnyView(ShopManagementView())),
+            ("car.fill", "上门服务", NBColors.page, AnyView(HomeServiceSettingsView())),
+            ("calendar.badge.clock", "服务时间", NBColors.page, AnyView(Text("服务时间"))),
+            ("tag.fill", "标签管理", NBColors.page, AnyView(Text("标签管理"))),
+            ("crown.fill", "订阅计划", NBColors.page, AnyView(SubscriptionView())),
             ("doc.text.fill", "全部订单", .nbSecondarySoft, AnyView(TechOrdersListView()))
         ]
 
@@ -225,7 +225,7 @@ struct TechnicianProfileView: View {
         .padding(Spacing.cardPadding)
         .background(Color.nbSurfaceGlass)
         .cornerRadius(Radius.card)
-        .shadow(color: Color(hex: "0F172A").opacity(0.06), radius: 12, y: 2)
+        .shadow(color: NBColors.ink.opacity(0.06), radius: 12, y: 2)
     }
 
     // MARK: - Menu Card
@@ -261,7 +261,7 @@ struct TechnicianProfileView: View {
         }
         .background(Color.nbSurfaceGlass)
         .cornerRadius(Radius.cardLg)
-        .shadow(color: Color(hex: "0F172A").opacity(0.07), radius: 16, y: 4)
+        .shadow(color: NBColors.ink.opacity(0.07), radius: 16, y: 4)
     }
 
     private func loadProfile() async {

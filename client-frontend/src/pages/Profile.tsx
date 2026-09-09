@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { authService, type Technician } from '../services/auth';
 import ArtistCardModal from '../components/ArtistCardModal';
 
-const Profile: React.FC = () => {
+const Profile: React.FC<{ managing?: boolean }> = ({ managing = false }) => {
   const navigate = useNavigate();
   const { user, technicians, logout, unbindTechnician, setDefaultTechnician, bindTechnician, refreshProfile } = useAuth();
 
@@ -12,6 +12,22 @@ const Profile: React.FC = () => {
   useEffect(() => {
     void refreshProfile();
   }, [refreshProfile]);
+
+  const [pending, setPending] = useState<Technician[]>([]);
+  const [bindingsError, setBindingsError] = useState(false);
+  const loadPending = async () => {
+    try { const profile = await authService.getProfile(); setPending(profile.pendingTechnicians || []); setBindingsError(false); }
+    catch { setBindingsError(true); }
+  };
+  useEffect(() => { void loadPending(); }, [managing]);
+  const ordered = technicians.slice().sort((a,b) => Number(b.isDefault) - Number(a.isDefault) || (b.boundAt || '').localeCompare(a.boundAt || ''));
+  const visibleTechnicians = managing ? ordered : ordered.slice(0,2);
+  const full = technicians.length + pending.length >= 5;
+  const openBinding = () => { if (!managing) navigate('/profile/technicians'); else if (!full) setShowBindModal(true); };
+  const cancelApplication = async (id: number) => {
+    try { await authService.cancelBindingApplication(id); await loadPending(); }
+    catch { alert('取消申请失败，请重试'); }
+  };
 
   const [showBindModal, setShowBindModal] = useState(false);
   const [cardTech, setCardTech] = useState<Technician | null>(null);
@@ -54,6 +70,7 @@ const Profile: React.FC = () => {
       setInviteCode('');
       setBindNote('');
       setFoundTechnician(null);
+      await loadPending();
       alert('绑定申请已提交，待美甲师通过后生效');
     } catch (e) {
       const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
@@ -138,10 +155,10 @@ const Profile: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-full bg-[linear-gradient(180deg,#FFFDFD_0%,#F7F3F6_48%,#F2F6FB_100%)] pb-24">
+    <div className="min-h-full bg-[var(--nb-page)] pb-24">
       {/* Header */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,#FF6B8A_0%,#FF88A0_48%,#FFB0BE_100%)]"></div>
+      {!managing && <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-[var(--nb-action)]"></div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.32),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.18),transparent_28%)]"></div>
         <div className="absolute -top-16 right-0 h-64 w-64 rounded-full bg-white/12 blur-3xl"></div>
         <div className="absolute -bottom-20 left-[-3rem] h-56 w-56 rounded-full bg-white/10 blur-3xl"></div>
@@ -149,7 +166,7 @@ const Profile: React.FC = () => {
         <div className="relative px-5 app-hero-safe pb-7 text-white">
           <div
             onClick={() => navigate('/profile/settings')}
-            className="rounded-[28px] border border-white/18 bg-white/10 px-4 py-4 shadow-[0_18px_52px_rgba(255,107,138,0.24)] backdrop-blur-xl cursor-pointer active:scale-[0.99] transition-transform"
+            className="rounded-[28px] border border-white/18 bg-white/10 px-4 py-4 shadow-[0_18px_52px_rgba(0,0,0,0.24)] backdrop-blur-xl cursor-pointer active:scale-[0.99] transition-transform"
           >
             <div className="flex items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-white/20 ring-2 ring-white/30">
@@ -175,41 +192,43 @@ const Profile: React.FC = () => {
         </div>
       </div>
 
+      }
+      {managing && <div className="p-5 flex items-center gap-4"><button className="min-h-11 px-4 rounded-lg active:bg-[var(--nb-pressed)] focus-visible:outline" onClick={() => navigate('/profile')}>返回</button><h1 className="text-lg font-semibold">我的美甲师</h1></div>}
       {/* My Technicians Section */}
       <div className="px-5 -mt-4">
-        <div className="rounded-[32px] bg-white/88 p-5 shadow-[0_24px_64px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
-          <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="rounded-[32px] bg-white/88 p-5 shadow-[0_24px_64px_rgba(0,0,0,0.08)] ring-1 ring-black/5 backdrop-blur">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--color-text)]">我的美甲师</h3>
-              <p className="mt-1 text-sm text-[var(--color-text-muted)]">查看已绑定的专属美甲师并管理默认服务对象</p>
+              <h3 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--color-text)]">我的美甲师 · {technicians.length} 位</h3>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">{managing ? `名额 ${technicians.length + pending.length}/5，含待确认申请` : '查看与管理已绑定美甲师'}</p>
             </div>
             <button
-              onClick={() => setShowBindModal(true)}
+              onClick={openBinding}
               className="shrink-0 rounded-full bg-[var(--color-primary-soft)] px-4 py-2 text-sm font-medium text-[var(--color-primary)]"
             >
-              + 绑定新美甲师
+              {managing ? (full ? '绑定名额已满' : '绑定新美甲师') : '管理 ›'}
             </button>
           </div>
 
           {technicians.length > 0 ? (
             <div className="space-y-3">
-              {technicians.map((tech) => {
+              {visibleTechnicians.map((tech) => {
                 return (
                   <div
                     key={tech.id}
-                    className={`rounded-[24px] p-4 shadow-[0_14px_36px_rgba(15,23,42,0.06)] ring-1 ${
+                    className={`rounded-[24px] p-4 shadow-[0_14px_36px_rgba(0,0,0,0.06)] ring-1 ${
                       tech.isDefault
-                        ? 'bg-[linear-gradient(135deg,#FFF0F5_0%,#FAFBFF_100%)] ring-[#FF6B8A]/10'
+                        ? 'bg-[var(--nb-page)] ring-[var(--nb-control)]/10'
                         : 'bg-white/78 ring-black/5'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-start gap-3">
-                        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[20px] bg-[linear-gradient(135deg,#FFE0EA_0%,#F4F7FB_100%)]">
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[20px] bg-[var(--nb-page)]">
                           {tech.avatarUrl ? (
                             <img src={tech.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
                           ) : (
-                            <span className="text-lg font-semibold text-[#FF6B8A]">
+                            <span className="text-lg font-semibold text-[var(--nb-ink)]">
                               {tech.name.slice(0, 1)}
                             </span>
                           )}
@@ -218,7 +237,7 @@ const Profile: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <p className="truncate text-base font-semibold text-[var(--color-text)]">{tech.name}</p>
                             {tech.isDefault && (
-                              <span className="rounded-full bg-[var(--color-primary)] px-2.5 py-1 text-[11px] font-medium text-white">默认</span>
+                              <span className="shrink-0 whitespace-nowrap rounded-full bg-[var(--color-primary)] px-2.5 py-1 text-[11px] font-medium text-white">默认</span>
                             )}
                           </div>
                           {tech.city && (
@@ -232,18 +251,18 @@ const Profile: React.FC = () => {
                           )}
                           <div className="mt-2 flex flex-wrap items-center gap-1.5">
                             {tech.homeService && (
-                              <span className="rounded-full bg-pink-50 px-2 py-0.5 text-[11px] font-medium text-[#FF6B8A]">
+                              <span className="rounded-full bg-[var(--nb-page)] px-2 py-0.5 text-[11px] font-medium text-[var(--nb-ink)]">
                                 可上门
                               </span>
                             )}
                             <span
                               className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
                                 tech.status === 'active'
-                                  ? 'bg-emerald-50 text-emerald-600'
-                                  : 'bg-slate-100 text-[var(--color-text-muted)]'
+                                  ? 'bg-[var(--nb-page)] text-[var(--nb-secondary)]'
+                                  : 'bg-[var(--nb-page)] text-[var(--color-text-muted)]'
                               }`}
                             >
-                              <span className={`h-1.5 w-1.5 rounded-full ${tech.status === 'active' ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                              <span className={`h-1.5 w-1.5 rounded-full ${tech.status === 'active' ? 'bg-[var(--nb-action)]' : 'bg-[var(--nb-action)]'}`} />
                               {tech.status === 'active' ? '接单中' : '休息中'}
                             </span>
                           </div>
@@ -253,27 +272,27 @@ const Profile: React.FC = () => {
                         <button
                           onClick={() => setCardTech(tech)}
                           aria-label="查看美甲师名片"
-                          className="flex h-8 w-8 items-center justify-center rounded-full bg-pink-50 text-[var(--color-primary)] active:bg-pink-100"
+                          className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--nb-page)] text-[var(--color-primary)] active:bg-[var(--nb-page)]"
                         >
                           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                           </svg>
                         </button>
-                        {!tech.isDefault && (
+                        {managing && !tech.isDefault && (
                           <button
                             onClick={() => handleSetDefault(tech.id)}
-                            className="rounded-full border border-[var(--color-primary)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-primary)]"
+                            className="rounded-full border border-[var(--color-primary)] bg-white min-h-11 px-3 py-1.5 text-xs font-medium text-[var(--color-primary)]"
                           >
                             设为默认
                           </button>
                         )}
-                        <button
+                        {managing && <button
                           onClick={() => handleUnbind(tech.id, tech.name)}
-                          className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)]"
+                          className="rounded-full bg-[var(--nb-page)] min-h-11 px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)]"
                         >
                           解除
-                        </button>
+                        </button>}
                       </div>
                     </div>
                   </div>
@@ -281,11 +300,11 @@ const Profile: React.FC = () => {
               })}
             </div>
           ) : (
-            <div className="rounded-[24px] bg-slate-50 px-5 py-8 text-center">
+            <div className="rounded-[24px] bg-[var(--nb-page)] px-5 py-8 text-center">
               <p className="text-sm font-medium text-[var(--color-text)] mb-2">暂无绑定的美甲师</p>
               <p className="text-sm text-[var(--color-text-muted)] mb-4">输入邀请码后，即可添加新的专属美甲师</p>
               <button
-                onClick={() => setShowBindModal(true)}
+                onClick={openBinding}
                 className="rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white"
               >
                 立即绑定
@@ -295,9 +314,14 @@ const Profile: React.FC = () => {
         </div>
       </div>
 
+      {bindingsError && <button className="min-h-11 mx-5 text-sm" onClick={loadPending}>绑定信息加载失败，点击重试</button>}
+      {!managing && pending.length > 0 && <button className="min-h-11 px-5 text-sm text-[var(--nb-link)]" onClick={() => navigate('/profile/technicians')}>待确认 {pending.length} 位 · 查看申请 ›</button>}
+      {!managing && technicians.length > 2 && <button className="min-h-11 px-5 text-sm text-[var(--nb-link)]" onClick={() => navigate('/profile/technicians')}>查看全部 {technicians.length} 位 ›</button>}
+      {managing && pending.map(tech => <div key={tech.id} className="mx-5 mt-4 p-4 rounded-xl bg-[var(--nb-surface)]"><p className="text-sm break-words">{tech.name} · 待确认</p><button className="min-h-11 px-4 text-sm rounded-lg active:bg-[var(--nb-pressed)] focus-visible:outline" onClick={() => cancelApplication(tech.id)}>取消申请</button></div>)}
+      {!managing && <>
       {/* Menu Items */}
       <div className="px-5 mt-6">
-        <div className="rounded-[32px] bg-white/88 p-2 shadow-[0_24px_64px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
+        <div className="rounded-[32px] bg-white/88 p-2 shadow-[0_24px_64px_rgba(0,0,0,0.08)] ring-1 ring-black/5 backdrop-blur">
           <div className="px-3 pb-2 pt-1">
             <h3 className="text-lg font-semibold text-[var(--color-text)]">我的服务</h3>
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">管理地址、预约、设计与服务沟通</p>
@@ -306,12 +330,12 @@ const Profile: React.FC = () => {
             <button
               key={item.label}
               onClick={item.onClick}
-              className={`w-full flex items-center justify-between rounded-[24px] px-4 py-4 active:bg-slate-50 transition-colors ${
+              className={`w-full flex items-center justify-between rounded-[24px] px-4 py-4 active:bg-[var(--nb-page)] transition-colors ${
                 index !== menuItems.length - 1 ? 'mb-1' : ''
               }`}
             >
               <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#FFF0F5_0%,#F4F7FB_100%)] text-[var(--color-text-secondary)]">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--nb-page)] text-[var(--color-text-secondary)]">
                   {item.icon}
                 </span>
                 <span className="text-body text-[var(--color-text)]">{item.label}</span>
@@ -326,7 +350,7 @@ const Profile: React.FC = () => {
 
       {/* Settings */}
       <div className="px-5 mt-4">
-        <div className="rounded-[32px] bg-white/88 p-2 shadow-[0_24px_64px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
+        <div className="rounded-[32px] bg-white/88 p-2 shadow-[0_24px_64px_rgba(0,0,0,0.08)] ring-1 ring-black/5 backdrop-blur">
           <div className="px-3 pb-2 pt-1">
             <h3 className="text-lg font-semibold text-[var(--color-text)]">更多</h3>
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">账号设置、协议与版本信息</p>
@@ -335,12 +359,12 @@ const Profile: React.FC = () => {
             <button
               key={item.label}
               onClick={item.onClick}
-              className={`w-full flex items-center justify-between rounded-[24px] px-4 py-4 active:bg-slate-50 transition-colors ${
+              className={`w-full flex items-center justify-between rounded-[24px] px-4 py-4 active:bg-[var(--nb-page)] transition-colors ${
                 index !== settingItems.length - 1 ? 'mb-1' : ''
               }`}
             >
               <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#FFF0F5_0%,#F4F7FB_100%)] text-[var(--color-text-secondary)]">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--nb-page)] text-[var(--color-text-secondary)]">
                   {item.icon}
                 </span>
                 <span className="text-body text-[var(--color-text)]">{item.label}</span>
@@ -352,7 +376,7 @@ const Profile: React.FC = () => {
           ))}
           <div className="flex items-center justify-between rounded-[24px] px-4 py-4">
             <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#FFF0F5_0%,#F4F7FB_100%)] text-[var(--color-text-secondary)]">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--nb-page)] text-[var(--color-text-secondary)]">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               </span>
               <span className="text-body text-[var(--color-text)]">版本</span>
@@ -366,12 +390,13 @@ const Profile: React.FC = () => {
       <div className="px-5 mt-6">
         <button
           onClick={handleLogout}
-          className="w-full rounded-[28px] bg-white/92 py-4 text-base font-medium text-[var(--color-error)] shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-black/5 active:scale-95 transition-transform backdrop-blur"
+          className="w-full rounded-[28px] bg-white/92 py-4 text-base font-medium text-[var(--color-error)] shadow-[0_18px_50px_rgba(0,0,0,0.08)] ring-1 ring-black/5 active:scale-95 transition-transform backdrop-blur"
         >
           退出登录
         </button>
       </div>
 
+      </>}
       {/* Bind Technician Modal */}
       {showBindModal && (
         <div
@@ -394,9 +419,9 @@ const Profile: React.FC = () => {
                   setInviteCode('');
                   setFoundTechnician(null);
                 }}
-                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
+                className="w-8 h-8 rounded-full bg-[var(--nb-page)] flex items-center justify-center"
               >
-                <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 text-[var(--nb-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -411,7 +436,7 @@ const Profile: React.FC = () => {
                     value={inviteCode}
                     onChange={(e) => handleInviteCodeChange(e.target.value.trim())}
                     placeholder="请输入美甲师提供的邀请码"
-                    className="w-full px-4 py-3 bg-gray-50 rounded-xl text-body text-[var(--color-text)] outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
+                    className="w-full px-4 py-3 bg-[var(--nb-page)] rounded-xl text-body text-[var(--color-text)] outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
                   />
                   {checkingInviteCode && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin"></div>
@@ -451,7 +476,7 @@ const Profile: React.FC = () => {
                       onChange={(e) => setBindNote(e.target.value)}
                       placeholder="给美甲师留言，如：我是老顾客小红"
                       rows={2}
-                      className="w-full px-4 py-3 bg-gray-50 rounded-xl text-body text-[var(--color-text)] outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 resize-none"
+                      className="w-full px-4 py-3 bg-[var(--nb-page)] rounded-xl text-body text-[var(--color-text)] outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 resize-none"
                     />
                   </div>
                 </>
@@ -459,8 +484,8 @@ const Profile: React.FC = () => {
 
               <button
                 onClick={handleBindTechnician}
-                disabled={!foundTechnician || bindingLoading}
-                className="w-full py-4 bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] text-white rounded-full text-body font-medium shadow-lg shadow-pink-200 active:scale-[0.98] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!foundTechnician || bindingLoading || full || bindingsError}
+                className="w-full py-4 bg-[var(--nb-action)] text-white rounded-full text-body font-medium shadow-lg shadow-black/5 active:scale-[0.98] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {bindingLoading ? '申请中...' : '申请绑定'}
               </button>

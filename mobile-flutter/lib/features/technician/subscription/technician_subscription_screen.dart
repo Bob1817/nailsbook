@@ -1,3 +1,4 @@
+import '../../../core/theme/colors.generated.dart';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
@@ -129,7 +130,7 @@ class _TechnicianSubscriptionScreenState extends State<TechnicianSubscriptionScr
       padding: const EdgeInsets.all(DT.xl),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFFFF6FA2), Color(0xFFFF6B9B), Color(0xFFFF81A4), Color(0xFFFFB387)],
+          colors: [NBColors.action, NBColors.action, NBColors.action, NBColors.action],
           begin: Alignment(0.7, -1.0),
           end: Alignment(-0.7, 1.0),
         ),

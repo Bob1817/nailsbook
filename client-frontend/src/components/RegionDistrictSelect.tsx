@@ -9,7 +9,7 @@ interface Props {
 }
 
 const selCls =
-  'w-full px-3 py-3 bg-gray-50 rounded-xl text-gray-900 outline-none focus:ring-2 focus:ring-[#FF6B8A]/20 text-sm';
+  'w-full px-3 py-3 bg-[var(--nb-page)] rounded-xl text-[var(--nb-ink)] outline-none focus:ring-2 focus:ring-[var(--nb-control)]/20 text-sm';
 
 const RegionDistrictSelect: React.FC<Props> = ({ value, onChange }) => {
   const cities = PROVINCE_CITY[value.province] || [];

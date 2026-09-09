@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import '../../../core/theme/colors.generated.dart';
 
 const orderStatusLabels = {
   'pending_quote': '待报价',
@@ -13,15 +13,15 @@ const orderStatusLabels = {
 };
 
 const orderStatusColors = {
-  'pending_quote': (Color(0xFFFFFBEB), Color(0xFFB45309)),
-  'pending_agree': (Color(0xFFEFF6FF), Color(0xFF1D4ED8)),
-  'pending_confirm': (Color(0xFFF5F3FF), Color(0xFF7C3AED)),
-  'pending_home': (Color(0xFFF0FDF4), Color(0xFF15803D)),
-  'pending_shop': (Color(0xFFF0FDF4), Color(0xFF15803D)),
-  'in_progress': (Color(0xFFFFF7ED), Color(0xFFC2410C)),
-  'completed': (Color(0xFF2A241E), Color(0xFF4B5563)),
-  'cancelled': (Color(0xFFFEF2F2), Color(0xFFDC2626)),
-  'expired': (Color(0xFF2A241E), Color(0xFF9CA3AF)),
+  'pending_quote': (NBColors.page, NBColors.action),
+  'pending_agree': (NBColors.page, NBColors.action),
+  'pending_confirm': (NBColors.page, NBColors.action),
+  'pending_home': (NBColors.page, NBColors.action),
+  'pending_shop': (NBColors.page, NBColors.action),
+  'in_progress': (NBColors.page, NBColors.action),
+  'completed': (NBColors.surface, NBColors.secondary),
+  'cancelled': (NBColors.page, NBColors.action),
+  'expired': (NBColors.surface, NBColors.control),
 };
 
 const upcomingStatuses = {

@@ -11,7 +11,7 @@ export const MainLayout: React.FC = () => {
   const showTabBar = MAIN_TABS.includes(location.pathname);
 
   return (
-    <div className="flex h-[100dvh] flex-col overflow-x-hidden bg-[#fff9f8]" style={{ overscrollBehaviorX: 'none' }}>
+    <div className="flex h-[100dvh] flex-col overflow-x-hidden bg-[var(--nb-page)]" style={{ overscrollBehaviorX: 'none' }}>
       <main className="flex-1 min-h-0 overflow-x-hidden">
         <Outlet />
       </main>

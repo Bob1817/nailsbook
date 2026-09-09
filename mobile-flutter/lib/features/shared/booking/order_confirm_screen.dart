@@ -1,3 +1,4 @@
+import '../../../core/theme/colors.generated.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
@@ -106,11 +107,11 @@ class _OrderConfirmScreenState extends State<OrderConfirmScreen> {
       case _ViewState.loading:
         return const CircularProgressIndicator(color: DT.primary);
       case _ViewState.expired:
-        return _statusView(Icons.link_off_rounded, const Color(0xFF94A3B8), '链接已失效', _message);
+        return _statusView(Icons.link_off_rounded, NBColors.action, '链接已失效', _message);
       case _ViewState.alreadyDone:
         return _statusView(Icons.check_circle_outline_rounded, DT.primary, '已处理', _message);
       case _ViewState.error:
-        return _statusView(Icons.error_outline_rounded, const Color(0xFFEF4444), '出错了', _message);
+        return _statusView(Icons.error_outline_rounded, NBColors.action, '出错了', _message);
       case _ViewState.success:
         return _statusView(Icons.check_circle_rounded, DT.primary, _message, '感谢你的确认，美甲师将与你联系');
       case _ViewState.detail:
@@ -193,7 +194,7 @@ class _OrderConfirmScreenState extends State<OrderConfirmScreen> {
               onPressed: _acting ? null : _cancel,
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                side: const BorderSide(color: Color(0xFF3A2F23)),
+                side: const BorderSide(color: NBColors.activeSurface),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
               ),
               child: const Text('取消预约', style: TextStyle(color: DT.textMuted)),

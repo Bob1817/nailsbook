@@ -240,16 +240,16 @@ ${description}
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="w-full aspect-video rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center gap-2 hover:border-[var(--color-primary)] transition-colors"
+                  className="w-full aspect-video rounded-xl border-2 border-dashed border-[var(--nb-control)] flex flex-col items-center justify-center gap-2 hover:border-[var(--color-primary)] transition-colors"
                 >
                   {uploading ? (
                     <div className="w-8 h-8 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin"></div>
                   ) : (
                     <>
-                      <svg className="w-10 h-10 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-10 h-10 text-[var(--nb-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                      <span className="text-body-sm text-slate-400">点击上传参考图</span>
+                      <span className="text-body-sm text-[var(--nb-muted)]">点击上传参考图</span>
                     </>
                   )}
                 </button>
@@ -277,11 +277,11 @@ ${description}
                   className={`p-4 rounded-xl border-2 transition-all ${
                     selectedShape === shape.id
                       ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]'
-                      : 'border-slate-100 bg-white'
+                      : 'border-[var(--nb-line)] bg-white'
                   }`}
                 >
-                  <div className="w-10 h-10 mx-auto mb-2 rounded-lg bg-slate-100 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="w-10 h-10 mx-auto mb-2 rounded-lg bg-[var(--nb-page)] flex items-center justify-center">
+                    <svg className="w-6 h-6 text-[var(--nb-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
                     </svg>
                   </div>
@@ -312,7 +312,7 @@ ${description}
                     className={`w-12 h-12 rounded-full border-2 shadow-sm ${
                       selectedColors.includes(color.id)
                         ? 'border-[var(--color-primary)] scale-110'
-                        : 'border-slate-200'
+                        : 'border-[var(--nb-line)]'
                     }`}
                     style={{ backgroundColor: color.hex }}
                   />
@@ -335,7 +335,7 @@ ${description}
                   className={`p-3 rounded-xl border-2 transition-all ${
                     selectedElements.includes(element.id)
                       ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)]'
-                      : 'border-slate-100 bg-white'
+                      : 'border-[var(--nb-line)] bg-white'
                   }`}
                 >
                   <span className="text-2xl">{element.icon}</span>
@@ -354,7 +354,7 @@ ${description}
             {/* Preview Card */}
             <div className="bg-white rounded-2xl overflow-hidden card-shadow">
               {/* Preview Image */}
-              <div className="aspect-square bg-slate-100 relative">
+              <div className="aspect-square bg-[var(--nb-page)] relative">
                 {customImage ? (
                   <img src={customImage} alt="预览" className="w-full h-full object-cover" />
                 ) : selectedBase ? (
@@ -365,7 +365,7 @@ ${description}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <svg className="w-16 h-16 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-16 h-16 text-[var(--nb-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
                     </svg>
                   </div>
@@ -382,7 +382,7 @@ ${description}
                     value={title}
                     onChange={handleTitleChange}
                     placeholder={generateTitle()}
-                    className="w-full px-3 py-2 bg-slate-50 rounded-xl text-body font-medium text-[var(--color-text)] outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
+                    className="w-full px-3 py-2 bg-[var(--nb-page)] rounded-xl text-body font-medium text-[var(--color-text)] outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
                   />
                 </div>
 
@@ -390,7 +390,7 @@ ${description}
 
                 <div className="flex flex-wrap gap-2">
                   {selectedShape && (
-                    <span className="text-caption px-2 py-1 bg-slate-100 rounded-full text-[var(--color-text)]">
+                    <span className="text-caption px-2 py-1 bg-[var(--nb-page)] rounded-full text-[var(--color-text)]">
                       {nailShapes.find((s) => s.id === selectedShape)?.name}
                     </span>
                   )}
@@ -404,7 +404,7 @@ ${description}
                     </span>
                   ))}
                   {selectedElements.map((elementId) => (
-                    <span key={elementId} className="text-caption px-2 py-1 bg-slate-100 rounded-full text-[var(--color-text)]">
+                    <span key={elementId} className="text-caption px-2 py-1 bg-[var(--nb-page)] rounded-full text-[var(--color-text)]">
                       {elementOptions.find((e) => e.id === elementId)?.name}
                     </span>
                   ))}
@@ -416,7 +416,7 @@ ${description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="添加设计描述或特殊要求..."
                   rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 rounded-xl text-body-sm text-[var(--color-text)] outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 resize-none"
+                  className="w-full px-4 py-3 bg-[var(--nb-page)] rounded-xl text-body-sm text-[var(--color-text)] outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 resize-none"
                 />
               </div>
             </div>
@@ -429,7 +429,7 @@ ${description}
   };
 
   return (
-    <div className="min-h-full bg-[linear-gradient(180deg,#fff8fa_0%,#f8f9fc_24%,#f5f6f8_100%)]">
+    <div className="min-h-full bg-[var(--nb-page)]">
       {/* Header */}
       <div className="sticky top-0 z-10 border-b border-white/60 bg-white/82 px-5 app-header-safe pb-4 backdrop-blur-md">
         <div className="flex items-center gap-4">
@@ -459,8 +459,8 @@ ${description}
                   currentStep === step.id
                     ? 'text-[var(--color-primary)]'
                     : currentStep > step.id
-                    ? 'text-emerald-500'
-                    : 'text-slate-300'
+                    ? 'text-[var(--nb-secondary)]'
+                    : 'text-[var(--nb-muted)]'
                 }`}
               >
                 <div
@@ -468,8 +468,8 @@ ${description}
                     currentStep === step.id
                       ? 'bg-[var(--color-primary)] text-white'
                       : currentStep > step.id
-                      ? 'bg-emerald-100 text-emerald-600'
-                      : 'bg-slate-100 text-slate-400'
+                      ? 'bg-[var(--nb-page)] text-[var(--nb-secondary)]'
+                      : 'bg-[var(--nb-page)] text-[var(--nb-muted)]'
                   }`}
                 >
                   {currentStep > step.id ? (
@@ -485,7 +485,7 @@ ${description}
               {index < steps.length - 1 && (
                 <div
                   className={`flex-1 h-0.5 mx-2 ${
-                    currentStep > step.id ? 'bg-emerald-200' : 'bg-slate-100'
+                    currentStep > step.id ? 'bg-[var(--nb-pressed)]' : 'bg-[var(--nb-page)]'
                   }`}
                 />
               )}
@@ -496,7 +496,7 @@ ${description}
 
       {/* Step Content */}
       <div className="p-5 pb-32">
-        <div className="rounded-[28px] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
+        <div className="rounded-[28px] bg-white p-5 shadow-[0_12px_32px_rgba(0,0,0,0.06)] ring-1 ring-black/5">
           {renderStepContent()}
         </div>
       </div>
@@ -507,7 +507,7 @@ ${description}
           {currentStep > 1 && (
             <button
               onClick={() => setCurrentStep(currentStep - 1)}
-              className="flex-1 py-3.5 bg-slate-100 text-[var(--color-text)] text-body font-medium rounded-full active:scale-95 transition-transform"
+              className="flex-1 py-3.5 bg-[var(--nb-page)] text-[var(--color-text)] text-body font-medium rounded-full active:scale-95 transition-transform"
             >
               上一步
             </button>
@@ -516,7 +516,7 @@ ${description}
             <button
               onClick={() => setCurrentStep(currentStep + 1)}
               disabled={currentStep === 1 && !selectedBase && !customImage}
-              className="flex-1 py-3.5 bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] text-white text-body font-medium rounded-full active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-pink-200"
+              className="flex-1 py-3.5 bg-[var(--nb-action)] text-white text-body font-medium rounded-full active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-black/5"
             >
               下一步
             </button>
@@ -524,7 +524,7 @@ ${description}
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="flex-1 py-3.5 bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] text-white text-body font-medium rounded-full active:scale-95 transition-transform disabled:opacity-50 shadow-lg shadow-pink-200"
+              className="flex-1 py-3.5 bg-[var(--nb-action)] text-white text-body font-medium rounded-full active:scale-95 transition-transform disabled:opacity-50 shadow-lg shadow-black/5"
             >
               {submitting ? '保存中...' : '保存设计'}
             </button>

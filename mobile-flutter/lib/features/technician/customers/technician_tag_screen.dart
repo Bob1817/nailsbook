@@ -1,3 +1,4 @@
+import '../../../core/theme/colors.generated.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
@@ -8,14 +9,10 @@ import '../auth/technician_auth_service.dart';
 import '../../../core/widgets/nb_toast.dart';
 
 const _tagColors = [
-  {'bg': Color(0xFF3A2F23), 'text': Color(0xFFFF5E93), 'name': '粉'},
-  {'bg': Color(0xFFFFF1E5), 'text': Color(0xFFC9792A), 'name': '橙'},
-  {'bg': Color(0xFFEEF9F1), 'text': Color(0xFF31B46C), 'name': '绿'},
-  {'bg': Color(0xFFEBF4FF), 'text': Color(0xFF3B82F6), 'name': '蓝'},
-  {'bg': Color(0xFFF5F0FF), 'text': Color(0xFF7C3AED), 'name': '紫'},
-  {'bg': Color(0xFFFFF8E6), 'text': Color(0xFFC9860A), 'name': '黄'},
-  {'bg': Color(0xFF2A241E), 'text': Color(0xFF6D6570), 'name': '灰'},
-  {'bg': Color(0xFFFFE4E4), 'text': Color(0xFFE53E3E), 'name': '红'},
+  {'bg': NBColors.page, 'text': NBColors.ink, 'name': '石墨'},
+  {'bg': NBColors.page, 'text': NBColors.secondary, 'name': '深灰'},
+  {'bg': NBColors.activeSurface, 'text': NBColors.link, 'name': '蓝灰'},
+  {'bg': NBColors.surface, 'text': NBColors.muted, 'name': '中灰'},
 ];
 
 class TechnicianTagScreen extends StatefulWidget {

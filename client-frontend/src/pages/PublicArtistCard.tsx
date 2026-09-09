@@ -44,7 +44,7 @@ const PublicArtistCard: React.FC = () => {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-pink-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--nb-ink)] border-t-transparent" />
       </div>
     );
   }
@@ -52,8 +52,8 @@ const PublicArtistCard: React.FC = () => {
   if (error || !data) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-white px-8 text-center">
-        <p className="text-base font-medium text-gray-900">名片不存在或已失效</p>
-        <p className="text-sm text-gray-500">请向美甲师确认后重新打开链接</p>
+        <p className="text-base font-medium text-[var(--nb-ink)]">名片不存在或已失效</p>
+        <p className="text-sm text-[var(--nb-secondary)]">请向美甲师确认后重新打开链接</p>
       </div>
     );
   }
@@ -144,6 +144,7 @@ const PublicArtistCard: React.FC = () => {
       onPrimary={handlePrimary}
       onShare={handleShare}
       onWorkClick={handleWorkClick}
+      onShopClick={artist.shopAddresses?.length ? () => navigate(`/artist/${encodeURIComponent(artist.invitationCode)}/shops/0`) : undefined}
       onLike={handleLike}
       onFavorite={handleFavorite}
       isLiked={isLiked}

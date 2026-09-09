@@ -153,52 +153,15 @@ const Home: React.FC = () => {
   };
 
   // Demo carousel images from free image CDN
-  const demoCarouselImages = [
-    {
-      id: 1,
-      url: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=800&q=80',
-      title: '法式优雅美甲',
-    },
-    {
-      id: 2,
-      url: 'https://images.unsplash.com/photo-1519014816548-bf5fe059798b?w=800&q=80',
-      title: '渐变粉色美甲',
-    },
-    {
-      id: 3,
-      url: 'https://images.unsplash.com/photo-1632345031435-8727f6897d53?w=800&q=80',
-      title: '精致花朵美甲',
-    },
-    {
-      id: 4,
-      url: 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=800&q=80',
-      title: '时尚几何美甲',
-    },
-    {
-      id: 5,
-      url: 'https://images.unsplash.com/photo-1610992015732-2449b76344bc?w=800&q=80',
-      title: '闪亮星空美甲',
-    },
-  ];
-
-  const heroImages = homeData?.works && homeData.works.length > 0
-    ? homeData.works.slice(0, 5).map((work) => ({
-        id: work.id,
-        url: work.coverUrl || work.imageUrls[0] || demoCarouselImages[0].url,
-        title: work.title || '最新作品',
-        technicianName: work.technicianName,
-        technicianAvatarUrl: work.technicianAvatarUrl,
-        workId: work.id,
-      }))
-    : demoCarouselImages.map((image) => ({
-        ...image,
-        technicianName: homeData?.technician?.name || '已绑定美甲师',
-        technicianAvatarUrl: homeData?.technician?.avatarUrl || null,
-        workId: null,
-      }));
+  const heroImages = (homeData?.works || []).slice(0, 5).map(work => ({
+    id: work.id, url: work.coverUrl || work.imageUrls[0], title: work.title || '推荐作品',
+    technicianName: work.technicianName, technicianAvatarUrl: work.technicianAvatarUrl, workId: work.id,
+  }));
 
   // Auto-play carousel
   useEffect(() => {
+    setCurrentSlide(0);
+    if (heroImages.length < 2) return;
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroImages.length);
     }, 4000);
@@ -239,10 +202,11 @@ const Home: React.FC = () => {
   }
 
   return (
-    <div className="min-h-full bg-[linear-gradient(180deg,#fff8fa_0%,#f8f9fc_24%,#f5f6f8_100%)] pb-24">
+    <div className="min-h-full bg-[var(--nb-page)] pb-24">
       {/* Hero */}
       <div className="relative overflow-hidden bg-white">
         <div className="relative h-[clamp(23rem,58dvh,35rem)] overflow-hidden">
+          {!heroImages.length && <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[var(--nb-page)] text-[var(--nb-muted)] text-sm"><p>{homeData?.technician ? '美甲师暂未设置首页推荐' : '绑定美甲师后查看首页推荐'}</p><button className="min-h-11 px-4 text-[var(--nb-link)] rounded-lg active:bg-[var(--nb-pressed)] focus-visible:outline" onClick={() => navigate('/works')}>浏览作品</button></div>}
           {heroImages.map((image, index) => (
             <button
               key={image.id}
@@ -258,7 +222,7 @@ const Home: React.FC = () => {
                 className="w-full h-full object-cover"
                 loading={index === 0 ? 'eager' : 'lazy'}
               />
-              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,10,20,0.58)_0%,rgba(7,10,20,0.05)_28%,rgba(7,10,20,0.08)_56%,rgba(7,10,20,0.78)_100%)]"></div>
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.58)_0%,rgba(0,0,0,0.05)_28%,rgba(0,0,0,0.08)_56%,rgba(0,0,0,0.78)_100%)]"></div>
               <div className="absolute bottom-4 left-5 right-5 flex items-end gap-3 text-left">
                 <div className="min-w-0 flex-1">
                   <h2 className="truncate text-lg font-bold text-white drop-shadow-[0_1px_10px_rgba(0,0,0,0.75)]">
@@ -289,7 +253,7 @@ const Home: React.FC = () => {
                     </div>
 
           <div className="absolute left-0 right-0 top-[max(0.75rem,calc(env(safe-area-inset-top)+0.55rem))] flex items-center justify-center gap-1.5">
-          {heroImages.map((_, index) => (
+          {heroImages.length > 1 && heroImages.map((_, index) => (
             <button
               key={index}
               type="button"
@@ -330,7 +294,7 @@ const Home: React.FC = () => {
         {upcomingOrder ? (
           <div
             onClick={() => setDetailOrderId(upcomingOrder.id)}
-            className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#FF6B8A] via-[#FF7C98] to-[#FF8FA3] p-5 shadow-[0_18px_48px_rgba(255,107,138,0.28)] cursor-pointer active:scale-[0.99] transition-transform"
+            className="relative overflow-hidden rounded-[28px] bg-[var(--nb-action)] p-5 shadow-[0_18px_48px_rgba(0,0,0,0.28)] cursor-pointer active:scale-[0.99] transition-transform"
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.14),transparent_28%)]" />
 
@@ -431,10 +395,10 @@ const Home: React.FC = () => {
         ) : (
           <div
             onClick={() => navigate('/orders/create')}
-            className="relative overflow-hidden rounded-[28px] bg-white px-5 py-7 shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-black/5 cursor-pointer active:scale-[0.99] transition-transform"
+            className="relative overflow-hidden rounded-[28px] bg-white px-5 py-7 shadow-[0_12px_32px_rgba(0,0,0,0.06)] ring-1 ring-black/5 cursor-pointer active:scale-[0.99] transition-transform"
           >
             <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF6B8A] to-[#FF8FA3] shadow-lg shadow-pink-200">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--nb-action)] shadow-lg shadow-black/5">
                 <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
@@ -448,7 +412,7 @@ const Home: React.FC = () => {
                   e.stopPropagation();
                   navigate('/orders/create');
                 }}
-                className="shrink-0 rounded-full bg-[var(--color-primary)] px-4 py-2.5 text-[13px] font-semibold text-white shadow-md shadow-pink-200 active:scale-[0.97]"
+                className="shrink-0 rounded-full bg-[var(--color-primary)] px-4 py-2.5 text-[13px] font-semibold text-white shadow-md shadow-black/5 active:scale-[0.97]"
               >
                 立即预约
               </button>
@@ -506,8 +470,8 @@ const Home: React.FC = () => {
           <div className="py-10 text-center text-sm text-[var(--color-text-muted)]">加载中...</div>
         ) : (
           <div className="rounded-3xl bg-white p-8 text-center shadow-sm ring-1 ring-black/5">
-            <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-slate-50 flex items-center justify-center">
-              <svg className="w-8 h-8 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-[var(--nb-page)] flex items-center justify-center">
+              <svg className="w-8 h-8 text-[var(--nb-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>

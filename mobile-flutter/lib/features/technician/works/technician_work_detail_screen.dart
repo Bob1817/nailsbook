@@ -1,3 +1,4 @@
+import '../../../core/theme/colors.generated.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -338,7 +339,7 @@ class _TechnicianWorkDetailScreenState extends State<TechnicianWorkDetailScreen>
                   right: 0,
                   height: galleryH,
                   child: imgs.isEmpty
-                      ? Container(color: const Color(0xFF1A1A1A))
+                      ? Container(color: NBColors.ink)
                       : PageView.builder(
                           itemCount: imgs.length,
                           onPageChanged: (i) => setState(() => _imageIndex = i),
@@ -347,8 +348,8 @@ class _TechnicianWorkDetailScreenState extends State<TechnicianWorkDetailScreen>
                             child: CachedNetworkImage(
                               imageUrl: ossDetail(imgs[i]),
                               fit: BoxFit.cover,
-                              placeholder: (_, __) => Container(color: const Color(0xFF1A1A1A)),
-                              errorWidget: (_, __, ___) => Container(color: const Color(0xFF1A1A1A), child: const Icon(Icons.image_not_supported, color: Colors.white24)),
+                              placeholder: (_, __) => Container(color: NBColors.ink),
+                              errorWidget: (_, __, ___) => Container(color: NBColors.ink, child: const Icon(Icons.image_not_supported, color: Colors.white24)),
                             ),
                           ),
                         ),
@@ -472,7 +473,7 @@ class _TechnicianWorkDetailScreenState extends State<TechnicianWorkDetailScreen>
         stat(Icons.bookmark, '收藏', _work['favoriteCount'] as int? ?? 0),
         stat(Icons.mode_comment_outlined, '评论', _work['commentCount'] as int? ?? 0),
         if (pinned) _badge('置顶', DT.primary),
-        if (feat) _badge('推荐', const Color(0xFFF59E0B)),
+        if (feat) _badge('推荐', NBColors.action),
         if (!vis) _badge('已隐藏', DT.textSecondary),
       ],
     );
@@ -539,8 +540,8 @@ class _TechnicianWorkDetailScreenState extends State<TechnicianWorkDetailScreen>
                                           style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: DT.textPrimary)),
                                     ),
                                     if (isTech) ...[const SizedBox(width: 6), _miniTag('美甲师', DT.primary, DT.primarySoft)],
-                                    if (pinned) ...[const SizedBox(width: 6), _miniTag('置顶', const Color(0xFFB45309), const Color(0xFFFEF3C7))],
-                                    if (hidden) ...[const SizedBox(width: 6), _miniTag('已隐藏', DT.textSecondary, const Color(0xFF3A2F23))],
+                                    if (pinned) ...[const SizedBox(width: 6), _miniTag('置顶', NBColors.action, NBColors.page)],
+                                    if (hidden) ...[const SizedBox(width: 6), _miniTag('已隐藏', DT.textSecondary, NBColors.activeSurface)],
                                   ],
                                 ),
                               ),

@@ -1,3 +1,4 @@
+import '../../../core/theme/colors.generated.dart';
 import '../../shared/chat/chat_screen.dart';
 import '../../shared/chat/chat_service.dart';
 import '../../../core/api/api_error.dart';
@@ -483,7 +484,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
   /// 预约状态徽章（移入服务信息卡头部，替代原独立的「当前预约状态」重卡片）。
   Widget _statusBadge(ClientOrder o) {
     final colors = _statusColors[o.status] ??
-        (const Color(0xFF2A241E), const Color(0xFF4B5563));
+        (NBColors.surface, NBColors.secondary);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration:
@@ -522,7 +523,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF3A2F23), Color(0xFF211C17)],
+                colors: [NBColors.activeSurface, NBColors.surface],
               ),
               borderRadius: BorderRadius.circular(24),
             ),
@@ -558,7 +559,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                          colors: [Color(0xFFFFFBEB), Color(0xFFFFF7ED)]),
+                          colors: [NBColors.page, NBColors.page]),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
@@ -571,15 +572,15 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                                 const Text('定金（线下支付）',
                                     style: TextStyle(
                                         fontSize: 12,
-                                        color: Color(0xFFD97706))),
+                                        color: NBColors.action)),
                                 const Spacer(),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
                                     color: o.isDepositPaid
-                                        ? const Color(0xFFD1FAE5)
-                                        : const Color(0xFFFEF3C7),
+                                        ? NBColors.page
+                                        : NBColors.page,
                                     borderRadius: BorderRadius.circular(999),
                                   ),
                                   child: Text(
@@ -588,8 +589,8 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                                         fontSize: 11,
                                         fontWeight: FontWeight.w500,
                                         color: o.isDepositPaid
-                                            ? const Color(0xFF059669)
-                                            : const Color(0xFFD97706)),
+                                            ? NBColors.action
+                                            : NBColors.action),
                                   ),
                                 ),
                               ]),
@@ -598,7 +599,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                                   style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFFB45309))),
+                                      color: NBColors.action)),
                             ],
                           ),
                         ),
@@ -675,10 +676,10 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                           width: 80,
                           height: 80,
                           decoration: BoxDecoration(
-                              color: const Color(0xFF211C17),
+                              color: NBColors.surface,
                               borderRadius: BorderRadius.circular(14)),
                           child: const Icon(Icons.image_not_supported_outlined,
-                              color: Color(0xFFCBD5E1)),
+                              color: NBColors.line),
                         ),
                       ),
                     ))
@@ -766,14 +767,14 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                     height: 48,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF211C17),
+                      color: NBColors.surface,
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(_clientWaitingLabel(o.status),
                         style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF94A3B8))),
+                            color: NBColors.action)),
                   ),
                 ),
                 if (isCancellable) ...[
@@ -807,13 +808,13 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               decoration: BoxDecoration(
                 gradient: isAmber
                     ? const LinearGradient(
-                        colors: [Color(0xFFFBBF24), Color(0xFFF97316)])
+                        colors: [NBColors.action, NBColors.action])
                     : DT.bookingGradient,
                 borderRadius: BorderRadius.circular(999),
                 boxShadow: isAmber
                     ? [
                         BoxShadow(
-                            color: const Color(0xFFFBBF24).withValues(alpha: 0.3),
+                            color: NBColors.action.withValues(alpha: 0.3),
                             blurRadius: 12,
                             offset: const Offset(0, 4))
                       ]
@@ -846,22 +847,22 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               onPressed: loading ? null : onTap,
               style: OutlinedButton.styleFrom(
                 foregroundColor: isRed
-                    ? const Color(0xFFEF4444)
+                    ? NBColors.action
                     : isOrange
-                        ? const Color(0xFFF97316)
-                        : const Color(0xFF475569),
+                        ? NBColors.action
+                        : NBColors.secondary,
                 side: BorderSide(
                     color: isRed
-                        ? const Color(0xFFEF4444).withValues(alpha: 0.3)
+                        ? NBColors.action.withValues(alpha: 0.3)
                         : isOrange
-                            ? const Color(0xFFF97316).withValues(alpha: 0.3)
-                            : const Color(0xFF3A2F23)),
+                            ? NBColors.action.withValues(alpha: 0.3)
+                            : NBColors.activeSurface),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(999)),
                 backgroundColor: isRed
-                    ? const Color(0xFFFEF2F2)
+                    ? NBColors.page
                     : isOrange
-                        ? const Color(0xFFFFF7ED)
+                        ? NBColors.page
                         : Colors.white,
               ),
               child: Text(label,
@@ -873,7 +874,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
 
   /// 取消预约：无边框的红色 liquid glass 按钮（红色半透明 + 红色柔光）。
   Widget _redGlassButton(String label, VoidCallback onTap, bool loading) {
-    const red = Color(0xFFEF4444);
+    const red = NBColors.action;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: red.withValues(alpha: 0.16),
@@ -1032,7 +1033,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFF211C17).withValues(alpha: 0.8),
+          color: NBColors.surface.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -1060,7 +1061,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFF211C17).withValues(alpha: 0.8),
+          color: NBColors.surface.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -1105,9 +1106,9 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                     width: 36,
                     height: 36,
                     decoration: const BoxDecoration(
-                        color: Color(0xFF211C17), shape: BoxShape.circle),
+                        color: NBColors.surface, shape: BoxShape.circle),
                     child: const Icon(Icons.close_rounded,
-                        size: 18, color: Color(0xFF64748B)),
+                        size: 18, color: NBColors.action),
                   ),
                 ),
               ],
@@ -1121,7 +1122,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                    colors: [Color(0xFF3A2F23), Color(0xFF211C17)]),
+                    colors: [NBColors.activeSurface, NBColors.surface]),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Column(
@@ -1226,10 +1227,10 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                         width: 36,
                         height: 36,
                         decoration: const BoxDecoration(
-                            color: Color(0xFF211C17),
+                            color: NBColors.surface,
                             shape: BoxShape.circle),
                         child: const Icon(Icons.close_rounded,
-                            size: 18, color: Color(0xFF64748B)),
+                            size: 18, color: NBColors.action),
                       ),
                     ),
                   ],
@@ -1237,9 +1238,9 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                 const SizedBox(height: 16),
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFF211C17).withValues(alpha: 0.8),
+                    color: NBColors.surface.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFF3A2F23)),
+                    border: Border.all(color: NBColors.activeSurface),
                   ),
                   child: TextField(
                     controller: reasonCtl,
@@ -1263,11 +1264,11 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                           onPressed:
                               _actionLoading ? null : () => Navigator.pop(ctx),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF475569),
-                            side: const BorderSide(color: Color(0xFF3A2F23)),
+                            foregroundColor: NBColors.secondary,
+                            side: const BorderSide(color: NBColors.activeSurface),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(999)),
-                            backgroundColor: const Color(0xFF211C17),
+                            backgroundColor: NBColors.surface,
                           ),
                           child: const Text('暂不拒绝',
                               style: TextStyle(fontWeight: FontWeight.w500)),
@@ -1286,7 +1287,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                                   _reject(reasonCtl.text);
                                 },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFEF4444),
+                            backgroundColor: NBColors.action,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(999)),
@@ -1347,9 +1348,9 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                     width: 36,
                     height: 36,
                     decoration: const BoxDecoration(
-                        color: Color(0xFF211C17), shape: BoxShape.circle),
+                        color: NBColors.surface, shape: BoxShape.circle),
                     child: const Icon(Icons.close_rounded,
-                        size: 18, color: Color(0xFF64748B)),
+                        size: 18, color: NBColors.action),
                   ),
                 ),
               ],
@@ -1364,11 +1365,11 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                       onPressed:
                           _actionLoading ? null : () => Navigator.pop(ctx),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF475569),
-                        side: const BorderSide(color: Color(0xFF3A2F23)),
+                        foregroundColor: NBColors.secondary,
+                        side: const BorderSide(color: NBColors.activeSurface),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(999)),
-                        backgroundColor: const Color(0xFF211C17),
+                        backgroundColor: NBColors.surface,
                       ),
                       child: const Text('暂不取消',
                           style: TextStyle(fontWeight: FontWeight.w500)),
@@ -1387,7 +1388,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                               _cancel();
                             },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEF4444),
+                        backgroundColor: NBColors.action,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(999)),
@@ -1438,9 +1439,9 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                     width: 36,
                     height: 36,
                     decoration: const BoxDecoration(
-                        color: Color(0xFF211C17), shape: BoxShape.circle),
+                        color: NBColors.surface, shape: BoxShape.circle),
                     child: const Icon(Icons.close_rounded,
-                        size: 18, color: Color(0xFF64748B)),
+                        size: 18, color: NBColors.action),
                   ),
                 ),
               ],
@@ -1454,7 +1455,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                    colors: [Color(0xFFFFFBEB), Color(0xFFFFF7ED)]),
+                    colors: [NBColors.page, NBColors.page]),
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Column(
@@ -1462,18 +1463,18 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                 children: [
                   const Text('定金金额',
                       style: TextStyle(
-                          fontSize: 12, color: Color(0xFFD97706))),
+                          fontSize: 12, color: NBColors.action)),
                   const SizedBox(height: 4),
                   Text('¥${o.depositAmount!.toStringAsFixed(0)}',
                       style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFFB45309))),
+                          color: NBColors.action)),
                   const SizedBox(height: 6),
                   Text('确认后将通知美甲师，美甲师确认收到后将接单',
                       style: TextStyle(
                           fontSize: 11,
-                          color: const Color(0xFFD97706).withValues(alpha: 0.7))),
+                          color: NBColors.action.withValues(alpha: 0.7))),
                 ],
               ),
             ),
@@ -1486,8 +1487,8 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(ctx),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF475569),
-                        side: const BorderSide(color: Color(0xFF3A2F23)),
+                        foregroundColor: NBColors.secondary,
+                        side: const BorderSide(color: NBColors.activeSurface),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(999)),
                       ),
@@ -1502,7 +1503,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                            colors: [Color(0xFFFBBF24), Color(0xFFF97316)]),
+                            colors: [NBColors.action, NBColors.action]),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Material(
@@ -1613,10 +1614,10 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                               width: 36,
                               height: 36,
                               decoration: const BoxDecoration(
-                                  color: Color(0xFF211C17),
+                                  color: NBColors.surface,
                                   shape: BoxShape.circle),
                               child: const Icon(Icons.close_rounded,
-                                  size: 18, color: Color(0xFF64748B)),
+                                  size: 18, color: NBColors.action),
                             ),
                           ),
                         ],
@@ -1632,7 +1633,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF211C17).withValues(alpha: 0.8),
+                              color: NBColors.surface.withValues(alpha: 0.8),
                               borderRadius: BorderRadius.circular(24),
                             ),
                             child: Column(
@@ -1642,7 +1643,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w500,
-                                        color: Color(0xFF374151))),
+                                        color: NBColors.secondary)),
                                 const SizedBox(height: 12),
                                 GestureDetector(
                                   onTap: () async {
@@ -1667,7 +1668,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                                       borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
                                           color: editDate.isEmpty
-                                              ? const Color(0xFF3A2F23)
+                                              ? NBColors.activeSurface
                                               : DT.primary.withValues(alpha: 0.3)),
                                     ),
                                     child: Text(
@@ -1687,7 +1688,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF211C17).withValues(alpha: 0.8),
+                              color: NBColors.surface.withValues(alpha: 0.8),
                               borderRadius: BorderRadius.circular(24),
                             ),
                             child: Column(
@@ -1697,7 +1698,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w500,
-                                        color: Color(0xFF374151))),
+                                        color: NBColors.secondary)),
                                 const SizedBox(height: 12),
                                 SizedBox(
                                   height: 180,
@@ -1738,7 +1739,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                                                     : FontWeight.w500,
                                                 color: sel
                                                     ? Colors.white
-                                                    : const Color(0xFF64748B),
+                                                    : NBColors.action,
                                               )),
                                         ),
                                       );
@@ -1753,7 +1754,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF211C17).withValues(alpha: 0.8),
+                              color: NBColors.surface.withValues(alpha: 0.8),
                               borderRadius: BorderRadius.circular(24),
                             ),
                             child: Column(
@@ -1763,7 +1764,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w500,
-                                        color: Color(0xFF374151))),
+                                        color: NBColors.secondary)),
                                 const SizedBox(height: 12),
                                 if (loadingAddresses)
                                   const Center(
@@ -1792,8 +1793,8 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                                                   begin: Alignment.topLeft,
                                                   end: Alignment.bottomRight,
                                                   colors: [
-                                                      Color(0xFF3A2F23),
-                                                      Color(0xFF211C17)
+                                                      NBColors.activeSurface,
+                                                      NBColors.surface
                                                     ])
                                               : null,
                                           color: selected ? null : Colors.white,
@@ -1966,9 +1967,9 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                       width: 36,
                       height: 36,
                       decoration: const BoxDecoration(
-                          color: Color(0xFF211C17), shape: BoxShape.circle),
+                          color: NBColors.surface, shape: BoxShape.circle),
                       child: const Icon(Icons.close_rounded,
-                          size: 18, color: Color(0xFF64748B)),
+                          size: 18, color: NBColors.action),
                     ),
                   ),
                 ],
@@ -1993,11 +1994,11 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF211C17),
+                    color: NBColors.surface,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                         color: date.isEmpty
-                            ? const Color(0xFF3A2F23)
+                            ? NBColors.activeSurface
                             : DT.primary.withValues(alpha: 0.3)),
                   ),
                   child: Row(
@@ -2038,7 +2039,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           gradient: sel ? DT.bookingGradient : null,
-                          color: sel ? null : const Color(0xFF211C17),
+                          color: sel ? null : NBColors.surface,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: sel ? DT.shadowPrimary : null,
                         ),
@@ -2049,7 +2050,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                                   sel ? FontWeight.w600 : FontWeight.w500,
                               color: sel
                                   ? Colors.white
-                                  : const Color(0xFF94A3B8),
+                                  : NBColors.action,
                             )),
                       ),
                     );
@@ -2102,21 +2103,21 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               width: 44,
               height: 44,
               decoration: const BoxDecoration(
-                  color: Color(0xFF2A241E), shape: BoxShape.circle)),
+                  color: NBColors.surface, shape: BoxShape.circle)),
           const SizedBox(width: 14),
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Container(
                 width: 80,
                 height: 10,
                 decoration: BoxDecoration(
-                    color: const Color(0xFF2A241E),
+                    color: NBColors.surface,
                     borderRadius: BorderRadius.circular(4))),
             const SizedBox(height: 6),
             Container(
                 width: 60,
                 height: 20,
                 decoration: BoxDecoration(
-                    color: const Color(0xFF2A241E),
+                    color: NBColors.surface,
                     borderRadius: BorderRadius.circular(4))),
           ]),
         ]),
@@ -2124,25 +2125,25 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
         Container(
             height: 180,
             decoration: BoxDecoration(
-                color: const Color(0xFF2A241E),
+                color: NBColors.surface,
                 borderRadius: BorderRadius.circular(32))),
         const SizedBox(height: 16),
         Container(
             height: 140,
             decoration: BoxDecoration(
-                color: const Color(0xFF2A241E),
+                color: NBColors.surface,
                 borderRadius: BorderRadius.circular(28))),
         const SizedBox(height: 16),
         Container(
             height: 80,
             decoration: BoxDecoration(
-                color: const Color(0xFF2A241E),
+                color: NBColors.surface,
                 borderRadius: BorderRadius.circular(28))),
         const SizedBox(height: 16),
         Container(
             height: 100,
             decoration: BoxDecoration(
-                color: const Color(0xFF2A241E),
+                color: NBColors.surface,
                 borderRadius: BorderRadius.circular(28))),
       ],
     );
@@ -2169,7 +2170,7 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
                 ],
               ),
               child: const Icon(Icons.arrow_back_ios_new_rounded,
-                  size: 18, color: Color(0xFF64748B)),
+                  size: 18, color: NBColors.action),
             ),
           ),
         ]),
@@ -2180,9 +2181,9 @@ class _ClientOrderDetailScreenState extends State<ClientOrderDetailScreen> {
               width: 72,
               height: 72,
               decoration: const BoxDecoration(
-                  color: Color(0xFF211C17), shape: BoxShape.circle),
+                  color: NBColors.surface, shape: BoxShape.circle),
               child: const Icon(Icons.error_outline_rounded,
-                  size: 32, color: Color(0xFFCBD5E1)),
+                  size: 32, color: NBColors.line),
             ),
             const SizedBox(height: 16),
             const Text('预约不存在',

@@ -64,24 +64,24 @@ const ArtistJoinPage = () => {
         <header className="flex items-center justify-between py-2">
           <Link
             to="/"
-            className="glass inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-medium text-[var(--color-ink-muted)] transition active:scale-[0.98] active:bg-white/92 active:shadow-[0_10px_24px_rgba(192,136,148,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
+            className="glass inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-medium text-[var(--color-ink-muted)] transition active:scale-[0.98] active:bg-white/92 active:shadow-[0_10px_24px_rgba(0,0,0,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
           >
             <ArrowLeft className="h-4 w-4" />
             返回首页
           </Link>
           <Link
             to="/role-select"
-            className="inline-flex min-h-11 items-center rounded-full bg-white/82 px-4 text-sm font-medium text-[var(--color-brand)] shadow-[0_12px_24px_rgba(192,136,148,0.08)] transition active:scale-[0.98] active:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
+            className="inline-flex min-h-11 items-center rounded-full bg-white/82 px-4 text-sm font-medium text-[var(--color-brand)] shadow-[0_12px_24px_rgba(0,0,0,0.08)] transition active:scale-[0.98] active:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
           >
             角色登录
           </Link>
         </header>
 
         <main className="flex flex-1 flex-col gap-5 pt-6">
-          <section className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,247,248,0.9))] px-5 py-6 shadow-[0_24px_56px_rgba(192,136,148,0.12)]">
-            <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-[radial-gradient(circle,rgba(255,143,163,0.24),transparent_68%)]" />
+          <section className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(0,0,0,0.9))] px-5 py-6 shadow-[0_24px_56px_rgba(0,0,0,0.12)]">
+            <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-[radial-gradient(circle,rgba(0,0,0,0.24),transparent_68%)]" />
             <div className="relative">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-[1.1rem] bg-[linear-gradient(135deg,var(--color-brand),var(--color-brand-soft))] text-white shadow-[0_16px_32px_rgba(255,107,138,0.24)]">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-[1.1rem] bg-[linear-gradient(135deg,var(--color-brand),var(--color-brand-soft))] text-white shadow-[0_16px_32px_rgba(0,0,0,0.24)]">
                 <Sparkles className="h-5 w-5" />
               </div>
               <p className="text-sm font-medium tracking-[0.18em] text-[var(--color-brand)] uppercase">
@@ -96,13 +96,13 @@ const ArtistJoinPage = () => {
             </div>
           </section>
 
-          <section className="rounded-[2rem] bg-white/90 p-5 shadow-[0_24px_56px_rgba(192,136,148,0.1)]">
+          <section className="rounded-[2rem] bg-white/90 p-5 shadow-[0_24px_56px_rgba(0,0,0,0.1)]">
             <h2 className="text-lg font-semibold tracking-[-0.02em] text-[var(--color-ink)]">适合先提交什么</h2>
             <ul className="mt-4 space-y-3 text-sm leading-6 text-[var(--color-ink-muted)]">
               {joinReasons.map((reason) => (
                 <li
                   key={reason}
-                  className="rounded-[1.4rem] border border-[rgba(255,107,138,0.1)] bg-[rgba(255,250,251,0.92)] px-4 py-3"
+                  className="rounded-[1.4rem] border border-[rgba(0,0,0,0.1)] bg-[rgba(255,255,255,0.92)] px-4 py-3"
                 >
                   {reason}
                 </li>
@@ -110,11 +110,11 @@ const ArtistJoinPage = () => {
             </ul>
           </section>
 
-          <section className="rounded-[2rem] bg-white p-5 shadow-[0_24px_56px_rgba(192,136,148,0.1)]">
+          <section className="rounded-[2rem] bg-white p-5 shadow-[0_24px_56px_rgba(0,0,0,0.1)]">
             {isSubmitted ? (
               <div className="space-y-5 text-center">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(74,222,128,0.16)]">
-                  <CheckCircle2 className="h-8 w-8 text-green-600" />
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(0,0,0,0.16)]">
+                  <CheckCircle2 className="h-8 w-8 text-[var(--nb-secondary)]" />
                 </div>
                 <div>
                   <h2 className="text-xl font-semibold tracking-[-0.03em] text-[var(--color-ink)]">
@@ -125,7 +125,7 @@ const ArtistJoinPage = () => {
                   </p>
                 </div>
 
-                <div className="rounded-[1.6rem] border border-[rgba(255,107,138,0.1)] bg-[rgba(255,250,251,0.92)] px-4 py-4 text-left">
+                <div className="rounded-[1.6rem] border border-[rgba(0,0,0,0.1)] bg-[rgba(255,255,255,0.92)] px-4 py-4 text-left">
                   <p className="text-sm font-semibold text-[var(--color-ink)]">接下来会看到的内容</p>
                   <p className="mt-2 text-sm leading-6 text-[var(--color-ink-muted)]">
                     服务方式、经验和风格标签已经完成前端收集。后续可继续补作品图、服务半径、价格策略和可预约档期。
@@ -135,7 +135,7 @@ const ArtistJoinPage = () => {
                 <button
                   type="button"
                   onClick={handleResetForm}
-                  className="w-full rounded-full bg-[rgba(255,240,243,0.92)] px-4 py-3 text-sm font-semibold text-[var(--color-brand)] transition active:scale-[0.99] active:bg-[rgba(255,228,233,0.98)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                  className="w-full rounded-full bg-[rgba(0,0,0,0.92)] px-4 py-3 text-sm font-semibold text-[var(--color-brand)] transition active:scale-[0.99] active:bg-[rgba(0,0,0,0.98)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                 >
                   重新填写资料
                 </button>
@@ -143,14 +143,14 @@ const ArtistJoinPage = () => {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Link
                     to="/"
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[rgba(255,107,138,0.12)] bg-white px-4 text-sm font-semibold text-[var(--color-ink)] transition active:scale-[0.99] active:bg-[rgba(255,250,251,0.98)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[rgba(0,0,0,0.12)] bg-white px-4 text-sm font-semibold text-[var(--color-ink)] transition active:scale-[0.99] active:bg-[rgba(255,255,255,0.98)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                   >
                     <Home className="h-4 w-4" />
                     返回首页
                   </Link>
                   <Link
                     to="/role-select"
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--color-brand),var(--color-brand-soft))] px-4 text-sm font-semibold text-white shadow-[0_16px_32px_rgba(255,107,138,0.22)] transition active:scale-[0.99] active:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--color-brand),var(--color-brand-soft))] px-4 text-sm font-semibold text-white shadow-[0_16px_32px_rgba(0,0,0,0.22)] transition active:scale-[0.99] active:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                   >
                     <LogIn className="h-4 w-4" />
                     前往角色登录
@@ -169,7 +169,7 @@ const ArtistJoinPage = () => {
                     type="text"
                     placeholder="例如：Luna / Luna Studio"
                     required
-                    className="min-h-12 w-full rounded-[1.35rem] border border-[rgba(255,107,138,0.12)] bg-[rgba(255,250,251,0.92)] px-4 py-3 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                    className="min-h-12 w-full rounded-[1.35rem] border border-[rgba(0,0,0,0.12)] bg-[rgba(255,255,255,0.92)] px-4 py-3 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                   />
                 </div>
 
@@ -183,7 +183,7 @@ const ArtistJoinPage = () => {
                     type="tel"
                     placeholder="用于后续联系，例如 138 0000 0000"
                     required
-                    className="min-h-12 w-full rounded-[1.35rem] border border-[rgba(255,107,138,0.12)] bg-[rgba(255,250,251,0.92)] px-4 py-3 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                    className="min-h-12 w-full rounded-[1.35rem] border border-[rgba(0,0,0,0.12)] bg-[rgba(255,255,255,0.92)] px-4 py-3 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                   />
                 </div>
 
@@ -197,7 +197,7 @@ const ArtistJoinPage = () => {
                     type="text"
                     placeholder="例如：上海 / San Gabriel"
                     required
-                    className="min-h-12 w-full rounded-[1.35rem] border border-[rgba(255,107,138,0.12)] bg-[rgba(255,250,251,0.92)] px-4 py-3 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                    className="min-h-12 w-full rounded-[1.35rem] border border-[rgba(0,0,0,0.12)] bg-[rgba(255,255,255,0.92)] px-4 py-3 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                   />
                 </div>
 
@@ -210,7 +210,7 @@ const ArtistJoinPage = () => {
                     name="serviceMode"
                     value={selectedMode}
                     onChange={(event) => setSelectedMode(event.target.value)}
-                    className="min-h-12 w-full rounded-[1.35rem] border border-[rgba(255,107,138,0.12)] bg-[rgba(255,250,251,0.92)] px-4 py-3 text-sm text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                    className="min-h-12 w-full rounded-[1.35rem] border border-[rgba(0,0,0,0.12)] bg-[rgba(255,255,255,0.92)] px-4 py-3 text-sm text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                   >
                     {serviceModes.map((mode) => (
                       <option key={mode} value={mode}>
@@ -229,7 +229,7 @@ const ArtistJoinPage = () => {
                     name="experience"
                     value={selectedExperience}
                     onChange={(event) => setSelectedExperience(event.target.value)}
-                    className="min-h-12 w-full rounded-[1.35rem] border border-[rgba(255,107,138,0.12)] bg-[rgba(255,250,251,0.92)] px-4 py-3 text-sm text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                    className="min-h-12 w-full rounded-[1.35rem] border border-[rgba(0,0,0,0.12)] bg-[rgba(255,255,255,0.92)] px-4 py-3 text-sm text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                   >
                     {experienceOptions.map((option) => (
                       <option key={option} value={option}>
@@ -250,7 +250,7 @@ const ArtistJoinPage = () => {
                     placeholder="例如：日系清透、法式、手绘、新娘预约"
                     list="artist-specialty-options"
                     required
-                    className="min-h-12 w-full rounded-[1.35rem] border border-[rgba(255,107,138,0.12)] bg-[rgba(255,250,251,0.92)] px-4 py-3 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                    className="min-h-12 w-full rounded-[1.35rem] border border-[rgba(0,0,0,0.12)] bg-[rgba(255,255,255,0.92)] px-4 py-3 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                   />
                   <datalist id="artist-specialty-options">
                     {specialties.map((specialty) => (
@@ -268,17 +268,17 @@ const ArtistJoinPage = () => {
                     name="note"
                     rows={5}
                     placeholder="可以补充服务区域、擅长款式、工作室情况，或你最希望用 NailBook 解决的问题。"
-                    className="w-full rounded-[1.35rem] border border-[rgba(255,107,138,0.12)] bg-[rgba(255,250,251,0.92)] px-4 py-3 text-sm leading-6 text-[var(--color-ink)] placeholder:text-[var(--color-ink-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                    className="w-full rounded-[1.35rem] border border-[rgba(0,0,0,0.12)] bg-[rgba(255,255,255,0.92)] px-4 py-3 text-sm leading-6 text-[var(--color-ink)] placeholder:text-[var(--color-ink-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                   />
                 </div>
 
                 {error && (
-                  <p className="text-sm text-red-500 text-center">{error}</p>
+                  <p className="text-sm text-[var(--nb-secondary)] text-center">{error}</p>
                 )}
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full rounded-full bg-[linear-gradient(135deg,var(--color-brand),var(--color-brand-soft))] px-4 py-3 text-sm font-semibold text-white shadow-[0_16px_32px_rgba(255,107,138,0.22)] transition active:scale-[0.99] active:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:opacity-60"
+                  className="w-full rounded-full bg-[linear-gradient(135deg,var(--color-brand),var(--color-brand-soft))] px-4 py-3 text-sm font-semibold text-white shadow-[0_16px_32px_rgba(0,0,0,0.22)] transition active:scale-[0.99] active:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:opacity-60"
                 >
                   {submitting ? '提交中...' : '提交入驻申请'}
                 </button>

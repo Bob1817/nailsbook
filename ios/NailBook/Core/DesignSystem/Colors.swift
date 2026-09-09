@@ -3,146 +3,146 @@ import SwiftUI
 // MARK: - NailBook Design Tokens (synced with WeChat mini-program)
 
 extension Color {
-    // Primary (Brand Pink #FF6B8A)
-    static let nbPrimary = Color(hex: "FF6B8A")
-    static let nbPrimaryDark = Color(hex: "E00B41")
-    static let nbPrimaryLight = Color(hex: "FF8FA3")
-    static let nbPrimaryPale = Color(hex: "FFB0BE")
-    static let nbPrimarySoft = Color(hex: "FFF0F5")
-    static let nbPrimaryBg = Color(hex: "FFF1F5")
+    // Legacy API adapted to COLOR-STANDARD.md.
+    static let nbPrimary = NBColors.action
+    static let nbPrimaryDark = NBColors.action
+    static let nbPrimaryLight = NBColors.action
+    static let nbPrimaryPale = NBColors.action
+    static let nbPrimarySoft = NBColors.page
+    static let nbPrimaryBg = NBColors.page
 
     // Brand Purple (gradient end)
-    static let nbPurple = Color(hex: "A78BFA")
-    static let nbPurpleDark = Color(hex: "8B5CF6")
-    static let nbPurpleSoft = Color(hex: "F5F3FF")
+    static let nbPurple = NBColors.action
+    static let nbPurpleDark = NBColors.action
+    static let nbPurpleSoft = NBColors.page
 
     // Secondary
-    static let nbSecondary = Color(hex: "6B7280")
-    static let nbSecondaryDark = Color(hex: "4B5563")
-    static let nbSecondaryLight = Color(hex: "9CA3AF")
-    static let nbSecondarySoft = Color(hex: "F3F4F6")
+    static let nbSecondary = NBColors.muted
+    static let nbSecondaryDark = NBColors.secondary
+    static let nbSecondaryLight = NBColors.muted
+    static let nbSecondarySoft = NBColors.page
 
     // Success
-    static let nbSuccess = Color(hex: "22C55E")
-    static let nbSuccessDark = Color(hex: "16A34A")
-    static let nbSuccessSoft = Color(hex: "ECFDF5")
+    static let nbSuccess = NBColors.action
+    static let nbSuccessDark = NBColors.action
+    static let nbSuccessSoft = NBColors.page
 
     // Warning
-    static let nbWarning = Color(hex: "D97706")
-    static let nbWarningDark = Color(hex: "B45309")
-    static let nbWarningSoft = Color(hex: "FFF4E6")
+    static let nbWarning = NBColors.action
+    static let nbWarningDark = NBColors.action
+    static let nbWarningSoft = NBColors.page
 
     // Error / Danger
-    static let nbError = Color(hex: "DC2626")
-    static let nbErrorDark = Color(hex: "B91C1C")
-    static let nbErrorSoft = Color(hex: "FEF2F2")
+    static let nbError = NBColors.action
+    static let nbErrorDark = NBColors.action
+    static let nbErrorSoft = NBColors.page
 
     // Info
-    static let nbInfo = Color(hex: "2563EB")
-    static let nbInfoDark = Color(hex: "1D4ED8")
-    static let nbInfoSoft = Color(hex: "EFF6FF")
+    static let nbInfo = NBColors.link
+    static let nbInfoDark = NBColors.link
+    static let nbInfoSoft = NBColors.page
 
-    // Text (wxapp: #1f2937, #6b7280, #4b5563, #9ca3af)
-    static let nbTextPrimary = Color(hex: "1F2937")
-    static let nbTextSecondary = Color(hex: "6B7280")
-    static let nbTextTertiary = Color(hex: "4B5563")
-    static let nbTextMuted = Color(hex: "9CA3AF")
-    static let nbTextQuaternary = Color(hex: "D1D5DB")
+    // Legacy API adapted to COLOR-STANDARD.md.
+    static let nbTextPrimary = NBColors.ink
+    static let nbTextSecondary = NBColors.muted
+    static let nbTextTertiary = NBColors.secondary
+    static let nbTextMuted = NBColors.muted
+    static let nbTextQuaternary = NBColors.muted
 
     // Surface
-    static let nbBg = Color(hex: "F8F9FC")
-    static let nbBgAlt = Color(hex: "F5F6FA")
-    static let nbBgDiscover = Color(hex: "F0F0F4")
-    static let nbBgWarm = Color(hex: "FFF8FB")
+    static let nbBg = NBColors.page
+    static let nbBgAlt = NBColors.page
+    static let nbBgDiscover = NBColors.page
+    static let nbBgWarm = NBColors.page
     static let nbSurface = Color.white
-    static let nbSurfaceAlt = Color(hex: "F9FAFB")
+    static let nbSurfaceAlt = NBColors.page
     static let nbSurfaceGlass = Color.white.opacity(0.92)
 
     // Border
-    static let nbBorder = Color(hex: "E5E7EB")
-    static let nbBorderInput = Color(hex: "DDD8DC")
-    static let nbBorderFocus = Color(hex: "BD587D")
-    static let nbBorderLight = Color(hex: "F2E6EC")
-    static let nbDivider = Color(hex: "F5F5F5")
-    static let nbHairline = Color(hex: "E2E8F0")
+    static let nbBorder = NBColors.line
+    static let nbBorderInput = NBColors.line
+    static let nbBorderFocus = NBColors.action
+    static let nbBorderLight = NBColors.line
+    static let nbDivider = NBColors.page
+    static let nbHairline = NBColors.line
 
     // Status badge colors (from wxapp)
-    static let nbStatusAmber = Color(hex: "B45309")
-    static let nbStatusAmberBg = Color(hex: "FFF4E6")
-    static let nbStatusBlue = Color(hex: "1D4ED8")
-    static let nbStatusBlueBg = Color(hex: "EFF6FF")
-    static let nbStatusPurple = Color(hex: "6D28D9")
-    static let nbStatusPurpleBg = Color(hex: "F5F3FF")
-    static let nbStatusGreen = Color(hex: "047857")
-    static let nbStatusGreenBg = Color(hex: "ECFDF5")
-    static let nbStatusGray = Color(hex: "4B5563")
-    static let nbStatusGrayBg = Color(hex: "F3F4F6")
-    static let nbStatusRed = Color(hex: "B91C1C")
-    static let nbStatusRedBg = Color(hex: "FEF2F2")
+    static let nbStatusAmber = NBColors.action
+    static let nbStatusAmberBg = NBColors.page
+    static let nbStatusBlue = NBColors.link
+    static let nbStatusBlueBg = NBColors.page
+    static let nbStatusPurple = NBColors.action
+    static let nbStatusPurpleBg = NBColors.page
+    static let nbStatusGreen = NBColors.action
+    static let nbStatusGreenBg = NBColors.page
+    static let nbStatusGray = NBColors.secondary
+    static let nbStatusGrayBg = NBColors.page
+    static let nbStatusRed = NBColors.action
+    static let nbStatusRedBg = NBColors.page
 }
 
 // MARK: - Gradients (synced with wxapp)
 
 enum NBGradient {
-    // Primary gradient: #FF6B8A -> #A78BFA (135deg)
+    // Legacy API adapted to COLOR-STANDARD.md.
     static let primary = LinearGradient(
-        colors: [Color(hex: "FF6B8A"), Color(hex: "A78BFA")],
+        colors: [NBColors.action, NBColors.action],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
     // Button gradient: same as primary
     static let button = LinearGradient(
-        colors: [Color(hex: "FF6B8A"), Color(hex: "A78BFA")],
+        colors: [NBColors.action, NBColors.action],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
-    // Chat bubble gradient (self): #FF6B8A -> #FF8FA3
+    // Legacy API adapted to COLOR-STANDARD.md.
     static let bubbleSelf = LinearGradient(
-        colors: [Color(hex: "FF6B8A"), Color(hex: "FF8FA3")],
+        colors: [NBColors.action, NBColors.action],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
-    // Hero header gradient: #ff6b8a -> #c084fc
+    // Legacy API adapted to COLOR-STANDARD.md.
     static let heroHeader = LinearGradient(
-        colors: [Color(hex: "FF6B8A"), Color(hex: "C084FC")],
+        colors: [NBColors.action, NBColors.action],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
-    // Page background gradient: #fff8fb -> #ffffff -> #f8f9fc
+    // Legacy API adapted to COLOR-STANDARD.md.
     static let pageBg = LinearGradient(
-        colors: [Color(hex: "FFF8FB"), Color.white, Color(hex: "F8F9FC")],
+        colors: [NBColors.page, Color.white, NBColors.page],
         startPoint: .top,
         endPoint: .bottom
     )
 
-    // Order card gradient: #FF6B8A -> #FF7C98 -> #FF8FA3
+    // Legacy API adapted to COLOR-STANDARD.md.
     static let orderCard = LinearGradient(
-        colors: [Color(hex: "FF6B8A"), Color(hex: "FF7C98"), Color(hex: "FF8FA3")],
+        colors: [NBColors.action, NBColors.action, NBColors.action],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
-    // Archive card: #3c2732 -> #6f4357
+    // Legacy API adapted to COLOR-STANDARD.md.
     static let archiveCard = LinearGradient(
-        colors: [Color(hex: "3C2732"), Color(hex: "6F4357")],
+        colors: [NBColors.ink, NBColors.action],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
-    // AI card: #fff1f7 -> #eee8ff
+    // Legacy API adapted to COLOR-STANDARD.md.
     static let aiCard = LinearGradient(
-        colors: [Color(hex: "FFF1F7"), Color(hex: "EEE8FF")],
+        colors: [NBColors.page, NBColors.page],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
-    // Date box gradient: #fff5f7 -> #ffe8ee
+    // Legacy API adapted to COLOR-STANDARD.md.
     static let dateBox = LinearGradient(
-        colors: [Color(hex: "FFF5F7"), Color(hex: "FFEE8EE")],
+        colors: [NBColors.page, NBColors.page],
         startPoint: .top,
         endPoint: .bottom
     )
@@ -159,9 +159,9 @@ enum NBGradient {
         endPoint: .bottom
     )
 
-    // Empty state icon: #FFE2EA -> #EDE9FE
+    // Legacy API adapted to COLOR-STANDARD.md.
     static let emptyIcon = LinearGradient(
-        colors: [Color(hex: "FFE2EA"), Color(hex: "EDE9FE")],
+        colors: [NBColors.line, NBColors.page],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
@@ -189,4 +189,21 @@ extension Color {
                   blue: Double(b) / 255,
                   opacity: Double(a) / 255)
     }
+}
+
+// BEGIN GENERATED COLOR PRIMITIVES — scripts/sync-colors.py
+enum NBColors {
+    static let page = Color(hex: "F5F5F7")
+    static let surface = Color(hex: "FFFFFF")
+    static let pressed = Color(hex: "ECECEF")
+    static let ink = Color(hex: "1D1D1F")
+    static let secondary = Color(hex: "48484D")
+    static let muted = Color(hex: "6E6E73")
+    static let line = Color(hex: "E5E5EA")
+    static let control = Color(hex: "8A8A8F")
+    static let link = Color(hex: "526477")
+    static let activeSurface = Color(hex: "EEF1F5")
+    static let action = Color(hex: "1D1D1F")
+    static let actionPressed = Color(hex: "343438")
+    static let inverse = Color(hex: "FFFFFF")
 }

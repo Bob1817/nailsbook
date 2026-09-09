@@ -17,19 +17,19 @@ struct ClientProfileView: View {
                         // Menu sections
                         menuCard(items: [
                             MenuItem(icon: "paintbrush.fill", title: "我的设计", iconBg: .nbPrimarySoft, destination: AnyView(DesignsListView())),
-                            MenuItem(icon: "heart.fill", title: "我的收藏", iconBg: Color(hex: "FFF1F5"), destination: AnyView(Text("我的收藏"))),
-                            MenuItem(icon: "hand.thumbsup.fill", title: "我的点赞", iconBg: Color(hex: "FFF7ED"), destination: AnyView(Text("我的点赞"))),
-                            MenuItem(icon: "location.fill", title: "地址管理", iconBg: Color(hex: "ECFDF5"), destination: AnyView(AddressesListView())),
+                            MenuItem(icon: "heart.fill", title: "我的收藏", iconBg: NBColors.page, destination: AnyView(Text("我的收藏"))),
+                            MenuItem(icon: "hand.thumbsup.fill", title: "我的点赞", iconBg: NBColors.page, destination: AnyView(Text("我的点赞"))),
+                            MenuItem(icon: "location.fill", title: "地址管理", iconBg: NBColors.page, destination: AnyView(AddressesListView())),
                             MenuItem(icon: "person.2.fill", title: "绑定美甲师", iconBg: .nbPurpleSoft, destination: AnyView(Text("绑定美甲师"))),
-                            MenuItem(icon: "envelope.fill", title: "推荐好友", iconBg: Color(hex: "EFF6FF"), destination: AnyView(Text("推荐好友"))),
-                            MenuItem(icon: "exclamationmark.bubble.fill", title: "问题反馈", iconBg: Color(hex: "FEF2F2"), destination: AnyView(HelpFeedbackView(role: .client)))
+                            MenuItem(icon: "envelope.fill", title: "推荐好友", iconBg: NBColors.page, destination: AnyView(Text("推荐好友"))),
+                            MenuItem(icon: "exclamationmark.bubble.fill", title: "问题反馈", iconBg: NBColors.page, destination: AnyView(HelpFeedbackView(role: .client)))
                         ])
 
                         menuCard(items: [
                             MenuItem(icon: "lock.fill", title: "修改密码", iconBg: .nbPrimarySoft, destination: AnyView(ChangePasswordView(role: .client))),
                             MenuItem(icon: "book.fill", title: "使用手册", iconBg: .nbPurpleSoft, destination: AnyView(Text("使用手册"))),
-                            MenuItem(icon: "doc.text.fill", title: "用户协议", iconBg: Color(hex: "F3F4F6"), destination: AnyView(Text("用户协议"))),
-                            MenuItem(icon: "hand.raised.fill", title: "隐私政策", iconBg: Color(hex: "ECFDF5"), destination: AnyView(Text("隐私政策")))
+                            MenuItem(icon: "doc.text.fill", title: "用户协议", iconBg: NBColors.page, destination: AnyView(Text("用户协议"))),
+                            MenuItem(icon: "hand.raised.fill", title: "隐私政策", iconBg: NBColors.page, destination: AnyView(Text("隐私政策")))
                         ])
 
                         // Logout button
@@ -169,7 +169,7 @@ struct ClientProfileView: View {
         }
         .background(Color.nbSurfaceGlass)
         .cornerRadius(Radius.cardLg)
-        .shadow(color: Color(hex: "0F172A").opacity(0.07), radius: 16, y: 4)
+        .shadow(color: NBColors.ink.opacity(0.07), radius: 16, y: 4)
     }
 
     private func loadProfile() async {

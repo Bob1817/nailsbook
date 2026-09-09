@@ -1,3 +1,4 @@
+import '../../../core/theme/colors.generated.dart';
 import 'package:flutter/gestures.dart';
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 import 'package:nailbook_mobile/core/widgets/glow_field.dart';
@@ -242,11 +243,14 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
                           context,
                           MaterialPageRoute(
                               builder: (_) => const UnifiedRegisterScreen())),
-                      child: const Text('注册账号',
+                      child: const SizedBox(
+                        height: 44,
+                        child: Center(child: Text('注册账号',
                           style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: ET.accent)),
+                              color: ET.accent))),
+                      ),
                     ),
                     GestureDetector(
                       onTap: () => Navigator.push(
@@ -254,9 +258,12 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
                           MaterialPageRoute(
                               builder: (_) =>
                                   const UnifiedForgotPasswordScreen())),
-                      child: const Text('忘记密码？',
+                      child: const SizedBox(
+                        height: 44,
+                        child: Center(child: Text('忘记密码？',
                           style: TextStyle(
-                              fontSize: 13, color: ET.inkSecondary)),
+                              fontSize: 13, color: ET.inkSecondary))),
+                      ),
                     ),
                   ],
                 ),
@@ -292,10 +299,10 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color(0x8816120E),
+                  Color(0x88000000),
                   Colors.transparent,
-                  Color(0x5516120E),
-                  Color(0xFF16120E),
+                  Color(0x55000000),
+                  NBColors.page,
                 ],
                 stops: [0.0, 0.28, 0.78, 1.0],
               ),
@@ -346,7 +353,7 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFEBD2B3), Color(0xFFC9A57C), Color(0xFF7C5B3D)],
+          colors: [NBColors.action, NBColors.ink, NBColors.action],
         ),
       ),
       child: Stack(
@@ -406,7 +413,8 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: ET.cream,
           foregroundColor: ET.onCream,
-          disabledBackgroundColor: ET.cream.withValues(alpha: 0.4),
+          disabledBackgroundColor: NBColors.pressed,
+          disabledForegroundColor: NBColors.control,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           elevation: 0,
@@ -484,8 +492,11 @@ class _UnifiedLoginScreenState extends State<UnifiedLoginScreen> {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: DT.errorBorder),
       ),
-      child: Text(msg,
-          style: const TextStyle(fontSize: 13, color: DT.errorText)),
+      child: Semantics(
+        liveRegion: true,
+        child: Text(msg,
+            style: const TextStyle(fontSize: 13, color: DT.errorText)),
+      ),
     );
   }
 }

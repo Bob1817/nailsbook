@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:colors": "python3 ../scripts/sync-colors.py --check && python3 ../scripts/check-colors.py",
+    "prebuild": "npm run check:colors"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.4",

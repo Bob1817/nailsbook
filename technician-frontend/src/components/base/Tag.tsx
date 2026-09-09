@@ -3,10 +3,10 @@ import React from 'react';
 type TagVariant = 'primary' | 'success' | 'warning' | 'neutral';
 
 const tagStyle: Record<TagVariant, React.CSSProperties> = {
-  primary: { background: '#FFE8EA', color: '#FF5A66' },
-  success: { background: '#E8F8F0', color: '#36C275' },
-  warning: { background: '#FFF4E5', color: '#FF9F43' },
-  neutral: { background: '#F5F5F5', color: '#666666' },
+  primary: { background: 'var(--nb-active-surface)', color: 'var(--nb-link)' },
+  success: { background: 'var(--nb-page)', color: 'var(--nb-secondary)' },
+  warning: { background: 'var(--nb-page)', color: 'var(--nb-ink)' },
+  neutral: { background: 'var(--nb-page)', color: 'var(--nb-secondary)' },
 };
 
 interface TagProps extends React.HTMLAttributes<HTMLSpanElement> {

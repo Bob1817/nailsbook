@@ -51,10 +51,10 @@ const PrivacySettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-[#fff9f8]">
+    <div className="flex h-[100dvh] flex-col bg-[var(--nb-page)]">
       <SubPageHeader title="隐私设置" />
       <div className="flex-1 overflow-y-auto px-5 py-4">
-        <section className="overflow-hidden rounded-[24px] bg-white shadow-[0_18px_36px_rgba(36,27,41,0.05)]">
+        <section className="overflow-hidden rounded-[24px] bg-white shadow-[0_18px_36px_rgba(0,0,0,0.05)]">
           {ITEMS.map((item, index) => (
             <ToggleRow
               key={item.key}
@@ -66,7 +66,7 @@ const PrivacySettingsPage: React.FC = () => {
             />
           ))}
         </section>
-        <p className="mt-3 px-1 text-xs leading-5 text-[#a89ba3]">
+        <p className="mt-3 px-1 text-xs leading-5 text-[var(--nb-muted)]">
           隐私偏好保存在本设备，用于控制你在客户端的展示方式。
         </p>
       </div>

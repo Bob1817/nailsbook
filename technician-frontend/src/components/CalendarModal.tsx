@@ -66,28 +66,28 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full rounded-t-[28px] bg-white px-5 pt-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] shadow-[0_-12px_40px_rgba(15,23,42,0.12)] animate-slide-up sm:max-w-sm sm:rounded-[28px] sm:pb-5"
+        className="w-full rounded-t-[28px] bg-white px-5 pt-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] shadow-[0_-12px_40px_rgba(0,0,0,0.12)] animate-slide-up sm:max-w-sm sm:rounded-[28px] sm:pb-5"
       >
         {/* 头部：月份导航 */}
         <div className="mb-4 flex items-center justify-between">
           <button
             type="button"
             onClick={goPrevMonth}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f7f3f5] active:bg-[#eee5e9]"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-page)] active:bg-[var(--nb-page)]"
           >
-            <svg className="h-5 w-5 text-[#3c3440]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-5 w-5 text-[var(--nb-ink)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <div className="text-[17px] font-semibold text-[#1f2230]">
+          <div className="text-[17px] font-semibold text-[var(--nb-ink)]">
             {viewYear}年{viewMonth + 1}月
           </div>
           <button
             type="button"
             onClick={goNextMonth}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f7f3f5] active:bg-[#eee5e9]"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-page)] active:bg-[var(--nb-page)]"
           >
-            <svg className="h-5 w-5 text-[#3c3440]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-5 w-5 text-[var(--nb-ink)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
@@ -96,7 +96,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
         {/* 星期表头 */}
         <div className="grid grid-cols-7 text-center">
           {WEEKDAYS.map((w) => (
-            <div key={w} className="py-1 text-xs text-[#a89ba3]">{w}</div>
+            <div key={w} className="py-1 text-xs text-[var(--nb-muted)]">{w}</div>
           ))}
         </div>
 
@@ -118,17 +118,17 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
                 <span
                   className={`flex h-9 w-9 items-center justify-center rounded-full text-sm transition-colors ${
                     isSelected
-                      ? 'bg-[#FF5E93] font-semibold text-white'
+                      ? 'bg-[var(--nb-action)] font-semibold text-white'
                       : isToday
-                        ? 'font-semibold text-[#FF5E93] ring-1 ring-[#FFC2D6]'
-                        : 'text-[#3c3440] active:bg-[#fff1f6]'
+                        ? 'font-semibold text-[var(--nb-ink)] ring-1 ring-[var(--nb-line)]'
+                        : 'text-[var(--nb-ink)] active:bg-[var(--nb-page)]'
                   }`}
                 >
                   {day}
                 </span>
                 <span
                   className={`mt-0.5 h-1 w-1 rounded-full ${
-                    hasOrders ? (isSelected ? 'bg-[#FF5E93]' : 'bg-[#22c55e]') : 'bg-transparent'
+                    hasOrders ? (isSelected ? 'bg-[var(--nb-action)]' : 'bg-[var(--nb-action)]') : 'bg-transparent'
                   }`}
                 />
               </button>
@@ -137,15 +137,15 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
         </div>
 
         {/* 底部操作 */}
-        <div className="mt-3 flex items-center justify-between border-t border-[#f6eef2] pt-3">
-          <span className="flex items-center gap-1.5 text-xs text-[#a89ba3]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
+        <div className="mt-3 flex items-center justify-between border-t border-[var(--nb-line)] pt-3">
+          <span className="flex items-center gap-1.5 text-xs text-[var(--nb-muted)]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--nb-action)]" />
             有预约
           </span>
           <button
             type="button"
             onClick={goToday}
-            className="rounded-full bg-[#fff1f6] px-4 py-1.5 text-[13px] font-semibold text-[#FF5E93] active:bg-[#ffe4ee]"
+            className="rounded-full bg-[var(--nb-page)] px-4 py-1.5 text-[13px] font-semibold text-[var(--nb-ink)] active:bg-[var(--nb-page)]"
           >
             回到今天
           </button>

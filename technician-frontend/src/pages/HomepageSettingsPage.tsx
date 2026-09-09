@@ -100,24 +100,24 @@ const HomepageSettingsPage: React.FC = () => {
     }));
   };
 
-  const sectionTitleClassName = 'text-[18px] font-semibold text-gray-900';
+  const sectionTitleClassName = 'text-[18px] font-semibold text-[var(--nb-ink)]';
   const inputClassName =
-    'w-full rounded-[16px] border border-[#f1e7e8] bg-[#fffdfd] px-4 py-3 text-[15px] text-gray-900 outline-none transition focus:border-pink-300 focus:bg-white focus:ring-4 focus:ring-pink-50';
+    'w-full rounded-[16px] border border-[var(--nb-line)] bg-[var(--nb-surface)] px-4 py-3 text-[15px] text-[var(--nb-ink)] outline-none transition focus:border-[var(--nb-control)] focus:bg-white focus:ring-4 focus:ring-[var(--nb-line)]';
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-[#fff9f8]">
+    <div className="flex h-[100dvh] flex-col bg-[var(--nb-page)]">
       {/* Header */}
-      <div className="shrink-0 flex items-center gap-3 bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[#f2e6ec]">
+      <div className="shrink-0 flex items-center gap-3 bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[var(--nb-line)]">
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f7f3f5] transition-colors active:bg-[#eee5e9]"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-page)] transition-colors active:bg-[var(--nb-page)]"
         >
-          <svg className="h-5 w-5 text-[#3c3440]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-5 w-5 text-[var(--nb-ink)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h1 className="text-[17px] font-semibold text-[#1f2230]">主页设置</h1>
+        <h1 className="text-[17px] font-semibold text-[var(--nb-ink)]">主页设置</h1>
       </div>
 
       <div className="flex-1 overflow-y-auto pb-24">
@@ -126,9 +126,9 @@ const HomepageSettingsPage: React.FC = () => {
           <Card className="p-5">
             <div className="mb-4">
               <h2 className={sectionTitleClassName}>封面图</h2>
-              <p className="mt-1 text-xs text-gray-400">展示您的审美风格，建议尺寸 750×400px</p>
+              <p className="mt-1 text-xs text-[var(--nb-muted)]">展示您的审美风格，建议尺寸 750×400px</p>
             </div>
-            <div className="relative overflow-hidden rounded-[18px] border border-[#f6ebec] bg-[#1a1a2e] aspect-[15/8]">
+            <div className="relative overflow-hidden rounded-[18px] border border-[var(--nb-line)] bg-[var(--nb-ink)] aspect-[15/8]">
               {formData.coverImageUrl ? (
                 <img src={formData.coverImageUrl} alt="封面图" className="h-full w-full object-cover" />
               ) : (
@@ -142,7 +142,7 @@ const HomepageSettingsPage: React.FC = () => {
                 </div>
               )}
               <div className="absolute bottom-3 right-3 flex gap-2">
-                <label className="inline-flex cursor-pointer items-center rounded-full bg-white/90 px-4 py-2 text-[13px] font-medium text-gray-700 shadow-sm transition hover:bg-white">
+                <label className="inline-flex cursor-pointer items-center rounded-full bg-white/90 px-4 py-2 text-[13px] font-medium text-[var(--nb-ink)] shadow-sm transition hover:bg-white">
                   {uploadingCover ? '上传中...' : '更换封面'}
                   <input
                     type="file"
@@ -156,7 +156,7 @@ const HomepageSettingsPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setFormData((prev) => ({ ...prev, coverImageUrl: '' }))}
-                    className="rounded-full bg-white/90 px-4 py-2 text-[13px] font-medium text-red-500 shadow-sm transition hover:bg-white"
+                    className="rounded-full bg-white/90 px-4 py-2 text-[13px] font-medium text-[var(--nb-secondary)] shadow-sm transition hover:bg-white"
                   >
                     移除
                   </button>
@@ -169,7 +169,7 @@ const HomepageSettingsPage: React.FC = () => {
           <Card className="p-5">
             <div className="mb-4">
               <h2 className={sectionTitleClassName}>个人简介</h2>
-              <p className="mt-1 text-xs text-gray-400">介绍您的专业背景、擅长风格等</p>
+              <p className="mt-1 text-xs text-[var(--nb-muted)]">介绍您的专业背景、擅长风格等</p>
             </div>
             <textarea
               value={formData.bio}
@@ -179,14 +179,14 @@ const HomepageSettingsPage: React.FC = () => {
               rows={4}
               className={inputClassName}
             />
-            <p className="mt-1 text-right text-xs text-gray-400">{formData.bio.length}/300字</p>
+            <p className="mt-1 text-right text-xs text-[var(--nb-muted)]">{formData.bio.length}/300字</p>
           </Card>
 
           {/* Service Philosophy */}
           <Card className="p-5">
             <div className="mb-4">
               <h2 className={sectionTitleClassName}>服务理念</h2>
-              <p className="mt-1 text-xs text-gray-400">您的服务理念是什么？</p>
+              <p className="mt-1 text-xs text-[var(--nb-muted)]">您的服务理念是什么？</p>
             </div>
             <textarea
               value={formData.servicePhilosophy}
@@ -196,14 +196,14 @@ const HomepageSettingsPage: React.FC = () => {
               rows={3}
               className={inputClassName}
             />
-            <p className="mt-1 text-right text-xs text-gray-400">{formData.servicePhilosophy.length}/200字</p>
+            <p className="mt-1 text-right text-xs text-[var(--nb-muted)]">{formData.servicePhilosophy.length}/200字</p>
           </Card>
 
           {/* Booking Notes */}
           <Card className="p-5">
             <div className="mb-4">
               <h2 className={sectionTitleClassName}>预约说明</h2>
-              <p className="mt-1 text-xs text-gray-400">告知客户您的预约规则</p>
+              <p className="mt-1 text-xs text-[var(--nb-muted)]">告知客户您的预约规则</p>
             </div>
             <textarea
               value={formData.bookingNotes}
@@ -213,14 +213,14 @@ const HomepageSettingsPage: React.FC = () => {
               rows={3}
               className={inputClassName}
             />
-            <p className="mt-1 text-right text-xs text-gray-400">{formData.bookingNotes.length}/200字</p>
+            <p className="mt-1 text-right text-xs text-[var(--nb-muted)]">{formData.bookingNotes.length}/200字</p>
           </Card>
 
           {/* Style Tags */}
           <Card className="p-5">
             <div className="mb-4">
               <h2 className={sectionTitleClassName}>擅长风格</h2>
-              <p className="mt-1 text-xs text-gray-400">选择您擅长的美甲风格，最多5个</p>
+              <p className="mt-1 text-xs text-[var(--nb-muted)]">选择您擅长的美甲风格，最多5个</p>
             </div>
 
             {/* Current Tags */}
@@ -228,20 +228,20 @@ const HomepageSettingsPage: React.FC = () => {
               {formData.styleTags.map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center gap-1 rounded-full bg-[#ffe9f0] px-3 py-1.5 text-[13px] font-medium text-[#FF5E93]"
+                  className="inline-flex items-center gap-1 rounded-full bg-[var(--nb-page)] px-3 py-1.5 text-[13px] font-medium text-[var(--nb-ink)]"
                 >
                   {tag}
                   <button
                     type="button"
                     onClick={() => handleRemoveTag(tag)}
-                    className="ml-1 text-[#FF5E93]/60 hover:text-[#FF5E93]"
+                    className="ml-1 text-[var(--nb-ink)]/60 hover:text-[var(--nb-ink)]"
                   >
                     ×
                   </button>
                 </span>
               ))}
               {formData.styleTags.length === 0 && (
-                <span className="text-[13px] text-gray-400">暂未选择风格标签</span>
+                <span className="text-[13px] text-[var(--nb-muted)]">暂未选择风格标签</span>
               )}
             </div>
 
@@ -258,12 +258,12 @@ const HomepageSettingsPage: React.FC = () => {
                   }
                 }}
                 placeholder="输入自定义标签"
-                className="flex-1 rounded-[12px] border border-[#f1e7e8] bg-[#fffdfd] px-3 py-2 text-[14px] outline-none focus:border-pink-300"
+                className="flex-1 rounded-[12px] border border-[var(--nb-line)] bg-[var(--nb-surface)] px-3 py-2 text-[14px] outline-none focus:border-[var(--nb-control)]"
               />
               <button
                 type="button"
                 onClick={() => handleAddTag(newTag)}
-                className="rounded-[12px] bg-[#ffe9f0] px-4 py-2 text-[13px] font-medium text-[#FF5E93] active:bg-[#ffd6e4]"
+                className="rounded-[12px] bg-[var(--nb-page)] px-4 py-2 text-[13px] font-medium text-[var(--nb-ink)] active:bg-[var(--nb-page)]"
               >
                 添加
               </button>
@@ -271,14 +271,14 @@ const HomepageSettingsPage: React.FC = () => {
 
             {/* Suggestions */}
             <div className="mt-4">
-              <p className="mb-2 text-[12px] text-gray-400">推荐标签</p>
+              <p className="mb-2 text-[12px] text-[var(--nb-muted)]">推荐标签</p>
               <div className="flex flex-wrap gap-2">
                 {STYLE_TAG_SUGGESTIONS.filter((s) => !formData.styleTags.includes(s)).map((tag) => (
                   <button
                     key={tag}
                     type="button"
                     onClick={() => handleAddTag(tag)}
-                    className="rounded-full border border-[#f1e7e8] bg-white px-3 py-1 text-[12px] text-gray-600 transition-colors active:bg-[#fff0f5]"
+                    className="rounded-full border border-[var(--nb-line)] bg-white px-3 py-1 text-[12px] text-[var(--nb-secondary)] transition-colors active:bg-[var(--nb-page)]"
                   >
                     + {tag}
                   </button>
@@ -290,7 +290,7 @@ const HomepageSettingsPage: React.FC = () => {
       </div>
 
       {/* Save Button */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-[#f5ecec] bg-white/92 px-5 py-4 backdrop-blur-xl safe-area-bottom">
+      <div className="fixed bottom-0 left-0 right-0 border-t border-[var(--nb-line)] bg-white/92 px-5 py-4 backdrop-blur-xl safe-area-bottom">
         <div className="mx-auto max-w-md">
           <Button
             onClick={handleSubmit}

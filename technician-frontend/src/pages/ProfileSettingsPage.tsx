@@ -105,25 +105,25 @@ const ProfileSettingsPage: React.FC = () => {
     }
   };
 
-  const sectionTitleClassName = 'text-[18px] font-semibold text-gray-900';
-  const labelClassName = 'mb-2 block text-[13px] font-medium text-gray-700';
+  const sectionTitleClassName = 'text-[18px] font-semibold text-[var(--nb-ink)]';
+  const labelClassName = 'mb-2 block text-[13px] font-medium text-[var(--nb-ink)]';
   const inputClassName =
-    'w-full rounded-[16px] border border-[#f1e7e8] bg-[#fffdfd] px-4 py-3 text-[15px] text-gray-900 outline-none transition focus:border-pink-300 focus:bg-white focus:ring-4 focus:ring-pink-50';
+    'w-full rounded-[16px] border border-[var(--nb-line)] bg-[var(--nb-surface)] px-4 py-3 text-[15px] text-[var(--nb-ink)] outline-none transition focus:border-[var(--nb-control)] focus:bg-white focus:ring-4 focus:ring-[var(--nb-line)]';
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-[#fff9f8]">
+    <div className="flex h-[100dvh] flex-col bg-[var(--nb-page)]">
       {/* Header */}
-      <div className="shrink-0 flex items-center gap-3 bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[#f2e6ec]">
+      <div className="shrink-0 flex items-center gap-3 bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[var(--nb-line)]">
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f7f3f5] transition-colors active:bg-[#eee5e9]"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-page)] transition-colors active:bg-[var(--nb-page)]"
         >
-          <svg className="h-5 w-5 text-[#3c3440]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-5 w-5 text-[var(--nb-ink)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h1 className="text-[17px] font-semibold text-[#1f2230]">个人设置</h1>
+        <h1 className="text-[17px] font-semibold text-[var(--nb-ink)]">个人设置</h1>
       </div>
 
       <div className="flex-1 overflow-y-auto pb-24">
@@ -133,23 +133,23 @@ const ProfileSettingsPage: React.FC = () => {
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
               <h2 className={sectionTitleClassName}>基本信息</h2>
-              <p className="mt-1 text-xs text-gray-400">用于展示您的服务身份与基础服务范围</p>
+              <p className="mt-1 text-xs text-[var(--nb-muted)]">用于展示您的服务身份与基础服务范围</p>
             </div>
           </div>
-          <div className="mb-5 flex items-center gap-4 rounded-[18px] border border-[#f6ebec] bg-[#fffdfd] p-4">
-            <div className="h-20 w-20 overflow-hidden rounded-full border border-[#f2e5e7] bg-[#fde8ef] shadow-[0_10px_24px_rgba(244,114,182,0.08)]">
+          <div className="mb-5 flex items-center gap-4 rounded-[18px] border border-[var(--nb-line)] bg-[var(--nb-surface)] p-4">
+            <div className="h-20 w-20 overflow-hidden rounded-full border border-[var(--nb-line)] bg-[var(--nb-page)] shadow-[0_10px_24px_rgba(0,0,0,0.08)]">
               {formData.avatar ? (
                 <img src={formData.avatar} alt="头像" className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-[32px] font-semibold text-[#ec4899]">
+                <div className="flex h-full w-full items-center justify-center text-[32px] font-semibold text-[var(--nb-ink)]">
                   {formData.name.trim().slice(0, 1) || '美'}
                 </div>
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[15px] font-semibold text-gray-900">头像</p>
-              <p className="mt-1 text-xs leading-5 text-gray-400">建议使用清晰的人像或品牌头像，便于客户识别</p>
-              <label className="mt-3 inline-flex cursor-pointer items-center rounded-full bg-[#fff0f5] px-4 py-2 text-[13px] font-medium text-[#ec4899] transition hover:bg-[#ffe7f0]">
+              <p className="text-[15px] font-semibold text-[var(--nb-ink)]">头像</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--nb-muted)]">建议使用清晰的人像或品牌头像，便于客户识别</p>
+              <label className="mt-3 inline-flex cursor-pointer items-center rounded-full bg-[var(--nb-page)] px-4 py-2 text-[13px] font-medium text-[var(--nb-ink)] transition hover:bg-[var(--nb-page)]">
                 {uploadingAvatar ? '上传中...' : '更换头像'}
                 <input
                   type="file"
@@ -164,7 +164,7 @@ const ProfileSettingsPage: React.FC = () => {
           <div className="space-y-4">
             <div>
               <label className={labelClassName}>
-                美甲师名称 <span className="text-red-500">*</span>
+                美甲师名称 <span className="text-[var(--nb-secondary)]">*</span>
               </label>
               <input
                 type="text"
@@ -183,9 +183,9 @@ const ProfileSettingsPage: React.FC = () => {
                 type="tel"
                 value={formData.phone}
                 disabled
-                className="w-full rounded-[16px] border border-[#f1e7e8] bg-[#faf7f7] px-4 py-3 text-[15px] text-gray-400"
+                className="w-full rounded-[16px] border border-[var(--nb-line)] bg-[var(--nb-page)] px-4 py-3 text-[15px] text-[var(--nb-muted)]"
               />
-              <p className="text-xs text-gray-400 mt-1">如需修改手机号请联系客服</p>
+              <p className="text-xs text-[var(--nb-muted)] mt-1">如需修改手机号请联系客服</p>
             </div>
 
             <div>
@@ -218,7 +218,7 @@ const ProfileSettingsPage: React.FC = () => {
         <Card className="p-5">
           <div className="mb-4">
             <h2 className={sectionTitleClassName}>社交媒体账号</h2>
-            <p className="mt-1 text-[13px] text-gray-500">填写您的社交媒体主页链接，方便客户关注您</p>
+            <p className="mt-1 text-[13px] text-[var(--nb-secondary)]">填写您的社交媒体主页链接，方便客户关注您</p>
           </div>
           <div className="space-y-4">
             {SOCIAL_MEDIA_CONFIG.map((config) => (
@@ -235,7 +235,7 @@ const ProfileSettingsPage: React.FC = () => {
                   className={inputClassName}
                 />
                 {config.prefix && (
-                  <p className="text-xs text-gray-400 mt-1">格式：{config.prefix}/...</p>
+                  <p className="text-xs text-[var(--nb-muted)] mt-1">格式：{config.prefix}/...</p>
                 )}
               </div>
             ))}
@@ -244,7 +244,7 @@ const ProfileSettingsPage: React.FC = () => {
       </div>
 
       {/* Save Button */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-[#f5ecec] bg-white/92 px-5 py-4 backdrop-blur-xl safe-area-bottom">
+      <div className="fixed bottom-0 left-0 right-0 border-t border-[var(--nb-line)] bg-white/92 px-5 py-4 backdrop-blur-xl safe-area-bottom">
         <div className="mx-auto max-w-md">
           <Button
             onClick={handleSubmit}

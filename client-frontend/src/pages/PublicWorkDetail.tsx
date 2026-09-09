@@ -92,7 +92,7 @@ const PublicWorkDetail: React.FC = () => {
   if (error || !work) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-white px-8 text-center">
-        <p className="text-base font-medium text-[var(--color-text,#1f2230)]">作品不存在或已下架</p>
+        <p className="text-base font-medium text-[var(--color-text,var(--nb-ink))]">作品不存在或已下架</p>
         <button onClick={() => navigate(-1)} className="rounded-full bg-[var(--color-primary)] px-6 py-2 text-sm text-white">
           返回
         </button>
@@ -141,12 +141,12 @@ const PublicWorkDetail: React.FC = () => {
       {/* 信息面板 */}
       <div className="relative z-10 -mt-6 flex min-h-0 flex-1 flex-col rounded-t-[28px] bg-white">
         <div className="shrink-0 px-5 pt-5 pb-4">
-          <h2 className="text-[1.35rem] font-bold leading-tight tracking-[-0.02em] text-gray-900">{work.title || '未命名作品'}</h2>
-          {work.description && <p className="mt-2 text-sm leading-6 text-gray-500">{work.description}</p>}
+          <h2 className="text-[1.35rem] font-bold leading-tight tracking-[-0.02em] text-[var(--nb-ink)]">{work.title || '未命名作品'}</h2>
+          {work.description && <p className="mt-2 text-sm leading-6 text-[var(--nb-secondary)]">{work.description}</p>}
           {work.tags.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
               {work.tags.map((tag) => (
-                <span key={tag} className="rounded-full bg-pink-50 px-2.5 py-0.5 text-[11px] font-medium text-[var(--color-primary)]">
+                <span key={tag} className="rounded-full bg-[var(--nb-page)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--color-primary)]">
                   #{tag}
                 </span>
               ))}
@@ -155,31 +155,31 @@ const PublicWorkDetail: React.FC = () => {
 
           {/* 美甲师 */}
           <div className="mt-3 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-pink-50 text-xs font-semibold text-[var(--color-primary)]">
+            <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[var(--nb-page)] text-xs font-semibold text-[var(--color-primary)]">
               {work.technician.avatarUrl ? (
                 <img src={work.technician.avatarUrl} alt={work.technician.name} className="h-full w-full object-cover" />
               ) : (
                 work.technician.name.slice(0, 1)
               )}
             </div>
-            <span className="text-sm text-gray-600">{work.technician.name}</span>
+            <span className="text-sm text-[var(--nb-secondary)]">{work.technician.name}</span>
           </div>
 
           {/* 操作（未登录 -> 登录提示） */}
-          <div className="mt-4 flex items-center gap-2 border-t border-gray-100 pt-4">
+          <div className="mt-4 flex items-center gap-2 border-t border-[var(--nb-line)] pt-4">
             <button
               onClick={promptLogin}
-              className="flex items-center justify-center gap-1.5 rounded-2xl bg-gray-50 px-3 py-2 text-xs font-medium text-gray-600"
+              className="flex items-center justify-center gap-1.5 rounded-2xl bg-[var(--nb-page)] px-3 py-2 text-xs font-medium text-[var(--nb-secondary)]"
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
               <span>喜欢</span>
-              {work.likeCount > 0 && <span className="text-xs text-gray-400">{work.likeCount}</span>}
+              {work.likeCount > 0 && <span className="text-xs text-[var(--nb-muted)]">{work.likeCount}</span>}
             </button>
             <button
               onClick={promptLogin}
-              className="flex items-center justify-center gap-1.5 rounded-2xl bg-gray-50 px-3 py-2 text-xs font-medium text-gray-600"
+              className="flex items-center justify-center gap-1.5 rounded-2xl bg-[var(--nb-page)] px-3 py-2 text-xs font-medium text-[var(--nb-secondary)]"
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
@@ -197,7 +197,7 @@ const PublicWorkDetail: React.FC = () => {
                   promptLogin();
                 }
               }}
-              className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl bg-[#FF6B8A] py-2.5 text-sm font-semibold text-white shadow-sm active:scale-[0.98] transition-transform min-h-[44px]"
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl bg-[var(--nb-action)] py-2.5 text-sm font-semibold text-white shadow-sm active:scale-[0.98] transition-transform min-h-[44px]"
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -208,44 +208,44 @@ const PublicWorkDetail: React.FC = () => {
         </div>
 
         {/* 评论（只读） */}
-        <div className="flex-1 overflow-y-auto border-t border-gray-100 px-5 py-4">
+        <div className="flex-1 overflow-y-auto border-t border-[var(--nb-line)] px-5 py-4">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900">评论</h3>
-            <span className="text-xs text-gray-400">{work.commentCount} 条</span>
+            <h3 className="text-sm font-semibold text-[var(--nb-ink)]">评论</h3>
+            <span className="text-xs text-[var(--nb-muted)]">{work.commentCount} 条</span>
           </div>
           {work.comments.length > 0 ? (
             <div className="space-y-3">
               {work.comments.map((c) => (
                 <div key={c.id} className="flex gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-200 text-[11px] font-semibold text-gray-500">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--nb-pressed)] text-[11px] font-semibold text-[var(--nb-secondary)]">
                     {c.user.avatarUrl ? (
                       <img src={c.user.avatarUrl} alt={c.user.name} className="h-full w-full object-cover" />
                     ) : (
                       c.user.name.slice(0, 1)
                     )}
                   </div>
-                  <div className="min-w-0 flex-1 rounded-2xl bg-gray-50 px-3 py-2">
-                    <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
-                      <span className="font-medium text-gray-700">{c.user.name}</span>
+                  <div className="min-w-0 flex-1 rounded-2xl bg-[var(--nb-page)] px-3 py-2">
+                    <div className="flex items-center gap-1.5 text-[11px] text-[var(--nb-muted)]">
+                      <span className="font-medium text-[var(--nb-ink)]">{c.user.name}</span>
                       {c.user.role === 'technician' && (
-                        <span className="rounded-full bg-pink-100 px-1.5 py-px text-[10px] font-medium text-pink-500">美甲师</span>
+                        <span className="rounded-full bg-[var(--nb-page)] px-1.5 py-px text-[10px] font-medium text-[var(--nb-secondary)]">美甲师</span>
                       )}
                     </div>
-                    <p className="mt-1 text-sm leading-5 text-gray-800">{c.content}</p>
+                    <p className="mt-1 text-sm leading-5 text-[var(--nb-ink)]">{c.content}</p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl bg-gray-50 px-4 py-6 text-center text-sm text-gray-400">暂无评论</div>
+            <div className="rounded-2xl bg-[var(--nb-page)] px-4 py-6 text-center text-sm text-[var(--nb-muted)]">暂无评论</div>
           )}
         </div>
 
         {/* 底部：点击触发登录 */}
-        <div className="shrink-0 border-t border-gray-100 bg-white px-5 pt-3 pb-[max(0.875rem,env(safe-area-inset-bottom)+0.5rem)]">
+        <div className="shrink-0 border-t border-[var(--nb-line)] bg-white px-5 pt-3 pb-[max(0.875rem,env(safe-area-inset-bottom)+0.5rem)]">
           <button
             onClick={promptLogin}
-            className="h-11 w-full rounded-full border border-gray-200 bg-gray-50 px-4 text-left text-sm text-gray-400"
+            className="h-11 w-full rounded-full border border-[var(--nb-line)] bg-[var(--nb-page)] px-4 text-left text-sm text-[var(--nb-muted)]"
           >
             添加评论…
           </button>

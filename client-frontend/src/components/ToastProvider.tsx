@@ -46,10 +46,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   };
 
   const bgColors: Record<Toast['type'], string> = {
-    success: 'bg-green-500',
-    error: 'bg-red-500',
-    warning: 'bg-amber-500',
-    info: 'bg-blue-500',
+    success: 'bg-[var(--nb-action)]',
+    error: 'bg-[var(--nb-action)]',
+    warning: 'bg-[var(--nb-action)]',
+    info: 'bg-[var(--nb-action)]',
   };
 
   return (

@@ -216,7 +216,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
               end: Alignment.bottomRight,
               colors: [
                 Color(0xC21D1D1F),
-                Color(0xC248484A)
+                Color(0xC21D1D1F)
               ], // 90% 不透明深色，透出底层模糊
             ),
             borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),

@@ -1,3 +1,4 @@
+import '../../../core/theme/colors.generated.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../auth/technician_auth_service.dart';
 import '../auth/technician_auth_models.dart';
@@ -260,7 +261,7 @@ class _TechnicianShopScreenState extends State<TechnicianShopScreen> {
                         horizontal: DT.sm, vertical: DT.xs),
                     decoration: BoxDecoration(
                       color:
-                          closed ? DT.fillGreyLight : const Color(0xFF3A2F23),
+                          closed ? DT.fillGreyLight : NBColors.activeSurface,
                       borderRadius: BorderRadius.circular(DT.sm),
                     ),
                     child: Text('$label $time',

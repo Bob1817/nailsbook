@@ -1,24 +1,25 @@
+@import "./colors.generated.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --color-primary: #FF5A66;
-  --color-primary-hover: #ea5e93;
-  --color-primary-light: #ffe9f0;
-  --color-secondary: #F59E0B;
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-danger: #ff4962;
-  --color-info: #FF5A66;
-  --color-background: #fff9f8;
-  --color-card: #FFFFFF;
-  --color-border: #f2e6ec;
-  --color-divider: #f7f2f5;
-  --color-text-primary: #1A1D26;
-  --color-text-secondary: #6B7280;
-  --color-text-tertiary: #9CA3AF;
-  --color-text-disabled: #D1D5DB;
+  --color-primary: var(--nb-action);
+  --color-primary-hover: var(--nb-action-pressed);
+  --color-primary-light: var(--nb-page);
+  --color-secondary: var(--nb-secondary);
+  --color-success: var(--nb-ink);
+  --color-warning: var(--nb-ink);
+  --color-danger: var(--nb-ink);
+  --color-info: var(--nb-link);
+  --color-background: var(--nb-page);
+  --color-card: var(--nb-surface);
+  --color-border: var(--nb-line);
+  --color-divider: var(--nb-line);
+  --color-text-primary: var(--nb-ink);
+  --color-text-secondary: var(--nb-secondary);
+  --color-text-tertiary: var(--nb-muted);
+  --color-text-disabled: var(--nb-control);
   --radius-card: 16px;
   --radius-button: 12px;
   --radius-input: 12px;
@@ -169,7 +170,7 @@ select:focus {
     height: 48px;
     border-radius: var(--radius-button);
     background: var(--color-primary);
-    color: #fff;
+    color: var(--nb-surface);
     font-size: 16px;
     font-weight: 600;
   }
@@ -179,7 +180,7 @@ select:focus {
     border-radius: var(--radius-button);
     border: 1px solid var(--color-border);
     color: var(--color-text-secondary);
-    background: #fff;
+    background: var(--nb-surface);
     font-size: 14px;
   }
 
@@ -280,3 +281,14 @@ select:focus {
   }
 }
 
+
+/* Shared neutral interaction contract. */
+button:focus-visible, a:focus-visible, input:focus-visible,
+textarea:focus-visible, select:focus-visible {
+  outline: 2px solid var(--nb-link);
+  outline-offset: 2px;
+}
+button { min-height: 44px; }
+input:not([type="checkbox"]):not([type="radio"]), textarea, select {
+  border-color: var(--nb-control);
+}

@@ -47,6 +47,19 @@ export interface PublicArtist {
   isVerified: boolean;
   homeService: boolean;
   shopService: boolean;
+  shopAddresses: Array<{
+    name: string;
+    description?: string;
+    photos?: string[];
+    qualifications?: Array<{ name: string; imageUrl?: string }>;
+    phone?: string;
+    province?: string;
+    city?: string;
+    district?: string;
+    detailAddress?: string;
+    doorInfo?: string;
+    businessHours?: Array<{ weekday: number; start: string; end: string; closed?: boolean }>;
+  }>;
   status: string;
   invitationCode: string;
   socialMedia: Record<string, string> | null;

@@ -1,3 +1,4 @@
+import '../../../core/theme/colors.generated.dart';
 import 'package:nailbook_mobile/core/widgets/glass_container.dart';
 
 import '../orders/client_create_order_screen.dart';
@@ -16,11 +17,11 @@ class ClientDesignDetailScreen extends StatefulWidget {
 }
 
 const _statusColors = <String, (Color, Color)>{
-  'pending_quote': (Color(0xFFFFF7ED), Color(0xFFD97706)),
-  'quoted': (Color(0xFFEFF6FF), Color(0xFF2563EB)),
-  'accepted': (Color(0xFFF0FDF4), Color(0xFF059669)),
-  'converted': (Color(0xFFF0FDF4), Color(0xFF059669)),
-  'rejected': (Color(0xFFFEF2F2), Color(0xFFDC2626)),
+  'pending_quote': (NBColors.page, NBColors.action),
+  'quoted': (NBColors.page, NBColors.action),
+  'accepted': (NBColors.page, NBColors.action),
+  'converted': (NBColors.page, NBColors.action),
+  'rejected': (NBColors.page, NBColors.action),
 };
 
 class _ClientDesignDetailScreenState extends State<ClientDesignDetailScreen> {

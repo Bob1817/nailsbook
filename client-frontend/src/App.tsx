@@ -27,6 +27,7 @@ import WorkDetailPage from './pages/WorkDetailPage';
 import MyFavorites from './pages/MyFavorites';
 import MyLikes from './pages/MyLikes';
 import PublicArtistCard from './pages/PublicArtistCard';
+import PublicShopDetail from './pages/PublicShopDetail';
 import ArtistWorksPage from './pages/ArtistWorksPage';
 import PublicWorkDetail from './pages/PublicWorkDetail';
 import ForgotPassword from './pages/ForgotPassword';
@@ -59,8 +60,8 @@ function AppRoutes() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-8 h-8 border-2 border-[#FF6B8A] border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[var(--nb-page)]">
+        <div className="w-8 h-8 border-2 border-[var(--nb-control)] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -72,6 +73,7 @@ function AppRoutes() {
       <Route path="/invite" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/artist/:code" element={<PublicArtistCard />} />
+      <Route path="/artist/:code/shops/:index" element={<PublicShopDetail />} />
       <Route path="/artist/:code/works" element={<ArtistWorksPage />} />
       <Route path="/w/:id" element={<PublicWorkDetail />} />
 
@@ -97,6 +99,7 @@ function AppRoutes() {
           <Route path="/chat/direct" element={<ChatDetail />} />
           <Route path="/chat/:conversationId" element={<ChatDetail />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/technicians" element={<Profile managing />} />
           <Route path="/profile/addresses" element={<AddressList />} />
           <Route path="/profile/addresses/edit" element={<EditAddress />} />
           <Route path="/favorites" element={<MyFavorites />} />

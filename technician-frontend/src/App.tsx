@@ -42,6 +42,7 @@ const MePage = lazy(async () => {
   const module = await import('./pages/MePage');
   return { default: module.MePage };
 });
+const HeroRecommendationsPage = lazy(() => import('./pages/HeroRecommendationsPage'));
 const WorksPage = lazy(() => import('./pages/WorksPage'));
 const ShopManagement = lazy(() => import('./pages/ShopManagement'));
 const ShopEdit = lazy(() => import('./pages/ShopEdit'));
@@ -72,8 +73,8 @@ const AboutPage = lazy(() => import('./pages/AboutPage'));
 
 function RouteFallback() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#fff9f8] px-5">
-      <div className="rounded-full bg-white px-4 py-2 text-sm text-gray-500 shadow-[0_8px_24px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.04]">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--nb-page)] px-5">
+      <div className="rounded-full bg-white px-4 py-2 text-sm text-[var(--nb-secondary)] shadow-[0_8px_24px_rgba(0,0,0,0.06)] ring-1 ring-black/[0.04]">
         页面加载中...
       </div>
     </div>
@@ -108,6 +109,7 @@ function App() {
                   <Route path="/chat" element={<ChatPage />} />
                   <Route path="/me" element={<MePage />} />
                   <Route path="/works" element={<WorksPage />} />
+                  <Route path="/hero-recommendations" element={<HeroRecommendationsPage />} />
                   <Route path="/shops" element={<ShopManagement />} />
                   <Route path="/shops/edit" element={<ShopEdit />} />
                   <Route path="/services" element={<ServicesPage />} />

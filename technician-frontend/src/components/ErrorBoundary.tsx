@@ -29,17 +29,17 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       if (this.props.fallback) return this.props.fallback;
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-[var(--nb-page)] p-4">
           <div className="text-center">
             <div className="text-4xl mb-4">😵</div>
-            <h2 className="text-lg font-semibold text-gray-800 mb-2">页面出错了</h2>
-            <p className="text-sm text-gray-500 mb-4">{this.state.error?.message}</p>
+            <h2 className="text-lg font-semibold text-[var(--nb-ink)] mb-2">页面出错了</h2>
+            <p className="text-sm text-[var(--nb-secondary)] mb-4">{this.state.error?.message}</p>
             <button
               onClick={() => {
                 this.setState({ hasError: false, error: null });
                 window.location.href = '/';
               }}
-              className="px-4 py-2 bg-pink-500 text-white rounded-lg text-sm"
+              className="px-4 py-2 bg-[var(--nb-action)] text-white rounded-lg text-sm"
             >
               返回首页
             </button>

@@ -14,11 +14,11 @@ function PhoneFrame({
       {/* Phone body */}
       <div className="relative w-[180px] sm:w-[200px] lg:w-[220px]">
         {/* Outer shell */}
-        <div className="rounded-[32px] border-[5px] border-[#1a1a1a] bg-[#1a1a1a] p-[3px] shadow-2xl shadow-black/20">
+        <div className="rounded-[32px] border-[5px] border-[var(--nb-ink)] bg-[var(--nb-ink)] p-[3px] shadow-2xl shadow-black/20">
           {/* Screen area */}
           <div className="relative overflow-hidden rounded-[26px] bg-white">
             {/* Dynamic Island */}
-            <div className="absolute left-1/2 top-[6px] z-10 h-[16px] w-[60px] -translate-x-1/2 rounded-full bg-[#1a1a1a]" />
+            <div className="absolute left-1/2 top-[6px] z-10 h-[16px] w-[60px] -translate-x-1/2 rounded-full bg-[var(--nb-ink)]" />
 
             {/* Screenshot */}
             <img
@@ -34,10 +34,10 @@ function PhoneFrame({
         </div>
 
         {/* Side button hints */}
-        <div className="absolute -left-[7px] top-[80px] h-[28px] w-[3px] rounded-l-sm bg-[#2a2a2a]" />
-        <div className="absolute -left-[7px] top-[120px] h-[18px] w-[3px] rounded-l-sm bg-[#2a2a2a]" />
-        <div className="absolute -left-[7px] top-[145px] h-[18px] w-[3px] rounded-l-sm bg-[#2a2a2a]" />
-        <div className="absolute -right-[7px] top-[105px] h-[36px] w-[3px] rounded-r-sm bg-[#2a2a2a]" />
+        <div className="absolute -left-[7px] top-[80px] h-[28px] w-[3px] rounded-l-sm bg-[var(--nb-ink)]" />
+        <div className="absolute -left-[7px] top-[120px] h-[18px] w-[3px] rounded-l-sm bg-[var(--nb-ink)]" />
+        <div className="absolute -left-[7px] top-[145px] h-[18px] w-[3px] rounded-l-sm bg-[var(--nb-ink)]" />
+        <div className="absolute -right-[7px] top-[105px] h-[36px] w-[3px] rounded-r-sm bg-[var(--nb-ink)]" />
       </div>
 
       {/* Label */}

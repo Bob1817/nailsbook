@@ -91,7 +91,7 @@ export default function ArtistApplicationPage() {
   )
 
   const inputClass = (error?: boolean) =>
-    `w-full rounded-2xl border ${error ? 'border-red-400' : 'border-line'} bg-brand-bg px-3 py-2.5 text-[13px] text-ink placeholder:text-ink-soft/60 outline-none transition focus:border-brand/50 focus:ring-2 focus:ring-brand/10 sm:px-4 sm:py-3 sm:text-[14px]`
+    `w-full rounded-2xl border ${error ? 'border-[var(--nb-control)]' : 'border-line'} bg-brand-bg px-3 py-2.5 text-[13px] text-ink placeholder:text-ink-soft/60 outline-none transition focus:border-brand/50 focus:ring-2 focus:ring-brand/10 sm:px-4 sm:py-3 sm:text-[14px]`
 
   if (status === 'success') {
     return (
@@ -99,15 +99,15 @@ export default function ArtistApplicationPage() {
         <Meta title={t.apply.title} />
         <div className="flex min-h-screen flex-col items-center justify-center bg-brand-bg px-4">
           <div className="mx-auto w-full max-w-md rounded-[24px] border border-line bg-surface p-6 text-center shadow-lg sm:rounded-[32px] sm:p-8">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-50 sm:h-16 sm:w-16">
-              <CheckCircle className="h-7 w-7 text-green-500 sm:h-8 sm:w-8" />
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--nb-page)] sm:h-16 sm:w-16">
+              <CheckCircle className="h-7 w-7 text-[var(--nb-secondary)] sm:h-8 sm:w-8" />
             </div>
             <h2 className="mt-5 text-lg font-black text-ink sm:mt-6 sm:text-xl">{t.apply.success}</h2>
             <p className="mt-2 text-[13px] leading-relaxed text-ink-muted sm:mt-3 sm:text-[14px]">{t.apply.successDesc}</p>
             <button
               type="button"
               onClick={() => navigate('/')}
-              className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-gradient-to-r from-brand to-brand-deep px-6 text-[14px] font-bold text-white shadow-lg shadow-pink-200/50 transition hover:-translate-y-0.5 active:scale-[0.98] sm:mt-8 sm:min-h-12 sm:text-[15px]"
+              className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-gradient-to-r from-brand to-brand-deep px-6 text-[14px] font-bold text-white shadow-lg shadow-black/50 transition hover:-translate-y-0.5 active:scale-[0.98] sm:mt-8 sm:min-h-12 sm:text-[15px]"
             >
               {t.apply.backHome}
             </button>
@@ -123,8 +123,8 @@ export default function ArtistApplicationPage() {
         <Meta title={t.apply.title} />
         <div className="flex min-h-screen flex-col items-center justify-center bg-brand-bg px-4">
           <div className="mx-auto w-full max-w-md rounded-[24px] border border-line bg-surface p-6 text-center shadow-lg sm:rounded-[32px] sm:p-8">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 sm:h-16 sm:w-16">
-              <AlertCircle className="h-7 w-7 text-amber-500 sm:h-8 sm:w-8" />
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--nb-page)] sm:h-16 sm:w-16">
+              <AlertCircle className="h-7 w-7 text-[var(--nb-secondary)] sm:h-8 sm:w-8" />
             </div>
             <h2 className="mt-5 text-lg font-black text-ink sm:mt-6 sm:text-xl">{t.apply.phoneExists}</h2>
             <p className="mt-2 text-[13px] leading-relaxed text-ink-muted sm:mt-3 sm:text-[14px]">
@@ -168,13 +168,13 @@ export default function ArtistApplicationPage() {
         <Meta title={t.apply.title} />
         <div className="flex min-h-screen flex-col items-center justify-center bg-brand-bg px-4">
           <div className="mx-auto w-full max-w-md rounded-[24px] border border-line bg-surface p-6 text-center shadow-lg sm:rounded-[32px] sm:p-8">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 sm:h-16 sm:w-16">
-              <XCircle className="h-7 w-7 text-red-500 sm:h-8 sm:w-8" />
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--nb-page)] sm:h-16 sm:w-16">
+              <XCircle className="h-7 w-7 text-[var(--nb-secondary)] sm:h-8 sm:w-8" />
             </div>
             <h2 className="mt-5 text-lg font-black text-ink sm:mt-6 sm:text-xl">{t.apply.error}</h2>
             <p className="mt-2 text-[13px] leading-relaxed text-ink-muted sm:mt-3 sm:text-[14px]">{t.apply.errorDesc}</p>
             {errorMsg && (
-              <p className="mt-2 rounded-xl bg-red-50 px-4 py-2 text-[11px] text-red-600 sm:text-[12px]">{errorMsg}</p>
+              <p className="mt-2 rounded-xl bg-[var(--nb-page)] px-4 py-2 text-[11px] text-[var(--nb-secondary)] sm:text-[12px]">{errorMsg}</p>
             )}
             <div className="mt-6 flex gap-3 sm:mt-8">
               <button
@@ -233,7 +233,7 @@ export default function ArtistApplicationPage() {
                 {...register('name')}
               />
               {errors.name && (
-                <p id="apply-name-error" className="mt-1 text-xs text-red-500" role="alert">
+                <p id="apply-name-error" className="mt-1 text-xs text-[var(--nb-secondary)]" role="alert">
                   {errors.name.message as string}
                 </p>
               )}
@@ -251,7 +251,7 @@ export default function ArtistApplicationPage() {
                 {...register('phone')}
               />
               {errors.phone && (
-                <p id="apply-phone-error" className="mt-1 text-xs text-red-500" role="alert">
+                <p id="apply-phone-error" className="mt-1 text-xs text-[var(--nb-secondary)]" role="alert">
                   {errors.phone.message as string}
                 </p>
               )}
@@ -269,7 +269,7 @@ export default function ArtistApplicationPage() {
                 {...register('city')}
               />
               {errors.city && (
-                <p id="apply-city-error" className="mt-1 text-xs text-red-500" role="alert">
+                <p id="apply-city-error" className="mt-1 text-xs text-[var(--nb-secondary)]" role="alert">
                   {errors.city.message as string}
                 </p>
               )}
@@ -287,7 +287,7 @@ export default function ArtistApplicationPage() {
                 {...register('wechat')}
               />
               {errors.wechat && (
-                <p id="apply-wechat-error" className="mt-1 text-xs text-red-500" role="alert">
+                <p id="apply-wechat-error" className="mt-1 text-xs text-[var(--nb-secondary)]" role="alert">
                   {errors.wechat.message as string}
                 </p>
               )}
@@ -345,7 +345,7 @@ export default function ArtistApplicationPage() {
             <button
               type="submit"
               disabled={status === 'checking' || status === 'submitting' || !isValid}
-              className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-deep px-6 text-[14px] font-bold text-white shadow-lg shadow-pink-200/50 transition hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed sm:min-h-12 sm:text-[15px]"
+              className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-deep px-6 text-[14px] font-bold text-white shadow-lg shadow-black/50 transition hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed sm:min-h-12 sm:text-[15px]"
             >
               {status === 'checking' ? (
                 <>

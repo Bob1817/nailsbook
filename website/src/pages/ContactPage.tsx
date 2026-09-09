@@ -45,15 +45,15 @@ export default function ContactPage() {
         <Meta title={t.contact.title} />
         <div className="flex min-h-screen flex-col items-center justify-center bg-brand-bg px-4">
           <div className="mx-auto w-full max-w-md rounded-[32px] border border-line bg-surface p-8 text-center shadow-lg">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
-              <CheckCircle className="h-8 w-8 text-green-500" />
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--nb-page)]">
+              <CheckCircle className="h-8 w-8 text-[var(--nb-secondary)]" />
             </div>
             <h2 className="mt-6 text-xl font-black text-ink">{t.contact.success}</h2>
             <p className="mt-2 text-sm text-ink-muted">{t.contact.successDesc}</p>
             <button
               type="button"
               onClick={() => navigate('/')}
-              className="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-gradient-to-r from-brand to-brand-deep px-6 text-sm font-bold text-white shadow-lg shadow-pink-200/50 transition hover:-translate-y-0.5 active:scale-[0.98]"
+              className="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-gradient-to-r from-brand to-brand-deep px-6 text-sm font-bold text-white shadow-lg shadow-black/50 transition hover:-translate-y-0.5 active:scale-[0.98]"
             >
               {t.contact.backHome}
             </button>
@@ -96,13 +96,13 @@ export default function ContactPage() {
                 type="text"
                 placeholder={t.contact.namePlaceholder}
                 className={`w-full rounded-2xl border ${
-                  errors.name ? 'border-red-400' : 'border-line'
+                  errors.name ? 'border-[var(--nb-control)]' : 'border-line'
                 } bg-brand-bg px-4 py-3 text-sm text-ink placeholder:text-ink-soft/60 outline-none transition focus:border-brand/50 focus:ring-2 focus:ring-brand/10`}
                 aria-describedby={errors.name ? 'contact-name-error' : undefined}
                 {...register('name')}
               />
               {errors.name && (
-                <p id="contact-name-error" className="mt-1 text-xs text-red-500" role="alert">
+                <p id="contact-name-error" className="mt-1 text-xs text-[var(--nb-secondary)]" role="alert">
                   {errors.name.message as string}
                 </p>
               )}
@@ -117,13 +117,13 @@ export default function ContactPage() {
                 type="email"
                 placeholder={t.contact.emailPlaceholder}
                 className={`w-full rounded-2xl border ${
-                  errors.email ? 'border-red-400' : 'border-line'
+                  errors.email ? 'border-[var(--nb-control)]' : 'border-line'
                 } bg-brand-bg px-4 py-3 text-sm text-ink placeholder:text-ink-soft/60 outline-none transition focus:border-brand/50 focus:ring-2 focus:ring-brand/10`}
                 aria-describedby={errors.email ? 'contact-email-error' : undefined}
                 {...register('email')}
               />
               {errors.email && (
-                <p id="contact-email-error" className="mt-1 text-xs text-red-500" role="alert">
+                <p id="contact-email-error" className="mt-1 text-xs text-[var(--nb-secondary)]" role="alert">
                   {errors.email.message as string}
                 </p>
               )}
@@ -138,13 +138,13 @@ export default function ContactPage() {
                 placeholder={t.contact.messagePlaceholder}
                 rows={5}
                 className={`w-full rounded-2xl border ${
-                  errors.message ? 'border-red-400' : 'border-line'
+                  errors.message ? 'border-[var(--nb-control)]' : 'border-line'
                 } bg-brand-bg px-4 py-3 text-sm text-ink placeholder:text-ink-soft/60 outline-none transition focus:border-brand/50 focus:ring-2 focus:ring-brand/10 resize-none`}
                 aria-describedby={errors.message ? 'contact-message-error' : undefined}
                 {...register('message')}
               />
               {errors.message && (
-                <p id="contact-message-error" className="mt-1 text-xs text-red-500" role="alert">
+                <p id="contact-message-error" className="mt-1 text-xs text-[var(--nb-secondary)]" role="alert">
                   {errors.message.message as string}
                 </p>
               )}
@@ -153,7 +153,7 @@ export default function ContactPage() {
             <button
               type="submit"
               disabled={status === 'submitting' || !isValid}
-              className="mt-2 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-deep px-6 text-sm font-bold text-white shadow-lg shadow-pink-200/50 transition hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+              className="mt-2 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-deep px-6 text-sm font-bold text-white shadow-lg shadow-black/50 transition hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {status === 'submitting' ? (
                 <>

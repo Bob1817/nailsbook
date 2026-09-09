@@ -6,7 +6,7 @@ describe('Skeleton', () => {
   it('renders correctly with default props', () => {
     const { container } = render(<Skeleton />)
     expect(container.firstChild).toBeInTheDocument()
-    expect(container.firstChild).toHaveClass('animate-pulse', 'bg-gray-200', 'rounded')
+    expect(container.firstChild).toHaveClass('animate-pulse', 'bg-[var(--nb-pressed)]', 'rounded')
   })
 
   it('renders circle variant', () => {

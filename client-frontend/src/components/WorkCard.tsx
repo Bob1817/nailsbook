@@ -53,7 +53,7 @@ const WorkCard: React.FC<WorkCardProps> = ({ work, variantIndex, onOpen, onToggl
       tabIndex={0}
       onClick={() => onOpen(work)}
       onKeyDown={handleKeyDown}
-      className={`group relative cursor-pointer overflow-hidden rounded-[20px] bg-white shadow-[0_8px_28px_rgba(15,23,42,0.08)] ring-1 ring-black/5 transition-transform active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] ${ASPECT_PATTERNS[variantIndex % ASPECT_PATTERNS.length]}`}
+      className={`group relative cursor-pointer overflow-hidden rounded-[20px] bg-white shadow-[0_8px_28px_rgba(0,0,0,0.08)] ring-1 ring-black/5 transition-transform active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] ${ASPECT_PATTERNS[variantIndex % ASPECT_PATTERNS.length]}`}
     >
       {imageUrl ? (
         <img
@@ -63,7 +63,7 @@ const WorkCard: React.FC<WorkCardProps> = ({ work, variantIndex, onOpen, onToggl
           loading="lazy"
         />
       ) : (
-        <div className="flex h-full min-h-[9rem] w-full items-center justify-center bg-[linear-gradient(135deg,#f1e8f0,#e8eaf6)] text-sm text-gray-400">
+        <div className="flex h-full min-h-[9rem] w-full items-center justify-center bg-[var(--nb-page)] text-sm text-[var(--nb-muted)]">
           暂无图片
         </div>
       )}
@@ -93,7 +93,7 @@ const WorkCard: React.FC<WorkCardProps> = ({ work, variantIndex, onOpen, onToggl
           aria-label={work.isLiked ? '取消点赞' : '点赞作品'}
           className="flex min-h-11 shrink-0 items-center justify-center gap-1 px-1 text-white transition-opacity active:opacity-75 disabled:cursor-default disabled:opacity-100"
         >
-          <svg className={`h-3.5 w-3.5 ${work.isLiked ? 'text-[#FF6B8A]' : 'text-white'}`} fill="currentColor" viewBox="0 0 20 20">
+          <svg className={`h-3.5 w-3.5 ${work.isLiked ? 'text-[var(--nb-ink)]' : 'text-white'}`} fill="currentColor" viewBox="0 0 20 20">
             <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
           </svg>
           <span className="text-[11px] font-medium text-white">{work.likeCount || 0}</span>

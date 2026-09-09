@@ -47,28 +47,28 @@ const AddressList: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-full flex items-center justify-center bg-gray-50">
-        <div className="w-8 h-8 border-2 border-[#FF6B8A] border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-full flex items-center justify-center bg-[var(--nb-page)]">
+        <div className="w-8 h-8 border-2 border-[var(--nb-control)] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-full bg-[linear-gradient(180deg,#FFFDFD_0%,#F7F3F6_48%,#F2F6FB_100%)]">
+    <div className="min-h-full bg-[var(--nb-page)]">
       {/* Header */}
       <div className="sticky top-0 z-10 border-b border-white/60 bg-white/78 px-5 app-header-safe pb-5 backdrop-blur-xl">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white/80 text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.08)] ring-1 ring-black/5"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white/80 text-[var(--nb-ink)] shadow-[0_10px_24px_rgba(0,0,0,0.08)] ring-1 ring-black/5"
           >
-            <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5 text-[var(--nb-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
           <div className="min-w-0">
             <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--color-text-muted)]">Address Book</p>
-            <h1 className="mt-0.5 text-lg font-semibold text-gray-900">地址管理</h1>
+            <h1 className="mt-0.5 text-lg font-semibold text-[var(--nb-ink)]">地址管理</h1>
           </div>
         </div>
       </div>
@@ -79,27 +79,27 @@ const AddressList: React.FC = () => {
           addresses.map((address) => (
             <div
               key={address.id}
-              className="rounded-[28px] bg-white/88 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur"
+              className="rounded-[28px] bg-white/88 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.08)] ring-1 ring-black/5 backdrop-blur"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="mb-2 flex items-center gap-2">
-                    <span className="text-base font-semibold text-gray-900">{address.contactName || '未命名'}</span>
-                    <span className="text-sm text-gray-500">{address.contactPhone}</span>
+                    <span className="text-base font-semibold text-[var(--nb-ink)]">{address.contactName || '未命名'}</span>
+                    <span className="text-sm text-[var(--nb-secondary)]">{address.contactPhone}</span>
                     {address.isDefault && (
                       <span className="rounded-full bg-[var(--color-primary-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-primary)]">
                         默认
                       </span>
                     )}
                   </div>
-                  <p className="text-sm leading-6 text-gray-600">
+                  <p className="text-sm leading-6 text-[var(--nb-secondary)]">
                     {[address.province, address.city, address.district, address.detailAddress].filter(Boolean).join(' ')}
                   </p>
                   {address.doorInfo && (
-                    <p className="mt-2 text-xs text-gray-400">{address.doorInfo}</p>
+                    <p className="mt-2 text-xs text-[var(--nb-muted)]">{address.doorInfo}</p>
                   )}
                 </div>
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#FFF0F5_0%,#F4F7FB_100%)]">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--nb-page)]">
                   <svg className="h-5 w-5 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -108,7 +108,7 @@ const AddressList: React.FC = () => {
               </div>
 
               {/* Actions */}
-              <div className="mt-4 flex items-center justify-end gap-2 border-t border-gray-100 pt-4">
+              <div className="mt-4 flex items-center justify-end gap-2 border-t border-[var(--nb-line)] pt-4">
                 {!address.isDefault && (
                   <button
                     onClick={() => handleSetDefault(address.id)}
@@ -119,13 +119,13 @@ const AddressList: React.FC = () => {
                 )}
                 <button
                   onClick={() => navigate(`/profile/addresses/edit?id=${address.id}`)}
-                  className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-gray-600"
+                  className="rounded-full bg-[var(--nb-page)] px-3 py-1.5 text-xs font-medium text-[var(--nb-secondary)]"
                 >
                   编辑
                 </button>
                 <button
                   onClick={() => handleDelete(address.id)}
-                  className="rounded-full bg-red-50 px-3 py-1.5 text-xs font-medium text-red-500"
+                  className="rounded-full bg-[var(--nb-page)] px-3 py-1.5 text-xs font-medium text-[var(--nb-secondary)]"
                 >
                   删除
                 </button>
@@ -133,25 +133,25 @@ const AddressList: React.FC = () => {
             </div>
           ))
         ) : (
-          <div className="rounded-[32px] bg-white/88 px-6 py-12 text-center shadow-[0_20px_60px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[linear-gradient(135deg,#FFE2EA_0%,#F4F6FB_100%)]">
-              <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="rounded-[32px] bg-white/88 px-6 py-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.08)] ring-1 ring-black/5 backdrop-blur">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--nb-page)]">
+              <svg className="w-8 h-8 text-[var(--nb-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <p className="text-sm font-medium text-gray-700">暂无地址</p>
-            <p className="mt-2 text-sm leading-6 text-gray-400">预约前先添加常用地址，之后可快速选择服务地点</p>
+            <p className="text-sm font-medium text-[var(--nb-ink)]">暂无地址</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--nb-muted)]">预约前先添加常用地址，之后可快速选择服务地点</p>
           </div>
         )}
       </div>
 
       {/* Add Button - anchored at bottom with safe area */}
-      <div className="fixed left-0 right-0 bottom-0 z-40 border-t border-gray-100 bg-white/95 px-5 py-4 backdrop-blur safe-area-bottom">
+      <div className="fixed left-0 right-0 bottom-0 z-40 border-t border-[var(--nb-line)] bg-white/95 px-5 py-4 backdrop-blur safe-area-bottom">
         <div className="mx-auto max-w-md">
           <button
             onClick={() => navigate('/profile/addresses/edit')}
-            className="w-full rounded-full bg-gradient-to-r from-[#FF6B8A] to-[#FF8FA3] py-3.5 font-medium text-white shadow-lg shadow-pink-200/50 active:scale-95 transition-transform"
+            className="w-full rounded-full bg-[var(--nb-action)] py-3.5 font-medium text-white shadow-lg shadow-black/50 active:scale-95 transition-transform"
           >
             + 添加新地址
           </button>

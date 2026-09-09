@@ -48,7 +48,7 @@ const MyFavorites: React.FC = () => {
   };
 
   return (
-    <div className="min-h-full bg-[linear-gradient(180deg,#fff8fa_0%,#f6f7fb_28%,#f5f6f8_100%)] pb-6">
+    <div className="min-h-full bg-[var(--nb-page)] pb-6">
       {/* Header */}
       <div className="sticky top-0 z-10 border-b border-white/60 bg-white/88 px-5 app-header-safe pb-3 backdrop-blur-md">
         <div className="flex items-center gap-3">

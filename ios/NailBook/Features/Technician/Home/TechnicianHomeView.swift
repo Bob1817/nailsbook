@@ -106,7 +106,7 @@ struct TechnicianHomeView: View {
         .padding(Spacing.cardPadding)
         .background(Color.nbSurfaceGlass)
         .cornerRadius(Radius.card)
-        .shadow(color: Color(hex: "0F172A").opacity(0.06), radius: 12, y: 2)
+        .shadow(color: NBColors.ink.opacity(0.06), radius: 12, y: 2)
     }
 
     // MARK: - Today Schedule Card
@@ -139,7 +139,7 @@ struct TechnicianHomeView: View {
         .padding(Spacing.cardPadding)
         .background(Color.nbSurfaceGlass)
         .cornerRadius(Radius.card)
-        .shadow(color: Color(hex: "0F172A").opacity(0.06), radius: 12, y: 2)
+        .shadow(color: NBColors.ink.opacity(0.06), radius: 12, y: 2)
     }
 
     private func loadData() async {

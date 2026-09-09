@@ -1,3 +1,4 @@
+import '../theme/colors.generated.dart';
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -96,9 +97,9 @@ class _NbToastWidgetState extends State<_NbToastWidget> with SingleTickerProvide
   ({IconData icon, Color color}) get _style {
     switch (widget.type) {
       case NbToastType.success:
-        return (icon: Icons.check_circle_rounded, color: const Color(0xFF34C759));
+        return (icon: Icons.check_circle_rounded, color: NBColors.action);
       case NbToastType.error:
-        return (icon: Icons.error_rounded, color: const Color(0xFFFF3B30));
+        return (icon: Icons.error_rounded, color: NBColors.action);
       case NbToastType.info:
         return (icon: Icons.info_rounded, color: DT.primary);
     }

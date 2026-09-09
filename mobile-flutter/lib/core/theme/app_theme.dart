@@ -9,11 +9,20 @@ class AppTheme {
   static ThemeData get light {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: DT.primary,
-      brightness: Brightness.dark,
+      brightness: Brightness.light,
+      dynamicSchemeVariant: DynamicSchemeVariant.monochrome,
     ).copyWith(
       surface: DT.surface,
       onSurface: DT.textPrimary,
       primary: DT.primary,
+      onPrimary: Colors.white,
+      secondary: DT.secondary,
+      onSecondary: Colors.white,
+      error: DT.textPrimary,
+      onError: Colors.white,
+      errorContainer: DT.bg,
+      onErrorContainer: DT.textPrimary,
+      surfaceTint: Colors.transparent,
     );
 
     return ThemeData(
@@ -54,8 +63,8 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: ET.cream,
           foregroundColor: ET.onCream,
-          disabledBackgroundColor: ET.cream.withValues(alpha: 0.4),
-          disabledForegroundColor: ET.onCream,
+          disabledBackgroundColor: DT.disabledBg,
+          disabledForegroundColor: DT.textMuted,
           minimumSize: const Size(double.infinity, 50),
           elevation: 0,
           shadowColor: Colors.transparent,

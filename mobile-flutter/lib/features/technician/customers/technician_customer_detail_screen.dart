@@ -1,3 +1,4 @@
+import '../../../core/theme/colors.generated.dart';
 
 
 import '../../../core/maps/map_service.dart';
@@ -22,16 +23,16 @@ class TechnicianCustomerDetailScreen extends StatefulWidget {
 
 // 标签兜底色板：与 webapp CustomerDetailPage 的 TAG_FALLBACK_COLORS 一致。
 const _tagFallbackColors = <String, ({Color bg, Color text})>{
-  '常客': (bg: Color(0xFF3A2F23), text: Color(0xFFFF5E93)),
-  '新客': (bg: Color(0xFFEBF4FF), text: Color(0xFF3B82F6)),
-  '高频': (bg: Color(0xFFFFF1E5), text: Color(0xFFC9792A)),
-  '简约': (bg: Color(0xFFEEF9F1), text: Color(0xFF31B46C)),
-  '裸色系': (bg: Color(0xFFFFF8E6), text: Color(0xFFC9860A)),
+  '常客': (bg: NBColors.activeSurface, text: NBColors.action),
+  '新客': (bg: NBColors.page, text: NBColors.action),
+  '高频': (bg: NBColors.page, text: NBColors.action),
+  '简约': (bg: NBColors.page, text: NBColors.action),
+  '裸色系': (bg: NBColors.page, text: NBColors.action),
 };
-const _tagDefaultColor = (bg: Color(0xFF2A241E), text: Color(0xFF6D6570));
+const _tagDefaultColor = (bg: NBColors.surface, text: NBColors.muted);
 // 客户头像配色（webapp 详情页风格）
-const _avatarBg = Color(0xFFFDECEF);
-const _avatarText = Color(0xFFE86B8F);
+const _avatarBg = NBColors.page;
+const _avatarText = NBColors.action;
 
 class _TechnicianCustomerDetailScreenState
     extends State<TechnicianCustomerDetailScreen> {
@@ -1023,26 +1024,12 @@ class _TechnicianCustomerDetailScreenState
       if (item['name']?.toString() != tag) continue;
       final color = item['color']?.toString() ?? item['textColor']?.toString();
       if (color == null || color.isEmpty) break;
-      final preset = <String, Color>{
-        '#FF5E93': const Color(0xFF3A2F23),
-        '#C9792A': const Color(0xFFFFF1E5),
-        '#31B46C': const Color(0xFFEEF9F1),
-        '#3B82F6': const Color(0xFFEBF4FF),
-        '#7C3AED': const Color(0xFFF5F0FF),
-        '#C9860A': const Color(0xFFFFF8E6),
-        '#6D6570': const Color(0xFF2A241E),
-        '#E53E3E': const Color(0xFFFFE4E4),
-      };
-      return (bg: preset[color] ?? DT.surfaceAlt, text: _parseHex(color));
+      // Old saved tag colors remain data; render through the neutral UI palette.
+      return (bg: NBColors.page, text: NBColors.ink);
     }
     return _tagFallbackColors[tag] ?? _tagDefaultColor;
   }
 
-  Color _parseHex(String value) {
-    var hex = value.replaceAll('#', '');
-    if (hex.length == 6) hex = 'FF$hex';
-    return Color(int.parse(hex, radix: 16));
-  }
 
   List<String> _tags(dynamic raw) {
     if (raw == null) return const [];
