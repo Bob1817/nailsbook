@@ -26,7 +26,7 @@ assert(template.includes('previewTechnicians'));
 assert(template.includes('bindtap="manageTechnicians"'));
 assert(!template.includes('wx:for="{{technicians}}"'));
 assert(template.includes('class="tech-preview-list"'));
-assert(template.includes('class="tech-default-icon"'));
+assert(template.includes('class="tech-default-mark"'));
 assert(template.includes('catchtap="quickBookTechnician"'));
 assert(!template.includes('class="growth-grid"'));
 assert(template.includes('class="tech-stats"'));

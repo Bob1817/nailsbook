@@ -1252,21 +1252,24 @@ page {
   display: block;
   min-height: 136rpx;
   margin-top: 12rpx;
-  padding: 18rpx 16rpx 18rpx 18rpx;
+  padding: 22rpx;
   box-sizing: border-box;
   border-radius: 20rpx;
   background: var(--nb-page);
 }
-.tech-card-main { display:flex; align-items:center; gap:18rpx; }
+.tech-card-main { display:flex; align-items:center; gap:20rpx; }
 .tech-preview:first-child { margin-top: 0; }
 .tech-preview:active { background: var(--nb-pressed); }
 .tech-preview-avatar {
-  width: 92rpx;
-  height: 92rpx;
-  border-radius: 24rpx;
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 26rpx;
   flex-shrink: 0;
   background: var(--nb-soft-surface);
 }
+.tech-avatar-wrap { position:relative; width:96rpx; height:96rpx; flex-shrink:0; }
+.tech-default-mark { position:absolute; right:-6rpx; bottom:-6rpx; width:34rpx; height:34rpx; display:flex; align-items:center; justify-content:center; border:4rpx solid var(--nb-page); border-radius:50%; background:var(--nb-ink); }
+.tech-default-mark image { width:20rpx; height:20rpx; filter:grayscale(1) brightness(0) invert(1); }
 .tech-preview-info { flex: 1; min-width: 0; }
 .tech-preview-name-row { display: flex; align-items: center; gap: 10rpx; min-width: 0; }
 .tech-preview-name {
@@ -1279,16 +1282,6 @@ page {
   font-weight: var(--weight-semibold);
   line-height: 1.4;
 }
-.tech-default-badge {
-  flex-shrink: 0;
-  padding: 4rpx 10rpx;
-  border-radius: 8rpx;
-  background: var(--nb-soft-surface);
-  color: var(--nb-text-link);
-  font-size: var(--font-xs);
-  line-height: 1.35;
-}
-.tech-default-icon { width:28rpx; height:28rpx; flex-shrink:0; }
 .tech-member-badge { flex-shrink:0; padding:4rpx 10rpx; border-radius:8rpx; background:var(--nb-soft-surface); color:var(--nb-text-link); font-size:var(--font-xs); line-height:1.35; }
 .tech-status {
   flex-shrink: 0;
@@ -1309,12 +1302,12 @@ page {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.tech-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); margin-top:18rpx; padding-top:16rpx; border-top:1rpx solid var(--nb-divider); }
-.tech-stat { min-width:0; display:flex; align-items:center; justify-content:center; gap:10rpx; }
-.tech-stat + .tech-stat { border-left:1rpx solid var(--nb-divider); }
-.tech-stat image { width:28rpx; height:28rpx; opacity:.72; }
-.tech-stat-value { color:var(--nb-ink); font-size:var(--font-sm); font-weight:var(--weight-semibold); }
-.tech-stat-label { margin-left:4rpx; color:var(--nb-muted); font-size:var(--font-xs); }
+.tech-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12rpx; margin-top:20rpx; }
+.tech-stat { min-width:0; min-height:104rpx; padding:14rpx 8rpx 12rpx; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:14rpx; background:var(--nb-soft-surface); }
+.tech-stat-icon { width:34rpx; height:34rpx; display:flex; align-items:center; justify-content:center; }
+.tech-stat-icon image { width:28rpx; height:28rpx; opacity:.72; }
+.tech-stat-value { margin-top:4rpx; max-width:100%; overflow:hidden; color:var(--nb-ink); font-size:var(--font-sm); font-weight:var(--weight-semibold); line-height:1.3; text-overflow:ellipsis; white-space:nowrap; }
+.tech-stat-label { margin-top:2rpx; color:var(--nb-muted); font-size:var(--font-xs); line-height:1.25; }
 .tech-benefit-row { margin-top:14rpx; padding:12rpx 16rpx; border-radius:12rpx; background:var(--nb-soft-surface); display:flex; justify-content:space-between; gap:12rpx; color:var(--nb-secondary); font-size:var(--font-xs); }
 .tech-quick-book {
   min-width: 112rpx;
@@ -1325,6 +1318,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8rpx;
   border-radius: 16rpx;
   background: var(--nb-action);
   color: var(--nb-inverse);
@@ -1332,6 +1326,7 @@ page {
   font-weight: var(--weight-semibold);
 }
 .tech-quick-book:active { background: var(--nb-action-pressed); }
+.tech-quick-book image { width:28rpx; height:28rpx; filter:brightness(0) invert(1); }
 .tech-quick-book-disabled { background: var(--nb-pressed); color: var(--nb-control); }
 .tech-preview-arrow { color: var(--nb-muted); font-size: var(--font-lg); }
 .tech-preview-footer {
