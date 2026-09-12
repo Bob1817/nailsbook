@@ -20,7 +20,7 @@ Page({
     roleCardSub: '',
     roleSwitchLabel: '切换身份',
     technicians: [],
-    previewTechnicians: [], activeCount: 0, pendingCount: 0,
+    previewTechnicians: [], activeCount: 0, pendingCount: 0, hiddenActiveCount: 0, previewSummary: '',
 
     // 角色能力（由 /client/auth/me 返回）
     capabilities: {

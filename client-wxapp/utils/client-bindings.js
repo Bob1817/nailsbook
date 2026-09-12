@@ -16,7 +16,13 @@ function normalizeBindings(bindings) {
 function bindingSummary(technicians) {
   const sorted = technicians.slice().sort((a,b) => Number(b.isDefault) - Number(a.isDefault) || String(b.boundAt || '').localeCompare(String(a.boundAt || '')) || Number(b.id) - Number(a.id));
   const active = sorted.filter(item => item.bindingStatus === 'active');
-  return { technicians: sorted, previewTechnicians: active.slice(0,2), activeCount: active.length, pendingCount: sorted.filter(item => item.bindingStatus === 'pending').length };
+  const pendingCount = sorted.filter(item => item.bindingStatus === 'pending').length;
+  const hiddenActiveCount = Math.max(active.length - 2, 0);
+  const previewSummary = [
+    hiddenActiveCount ? `还有 ${hiddenActiveCount} 位已绑定` : '',
+    pendingCount ? `${pendingCount} 位待确认` : ''
+  ].filter(Boolean).join(' · ');
+  return { technicians: sorted, previewTechnicians: active.slice(0,2), activeCount: active.length, pendingCount, hiddenActiveCount, previewSummary };
 }
 
 module.exports = { normalizeBindings, bindingSummary };
