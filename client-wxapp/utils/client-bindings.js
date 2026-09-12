@@ -26,6 +26,10 @@ function normalizeBindings(bindings) {
         savedAmountText: `¥${(savedAmountFen / 100).toFixed(2)}`,
         membership,
         points,
+        membershipName: membership && membership.name || '',
+        pointsText: String(points == null ? 0 : points),
+        visitsText: String(completedVisits),
+        hasBenefits: benefitLabels.length > 0,
         summary: [membership && membership.name, `${completedVisits} 次消费`, points != null ? `${points} 积分` : ''].filter(Boolean).join(' · '),
         benefitSummary: benefitLabels.length ? benefitLabels.join(' · ') : '该美甲师暂未设置会员权益',
         progressSummary: nextTier ? `距${nextTier.name}还差 ${Number(nextTier.remaining || 0)} ${nextUnit}` : ''

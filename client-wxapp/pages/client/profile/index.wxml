@@ -43,19 +43,28 @@
         </view>
         <view wx:if="{{activeCount}}" class="tech-preview-list">
           <view wx:for="{{previewTechnicians}}" wx:key="id" class="tech-preview" bindtap="viewTechnicianHome" data-id="{{item.id}}" role="button" aria-label="查看{{item.name}}主页">
-            <image class="tech-preview-avatar" src="{{item.avatar || '/static/icons/technician.svg'}}" mode="aspectFill"/>
-            <view class="tech-preview-info">
-              <view class="tech-preview-name-row">
-                <text class="tech-preview-name">{{item.name}}</text>
-                <text wx:if="{{item.isDefault}}" class="tech-default-badge">默认</text>
-                <text class="tech-status tech-status-{{item.statusTone}}">{{item.statusLabel}}</text>
+            <view class="tech-card-main">
+              <image class="tech-preview-avatar" src="{{item.avatar || '/static/icons/technician.svg'}}" mode="aspectFill"/>
+              <view class="tech-preview-info">
+                <view class="tech-preview-name-row">
+                  <text class="tech-preview-name">{{item.name}}</text>
+                  <image wx:if="{{item.isDefault}}" class="tech-default-icon" src="/static/icons/social-star-active.svg" mode="aspectFit" aria-label="默认美甲师" />
+                  <text wx:if="{{item.relationship.membershipName}}" class="tech-member-badge">{{item.relationship.membershipName}}</text>
+                  <text class="tech-status tech-status-{{item.statusTone}}">{{item.statusLabel}}</text>
+                </view>
+                <text class="tech-preview-meta">{{item.shopName || item.city || '已绑定的美甲师'}}{{item.shopService ? ' · 支持到店' : ''}}</text>
               </view>
-              <text class="tech-preview-meta">{{item.shopName || item.city || '已绑定的美甲师'}}{{item.shopService ? ' · 支持到店' : ''}}</text>
-              <text class="tech-relationship">{{item.relationship.summary}} · 累计优惠 {{item.relationship.savedAmountText}}</text>
-              <text class="tech-benefit">{{item.relationship.benefitSummary}}</text>
-              <text wx:if="{{item.relationship.progressSummary}}" class="tech-benefit">{{item.relationship.progressSummary}}</text>
+              <view class="tech-quick-book {{item.canBook ? '' : 'tech-quick-book-disabled'}}" catchtap="quickBookTechnician" data-id="{{item.id}}" data-can-book="{{item.canBook}}" role="button" aria-label="预约{{item.name}}">预约</view>
             </view>
-            <view class="tech-quick-book {{item.canBook ? '' : 'tech-quick-book-disabled'}}" catchtap="quickBookTechnician" data-id="{{item.id}}" data-can-book="{{item.canBook}}" role="button" aria-label="预约{{item.name}}">快速预约</view>
+            <view class="tech-stats">
+              <view class="tech-stat"><image src="/static/icons/calendar.svg"/><view><text class="tech-stat-value">{{item.relationship.visitsText}}</text><text class="tech-stat-label">次</text></view></view>
+              <view class="tech-stat"><image src="/static/icons/crown.svg"/><view><text class="tech-stat-value">{{item.relationship.pointsText}}</text><text class="tech-stat-label">积分</text></view></view>
+              <view class="tech-stat"><image src="/static/icons/wallet.svg"/><view><text class="tech-stat-value">{{item.relationship.savedAmountText}}</text><text class="tech-stat-label">已优惠</text></view></view>
+            </view>
+            <view wx:if="{{item.relationship.hasBenefits || item.relationship.progressSummary}}" class="tech-benefit-row">
+              <text wx:if="{{item.relationship.hasBenefits}}">{{item.relationship.benefitSummary}}</text>
+              <text wx:if="{{item.relationship.progressSummary}}">{{item.relationship.progressSummary}}</text>
+            </view>
           </view>
         </view>
         <view wx:else class="tech-preview-empty" bindtap="manageTechnicians" role="button" aria-label="绑定美甲师">
