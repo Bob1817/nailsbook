@@ -7,6 +7,21 @@
     <button class="booking-action btn-save" bindtap="savePricingSettings" disabled="{{pricingSaving}}">保存定金设置</button>
   </view>
 
+  <view class="svc-card loyalty-card">
+    <view class="loyalty-head"><view><text class="label">会员等级与权益</text><text class="form-helper">仅对你的客户生效</text></view><switch checked="{{loyaltyEnabled}}" bindchange="toggleLoyalty" color="#111111" /></view>
+    <view class="form-item"><text class="label">每实付 1 元赠送积分</text><input class="input form-input" type="digit" value="{{pointsPerYuan}}" bindinput="onPointsRate" placeholder="0" placeholder-class="form-placeholder" /></view>
+    <view wx:for="{{loyaltyTiers}}" wx:key="id" class="loyalty-tier">
+      <view class="loyalty-tier-head"><text>等级 {{index + 1}}</text><text class="tier-remove" bindtap="removeLoyaltyTier" data-index="{{index}}">删除</text></view>
+      <input class="input form-input" value="{{item.name}}" bindinput="updateLoyaltyTier" data-index="{{index}}" data-field="name" placeholder="等级名称，如银卡会员" placeholder-class="form-placeholder" />
+      <picker range="{{thresholdTypes}}" value="{{item.thresholdTypeIndex}}" bindchange="updateTierType" data-index="{{index}}"><view class="input form-input">升级依据：{{thresholdTypes[item.thresholdTypeIndex]}}</view></picker>
+      <input class="input form-input" type="digit" value="{{item.thresholdValue}}" bindinput="updateLoyaltyTier" data-index="{{index}}" data-field="thresholdValue" placeholder="达到数值" placeholder-class="form-placeholder" />
+      <input class="input form-input" type="digit" value="{{item.discountPercent}}" bindinput="updateLoyaltyTier" data-index="{{index}}" data-field="discountPercent" placeholder="折扣减免比例，如 10" placeholder-class="form-placeholder" />
+      <input class="input form-input" value="{{item.benefitsText}}" bindinput="updateLoyaltyTier" data-index="{{index}}" data-field="benefitsText" placeholder="权益，用顿号分隔" placeholder-class="form-placeholder" />
+    </view>
+    <button class="booking-action loyalty-add" bindtap="addLoyaltyTier">添加会员等级</button>
+    <button class="booking-action btn-save" bindtap="saveLoyaltySettings" disabled="{{loyaltySaving}}">保存会员权益</button>
+  </view>
+
 
   <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
 

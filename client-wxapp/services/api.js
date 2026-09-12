@@ -363,6 +363,8 @@ const technician = {
 
   services: {
     pricingSettings: () => api.get(`${T}/services/pricing-settings`),
+    loyaltySettings: () => api.get(`${T}/services/loyalty-settings`),
+    updateLoyaltySettings: data => api.patch(`${T}/services/loyalty-settings`, data),
     updatePricingSettings: (data) => api.patch(`${T}/services/pricing-settings`, data),
     list: () => api.get(`${T}/services`),
     create: (data) => api.post(`${T}/services`, data),

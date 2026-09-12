@@ -1150,7 +1150,7 @@ export class ClientAuthService {
             status: 'completed',
           },
           _count: { _all: true },
-          _sum: { discountAmountFen: true },
+          _sum: { discountAmountFen: true, actualAmount: true },
         })
       : [];
     const statsByTechnician = new Map(
@@ -1218,7 +1218,21 @@ export class ClientAuthService {
           ? JSON.parse(b.technician.shopAddresses)
           : [],
       })),
-      technicians: activeBindings.map((b) => ({
+      technicians: activeBindings.map((b) => {
+        const stats = statsByTechnician.get(b.techId);
+        const settings = b.technician.loyaltySettings
+          ? JSON.parse(b.technician.loyaltySettings)
+          : { enabled: false, tiers: [] };
+        const metrics = {
+          visits: stats?._count._all || 0,
+          spend: Number(stats?._sum.actualAmount || 0),
+          points: b.loyaltyPoints || 0,
+        };
+        const tiers = settings.enabled && Array.isArray(settings.tiers) ? settings.tiers : [];
+        const currentTier = tiers.reduce((selected, tier) =>
+          metrics[tier.thresholdType as keyof typeof metrics] >= Number(tier.thresholdValue || 0) ? tier : selected, null);
+        const nextTier = tiers.find((tier) => metrics[tier.thresholdType as keyof typeof metrics] < Number(tier.thresholdValue || 0)) || null;
+        return ({
         id: b.technician.id,
         name: b.technician.name,
         phone: b.technician.phone,
@@ -1239,20 +1253,21 @@ export class ClientAuthService {
         serviceSchedule: this.parseServiceSchedule(
           b.technician.serviceSchedule,
         ),
-        relationship: {
-          completedVisits:
-            statsByTechnician.get(b.techId)?._count._all || 0,
-          savedAmountFen:
-            statsByTechnician.get(b.techId)?._sum.discountAmountFen || 0,
-          membership: null,
-          points: null,
-          benefits: [],
-        },
+          relationship: {
+            completedVisits: metrics.visits,
+            lifetimeSpend: metrics.spend,
+            savedAmountFen: stats?._sum.discountAmountFen || 0,
+            membership: currentTier ? { name: currentTier.name, discountPercent: currentTier.discountPercent || 0 } : null,
+            points: metrics.points,
+            benefits: currentTier?.benefits || [],
+            nextTier: nextTier ? { name: nextTier.name, thresholdType: nextTier.thresholdType, remaining: Math.max(0, Number(nextTier.thresholdValue) - metrics[nextTier.thresholdType as keyof typeof metrics]) } : null,
+          },
         isDefault: b.isDefault,
         bindSource: b.bindSource,
         bindId: b.id,
         boundAt: b.createdAt,
-      })),
+        });
+      }),
     };
   }
 

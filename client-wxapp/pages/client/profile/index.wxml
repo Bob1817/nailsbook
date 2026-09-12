@@ -53,6 +53,7 @@
               <text class="tech-preview-meta">{{item.shopName || item.city || '已绑定的美甲师'}}{{item.shopService ? ' · 支持到店' : ''}}</text>
               <text class="tech-relationship">{{item.relationship.summary}} · 累计优惠 {{item.relationship.savedAmountText}}</text>
               <text class="tech-benefit">{{item.relationship.benefitSummary}}</text>
+              <text wx:if="{{item.relationship.progressSummary}}" class="tech-benefit">{{item.relationship.progressSummary}}</text>
             </view>
             <view class="tech-quick-book {{item.canBook ? '' : 'tech-quick-book-disabled'}}" catchtap="quickBookTechnician" data-id="{{item.id}}" data-can-book="{{item.canBook}}" role="button" aria-label="预约{{item.name}}">快速预约</view>
           </view>

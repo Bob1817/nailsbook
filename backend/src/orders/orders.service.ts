@@ -1142,6 +1142,21 @@ export class OrdersService {
           suggestedMaintenanceAt,
         },
       });
+      const technicianLoyalty = tx.technician?.findUnique
+        ? await tx.technician.findUnique({ where: { id: order.technicianId }, select: { loyaltySettings: true } })
+        : null;
+      const loyaltySettings = technicianLoyalty?.loyaltySettings ? JSON.parse(technicianLoyalty.loyaltySettings) : null;
+      const earnedPoints = loyaltySettings?.enabled ? Math.max(0, Math.floor(actualAmount * Number(loyaltySettings.pointsPerYuan || 0))) : 0;
+      if (order.clientUserId && earnedPoints > 0) {
+        await tx.clientTechBinding.updateMany({
+          where: {
+            clientId: order.clientUserId,
+            techId: order.technicianId,
+            status: 'active',
+          },
+          data: { loyaltyPoints: { increment: earnedPoints } },
+        });
+      }
       await tx.serviceRecord.create({
         data: {
           orderId: id,

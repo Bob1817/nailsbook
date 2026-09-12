@@ -60,6 +60,30 @@ export class TechnicianServicesService {
     }, select: { depositMode: true, depositValue: true } });
   }
 
+  async loyaltySettings(technicianId: number) {
+    const row = await this.prisma.technician.findUnique({ where: { id: technicianId }, select: { loyaltySettings: true } });
+    if (!row) throw new NotFoundException('美甲师不存在');
+    return row.loyaltySettings ? JSON.parse(row.loyaltySettings) : { enabled: false, pointsPerYuan: 0, tiers: [] };
+  }
+
+  async updateLoyaltySettings(technicianId: number, input: unknown) {
+    const dto = input as { enabled?: boolean; pointsPerYuan?: number; tiers?: Array<{ id?: string; name?: string; thresholdType?: string; thresholdValue?: number; discountPercent?: number; benefits?: string[] }> };
+    const pointsPerYuan = Number(dto?.pointsPerYuan || 0);
+    if (!Number.isFinite(pointsPerYuan) || pointsPerYuan < 0 || pointsPerYuan > 100) throw new BadRequestException('积分比例应为0到100');
+    if (!Array.isArray(dto?.tiers) || dto.tiers.length > 10) throw new BadRequestException('会员等级设置无效');
+    const tiers = dto.tiers.map((tier, index) => {
+      const name = String(tier.name || '').trim();
+      const thresholdType = String(tier.thresholdType || 'visits');
+      const thresholdValue = Number(tier.thresholdValue);
+      const discountPercent = Number(tier.discountPercent || 0);
+      if (!name || !['visits', 'spend', 'points'].includes(thresholdType) || !Number.isFinite(thresholdValue) || thresholdValue < 0 || !Number.isFinite(discountPercent) || discountPercent < 0 || discountPercent > 100) throw new BadRequestException(`第${index + 1}个会员等级设置无效`);
+      return { id: String(tier.id || `tier_${index + 1}`), name, thresholdType, thresholdValue, discountPercent, benefits: (Array.isArray(tier.benefits) ? tier.benefits : []).map(String).map(v => v.trim()).filter(Boolean).slice(0, 8) };
+    });
+    const settings = { enabled: Boolean(dto.enabled), pointsPerYuan, tiers };
+    await this.prisma.technician.update({ where: { id: technicianId }, data: { loyaltySettings: JSON.stringify(settings) } });
+    return settings;
+  }
+
   async list(technicianId: number) {
     await this.ensureImported(technicianId);
     return this.readServices(technicianId);

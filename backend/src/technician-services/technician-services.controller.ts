@@ -103,6 +103,16 @@ export class TechnicianServicesController {
     return this.technicianServicesService.updatePricingSettings(request.user.technicianId, body);
   }
 
+  @Get('loyalty-settings')
+  loyaltySettings(@Req() request: { user: { technicianId: number } }) {
+    return this.technicianServicesService.loyaltySettings(request.user.technicianId);
+  }
+
+  @Patch('loyalty-settings')
+  updateLoyaltySettings(@Req() request: { user: { technicianId: number } }, @Body() body: unknown) {
+    return this.technicianServicesService.updateLoyaltySettings(request.user.technicianId, body);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: '更新服务' })
   @ApiParam({ name: 'id', type: String, description: '服务ID' })

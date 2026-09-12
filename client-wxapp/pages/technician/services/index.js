@@ -13,6 +13,9 @@ Page({
   data: {
     services: [],
     depositModes: ['不收定金', '固定金额', '最终总价比例'], depositModeIndex: 0, depositInput: '', pricingSaving: false,
+    loyaltyEnabled: false, pointsPerYuan: '0', loyaltySaving: false,
+    thresholdTypes: ['消费次数', '累计实付金额', '积分'], thresholdValues: ['visits', 'spend', 'points'],
+    loyaltyTiers: [],
     loading: false,
     loadFailed: false,
     showForm: false,
@@ -27,6 +30,38 @@ Page({
   onLoad() {
     this.loadServices();
     this.loadPricingSettings();
+    this.loadLoyaltySettings();
+  },
+
+  async loadLoyaltySettings() {
+    try {
+      const value = await api.technician.services.loyaltySettings();
+      const loyaltyTiers = (value.tiers || []).map(tier => Object.assign({}, tier, { thresholdTypeIndex: this.data.thresholdValues.indexOf(tier.thresholdType), benefitsText: (tier.benefits || []).join('、') }));
+      this.setData({ loyaltyEnabled: !!value.enabled, pointsPerYuan: String(value.pointsPerYuan || 0), loyaltyTiers });
+    } catch (err) { wx.showToast({ title: err.message || '会员设置加载失败', icon: 'none' }); }
+  },
+  toggleLoyalty(e) { this.setData({ loyaltyEnabled: !!e.detail.value }); },
+  onPointsRate(e) { this.setData({ pointsPerYuan: e.detail.value }); },
+  addLoyaltyTier() {
+    this.setData({ loyaltyTiers: this.data.loyaltyTiers.concat({ id: `tier_${Date.now()}`, name: '', thresholdType: 'visits', thresholdTypeIndex: 0, thresholdValue: '', discountPercent: '', benefitsText: '' }) });
+  },
+  updateLoyaltyTier(e) {
+    const tiers = this.data.loyaltyTiers.slice(); const index = Number(e.currentTarget.dataset.index); const field = e.currentTarget.dataset.field;
+    tiers[index] = Object.assign({}, tiers[index], { [field]: e.detail.value }); this.setData({ loyaltyTiers: tiers });
+  },
+  updateTierType(e) {
+    const tiers = this.data.loyaltyTiers.slice(); const index = Number(e.currentTarget.dataset.index);
+    const thresholdTypeIndex = Number(e.detail.value);
+    tiers[index] = Object.assign({}, tiers[index], { thresholdTypeIndex, thresholdType: this.data.thresholdValues[thresholdTypeIndex] }); this.setData({ loyaltyTiers: tiers });
+  },
+  removeLoyaltyTier(e) { this.setData({ loyaltyTiers: this.data.loyaltyTiers.filter((_, i) => i !== Number(e.currentTarget.dataset.index)) }); },
+  async saveLoyaltySettings() {
+    if (this.data.loyaltySaving) return;
+    const tiers = this.data.loyaltyTiers.map(tier => ({ id: tier.id, name: tier.name, thresholdType: tier.thresholdType, thresholdValue: Number(tier.thresholdValue), discountPercent: Number(tier.discountPercent || 0), benefits: String(tier.benefitsText || (tier.benefits || []).join('、')).split(/[、,，]/).map(v => v.trim()).filter(Boolean) }));
+    this.setData({ loyaltySaving: true });
+    try { await api.technician.services.updateLoyaltySettings({ enabled: this.data.loyaltyEnabled, pointsPerYuan: Number(this.data.pointsPerYuan || 0), tiers }); wx.showToast({ title: '会员权益已保存', icon: 'success' }); await this.loadLoyaltySettings(); }
+    catch (err) { wx.showToast({ title: err.message || '保存失败', icon: 'none' }); }
+    finally { this.setData({ loyaltySaving: false }); }
   },
 
   async loadPricingSettings() {

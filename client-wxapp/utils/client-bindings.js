@@ -9,6 +9,10 @@ function normalizeBindings(bindings) {
     const membership = relationship.membership || null;
     const points = relationship.points;
     const benefits = Array.isArray(relationship.benefits) ? relationship.benefits.filter(Boolean) : [];
+    const discountPercent = Number(membership && membership.discountPercent || 0);
+    const benefitLabels = [discountPercent > 0 ? `服务减免 ${discountPercent}%` : '', ...benefits].filter(Boolean);
+    const nextTier = relationship.nextTier || null;
+    const nextUnit = nextTier && ({ visits: '次消费', spend: '元实付', points: '积分' }[nextTier.thresholdType] || '');
     return {
       id: technician.id, name: technician.name || '美甲师', phone: technician.phone || '',
       avatar: technician.avatarUrl || technician.avatar || '', city: technician.city || '',
@@ -23,7 +27,8 @@ function normalizeBindings(bindings) {
         membership,
         points,
         summary: [membership && membership.name, `${completedVisits} 次消费`, points != null ? `${points} 积分` : ''].filter(Boolean).join(' · '),
-        benefitSummary: benefits.length ? benefits.join(' · ') : '该美甲师暂未设置会员权益'
+        benefitSummary: benefitLabels.length ? benefitLabels.join(' · ') : '该美甲师暂未设置会员权益',
+        progressSummary: nextTier ? `距${nextTier.name}还差 ${Number(nextTier.remaining || 0)} ${nextUnit}` : ''
       },
       shopName: defaultShop?.name || technician.shopName || '', isDefault: !!b.isDefault,
       bindingStatus: b.bindingStatus || (b.status === 'pending' ? 'pending' : 'active'),

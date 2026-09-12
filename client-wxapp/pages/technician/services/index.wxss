@@ -363,3 +363,11 @@
 .btn-save[disabled] {
   opacity: 0.45;
 }
+.loyalty-card { margin-bottom: 24rpx; }
+.loyalty-head { display:flex; align-items:center; justify-content:space-between; gap:20rpx; }
+.loyalty-head .form-helper { display:block; margin-top:6rpx; }
+.loyalty-tier { margin-top:20rpx; padding:20rpx; border-radius:16rpx; background:var(--nb-page); }
+.loyalty-tier-head { min-height:44px; display:flex; align-items:center; justify-content:space-between; font-weight:var(--weight-semibold); }
+.tier-remove { min-height:44px; display:flex; align-items:center; color:var(--nb-danger); font-size:var(--font-xs); }
+.loyalty-tier .form-input { margin-top:12rpx; }
+.loyalty-add { margin-top:20rpx; background:var(--nb-page); color:var(--nb-ink); }
