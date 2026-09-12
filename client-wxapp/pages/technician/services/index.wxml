@@ -1,5 +1,11 @@
 <nav-bar title="服务管理" showBack/>
 <view class="container">
+  <view class="svc-card">
+    <view class="form-item"><text class="label">预约定金</text><picker range="{{depositModes}}" value="{{depositModeIndex}}" bindchange="onDepositMode"><view class="input form-input">{{depositModes[depositModeIndex]}}</view></picker></view>
+    <view wx:if="{{depositModeIndex > 0}}" class="form-item"><text class="label">{{depositModeIndex === 2 ? '最终总价比例（%）' : '固定定金（元）'}}</text><input class="input form-input" type="digit" value="{{depositInput}}" bindinput="onDepositInput" placeholder="0" placeholder-class="form-placeholder" /></view>
+    <text class="form-helper">未设置为 0；比例按含附加费、扣除优惠后的最终总价计算，确认预约时可修改。</text>
+    <button class="booking-action btn-save" bindtap="savePricingSettings" disabled="{{pricingSaving}}">保存定金设置</button>
+  </view>
 
 
   <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
@@ -98,7 +104,7 @@
 
     <view class="form-pair">
       <view class="form-item form-half"><text class="label">服务价格（元）*</text><input placeholder-class="form-placeholder" class="input form-input" type="digit" placeholder="例如 168" value="{{form.price}}" data-field="price" bindinput="onFormInput" confirm-type="done" /></view>
-      <view class="form-item form-half"><text class="label">预计时长（分钟）*</text><input placeholder-class="form-placeholder" class="input form-input" type="number" placeholder="60" value="{{form.durationMinutes}}" data-field="durationMinutes" bindinput="onFormInput" confirm-type="done" /></view>
+      <view wx:if="{{categoryIndex < 4}}" class="form-item form-half"><text class="label">预计时长（分钟）*</text><input placeholder-class="form-placeholder" class="input form-input" type="number" placeholder="60" value="{{form.durationMinutes}}" data-field="durationMinutes" bindinput="onFormInput" confirm-type="done" /></view>
     </view>
 
     <text class="form-helper">客户预约时可多选服务，系统会按这里的价格自动累加。</text>

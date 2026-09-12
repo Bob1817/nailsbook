@@ -194,8 +194,8 @@ const client = {
     create: (data) => api.post(`${C}/orders`, data),
     createFromDesign: (data) => api.post(`${C}/orders/from-design`, data),
     update: (id, data) => api.patch(`${C}/orders/${id}`, data),
-    acceptQuote: (id, fundAmount = 0) => api.post(`${C}/orders/${id}/agree`, { fundAmount }),
-    rejectQuote: (id, reason) => api.post(`${C}/orders/${id}/reject-quote`, { reason }),
+    acceptQuote: (id, fundAmount = 0, quoteVersion) => api.post(`${C}/orders/${id}/agree`, { fundAmount, quoteVersion }),
+    rejectQuote: (id, reason, quoteVersion) => api.post(`${C}/orders/${id}/reject-quote`, { reason, quoteVersion }),
     cancel: (id) => api.patch(`${C}/orders/${id}/status`, { status: 'cancelled' }),
     saveReview: (id, data) => api.patch(`${C}/orders/${id}/review`, data),
     saveClientPhotos: (id, photos) => api.patch(`${C}/orders/${id}/client-photos`, { photos }),
@@ -362,6 +362,8 @@ const technician = {
   },
 
   services: {
+    pricingSettings: () => api.get(`${T}/services/pricing-settings`),
+    updatePricingSettings: (data) => api.patch(`${T}/services/pricing-settings`, data),
     list: () => api.get(`${T}/services`),
     create: (data) => api.post(`${T}/services`, data),
     update: (id, data) => api.patch(`${T}/services/${id}`, data),

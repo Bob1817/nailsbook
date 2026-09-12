@@ -28,13 +28,17 @@ export class QuoteServiceSelectionDto {
 }
 
 export class ReviewOrderDto {
+  @IsOptional() @IsBoolean() useCurrentServices?: boolean;
+  @IsOptional() @IsInt() @Min(0) quoteVersion?: number;
+  @IsOptional() @IsInt() @Min(0) corePriceFen?: number;
+  @IsOptional() @IsArray() @IsString({ each: true }) surchargeIds?: string[];
   @IsOptional() @IsIn(['services', 'manual']) quoteMode?: 'services' | 'manual';
   @ValidateIf(o => o.quoteMode === 'manual') @IsInt() @Min(1) @Max(100000000) amountFen?: number;
   @ValidateIf(o => o.quoteMode === 'manual') @IsInt() @Min(1) @Max(1440) durationMinutes?: number;
   @IsOptional() @IsBoolean() continueAccepting?: boolean;
   @IsOptional() @IsInt() @Min(0) dayVersion?: number;
 
-  @ValidateIf(o => o.quoteMode !== 'manual')
+  @ValidateIf(o => o.quoteMode !== 'manual' && !o.useCurrentServices)
   @ApiProperty({ description: '构成报价的基础服务' })
   @IsArray()
   @ValidateNested({ each: true })

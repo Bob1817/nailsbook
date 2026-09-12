@@ -5,12 +5,14 @@ const CATEGORIES = {
   basic_care: '基础护理',
   color_style: '美色造型',
   extension_reinforcement: '延长加固',
-  removal: '卸甲'
+  removal: '卸甲',
+  surcharge_home: '上门服务费', surcharge_night: '晚间服务费', surcharge_holiday: '假日服务费'
 };
 
 Page({
   data: {
     services: [],
+    depositModes: ['不收定金', '固定金额', '最终总价比例'], depositModeIndex: 0, depositInput: '', pricingSaving: false,
     loading: false,
     loadFailed: false,
     showForm: false,
@@ -24,6 +26,27 @@ Page({
 
   onLoad() {
     this.loadServices();
+    this.loadPricingSettings();
+  },
+
+  async loadPricingSettings() {
+    try {
+      const settings = await api.technician.services.pricingSettings();
+      this.setData({ depositModeIndex: ['none', 'fixed', 'percentage'].indexOf(settings.depositMode), depositInput: String((settings.depositValue || 0) / 100) });
+    } catch (err) { wx.showToast({ title: err.message || '定金设置加载失败', icon: 'none' }); }
+  },
+  onDepositMode(e) { this.setData({ depositModeIndex: Number(e.detail.value), depositInput: '' }); },
+  onDepositInput(e) { this.setData({ depositInput: e.detail.value }); },
+  async savePricingSettings() {
+    if (this.data.pricingSaving) return;
+    const value = this.data.depositModeIndex ? Math.round(Number(this.data.depositInput) * 100) : 0;
+    if (!Number.isFinite(value) || value < 0 || (this.data.depositModeIndex === 2 && value > 10000)) return wx.showToast({ title: '请输入有效定金设置', icon: 'none' });
+    this.setData({ pricingSaving: true });
+    try {
+      await api.technician.services.updatePricingSettings({ depositMode: ['none', 'fixed', 'percentage'][this.data.depositModeIndex], depositValue: value });
+      wx.showToast({ title: '定金设置已保存', icon: 'success' });
+    } catch (err) { wx.showToast({ title: err.message || '保存失败', icon: 'none' }); }
+    finally { this.setData({ pricingSaving: false }); }
   },
 
   async loadServices() {
@@ -102,12 +125,12 @@ Page({
     }
     if (submitting) return;
     const price = Number(form.price);
-    const durationMinutes = Number(form.durationMinutes);
+    const durationMinutes = form.category.startsWith('surcharge_') ? 0 : Number(form.durationMinutes);
     if (!form.price || !Number.isFinite(price) || price < 0) {
       wx.showToast({ title: '请输入有效价格', icon: 'none' });
       return;
     }
-    if (!form.durationMinutes || !Number.isFinite(durationMinutes) || durationMinutes < 15) {
+    if (!form.category.startsWith('surcharge_') && (!form.durationMinutes || !Number.isFinite(durationMinutes) || durationMinutes < 15)) {
       wx.showToast({ title: '服务时长不能少于15分钟', icon: 'none' });
       return;
     }

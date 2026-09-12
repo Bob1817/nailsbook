@@ -1,3 +1,4 @@
+import { depositFen, SURCHARGE_CATEGORIES } from '../orders/booking-proposal';
 import {
   BadRequestException,
   Injectable,
@@ -32,10 +33,32 @@ type UpdateServiceDto = Partial<CreateServiceDto> & {
   isActive?: boolean;
   sortOrder?: number;
 };
+const SERVICE_CATEGORIES: ServiceCategory[] = [
+  'basic_care',
+  'color_style',
+  'extension_reinforcement',
+  'removal',
+  'surcharge_home',
+  'surcharge_night',
+  'surcharge_holiday',
+];
 
 @Injectable()
 export class TechnicianServicesService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async pricingSettings(technicianId: number) {
+    const settings = await this.prisma.technician.findUnique({ where: { id: technicianId }, select: { depositMode: true, depositValue: true } });
+    if (!settings) throw new NotFoundException('美甲师不存在');
+    return settings;
+  }
+
+  async updatePricingSettings(technicianId: number, dto: { depositMode: string; depositValue: number }) {
+    depositFen(null, dto.depositMode, dto.depositValue);
+    return this.prisma.technician.update({ where: { id: technicianId }, data: {
+      depositMode: dto.depositMode, depositValue: dto.depositMode === 'none' ? 0 : dto.depositValue,
+    }, select: { depositMode: true, depositValue: true } });
+  }
 
   async list(technicianId: number) {
     await this.ensureImported(technicianId);
@@ -78,6 +101,7 @@ export class TechnicianServicesService {
     if (!existing) throw new NotFoundException('服务不存在');
     this.assertValidService({
       name: dto.name ?? existing.name,
+      category: dto.category ?? existing.category,
       price:
         dto.price ??
         (existing.priceMinFen == null
@@ -209,16 +233,24 @@ export class TechnicianServicesService {
   }
   private assertValidService(service: {
     name?: string;
+    category?: string;
     price?: number;
     durationMinutes?: number | null;
   }) {
     if (typeof service.name !== 'string' || !service.name.trim())
       throw new BadRequestException('请输入服务名称');
+    if (!SERVICE_CATEGORIES.includes(service.category as ServiceCategory))
+      throw new BadRequestException('服务分类无效');
     if (!Number.isFinite(Number(service.price)) || Number(service.price) < 0)
       throw new BadRequestException('请输入有效服务价格');
     if (
+      SURCHARGE_CATEGORIES.includes(service.category || '') &&
+      Number(service.durationMinutes) !== 0
+    )
+      throw new BadRequestException('附加服务不设置服务时长');
+    if (
       !Number.isInteger(Number(service.durationMinutes)) ||
-      Number(service.durationMinutes) < 15
+      Number(service.durationMinutes) < (SURCHARGE_CATEGORIES.includes(service.category || '') ? 0 : 15)
     )
       throw new BadRequestException('服务时长不能少于15分钟');
   }

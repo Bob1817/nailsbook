@@ -141,7 +141,7 @@ Page({
       wx.showToast({ title: '暂无法获取美甲师信息', icon: 'none' });
       return;
     }
-    wx.navigateTo({ url: '/pages/client/create-order/index?workId=' + work.id + '&techId=' + technicianId });
+    wx.navigateTo({ url: '/pages/client/create-order/index?workId=' + work.id + '&techId=' + technicianId + '&source=work_detail' });
   },
 
   onShareAppMessage: function () {

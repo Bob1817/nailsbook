@@ -296,6 +296,11 @@ describe('Technician operation HTTP contract', () => {
         customer.id,
         'pending_confirm',
       );
+      const futureDate = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+      await testApp.prisma.order.update({ where: { id: order2.id }, data: {
+        startTime: new Date(`${futureDate}T06:00:00.000Z`),
+        endTime: new Date(`${futureDate}T08:00:00.000Z`),
+      } });
 
       const confirmRes = await request(testApp.app.getHttpServer())
         .patch(`/api/technician/orders/${order2.id}/confirm`)

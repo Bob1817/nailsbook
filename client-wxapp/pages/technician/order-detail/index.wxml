@@ -113,7 +113,7 @@
         <text class="{{order.servicePriceSuperseded ? 'price-invalid' : 'semantic-money'}}">¥{{order.serviceSubtotalFen / 100}}</text>
       </view>
       <view wx:if="{{order.bookingType === 'work' && order.workPriceFen > 0}}" class="price-line"><text>作品报价</text><text class="{{order.workPriceSuperseded ? 'price-invalid' : 'semantic-money'}}">¥{{order.workPriceFen / 100}}</text></view>
-      <view wx:if="{{order.discountAmountFen > 0 && !order._priceDiffType}}" class="price-line price-discount">
+      <view wx:if="{{!order.pricingDetails && order.discountAmountFen > 0 && !order._priceDiffType}}" class="price-line price-discount">
         <text>优惠</text>
         <text class="semantic-money">-¥{{order.discountAmountFen / 100}}</text>
       </view>
@@ -125,13 +125,19 @@
       </view>
     </view>
 
-    <view wx:if="{{order._priceDiffType === 'surcharge'}}" class="price-line price-surcharge">
+    <view wx:if="{{!order.pricingDetails && order._priceDiffType === 'surcharge'}}" class="price-line price-surcharge">
       <text>其他</text>
       <text class="semantic-money">+¥{{order._priceDiffFen / 100}}</text>
     </view>
-    <view wx:elif="{{order._priceDiffType === 'discount'}}" class="price-line price-discount">
+    <view wx:elif="{{!order.pricingDetails && order._priceDiffType === 'discount'}}" class="price-line price-discount">
       <text>优惠</text>
       <text class="semantic-money">-¥{{0 - order._priceDiffFen / 100}}</text>
+    </view>
+
+    <view wx:if="{{order.pricingDetails}}">
+      <view class="price-line"><text>基础服务报价</text><text>¥{{order.pricingDetails.coreFen / 100}}</text></view>
+      <view class="price-line"><text>附加服务费</text><text>¥{{order.pricingDetails.extrasFen / 100}}</text></view>
+      <view wx:if="{{order.pricingDetails.finalDiscountFen > 0}}" class="price-line"><text>最终优惠</text><text>-¥{{order.pricingDetails.finalDiscountFen / 100}}</text></view>
     </view>
 
     <view class="price-row" bindtap="openEditPrice" role="button" aria-label="调整作品标准报价">
@@ -209,24 +215,17 @@
   </view>
 
   <scroll-view scroll-y class="sheet-body">
-    <view class="form-item" wx:if="{{!quickBooking}}">
+    <view class="form-item">
       <text class="form-label">服务组合 <text class="required">*</text></text>
       <text class="quote-helper">根据客户图片和描述，选择实际需要的基础服务</text>
       <view class="quote-service-list"><view wx:for="{{quoteServices}}" wx:key="id" class="quote-service {{quoteServiceQuantities[item.id] > 0 ? 'selected' : ''}}"><view class="quote-service-copy" data-id="{{item.id}}" bindtap="toggleQuoteService"><text class="quote-service-name">{{item.name}}</text><text class="quote-service-meta">¥{{item.price}} · {{item.durationMinutes}}分钟</text></view><view class="quote-quantity"><view class="quote-quantity-btn" data-id="{{item.id}}" data-delta="-1" bindtap="changeQuoteServiceQuantity">−</view><text>{{quoteServiceQuantities[item.id] || 0}}</text><view class="quote-quantity-btn" data-id="{{item.id}}" data-delta="1" bindtap="changeQuoteServiceQuantity">+</view></view></view></view>
     </view>
 
-    <block wx:if="{{quickBooking}}">
-      <view class="form-item"><text class="form-label">本次报价（元） *</text><input placeholder-class="form-placeholder" class="form-input" type="digit" value="{{quotePrice}}" bindinput="onManualPrice" placeholder="请输入金额" /></view>
-      <view class="form-item"><text class="form-label">服务时长（分钟） *</text><input placeholder-class="form-placeholder" class="form-input" type="number" value="{{quoteDuration}}" bindinput="onManualDuration" placeholder="请输入预计时长" /><text class="quote-helper">{{quoteEnd ? '预计结束：' + quoteEnd : '填写时长后显示结束时间'}}</text></view>
-      <view class="form-item"><text class="form-label">{{quoteDate}} 是否继续接单 *</text>
-        <radio-group bindchange="onQuoteContinue">
-          <label class="day-choice"><radio color="#1D1D1F" value="yes" checked="{{quoteContinue === 'yes'}}"/>继续接单{{quoteDayWasClosed ? '（重新开放该日期）' : ''}}</label>
-          <label class="day-choice"><radio color="#1D1D1F" value="no" checked="{{quoteContinue === 'no'}}"/>停止当日接单</label>
-        </radio-group>
-        <text class="quote-helper">停止后该日不再接受新申请，已有预约和待处理申请不受影响。客户确认报价后预约生效。</text>
-        <button wx:if="{{quoteDayVersion === null}}" class="day-choice" bindtap="loadQuoteDay">重试加载接单设置</button>
-      </view>
-    </block>
+    <view wx:if="{{quoteSurcharges.length}}" class="form-item">
+      <text class="form-label">附加服务（按需加入）</text>
+      <view class="quote-service-list"><view wx:for="{{quoteSurcharges}}" wx:key="id" class="quote-service {{quoteSurchargeMap[item.id] ? 'selected' : ''}}" data-id="{{item.id}}" bindtap="toggleQuoteSurcharge" role="checkbox" aria-checked="{{!!quoteSurchargeMap[item.id]}}"><view class="quote-service-copy"><text class="quote-service-name">{{item.name}}</text><text class="quote-service-meta">¥{{item.price}}</text></view><text>{{quoteSurchargeMap[item.id] ? '已加入' : '加入'}}</text></view></view>
+    </view>
+    <view class="form-item"><text class="form-label">基础组合报价（元）</text><input class="form-input" type="digit" value="{{quoteCorePrice}}" bindinput="onQuoteCoreInput" placeholder-class="form-placeholder" /><text class="quote-helper">基础原价 ¥{{quoteSubtotalFen / 100}} · 附加服务 ¥{{quoteExtraFen / 100}} · 预计 {{quoteTotalDuration}} 分钟</text></view>
     <view class="form-row-2">
       <view class="form-item form-half">
         <text class="form-label">服务日期 <text class="required">*</text></text>
@@ -242,7 +241,8 @@
       </view>
     </view>
 
-    <view class="form-item" wx:if="{{!quickBooking}}">
+    <view class="form-item">
+      <text class="quote-helper">方案无变化直接排期；价格、定金、服务或时间有变动，发送客户确认。</text>
       <text class="form-label">最终报价（元） *</text>
       <input placeholder-class="form-placeholder" class="form-input" type="digit" placeholder="请输入最终报价" value="{{quotePrice}}" bindinput="onQuoteFinalPriceInput" confirm-type="done" />
       <view class="quote-summary"><text>服务合计 ¥{{quoteSubtotalFen / 100}}</text><text>预计 {{quoteTotalDuration}} 分钟</text><text wx:if="{{quoteFinalFen > quoteSubtotalFen}}">其他 +¥{{(quoteFinalFen - quoteSubtotalFen) / 100}}</text><text wx:elif="{{quoteFinalFen < quoteSubtotalFen}}">优惠 -¥{{(quoteSubtotalFen - quoteFinalFen) / 100}}</text><text class="quote-final">最终报价 ¥{{quoteFinalFen / 100}}</text></view>
@@ -270,7 +270,7 @@
 
   <view class="sheet-footer">
     <view class="booking-action action-btn action-primary {{submitting ? 'is-disabled' : ''}}" bindtap="submitQuote">
-      {{submitting ? '提交中...' : (quickBooking ? '确认安排并发送报价' : '确认报价')}}
+      {{submitting ? '提交中...' : '确认方案'}}
     </view>
   </view>
 </view>

@@ -15,7 +15,7 @@ function formatAddr(a) { return [a.province,a.city,a.district,a.detailAddress ||
 Page({
   data: {
     technicians: [],
-    quickMode: false,
+    quickMode: false, depositMode: 'none', depositValue: 0, depositText: '¥0', settingsReady: false,
     referenceOnly: false,
     quickAvailable: false,
     needsBinding: false,
@@ -66,8 +66,12 @@ Page({
     this._pageActive = true;
     this._fullMode = options.mode === 'full' || !!options.design_id || !!options.serviceId;
     this.setData({ referenceOnly: options.reference === '1' });
-    this._attributionSource = options.source === 'work_share' ? 'work_share' : '';
+    this._attributionSource = options.source || '';
+    this.inviteCode = options.invite || '';
+    this._draftOwner = String((wx.getStorageSync('client_userInfo') || {}).id || 'guest');
     var draft = wx.getStorageSync(DRAFT_KEY) || {};
+    if (options.resume !== '1' || (draft.owner && draft.owner !== 'guest' && draft.owner !== this._draftOwner) || (options.intent && options.intent !== draft.applicationKey)) draft = {};
+    this.inviteCode = this.inviteCode || draft.inviteCode || '';
     if ((options.techId && Number(options.techId) !== draft.selectedTechId) || (options.workId && Number(options.workId) !== draft.sourceWorkId)) draft = {};
     if (options.resume === '1' && !options.mode && !options.design_id && !options.serviceId) this._fullMode = !!draft.fullMode;
     this.applicationKey = draft.applicationKey || ('booking-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10));
@@ -88,6 +92,7 @@ Page({
       this.setData({ presetLocked:true });
     }
     this._resumeDraft = options.resume === '1';
+    this._resumeSubmit = this._resumeDraft && options.intent === draft.applicationKey && draft.submitRequested === true;
     this.loadTechnicians();
     if (options.design_id) this.loadDesign(options.design_id);
     // 从作品详情「预约同款」进入：以该作品作为预约服务内容
@@ -128,24 +133,28 @@ Page({
   requireClientLogin: function () {
     if (this.isClientLoggedIn()) return true;
     this.saveDraft();
-    const path = '/pages/client/create-order/index?techId=' + this.data.selectedTechId + '&resume=1&mode=' + (this._fullMode ? 'full' : 'quick');
-    wx.navigateTo({ url: buildClientLoginUrl(path, { source: 'quick_booking' }) });
+    const path = '/pages/client/create-order/index?techId=' + this.data.selectedTechId + '&resume=1&intent=' + encodeURIComponent(this.applicationKey) + '&mode=' + (this._fullMode ? 'full' : 'quick');
+    const inviteCode = this.inviteCode || (this.data.selectedTech || {}).invitationCode || '';
+    wx.navigateTo({ url: buildClientLoginUrl(path, { source: this._attributionSource || 'quick_booking', inviteCode }) });
     return false;
   },
   useFullBooking: function () {
     this._fullMode = true;
     this.setData({ quickMode: false, referenceOnly: false, presetLocked: !!this._presetTechId, isCustomService: !this.data.activeServiceItems.length });
+    this.updateDeposit();
   },
   clearQuickWork: function () {
     this._workRequestId = (this._workRequestId || 0) + 1;
     this.sourceWorkId = null; this.sourceShareToken = ''; this._pendingWorkPrefill = null;
     this._sourceLoading = false; this._sourceFailed = false;
     this.setData({ sourceWork: null, selectedWorkIds: [], referenceOnly: false, customTitle: '', customDesc: '', customImages: [], selectedServiceDuration: 0, selectedServiceCount: 0, selectedServiceTotal: 0, startTime: '' });
+    this.updateDeposit();
   },
   toggleReferenceOnly: function () {
     if (!this.data.quickMode || !this.data.sourceWork) return;
     const referenceOnly = !this.data.referenceOnly || !this.data.sourceWork.pricingReady;
     this.setData({ referenceOnly: referenceOnly, selectedServiceDuration: referenceOnly ? 0 : this.data.sourceWork.totalDurationMinutes, startTime: '' });
+    this.updateDeposit();
   },
 
   // ── 数据加载 ─────────────────────────────
@@ -164,7 +173,7 @@ Page({
     var self = this;
     if (!this.isClientLoggedIn() && this._presetTechId) { this.loadPublicTechnician(); return; }
     api.auth.getUserInfo('client').then(function (res) {
-      var bindings = res.bindings || wx.getStorageSync('client_bindings') || [];
+      var bindings = res.bindings || res.technicians || wx.getStorageSync('client_bindings') || [];
       var techs = bindings.map(function (b) {
         var t = b.technician || b;
         return {
@@ -235,6 +244,9 @@ Page({
       if (requestId !== self._workRequestId) return;
       if (Number(w.id) !== Number(workId)) throw new Error('分享作品与预约来源不一致');
       var techId = w.technicianId || (w.technician && w.technician.id) || 0;
+      if (self._presetTechId && techId && Number(self._presetTechId) !== Number(techId)) {
+        throw new Error('作品与当前美甲师不一致，请从作品页面重新预约');
+      }
       var images = (w.imageUrls && w.imageUrls.length)
         ? w.imageUrls.slice(0, 9)
         : (w.coverUrl ? [w.coverUrl] : []);
@@ -263,7 +275,7 @@ Page({
       self._sourceFailed = true;
       console.error('loadWork', e);
       wx.showToast({ title: e.message || '请先绑定该美甲师后预约同款', icon: 'none' });
-    }).finally(function () { if (requestId === self._workRequestId) self._sourceLoading = false; });
+    }).finally(function () { if (requestId === self._workRequestId) { self._sourceLoading = false; self.resumeSubmission(); } });
   },
 
   viewSourceWork: function () {
@@ -293,6 +305,8 @@ Page({
     });
     this.sourceWorkId = pf.sourceWorkId;
     this._pendingWorkPrefill = null;
+    this.updateDeposit();
+    this.resumeSubmission();
   },
 
   loadTechWorks: function (techId) {
@@ -325,7 +339,7 @@ Page({
     this.sourceWorkId = null;
     var shopAddrs = (tech.shopAddresses || []).filter(function (shop) { return shop.enabled !== false; });
     var serviceItems = (tech.serviceItems || []).filter(function (item) {
-      return item.isActive !== false && Number.isFinite(Number(item.price)) && Number(item.durationMinutes) > 0;
+      return !String(item.category).startsWith('surcharge_') && item.isActive !== false && Number.isFinite(Number(item.price)) && Number(item.durationMinutes) > 0;
     });
     this.setData({
       selectedTechId: id, selectedTech: tech, sourceWork: null,
@@ -341,22 +355,44 @@ Page({
       startTime: ''
     });
     this.refreshServiceOptions(tech, false);
-    this.setData({ quickMode: false, quickAvailable: false });
+    this.setData({ quickMode: false, quickAvailable: false, settingsReady: false });
     if (api.public.bookingSettings) api.public.bookingSettings(id).then(settings => {
       if (this.data.selectedTechId !== id) return;
       const quick = settings.quickBookingEnabled && !this._fullMode;
+      this.setData({ settingsReady: true, depositMode: settings.depositMode || 'none', depositValue: settings.depositValue || 0 });
+      this.updateDeposit();
       this.setData({ quickAvailable: !!settings.quickBookingEnabled, quickMode: !!quick,
         ...(quick ? { presetLocked: true, isCustomService: true } : {}) });
       if (quick && this.data.sourceWork && !this.data.sourceWork.pricingReady) this.setData({ referenceOnly: true, selectedServiceDuration: 0 });
-    }).catch(() => {});
+      this.updateDeposit();
+      this.resumeSubmission();
+    }).catch(() => { if (this.data.selectedTechId === id) wx.showToast({ title: '预约设置加载失败，请重新进入重试', icon: 'none' }); });
     this.loadTechWorks(id);
     // booking-time-picker 组件通过 techId observer 自动加载排班和占用数据
+  },
+
+  expectedPriceFen: function () {
+    const d = this.data;
+    return d.sourceWork && d.sourceWork.pricingReady && !d.referenceOnly ? d.sourceWork.standardPriceFen : !d.isCustomService && d.selectedServiceCount > 0 ? Math.round(d.selectedServiceTotal * 100) : null;
+  },
+
+  resumeSubmission: function () {
+    if (!this._resumeSubmit || !this.isClientLoggedIn() || !this.data.bookingReady || !this.data.settingsReady || this._sourceLoading || this._sourceFailed) return;
+    const draft = this._bookingDraft || {};
+    if (!this.data.startTime || this.data.startTime !== draft.startTime || this.data.serviceDate !== draft.serviceDate) return;
+    this._resumeSubmit = false;
+    if (draft.expectedPriceFen !== this.expectedPriceFen() || draft.depositMode !== this.data.depositMode || draft.depositValue !== this.data.depositValue) {
+      wx.showToast({ title: '价格或定金设置已更新，请核对后提交', icon: 'none' });
+      return;
+    }
+    this.handleSubmit();
   },
 
   onBookingAvailability: function (e) {
     if (this.data.bookingReady !== e.detail.ready || this.data.bookingPaused !== e.detail.paused) {
       this.setData({ bookingReady: e.detail.ready, bookingPaused: e.detail.paused });
     }
+    this.resumeSubmission();
   },
 
   contactSelectedTech: function () {
@@ -365,6 +401,7 @@ Page({
   },
 
   checkBookingAvailability: function () {
+    if (this.data.settingsReady === false) { wx.showToast({ title: '请等待预约设置加载完成', icon: 'none' }); return false; }
     if (this.data.bookingPaused) {
       wx.showToast({ title: '美甲师已关闭预约，请先联系沟通', icon: 'none' });
       return false;
@@ -485,6 +522,14 @@ Page({
       selectedServiceTotal: summary.totalPrice,
       selectedServiceDuration: summary.totalDurationMinutes
     });
+    this.updateDeposit();
+  },
+
+  updateDeposit: function () {
+    const d = this.data;
+    const known = d.sourceWork ? d.sourceWork.pricingReady && !d.referenceOnly : !d.isCustomService && d.selectedServiceCount > 0;
+    const amount = d.depositMode === 'fixed' ? d.depositValue / 100 : d.depositMode === 'percentage' && known ? Math.round(d.selectedServiceTotal * 100 * d.depositValue / 10000) / 100 : 0;
+    this.setData({ depositText: d.depositMode === 'percentage' && !known ? (d.depositValue / 100) + '%，金额待报价后计算' : '¥' + amount });
   },
 
   onCustomTitleInput: function (e) { this.setData({ customTitle: e.detail.value }); },
@@ -548,10 +593,16 @@ Page({
     if (!this.applicationKey) return;
     wx.setStorageSync(DRAFT_KEY, {
       applicationKey: this.applicationKey,
+      owner: this._draftOwner || String((wx.getStorageSync('client_userInfo') || {}).id || 'guest'),
+      inviteCode: this.inviteCode || '',
       fullMode: !!this._fullMode,
       sourceWorkId: this.sourceWorkId || null,
       sourceShareToken: this.sourceShareToken || '',
       attributionSource: this._attributionSource || '',
+      submitRequested: !!this._submitRequested,
+      expectedPriceFen: this.expectedPriceFen(),
+      depositMode: d.depositMode,
+      depositValue: d.depositValue,
       referenceOnly: this.data.referenceOnly,
       selectedTechId: d.selectedTechId,
       serviceType: d.serviceType,
@@ -616,8 +667,9 @@ Page({
     if (!d.quickMode && !this.sourceWorkId && !d.isCustomService && d.selectedServiceIds.length === 0) { wx.showToast({ title: '请选择服务内容', icon: 'none' }); return; }
     if (this.sourceWorkId && (!d.sourceWork || (!d.sourceWork.pricingReady && !d.quickMode))) { wx.showToast({ title: '该作品尚未完善服务与标准报价', icon: 'none' }); return; }
 
+    this._submitRequested = true;
     this.saveDraft();
-    if (d.quickMode) { this.doSubmit(); return; }
+    if (!this._fullMode || d.quickMode) { this.doSubmit(); return; }
     this.setData({ showApplicationReview: true, bookingRulesAgreed: false });
   },
 
@@ -645,18 +697,20 @@ Page({
   doSubmit: async function () {
     var self = this;
     var d = self.data;
-    if (d.quickMode && !this.requireClientLogin()) return;
-    if (d.quickMode && d.needsBinding) {
+    if (!this.requireClientLogin()) return;
+    if (d.needsBinding) {
       if (d.submitting) return;
       this.setData({ submitting: true });
       try {
-        if (!this.sourceWorkId) {
-          this.setData({ showBindTech: true, bindInviteCode: (d.selectedTech || {}).invitationCode || '', bindTechId: d.selectedTechId, bindTechName: (d.selectedTech || {}).name || '' });
+        const invite = this.inviteCode || (d.selectedTech || {}).invitationCode;
+        if (!this.sourceWorkId && !invite) {
+          this.setData({ showBindTech: true, bindTechId: d.selectedTechId, bindTechName: (d.selectedTech || {}).name || '' });
           return;
         }
         const consent = await wx.showModal({ title: '预约' + (d.selectedTech.name || '美甲师'), content: '继续后将绑定这位美甲师并提交预约申请，已有其他绑定不会改变。', confirmText: '确认并提交' });
         if (!consent.confirm) return;
-        await api.client.profile.bindSharedWork(this.sourceWorkId, this.sourceShareToken);
+        if (this.sourceWorkId) await api.client.profile.bindSharedWork(this.sourceWorkId, this.sourceShareToken);
+        else await api.client.profile.bindQuickBooking(d.selectedTechId, invite);
         this.setData({ needsBinding: false });
       } catch (err) { wx.showToast({ title: err.message || '绑定失败，请重试', icon: 'none' }); return; }
       finally { this.setData({ submitting: false }); }
@@ -666,6 +720,8 @@ Page({
     wx.showLoading({ title: '提交中...' });
 
     var payload = {
+      expectedDepositMode: d.depositMode, expectedDepositValue: d.depositValue,
+      expectedPriceFen: d.sourceWork && d.sourceWork.pricingReady && !d.referenceOnly ? d.sourceWork.standardPriceFen : !d.isCustomService && d.selectedServiceCount > 0 ? Math.round(d.selectedServiceTotal * 100) : undefined,
       applicationKey:self.applicationKey,
       techId: d.selectedTechId,
       serviceDate: d.serviceDate,
@@ -706,10 +762,11 @@ Page({
       : api.client.orders.create(payload);
     request.then(function () {
       wx.hideLoading();
-      if (!self._pageActive) { self._submittedWhileHidden = true; return; }
       wx.removeStorageSync(DRAFT_KEY);
       self.applicationKey = '';
+      if (!self._pageActive) { self._submittedWhileHidden = true; return; }
       wx.showToast({ title: '申请已提交', icon: 'success' });
+      requestBookingReminder('client');
       self._navTimer = setTimeout(function () { if (self._pageActive) wx.reLaunch({ url: '/pages/client/orders/index' }); }, 1200);
     }).catch(function (err) {
       wx.hideLoading();

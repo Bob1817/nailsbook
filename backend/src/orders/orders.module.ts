@@ -12,6 +12,8 @@ import { ChatModule } from '../chat/chat.module';
 import { BookingMutexService } from './booking-mutex.service';
 import { ReferralsModule } from '../referrals/referrals.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
+import { AdminOrdersController } from './admin-orders.controller';
+import { AdminOrdersService } from './admin-orders.service';
 
 @Module({
   imports: [PrismaModule, ChatModule, ReferralsModule, SubscriptionsModule],
@@ -21,6 +23,7 @@ import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
     PublicOrdersController,
     PublicBookingDaysController,
     TechnicianBookingDaysController,
+    AdminOrdersController,
   ],
   providers: [
     OrdersService,
@@ -28,6 +31,7 @@ import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
     OrdersScheduler,
     BookingMutexService,
     BookingDaysService,
+    AdminOrdersService,
   ],
   exports: [OrdersService, ClientOrdersService],
 })

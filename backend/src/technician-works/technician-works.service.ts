@@ -1,3 +1,4 @@
+import { SURCHARGE_CATEGORIES } from '../orders/booking-proposal';
 import {
   BadRequestException,
   ConflictException,
@@ -536,6 +537,7 @@ export class TechnicianWorksService {
       include: {
         service: { select: { name: true } },
         serviceRecord: { select: { actualAmount: true } },
+        serviceLines: { orderBy: { sortOrder: 'asc' } },
       },
     });
     if (!order) throw new NotFoundException('已完成订单不存在');
@@ -543,12 +545,20 @@ export class TechnicianWorksService {
     const images = clientPhotos.length
       ? clientPhotos
       : this.parseStoredImageUrls(order.customImages);
-    const amount = order.serviceRecord?.actualAmount ?? order.actualAmount ?? 0;
+    const baseLines = (order.serviceLines || []).filter(line => line.source !== 'surcharge');
+    const baseSummary = summarizeSnapshotLines(baseLines);
+    const amount = baseLines.length
+      ? baseSummary.serviceSubtotalFen / 100
+      : order.serviceRecord?.actualAmount ?? order.actualAmount ?? order.quotePrice ?? 0;
     const work = await this.prisma.$transaction(async (tx) => {
       const created = await tx.nailWork.create({
         data: {
           techId: technicianId,
           sourceOrderId: order.id,
+          serviceSubtotalFen: baseSummary.serviceSubtotalFen,
+          totalDurationMinutes: baseSummary.totalDurationMinutes,
+          standardPriceFen: baseSummary.serviceSubtotalFen || null,
+          serviceLines: { create: baseLines.map(({ serviceId, servicePublicIdSnapshot, nameSnapshot, unitPriceFen, durationMinutes, quantity, subtotalFen, sortOrder }) => ({ serviceId, servicePublicIdSnapshot, nameSnapshot, unitPriceFen, durationMinutes, quantity, subtotalFen, sortOrder })) },
           visibilityScope: 'authorized_clients',
           serviceId: order.serviceId,
           title: order.service?.name
@@ -1084,6 +1094,7 @@ export class TechnicianWorksService {
       where: {
         technicianId,
         publicId: { in: selectedServiceIds },
+        category: { notIn: SURCHARGE_CATEGORIES },
         isBookable: true,
         archivedAt: null,
       },

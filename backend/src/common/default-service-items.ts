@@ -2,7 +2,10 @@ export type ServiceCategory =
   | 'basic_care'
   | 'color_style'
   | 'extension_reinforcement'
-  | 'removal';
+  | 'removal'
+  | 'surcharge_home'
+  | 'surcharge_night'
+  | 'surcharge_holiday';
 
 export type DefaultServiceItem = {
   id: string;

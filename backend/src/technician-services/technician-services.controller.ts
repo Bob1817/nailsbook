@@ -1,3 +1,8 @@
+import { IsIn, IsInt, Min, Max } from 'class-validator';
+class PricingSettingsDto {
+  @IsIn(['none', 'fixed', 'percentage']) depositMode: string;
+  @IsInt() @Min(0) @Max(100000000) depositValue: number;
+}
 import {
   Body,
   Controller,
@@ -52,6 +57,9 @@ export class TechnicianServicesController {
             'color_style',
             'extension_reinforcement',
             'removal',
+            'surcharge_home',
+            'surcharge_night',
+            'surcharge_holiday',
           ],
           description: '服务分类',
         },
@@ -74,7 +82,7 @@ export class TechnicianServicesController {
         | 'basic_care'
         | 'color_style'
         | 'extension_reinforcement'
-        | 'removal';
+        | 'removal' | 'surcharge_home' | 'surcharge_night' | 'surcharge_holiday';
       price?: number;
       durationMinutes?: number;
     },
@@ -83,6 +91,16 @@ export class TechnicianServicesController {
       request.user.technicianId,
       body,
     );
+  }
+
+  @Get('pricing-settings')
+  pricingSettings(@Req() request: { user: { technicianId: number } }) {
+    return this.technicianServicesService.pricingSettings(request.user.technicianId);
+  }
+
+  @Patch('pricing-settings')
+  updatePricingSettings(@Req() request: { user: { technicianId: number } }, @Body() body: PricingSettingsDto) {
+    return this.technicianServicesService.updatePricingSettings(request.user.technicianId, body);
   }
 
   @Patch(':id')
@@ -100,6 +118,9 @@ export class TechnicianServicesController {
             'color_style',
             'extension_reinforcement',
             'removal',
+            'surcharge_home',
+            'surcharge_night',
+            'surcharge_holiday',
           ],
           description: '服务分类',
         },
@@ -124,7 +145,7 @@ export class TechnicianServicesController {
         | 'basic_care'
         | 'color_style'
         | 'extension_reinforcement'
-        | 'removal';
+        | 'removal' | 'surcharge_home' | 'surcharge_night' | 'surcharge_holiday';
       isActive?: boolean;
       sortOrder?: number;
       price?: number;

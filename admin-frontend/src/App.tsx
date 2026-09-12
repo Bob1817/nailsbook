@@ -25,6 +25,7 @@ import AccountDeletions from './pages/AccountDeletions';
 import ArtistApplications from './pages/ArtistApplications';
 import WechatConfig from './pages/WechatConfig';
 import LaunchConfig from './pages/LaunchConfig';
+import Orders from './pages/Orders';
 
 const App: React.FC = () => {
   return (
@@ -57,6 +58,7 @@ const App: React.FC = () => {
               <Route index element={<Dashboard />} />
               <Route path="technicians" element={<ProtectedRoute permission="technician:view"><Technicians /></ProtectedRoute>} />
               <Route path="customers" element={<ProtectedRoute permission="customer:view"><Customers /></ProtectedRoute>} />
+              <Route path="orders" element={<ProtectedRoute permission="booking:view"><Orders /></ProtectedRoute>} />
               <Route path="works" element={<ProtectedRoute permission="work:view"><Works /></ProtectedRoute>} />
               <Route path="comments" element={<ProtectedRoute permission="comment:view"><Comments /></ProtectedRoute>} />
               <Route path="reports" element={<ProtectedRoute permission="report:view"><Reports /></ProtectedRoute>} />

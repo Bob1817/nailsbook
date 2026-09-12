@@ -109,6 +109,9 @@ Page({
         _showPriceCard: price > 0 || depositAmount > 0, _actions: null,
         review: raw.review || null,
         sourceWork,
+        quoteVersion: raw.quoteVersion || 0,
+        acceptedProposal: raw.acceptedProposal,
+        pricingDetails: raw.pricingDetails,
         serviceLines: raw.serviceLines || [],
         serviceSubtotalFen,
         discountAmountFen: Number(raw.discountAmountFen || 0),
@@ -287,7 +290,7 @@ Page({
     this.setData({ actionSubmitting: 'agree' });
     try {
       wx.showLoading({ title: '处理中...' });
-      await api.client.orders.acceptQuote(this.orderId, 0);
+      await api.client.orders.acceptQuote(this.orderId, 0, this.data.order.quoteVersion);
       wx.hideLoading(); wx.showToast({ title: '已同意报价', icon: 'success' });
       this.loadOrder();
     } catch (err) { wx.hideLoading(); wx.showToast({ title: err.message || '操作失败', icon: 'none' }); }
@@ -303,7 +306,7 @@ Page({
     if (this.data.submitting) return;
     this.setData({ submitting: true });
     try {
-      await api.client.orders.rejectQuote(this.orderId, this.data.rejectReason || '用户拒绝');
+      await api.client.orders.rejectQuote(this.orderId, this.data.rejectReason || '用户拒绝', this.data.order.quoteVersion);
       this.setData({ submitting: false, showReject: false });
       wx.showToast({ title: '已拒绝报价', icon: 'success' }); this.loadOrder();
     } catch (err) { this.setData({ submitting: false }); wx.showToast({ title: err.message || '操作失败', icon: 'none' }); }

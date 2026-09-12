@@ -60,7 +60,7 @@ describe('修改预约时间的冲突保护', () => {
     expect(tx.blockedTimeSlot.create).not.toHaveBeenCalled();
   });
 
-  it('客户修改时间时同步订单和占用时段，并排除自身占用', async () => {
+  it('客户修改申请时间时更新订单但不占档，并排除自身占用', async () => {
     const updatedOrder = {
       id: 1,
       technicianId: 7,
@@ -121,7 +121,7 @@ describe('修改预约时间的冲突保护', () => {
     expect(tx.blockedTimeSlot.deleteMany).toHaveBeenCalledWith({
       where: { orderId: 1 },
     });
-    expect(tx.blockedTimeSlot.create).toHaveBeenCalledTimes(1);
+    expect(tx.blockedTimeSlot.create).not.toHaveBeenCalled();
     expect(tx.order.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -169,7 +169,7 @@ describe('修改预约时间的冲突保护', () => {
     expect(tx.blockedTimeSlot.findFirst).toHaveBeenCalledWith({
       where: expect.objectContaining({
         techId: 7,
-        NOT: { orderId: 5 },
+        OR: [{ orderId: null }, { orderId: { not: 5 } }],
       }),
       select: { id: true },
     });

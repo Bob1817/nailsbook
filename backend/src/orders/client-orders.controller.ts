@@ -159,12 +159,13 @@ export class ClientOrdersController {
   agree(
     @Req() request: { user: { clientUserId: number } },
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { fundAmount?: number } = {},
+    @Body() body: { fundAmount?: number; quoteVersion?: number } = {},
   ) {
     return this.clientOrdersService.agree(
       request.user.clientUserId,
       id,
       Number(body.fundAmount ?? 0),
+      body.quoteVersion,
     );
   }
 
@@ -183,6 +184,7 @@ export class ClientOrdersController {
       request.user.clientUserId,
       id,
       dto.reason,
+      dto.quoteVersion,
     );
   }
 

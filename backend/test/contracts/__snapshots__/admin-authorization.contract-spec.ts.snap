@@ -200,6 +200,20 @@ exports[`Admin authorization HTTP contract covers every admin business route wit
   },
   {
     "method": "GET",
+    "path": "/api/admin/orders",
+    "permissions": [
+      "booking:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/orders/:id",
+    "permissions": [
+      "booking:view",
+    ],
+  },
+  {
+    "method": "GET",
     "path": "/api/admin/permissions",
     "permissions": [
       "role:view",

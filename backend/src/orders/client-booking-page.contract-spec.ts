@@ -12,9 +12,19 @@ describe('客户端核心路径静态契约', () => {
 
     expect(detail).toContain('create-order/index?workId=');
     expect(createOrder).toContain('sourceWorkId: w.id');
+    expect(createOrder).toContain('作品与当前美甲师不一致');
     expect(createOrder).toContain(
       'if (self.sourceWorkId) payload.sourceWorkId = self.sourceWorkId;',
     );
+  });
+
+  it('登录恢复前重新核对价格和定金规则', () => {
+    const createOrder = readWxapp('pages/client/create-order/index.js');
+
+    expect(createOrder).toContain('expectedPriceFen: this.expectedPriceFen()');
+    expect(createOrder).toContain("draft.depositMode !== this.data.depositMode");
+    expect(createOrder).toContain('价格或定金设置已更新，请核对后提交');
+    expect(createOrder).toContain("inviteCode = this.inviteCode || (this.data.selectedTech || {}).invitationCode");
   });
 
   it('公开作品预约同款在登录后保留目标页面', () => {
@@ -25,8 +35,8 @@ describe('客户端核心路径静态契约', () => {
     const navigation = readWxapp('utils/artist-navigation.js');
 
     expect(publicWorkWxml).toMatch(/bind(?:tap|:book)="bookSameStyle"/);
-    expect(publicWorkJs).toContain('buildClientLoginUrl(redirect');
-    expect(publicWorkJs).toContain("'&book=1&channel='");
+    expect(publicWorkJs).toContain('create-order/index?workId=');
+    expect(publicWorkJs).toContain('encodeURIComponent(this.shareToken)');
     expect(navigation).toContain('post_auth_redirect');
     expect(login).toContain('consumePostAuthRedirect(this.redirect)');
     expect(register).toContain('consumePostAuthRedirect(this.redirect)');

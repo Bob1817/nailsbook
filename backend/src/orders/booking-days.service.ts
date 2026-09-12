@@ -34,7 +34,7 @@ export class BookingDaysService {
 
   async settings(technicianId: number) {
     const technician = isLaunchTechnician(technicianId)
-      ? await this.prisma.technician.findUnique({ where: { id: technicianId }, select: { id: true, quickBookingEnabled: true } })
+      ? await this.prisma.technician.findUnique({ where: { id: technicianId }, select: { id: true, quickBookingEnabled: true, depositMode: true, depositValue: true } })
       : null;
     if (!technician) {
       throw new NotFoundException('美甲师不存在');
@@ -45,7 +45,7 @@ export class BookingDaysService {
       orderBy: { serviceDate: 'asc' },
     });
     const blockedSlots = await this.prisma.blockedTimeSlot.findMany({ where: { techId: technicianId, endTime: { gte: new Date() } }, select: { startTime: true, endTime: true } });
-    return { quickBookingEnabled: quickBookingEnabled(technicianId, technician.quickBookingEnabled), days, blockedSlots };
+    return { depositMode: technician.depositMode, depositValue: technician.depositValue, quickBookingEnabled: quickBookingEnabled(technicianId, technician.quickBookingEnabled), days, blockedSlots };
   }
 
   async updateSettings(technicianId: number, quickBookingEnabled: boolean) {

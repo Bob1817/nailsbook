@@ -1296,12 +1296,12 @@ export class ClientAuthService {
             where: { clientId_techId: { clientId, techId } },
           });
           if (existing?.status === 'active') return { status: 'active', techId, workId: work.id };
+          if (existing) throw new ConflictException('请联系美甲师确认已有绑定申请或重新绑定');
           const currentDefault = await tx.clientTechBinding.findFirst({
             where: { clientId, status: 'active', isDefault: true },
           });
           const data = { status: 'active', bindSource: 'work_share', isDefault: !currentDefault };
-          if (existing) await tx.clientTechBinding.update({ where: { id: existing.id }, data });
-          else await tx.clientTechBinding.create({ data: { clientId, techId, ...data } });
+          await tx.clientTechBinding.create({ data: { clientId, techId, ...data } });
           const customer = await tx.customer.findFirst({ where: { technicianId: techId, clientUserId: clientId } });
           if (!customer) await tx.customer.create({ data: {
             technicianId: techId, clientUserId: clientId, name: client.nickname || client.phone,

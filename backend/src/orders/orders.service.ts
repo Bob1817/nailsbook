@@ -1,3 +1,4 @@
+import { depositFen, proposalSnapshot, quoteTotals, SURCHARGE_CATEGORIES } from './booking-proposal';
 import { assertBookingAccountState } from './booking-account-state';
 import { BookingDaysService, businessDate } from './booking-days.service';
 import {
@@ -464,6 +465,11 @@ export class OrdersService {
     assertLaunchShopService(dto.serviceType);
     const order = await this.findOneForTechnician(id, technicianId);
 
+    if ((order.acceptedProposal || order.quoteVersion > 0) && ['pending_quote', 'pending_confirm', 'pending_agree'].includes(order.status)) {
+      if (dto.price !== undefined || dto.depositAmount !== undefined || dto.isDepositPaid !== undefined || dto.startTime !== undefined || dto.endTime !== undefined || dto.serviceType !== undefined) {
+        throw new BadRequestException('请在确认方案中修改价格、定金或时间，调整后由客户确认');
+      }
+    }
     if (order.quickBooking && (dto.price !== undefined || (order.status === 'pending_agree' && (dto.startTime !== undefined || dto.endTime !== undefined || dto.serviceType !== undefined)))) throw new BadRequestException('报价已提交，调整安排需先由客户拒绝后重新报价');
     const updateData: any = {};
     const timeChanged =
@@ -539,7 +545,7 @@ export class OrdersService {
       const conflict = await tx.blockedTimeSlot.findFirst({
         where: {
           techId: technicianId,
-          NOT: { orderId: id },
+          OR: [{ orderId: null }, { orderId: { not: id } }],
           startTime: { lt: blockEnd },
           endTime: { gt: startTime },
         },
@@ -584,19 +590,21 @@ export class OrdersService {
 
   async review(id: number, technicianId: number, dto: ReviewOrderDto) {
     const work = () => this.reviewLocked(id, technicianId, dto);
-    return this.bookingMutex ? this.bookingMutex.runExclusive(technicianId, work) : work();
+    const updated = await (this.bookingMutex ? this.bookingMutex.runExclusive(technicianId, work) : work());
+    return updated.status === 'pending_confirm' ? this.confirm(id) : updated;
   }
 
   private async reviewLocked(id: number, technicianId: number, dto: ReviewOrderDto) {
     const order = await this.findOneForTechnician(id, technicianId);
 
-    if (!canTransition(order.status as OrderStatus, 'pending_agree')) {
+    if (!['pending_quote', 'pending_confirm', 'pending_agree'].includes(order.status)) {
       throw new BadRequestException('当前订单状态不支持报价');
     }
 
+    if ((order.quoteVersion || 0) !== (dto.quoteVersion || 0)) throw new BadRequestException('方案已更新，请刷新后重试');
     const manual = dto.quoteMode === 'manual';
     if (manual && !order.quickBooking) throw new BadRequestException('手工报价仅用于极简预约');
-    if (order.quickBooking && (typeof dto.continueAccepting !== 'boolean' || !Number.isInteger(dto.dayVersion))) throw new BadRequestException('请确认预约当天是否继续接单');
+    if (dto.continueAccepting !== undefined && !Number.isInteger(dto.dayVersion)) throw new BadRequestException('接单设置版本无效');
     if (manual && (!Number.isInteger(dto.amountFen) || dto.amountFen! <= 0 || dto.amountFen! > 100000000 || !Number.isInteger(dto.durationMinutes) || dto.durationMinutes! < 1 || dto.durationMinutes! > 1440 || (dto.services?.length) || dto.discountAmountFen)) throw new BadRequestException('报价金额或服务时长无效');
     const requested = dto.services ?? [];
     const services = await this.prisma.service.findMany({
@@ -612,30 +620,39 @@ export class OrdersService {
         name: true,
         priceMinFen: true,
         durationMinutes: true,
+        category: true,
       },
     });
-    const serviceLines = manual ? [{
+    const serviceLines = dto.useCurrentServices ? (order.serviceLines || []).filter(line => line.source !== 'surcharge').map(({ serviceId, servicePublicIdSnapshot, nameSnapshot, unitPriceFen, subtotalFen, durationMinutes, quantity, sortOrder }) => ({ serviceId, servicePublicIdSnapshot, nameSnapshot, unitPriceFen, subtotalFen, durationMinutes, quantity, sortOrder })) : manual ? [{
       serviceId: null, servicePublicIdSnapshot: null, nameSnapshot: '本次美甲服务',
       unitPriceFen: dto.amountFen!, subtotalFen: dto.amountFen!, durationMinutes: dto.durationMinutes!, quantity: 1, sortOrder: 0,
     }] : buildServiceSnapshotLines(services, requested);
     const summary = summarizeSnapshotLines(serviceLines);
-    const promotionDiscountFen = order.promotion && order.promotion.enabled &&
-      (!order.promotion.startsAt || order.promotion.startsAt <= new Date()) &&
-      (!order.promotion.endsAt || order.promotion.endsAt > new Date())
-      ? Math.min(order.promotion.discountAmountFen, summary.serviceSubtotalFen)
-      : 0;
-    const requestedDiscountFen = dto.discountAmountFen ?? 0;
-    const effectiveDiscountFen = requestedDiscountFen > 0 ? requestedDiscountFen : promotionDiscountFen;
-    const quotedFinalPriceFen = (dto.finalPriceFen != null && requestedDiscountFen > 0)
-      ? dto.finalPriceFen
-      : finalPriceFen(
-      summary.serviceSubtotalFen,
-      effectiveDiscountFen,
-    );
-    const discountAmountFen = Math.max(
-      0,
-      summary.serviceSubtotalFen - quotedFinalPriceFen,
-    );
+    if (!serviceLines.length) throw new BadRequestException('请选择基础服务组合');
+    const surchargeIds = [...new Set(dto.surchargeIds || [])];
+    const extras = surchargeIds.length ? await this.prisma.service.findMany({ where: {
+      technicianId, publicId: { in: surchargeIds }, category: { in: SURCHARGE_CATEGORIES }, isBookable: true, archivedAt: null,
+    } }) : [];
+    if (extras.length !== surchargeIds.length) throw new BadRequestException('附加服务已失效，请重新选择');
+    if (!dto.useCurrentServices && services.some(item => (item as any).category && SURCHARGE_CATEGORIES.includes((item as any).category))) throw new BadRequestException('附加费用请在附加服务中选择');
+    const extraLines = extras.map((item, index) => ({
+      serviceId: item.id, servicePublicIdSnapshot: item.publicId, nameSnapshot: item.name,
+      unitPriceFen: item.priceMinFen || 0, subtotalFen: item.priceMinFen || 0,
+      durationMinutes: 0, quantity: 1, sortOrder: serviceLines.length + index, source: 'surcharge',
+    }));
+    const coreFen = dto.corePriceFen ?? (dto.useCurrentServices
+      ? (order.pricingDetails ? JSON.parse(order.pricingDetails).coreFen : order.finalPriceFen ?? summary.serviceSubtotalFen)
+      : finalPriceFen(summary.serviceSubtotalFen, dto.discountAmountFen || 0));
+    if (!dto.useCurrentServices && coreFen > summary.serviceSubtotalFen) throw new BadRequestException('基础组合报价不能超过服务合计');
+    const totals = quoteTotals(summary.serviceSubtotalFen, coreFen, extraLines.reduce((sum, line) => sum + line.subtotalFen, 0), dto.finalPriceFen);
+    const quotedFinalPriceFen = totals.finalFen;
+    const discountAmountFen = Math.max(0, summary.serviceSubtotalFen + totals.extrasFen - quotedFinalPriceFen);
+    const depositModeSnapshot = dto.depositAmount !== undefined ? 'fixed' : order.depositModeSnapshot || 'none';
+    const depositValueSnapshot = dto.depositAmount !== undefined ? Math.round(dto.depositAmount * 100) : order.depositValueSnapshot || 0;
+    const depositAmount = (depositFen(quotedFinalPriceFen, depositModeSnapshot, depositValueSnapshot) || 0) / 100;
+    // An unchanged explicit amount preserves the accepted calculation rule.
+    const sameDeposit = dto.depositAmount !== undefined && Math.round((order.depositAmount || 0) * 100) === depositValueSnapshot;
+    const depositRule = sameDeposit ? { depositModeSnapshot: order.depositModeSnapshot, depositValueSnapshot: order.depositValueSnapshot } : { depositModeSnapshot, depositValueSnapshot };
     const startTime = parseBusinessDateTime(dto.serviceDate, dto.startTime);
     const endTime = new Date(
       startTime.getTime() + summary.totalDurationMinutes * 60000,
@@ -649,11 +666,11 @@ export class OrdersService {
       throw new BadRequestException('预约时间或预估时长无效');
     }
     await this.assertTechnicianWorkSchedule(technicianId, startTime, endTime);
-    if (order.quickBooking) await this.assertTechnicianShopSchedule(technicianId, order.address || '', startTime, endTime, true);
+    if (order.serviceType === '到店美甲') await this.assertTechnicianShopSchedule(technicianId, order.address || '', startTime, endTime, true);
     const blockedConflict = await this.prisma.blockedTimeSlot.findFirst({
       where: {
         techId: technicianId,
-        NOT: { orderId: id },
+        OR: [{ orderId: null }, { orderId: { not: id } }],
         startTime: { lt: endTime },
         endTime: { gt: startTime },
       },
@@ -663,40 +680,52 @@ export class OrdersService {
       throw new BadRequestException('该时间段已被预约，请与客户协商新的时间');
     }
 
+    const proposed = proposalSnapshot({ ...order, pricingDetails: JSON.stringify(totals), startTime, endTime, finalPriceFen: quotedFinalPriceFen, depositAmount, ...depositRule }, [...serviceLines, ...extraLines]);
+    const unchanged = !!order.acceptedProposal && order.acceptedProposal === proposed;
     let systemMessage: any = null;
     let conversationId: number | null = null;
 
     const updated = await this.prisma.$transaction(async (tx) => {
-      if (order.quickBooking) {
+      const claimed = await tx.order.updateMany({ where: { id, status: order.status, updatedAt: order.updatedAt }, data: { quoteVersion: { increment: 1 } } });
+      if (claimed.count !== 1) throw new BadRequestException('预约方案已更新，请刷新');
+      if (dto.continueAccepting !== undefined) {
         if (!this.bookingDays) throw new BadRequestException('接单设置服务不可用');
-        if (businessDate(order.startTime) !== dto.serviceDate) await this.bookingDays.assertOpen(tx, technicianId, dto.serviceDate);
-        const latest = await tx.order.findUnique({ where: { id } });
-        if (latest?.status !== 'pending_quote') throw new BadRequestException('预约状态已更新，请刷新');
-        const conflict = await tx.blockedTimeSlot.findFirst({ where: { techId: technicianId, NOT: { orderId: id }, startTime: { lt: endTime }, endTime: { gt: startTime } } });
-        if (conflict) throw new BadRequestException('该时间段已被预约');
-        await this.bookingDays.save(tx, technicianId, dto.serviceDate, dto.continueAccepting!, dto.dayVersion!);
+        await this.bookingDays.save(tx, technicianId, dto.serviceDate, dto.continueAccepting, dto.dayVersion!);
       }
+      const receipts = await tx.paymentOrder.aggregate({ where: { orderId: id, status: 'paid', paymentType: 'deposit' }, _sum: { amountCents: true } });
+      const received = receipts._sum.amountCents || 0;
+      if (received > depositAmount * 100 || (received > 0 && dto.isDepositPaid === false)) throw new BadRequestException('已有定金收款，请先处理退款');
+      if (dto.isDepositPaid && depositAmount * 100 > received) {
+        const receiptId = crypto.randomUUID();
+        await tx.paymentOrder.create({ data: {
+          paymentNo: `OFFLINE_${receiptId}`, idempotencyKey: `quote-deposit:${id}:${order.quoteVersion || 0}`,
+          orderId: id, technicianId, clientUserId: order.clientUserId, paymentType: 'deposit',
+          amountCents: Math.round(depositAmount * 100) - received, channel: 'offline', status: 'paid', paidAt: new Date(),
+        } });
+      }
+      const depositPaid = depositAmount > 0 && (dto.isDepositPaid === true || received >= Math.round(depositAmount * 100));
       const updated = await tx.order.update({
         where: { id },
         data: {
           startTime,
           endTime,
-          bookingType: 'custom',
+          pricingDetails: JSON.stringify(totals),
+          ...depositRule,
           serviceSubtotalFen: summary.serviceSubtotalFen,
           discountAmountFen,
           finalPriceFen: quotedFinalPriceFen,
           totalDurationMinutes: summary.totalDurationMinutes,
-      quotePrice: quotedFinalPriceFen / 100,
+          quotePrice: quotedFinalPriceFen / 100,
           quoteRemark: dto.remark || null,
           quotedAt: new Date(),
-          status: 'pending_agree',
+          status: unchanged ? 'pending_confirm' : 'pending_agree',
           bookingPhase: 'application',
           expectedDate: startTime,
           expectedTimeSlot: dto.startTime,
-          depositAmount: dto.depositAmount ?? 0,
-          isDepositPaid: dto.isDepositPaid ?? false,
-          depositStatus: dto.isDepositPaid ? 'paid' : 'pending',
-          depositConfirmedAt: dto.isDepositPaid ? new Date() : null,
+          depositAmount,
+          isDepositPaid: depositPaid,
+          depositStatus: depositPaid ? 'paid' : 'pending',
+          depositConfirmedAt: depositPaid ? (order.depositConfirmedAt || new Date()) : null,
         },
         include: {
           technician: { select: { id: true, name: true, phone: true } },
@@ -707,24 +736,12 @@ export class OrdersService {
       });
       await tx.orderServiceLine.deleteMany({ where: { orderId: id } });
       await tx.orderServiceLine.createMany({
-        data: serviceLines.map((line) => ({
-          orderId: id,
-          ...line,
-          source: 'quote',
-        })),
+        data: [...serviceLines.map((line) => ({ orderId: id, ...line, source: 'quote' })), ...extraLines.map(line => ({ orderId: id, ...line }))],
       });
       await tx.blockedTimeSlot.deleteMany({ where: { orderId: id } });
-      await tx.blockedTimeSlot.create({
-        data: {
-          techId: technicianId,
-          orderId: id,
-          startTime,
-          endTime,
-          reason: 'booking',
-        },
-      });
 
-      if (order.clientUserId) {
+
+      if (order.clientUserId && !unchanged) {
         const preview = '美甲师已提交报价，请查看并确认～';
         const conversation = await tx.conversation.upsert({
           where: {
@@ -789,10 +806,16 @@ export class OrdersService {
     confirmedPrice?: number,
     confirmedDeposit?: number,
     confirmedDepositPaid?: boolean,
+    acceptance?: { clientUserId: number; quoteVersion: number },
   ) {
     const order = await this.findOne(id);
 
-    if (
+    if (acceptance) {
+      if (order.clientUserId !== acceptance.clientUserId || order.quoteVersion !== acceptance.quoteVersion) throw new BadRequestException('报价已更新，请刷新后确认');
+      if (['pending_shop', 'pending_home'].includes(order.status)) return order;
+      if (order.status !== 'pending_agree') throw new BadRequestException('当前预约不能确认');
+    }
+    if (!acceptance &&
       !canTransition(order.status as OrderStatus, 'pending_home') &&
       !canTransition(order.status as OrderStatus, 'pending_shop')
     ) {
@@ -832,13 +855,24 @@ export class OrdersService {
     if (depositAmount > totalAmount)
       throw new BadRequestException('定金不能超过优惠后的应付总价');
 
+    if (!acceptance && (confirmedPriceFen !== (order.finalPriceFen ?? Math.round((order.quotePrice || 0) * 100)) || Math.round(depositAmount * 100) !== Math.round((order.depositAmount || 0) * 100))) {
+      const parts = getBusinessDateTimeParts(order.startTime);
+      return this.review(id, order.technicianId, {
+        useCurrentServices: true, services: [], quoteVersion: order.quoteVersion || 0,
+        serviceDate: `${parts.year}-${parts.month}-${parts.day}`, startTime: `${parts.hour}:${parts.minute}`, finalPriceFen: confirmedPriceFen,
+        depositAmount, isDepositPaid, surchargeIds: (order.serviceLines || []).filter(line => line.source === 'surcharge').map(line => line.servicePublicIdSnapshot!).filter(Boolean),
+      });
+    }
+    if (order.startTime <= new Date() || order.endTime <= order.startTime) throw new BadRequestException('预约时间或服务时长已失效');
+    await this.assertTechnicianWorkSchedule(order.technicianId, order.startTime, order.endTime);
+    if (order.serviceType === '到店美甲') await this.assertTechnicianShopSchedule(order.technicianId, order.address || '', order.startTime, order.endTime, true);
     let systemMessage: any = null;
     let conversationId: number | null = null;
 
     const confirmBooking = () =>
       this.prisma.$transaction(async (tx) => {
         const claimed = await tx.order.updateMany({
-          where: { id, status: order.status },
+          where: { id, status: order.status, updatedAt: order.updatedAt },
           data: { status: targetStatus },
         });
         if (claimed.count !== 1)
@@ -884,7 +918,7 @@ export class OrdersService {
         const conflict = await tx.blockedTimeSlot.findFirst({
           where: {
             techId: order.technicianId,
-            NOT: { orderId: id },
+            OR: [{ orderId: null }, { orderId: { not: id } }],
             startTime: { lt: order.endTime },
             endTime: { gt: order.startTime },
           },
@@ -899,6 +933,7 @@ export class OrdersService {
           where: { id },
           data: {
             status: targetStatus,
+            acceptedProposal: proposalSnapshot(order),
             depositAmount,
             isDepositPaid,
             depositStatus: isDepositPaid ? 'paid' : 'pending',
@@ -916,7 +951,7 @@ export class OrdersService {
             quotedAt: new Date(),
             discountAmountFen: Math.max(
               0,
-              (order.serviceSubtotalFen ?? 0) - confirmedPriceFen,
+              (order.serviceSubtotalFen ?? 0) + (order.serviceLines || []).filter(line => line.source === 'surcharge').reduce((sum, line) => sum + line.subtotalFen, 0) - confirmedPriceFen,
             ),
             bookingPhase: 'booking',
             tradeStatus: requiresDeposit ? 'deposit_pending' : 'deposit_paid',
@@ -1489,7 +1524,7 @@ export class OrdersService {
       const conflict = await tx.blockedTimeSlot.findFirst({
         where: {
           techId: technicianId,
-          NOT: { orderId: id },
+          OR: [{ orderId: null }, { orderId: { not: id } }],
           startTime: { lt: blockEnd },
           endTime: { gt: startTime },
         },

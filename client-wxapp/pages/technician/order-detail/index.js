@@ -43,7 +43,7 @@ function actionsForStatus(status) {
 
   switch (status) {
     case 'pending_quote':   return [QUOTE, CANCEL];
-    case 'pending_agree':   return [CANCEL];
+    case 'pending_agree':   return [QUOTE, CANCEL];
     case 'pending_client_confirm': return [CANCEL];
     case 'pending_confirm': return [QUOTE, CANCEL, CONFIRM];
     case 'pending_shop':    return [CANCEL];
@@ -93,7 +93,7 @@ Page({
     quoteTime: '',
     quoteDuration: '120',
     quoteRemark: '',
-    quoteServices: [],
+    quoteServices: [], quoteSurcharges: [], quoteSurchargeIds: [], quoteSurchargeMap: {}, quoteExtraFen: 0, quoteCorePrice: '', quoteUseCurrent: false,
     quoteSelectedServiceIds: [],
     quoteServiceQuantities: {},
     quoteSubtotalFen: 0,
@@ -162,7 +162,14 @@ Page({
       ]);
       const raw = result[0];
       this.setData({ quickBooking: raw.quickBooking === true });
-      const quoteServices = (result[1] || []).filter(item => item.isActive !== false);
+      const allServices = (result[1] || []).filter(item => item.isActive !== false).map(item => ({ ...item, publicId: item.publicId || item.id }));
+      const quoteServices = allServices.filter(item => !String(item.category).startsWith('surcharge_'));
+      const quoteSurcharges = allServices.filter(item => String(item.category).startsWith('surcharge_'));
+      this._rawOrder = raw;
+      this._quoteBaseTouched = false; this._quoteCoreTouched = false; this._quoteFinalTouched = false; this._quoteDepositTouched = false;
+      const pricing = typeof raw.pricingDetails === 'string' ? JSON.parse(raw.pricingDetails) : raw.pricingDetails;
+      const surchargeIds = (raw.serviceLines || []).filter(line => line.source === 'surcharge').map(line => line.servicePublicIdSnapshot);
+      this.setData({ quoteSurcharges, quoteSurchargeIds: surchargeIds, quoteSurchargeMap: Object.fromEntries(surchargeIds.map(id => [id, true])), quoteUseCurrent: (raw.serviceLines || []).some(line => line.source !== 'surcharge'), quoteCorePrice: String((pricing ? pricing.coreFen : raw.finalPriceFen || raw.serviceSubtotalFen || 0) / 100) });
       const technicianProfile = result[2] || {};
       let sourceWork = raw.sourceWork || null;
       const sourceWorkId = raw.sourceWorkId || (sourceWork && sourceWork.id);
@@ -197,6 +204,7 @@ Page({
 
       const decorated = {
         ...o,
+        pricingDetails: pricing || null,
         review: raw.review ? { ...raw.review, photos: parseReviewPhotos(raw.review.photos) } : null,
         techId: o.techId || raw.techId || raw.technicianId || (raw.technician && raw.technician.id),
         _statusLabel: getStatusLabel(o.status),
@@ -384,6 +392,7 @@ Page({
   // ---------- 报价 ----------
   openQuote() {
     const status = this.data.order && this.data.order.status;
+    this.recalculateQuote();
     this.setData({ quoteContinue: '', quoteDayVersion: null });
     if (this.data.quickBooking) this.loadQuoteDay();
     this.setData({
@@ -416,6 +425,7 @@ Page({
   toggleQuoteService(e) {
     const id = String(e.currentTarget.dataset.id);
     const quantities = { ...this.data.quoteServiceQuantities };
+    this._quoteBaseTouched = true;
     quantities[id] = quantities[id] > 0 ? 0 : 1;
     const ids = Object.keys(quantities).filter(key => quantities[key] > 0);
     this.setData({ quoteSelectedServiceIds: ids, quoteServiceQuantities: quantities });
@@ -423,6 +433,7 @@ Page({
   },
   changeQuoteServiceQuantity(e) {
     const id = String(e.currentTarget.dataset.id);
+    this._quoteBaseTouched = true;
     const delta = Number(e.currentTarget.dataset.delta);
     const quantities = { ...this.data.quoteServiceQuantities };
     quantities[id] = Math.max(0, Math.min(20, Number(quantities[id] || 0) + delta));
@@ -430,89 +441,76 @@ Page({
     this.setData({ quoteSelectedServiceIds: ids, quoteServiceQuantities: quantities });
     this.recalculateQuote();
   },
-  onQuoteDiscountInput(e) { this.setData({ quoteDiscount: e.detail.value }); this.recalculateQuote(e.detail.value); },
-  onQuoteFinalPriceInput(e) { this.setData({ quotePrice: e.detail.value }); this.recalculateQuote(); },
-  recalculateQuote(discountValue) {
+  onQuoteDiscountInput(e) { this.setData({ quoteDiscount: e.detail.value }); this.recalculateQuote(); },
+  onQuoteCoreInput(e) { this._quoteCoreTouched = true; this.setData({ quoteCorePrice: e.detail.value }); this.recalculateQuote(); },
+  onQuoteFinalPriceInput(e) { this._quoteFinalTouched = true; this.setData({ quotePrice: e.detail.value }); this.recalculateQuote(); },
+  toggleQuoteSurcharge(e) {
+    const id = String(e.currentTarget.dataset.id);
+    const ids = this.data.quoteSurchargeIds.includes(id) ? this.data.quoteSurchargeIds.filter(value => value !== id) : this.data.quoteSurchargeIds.concat(id);
+    this.setData({ quoteSurchargeIds: ids, quoteSurchargeMap: Object.fromEntries(ids.map(value => [value, true])) });
+    this.recalculateQuote();
+  },
+  recalculateQuote() {
+    const raw = this._rawOrder || {};
+    const useCurrent = !this._quoteBaseTouched && (raw.serviceLines || []).some(line => line.source !== 'surcharge');
     const selected = this.data.quoteServices.filter(item => Number(this.data.quoteServiceQuantities[String(item.id)] || 0) > 0);
-    const subtotal = selected.reduce((sum, item) => sum + Math.round(Number(item.price || 0) * 100) * this.data.quoteServiceQuantities[String(item.id)], 0);
-    const duration = selected.reduce((sum, item) => sum + Number(item.durationMinutes || 0) * this.data.quoteServiceQuantities[String(item.id)], 0);
-    const manualFinalFen = Math.round(Number(this.data.quotePrice || 0) * 100);
-    const discountFen = Math.max(0, Math.round(Number(discountValue !== undefined ? discountValue : this.data.quoteDiscount || 0) * 100));
-    this.setData({ quoteSubtotalFen: subtotal, quoteFinalFen: manualFinalFen > 0 ? manualFinalFen : Math.max(0, subtotal - discountFen), quoteTotalDuration: duration });
+    const lines = useCurrent ? raw.serviceLines.filter(line => line.source !== 'surcharge') : selected.map(item => ({ unitPriceFen: Math.round(Number(item.price) * 100), quantity: this.data.quoteServiceQuantities[String(item.id)], durationMinutes: item.durationMinutes }));
+    const subtotal = lines.reduce((sum, line) => sum + line.unitPriceFen * line.quantity, 0);
+    const duration = lines.reduce((sum, line) => sum + line.durationMinutes * line.quantity, 0);
+    const extras = this.data.quoteSurcharges.filter(item => this.data.quoteSurchargeIds.includes(String(item.id))).reduce((sum, item) => sum + Math.round(Number(item.price) * 100), 0);
+    const core = this._quoteCoreTouched || useCurrent ? Math.round(Number(this.data.quoteCorePrice || 0) * 100) : subtotal;
+    const oldPricing = typeof raw.pricingDetails === 'string' ? JSON.parse(raw.pricingDetails) : raw.pricingDetails;
+    const final = this._quoteFinalTouched ? Math.round(Number(this.data.quotePrice || 0) * 100) : Math.max(0, core + extras - (oldPricing ? oldPricing.finalDiscountFen || 0 : 0));
+    const patch = { quoteUseCurrent: useCurrent, quoteSubtotalFen: subtotal, quoteExtraFen: extras, quoteFinalFen: final, quoteTotalDuration: duration, quoteCorePrice: String(core / 100), quotePrice: this._quoteFinalTouched ? this.data.quotePrice : String(final / 100) };
+    if (!this._quoteDepositTouched) {
+      patch.quoteDepositAmount = String((raw.depositModeSnapshot === 'percentage' ? Math.round(final * (raw.depositValueSnapshot || 0) / 10000) : raw.depositModeSnapshot === 'fixed' ? raw.depositValueSnapshot : Math.round((raw.depositAmount || 0) * 100)) / 100);
+    }
+    this.setData(patch);
   },
   onQuoteRemarkInput(e)   { this.setData({ quoteRemark: e.detail.value }); },
-  onQuoteDepositAmountInput(e) { this.setData({ quoteDepositAmount: e.detail.value }); },
+  onQuoteDepositAmountInput(e) { this._quoteDepositTouched = true; this.setData({ quoteDepositAmount: e.detail.value }); },
   onQuoteDepositPaidChange(e) { this.setData({ quoteDepositPaid: e.detail.value }); },
 
   async submitQuote() {
     if (this.data.submitting) return;
-    const { quoteDate, quoteTime, quoteRemark, quoteSelectedServiceIds, quoteDiscount, quoteSubtotalFen } = this.data;
-    if (!this.data.quickBooking && !quoteSelectedServiceIds.length) return wx.showToast({ title: '请选择至少一项基础服务', icon: 'none' });
-    if (!quoteDate) return wx.showToast({ title: '请选择服务日期', icon: 'none' });
-    if (!quoteTime) return wx.showToast({ title: '请选择服务时间', icon: 'none' });
-
-    if (this.data.quickBooking) {
-      if (!/^(0|[1-9]\d*)(\.\d{1,2})?$/.test(this.data.quotePrice) || Number(this.data.quotePrice) <= 0) return wx.showToast({ title: '请填写有效报价', icon: 'none' });
-      if (!/^\d+$/.test(this.data.quoteDuration) || Number(this.data.quoteDuration) < 1 || !this.data.quoteEnd) return wx.showToast({ title: '请填写有效时长', icon: 'none' });
-      if (!this.data.quoteContinue || this.data.quoteDayVersion === null) return wx.showToast({ title: '请确认当日是否继续接单', icon: 'none' });
-    }
-    const discountAmountFen = this.data.quickBooking ? 0 : Math.round(Number(quoteDiscount || 0) * 100);
-    if (!this.data.quickBooking && (!/^(0|[1-9]\d*)(\.\d{1,2})?$/.test(this.data.quotePrice) || Number(this.data.quotePrice) <= 0)) return wx.showToast({ title: '请填写有效的最终报价', icon: 'none' });
-
-    const depositAmt = this.data.quoteDepositAmount;
-    const depositFen = Math.round(Number(depositAmt || 0) * 100);
-    if (this.data.quoteDepositPaid && (!depositAmt || !Number.isFinite(depositFen) || depositFen <= 0)) {
-      return wx.showToast({ title: '定金已支付时，请填写大于 0 的定金金额', icon: 'none' });
-    }
-
+    const d = this.data;
+    if (!d.quoteUseCurrent && !d.quoteSelectedServiceIds.length) return wx.showToast({ title: '请选择至少一项基础服务', icon: 'none' });
+    if (!d.quoteDate || !d.quoteTime) return wx.showToast({ title: '请选择服务日期和时间', icon: 'none' });
+    const finalFen = Math.round(Number(d.quotePrice) * 100);
+    const depositAmount = Number(d.quoteDepositAmount || 0);
+    if (!Number.isFinite(finalFen) || finalFen <= 0 || finalFen > Math.round(Number(d.quoteCorePrice) * 100) + d.quoteExtraFen) return wx.showToast({ title: '请核对最终报价与费用明细', icon: 'none' });
+    if (!Number.isFinite(depositAmount) || depositAmount < 0 || depositAmount * 100 > finalFen || (d.quoteDepositPaid && depositAmount <= 0)) return wx.showToast({ title: '请核对定金金额', icon: 'none' });
     this.setData({ submitting: true });
     try {
       const payload = {
-        services: quoteSelectedServiceIds.map(serviceId => {
-          const service = this.data.quoteServices.find(item => String(item.id) === serviceId);
-          return { servicePublicId: service ? service.publicId : serviceId, quantity: this.data.quoteServiceQuantities[serviceId] || 1 };
-        }),
-        serviceDate: quoteDate,
-        startTime: quoteTime,
-        discountAmountFen,
-        finalPriceFen: Math.round(Number(this.data.quotePrice) * 100)
+        useCurrentServices: d.quoteUseCurrent,
+        quoteVersion: (this._rawOrder || {}).quoteVersion || 0,
+        services: d.quoteUseCurrent ? [] : d.quoteSelectedServiceIds.map(id => ({ servicePublicId: id, quantity: d.quoteServiceQuantities[id] || 1 })),
+        surchargeIds: d.quoteSurchargeIds,
+        corePriceFen: Math.round(Number(d.quoteCorePrice) * 100), finalPriceFen: finalFen,
+        serviceDate: d.quoteDate, startTime: d.quoteTime, remark: d.quoteRemark,
+        isDepositPaid: !!d.quoteDepositPaid,
       };
-      if (this.data.quickBooking) {
-        delete payload.services;
-        delete payload.finalPriceFen;
-        payload.quoteMode = 'manual';
-        payload.amountFen = Math.round(Number(this.data.quotePrice) * 100);
-        payload.durationMinutes = Number(this.data.quoteDuration);
-        payload.continueAccepting = this.data.quoteContinue === 'yes';
-        payload.dayVersion = this.data.quoteDayVersion;
-      }
-      if (quoteRemark) payload.remark = quoteRemark;
-      // 定金数据
-      if (depositAmt !== '' && depositAmt !== undefined) {
-        payload.depositAmount = Number(depositAmt);
-      }
-      payload.isDepositPaid = !!this.data.quoteDepositPaid;
-      await api.technician.orders.quote(this.orderId, payload);
-      this.setData({ submitting: false, showQuote: false });
-      wx.showToast({ title: '报价已发送', icon: 'success' });
+      if (this._quoteDepositTouched) payload.depositAmount = depositAmount;
+      if (d.quoteContinue && d.quoteDayVersion !== null) { payload.continueAccepting = d.quoteContinue === 'yes'; payload.dayVersion = d.quoteDayVersion; }
+      const result = await api.technician.orders.quote(this.orderId, payload);
+      this.setData({ showQuote: false });
+      wx.showToast({ title: ['pending_shop', 'pending_home'].includes(result.status) ? '已确认排期' : '已发送客户确认', icon: 'success' });
       this.loadOrder();
-    } catch (err) {
-      this.setData({ submitting: false });
-      if (this.data.quickBooking) { this.setData({ quoteContinue: '', quoteDayVersion: null }); this.loadQuoteDay(); }
-      wx.showToast({ title: err.message || '报价失败', icon: 'none' });
-    }
+    } catch (err) { wx.showToast({ title: err.message || '提交失败', icon: 'none' }); }
+    finally { this.setData({ submitting: false }); }
   },
 
-  // ---------- 确认 ----------
   confirmOrder() {
     if (this.data.confirmationOrder || !this.data.order) return;
-    this.setData({ confirmationOrder: this.data.order });
+    this.openQuote();
   },
   closeConfirmation() { this.setData({ confirmationOrder: null }); },
   confirmationSaved() { this.closeConfirmation(); this.loadOrder(); },
 
   // ---------- 报价调整 ----------
   openEditPrice() {
+    if (this._rawOrder && ['pending_quote', 'pending_confirm', 'pending_agree'].includes(this._rawOrder.status)) return this.openQuote();
     if (this.data.quickBooking) return wx.showToast({ title: '调整报价需先由客户拒绝，再重新报价', icon: 'none' });
     var o = this.data.order;
     if (!o) return;
@@ -603,6 +601,7 @@ Page({
 
   // ---------- 编辑预约时间（跳转日历页）----------
   editBookingTime() {
+    if (this._rawOrder && ['pending_quote', 'pending_confirm', 'pending_agree'].includes(this._rawOrder.status)) return this.openQuote();
     var o = this.data.order;
     if (!o) return;
     var start = parseDate(o.startTime);
@@ -624,6 +623,7 @@ Page({
 
   // ---------- 编辑服务项目 ----------
   openServiceEdit() {
+    if (this._rawOrder && ['pending_quote', 'pending_confirm', 'pending_agree'].includes(this._rawOrder.status)) return this.openQuote();
     if (this.data.quickBooking) return;
     var o = this.data.order;
     if (!o) return;

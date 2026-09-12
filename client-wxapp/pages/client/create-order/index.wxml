@@ -102,8 +102,8 @@
         <text class="form-label">服务名称</text>
         <input class="form-input" value="{{customTitle}}" bindinput="onCustomTitleInput" placeholder="例如：法式渐变美甲" placeholder-class="form-placeholder" confirm-type="done" />
       </view>
-      <view class="form-field" wx:if="{{!quickMode}}">
-        <text class="form-label">详细描述</text>
+      <view class="form-field">
+        <text class="form-label">美甲要求（选填）</text>
         <textarea class="form-textarea" value="{{customDesc}}" bindinput="onCustomDescInput" placeholder="描述款式、颜色或其他具体需求" placeholder-class="form-placeholder" maxlength="300" adjust-position cursor-spacing="120" confirm-type="done" />
       </view>
       <view class="form-field">
@@ -215,6 +215,8 @@
     </view>
     <textarea class="remark-input" value="{{remark}}" bindinput="onRemarkInput" placeholder="请输入特殊需求..." placeholder-class="form-placeholder" adjust-position cursor-spacing="120" confirm-type="done" />
   </view>
+
+  <view wx:if="{{selectedTech}}" class="section"><text class="section-sub">定金：{{depositText}}。提交的是预约申请；美甲师调整价格、定金或时间后，会请你确认。</text></view>
 
   <!-- 提交按钮 -->
   <view class="submit-bar">

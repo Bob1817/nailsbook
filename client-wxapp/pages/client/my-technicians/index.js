@@ -43,7 +43,7 @@ Page({
 
   bookTechnician(e) {
     const { id } = e.currentTarget.dataset;
-    if (id) wx.navigateTo({ url: `/pages/client/create-order/index?techId=${id}` });
+    if (id) wx.navigateTo({ url: `/pages/client/create-order/index?techId=${id}&source=bound_artist` });
   },
 
   // 绑定美甲师

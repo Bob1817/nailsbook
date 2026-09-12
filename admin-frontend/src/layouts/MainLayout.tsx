@@ -20,6 +20,7 @@ import {
   NotificationOutlined,
   SettingOutlined,
   RocketOutlined,
+  CalendarOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -50,6 +51,12 @@ const MainLayout: React.FC = () => {
       icon: <UserOutlined />,
       label: '客户管理',
       permission: 'customer:view',
+    },
+    {
+      key: '/orders',
+      icon: <CalendarOutlined />,
+      label: '预约管理',
+      permission: 'booking:view',
     },
     {
       key: '/works',

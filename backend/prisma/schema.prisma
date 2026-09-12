@@ -87,6 +87,8 @@ model Technician {
   homeServicePricing         String? // JSON: tiered pricing [{minKm, maxKm, price}]
   nightServiceFee            Float? // Night service surcharge
   holidayServiceFee          Float? // Holiday service surcharge
+  depositMode                String                      @default("none")
+  depositValue               Int                         @default(0)
   minOrderAmount             Float? // Minimum order amount (guaranteed consumption)
   // Social media accounts
   socialMedia                String? // JSON object of social media accounts
@@ -456,6 +458,11 @@ model Order {
   referralRelationId     Int?
   referrerClientId       Int?
   contentPublicationTask ContentPublicationTask?
+  acceptedProposal       String?
+  quoteVersion           Int                     @default(0)
+  depositModeSnapshot    String                  @default("none")
+  depositValueSnapshot   Int                     @default(0)
+  pricingDetails         String?
   quickBooking           Boolean                 @default(false)
   bookingType            String                  @default("legacy")
   serviceSubtotalFen     Int                     @default(0)

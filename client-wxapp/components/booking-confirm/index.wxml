@@ -5,7 +5,7 @@
       <view class="confirm-content">
         <view class="summary">{{summary}}</view>
         <view class="summary">{{order.customerName || '客户'}} · {{order.shopName || order._shopName || '店铺待确认'}}</view>
-        <view class="hint">请核对最终总价和定金收款情况后确认排期。</view>
+        <view class="hint">{{proposalChanged ? '价格或定金已调整，提交后由客户确认最新方案。' : '请核对最终总价和定金收款情况后确认排期。'}}</view>
         <view class="field-label">最终总价（元）</view>
         <input class="form-input" placeholder-class="form-placeholder" type="digit" value="{{price}}" bindinput="onPrice" disabled="{{submitting}}" placeholder="请输入最终总价" adjust-position cursor-spacing="100" />
         <view class="field-label">定金金额（元）</view>
@@ -17,7 +17,7 @@
     </scroll-view>
     <view class="confirm-actions">
       <button class="booking-action cancel {{submitting ? 'is-disabled' : ''}}" disabled="{{submitting}}" bindtap="close">取消</button>
-      <button class="booking-action submit {{submitting ? 'is-disabled' : ''}}" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submit">{{submitting ? '确认中' : '确认排期'}}</button>
+      <button class="booking-action submit {{submitting ? 'is-disabled' : ''}}" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submit">{{submitting ? '确认中' : (proposalChanged ? '提交客户确认' : '确认排期')}}</button>
     </view>
   </view>
 </view>

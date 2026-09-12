@@ -16,6 +16,7 @@ const wx = {
   showModal: async options => { modals.push(options); return { confirm: true }; }
 };
 global.wx = wx;
+global.getApp = () => ({ globalData: {} });
 const api = {
   public: { bookingSettings: async () => ({ quickBookingEnabled: enabled, days: [] }) },
   client: { orders: { create: async data => { requests.push(data); return { id: 1 }; } } },
@@ -56,10 +57,11 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   enabled = true; booking._fullMode = true; booking.selectTechById(7); await flush();
   assert.equal(booking.data.quickMode, false, '明确完整模式不被极简覆盖');
 
-  booking.data.quickMode = true; booking.data.startTime = '14:00'; booking.applicationKey = 'resume-key';
+  booking.data.quickMode = true; booking.data.startTime = '14:00'; booking.data.selectedTech.invitationCode = 'NAIL7'; booking.applicationKey = 'resume-key';
   delete storage.client_token;
   assert.equal(booking.requireClientLogin(), false);
   assert.ok(destination.includes('redirect='));
+  assert.ok(destination.includes('invite=NAIL7'), '登录和注册链路保留美甲师邀请码');
   assert.equal(storage.client_booking_application_draft.startTime, '14:00', '取消登录不丢时间');
   storage.client_token = 'test-token';
 
@@ -72,17 +74,22 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
 
   const tech = page('pages/technician/order-detail/index.js');
   tech.orderId = 9; tech.loadOrder = () => {};
-  Object.assign(tech.data, { quickBooking: true, quoteDate: '2099-01-05', quoteTime: '14:00', quotePrice: '300', quoteDuration: '90', quoteDayVersion: 0 });
-  tech.updateQuoteEnd();
-  assert.equal(tech.data.quoteEnd, '15:30');
-  const before = requests.length;
+  tech._rawOrder = { quoteVersion: 0, depositModeSnapshot: 'percentage', depositValueSnapshot: 2000 };
+  Object.assign(tech.data, { quickBooking: true, quoteDate: '2099-01-05', quoteTime: '14:00',
+    quoteServices: [{ id: 'base', price: 180, durationMinutes: 90 }], quoteSelectedServiceIds: ['base'], quoteServiceQuantities: { base: 1 },
+    quoteSurcharges: [{ id: 'night', price: 20 }], quoteSurchargeIds: [] });
+  tech.recalculateQuote();
+  assert.equal(tech.data.quotePrice, '180');
+  assert.equal(tech.data.quoteDepositAmount, '36');
+  tech.toggleQuoteSurcharge({ currentTarget: { dataset: { id: 'night' } } });
+  assert.equal(tech.data.quotePrice, '200');
+  assert.equal(tech.data.quoteDepositAmount, '40', '比例定金按含附加费的最终总价计算');
+  tech.onQuoteFinalPriceInput({ detail: { value: '190' } });
+  assert.equal(tech.data.quoteDepositAmount, '38', '最终优惠后重算比例定金');
   await tech.submitQuote();
-  assert.equal(requests.length, before, '未选择当日接单项不能保存');
-  tech.data.quoteContinue = 'no';
-  await tech.submitQuote();
-  assert.equal(requests.at(-1).amountFen, 30000);
-  assert.equal(requests.at(-1).durationMinutes, 90);
-  assert.equal(requests.at(-1).continueAccepting, false);
-  assert.equal(requests.at(-1).services, undefined, '手工报价不污染服务目录');
+  assert.equal(requests.at(-1).finalPriceFen, 19000);
+  assert.equal(requests.at(-1).surchargeIds[0], 'night');
+  assert.equal(requests.at(-1).services[0].servicePublicId, 'base');
+  assert.equal(requests.at(-1).depositAmount, undefined, '未人工覆盖的定金由后端按规则计算');
   console.log('极简提交、开关兼容、登录草稿、未知时长和美甲师三项确认检查通过');
 })().catch(error => { console.error(error); process.exitCode = 1; });

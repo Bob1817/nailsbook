@@ -103,7 +103,12 @@ const day = () => picker.data.calendarDays.find(d => d.dateStr === '2099-01-05')
   vm.runInNewContext(fs.readFileSync(pageFile, 'utf8'), {
     Page: value => { pageDefinition = value; },
     require: require('node:module').createRequire(pageFile),
-    wx: { showToast: value => toasts.push(value.title), navigateTo: value => { navigation = value.url; } }
+    getApp: () => ({ globalData: { role: 'client', token: 'test-token' } }),
+    wx: {
+      getStorageSync: key => key === 'role' ? 'client' : key === 'client_token' ? 'test-token' : undefined,
+      showToast: value => toasts.push(value.title),
+      navigateTo: value => { navigation = value.url; }
+    }
   });
   const page = { ...pageDefinition, data: { ...pageDefinition.data, selectedTech: { id: 7, name: '测试' }, selectedTechId: 7 },
     setData(value) { Object.assign(this.data, value); } };
@@ -117,6 +122,7 @@ const day = () => picker.data.calendarDays.find(d => d.dateStr === '2099-01-05')
   page.onBookingAvailability({ detail: { ready: false, paused: false } });
   assert.equal(page.checkBookingAvailability(), false);
   page.onBookingAvailability({ detail: { ready: true, paused: false } });
+  page.setData({ settingsReady: true });
   assert.equal(page.checkBookingAvailability(), true);
   const strip = { ...definition.methods, data: { ...definition.data, horizontal: true, _ready: true, paused: false,
     serviceType: 'home', techInfo: {}, serviceDate: '', closedDates: [] },

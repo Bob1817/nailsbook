@@ -1,0 +1,7 @@
+ALTER TABLE "Technician" ADD COLUMN "depositMode" TEXT NOT NULL DEFAULT 'none';
+ALTER TABLE "Technician" ADD COLUMN "depositValue" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "Order" ADD COLUMN "acceptedProposal" TEXT;
+ALTER TABLE "Order" ADD COLUMN "quoteVersion" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "Order" ADD COLUMN "depositModeSnapshot" TEXT NOT NULL DEFAULT 'none';
+ALTER TABLE "Order" ADD COLUMN "depositValueSnapshot" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "Order" ADD COLUMN "pricingDetails" TEXT;

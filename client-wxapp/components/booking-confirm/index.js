@@ -4,22 +4,31 @@ const { requestBookingReminder } = require('../../utils/wechat-subscription');
 
 Component({
   properties: { order: { type: Object, value: null, observer: 'resetForm' } },
-  data: { price: '', deposit: '', depositPaid: false, submitting: false, error: '', summary: '' },
+  data: { price: '', deposit: '', depositPaid: false, proposalChanged: false, submitting: false, error: '', summary: '' },
   methods: {
     resetForm(order) {
       if (!order) return;
       this.setData({
         price: String(order.price || 0), deposit: String(order.depositAmount || 0),
-        depositPaid: !!order.depositPaid, error: '',
+        depositPaid: !!order.depositPaid, proposalChanged: false, error: '',
         summary: `${formatBookingDate(order.startTime)} ${formatClock(order.startTime)}`
       });
     },
     stop() {},
     close() { if (!this.data.submitting) this.triggerEvent('close'); },
-    onPrice(e) { this.setData({ price: e.detail.value, error: '' }); },
+    updateProposalChanged(price, deposit) {
+      const order = this.data.order || {};
+      this.setData({ proposalChanged: Number(price) !== Number(order.price || 0) || Number(deposit) !== Number(order.depositAmount || 0) });
+    },
+    onPrice(e) {
+      const price = e.detail.value;
+      this.setData({ price, error: '' });
+      this.updateProposalChanged(price, this.data.deposit);
+    },
     onDeposit(e) {
       const deposit = e.detail.value;
       this.setData({ deposit, error: '', ...(Number(deposit) > 0 ? {} : { depositPaid: false }) });
+      this.updateProposalChanged(this.data.price, deposit);
     },
     onPaid(e) { this.setData({ depositPaid: !!e.detail.value, error: '' }); },
     async submit() {
@@ -35,11 +44,11 @@ Component({
       this.setData({ submitting: true, error: '' });
       try {
         await requestBookingReminder('technician');
-        await api.technician.orders.confirm(this.data.order.id, {
+        const result = await api.technician.orders.confirm(this.data.order.id, {
           price: Number(price), depositAmount: Number(deposit),
           isDepositPaid: Number(deposit) > 0 && this.data.depositPaid
         });
-        wx.showToast({ title: '已确认排期', icon: 'success' });
+        wx.showToast({ title: result && result.status === 'pending_agree' ? '已发送客户确认' : '已确认排期', icon: 'success' });
         this.triggerEvent('saved');
       } catch (err) {
         this.setData({ error: err.message || '确认失败，请重试' });

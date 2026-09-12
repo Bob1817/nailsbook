@@ -47,6 +47,8 @@ describe('OrdersService 流转成功路径', () => {
       service: { findUnique: jest.fn().mockResolvedValue(null) },
     };
     service = new OrdersService(prisma, chatGateway as never);
+    jest.spyOn(service as any, 'assertTechnicianWorkSchedule').mockResolvedValue(undefined);
+    jest.spyOn(service as any, 'assertTechnicianShopSchedule').mockResolvedValue(undefined);
   });
 
   it('confirm 上门：pending_confirm → pending_home，并给客户发系统消息+推送', async () => {
@@ -58,8 +60,8 @@ describe('OrdersService 流转成功路径', () => {
       technicianId: 7,
       depositAmount: 0,
       isDepositPaid: false,
-      startTime: new Date('2026-06-10T10:00:00Z'),
-      endTime: new Date('2026-06-10T12:00:00Z'),
+      startTime: new Date('2099-06-10T10:00:00Z'),
+      endTime: new Date('2099-06-10T12:00:00Z'),
     } as never);
 
     await service.confirm(1);
@@ -84,8 +86,8 @@ describe('OrdersService 流转成功路径', () => {
       clientUserId: 11,
       technicianId: 7,
       depositAmount: 0,
-      startTime: new Date('2026-06-10T10:00:00Z'),
-      endTime: new Date('2026-06-10T12:00:00Z'),
+      startTime: new Date('2099-06-10T10:00:00Z'),
+      endTime: new Date('2099-06-10T12:00:00Z'),
     } as never);
 
     await service.confirm(1);
@@ -97,33 +99,12 @@ describe('OrdersService 流转成功路径', () => {
     );
   });
 
-  it('confirm 覆盖最终报价并按服务合计重算优惠', async () => {
-    jest.spyOn(service, 'findOne').mockResolvedValue({
-      id: 1,
-      status: 'pending_confirm',
-      serviceType: '到店美甲',
-      clientUserId: 11,
-      technicianId: 7,
-      depositAmount: 0,
-      serviceSubtotalFen: 30000,
-      finalPriceFen: 28000,
-      quotePrice: 280,
-      startTime: new Date('2026-06-10T10:00:00Z'),
-      endTime: new Date('2026-06-10T12:00:00Z'),
-    } as never);
-
+  it('确认时改价转为客户确认，不直接排期', async () => {
+    jest.spyOn(service, 'findOne').mockResolvedValue({ id: 1, technicianId: 7, status: 'pending_confirm', finalPriceFen: 28000, depositAmount: 0, startTime: new Date('2099-06-10T02:00:00Z') } as never);
+    const review = jest.spyOn(service, 'review').mockResolvedValue({ status: 'pending_agree' } as never);
     await service.confirm(1, 268);
-
-    expect(prisma.order.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          quotePrice: 268,
-          finalPriceFen: 26800,
-          discountAmountFen: 3200,
-          quotedAt: expect.any(Date),
-        }),
-      }),
-    );
+    expect(review).toHaveBeenCalledWith(1, 7, expect.objectContaining({ finalPriceFen: 26800, serviceDate: '2099-06-10', startTime: '10:00' }));
+    expect(prisma.blockedTimeSlot.create).not.toHaveBeenCalled();
   });
 
   it('confirm 遇到已锁定档期时不转正式预约', async () => {
@@ -134,8 +115,8 @@ describe('OrdersService 流转成功路径', () => {
       serviceType: '到店美甲',
       technicianId: 7,
       depositAmount: 0,
-      startTime: new Date('2026-06-10T10:00:00Z'),
-      endTime: new Date('2026-06-10T12:00:00Z'),
+      startTime: new Date('2099-06-10T10:00:00Z'),
+      endTime: new Date('2099-06-10T12:00:00Z'),
     } as never);
 
     await expect(service.confirm(1)).rejects.toThrow('该时间段已被预约');
@@ -153,8 +134,8 @@ describe('OrdersService 流转成功路径', () => {
       quotePrice: 200,
       depositAmount: 50,
       isDepositPaid: false,
-      startTime: new Date('2026-06-10T10:00:00Z'),
-      endTime: new Date('2026-06-10T12:00:00Z'),
+      startTime: new Date('2099-06-10T10:00:00Z'),
+      endTime: new Date('2099-06-10T12:00:00Z'),
     } as never);
 
     await service.confirm(1);
@@ -172,11 +153,11 @@ describe('OrdersService 流转成功路径', () => {
     beforeEach(() => {
       jest.spyOn(service, 'findOne').mockResolvedValue({
         id: 1, status: 'pending_confirm', serviceType: '到店美甲', clientUserId: 11,
-        technicianId: 7, quotePrice: 696, depositAmount: 60, isDepositPaid: false,
-        startTime: new Date('2026-09-10T10:00:00Z'), endTime: new Date('2026-09-10T12:00:00Z'),
+        technicianId: 7, quotePrice: 598, finalPriceFen: 59800, depositAmount: 100, isDepositPaid: false,
+        startTime: new Date('2099-09-10T10:00:00Z'), endTime: new Date('2099-09-10T12:00:00Z'),
       } as never);
     });
-    it('新总价和已收定金同步到预约、交易和线下收款记录', async () => {
+    it('已确认总价和实收定金同步到预约、交易和线下收款记录', async () => {
       await service.confirm(1, 598, 100, true);
       expect(prisma.order.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({
         quotePrice: 598, finalPriceFen: 59800, depositAmount: 100, isDepositPaid: true,
@@ -189,10 +170,10 @@ describe('OrdersService 流转成功路径', () => {
         channel: 'offline', amountCents: 10000, status: 'paid', paymentType: 'deposit',
       }) }));
     });
-    it('未收定金使用新金额提示客户支付', async () => {
-      await service.confirm(1, 598, 80, false);
+    it('未收定金使用已确认金额提示客户支付', async () => {
+      await service.confirm(1, 598, 100, false);
       expect(prisma.order.update.mock.calls[0][0].data.tradeStatus).toBe('deposit_pending');
-      expect(prisma.message.create.mock.calls[0][0].data.content).toContain('80.00');
+      expect(prisma.message.create.mock.calls[0][0].data.content).toContain('100.00');
       expect(prisma.paymentOrder.create).not.toHaveBeenCalled();
     });
     it.each([[0, 0], [-1, 0], [598.001, 0], [598, -1], [598, 599], [598, 0.001]])('拒绝无效总价 %s 或定金 %s', async (price, deposit) => {
@@ -200,6 +181,8 @@ describe('OrdersService 流转成功路径', () => {
       expect(prisma.order.update).not.toHaveBeenCalled();
     });
     it('无定金时不会记录虚假收款', async () => {
+      const order = await service.findOne(1);
+      jest.spyOn(service, 'findOne').mockResolvedValue({ ...order, depositAmount: 0 } as never);
       await service.confirm(1, 598, 0, true);
       expect(prisma.order.update.mock.calls[0][0].data.isDepositPaid).toBe(false);
       expect(prisma.paymentOrder.create).not.toHaveBeenCalled();
@@ -207,6 +190,8 @@ describe('OrdersService 流转成功路径', () => {
     it('已有支付凭据的定金不能取消或降低', async () => {
       prisma.paymentOrder.aggregate.mockResolvedValue({ _sum: { amountCents: 10000 } });
       await expect(service.confirm(1, 598, 100, false)).rejects.toThrow('已有定金收款记录');
+      const order = await service.findOne(1);
+      jest.spyOn(service, 'findOne').mockResolvedValue({ ...order, depositAmount: 50 } as never);
       await expect(service.confirm(1, 598, 50, true)).rejects.toThrow('已有定金收款记录');
     });
     it('已有定金凭据不重复记录收款', async () => {

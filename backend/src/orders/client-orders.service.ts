@@ -1,3 +1,5 @@
+import { OrdersService } from './orders.service';
+import { depositFen, proposalSnapshot, SURCHARGE_CATEGORIES } from './booking-proposal';
 import { assertBookingAccountState } from './booking-account-state';
 import { BookingDaysService, businessDate, quickBookingEnabled, assertBookingDate } from './booking-days.service';
 import {
@@ -68,6 +70,7 @@ export class ClientOrdersService {
     @Optional() private readonly rewardFunds?: RewardFundService,
     @Optional() private readonly subscriptions?: SubscriptionsService,
     @Optional() private readonly bookingDays?: BookingDaysService,
+    @Optional() private readonly orders?: OrdersService,
   ) {}
 
   async findTradeOrders(clientUserId: number, status?: string) {
@@ -249,6 +252,7 @@ export class ClientOrdersService {
         where: {
           technicianId: dto.techId,
           publicId: { in: dto.selectedServiceIds ?? [] },
+          category: { notIn: SURCHARGE_CATEGORIES },
           isBookable: true,
           archivedAt: null,
         },
@@ -274,6 +278,12 @@ export class ClientOrdersService {
         : bookingType === 'standard'
           ? serviceSubtotalFen
           : null;
+    const depositModeSnapshot = binding.technician.depositMode || 'none';
+    const depositValueSnapshot = binding.technician.depositValue || 0;
+    if ((dto.expectedDepositMode !== undefined && dto.expectedDepositMode !== depositModeSnapshot) ||
+        (dto.expectedDepositValue !== undefined && dto.expectedDepositValue !== depositValueSnapshot) ||
+        (dto.expectedPriceFen !== undefined && dto.expectedPriceFen !== finalPriceFen)) throw new BadRequestException('价格或定金设置已更新，请重新加载预约信息后提交');
+    const defaultDepositFen = depositFen(finalPriceFen, depositModeSnapshot, depositValueSnapshot);
     const now = new Date();
     const sourcePromotion = !dto.referenceOnly && sourceWork?.promotion && sourceWork.promotion.enabled &&
       (!sourceWork.promotion.startsAt || sourceWork.promotion.startsAt <= now) &&
@@ -358,6 +368,13 @@ export class ClientOrdersService {
             promotionId: sourcePromotion?.id ?? null,
             bookingType,
             quickBooking: dto.quickBooking === true,
+            depositModeSnapshot, depositValueSnapshot,
+            depositAmount: defaultDepositFen == null ? null : defaultDepositFen / 100,
+            acceptedProposal: finalPriceFen == null ? null : proposalSnapshot({
+              startTime, endTime, address: orderAddress, serviceType: dto.serviceType,
+              finalPriceFen, depositAmount: (defaultDepositFen || 0) / 100,
+              depositModeSnapshot, depositValueSnapshot,
+            }, serviceLines),
             serviceSubtotalFen,
             discountAmountFen: Math.max(
               0,
@@ -923,6 +940,7 @@ export class ClientOrdersService {
       throw new NotFoundException('订单不存在');
     }
 
+    if (order.quoteVersion > 0 && ['pending_quote', 'pending_confirm', 'pending_agree'].includes(order.status)) throw new BadRequestException('请联系美甲师在确认方案中调整预约时间');
     if (order.quickBooking && (!order.totalDurationMinutes || order.status === 'pending_agree')) throw new BadRequestException('请先拒绝报价，联系美甲师在报价时调整安排');
     if (!this.canUpdateOrder(order)) {
       throw new BadRequestException('当前订单状态不支持修改');
@@ -1026,7 +1044,7 @@ export class ClientOrdersService {
       });
 
       await tx.blockedTimeSlot.deleteMany({ where: { orderId: id } });
-      await tx.blockedTimeSlot.create({
+      if (!['pending_quote', 'pending_confirm', 'pending_agree'].includes(order.status)) await tx.blockedTimeSlot.create({
         data: {
           techId: order.technicianId,
           orderId: id,
@@ -1042,7 +1060,7 @@ export class ClientOrdersService {
     return this.mapOrder(updatedOrder);
   }
 
-  async agree(clientUserId: number, id: number, fundAmount: number = 0) {
+  async agree(clientUserId: number, id: number, fundAmount: number = 0, quoteVersion?: number) {
     if (isMiniProgramLaunchMode() && fundAmount > 0) {
       throw new BadRequestException('小程序首期不支持美甲基金抵扣');
     }
@@ -1056,6 +1074,13 @@ export class ClientOrdersService {
 
     if (!order) {
       throw new NotFoundException('订单不存在');
+    }
+
+    if (order.quoteVersion > 0) {
+      if (!this.orders || !Number.isInteger(quoteVersion) || quoteVersion !== order.quoteVersion) throw new BadRequestException('报价已更新，请刷新并确认最新方案');
+      if (fundAmount) throw new BadRequestException('请按当前最终报价确认');
+      await this.orders.confirm(id, undefined, undefined, undefined, { clientUserId, quoteVersion });
+      return this.findOne(clientUserId, id);
     }
 
     // pending_agree：客户对美甲师报价的同意；
@@ -1164,7 +1189,7 @@ export class ClientOrdersService {
     return this.mapOrder(updatedOrder);
   }
 
-  async rejectQuote(clientUserId: number, id: number, reason: string) {
+  async rejectQuote(clientUserId: number, id: number, reason: string, quoteVersion?: number) {
     const order = await this.prisma.order.findFirst({
       where: {
         id,
@@ -1181,11 +1206,17 @@ export class ClientOrdersService {
       throw new BadRequestException('当前订单状态不支持拒绝报价');
     }
 
+    if (order.quoteVersion > 0 && quoteVersion !== order.quoteVersion) throw new BadRequestException('预约方案已更新，请刷新后重试');
+
     let systemMessage: any = null;
     let conversationId: number | null = null;
 
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
-      if (order.quickBooking) {
+      if (order.quoteVersion > 0) {
+        const changed = await tx.order.updateMany({ where: { id, clientUserId, status: 'pending_agree', quoteVersion, updatedAt: order.updatedAt }, data: { status: 'pending_quote' } });
+        if (changed.count !== 1) throw new BadRequestException('预约方案已更新，请刷新后重试');
+      }
+      if (order.quickBooking && !order.quoteVersion) {
         const changed = await tx.order.updateMany({ where: { id, clientUserId, status: 'pending_agree', updatedAt: order.updatedAt }, data: { status: 'pending_quote' } });
         if (!changed.count) throw new BadRequestException('预约已更新，请刷新后重试');
         await tx.blockedTimeSlot.deleteMany({ where: { orderId: id } });
@@ -1194,9 +1225,9 @@ export class ClientOrdersService {
       const updated = await tx.order.update({
         where: { id },
         data: {
-          ...(order.quickBooking ? { totalDurationMinutes: 0, endTime: order.startTime, finalPriceFen: null, serviceSubtotalFen: 0, discountAmountFen: 0 } : {}),
+          ...(order.quickBooking && !order.quoteVersion ? { totalDurationMinutes: 0, endTime: order.startTime, finalPriceFen: null, serviceSubtotalFen: 0, discountAmountFen: 0 } : {}),
           status: 'pending_quote',
-          quotePrice: order.quickBooking ? null : 0,
+          quotePrice: order.quoteVersion ? order.quotePrice : order.quickBooking ? null : 0,
           quoteRemark: null,
           quotedAt: null,
         },
@@ -1475,7 +1506,7 @@ export class ClientOrdersService {
       });
 
       await tx.blockedTimeSlot.deleteMany({ where: { orderId: id } });
-      await tx.blockedTimeSlot.create({
+      if (!['pending_quote', 'pending_confirm', 'pending_agree'].includes(order.status)) await tx.blockedTimeSlot.create({
         data: {
           techId: order.technicianId,
           orderId: id,
@@ -1620,6 +1651,11 @@ export class ClientOrdersService {
       remark: order.remark ?? null,
       address: order.address ?? null,
       quotePrice: order.quotePrice ?? null,
+      quoteVersion: order.quoteVersion || 0,
+      depositModeSnapshot: order.depositModeSnapshot || 'none',
+      depositValueSnapshot: order.depositValueSnapshot || 0,
+      pricingDetails: order.pricingDetails ? JSON.parse(order.pricingDetails) : null,
+      acceptedProposal: order.acceptedProposal ? JSON.parse(order.acceptedProposal) : null,
       bookingType: order.bookingType ?? 'legacy',
       serviceSubtotalFen: order.serviceSubtotalFen ?? 0,
       discountAmountFen: order.discountAmountFen ?? 0,

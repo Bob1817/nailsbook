@@ -1,8 +1,6 @@
 const api = require('../../../services/api');
 const { parseWorkScene } = require('../../../utils/work-share-scene');
-const { trackConversion, getVisitorId } = require('../../../utils/conversion-tracking');
-const { rememberShareRegistration } = require('../../../utils/work-share-registration');
-const { buildClientLoginUrl } = require('../../../utils/artist-navigation');
+const { trackConversion } = require('../../../utils/conversion-tracking');
 const { normalizeWork, normalizeWorkDetail } = require('../../../utils/normalize-work');
 
 Page({
@@ -168,51 +166,10 @@ Page({
     this._bookingOpening = true;
     try {
     trackConversion({ eventType: 'booking_intent', workId: work.id, technicianId: work.technicianId || (work.technician || {}).id, channel: this.shareChannel || 'wechat_share', touchpoint: 'work_share', shareToken: this.shareToken });
-    if (api.public && api.public.bookingSettings) {
-      try {
-        const techId = work.technicianId || (work.technician || {}).id;
-        const settings = await api.public.bookingSettings(techId);
-        if (settings.quickBookingEnabled) {
-          const shareQuery = this.shareToken ? '&shareToken=' + encodeURIComponent(this.shareToken) : '';
-          wx.navigateTo({ url: '/pages/client/create-order/index?workId=' + work.id + '&techId=' + techId + shareQuery + '&source=work_share&mode=quick' });
-          return;
-        }
-      } catch (err) {
-        if (!err.bookingSettingsUnsupported) {
-          wx.showToast({ title: err.message || '预约信息加载失败，请重试', icon: 'none' });
-          return;
-        }
-      }
-    }
-    const app = getApp();
-    const token = app.globalData.token || wx.getStorageSync('client_token');
-    const role = app.globalData.role || wx.getStorageSync('role');
-    if (!token || role !== 'client') {
-      const query = this.shareToken ? 'shareToken=' + encodeURIComponent(this.shareToken) : 'id=' + work.id;
-      const redirect = '/pages/client/public-work/index?' + query + '&book=1&channel=' + (this.shareChannel || 'wechat_share');
-      const loginUrl = buildClientLoginUrl(redirect, { source: 'work_share' });
-      rememberShareRegistration({ shareWorkId: Number(work.id), shareToken: this.shareToken || undefined,
-        shareChannel: this.shareChannel || 'wechat_share', shareVisitorId: getVisitorId() }, redirect);
-      wx.navigateTo({ url: loginUrl });
-      return;
-    }
-    this.setData({ binding: true });
-    try {
-      const name = (work.technician && work.technician.name) || work.technicianName || '这位美甲师';
-      const result = await wx.showModal({
-        title: '预约' + name,
-        content: '继续后将绑定这位美甲师并进入预约，已有的其他绑定不会改变。已绑定则直接继续。',
-        confirmText: '确认并继续',
-      });
-      if (!result.confirm) return;
-      const binding = await api.client.profile.bindSharedWork(Number(work.id), this.shareToken);
-      const shareQuery = this.shareToken ? '&shareToken=' + encodeURIComponent(this.shareToken) : '';
-      wx.navigateTo({ url: '/pages/client/create-order/index?workId=' + binding.workId + '&techId=' + binding.techId + shareQuery + '&source=work_share' });
-    } catch (err) {
-      wx.showToast({ title: err.message || '暂时无法预约，请重试', icon: 'none' });
-    } finally {
-      this.setData({ binding: false });
-    }
+    const techId = work.technicianId || (work.technician || {}).id;
+    if (!techId) return wx.showToast({ title: '作品美甲师信息不完整', icon: 'none' });
+    const shareQuery = this.shareToken ? '&shareToken=' + encodeURIComponent(this.shareToken) : '';
+    wx.navigateTo({ url: '/pages/client/create-order/index?workId=' + work.id + '&techId=' + techId + shareQuery + '&source=work_share' });
     } finally {
       this._bookingOpening = false;
     }

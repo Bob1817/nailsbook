@@ -96,22 +96,31 @@
     </view>
   </view>
 
+  <view wx:if="{{order.status === 'pending_agree' && order.acceptedProposal}}" class="card">
+    <text class="card-title">请确认调整后的方案</text>
+    <text class="remark-text">原报价 ¥{{order.acceptedProposal.price / 100}} · 原定金 ¥{{order.acceptedProposal.deposit / 100}}。当前服务、时间及费用如下；确认后进入排期。</text>
+  </view>
   <!-- ============ 价格信息 ============ -->
   <view wx:if="{{order._showPriceCard}}" class="card">
     <text class="card-title">{{order.status === 'pending_agree' ? '美甲师报价' : '费用信息'}}</text>
 
     <view wx:if="{{order.serviceLines.length}}" class="price-lines">
       <view wx:for="{{order.serviceLines}}" wx:key="id" class="price-line"><text>{{item.name}}{{item.quantity > 1 ? ' × ' + item.quantity : ''}}</text><text class="semantic-money">¥{{item.subtotalFen / 100}}</text></view>
-      <view class="price-line price-subtotal"><text>服务合计</text><text class="{{order.servicePriceSuperseded ? 'price-invalid' : 'semantic-money'}}">¥{{order.serviceSubtotalFen / 100}}</text></view>
+      <view class="price-line price-subtotal"><text>基础服务合计</text><text class="{{order.servicePriceSuperseded ? 'price-invalid' : 'semantic-money'}}">¥{{order.serviceSubtotalFen / 100}}</text></view>
       <view wx:if="{{order.bookingType === 'work' && order.workPriceFen > 0}}" class="price-line"><text>作品报价</text><text class="{{order.workPriceSuperseded ? 'price-invalid' : 'semantic-money'}}">¥{{order.workPriceFen / 100}}</text></view>
-      <view wx:if="{{order.priceDifferenceFen > 0}}" class="price-line"><text>其他</text><text class="semantic-money">+¥{{order.priceDifferenceFen / 100}}</text></view>
-      <view wx:elif="{{order.priceDifferenceFen < 0}}" class="price-line price-discount"><text>优惠</text><text class="semantic-money">-¥{{0 - order.priceDifferenceFen / 100}}</text></view>
+      <view wx:if="{{!order.pricingDetails && order.priceDifferenceFen > 0}}" class="price-line"><text>其他</text><text class="semantic-money">+¥{{order.priceDifferenceFen / 100}}</text></view>
+      <view wx:elif="{{!order.pricingDetails && order.priceDifferenceFen < 0}}" class="price-line price-discount"><text>优惠</text><text class="semantic-money">-¥{{0 - order.priceDifferenceFen / 100}}</text></view>
     </view>
+    <block wx:if="{{order.pricingDetails}}">
+      <view class="price-line"><text>基础组合报价</text><text class="semantic-money">¥{{order.pricingDetails.coreFen / 100}}</text></view>
+      <view class="price-line"><text>附加服务合计</text><text class="semantic-money">¥{{order.pricingDetails.extrasFen / 100}}</text></view>
+      <view wx:if="{{order.pricingDetails.finalDiscountFen > 0}}" class="price-line"><text>本单优惠</text><text class="semantic-money">-¥{{order.pricingDetails.finalDiscountFen / 100}}</text></view>
+    </block>
     <view class="price-row">
       <text class="price-label">{{order.priceLabel}}</text>
       <view class="price-right">
         <text class="price-main semantic-money">{{order._priceText}}</text>
-        <text class="deposit-note">{{order.depositPaid && order.depositAmount > 0 ? '已支付定金 ¥' + (order.depositAmount / 100) : '未支付定金'}}</text>
+        <text class="deposit-note">{{order.depositPaid && order.depositAmount > 0 ? '已支付定金 ¥' + order.depositAmount : (order.depositAmount > 0 ? '待收定金 ¥' + order.depositAmount : '无需定金')}}</text>
       </view>
     </view>
     <view wx:if="{{order.status === 'completed'}}" class="price-row actual-payment-row">

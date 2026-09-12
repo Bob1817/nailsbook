@@ -1,5 +1,4 @@
 const api = require('../../../services/api');
-const { buildClientLoginUrl } = require('../../../utils/artist-navigation');
 
 Page({
   data: { artist: null, loading: true, error: '', owner: false, enabled: false, quickBookingEnabled: false, acceptingBookings: false, savingAvailability: false, submitting: false },
@@ -90,22 +89,7 @@ Page({
       wx.showModal({ title: '进入小程序预约', content: '请点击页面底部“前往小程序”，进入后点击“立即预约”完成授权。', showCancel: false });
       return;
     }
-    const path = `/pages/client/create-order/index?techId=${this.techId}&mode=quick&source=quick_booking`;
-    const loggedIn = wx.getStorageSync('role') === 'client' && !wx.getStorageSync('isTourist') &&
-      (wx.getStorageSync('client_token') || wx.getStorageSync('token'));
-    if (!loggedIn) {
-      const url = buildClientLoginUrl(path, { inviteCode: this.inviteCode, source: 'card' });
-      wx.navigateTo({ url: url + `&quickBookingTechId=${this.techId}` });
-      return;
-    }
-    this.setData({ submitting: true });
-    try {
-      await api.client.profile.bindQuickBooking(this.techId, this.inviteCode);
-      wx.navigateTo({ url: path });
-    } catch (err) {
-      wx.showToast({ title: err.message || '暂时无法预约，请重试', icon: 'none' });
-    } finally {
-      this.setData({ submitting: false });
-    }
+    const path = `/pages/client/create-order/index?techId=${this.techId}&mode=quick&source=quick_booking&invite=${encodeURIComponent(this.inviteCode)}`;
+    wx.navigateTo({ url: path });
   }
 });

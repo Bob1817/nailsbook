@@ -200,7 +200,7 @@ Page({
       const list = await api.technician.services.list();
       if (!this._pageActive) return;
       const availableServices = (list || [])
-        .filter(item => item.isActive !== false)
+        .filter(item => item.isActive !== false && !String(item.category).startsWith('surcharge_'))
         .map(item => ({
           ...item,
           configurationValid:
