@@ -1141,6 +1141,20 @@ export class ClientAuthService {
     );
     const defaultBinding = activeBindings.find((b) => b.isDefault);
 
+    const [completedVisits, discountSummary] = await Promise.all([
+      this.prisma.order.count({ where: { clientUserId, status: 'completed' } }),
+      this.prisma.order.aggregate({
+        where: { clientUserId, status: 'completed' },
+        _sum: { discountAmountFen: true },
+      }),
+    ]);
+    const customerLevel = completedVisits >= 10 ? '常客' : completedVisits >= 3 ? '熟客' : '新客';
+    const nextLevel = completedVisits < 3
+      ? { name: '熟客', remainingVisits: 3 - completedVisits }
+      : completedVisits < 10
+        ? { name: '常客', remainingVisits: 10 - completedVisits }
+        : null;
+
     // 检查是否同时是美甲师
     const technicianAccount = await this.prisma.technician.findUnique({
       where: { phone: client.phone },
@@ -1160,6 +1174,14 @@ export class ClientAuthService {
       city: client.city,
       bio: client.bio,
       status: client.status,
+      growth: {
+        customerLevel,
+        memberLevel: '普通会员',
+        completedVisits,
+        discountLabel: '暂无专属折扣',
+        savedAmountFen: discountSummary._sum.discountAmountFen || 0,
+        nextLevel,
+      },
       capabilities: {
         hasBoundTechnician: activeBindings.length > 0,
         isTechnician: !!technicianAccount,

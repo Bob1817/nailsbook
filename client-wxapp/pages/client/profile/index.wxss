@@ -1225,6 +1225,35 @@ page {
 .menu-label { flex: 1; min-width: 0; font-size: var(--font-sm); font-weight: var(--weight-normal); }
 .menu-copy,.menu-desc { display: none; }
 
+.growth-card { padding: 24rpx 28rpx 20rpx; }
+.growth-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16rpx; }
+.growth-saved { color: var(--nb-money); font-size: var(--font-xs); line-height: 1.5; }
+.growth-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 22rpx; }
+.growth-item { min-width: 0; text-align: center; }
+.growth-value {
+  display: block;
+  overflow: hidden;
+  color: var(--nb-ink);
+  font-size: var(--font-sm);
+  font-weight: var(--weight-semibold);
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.growth-discount { font-size: var(--font-xs); line-height: 1.95; }
+.growth-label { display: block; margin-top: 6rpx; color: var(--nb-muted); font-size: var(--font-xs); }
+.growth-progress {
+  display: block;
+  margin-top: 18rpx;
+  padding: 12rpx 16rpx;
+  border-radius: 12rpx;
+  background: var(--nb-soft-surface);
+  color: var(--nb-secondary);
+  font-size: var(--font-xs);
+  line-height: 1.45;
+  text-align: center;
+}
+
 .tech-section-card { overflow: hidden; }
 .tech-section-head { align-items: center; padding: 24rpx 28rpx 18rpx; }
 .tech-head-title-row { gap: 10rpx; }
@@ -1289,6 +1318,15 @@ page {
   font-size: var(--font-xs);
   line-height: 1.35;
 }
+.tech-status {
+  flex-shrink: 0;
+  padding: 4rpx 10rpx;
+  border-radius: 8rpx;
+  font-size: var(--font-xs);
+  line-height: 1.35;
+}
+.tech-status-active { background: var(--nb-success-surface); color: var(--nb-success); }
+.tech-status-inactive { background: var(--nb-page); color: var(--nb-muted); }
 .tech-preview-meta {
   display: block;
   margin-top: 8rpx;
@@ -1299,14 +1337,23 @@ page {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.tech-preview-action {
-  width: 44px;
-  height: 44px;
+.tech-quick-book {
+  min-width: 136rpx;
+  min-height: 44px;
+  padding: 0 18rpx;
+  box-sizing: border-box;
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
+  border-radius: 16rpx;
+  background: var(--nb-action);
+  color: var(--nb-inverse);
+  font-size: var(--font-xs);
+  font-weight: var(--weight-semibold);
 }
+.tech-quick-book:active { background: var(--nb-action-pressed); }
+.tech-quick-book-disabled { background: var(--nb-pressed); color: var(--nb-control); }
 .tech-preview-arrow { color: var(--nb-muted); font-size: var(--font-lg); }
 .tech-preview-footer {
   min-height: 44px;

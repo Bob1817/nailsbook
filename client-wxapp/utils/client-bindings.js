@@ -2,10 +2,14 @@ function normalizeBindings(bindings) {
   return bindings.map(b => {
     const technician = b.technician || b;
     const defaultShop = (technician.shopAddresses || []).find(shop => shop.enabled !== false);
+    const status = technician.status || 'active';
     return {
       id: technician.id, name: technician.name || '美甲师', phone: technician.phone || '',
       avatar: technician.avatarUrl || technician.avatar || '', city: technician.city || '',
-      status: technician.status || 'active', shopService: !!technician.shopService,
+      status,
+      statusLabel: status === 'active' ? '接单中' : status === 'inactive' ? '休息中' : '暂停服务',
+      statusTone: status === 'active' ? 'active' : 'inactive',
+      canBook: status === 'active', shopService: !!technician.shopService,
       shopName: defaultShop?.name || technician.shopName || '', isDefault: !!b.isDefault,
       bindingStatus: b.bindingStatus || (b.status === 'pending' ? 'pending' : 'active'),
       boundAt: b.boundAt || b.createdAt || ''

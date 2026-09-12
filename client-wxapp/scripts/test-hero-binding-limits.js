@@ -13,6 +13,8 @@ assert.equal(summary.pendingCount, 1);
 assert.deepEqual(summary.previewTechnicians.map(w => w.id), [1,5]);
 assert.equal(summary.hiddenActiveCount, 3);
 assert.equal(summary.previewSummary, '还有 3 位已绑定 · 1 位待确认');
+assert.equal(summary.previewTechnicians[0].statusLabel, '接单中');
+assert.equal(summary.previewTechnicians[0].canBook, true);
 assert.equal(bindingSummary([]).previewTechnicians.length, 0);
 
 let page, fail = false, writes = 0, saved = [1,2,3];
