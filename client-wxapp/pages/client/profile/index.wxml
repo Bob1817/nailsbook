@@ -29,20 +29,6 @@
   <scroll-view class="content-scroll" scroll-y enhanced show-scrollbar="{{false}}">
     <view class="content-area">
 
-      <view class="section-card growth-card">
-        <view class="growth-head">
-          <view><text class="section-title">我的成长</text><text class="section-sub">消费与会员状态</text></view>
-          <text class="growth-saved">累计优惠 {{growth.savedAmountText}}</text>
-        </view>
-        <view class="growth-grid">
-          <view class="growth-item"><text class="growth-value">{{growth.customerLevel}}</text><text class="growth-label">客户等级</text></view>
-          <view class="growth-item"><text class="growth-value">{{growth.memberLevel}}</text><text class="growth-label">会员等级</text></view>
-          <view class="growth-item"><text class="growth-value">{{growth.completedVisits}} 次</text><text class="growth-label">消费次数</text></view>
-          <view class="growth-item"><text class="growth-value growth-discount">{{growth.discountLabel}}</text><text class="growth-label">当前折扣</text></view>
-        </view>
-        <text wx:if="{{growth.nextLevel}}" class="growth-progress">再完成 {{growth.nextLevel.remainingVisits}} 次服务升级为{{growth.nextLevel.name}}</text>
-      </view>
-
       <!-- 我的美甲师 -->
       <view class="section-card tech-section-card">
         <view class="tech-section-head">
@@ -65,6 +51,8 @@
                 <text class="tech-status tech-status-{{item.statusTone}}">{{item.statusLabel}}</text>
               </view>
               <text class="tech-preview-meta">{{item.shopName || item.city || '已绑定的美甲师'}}{{item.shopService ? ' · 支持到店' : ''}}</text>
+              <text class="tech-relationship">{{item.relationship.summary}} · 累计优惠 {{item.relationship.savedAmountText}}</text>
+              <text class="tech-benefit">{{item.relationship.benefitSummary}}</text>
             </view>
             <view class="tech-quick-book {{item.canBook ? '' : 'tech-quick-book-disabled'}}" catchtap="quickBookTechnician" data-id="{{item.id}}" data-can-book="{{item.canBook}}" role="button" aria-label="预约{{item.name}}">快速预约</view>
           </view>

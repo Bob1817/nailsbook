@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const root = path.join(__dirname, '..');
 const { bindingSummary, normalizeBindings } = require('../utils/client-bindings');
 const summary = bindingSummary(normalizeBindings([
-  ...Array.from({length: 5}, (_, i) => ({ id: i + 1, name: '美甲师' + i, isDefault: i === 0, boundAt: '2026-09-0' + (i + 1) })),
+  ...Array.from({length: 5}, (_, i) => ({ id: i + 1, name: '美甲师' + i, isDefault: i === 0, boundAt: '2026-09-0' + (i + 1), relationship: i === 0 ? { completedVisits: 4, savedAmountFen: 1200 } : undefined })),
   {id: 9, name: '待审核', bindingStatus: 'pending'}
 ]));
 assert.equal(summary.activeCount, 5);
@@ -15,6 +15,8 @@ assert.equal(summary.hiddenActiveCount, 3);
 assert.equal(summary.previewSummary, '还有 3 位已绑定 · 1 位待确认');
 assert.equal(summary.previewTechnicians[0].statusLabel, '接单中');
 assert.equal(summary.previewTechnicians[0].canBook, true);
+assert.equal(summary.previewTechnicians[0].relationship.summary, '4 次消费');
+assert.equal(summary.previewTechnicians[0].relationship.savedAmountText, '¥12.00');
 assert.equal(bindingSummary([]).previewTechnicians.length, 0);
 
 let page, fail = false, writes = 0, saved = [1,2,3];

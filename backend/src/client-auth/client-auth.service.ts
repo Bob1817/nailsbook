@@ -1141,19 +1141,21 @@ export class ClientAuthService {
     );
     const defaultBinding = activeBindings.find((b) => b.isDefault);
 
-    const [completedVisits, discountSummary] = await Promise.all([
-      this.prisma.order.count({ where: { clientUserId, status: 'completed' } }),
-      this.prisma.order.aggregate({
-        where: { clientUserId, status: 'completed' },
-        _sum: { discountAmountFen: true },
-      }),
-    ]);
-    const customerLevel = completedVisits >= 10 ? '常客' : completedVisits >= 3 ? '熟客' : '新客';
-    const nextLevel = completedVisits < 3
-      ? { name: '熟客', remainingVisits: 3 - completedVisits }
-      : completedVisits < 10
-        ? { name: '常客', remainingVisits: 10 - completedVisits }
-        : null;
+    const relationshipStats = activeBindings.length
+      ? await this.prisma.order.groupBy({
+          by: ['technicianId'],
+          where: {
+            clientUserId,
+            technicianId: { in: activeBindings.map((binding) => binding.techId) },
+            status: 'completed',
+          },
+          _count: { _all: true },
+          _sum: { discountAmountFen: true },
+        })
+      : [];
+    const statsByTechnician = new Map(
+      relationshipStats.map((item) => [item.technicianId, item]),
+    );
 
     // 检查是否同时是美甲师
     const technicianAccount = await this.prisma.technician.findUnique({
@@ -1174,14 +1176,6 @@ export class ClientAuthService {
       city: client.city,
       bio: client.bio,
       status: client.status,
-      growth: {
-        customerLevel,
-        memberLevel: '普通会员',
-        completedVisits,
-        discountLabel: '暂无专属折扣',
-        savedAmountFen: discountSummary._sum.discountAmountFen || 0,
-        nextLevel,
-      },
       capabilities: {
         hasBoundTechnician: activeBindings.length > 0,
         isTechnician: !!technicianAccount,
@@ -1245,6 +1239,15 @@ export class ClientAuthService {
         serviceSchedule: this.parseServiceSchedule(
           b.technician.serviceSchedule,
         ),
+        relationship: {
+          completedVisits:
+            statsByTechnician.get(b.techId)?._count._all || 0,
+          savedAmountFen:
+            statsByTechnician.get(b.techId)?._sum.discountAmountFen || 0,
+          membership: null,
+          points: null,
+          benefits: [],
+        },
         isDefault: b.isDefault,
         bindSource: b.bindSource,
         bindId: b.id,

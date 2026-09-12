@@ -3,6 +3,12 @@ function normalizeBindings(bindings) {
     const technician = b.technician || b;
     const defaultShop = (technician.shopAddresses || []).find(shop => shop.enabled !== false);
     const status = technician.status || 'active';
+    const relationship = technician.relationship || {};
+    const completedVisits = Number(relationship.completedVisits || 0);
+    const savedAmountFen = Number(relationship.savedAmountFen || 0);
+    const membership = relationship.membership || null;
+    const points = relationship.points;
+    const benefits = Array.isArray(relationship.benefits) ? relationship.benefits.filter(Boolean) : [];
     return {
       id: technician.id, name: technician.name || '美甲师', phone: technician.phone || '',
       avatar: technician.avatarUrl || technician.avatar || '', city: technician.city || '',
@@ -10,6 +16,15 @@ function normalizeBindings(bindings) {
       statusLabel: status === 'active' ? '接单中' : status === 'inactive' ? '休息中' : '暂停服务',
       statusTone: status === 'active' ? 'active' : 'inactive',
       canBook: status === 'active', shopService: !!technician.shopService,
+      relationship: {
+        completedVisits,
+        savedAmountFen,
+        savedAmountText: `¥${(savedAmountFen / 100).toFixed(2)}`,
+        membership,
+        points,
+        summary: [membership && membership.name, `${completedVisits} 次消费`, points != null ? `${points} 积分` : ''].filter(Boolean).join(' · '),
+        benefitSummary: benefits.length ? benefits.join(' · ') : '该美甲师暂未设置会员权益'
+      },
       shopName: defaultShop?.name || technician.shopName || '', isDefault: !!b.isDefault,
       bindingStatus: b.bindingStatus || (b.status === 'pending' ? 'pending' : 'active'),
       boundAt: b.boundAt || b.createdAt || ''

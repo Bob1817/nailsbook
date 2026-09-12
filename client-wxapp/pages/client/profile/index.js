@@ -21,11 +21,6 @@ Page({
     roleSwitchLabel: '切换身份',
     technicians: [],
     previewTechnicians: [], activeCount: 0, pendingCount: 0, hiddenActiveCount: 0, previewSummary: '',
-    growth: {
-      customerLevel: '新客', memberLevel: '普通会员', completedVisits: 0,
-      discountLabel: '暂无专属折扣', savedAmountFen: 0, savedAmountText: '¥0.00',
-      nextLevel: { name: '熟客', remainingVisits: 3 }
-    },
 
     // 角色能力（由 /client/auth/me 返回）
     capabilities: {
@@ -91,10 +86,6 @@ Page({
               wx.setStorageSync('client_bindings', bindings);
             }
             if (me.phone) wx.setStorageSync('client_userInfo', Object.assign({}, userInfo || {}, { phone: me.phone }));
-            if (me.growth) {
-              const savedAmountFen = Number(me.growth.savedAmountFen || 0);
-              this.setData({ growth: Object.assign({}, me.growth, { savedAmountFen, savedAmountText: `¥${(savedAmountFen / 100).toFixed(2)}` }) });
-            }
           }
         } catch (e) {
           console.warn('getUserInfo failed:', e);

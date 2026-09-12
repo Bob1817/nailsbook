@@ -1225,35 +1225,6 @@ page {
 .menu-label { flex: 1; min-width: 0; font-size: var(--font-sm); font-weight: var(--weight-normal); }
 .menu-copy,.menu-desc { display: none; }
 
-.growth-card { padding: 24rpx 28rpx 20rpx; }
-.growth-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16rpx; }
-.growth-saved { color: var(--nb-money); font-size: var(--font-xs); line-height: 1.5; }
-.growth-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 22rpx; }
-.growth-item { min-width: 0; text-align: center; }
-.growth-value {
-  display: block;
-  overflow: hidden;
-  color: var(--nb-ink);
-  font-size: var(--font-sm);
-  font-weight: var(--weight-semibold);
-  line-height: 1.4;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.growth-discount { font-size: var(--font-xs); line-height: 1.95; }
-.growth-label { display: block; margin-top: 6rpx; color: var(--nb-muted); font-size: var(--font-xs); }
-.growth-progress {
-  display: block;
-  margin-top: 18rpx;
-  padding: 12rpx 16rpx;
-  border-radius: 12rpx;
-  background: var(--nb-soft-surface);
-  color: var(--nb-secondary);
-  font-size: var(--font-xs);
-  line-height: 1.45;
-  text-align: center;
-}
-
 .tech-section-card { overflow: hidden; }
 .tech-section-head { align-items: center; padding: 24rpx 28rpx 18rpx; }
 .tech-head-title-row { gap: 10rpx; }
@@ -1337,6 +1308,18 @@ page {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.tech-relationship,
+.tech-benefit {
+  display: block;
+  margin-top: 6rpx;
+  overflow: hidden;
+  color: var(--nb-secondary);
+  font-size: var(--font-xs);
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tech-benefit { color: var(--nb-muted); }
 .tech-quick-book {
   min-width: 136rpx;
   min-height: 44px;
