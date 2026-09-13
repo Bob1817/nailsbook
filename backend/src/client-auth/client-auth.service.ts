@@ -1238,6 +1238,7 @@ export class ClientAuthService {
         phone: b.technician.phone,
         avatarUrl: b.technician.avatarUrl,
         city: b.technician.city,
+        bio: b.technician.bio,
         serviceArea: b.technician.serviceArea,
         status: b.technician.status,
         homeService: b.technician.homeService,
@@ -1272,6 +1273,24 @@ export class ClientAuthService {
   }
 
   // 一键预约邀请必须匹配当前开放的美甲师。
+  async getPrivateTechnicianNotes(clientId: number) {
+    return this.prisma.clientTechnicianNote.findMany({ where: { clientId }, select: { techId: true, content: true } });
+  }
+
+  async savePrivateTechnicianNote(clientId: number, techId: number, content: unknown) {
+    if (!Number.isInteger(techId) || techId <= 0 || typeof content !== 'string' || content.length > 200) {
+      throw new BadRequestException('备注最多 200 字');
+    }
+    const binding = await this.prisma.clientTechBinding.findUnique({ where: { clientId_techId: { clientId, techId } } });
+    if (!binding || binding.status !== 'active') throw new NotFoundException('未绑定该美甲师');
+    return this.prisma.clientTechnicianNote.upsert({
+      where: { clientId_techId: { clientId, techId } },
+      create: { clientId, techId, content: content.trim() },
+      update: { content: content.trim() },
+      select: { techId: true, content: true },
+    });
+  }
+
   async validateQuickBookingInvite(techId: number, inviteCode?: string) {
     if (!inviteCode) throw new BadRequestException('一键预约暂未开放');
     const technician = await this.findActiveTechnicianByInviteCode(inviteCode, '预约邀请已失效');

@@ -418,3 +418,35 @@ describe('ClientAuthService — 绑定审批工作流', () => {
   });
 
 });
+
+describe('private technician notes', () => {
+  const makeService = () => {
+    const prisma = { clientTechBinding: { findUnique: jest.fn() }, clientTechnicianNote: { findMany: jest.fn(), upsert: jest.fn() } };
+    const service = Object.create(ClientAuthService.prototype);
+    service.prisma = prisma;
+    return { service: service as ClientAuthService, prisma };
+  };
+  it('scopes reads to the authenticated client and omits internal fields', async () => {
+    const { service, prisma } = makeService();
+    await service.getPrivateTechnicianNotes(7);
+    expect(prisma.clientTechnicianNote.findMany).toHaveBeenCalledWith({ where: { clientId: 7 }, select: { techId: true, content: true } });
+  });
+  it('rejects writes without an active binding', async () => {
+    const { service, prisma } = makeService();
+    prisma.clientTechBinding.findUnique.mockResolvedValue({ status: 'pending' });
+    await expect(service.savePrivateTechnicianNote(7, 2, 'note')).rejects.toThrow();
+    expect(prisma.clientTechnicianNote.upsert).not.toHaveBeenCalled();
+  });
+  it('uses the authenticated client in the write key and supports clearing', async () => {
+    const { service, prisma } = makeService();
+    prisma.clientTechBinding.findUnique.mockResolvedValue({ status: 'active' });
+    await service.savePrivateTechnicianNote(7, 2, '   ');
+    expect(prisma.clientTechnicianNote.upsert).toHaveBeenCalledWith(expect.objectContaining({ where: { clientId_techId: { clientId: 7, techId: 2 } }, update: { content: '' } }));
+  });
+  it('rejects invalid content before touching storage', async () => {
+    const { service, prisma } = makeService();
+    await expect(service.savePrivateTechnicianNote(7, 2, 'x'.repeat(201))).rejects.toThrow();
+    await expect(service.savePrivateTechnicianNote(7, 2, null)).rejects.toThrow();
+    expect(prisma.clientTechnicianNote.upsert).not.toHaveBeenCalled();
+  });
+});

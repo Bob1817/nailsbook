@@ -334,6 +334,18 @@ export class ClientAuthController {
     );
   }
 
+  @Get('technician-notes')
+  @UseGuards(ClientJwtAuthGuard)
+  getTechnicianNotes(@Req() request: { user: { clientUserId: number } }) {
+    return this.clientAuthService.getPrivateTechnicianNotes(request.user.clientUserId);
+  }
+
+  @Patch('technician-notes/:techId')
+  @UseGuards(ClientJwtAuthGuard)
+  saveTechnicianNote(@Req() request: { user: { clientUserId: number } }, @Param('techId') techId: string, @Body() body: { content: unknown }) {
+    return this.clientAuthService.savePrivateTechnicianNote(request.user.clientUserId, Number(techId), body.content);
+  }
+
   @Post('set-default-technician/:techId')
   @UseGuards(ClientJwtAuthGuard)
   @ApiOperation({ summary: '设置默认美甲师' })

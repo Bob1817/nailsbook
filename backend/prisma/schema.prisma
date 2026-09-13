@@ -1776,3 +1776,12 @@ model AccountDeletionRequest {
   @@unique([accountType, accountId])
   @@index([status, requestedAt])
 }
+
+// Private client annotations; never included in technician binding responses.
+model ClientTechnicianNote {
+  clientId Int
+  techId Int
+  content String
+  updatedAt DateTime @updatedAt
+  @@id([clientId, techId])
+}
