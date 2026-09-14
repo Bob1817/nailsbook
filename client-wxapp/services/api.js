@@ -167,6 +167,8 @@ const client = {
       api.del(`${C}/auth/binding-applications/${techId}`),
     unbindTechnician: (techId) =>
       api.del(`${C}/auth/unbind-technician/${techId}`),
+    technicianNotes: () => api.get(`${C}/auth/technician-notes`),
+    saveTechnicianNote: (techId, content) => api.patch(`${C}/auth/technician-notes/${techId}`, { content }),
     setDefaultTechnician: (techId) =>
       api.post(`${C}/auth/set-default-technician/${techId}`)
   },

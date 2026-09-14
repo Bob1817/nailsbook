@@ -1,18 +1,32 @@
 @import '../profile/index.wxss';
 @import '../../../styles/booking-actions.wxss';
 .manager-page { min-height:100vh; background:var(--nb-page); color:var(--nb-ink); }
-.manager-content { padding:24rpx 32rpx calc(32rpx + env(safe-area-inset-bottom)); }
+.manager-overview { padding:20rpx 32rpx 18rpx; background:var(--nb-surface); }
+.manager-content { padding:20rpx 24rpx calc(48rpx + env(safe-area-inset-bottom)); }
 .manager-header { display:flex; align-items:center; justify-content:space-between; gap:20rpx; }
-.manager-header .booking-action { width:auto; }
+.manager-add { min-width:96rpx; min-height:44px; flex-shrink:0; margin:0; padding:0; display:flex; align-items:center; justify-content:flex-end; border:0; background:transparent; color:var(--nb-text-link); font-size:var(--font-xs); }
+.manager-add::after { border:0; }
+.manager-add[disabled] { color:var(--nb-control); }
 .manager-hint { display:block; font-size:var(--font-xs); color:var(--nb-muted); line-height:1.6; margin-top:10rpx; }
 .manager-state { padding:48rpx 0; font-size:var(--font-sm); color:var(--nb-muted); }
-.manager-card { margin-top:24rpx; padding:24rpx; background:var(--nb-surface); border-radius:20rpx; }
-.manager-main { display:flex; align-items:center; gap:20rpx; min-height:44px; }
-.manager-main:active { opacity:.7; }
-.manager-avatar { width:88rpx; height:88rpx; border-radius:50%; flex-shrink:0; background:var(--nb-page); }
-.manager-info { min-width:0; }
+.manager-card { box-sizing:border-box; min-width:0; margin-top:14rpx; padding:20rpx 22rpx 12rpx; background:var(--nb-surface); border:1rpx solid var(--nb-divider); border-radius:16rpx; }
+.manager-main { display:flex; align-items:center; gap:12rpx; min-height:72rpx; }
+.manager-profile { flex:1; min-width:0; display:flex; align-items:center; gap:16rpx; min-height:44px; }
+.manager-profile:active { opacity:.65; }
+.manager-avatar { width:72rpx; height:72rpx; border-radius:50%; flex-shrink:0; background:var(--nb-page); }
+.manager-info { flex:1; min-width:0; }
+.manager-name-row { display:flex; align-items:center; gap:10rpx; min-width:0; }
 .manager-name { display:block; font-size:var(--font-sm); font-weight:var(--weight-semibold); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.manager-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12rpx; margin-top:24rpx; }
+.manager-level { flex-shrink:0; color:var(--nb-secondary); font-size:var(--font-xs); }
+.manager-activity { display:block; margin-top:4rpx; overflow:hidden; font-size:var(--font-xs); line-height:1.4; text-overflow:ellipsis; white-space:nowrap; }
+.manager-book-link { min-width:104rpx; min-height:44px; margin:0; padding:0; flex-shrink:0; border:0; background:transparent; color:var(--nb-text-link); font-size:var(--font-xs); font-weight:var(--weight-semibold); }
+.manager-book-link::after { border:0; }
+.manager-book-link-disabled { color:var(--nb-control); }
+.manager-relationship { min-height:44px; display:flex; align-items:center; gap:8rpx; margin-top:10rpx; border-top:1rpx solid var(--nb-divider); color:var(--nb-secondary); font-size:var(--font-xs); white-space:nowrap; }
+.manager-relationship image { width:24rpx; height:24rpx; margin-left:auto; opacity:.48; }
+.manager-relationship:active { opacity:.65; }
+.manager-actions { display:flex; width:100%; gap:12rpx; margin-top:24rpx; box-sizing:border-box; }
+.manager-actions .booking-action { flex:1 1 0%; width:0; min-width:0; padding:0 8rpx; box-sizing:border-box; }
 .booking-action { margin:0; width:100%; background:var(--nb-soft-surface); color:var(--nb-secondary); }
 .booking-action::after { border:0; }
 .booking-action:active { background:var(--nb-pressed); }
@@ -20,3 +34,25 @@
 .danger-action { color:var(--nb-danger); background:var(--nb-danger-surface); }
 .modal-content { max-height:85vh; overflow-y:auto; padding-bottom:calc(24rpx + env(safe-area-inset-bottom)); }
 .modal-close,.bind-mode-tab,.followed-item { min-height:44px; }
+
+.manager-eyebrow { display:block; margin-bottom:4rpx; font-size:var(--font-xs); color:var(--nb-muted); }
+.manager-list-heading { display:flex; justify-content:space-between; gap:16rpx; font-size:var(--font-xs); color:var(--nb-muted); }
+.manager-chevron { color:var(--nb-muted); font-size:var(--font-md); }
+.manager-settings { width:100%; box-sizing:border-box; display:flex; align-items:center; justify-content:space-between; gap:16rpx; padding-top:4rpx; border-top:1rpx solid var(--nb-divider); }
+.manager-default { font-size:var(--font-xs); color:var(--nb-muted); }
+.manager-text-action { width:auto; min-width:0; flex:0 0 auto; box-sizing:border-box; min-height:44px; margin:0; padding:0; display:flex; align-items:center; background:transparent; color:var(--nb-text-link); font-size:var(--font-xs); line-height:1.4; border:0; }
+.manager-text-action::after { border:0; }
+.manager-text-action:active { opacity:.6; }
+.manager-unbind-slot { flex:1; min-width:88px; display:flex; justify-content:flex-end; }
+.manager-unbind-slot .manager-text-action.danger-action { width:88px; min-height:44px; margin:0; padding:0; justify-content:flex-end; color:var(--nb-danger); background:transparent; }
+
+.relationship-note { min-height:44px; display:flex; align-items:center; gap:12rpx; border-top:1rpx solid var(--nb-divider); font-size:var(--font-xs); color:var(--nb-secondary); line-height:1.5; }
+.relationship-note image { width:26rpx; height:26rpx; flex-shrink:0; opacity:.6; }
+.relationship-note > text:nth-child(2) { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.relationship-note-label { flex-shrink:0; color:var(--nb-muted); }
+.relationship-note:active { background:var(--nb-pressed); }
+.manager-more-row { min-height:44px; display:flex; align-items:center; justify-content:flex-end; border-top:1rpx solid var(--nb-divider); }
+.manager-more-row .manager-text-action { width:auto; margin:0; padding:0 12rpx; }
+.manager-icon-action { width:44px; height:44px; margin:0; padding:0; display:flex; align-items:center; justify-content:flex-end; border:0; background:transparent; }
+.manager-icon-action::after { border:0; }
+.manager-icon-action image { width:30rpx; height:30rpx; opacity:.58; }

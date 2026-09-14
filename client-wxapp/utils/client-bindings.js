@@ -13,14 +13,24 @@ function normalizeBindings(bindings) {
     const benefitLabels = [discountPercent > 0 ? `服务减免 ${discountPercent}%` : '', ...benefits].filter(Boolean);
     const nextTier = relationship.nextTier || null;
     const nextUnit = nextTier && ({ visits: '次消费', spend: '元实付', points: '积分' }[nextTier.thresholdType] || '');
+    const lastServiceAt = relationship.lastServiceAt ? new Date(relationship.lastServiceAt) : null;
+    const lastServiceText = lastServiceAt && !Number.isNaN(lastServiceAt.getTime())
+      ? `${lastServiceAt.getMonth() + 1}月${lastServiceAt.getDate()}日`
+      : '暂无服务';
     return {
       id: technician.id, name: technician.name || '美甲师', phone: technician.phone || '',
       avatar: technician.avatarUrl || technician.avatar || '', city: technician.city || '',
+      bio: technician.bio || '',
+      address: defaultShop ? [defaultShop.province, defaultShop.city, defaultShop.district, defaultShop.detailAddress || defaultShop.address].filter(Boolean).join('') : technician.serviceArea || '',
+      location: [defaultShop?.name || technician.shopName, technician.city].filter(Boolean).join(' · '),
       status,
       statusLabel: status === 'active' ? '接单中' : status === 'inactive' ? '休息中' : '暂停服务',
       statusTone: status === 'active' ? 'active' : 'inactive',
       canBook: status === 'active', shopService: !!technician.shopService,
       relationship: {
+        lifetimeSpendText: relationship.lifetimeSpend == null ? '待同步' : `¥${Number(relationship.lifetimeSpend).toFixed(2)}`,
+        lastServiceAt: relationship.lastServiceAt || '',
+        lastServiceText,
         completedVisits,
         savedAmountFen,
         savedAmountText: `¥${(savedAmountFen / 100).toFixed(2)}`,
@@ -45,12 +55,12 @@ function bindingSummary(technicians) {
   const sorted = technicians.slice().sort((a,b) => Number(b.isDefault) - Number(a.isDefault) || String(b.boundAt || '').localeCompare(String(a.boundAt || '')) || Number(b.id) - Number(a.id));
   const active = sorted.filter(item => item.bindingStatus === 'active');
   const pendingCount = sorted.filter(item => item.bindingStatus === 'pending').length;
-  const hiddenActiveCount = Math.max(active.length - 2, 0);
+  const hiddenActiveCount = Math.max(active.length - 5, 0);
   const previewSummary = [
     hiddenActiveCount ? `还有 ${hiddenActiveCount} 位已绑定` : '',
     pendingCount ? `${pendingCount} 位待确认` : ''
   ].filter(Boolean).join(' · ');
-  return { technicians: sorted, previewTechnicians: active.slice(0,2), activeCount: active.length, pendingCount, hiddenActiveCount, previewSummary };
+  return { technicians: sorted, previewTechnicians: active.slice(0,5), activeCount: active.length, pendingCount, hiddenActiveCount, previewSummary };
 }
 
 module.exports = { normalizeBindings, bindingSummary };

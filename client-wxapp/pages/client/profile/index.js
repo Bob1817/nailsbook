@@ -115,6 +115,10 @@ Page({
         ...bindingSummary(normalizeBindings(bindings)),
         capabilities
       });
+      try {
+        const notes = await api.client.profile.technicianNotes();
+        this.setData({ privateNotes: Object.fromEntries(notes.map(note => [note.techId, note.content])) });
+      } catch (_) { this.setData({ privateNotes: {} }); }
     } catch (err) {
       console.error('loadProfile error:', err);
     }
@@ -169,6 +173,20 @@ Page({
     }
   },
 
+  editPrivateNote(e) {
+    const id = Number(e.currentTarget.dataset.id);
+    wx.showModal({ title: '私人备注', editable: true, placeholderText: '记录她的特点或你选择她的理由（仅自己可见）', content: (this.data.privateNotes || {})[id] || '', success: async result => {
+      if (!result.confirm || this._noteSaving) return;
+      const content = result.content || '';
+      if (content.length > 200) return wx.showToast({ title: '备注最多 200 字', icon: 'none' });
+      this._noteSaving = true;
+      try {
+        const note = await api.client.profile.saveTechnicianNote(id, content);
+        this.setData({ privateNotes: { ...this.data.privateNotes, [id]: note.content } });
+      } catch (error) { wx.showToast({ title: error.message || '保存失败，请重试', icon: 'none' }); }
+      finally { this._noteSaving = false; }
+    } });
+  },
   preventBubble() {},
 
   editProfile() {

@@ -1151,6 +1151,7 @@ export class ClientAuthService {
           },
           _count: { _all: true },
           _sum: { discountAmountFen: true, actualAmount: true },
+          _max: { completedAt: true },
         })
       : [];
     const statsByTechnician = new Map(
@@ -1257,6 +1258,7 @@ export class ClientAuthService {
           relationship: {
             completedVisits: metrics.visits,
             lifetimeSpend: metrics.spend,
+            lastServiceAt: stats?._max.completedAt || null,
             savedAmountFen: stats?._sum.discountAmountFen || 0,
             membership: currentTier ? { name: currentTier.name, discountPercent: currentTier.discountPercent || 0 } : null,
             points: metrics.points,
