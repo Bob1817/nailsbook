@@ -23,13 +23,15 @@
           <button wx:if="{{item.bindingStatus !== 'pending'}}" class="manager-book-link {{item.canBook ? '' : 'manager-book-link-disabled'}}" bindtap="bookTechnician" data-id="{{item.id}}" disabled="{{!item.canBook}}">预约 <text>›</text></button>
         </view>
         <view wx:if="{{item.bindingStatus !== 'pending'}}" class="manager-relationship" bindtap="viewTechnicianHome" data-id="{{item.id}}" role="button" aria-label="查看与{{item.name}}的关系详情">
-          <text>上次 {{item.relationship.lastServiceText}}</text><text>·</text><text>已做 {{item.relationship.visitsText}} 次</text><text>·</text><text>实付 {{item.relationship.lifetimeSpendText}}</text><image src="/static/icons/arrow-right.svg" mode="aspectFit"/>
+          <view><text>{{item.relationship.lastServiceText}}</text><text>上次服务</text></view>
+          <view><text>{{item.relationship.visitsText}} 次</text><text>服务记录</text></view>
+          <view><text>{{item.relationship.lifetimeSpendText}}</text><text>累计实付</text></view>
         </view>
         <view wx:if="{{item.bindingStatus !== 'pending'}}" class="relationship-note" bindtap="editPrivateNote" data-id="{{item.id}}" role="button" aria-label="编辑私人备注">
           <image src="/static/icons/edit.svg" mode="aspectFit"/><text>{{privateNotes[item.id] || '添加私人备注'}}</text><text class="relationship-note-label">仅自己可见</text>
         </view>
         <view class="manager-actions manager-actions-pending" wx:if="{{item.bindingStatus === 'pending'}}"><button class="booking-action" bindtap="cancelBindingApplication" data-id="{{item.id}}">取消申请</button><button class="booking-action" bindtap="viewTechnicianHome" data-id="{{item.id}}">查看主页</button></view>
-        <view wx:if="{{item.bindingStatus !== 'pending'}}" class="manager-more-row"><button class="manager-text-action" bindtap="messageTechnician" data-id="{{item.id}}" data-name="{{item.name}}">联系</button><button class="manager-icon-action" bindtap="toggleBindingOptions" data-id="{{item.id}}" aria-label="{{expandedBindingId === item.id ? '收起管理' : '更多管理'}}"><image src="/static/icons/more-horizontal.svg" mode="aspectFit"/></button></view>
+        <view wx:if="{{item.bindingStatus !== 'pending'}}" class="manager-more-row"><button class="manager-icon-action" bindtap="messageTechnician" data-id="{{item.id}}" data-name="{{item.name}}" aria-label="联系{{item.name}}"><image src="/static/icons/tab-chat.svg" mode="aspectFit"/></button><button class="manager-icon-action" bindtap="toggleBindingOptions" data-id="{{item.id}}" aria-label="{{expandedBindingId === item.id ? '收起管理' : '更多管理'}}"><image src="/static/icons/more-horizontal.svg" mode="aspectFit"/></button></view>
         <view wx:if="{{item.bindingStatus !== 'pending' && expandedBindingId === item.id}}" class="manager-settings">
           <button class="manager-text-action" bindtap="callTechnician" data-phone="{{item.phone}}">电话联系</button>
           <text wx:if="{{item.isDefault}}" class="manager-default">默认预约美甲师</text><button wx:else class="manager-text-action" bindtap="setDefaultTech" data-id="{{item.id}}">设为默认</button>

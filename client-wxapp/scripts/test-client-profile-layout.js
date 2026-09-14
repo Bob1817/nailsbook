@@ -36,7 +36,7 @@ assert(template.includes('item.relationship.lifetimeSpendText'));
 assert(template.includes('item.relationship.membershipName'));
 assert(template.includes('item.statusLabel'));
 assert(template.includes('{{previewSummary}}'));
-assert(styles.includes('min-height:244rpx'));
+assert(styles.includes('min-height:264rpx'));
 assert(styles.includes('min-height: 44px'));
 assert(styles.includes('.tech-quick-book'));
 assert(styles.includes('.tech-relationship-line'));

@@ -58,7 +58,9 @@
               <view class="tech-quick-book {{item.canBook ? '' : 'tech-quick-book-disabled'}}" catchtap="quickBookTechnician" data-id="{{item.id}}" data-can-book="{{item.canBook}}" role="button" aria-label="预约{{item.name}}">预约 <text>›</text></view>
             </view>
             <view class="tech-relationship-line">
-              <text>上次 {{item.relationship.lastServiceText}}</text><text>·</text><text>已做 {{item.relationship.visitsText}} 次</text><text>·</text><text>实付 {{item.relationship.lifetimeSpendText}}</text>
+              <view><text>{{item.relationship.lastServiceText}}</text><text>上次服务</text></view>
+              <view><text>{{item.relationship.visitsText}} 次</text><text>服务记录</text></view>
+              <view><text>{{item.relationship.lifetimeSpendText}}</text><text>累计实付</text></view>
             </view>
             <view wx:if="{{privateNotes[item.id]}}" class="tech-note-line"><text>我的备注</text><text>{{privateNotes[item.id]}}</text></view>
           </view>
