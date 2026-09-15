@@ -1,0 +1,26 @@
+/* Shared visual hierarchy for the profile preview and bound-artist list. */
+.tech-card-main, .manager-main { display:flex; align-items:center; gap:16rpx; }
+.manager-profile { flex:1; min-width:0; min-height:44px; display:flex; align-items:center; gap:16rpx; }
+.tech-avatar-wrap { width:92rpx; height:92rpx; flex-shrink:0; }
+.tech-preview-avatar, .manager-avatar { display:block; width:92rpx; height:92rpx; flex-shrink:0; border-radius:50%; background:var(--nb-page); }
+.tech-preview-info, .manager-info { flex:1; min-width:0; }
+.tech-preview-name-row, .manager-name-row { display:flex; align-items:center; gap:10rpx; min-width:0; }
+.tech-preview-name, .manager-name { display:block; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--nb-ink); font-size:var(--font-lg); font-weight:var(--weight-semibold); line-height:1.4; }
+.tech-member-badge, .tech-default-mark, .manager-level { flex-shrink:0; max-width:112rpx; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:2rpx 8rpx; border-radius:4px; background:var(--nb-page); color:var(--nb-secondary); font-size:var(--font-xs); line-height:1.5; }
+.tech-preview-meta, .manager-activity { display:block; margin-top:6rpx; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:var(--font-sm); line-height:1.4; }
+.tech-status-active { color:var(--nb-success); }
+.tech-status-inactive { color:var(--nb-muted); }
+.tech-quick-book, .manager-main .manager-book-link { flex:0 0 64px; width:64px; min-width:64px; min-height:44px; margin:0; padding:0; box-sizing:border-box; display:flex; align-items:center; justify-content:flex-end; border:0; border-radius:8px; background:transparent; color:var(--nb-secondary); font-size:var(--font-sm); font-weight:var(--weight-medium); line-height:1.4; }
+.manager-book-link::after { border:0; }
+.relationship-book-face { display:flex; align-items:center; justify-content:center; gap:8rpx; padding:12rpx 20rpx; border-radius:8px; background:var(--nb-soft-surface); }
+.relationship-book-face > text { font-size:var(--font-md); line-height:1; }
+.tech-quick-book:active .relationship-book-face, .manager-book-link:active .relationship-book-face { background:var(--nb-pressed); }
+.tech-quick-book-disabled, .manager-main .manager-book-link[disabled] { color:var(--nb-control); }
+.tech-quick-book-disabled .relationship-book-face, .manager-book-link[disabled] .relationship-book-face { background:var(--nb-pressed); }
+.tech-relationship-line, .manager-relationship { display:flex; align-items:flex-start; margin-top:24rpx; padding:18rpx 12rpx; border-radius:12rpx; background:var(--nb-page); }
+.tech-relationship-line > view, .manager-relationship > view { flex:1; min-width:0; text-align:center; }
+.tech-relationship-line text, .manager-relationship text { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tech-relationship-line text:first-child, .manager-relationship text:first-child { color:var(--nb-ink); font-size:var(--font-md); font-weight:var(--weight-medium); font-variant-numeric:tabular-nums; line-height:1.4; }
+.tech-relationship-line text:last-child, .manager-relationship text:last-child { margin-top:4rpx; color:var(--nb-muted); font-size:var(--font-xs); line-height:1.4; }
+.tech-relationship-line .relationship-money:first-child, .manager-relationship .relationship-money:first-child { color:var(--nb-money); }
+.manager-profile:active { opacity:.7; }

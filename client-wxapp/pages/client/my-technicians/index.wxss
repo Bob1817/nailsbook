@@ -4,31 +4,12 @@
 .manager-overview { padding:20rpx 32rpx 18rpx; background:var(--nb-surface); }
 .manager-content { padding:20rpx 24rpx calc(48rpx + env(safe-area-inset-bottom)); }
 .manager-header { display:flex; align-items:center; justify-content:space-between; gap:20rpx; }
-.manager-add { min-width:96rpx; min-height:44px; flex-shrink:0; margin:0; padding:0; display:flex; align-items:center; justify-content:flex-end; border:0; background:transparent; color:var(--nb-text-link); font-size:var(--font-xs); }
+.manager-add { width:auto; min-width:96rpx; min-height:44px; flex-shrink:0; margin:0; padding:0; display:flex; align-items:center; justify-content:flex-end; border:0; background:transparent; color:var(--nb-text-link); font-size:var(--font-sm); }
 .manager-add::after { border:0; }
 .manager-add[disabled] { color:var(--nb-control); }
 .manager-hint { display:block; font-size:var(--font-xs); color:var(--nb-muted); line-height:1.6; margin-top:10rpx; }
 .manager-state { padding:48rpx 0; font-size:var(--font-sm); color:var(--nb-muted); }
-.manager-card { box-sizing:border-box; min-width:0; margin-top:16rpx; padding:24rpx 24rpx 12rpx; background:var(--nb-surface); border:1rpx solid var(--nb-divider); border-radius:20rpx; }
-.manager-main { display:flex; align-items:center; gap:12rpx; min-height:72rpx; }
-.manager-profile { flex:1; min-width:0; display:flex; align-items:center; gap:16rpx; min-height:44px; }
-.manager-profile:active { opacity:.65; }
-.manager-avatar { width:84rpx; height:84rpx; border-radius:50%; flex-shrink:0; background:var(--nb-page); }
-.manager-info { flex:1; min-width:0; }
-.manager-name-row { display:flex; align-items:center; gap:10rpx; min-width:0; }
-.manager-name { display:block; font-size:var(--font-sm); font-weight:var(--weight-semibold); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.manager-level { flex-shrink:0; color:var(--nb-secondary); font-size:var(--font-xs); }
-.manager-activity { display:block; margin-top:4rpx; overflow:hidden; font-size:var(--font-xs); line-height:1.4; text-overflow:ellipsis; white-space:nowrap; }
-.manager-book-link { min-width:104rpx; min-height:44px; margin:0; padding:0; flex-shrink:0; border:0; background:transparent; color:var(--nb-text-link); font-size:var(--font-xs); font-weight:var(--weight-semibold); }
-.manager-book-link::after { border:0; }
-.manager-book-link-disabled { color:var(--nb-control); }
-.manager-relationship { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); margin-top:18rpx; padding:18rpx 0; border-top:1rpx solid var(--nb-divider); border-bottom:1rpx solid var(--nb-divider); }
-.manager-relationship > view { min-width:0; padding-left:18rpx; border-left:1rpx solid var(--nb-divider); }
-.manager-relationship > view:first-child { padding-left:0; border-left:0; }
-.manager-relationship text { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.manager-relationship text:first-child { color:var(--nb-ink); font-size:var(--font-sm); font-weight:var(--weight-medium); line-height:1.35; }
-.manager-relationship text:last-child { margin-top:5rpx; color:var(--nb-muted); font-size:var(--font-xs); line-height:1.3; }
-.manager-relationship:active { opacity:.65; }
+.manager-card { box-sizing:border-box; min-width:0; margin-top:16rpx; padding:28rpx 28rpx 12rpx; background:var(--nb-surface); border:0; border-radius:20rpx; }
 .manager-actions { display:flex; width:100%; gap:12rpx; margin-top:24rpx; box-sizing:border-box; }
 .manager-actions .booking-action { flex:1 1 0%; width:0; min-width:0; padding:0 8rpx; box-sizing:border-box; }
 .booking-action { margin:0; width:100%; background:var(--nb-soft-surface); color:var(--nb-secondary); }
@@ -42,7 +23,7 @@
 .manager-eyebrow { display:block; margin-bottom:4rpx; font-size:var(--font-xs); color:var(--nb-muted); }
 .manager-list-heading { display:flex; justify-content:space-between; gap:16rpx; font-size:var(--font-xs); color:var(--nb-muted); }
 .manager-chevron { color:var(--nb-muted); font-size:var(--font-md); }
-.manager-settings { width:100%; box-sizing:border-box; display:flex; align-items:center; justify-content:space-between; gap:16rpx; padding-top:4rpx; border-top:1rpx solid var(--nb-divider); }
+.manager-settings { width:100%; box-sizing:border-box; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; padding-top:4rpx; }
 .manager-default { font-size:var(--font-xs); color:var(--nb-muted); }
 .manager-text-action { width:auto; min-width:0; flex:0 0 auto; box-sizing:border-box; min-height:44px; margin:0; padding:0; display:flex; align-items:center; background:transparent; color:var(--nb-text-link); font-size:var(--font-xs); line-height:1.4; border:0; }
 .manager-text-action::after { border:0; }
@@ -50,13 +31,11 @@
 .manager-unbind-slot { flex:1; min-width:88px; display:flex; justify-content:flex-end; }
 .manager-unbind-slot .manager-text-action.danger-action { width:88px; min-height:44px; margin:0; padding:0; justify-content:flex-end; color:var(--nb-danger); background:transparent; }
 
-.relationship-note { min-height:44px; display:flex; align-items:center; gap:12rpx; font-size:var(--font-xs); color:var(--nb-secondary); line-height:1.5; }
-.relationship-note image { width:26rpx; height:26rpx; flex-shrink:0; opacity:.6; }
-.relationship-note > text:nth-child(2) { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.relationship-note-label { flex-shrink:0; color:var(--nb-muted); }
-.relationship-note:active { background:var(--nb-pressed); }
-.manager-more-row { min-height:44px; display:flex; align-items:center; justify-content:flex-end; border-top:1rpx solid var(--nb-divider); }
-.manager-more-row .manager-text-action { width:auto; margin:0; padding:0 12rpx; }
-.manager-icon-action { width:44px; height:44px; margin:0; padding:0; display:flex; align-items:center; justify-content:center; border:0; background:transparent; }
+.manager-more-row { display:flex; align-items:center; gap:8px; margin-top:8rpx; }
+.relationship-note { flex:1; min-width:0; min-height:44px; display:flex; align-items:center; gap:12rpx; font-size:var(--font-sm); color:var(--nb-secondary); line-height:1.5; border-radius:8px; }
+.relationship-note image { width:32rpx; height:32rpx; flex-shrink:0; }
+.relationship-note text { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.manager-more-row .manager-icon-action { flex:0 0 44px; width:44px; min-width:44px; height:44px; margin:0; padding:0; display:flex; align-items:center; justify-content:center; border:0; border-radius:8px; background:transparent; }
 .manager-icon-action::after { border:0; }
-.manager-icon-action image { width:30rpx; height:30rpx; opacity:.58; }
+.manager-icon-action image { width:36rpx; height:36rpx; }
+.relationship-pressed { background:var(--nb-pressed); }

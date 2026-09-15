@@ -1,7 +1,7 @@
 <view class="manager-page">
   <nav-bar title="我的美甲师" showBack />
   <view class="manager-overview">
-    <view class="manager-header"><view><text class="manager-eyebrow">我的绑定</text><text class="section-title">已绑定 {{activeCount}} / 5 位</text></view><button class="manager-add" disabled="{{loading || loadFailed || technicians.length >= 5}}" bindtap="openBindModal">绑定 ›</button></view>
+    <view class="manager-header"><view><text class="manager-eyebrow">我的绑定</text><text class="section-title">已绑定 {{activeCount}} / 5 位</text></view><button size="mini" class="manager-add" disabled="{{loading || loadFailed || technicians.length >= 5}}" bindtap="openBindModal">绑定 ›</button></view>
     <text wx:if="{{pendingCount}}" class="manager-hint">{{pendingCount}} 个申请等待美甲师确认</text>
     <text wx:if="{{technicians.length > 5}}" class="manager-hint">已有关系予以保留。减少至 5 位以下后可新增绑定。</text>
   </view>
@@ -20,23 +20,26 @@
               <text class="manager-activity tech-status-{{item.statusTone}}">{{item.bindingStatus === 'pending' ? '等待美甲师确认' : item.statusLabel}}</text>
             </view>
           </view>
-          <button wx:if="{{item.bindingStatus !== 'pending'}}" class="manager-book-link {{item.canBook ? '' : 'manager-book-link-disabled'}}" bindtap="bookTechnician" data-id="{{item.id}}" disabled="{{!item.canBook}}">预约 <text>›</text></button>
+          <button wx:if="{{item.bindingStatus !== 'pending'}}" size="mini" class="manager-book-link {{item.canBook ? '' : 'manager-book-link-disabled'}}" bindtap="bookTechnician" data-id="{{item.id}}" disabled="{{!item.canBook}}" aria-label="预约{{item.name}}"><view class="relationship-book-face">预约<text>›</text></view></button>
         </view>
-        <view wx:if="{{item.bindingStatus !== 'pending'}}" class="manager-relationship" bindtap="viewTechnicianHome" data-id="{{item.id}}" role="button" aria-label="查看与{{item.name}}的关系详情">
+        <view wx:if="{{item.bindingStatus !== 'pending'}}" class="manager-relationship">
           <view><text>{{item.relationship.lastServiceText}}</text><text>上次服务</text></view>
-          <view><text>{{item.relationship.visitsText}} 次</text><text>服务记录</text></view>
-          <view><text>{{item.relationship.lifetimeSpendText}}</text><text>累计实付</text></view>
-        </view>
-        <view wx:if="{{item.bindingStatus !== 'pending'}}" class="relationship-note" bindtap="editPrivateNote" data-id="{{item.id}}" role="button" aria-label="编辑私人备注">
-          <image src="/static/icons/edit.svg" mode="aspectFit"/><text>{{privateNotes[item.id] || '添加私人备注'}}</text><text class="relationship-note-label">仅自己可见</text>
+          <view><text>{{item.relationship.visitsText}} 次</text><text>已做美甲</text></view>
+          <view><text class="relationship-money">{{item.relationship.lifetimeSpendText}}</text><text>累计实付</text></view>
         </view>
         <view class="manager-actions manager-actions-pending" wx:if="{{item.bindingStatus === 'pending'}}"><button class="booking-action" bindtap="cancelBindingApplication" data-id="{{item.id}}">取消申请</button><button class="booking-action" bindtap="viewTechnicianHome" data-id="{{item.id}}">查看主页</button></view>
-        <view wx:if="{{item.bindingStatus !== 'pending'}}" class="manager-more-row"><button class="manager-icon-action" bindtap="messageTechnician" data-id="{{item.id}}" data-name="{{item.name}}" aria-label="联系{{item.name}}"><image src="/static/icons/tab-chat.svg" mode="aspectFit"/></button><button class="manager-icon-action" bindtap="toggleBindingOptions" data-id="{{item.id}}" aria-label="{{expandedBindingId === item.id ? '收起管理' : '更多管理'}}"><image src="/static/icons/more-horizontal.svg" mode="aspectFit"/></button></view>
+        <view wx:if="{{item.bindingStatus !== 'pending'}}" class="manager-more-row">
+          <view class="relationship-note" bindtap="editPrivateNote" data-id="{{item.id}}" role="button" aria-label="编辑私人备注，仅自己可见" hover-class="relationship-pressed">
+            <image src="/static/icons/edit.svg" mode="aspectFit"/><text>{{privateNotes[item.id] || '添加私人备注'}}</text>
+          </view>
+          <button size="mini" class="manager-icon-action" bindtap="messageTechnician" data-id="{{item.id}}" data-name="{{item.name}}" aria-label="联系{{item.name}}" hover-class="relationship-pressed"><image src="/static/icons/tab-chat.svg" mode="aspectFit"/></button>
+          <button size="mini" class="manager-icon-action" bindtap="toggleBindingOptions" data-id="{{item.id}}" aria-label="{{expandedBindingId === item.id ? '收起管理' : '更多管理'}}" hover-class="relationship-pressed"><image src="/static/icons/more-horizontal.svg" mode="aspectFit"/></button>
+        </view>
         <view wx:if="{{item.bindingStatus !== 'pending' && expandedBindingId === item.id}}" class="manager-settings">
-          <button class="manager-text-action" bindtap="callTechnician" data-phone="{{item.phone}}">电话联系</button>
-          <text wx:if="{{item.isDefault}}" class="manager-default">默认预约美甲师</text><button wx:else class="manager-text-action" bindtap="setDefaultTech" data-id="{{item.id}}">设为默认</button>
+          <button size="mini" class="manager-text-action" bindtap="callTechnician" data-phone="{{item.phone}}">电话联系</button>
+          <text wx:if="{{item.isDefault}}" class="manager-default">默认预约美甲师</text><button wx:else size="mini" class="manager-text-action" bindtap="setDefaultTech" data-id="{{item.id}}">设为默认</button>
           <view class="manager-unbind-slot">
-            <button class="manager-text-action danger-action" bindtap="unbindTechnician" data-id="{{item.id}}" data-name="{{item.name}}">解除绑定</button>
+            <button size="mini" class="manager-text-action danger-action" bindtap="unbindTechnician" data-id="{{item.id}}" data-name="{{item.name}}">解除绑定</button>
           </view>
         </view>
       </view>

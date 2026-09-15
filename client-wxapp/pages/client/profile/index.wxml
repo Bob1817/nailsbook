@@ -53,14 +53,14 @@
                   <text wx:if="{{item.relationship.membershipName}}" class="tech-member-badge">{{item.relationship.membershipName}}</text>
                   <text wx:elif="{{item.isDefault}}" class="tech-default-mark">默认</text>
                 </view>
-                <text class="tech-preview-meta tech-status-{{item.statusTone}}">{{item.statusLabel}}{{item.relationship.progressSummary ? ' · ' + item.relationship.progressSummary : ''}}</text>
+                <text class="tech-preview-meta tech-status-{{item.statusTone}}">{{item.statusLabel}}</text>
               </view>
-              <view class="tech-quick-book {{item.canBook ? '' : 'tech-quick-book-disabled'}}" catchtap="quickBookTechnician" data-id="{{item.id}}" data-can-book="{{item.canBook}}" role="button" aria-label="预约{{item.name}}">预约 <text>›</text></view>
+              <view class="tech-quick-book {{item.canBook ? '' : 'tech-quick-book-disabled'}}" catchtap="quickBookTechnician" data-id="{{item.id}}" data-can-book="{{item.canBook}}" role="button" aria-label="预约{{item.name}}"><view class="relationship-book-face">预约<text>›</text></view></view>
             </view>
             <view class="tech-relationship-line">
               <view><text>{{item.relationship.lastServiceText}}</text><text>上次服务</text></view>
-              <view><text>{{item.relationship.visitsText}} 次</text><text>服务记录</text></view>
-              <view><text>{{item.relationship.lifetimeSpendText}}</text><text>累计实付</text></view>
+              <view><text>{{item.relationship.visitsText}} 次</text><text>已做美甲</text></view>
+              <view><text class="relationship-money">{{item.relationship.lifetimeSpendText}}</text><text>累计实付</text></view>
             </view>
             <view wx:if="{{privateNotes[item.id]}}" class="tech-note-line"><text>我的备注</text><text>{{privateNotes[item.id]}}</text></view>
           </view>
