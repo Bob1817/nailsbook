@@ -7,10 +7,12 @@ import {
   Query,
   Optional,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { WorkShareCodeService } from './work-share-code.service';
-import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiParam, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { AuthenticatedAccountGuard } from '../common/authenticated-account.guard';
 import {
   isLaunchTechnician,
   launchTechnicianFilterId,
@@ -44,6 +46,8 @@ function parseImageUrls(
 
 @ApiTags('公开-作品')
 @Controller('public/works')
+@UseGuards(AuthenticatedAccountGuard)
+@ApiBearerAuth()
 export class PublicWorksController {
   constructor(private readonly prisma: PrismaService, @Optional() private readonly shareCodes?: WorkShareCodeService) {}
 
@@ -57,7 +61,7 @@ export class PublicWorksController {
   }
 
   @Get()
-  @ApiOperation({ summary: '获取游客可浏览的公开作品流' })
+  @ApiOperation({ summary: '获取登录客户可浏览的作品流' })
   async getPublicFeed(
     @Query('limit') limit?: string,
     @Query('techId') techId?: string,

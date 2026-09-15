@@ -88,7 +88,7 @@ export class ClientAuthController {
     return this.clientAuthService.registerByInvite(body);
   }
 
-  // ── SMS 验证码登录 / 注册（免邀请码） ──
+  // ── SMS 验证码登录 ──
 
   @Post('send-sms-login')
   @Throttle({ default: { ttl: 60000, limit: 3 } })
@@ -101,7 +101,7 @@ export class ClientAuthController {
 
   @Post('send-sms-register')
   @Throttle({ default: { ttl: 60000, limit: 3 } })
-  @ApiOperation({ summary: '发送注册短信验证码（仅未注册手机号真实发送）' })
+  @ApiOperation({ summary: '旧版短信注册入口（已关闭）' })
   @ApiBody({ type: SendSmsLoginDto })
   @ApiResponse({ status: 200, description: '已发送（防枚举，统一返回）' })
   async sendSmsCodeForRegister(@Body() body: SendSmsLoginDto) {
@@ -110,7 +110,7 @@ export class ClientAuthController {
 
   @Post('register-by-sms')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
-  @ApiOperation({ summary: '手机号 + 短信验证码注册（免邀请码）' })
+  @ApiOperation({ summary: '旧版短信注册入口（已关闭）' })
   @ApiBody({ type: RegisterBySmsDto })
   @ApiResponse({
     status: 200,
@@ -200,7 +200,7 @@ export class ClientAuthController {
   @Post('select-role')
   @UseGuards(ClientJwtAuthGuard)
   @Throttle({ default: { ttl: 60000, limit: 5 } })
-  @ApiOperation({ summary: '注册后选择角色（客户/美甲师），可跳过绑定/激活' })
+  @ApiOperation({ summary: '注册后选择角色（客户必须填写邀请码，美甲师必须填写激活密钥）' })
   @ApiBody({ type: SelectRoleDto })
   @ApiResponse({ status: 200, description: '返回对应角色的登录凭证' })
   @ApiResponse({ status: 400, description: '参数错误或密钥无效' })
@@ -313,10 +313,12 @@ export class ClientAuthController {
   async unbindTechnician(
     @Req() request: { user: { clientUserId: number } },
     @Param('techId') techId: string,
+    @Query('confirmAccountClosure') confirmAccountClosure?: string,
   ) {
     return this.clientAuthService.unbindTechnician(
       request.user.clientUserId,
       parseInt(techId, 10),
+      confirmAccountClosure === '1' || confirmAccountClosure === 'true',
     );
   }
 

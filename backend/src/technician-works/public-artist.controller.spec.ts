@@ -4,9 +4,6 @@ import { PublicArtistController } from './public-artist.controller';
 describe('PublicArtistController', () => {
   const prisma = {
     technician: { findFirst: jest.fn() },
-    nailWork: { findMany: jest.fn() },
-    nailWorkLike: { count: jest.fn() },
-    nailWorkFavorite: { count: jest.fn() },
     technicianFollow: { count: jest.fn() },
     technicianQualification: { findMany: jest.fn() },
     technicianFeaturedComment: { findMany: jest.fn() },
@@ -16,10 +13,8 @@ describe('PublicArtistController', () => {
 
   beforeEach(() => jest.clearAllMocks());
 
-  it('returns only active services, enabled addresses and public works', async () => {
+  it('returns public profile data without exposing works to guests', async () => {
     prisma.technicianFollow.count.mockResolvedValue(12);
-    prisma.nailWorkLike.count.mockResolvedValue(0);
-    prisma.nailWorkFavorite.count.mockResolvedValue(0);
     prisma.technicianQualification.findMany.mockResolvedValue([]);
     prisma.technicianFeaturedComment.findMany.mockResolvedValue([]);
     prisma.serviceReview.findMany.mockResolvedValue([]);
@@ -65,27 +60,14 @@ describe('PublicArtistController', () => {
       socialMedia: null,
       status: 'active',
     });
-    prisma.nailWork.findMany.mockResolvedValue([
-      { id: 11, title: '法式', images: '["/work.png"]', coverUrl: null },
-    ]);
-
     const result = await controller.getBusinessPage(7);
 
-    expect(prisma.nailWork.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          techId: 7,
-          isVisible: true,
-          visibilityScope: 'public',
-          publicationStatus: 'approved',
-        },
-      }),
-    );
     expect(result.artist.serviceItems).toHaveLength(1);
     expect(result.artist.shopAddresses).toHaveLength(1);
     expect(result.artist.followerCount).toBe(12);
     expect(result.artist.bookingReady).toBe(true);
-    expect(result.works[0].coverUrl).toContain('/work.png');
+    expect(result.works).toEqual([]);
+    expect(result.artist.stats.workCount).toBe(0);
     expect(result.artist).not.toHaveProperty('phone');
   });
 

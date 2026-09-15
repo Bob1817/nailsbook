@@ -29,6 +29,7 @@ describe('ClientAuthService — 绑定审批工作流', () => {
         findMany: jest.fn(),
         create: jest.fn().mockResolvedValue({ id: 99 }),
         update: jest.fn().mockResolvedValue({ id: 99, status: 'inactive' }),
+        updateMany: jest.fn(),
         count: jest.fn().mockResolvedValue(0),
       },
       clientUser: {
@@ -39,6 +40,7 @@ describe('ClientAuthService — 绑定审批工作流', () => {
           .mockResolvedValue({ nickname: '小红', phone: '13800138001' }),
       },
       clientAddress: {
+        deleteMany: jest.fn(),
         findFirst: jest.fn().mockResolvedValue({
           province: '浙江省',
           city: '杭州市',
@@ -47,6 +49,10 @@ describe('ClientAuthService — 绑定审批工作流', () => {
         }),
       },
       customer: { upsert: jest.fn(), updateMany: jest.fn() },
+      nailWorkShareGrant: { updateMany: jest.fn() },
+      deviceToken: { deleteMany: jest.fn() },
+      wechatSubscriptionAuthorization: { deleteMany: jest.fn() },
+      wechatIdentity: { updateMany: jest.fn() },
       conversation: {
         upsert: jest.fn().mockResolvedValue({ id: 5 }),
         findUnique: jest.fn().mockResolvedValue({ id: 5 }),
@@ -367,6 +373,7 @@ describe('ClientAuthService — 绑定审批工作流', () => {
         isDefault: false,
       });
       prisma.order.count.mockResolvedValue(0);
+      prisma.clientTechBinding.count.mockResolvedValue(2);
 
       await service.unbindTechnician(11, 1);
 
@@ -376,6 +383,19 @@ describe('ClientAuthService — 绑定审批工作流', () => {
       expect(prisma.clientTechBinding.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: { status: 'inactive' } }),
       );
+    });
+
+    it('最后一位美甲师需明确确认，确认后注销客户账号', async () => {
+      prisma.clientTechBinding.findUnique.mockResolvedValue({ id: 7, status: 'active', isDefault: true });
+      prisma.clientTechBinding.count.mockResolvedValue(1);
+      prisma.order.count.mockResolvedValue(0);
+
+      await expect(service.unbindTechnician(11, 1)).rejects.toThrow('解绑最后一位美甲师将注销账号');
+      await expect(service.unbindTechnician(11, 1, true)).resolves.toMatchObject({ accountClosed: true });
+      expect(prisma.clientUser.update).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: 11 },
+        data: expect.objectContaining({ status: 'deleted', tokenVersion: { increment: 1 } }),
+      }));
     });
   });
   describe('一键预约邀请', () => {

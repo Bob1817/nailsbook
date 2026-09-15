@@ -179,7 +179,7 @@ describe('WechatAuthService', () => {
     });
   });
 
-  it('creates new client via WeChat and returns needsSetupPassword', async () => {
+  it('rejects a new client without a technician invitation', async () => {
     global.fetch = jest
       .fn()
       .mockResolvedValueOnce({
@@ -196,34 +196,14 @@ describe('WechatAuthService', () => {
           }),
       }) as never;
     prisma.clientUser.findUnique.mockResolvedValue(null);
-    prisma.clientUser.create.mockResolvedValue({
-      id: 12,
-      phone: '13900139000',
-      passwordHash: '',
-    });
-    prisma.wechatIdentity.create.mockResolvedValue({});
-
     await expect(
       service.completeClient({
         wechatSessionToken: 'session',
         phoneCode: 'phone-code',
         shareWorkId: 9,
       }),
-    ).resolves.toMatchObject({
-      authenticated: false,
-      needsRoleSelection: true,
-    });
-
-    expect(prisma.conversionEvent.upsert).toHaveBeenCalledWith(expect.objectContaining({ create: expect.objectContaining({ clientUserId: 12, eventType: 'registration_completed', workId: 9 }) }));
-    // 验证新用户通过 prisma.clientUser.create 创建（而非 registerByInvite）
-    expect(prisma.clientUser.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          phone: '13900139000',
-          passwordHash: '',
-        }),
-      }),
-    );
+    ).rejects.toThrow('新客户仅可通过美甲师邀请链接注册');
+    expect(prisma.clientUser.create).not.toHaveBeenCalled();
   });
   it('invitation registration binds through the invite flow and logs in without password setup', async () => {
     jest.spyOn(service, 'verifySessionToken').mockResolvedValue({ appId: 'wx-test', openId: 'openid-1' });

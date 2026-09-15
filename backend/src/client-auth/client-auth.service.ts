@@ -12,7 +12,6 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../common/prisma/prisma.service';
-import type { Technician } from '@prisma/client';
 import { ClientLoginDto } from './dto/client-login.dto';
 import { RegisterByInviteDto } from './dto/register-by-invite.dto';
 import { RegisterBySmsDto } from './dto/register-by-sms.dto';
@@ -37,7 +36,6 @@ type ClientWithBindings = Prisma.ClientUserGetPayload<{
 export class ClientAuthService {
   private static readonly RESET_PASSWORD_CODE_PURPOSE = 'client:reset-password';
   private static readonly SMS_LOGIN_CODE_PURPOSE = 'client:sms-login';
-  private static readonly SMS_REGISTER_CODE_PURPOSE = 'client:sms-register';
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
@@ -103,58 +101,10 @@ export class ClientAuthService {
 
   // ── SMS 验证码登录 / 注册（免邀请码） ──
 
-  /** 手机号 + 短信验证码 → 注册客户（无需邀请码，无需密码） */
+  /** 旧版免邀请码注册入口已关闭。 */
   async registerBySms(dto: RegisterBySmsDto) {
-    // 1. 校验短信验证码
-    await this.verificationCode.validate(
-      dto.phone,
-      dto.smsCode,
-      ClientAuthService.SMS_REGISTER_CODE_PURPOSE,
-    );
-
-    // 2. 检查手机号是否已注册
-    const existing = await this.prisma.clientUser.findUnique({
-      where: { phone: dto.phone },
-    });
-    if (existing) {
-      throw new ConflictException('该手机号已被注册');
-    }
-
-    // 3. 创建用户（无密码，后续可在 app 内设置）
-    const managedPassword = this.generateManagedPassword();
-    const passwordHash = await bcrypt.hash(managedPassword, 10);
-
-    const client = await this.prisma.clientUser.create({
-      data: {
-        phone: dto.phone,
-        passwordHash,
-        managedPasswordCiphertext: managedPassword, // 托管密码，供后续 SMS 登录使用
-        nickname: dto.nickname || null,
-        status: 'active',
-      },
-    });
-
-    await recordWorkShareRegistration(this.prisma, client.id, dto);
-
-    return {
-      accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
-      refreshToken: this.signRefreshToken(
-        client.id,
-        client.phone,
-        client.tokenVersion,
-      ),
-      client: {
-        id: client.id,
-        nickname: client.nickname,
-        phone: client.phone,
-        avatarUrl: client.avatarUrl,
-        city: client.city,
-        bio: client.bio,
-        status: client.status,
-      },
-      roles: ['client'],
-      needsOnboarding: true, // 新用户需要选择"绑定美甲师"或"我是美甲师"
-    };
+    void dto;
+    throw new BadRequestException('客户仅可通过美甲师邀请注册');
   }
 
   /** 手机号 + 短信验证码 → 登录（无需密码，无需绑定美甲师） */
@@ -249,23 +199,10 @@ export class ClientAuthService {
     return { sent: true, devCode: this.verificationCode.getDevCode() };
   }
 
-  /** 发送 SMS 注册验证码（防枚举，仅未注册手机号真正发送） */
+  /** 旧版免邀请码短信注册入口已关闭。 */
   async sendSmsCodeForRegister(phone: string) {
-    try {
-      const existing = await this.prisma.clientUser.findUnique({
-        where: { phone },
-      });
-      if (!existing) {
-        const code = await this.verificationCode.generate(
-          phone,
-          ClientAuthService.SMS_REGISTER_CODE_PURPOSE,
-        );
-        void this.sms.sendVerificationCode(phone, code, '注册').catch(() => {});
-      }
-    } catch {
-      // 静默处理
-    }
-    return { sent: true, devCode: this.verificationCode.getDevCode() };
+    void phone;
+    throw new BadRequestException('客户仅可通过美甲师邀请注册');
   }
 
   /** 已登录客户 → 激活美甲师身份（使用超管后台生成的激活密钥） */
@@ -545,14 +482,10 @@ export class ClientAuthService {
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const registrationSource = dto.source || 'invite';
 
-    // 有邀请码时查找对应的美甲师
-    let technician: Technician | null = null;
-    if (dto.inviteCode) {
-      technician = await this.findActiveTechnicianByInviteCode(
-        dto.inviteCode,
-        '该邀请码无效，请跟您的美甲师确认后再注册',
-      );
-    }
+    const technician = await this.findActiveTechnicianByInviteCode(
+      dto.inviteCode,
+      '该邀请码无效，请跟您的美甲师确认后再注册',
+    );
 
     const client = await this.prisma.$transaction(async (tx) => {
       const created = await tx.clientUser.create({
@@ -563,29 +496,26 @@ export class ClientAuthService {
         },
       });
 
-      // 有邀请码时创建绑定关系
-      if (technician && dto.inviteCode) {
-        await tx.clientTechBinding.create({
-          data: {
-            clientId: created.id,
-            techId: technician.id,
-            inviteCode: dto.inviteCode,
-            bindSource: registrationSource,
-            isDefault: true,
-          },
-        });
+      await tx.clientTechBinding.create({
+        data: {
+          clientId: created.id,
+          techId: technician.id,
+          inviteCode: dto.inviteCode,
+          bindSource: registrationSource,
+          isDefault: true,
+        },
+      });
 
-        await tx.customer.create({
-          data: {
-            technicianId: technician.id,
-            clientUserId: created.id,
-            name: dto.nickname || dto.phone,
-            phone: dto.phone,
-            sourceType: registrationSource,
-            sourceRef: dto.inviteCode,
-          },
-        });
-      }
+      await tx.customer.create({
+        data: {
+          technicianId: technician.id,
+          clientUserId: created.id,
+          name: dto.nickname || dto.phone,
+          phone: dto.phone,
+          sourceType: registrationSource,
+          sourceRef: dto.inviteCode,
+        },
+      });
 
       if (wechatIdentity) {
         await tx.wechatIdentity.create({
@@ -618,9 +548,7 @@ export class ClientAuthService {
       roles: ['client'],
     };
 
-    // 有绑定美甲师时返回绑定信息
-    if (technician) {
-      const technicianPayload = {
+    const technicianPayload = {
         id: technician.id,
         name: technician.name,
         phone: technician.phone,
@@ -637,12 +565,8 @@ export class ClientAuthService {
         isDefault: true,
         bindSource: registrationSource,
       };
-      result.technician = technicianPayload;
-      result.technicians = [technicianPayload];
-    } else {
-      // 无绑定美甲师时标记需要引导
-      result.needsOnboarding = true;
-    }
+    result.technician = technicianPayload;
+    result.technicians = [technicianPayload];
 
     return result;
   }
@@ -790,7 +714,7 @@ export class ClientAuthService {
     return this.loginByWechat(client.id);
   }
 
-  /** 注册后选择角色（客户/美甲师），可跳过绑定/激活 */
+  /** 注册后选择角色；两种角色都必须持有对应的邀请凭证。 */
   async selectRole(
     clientUserId: number,
     dto: {
@@ -806,20 +730,14 @@ export class ClientAuthService {
       throw new UnauthorizedException('用户不存在');
     }
 
-    // 选择客户：可选绑定美甲师
+    // 选择客户：必须通过美甲师邀请码建立首个绑定。
     if (dto.role === 'client') {
-      if (dto.inviteCode) {
-        const technician = await this.findActiveTechnicianByInviteCode(
-          dto.inviteCode,
-          '邀请码无效或美甲师不存在',
-        );
-        await this.ensureActiveBinding(
-          client.id,
-          technician.id,
-          dto.inviteCode,
-          'manual',
-        );
-      }
+      if (!dto.inviteCode) throw new BadRequestException('客户注册必须填写美甲师邀请码');
+      const technician = await this.findActiveTechnicianByInviteCode(
+        dto.inviteCode,
+        '邀请码无效或美甲师不存在',
+      );
+      await this.ensureActiveBinding(client.id, technician.id, dto.inviteCode, 'manual');
 
       // 如果还没设置密码，返回设置密码 token
       if (!client.passwordHash) {
@@ -841,71 +759,12 @@ export class ClientAuthService {
 
     // 选择美甲师
     if (dto.role === 'technician') {
-      let technician = await this.prisma.technician.findUnique({
-        where: { phone: client.phone },
-      });
-
-      if (dto.activationKey) {
-        // 使用激活密钥激活美甲师
-        const activated = await this.activateTechnician(
-          client.id,
-          dto.activationKey,
-        );
-        return {
-          authenticated: true,
-          role: 'technician' as const,
-          ...activated,
-        };
-      }
-
-      // 无激活密钥 → 创建/复用美甲师账号
-      if (!technician) {
-        technician = await this.prisma.technician.create({
-          data: {
-            name: client.nickname || client.phone,
-            phone: client.phone,
-            passwordHash: '',
-            managedPasswordCiphertext: null,
-            status: 'inactive',
-          },
-        });
-      }
-
-      // 同步微信身份已在 completeClient 中完成 client 绑定，
-      // 这里需要额外把同一微信绑定到 technician 账号，便于后续微信登录
-      // 但一个微信只能绑定一个账号，所以这里仅更新 technician 的微信身份记录
-      // （复用同一个 unionId/openId 的 wechatIdentity 行不可行，因为 clientUserId 已占用）
-      // 暂时不在游客模式绑定微信身份，后续微信登录仍走 client 身份再切换
-
-      const isTourist = !technician.passwordHash;
-      const techPayload = {
-        sub: technician.id,
-        phone: technician.phone,
-        userType: 'technician' as const,
-        tv: technician.tokenVersion,
-      };
-
+      if (!dto.activationKey) throw new BadRequestException('美甲师注册必须填写系统激活密钥');
+      const activated = await this.activateTechnician(client.id, dto.activationKey);
       return {
         authenticated: true,
         role: 'technician' as const,
-        accessToken: this.jwtService.sign(techPayload),
-        refreshToken: this.jwtService.sign(
-          { ...techPayload, tokenType: 'refresh' },
-          { expiresIn: '30d' },
-        ),
-        technician: {
-          id: technician.id,
-          name: technician.name,
-          phone: technician.phone,
-          avatarUrl: technician.avatarUrl,
-          city: technician.city,
-          status: technician.status,
-          homeService: technician.homeService,
-          shopService: technician.shopService,
-          isTourist,
-        },
-        roles: isTourist ? ['technician'] : ['client', 'technician'],
-        isTourist,
+        ...activated,
       };
     }
 
@@ -1723,7 +1582,7 @@ export class ClientAuthService {
     }
   }
 
-  async unbindTechnician(clientUserId: number, techId: number) {
+  async unbindTechnician(clientUserId: number, techId: number, confirmAccountClosure = false) {
     const binding = await this.prisma.clientTechBinding.findUnique({
       where: {
         clientId_techId: {
@@ -1735,6 +1594,14 @@ export class ClientAuthService {
 
     if (!binding || binding.status !== 'active') {
       throw new NotFoundException('绑定关系不存在');
+    }
+
+    const activeBindingCount = await this.prisma.clientTechBinding.count({
+      where: { clientId: clientUserId, status: 'active' },
+    });
+    const closesAccount = activeBindingCount <= 1;
+    if (closesAccount && !confirmAccountClosure) {
+      throw new BadRequestException('解绑最后一位美甲师将注销账号，请确认后重试');
     }
 
     // 待上门/待到店/进行中：正在进行的预约，禁止解除绑定。
@@ -1771,6 +1638,49 @@ export class ClientAuthService {
         data: { status: 'inactive' },
       });
 
+      if (closesAccount) {
+        await tx.clientTechBinding.updateMany({
+          where: { clientId: clientUserId },
+          data: { status: 'inactive', isDefault: false, note: null },
+        });
+        await tx.clientAddress.deleteMany({ where: { clientId: clientUserId } });
+        await tx.customer.updateMany({
+          where: { clientUserId },
+          data: {
+            name: '已注销用户', phone: null, avatarUrl: null,
+            gender: null, birthday: null, address: null, tags: null, notes: null,
+          },
+        });
+        await tx.nailWorkShareGrant.updateMany({
+          where: { clientUserId },
+          data: { revokedAt: new Date() },
+        });
+        await tx.deviceToken.deleteMany({
+          where: { clientUserId, role: 'client' },
+        });
+        await tx.wechatSubscriptionAuthorization.deleteMany({
+          where: { ownerKey: `client:${clientUserId}`, role: 'client' },
+        });
+        await tx.wechatIdentity.updateMany({
+          where: { clientUserId },
+          data: { clientUserId: null },
+        });
+        await tx.clientUser.update({
+          where: { id: clientUserId },
+          data: {
+            status: 'deleted',
+            phone: `deleted_client_${clientUserId}`,
+            passwordHash: '',
+            managedPasswordCiphertext: null,
+            nickname: '已注销用户',
+            avatarUrl: null,
+            city: null,
+            bio: null,
+            tokenVersion: { increment: 1 },
+          },
+        });
+      }
+
       // If unbinding the default, set another as default
       if (binding.isDefault) {
         const anotherBinding = await tx.clientTechBinding.findFirst({
@@ -1793,7 +1703,7 @@ export class ClientAuthService {
       return updated;
     });
 
-    return result;
+    return { binding: result, accountClosed: closesAccount };
   }
 
   async cancelPendingBinding(clientUserId: number, techId: number) {

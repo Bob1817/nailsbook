@@ -20,7 +20,6 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { ClientJwtAuthGuard } from '../client-auth/client-jwt-auth.guard';
-import { ClientOptionalJwtAuthGuard } from '../client-auth/client-optional-jwt-auth.guard';
 import { ClientHomeService } from './client-home.service';
 
 @Controller('client')
@@ -28,105 +27,83 @@ import { ClientHomeService } from './client-home.service';
 export class ClientHomeController {
   constructor(private readonly clientHomeService: ClientHomeService) {}
 
-  // ========== 公开接口（无需登录）==========
+  // ========== 客户作品与首页（需登录）==========
 
   @Get('home')
-  @UseGuards(ClientOptionalJwtAuthGuard)
-  @ApiOperation({ summary: '获取首页数据（未登录返回公开精品作品）' })
+  @UseGuards(ClientJwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '获取当前客户首页数据' })
   @ApiResponse({ status: 200, description: '返回首页数据' })
-  getHome(@Req() request?: { user?: { clientUserId: number } }) {
-    const userId = request?.user?.clientUserId;
-    if (userId) {
-      return this.clientHomeService.getHome(userId);
-    }
-    return this.clientHomeService.getHomePublic();
+  getHome(@Req() request: { user: { clientUserId: number } }) {
+    return this.clientHomeService.getHome(request.user.clientUserId);
   }
 
   @Get('featured-works')
-  @UseGuards(ClientOptionalJwtAuthGuard)
+  @UseGuards(ClientJwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: '获取推荐作品（分页）' })
   @ApiQuery({ name: 'page', type: Number, required: false })
   @ApiQuery({ name: 'limit', type: Number, required: false })
   getFeaturedWorks(
-    @Req() request?: { user?: { clientUserId: number } },
+    @Req() request: { user: { clientUserId: number } },
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    const userId = request?.user?.clientUserId;
-    if (userId) {
-      return this.clientHomeService.getFeaturedWorks(
-        userId,
-        page ? parseInt(page, 10) : 1,
-        limit ? parseInt(limit, 10) : 10,
-      );
-    }
-    // 未登录：返回公开作品
-    return this.clientHomeService.getFeaturedWorksPublic(
+    return this.clientHomeService.getFeaturedWorks(
+      request.user.clientUserId,
       page ? parseInt(page, 10) : 1,
       limit ? parseInt(limit, 10) : 10,
     );
   }
 
   @Get('works')
-  @UseGuards(ClientOptionalJwtAuthGuard)
+  @UseGuards(ClientJwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: '获取作品列表' })
   @ApiQuery({ name: 'techId', type: Number, required: false })
   @ApiQuery({ name: 'sortBy', required: false })
   @ApiQuery({ name: 'sortDir', required: false })
   getWorks(
-    @Req() request?: { user?: { clientUserId: number } },
+    @Req() request: { user: { clientUserId: number } },
     @Query('techId') techId?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortDir') sortDir?: string,
   ) {
-    const userId = request?.user?.clientUserId;
-    if (userId) {
-      const allowed = ['latest', 'likes', 'comments', 'favorites'] as const;
-      const sort = (allowed as readonly string[]).includes(sortBy ?? '')
-        ? (sortBy as (typeof allowed)[number])
-        : 'latest';
-      const dir = sortDir === 'asc' ? 'asc' : 'desc';
-      return this.clientHomeService.getWorks(
-        userId,
-        techId ? parseInt(techId, 10) : undefined,
-        sort,
-        dir,
-      );
-    }
-    // 未登录：返回公开作品
-    return this.clientHomeService.getWorksPublic(
+    const allowed = ['latest', 'likes', 'comments', 'favorites'] as const;
+    const sort = (allowed as readonly string[]).includes(sortBy ?? '')
+      ? (sortBy as (typeof allowed)[number])
+      : 'latest';
+    const dir = sortDir === 'asc' ? 'asc' : 'desc';
+    return this.clientHomeService.getWorks(
+      request.user.clientUserId,
       techId ? parseInt(techId, 10) : undefined,
+      sort,
+      dir,
     );
   }
 
   @Get('works/:id')
-  @UseGuards(ClientOptionalJwtAuthGuard)
+  @UseGuards(ClientJwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: '获取作品详情' })
   @ApiParam({ name: 'id', type: Number })
   getWork(
     @Param('id', ParseIntPipe) id: number,
-    @Req() request?: { user?: { clientUserId: number } },
+    @Req() request: { user: { clientUserId: number } },
   ) {
-    const userId = request?.user?.clientUserId;
-    if (userId) {
-      return this.clientHomeService.getWork(userId, id);
-    }
-    return this.clientHomeService.getWorkPublic(id);
+    return this.clientHomeService.getWork(request.user.clientUserId, id);
   }
 
   @Get('works/:id/comments')
-  @UseGuards(ClientOptionalJwtAuthGuard)
+  @UseGuards(ClientJwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: '获取作品评论列表' })
   @ApiParam({ name: 'id', type: Number })
   getComments(
     @Param('id', ParseIntPipe) id: number,
-    @Req() request?: { user?: { clientUserId: number } },
+    @Req() request: { user: { clientUserId: number } },
   ) {
-    const userId = request?.user?.clientUserId;
-    if (userId) {
-      return this.clientHomeService.getComments(userId, id);
-    }
-    return this.clientHomeService.getCommentsPublic(id);
+    return this.clientHomeService.getComments(request.user.clientUserId, id);
   }
 
   // ========== 需认证的私密接口 ==========

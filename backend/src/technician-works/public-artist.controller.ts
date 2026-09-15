@@ -38,25 +38,6 @@ function parseJsonArray(value: string | null): unknown[] {
   }
 }
 
-function parseImageUrls(
-  images: string | null,
-  coverUrl: string | null,
-): string[] {
-  if (!images) return coverUrl ? [coverUrl] : [];
-  try {
-    const parsed = JSON.parse(images);
-    if (Array.isArray(parsed)) {
-      return parsed.filter((item): item is string => typeof item === 'string');
-    }
-  } catch {
-    return images
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-  return coverUrl ? [coverUrl] : [];
-}
-
 @ApiTags('公开-美甲师名片')
 @Controller('public/artist')
 export class PublicArtistController {
@@ -134,9 +115,9 @@ export class PublicArtistController {
   }
 
   @Get(':code')
-  @ApiOperation({ summary: '通过邀请码获取美甲师公开名片（含作品）' })
+  @ApiOperation({ summary: '通过邀请码获取美甲师公开名片（不含作品）' })
   @ApiParam({ name: 'code', type: String, description: '美甲师邀请码' })
-  @ApiResponse({ status: 200, description: '返回名片信息与作品列表' })
+  @ApiResponse({ status: 200, description: '返回美甲师名片信息' })
   @ApiResponse({ status: 404, description: '美甲师不存在或未启用' })
   async getCard(@Param('code') code: string) {
     return this.getPublicCard({ invitationCode: code });
@@ -154,36 +135,8 @@ export class PublicArtistController {
       throw new NotFoundException('美甲师不存在或未启用');
     }
 
-    const rawWorks = await this.prisma.nailWork.findMany({
-      where: {
-        techId: technician.id,
-        isVisible: true,
-        visibilityScope: 'public',
-        publicationStatus: 'approved',
-      },
-      orderBy: [
-        { isFeatured: 'desc' },
-        { isPinned: 'desc' },
-        { sortOrder: 'asc' },
-        { createdAt: 'desc' },
-      ],
-      take: 30,
-    });
-
-    const homepageWorks = rawWorks.some((work) => work.isFeatured)
-      ? rawWorks.filter((work) => work.isFeatured)
-      : rawWorks;
-    const works = homepageWorks.map((work) => {
-      const imageUrls = parseImageUrls(work.images, work.coverUrl)
-        .map((url) => toAbsoluteUrl(url))
-        .filter((url): url is string => Boolean(url));
-      return {
-        id: work.id,
-        title: work.title,
-        coverUrl: toAbsoluteUrl(work.coverUrl) ?? imageUrls[0] ?? null,
-        imageUrls,
-      };
-    });
+    // 邀请落地页只用于识别美甲师和完成注册，不向未登录访客下发作品。
+    const works: never[] = [];
     const readiness = bookingReadiness(technician);
 
     // Get qualifications
@@ -236,22 +189,8 @@ export class PublicArtistController {
       }
     }
 
-    // Get like count (from nail works belonging to this technician)
-    const workIds = works.map((w) => w.id);
-    const likeCount =
-      workIds.length > 0
-        ? await this.prisma.nailWorkLike.count({
-            where: { workId: { in: workIds } },
-          })
-        : 0;
-
-    // Get favorite count
-    const favoriteCount =
-      workIds.length > 0
-        ? await this.prisma.nailWorkFavorite.count({
-            where: { workId: { in: workIds } },
-          })
-        : 0;
+    const likeCount = 0;
+    const favoriteCount = 0;
 
     // Get rating from service reviews
     const reviews = await this.prisma.serviceReview.findMany({
