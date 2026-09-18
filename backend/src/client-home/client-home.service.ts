@@ -638,9 +638,7 @@ export class ClientHomeService {
           if (shop) {
             firstShop = {
               name: typeof shop.name === 'string' ? shop.name : '服务店铺',
-              address: [shop.province, shop.city, shop.district, shop.detailAddress]
-              .filter((part) => typeof part === 'string' && part.trim())
-              .join(' '),
+              address: typeof shop.city === 'string' ? shop.city.trim() : '',
             };
           }
         }
