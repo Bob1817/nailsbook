@@ -23,6 +23,8 @@ jobs:
           cache-dependency-path: backend/package-lock.json
 
       - run: npm ci
+      # 拦住「改了 schema.prisma 却没生成迁移」：这类漂移只在重新部署后才暴露
+      - run: npm run check:schema-drift
       - run: npm test -- --runInBand
         env:
           DATABASE_URL: file:./test.db
