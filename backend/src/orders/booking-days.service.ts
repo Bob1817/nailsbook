@@ -45,7 +45,22 @@ export class BookingDaysService {
       orderBy: { serviceDate: 'asc' },
     });
     const blockedSlots = await this.prisma.blockedTimeSlot.findMany({ where: { techId: technicianId, endTime: { gte: new Date() } }, select: { startTime: true, endTime: true } });
-    return { depositMode: technician.depositMode, depositValue: technician.depositValue, quickBookingEnabled: quickBookingEnabled(technicianId, technician.quickBookingEnabled), days, blockedSlots };
+    // Aggregate per-service deposit as a reference total (actual booking uses per-service calculation)
+    const services = await this.prisma.service.findMany({
+      where: { technicianId, archivedAt: null, isBookable: true, depositMode: { not: 'none' } },
+      select: { priceMinFen: true, depositMode: true, depositValue: true },
+    });
+    let totalDepositFen = 0;
+    for (const svc of services) {
+      if (svc.depositMode === 'fixed' && svc.depositValue > 0) {
+        totalDepositFen += svc.depositValue;
+      } else if (svc.depositMode === 'percentage' && svc.depositValue > 0 && svc.priceMinFen) {
+        totalDepositFen += Math.round(svc.priceMinFen * svc.depositValue / 10000);
+      }
+    }
+    const depositMode = totalDepositFen > 0 ? 'fixed' : 'none';
+    const depositValue = totalDepositFen;
+    return { depositMode, depositValue, quickBookingEnabled: quickBookingEnabled(technicianId, technician.quickBookingEnabled), days, blockedSlots };
   }
 
   async updateSettings(technicianId: number, quickBookingEnabled: boolean) {

@@ -227,6 +227,7 @@ export class ClientOrdersService {
       subtotalFen: number;
       sortOrder: number;
     }> = [];
+    let selectedServices: Array<{ priceMinFen: number | null; depositMode: string; depositValue: number }> = [];
     if (sourceWork && !dto.referenceOnly) {
       serviceLines = sourceWork.serviceLines.map((line) => ({
         serviceId: line.serviceId,
@@ -262,8 +263,11 @@ export class ClientOrdersService {
           name: true,
           priceMinFen: true,
           durationMinutes: true,
+          depositMode: true,
+          depositValue: true,
         },
       });
+      selectedServices = services;
       serviceLines = buildServiceSnapshotLines(services, requested);
     }
     const summary = summarizeSnapshotLines(serviceLines);
@@ -278,12 +282,26 @@ export class ClientOrdersService {
         : bookingType === 'standard'
           ? serviceSubtotalFen
           : null;
-    const depositModeSnapshot = binding.technician.depositMode || 'none';
-    const depositValueSnapshot = binding.technician.depositValue || 0;
-    if ((dto.expectedDepositMode !== undefined && dto.expectedDepositMode !== depositModeSnapshot) ||
-        (dto.expectedDepositValue !== undefined && dto.expectedDepositValue !== depositValueSnapshot) ||
-        (dto.expectedPriceFen !== undefined && dto.expectedPriceFen !== finalPriceFen)) throw new BadRequestException('价格或定金设置已更新，请重新加载预约信息后提交');
-    const defaultDepositFen = depositFen(finalPriceFen, depositModeSnapshot, depositValueSnapshot);
+    // Calculate deposit from per-service deposit settings
+    let defaultDepositFen = 0;
+    let depositModeSnapshot = 'none';
+    let depositValueSnapshot = 0;
+    if (bookingType === 'standard' && selectedServices.length > 0) {
+      for (const svc of selectedServices) {
+        if (svc.depositMode === 'fixed' && svc.depositValue > 0) {
+          defaultDepositFen += svc.depositValue;
+        } else if (svc.depositMode === 'percentage' && svc.depositValue > 0 && svc.priceMinFen) {
+          defaultDepositFen += Math.round(svc.priceMinFen * svc.depositValue / 10000);
+        }
+      }
+      depositModeSnapshot = defaultDepositFen > 0 ? 'fixed' : 'none';
+    } else {
+      // Fallback to technician-level deposit for work/custom bookings
+      depositModeSnapshot = binding.technician.depositMode || 'none';
+      depositValueSnapshot = binding.technician.depositValue || 0;
+      defaultDepositFen = depositFen(finalPriceFen, depositModeSnapshot, depositValueSnapshot) ?? 0;
+    }
+    if ((dto.expectedPriceFen !== undefined && dto.expectedPriceFen !== finalPriceFen)) throw new BadRequestException('价格已更新，请重新加载预约信息后提交');
     const now = new Date();
     const sourcePromotion = !dto.referenceOnly && sourceWork?.promotion && sourceWork.promotion.enabled &&
       (!sourceWork.promotion.startsAt || sourceWork.promotion.startsAt <= now) &&

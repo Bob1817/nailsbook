@@ -60,7 +60,7 @@ export class ClientHomeService {
         publicationStatus: 'approved', archivedAt: null, coverUrl: { not: null },
       },
       orderBy: [{ heroSlot: 'asc' }, { id: 'desc' }],
-      include: { likes: true, comments: true, technician: { select: { name: true, id: true, avatarUrl: true } } },
+      include: { likes: true, comments: true, technician: { select: { name: true, id: true, avatarUrl: true, shopAddresses: true } } },
     });
     const groups = bindings.map((item) => candidates.filter((work) => work.techId === item.techId && work.coverUrl?.trim()).slice(0, 3))
       .filter((items) => items.length).slice(0, 5);
@@ -336,7 +336,7 @@ export class ClientHomeService {
         comments: true,
         favorites: true,
         technician: {
-          select: { name: true, id: true, avatarUrl: true },
+          select: { name: true, id: true, avatarUrl: true, shopAddresses: true },
         },
       },
     });
@@ -398,7 +398,7 @@ export class ClientHomeService {
           likes: true,
           comments: true,
           favorites: true,
-          technician: { select: { name: true, id: true, avatarUrl: true } },
+          technician: { select: { name: true, id: true, avatarUrl: true, shopAddresses: true } },
         },
       }),
       this.prisma.nailWork.count({ where }),
@@ -426,7 +426,7 @@ export class ClientHomeService {
           include: {
             likes: true,
             comments: true,
-            technician: { select: { name: true, id: true, avatarUrl: true } },
+            technician: { select: { name: true, id: true, avatarUrl: true, shopAddresses: true } },
           },
         },
       },
@@ -453,7 +453,7 @@ export class ClientHomeService {
           include: {
             likes: true,
             comments: true,
-            technician: { select: { name: true, id: true, avatarUrl: true } },
+            technician: { select: { name: true, id: true, avatarUrl: true, shopAddresses: true } },
           },
         },
       },
@@ -595,6 +595,7 @@ export class ClientHomeService {
       name: string | null;
       id?: number;
       avatarUrl?: string | null;
+      shopAddresses?: string | null;
     };
     techId?: number;
     visibilityScope?: string;
@@ -625,6 +626,29 @@ export class ClientHomeService {
     // Get technicianId from either work.techId or work.technician.id
     const technicianId = work.techId ?? work.technician?.id;
 
+    // 解析美甲师第一个启用店铺的名称与完整地址（供作品卡展示；未配置店铺则为 null）
+    let firstShop: { name: string; address: string } | null = null;
+    if (work.technician?.shopAddresses) {
+      try {
+        const parsedShops = JSON.parse(work.technician.shopAddresses);
+        if (Array.isArray(parsedShops)) {
+          const shop = parsedShops.find(
+            (item) => item && item.enabled !== false,
+          );
+          if (shop) {
+            firstShop = {
+              name: typeof shop.name === 'string' ? shop.name : '服务店铺',
+              address: [shop.province, shop.city, shop.district, shop.detailAddress]
+              .filter((part) => typeof part === 'string' && part.trim())
+              .join(' '),
+            };
+          }
+        }
+      } catch {
+        // 未配置有效店铺时不展示虚构地址。
+      }
+    }
+
     return {
       id: work.id,
       title: work.title,
@@ -646,6 +670,8 @@ export class ClientHomeService {
         ? toAbsoluteUrl(work.technician.avatarUrl)
         : null,
       technicianId: technicianId,
+      technicianShopName: firstShop?.name ?? null,
+      technicianShopAddress: firstShop?.address ?? null,
       visibilityScope: work.visibilityScope ?? 'public',
       price: work.price ?? null,
       serviceSubtotalFen: work.serviceSubtotalFen ?? 0,
@@ -752,7 +778,7 @@ export class ClientHomeService {
           likes: true,
           comments: true,
           favorites: true,
-          technician: { select: { name: true, id: true, avatarUrl: true } },
+          technician: { select: { name: true, id: true, avatarUrl: true, shopAddresses: true } },
         },
       }),
       this.prisma.nailWork.count({ where }),

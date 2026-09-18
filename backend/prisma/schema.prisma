@@ -632,6 +632,7 @@ model ClientTechBinding {
   inviteCode String?
   bindSource String
   isDefault  Boolean    @default(false)
+  showOnProfile Boolean @default(true)
   // pending（待美甲师审批）| active（已绑定）| inactive（已解除）| rejected（被拒绝）
   status     String     @default("active")
   note       String? // 客户申请绑定时填写的备注
@@ -1461,6 +1462,8 @@ model Service {
   workServiceLines     NailWorkServiceLine[]
   orderServiceLines    OrderServiceLine[]
   maintenanceCycleDays Int                   @default(21)
+  depositMode          String                @default("none") // none, fixed, percentage
+  depositValue         Int                   @default(0) // fixed: fen, percentage: basis points (10000=100%)
 
   @@unique([technicianId, publicId])
   @@index([technicianId, archivedAt, isBookable, sortOrder])

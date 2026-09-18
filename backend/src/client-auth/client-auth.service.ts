@@ -663,6 +663,128 @@ export class ClientAuthService {
     };
   }
 
+  /**
+   * 登录并自动绑定美甲师
+   * - 新用户：自动注册 + 绑定 + 登录
+   * - 老用户：登录 + 绑定（未绑定时）/ 跳过（已绑定）/ 提示已满（超限）
+   */
+  async loginAndBind(dto: { phone: string; password: string; techId: number; source?: string }) {
+    const MAX_ACTIVE_BINDINGS = 5;
+    const techId = dto.techId;
+    const bindSource = dto.source || 'login_and_bind';
+
+    // 校验美甲师
+    if (!isLaunchTechnician(techId)) throw new NotFoundException('美甲师不存在');
+    const technician = await this.prisma.technician.findUnique({ where: { id: techId } });
+    if (!technician) throw new NotFoundException('美甲师不存在');
+    if (technician.status !== 'active') throw new BadRequestException('美甲师暂未开放服务');
+
+    const loadClient = () =>
+      this.prisma.clientUser.findUnique({
+        where: { phone: dto.phone },
+        include: {
+          bindings: {
+            where: { status: { in: ['active', 'pending'] } },
+            include: { technician: true },
+            orderBy: { isDefault: 'desc' },
+          },
+        },
+      });
+
+    // 查找用户
+    let existing = await this.prisma.clientUser.findUnique({ where: { phone: dto.phone } });
+    let isNewUser = false;
+
+    if (!existing) {
+      // ── 新用户：自动注册 + 绑定 ──
+      isNewUser = true;
+      const passwordHash = await bcrypt.hash(dto.password, 10);
+      await this.prisma.$transaction(async (tx) => {
+        const created = await tx.clientUser.create({
+          data: { phone: dto.phone, passwordHash, nickname: null },
+        });
+        await tx.clientTechBinding.create({
+          data: { clientId: created.id, techId, inviteCode: null, bindSource, status: 'active', isDefault: true },
+        });
+        await tx.customer.upsert({
+          where: { technicianId_clientUserId: { technicianId: techId, clientUserId: created.id } },
+          update: { name: dto.phone, phone: dto.phone },
+          create: { technicianId: techId, clientUserId: created.id, name: dto.phone, phone: dto.phone, sourceType: bindSource, sourceRef: 'auto_register' },
+        });
+        existing = created;
+      });
+    } else {
+      // ── 老用户：验证密码 ──
+      if (existing.status !== 'active') throw new UnauthorizedException('账号已被禁用');
+      if (!existing.passwordHash) throw new UnauthorizedException('账号未设置密码，请通过微信登录设置密码');
+      const valid = await bcrypt.compare(dto.password, existing.passwordHash);
+      if (!valid) throw new UnauthorizedException('手机号或密码错误');
+    }
+
+    // 加载完整绑定数据
+    let client = await loadClient();
+    if (!client) throw new UnauthorizedException('用户加载失败');
+
+    // 检查是否已绑定该美甲师
+    const existingBinding = client.bindings.find(b => b.techId === techId);
+    let bound = false;
+    let bindingsFull = false;
+
+    if (existingBinding) {
+      bound = true;
+    } else {
+      const activeCount = await this.prisma.clientTechBinding.count({
+        where: { clientId: client.id, status: 'active' },
+      });
+      if (activeCount >= MAX_ACTIVE_BINDINGS) {
+        bindingsFull = true;
+      } else {
+        await this.prisma.$transaction(async (tx) => {
+          await tx.clientTechBinding.create({
+            data: { clientId: client!.id, techId, inviteCode: null, bindSource, status: 'active', isDefault: activeCount === 0 },
+          });
+          await tx.customer.upsert({
+            where: { technicianId_clientUserId: { technicianId: techId, clientUserId: client!.id } },
+            update: { name: client!.phone, phone: client!.phone },
+            create: { technicianId: techId, clientUserId: client!.id, name: client!.phone, phone: client!.phone, sourceType: bindSource, sourceRef: 'auto_bind' },
+          });
+        });
+        bound = true;
+        client = await loadClient();
+        if (!client) throw new UnauthorizedException('用户加载失败');
+      }
+    }
+
+    // 收集角色
+    const roles: string[] = ['client'];
+    const hasTechnicianAccount = await this.prisma.technician.findUnique({
+      where: { phone: dto.phone },
+      select: { id: true, status: true, passwordHash: true },
+    });
+    if (hasTechnicianAccount && hasTechnicianAccount.status === 'active') {
+      roles.push('technician');
+      if (hasTechnicianAccount.passwordHash && hasTechnicianAccount.passwordHash !== client.passwordHash) {
+        await this.prisma.clientUser.update({
+          where: { id: client.id },
+          data: { passwordHash: hasTechnicianAccount.passwordHash, managedPasswordCiphertext: null },
+        });
+      }
+    }
+
+    // 构建返回
+    const loginResult = client.bindings.length > 0
+      ? this.buildLoginResult(client)
+      : {
+          accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
+          refreshToken: this.signRefreshToken(client.id, client.phone, client.tokenVersion),
+          client: { id: client.id, nickname: client.nickname, phone: client.phone, avatarUrl: client.avatarUrl, city: client.city, bio: client.bio, status: client.status },
+          technician: null,
+          technicians: [],
+        };
+
+    return { ...loginResult, roles, needsOnboarding: isNewUser, bound, bindingsFull, isNewUser };
+  }
+
   /** 签发密码设置短期 token（供 wechat-auth completeClient 调用） */
   createPasswordSetupToken(clientId: number): string {
     return this.jwtService.sign(
@@ -969,6 +1091,7 @@ export class ClientAuthService {
           b.technician.serviceSchedule,
         ),
         isDefault: b.isDefault,
+        showOnProfile: b.showOnProfile,
         bindSource: b.bindSource,
       })),
     };
@@ -1149,6 +1272,21 @@ export class ClientAuthService {
       create: { clientId, techId, content: content.trim() },
       update: { content: content.trim() },
       select: { techId: true, content: true },
+    });
+  }
+
+  async setTechnicianProfileVisibility(clientId: number, techId: number, showOnProfile: unknown) {
+    if (!Number.isInteger(techId) || techId <= 0 || typeof showOnProfile !== 'boolean') {
+      throw new BadRequestException('展示设置无效');
+    }
+    const binding = await this.prisma.clientTechBinding.findUnique({
+      where: { clientId_techId: { clientId, techId } },
+    });
+    if (!binding || binding.status !== 'active') throw new NotFoundException('未绑定该美甲师');
+    return this.prisma.clientTechBinding.update({
+      where: { id: binding.id },
+      data: { showOnProfile },
+      select: { techId: true, showOnProfile: true },
     });
   }
 

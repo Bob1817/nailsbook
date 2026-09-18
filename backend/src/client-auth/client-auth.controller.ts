@@ -42,6 +42,7 @@ import {
 } from './dto/forgot-password.dto';
 import { SetupPasswordDto } from './dto/setup-password.dto';
 import { SelectRoleDto } from './dto/select-role.dto';
+import { LoginAndBindDto } from './dto/login-and-bind.dto';
 import { RegisterDeviceTokenDto } from '../notifications/dto/register-device-token.dto';
 import { PushService } from '../notifications/push.service';
 
@@ -159,6 +160,15 @@ export class ClientAuthController {
   @ApiBody({ type: ClientLoginDto })
   async login(@Body() body: ClientLoginDto) {
     return this.clientAuthService.login(body);
+  }
+
+  @Post('login-and-bind')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @ApiOperation({ summary: '登录并自动绑定美甲师（新用户自动注册）' })
+  @ApiBody({ type: LoginAndBindDto })
+  @ApiResponse({ status: 200, description: '登录成功，返回 token 及绑定状态' })
+  async loginAndBind(@Body() body: LoginAndBindDto) {
+    return this.clientAuthService.loginAndBind(body);
   }
 
   @Post('forgot-password/send-code')
@@ -346,6 +356,12 @@ export class ClientAuthController {
   @UseGuards(ClientJwtAuthGuard)
   saveTechnicianNote(@Req() request: { user: { clientUserId: number } }, @Param('techId') techId: string, @Body() body: { content: unknown }) {
     return this.clientAuthService.savePrivateTechnicianNote(request.user.clientUserId, Number(techId), body.content);
+  }
+
+  @Patch('technician-profile-visibility/:techId')
+  @UseGuards(ClientJwtAuthGuard)
+  setTechnicianProfileVisibility(@Req() request: { user: { clientUserId: number } }, @Param('techId') techId: string, @Body() body: { showOnProfile: unknown }) {
+    return this.clientAuthService.setTechnicianProfileVisibility(request.user.clientUserId, Number(techId), body.showOnProfile);
   }
 
   @Post('set-default-technician/:techId')

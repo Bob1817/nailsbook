@@ -19,6 +19,8 @@ type ServiceItem = {
   durationMinutes: number;
   isActive: boolean;
   sortOrder: number;
+  depositMode: string;
+  depositValue: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -28,6 +30,8 @@ type CreateServiceDto = {
   category: ServiceCategory;
   price?: number;
   durationMinutes?: number;
+  depositMode?: string;
+  depositValue?: number;
 };
 type UpdateServiceDto = Partial<CreateServiceDto> & {
   isActive?: boolean;
@@ -91,6 +95,7 @@ export class TechnicianServicesService {
 
   async create(technicianId: number, dto: CreateServiceDto) {
     this.assertValidService(dto);
+    const { depositMode, depositValue } = this.assertValidDeposit(dto.depositMode, dto.depositValue, Number(dto.price));
     await this.ensureImported(technicianId);
     const count = await this.prisma.service.count({
       where: { technicianId, archivedAt: null },
@@ -109,6 +114,8 @@ export class TechnicianServicesService {
         priceMaxFen: this.toFen(Number(dto.price)),
         isBookable: true,
         sortOrder: count + 1,
+        depositMode,
+        depositValue,
       },
     });
     await this.syncLegacyMirror(technicianId);
@@ -133,6 +140,16 @@ export class TechnicianServicesService {
           : existing.priceMinFen / 100),
       durationMinutes: dto.durationMinutes ?? existing.durationMinutes,
     });
+    const price = dto.price ?? (existing.priceMinFen == null ? 0 : existing.priceMinFen / 100);
+    let depositUpdate: { depositMode?: string; depositValue?: number } = {};
+    if (dto.depositMode !== undefined || dto.depositValue !== undefined) {
+      const { depositMode, depositValue } = this.assertValidDeposit(
+        dto.depositMode ?? existing.depositMode,
+        dto.depositValue ?? existing.depositValue,
+        price,
+      );
+      depositUpdate = { depositMode, depositValue };
+    }
     await this.prisma.service.update({
       where: { id: existing.id },
       data: {
@@ -152,6 +169,7 @@ export class TechnicianServicesService {
           : {}),
         ...(dto.isActive !== undefined ? { isBookable: dto.isActive } : {}),
         ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
+        ...depositUpdate,
       },
     });
     await this.syncLegacyMirror(technicianId);
@@ -239,6 +257,8 @@ export class TechnicianServicesService {
       durationMinutes: item.durationMinutes ?? 0,
       isActive: item.isBookable,
       sortOrder: item.sortOrder,
+      depositMode: item.depositMode || 'none',
+      depositValue: item.depositValue || 0,
       createdAt: item.createdAt.toISOString(),
       updatedAt: item.updatedAt.toISOString(),
     }));
@@ -255,6 +275,17 @@ export class TechnicianServicesService {
   private toFen(value: number) {
     return Math.round(Number(value) * 100);
   }
+  private assertValidDeposit(mode?: string, value?: number, _price?: number): { depositMode: string; depositValue: number } {
+    const m = mode || 'none';
+    const v = Number(value) || 0;
+    if (!['none', 'fixed', 'percentage'].includes(m)) throw new BadRequestException('定金模式无效');
+    if (m !== 'none') {
+      if (!Number.isFinite(v) || v < 0) throw new BadRequestException('定金数值无效');
+      if (m === 'percentage' && v > 10000) throw new BadRequestException('定金比例不能超过100%');
+    }
+    return { depositMode: m, depositValue: m === 'none' ? 0 : Math.round(v) };
+  }
+
   private assertValidService(service: {
     name?: string;
     category?: string;

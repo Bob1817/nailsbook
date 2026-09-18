@@ -65,6 +65,8 @@ export class TechnicianServicesController {
         },
         price: { type: 'number', description: '参考价格' },
         durationMinutes: { type: 'number', description: '预计服务时长（分钟）' },
+        depositMode: { type: 'string', enum: ['none', 'fixed', 'percentage'], description: '定金模式' },
+        depositValue: { type: 'number', description: '定金值（fixed: 分, percentage: 万分比）' },
       },
       required: ['name', 'category'],
     },
@@ -85,6 +87,8 @@ export class TechnicianServicesController {
         | 'removal' | 'surcharge_home' | 'surcharge_night' | 'surcharge_holiday';
       price?: number;
       durationMinutes?: number;
+      depositMode?: string;
+      depositValue?: number;
     },
   ) {
     return this.technicianServicesService.create(
@@ -138,6 +142,8 @@ export class TechnicianServicesController {
         sortOrder: { type: 'number', description: '排序顺序' },
         price: { type: 'number', description: '参考价格' },
         durationMinutes: { type: 'number', description: '预计服务时长（分钟）' },
+        depositMode: { type: 'string', enum: ['none', 'fixed', 'percentage'], description: '定金模式' },
+        depositValue: { type: 'number', description: '定金值（fixed: 分, percentage: 万分比）' },
       },
     },
   })
@@ -160,6 +166,8 @@ export class TechnicianServicesController {
       sortOrder?: number;
       price?: number;
       durationMinutes?: number;
+      depositMode?: string;
+      depositValue?: number;
     },
   ) {
     return this.technicianServicesService.update(
