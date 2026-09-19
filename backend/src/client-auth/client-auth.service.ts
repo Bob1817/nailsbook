@@ -74,6 +74,11 @@ export class ClientAuthService {
       code,
       ClientAuthService.RESET_PASSWORD_CODE_PURPOSE,
     );
+    await this.resetPasswordByPhoneOwnership(phone, newPassword);
+  }
+
+  /** 微信手机号授权重置：号码归属已由微信侧验证，直接重置（tokenVersion 递增使旧 token 全失效） */
+  async resetPasswordByPhoneOwnership(phone: string, newPassword: string) {
     const client = await this.prisma.clientUser.findUnique({
       where: { phone },
     });

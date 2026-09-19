@@ -99,6 +99,8 @@ P1 开发完成记录：作品发布已完成预约优先关联与授权摘要�
 
 验收标准：客户和美甲师均可完成完整鉴权流程，无死循环、白屏或错误角色跳转。
 
+改造决策（2026-09-19）：项目未接入短信服务，找回密码与美甲师首次设密由「短信验证码」改为「微信手机号授权验证」（`button open-type="getPhoneNumber"`）。后端新增 `/api/wechat/auth/client/reset-password`、`/api/wechat/auth/technician/reset-password`、`/api/wechat/auth/technician/set-initial-password`（授权手机号与填写手机号比对一致才放行，重置时 tokenVersion 递增使旧 token 全失效）；原短信接口保留作为回滚通道。微信能力不可用（capabilities.wechatLogin=false）时页面降级为「联系客服」（open-type="contact"）。P0-04 保持待真机验收，找回/设密相关用例需按新交互回归。
+
 ### P0-05 完成预约状态机真机回归
 
 - [ ] 客户选择美甲师、服务项目、日期、时间和服务方式创建预约。

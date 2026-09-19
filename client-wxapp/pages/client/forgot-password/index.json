@@ -4,7 +4,6 @@
   "usingComponents": {
     "nav-bar": "/components/nav-bar/index",
     "secondary-page-header": "/components/secondary-page-header/index",
-    "form-field": "/components/form-field/index",
-    "action-button": "/components/action-button/index"
+    "form-field": "/components/form-field/index"
   }
 }

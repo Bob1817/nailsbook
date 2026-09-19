@@ -16,6 +16,7 @@ import {
   WechatClientCompleteDto,
   WechatTechnicianCompleteDto,
 } from './dto/wechat-complete.dto';
+import { WechatPhoneResetDto } from './dto/wechat-phone-reset.dto';
 
 interface Code2SessionResult {
   appId?: string;
@@ -198,6 +199,33 @@ export class WechatAuthService {
       role: 'technician' as const,
       ...(await this.technicianAuth.loginByWechat(technician.id)),
     };
+  }
+
+  /** 忘记密码（客户）：微信手机号授权验证号码归属后直接重置，无需短信验证码 */
+  async resetClientPasswordByPhoneCode(dto: WechatPhoneResetDto) {
+    const phone = await this.exchangePhoneCode(dto.phoneCode);
+    if (phone !== dto.phone) {
+      throw new BadRequestException('微信授权手机号与填写手机号不一致，请重新授权');
+    }
+    return this.clientAuth.resetPasswordByPhoneOwnership(dto.phone, dto.newPassword);
+  }
+
+  /** 忘记密码（美甲师）：微信手机号授权验证号码归属后直接重置，无需短信验证码 */
+  async resetTechnicianPasswordByPhoneCode(dto: WechatPhoneResetDto) {
+    const phone = await this.exchangePhoneCode(dto.phoneCode);
+    if (phone !== dto.phone) {
+      throw new BadRequestException('微信授权手机号与填写手机号不一致，请重新授权');
+    }
+    return this.technicianAuth.resetPasswordByPhoneOwnership(dto.phone, dto.newPassword);
+  }
+
+  /** 首次设密（美甲师）：微信手机号授权验证号码归属后设置登录密码并自动登录 */
+  async setTechnicianInitialPasswordByPhoneCode(dto: WechatPhoneResetDto) {
+    const phone = await this.exchangePhoneCode(dto.phoneCode);
+    if (phone !== dto.phone) {
+      throw new BadRequestException('微信授权手机号与填写手机号不一致，请重新授权');
+    }
+    return this.technicianAuth.setInitialPasswordByPhoneOwnership(dto.phone, dto.newPassword);
   }
 
   private async linkIdentity(

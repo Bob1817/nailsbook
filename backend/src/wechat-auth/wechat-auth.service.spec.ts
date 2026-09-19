@@ -51,10 +51,15 @@ describe('WechatAuthService', () => {
       loginByWechat: jest.fn().mockResolvedValue({ accessToken: 'client-jwt' }),
       registerByInvite: jest.fn(),
       createPasswordSetupToken: jest.fn().mockReturnValue('setup-token'),
+      resetPasswordByPhoneOwnership: jest.fn().mockResolvedValue({ success: true }),
     };
     technicianAuth = {
       loginByWechat: jest.fn(),
       register: jest.fn(),
+      resetPasswordByPhoneOwnership: jest.fn().mockResolvedValue({ success: true }),
+      setInitialPasswordByPhoneOwnership: jest
+        .fn()
+        .mockResolvedValue({ accessToken: 'tech-jwt' }),
     };
     service = new WechatAuthService(
       config as never,
@@ -235,6 +240,63 @@ describe('WechatAuthService', () => {
     await expect(service.completeClient({ wechatSessionToken: 'session', phoneCode: 'phone-code', inviteCode: 'WRONG', quickBookingTechId: 7 })).rejects.toThrow('预约邀请已失效');
     expect(exchange).not.toHaveBeenCalled();
     expect(prisma.clientUser.create).not.toHaveBeenCalled();
+  });
+
+  it('resets client password when the authorized phone matches', async () => {
+    jest.spyOn(service as any, 'exchangePhoneCode').mockResolvedValue('13800138000');
+    await expect(
+      service.resetClientPasswordByPhoneCode({
+        phone: '13800138000',
+        phoneCode: 'phone-code',
+        newPassword: 'Newpass123',
+      }),
+    ).resolves.toEqual({ success: true });
+    expect(clientAuth.resetPasswordByPhoneOwnership).toHaveBeenCalledWith(
+      '13800138000',
+      'Newpass123',
+    );
+  });
+
+  it('rejects client password reset when the authorized phone mismatches', async () => {
+    jest.spyOn(service as any, 'exchangePhoneCode').mockResolvedValue('13900139000');
+    await expect(
+      service.resetClientPasswordByPhoneCode({
+        phone: '13800138000',
+        phoneCode: 'phone-code',
+        newPassword: 'Newpass123',
+      }),
+    ).rejects.toThrow('微信授权手机号与填写手机号不一致');
+    expect(clientAuth.resetPasswordByPhoneOwnership).not.toHaveBeenCalled();
+  });
+
+  it('resets technician password when the authorized phone matches', async () => {
+    jest.spyOn(service as any, 'exchangePhoneCode').mockResolvedValue('13800138000');
+    await expect(
+      service.resetTechnicianPasswordByPhoneCode({
+        phone: '13800138000',
+        phoneCode: 'phone-code',
+        newPassword: 'Newpass123',
+      }),
+    ).resolves.toEqual({ success: true });
+    expect(technicianAuth.resetPasswordByPhoneOwnership).toHaveBeenCalledWith(
+      '13800138000',
+      'Newpass123',
+    );
+  });
+
+  it('sets technician initial password via authorized phone and returns login tokens', async () => {
+    jest.spyOn(service as any, 'exchangePhoneCode').mockResolvedValue('13800138000');
+    await expect(
+      service.setTechnicianInitialPasswordByPhoneCode({
+        phone: '13800138000',
+        phoneCode: 'phone-code',
+        newPassword: 'Newpass123',
+      }),
+    ).resolves.toEqual({ accessToken: 'tech-jwt' });
+    expect(technicianAuth.setInitialPasswordByPhoneOwnership).toHaveBeenCalledWith(
+      '13800138000',
+      'Newpass123',
+    );
   });
 
 });

@@ -84,7 +84,7 @@ const auth = {
   registerClient: (phone, password, inviteCode, source) =>
     registerWithShare(`${C}/auth/register-by-invite`, { phone, password, inviteCode, source: source || undefined }),
 
-  /** 新流程：SMS 免邀请码注册 */
+  /** 旧版短信注册入口已关闭，保留方法只为兼容旧包。 */
   registerBySms: (phone, smsCode) =>
     registerWithShare(`${C}/auth/register-by-sms`, { phone, smsCode }),
 
@@ -112,6 +112,10 @@ const auth = {
     return api.post(`${base}/auth/login`, { phone, password }, { needAuth: false });
   },
 
+  /** 登录并自动绑定美甲师（新用户自动注册） */
+  loginAndBind: (phone, password, techId, source) =>
+    api.post(`${C}/auth/login-and-bind`, { phone, password, techId, source }, { needAuth: false }),
+
   getUserInfo: (role = 'client') => {
     const base = role === 'technician' ? T : C;
     return api.get(`${base}/auth/me`);
@@ -123,11 +127,19 @@ const auth = {
     return api.post(`${base}/auth/forgot-password/reset`, { phone, code, newPassword }, { needAuth: false });
   },
 
+  /** 忘记密码（微信手机号授权）：phoneCode 为 getPhoneNumber 回调的一次性 code */
+  wechatResetPassword: (role, { phone, phoneCode, newPassword }) => {
+    const path = role === 'technician'
+      ? '/api/wechat/auth/technician/reset-password'
+      : '/api/wechat/auth/client/reset-password';
+    return api.post(path, { phone, phoneCode, newPassword }, { needAuth: false });
+  },
+
   /** 微信注册/首次登录 → 设置密码 */
   setupPassword: (passwordSetupToken, password) =>
     api.post(`${C}/auth/setup-password`, { passwordSetupToken, password }, { needAuth: false }),
 
-  /** 注册后选择角色（客户/美甲师），可跳过绑定/激活 */
+  /** 历史账号补全角色：客户和美甲师都必须提交对应邀请凭证。 */
   selectRole: (role, { inviteCode, activationKey } = {}) =>
     api.post(`${C}/auth/select-role`, { role, inviteCode, activationKey }, { needAuth: true }),
 
@@ -139,8 +151,7 @@ const auth = {
 
 // ========== 客户端 ==========
 const client = {
-  // 首页后端支持游客访问；始终匿名请求，避免失效 token 被 optional guard 拒绝后产生 401。
-  home: () => api.get(`${C}/home`, null, { needAuth: false, silent: true }),
+  home: () => api.get(`${C}/home`, null, { silent: true }),
   featuredWorks: (params, options) => api.get(`${C}/featured-works`, params, options),
   beautyArchive: () => api.get(`${C}/beauty-archive`),
 
@@ -165,10 +176,12 @@ const client = {
       api.post(`${C}/auth/binding-applications/request`, { techId, note }),
     cancelBindingApplication: (techId) =>
       api.del(`${C}/auth/binding-applications/${techId}`),
-    unbindTechnician: (techId) =>
-      api.del(`${C}/auth/unbind-technician/${techId}`),
+    unbindTechnician: (techId, confirmAccountClosure = false) =>
+      api.del(`${C}/auth/unbind-technician/${techId}${confirmAccountClosure ? '?confirmAccountClosure=1' : ''}`),
     technicianNotes: () => api.get(`${C}/auth/technician-notes`),
     saveTechnicianNote: (techId, content) => api.patch(`${C}/auth/technician-notes/${techId}`, { content }),
+    setTechnicianProfileVisibility: (techId, showOnProfile) =>
+      api.patch(`${C}/auth/technician-profile-visibility/${techId}`, { showOnProfile }),
     setDefaultTechnician: (techId) =>
       api.post(`${C}/auth/set-default-technician/${techId}`)
   },
@@ -290,6 +303,9 @@ const technician = {
     updateServiceType: (data) => api.patch(`${T}/auth/service-type`, data),
     sendInitialPasswordCode: (phone) => api.post(`${T}/auth/set-initial-password/send-code`, { phone }, { needAuth: false }),
     setInitialPassword: (phone, code, newPassword) => api.post(`${T}/auth/set-initial-password`, { phone, code, newPassword }, { needAuth: false }),
+    /** 首次设密（微信手机号授权）：phoneCode 为 getPhoneNumber 回调的一次性 code */
+    wechatSetInitialPassword: ({ phone, phoneCode, newPassword }) =>
+      api.post('/api/wechat/auth/technician/set-initial-password', { phone, phoneCode, newPassword }, { needAuth: false }),
     setPassword: (newPassword) => api.post(`${T}/auth/set-password`, { newPassword }),
     switchToClient: () => api.post(`${T}/auth/switch-to-client`, {}),
     bindingApplications: () => api.get(`${T}/auth/binding-applications`),
@@ -597,7 +613,7 @@ const publicApi = {
   brands: {
     profile: (id, params) => api.get(`${P}/brands/${id}`, params, { needAuth: false }),
     services: (id, params) => api.get(`${P}/brands/${id}/services`, params, { needAuth: false }),
-    works: (id, params) => api.get(`${P}/brands/${id}/works`, params, { needAuth: false }),
+    works: (id, params) => api.get(`${P}/brands/${id}/works`, params),
     reviews: (id, params) => api.get(`${P}/brands/${id}/reviews`, params, { needAuth: false }),
     availability: (id, params) => api.get(`${P}/brands/${id}/availability`, params, { needAuth: false })
   },
@@ -605,11 +621,11 @@ const publicApi = {
     resolve: (token) => api.get(`${P}/referrals/${token}`, null, { needAuth: false })
   },
   works: {
-    list: (params) => api.get(`${P}/works`, params, { needAuth: false }),
-    featured: () => api.get(`${P}/works/featured`, null, { needAuth: false }),
-    detail: (id) => api.get(`${P}/works/${id}`, null, { needAuth: false }),
-    shared: (token) => api.get(`${P}/works/shared/${token}`, null, { needAuth: false }),
-    shareCode: (id, shareToken) => api.get(`${P}/works/${id}/share-code`, shareToken ? { shareToken } : null, { needAuth: false })
+    list: (params) => api.get(`${P}/works`, params),
+    featured: () => api.get(`${P}/works/featured`),
+    detail: (id) => api.get(`${P}/works/${id}`),
+    shared: (token) => api.get(`${P}/works/shared/${token}`),
+    shareCode: (id, shareToken) => api.get(`${P}/works/${id}/share-code`, shareToken ? { shareToken } : null)
   }
 };
 

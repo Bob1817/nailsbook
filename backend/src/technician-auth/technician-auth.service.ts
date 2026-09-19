@@ -59,6 +59,11 @@ export class TechnicianAuthService {
       code,
       TechnicianAuthService.RESET_PASSWORD_CODE_PURPOSE,
     );
+    await this.resetPasswordByPhoneOwnership(phone, newPassword);
+  }
+
+  /** 微信手机号授权重置：号码归属已由微信侧验证，直接重置（tokenVersion 递增使旧 token 全失效） */
+  async resetPasswordByPhoneOwnership(phone: string, newPassword: string) {
     const technician = await this.findTechnicianByPhone(phone);
     if (!technician || !technician.passwordHash) {
       throw new BadRequestException('该手机号未注册');
@@ -529,6 +534,14 @@ export class TechnicianAuthService {
       code,
       TechnicianAuthService.INITIAL_PASSWORD_CODE_PURPOSE,
     );
+    return this.setInitialPasswordByPhoneOwnership(phone, newPassword);
+  }
+
+  /** 微信手机号授权首次设密：号码归属已由微信侧验证，直接校验账号状态并设密 */
+  async setInitialPasswordByPhoneOwnership(
+    phone: string,
+    newPassword: string,
+  ) {
     const technician = await this.findTechnicianByPhone(phone);
 
     if (!technician) {
