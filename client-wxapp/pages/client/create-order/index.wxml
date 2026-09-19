@@ -1,5 +1,5 @@
 <nav-bar title="{{quickMode ? '预约' + (selectedTech.name || '美甲师') : '创建预约'}}" showBack/>
-<view class="page">
+<view class="page" style="padding-bottom: {{submitBarHeight + 16}}px;">
 
   <!-- 选择美甲师 -->
   <view class="section" wx:if="{{!presetLocked}}">
@@ -62,6 +62,10 @@
   <view class="section service-selection-section" wx:if="{{selectedTech}}">
     <view class="section-head">
       <text class="section-title">{{sourceWork ? '服务项目' : quickMode ? '补充款式参考（选填）' : '选择服务 · 可多选'}}</text>
+      <view wx:if="{{quickMode && !sourceWork}}" class="section-head-action" bindtap="toggleQuickRef" role="button" aria-label="{{showQuickRef ? '收起' : '展开'}}款式参考">
+        <text class="section-head-action-text">{{showQuickRef ? '收起' : '展开'}}</text>
+        <text class="section-head-action-arrow">{{showQuickRef ? '‹' : '›'}}</text>
+      </view>
     </view>
 
     <!-- 切换：选服务项目 / 自定义需求 -->
@@ -97,7 +101,7 @@
 
     <text wx:if="{{quickMode && (!sourceWork || referenceOnly)}}" class="section-sub">此项可跳过，不影响提交时间申请</text>
     <!-- 自定义需求表单 -->
-    <view wx:if="{{isCustomService && !sourceWork}}" class="custom-form">
+    <view wx:if="{{isCustomService && !sourceWork && (showQuickRef || !quickMode)}}" class="custom-form">
       <view class="form-field" wx:if="{{!quickMode}}">
         <text class="form-label">服务名称</text>
         <input class="form-input" value="{{customTitle}}" bindinput="onCustomTitleInput" placeholder="例如：法式渐变美甲" placeholder-class="form-placeholder" confirm-type="done" />
@@ -122,34 +126,46 @@
 
       <!-- 参考作品 -->
       <view class="form-field" wx:if="{{techWorks.length > 0}}">
-        <text class="form-label">参考作品（可选，最多3个）</text>
+        <view class="form-label-row">
+          <text class="form-label">参考作品（可选）</text>
+          <text class="form-label-count">{{selectedWorkIds.length}}/3</text>
+        </view>
         <view class="work-picker-trigger" bindtap="toggleWorkSelector" role="button" aria-label="{{showWorkSelector ? '收起作品选择' : '选择参考作品'}}">
           <image class="work-picker-icon" src="/static/icons/image.svg" mode="aspectFit" />
           <view class="work-picker-copy">
             <text class="work-picker-title">{{showWorkSelector ? '收起作品选择' : '从美甲师作品中选择'}}</text>
-            <text class="work-picker-meta">{{selectedWorkIds.length > 0 ? '已选择 ' + selectedWorkIds.length + ' 个作品' : '选择接近你需求的款式作为参考'}}</text>
+            <text class="work-picker-meta">{{selectedWorkIds.length > 0 ? '已选 ' + selectedWorkIds.length + ' 个，还可选 ' + (3 - selectedWorkIds.length) + ' 个' : '选择接近你需求的款式作为参考'}}</text>
           </view>
           <image class="work-picker-arrow {{showWorkSelector ? 'work-picker-arrow-open' : ''}}" src="/static/icons/arrow-right.svg" mode="aspectFit" />
         </view>
         <view wx:if="{{selectedWorkIds.length > 0}}" class="selected-works">
-          <view wx:for="{{techWorks}}" wx:key="id" wx:if="{{selectedWorkIds.indexOf(item.id) >= 0}}" class="selected-work-item">
+          <view wx:for="{{techWorks}}" wx:key="id" wx:if="{{selectedWorkMap[item.id]}}" class="selected-work-item">
             <image src="{{item.coverUrl}}" mode="aspectFill" class="work-thumb" lazy-load aria-label="{{item.title || '美甲作品'}}" />
             <view class="remove-btn" bindtap="removeWork" data-id="{{item.id}}">✕</view>
           </view>
         </view>
-        <view wx:if="{{showWorkSelector}}" class="work-selector">
-          <view wx:for="{{techWorks}}" wx:key="id"
-            class="work-option {{selectedWorkIds.indexOf(item.id) >= 0 ? 'work-option-active' : ''}}"
-            bindtap="toggleWork" data-id="{{item.id}}">
-            <image src="{{item.coverUrl}}" mode="aspectFill" class="work-option-img" lazy-load aria-label="{{item.title || '美甲作品'}}" />
-            <view wx:if="{{selectedWorkIds.indexOf(item.id) >= 0}}" class="work-check">✓</view>
+        <!-- 作品网格：点击卡片选中/取消，点击预览打开弹窗 -->
+        <view wx:if="{{showWorkSelector}}" class="work-grid">
+          <view wx:for="{{techWorks}}" wx:key="id" class="work-cell">
+            <view class="work-cell-img-wrap" bindtap="toggleWork" data-id="{{item.id}}" role="button" aria-label="{{selectedWorkMap[item.id] ? '取消选择' : '选择'}}{{item.title || '美甲作品'}}">
+              <image src="{{item.coverUrl}}" mode="aspectFill" class="work-cell-img" lazy-load />
+              <view wx:if="{{selectedWorkMap[item.id]}}" class="work-cell-check">✓</view>
+            </view>
+            <view class="work-cell-info">
+              <text class="work-cell-title">{{item.title || '美甲作品'}}</text>
+              <view class="work-cell-bottom">
+                <text wx:if="{{item.standardPriceFen > 0}}" class="work-cell-price semantic-money">¥{{item.standardPriceFen / 100}}</text>
+                <text wx:else class="work-cell-price work-cell-pending">待报价</text>
+                <view class="work-cell-preview" catchtap="previewWork" data-id="{{item.id}}" role="button" aria-label="预览{{item.title || '美甲作品'}}"><text>预览</text></view>
+              </view>
+            </view>
           </view>
         </view>
       </view>
     </view>
 
     <!-- 标准服务列表 -->
-    <view wx:if="{{!sourceWork && !isCustomService && activeServiceItems.length > 0}}" class="service-list">
+    <view wx:if="{{!sourceWork && !isCustomService && activeServiceItems.length > 0 && (showQuickRef || !quickMode)}}" class="service-list">
       <view wx:for="{{activeServiceItems}}" wx:key="id"
         class="service-card {{selectedServiceMap[item.id] ? 'service-card-active' : ''}}"
         bindtap="toggleService" data-id="{{item.id}}" hover-class="choice-pressed" role="checkbox" aria-checked="{{!!selectedServiceMap[item.id]}}" aria-label="{{item.name}}，¥{{item.price}}，约{{item.durationMinutes}}分钟{{selectedServiceMap[item.id] ? '，已选中' : '，未选中'}}">
@@ -180,16 +196,24 @@
   </view>
 
   <view wx:if="{{quickMode}}" class="section">
-    <text class="section-sub">{{selectedShopName ? '默认到店：' + selectedShopName + '。' : ''}}提交的是预约申请，最终时间与报价以双方确认为准。</text>
-      <button class="quick-choice booking-action" hover-class="quick-choice-pressed" bindtap="useFullBooking">使用完整预约</button>
+    <button class="quick-choice booking-action" hover-class="quick-choice-pressed" bindtap="useFullBooking">使用完整预约</button>
   </view>
   <!-- 到店：选择门店 -->
   <view class="section" wx:if="{{selectedTech}}">
     <view class="section-head">
       <text class="section-title">服务形式</text>
-      <text class="section-sub">{{serviceOptions.length === 1 ? '已为你选中唯一可用门店' : '单选 · 请选择到店门店'}}</text>
+      <text class="section-sub">{{serviceOptions.length === 1 ? '当前美甲师仅有 1 个可用门店' : '单选 · 请选择到店门店'}}</text>
     </view>
-    <radio-group wx:if="{{serviceOptions.length > 0}}" class="addr-list" bindchange="selectServiceOption">
+    <!-- 单店：展示信息卡片，无需选择 -->
+    <view wx:if="{{serviceOptions.length === 1}}" class="addr-card addr-card-active addr-card-readonly">
+      <view class="addr-info">
+        <view class="addr-name-row"><text class="addr-name">{{serviceOptions[0].title}}</text><text wx:if="{{serviceOptions[0].contact}}" class="addr-phone">{{serviceOptions[0].contact}}</text></view>
+        <text class="addr-detail">{{serviceOptions[0].detail}}</text>
+        <view wx:if="{{serviceOptions[0].type === '到店美甲' && serviceOptions[0].guidance && serviceOptions[0].guidance.enabled}}" class="addr-guidance-link" catchtap="openShopGuidance" data-idx="{{serviceOptions[0].shopIndex}}" role="button" aria-label="查看到店指引"><text>查看到店指引</text><text>›</text></view>
+      </view>
+    </view>
+    <!-- 多店：radio 选择 -->
+    <radio-group wx:elif="{{serviceOptions.length > 1}}" class="addr-list" bindchange="selectServiceOption">
       <label wx:for="{{serviceOptions}}" wx:key="key"
         class="addr-card {{selectedServiceOptionKey === item.key ? 'addr-card-active' : ''}}">
         <radio class="service-option-native" value="{{item.key}}" checked="{{selectedServiceOptionKey === item.key}}" />
@@ -213,62 +237,220 @@
     <view class="section-head">
       <text class="section-title">补充说明</text>
     </view>
-    <textarea class="remark-input" value="{{remark}}" bindinput="onRemarkInput" placeholder="请输入特殊需求..." placeholder-class="form-placeholder" adjust-position cursor-spacing="120" confirm-type="done" />
+    <textarea class="remark-input" value="{{remark}}" bindinput="onRemarkInput" placeholder="请填写预约备注，如款式偏好、特殊需求等" placeholder-class="form-placeholder" maxlength="200" adjust-position cursor-spacing="120" auto-height confirm-type="done" />
   </view>
 
-  <view wx:if="{{selectedTech}}" class="section"><text class="section-sub">定金：{{depositText}}。提交的是预约申请；美甲师调整价格、定金或时间后，会请你确认。</text></view>
-
-  <!-- 提交按钮 -->
-  <view class="submit-bar">
-    <view wx:if="{{(!isCustomService || sourceWork) && selectedServiceCount > 0}}" class="booking-price-summary">
-      <view class="booking-price-copy">
-        <view wx:if="{{sourceWork && sourceWork.pricingReady && sourceWork.standardPriceFen !== sourceWork.serviceSubtotalFen}}" class="booking-price-detail">
-          <text class="booking-price-original">¥{{sourceWork.serviceSubtotalFen / 100}}</text>
-          <text wx:if="{{sourceWork.priceDifferenceFen < 0}}" class="booking-price-adjustment">优惠 ¥{{0 - sourceWork.priceDifferenceFen / 100}}</text>
-          <text wx:elif="{{sourceWork.priceDifferenceFen > 0}}" class="booking-price-adjustment">其他 +¥{{sourceWork.priceDifferenceFen / 100}}</text>
+  <!-- 提交栏 -->
+  <view class="submit-bar {{hasPriceContent ? 'submit-bar-split' : ''}}" wx:if="{{selectedTech}}">
+    <view class="submit-price-col {{hasPriceContent ? 'submit-price-col-visible' : ''}}">
+      <!-- 有服务内容时：展示价格 -->
+      <block wx:if="{{sourceWork}}">
+        <view class="submit-price-row" wx:if="{{sourceWork.pricingReady && !referenceOnly && sourceWork.standardPriceFen !== sourceWork.serviceSubtotalFen}}">
+          <text class="submit-price-main submit-price-struck">¥{{sourceWork.serviceSubtotalFen / 100}}</text>
+          <text class="submit-detail-link" bindtap="showServiceDetail" role="button" aria-label="查看服务明细">查看明细</text>
         </view>
-        <text class="booking-price-label">{{sourceWork ? '作品报价' : '组合价格'}}</text>
-        <text class="booking-price-total semantic-money">¥{{selectedServiceTotal}}</text>
+        <view class="submit-price-row" wx:elif="{{!sourceWork.pricingReady || referenceOnly}}">
+          <text class="submit-price-main">¥{{sourceWork.serviceSubtotalFen / 100}}</text>
+          <text class="submit-detail-link" bindtap="showServiceDetail" role="button" aria-label="查看服务明细">查看明细</text>
+        </view>
+      </block>
+      <block wx:elif="{{!isCustomService && selectedServiceCount > 0}}">
+        <view class="submit-price-row">
+          <text class="submit-price-main">¥{{selectedServiceTotal}}</text>
+          <text class="submit-detail-link" bindtap="showServiceDetail" role="button" aria-label="查看服务明细">查看明细</text>
+        </view>
+      </block>
+      <!-- 最终报价 -->
+      <view class="submit-price-row" wx:if="{{sourceWork && sourceWork.pricingReady && !referenceOnly}}">
+        <text class="submit-price-main submit-price-quote">¥{{sourceWork.standardPriceFen / 100}}</text>
+        <text wx:if="{{sourceWork.standardPriceFen < sourceWork.serviceSubtotalFen}}" class="submit-price-tag submit-tag-discount">优惠 ¥{{(sourceWork.serviceSubtotalFen - sourceWork.standardPriceFen) / 100}}</text>
+        <text wx:elif="{{sourceWork.standardPriceFen > sourceWork.serviceSubtotalFen}}" class="submit-price-tag submit-tag-increase">+¥{{(sourceWork.standardPriceFen - sourceWork.serviceSubtotalFen) / 100}}</text>
+      </view>
+      <!-- 定金 -->
+      <view wx:if="{{hasPriceContent && depositMode !== 'none'}}" class="submit-price-note">
+        定金 {{depositText}}
       </view>
     </view>
-    <view class="submit-btn booking-action {{submitting || bookingPaused || !bookingReady ? 'btn-disabled' : ''}}" bindtap="handleSubmit">
-      <text>{{bookingPaused ? '美甲师已暂停接单' : submitting ? '提交中...' : quickMode ? '提交时间申请' : isCustomService ? '提交需求等待报价' : '确认预约'}}</text>
+    <view class="submit-btn {{hasPriceContent ? 'submit-btn-compact' : 'submit-btn-full'}} {{submitting || bookingPaused || !bookingReady ? 'btn-disabled' : ''}}" bindtap="handleSubmit">
+      <text>{{bookingPaused ? '暂停接单' : submitting ? '提交中...' : quickMode ? '提交申请' : isCustomService ? '提交需求' : '确认预约'}}</text>
+    </view>
+  </view>
+
+<!-- 服务明细弹窗 -->
+<view wx:if="{{showServiceDetailModal}}" class="modal-overlay" bindtap="hideServiceDetail" catchtouchmove="preventModalClose">
+  <view class="modal-panel detail-modal" catchtap="preventModalClose">
+    <view class="detail-modal-header">
+      <text class="detail-modal-title">服务明细</text>
+      <view class="detail-modal-close" bindtap="hideServiceDetail" role="button" aria-label="关闭">×</view>
+    </view>
+    <view class="detail-list">
+      <block wx:if="{{sourceWork}}">
+        <view wx:for="{{sourceWork.serviceLines}}" wx:key="name" class="detail-item">
+          <text class="detail-name">{{item.name}}{{item.quantity > 1 ? ' × ' + item.quantity : ''}}</text>
+          <text class="detail-price">¥{{item.subtotalFen / 100}}</text>
+        </view>
+      </block>
+      <block wx:elif="{{!isCustomService && selectedServiceCount > 0}}">
+        <block wx:for="{{activeServiceItems}}" wx:key="id">
+          <view wx:if="{{selectedServiceMap[item.id]}}" class="detail-item">
+            <text class="detail-name">{{item.name}}</text>
+            <text class="detail-price">¥{{item.price}}</text>
+          </view>
+        </block>
+      </block>
+      <view class="detail-total">
+        <text class="detail-total-label">合计</text>
+        <text class="detail-total-price">{{sourceWork ? '¥' + sourceWork.serviceSubtotalFen / 100 : '¥' + selectedServiceTotal}}</text>
+      </view>
+    </view>
+  </view>
+</view>
+</view>
+
+<!-- Quick 模式确认提交弹窗 -->
+<view wx:if="{{showQuickConfirm}}" class="modal-overlay" bindtap="cancelQuickSubmit" catchtouchmove="preventModalClose">
+  <view class="modal-panel confirm-modal" catchtap="preventModalClose">
+    <view class="confirm-modal-header">
+      <text class="confirm-modal-title">确认预约信息</text>
+      <view class="confirm-modal-close" bindtap="cancelQuickSubmit" role="button" aria-label="关闭">×</view>
+    </view>
+    <view class="confirm-modal-body">
+      <view class="confirm-info-block">
+        <view class="confirm-info-row">
+          <text class="confirm-info-label">美甲师</text>
+          <text class="confirm-info-value">{{selectedTech.name}}</text>
+        </view>
+        <view class="confirm-info-row">
+          <text class="confirm-info-label">预约时间</text>
+          <text class="confirm-info-value confirm-info-highlight">{{serviceDate}} {{startTime}}</text>
+        </view>
+        <view wx:if="{{serviceType}}" class="confirm-info-row">
+          <text class="confirm-info-label">服务方式</text>
+          <text class="confirm-info-value">{{serviceType}}{{selectedShopName ? ' · ' + selectedShopName : ''}}</text>
+        </view>
+        <view wx:if="{{remark}}" class="confirm-info-row">
+          <text class="confirm-info-label">备注</text>
+          <text class="confirm-info-value">{{remark}}</text>
+        </view>
+      </view>
+      <view wx:if="{{sourceWork || (!isCustomService && selectedServiceCount > 0)}}" class="confirm-tip">
+        <text>提交的是预约申请，最终时间与报价以美甲师确认为准。</text>
+      </view>
+      <view wx:else class="confirm-tip confirm-tip-warn">
+        <text class="confirm-warn-title">本次预约仅预约时间</text>
+        <text class="confirm-warn-text">预约款式及价格请联系美甲师确认。美甲师确认排期时将完善服务项目与最终报价。</text>
+      </view>
+    </view>
+    <view class="confirm-modal-btns">
+      <view class="confirm-btn confirm-btn-cancel" bindtap="cancelQuickSubmit">返回修改</view>
+      <view class="confirm-btn confirm-btn-primary" bindtap="confirmQuickSubmit">提交申请</view>
     </view>
   </view>
 </view>
 
-<!-- 预约申请核对 -->
-<view wx:if="{{showApplicationReview}}" class="modal-overlay" bindtap="cancelApplicationReview">
-  <view class="modal-panel application-review" catchtap="preventModalClose">
-    <view class="modal-handle"></view>
-    <text class="modal-title">核对预约申请</text>
-    <text class="application-review-tip">当前提交的是预约申请，美甲师人工确认后生效；确认前不会占用正式档期。</text>
-    <view class="review-summary">
-      <view class="review-row"><text>美甲师</text><text>{{selectedTech.name}}</text></view>
-      <view class="review-row"><text>期望时间</text><text>{{serviceDate}} {{startTime}}</text></view>
-      <view class="review-row"><text>服务方式</text><text>{{serviceType}}</text></view>
-      <view wx:if="{{sourceWork && sourceWork.pricingReady}}" class="review-price-breakdown">
-        <view wx:for="{{sourceWork.serviceLines}}" wx:key="name" class="review-row"><text>{{item.name}} × {{item.quantity || 1}}</text><text class="semantic-money">¥{{item.subtotalFen / 100}}</text></view>
-        <view class="review-row"><text>服务合计</text><text class="semantic-money">¥{{sourceWork.serviceSubtotalFen / 100}}</text></view>
-        <view class="review-row"><text>作品报价</text><text class="review-price semantic-money">¥{{sourceWork.standardPriceFen / 100}}</text></view>
-      </view>
-      <view wx:elif="{{!isCustomService}}" class="review-row"><text>服务价格</text><text class="review-price semantic-money">¥{{selectedServiceTotal}}</text></view>
+<!-- Full 模式预约申请核对 -->
+<view wx:if="{{showApplicationReview}}" class="modal-overlay" bindtap="cancelApplicationReview" catchtouchmove="preventModalClose">
+  <view class="modal-panel confirm-modal" catchtap="preventModalClose">
+    <view class="confirm-modal-header">
+      <text class="confirm-modal-title">核对预约申请</text>
+      <view class="confirm-modal-close" bindtap="cancelApplicationReview" role="button" aria-label="关闭">×</view>
     </view>
-    <view class="rules-check" bindtap="toggleBookingRules" role="checkbox" aria-checked="{{bookingRulesAgreed}}" aria-label="确认预约信息无误并同意预约规则">
-      <view class="rules-box {{bookingRulesAgreed ? 'rules-box-active' : ''}}">
-        <image wx:if="{{bookingRulesAgreed}}" class="rules-check-icon" src="/static/icons/check-circle.svg" mode="aspectFit" />
+    <view class="confirm-modal-body">
+      <view class="confirm-info-block">
+        <view class="confirm-info-row">
+          <text class="confirm-info-label">美甲师</text>
+          <text class="confirm-info-value">{{selectedTech.name}}</text>
+        </view>
+        <view class="confirm-info-row">
+          <text class="confirm-info-label">预约时间</text>
+          <text class="confirm-info-value confirm-info-highlight">{{serviceDate}} {{startTime}}</text>
+        </view>
+        <view class="confirm-info-row">
+          <text class="confirm-info-label">服务方式</text>
+          <text class="confirm-info-value">{{serviceType}}{{selectedShopName ? ' · ' + selectedShopName : ''}}</text>
+        </view>
+        <view wx:if="{{sourceWork && sourceWork.pricingReady}}" class="confirm-info-row">
+          <text class="confirm-info-label">服务报价</text>
+          <text class="confirm-info-value confirm-info-price">¥{{sourceWork.standardPriceFen / 100}}</text>
+        </view>
+        <view wx:elif="{{!isCustomService && selectedServiceCount > 0}}" class="confirm-info-row">
+          <text class="confirm-info-label">服务价格</text>
+          <text class="confirm-info-value confirm-info-price">¥{{selectedServiceTotal}}</text>
+        </view>
+        <view wx:if="{{remark}}" class="confirm-info-row">
+          <text class="confirm-info-label">备注</text>
+          <text class="confirm-info-value">{{remark}}</text>
+        </view>
       </view>
-      <text>我已确认信息无误，并理解最终时间与价格以美甲师确认为准</text>
+      <view wx:if="{{sourceWork || (!isCustomService && selectedServiceCount > 0)}}" class="confirm-tip">
+        <text>美甲师确认后生效；确认前不会占用正式档期。</text>
+      </view>
+      <view wx:else class="confirm-tip confirm-tip-warn">
+        <text class="confirm-warn-title">本次预约仅预约时间</text>
+        <text class="confirm-warn-text">预约款式及价格请联系美甲师确认。美甲师确认排期时将完善服务项目与最终报价。</text>
+      </view>
     </view>
-    <view class="modal-btns">
-      <view class="modal-btn modal-btn-cancel" bindtap="cancelApplicationReview">返回修改</view>
-      <view class="modal-btn modal-btn-confirm {{bookingRulesAgreed ? '' : 'modal-btn-disabled'}}" bindtap="confirmApplicationReview">提交申请</view>
+    <view class="confirm-check" bindtap="toggleBookingRules" role="checkbox" aria-checked="{{bookingRulesAgreed}}">
+      <view class="confirm-check-box {{bookingRulesAgreed ? 'confirm-check-active' : ''}}">
+        <view wx:if="{{bookingRulesAgreed}}" class="confirm-check-dot"></view>
+      </view>
+      <text class="confirm-check-text">我已确认信息无误，最终以美甲师确认为准</text>
+    </view>
+    <view class="confirm-modal-btns">
+      <view class="confirm-btn confirm-btn-cancel" bindtap="cancelApplicationReview">返回修改</view>
+      <view class="confirm-btn confirm-btn-primary {{bookingRulesAgreed ? '' : 'confirm-btn-disabled'}}" bindtap="confirmApplicationReview">提交申请</view>
+    </view>
+  </view>
+</view>
+
+<!-- 提交成功状态 -->
+<view wx:if="{{submitSuccess}}" class="success-overlay">
+  <view class="success-panel">
+    <view class="success-icon">✓</view>
+    <text class="success-title">预约申请已提交</text>
+    <text class="success-sub">等待{{submitSuccessTech}}确认时间与报价</text>
+    <text class="success-hint">确认后你会收到微信通知</text>
+    <view class="success-actions">
+      <view class="success-btn" bindtap="goToOrders">查看我的预约</view>
+    </view>
+  </view>
+</view>
+
+<!-- 作品预览弹窗 -->
+<view wx:if="{{showWorkPreview && previewWorkData}}" class="work-preview-overlay" bindtap="closeWorkPreview" catchtouchmove="preventModalClose">
+  <view class="work-preview-sheet" catchtap="preventModalClose" catchtouchmove="preventModalClose">
+    <!-- 顶部栏：返回 + 计数 + 选择按钮 -->
+    <!-- 顶部：计数 + 关闭 -->
+    <view class="work-preview-topbar">
+      <text class="work-preview-counter">{{previewWorkIndex + 1}} / {{techWorks.length}}</text>
+      <view class="work-preview-close" catchtap="closeWorkPreview" role="button" aria-label="关闭">×</view>
+    </view>
+    <!-- 图片 -->
+    <scroll-view class="work-preview-scroll" scroll-y enhanced show-scrollbar="{{false}}" catchtouchmove="preventModalClose">
+      <image src="{{previewWorkData.coverUrl}}" mode="aspectFill" class="work-preview-cover" bindlongpress="previewFullImage" data-url="{{previewWorkData.coverUrl}}" />
+      <view class="work-preview-info">
+        <text class="work-preview-title">{{previewWorkData.title || '美甲作品'}}</text>
+        <text wx:if="{{previewWorkData.description}}" class="work-preview-desc">{{previewWorkData.description}}</text>
+        <view class="work-preview-meta">
+          <text wx:if="{{previewWorkData.standardPriceFen > 0}}" class="work-preview-price semantic-money">¥{{previewWorkData.standardPriceFen / 100}}</text>
+          <text wx:else class="work-preview-price-pending">待报价</text>
+          <text wx:if="{{previewWorkData.totalDurationMinutes}}" class="work-preview-duration">约 {{previewWorkData.totalDurationMinutes}} 分钟</text>
+        </view>
+      </view>
+    </scroll-view>
+    <!-- 底部：上一款 + 选择 + 下一款 -->
+    <view class="work-preview-footer">
+      <view class="work-nav-btn {{previewWorkIndex <= 0 ? 'work-nav-disabled' : ''}}" catchtap="prevWork" role="button">‹ 上一款</view>
+      <view class="work-preview-select-btn {{selectedWorkMap[previewWorkData.id] ? 'work-preview-selected' : ''}} {{!selectedWorkMap[previewWorkData.id] && selectedWorkIds.length >= 3 ? 'work-preview-select-disabled' : ''}}" catchtap="toggleWorkFromPreview" data-id="{{previewWorkData.id}}" role="button">
+        <text>{{selectedWorkMap[previewWorkData.id] ? '✓ 已选' : '选择此作品'}}</text>
+      </view>
+      <view class="work-nav-btn {{previewWorkIndex >= techWorks.length - 1 ? 'work-nav-disabled' : ''}}" catchtap="nextWork" role="button">下一款 ›</view>
     </view>
   </view>
 </view>
 
 <!-- 绑定美甲师弹窗 -->
-<view wx:if="{{showBindTech}}" class="modal-overlay" bindtap="cancelBindTech">
+<view wx:if="{{showBindTech}}" class="modal-overlay" bindtap="cancelBindTech" catchtouchmove="preventModalClose">
   <view class="modal-panel" catchtap="preventModalClose">
     <view class="modal-handle"></view>
     <text class="modal-title">绑定美甲师</text>

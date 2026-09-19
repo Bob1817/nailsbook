@@ -1,39 +1,33 @@
 import SwiftUI
-
-// MARK: - Notification Settings
+import UserNotifications
 
 struct NotificationSettingsView: View {
-    @AppStorage("pushEnabled") private var pushEnabled = true
-    @AppStorage("orderNotify") private var orderNotify = true
-    @AppStorage("messageNotify") private var messageNotify = true
-    @AppStorage("marketingNotify") private var marketingNotify = false
-
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var status = "读取中"
     var body: some View {
         List {
-            Section {
-                Toggle(isOn: $pushEnabled) {
-                    Label("推送通知", systemImage: "bell.fill")
-                }
-            } header: {
-                Text("通知开关")
-            } footer: {
-                Text("关闭后将不会收到任何推送通知")
+            Section("系统通知权限") {
+                Text(status)
+                Button("打开系统设置") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+                }.frame(minHeight: 44)
             }
-
-            if pushEnabled {
-                Section("通知类型") {
-                    Toggle(isOn: $orderNotify) {
-                        Label("订单通知", systemImage: "doc.text.fill")
-                    }
-                    Toggle(isOn: $messageNotify) {
-                        Label("消息通知", systemImage: "bubble.left.fill")
-                    }
-                    Toggle(isOn: $marketingNotify) {
-                        Label("营销通知", systemImage: "megaphone.fill")
-                    }
-                }
+            Section {
+                Text("系统授权不代表服务端推送已经启用。微信订阅消息不适用于 iOS；预约状态以应用内刷新为准。")
             }
         }
         .navigationTitle("通知设置")
+        .task { await refresh() }
+        .onChange(of: scenePhase) { if $0 == .active { Task { await refresh() } } }
+    }
+    private func refresh() async {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        switch settings.authorizationStatus {
+        case .authorized: status = "系统已授权"
+        case .denied: status = "系统已关闭通知"
+        case .provisional, .ephemeral: status = "临时授权"
+        case .notDetermined: status = "尚未申请通知权限"
+        @unknown default: status = "未知权限状态"
+        }
     }
 }

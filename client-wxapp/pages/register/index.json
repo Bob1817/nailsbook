@@ -2,5 +2,7 @@
   "usingComponents": {
     "nav-bar": "/components/nav-bar/index"
   },
-  "navigationBarTitleText": ""
+  "navigationBarTitleText": "",
+  "navigationStyle": "custom",
+  "navigationBarTextStyle": "black"
 }

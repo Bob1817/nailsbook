@@ -14,6 +14,7 @@ function formatAddr(a) { return [a.province,a.city,a.district,a.detailAddress ||
 
 Page({
   data: {
+    submitBarHeight: 120,
     technicians: [],
     quickMode: false, depositMode: 'none', depositValue: 0, depositText: '¥0', settingsReady: false,
     referenceOnly: false,
@@ -40,6 +41,7 @@ Page({
     customDesc: '',
     customImages: [],
     showWorkSelector: false,
+    showQuickRef: false,
     techWorks: [],
     selectedWorkIds: [],
     sourceWork: null,
@@ -50,6 +52,15 @@ Page({
     remark: '',
     uploading: false,
     submitting: false,
+    submitSuccess: false,
+    submitSuccessTech: '',
+    showServiceDetailModal: false,
+    showQuickConfirm: false,
+    showWorkPreview: false,
+    previewWorkData: null,
+    previewWorkIndex: 0,
+    selectedWorkMap: {},
+    hasPriceContent: false,
     minDate: '',
     showApplicationReview: false,
     bookingRulesAgreed: false,
@@ -60,6 +71,23 @@ Page({
     bindTechName: '',
     bindTechId: 0,
     bindError: ''
+  },
+
+  onReady: function () { this.measureSubmitBar(); },
+  onResize: function () { this.measureSubmitBar(); },
+
+  measureSubmitBar: function () {
+    this.createSelectorQuery().select('.submit-bar').boundingClientRect(rect => {
+      if (rect && Math.abs(rect.height - this.data.submitBarHeight) > 1) {
+        this.setData({ submitBarHeight: Math.ceil(rect.height) });
+      }
+    }).exec();
+  },
+
+  refreshPriceContent: function () {
+    var d = this.data;
+    var has = !!(d.sourceWork || (!d.isCustomService && d.selectedServiceCount > 0));
+    if (has !== d.hasPriceContent) this.setData({ hasPriceContent: has });
   },
 
   onLoad: function (options) {
@@ -149,6 +177,7 @@ Page({
     this._sourceLoading = false; this._sourceFailed = false;
     this.setData({ sourceWork: null, selectedWorkIds: [], referenceOnly: false, customTitle: '', customDesc: '', customImages: [], selectedServiceDuration: 0, selectedServiceCount: 0, selectedServiceTotal: 0, startTime: '' });
     this.updateDeposit();
+    this.refreshPriceContent();
   },
   toggleReferenceOnly: function () {
     if (!this.data.quickMode || !this.data.sourceWork) return;
@@ -306,6 +335,7 @@ Page({
     this.sourceWorkId = pf.sourceWorkId;
     this._pendingWorkPrefill = null;
     this.updateDeposit();
+    this.refreshPriceContent();
     this.resumeSubmission();
   },
 
@@ -356,6 +386,7 @@ Page({
     });
     this.refreshServiceOptions(tech, false);
     this.setData({ quickMode: false, quickAvailable: false, settingsReady: false });
+    this.refreshPriceContent();
     if (api.public.bookingSettings) api.public.bookingSettings(id).then(settings => {
       if (this.data.selectedTechId !== id) return;
       const quick = settings.quickBookingEnabled && !this._fullMode;
@@ -496,6 +527,10 @@ Page({
 
   // ── 自定义 / 标准服务切换 ──────────────
 
+  toggleQuickRef: function () {
+    this.setData({ showQuickRef: !this.data.showQuickRef });
+  },
+
   switchContentMode: function (e) {
     if (this.sourceWorkId) return;
     var mode = e.currentTarget.dataset.mode;
@@ -507,6 +542,8 @@ Page({
       selectedServiceTotal: 0,
       selectedServiceDuration: 0
     });
+    this.updateDeposit();
+    this.refreshPriceContent();
   },
 
   toggleService: function (e) {
@@ -523,13 +560,14 @@ Page({
       selectedServiceDuration: summary.totalDurationMinutes
     });
     this.updateDeposit();
+    this.refreshPriceContent();
   },
 
   updateDeposit: function () {
     const d = this.data;
     const known = d.sourceWork ? d.sourceWork.pricingReady && !d.referenceOnly : !d.isCustomService && d.selectedServiceCount > 0;
     const amount = d.depositMode === 'fixed' ? d.depositValue / 100 : d.depositMode === 'percentage' && known ? Math.round(d.selectedServiceTotal * 100 * d.depositValue / 10000) / 100 : 0;
-    this.setData({ depositText: d.depositMode === 'percentage' && !known ? (d.depositValue / 100) + '%，金额待报价后计算' : '¥' + amount });
+    this.setData({ depositText: d.depositMode === 'percentage' && !known ? (d.depositValue / 100) + '%，金额待报价后计算' : '¥' + amount }, () => this.measureSubmitBar());
   },
 
   onCustomTitleInput: function (e) { this.setData({ customTitle: e.detail.value }); },
@@ -568,18 +606,27 @@ Page({
   toggleWorkSelector: function () { this.setData({ showWorkSelector: !this.data.showWorkSelector }); },
 
   toggleWork: function (e) {
-    var id = e.currentTarget.dataset.id;
-    if (this.data.quickMode) { this.setData({ selectedWorkIds: [id], showWorkSelector: false, referenceOnly: false }); this.loadWork(id); return; }
+    var id = Number(e.currentTarget.dataset.id);
+    if (this.data.quickMode) {
+      var map = {}; map[id] = true;
+      this.setData({ selectedWorkIds: [id], selectedWorkMap: map, showWorkSelector: false, referenceOnly: false });
+      this.loadWork(id); return;
+    }
     var ids = this.data.selectedWorkIds.slice();
     var idx = ids.indexOf(id);
     if (idx >= 0) { ids.splice(idx, 1); }
     else { if (ids.length >= 3) { wx.showToast({ title: '最多选3个', icon: 'none' }); return; } ids.push(id); }
-    this.setData({ selectedWorkIds: ids });
+    var m = {};
+    ids.forEach(function (i) { m[i] = true; });
+    this.setData({ selectedWorkIds: ids, selectedWorkMap: m });
   },
 
   removeWork: function (e) {
-    var id = e.currentTarget.dataset.id;
-    this.setData({ selectedWorkIds: this.data.selectedWorkIds.filter(function (i) { return i !== id; }) });
+    var id = Number(e.currentTarget.dataset.id);
+    var ids = this.data.selectedWorkIds.filter(function (i) { return i !== id; });
+    var m = {};
+    ids.forEach(function (i) { m[i] = true; });
+    this.setData({ selectedWorkIds: ids, selectedWorkMap: m });
   },
 
   // ── 备注 ─────────────────────────────────
@@ -650,11 +697,13 @@ Page({
         selectedServiceTotal: summary.totalPrice,
         selectedServiceDuration: summary.totalDurationMinutes
       });
+      this.updateDeposit();
     }
   },
 
   handleSubmit: async function () {
-    var d = this.data;
+    var self = this;
+    var d = self.data;
     if (d.submitting) return;
     if (this._sourceLoading || this._sourceFailed) { wx.showToast({ title: '请等待作品加载成功后再提交', icon: 'none' }); return; }
     if (!d.selectedTechId) { wx.showToast({ title: '请选择美甲师', icon: 'none' }); return; }
@@ -663,13 +712,15 @@ Page({
     if (!d.serviceDate) { wx.showToast({ title: '请选择日期', icon: 'none' }); return; }
     if (!d.startTime) { wx.showToast({ title: '请选择时间', icon: 'none' }); return; }
     if (d.serviceType === '到店美甲' && !d.selectedShopName) { wx.showToast({ title: '请选择门店', icon: 'none' }); return; }
-    if (!d.quickMode && !this.sourceWorkId && d.isCustomService && !d.customTitle.trim()) { wx.showToast({ title: '请输入服务名称', icon: 'none' }); return; }
-    if (!d.quickMode && !this.sourceWorkId && !d.isCustomService && d.selectedServiceIds.length === 0) { wx.showToast({ title: '请选择服务内容', icon: 'none' }); return; }
+    // 服务非必填：无服务时由确认弹窗提醒用户
     if (this.sourceWorkId && (!d.sourceWork || (!d.sourceWork.pricingReady && !d.quickMode))) { wx.showToast({ title: '该作品尚未完善服务与标准报价', icon: 'none' }); return; }
 
     this._submitRequested = true;
     this.saveDraft();
-    if (!this._fullMode || d.quickMode) { this.doSubmit(); return; }
+    if (!this._fullMode || d.quickMode) {
+      this.setData({ showQuickConfirm: true });
+      return;
+    }
     this.setData({ showApplicationReview: true, bookingRulesAgreed: false });
   },
 
@@ -694,6 +745,74 @@ Page({
     this.doSubmit();
   },
 
+  goToOrders: function () {
+    wx.reLaunch({ url: '/pages/client/orders/index' });
+  },
+
+  showServiceDetail: function () {
+    this.setData({ showServiceDetailModal: true });
+  },
+
+  hideServiceDetail: function () {
+    this.setData({ showServiceDetailModal: false });
+  },
+
+  confirmQuickSubmit: function () {
+    this.setData({ showQuickConfirm: false });
+    this.doSubmit();
+  },
+
+  cancelQuickSubmit: function () {
+    this.setData({ showQuickConfirm: false });
+  },
+
+  previewWork: function (e) {
+    var id = Number(e.currentTarget.dataset.id);
+    var works = this.data.techWorks;
+    var idx = works.findIndex(function (w) { return w.id === id; });
+    if (idx < 0) return;
+    this.setData({ showWorkPreview: true, previewWorkData: works[idx], previewWorkIndex: idx });
+  },
+
+  prevWork: function () {
+    var idx = this.data.previewWorkIndex - 1;
+    if (idx < 0) return;
+    this.setData({ previewWorkData: this.data.techWorks[idx], previewWorkIndex: idx });
+  },
+
+  nextWork: function () {
+    var idx = this.data.previewWorkIndex + 1;
+    if (idx >= this.data.techWorks.length) return;
+    this.setData({ previewWorkData: this.data.techWorks[idx], previewWorkIndex: idx });
+  },
+
+  toggleWorkFromPreview: function (e) {
+    var id = Number(e.currentTarget.dataset.id);
+    if (this.data.selectedWorkMap[id]) {
+      // 取消选择
+      var ids = this.data.selectedWorkIds.filter(function (i) { return i !== id; });
+      var m = {}; ids.forEach(function (i) { m[i] = true; });
+      this.setData({ selectedWorkIds: ids, selectedWorkMap: m });
+    } else {
+      if (this.data.selectedWorkIds.length >= 3) {
+        wx.showToast({ title: '最多选 3 个作品', icon: 'none' });
+        return;
+      }
+      var ids2 = this.data.selectedWorkIds.concat([id]);
+      var m2 = {}; ids2.forEach(function (i) { m2[i] = true; });
+      this.setData({ selectedWorkIds: ids2, selectedWorkMap: m2 });
+    }
+  },
+
+  closeWorkPreview: function () {
+    this.setData({ showWorkPreview: false, previewWorkData: null });
+  },
+
+  previewFullImage: function (e) {
+    var url = e.currentTarget.dataset.url;
+    if (url) wx.previewImage({ urls: [url], current: url });
+  },
+
   doSubmit: async function () {
     var self = this;
     var d = self.data;
@@ -707,8 +826,7 @@ Page({
           this.setData({ showBindTech: true, bindTechId: d.selectedTechId, bindTechName: (d.selectedTech || {}).name || '' });
           return;
         }
-        const consent = await wx.showModal({ title: '预约' + (d.selectedTech.name || '美甲师'), content: '继续后将绑定这位美甲师并提交预约申请，已有其他绑定不会改变。', confirmText: '确认并提交' });
-        if (!consent.confirm) return;
+        // 有邀请码（来自分享页）→ 静默绑定，不再弹确认窗
         if (this.sourceWorkId) await api.client.profile.bindSharedWork(this.sourceWorkId, this.sourceShareToken);
         else await api.client.profile.bindQuickBooking(d.selectedTechId, invite);
         this.setData({ needsBinding: false });
@@ -765,9 +883,9 @@ Page({
       wx.removeStorageSync(DRAFT_KEY);
       self.applicationKey = '';
       if (!self._pageActive) { self._submittedWhileHidden = true; return; }
-      wx.showToast({ title: '申请已提交', icon: 'success' });
+      self.setData({ submitSuccess: true, submitSuccessTech: (d.selectedTech || {}).name || '美甲师' });
       requestBookingReminder('client');
-      self._navTimer = setTimeout(function () { if (self._pageActive) wx.reLaunch({ url: '/pages/client/orders/index' }); }, 1200);
+      self._navTimer = setTimeout(function () { if (self._pageActive) wx.reLaunch({ url: '/pages/client/orders/index' }); }, 2500);
     }).catch(function (err) {
       wx.hideLoading();
       if (!self._pageActive) { self._submitFinishedWhileHidden = true; return; }

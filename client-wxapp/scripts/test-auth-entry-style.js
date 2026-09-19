@@ -41,13 +41,15 @@ const cases = [
     name: '身份选择',
     wxml: 'pages/role-select/index.wxml',
     wxss: 'pages/role-select/index.wxss',
-    requiredControls: 4,
+    requiredControls: 2,
   },
   {
     name: '统一注册',
     wxml: 'pages/register/index.wxml',
     wxss: 'pages/register/index.wxss',
     requiredControls: 1,
+    inputRule: '.input-row {',
+    requiresInputHeight: false,
   },
   {
     name: '设置密码',

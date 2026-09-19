@@ -14,7 +14,6 @@ struct NailBookApp: App {
                 .environmentObject(deepLinkService)
                 .task {
                     await appState.restoreSession()
-                    _ = await PushNotificationService.shared.requestPermission()
                 }
                 .onReceive(NotificationCenter.default.publisher(for: .deepLinkReceived)) { notification in
                     handleDeepLink(notification)
@@ -23,20 +22,24 @@ struct NailBookApp: App {
     }
 
     private func handleDeepLink(_ notification: Notification) {
-        guard let userInfo = notification.userInfo else { return }
-        if let type = userInfo["type"] as? String {
-            switch type {
-            case "invite":
-                if let code = userInfo["code"] as? String {
-                    // Navigate to register with code
-                }
-            case "work":
-                if let id = userInfo["id"] as? Int {
-                    // Navigate to work detail
-                }
-            default:
-                break
+        guard let userInfo = notification.userInfo,
+              let type = userInfo["type"] as? String else { return }
+
+        switch type {
+        case "invite":
+            if let code = userInfo["code"] as? String {
+                deepLinkService.pendingInviteCode = code
             }
+        case "work":
+            if let id = userInfo["id"] as? Int {
+                deepLinkService.pendingWorkId = id
+            }
+        case "artist":
+            if let code = userInfo["code"] as? String {
+                deepLinkService.pendingArtistCode = code
+            }
+        default:
+            break
         }
     }
 }

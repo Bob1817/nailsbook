@@ -51,16 +51,34 @@
         <view class="visitor-artist" data-event="artist" bindtap="emit" role="button" aria-label="查看{{visitorInfo.name}}的主页">
           <image wx:if="{{visitorInfo.avatarUrl}}" class="visitor-avatar" src="{{visitorInfo.avatarUrl}}" mode="aspectFill" />
           <view wx:else class="visitor-avatar"><image src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" /></view>
-          <view class="visitor-copy"><text class="visitor-name">{{visitorInfo.name}}</text><text wx:if="{{visitorInfo.city}}" class="visitor-description">{{visitorInfo.city}}</text></view>
-          <text class="visitor-link">查看主页 ›</text>
+          <view class="visitor-copy">
+            <text class="visitor-name">{{visitorInfo.name}}</text>
+            <view class="visitor-meta">
+              <text wx:if="{{visitorInfo.city}}" class="visitor-meta-item">{{visitorInfo.city}}</text>
+              <text wx:if="{{visitorInfo.acceptingBookings !== false}}" class="visitor-status visitor-status-open">接单中</text>
+              <text wx:else class="visitor-status visitor-status-closed">休息中</text>
+            </view>
+          </view>
+          <text class="visitor-link">进入主页 ›</text>
         </view>
-        <text wx:if="{{visitorInfo.bio}}" class="visitor-description">{{visitorInfo.bio}}</text>
-        <view wx:for="{{visitorInfo.shops}}" wx:key="index" class="visitor-shop">
-          <text class="visitor-name">{{item.name}}</text>
-          <text wx:if="{{item.address}}" class="visitor-description">{{item.address}}</text>
+        <text wx:if="{{visitorInfo.bio}}" class="visitor-bio">{{visitorInfo.bio}}</text>
+        <view wx:if="{{visitorInfo.shops.length}}" class="visitor-shops">
+          <view wx:for="{{visitorInfo.shops}}" wx:key="index" class="visitor-shop-card">
+            <view class="visitor-shop-info-row">
+              <image src="/static/icons/shop.svg" mode="aspectFit" class="visitor-shop-icon"/>
+              <text class="visitor-shop-name">{{item.name}}</text>
+            </view>
+            <view wx:if="{{item.businessHours && item.businessHours.length}}" class="visitor-shop-info-row visitor-shop-hours-row">
+              <image src="/static/icons/clock.svg" mode="aspectFit" class="visitor-shop-icon"/>
+              <text class="visitor-shop-hours-text">{{item.businessHours[0].start}} - {{item.businessHours[0].end}}</text>
+            </view>
+            <view wx:if="{{item.address}}" class="visitor-shop-info-row visitor-shop-addr-row">
+              <image src="/static/icons/pin.svg" mode="aspectFit" class="visitor-shop-icon"/>
+              <text class="visitor-shop-addr"><text>{{item.address}}</text><text class="visitor-shop-nav-inline" data-index="{{index}}" catchtap="navigateToShop"> 导航</text></text>
+            </view>
+          </view>
         </view>
-        <text wx:if="{{!visitorInfo.shops.length}}" class="visitor-description">店铺信息待完善，预约前请确认服务地点</text>
-        <text class="visitor-booking-note">{{visitorInfo.acceptingBookings === false ? '美甲师暂未开启接单，可先浏览作品' : '点击预约同款，登录并确认绑定美甲师后选择服务时间'}}</text>
+        <text wx:else class="visitor-hint">店铺信息待完善，预约前请确认服务地点</text>
       </view>
 
       <view wx:if="{{!visitorInfo}}" class="engagement-section" style="display:flex;align-items:stretch;overflow:hidden;">
@@ -68,8 +86,6 @@
         <view class="engagement-action {{work.isFavorited ? 'is-active' : ''}}" style="flex:1 1 0;width:0;min-width:0;" data-event="favorite" bindtap="emit" role="button" aria-label="收藏，{{work.favoriteCount || 0}}次"><image src="{{work.isFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}"/><text class="action-count">{{work.favoriteCount || 0}}</text></view>
         <button class="engagement-action" style="flex:1 1 0;width:0;min-width:0;" disabled="{{!canShare && !canRetryShare}}" open-type="{{canShare ? 'share' : ''}}" bindtap="retryShare" aria-label="{{canShare ? '分享作品' : (canRetryShare ? '重新检查作品分享状态' : '此作品暂不可分享')}}"><image src="/static/icons/share.svg"/></button>
       </view>
-
-      <button wx:if="{{visitorInfo && sharePath}}" class="visitor-share" open-type="share">发给微信好友</button>
 
       <view wx:if="{{!visitorInfo}}" class="comments-section">
         <view class="comments-header"><text class="comments-title">评论</text><text class="comments-count">{{comments.length}} 条</text></view>
@@ -90,8 +106,15 @@
         <view wx:if="{{replyingTo}}" class="replying">回复 @{{replyingTo.name}} <text data-event="commentcancel" bindtap="emit">取消</text></view>
         <view class="input-row"><input class="comment-input" style="flex:1 1 0%;width:0;min-width:0;" placeholder="{{canComment ? '添加评论…' : '登录后参与评论'}}" value="{{commentText}}" focus="{{inputFocused}}" adjust-position="{{false}}" hold-keyboard="{{true}}" bindkeyboardheightchange="onKeyboardHeightChange" bindblur="onInputBlur" bindinput="onInput" bindconfirm="submitComment" confirm-type="send"/><button disabled="{{submittingComment}}" loading="{{submittingComment}}" class="send" size="mini" style="flex:0 0 72px;width:72px;min-width:72px;max-width:72px;height:44px;line-height:44px;display:block;text-align:center;font-size:14px;margin:0;padding:0;background:var(--nb-action);color:var(--nb-inverse);" hover-class="send-pressed" bindtap="submitComment" aria-label="{{submittingComment ? '正在发送评论' : '发送评论'}}">{{submittingComment ? '发送中' : '发送'}}</button></view>
     </view>
-    <view wx:if="{{visitorInfo}}" class="visitor-booking-bar">
-      <button class="visitor-booking-button booking-action" disabled="{{visitorInfo.acceptingBookings === false}}" bindtap="bookSame">{{visitorInfo.acceptingBookings === false ? '美甲师暂未开启接单' : '预约这位美甲师'}}</button>
+    <!-- 已登录：分享 + 预约同款 -->
+    <view wx:if="{{visitorInfo && isLoggedIn}}" class="visitor-booking-bar">
+      <view class="visitor-bar-btn visitor-bar-btn-outline" open-type="share" hover-class="visitor-bar-pressed">分享给好友</view>
+      <view class="visitor-bar-btn visitor-bar-btn-primary" bindtap="bookSame" hover-class="visitor-bar-pressed">{{visitorInfo.acceptingBookings === false ? '暂未接单' : '预约同款'}}</view>
+    </view>
+    <!-- 未登录：联系美甲师 + 查看更多作品 -->
+    <view wx:elif="{{visitorInfo && !isLoggedIn}}" class="visitor-booking-bar">
+      <view class="visitor-bar-btn visitor-bar-btn-outline" data-event="contact" bindtap="emit" hover-class="visitor-bar-pressed">联系该美甲师</view>
+      <view class="visitor-bar-btn visitor-bar-btn-primary" data-event="viewworks" bindtap="emit" hover-class="visitor-bar-pressed">查看更多作品</view>
     </view>
   </block>
 </view>

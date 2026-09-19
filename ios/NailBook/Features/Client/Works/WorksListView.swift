@@ -30,12 +30,7 @@ struct WorksListView: View {
                                 WorkGridCard(work: work)
                             }
                             .buttonStyle(.plain)
-                            .onAppear {
-                                if work.id == works.last?.id && hasMore {
-                                    page += 1
-                                    Task { await loadMore() }
-                                }
-                            }
+
                         }
                     }
                     .padding(.horizontal, Spacing.lg)
@@ -58,17 +53,6 @@ struct WorksListView: View {
         } catch {
             isLoading = false
         }
-    }
-
-    private func loadMore() async {
-        guard hasMore else { return }
-        do {
-            let more: [NailWork] = try await APIClient.shared.request(
-                .clientWorks(techId: techId, sortBy: nil, sortDir: nil)
-            )
-            if more.isEmpty { hasMore = false }
-            else { works.append(contentsOf: more) }
-        } catch {}
     }
 
     private func refresh() async {

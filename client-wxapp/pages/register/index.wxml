@@ -1,101 +1,25 @@
-<nav-bar title="注册" transparent/>
-<view class="container">
-  <view class="header">
-    <view class="logo-circle">N</view>
-    <text class="title">创建账号</text>
-    <text class="subtitle">注册后即可使用 NailBook 服务</text>
-  </view>
-
-  <view class="form">
-    <!-- 手机号 -->
-    <view class="form-item">
-      <text class="label">手机号</text>
-      <view class="phone-display">
-        <text class="phone-text">{{phone || '未获取到手机号'}}</text>
+<view class="register-root">
+  <nav-bar title="注册" showBack titleCenter customBack bind:back="goBack"/>
+  <scroll-view class="register-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <view class="register-content">
+      <text class="register-heading">创建账号</text>
+      <text class="register-sub">凭邀请加入你的专属美甲服务</text>
+      <view class="form-section">
+        <text class="field-label">手机号</text>
+        <view class="input-row"><text class="input-prefix">+86</text><view class="input-divider"></view><input class="input-field" type="number" maxlength="11" value="{{phone}}" bindinput="onPhoneInput" placeholder="请输入手机号码" placeholder-class="input-placeholder" disabled="{{loading}}"/></view>
+        <view class="label-row"><text class="field-label">邀请码 / 激活密钥</text><text class="required-mark">必填</text></view>
+        <view class="input-row {{inviteError ? 'input-row-error' : ''}}"><image class="input-icon" src="/static/icons/key.svg" mode="aspectFit"/><input class="input-field" value="{{inviteInput}}" bindinput="onInviteInput" placeholder="粘贴邀请码、邀请链接或激活密钥" placeholder-class="input-placeholder" disabled="{{loading}}"/><text wx:if="{{inviteChecking}}" class="checking-text">核验中</text></view>
+        <text wx:if="{{inviteError}}" class="field-message error-message">{{inviteError}}</text>
+        <text wx:else class="field-message {{inviteValid || inviteType === 'activationKey' ? 'success-message' : ''}}">{{modeHint}}</text>
+        <view wx:if="{{inviteType === 'activationKey'}}" class="conditional-field"><text class="field-label">美甲师姓名</text><view class="input-row"><image class="input-icon" src="/static/icons/technician.svg" mode="aspectFit"/><input class="input-field" value="{{name}}" bindinput="onNameInput" placeholder="请输入真实姓名" placeholder-class="input-placeholder" disabled="{{loading}}"/></view></view>
+        <text class="field-label password-label">设置密码</text>
+        <view class="input-row"><image class="input-icon" src="/static/icons/lock.svg" mode="aspectFit"/><input class="input-field" type="{{showPassword ? 'text' : 'password'}}" password="{{!showPassword}}" value="{{password}}" bindinput="onPasswordInput" placeholder="至少 8 位，含字母和数字" placeholder-class="input-placeholder" disabled="{{loading}}"/><view class="pwd-toggle" bindtap="togglePassword"><image class="pwd-toggle-icon" src="{{showPassword ? '/static/icons/eye-open.svg' : '/static/icons/eye-closed.svg'}}" mode="aspectFit"/></view></view>
+        <text class="field-label">确认密码</text>
+        <view class="input-row"><image class="input-icon" src="/static/icons/lock.svg" mode="aspectFit"/><input class="input-field" type="{{showPassword ? 'text' : 'password'}}" password="{{!showPassword}}" value="{{confirmPassword}}" bindinput="onConfirmPasswordInput" placeholder="再次输入密码" placeholder-class="input-placeholder" disabled="{{loading}}"/></view>
+        <checkbox-group class="privacy-consent" bindchange="onPrivacyAgreementChange"><label><checkbox color="#287A4B" value="agree" checked="{{privacyAgreed}}"/><text>我已阅读并同意</text></label><text class="privacy-link" catchtap="openUserAgreement">《用户协议》</text><text>和</text><text class="privacy-link" catchtap="openPrivacyPolicy">《隐私政策》</text></checkbox-group>
+        <button class="submit-btn booking-action {{canSubmit ? 'submit-btn-active' : ''}}" disabled="{{!canSubmit || loading}}" loading="{{loading}}" bindtap="handleSubmit">注册</button>
+        <view class="account-actions"><text class="account-action" bindtap="goBack">已有账号？去登录</text></view>
       </view>
     </view>
-
-    <!-- 邀请码/激活密钥（非必填） -->
-    <view class="form-item">
-      <text class="label">邀请码/激活密钥 <text class="optional">（选填）</text></text>
-      <input
-        class="input"
-        placeholder="输入邀请码、邀请链接或激活密钥"
-        value="{{inviteInput}}"
-        bindinput="onInviteInput"
-        disabled="{{loading}}" confirm-type="done" />
-      <!-- 邀请码验证状态 -->
-      <view wx:if="{{inviteChecking}}" class="invite-status checking">
-        <text>验证中...</text>
-      </view>
-      <view wx:elif="{{inviteValid}}" class="invite-status valid">
-        <text>✓ 邀请码有效，美甲师：{{inviteTechName}}</text>
-      </view>
-      <view wx:elif="{{inviteError}}" class="invite-status error">
-        <text>✕ {{inviteError}}</text>
-      </view>
-      <view wx:elif="{{inviteType === 'activationKey'}}" class="invite-status valid">
-        <text>✓ 检测到激活密钥格式</text>
-      </view>
-      <!-- 模式提示 -->
-      <text class="mode-hint">{{modeHint}}</text>
-    </view>
-
-    <!-- 美甲师注册时需要姓名 -->
-    <view wx:if="{{inviteType === 'activationKey'}}" class="form-item">
-      <text class="label">姓名</text>
-      <input
-        class="input"
-        placeholder="请输入您的姓名"
-        value="{{name}}"
-        bindinput="onNameInput"
-        disabled="{{loading}}" confirm-type="done" />
-    </view>
-
-    <!-- 密码 -->
-    <view class="form-item">
-      <text class="label">设置密码</text>
-      <view class="password-row">
-        <input
-          class="input"
-          type="{{showPassword ? 'text' : 'password'}}"
-          password="{{!showPassword}}"
-          placeholder="至少 8 位，含字母和数字"
-          value="{{password}}"
-          bindinput="onPasswordInput"
-          disabled="{{loading}}" confirm-type="done" />
-        <view class="pwd-toggle" bindtap="togglePassword">
-          <text class="pwd-toggle-text">{{showPassword ? '隐藏' : '显示'}}</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 确认密码 -->
-    <view class="form-item">
-      <text class="label">确认密码</text>
-      <input
-        class="input"
-        type="{{showPassword ? 'text' : 'password'}}"
-        password="{{!showPassword}}"
-        placeholder="再次输入密码"
-        value="{{confirmPassword}}"
-        bindinput="onConfirmPasswordInput"
-        disabled="{{loading}}" confirm-type="done" />
-    </view>
-
-    <!-- 注册按钮 -->
-    <button
-      class="btn-primary booking-action {{canSubmit ? 'btn-active' : ''}}"
-      disabled="{{!canSubmit || loading}}"
-      loading="{{loading}}"
-      bindtap="handleSubmit"
-    >
-      {{loading ? '注册中...' : '注册'}}
-    </button>
-
-    <!-- 返回登录 -->
-    <view class="link-row">
-      <text class="link" bindtap="goBack">已有账号？去登录</text>
-    </view>
-  </view>
+  </scroll-view>
 </view>

@@ -5,6 +5,8 @@ export interface ServiceItem {
   category: ServiceCategory;
   isActive: boolean;
   sortOrder: number;
+  depositMode: string;
+  depositValue: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -19,6 +21,8 @@ export interface CreateServiceDto {
   name: string;
   description?: string;
   category: ServiceCategory;
+  depositMode?: string;
+  depositValue?: number;
 }
 
 export interface UpdateServiceDto {
@@ -26,6 +30,8 @@ export interface UpdateServiceDto {
   description?: string;
   isActive?: boolean;
   sortOrder?: number;
+  depositMode?: string;
+  depositValue?: number;
 }
 
 export const SERVICE_CATEGORIES: Record<ServiceCategory, { label: string; description: string }> = {

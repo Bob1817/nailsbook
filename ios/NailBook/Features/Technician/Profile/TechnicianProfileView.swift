@@ -5,6 +5,7 @@ import SwiftUI
 struct TechnicianProfileView: View {
     @EnvironmentObject var appState: AppState
     @State private var profile: TechnicianProfile?
+    @State private var insights: TechnicianInsights?
 
     var body: some View {
         NavigationStack {
@@ -27,6 +28,7 @@ struct TechnicianProfileView: View {
                         menuCard(items: [
                             MenuItem(icon: "person.text.rectangle", title: "个人设置", iconBg: .nbPrimarySoft, destination: AnyView(TechProfileSettingsView())),
                             MenuItem(icon: "lock.fill", title: "账号安全", iconBg: .nbPurpleSoft, destination: AnyView(ChangePasswordView(role: .technician))),
+                            MenuItem(icon: "gift.fill", title: "推荐活动", iconBg: .nbPrimarySoft, destination: AnyView(ReferralCampaignView())),
                             MenuItem(icon: "questionmark.circle.fill", title: "帮助反馈", iconBg: NBColors.page, destination: AnyView(HelpFeedbackView(role: .technician))),
                             MenuItem(icon: "info.circle.fill", title: "关于", iconBg: NBColors.page, destination: AnyView(AboutView()))
                         ])
@@ -53,7 +55,10 @@ struct TechnicianProfileView: View {
             .navigationTitle("我的")
             .navigationBarTitleDisplayMode(.inline)
             .ignoresSafeArea(edges: .top)
-            .task { await loadProfile() }
+            .task {
+                await loadProfile()
+                await loadInsights()
+            }
         }
     }
 
@@ -127,9 +132,9 @@ struct TechnicianProfileView: View {
 
     private var statsCard: some View {
         VStack(spacing: 0) {
-            statRow("今日订单", "0", "本月收入", "¥0")
+            statRow("今日订单", "\(insights?.bookings?.today ?? 0)", "本月收入", formatMoney(insights?.revenue?.monthConfirmed ?? 0))
             Divider().padding(.horizontal, Spacing.cardPadding)
-            statRow("客户总数", "0", "作品数量", "0")
+            statRow("客户总数", "\(insights?.customers?.total ?? 0)", "作品数量", "\(insights?.works?.total ?? 0)")
         }
         .background(Color.nbSurfaceGlass)
         .cornerRadius(Radius.card)
@@ -174,7 +179,7 @@ struct TechnicianProfileView: View {
                     Text(title)
                         .font(NBFont.captionMedium)
                         .foregroundColor(.nbTextSecondary)
-                    Text("0")
+                    Text(getOrderCount(for: title))
                         .font(NBFont.bodyMedium)
                         .fontWeight(.semibold)
                         .foregroundColor(.nbTextPrimary)
@@ -188,6 +193,16 @@ struct TechnicianProfileView: View {
         .shadow(color: NBColors.ink.opacity(0.06), radius: 12, y: 2)
     }
 
+    private func getOrderCount(for title: String) -> String {
+        switch title {
+        case "待报价": return "\(insights?.bookings?.pending ?? 0)"
+        case "待确认": return "0"
+        case "进行中": return "0"
+        case "已完成": return "\(insights?.bookings?.monthCompleted ?? 0)"
+        default: return "0"
+        }
+    }
+
     // MARK: - Tools Grid
 
     private var toolsGrid: some View {
@@ -195,10 +210,9 @@ struct TechnicianProfileView: View {
             ("photo.on.rectangle.angled", "作品管理", .nbPrimarySoft, AnyView(TechnicianWorksView())),
             ("list.bullet.rectangle", "服务项目", .nbPurpleSoft, AnyView(TechnicianServicesView())),
             ("building.2.fill", "门店管理", NBColors.page, AnyView(ShopManagementView())),
-            ("car.fill", "上门服务", NBColors.page, AnyView(HomeServiceSettingsView())),
+            ("house.fill", "主页设置", NBColors.page, AnyView(HomepageSettingsView())),
             ("calendar.badge.clock", "服务时间", NBColors.page, AnyView(Text("服务时间"))),
             ("tag.fill", "标签管理", NBColors.page, AnyView(Text("标签管理"))),
-            ("crown.fill", "订阅计划", NBColors.page, AnyView(SubscriptionView())),
             ("doc.text.fill", "全部订单", .nbSecondarySoft, AnyView(TechOrdersListView()))
         ]
 
@@ -268,5 +282,29 @@ struct TechnicianProfileView: View {
         do {
             profile = try await APIClient.shared.request(.technicianMe)
         } catch {}
+    }
+
+    private func loadInsights() async {
+        do {
+            let month = currentDateInChina().prefix(7).description
+            insights = try await APIClient.shared.request(.technicianInsights(month: month))
+        } catch {}
+    }
+
+    private func currentDateInChina() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "Asia/Shanghai")
+        return formatter.string(from: Date())
+    }
+
+    private func formatMoney(_ amount: Double) -> String {
+        if amount >= 10000 {
+            return String(format: "¥%.1f万", amount / 10000)
+        } else if amount >= 1000 {
+            return String(format: "¥%.0f", amount)
+        } else {
+            return String(format: "¥%.0f", amount)
+        }
     }
 }

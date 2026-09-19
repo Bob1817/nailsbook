@@ -12,6 +12,10 @@ class DeepLinkService: ObservableObject {
         case unknown
     }
 
+    @Published var pendingInviteCode: String?
+    @Published var pendingWorkId: Int?
+    @Published var pendingArtistCode: String?
+
     private init() {}
 
     func parse(url: URL) -> DeepLinkType {
@@ -49,19 +53,21 @@ class DeepLinkService: ObservableObject {
     func handle(_ type: DeepLinkType) {
         switch type {
         case .invite(let code):
-            // Navigate to register with invite code
+            pendingInviteCode = code
             NotificationCenter.default.post(
                 name: .deepLinkReceived,
                 object: nil,
                 userInfo: ["type": "invite", "code": code]
             )
         case .work(let id):
+            pendingWorkId = id
             NotificationCenter.default.post(
                 name: .deepLinkReceived,
                 object: nil,
                 userInfo: ["type": "work", "id": id]
             )
         case .artist(let code):
+            pendingArtistCode = code
             NotificationCenter.default.post(
                 name: .deepLinkReceived,
                 object: nil,
@@ -70,5 +76,11 @@ class DeepLinkService: ObservableObject {
         case .unknown:
             break
         }
+    }
+
+    func clearPending() {
+        pendingInviteCode = nil
+        pendingWorkId = nil
+        pendingArtistCode = nil
     }
 }

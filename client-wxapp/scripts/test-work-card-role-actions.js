@@ -46,20 +46,20 @@ expect(wxss, /\.wc-price-pill \{[^}]*border:0;/, '价格毛玻璃胶囊不应显
 expect(wxss, /\.wc-price-pill \{[^}]*color:var\(--nb-surface\);[^}]*font-weight:800;/, '价格文字应保持高对比亮色');
 expect(fs.readFileSync(path.join(root, 'pages/technician/home/index.js'), 'utf8'), /'删除作品'[\s\S]*confirmDeleteWork\(id\)[\s\S]*works\.delete\(id\)/, '首页作品菜单应提供二次确认删除');
 
-const discoverJs = fs.readFileSync(path.join(root, 'pages/client/discover/index.js'), 'utf8');
-const discoverWxml = fs.readFileSync(path.join(root, 'pages/client/discover/index.wxml'), 'utf8');
 const clientHomeJs = fs.readFileSync(path.join(root, 'pages/client/home/index.js'), 'utf8');
 const artistHomeJs = fs.readFileSync(path.join(root, 'pages/client/artist-home/index.js'), 'utf8');
-expect(discoverJs, /api\.client\.works\.list[\s\S]*api\.client\.featuredWorks/, '作品页应分别读取绑定美甲师全部作品和精选作品');
-expect(discoverJs, /visible\.filter\(function \(work\) \{ return work\.isFeatured; \}\)/, 'Hero 只能使用美甲师设置的精选作品');
-expect(discoverJs, /visible\.forEach\(function \(w, i\)/, '普通列表应保留全部作品，不能扣除 Hero 作品');
-expect(discoverWxml, /class="hero-work"[\s\S]*class="all-works-head"/, '作品页应提供独立 Hero 与全部作品区域');
-expect(clientHomeJs, /api\.client\.featuredWorks\([\s\S]*needAuth: !!this\._clientLoggedIn/, '客户端首页应读取专用精选作品接口，并兼容登录与游客状态');
+expect(clientHomeJs, /api\.client\.featuredWorks\([\s\S]*\{ silent: true \}/, '客户端首页应通过登录客户专用接口读取精选作品');
+if (/needAuth:\s*false/.test(clientHomeJs)) {
+  throw new Error('客户端首页不得以游客身份请求作品');
+}
 expect(clientHomeJs, /viewWork\(e\)[\s\S]*\/pages\/client\/work-detail\/index\?id=/, '首页精选作品应进入与列表同口径的客户端作品详情');
 if (/api\.public\.works\.list\(\{ page: page, limit: 10 \}\)/.test(clientHomeJs)) {
   throw new Error('客户端首页不应使用通用公开作品流替代精选作品接口');
 }
-expect(artistHomeJs, /api\.public\.artists\.detail[\s\S]*api\.client\.works\.list\([\s\S]*techId: this\.data\.artistId[\s\S]*needAuth: false/, '美甲师主页应分别读取公开资料和客户端可见作品');
+expect(artistHomeJs, /api\.public\.artists\.detail[\s\S]*api\.client\.works\.list\([\s\S]*techId: this\.data\.artistId/, '美甲师主页应分别读取公开资料和登录客户可见作品');
+if (/api\.client\.works\.list\([\s\S]{0,160}needAuth:\s*false/.test(artistHomeJs)) {
+  throw new Error('美甲师主页不得匿名读取作品');
+}
 expect(artistHomeJs, /sourceWorks\.some\(\(item\) => item\.isFeatured\)[\s\S]*sourceWorks\.filter\(\(item\) => item\.isFeatured\)/, '美甲师主页应在标准化前保留并筛选精选标记');
 
 const detailWxss = fs.readFileSync(path.join(root, 'pages/client/work-detail/index.wxss'), 'utf8');
@@ -85,6 +85,7 @@ expect(clientDetailWxml, /<work-detail-view[^>]*bind:like="toggleLike"/, '客户
 expect(publicDetailWxml, /<work-detail-view[^>]*canComment="\{\{false\}\}"/, '公开作品详情页应复用共享组件并关闭登录态评论权限');
 expect(publicDetailJs, /api\.public\.works\.detail\(this\.workId\)/, '分享落地普通 ID 应使用公开接口，不被登录用户已有绑定范围限制');
 expect(publicDetailJs, /this\.shareToken[\s\S]*api\.public\.works\.shared\(this\.shareToken\)/, '限时分享令牌仍应使用公开分享接口');
+expect(publicDetailJs, /if \(!token\)[\s\S]*buildClientLoginUrl\(returnPath/, '未登录访问作品分享时应先登录并保留返回路径');
 expect(sharedDetailWxml, /class="title-row"[\s\S]*wx:if="\{\{isAuthor\}\}" class="manage-button"[^>]*aria-label="管理作品"[\s\S]*more-horizontal\.svg/, '共享详情组件应在标题右侧仅向作者展示三点管理入口');
 expect(sharedDetailWxml, /wx:if="\{\{work\._priceText\}\}" class="work-price-row"[\s\S]*服务原价[\s\S]*优惠[\s\S]*其他/, '共享详情组件必须统一展示综合报价及价格差额');
 expect(technicianDetailWxml, /bind:commentmanage="manageComment"/, '美甲师详情页应接入作者评论管理权限');

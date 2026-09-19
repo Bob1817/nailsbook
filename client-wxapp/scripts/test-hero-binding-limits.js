@@ -18,6 +18,13 @@ assert.equal(summary.previewTechnicians[0].canBook, true);
 assert.equal(summary.previewTechnicians[0].relationship.summary, '4 次消费');
 assert.equal(summary.previewTechnicians[0].relationship.savedAmountText, '¥12.00');
 assert.equal(bindingSummary([]).previewTechnicians.length, 0);
+const displaySummary = bindingSummary(normalizeBindings([
+  { id: 1, name: '展示', showOnProfile: true },
+  { id: 2, name: '隐藏', showOnProfile: false },
+]));
+assert.equal(displaySummary.activeCount, 2, '隐藏卡片不能改变绑定数量');
+assert.equal(displaySummary.visibleCount, 1, '仅展示开启的美甲师');
+assert.deepEqual(displaySummary.previewTechnicians.map(item => item.id), [1]);
 
 let page, fail = false, writes = 0, saved = [1,2,3];
 const works = [1,2,3,4].map(id => ({ id, title: '作品' + id, coverUrl: '/test.jpg', isVisible: true, visibilityScope: 'public', publicationStatus: 'approved' }));

@@ -7,6 +7,7 @@ Component({
     gridArtistMeta: '',
     displayPrice: '',
     artistStatus: '',
+    artistPlaceLine: '',
     showClientActions: false,
     localLiked: false,
     localFavorited: false,
@@ -131,9 +132,15 @@ Component({
         return publisherId && bindingTechId(binding) === publisherId;
       });
 
+      // 美甲师信息第二行：地址 · 店铺名（默认第一个启用店铺；无店铺则为空隐藏）
+      var shopName = String(work.technicianShopName || '').trim();
+      var shopAddress = String(work.technicianShopAddress || '').trim();
+      var placeParts = [shopAddress, shopName].filter(Boolean);
+
       this.setData({
         compactExpertise: expertise,
         gridArtistMeta: gridMeta,
+        artistPlaceLine: placeParts.join(' · '),
         displayPrice: formatCardPrice(work),
         artistStatus: manageable
           ? publicationStatusText(work)

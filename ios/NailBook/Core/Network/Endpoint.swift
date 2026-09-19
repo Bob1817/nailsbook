@@ -3,6 +3,9 @@ import Foundation
 // MARK: - API Endpoint Definitions
 
 enum Endpoint {
+    case resource(role: UserRole, path: String, method: String = "GET", body: [String: Any]? = nil)
+    case publicResource(path: String)
+
     // Auth
     case clientLogin(phone: String, password: String)
     case clientRegister(phone: String, password: String, inviteCode: String)
@@ -79,6 +82,8 @@ enum Endpoint {
     case customerDetail(id: Int)
     case updateCustomerTags(id: Int, tags: [String])
     case customerTags
+    case createCustomerFollowUp(id: Int, content: String, plannedAt: String)
+    case completeCustomerFollowUp(customerId: Int, followUpId: Int)
 
     // Technician Works
     case techWorks
@@ -93,9 +98,35 @@ enum Endpoint {
     // Services
     case services
     case createService(params: [String: Any])
-    case updateService(id: Int, params: [String: Any])
-    case toggleService(id: Int)
-    case deleteService(id: Int)
+    case updateService(id: String, params: [String: Any])
+    case toggleService(id: String)
+    case deleteService(id: String)
+
+    // Shop Management
+    case technicianShops
+    case updateShopAddresses(shops: [[String: Any]], shopService: Bool)
+
+    // Booking Days
+    case bookingDaysList
+    case bookingDayUpdate(date: String, accepting: Bool, version: Int)
+    case bookingDaysSettingsUpdate(params: [String: Any])
+
+    // Brand Profile
+    case brandProfileGet
+    case brandProfileUpdate(params: [String: Any])
+
+    // Subscriptions
+    case subscriptionPlans
+    case subscriptionCurrent
+
+    // Referrals
+    case referralRelations
+
+    // Insights
+    case technicianInsights(month: String?)
+
+    // Beauty Archive
+    case beautyArchive
 
     // Uploads
     case uploadImage(role: UserRole)
@@ -103,8 +134,20 @@ enum Endpoint {
 
     // MARK: - Properties
 
+    var requiresAuthentication: Bool {
+        switch self {
+        case .resource(_, let path, _, _): return !path.hasPrefix("auth/forgot-password/")
+        case .publicResource, .clientLogin, .clientRegister, .technicianLogin, .technicianRegister,
+             .refreshToken, .checkPhone, .findTechnicianByInviteCode:
+            return false
+        default: return true
+        }
+    }
+
     var path: String {
         switch self {
+        case .resource(let role, let path, _, _): return "/\(role.rawValue)/\(path)"
+        case .publicResource(let path): return "/public/\(path)"
         // Auth
         case .clientLogin: return "/client/auth/login"
         case .clientRegister: return "/client/auth/register-by-invite"
@@ -181,6 +224,8 @@ enum Endpoint {
         case .customerDetail(let id): return "/technician/customers/\(id)"
         case .updateCustomerTags(let id, _): return "/technician/customers/\(id)/tags"
         case .customerTags: return "/technician/customers/tags"
+        case .createCustomerFollowUp(let id, _, _): return "/technician/customers/\(id)/follow-ups"
+        case .completeCustomerFollowUp(let customerId, let followUpId): return "/technician/customers/\(customerId)/follow-ups/\(followUpId)/complete"
 
         // Technician Works
         case .techWorks: return "/technician/works"
@@ -199,6 +244,32 @@ enum Endpoint {
         case .toggleService(let id): return "/technician/services/\(id)/toggle"
         case .deleteService(let id): return "/technician/services/\(id)"
 
+        // Shop Management
+        case .technicianShops: return "/technician/auth/me"
+        case .updateShopAddresses: return "/technician/auth/service-type"
+
+        // Booking Days
+        case .bookingDaysList: return "/technician/booking-days"
+        case .bookingDayUpdate(let date, _, _): return "/technician/booking-days/\(date)"
+        case .bookingDaysSettingsUpdate: return "/technician/booking-days/settings"
+
+        // Brand Profile
+        case .brandProfileGet: return "/technician/brand-profile"
+        case .brandProfileUpdate: return "/technician/brand-profile"
+
+        // Subscriptions
+        case .subscriptionPlans: return "/technician/subscriptions/plans"
+        case .subscriptionCurrent: return "/technician/subscriptions/current"
+
+        // Referrals
+        case .referralRelations: return "/technician/referrals"
+
+        // Insights
+        case .technicianInsights: return "/technician/insights/overview"
+
+        // Beauty Archive
+        case .beautyArchive: return "/client/beauty-archive"
+
         // Uploads
         case .uploadImage(let role): return "/\(role.rawValue)/uploads/image"
         case .uploadAudio(let role): return "/\(role.rawValue)/uploads/audio"
@@ -207,20 +278,24 @@ enum Endpoint {
 
     var method: String {
         switch self {
+        case .resource(_, _, let method, _): return method
         case .clientLogin, .clientRegister, .technicianLogin, .technicianRegister,
              .refreshToken, .checkPhone, .createClientOrder, .createTechOrder,
              .createDesign, .createWork, .createService, .createAddress,
              .sendMessage, .addComment, .likeWork, .favoriteWork,
              .agreeOrder, .markDepositPaid, .registerDeviceToken,
              .acceptDesignQuote, .rejectDesignQuote,
-             .uploadImage, .uploadAudio:
+             .uploadImage, .uploadAudio, .createCustomerFollowUp:
             return "POST"
 
-        case .updateClientProfile, .updateTechnicianProfile, .changePassword,
+        case .updateClientProfile: return "PUT"
+
+        case .updateTechnicianProfile, .changePassword,
              .updateOrderStatus, .quoteOrder, .confirmOrder, .completeOrder,
              .cancelOrder, .updateDesign, .updateAddress, .updateWork,
              .updateService, .updateCustomerTags, .markRead,
-             .toggleService, .setDefaultAddress:
+             .toggleService, .setDefaultAddress, .completeCustomerFollowUp,
+             .bookingDayUpdate, .bookingDaysSettingsUpdate, .brandProfileUpdate:
             return "PATCH"
 
         case .deleteComment, .deleteDesign, .deleteAddress, .deleteWork, .deleteService:
@@ -229,6 +304,9 @@ enum Endpoint {
         case .toggleWorkVisible, .toggleWorkPinned, .toggleWorkFeatured,
              .rejectQuote:
             return "POST"
+
+        case .updateShopAddresses:
+            return "PATCH"
 
         default:
             return "GET"
@@ -264,6 +342,11 @@ enum Endpoint {
             return [URLQueryItem(name: "code", value: code)]
         case .messages(let cid, _):
             return [URLQueryItem(name: "conversation_id", value: "\(cid)")]
+        case .technicianInsights(let month):
+            if let m = month {
+                return [URLQueryItem(name: "month", value: m)]
+            }
+            return nil
         default:
             return nil
         }
@@ -271,6 +354,8 @@ enum Endpoint {
 
     var body: [String: Any]? {
         switch self {
+        case .markRead(let id, _): return ["conversation_id": id]
+        case .resource(_, _, _, let body): return body
         case .clientLogin(let phone, let password):
             return ["phone": phone, "password": password]
         case .clientRegister(let phone, let password, let code):
@@ -329,6 +414,16 @@ enum Endpoint {
             var d: [String: Any] = ["quotePrice": price]
             if let r = remark { d["quoteRemark"] = r }
             return d
+        case .updateShopAddresses(let shops, let shopService):
+            return ["shopAddresses": shops, "shopService": shopService]
+        case .createCustomerFollowUp(_, let content, let plannedAt):
+            return ["content": content, "plannedAt": plannedAt]
+        case .bookingDayUpdate(_, let accepting, let version):
+            return ["accepting": accepting, "version": version]
+        case .bookingDaysSettingsUpdate(let params):
+            return params
+        case .brandProfileUpdate(let params):
+            return params
         default:
             return nil
         }

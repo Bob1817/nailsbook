@@ -107,6 +107,12 @@ struct TechCustomerDetailView: View {
     @State private var editTags: [String] = []
     @State private var newTag = ""
 
+    // Follow up
+    @State private var followUpContent = ""
+    @State private var followUpDate = Date()
+    @State private var showFollowUpDatePicker = false
+    @State private var savingFollowUp = false
+
     var body: some View {
         ScrollView {
             if let customer = customer {
@@ -178,6 +184,63 @@ struct TechCustomerDetailView: View {
                     }
                     .padding(.horizontal, Spacing.lg)
 
+                    // Follow Up Section
+                    NBCard {
+                        VStack(alignment: .leading, spacing: Spacing.md) {
+                            Text("跟进记录")
+                                .font(NBFont.titleSmall)
+
+                            // Create follow up
+                            VStack(spacing: Spacing.sm) {
+                                TextField("输入跟进内容...", text: $followUpContent)
+                                    .font(NBFont.bodyMedium)
+                                    .padding(Spacing.md)
+                                    .background(Color.nbSurfaceAlt)
+                                    .cornerRadius(Radius.md)
+
+                                HStack {
+                                    Button {
+                                        showFollowUpDatePicker = true
+                                    } label: {
+                                        HStack(spacing: Spacing.xs) {
+                                            Image(systemName: "calendar")
+                                                .font(.system(size: 14))
+                                            Text(formatFollowUpDate(followUpDate))
+                                                .font(NBFont.captionLarge)
+                                        }
+                                        .foregroundColor(.nbTextSecondary)
+                                    }
+
+                                    Spacer()
+
+                                    Button {
+                                        Task { await createFollowUp() }
+                                    } label: {
+                                        Text(savingFollowUp ? "保存中..." : "添加跟进")
+                                            .font(NBFont.captionLarge)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, Spacing.md)
+                                            .padding(.vertical, Spacing.sm)
+                                            .background(followUpContent.isEmpty ? Color.nbTextTertiary : Color.nbPrimary)
+                                            .cornerRadius(Radius.full)
+                                    }
+                                    .disabled(followUpContent.isEmpty || savingFollowUp)
+                                }
+                            }
+
+                            // Follow up list
+                            if let followUps = customer.followUps, !followUps.isEmpty {
+                                Divider()
+                                ForEach(followUps) { followUp in
+                                    FollowUpRow(followUp: followUp) {
+                                        Task { await completeFollowUp(followUp.id) }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     // Notes
                     if let notes = customer.notes, !notes.isEmpty {
                         NBCard {
@@ -199,6 +262,21 @@ struct TechCustomerDetailView: View {
         .background(Color.nbBg)
         .task { await loadCustomer() }
         .sheet(isPresented: $showTagEditor) { tagEditorSheet }
+        .sheet(isPresented: $showFollowUpDatePicker) {
+            NavigationStack {
+                DatePicker("选择跟进日期", selection: $followUpDate, displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .padding()
+                    .navigationTitle("跟进日期")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("确定") { showFollowUpDatePicker = false }
+                        }
+                    }
+            }
+            .presentationDetents([.medium])
+        }
     }
 
     private func statCard(_ title: String, value: String) -> some View {
@@ -279,5 +357,88 @@ struct TechCustomerDetailView: View {
             showTagEditor = false
             await loadCustomer()
         } catch {}
+    }
+
+    private func createFollowUp() async {
+        guard !followUpContent.isEmpty else { return }
+        savingFollowUp = true
+        do {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            let plannedAt = formatter.string(from: followUpDate)
+            _ = try await APIClient.shared.requestVoid(.createCustomerFollowUp(id: customerId, content: followUpContent, plannedAt: plannedAt))
+            followUpContent = ""
+            savingFollowUp = false
+            await loadCustomer()
+        } catch {
+            savingFollowUp = false
+        }
+    }
+
+    private func completeFollowUp(_ followUpId: Int) async {
+        do {
+            _ = try await APIClient.shared.requestVoid(.completeCustomerFollowUp(customerId: customerId, followUpId: followUpId))
+            await loadCustomer()
+        } catch {}
+    }
+
+    private func formatFollowUpDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy年M月d日"
+        return formatter.string(from: date)
+    }
+}
+
+// MARK: - Follow Up Row
+
+struct FollowUpRow: View {
+    let followUp: FollowUp
+    let onComplete: () -> Void
+
+    var body: some View {
+        HStack(spacing: Spacing.md) {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text(followUp.content ?? "")
+                    .font(NBFont.bodyMedium)
+                    .foregroundColor(.nbTextPrimary)
+                if let plannedAt = followUp.plannedAt {
+                    Text(formatDate(plannedAt))
+                        .font(NBFont.captionMedium)
+                        .foregroundColor(.nbTextTertiary)
+                }
+            }
+            Spacer()
+            if followUp.status == "completed" {
+                Text("已完成")
+                    .font(NBFont.captionSmall)
+                    .foregroundColor(.nbSuccess)
+                    .padding(.horizontal, Spacing.xs)
+                    .padding(.vertical, 2)
+                    .background(Color.nbSuccessSoft)
+                    .cornerRadius(Radius.sm)
+            } else {
+                Button {
+                    onComplete()
+                } label: {
+                    Text("完成")
+                        .font(NBFont.captionSmall)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, Spacing.sm)
+                        .padding(.vertical, Spacing.xs)
+                        .background(Color.nbPrimary)
+                        .cornerRadius(Radius.sm)
+                }
+            }
+        }
+        .padding(.vertical, Spacing.xs)
+    }
+
+    private func formatDate(_ isoString: String) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        guard let date = formatter.date(from: isoString) else { return "" }
+        let displayFormatter = DateFormatter()
+        displayFormatter.dateFormat = "yyyy年M月d日"
+        return displayFormatter.string(from: date)
     }
 }

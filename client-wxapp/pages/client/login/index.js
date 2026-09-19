@@ -125,10 +125,6 @@ Page({
     wx.reLaunch({ url: '/pages/login/index' });
   },
 
-  browseAsGuest() {
-    wx.reLaunch({ url: '/pages/client/discover/index' });
-  },
-
   async handlePhoneNext() {
     if (!privacy.requireAgreement(this)) return;
     const phone = this.data.phone.trim();
@@ -153,7 +149,7 @@ Page({
           ? `&invite=${encodeURIComponent(this.inviteCode)}`
           : '';
         const source = `&source=${this.registrationSource}`;
-        wx.navigateTo({ url: `/pages/client/register/index?phone=${phone}${redirect}${referral}${invite}${source}` });
+        wx.navigateTo({ url: `/pages/register/index?phone=${phone}${redirect}${referral}${invite}${source}` });
       }
     } catch (err) {
       wx.hideLoading();

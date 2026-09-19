@@ -18,7 +18,7 @@ struct ClientTabView: View {
                 }
                 .tag(1)
 
-            WorksListView()
+            NavigationStack { WorksListView() }
                 .tabItem {
                     Label("发现", systemImage: "sparkles")
                 }

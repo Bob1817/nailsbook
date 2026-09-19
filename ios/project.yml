@@ -44,3 +44,15 @@ targets:
       base:
         INFOPLIST_FILE: NailBook/Resources/Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: cn.lunails.nailbook
+  NailBookTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: NailBookTests
+    dependencies:
+      - target: NailBook
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: ""
+        PRODUCT_BUNDLE_IDENTIFIER: cn.lunails.nailbook.tests

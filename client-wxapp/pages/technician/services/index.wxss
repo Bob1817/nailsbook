@@ -371,3 +371,63 @@
 .tier-remove { min-height:44px; display:flex; align-items:center; color:var(--nb-danger); font-size:var(--font-xs); }
 .loyalty-tier .form-input { margin-top:12rpx; }
 .loyalty-add { margin-top:20rpx; background:var(--nb-page); color:var(--nb-ink); }
+
+/* ===== 定金设置 ===== */
+.deposit-options {
+  display: flex;
+  gap: 16rpx;
+}
+.deposit-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  height: 80rpx;
+  border-radius: var(--radius-sm);
+  border: 2rpx solid var(--nb-line);
+  background: var(--bg-card);
+  font-size: var(--font-sm);
+  color: var(--text-body);
+  transition: all 0.2s;
+}
+.deposit-option-active {
+  border-color: var(--nb-ink);
+  background: var(--nb-page);
+}
+.deposit-radio {
+  width: 28rpx;
+  height: 28rpx;
+  border-radius: 50%;
+  border: 2rpx solid var(--nb-control);
+  box-sizing: border-box;
+}
+.deposit-radio-active {
+  border-color: var(--nb-ink);
+  background: var(--nb-ink);
+  box-shadow: inset 0 0 0 4rpx var(--bg-card);
+}
+
+/* ===== 定金信息展示 ===== */
+.svc-deposit-info {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 16rpx;
+  padding: 12rpx 16rpx;
+  background: var(--nb-page);
+  border-radius: 12rpx;
+}
+.svc-deposit-label {
+  font-size: 22rpx;
+  color: var(--text-muted);
+}
+.svc-deposit-value {
+  font-size: 24rpx;
+  font-weight: var(--weight-semibold);
+  color: var(--nb-money);
+}
+.svc-deposit-ratio {
+  font-size: 22rpx;
+  color: var(--text-muted);
+}

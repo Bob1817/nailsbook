@@ -87,7 +87,7 @@ Page({
         api.public.artists.detail(this.data.artistId),
         api.client.works.list(
           { techId: this.data.artistId },
-          { needAuth: false, silent: true }
+          { silent: true }
         ).catch(() => null)
       ]);
       const res = results[0];

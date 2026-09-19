@@ -14,19 +14,18 @@
 .wc-manage-icon { width:28rpx; height:28rpx; filter:drop-shadow(0 2rpx 5rpx rgba(255,255,255,.9)); }
 .wc-manage:active { opacity:.72; transform:scale(.96); }
 .wc-price-pill { position:absolute; z-index:2; left:14rpx; bottom:14rpx; max-width:70%; min-height:52rpx; padding:0 18rpx; display:flex; align-items:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--nb-surface); background:rgba(0, 0, 0, .62); border:0; border-radius:999rpx; box-shadow:0 5rpx 16rpx rgba(0, 0, 0, .24); -webkit-backdrop-filter:blur(18rpx) saturate(135%); backdrop-filter:blur(18rpx) saturate(135%); text-shadow:0 2rpx 5rpx rgba(0,0,0,.34); font-family:var(--font-display); font-size:27rpx; font-weight:800; }
-.wc-editorial-copy { padding:18rpx 18rpx 16rpx; }
-.wc-featured .wc-editorial-copy { padding:22rpx 24rpx 18rpx; }
+.wc-editorial-copy { padding:18rpx 18rpx 12rpx; }
+.wc-featured .wc-editorial-copy { padding:22rpx 24rpx 12rpx; }
 .wc-editorial-title { display:block; width:100%; min-width:0; color:var(--nb-ink); font-family:var(--font-display); font-size:27rpx; font-weight:650; line-height:1.35; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .wc-featured .wc-editorial-title { font-size:32rpx; }
 .wc-editorial-artist { width:100%; min-width:0; min-height:58rpx; margin-top:13rpx; display:flex; align-items:center; gap:10rpx; box-sizing:border-box; overflow:hidden; }
 .wc-editorial-avatar { width:46rpx; height:46rpx; border-radius:50%; flex-shrink:0; background:var(--nb-page); }
 .wc-featured .wc-editorial-avatar { width:52rpx; height:52rpx; }
 .wc-editorial-avatar-fallback { display:flex; align-items:center; justify-content:center; color:var(--nb-ink); font-size:20rpx; font-weight:600; }
-.wc-editorial-artist-copy { flex:1; min-width:0; display:flex; align-items:baseline; gap:7rpx; overflow:hidden; }
-.wc-editorial-name { flex-shrink:0; max-width:48%; color:var(--nb-ink); font-size:21rpx; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.wc-artist-separator { flex-shrink:0; color:var(--nb-muted); font-size:18rpx; }
-.wc-editorial-expertise { min-width:0; color:var(--nb-muted); font-size:18rpx; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.35; }
-.wc-client-actions { min-height:96rpx; padding:8rpx 12rpx 12rpx; border-top: 0; display:flex; align-items:stretch; gap:8rpx; box-sizing:border-box; }
+.wc-editorial-artist-copy { flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; gap:4rpx; overflow:hidden; }
+.wc-editorial-name { width:100%; color:var(--nb-ink); font-size:21rpx; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.wc-editorial-place { width:100%; color:var(--nb-muted); font-size:18rpx; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.35; }
+.wc-client-actions { min-height:88rpx; padding:0 12rpx 12rpx; border-top: 0; display:flex; align-items:stretch; gap:8rpx; box-sizing:border-box; }
 .wc-client-tools { flex:0 0 auto; min-height:88rpx; display:flex; align-items:stretch; gap:2rpx; }
 .wc-client-action { width:64rpx; min-width:64rpx; min-height:88rpx; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3rpx; color:var(--nb-secondary); font-size:17rpx; border-radius:14rpx; }
 .wc-client-action:active { background:var(--nb-page); }
@@ -35,7 +34,7 @@
 .wc-book-same { flex:1; min-width:112rpx; min-height:88rpx; padding:0; display:flex; align-items:center; justify-content:center; color:var(--nb-surface); border-radius:16rpx; font-size:19rpx; font-weight:650; white-space:nowrap; }
 .wc-book-label { width:100%; height:64rpx; display:flex; align-items:center; justify-content:center; background:var(--nb-action); border-radius:14rpx; box-shadow:0 6rpx 14rpx rgba(0, 0, 0, .22); box-sizing:border-box; }
 .wc-book-same:active .wc-book-label { background:var(--nb-action); transform:scale(.98); }
-.wc-featured .wc-client-actions { padding:12rpx 18rpx 16rpx; gap:10rpx; }
+.wc-featured .wc-client-actions { padding:0 18rpx 16rpx; gap:10rpx; }
 .wc-featured .wc-client-action { font-size:20rpx; }
 .wc-featured .wc-client-tools { gap:6rpx; }
 .wc-featured .wc-client-action { width:80rpx; min-width:80rpx; }

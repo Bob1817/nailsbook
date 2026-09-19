@@ -86,3 +86,46 @@ enum OrderStatus: String, Codable, CaseIterable {
         }
     }
 }
+
+extension Order {
+    enum CodingKeys: String, CodingKey {
+        case id, orderNo, status, serviceType, quotePrice, startTime, endTime, address, remark, customTitle, customDescription, customImages, clientPhotos, isDepositPaid, depositAmount, quoteRemark, cancelReason, confirmedAt, completedAt, cancelledAt, createdAt, technician, customer, clientUser, addressDetail
+    }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(Int.self, forKey: .id)
+        orderNo = try values.decode(String.self, forKey: .orderNo)
+        status = try values.decode(String.self, forKey: .status)
+        serviceType = try values.decodeIfPresent(String.self, forKey: .serviceType)
+        quotePrice = try values.decodeIfPresent(Double.self, forKey: .quotePrice)
+        startTime = try values.decodeIfPresent(String.self, forKey: .startTime)
+        endTime = try values.decodeIfPresent(String.self, forKey: .endTime)
+        address = try values.decodeIfPresent(String.self, forKey: .address)
+        remark = try values.decodeIfPresent(String.self, forKey: .remark)
+        customTitle = try values.decodeIfPresent(String.self, forKey: .customTitle)
+        customDescription = try values.decodeIfPresent(String.self, forKey: .customDescription)
+        if let array = try? values.decode([String].self, forKey: .customImages) {
+            customImages = array
+        } else if let json = try values.decodeIfPresent(String.self, forKey: .customImages) {
+            customImages = try JSONDecoder().decode([String].self, from: Data(json.utf8))
+        } else { customImages = nil }
+        if let array = try? values.decode([String].self, forKey: .clientPhotos) {
+            clientPhotos = array
+        } else if let json = try values.decodeIfPresent(String.self, forKey: .clientPhotos) {
+            clientPhotos = try JSONDecoder().decode([String].self, from: Data(json.utf8))
+        } else { clientPhotos = nil }
+        isDepositPaid = try values.decodeIfPresent(Bool.self, forKey: .isDepositPaid)
+        depositAmount = try values.decodeIfPresent(Double.self, forKey: .depositAmount)
+        quoteRemark = try values.decodeIfPresent(String.self, forKey: .quoteRemark)
+        cancelReason = try values.decodeIfPresent(String.self, forKey: .cancelReason)
+        confirmedAt = try values.decodeIfPresent(String.self, forKey: .confirmedAt)
+        completedAt = try values.decodeIfPresent(String.self, forKey: .completedAt)
+        cancelledAt = try values.decodeIfPresent(String.self, forKey: .cancelledAt)
+        createdAt = try values.decodeIfPresent(String.self, forKey: .createdAt)
+        technician = try values.decodeIfPresent(OrderTechnician.self, forKey: .technician)
+        customer = try values.decodeIfPresent(OrderCustomer.self, forKey: .customer)
+        clientUser = try values.decodeIfPresent(OrderClientUser.self, forKey: .clientUser)
+        addressDetail = try values.decodeIfPresent(OrderAddress.self, forKey: .addressDetail)
+    }
+}

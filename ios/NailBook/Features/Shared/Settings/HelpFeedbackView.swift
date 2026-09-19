@@ -8,6 +8,7 @@ struct HelpFeedbackView: View {
     @State private var content = ""
     @State private var isSubmitting = false
     @State private var showSuccess = false
+    @State private var error: String?
 
     private let types = [
         ("suggestion", "功能建议"),
@@ -51,6 +52,7 @@ struct HelpFeedbackView: View {
                     }
                 }
 
+                if let error { Text(error).foregroundColor(.nbError) }
                 NBButton(title: "提交反馈", style: .primary, isLoading: isSubmitting) {
                     submitFeedback()
                 }
@@ -77,14 +79,16 @@ struct HelpFeedbackView: View {
     }
 
     private func submitFeedback() {
-        guard !content.isEmpty else { return }
+        guard !isSubmitting, !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         isSubmitting = true
         Task {
-            // The endpoint is POST /{role}/feedback
-            // For now, we'll use a generic approach
-            isSubmitting = false
-            showSuccess = true
-            content = ""
+            defer { isSubmitting = false }
+            do {
+                try await APIClient.shared.requestVoid(.resource(role: role, path: "feedback", method: "POST", body: ["title": String(content.prefix(60)), "type": feedbackType, "content": content]))
+                showSuccess = true
+                content = ""
+                error = nil
+            } catch { self.error = error.localizedDescription }
         }
     }
 }

@@ -6,7 +6,6 @@ const root = path.join(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 const cases = [
-  ['发现页', 'pages/client/discover/index.wxml', 'pages/client/discover/index.wxss', 2],
   ['消息页', 'pages/client/chat/index.wxml', 'pages/client/chat/index.wxss', 4],
   ['会话页', 'pages/client/chat-detail/index.wxml', 'pages/client/chat-detail/index.wxss', 1],
   ['新建设计', 'pages/client/create-design/index.wxml', 'pages/client/create-design/index.wxss', 1],

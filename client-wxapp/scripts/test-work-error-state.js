@@ -25,7 +25,7 @@ const instance = { ...page, data: { ...page.data }, setData(patch) { Object.assi
   error = { code: -1 }; await instance.loadWork();
   assert.equal(instance.data.canRetry, true);
   assert(instance.data.errorDescription.includes('网络'));
-  instance.goBack(); assert.equal(destination, '/pages/client/discover/index');
+  instance.goBack(); assert.equal(destination, '/pages/client/home/index');
   depth = 2; instance.goBack(); assert.equal(back, 1);
   let component, copied = '';
   const componentSource = fs.readFileSync(path.join(root, 'components/work-detail-view/index.js'), 'utf8');

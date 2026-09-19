@@ -1,495 +1,564 @@
 import SwiftUI
 
-// MARK: - Client Home (synced with wxapp client/home)
+// MARK: - Client Home View (aligned with wxapp design)
 
 struct ClientHomeView: View {
-    @EnvironmentObject var appState: AppState
-    @State private var homeData: ClientHomeData?
-    @State private var isLoading = true
-    @State private var errorMessage: String?
-    @State private var heroIndex = 0
+    @State private var home: ClientHomeData?
+    @State private var featuredWorks: [NailWork] = []
+    @State private var loading = true
+    @State private var worksLoading = true
+    @State private var error: String?
+    @State private var swiperIndex = 0
+
+    // Timer for auto-play
+    let timer = Timer.publish(every: 4, on: .main, in: .common).autoconnect()
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                Color.nbBg.ignoresSafeArea()
-
-                if isLoading {
-                    NBLoadingView()
-                } else if let data = homeData {
-                    ScrollView {
-                        VStack(spacing: 0) {
-                            // Hero Section - Featured Works Swiper (wxapp: 620rpx, border-radius 24rpx)
-                            if let works = data.featuredWorks, !works.isEmpty {
-                                heroSwiper(works)
-                            } else {
-                                heroPlaceholder
-                            }
-
-                            VStack(spacing: Spacing.sectionGap) {
-                                // Booking Section - Order Card
-                                if let order = data.latestOrder {
-                                    bookingSection(order)
-                                } else {
-                                    noOrderCard
-                                }
-
-                                // Asset Section - 美甲记录
-                                assetSection
-
-                                // Featured Works Grid
-                                if let works = data.featuredWorks, !works.isEmpty {
-                                    sectionHeader("精选作品")
-                                    waterfallGrid(works)
-                                }
-                            }
-                            .padding(.horizontal, Spacing.page)
-                            .padding(.top, Spacing.xxl)
-                            .padding(.bottom, 100)
-                        }
-                    }
-                } else if let error = errorMessage {
-                    NBEmptyState(icon: "wifi.slash", title: "加载失败", message: error)
-                }
-            }
-            .navigationTitle("首页")
-            .navigationBarTitleDisplayMode(.inline)
-            .refreshable { await loadHome() }
-            .task { await loadHome() }
-        }
-    }
-
-    // MARK: - Hero Swiper (wxapp: swiper 620rpx)
-
-    private func heroSwiper(_ works: [NailWork]) -> some View {
-        VStack(spacing: Spacing.sm) {
-            TabView(selection: $heroIndex) {
-                ForEach(works.indices, id: \.self) { index in
-                    let work = works[index]
-                    ZStack(alignment: .bottomLeading) {
-                        // Image
-                        if let url = work.coverUrl, let imageURL = URL(string: url) {
-                            AsyncImage(url: imageURL) { image in
-                                image.resizable().aspectRatio(contentMode: .fill)
-                            } placeholder: {
-                                Rectangle().fill(Color.nbSecondarySoft)
-                            }
-                        } else {
-                            Rectangle()
-                                .fill(Color.nbSecondarySoft)
-                                .overlay(Image(systemName: "photo").foregroundColor(.nbTextTertiary))
-                        }
-
-                        // Gradient overlay (wxapp: rgba(7,10,20,0.24) -> transparent -> rgba(7,10,20,0.76))
-                        NBGradient.workOverlay
-
-                        // Bottom info
-                        VStack(alignment: .leading, spacing: Spacing.xs) {
-                            Text(work.title ?? "")
-                                .font(NBFont.titleLarge)
-                                .foregroundColor(.white)
-                                .lineLimit(1)
-                            if let tech = work.technician?.name {
-                                Text(tech)
-                                    .font(NBFont.captionLarge)
-                                    .foregroundColor(.white.opacity(0.8))
-                            }
-                        }
-                        .padding(Spacing.lg)
-                    }
-                    .frame(height: 310)
-                    .cornerRadius(Radius.lg)
-                    .clipped()
-                    .tag(index)
-                }
-            }
-            .tabViewStyle(.page(indexDisplayMode: .automatic))
-            .frame(height: 310)
-            .padding(.horizontal, Spacing.page)
-        }
-    }
-
-    private var heroPlaceholder: some View {
-        VStack(spacing: Spacing.lg) {
-            ZStack {
-                Circle()
-                    .fill(NBGradient.emptyIcon)
-                    .frame(width: 80, height: 80)
-                Image(systemName: "photo")
-                    .font(.system(size: 32))
-                    .foregroundColor(.nbPrimary.opacity(0.6))
-            }
-            Text("绑定美甲师后查看最新作品")
-                .font(NBFont.bodyMedium)
-                .foregroundColor(.nbTextSecondary)
-        }
-        .frame(height: 200)
-        .frame(maxWidth: .infinity)
-    }
-
-    // MARK: - Booking Section (wxapp: gradient order card #FF6B8A -> #FF8FA3)
-
-    private func bookingSection(_ order: Order) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            sectionHeader("我的预约")
-
-            NavigationLink(destination: ClientOrderDetailView(orderId: order.id)) {
+            ScrollView {
                 VStack(spacing: 0) {
-                    // Status badge + countdown
-                    HStack {
-                        NBStatusBadge(
-                            text: OrderStatus(rawValue: order.status)?.displayName ?? order.status,
-                            bgColor: .white.opacity(0.25),
-                            textColor: .white
-                        )
-                        Spacer()
-                        if let start = order.startTime {
-                            Text(countdownText(start))
-                                .font(NBFont.captionLarge)
-                                .foregroundColor(.white.opacity(0.8))
-                        }
-                    }
-                    .padding(.horizontal, Spacing.lg)
-                    .padding(.top, Spacing.lg)
+                    // Hero Section - Works Swiper
+                    heroSection
 
-                    // Order body
-                    HStack(spacing: Spacing.lg) {
-                        // Date box (wxapp: 160rpx, border-radius 32rpx, rgba(255,255,255,0.20))
-                        VStack(spacing: 2) {
-                            Text(orderMonth(order.startTime))
-                                .font(NBFont.captionLarge)
-                                .foregroundColor(.white.opacity(0.7))
-                            Text(orderDay(order.startTime))
-                                .font(.system(size: 28, weight: .bold))
-                                .foregroundColor(.white)
-                            Text(orderWeekday(order.startTime))
-                                .font(NBFont.captionMedium)
-                                .foregroundColor(.white.opacity(0.7))
-                        }
-                        .frame(width: 72, height: 72)
-                        .background(Color.white.opacity(0.2))
-                        .cornerRadius(Radius.xl)
+                    // Booking Section
+                    bookingSection
 
-                        // Details
-                        VStack(alignment: .leading, spacing: Spacing.xs) {
-                            Text(order.customTitle ?? order.serviceType ?? "预约")
-                                .font(NBFont.bodyLarge)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-                                .lineLimit(1)
-                            if let tech = order.technician?.name {
-                                Text(tech)
-                                    .font(NBFont.captionLarge)
-                                    .foregroundColor(.white.opacity(0.8))
-                            }
-                            if let addr = order.address {
-                                Text(addr)
-                                    .font(NBFont.captionMedium)
-                                    .foregroundColor(.white.opacity(0.6))
-                                    .lineLimit(1)
-                            }
-                        }
-                        Spacer()
-                    }
-                    .padding(Spacing.lg)
+                    // Popular Styles
+                    styleSection
 
-                    // Actions
-                    HStack(spacing: Spacing.md) {
-                        orderActionButton(icon: "bubble.left.fill", title: "发消息")
-                        orderActionButton(icon: "phone.fill", title: "打电话")
-                        orderActionButton(icon: "chevron.right", title: "查看详情")
-                    }
-                    .padding(.horizontal, Spacing.lg)
-                    .padding(.bottom, Spacing.lg)
+                    // Featured Works
+                    featuredWorksSection
                 }
-                .background(NBGradient.orderCard)
-                .cornerRadius(Radius.hero)
-                .shadow(color: Color.nbPrimary.opacity(0.24), radius: 16, y: 6)
+                .padding(.bottom, 100) // Tab bar space
             }
-            .buttonStyle(.plain)
+            .background(NBColors.page)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("NailBook")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(NBColors.ink)
+                }
+            }
+            .task {
+                await loadHome()
+                await loadWorks()
+            }
+            .refreshable {
+                await loadHome()
+                await loadWorks()
+            }
         }
     }
 
-    private func orderActionButton(icon: String, title: String) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.system(size: 12))
-            Text(title)
-                .font(NBFont.captionMedium)
+    // MARK: - Hero Section (Swiper)
+
+    private var heroSection: some View {
+        VStack(spacing: 0) {
+            if featuredWorks.isEmpty && !worksLoading {
+                // Placeholder when no works
+                VStack(spacing: Spacing.md) {
+                    Circle()
+                        .fill(Color.black.opacity(0.12))
+                        .frame(width: 36, height: 36)
+                        .overlay(
+                            Circle()
+                                .fill(Color.black.opacity(0.3))
+                                .frame(width: 16, height: 16)
+                        )
+
+                    Text(home?.technician != nil ? "美甲师暂未设置首页推荐" : "绑定美甲师后查看首页推荐")
+                        .font(.system(size: 14))
+                        .foregroundColor(NBColors.muted)
+
+                    Button("浏览作品") {
+                        // Navigate to works
+                    }
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(NBColors.link)
+                }
+                .frame(height: 310)
+                .frame(maxWidth: .infinity)
+                .background(NBColors.page)
+                .cornerRadius(Radius.md)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+            } else {
+                // Swiper
+                ZStack(alignment: .top) {
+                    TabView(selection: $swiperIndex) {
+                        ForEach(Array(featuredWorks.prefix(5).enumerated()), id: \.element.id) { index, work in
+                            heroWorkCard(work)
+                                .tag(index)
+                        }
+                    }
+                    .tabViewStyle(.page(indexDisplayMode: .never))
+                    .frame(height: 310)
+                    .onReceive(timer) { _ in
+                        guard featuredWorks.count > 1 else { return }
+                        withAnimation {
+                            swiperIndex = (swiperIndex + 1) % min(featuredWorks.count, 5)
+                        }
+                    }
+
+                    // Dots
+                    if featuredWorks.count > 1 {
+                        HStack(spacing: 6) {
+                            ForEach(0..<min(featuredWorks.count, 5), id: \.self) { index in
+                                Capsule()
+                                    .fill(index == swiperIndex ? Color.white : Color.white.opacity(0.58))
+                                    .frame(width: index == swiperIndex ? 12 : 3, height: 3)
+                            }
+                        }
+                        .padding(.top, 11)
+                    }
+                }
+                .cornerRadius(Radius.md)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+            }
+
+            if worksLoading {
+                ProgressView()
+                    .frame(height: 310)
+            }
         }
-        .foregroundColor(.white)
-        .padding(.horizontal, Spacing.md)
-        .padding(.vertical, Spacing.sm)
-        .background(Color.white.opacity(0.2))
-        .cornerRadius(Radius.pill)
+    }
+
+    private func heroWorkCard(_ work: NailWork) -> some View {
+        ZStack {
+            // Image
+            AsyncImage(url: URL(string: work.coverUrl ?? "")) { image in
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } placeholder: {
+                Rectangle()
+                    .fill(NBColors.page)
+            }
+            .frame(height: 310)
+            .clipped()
+
+            // Overlay gradient
+            VStack {
+                Spacer()
+                LinearGradient(
+                    colors: [Color.black.opacity(0.24), Color.black.opacity(0.02), Color.black.opacity(0.08), Color.black.opacity(0.76)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 120)
+                .overlay(
+                    HStack(alignment: .bottom) {
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(work.title ?? "美甲作品")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.white)
+                                .lineLimit(1)
+
+                            if let name = work.technicianName {
+                                Text(name)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(Color.white.opacity(0.88))
+                            }
+                        }
+
+                        Spacer()
+
+                        // CTA Button
+                        HStack(spacing: 2) {
+                            Text("查看详情")
+                                .font(.system(size: 14, weight: .medium))
+                            Text("›")
+                                .font(.system(size: 18))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color.black.opacity(0.34))
+                        .cornerRadius(18)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
+                )
+            }
+        }
+        .cornerRadius(Radius.md)
+    }
+
+    // MARK: - Booking Section
+
+    private var bookingSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header
+            HStack {
+                Text("我的预约")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(NBColors.ink)
+                Spacer()
+                if home?.latestOrder != nil {
+                    Button("查看全部 ›") {
+                        // Navigate to orders
+                    }
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(NBColors.link)
+                }
+            }
+
+            Text(home?.latestOrder != nil ? "距离最近的一次预约" : "快速发起你的下一次美甲")
+                .font(.system(size: 14))
+                .foregroundColor(NBColors.muted)
+                .padding(.top, 3)
+                .padding(.bottom, 12)
+
+            if let order = home?.latestOrder {
+                // Has order
+                orderCard(order)
+            } else {
+                // No order
+                noOrderCard
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 24)
+    }
+
+    private func orderCard(_ order: Order) -> some View {
+        VStack(spacing: 0) {
+            // Top: status + countdown
+            HStack {
+                Text(OrderStatus(rawValue: order.status)?.displayName ?? order.status)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(NBColors.success)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(NBColors.successSurface)
+                    .cornerRadius(Radius.md)
+
+                Spacer()
+
+                HStack(spacing: 0) {
+                    Text("还有 ")
+                        .font(.system(size: 12))
+                    Text("3天")
+                        .font(.system(size: 12, weight: .medium))
+                }
+                .foregroundColor(NBColors.action)
+            }
+            .padding(.bottom, 16)
+
+            // Body: date + details
+            HStack(alignment: .top, spacing: 16) {
+                // Date box
+                VStack(spacing: 2) {
+                    Text("9月")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(NBColors.muted)
+                    Text("17")
+                        .font(.system(size: 26, weight: .bold))
+                        .foregroundColor(NBColors.action)
+                    Text("周三")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(NBColors.muted)
+                }
+                .frame(width: 60, height: 68)
+                .background(NBColors.page)
+                .cornerRadius(16)
+
+                // Details
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("14:00 - 16:00")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(NBColors.ink)
+
+                    if let tech = order.technician {
+                        HStack(spacing: 4) {
+                            Image(systemName: "person")
+                                .font(.system(size: 12))
+                            Text(tech.name ?? "")
+                                .font(.system(size: 14))
+                        }
+                        .foregroundColor(NBColors.ink)
+                    }
+                }
+
+                Spacer()
+            }
+            .padding(.bottom, 12)
+
+            // Actions
+            HStack(spacing: 6) {
+                Button {
+                    // Send message
+                } label: {
+                    HStack(spacing: 3) {
+                        Image(systemName: "bubble.left")
+                            .font(.system(size: 14))
+                        Text("发消息")
+                    }
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(NBColors.ink)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(NBColors.softSurface)
+                    .cornerRadius(Radius.button)
+                }
+
+                Button {
+                    // Call
+                } label: {
+                    HStack(spacing: 3) {
+                        Image(systemName: "phone")
+                            .font(.system(size: 14))
+                        Text("打电话")
+                    }
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(NBColors.ink)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(NBColors.softSurface)
+                    .cornerRadius(Radius.button)
+                }
+
+                Button {
+                    // View detail
+                } label: {
+                    Text("查看详情")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(NBColors.action)
+                        .cornerRadius(Radius.button)
+                }
+            }
+        }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(Radius.xl)
+        .shadow(color: Color.black.opacity(0.07), radius: 15, y: 5)
     }
 
     private var noOrderCard: some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            sectionHeader("我的预约")
-            VStack(spacing: Spacing.md) {
-                Image(systemName: "calendar")
-                    .font(.system(size: 32))
-                    .foregroundColor(.nbTextTertiary)
-                Text("当前暂无预约")
-                    .font(NBFont.bodyMedium)
-                    .foregroundColor(.nbTextSecondary)
-                Text("去预约")
-                    .font(NBFont.bodyMedium)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.nbPrimary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, Spacing.xxl)
-            .background(Color.nbSurfaceGlass)
-            .cornerRadius(Radius.card)
-        }
-    }
-
-    // MARK: - Asset Section (wxapp: archive card + ai card)
-
-    private var assetSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            sectionHeader("我的美甲记录")
-            HStack(spacing: Spacing.md) {
-                // Archive card (wxapp: gradient #3c2732 -> #6f4357)
-                VStack(alignment: .leading, spacing: Spacing.sm) {
-                    Image(systemName: "folder.fill")
-                        .font(.system(size: 24))
-                        .foregroundColor(.white)
-                    Text("美甲档案")
-                        .font(NBFont.bodyLarge)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                    Text("查看历史记录")
-                        .font(NBFont.captionLarge)
-                        .foregroundColor(.white.opacity(0.7))
+        Button {
+            // Navigate to booking
+        } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("当前暂无预约")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(NBColors.ink)
+                    Text("挑选喜欢的款式，快速预约美甲师")
+                        .font(.system(size: 12))
+                        .foregroundColor(NBColors.muted)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(Spacing.cardPadding)
-                .background(NBGradient.archiveCard)
+
+                Spacer()
+
+                HStack(spacing: 4) {
+                    Text("去预约")
+                        .font(.system(size: 14, weight: .semibold))
+                    Text("›")
+                        .font(.system(size: 18))
+                }
+                .foregroundColor(NBColors.action)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(NBColors.page)
                 .cornerRadius(Radius.xl)
-                .frame(height: 135)
-
-                // AI card (wxapp: gradient #fff1f7 -> #eee8ff)
-                VStack(alignment: .leading, spacing: Spacing.sm) {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 24))
-                        .foregroundColor(.nbPrimary)
-                    Text("AI 试甲")
-                        .font(NBFont.bodyLarge)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.nbTextPrimary)
-                    Text("智能推荐")
-                        .font(NBFont.captionLarge)
-                        .foregroundColor(.nbTextSecondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(Spacing.cardPadding)
-                .background(NBGradient.aiCard)
-                .cornerRadius(Radius.xl)
-                .frame(height: 135)
             }
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(Radius.lg)
+            .shadow(color: Color.black.opacity(0.05), radius: 10, y: 2)
         }
     }
 
-    // MARK: - Waterfall Grid
+    // MARK: - Style Section
 
-    private func waterfallGrid(_ works: [NailWork]) -> some View {
-        HStack(alignment: .top, spacing: Spacing.md) {
-            LazyVStack(spacing: Spacing.md) {
-                ForEach(works.enumerated().filter { $0.offset % 2 == 0 }.map(\.element)) { work in
-                    NavigationLink(destination: WorkDetailView(workId: work.id)) {
-                        WorkCardWX(work: work, tall: true)
+    private var styleSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("热门风格")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(NBColors.ink)
+                Spacer()
+                Button("查看全部 ›") {
+                    // Navigate to works
+                }
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(NBColors.link)
+            }
+
+            Text("按你的场景，快速找到下一款灵感")
+                .font(.system(size: 14))
+                .foregroundColor(NBColors.muted)
+                .padding(.top, 3)
+                .padding(.bottom, 12)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 7) {
+                    ForEach(["韩系温柔风", "轻奢法式", "简约日式", "高级手绘", "氛围感晕染"], id: \.self) { style in
+                        Text(style)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(NBColors.ink)
+                            .padding(.horizontal, 16)
+                            .frame(minHeight: 44)
+                            .background(Color.white)
+                            .cornerRadius(Radius.xl)
+                            .shadow(color: Color.black.opacity(0.05), radius: 5, y: 1)
                     }
-                    .buttonStyle(.plain)
                 }
             }
-            LazyVStack(spacing: Spacing.md) {
-                ForEach(works.enumerated().filter { $0.offset % 2 == 1 }.map(\.element)) { work in
-                    NavigationLink(destination: WorkDetailView(workId: work.id)) {
-                        WorkCardWX(work: work, tall: false)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 24)
+    }
+
+    // MARK: - Featured Works Section
+
+    private var featuredWorksSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("精选作品")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(NBColors.ink)
+                Spacer()
+                Button("查看全部 ›") {
+                    // Navigate to works
+                }
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(NBColors.link)
+            }
+
+            Text("设计能力、审美理念与适合你的场景")
+                .font(.system(size: 14))
+                .foregroundColor(NBColors.muted)
+                .padding(.top, 3)
+                .padding(.bottom, 12)
+
+            if !featuredWorks.isEmpty {
+                // Waterfall layout
+                HStack(alignment: .top, spacing: 8) {
+                    // Left column
+                    VStack(spacing: 8) {
+                        ForEach(Array(featuredWorks.enumerated().filter { $0.offset % 2 == 0 }.map { $0.element })) { work in
+                            workCard(work)
+                        }
                     }
-                    .buttonStyle(.plain)
+
+                    // Right column
+                    VStack(spacing: 8) {
+                        ForEach(Array(featuredWorks.enumerated().filter { $0.offset % 2 == 1 }.map { $0.element })) { work in
+                            workCard(work)
+                        }
+                    }
                 }
+            } else if worksLoading {
+                ProgressView()
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 40)
+            } else {
+                // Empty state
+                VStack(spacing: Spacing.md) {
+                    Circle()
+                        .fill(NBColors.page)
+                        .frame(width: 64, height: 64)
+                        .overlay(
+                            Image(systemName: "photo")
+                                .font(.system(size: 24))
+                                .foregroundColor(NBColors.muted)
+                        )
+
+                    Text("暂无作品展示")
+                        .font(.system(size: 14))
+                        .foregroundColor(NBColors.muted)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 40)
+                .background(Color.white)
+                .cornerRadius(Radius.md)
+                .shadow(color: Color.black.opacity(0.05), radius: 10, y: 2)
             }
         }
+        .padding(.horizontal, 20)
+        .padding(.top, 24)
     }
 
-    // MARK: - Section Header
+    private func workCard(_ work: NailWork) -> some View {
+        NavigationLink(destination: WorkDetailView(workId: work.id)) {
+            VStack(alignment: .leading, spacing: 8) {
+                // Image
+                AsyncImage(url: URL(string: work.coverUrl ?? "")) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    Rectangle()
+                        .fill(NBColors.page)
+                        .overlay(
+                            Image(systemName: "photo")
+                                .foregroundColor(NBColors.muted)
+                        )
+                }
+                .aspectRatio(0.75, contentMode: .fit)
+                .clipped()
+                .cornerRadius(Radius.sm)
 
-    private func sectionHeader(_ title: String) -> some View {
-        HStack {
-            Text(title)
-                .font(NBFont.titleMedium)
-                .fontWeight(.bold)
-                .foregroundColor(.nbTextPrimary)
-            Spacer()
+                // Info
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(work.title ?? "美甲作品")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(NBColors.ink)
+                        .lineLimit(1)
+
+                    HStack(spacing: 4) {
+                        if let name = work.technicianName {
+                            Text(name)
+                                .font(.system(size: 12))
+                                .foregroundColor(NBColors.muted)
+                        }
+
+                        Spacer()
+
+                        HStack(spacing: 2) {
+                            Image(systemName: "heart")
+                                .font(.system(size: 10))
+                            Text("\(work.likeCount ?? 0)")
+                                .font(.system(size: 12))
+                        }
+                        .foregroundColor(NBColors.muted)
+                    }
+                }
+                .padding(.horizontal, 4)
+            }
         }
+        .buttonStyle(.plain)
     }
 
-    // MARK: - Helpers
-
-    private func orderMonth(_ iso: String?) -> String {
-        guard let iso, let date = parseDate(iso) else { return "" }
-        let f = DateFormatter(); f.dateFormat = "M月"; return f.string(from: date)
-    }
-
-    private func orderDay(_ iso: String?) -> String {
-        guard let iso, let date = parseDate(iso) else { return "" }
-        let f = DateFormatter(); f.dateFormat = "d"; return f.string(from: date)
-    }
-
-    private func orderWeekday(_ iso: String?) -> String {
-        guard let iso, let date = parseDate(iso) else { return "" }
-        let f = DateFormatter(); f.locale = Locale(identifier: "zh_CN"); f.dateFormat = "EEE"; return f.string(from: date)
-    }
-
-    private func countdownText(_ iso: String) -> String {
-        guard let date = parseDate(iso) else { return "" }
-        let interval = date.timeIntervalSinceNow
-        if interval < 0 { return "已过期" }
-        let hours = Int(interval) / 3600
-        let days = hours / 24
-        if days > 0 { return "还有\(days)天" }
-        if hours > 0 { return "还有\(hours)小时" }
-        return "即将开始"
-    }
-
-    private func parseDate(_ iso: String) -> Date? {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f.date(from: iso)
-    }
+    // MARK: - Data Loading
 
     private func loadHome() async {
         do {
-            homeData = try await APIClient.shared.request(.clientHome)
-            isLoading = false
+            home = try await APIClient.shared.request(.clientHome)
+            error = nil
         } catch {
-            errorMessage = error.localizedDescription
-            isLoading = false
+            self.error = error.localizedDescription
         }
+        loading = false
+    }
+
+    private func loadWorks() async {
+        do {
+            let response: [NailWork] = try await APIClient.shared.request(.featuredWorks(page: 1, limit: 10))
+            featuredWorks = response
+        } catch {}
+        worksLoading = false
     }
 }
 
-// MARK: - Work Card (wxapp style with gradient overlay)
+// MARK: - Preview
 
-struct WorkCardWX: View {
-    let work: NailWork
-    var tall: Bool = false
-
-    var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            // Image
-            GeometryReader { geo in
-                if let url = work.coverUrl, let imageURL = URL(string: url) {
-                    AsyncImage(url: imageURL) { image in
-                        image.resizable().aspectRatio(contentMode: .fill)
-                    } placeholder: {
-                        Rectangle().fill(Color.nbSecondarySoft)
-                    }
-                    .frame(width: geo.size.width, height: tall ? geo.size.width * 1.33 : geo.size.width * 1.25)
-                    .clipped()
-                } else {
-                    Rectangle()
-                        .fill(NBGradient.emptyIcon)
-                        .frame(width: geo.size.width, height: tall ? geo.size.width * 1.33 : geo.size.width * 1.25)
-                        .overlay(Image(systemName: "photo").foregroundColor(.nbTextTertiary))
-                }
-            }
-            .frame(height: tall ? 200 : 180)
-
-            // Gradient overlay
-            NBGradient.workOverlay
-
-            // Top pills
-            VStack {
-                HStack(spacing: Spacing.xs) {
-                    // Tech pill
-                    if let tech = work.technician {
-                        HStack(spacing: 4) {
-                            Circle()
-                                .fill(Color.white.opacity(0.3))
-                                .frame(width: 18, height: 18)
-                                .overlay(
-                                    Text(String(tech.name?.first ?? "?"))
-                                        .font(.system(size: 9))
-                                        .foregroundColor(.white)
-                                )
-                            Text(tech.name ?? "")
-                                .font(.system(size: 10))
-                                .fontWeight(.medium)
-                                .foregroundColor(.white)
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.black.opacity(0.32))
-                        .cornerRadius(Radius.pill)
-                    }
-                    Spacer()
-                    // Like pill
-                    HStack(spacing: 3) {
-                        Image(systemName: "heart.fill")
-                            .font(.system(size: 10))
-                            .foregroundColor(.white)
-                        Text("\(work.likeCount ?? 0)")
-                            .font(.system(size: 10))
-                            .foregroundColor(.white)
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.black.opacity(0.32))
-                    .cornerRadius(Radius.pill)
-                }
-                Spacer()
-            }
-            .padding(8)
-
-            // Bottom info
-            VStack(alignment: .leading, spacing: 3) {
-                Text(work.title ?? "")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                if let tags = work.tags, !tags.isEmpty {
-                    HStack(spacing: 4) {
-                        ForEach(tags.prefix(2), id: \.self) { tag in
-                            Text("#\(tag)")
-                                .font(.system(size: 9))
-                                .foregroundColor(.white.opacity(0.9))
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.white.opacity(0.16))
-                                .cornerRadius(8)
-                        }
-                    }
-                }
-                HStack {
-                    if let date = work.createdAt {
-                        Text(formatShortDate(date))
-                            .font(.system(size: 9))
-                            .foregroundColor(.white.opacity(0.52))
-                    }
-                    Spacer()
-                    Text("查看详情")
-                        .font(.system(size: 10))
-                        .foregroundColor(.white.opacity(0.78))
-                }
-            }
-            .padding(8)
-        }
-        .cornerRadius(Radius.md)
-        .clipped()
-        .shadow(color: NBColors.ink.opacity(0.08), radius: 8, y: 2)
-    }
-
-    private func formatShortDate(_ iso: String) -> String {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        guard let date = f.date(from: iso) else { return "" }
-        let df = DateFormatter()
-        df.dateFormat = "MM/dd"
-        return df.string(from: date)
-    }
+#Preview {
+    ClientHomeView()
 }

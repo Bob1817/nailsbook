@@ -1,240 +1,107 @@
 import SwiftUI
 
-// MARK: - Services Management
-
 struct TechnicianServicesView: View {
     @State private var services: [TechnicianService] = []
-    @State private var isLoading = true
-    @State private var showCreate = false
-
+    @State private var editing: TechnicianService?
+    @State private var creating = false
+    @State private var deleting: TechnicianService?
+    @State private var busy = false
+    @State private var error: String?
     var body: some View {
-        NavigationStack {
-            Group {
-                if isLoading {
-                    NBLoadingView()
-                } else if services.isEmpty {
-                    NBEmptyState(icon: "list.bullet.rectangle", title: "暂无服务项目", message: "添加你提供的美甲服务")
-                } else {
-                    List(services) { service in
-                        ServiceRow(service: service,
-                                  onToggle: { Task { await toggleService(service.id) } },
-                                  onDelete: { Task { await deleteService(service.id) } })
-                    }
-                    .listStyle(.plain)
+        List {
+            ForEach(services) { service in
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(service.name).font(.headline)
+                    Text("¥\(service.price ?? 0, specifier: "%.2f") · \(service.durationMinutes ?? 0) 分钟")
+                    Text(service.isActive ? "可预约" : "已停用").font(.footnote)
+                    HStack {
+                        Button("编辑") { editing = service }
+                        Spacer()
+                        Button(service.isActive ? "停用" : "启用") { mutate(.toggleService(id: service.id)) }
+                        Button("删除", role: .destructive) { deleting = service }
+                    }.buttonStyle(.borderless).frame(minHeight: 44)
                 }
             }
-            .navigationTitle("服务项目")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button { showCreate = true } label: {
-                        Image(systemName: "plus")
-                    }
-                }
-            }
-            .background(Color.nbBg)
-            .task { await loadServices() }
-            .refreshable { await loadServices() }
-            .sheet(isPresented: $showCreate) {
-                EditServiceView(service: nil) { await loadServices() }
-            }
+            if let error { Text(error); Button("重试") { Task { await load() } } }
+            if busy { ProgressView() }
+        }
+        .disabled(busy)
+        .navigationTitle("服务项目")
+        .toolbar { Button("添加") { creating = true } }
+        .task { await load() }
+        .refreshable { await load() }
+        .sheet(isPresented: $creating) { EditServiceView(service: nil) { await load() } }
+        .sheet(item: $editing) { service in EditServiceView(service: service) { await load() } }
+        .confirmationDialog("确认删除服务项目？", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }), titleVisibility: .visible) {
+            Button("删除", role: .destructive) { if let deleting { mutate(.deleteService(id: deleting.id)) } }
         }
     }
-
-    private func loadServices() async {
-        do {
-            services = try await APIClient.shared.request(.services)
-            isLoading = false
-        } catch { isLoading = false }
+    private func load() async {
+        busy = true
+        defer { busy = false }
+        do { services = try await APIClient.shared.request(.services); error = nil }
+        catch { self.error = error.localizedDescription }
     }
-
-    private func toggleService(_ id: Int) async {
-        do {
-            _ = try await APIClient.shared.requestVoid(.toggleService(id: id))
-            await loadServices()
-        } catch {}
-    }
-
-    private func deleteService(_ id: Int) async {
-        do {
-            _ = try await APIClient.shared.requestVoid(.deleteService(id: id))
-            await loadServices()
-        } catch {}
-    }
-}
-
-struct ServiceRow: View {
-    let service: TechnicianService
-    var onToggle: (() -> Void)?
-    var onDelete: (() -> Void)?
-
-    var body: some View {
-        HStack(spacing: Spacing.md) {
-            VStack(alignment: .leading, spacing: Spacing.xs) {
-                Text(service.name)
-                    .font(NBFont.bodyLarge)
-                    .foregroundColor(.nbTextPrimary)
-                if let desc = service.description, !desc.isEmpty {
-                    Text(desc)
-                        .font(NBFont.captionLarge)
-                        .foregroundColor(.nbTextSecondary)
-                        .lineLimit(1)
-                }
-                HStack(spacing: Spacing.md) {
-                    if let price = service.price {
-                        Text("¥\(String(format: "%.0f", price))")
-                            .font(NBFont.bodyMedium)
-                            .foregroundColor(.nbPrimary)
-                    }
-                    if let duration = service.duration {
-                        Text("\(duration)分钟")
-                            .font(NBFont.captionLarge)
-                            .foregroundColor(.nbTextTertiary)
-                    }
-                    if let category = service.category {
-                        NBChip(title: category, color: .nbInfo)
-                    }
-                }
-            }
-            Spacer()
-            Button {
-                onToggle?()
-            } label: {
-                Image(systemName: service.isActive ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(service.isActive ? .nbSuccess : .nbTextTertiary)
-                    .font(.system(size: 22))
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.vertical, Spacing.xs)
-        .listRowBackground(Color.nbSurface)
-        .swipeActions(edge: .trailing) {
-            Button(role: .destructive) { onDelete?() } label: {
-                Label("删除", systemImage: "trash")
-            }
-            NavigationLink { EditServiceView(service: service) {} } label: {
-                Label("编辑", systemImage: "pencil")
-            }
-            .tint(.nbInfo)
+    private func mutate(_ endpoint: Endpoint) {
+        guard !busy else { return }
+        busy = true
+        Task {
+            defer { busy = false }
+            do { try await APIClient.shared.requestVoid(endpoint); await load() }
+            catch { self.error = error.localizedDescription }
         }
     }
 }
-
-// MARK: - Edit Service
 
 struct EditServiceView: View {
     let service: TechnicianService?
-    var onSave: (() async -> Void)?
-
-    @Environment(\.dismiss) var dismiss
+    let onSave: () async -> Void
+    @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var description = ""
-    @State private var priceText = ""
-    @State private var durationText = ""
-    @State private var category = ""
-    @State private var isSaving = false
-
-    private let categories = ["基础护理", "色彩美甲", "延伸美甲", "卸甲", "其他"]
-
+    @State private var price = ""
+    @State private var duration = 60
+    @State private var category = "basic_care"
+    @State private var busy = false
+    @State private var error: String?
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: Spacing.lg) {
-                    NBCard {
-                        VStack(alignment: .leading, spacing: Spacing.md) {
-                            Text("服务名称")
-                                .font(NBFont.titleSmall)
-                            NBTextField(placeholder: "如：基础美甲护理", text: $name)
-                        }
-                    }
-
-                    NBCard {
-                        VStack(alignment: .leading, spacing: Spacing.md) {
-                            Text("服务描述")
-                                .font(NBFont.titleSmall)
-                            TextEditor(text: $description)
-                                .font(NBFont.bodyMedium)
-                                .frame(height: 80)
-                                .padding(Spacing.sm)
-                                .background(Color.nbSurfaceAlt)
-                                .cornerRadius(Radius.sm)
-                        }
-                    }
-
-                    NBCard {
-                        VStack(alignment: .leading, spacing: Spacing.md) {
-                            Text("价格与时长")
-                                .font(NBFont.titleSmall)
-                            HStack(spacing: Spacing.md) {
-                                NBTextField(placeholder: "价格(元)", text: $priceText, keyboardType: .decimalPad)
-                                NBTextField(placeholder: "时长(分钟)", text: $durationText, keyboardType: .numberPad)
-                            }
-                        }
-                    }
-
-                    NBCard {
-                        VStack(alignment: .leading, spacing: Spacing.md) {
-                            Text("分类")
-                                .font(NBFont.titleSmall)
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: Spacing.sm) {
-                                    ForEach(categories, id: \.self) { cat in
-                                        NBChip(title: cat, isSelected: category == cat)
-                                            .onTapGesture { category = cat }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    NBButton(title: service == nil ? "添加服务" : "保存修改", style: .primary, isLoading: isSaving) {
-                        save()
-                    }
+            Form {
+                TextField("服务名称", text: $name)
+                TextField("服务描述", text: $description, axis: .vertical)
+                TextField("价格（元）", text: $price).keyboardType(.decimalPad)
+                Stepper("时长 \(duration) 分钟", value: $duration, in: 1...1440)
+                Picker("分类", selection: $category) {
+                    Text("基础护理").tag("basic_care")
+                    Text("色彩款式").tag("color_style")
+                    Text("延长加固").tag("extension_reinforcement")
+                    Text("卸甲").tag("removal")
                 }
-                .padding(Spacing.lg)
+                if let error { Text(error) }
+                Button("保存") { Task { await save() } }.frame(minHeight: 44)
+                if busy { ProgressView() }
             }
+            .disabled(busy)
             .navigationTitle(service == nil ? "添加服务" : "编辑服务")
-            .navigationBarTitleDisplayMode(.inline)
-            .background(Color.nbBg)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") { dismiss() }
-                }
-            }
-            .onAppear { loadExisting() }
-        }
-    }
-
-    private func loadExisting() {
-        guard let s = service else { return }
-        name = s.name
-        description = s.description ?? ""
-        if let p = s.price { priceText = String(format: "%.0f", p) }
-        if let d = s.duration { durationText = "\(d)" }
-        category = s.category ?? ""
-    }
-
-    private func save() {
-        guard !name.isEmpty else { return }
-        isSaving = true
-
-        var params: [String: Any] = ["name": name]
-        if !description.isEmpty { params["description"] = description }
-        if let price = Double(priceText) { params["price"] = price }
-        if let duration = Int(durationText) { params["duration"] = duration }
-        if !category.isEmpty { params["category"] = category }
-
-        Task {
-            do {
-                if let s = service {
-                    _ = try await APIClient.shared.requestVoid(.updateService(id: s.id, params: params))
-                } else {
-                    _ = try await APIClient.shared.requestVoid(.createService(params: params))
-                }
-                await onSave?()
-                dismiss()
-            } catch {
-                isSaving = false
+            .toolbar { Button("关闭") { dismiss() }.disabled(busy) }
+            .onAppear {
+                name = service?.name ?? ""; description = service?.description ?? ""
+                price = service?.price.map { String(format: "%.2f", $0) } ?? ""
+                duration = service?.durationMinutes ?? 60; category = service?.category ?? "basic_care"
             }
         }
+    }
+    private func save() async {
+        guard !busy else { return }
+        guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, let fen = OrderMoney.fen(price) else {
+            error = "请填写服务名称和有效价格"; return
+        }
+        busy = true
+        defer { busy = false }
+        let body: [String: Any] = ["name": name, "description": description, "price": Double(fen) / 100, "durationMinutes": duration, "category": category]
+        do {
+            try await APIClient.shared.requestVoid(service.map { .updateService(id: $0.id, params: body) } ?? .createService(params: body))
+            await onSave(); dismiss()
+        } catch { self.error = error.localizedDescription }
     }
 }

@@ -6,6 +6,7 @@ struct ShopManagementView: View {
     @State private var shops: [ShopAddress] = []
     @State private var isLoading = true
     @State private var showAdd = false
+    @State private var error: String?
 
     var body: some View {
         List {
@@ -34,13 +35,13 @@ struct ShopManagementView: View {
                 }
             } else {
                 ForEach(shops) { shop in
-                    ShopRow(shop: shop)
-                }
-                .onDelete { indexSet in
-                    for index in indexSet {
-                        shops.remove(at: index)
+                    NavigationLink(destination: EditShopView(shop: shop, onSave: { saved in
+                        Task { await loadShops() }
+                    })) {
+                        ShopRow(shop: shop)
                     }
                 }
+                .onDelete(perform: deleteShops)
             }
         }
         .navigationTitle("门店管理")
@@ -52,7 +53,60 @@ struct ShopManagementView: View {
             }
         }
         .sheet(isPresented: $showAdd) {
-            EditShopView(shop: nil)
+            EditShopView(shop: nil, onSave: { _ in
+                Task { await loadShops() }
+            })
+        }
+        .task { await loadShops() }
+        .alert("错误", isPresented: .constant(error != nil)) {
+            Button("确定") { error = nil }
+        } message: {
+            Text(error ?? "")
+        }
+    }
+
+    private func loadShops() async {
+        do {
+            let profile: TechnicianProfile = try await APIClient.shared.request(.technicianShops)
+            shops = profile.shopAddresses ?? []
+            isLoading = false
+        } catch {
+            isLoading = false
+            self.error = error.localizedDescription
+        }
+    }
+
+    private func deleteShops(at offsets: IndexSet) {
+        let shopsToDelete = offsets.map { shops[$0] }
+        guard let first = shopsToDelete.first else { return }
+
+        Task {
+            do {
+                let remaining = shops.filter { shop in
+                    !offsets.contains(shops.firstIndex(where: { $0.id == shop.id }) ?? -1)
+                }
+                let shopData = remaining.map { shop -> [String: Any] in
+                    var dict: [String: Any] = [
+                        "id": shop.id,
+                        "name": shop.name,
+                        "detailAddress": shop.detailAddress,
+                        "enabled": shop.enabled
+                    ]
+                    if let province = shop.province { dict["province"] = province }
+                    if let city = shop.city { dict["city"] = city }
+                    if let district = shop.district { dict["district"] = district }
+                    if let lat = shop.latitude { dict["latitude"] = lat }
+                    if let lng = shop.longitude { dict["longitude"] = lng }
+                    if let phone = shop.phone { dict["phone"] = phone }
+                    return dict
+                }
+                let hasEnabled = remaining.contains(where: { $0.enabled })
+                try await APIClient.shared.requestVoid(.updateShopAddresses(shops: shopData, shopService: hasEnabled))
+                shops = remaining
+            } catch {
+                self.error = error.localizedDescription
+                await loadShops()
+            }
         }
     }
 }
@@ -62,14 +116,26 @@ struct ShopRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
-            Text(shop.name)
-                .font(NBFont.bodyLarge)
-                .foregroundColor(.nbTextPrimary)
+            HStack {
+                Text(shop.name)
+                    .font(NBFont.bodyLarge)
+                    .foregroundColor(.nbTextPrimary)
+                Spacer()
+                if !shop.enabled {
+                    Text("已关闭")
+                        .font(NBFont.captionSmall)
+                        .foregroundColor(.nbTextTertiary)
+                        .padding(.horizontal, Spacing.xs)
+                        .padding(.vertical, 2)
+                        .background(Color.nbSecondarySoft)
+                        .cornerRadius(Radius.sm)
+                }
+            }
             Text(shop.address)
                 .font(NBFont.captionLarge)
                 .foregroundColor(.nbTextSecondary)
-            if let hours = shop.businessHours {
-                Text(hours)
+            if let phone = shop.phone, !phone.isEmpty {
+                Text(phone)
                     .font(NBFont.captionMedium)
                     .foregroundColor(.nbTextTertiary)
             }
@@ -78,13 +144,22 @@ struct ShopRow: View {
     }
 }
 
+// MARK: - Edit Shop View
+
 struct EditShopView: View {
     let shop: ShopAddress?
+    let onSave: (ShopAddress) -> Void
     @Environment(\.dismiss) var dismiss
+
     @State private var name = ""
-    @State private var address = ""
-    @State private var businessHours = ""
+    @State private var province = ""
+    @State private var city = ""
+    @State private var district = ""
+    @State private var detailAddress = ""
     @State private var phone = ""
+    @State private var enabled = true
+    @State private var saving = false
+    @State private var error: String?
 
     var body: some View {
         NavigationStack {
@@ -95,14 +170,29 @@ struct EditShopView: View {
                             Text("门店信息")
                                 .font(NBFont.titleSmall)
                             NBTextField(placeholder: "门店名称", text: $name)
-                            NBTextField(placeholder: "详细地址", text: $address)
-                            NBTextField(placeholder: "营业时间（如：10:00-20:00）", text: $businessHours)
+                            NBTextField(placeholder: "省份", text: $province)
+                            NBTextField(placeholder: "城市", text: $city)
+                            NBTextField(placeholder: "区/县", text: $district)
+                            NBTextField(placeholder: "详细地址", text: $detailAddress)
                             NBTextField(placeholder: "联系电话", text: $phone, keyboardType: .phonePad)
                         }
                     }
-                    NBButton(title: "保存", style: .primary) {
-                        dismiss()
+
+                    NBCard {
+                        Toggle("启用门店", isOn: $enabled)
+                            .font(NBFont.bodyMedium)
                     }
+
+                    if let error {
+                        Text(error)
+                            .font(NBFont.captionMedium)
+                            .foregroundColor(.nbError)
+                    }
+
+                    NBButton(title: saving ? "保存中..." : "保存", style: .primary) {
+                        Task { await save() }
+                    }
+                    .disabled(saving || name.isEmpty || detailAddress.isEmpty)
                 }
                 .padding(Spacing.lg)
             }
@@ -115,15 +205,98 @@ struct EditShopView: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .onAppear {
+            if let shop = shop {
+                name = shop.name
+                province = shop.province ?? ""
+                city = shop.city ?? ""
+                district = shop.district ?? ""
+                detailAddress = shop.detailAddress
+                phone = shop.phone ?? ""
+                enabled = shop.enabled
+            }
+        }
     }
-}
 
-// Simple shop model
-struct ShopAddress: Identifiable {
-    let id = UUID()
-    var name: String
-    var address: String
-    var businessHours: String?
-    var phone: String?
+    private func save() async {
+        saving = true
+        error = nil
+
+        do {
+            // Get current shops
+            let profile: TechnicianProfile = try await APIClient.shared.request(.technicianShops)
+            var currentShops = profile.shopAddresses ?? []
+
+            let shopId = shop?.id ?? UUID().uuidString
+            let shopData: [String: Any] = {
+                var dict: [String: Any] = [
+                    "id": shopId,
+                    "name": name.trimmingCharacters(in: .whitespaces),
+                    "detailAddress": detailAddress.trimmingCharacters(in: .whitespaces),
+                    "enabled": enabled
+                ]
+                if !province.isEmpty { dict["province"] = province }
+                if !city.isEmpty { dict["city"] = city }
+                if !district.isEmpty { dict["district"] = district }
+                if !phone.isEmpty { dict["phone"] = phone }
+                if let lat = shop?.latitude { dict["latitude"] = lat }
+                if let lng = shop?.longitude { dict["longitude"] = lng }
+                return dict
+            }()
+
+            if let index = currentShops.firstIndex(where: { $0.id == shopId }) {
+                currentShops[index] = ShopAddress(
+                    id: shopId,
+                    name: name.trimmingCharacters(in: .whitespaces),
+                    province: province.isEmpty ? nil : province,
+                    city: city.isEmpty ? nil : city,
+                    district: district.isEmpty ? nil : district,
+                    detailAddress: detailAddress.trimmingCharacters(in: .whitespaces),
+                    latitude: shop?.latitude,
+                    longitude: shop?.longitude,
+                    phone: phone.isEmpty ? nil : phone,
+                    enabled: enabled,
+                    businessHours: shop?.businessHours,
+                    guidance: shop?.guidance
+                )
+            } else {
+                currentShops.append(ShopAddress(
+                    id: shopId,
+                    name: name.trimmingCharacters(in: .whitespaces),
+                    province: province.isEmpty ? nil : province,
+                    city: city.isEmpty ? nil : city,
+                    district: district.isEmpty ? nil : district,
+                    detailAddress: detailAddress.trimmingCharacters(in: .whitespaces),
+                    phone: phone.isEmpty ? nil : phone,
+                    enabled: enabled
+                ))
+            }
+
+            let shopArray = currentShops.map { s -> [String: Any] in
+                var dict: [String: Any] = [
+                    "id": s.id,
+                    "name": s.name,
+                    "detailAddress": s.detailAddress,
+                    "enabled": s.enabled
+                ]
+                if let p = s.province { dict["province"] = p }
+                if let c = s.city { dict["city"] = c }
+                if let d = s.district { dict["district"] = d }
+                if let lat = s.latitude { dict["latitude"] = lat }
+                if let lng = s.longitude { dict["longitude"] = lng }
+                if let ph = s.phone { dict["phone"] = ph }
+                return dict
+            }
+            let hasEnabled = currentShops.contains(where: { $0.enabled })
+
+            try await APIClient.shared.requestVoid(.updateShopAddresses(shops: shopArray, shopService: hasEnabled))
+
+            saving = false
+            onSave(currentShops.last ?? ShopAddress(id: shopId, name: name, detailAddress: detailAddress, enabled: enabled))
+            dismiss()
+        } catch {
+            saving = false
+            self.error = error.localizedDescription
+        }
+    }
 }

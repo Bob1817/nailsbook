@@ -7,12 +7,37 @@ struct TechnicianScheduleView: View {
     @State private var orders: [Order] = []
     @State private var isLoading = true
     @State private var weekDates: [Date] = []
+    @State private var bookingDays: [BookingDay] = []
+    @State private var dayAccepting = true
+    @State private var savingBookingDay = false
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 // Week calendar
                 weekCalendar
+
+                Divider()
+
+                // Day accepting toggle
+                if !bookingDays.isEmpty {
+                    HStack {
+                        Text(dayAccepting ? "当日接受预约" : "当日停止接单")
+                            .font(NBFont.bodyMedium)
+                            .foregroundColor(dayAccepting ? .nbSuccess : .nbTextTertiary)
+                        Spacer()
+                        Toggle("", isOn: $dayAccepting)
+                            .labelsHidden()
+                            .tint(.nbPrimary)
+                            .onChange(of: dayAccepting) { _ in
+                                Task { await toggleBookingDay() }
+                            }
+                            .disabled(savingBookingDay || isDatePast)
+                    }
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.vertical, Spacing.sm)
+                    .background(Color.nbSurface)
+                }
 
                 Divider()
 
@@ -39,9 +64,13 @@ struct TechnicianScheduleView: View {
             .background(Color.nbBg)
             .task {
                 buildWeekDates()
+                await loadBookingDays()
                 await loadOrders()
             }
-            .refreshable { await loadOrders() }
+            .refreshable {
+                await loadBookingDays()
+                await loadOrders()
+            }
         }
     }
 
@@ -63,6 +92,7 @@ struct TechnicianScheduleView: View {
                 ForEach(weekDates, id: \.self) { date in
                     Button {
                         selectedDate = date
+                        updateDayAccepting()
                         Task { await loadOrders() }
                     } label: {
                         VStack(spacing: Spacing.xs) {
@@ -180,6 +210,17 @@ struct TechnicianScheduleView: View {
         }
     }
 
+    private var isDatePast: Bool {
+        let calendar = Calendar.current
+        return calendar.startOfDay(for: selectedDate) < calendar.startOfDay(for: Date())
+    }
+
+    private var selectedDateKey: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: selectedDate)
+    }
+
     private func orderCount(for date: Date) -> Int {
         orders.filter { order in
             guard let start = order.startTime else { return false }
@@ -238,10 +279,38 @@ struct TechnicianScheduleView: View {
         }
     }
 
+    private func updateDayAccepting() {
+        let day = bookingDays.first { $0.serviceDate == selectedDateKey }
+        dayAccepting = day?.accepting ?? true
+    }
+
+    private func loadBookingDays() async {
+        do {
+            let response: BookingDaysResponse = try await APIClient.shared.request(.bookingDaysList)
+            bookingDays = response.days ?? []
+            updateDayAccepting()
+        } catch {}
+    }
+
     private func loadOrders() async {
         do {
             orders = try await APIClient.shared.request(.technicianOrders(status: nil, customerId: nil))
             isLoading = false
         } catch { isLoading = false }
+    }
+
+    private func toggleBookingDay() async {
+        guard !savingBookingDay else { return }
+        savingBookingDay = true
+        do {
+            let day = bookingDays.first { $0.serviceDate == selectedDateKey }
+            let version = day?.version ?? 0
+            _ = try await APIClient.shared.requestVoid(.bookingDayUpdate(date: selectedDateKey, accepting: dayAccepting, version: version))
+            savingBookingDay = false
+            await loadBookingDays()
+        } catch {
+            savingBookingDay = false
+            dayAccepting.toggle()
+        }
     }
 }

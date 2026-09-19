@@ -16,6 +16,7 @@ Component({
     canComment: { type: Boolean, value: true },
     canShare: { type: Boolean, value: true },
     sharePath: { type: String, value: '' },
+    isLoggedIn: { type: Boolean, value: false },
     canRetryShare: { type: Boolean, value: false },
     commentText: { type: String, value: '' },
     submittingComment: { type: Boolean, value: false },
@@ -51,6 +52,16 @@ Component({
       if (!this.properties.canShare && this.properties.canRetryShare) this.triggerEvent('shareretry');
     },
     onSwiperChange(e) { this.setData({ currentImageIndex: e.detail.current }); },
+    navigateToShop(e) {
+      const index = e.currentTarget.dataset.index;
+      const shops = (this.data.visitorInfo && this.data.visitorInfo.shops) || [];
+      const shop = shops[index];
+      if (!shop) return;
+      const lat = parseFloat(shop.latitude) || 0;
+      const lng = parseFloat(shop.longitude) || 0;
+      if (!lat && !lng) { wx.showToast({ title: '暂无导航信息', icon: 'none' }); return; }
+      wx.openLocation({ latitude: lat, longitude: lng, name: shop.name || '工作室', address: shop.address || '', scale: 18 });
+    },
     previewImage(e) { wx.previewImage({ current: e.currentTarget.dataset.url, urls: this.properties.imageUrls }); },
     onKeyboardHeightChange(e) { this.setData({ keyboardHeight: Math.max(0, Number(e.detail.height) || 0) }); },
     onInputBlur() { this.setData({ keyboardHeight: 0, inputFocused: false }); },

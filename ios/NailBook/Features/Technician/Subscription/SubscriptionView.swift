@@ -128,8 +128,13 @@ struct SubscriptionView: View {
 
     private func loadPlans() async {
         do {
-            plans = try await APIClient.shared.request(.technicianOrders(status: nil, customerId: nil))
-            // This is a placeholder - the actual endpoint would be different
+            async let plansRequest: [SubscriptionPlan] = APIClient.shared.request(.subscriptionPlans)
+            async let currentRequest: TechnicianSubscription? = try? APIClient.shared.request(.subscriptionCurrent)
+
+            plans = (try? await plansRequest) ?? []
+            if let current = try? await currentRequest {
+                currentPlan = current.plan
+            }
             isLoading = false
         } catch { isLoading = false }
     }

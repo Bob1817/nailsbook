@@ -1,28 +1,5 @@
 <nav-bar title="服务管理" showBack/>
 <view class="container">
-  <view class="svc-card">
-    <view class="form-item"><text class="label">预约定金</text><picker range="{{depositModes}}" value="{{depositModeIndex}}" bindchange="onDepositMode"><view class="input form-input">{{depositModes[depositModeIndex]}}</view></picker></view>
-    <view wx:if="{{depositModeIndex > 0}}" class="form-item"><text class="label">{{depositModeIndex === 2 ? '最终总价比例（%）' : '固定定金（元）'}}</text><input class="input form-input" type="digit" value="{{depositInput}}" bindinput="onDepositInput" placeholder="0" placeholder-class="form-placeholder" /></view>
-    <text class="form-helper">未设置为 0；比例按含附加费、扣除优惠后的最终总价计算，确认预约时可修改。</text>
-    <button class="booking-action btn-save" bindtap="savePricingSettings" disabled="{{pricingSaving}}">保存定金设置</button>
-  </view>
-
-  <view class="svc-card loyalty-card">
-    <view class="loyalty-head"><view><text class="label">会员等级与权益</text><text class="form-helper">仅对你的客户生效</text></view><switch checked="{{loyaltyEnabled}}" bindchange="toggleLoyalty" color="#111111" /></view>
-    <view class="form-item"><text class="label">每实付 1 元赠送积分</text><input class="input form-input" type="digit" value="{{pointsPerYuan}}" bindinput="onPointsRate" placeholder="0" placeholder-class="form-placeholder" /></view>
-    <view wx:for="{{loyaltyTiers}}" wx:key="id" class="loyalty-tier">
-      <view class="loyalty-tier-head"><text>等级 {{index + 1}}</text><text class="tier-remove" bindtap="removeLoyaltyTier" data-index="{{index}}">删除</text></view>
-      <input class="input form-input" value="{{item.name}}" bindinput="updateLoyaltyTier" data-index="{{index}}" data-field="name" placeholder="等级名称，如银卡会员" placeholder-class="form-placeholder" />
-      <picker range="{{thresholdTypes}}" value="{{item.thresholdTypeIndex}}" bindchange="updateTierType" data-index="{{index}}"><view class="input form-input">升级依据：{{thresholdTypes[item.thresholdTypeIndex]}}</view></picker>
-      <input class="input form-input" type="digit" value="{{item.thresholdValue}}" bindinput="updateLoyaltyTier" data-index="{{index}}" data-field="thresholdValue" placeholder="达到数值" placeholder-class="form-placeholder" />
-      <input class="input form-input" type="digit" value="{{item.discountPercent}}" bindinput="updateLoyaltyTier" data-index="{{index}}" data-field="discountPercent" placeholder="折扣减免比例，如 10" placeholder-class="form-placeholder" />
-      <input class="input form-input" value="{{item.benefitsText}}" bindinput="updateLoyaltyTier" data-index="{{index}}" data-field="benefitsText" placeholder="权益，用顿号分隔" placeholder-class="form-placeholder" />
-    </view>
-    <button class="booking-action loyalty-add" bindtap="addLoyaltyTier">添加会员等级</button>
-    <button class="booking-action btn-save" bindtap="saveLoyaltySettings" disabled="{{loyaltySaving}}">保存会员权益</button>
-  </view>
-
-
   <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
 
   <view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
@@ -83,6 +60,11 @@
             <view class="svc-duration-value"><text class="svc-duration-number">{{item.durationMinutes || '待设置'}}</text><text class="svc-duration-unit">分钟</text></view>
           </view>
         </view>
+        <view wx:if="{{item.depositMode && item.depositMode !== 'none'}}" class="svc-deposit-info">
+          <text class="svc-deposit-label">定金</text>
+          <text class="svc-deposit-value">¥{{item.depositAmountText}}</text>
+          <text wx:if="{{item.depositMode === 'percentage'}}" class="svc-deposit-ratio">（{{item.depositPercentText}}%）</text>
+        </view>
       </view>
     </view>
   </view>
@@ -123,6 +105,33 @@
     </view>
 
     <text class="form-helper">客户预约时可多选服务，系统会按这里的价格自动累加。</text>
+
+    <view class="form-item">
+      <text class="label">定金设置</text>
+      <view class="deposit-options">
+        <view class="deposit-option {{form.depositMode === 'none' ? 'deposit-option-active' : ''}}" bindtap="onDepositModeSelect" data-mode="none">
+          <view class="deposit-radio {{form.depositMode === 'none' ? 'deposit-radio-active' : ''}}"></view>
+          <text>无定金</text>
+        </view>
+        <view class="deposit-option {{form.depositMode === 'fixed' ? 'deposit-option-active' : ''}}" bindtap="onDepositModeSelect" data-mode="fixed">
+          <view class="deposit-radio {{form.depositMode === 'fixed' ? 'deposit-radio-active' : ''}}"></view>
+          <text>一口价</text>
+        </view>
+        <view class="deposit-option {{form.depositMode === 'percentage' ? 'deposit-option-active' : ''}}" bindtap="onDepositModeSelect" data-mode="percentage">
+          <view class="deposit-radio {{form.depositMode === 'percentage' ? 'deposit-radio-active' : ''}}"></view>
+          <text>按比例</text>
+        </view>
+      </view>
+    </view>
+    <view wx:if="{{form.depositMode === 'fixed'}}" class="form-item">
+      <text class="label">定金金额（元）</text>
+      <input placeholder-class="form-placeholder" class="input form-input" type="digit" placeholder="输入定金金额，需大于0" value="{{form.depositValue}}" data-field="depositValue" bindinput="onFormInput" confirm-type="done" />
+    </view>
+    <view wx:if="{{form.depositMode === 'percentage'}}" class="form-item">
+      <text class="label">定金比例</text>
+      <input placeholder-class="form-placeholder" class="input form-input" type="digit" placeholder="输入比例，如 0.5 表示 50%" value="{{form.depositPercent}}" data-field="depositPercent" bindinput="onDepositPercentInput" confirm-type="done" />
+      <text class="form-helper">大于 0 小于 1，1 即为 100%。例如输入 0.3 表示收取服务价格的 30% 作为定金。</text>
+    </view>
 
     <view class="form-item">
       <text class="label">描述（选填）</text>

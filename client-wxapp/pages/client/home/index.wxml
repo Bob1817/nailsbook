@@ -92,19 +92,6 @@
     </view>
   </view>
 
-  <view class="section style-section">
-    <view class="section-header">
-      <text class="section-title">热门风格</text>
-      <view class="section-more semantic-link" bindtap="navigateToWorks">查看全部 ›</view>
-    </view>
-    <text class="section-sub">按你的场景，快速找到下一款灵感</text>
-    <scroll-view class="style-scroll" scroll-x enhanced show-scrollbar="{{false}}">
-      <view class="style-row">
-        <view wx:for="{{popularStyles}}" wx:key="*this" class="style-chip" bindtap="viewStyle" data-style="{{item}}">{{item}}</view>
-      </view>
-    </scroll-view>
-  </view>
-
   <!-- 精选作品 -->
   <view class="section">
     <view class="section-header">

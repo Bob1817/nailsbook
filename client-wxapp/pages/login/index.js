@@ -32,6 +32,9 @@ Page({
     this.setData({ invitationRegistration: !!this.inviteCode });
     this.registrationSource = options.source === 'card' ? 'card' : 'invite';
     this.quickBookingTechId = options.quickBookingTechId ? Number(options.quickBookingTechId) : undefined;
+    // 作品详情页跳转登录时携带的美甲师ID和操作类型
+    this.autoBindTechId = options.techId ? Number(options.techId) : undefined;
+    this.postLoginAction = options.action || ''; // 'chat' | 'works' | ''
     if (options.referral) {
       this.referralToken = options.referral;
       wx.setStorageSync('pending_referral_token', options.referral);
@@ -150,10 +153,6 @@ Page({
     this.setData({ step: 'phone', phone: '', password: '', phoneValid: false, showPassword: false });
   },
 
-  browseAsGuest() {
-    wx.reLaunch({ url: '/pages/client/discover/index' });
-  },
-
   goBackToWechat() {
     this.setData({ step: 'wechat', password: '', showPassword: false });
   },
@@ -175,17 +174,33 @@ Page({
     this.setData({ showPassword: !this.data.showPassword });
   },
 
-  /** 忘记密码 — 跳转到找回密码页 */
-  goForgotPassword() {
-    wx.navigateTo({
-      url: '/pages/forgot-password/index?phone=' + (this.data.phoneValid ? this.data.phone : '')
-    });
+  /** 忘记密码 — 按账号角色跳转对应分包的找回密码页（验证码按角色隔离） */
+  async goForgotPassword() {
+    const phone = this.data.phoneValid ? this.data.phone : '';
+    if (!phone) {
+      wx.navigateTo({ url: '/pages/client/forgot-password/index' });
+      return;
+    }
+    let role = 'client';
+    try {
+      const checks = await Promise.all([
+        api.auth.checkPhone(phone, 'client'),
+        api.auth.checkPhone(phone, 'technician')
+      ]);
+      if (!checks[0].exists && checks[1].exists) role = 'technician';
+    } catch (e) {
+      // 识别失败时按客户处理，与手机号登录的默认角色一致
+    }
+    wx.navigateTo({ url: `/pages/${role}/forgot-password/index?phone=${phone}` });
   },
 
   /** 注册账号 — 跳转到注册页 */
   goRegister() {
+    const invite = this.inviteCode ? '&invite=' + encodeURIComponent(this.inviteCode) : '';
+    const redirect = this.redirect ? '&redirect=' + encodeURIComponent(this.redirect) : '';
+    const source = '&source=' + this.registrationSource;
     wx.navigateTo({
-      url: '/pages/register/index?phone=' + (this.data.phoneValid ? this.data.phone : '')
+      url: '/pages/register/index?phone=' + (this.data.phoneValid ? this.data.phone : '') + invite + redirect + source
     });
   },
 

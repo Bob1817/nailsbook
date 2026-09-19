@@ -1,5 +1,6 @@
 /* ===== 页面根 ===== */
 @import '../../../styles/technician-relationship.wxss';
+@import '../../../styles/booking-actions.wxss';
 
 page {
   background: var(--bg-page);
@@ -156,11 +157,346 @@ page {
   display: block;
 }
 
-/* ===== 我的美甲师 ===== */
+/* ===== 美甲师轮播卡片 ===== */
 
+.tech-carousel-section {
+  margin: 0 -32rpx; /* Bleed out to screen edges */
+  overflow: hidden;
+  position: relative;
+}
 
-.tech-head-titles { flex: 1; min-width: 0; }
-.tech-head-title-row { display: flex; align-items: center; gap: 12rpx; }
+/* Right fade gradient hint for multi-card swipe */
+.tech-carousel-section::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 64rpx;
+  background: linear-gradient(to right, transparent, var(--nb-surface));
+  pointer-events: none;
+  z-index: 1;
+}
+
+.tech-carousel-section-single::after {
+  display: none;
+}
+
+.tech-carousel {
+  width: 100%;
+  white-space: nowrap;
+  padding: 0 32rpx; /* First/last card edge spacing */
+}
+
+.tech-carousel-track {
+  display: inline-flex;
+  gap: 24rpx;
+}
+
+.tech-carousel-card {
+  flex-shrink: 0;
+  width: calc(100vw - 64rpx - 48rpx); /* Full width minus padding minus small peek */
+  background: var(--bg-card);
+  border-radius: 28rpx;
+  padding: 32rpx;
+  box-shadow: 0 10rpx 28rpx rgba(0, 0, 0, 0.07);
+  position: relative;
+  vertical-align: top;
+  white-space: normal;
+  box-sizing: border-box;
+}
+
+/* Single card: full width, no peek needed */
+.tech-carousel-card-single {
+  width: calc(100vw - 64rpx);
+}
+
+.tech-carousel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.tech-carousel-head-left {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  flex: 1;
+  min-width: 0;
+}
+
+.tech-carousel-book[disabled] {
+  background: var(--nb-pressed);
+  color: var(--nb-control);
+  opacity: 1;
+}
+
+.tech-carousel-avatar {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--nb-page);
+}
+
+.tech-carousel-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tech-carousel-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 6rpx;
+}
+
+.tech-carousel-name {
+  font-size: var(--font-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tech-carousel-shop {
+  display: block;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 6rpx;
+}
+
+.tech-carousel-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.tech-carousel-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+}
+
+.tech-dot-active { background: var(--nb-success); }
+.tech-dot-inactive { background: var(--text-muted); }
+
+.tech-carousel-status {
+  font-size: var(--font-xs);
+  font-weight: var(--weight-medium);
+}
+
+.tech-carousel-relationship {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  margin-top: 24rpx;
+  padding: 18rpx 12rpx;
+  border-top: 0;
+  border-radius: 20rpx;
+  background: var(--nb-page);
+}
+
+.tech-carousel-rel-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+  min-width: 0;
+}
+
+.tech-carousel-rel-value {
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.tech-carousel-rel-money {
+  color: var(--nb-money);
+}
+
+.tech-carousel-rel-label {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+.tech-carousel-rel-divider {
+  display:none;
+}
+
+.tech-carousel-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+
+.tech-carousel-dot-indicator {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: var(--border-strong);
+  transition: all 0.3s ease;
+}
+
+.tech-carousel-dot-active {
+  width: 36rpx;
+  border-radius: 6rpx;
+  background: var(--brand-primary);
+}
+
+/* Swipe hint arrows */
+.tech-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.30);
+  z-index: 3;
+}
+
+.tech-carousel-arrow-left {
+  left: 12rpx;
+}
+
+.tech-carousel-arrow-right {
+  right: 12rpx;
+}
+
+.tech-carousel-arrow:active {
+  background: rgba(0,0,0,0.45);
+}
+
+.tech-carousel-arrow-icon {
+  font-size: 36rpx;
+  color: #fff;
+  line-height: 1;
+  font-weight: 300;
+}
+
+/* Homepage link inline with name */
+.tech-carousel-home-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2rpx;
+  margin-left: 8rpx;
+}
+
+.tech-carousel-home-text {
+  font-size: var(--font-xs);
+  color: var(--brand-primary);
+  font-weight: var(--weight-medium);
+}
+
+.tech-carousel-home-arrow {
+  font-size: var(--font-sm);
+  color: var(--brand-primary);
+  line-height: 1;
+}
+
+/* Private note at card bottom */
+.tech-carousel-note {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid var(--border-light);
+}
+
+.tech-carousel-note-label {
+  flex-shrink: 0;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+.tech-carousel-note-text {
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tech-carousel-book {
+  flex-shrink: 0;
+  min-width: 0;
+  height: 56rpx;
+  margin: 0;
+  padding: 0 20rpx;
+  white-space: nowrap;
+  font-size: var(--font-xs);
+  border-radius: var(--radius-md);
+}
+
+.tech-carousel-empty {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 28rpx 32rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.06);
+}
+
+.tech-carousel-empty:active {
+  opacity: 0.92;
+}
+
+.tech-carousel-empty-icon {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: var(--radius-md);
+  background: var(--nb-page);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tech-carousel-empty-icon image {
+  width: 36rpx;
+  height: 36rpx;
+}
+
+.tech-carousel-empty-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.tech-carousel-empty-title {
+  display: block;
+  font-size: var(--font-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  margin-bottom: 4rpx;
+}
+
+.tech-carousel-empty-hint {
+  display: block;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+.tech-carousel-empty-arrow {
+  font-size: var(--font-md);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ===== 我的美甲师 (旧样式保留兼容) ===== */
+
 .tech-count-chip {
   min-width: 32rpx;
   height: 32rpx;
@@ -1046,14 +1382,6 @@ page {
   padding: var(--space-md) 28rpx 16rpx;
   border-bottom: 0;
 }
-.tech-section-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16rpx;
-  padding: var(--space-md) 28rpx 16rpx;
-  border-bottom: 0;
-}
 .tech-body {
   padding: 12rpx 16rpx 16rpx;
 }
@@ -1077,7 +1405,6 @@ page {
   flex-shrink: 0;
 }
 .section-head { padding: 30rpx 32rpx 20rpx; }
-.tech-section-head { padding: 32rpx 32rpx 24rpx; border-bottom: 0; }
 .tech-body { padding: 0 20rpx 20rpx; }
 .tech-card {
   display: block;
@@ -1113,10 +1440,6 @@ page {
 .section-head {
   padding: 22rpx 28rpx 12rpx;
 }
-.tech-section-head {
-  padding: 24rpx 28rpx 16rpx;
-}
-.tech-head-title-row { gap: 8rpx; }
 .tech-count-chip {
   min-width: 28rpx;
   height: 28rpx;
@@ -1228,17 +1551,7 @@ page {
 .menu-copy,.menu-desc { display: none; }
 
 .tech-section-card { overflow: hidden; }
-.tech-section-head { align-items:center; padding:8rpx 28rpx 8rpx; }
-.tech-head-title-row { gap:10rpx; }
 .tech-count-chip { min-width:0; height:auto; padding:0; border-radius:0; background:transparent; color:var(--nb-muted); font-size:var(--font-xs); font-weight:var(--weight-normal); line-height:1.4; }
-.tech-section-head .bind-btn {
-  min-width: 104rpx;
-  min-height: 44px;
-  padding: 0 4rpx 0 16rpx;
-  background: transparent;
-  color: var(--nb-text-link);
-  box-shadow: none;
-}
 .bind-btn-arrow { margin-left: 6rpx; font-size: var(--font-md); }
 /* Both relationship cards use the same identity, metrics and action styles. */
 .tech-preview-list { width:100%; padding:0 28rpx 24rpx; box-sizing:border-box; white-space:nowrap; }
@@ -1291,3 +1604,40 @@ page {
 .tech-empty-copy { flex: 1; min-width: 0; }
 .tech-empty-title { display: block; color: var(--nb-ink); font-size: var(--font-sm); font-weight: var(--weight-semibold); }
 .tech-empty-hint { display: block; margin-top: 6rpx; color: var(--nb-muted); font-size: var(--font-xs); }
+
+/* ===== 顶部个人信息区：状态栏与个人资料合并为一个整体，不再单独出页头。
+       背景满宽铺到屏幕顶端；内容列沿用下方卡片的外留白 32rpx + 卡内 28rpx。 ===== */
+.profile-top {
+  flex-shrink: 0;
+  padding: 0 32rpx 36rpx;
+  background: var(--nb-surface);
+}
+.page-hero {
+  margin: 0;
+  padding: 0 28rpx;
+  border-radius: 0;
+  background: transparent;
+  color: var(--nb-ink);
+}
+.page-hero:active { opacity: 1; background: var(--nb-pressed); }
+
+/* ===== 模块卡片头部统一：三张卡共用同一套标题、正文与右侧操作间距 ===== */
+.section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 24rpx 28rpx 16rpx;
+  border-bottom: 0;
+}
+.section-head-copy { flex: 1; min-width: 0; }
+.section-head-row { display: flex; align-items: baseline; gap: 10rpx; }
+.section-head-action {
+  flex-shrink: 0;
+  min-width: 104rpx;
+  min-height: 44px;
+  padding: 0 4rpx 0 16rpx;
+  background: transparent;
+  color: var(--nb-text-link);
+  box-shadow: none;
+}

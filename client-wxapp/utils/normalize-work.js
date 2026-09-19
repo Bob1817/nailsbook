@@ -121,6 +121,9 @@ function normalizeWork(raw, technician, options) {
     technicianName: mergedTech.name,
     technicianAvatarUrl: mergedTech.avatarUrl,
     technicianCity: mergedTech.cityText,
+    // 美甲师第一个启用店铺（后端 mapWork 解析；无店铺为空串）
+    technicianShopName: raw.technicianShopName || '',
+    technicianShopAddress: raw.technicianShopAddress || '',
     techInitial: (mergedTech.name || '美').charAt(0),
     experienceYears: mergedTech.experienceYears,
     experienceText: mergedTech.experienceText,

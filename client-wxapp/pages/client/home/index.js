@@ -39,8 +39,7 @@ Page({
     orderShopName: '',
     worksPage: 1,
     worksHasMore: true,
-    worksLoading: false,
-    popularStyles: ['法式', '极简', '新中式', '婚礼', '职场', '艺术风']
+    worksLoading: false
   },
 
   onLoad() {},
@@ -187,10 +186,10 @@ Page({
     this.setData({ worksLoading: true });
 
     try {
-      // 首页只展示精选作品。登录时保留绑定美甲师口径，游客则匿名读取公开精选。
+      // 首页只展示登录客户可见的精选作品。
       var res = await api.client.featuredWorks(
         { page: page, limit: 10 },
-        { needAuth: !!this._clientLoggedIn, silent: true }
+        { silent: true }
       );
       var list = res.works || res.list || res.data || (Array.isArray(res) ? res : []);
       var boundTech = this.data.technician;
@@ -253,10 +252,6 @@ Page({
   },
 
   navigateToWorks() { wx.navigateTo({ url: '/pages/client/works/index' }); },
-  viewStyle(e) {
-    var style = e.currentTarget.dataset.style;
-    wx.navigateTo({ url: '/pages/client/works/index?keyword=' + encodeURIComponent(style) });
-  },
   navigateToBooking() { wx.navigateTo({ url: '/pages/client/create-order/index' }); },
   navigateToOrders() { wx.navigateTo({ url: '/pages/client/orders/index' }); },
   navigateToChat() { wx.navigateTo({ url: '/pages/client/chat/index' }); },

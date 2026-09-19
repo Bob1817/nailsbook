@@ -1,178 +1,35 @@
-.container {
-  padding: 0 48rpx;
-  padding-top: 80rpx;
-}
-
-.header {
-  text-align: center;
-  margin-bottom: 60rpx;
-}
-
-.logo-circle {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: 50%;
-  background: var(--nb-action);
-  color: var(--nb-surface);
-  font-size: 56rpx;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 24rpx;
-}
-
-.title {
-  font-size: 40rpx;
-  font-weight: bold;
-  color: var(--nb-ink);
-  display: block;
-  margin-bottom: 12rpx;
-}
-
-.subtitle {
-  font-size: 28rpx;
-  color: var(--nb-muted);
-  display: block;
-}
-
-.form {
-  width: 100%;
-}
-
-.form-item {
-  margin-bottom: 32rpx;
-}
-
-.label {
-  font-size: 28rpx;
-  font-weight: 500;
-  color: var(--nb-ink);
-  display: block;
-  margin-bottom: 12rpx;
-}
-
-.optional {
-  font-weight: normal;
-  color: var(--nb-muted);
-  font-size: 24rpx;
-}
-
-.input {
-  width: 100%;
-  height: 88rpx;
-  background: var(--nb-page);
-  border-radius: 12rpx;
-  padding: 0 24rpx;
-  font-size: 28rpx;
-  box-sizing: border-box;
-}
-
-.phone-display {
-  width: 100%;
-  height: 88rpx;
-  background: var(--nb-page);
-  border-radius: 12rpx;
-  padding: 0 24rpx;
-  display: flex;
-  align-items: center;
-  box-sizing: border-box;
-}
-
-.phone-text {
-  font-size: 28rpx;
-  color: var(--nb-secondary);
-}
-
-/* 邀请码验证状态 */
-.invite-status {
-  margin-top: 8rpx;
-  padding: 8rpx 0;
-  font-size: 24rpx;
-}
-
-.invite-status.checking {
-  color: var(--nb-muted);
-}
-
-.invite-status.valid {
-  color: var(--nb-success);
-}
-
-.invite-status.error {
-  color: var(--nb-danger);
-}
-
-.mode-hint {
-  display: block;
-  margin-top: 8rpx;
-  font-size: 24rpx;
-  color: var(--nb-muted);
-}
-
-/* 密码行 */
-.password-row {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.password-row .input {
-  flex: 1;
-  padding-right: 100rpx;
-}
-
-.pwd-toggle {
-  position: absolute;
-  right: 24rpx;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 1;
-}
-
-.pwd-toggle-text {
-  font-size: 24rpx;
-  color: var(--nb-ink);
-}
-
-/* 按钮 */
-.btn-primary {
-  width: 100%;
-  height: 88rpx;
-  background: var(--nb-page);
-  color: var(--nb-surface);
-  font-size: 32rpx;
-  font-weight: bold;
-  border-radius: 12rpx;
-  border: none;
-  margin-top: 40rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-primary::after {
-  border: none;
-}
-
-.btn-active {
-  background: var(--nb-action);
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.3);
-}
-
-/* 链接行 */
-.link-row {
-  text-align: center;
-  margin-top: 32rpx;
-  padding-bottom: 60rpx;
-}
-
-.link {
-  font-size: 28rpx;
-  color: var(--nb-text-link);
-}
-
 @import '../../styles/booking-actions.wxss';
-.input { height: var(--input-height); min-height: 44px; background: var(--bg-input); border-radius: var(--input-radius); padding: 0 var(--input-padding-h); font-size: var(--font-sm); }
-.phone-display { min-height: var(--input-height); border-radius: var(--input-radius); font-size: var(--font-sm); }
-.btn-primary.booking-action { height: var(--control-hit-height); min-height: 44px; margin-top: 24rpx; border-radius: 8px; background: var(--nb-action); font-size: var(--font-sm); box-shadow: none; }
+page { height: 100%; background: var(--bg-card); }
+.register-root { height: 100vh; display: flex; flex-direction: column; background: var(--bg-card); }
+.register-scroll { flex: 1; min-height: 0; }
+.register-content { box-sizing: border-box; width: 100%; padding: 56rpx var(--space-xl) calc(40rpx + env(safe-area-inset-bottom)); }
+.register-heading { display: block; text-align: center; color: var(--text-primary); font-size: 48rpx; line-height: 1.25; font-weight: var(--weight-bold); }
+.register-sub { display: block; margin: 14rpx 0 48rpx; text-align: center; color: var(--text-faint); font-size: var(--font-sm); }
+.form-section { padding: 0 8rpx; }
+.field-label { display: block; margin: 0 0 12rpx; color: var(--text-primary); font-size: 26rpx; font-weight: var(--weight-semibold); }
+.label-row { display: flex; align-items: center; justify-content: space-between; }
+.required-mark { margin-bottom: 12rpx; color: var(--nb-muted); font-size: 22rpx; }
+.input-row { box-sizing: border-box; width: 100%; height: 56px; min-height: 56px; display: flex; align-items: center; margin-bottom: 28rpx; padding: 0 28rpx; border: 1px solid transparent; border-radius: 14px; background: var(--nb-soft-surface); }
+.input-row-error { border-color: var(--nb-danger); }
+.input-prefix { flex-shrink: 0; color: var(--text-primary); font-size: 30rpx; font-weight: var(--weight-semibold); }
+.input-divider { width: 1px; height: 28rpx; flex-shrink: 0; margin: 0 24rpx; background: var(--border-default); }
+.input-icon { width: 36rpx; height: 36rpx; flex-shrink: 0; margin-right: 24rpx; opacity: .45; }
+.input-field { flex: 1; height: 56px; color: var(--text-primary); background: transparent; font-size: 30rpx; line-height: 56px; }
+.input-placeholder { color: var(--text-faint); font-size: 27rpx; }
+.checking-text { flex-shrink: 0; color: var(--text-faint); font-size: 22rpx; }
+.field-message { display: block; min-height: 34rpx; margin: -16rpx 4rpx 26rpx; color: var(--text-faint); font-size: 22rpx; line-height: 34rpx; }
+.error-message { color: var(--nb-danger); }
+.success-message { color: var(--nb-success); }
+.conditional-field { margin-top: 4rpx; }
+.password-label { margin-top: 2rpx; }
+.pwd-toggle { width: 44px; height: 44px; display: flex; align-items: center; justify-content: flex-end; flex-shrink: 0; }
+.pwd-toggle-icon { width: 40rpx; height: 40rpx; opacity: .35; }
+.privacy-consent { box-sizing: border-box; width: 100%; min-height: 44px; display: flex; align-items: center; flex-wrap: wrap; color: var(--text-faint); font-size: 22rpx; line-height: 1.6; }
+.privacy-consent label { min-height: 44px; display: flex; align-items: center; }
+.privacy-consent checkbox { transform: scale(.78); transform-origin: left center; }
+.privacy-link { min-height: 44px; display: inline-flex; align-items: center; color: var(--nb-text-link); }
+.submit-btn { box-sizing: border-box; width: 100%; height: var(--control-hit-height); min-height: 44px; margin: 10rpx 0 0; padding: 0; border: 0; border-radius: 8px; background: var(--nb-soft-surface); color: var(--nb-secondary); font-size: var(--font-sm); font-weight: var(--weight-bold); }
+.submit-btn::after { border: 0; }
+.submit-btn-active { background: var(--nb-action); color: var(--text-inverse); }
+.account-actions { min-height: 88rpx; display: flex; align-items: center; justify-content: center; }
+.account-action { min-height: 88rpx; display: flex; align-items: center; padding: 0 24rpx; color: var(--nb-text-link); font-size: var(--font-sm); }

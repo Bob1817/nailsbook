@@ -16,6 +16,11 @@ struct ClientSettingsView: View {
                 }
             }
 
+            Section("账号管理") {
+                RoleSwitchButton()
+                Button("切换账号") { Task { await appState.logout() } }.frame(minHeight: 44)
+                NavigationLink("账号注销") { AccountDeletionView(role: appState.currentRole) }
+            }
             Section("关于") {
                 NavigationLink { HelpFeedbackView(role: .client) } label: {
                     Label("帮助与反馈", systemImage: "questionmark.circle.fill")
@@ -65,14 +70,14 @@ struct TechnicianSettingsView: View {
                 NavigationLink { ShopManagementView() } label: {
                     Label("门店管理", systemImage: "building.2.fill")
                 }
-                NavigationLink { HomeServiceSettingsView() } label: {
-                    Label("上门服务设置", systemImage: "car.fill")
-                }
-                NavigationLink { SubscriptionView() } label: {
-                    Label("订阅计划", systemImage: "crown.fill")
-                }
+
             }
 
+            Section("账号管理") {
+                RoleSwitchButton()
+                Button("切换账号") { Task { await appState.logout() } }.frame(minHeight: 44)
+                NavigationLink("账号注销") { AccountDeletionView(role: appState.currentRole) }
+            }
             Section("关于") {
                 NavigationLink { HelpFeedbackView(role: .technician) } label: {
                     Label("帮助与反馈", systemImage: "questionmark.circle.fill")

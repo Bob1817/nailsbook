@@ -153,9 +153,5 @@ Page({
 
   goBack() {
     wx.navigateBack();
-  },
-
-  browseAsGuest() {
-    wx.reLaunch({ url: '/pages/client/discover/index' });
   }
 });

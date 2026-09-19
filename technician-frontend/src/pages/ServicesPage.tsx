@@ -25,6 +25,8 @@ const ServicesPage: React.FC = () => {
     name: '',
     description: '',
     category: 'basic_care',
+    depositMode: 'none',
+    depositValue: 0,
   });
 
   useEffect(() => {
@@ -73,6 +75,15 @@ const ServicesPage: React.FC = () => {
       return;
     }
 
+    if (formData.depositMode === 'fixed' && (!formData.depositValue || formData.depositValue <= 0)) {
+      toast.error('请输入有效的定金金额');
+      return;
+    }
+    if (formData.depositMode === 'percentage' && (!formData.depositValue || formData.depositValue <= 0 || formData.depositValue >= 10000)) {
+      toast.error('定金比例需大于 0 小于 100%');
+      return;
+    }
+
     try {
       if (editingService) {
         await servicesService.update(editingService.id, formData);
@@ -83,7 +94,7 @@ const ServicesPage: React.FC = () => {
       }
       setShowAddModal(false);
       setEditingService(null);
-      setFormData({ name: '', description: '', category: 'basic_care' });
+      setFormData({ name: '', description: '', category: 'basic_care', depositMode: 'none', depositValue: 0 });
       await loadServices();
     } catch {
       toast.error('保存失败，请重试');
@@ -96,13 +107,15 @@ const ServicesPage: React.FC = () => {
       name: service.name,
       description: service.description || '',
       category: service.category,
+      depositMode: service.depositMode || 'none',
+      depositValue: service.depositValue || 0,
     });
     setShowAddModal(true);
   };
 
   const handleAddNew = () => {
     setEditingService(null);
-    setFormData({ name: '', description: '', category: 'basic_care' });
+    setFormData({ name: '', description: '', category: 'basic_care', depositMode: 'none', depositValue: 0 });
     setShowAddModal(true);
   };
 
@@ -198,6 +211,14 @@ const ServicesPage: React.FC = () => {
                           {service.description && (
                             <p className="text-sm text-[var(--nb-secondary)] leading-relaxed">
                               {service.description}
+                            </p>
+                          )}
+                          {service.depositMode && service.depositMode !== 'none' && (
+                            <p className="text-xs text-[var(--nb-secondary)] mt-1">
+                              定金: {service.depositMode === 'fixed'
+                                ? `¥${(service.depositValue / 100).toFixed(0)}`
+                                : `${(service.depositValue / 100).toFixed(1)}%`
+                              }
                             </p>
                           )}
                         </div>
@@ -313,6 +334,65 @@ const ServicesPage: React.FC = () => {
                   rows={3}
                   className="w-full px-4 py-3 rounded-xl border border-[var(--nb-line)] focus:border-[var(--nb-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-line)] resize-none"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[var(--nb-ink)] mb-2">
+                  定金设置
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: 'none', label: '无定金' },
+                    { value: 'fixed', label: '一口价' },
+                    { value: 'percentage', label: '按比例' },
+                  ].map((opt) => (
+                    <label
+                      key={opt.value}
+                      className={`flex items-center justify-center p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                        (formData.depositMode || 'none') === opt.value
+                          ? 'border-[var(--nb-ink)] bg-[var(--nb-page)]'
+                          : 'border-[var(--nb-line)] hover:border-[var(--nb-control)]'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="depositMode"
+                        value={opt.value}
+                        checked={(formData.depositMode || 'none') === opt.value}
+                        onChange={() => setFormData({ ...formData, depositMode: opt.value, depositValue: 0 })}
+                        className="sr-only"
+                      />
+                      <span className="text-sm font-medium text-[var(--nb-ink)]">{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+                {formData.depositMode === 'fixed' && (
+                  <input
+                    type="number"
+                    value={formData.depositValue || ''}
+                    onChange={(e) => setFormData({ ...formData, depositValue: Math.round(Number(e.target.value) * 100) })}
+                    placeholder="输入定金金额（元），需大于 0"
+                    className="mt-2 w-full px-4 py-3 rounded-xl border border-[var(--nb-line)] focus:border-[var(--nb-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-line)]"
+                  />
+                )}
+                {formData.depositMode === 'percentage' && (
+                  <div className="mt-2">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      max="0.99"
+                      value={formData.depositValue ? (formData.depositValue / 10000).toString() : ''}
+                      onChange={(e) => {
+                        const pct = Number(e.target.value);
+                        setFormData({ ...formData, depositValue: pct > 0 && pct < 1 ? Math.round(pct * 10000) : 0 });
+                      }}
+                      placeholder="输入比例，如 0.5 表示 50%"
+                      className="w-full px-4 py-3 rounded-xl border border-[var(--nb-line)] focus:border-[var(--nb-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-line)]"
+                    />
+                    <p className="mt-1 text-xs text-[var(--nb-muted)]">大于 0 小于 1，1 即为 100%</p>
+                  </div>
+                )}
               </div>
             </form>
 

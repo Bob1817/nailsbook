@@ -1,9 +1,8 @@
 const { consumePostAuthRedirect } = require('../../utils/artist-navigation');
 /**
  * 注册后角色选择页
- * 新用户（无邀请码注册）在微信授权并获取手机号后进入此页
- * 选择客户：可填美甲师邀请码绑定，也可跳过
- * 选择美甲师：可填激活密钥认证，也可跳过进入游客模式
+ * 兼容历史微信注册用户的身份补全页。
+ * 客户必须填写美甲师邀请码，美甲师必须填写系统激活密钥。
  */
 const api = require('../../services/api');
 
@@ -90,7 +89,7 @@ Page({
   // ========== 美甲师：激活密钥 ==========
 
   onActivationKeyInput(e) {
-    this.setData({ activationKey: e.detail.value.trim(), error: '' });
+    this.setData({ activationKey: e.detail.value.trim().toUpperCase(), error: '' });
   },
 
   toggleActivationKeyVisibility() {
@@ -99,13 +98,17 @@ Page({
 
   // ========== 提交 ==========
 
-  async submitClient(skipBind) {
+  async submitClient() {
     if (this.data.loading) return;
+    if (!this.data.inviteCode || !this.data.foundTech) {
+      this.setData({ error: '请输入有效的美甲师邀请码' });
+      return;
+    }
     this.setData({ loading: true, error: '' });
 
     try {
       const res = await api.auth.selectRole('client', {
-        inviteCode: skipBind ? undefined : this.data.inviteCode || undefined
+        inviteCode: this.data.inviteCode
       });
       await this._handleSelectRoleResponse(res);
     } catch (err) {
@@ -113,13 +116,17 @@ Page({
     }
   },
 
-  async submitTechnician(skipActivate) {
+  async submitTechnician() {
     if (this.data.loading) return;
+    if (!/^[A-Z0-9]{16}$/.test(this.data.activationKey)) {
+      this.setData({ error: '请输入 16 位系统激活密钥' });
+      return;
+    }
     this.setData({ loading: true, error: '' });
 
     try {
       const res = await api.auth.selectRole('technician', {
-        activationKey: skipActivate ? undefined : this.data.activationKey || undefined
+        activationKey: this.data.activationKey
       });
       await this._handleSelectRoleResponse(res);
     } catch (err) {

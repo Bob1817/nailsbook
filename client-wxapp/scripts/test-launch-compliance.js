@@ -28,6 +28,16 @@ assert(!createOrderJs.includes('上门美甲') && !createOrderWxml.includes('上
 assert(!createOrderJs.includes('getLocation') && !createOrderJs.includes('client.addresses'), '预约页不得读取定位或客户地址');
 assert(!read('pages/technician/shop-management/index.js').includes('chooseLocation'), '首发版店铺管理不得请求地图选址');
 assert(!read('pages/technician/help-feedback/index.js').includes('上门服务'), '帮助中心不得宣传上门服务');
+assert(!routes.includes('pages/client/discover/index'), '首发版不得提供游客作品发现页');
+const publicWorkJs = read('pages/client/public-work/index.js');
+assert(publicWorkJs.includes('buildClientLoginUrl(returnPath'), '作品分享页必须先建立登录态并保留返回路径');
+const apiJs = read('services/api.js');
+[
+  /works: \(id, params\) => api\.get\(`\$\{P\}\/brands\/\$\{id\}\/works`, params\)/,
+  /list: \(params\) => api\.get\(`\$\{P\}\/works`, params\)/,
+  /detail: \(id\) => api\.get\(`\$\{P\}\/works\/\$\{id\}`\)/,
+  /shared: \(token\) => api\.get\(`\$\{P\}\/works\/shared\/\$\{token\}`\)/,
+].forEach((pattern) => assert(pattern.test(apiJs), '公开作品接口不得关闭鉴权'));
 
 [
   'pages/technician/referral-campaign/index',

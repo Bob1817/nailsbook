@@ -40,8 +40,8 @@ struct ClientAddress: Codable, Identifiable {
 
 struct Conversation: Codable, Identifiable {
     let id: Int
-    let clientId: Int
-    let techId: Int
+    var clientId: Int?
+    var techId: Int?
     var lastMessage: String?
     var lastMessageAt: String?
     var createdAt: String?
@@ -81,12 +81,12 @@ struct ChatMessage: Codable, Identifiable {
 // MARK: - Service Models
 
 struct TechnicianService: Codable, Identifiable {
-    let id: Int
-    let technicianId: Int
+    let id: String
     var name: String
     var description: String?
     var price: Double?
-    var duration: Int?
+    var durationMinutes: Int?
+    var duration: Int? { durationMinutes }
     var category: String?
     var isActive: Bool
     var createdAt: String?
@@ -108,6 +108,7 @@ struct Customer: Codable, Identifiable {
     var orderCount: Int?
     var totalSpent: Double?
     var lastOrderAt: String?
+    var followUps: [FollowUp]?
 }
 
 // MARK: - Subscription Models
@@ -140,7 +141,8 @@ struct TechnicianSubscription: Codable {
 
 struct ClientHomeData: Codable {
     var technician: HomeTechnician?
-    var featuredWorks: [NailWork]?
+    var works: [NailWork]?
+    var featuredWorks: [NailWork]? { works }
     var latestOrder: Order?
     var pendingBindingCount: Int?
 }
@@ -159,4 +161,164 @@ struct TechnicianHomeData: Codable {
     var pendingConfirmCount: Int?
     var todayIncome: Double?
     var totalCustomers: Int?
+}
+
+// MARK: - Insights Models
+
+struct TechnicianInsights: Codable {
+    var period: InsightsPeriod?
+    var revenue: InsightsRevenue?
+    var bookings: InsightsBookings?
+    var customers: InsightsCustomers?
+    var rating: InsightsRating?
+    var works: InsightsWorks?
+    var trends: InsightsTrends?
+    var referrals: InsightsReferrals?
+}
+
+struct InsightsReferrals: Codable {
+    var total: Int?
+    var qualified: Int?
+    var conversionRate: Double?
+    var qualifiedRevenue: Double?
+}
+
+struct InsightsPeriod: Codable {
+    var selectedMonth: String?
+    var minMonth: String?
+    var maxMonth: String?
+    var monthStart: String?
+    var endExclusive: String?
+}
+
+struct InsightsRevenue: Codable {
+    var monthConfirmed: Double?
+    var averageTicket: Double?
+}
+
+struct InsightsBookings: Codable {
+    var monthCompleted: Int?
+    var pending: Int?
+    var today: Int?
+}
+
+struct InsightsCustomers: Codable {
+    var total: Int?
+    var newThisMonth: Int?
+    var repeatRate: Double?
+    var dueForRepurchase: Int?
+}
+
+struct InsightsRating: Codable {
+    var average: Double?
+    var count: Int?
+}
+
+struct InsightsWorks: Codable {
+    var total: Int?
+}
+
+struct InsightsTrends: Codable {
+    var daily: [TrendItem]?
+    var weekly: [TrendItem]?
+}
+
+struct TrendItem: Codable {
+    var period: String?
+    var revenue: Double?
+    var bookings: Int?
+}
+
+// MARK: - Beauty Archive Models
+
+struct BeautyArchiveResponse: Codable {
+    var records: [BeautyRecord]?
+    var summary: BeautySummary?
+    var recommendations: [NailWork]?
+}
+
+struct BeautyRecord: Codable, Identifiable {
+    let id: Int
+    var targetType: String?
+    var targetId: Int?
+    var title: String?
+    var coverUrl: String?
+    var imageUrls: [String]?
+    var clientPhotos: [String]?
+    var clientRecordNote: String?
+    var orderId: Int?
+    var workId: Int?
+    var canShare: Bool?
+    var technicianId: Int?
+    var technicianName: String?
+    var serviceDate: String?
+    var price: Double?
+    var tags: [String]?
+}
+
+struct BeautySummary: Codable {
+    var totalSpent: Double?
+    var favoriteStyle: String?
+    var favoriteScene: String?
+    var styleTags: [String]?
+}
+
+// MARK: - Follow Up Models
+
+struct FollowUp: Codable, Identifiable {
+    let id: Int
+    var content: String?
+    var plannedAt: String?
+    var completedAt: String?
+    var status: String?
+}
+
+// MARK: - Booking Days Models
+
+struct BookingDaysResponse: Codable {
+    var days: [BookingDay]?
+    var settings: BookingSettings?
+}
+
+struct BookingDay: Codable, Identifiable {
+    var id: String { serviceDate }
+    let serviceDate: String
+    var accepting: Bool?
+    var version: Int?
+}
+
+struct BookingSettings: Codable {
+    var quickBookingEnabled: Bool?
+}
+
+// MARK: - Brand Profile Models
+
+struct BrandProfile: Codable {
+    var brandName: String?
+    var tagline: String?
+    var heroImageUrl: String?
+    var experienceYears: Int?
+    var specialties: [String]?
+    var certificationTitle: String?
+    var artistIntroduction: String?
+    var aestheticPhilosophy: String?
+    var publicationStatus: String?
+    var shareTitle: String?
+    var shareDescription: String?
+    var shareCoverUrl: String?
+}
+
+// MARK: - Referral Models
+
+struct ReferralRelation: Codable, Identifiable {
+    let id: Int
+    var referrer: ReferralUser?
+    var referred: ReferralUser?
+    var status: String?
+    var createdAt: String?
+}
+
+struct ReferralUser: Codable {
+    var nickname: String?
+    var avatarUrl: String?
 }

@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - Reusable UI Components (synced with wxapp design)
+// MARK: - Reusable UI Components (aligned with wxapp design)
 
 struct NBButton: View {
     enum Style {
@@ -25,18 +25,14 @@ struct NBButton: View {
                     Image(systemName: icon)
                 }
                 Text(title)
-                    .font(NBFont.bodyLarge)
+                    .font(NBFont.bodyMedium)
                     .fontWeight(.semibold)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 48)
+            .frame(height: 44)  // wxapp: --btn-height: 44px
             .foregroundColor(foregroundColor)
             .background(backgroundView)
-            .cornerRadius(Radius.lg)
-            .overlay(
-                RoundedRectangle(cornerRadius: Radius.lg)
-                    .stroke(borderColor, lineWidth: style == .outline ? 1.5 : 0)
-            )
+            .cornerRadius(Radius.button)  // wxapp: 8px
         }
         .disabled(isDisabled || isLoading)
         .opacity(isDisabled ? 0.6 : 1)
@@ -46,30 +42,27 @@ struct NBButton: View {
     private var backgroundView: some View {
         switch style {
         case .primary:
-            NBGradient.button
+            // wxapp: background: var(--nb-action) which is #1D1D1F
+            NBColors.action
         case .secondary:
-            Color.nbSecondarySoft
+            NBColors.softSurface
         case .outline:
             Color.clear
         case .ghost:
             Color.clear
         case .destructive:
-            Color.nbError
+            Color.red
         }
     }
 
     private var foregroundColor: Color {
         switch style {
         case .primary: return .white
-        case .secondary: return .nbTextPrimary
-        case .outline: return .nbPrimary
-        case .ghost: return .nbPrimary
+        case .secondary: return NBColors.ink
+        case .outline: return NBColors.action
+        case .ghost: return NBColors.action
         case .destructive: return .white
         }
-    }
-
-    private var borderColor: Color {
-        style == .outline ? .nbPrimary : .clear
     }
 }
 
@@ -90,20 +83,16 @@ struct NBTextField: View {
         }
         .font(NBFont.bodyLarge)
         .padding(.horizontal, Spacing.lg)
-        .frame(height: 48)
-        .background(Color.nbSurfaceAlt)
-        .cornerRadius(Radius.sm)
-        .overlay(
-            RoundedRectangle(cornerRadius: Radius.sm)
-                .stroke(Color.nbBorderInput, lineWidth: 1)
-        )
+        .frame(height: 56)  // wxapp: 56px
+        .background(NBColors.softSurface)  // wxapp: var(--nb-soft-surface)
+        .cornerRadius(Radius.input)  // wxapp: 14px
     }
 }
 
 struct NBChip: View {
     let title: String
     var isSelected = false
-    var color: Color = .nbPrimary
+    var color: Color = NBColors.action
 
     var body: some View {
         Text(title)
@@ -114,7 +103,7 @@ struct NBChip: View {
             .foregroundColor(isSelected ? .white : color)
             .background(
                 Group {
-                    if isSelected { NBGradient.button } else { color.opacity(0.1) }
+                    if isSelected { color } else { color.opacity(0.1) }
                 }
             )
             .cornerRadius(Radius.pill)
@@ -133,10 +122,9 @@ struct NBCard<Content: View>: View {
     var body: some View {
         content
             .padding(padding)
-            .background(Color.nbSurfaceGlass)
+            .background(NBColors.surface)
             .cornerRadius(Radius.card)
-            .shadow(color: NBColors.ink.opacity(0.06), radius: 12, y: 2)
-            .shadow(color: NBColors.ink.opacity(0.03), radius: 2, y: 1)
+            .shadow(color: Color.black.opacity(0.05), radius: 10, y: 2)
     }
 }
 
@@ -149,19 +137,19 @@ struct NBEmptyState: View {
         VStack(spacing: Spacing.lg) {
             ZStack {
                 Circle()
-                    .fill(NBGradient.emptyIcon)
+                    .fill(NBColors.softSurface)
                     .frame(width: 80, height: 80)
                 Image(systemName: icon)
                     .font(.system(size: 32))
-                    .foregroundColor(.nbPrimary)
+                    .foregroundColor(NBColors.muted)
             }
             Text(title)
                 .font(NBFont.titleMedium)
-                .foregroundColor(.nbTextPrimary)
+                .foregroundColor(NBColors.ink)
             if !message.isEmpty {
                 Text(message)
                     .font(NBFont.bodyMedium)
-                    .foregroundColor(.nbTextSecondary)
+                    .foregroundColor(NBColors.secondary)
                     .multilineTextAlignment(.center)
             }
         }
@@ -205,5 +193,47 @@ extension View {
 
     func nbPagePadding() -> some View {
         padding(.horizontal, Spacing.page)
+    }
+}
+
+// MARK: - Flow Layout
+
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let result = arrange(proposal: proposal, subviews: subviews)
+        return result.size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let result = arrange(proposal: proposal, subviews: subviews)
+        for (index, origin) in result.origins.enumerated() {
+            subviews[index].place(at: CGPoint(x: bounds.minX + origin.x, y: bounds.minY + origin.y), proposal: .unspecified)
+        }
+    }
+
+    private func arrange(proposal: ProposedViewSize, subviews: Subviews) -> (size: CGSize, origins: [CGPoint]) {
+        let maxWidth = proposal.width ?? .infinity
+        var origins: [CGPoint] = []
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+        var maxX: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > maxWidth && x > 0 {
+                x = 0
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            origins.append(CGPoint(x: x, y: y))
+            rowHeight = max(rowHeight, size.height)
+            x += size.width + spacing
+            maxX = max(maxX, x)
+        }
+
+        return (CGSize(width: maxX - spacing, height: y + rowHeight), origins)
     }
 }

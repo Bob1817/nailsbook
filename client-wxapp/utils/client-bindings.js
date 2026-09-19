@@ -45,6 +45,7 @@ function normalizeBindings(bindings) {
         progressSummary: nextTier ? `距${nextTier.name}还差 ${Number(nextTier.remaining || 0)} ${nextUnit}` : ''
       },
       shopName: defaultShop?.name || technician.shopName || '', isDefault: !!b.isDefault,
+      showOnProfile: b.showOnProfile !== false,
       bindingStatus: b.bindingStatus || (b.status === 'pending' ? 'pending' : 'active'),
       boundAt: b.boundAt || b.createdAt || ''
     };
@@ -55,12 +56,13 @@ function bindingSummary(technicians) {
   const sorted = technicians.slice().sort((a,b) => Number(b.isDefault) - Number(a.isDefault) || String(b.boundAt || '').localeCompare(String(a.boundAt || '')) || Number(b.id) - Number(a.id));
   const active = sorted.filter(item => item.bindingStatus === 'active');
   const pendingCount = sorted.filter(item => item.bindingStatus === 'pending').length;
+  const visible = active.filter(item => item.showOnProfile);
   const hiddenActiveCount = Math.max(active.length - 5, 0);
   const previewSummary = [
     hiddenActiveCount ? `还有 ${hiddenActiveCount} 位已绑定` : '',
     pendingCount ? `${pendingCount} 位待确认` : ''
   ].filter(Boolean).join(' · ');
-  return { technicians: sorted, previewTechnicians: active.slice(0,5), activeCount: active.length, pendingCount, hiddenActiveCount, previewSummary };
+  return { technicians: sorted, previewTechnicians: visible.slice(0,5), activeCount: active.length, visibleCount: visible.length, pendingCount, hiddenActiveCount, previewSummary };
 }
 
 module.exports = { normalizeBindings, bindingSummary };

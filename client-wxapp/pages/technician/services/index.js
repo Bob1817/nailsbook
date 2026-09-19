@@ -9,19 +9,31 @@ const CATEGORIES = {
   surcharge_home: '上门服务费', surcharge_night: '晚间服务费', surcharge_holiday: '假日服务费'
 };
 
+function withDisplayFields(service) {
+  const depositValue = Number(service.depositValue || 0);
+  const price = Number(service.price || 0);
+  const depositAmount = service.depositMode === 'fixed'
+    ? depositValue / 100
+    : service.depositMode === 'percentage'
+      ? price * depositValue / 10000
+      : 0;
+  return {
+    ...service,
+    categoryLabel: CATEGORIES[service.category] || service.category,
+    depositAmountText: depositAmount.toFixed(0),
+    depositPercentText: (depositValue / 100).toFixed(1)
+  };
+}
+
 Page({
   data: {
     services: [],
-    depositModes: ['不收定金', '固定金额', '最终总价比例'], depositModeIndex: 0, depositInput: '', pricingSaving: false,
-    loyaltyEnabled: false, pointsPerYuan: '0', loyaltySaving: false,
-    thresholdTypes: ['消费次数', '累计实付金额', '积分'], thresholdValues: ['visits', 'spend', 'points'],
-    loyaltyTiers: [],
     loading: false,
     loadFailed: false,
     showForm: false,
     actionMenuId: null,
     editingId: null,
-    form: { name: '', description: '', category: 'basic_care', price: '', durationMinutes: '' },
+    form: { name: '', description: '', category: 'basic_care', price: '', durationMinutes: '', depositMode: 'none', depositValue: '', depositPercent: '' },
     categories: Object.entries(CATEGORIES).map(([value, label]) => ({ value, label })),
     categoryIndex: 0,
     submitting: false
@@ -29,69 +41,13 @@ Page({
 
   onLoad() {
     this.loadServices();
-    this.loadPricingSettings();
-    this.loadLoyaltySettings();
-  },
-
-  async loadLoyaltySettings() {
-    try {
-      const value = await api.technician.services.loyaltySettings();
-      const loyaltyTiers = (value.tiers || []).map(tier => Object.assign({}, tier, { thresholdTypeIndex: this.data.thresholdValues.indexOf(tier.thresholdType), benefitsText: (tier.benefits || []).join('、') }));
-      this.setData({ loyaltyEnabled: !!value.enabled, pointsPerYuan: String(value.pointsPerYuan || 0), loyaltyTiers });
-    } catch (err) { wx.showToast({ title: err.message || '会员设置加载失败', icon: 'none' }); }
-  },
-  toggleLoyalty(e) { this.setData({ loyaltyEnabled: !!e.detail.value }); },
-  onPointsRate(e) { this.setData({ pointsPerYuan: e.detail.value }); },
-  addLoyaltyTier() {
-    this.setData({ loyaltyTiers: this.data.loyaltyTiers.concat({ id: `tier_${Date.now()}`, name: '', thresholdType: 'visits', thresholdTypeIndex: 0, thresholdValue: '', discountPercent: '', benefitsText: '' }) });
-  },
-  updateLoyaltyTier(e) {
-    const tiers = this.data.loyaltyTiers.slice(); const index = Number(e.currentTarget.dataset.index); const field = e.currentTarget.dataset.field;
-    tiers[index] = Object.assign({}, tiers[index], { [field]: e.detail.value }); this.setData({ loyaltyTiers: tiers });
-  },
-  updateTierType(e) {
-    const tiers = this.data.loyaltyTiers.slice(); const index = Number(e.currentTarget.dataset.index);
-    const thresholdTypeIndex = Number(e.detail.value);
-    tiers[index] = Object.assign({}, tiers[index], { thresholdTypeIndex, thresholdType: this.data.thresholdValues[thresholdTypeIndex] }); this.setData({ loyaltyTiers: tiers });
-  },
-  removeLoyaltyTier(e) { this.setData({ loyaltyTiers: this.data.loyaltyTiers.filter((_, i) => i !== Number(e.currentTarget.dataset.index)) }); },
-  async saveLoyaltySettings() {
-    if (this.data.loyaltySaving) return;
-    const tiers = this.data.loyaltyTiers.map(tier => ({ id: tier.id, name: tier.name, thresholdType: tier.thresholdType, thresholdValue: Number(tier.thresholdValue), discountPercent: Number(tier.discountPercent || 0), benefits: String(tier.benefitsText || (tier.benefits || []).join('、')).split(/[、,，]/).map(v => v.trim()).filter(Boolean) }));
-    this.setData({ loyaltySaving: true });
-    try { await api.technician.services.updateLoyaltySettings({ enabled: this.data.loyaltyEnabled, pointsPerYuan: Number(this.data.pointsPerYuan || 0), tiers }); wx.showToast({ title: '会员权益已保存', icon: 'success' }); await this.loadLoyaltySettings(); }
-    catch (err) { wx.showToast({ title: err.message || '保存失败', icon: 'none' }); }
-    finally { this.setData({ loyaltySaving: false }); }
-  },
-
-  async loadPricingSettings() {
-    try {
-      const settings = await api.technician.services.pricingSettings();
-      this.setData({ depositModeIndex: ['none', 'fixed', 'percentage'].indexOf(settings.depositMode), depositInput: String((settings.depositValue || 0) / 100) });
-    } catch (err) { wx.showToast({ title: err.message || '定金设置加载失败', icon: 'none' }); }
-  },
-  onDepositMode(e) { this.setData({ depositModeIndex: Number(e.detail.value), depositInput: '' }); },
-  onDepositInput(e) { this.setData({ depositInput: e.detail.value }); },
-  async savePricingSettings() {
-    if (this.data.pricingSaving) return;
-    const value = this.data.depositModeIndex ? Math.round(Number(this.data.depositInput) * 100) : 0;
-    if (!Number.isFinite(value) || value < 0 || (this.data.depositModeIndex === 2 && value > 10000)) return wx.showToast({ title: '请输入有效定金设置', icon: 'none' });
-    this.setData({ pricingSaving: true });
-    try {
-      await api.technician.services.updatePricingSettings({ depositMode: ['none', 'fixed', 'percentage'][this.data.depositModeIndex], depositValue: value });
-      wx.showToast({ title: '定金设置已保存', icon: 'success' });
-    } catch (err) { wx.showToast({ title: err.message || '保存失败', icon: 'none' }); }
-    finally { this.setData({ pricingSaving: false }); }
   },
 
   async loadServices() {
     this.setData({ loading: true, loadFailed: false });
     try {
       const res = await api.technician.services.list();
-      const services = (Array.isArray(res) ? res : (res.data || [])).map(s => ({
-        ...s,
-        categoryLabel: CATEGORIES[s.category] || s.category
-      }));
+      const services = (Array.isArray(res) ? res : (res.data || [])).map(withDisplayFields);
       this.setData({ services, loadFailed: false });
     } catch (err) {
       this.setData({ loadFailed: true });
@@ -105,7 +61,7 @@ Page({
       showForm: true,
       actionMenuId: null,
       editingId: null,
-      form: { name: '', description: '', category: 'basic_care', price: '', durationMinutes: '' },
+      form: { name: '', description: '', category: 'basic_care', price: '', durationMinutes: '', depositMode: 'none', depositValue: '', depositPercent: '' },
       categoryIndex: 0
     });
   },
@@ -114,6 +70,7 @@ Page({
     const svc = this.data.services.find(s => s.id === e.currentTarget.dataset.id);
     if (!svc) return;
     const categoryIndex = this.data.categories.findIndex(c => c.value === svc.category);
+    const depositMode = svc.depositMode || 'none';
     this.setData({
       showForm: true,
       actionMenuId: null,
@@ -123,7 +80,10 @@ Page({
         description: svc.description || '',
         category: svc.category,
         price: svc.price != null ? String(svc.price) : '',
-        durationMinutes: svc.durationMinutes != null ? String(svc.durationMinutes) : ''
+        durationMinutes: svc.durationMinutes != null ? String(svc.durationMinutes) : '',
+        depositMode,
+        depositValue: depositMode === 'fixed' && svc.depositValue ? String(svc.depositValue / 100) : '',
+        depositPercent: depositMode === 'percentage' && svc.depositValue ? String(svc.depositValue / 10000) : ''
       },
       categoryIndex: categoryIndex >= 0 ? categoryIndex : 0
     });
@@ -152,6 +112,15 @@ Page({
     this.setData({ categoryIndex: index, 'form.category': category });
   },
 
+  onDepositModeSelect(e) {
+    const mode = e.currentTarget.dataset.mode;
+    this.setData({ 'form.depositMode': mode, 'form.depositValue': '', 'form.depositPercent': '' });
+  },
+
+  onDepositPercentInput(e) {
+    this.setData({ 'form.depositPercent': e.detail.value });
+  },
+
   async handleSubmit() {
     const { form, editingId, submitting } = this.data;
     if (!form.name.trim()) {
@@ -170,12 +139,33 @@ Page({
       return;
     }
 
+    // Deposit validation
+    let depositMode = form.depositMode || 'none';
+    let depositValue = 0;
+    if (depositMode === 'fixed') {
+      const dv = Number(form.depositValue);
+      if (!form.depositValue || !Number.isFinite(dv) || dv <= 0) {
+        wx.showToast({ title: '请输入有效的定金金额', icon: 'none' });
+        return;
+      }
+      depositValue = Math.round(dv * 100); // yuan to fen
+    } else if (depositMode === 'percentage') {
+      const dp = Number(form.depositPercent);
+      if (!form.depositPercent || !Number.isFinite(dp) || dp <= 0 || dp >= 1) {
+        wx.showToast({ title: '定金比例需大于0小于1', icon: 'none' });
+        return;
+      }
+      depositValue = Math.round(dp * 10000); // ratio to basis points
+    }
+
     const payload = {
       name: form.name.trim(),
       description: form.description.trim() || undefined,
       category: form.category,
       price,
-      durationMinutes
+      durationMinutes,
+      depositMode,
+      depositValue
     };
 
     this.setData({ submitting: true });

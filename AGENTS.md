@@ -72,4 +72,6 @@ These rules are mandatory for NailArt Studio development:
 - Client and admin interfaces must be designed as WebApp screens first, then adapted upward to tablet and desktop.
 - Every interactive control must be touch-friendly: minimum 44px height, clear pressed/focus states, no hover-only interaction, and safe-area awareness for fixed navigation.
 - UI work must follow [DESIGN-airbnb.md](/Users/shibo/Documents/Codex/nailArt/DESIGN-airbnb.md) for the product baseline and [design-system/nailart-studio/MASTER.md](/Users/shibo/Documents/Codex/nailArt/design-system/nailart-studio/MASTER.md) for mobile UI quality checks.
+- Color rules are overridden by [COLOR-STANDARD.md](design-system/nailbook/COLOR-STANDARD.md). Use the neutral palette in `design-system/nailbook/colors.json`; no warm or vivid decorative UI colors. Preserve real artwork colors and platform-required third-party branding. Run `python3 scripts/sync-colors.py --check` and `python3 scripts/check-colors.py` for color changes.
 - For every non-trivial change, define the verifiable success criteria before editing and run the narrowest relevant tests/builds before claiming completion.
+- 小程序统一风格遵循 `client-wxapp/docs/DESIGN-GOVERNANCE.md`，以已认可的预约卡片操作为基准，避免套用历史大字号胶囊按钮。

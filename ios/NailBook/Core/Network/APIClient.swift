@@ -1,19 +1,20 @@
 import Foundation
 
+@MainActor
 class APIClient: ObservableObject {
     static let shared = APIClient()
 
-    private let baseURL = "https://api.lunails.cn/api"
+    private let baseURL: String
     private let session: URLSession
     private let decoder: JSONDecoder
-    private var isRefreshing = false
-    private var refreshContinuations: [CheckedContinuation<Void, Error>] = []
+    private var refreshTasks: [UserRole: Task<Void, Error>] = [:]
 
-    init() {
+    init(baseURL: String = ProcessInfo.processInfo.environment["NAILBOOK_API_URL"] ?? "https://api.lunails.cn/api", session: URLSession? = nil) {
+        self.baseURL = baseURL
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 15
         config.timeoutIntervalForResource = 30
-        self.session = URLSession(configuration: config)
+        self.session = session ?? URLSession(configuration: config)
 
         self.decoder = JSONDecoder()
         self.decoder.dateDecodingStrategy = .iso8601
@@ -24,6 +25,11 @@ class APIClient: ObservableObject {
     func request<T: Decodable>(_ endpoint: Endpoint) async throws -> T {
         let data = try await performRequest(endpoint)
         do {
+            if T.self is APIList.Type,
+               let object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let list = object["data"] as? [Any] ?? object["list"] as? [Any] ?? object["items"] as? [Any] ?? object["works"] as? [Any] ?? object["messages"] as? [Any] {
+                return try decoder.decode(T.self, from: JSONSerialization.data(withJSONObject: list))
+            }
             return try decoder.decode(T.self, from: data)
         } catch {
             throw APIError.decodingError(error)
@@ -59,7 +65,7 @@ class APIClient: ObservableObject {
 
     // MARK: - Private
 
-    private func performRequest(_ endpoint: Endpoint) async throws -> Data {
+    private func performRequest(_ endpoint: Endpoint, mayRefresh: Bool = true) async throws -> Data {
         var urlComponents = URLComponents(string: baseURL + endpoint.path)!
         if let queryItems = endpoint.queryItems {
             urlComponents.queryItems = queryItems
@@ -70,7 +76,7 @@ class APIClient: ObservableObject {
 
         // Add auth token
         let role: UserRole = endpoint.path.hasPrefix("/client") ? .client : .technician
-        if let token = await TokenManager.shared.getAccessToken(for: role) {
+        if endpoint.requiresAuthentication, let token = await TokenManager.shared.getAccessToken(for: role) {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
@@ -91,10 +97,10 @@ class APIClient: ObservableObject {
         let (data, response) = try await session.data(for: request)
 
         // Handle 401 with token refresh
-        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 401 {
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 401, mayRefresh, endpoint.requiresAuthentication {
             try await refreshTokenIfNeeded(role: role)
             // Retry original request
-            return try await performRequest(endpoint)
+            return try await performRequest(endpoint, mayRefresh: false)
         }
 
         try checkResponse(response, data: data)
@@ -116,44 +122,31 @@ class APIClient: ObservableObject {
     }
 
     private func refreshTokenIfNeeded(role: UserRole) async throws {
-        if isRefreshing {
-            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                refreshContinuations.append(continuation)
+        if let task = refreshTasks[role] { return try await task.value }
+        let task = Task { @MainActor in
+            guard let refreshToken = await TokenManager.shared.getRefreshToken(for: role) else {
+                throw APIError.tokenRefreshFailed
             }
-            return
+            let endpoint = Endpoint.refreshToken(role: role)
+            guard let url = URL(string: baseURL + endpoint.path) else { throw APIError.invalidURL }
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try JSONSerialization.data(withJSONObject: ["refreshToken": refreshToken])
+            let (data, response) = try await session.data(for: request)
+            if let http = response as? HTTPURLResponse, [400, 401, 403].contains(http.statusCode) {
+                throw APIError.tokenRefreshFailed
+            }
+            try checkResponse(response, data: data)
+            let tokens = try decoder.decode(TokenResponse.self, from: data)
+            await TokenManager.shared.saveTokens(accessToken: tokens.accessToken,
+                                                refreshToken: tokens.refreshToken, role: role)
         }
-
-        isRefreshing = true
-        defer {
-            isRefreshing = false
-            let continuations = refreshContinuations
-            refreshContinuations = []
-            continuations.forEach { $0.resume() }
-        }
-
-        guard let refreshToken = await TokenManager.shared.getRefreshToken(for: role) else {
-            throw APIError.tokenRefreshFailed
-        }
-
-        let endpoint = Endpoint.refreshToken(role: role)
-        var urlComponents = URLComponents(string: baseURL + endpoint.path)!
-        var request = URLRequest(url: urlComponents.url!)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONSerialization.data(withJSONObject: ["refreshToken": refreshToken])
-
-        let (data, response) = try await session.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            throw APIError.tokenRefreshFailed
-        }
-
-        let tokenResponse = try decoder.decode(TokenResponse.self, from: data)
-        await TokenManager.shared.saveTokens(
-            accessToken: tokenResponse.accessToken,
-            refreshToken: tokenResponse.refreshToken,
-            role: role
-        )
+        refreshTasks[role] = task
+        defer { refreshTasks[role] = nil }
+        try await task.value
     }
+
 }
 
 // MARK: - Response Models
@@ -167,3 +160,6 @@ struct UploadResponse: Codable {
     let url: String
     let filename: String?
 }
+
+private protocol APIList {}
+extension Array: APIList {}

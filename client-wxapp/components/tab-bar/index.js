@@ -1,7 +1,6 @@
 const CLIENT_TABS = [
   { key: 'home',     icon: 'home', label: '首页',  path: '/pages/client/home/index' },
   { key: 'orders',   icon: 'calendar', label: '预约',  path: '/pages/client/orders/index' },
-  { key: 'discover', icon: 'compass', label: '作品',  path: '/pages/client/discover/index' },
   { key: 'chat',     icon: 'chat', label: '消息',  path: '/pages/client/chat/index' },
   { key: 'profile',  icon: 'profile', label: '我的',  path: '/pages/client/profile/index' }
 ];
@@ -40,7 +39,7 @@ Component({
       const app = getApp();
       const role = app.globalData.role || wx.getStorageSync('role') || 'client';
       const token = app.globalData.token || wx.getStorageSync(`${role}_token`) || wx.getStorageSync('token');
-      if (!token && key !== 'discover') {
+      if (!token) {
         wx.navigateTo({ url: '/pages/login/index?redirect=' + encodeURIComponent(tab.path) });
         return;
       }

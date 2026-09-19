@@ -5,23 +5,6 @@ page {
   margin: 0;
 }
 
-/* ===== 风格标签横滚 ===== */
-.style-scroll { width: 100%; margin-top: 22rpx; white-space: nowrap; }
-.style-row { display: inline-flex; gap: 14rpx; padding: 2rpx 2rpx 8rpx; }
-.style-chip {
-  display: flex; align-items: center; justify-content: center;
-  min-height: var(--touch-min);
-  padding: 0 var(--space-lg);
-  border-radius: var(--radius-xl);
-  background: var(--bg-card);
-  border: 0;
-  color: var(--text-body);
-  font-size: var(--font-sm);
-  font-weight: var(--weight-semibold);
-  box-shadow: var(--shadow-sm);
-}
-.style-chip:active { background: var(--bg-tag); border-color: var(--brand-primary-light); }
-
 /* ===== 资产卡片网格 ===== */
 .asset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18rpx; margin-top: 22rpx; }
 .asset-card {
@@ -341,12 +324,12 @@ page {
   display: -webkit-box; -webkit-line-clamp: 2;
   -webkit-box-orient: vertical; overflow: hidden;
 }
-.order-guidance-link { position: relative; height: 56rpx; margin-top: 0; padding-left: 28rpx; box-sizing: border-box; display: flex; align-items:flex-start; justify-content:flex-start; gap:8rpx; color:var(--nb-text-link); background:transparent; font-size:var(--font-xs); font-weight:var(--weight-medium); line-height:var(--leading-normal); }
+.order-guidance-link { position: relative; height: auto; margin-top: 0; padding-left: 28rpx; box-sizing: border-box; display: flex; align-items:flex-start; justify-content:flex-start; gap:8rpx; color:var(--nb-text-link); background:transparent; font-size:var(--font-xs); font-weight:var(--weight-medium); line-height:var(--leading-normal); }
 .order-guidance-link::before { content: ''; position: absolute; top: -16rpx; right: 0; bottom: -16rpx; left: 0; }
 .order-guidance-link:active { opacity: .68; }
 .order-card-actions {
   display: flex; gap: 12rpx;
-  padding-top: 16rpx;
+  padding-top: 0;
   border-top: 0;
 }
 .order-action-btn {

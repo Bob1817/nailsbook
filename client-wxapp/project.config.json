@@ -89,12 +89,13 @@
   },
   "compileType": "miniprogram",
   "libVersion": "2.25.0",
-  "appid": "wxd290b3028b657cf8",
+  "appid": "wx05644a205a1844a0",
   "projectname": "nailbook-wxapp",
   "condition": {},
   "editorSetting": {
     "tabIndent": "insertSpaces",
     "tabSize": 2
   },
-  "simulatorPluginLibVersion": {}
+  "simulatorPluginLibVersion": {},
+  "isGameTourist": false
 }

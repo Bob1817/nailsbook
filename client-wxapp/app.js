@@ -61,11 +61,11 @@ App({
           }
         })
         .catch(() => {
-          // 网络错误等，保守起见仍跳转（home 接口已改为公开）
+          // 网络错误时保留本地会话，进入首页后由认证接口再次校验。
           if (!preserveSharePage) setTimeout(() => wx.reLaunch({ url: homePage }), 300);
         });
     }
-    // 无 token → 保持 app.json 的公开发现页，允许游客先浏览再转化
+    // 无 token 时停留在登录页；作品与客户首页均要求有效会话。
   },
 
   onShow() {

@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - Work Detail View
+// MARK: - Work Detail View (aligned with wxapp design)
 
 struct WorkDetailView: View {
     let workId: Int
@@ -15,183 +15,516 @@ struct WorkDetailView: View {
     @State private var showCommentInput = false
 
     var body: some View {
-        ScrollView {
-            if let work = work {
-                VStack(spacing: 0) {
-                    // Image carousel
-                    if let images = work.images, !images.isEmpty {
-                        TabView(selection: $currentImageIndex) {
-                            ForEach(images.indices, id: \.self) { index in
-                                AsyncImage(url: URL(string: images[index])) { image in
-                                    image
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                } placeholder: {
-                                    Rectangle()
-                                        .fill(Color.nbSecondarySoft)
-                                        .overlay(ProgressView())
-                                }
-                                .tag(index)
-                            }
-                        }
-                        .tabViewStyle(.page(indexDisplayMode: .automatic))
-                        .frame(height: 400)
-                    }
-
-                    VStack(alignment: .leading, spacing: Spacing.lg) {
-                        // Title & info
-                        VStack(alignment: .leading, spacing: Spacing.sm) {
-                            Text(work.title ?? "未命名作品")
-                                .font(NBFont.titleLarge)
-                                .foregroundColor(.nbTextPrimary)
-
-                            if let tech = work.technician {
-                                HStack(spacing: Spacing.sm) {
-                                    Circle()
-                                        .fill(Color.nbPrimarySoft)
-                                        .frame(width: 24, height: 24)
-                                        .overlay(
-                                            Text(String(tech.name?.first ?? "?"))
-                                                .font(NBFont.captionSmall)
-                                                .foregroundColor(.nbPrimary)
-                                        )
-                                    Text(tech.name ?? "")
-                                        .font(NBFont.bodySmall)
-                                        .foregroundColor(.nbTextSecondary)
-                                }
-                            }
-
-                            if let desc = work.description, !desc.isEmpty {
-                                Text(desc)
-                                    .font(NBFont.bodyMedium)
-                                    .foregroundColor(.nbTextSecondary)
-                                    .padding(.top, Spacing.xs)
-                            }
-
-                            // Tags
-                            if let tags = work.tags, !tags.isEmpty {
-                                FlowLayout(spacing: Spacing.sm) {
-                                    ForEach(tags, id: \.self) { tag in
-                                        NBChip(title: tag)
-                                    }
-                                }
-                            }
-                        }
-
-                        Divider()
-
-                        // Action bar
-                        HStack(spacing: Spacing.xxl) {
-                            actionButton(icon: isLiked ? "heart.fill" : "heart",
-                                        title: "\(work.likeCount ?? 0)",
-                                        color: isLiked ? .nbPrimary : .nbTextSecondary) {
-                                toggleLike()
-                            }
-                            actionButton(icon: isFavorited ? "star.fill" : "star",
-                                        title: "\(work.favoriteCount ?? 0)",
-                                        color: isFavorited ? .nbWarning : .nbTextSecondary) {
-                                toggleFavorite()
-                            }
-                            actionButton(icon: "bubble.right",
-                                        title: "\(comments.count)",
-                                        color: .nbTextSecondary) {
-                                showCommentInput = true
-                            }
-                            Spacer()
-                            actionButton(icon: "square.and.arrow.up",
-                                        title: "分享",
-                                        color: .nbTextSecondary) {
-                                shareWork()
-                            }
-                        }
-
-                        Divider()
-
-                        // Comments section
-                        VStack(alignment: .leading, spacing: Spacing.md) {
-                            Text("评论 (\(comments.count))")
-                                .font(NBFont.titleSmall)
-                                .foregroundColor(.nbTextPrimary)
-
-                            if comments.isEmpty {
-                                Text("暂无评论，快来抢沙发~")
-                                    .font(NBFont.bodyMedium)
-                                    .foregroundColor(.nbTextTertiary)
-                                    .padding(.vertical, Spacing.lg)
-                            } else {
-                                ForEach(comments) { comment in
-                                    CommentRow(comment: comment) {
-                                        replyTo = comment
-                                        showCommentInput = true
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .padding(Spacing.lg)
-                }
+        ZStack {
+            if isLoading {
+                loadingView
+            } else if let work = work {
+                workContent(work)
+            } else {
+                errorView
             }
         }
-        .navigationBarTitleDisplayMode(.inline)
-        .background(Color.nbBg)
-        .safeAreaInset(edge: .bottom) {
+        .navigationBarHidden(true)
+        .task { await loadDetail() }
+    }
+
+    // MARK: - Loading View
+
+    private var loadingView: some View {
+        VStack {
+            Spacer()
+            ProgressView()
+                .scaleEffect(1.2)
+            Spacer()
+        }
+        .background(NBColors.page)
+    }
+
+    // MARK: - Error View
+
+    private var errorView: some View {
+        VStack(spacing: 16) {
+            Spacer()
+
+            ZStack {
+                Circle()
+                    .fill(NBColors.page)
+                    .frame(width: 44, height: 44)
+                Text("!")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(NBColors.ink)
+            }
+
+            Text("作品暂时无法加载")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(NBColors.ink)
+
+            Text("暂时无法打开这件作品。你可以返回继续浏览，或稍后重新尝试。")
+                .font(.system(size: 14))
+                .foregroundColor(NBColors.muted)
+                .lineSpacing(1.4)
+                .multilineTextAlignment(.center)
+
+            HStack(spacing: 12) {
+                Button("返回浏览") {
+                    // Go back
+                }
+                .font(.system(size: 15, weight: .medium))
+                .foregroundColor(NBColors.secondary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(NBColors.page)
+                .cornerRadius(8)
+
+                Button("重新加载") {
+                    Task { await loadDetail() }
+                }
+                .font(.system(size: 15, weight: .medium))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(NBColors.action)
+                .cornerRadius(8)
+            }
+            .padding(.horizontal, 24)
+
+            Spacer()
+        }
+        .background(NBColors.page)
+    }
+
+    // MARK: - Work Content
+
+    private func workContent(_ work: NailWork) -> some View {
+        VStack(spacing: 0) {
+            // Image carousel
+            imageCarousel(work)
+
+            // Info panel
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    // Title row
+                    titleRow(work)
+
+                    // Price
+                    if let price = work.price, price > 0 {
+                        priceRow(work)
+                    }
+
+                    // Description
+                    if let desc = work.description, !desc.isEmpty {
+                        Text(desc)
+                            .font(.system(size: 14))
+                            .foregroundColor(NBColors.secondary)
+                            .lineSpacing(1.6)
+                            .padding(.top, 8)
+                    }
+
+                    // Tags
+                    if let tags = work.tags, !tags.isEmpty {
+                        tagsSection(tags)
+                    }
+
+                    // Technician info
+                    if let tech = work.technician {
+                        technicianRow(tech)
+                    }
+
+                    // Engagement actions
+                    engagementSection(work)
+
+                    // Comments
+                    commentsSection
+                }
+                .padding(16)
+            }
+
             // Comment input bar
             if showCommentInput {
                 commentInputBar
             }
         }
-        .task { await loadDetail() }
+        .background(Color.white)
+    }
+
+    // MARK: - Image Carousel
+
+    private func imageCarousel(_ work: NailWork) -> some View {
+        ZStack(alignment: .bottom) {
+            let images = work.imageUrls ?? (work.coverUrl != nil ? [work.coverUrl!] : [])
+
+            if images.isEmpty {
+                Rectangle()
+                    .fill(NBColors.page)
+                    .frame(height: UIScreen.main.bounds.height * 0.55)
+            } else {
+                TabView(selection: $currentImageIndex) {
+                    ForEach(images.indices, id: \.self) { index in
+                        AsyncImage(url: URL(string: images[index])) { image in
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        } placeholder: {
+                            Rectangle()
+                                .fill(NBColors.page)
+                                .overlay(ProgressView())
+                        }
+                        .tag(index)
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: .automatic))
+                .frame(height: UIScreen.main.bounds.height * 0.55)
+            }
+
+            // Back button
+            VStack {
+                HStack {
+                    Button {
+                        // Go back
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundColor(.white)
+                            .frame(width: 44, height: 44)
+                            .background(Color.black.opacity(0.52))
+                            .clipShape(Circle())
+                    }
+                    .padding(.leading, 16)
+                    .padding(.top, 60)
+
+                    Spacer()
+                }
+                Spacer()
+            }
+        }
+    }
+
+    // MARK: - Title Row
+
+    private func titleRow(_ work: NailWork) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text(work.title ?? "未命名作品")
+                .font(.system(size: 19, weight: .bold))
+                .foregroundColor(NBColors.ink)
+                .lineLimit(2)
+
+            Spacer()
+
+            // Book same button
+            Button {
+                // Book same
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 12))
+                    Text("预约同款")
+                        .font(.system(size: 13, weight: .semibold))
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .background(NBColors.action)
+                .cornerRadius(6)
+            }
+        }
+    }
+
+    // MARK: - Price Row
+
+    private func priceRow(_ work: NailWork) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text("¥\(String(format: "%.0f", work.price ?? 0))")
+                .font(.system(size: 19, weight: .bold))
+                .foregroundColor(NBColors.action)
+        }
+        .padding(.top, 8)
+    }
+
+    // MARK: - Tags Section
+
+    private func tagsSection(_ tags: [String]) -> some View {
+        HStack(spacing: 8) {
+            ForEach(tags, id: \.self) { tag in
+                Text("#\(tag)")
+                    .font(.system(size: 11))
+                    .foregroundColor(NBColors.ink)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4)
+                    .background(NBColors.page)
+                    .cornerRadius(999)
+            }
+        }
+        .padding(.top, 12)
+    }
+
+    // MARK: - Technician Row
+
+    private func technicianRow(_ tech: WorkTechnician) -> some View {
+        HStack(spacing: 12) {
+            if let avatarUrl = tech.avatarUrl, let url = URL(string: avatarUrl) {
+                AsyncImage(url: url) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    Circle()
+                        .fill(NBColors.page)
+                }
+                .frame(width: 36, height: 36)
+                .clipShape(Circle())
+            } else {
+                ZStack {
+                    Circle()
+                        .fill(NBColors.page)
+                        .frame(width: 36, height: 36)
+                    Text(String(tech.name?.first ?? "?"))
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(NBColors.action)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(tech.name ?? "")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(NBColors.ink)
+                Text("服务美甲师")
+                    .font(.system(size: 12))
+                    .foregroundColor(NBColors.muted)
+            }
+
+            Spacer()
+
+            Text("查看主页 ›")
+                .font(.system(size: 12))
+                .foregroundColor(NBColors.link)
+        }
+        .padding(.vertical, 12)
+    }
+
+    // MARK: - Engagement Section
+
+    private func engagementSection(_ work: NailWork) -> some View {
+        HStack(spacing: 6) {
+            // Like
+            Button {
+                toggleLike()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: isLiked ? "heart.fill" : "heart")
+                        .font(.system(size: 16))
+                        .foregroundColor(isLiked ? NBColors.action : NBColors.secondary)
+                    Text("\(work.likeCount ?? 0)")
+                        .font(.system(size: 13))
+                        .foregroundColor(NBColors.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(NBColors.page)
+                .cornerRadius(9)
+            }
+
+            // Favorite
+            Button {
+                toggleFavorite()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: isFavorited ? "star.fill" : "star")
+                        .font(.system(size: 16))
+                        .foregroundColor(isFavorited ? NBColors.warning : NBColors.secondary)
+                    Text("\(work.favoriteCount ?? 0)")
+                        .font(.system(size: 13))
+                        .foregroundColor(NBColors.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(NBColors.page)
+                .cornerRadius(9)
+            }
+
+            // Share
+            Button {
+                shareWork()
+            } label: {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.system(size: 16))
+                    .foregroundColor(NBColors.secondary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(NBColors.page)
+                    .cornerRadius(9)
+            }
+        }
+        .padding(.vertical, 12)
+    }
+
+    // MARK: - Comments Section
+
+    private var commentsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("评论")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(NBColors.ink)
+                Spacer()
+                Text("\(comments.count) 条")
+                    .font(.system(size: 12))
+                    .foregroundColor(NBColors.muted)
+            }
+
+            if comments.isEmpty {
+                VStack(spacing: 8) {
+                    Text("还没有评论")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(NBColors.secondary)
+                    Text("说说你对这个作品的看法")
+                        .font(.system(size: 11))
+                        .foregroundColor(NBColors.muted)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
+                .background(NBColors.page)
+                .cornerRadius(10)
+            } else {
+                ForEach(comments) { comment in
+                    commentRow(comment)
+                }
+            }
+        }
+    }
+
+    private func commentRow(_ comment: NailWorkComment) -> some View {
+        HStack(alignment: .top, spacing: 9) {
+            // Avatar
+            let avatarUrl = comment.client?.avatarUrl ?? comment.technician?.avatarUrl
+            let userName = comment.client?.nickname ?? comment.technician?.name ?? "匿名用户"
+            let isTechnician = comment.technicianId != nil
+
+            if let avatarUrl = avatarUrl, let url = URL(string: avatarUrl) {
+                AsyncImage(url: url) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    Circle()
+                        .fill(NBColors.page)
+                }
+                .frame(width: 30, height: 30)
+                .clipShape(Circle())
+            } else {
+                ZStack {
+                    Circle()
+                        .fill(NBColors.page)
+                        .frame(width: 30, height: 30)
+                    Text(String(userName.prefix(1)))
+                        .font(.system(size: 12))
+                        .foregroundColor(NBColors.muted)
+                }
+            }
+
+            // Content
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(userName)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(NBColors.ink)
+
+                    if isTechnician {
+                        Text("美甲师")
+                            .font(.system(size: 10))
+                            .foregroundColor(NBColors.secondary)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(NBColors.page)
+                            .cornerRadius(3)
+                    }
+
+                    if comment.isPinned == true {
+                        Text("置顶")
+                            .font(.system(size: 10))
+                            .foregroundColor(NBColors.secondary)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(NBColors.page)
+                            .cornerRadius(3)
+                    }
+
+                    Spacer()
+
+                    if let time = comment.createdAt {
+                        Text(formatTime(time))
+                            .font(.system(size: 10))
+                            .foregroundColor(NBColors.muted)
+                    }
+                }
+
+                Text(comment.content)
+                    .font(.system(size: 13))
+                    .foregroundColor(NBColors.secondary)
+                    .lineSpacing(1.4)
+            }
+        }
+        .padding(.vertical, 4)
     }
 
     // MARK: - Comment Input Bar
 
     private var commentInputBar: some View {
-        HStack(spacing: Spacing.md) {
+        VStack(spacing: 0) {
+            Divider()
+
             if let reply = replyTo {
-                Text("回复 \(reply.client?.nickname ?? reply.technician?.name ?? "")")
-                    .font(NBFont.captionLarge)
-                    .foregroundColor(.nbPrimary)
-                Button { replyTo = nil } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.nbTextTertiary)
+                let replyName = reply.client?.nickname ?? reply.technician?.name ?? ""
+                HStack {
+                    Text("回复 @\(replyName)")
+                        .font(.system(size: 11))
+                        .foregroundColor(NBColors.secondary)
+                    Spacer()
+                    Button("取消") { replyTo = nil }
+                        .font(.system(size: 11))
+                        .foregroundColor(NBColors.ink)
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
             }
 
-            TextField(replyTo != nil ? "写回复..." : "写评论...", text: $commentText)
-                .font(NBFont.bodyMedium)
-                .padding(.horizontal, Spacing.md)
-                .frame(height: 40)
-                .background(Color.nbSurfaceAlt)
-                .cornerRadius(Radius.full)
+            HStack(spacing: 12) {
+                TextField(replyTo != nil ? "写回复..." : "添加评论…", text: $commentText)
+                    .font(.system(size: 13))
+                    .padding(.horizontal, 13)
+                    .frame(height: 44)
+                    .background(NBColors.softSurface)
+                    .cornerRadius(8)
 
-            Button {
-                Task { await submitComment() }
-            } label: {
-                Image(systemName: "arrow.up.circle.fill")
-                    .font(.system(size: 28))
-                    .foregroundColor(commentText.isEmpty ? .nbTextTertiary : .nbPrimary)
+                Button {
+                    Task { await submitComment() }
+                } label: {
+                    Text("发送")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(commentText.isEmpty ? NBColors.muted : .white)
+                        .frame(width: 72, height: 44)
+                        .background(commentText.isEmpty ? NBColors.page : NBColors.action)
+                        .cornerRadius(8)
+                }
+                .disabled(commentText.isEmpty)
             }
-            .disabled(commentText.isEmpty)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color.white)
         }
-        .padding(.horizontal, Spacing.lg)
-        .padding(.vertical, Spacing.sm)
-        .background(Color.nbSurface)
-        .shadow(color: .black.opacity(0.06), radius: 4, y: -2)
+    }
+
+    // MARK: - Helpers
+
+    private func formatTime(_ isoString: String) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        guard let date = formatter.date(from: isoString) else { return "" }
+        let f = DateFormatter()
+        f.dateFormat = "MM-dd HH:mm"
+        return f.string(from: date)
     }
 
     // MARK: - Actions
-
-    private func actionButton(icon: String, title: String, color: Color, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: 2) {
-                Image(systemName: icon)
-                    .font(.system(size: 20))
-                Text(title)
-                    .font(NBFont.captionMedium)
-            }
-            .foregroundColor(color)
-        }
-    }
 
     private func loadDetail() async {
         do {
@@ -239,136 +572,10 @@ struct WorkDetailView: View {
     }
 }
 
-// MARK: - Comment Row
+// MARK: - Preview
 
-struct CommentRow: View {
-    let comment: NailWorkComment
-    var onReply: (() -> Void)?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            HStack(spacing: Spacing.sm) {
-                Circle()
-                    .fill(Color.nbPrimarySoft)
-                    .frame(width: 28, height: 28)
-                    .overlay(
-                        Text(String(displayName.first ?? "?"))
-                            .font(NBFont.captionSmall)
-                            .foregroundColor(.nbPrimary)
-                    )
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(displayName)
-                        .font(NBFont.captionLarge)
-                        .fontWeight(.medium)
-                        .foregroundColor(.nbTextPrimary)
-                    if let time = comment.createdAt {
-                        Text(formatTime(time))
-                            .font(NBFont.captionSmall)
-                            .foregroundColor(.nbTextMuted)
-                    }
-                }
-                Spacer()
-
-                if comment.isPinned == true {
-                    Text("置顶")
-                        .font(NBFont.captionSmall)
-                        .foregroundColor(.nbPrimary)
-                }
-            }
-
-            Text(comment.content)
-                .font(NBFont.bodyMedium)
-                .foregroundColor(.nbTextPrimary)
-
-            // Replies
-            if let replies = comment.replies, !replies.isEmpty {
-                VStack(alignment: .leading, spacing: Spacing.sm) {
-                    ForEach(replies) { reply in
-                        HStack(spacing: Spacing.sm) {
-                            Circle()
-                                .fill(Color.nbSecondarySoft)
-                                .frame(width: 20, height: 20)
-                                .overlay(
-                                    Text(String((reply.client?.nickname ?? reply.technician?.name ?? "?").first ?? "?"))
-                                        .font(.system(size: 8))
-                                        .foregroundColor(.nbTextSecondary)
-                                )
-                            Text(reply.client?.nickname ?? reply.technician?.name ?? "")
-                                .font(NBFont.captionMedium)
-                                .fontWeight(.medium)
-                            Text(reply.content)
-                                .font(NBFont.captionLarge)
-                                .foregroundColor(.nbTextSecondary)
-                        }
-                    }
-                }
-                .padding(.leading, Spacing.xl)
-                .padding(.vertical, Spacing.sm)
-                .background(Color.nbSurfaceAlt)
-                .cornerRadius(Radius.sm)
-            }
-
-            Button { onReply?() } label: {
-                Text("回复")
-                    .font(NBFont.captionLarge)
-                    .foregroundColor(.nbTextTertiary)
-            }
-        }
-        .padding(.vertical, Spacing.sm)
-    }
-
-    private var displayName: String {
-        comment.client?.nickname ?? comment.technician?.name ?? "匿名用户"
-    }
-
-    private func formatTime(_ isoString: String) -> String {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        guard let date = formatter.date(from: isoString) else { return "" }
-        let f = DateFormatter()
-        f.dateFormat = "MM-dd HH:mm"
-        return f.string(from: date)
-    }
-}
-
-// MARK: - Flow Layout
-
-struct FlowLayout: Layout {
-    var spacing: CGFloat = 8
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let result = arrange(proposal: proposal, subviews: subviews)
-        return result.size
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let result = arrange(proposal: proposal, subviews: subviews)
-        for (index, origin) in result.origins.enumerated() {
-            subviews[index].place(at: CGPoint(x: bounds.minX + origin.x, y: bounds.minY + origin.y), proposal: .unspecified)
-        }
-    }
-
-    private func arrange(proposal: ProposedViewSize, subviews: Subviews) -> (size: CGSize, origins: [CGPoint]) {
-        let maxWidth = proposal.width ?? .infinity
-        var origins: [CGPoint] = []
-        var x: CGFloat = 0
-        var y: CGFloat = 0
-        var rowHeight: CGFloat = 0
-        var maxX: CGFloat = 0
-
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if x + size.width > maxWidth && x > 0 {
-                x = 0
-                y += rowHeight + spacing
-                rowHeight = 0
-            }
-            origins.append(CGPoint(x: x, y: y))
-            rowHeight = max(rowHeight, size.height)
-            x += size.width + spacing
-            maxX = max(maxX, x)
-        }
-
-        return (CGSize(width: maxX - spacing, height: y + rowHeight), origins)
+#Preview {
+    NavigationStack {
+        WorkDetailView(workId: 1)
     }
 }

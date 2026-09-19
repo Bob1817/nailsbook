@@ -85,7 +85,6 @@ const checks = [
   'test-account-deletion.js',
   'test-work-error-state.js',
   'test-work-promotion.js',
-  'test-discover-work-navigation.js',
   'test-page-governance.js',
 ];
 

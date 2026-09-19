@@ -17,8 +17,8 @@
       <view wx:else class="wc-editorial-avatar wc-editorial-avatar-fallback"><image src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" /></view>
       <view class="wc-editorial-artist-copy">
         <text class="wc-editorial-name">{{work.technicianName || '独立美甲师'}}</text>
-        <text wx:if="{{artistStatus}}" class="wc-artist-separator">·</text>
-        <text wx:if="{{artistStatus}}" class="wc-editorial-expertise">{{artistStatus}}</text>
+        <text wx:if="{{manageable && artistStatus}}" class="wc-editorial-place">{{artistStatus}}</text>
+        <text wx:elif="{{artistPlaceLine}}" class="wc-editorial-place">{{artistPlaceLine}}</text>
       </view>
     </view>
   </view>

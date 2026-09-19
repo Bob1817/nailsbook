@@ -4,30 +4,56 @@
   box-sizing: border-box;
 }
 .has-composer { padding-bottom: calc(176rpx + env(safe-area-inset-bottom)); }
+/* Visitor artist card — white card, booking-card baseline */
 .visitor-section {
-  margin: 24rpx 0;
-  padding: 24rpx;
-  border-radius: 24rpx;
-  background: var(--nb-page);
+  margin: var(--space-md) 32rpx;
+  padding: var(--space-md);
+  border-radius: var(--radius-lg);
+  background: var(--nb-surface);
+  box-shadow: 0 10rpx 28rpx rgba(0, 0, 0, 0.07);
 }
 .visitor-artist {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: var(--space-sm);
   min-height: 88rpx;
 }
-.visitor-avatar { width: 72rpx; height: 72rpx; border-radius: 50%; flex-shrink: 0; }
+.visitor-artist:active { opacity: .85; }
+.visitor-avatar { width: 88rpx; height: 88rpx; border-radius: 50%; flex-shrink: 0; }
 .visitor-copy { flex: 1; min-width: 0; }
-.visitor-name { display: block; font-size: 28rpx; font-weight: 600; color: var(--nb-ink); }
-.visitor-description { display: block; margin-top: 8rpx; font-size: 24rpx; line-height: 1.6; color: var(--nb-secondary); }
-.visitor-link { font-size: 24rpx; color: var(--nb-text-link); flex-shrink: 0; }
-.visitor-shop { margin-top: 20rpx; }
+.visitor-name { display: block; font-size: var(--font-md); font-weight: 600; color: var(--nb-ink); line-height: 1.3; }
+.visitor-meta { display: flex; align-items: center; gap: var(--space-xs); margin-top: 8rpx; }
+.visitor-meta-item { font-size: var(--font-xs); color: var(--nb-muted); }
+.visitor-status { font-size: var(--font-xs); font-weight: 600; line-height: 1.4; padding: 2rpx 14rpx; border-radius: var(--radius-full); }
+.visitor-status-open { color: var(--nb-success); background: var(--nb-success-surface); }
+.visitor-status-closed { color: var(--nb-muted); background: var(--nb-line); }
+.visitor-link { font-size: var(--font-sm); color: var(--nb-text-link); flex-shrink: 0; font-weight: 500; }
+.visitor-bio { display: block; margin-top: var(--space-sm); font-size: var(--font-sm); line-height: 1.6; color: var(--nb-secondary); }
+.visitor-shops { margin-top: var(--space-md); }
+.visitor-shop-card {
+  padding: 18rpx 20rpx;
+  border-radius: 18rpx;
+  background: var(--nb-page);
+}
+.visitor-shop-card + .visitor-shop-card { margin-top: var(--space-sm); }
+.visitor-shop-info-row { display: flex; align-items: center; gap: var(--space-xs); min-width: 0; }
+.visitor-shop-hours-row { margin-top: 12rpx; }
+.visitor-shop-addr-row { align-items: flex-start; margin-top: 12rpx; }
+.visitor-shop-icon { width: 26rpx; height: 26rpx; flex-shrink: 0; opacity: .9; }
+.visitor-shop-addr-row .visitor-shop-icon { margin-top: 4rpx; }
+.visitor-shop-name { flex: 1; min-width: 0; font-size: var(--font-sm); font-weight: 600; color: var(--nb-ink); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.visitor-shop-hours-text { font-size: var(--font-xs); color: var(--nb-muted); }
+.visitor-shop-addr { font-size: var(--font-xs); color: var(--nb-muted); line-height: 1.5; }
+.visitor-shop-nav-inline { color: var(--nb-text-link); font-weight: 500; }
+.visitor-hint { display: block; margin-top: var(--space-sm); font-size: var(--font-sm); color: var(--nb-muted); }
 .info-panel.visitor-panel { padding-bottom: calc(150rpx + env(safe-area-inset-bottom)); }
-.visitor-booking-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 10; padding: 16rpx 28rpx calc(16rpx + env(safe-area-inset-bottom)); background: var(--nb-surface); }
-.visitor-booking-button { min-height: 88rpx; border: 0; border-radius: 20rpx; background: var(--nb-text-link); color: var(--nb-surface); font-size: 28rpx; }
-.visitor-booking-button::after, .visitor-share::after { border: 0; }
-.visitor-booking-button:active { opacity: .8; }
-.visitor-share { min-height: 88rpx; color: var(--nb-text-link); background: transparent; font-size: 26rpx; border: 0; }
+.visitor-booking-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 10; display: flex; gap: 24rpx; padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom)); background: var(--nb-surface); box-shadow: 0 -4rpx 16rpx rgba(0,0,0,0.06); }
+.visitor-bar-btn { flex: 1 0 0%; width: 0; height: 88rpx; display: flex; align-items: center; justify-content: center; border-radius: 16rpx; font-size: 26rpx; font-weight: 600; box-sizing: border-box; line-height: 1; }
+.visitor-bar-btn-primary { background: var(--nb-action); color: var(--nb-inverse); border: 0; }
+.visitor-bar-btn-primary:active { opacity: .8; }
+.visitor-bar-btn-outline { background: transparent; color: var(--nb-action); border: 2rpx solid var(--nb-action); }
+.visitor-bar-btn-outline:active { opacity: .7; }
+.visitor-bar-pressed { opacity: .7; }
 .visitor-booking-note { display: block; margin-top: 24rpx; font-size: 24rpx; line-height: 1.6; color: var(--nb-secondary); }
 .state-screen {
   min-height: 100vh;
@@ -422,5 +448,3 @@
 
 @import '../../styles/semantic-actions.wxss';
 @import '../../styles/booking-actions.wxss';
-
-.visitor-booking-button.booking-action { min-height:44px; height:44px; border-radius:8px; font-size:var(--font-sm); line-height:1.4; box-shadow:none; }

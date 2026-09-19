@@ -195,6 +195,7 @@ extension Color {
 enum NBColors {
     static let page = Color(hex: "F5F5F7")
     static let surface = Color(hex: "FFFFFF")
+    static let softSurface = Color(hex: "EEF1F5")  // wxapp: --nb-soft-surface
     static let pressed = Color(hex: "ECECEF")
     static let ink = Color(hex: "1D1D1F")
     static let secondary = Color(hex: "48484D")
@@ -206,4 +207,12 @@ enum NBColors {
     static let action = Color(hex: "1D1D1F")
     static let actionPressed = Color(hex: "343438")
     static let inverse = Color(hex: "FFFFFF")
+
+    // Status colors
+    static let success = Color(hex: "34C759")
+    static let successSurface = Color(hex: "E8F5E9")
+    static let danger = Color(hex: "FF3B30")
+    static let dangerSurface = Color(hex: "FFEBEE")
+    static let warning = Color(hex: "FF9500")
+    static let warningSurface = Color(hex: "FFF3E0")
 }

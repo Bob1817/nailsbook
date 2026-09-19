@@ -6,6 +6,9 @@ const { phoneMask } = require('../../../utils/util');
 Page({
   data: {
     avatar: '',
+    // 顶部个人信息区延伸到状态栏下方，由页面自行撑开安全区
+    statusBarHeight: 0,
+    navBarHeight: 0,
     avatarUploading: false,
     nickname: '',
     phone: '',
@@ -20,7 +23,8 @@ Page({
     roleCardSub: '',
     roleSwitchLabel: '切换身份',
     technicians: [],
-    previewTechnicians: [], activeCount: 0, pendingCount: 0, hiddenActiveCount: 0, previewSummary: '',
+    previewTechnicians: [], activeCount: 0, visibleCount: 0, pendingCount: 0, hiddenActiveCount: 0, previewSummary: '',
+    carouselIndex: 0, carouselScrollTarget: '',
 
     // 角色能力（由 /client/auth/me 返回）
     capabilities: {
@@ -51,6 +55,14 @@ Page({
   onUnload() { this._avatarUnloaded = true; },
 
   onLoad() {
+    const systemInfo = wx.getSystemInfoSync();
+    const menuButton = wx.getMenuButtonBoundingClientRect();
+    // 顶部区必须避开右上角胶囊按钮：导航栏高度 = 胶囊底部 + 与顶部等距留白
+    const navBarHeight = menuButton.top + menuButton.height + (menuButton.top - systemInfo.statusBarHeight);
+    this.setData({
+      statusBarHeight: systemInfo.statusBarHeight || 0,
+      navBarHeight: Math.round(navBarHeight)
+    });
     this.loadProfile();
   },
 
@@ -417,6 +429,33 @@ Page({
   },
 
   manageTechnicians() { wx.navigateTo({ url: '/pages/client/my-technicians/index' }); },
+
+  onCarouselScroll(e) {
+    const scrollLeft = e.detail.scrollLeft;
+    const query = wx.createSelectorQuery();
+    query.select('.tech-carousel-card').boundingClientRect(rect => {
+      if (!rect) return;
+      const gapPx = 12;
+      const w = rect.width + gapPx;
+      if (w <= 0) return;
+      const idx = Math.round(scrollLeft / w);
+      this.setData({ carouselIndex: Math.max(0, Math.min(idx, (this.data.previewTechnicians.length || 1) - 1)) });
+    }).exec();
+  },
+
+  carouselPrev() {
+    const target = Math.max(0, this.data.carouselIndex - 1);
+    const tech = this.data.previewTechnicians[target];
+    if (tech) this.setData({ carouselScrollTarget: 'carousel-' + tech.id, carouselIndex: target });
+  },
+
+  carouselNext() {
+    const max = (this.data.previewTechnicians.length || 1) - 1;
+    const target = Math.min(max, this.data.carouselIndex + 1);
+    const tech = this.data.previewTechnicians[target];
+    if (tech) this.setData({ carouselScrollTarget: 'carousel-' + tech.id, carouselIndex: target });
+  },
+
   viewTechnicianHome(e) {
     const id = e.currentTarget.dataset.id;
     if (id) wx.navigateTo({ url: '/pages/client/artist-home/index?id=' + id });

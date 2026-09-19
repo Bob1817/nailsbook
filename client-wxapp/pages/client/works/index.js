@@ -71,7 +71,11 @@ Page({
   loadBusinessPage: function () {
     var self = this;
     self.setData({ loading: true, loadFailed: false, businessPage: true });
-    api.public.artists.detail(self.data.targetTechId).then(function (res) {
+    Promise.all([
+      api.public.artists.detail(self.data.targetTechId),
+      api.client.works.list({ techId: self.data.targetTechId })
+    ]).then(function (results) {
+      var res = results[0];
       var artist = res.artist || {};
       artist.initial = (artist.name || '美').charAt(0);
       var techSnapshot = {
@@ -85,7 +89,8 @@ Page({
         specialties: artist.styleTags || [],
         styleTags: artist.styleTags || []
       };
-      var works = (res.works || []).map(function (work, index) {
+      var worksData = results[1];
+      var works = (worksData.list || worksData.data || worksData || []).map(function (work, index) {
         return normalizeWork(work, techSnapshot, { index: index, styleTags: techSnapshot.styleTags });
       });
       self.setData({
@@ -114,12 +119,9 @@ Page({
   loadWorks: function () {
     var self = this;
     self.setData({ loading: true, loadFailed: false });
-    var app = getApp();
-    var currentRole = app.globalData.role || wx.getStorageSync('role');
-    var isClient = currentRole === 'client' && !!(app.globalData.token || wx.getStorageSync('client_token'));
     Promise.all([
-      api.public.works.list({ sortBy: self.data.sortBy, sortDir: self.data.sortDirs[self.data.sortBy] }),
-      isClient ? api.client.likes.list().catch(function () { return []; }) : Promise.resolve([])
+      api.client.works.list({ sortBy: self.data.sortBy, sortDir: self.data.sortDirs[self.data.sortBy] }),
+      api.client.likes.list().catch(function () { return []; })
     ]).then(function (results) {
         var res = results[0];
         var likedList = results[1] || [];

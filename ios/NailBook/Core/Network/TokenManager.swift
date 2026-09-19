@@ -24,6 +24,10 @@ actor TokenManager {
         let prefix = role.rawValue
         keychain["\(prefix)_access_token"] = accessToken
         keychain["\(prefix)_refresh_token"] = refreshToken
+        if getCurrentRole() == nil { keychain["user_type"] = role.rawValue }
+    }
+
+    func setCurrentRole(_ role: UserRole) {
         keychain["user_type"] = role.rawValue
     }
 

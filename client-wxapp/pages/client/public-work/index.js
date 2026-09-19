@@ -2,6 +2,7 @@ const api = require('../../../services/api');
 const { parseWorkScene } = require('../../../utils/work-share-scene');
 const { trackConversion } = require('../../../utils/conversion-tracking');
 const { normalizeWork, normalizeWorkDetail } = require('../../../utils/normalize-work');
+const { buildClientLoginUrl } = require('../../../utils/artist-navigation');
 
 Page({
   data: {
@@ -14,12 +15,21 @@ Page({
     canRetry: false,
     imageIndex: 0,
     binding: false,
-    visitorInfo: null
+    visitorInfo: null,
+    isLoggedIn: false
   },
 
   onLoad(options) {
     this.shareChannel = options.scene || options.channel === 'wechat_moments' ? 'wechat_moments' : 'wechat_share';
     if (options.scene) options = parseWorkScene(options.scene) || {};
+    if (!options.shareToken && !options.id) {
+      this.setData({ loading: false, error: true, errorMessage: '分享链接无效', errorDescription: '链接信息不完整，请返回浏览，或请分享者重新发送作品链接。', canRetry: false });
+      return;
+    }
+    // 检测登录状态，未登录也可浏览
+    const token = wx.getStorageSync('token') || wx.getStorageSync('client_token') || wx.getStorageSync('technician_token');
+    this.setData({ isLoggedIn: !!token });
+    this._techId = null; // 缓存美甲师 ID，登录绑定时使用
     this.resumeBooking = options.book === '1';
     if (options.shareToken) {
       this.shareToken = options.shareToken;
@@ -27,8 +37,6 @@ Page({
     } else if (options.id) {
       this.workId = options.id;
       this.loadWork();
-    } else {
-      this.setData({ loading: false, error: true, errorMessage: '分享链接无效', errorDescription: '链接信息不完整，请返回浏览，或请分享者重新发送作品链接。', canRetry: false });
     }
   },
 
@@ -47,6 +55,7 @@ Page({
         shops: rawWork.shops || []
       };
       const techId = rawWork.technicianId || (rawWork.technician && (rawWork.technician.id || rawWork.technician.technicianId));
+      this._techId = techId || null;
       if (techId) {
         try {
           const artistRes = await api.public.artists.detail(String(techId));
@@ -62,7 +71,10 @@ Page({
               acceptingBookings: artist.acceptingBookings !== false,
               shops: (artist.shopAddresses || []).filter(shop => shop && shop.enabled !== false).map(shop => ({
                 name: shop.name || '服务店铺',
-                address: [shop.province, shop.city, shop.district, shop.detailAddress].filter(Boolean).join(' ')
+                address: [shop.province, shop.city, shop.district, shop.detailAddress].filter(Boolean).join(' '),
+                businessHours: shop.businessHours || null,
+                latitude: shop.latitude,
+                longitude: shop.longitude
               }))
             };
             artist.styleTags = (artist.styleTags || artist.specialties || []).slice(0, 5);
@@ -153,11 +165,27 @@ Page({
 
   goBack() {
     if (getCurrentPages().length > 1) wx.navigateBack();
-    else wx.reLaunch({ url: '/pages/client/discover/index' });
+    else wx.reLaunch({ url: '/pages/client/home/index' });
   },
 
   goToLogin() {
     wx.navigateTo({ url: '/pages/client/login/index' });
+  },
+
+  // 未登录：联系该美甲师 → 跳转登录，登录后自动绑定并进入对话
+  contactArtist() {
+    const techId = this._techId;
+    if (!techId) return wx.showToast({ title: '美甲师信息不完整', icon: 'none' });
+    const returnPath = `/pages/client/chat-detail/index?techId=${techId}`;
+    wx.navigateTo({ url: buildClientLoginUrl(returnPath, { source: 'work_share' }) + '&techId=' + techId + '&action=chat' });
+  },
+
+  // 未登录：查看更多作品 → 跳转登录，登录后自动绑定并进入作品列表
+  viewMoreWorks() {
+    const techId = this._techId;
+    if (!techId) return wx.showToast({ title: '美甲师信息不完整', icon: 'none' });
+    const returnPath = `/pages/client/works/index?techId=${techId}`;
+    wx.navigateTo({ url: buildClientLoginUrl(returnPath, { source: 'work_share' }) + '&techId=' + techId + '&action=works' });
   },
 
   async bookSameStyle() {

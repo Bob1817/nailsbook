@@ -24,7 +24,31 @@ Page({
   },
   toggleBindingOptions(e) {
     const id = Number(e.currentTarget.dataset.id);
-    this.setData({ expandedBindingId: this.data.expandedBindingId === id ? null : id });
+    const technician = this.data.technicians.find(item => Number(item.id) === id);
+    if (!technician) return;
+    const actionEvent = { currentTarget: { dataset: { id, name: technician.name } } };
+    wx.showActionSheet({
+      itemList: [
+        technician.showOnProfile ? '取消展示' : '设置展示',
+        '发起消息',
+        '发起预约',
+        '解除绑定'
+      ],
+      success: ({ tapIndex }) => {
+        switch (tapIndex) {
+          case 0: this.toggleProfileVisibility({ ...actionEvent, detail: { value: !technician.showOnProfile } }); break;
+          case 1: this.messageTechnician(actionEvent); break;
+          case 2:
+            if (!technician.canBook) {
+              wx.showToast({ title: '该美甲师暂不可预约', icon: 'none' });
+              return;
+            }
+            this.bookTechnician(actionEvent);
+            break;
+          case 3: this.unbindTechnician(actionEvent); break;
+        }
+      }
+    });
   },
   editPrivateNote(e) {
     const id = Number(e.currentTarget.dataset.id);
@@ -39,6 +63,22 @@ Page({
       } catch (error) { wx.showToast({ title: error.message || '保存失败，请重试', icon: 'none' }); }
       finally { this._noteSaving = false; }
     } });
+  },
+  async toggleProfileVisibility(e) {
+    const id = Number(e.currentTarget.dataset.id);
+    const showOnProfile = !!e.detail.value;
+    if (!id || this._visibilitySaving) return;
+    this._visibilitySaving = true;
+    try {
+      await api.client.profile.setTechnicianProfileVisibility(id, showOnProfile);
+      this.setData(bindingSummary(this.data.technicians.map(item =>
+        Number(item.id) === id ? { ...item, showOnProfile } : item
+      )));
+      wx.showToast({ title: showOnProfile ? '已在我的页展示' : '已从我的页隐藏', icon: 'success' });
+    } catch (error) {
+      wx.showToast({ title: error.message || '设置失败，请重试', icon: 'none' });
+      this.loadProfile();
+    } finally { this._visibilitySaving = false; }
   },
   preventBubble() {},
 
@@ -226,18 +266,27 @@ Page({
 
   async unbindTechnician(e) {
     const { id, name } = e.currentTarget.dataset;
+    const closesAccount = this.data.activeCount <= 1;
     wx.showModal({
-      title: '删除美甲师',
-      content: `确定解除与“${name || '该美甲师'}”的绑定吗？待报价、待确认等未完成预约将一并取消，历史记录保留。有待到店或进行中的预约时不能解绑。`,
-      confirmText: '删除并解绑',
+      title: closesAccount ? '解绑并注销账号？' : '解除绑定？',
+      content: closesAccount
+        ? `“${name || '该美甲师'}”是你当前唯一绑定的美甲师。解除后客户账号将立即注销并退出登录；有待到店或进行中的预约时无法操作。`
+        : `确定解除与“${name || '该美甲师'}”的绑定吗？待报价、待确认等未完成预约将一并取消，历史记录保留。有待到店或进行中的预约时不能解绑。`,
+      confirmText: closesAccount ? '解绑并注销' : '确认解绑',
       confirmColor: uiColors.danger,
       success: async (res) => {
         if (!res.confirm) return;
         wx.showLoading({ title: '处理中...' });
         try {
-          await api.client.profile.unbindTechnician(id);
+          const result = await api.client.profile.unbindTechnician(id, closesAccount);
           wx.hideLoading();
-          wx.showToast({ title: '已删除并解绑', icon: 'success' });
+          if (result && result.accountClosed) {
+            getApp().logout();
+            wx.showToast({ title: '账号已注销', icon: 'none' });
+            setTimeout(() => wx.reLaunch({ url: '/pages/login/index' }), 600);
+            return;
+          }
+          wx.showToast({ title: '已解除绑定', icon: 'success' });
           const refreshed = await api.auth.getUserInfo('client');
           if (refreshed.bindings || refreshed.technicians) wx.setStorageSync('client_bindings', refreshed.bindings || refreshed.technicians);
           this.loadProfile();
@@ -256,7 +305,7 @@ Page({
       wx.showToast({ title: '已设为默认', icon: 'success' });
       const res = await api.auth.getUserInfo('client');
       if (res.bindings || res.technicians) wx.setStorageSync('client_bindings', res.bindings || res.technicians);
-      this.loadProfile();
+        this.loadProfile();
     } catch (err) {
       wx.showToast({ title: err.message || '设置失败', icon: 'none' });
     }
