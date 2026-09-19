@@ -24,7 +24,7 @@
     <text wx:if="{{error}}" class="error-text">{{error}}</text>
 
     <block wx:if="{{phone}}">
-      <button wx:if="{{wechatAvailable}}" class="btn-primary wechat-set-btn" open-type="getPhoneNumber" bindgetphonenumber="onWechatPhone" loading="{{loading}}" disabled="{{loading}}">
+      <button wx:if="{{wechatAvailable}}" class="btn-primary wechat-set-btn booking-action" open-type="getPhoneNumber" bindgetphonenumber="onWechatPhone" loading="{{loading}}" disabled="{{loading}}">
         {{loading ? '设置中...' : '微信授权设置并登录'}}
       </button>
       <view wx:elif="{{!wechatChecking}}" class="fallback-card">

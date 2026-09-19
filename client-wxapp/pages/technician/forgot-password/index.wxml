@@ -8,12 +8,12 @@
     <view class="field"><text class="label">确认密码</text><input class="input" password value="{{confirmPassword}}" bindinput="onConfirmPasswordInput" placeholder="再次输入新密码" placeholder-class="ph" confirm-type="done" /></view>
   </view>
 
-  <button wx:if="{{wechatAvailable}}" class="submit-btn wechat-submit" open-type="getPhoneNumber" bindgetphonenumber="onWechatPhone" loading="{{submitting}}" disabled="{{submitting}}">
+  <button wx:if="{{wechatAvailable}}" class="submit-btn wechat-submit booking-action" open-type="getPhoneNumber" bindgetphonenumber="onWechatPhone" loading="{{submitting}}" disabled="{{submitting}}">
     <text>{{submitting ? '提交中...' : '微信授权重置'}}</text>
   </button>
   <view wx:elif="{{!wechatChecking}}" class="fallback-card">
     <text class="fallback-text">当前环境暂不支持微信授权验证，请联系客服协助重置密码</text>
-    <button class="contact-btn" open-type="contact" show-message-card="true" send-message-title="找回密码">联系客服</button>
+    <button class="contact-btn booking-action" open-type="contact" show-message-card="true" send-message-title="找回密码">联系客服</button>
   </view>
 </view>
 </view>
