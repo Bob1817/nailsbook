@@ -19,21 +19,22 @@ describe('mini program launch mode', () => {
     process.env = original;
   });
 
-  it('fails closed by default', () => {
-    expect(isMiniProgramLaunchMode()).toBe(true);
+  it('uses multi-tenant behavior by default', () => {
+    expect(isMiniProgramLaunchMode()).toBe(false);
     expect(launchTechnicianId()).toBeNull();
-    expect(isLaunchTechnician(1)).toBe(false);
+    expect(isLaunchTechnician(1)).toBe(true);
   });
 
   it('allows only the configured launch technician', () => {
+    process.env.MINIPROGRAM_LAUNCH_MODE = 'true';
     process.env.MINIPROGRAM_TECHNICIAN_ID = '7';
     expect(isLaunchTechnician(7)).toBe(true);
     expect(isLaunchTechnician(8)).toBe(false);
   });
 
-  it('restores multi-tenant behavior only when explicitly disabled', () => {
-    process.env.MINIPROGRAM_LAUNCH_MODE = 'false';
-    expect(isMiniProgramLaunchMode()).toBe(false);
+  it('does not restrict launch mode when no technician is configured', () => {
+    process.env.MINIPROGRAM_LAUNCH_MODE = 'true';
+    expect(isMiniProgramLaunchMode()).toBe(true);
     expect(isLaunchTechnician(99)).toBe(true);
   });
 });

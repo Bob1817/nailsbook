@@ -67,7 +67,7 @@ async function main() {
     {
       key: 'launch_mode_enabled',
       passed: process.env.MINIPROGRAM_LAUNCH_MODE !== 'false',
-      detail: process.env.MINIPROGRAM_LAUNCH_MODE || 'default(true)',
+      detail: process.env.MINIPROGRAM_LAUNCH_MODE || 'default(false)',
     },
     {
       key: 'single_launch_technician_configured',

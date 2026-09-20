@@ -154,7 +154,12 @@ export class ClientAuthService {
       client.bindings.length === 0 && !hasTechnicianAccount;
 
     // 4. 构建返回数据
-    if (client.bindings.length > 0) {
+    // 绑定记录可能只指向当前小程序发布范围之外的美甲师。此时仍应允许
+    // 客户完成认证，由后续引导处理绑定；不能把发布范围过滤误报为 404。
+    const hasLaunchBinding = client.bindings.some((binding) =>
+      isLaunchTechnician(binding.techId),
+    );
+    if (hasLaunchBinding) {
       return {
         ...this.buildLoginResult(client),
         roles,

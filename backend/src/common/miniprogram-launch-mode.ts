@@ -7,7 +7,8 @@ const DISABLED_VALUES = new Set(['0', 'false', 'off', 'no']);
 let configuredTechnicianId: number | null | undefined;
 
 export function isMiniProgramLaunchMode() {
-  const value = String(process.env.MINIPROGRAM_LAUNCH_MODE ?? 'true')
+  // 多租户是默认产品行为；首期单美甲师限制必须显式开启。
+  const value = String(process.env.MINIPROGRAM_LAUNCH_MODE ?? 'false')
     .trim()
     .toLowerCase();
   return !DISABLED_VALUES.has(value);
@@ -39,7 +40,8 @@ export function launchTechnicianFilterId() {
 export function isLaunchTechnician(technicianId: number) {
   if (!isMiniProgramLaunchMode()) return true;
   const allowedId = launchTechnicianId();
-  return allowedId !== null && technicianId === allowedId;
+  // 未配置具体美甲师时不能把所有客户误判为未绑定。
+  return allowedId === null || technicianId === allowedId;
 }
 
 export function assertLaunchShopService(serviceType?: string | null) {
