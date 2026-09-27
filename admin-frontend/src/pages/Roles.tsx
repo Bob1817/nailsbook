@@ -74,7 +74,8 @@ const Roles: React.FC = () => {
       const ids = (detail.permissions || []).map((rp) => rp.permission.id);
       setCheckedKeys(ids);
     } catch {
-      setCheckedKeys([]);
+      message.error('权限加载失败，请重试');
+      return;
     }
     setModalVisible(true);
   };
@@ -147,7 +148,7 @@ const Roles: React.FC = () => {
       key: 'action',
       render: (_: unknown, record: AdminRole) => (
         <Space>
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEditModal(record)}>
+          <Button type="link"  icon={<EditOutlined />} disabled={record.code === 'super_admin'} onClick={() => openEditModal(record)}>
             编辑
           </Button>
           <Popconfirm
@@ -155,7 +156,7 @@ const Roles: React.FC = () => {
             onConfirm={() => handleDelete(record.id)}
             disabled={record.code === 'super_admin'}
           >
-            <Button type="link" size="small" danger icon={<DeleteOutlined />} disabled={record.code === 'super_admin'}>
+            <Button type="link"  danger icon={<DeleteOutlined />} disabled={record.code === 'super_admin'}>
               删除
             </Button>
           </Popconfirm>
@@ -175,6 +176,7 @@ const Roles: React.FC = () => {
         </div>
 
         <Table
+          scroll={{ x: 640 }}
           columns={columns}
           dataSource={roles}
           rowKey="id"
@@ -209,6 +211,7 @@ const Roles: React.FC = () => {
             {Object.keys(groupedPerms).length > 0 ? (
               <Tree
                 checkable
+                className="role-permission-tree"
                 defaultExpandAll
                 checkedKeys={checkedKeys}
                 onCheck={onCheck}

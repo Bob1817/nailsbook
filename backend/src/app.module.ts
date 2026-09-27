@@ -33,6 +33,7 @@ import { TechnicianServicesModule } from './technician-services/technician-servi
 import { ArtistApplicationsModule } from './artist-applications/artist-applications.module';
 import { CustomServiceRequestsModule } from './custom-service-requests/custom-service-requests.module';
 import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
+import { AdminUsersModule } from './admin-users/admin-users.module';
 import { AdminRolesModule } from './admin-roles/admin-roles.module';
 import { AdminPermissionsModule } from './admin-permissions/admin-permissions.module';
 import { AdminInviteKeysModule } from './admin-invite-keys/admin-invite-keys.module';
@@ -106,6 +107,7 @@ import { BrandProfilesModule } from './brand-profiles/brand-profiles.module';
     CustomServiceRequestsModule,
     FeatureFlagsModule,
     AdminRolesModule,
+    AdminUsersModule,
     AdminPermissionsModule,
     AdminInviteKeysModule,
     AdminWorksModule,

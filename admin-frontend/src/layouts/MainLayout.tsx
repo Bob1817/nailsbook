@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layout, Menu, Dropdown, Avatar, Button } from 'antd';
+import { Layout, Menu, Dropdown, Avatar, Button, Grid } from 'antd';
 import {
   DashboardOutlined,
   TeamOutlined,
@@ -28,12 +28,15 @@ import { useAuth } from '../contexts/AuthContext';
 const { Header, Sider, Content } = Layout;
 
 const MainLayout: React.FC = () => {
+  const screens = Grid.useBreakpoint();
+  const mobile = !screens.md;
   const [collapsed, setCollapsed] = useState(false);
   const { user, logout, hasPermission } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const menuItems = [
+    { key: '/admin-users', icon: <UserOutlined />, label: '账号管理', permission: 'role:view' },
     {
       key: '/',
       icon: <DashboardOutlined />,
@@ -140,7 +143,7 @@ const MainLayout: React.FC = () => {
   ];
 
   const filteredMenuItems = menuItems.filter(
-    item => !item.permission || hasPermission(item.permission)
+    item => (item.key !== '/admin-users' && item.key !== '/roles' || user?.roleCode === 'super_admin') && (!item.permission || hasPermission(item.permission))
   );
 
   const userMenuItems = {
@@ -157,8 +160,13 @@ const MainLayout: React.FC = () => {
       <Sider
         trigger={null}
         collapsible
+        breakpoint="md"
+        collapsedWidth={mobile ? 0 : 80}
+        onBreakpoint={broken => setCollapsed(broken)}
         collapsed={collapsed}
         style={{
+          zIndex: 20,
+          paddingBottom: 'env(safe-area-inset-bottom)',
           overflow: 'auto',
           height: '100vh',
           position: 'fixed',
@@ -187,10 +195,10 @@ const MainLayout: React.FC = () => {
             icon: item.icon,
             label: item.label,
           }))}
-          onClick={({ key }) => navigate(key)}
+          onClick={({ key }) => { navigate(key); if (mobile) setCollapsed(true); }}
         />
       </Sider>
-      <Layout style={{ marginLeft: collapsed ? 80 : 200, transition: 'margin-left 0.2s' }}>
+      <Layout style={{ marginLeft: mobile ? 0 : collapsed ? 80 : 200, transition: 'margin-left 0.2s' }}>
         <Header style={{
           padding: '0 24px',
           background: 'var(--nb-surface)',
@@ -212,7 +220,7 @@ const MainLayout: React.FC = () => {
             </div>
           </Dropdown>
         </Header>
-        <Content style={{ margin: 24, padding: 24, background: 'var(--nb-surface)', borderRadius: 8, minHeight: 'calc(100vh - 112px)' }}>
+        <Content style={{ margin: mobile ? 12 : 24, padding: mobile ? 12 : 24, background: 'var(--nb-surface)', borderRadius: 8, minHeight: 'calc(100vh - 112px)' }}>
           <Outlet />
         </Content>
       </Layout>

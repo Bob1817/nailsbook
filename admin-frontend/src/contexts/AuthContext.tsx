@@ -20,13 +20,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    if (!storedToken) { setLoading(false); return; }
+    setToken(storedToken);
+    authService.getMe().then(profile => {
+      setUser(profile);
+      localStorage.setItem('user', JSON.stringify(profile));
+    }).catch(() => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setToken(null);
+      setUser(null);
+    }).finally(() => setLoading(false));
   }, []);
 
   const login = async (username: string, password: string) => {

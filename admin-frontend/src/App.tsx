@@ -15,6 +15,7 @@ import Subscriptions from './pages/Subscriptions';
 import OperationLogs from './pages/OperationLogs';
 import Forbidden from './pages/Forbidden';
 import FeatureFlags from './pages/FeatureFlags';
+import AdminUsers from './pages/AdminUsers';
 import Roles from './pages/Roles';
 import InviteKeys from './pages/InviteKeys';
 import Works from './pages/Works';
@@ -55,7 +56,7 @@ const App: React.FC = () => {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<Dashboard />} />
+              <Route index element={<ProtectedRoute permission="dashboard:view"><Dashboard /></ProtectedRoute>} />
               <Route path="technicians" element={<ProtectedRoute permission="technician:view"><Technicians /></ProtectedRoute>} />
               <Route path="customers" element={<ProtectedRoute permission="customer:view"><Customers /></ProtectedRoute>} />
               <Route path="orders" element={<ProtectedRoute permission="booking:view"><Orders /></ProtectedRoute>} />
@@ -71,7 +72,8 @@ const App: React.FC = () => {
               <Route path="feature-flags" element={<ProtectedRoute permission="feature_flag:view"><FeatureFlags /></ProtectedRoute>} />
               <Route path="wechat-config" element={<ProtectedRoute permission="feature_flag:view"><WechatConfig /></ProtectedRoute>} />
               <Route path="launch-config" element={<ProtectedRoute permission="feature_flag:view"><LaunchConfig /></ProtectedRoute>} />
-              <Route path="roles" element={<ProtectedRoute permission="role:view"><Roles /></ProtectedRoute>} />
+              <Route path="admin-users" element={<ProtectedRoute superAdmin><AdminUsers /></ProtectedRoute>} />
+              <Route path="roles" element={<ProtectedRoute superAdmin><Roles /></ProtectedRoute>} />
               <Route path="invite-keys" element={<ProtectedRoute permission="technician:create"><InviteKeys /></ProtectedRoute>} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

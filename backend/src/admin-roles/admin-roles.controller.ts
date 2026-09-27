@@ -9,9 +9,11 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { SuperAdminGuard } from '../auth/super-admin.guard';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Permissions } from '../auth/permission.decorator';
 import { OperationLog } from '../auth/operation-log.decorator';
+import { CreateAdminRoleDto, UpdateAdminRoleDto } from './admin-role.dto';
 import { AdminRolesService } from './admin-roles.service';
 
 @Controller('admin/roles')
@@ -32,32 +34,30 @@ export class AdminRolesController {
   }
 
   @Post()
+  @UseGuards(SuperAdminGuard)
   @Permissions('role:create')
   @OperationLog({ module: 'role', action: 'create' })
   create(
     @Body()
-    body: {
-      name: string;
-      code: string;
-      description?: string;
-      permissionIds?: number[];
-    },
+    body: CreateAdminRoleDto,
   ) {
     return this.service.create(body);
   }
 
   @Patch(':id')
+  @UseGuards(SuperAdminGuard)
   @Permissions('role:update')
   @OperationLog({ module: 'role', action: 'update' })
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body()
-    body: { name?: string; description?: string; permissionIds?: number[] },
+    body: UpdateAdminRoleDto,
   ) {
     return this.service.update(id, body);
   }
 
   @Delete(':id')
+  @UseGuards(SuperAdminGuard)
   @Permissions('role:delete')
   @OperationLog({ module: 'role', action: 'delete' })
   remove(@Param('id', ParseIntPipe) id: number) {

@@ -60,6 +60,7 @@ export class AuthController {
       phone: dbUser.phone,
       roleId: dbUser.roleId,
       roleName: dbUser.role.name,
+      roleCode: dbUser.role.code,
       permissions,
       status: dbUser.status,
       lastLoginAt: dbUser.lastLoginAt,

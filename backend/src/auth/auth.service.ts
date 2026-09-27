@@ -12,6 +12,7 @@ export interface LoginResponse {
     realName: string;
     roleId: number;
     roleName: string;
+    roleCode: string;
     permissions: string[];
   };
 }
@@ -69,13 +70,14 @@ export class AuthService {
 
     return {
       accessToken: this.jwtService.sign(payload),
-      refreshToken: this.signRefreshToken(user.id),
+      refreshToken: this.signRefreshToken(user.id, user.tokenVersion),
       user: {
         id: user.id,
         username: user.username,
         realName: user.realName || '',
         roleId: user.roleId,
         roleName: user.role.name,
+        roleCode: user.role.code,
         permissions,
       },
     };
@@ -94,7 +96,7 @@ export class AuthService {
     }
 
     const user = await this.getUserById(payload.sub);
-    if (!user || user.status !== 'active') {
+    if (!user || user.status !== 'active' || payload.tv !== user.tokenVersion) {
       throw new UnauthorizedException('用户不存在或已被禁用');
     }
 
@@ -109,13 +111,13 @@ export class AuthService {
 
     return {
       accessToken: this.jwtService.sign(accessTokenPayload),
-      refreshToken: this.signRefreshToken(user.id),
+      refreshToken: this.signRefreshToken(user.id, user.tokenVersion),
     };
   }
 
-  private signRefreshToken(userId: number) {
+  private signRefreshToken(userId: number, tokenVersion: number) {
     return this.jwtService.sign(
-      { sub: userId, tokenType: 'refresh' },
+      { sub: userId, tokenType: 'refresh', tv: tokenVersion },
       { expiresIn: '30d' },
     );
   }

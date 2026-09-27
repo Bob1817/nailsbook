@@ -34,6 +34,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         status: true,
         role: {
           select: {
+            code: true,
             permissions: {
               select: { permission: { select: { code: true } } },
             },
@@ -51,6 +52,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       userId: payload.sub,
       username: payload.username,
       roleId: payload.roleId,
+      roleCode: admin.role.code,
       permissions: admin.role.permissions.map((item) => item.permission.code),
     };
   }

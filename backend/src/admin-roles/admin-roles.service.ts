@@ -9,6 +9,12 @@ import { PrismaService } from '../common/prisma/prisma.service';
 export class AdminRolesService {
   constructor(private prisma: PrismaService) {}
 
+  private async validatePermissions(ids?: number[]) {
+    if (ids === undefined) return;
+    const count = await this.prisma.adminPermission.count({ where: { id: { in: ids } } });
+    if (count !== ids.length) throw new BadRequestException('权限不存在或重复');
+  }
+
   async findAll() {
     return this.prisma.adminRole.findMany({
       include: { _count: { select: { users: true } } },
@@ -34,6 +40,7 @@ export class AdminRolesService {
     description?: string;
     permissionIds?: number[];
   }) {
+    await this.validatePermissions(data.permissionIds);
     const existing = await this.prisma.adminRole.findUnique({
       where: { code: data.code },
     });
@@ -56,7 +63,9 @@ export class AdminRolesService {
     id: number,
     data: { name?: string; description?: string; permissionIds?: number[] },
   ) {
-    await this.findOne(id);
+    const role = await this.findOne(id);
+    if (role.code === 'super_admin') throw new BadRequestException('不能修改超级管理员角色');
+    await this.validatePermissions(data.permissionIds);
 
     return this.prisma.$transaction(async (tx) => {
       if (data.permissionIds !== undefined) {

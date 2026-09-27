@@ -8,6 +8,7 @@ export interface LoginResponse {
     realName: string;
     roleId: number;
     roleName: string;
+  roleCode: string;
     permissions: string[];
   };
 }
@@ -20,6 +21,7 @@ export interface UserInfo {
   phone?: string;
   roleId: number;
   roleName: string;
+  roleCode: string;
   permissions: string[];
   status: string;
   lastLoginAt?: string;

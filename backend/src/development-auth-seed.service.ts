@@ -227,7 +227,7 @@ export class DevelopmentAuthSeedService implements OnModuleInit {
       await this.prisma.adminUser.create({
         data: {
           username: 'admin',
-          passwordHash: await bcrypt.hash('123456', 10),
+          passwordHash: await bcrypt.hash('admin1234', 10),
           realName: '超级管理员',
           roleId: role.id,
           status: 'active',

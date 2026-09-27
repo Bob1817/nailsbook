@@ -22,3 +22,12 @@ body {
 .ant-menu-dark {
   background: transparent !important;
 }
+
+.role-permission-tree .ant-tree-treenode {
+  min-height: 44px;
+  align-items: center;
+}
+.role-permission-tree .ant-tree-node-content-wrapper {
+  min-height: 44px;
+  line-height: 44px;
+}

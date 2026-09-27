@@ -6,9 +6,10 @@ import { Spin } from 'antd';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   permission?: string;
+  superAdmin?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, permission }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, permission, superAdmin }) => {
   const { user, token, loading, hasPermission } = useAuth();
   const location = useLocation();
 
@@ -24,7 +25,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, permission })
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (permission && !hasPermission(permission)) {
+  if ((superAdmin && user.roleCode !== 'super_admin') || (permission && !hasPermission(permission))) {
     return <Navigate to="/403" replace />;
   }
 
