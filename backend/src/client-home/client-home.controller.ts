@@ -6,6 +6,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Put,
   Query,
   Req,
   UseGuards,
@@ -204,6 +205,24 @@ export class ClientHomeController {
       id,
       content,
       parentId,
+    );
+  }
+
+  @Put('works/:workId/comments/:commentId')
+  @UseGuards(ClientJwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '编辑评论（仅限自己的评论）' })
+  @ApiParam({ name: 'workId', type: Number })
+  @ApiParam({ name: 'commentId', type: Number })
+  updateComment(
+    @Req() request: { user: { clientUserId: number } },
+    @Param('commentId', ParseIntPipe) commentId: number,
+    @Body('content') content: string,
+  ) {
+    return this.clientHomeService.updateComment(
+      request.user.clientUserId,
+      commentId,
+      content,
     );
   }
 

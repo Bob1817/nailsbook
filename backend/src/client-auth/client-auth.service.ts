@@ -156,14 +156,19 @@ export class ClientAuthService {
     // 4. 构建返回数据
     // 绑定记录可能只指向当前小程序发布范围之外的美甲师。此时仍应允许
     // 客户完成认证，由后续引导处理绑定；不能把发布范围过滤误报为 404。
-    const hasLaunchBinding = client.bindings.some((binding) =>
-      isLaunchTechnician(binding.techId),
-    );
+    const hasLaunchBinding = this.hasLaunchBinding(client);
     if (hasLaunchBinding) {
       return {
         ...this.buildLoginResult(client),
         roles,
         needsOnboarding,
+      };
+    }
+    if (client.bindings.length > 0) {
+      return {
+        ...this.buildOutOfScopeLoginResult(client),
+        roles,
+        needsOnboarding: false,
       };
     }
 
@@ -641,12 +646,19 @@ export class ClientAuthService {
     const needsOnboarding =
       client.bindings.length === 0 && !hasTechnicianAccount;
 
-    // 构建返回数据（与 loginBySms 一致）
-    if (client.bindings.length > 0) {
+    // 构建返回数据（与 loginBySms 一致）：仅有首期内绑定时才走完整登录结果
+    if (this.hasLaunchBinding(client)) {
       return {
         ...this.buildLoginResult(client),
         roles,
         needsOnboarding,
+      };
+    }
+    if (client.bindings.length > 0) {
+      return {
+        ...this.buildOutOfScopeLoginResult(client),
+        roles,
+        needsOnboarding: false,
       };
     }
 
@@ -782,15 +794,17 @@ export class ClientAuthService {
     }
 
     // 构建返回
-    const loginResult = client.bindings.length > 0
+    const loginResult = this.hasLaunchBinding(client)
       ? this.buildLoginResult(client)
-      : {
-          accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
-          refreshToken: this.signRefreshToken(client.id, client.phone, client.tokenVersion),
-          client: { id: client.id, nickname: client.nickname, phone: client.phone, avatarUrl: client.avatarUrl, city: client.city, bio: client.bio, status: client.status },
-          technician: null,
-          technicians: [],
-        };
+      : client.bindings.length > 0
+        ? this.buildOutOfScopeLoginResult(client)
+        : {
+            accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
+            refreshToken: this.signRefreshToken(client.id, client.phone, client.tokenVersion),
+            client: { id: client.id, nickname: client.nickname, phone: client.phone, avatarUrl: client.avatarUrl, city: client.city, bio: client.bio, status: client.status },
+            technician: null,
+            technicians: [],
+          };
 
     return { ...loginResult, roles, needsOnboarding: isNewUser, bound, bindingsFull, isNewUser };
   }
@@ -986,8 +1000,15 @@ export class ClientAuthService {
     const needsOnboarding =
       client.bindings.length === 0 && !hasTechnicianAccount;
 
-    if (client.bindings.length > 0) {
+    if (this.hasLaunchBinding(client)) {
       return { ...this.buildLoginResult(client), roles, needsOnboarding };
+    }
+    if (client.bindings.length > 0) {
+      return {
+        ...this.buildOutOfScopeLoginResult(client),
+        roles,
+        needsOnboarding: false,
+      };
     }
 
     return {
@@ -1039,6 +1060,38 @@ export class ClientAuthService {
     return this.loginByWechat(client.id);
   }
 
+  /** 绑定是否落在当前小程序首期开放范围内 */
+  private hasLaunchBinding(client: ClientWithBindings) {
+    return client.bindings.some((binding) => isLaunchTechnician(binding.techId));
+  }
+
+  /**
+   * 有绑定记录但均不在首期开放范围：仍允许登录，
+   * 避免把发布范围过滤误报成「没有绑定美甲师」。
+   */
+  private buildOutOfScopeLoginResult(client: ClientWithBindings) {
+    return {
+      accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
+      refreshToken: this.signRefreshToken(
+        client.id,
+        client.phone,
+        client.tokenVersion,
+      ),
+      client: {
+        id: client.id,
+        nickname: client.nickname,
+        phone: client.phone,
+        avatarUrl: client.avatarUrl,
+        city: client.city,
+        bio: client.bio,
+        status: client.status,
+      },
+      technician: null,
+      technicians: [],
+      bindingsOutsideLaunchScope: true,
+    };
+  }
+
   private buildLoginResult(client: ClientWithBindings) {
     const launchBindings = client.bindings.filter((binding) =>
       isLaunchTechnician(binding.techId),
@@ -1046,6 +1099,11 @@ export class ClientAuthService {
     const defaultBinding =
       launchBindings.find((b) => b.isDefault) || launchBindings[0];
     if (!defaultBinding) {
+      if (client.bindings.length > 0) {
+        throw new NotFoundException(
+          '当前账号绑定的美甲师不在本期开放范围，请联系客服确认，或使用本期邀请码重新绑定',
+        );
+      }
       throw new NotFoundException('当前账号尚未绑定指定美甲店');
     }
 

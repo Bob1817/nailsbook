@@ -439,6 +439,116 @@ describe('ClientAuthService — 绑定审批工作流', () => {
 
 });
 
+describe('登录绑定与首期开放范围', () => {
+  const makeService = () => {
+    const prisma = {
+      clientUser: {
+        findUnique: jest.fn(),
+        update: jest.fn(),
+      },
+      technician: { findUnique: jest.fn() },
+    };
+    const jwt = {
+      sign: jest.fn().mockReturnValue('token'),
+    };
+    const service = Object.create(ClientAuthService.prototype);
+    service.prisma = prisma;
+    service.jwt = jwt;
+    service.signToken = jest.fn().mockReturnValue('access');
+    service.signRefreshToken = jest.fn().mockReturnValue('refresh');
+    service.parseServiceItems = jest.fn().mockReturnValue([]);
+    return { service: service as ClientAuthService, prisma };
+  };
+
+  const outOfScopeClient = {
+    id: 360,
+    phone: '15336520045',
+    nickname: '测试客户',
+    avatarUrl: null,
+    city: null,
+    bio: null,
+    status: 'active',
+    passwordHash: 'hashed',
+    tokenVersion: 1,
+    bindings: [
+      {
+        id: 1,
+        techId: 55,
+        isDefault: true,
+        status: 'active',
+        technician: {
+          id: 55,
+          name: '贝贝',
+          phone: '15267003169',
+          status: 'active',
+          homeService: false,
+          shopService: true,
+          avatarUrl: null,
+          city: null,
+          serviceArea: null,
+          invitationCode: 'EA6A39D2',
+          socialMedia: null,
+          shopAddresses: null,
+          serviceItems: null,
+        },
+      },
+    ],
+  };
+
+  beforeEach(() => {
+    process.env.MINIPROGRAM_LAUNCH_MODE = 'true';
+    process.env.MINIPROGRAM_TECHNICIAN_ID = '57';
+    // 模块级缓存会绕过 env，这里直接断言依赖 isLaunchTechnician 的行为
+    const launchMode = require('../common/miniprogram-launch-mode');
+    launchMode.configureLaunchTechnicianId(57);
+  });
+
+  afterEach(() => {
+    const launchMode = require('../common/miniprogram-launch-mode');
+    launchMode.resetLaunchTechnicianIdConfiguration();
+    delete process.env.MINIPROGRAM_LAUNCH_MODE;
+    delete process.env.MINIPROGRAM_TECHNICIAN_ID;
+  });
+
+  it('密码登录：绑定不在首期范围时报明确原因，而不是“没有绑定美甲师”', async () => {
+    const { service, prisma } = makeService();
+    prisma.clientUser.findUnique.mockResolvedValue(outOfScopeClient);
+    prisma.technician.findUnique.mockResolvedValue(null);
+    (service as any).bcryptCompare = undefined;
+
+    const bcrypt = require('bcryptjs');
+    const compareSpy = jest
+      .spyOn(bcrypt, 'compare')
+      .mockResolvedValue(true);
+
+    try {
+      const result = await service.login({
+        phone: '15336520045',
+        password: 'any',
+      } as never);
+      expect(result.technicians).toEqual([]);
+      expect(result.bindingsOutsideLaunchScope).toBe(true);
+      expect(result.needsOnboarding).toBe(false);
+      expect(result.client.phone).toBe('15336520045');
+    } finally {
+      compareSpy.mockRestore();
+    }
+  });
+
+  it('buildLoginResult：有绑定但不在首期范围时，错误文案不得暗示未绑定', async () => {
+    const { service } = makeService();
+    let message = '';
+    try {
+      (service as any).buildLoginResult(outOfScopeClient);
+    } catch (error: any) {
+      message = error.message;
+    }
+    expect(message).toContain('不在本期开放范围');
+    expect(message).not.toContain('没有绑定');
+    expect(message).not.toContain('尚未绑定指定美甲店');
+  });
+});
+
 describe('private technician notes', () => {
   const makeService = () => {
     const prisma = { clientTechBinding: { findUnique: jest.fn() }, clientTechnicianNote: { findMany: jest.fn(), upsert: jest.fn() } };

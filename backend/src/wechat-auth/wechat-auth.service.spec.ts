@@ -207,7 +207,11 @@ describe('WechatAuthService', () => {
         phoneCode: 'phone-code',
         shareWorkId: 9,
       }),
-    ).rejects.toThrow('新客户仅可通过美甲师邀请链接注册');
+    ).resolves.toMatchObject({
+      authenticated: false,
+      needsRegistration: true,
+      phone: '13900139000',
+    });
     expect(prisma.clientUser.create).not.toHaveBeenCalled();
   });
   it('invitation registration binds through the invite flow and logs in without password setup', async () => {
