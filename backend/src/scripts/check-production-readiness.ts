@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { isMiniProgramLaunchMode } from '../common/miniprogram-launch-mode';
 
 const prisma = new PrismaClient();
 
@@ -66,7 +67,7 @@ async function main() {
   const checks = [
     {
       key: 'launch_mode_enabled',
-      passed: process.env.MINIPROGRAM_LAUNCH_MODE !== 'false',
+      passed: isMiniProgramLaunchMode(),
       detail: process.env.MINIPROGRAM_LAUNCH_MODE || 'default(false)',
     },
     {

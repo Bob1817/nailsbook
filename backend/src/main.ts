@@ -89,7 +89,7 @@ async function bootstrap() {
 
   if (shouldEnableSwagger()) {
     const swaggerConfig = new DocumentBuilder()
-      .setTitle('NailBook API')
+      .setTitle('OnlyNail API')
       .setDescription('美甲预约平台接口文档')
       .setVersion('1.0')
       .addBearerAuth()

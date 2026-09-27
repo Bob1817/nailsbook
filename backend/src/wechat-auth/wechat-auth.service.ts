@@ -113,7 +113,13 @@ export class WechatAuthService {
 
     if (!client) {
       if (!dto.inviteCode) {
-        throw new BadRequestException('新客户仅可通过美甲师邀请链接注册');
+        // 手机号已由微信侧验证，但账号未注册：返回可识别状态，由前端提示并跳转注册
+        return {
+          authenticated: false,
+          needsRegistration: true,
+          phone,
+          message: '该手机号尚未注册，请先完成注册',
+        };
       }
       const registered = await this.clientAuth.registerClientByWechatInvite(
         {

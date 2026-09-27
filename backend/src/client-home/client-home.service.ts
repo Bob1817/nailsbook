@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -73,6 +74,17 @@ export class ClientHomeService {
     const latestBooking = await this.prisma.order.findFirst({
       where: { clientUserId, technicianId: binding.techId },
       orderBy: [{ startTime: 'desc' }, { createdAt: 'desc' }],
+      include: {
+        technician: {
+          select: {
+            id: true,
+            name: true,
+            avatarUrl: true,
+            phone: true,
+            shopAddresses: true,
+          },
+        },
+      },
     });
 
     const UPLOAD_BASE_URL =
@@ -99,14 +111,51 @@ export class ClientHomeService {
         isLiked: work.likes.some((like) => like.clientId === clientUserId),
       })),
       latestOrder: latestBooking
-        ? {
-            id: latestBooking.id,
-            orderNo: latestBooking.orderNo,
-            status: latestBooking.status,
-            startTime: latestBooking.startTime,
-            endTime: latestBooking.endTime,
-            address: latestBooking.address,
-          }
+        ? (() => {
+            // 从美甲师店铺地址中匹配店铺名称（与小程序首页逻辑一致）
+            let shopName: string | null = null;
+            if (latestBooking.technician?.shopAddresses) {
+              try {
+                const shops = JSON.parse(latestBooking.technician.shopAddresses) as Array<{
+                  name?: string;
+                  province?: string;
+                  city?: string;
+                  district?: string;
+                  detailAddress?: string;
+                  enabled?: boolean;
+                }>;
+                const enabledShops = shops.filter((s) => s.enabled !== false);
+                const normAddr = (latestBooking.address || '').replace(/\s+/g, '');
+                const matched = normAddr
+                  ? enabledShops.find((s) => {
+                      const full = ((s.province || '') + (s.city || '') + (s.district || '') + (s.detailAddress || '')).replace(/\s+/g, '');
+                      return full === normAddr || normAddr.indexOf((s.detailAddress || '').replace(/\s+/g, '')) >= 0;
+                    })
+                  : null;
+                shopName = matched?.name ?? enabledShops[0]?.name ?? null;
+              } catch {
+                shopName = null;
+              }
+            }
+            return {
+              id: latestBooking.id,
+              orderNo: latestBooking.orderNo,
+              status: latestBooking.status,
+              serviceType: latestBooking.serviceType,
+              startTime: latestBooking.startTime,
+              endTime: latestBooking.endTime,
+              address: latestBooking.address,
+              shopName,
+              technician: latestBooking.technician
+                ? {
+                    id: latestBooking.technician.id,
+                    name: latestBooking.technician.name,
+                    avatarUrl: toAbsoluteUrl(latestBooking.technician.avatarUrl),
+                    phone: latestBooking.technician.phone,
+                  }
+                : null,
+            };
+          })()
         : null,
     };
   }
@@ -1049,6 +1098,30 @@ export class ClientHomeService {
       canLike: Boolean(access?.canLike),
       canComment: Boolean(access?.canComment),
     };
+  }
+
+  async updateComment(clientUserId: number, commentId: number, content: string) {
+    const trimmed = (content ?? '').trim();
+    if (!trimmed) throw new BadRequestException('评论内容不能为空');
+
+    const comment = await this.prisma.nailWorkComment.findFirst({
+      where: { id: commentId },
+    });
+    if (!comment) throw new NotFoundException('评论不存在');
+    if (comment.clientId !== clientUserId) {
+      throw new NotFoundException('无权编辑此评论');
+    }
+
+    const updated = await this.prisma.nailWorkComment.update({
+      where: { id: commentId },
+      data: { content: trimmed },
+      include: {
+        client: { select: { id: true, nickname: true, avatarUrl: true } },
+        technician: { select: { id: true, name: true, avatarUrl: true } },
+      },
+    });
+
+    return this.mapComment(updated, clientUserId);
   }
 
   async deleteComment(clientUserId: number, commentId: number) {
