@@ -20,12 +20,18 @@ struct NailWork: Codable, Identifiable {
     var reviewNote: String?
     var sortOrder: Int?
     var price: Double?
+    var priceText: String?
+    var standardPriceFen: Int?
+    var serviceSubtotalFen: Int?
+    var priceCents: Int?
     var viewCount: Int?
     var createdAt: String?
     var updatedAt: String?
     var technicianId: Int?
     var technicianName: String?
     var technicianAvatarUrl: String?
+    var technicianShopName: String?
+    var technicianShopAddress: String?
     var technician: WorkTechnician? {
         guard let id = technicianId ?? techId else { return nil }
         return WorkTechnician(id: id, name: technicianName, avatarUrl: technicianAvatarUrl)
@@ -35,6 +41,22 @@ struct NailWork: Codable, Identifiable {
     var likeCount: Int?
     var favoriteCount: Int?
     var commentCount: Int?
+    var totalDurationMinutes: Int?
+    var serviceLines: [WorkServiceLine]?
+
+    /// 价格口径对齐小程序 formatCardPrice：priceText → 分单位字段换算 → price 元
+    var displayPrice: String? {
+        if let priceText = priceText, !priceText.isEmpty { return priceText }
+        let fen = standardPriceFen ?? serviceSubtotalFen ?? priceCents ?? 0
+        let yuan = Double(fen) / 100
+        if yuan > 0 {
+            return yuan == yuan.rounded()
+                ? "¥\(String(format: "%.0f", yuan))"
+                : "¥\(String(format: "%.1f", yuan))"
+        }
+        let value = price ?? 0
+        return value > 0 ? "¥\(String(format: "%.0f", value))" : nil
+    }
 }
 
 struct WorkTechnician: Codable, Identifiable {
@@ -42,6 +64,17 @@ struct WorkTechnician: Codable, Identifiable {
     var name: String?
     var avatarUrl: String?
     var city: String?
+}
+
+/// 作品服务线（预约同款读取的服务项目与报价）
+struct WorkServiceLine: Codable, Identifiable {
+    var servicePublicIdSnapshot: String?
+    var nameSnapshot: String
+    var unitPriceFen: Int
+    var durationMinutes: Int
+    var quantity: Int
+    var subtotalFen: Int
+    var id: String { servicePublicIdSnapshot ?? nameSnapshot }
 }
 
 struct NailWorkComment: Codable, Identifiable {

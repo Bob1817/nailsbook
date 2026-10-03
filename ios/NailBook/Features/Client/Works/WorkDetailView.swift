@@ -4,6 +4,7 @@ import SwiftUI
 
 struct WorkDetailView: View {
     let workId: Int
+    @Environment(\.dismiss) private var dismiss
     @State private var work: NailWork?
     @State private var comments: [NailWorkComment] = []
     @State private var isLoading = true
@@ -12,7 +13,12 @@ struct WorkDetailView: View {
     @State private var commentText = ""
     @State private var replyTo: NailWorkComment?
     @State private var currentImageIndex = 0
-    @State private var showCommentInput = false
+    @State private var loadErrorMessage: String?
+    @State private var myClientUserId: Int?
+    @State private var editingComment: NailWorkComment?
+    @State private var editText = ""
+    @State private var deletingComment: NailWorkComment?
+    @State private var navigateToBooking = false
 
     var body: some View {
         ZStack {
@@ -25,7 +31,30 @@ struct WorkDetailView: View {
             }
         }
         .navigationBarHidden(true)
+        .toolbar(.hidden, for: .tabBar)
         .task { await loadDetail() }
+        .task {
+            if let me: ClientUser = try? await APIClient.shared.request(.clientMe) {
+                myClientUserId = me.id
+            }
+        }
+        // 编辑自己的评论
+        .alert("编辑评论", isPresented: Binding(
+            get: { editingComment != nil },
+            set: { if !$0 { editingComment = nil } }
+        )) {
+            TextField("评论内容", text: $editText)
+            Button("取消", role: .cancel) { editingComment = nil }
+            Button("保存") { Task { await saveEdit() } }
+        }
+        // 删除自己的评论
+        .confirmationDialog("删除这条评论？", isPresented: Binding(
+            get: { deletingComment != nil },
+            set: { if !$0 { deletingComment = nil } }
+        ), titleVisibility: .visible) {
+            Button("删除", role: .destructive) { Task { await deleteComment() } }
+            Button("取消", role: .cancel) { deletingComment = nil }
+        }
     }
 
     // MARK: - Loading View
@@ -59,15 +88,16 @@ struct WorkDetailView: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(NBColors.ink)
 
-            Text("暂时无法打开这件作品。你可以返回继续浏览，或稍后重新尝试。")
+            Text(loadErrorMessage ?? "暂时无法打开这件作品。你可以返回继续浏览，或稍后重新尝试。")
                 .font(.system(size: 14))
                 .foregroundColor(NBColors.muted)
                 .lineSpacing(1.4)
                 .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
 
             HStack(spacing: 12) {
                 Button("返回浏览") {
-                    // Go back
+                    dismiss()
                 }
                 .font(.system(size: 15, weight: .medium))
                 .foregroundColor(NBColors.secondary)
@@ -96,12 +126,12 @@ struct WorkDetailView: View {
     // MARK: - Work Content
 
     private func workContent(_ work: NailWork) -> some View {
-        VStack(spacing: 0) {
-            // Image carousel
-            imageCarousel(work)
+        // 单一滚动流：图片 + 内容 + 评论整体滚动，上滑后内容区占满全屏
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                // Image carousel
+                imageCarousel(work)
 
-            // Info panel
-            ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     // Title row
                     titleRow(work)
@@ -138,20 +168,33 @@ struct WorkDetailView: View {
                 }
                 .padding(16)
             }
-
-            // Comment input bar
-            if showCommentInput {
-                commentInputBar
-            }
         }
-        .background(Color.white)
+        .ignoresSafeArea(edges: .top)
+        .background(NBColors.page)
+        // 评论输入栏：悬浮毛玻璃（Apple glass）
+        .safeAreaInset(edge: .bottom) {
+            commentInputBar
+        }
+        // 预约同款：作品归属美甲师时跳转创建预约（作品模式）
+        .background(
+            Group {
+                if let tech = work.technician {
+                    NavigationLink(destination: CreateOrderView(techId: tech.id, techName: tech.name ?? "美甲师", sourceWork: work), isActive: $navigateToBooking) { EmptyView() }.hidden()
+                }
+            }
+        )
     }
 
     // MARK: - Image Carousel
 
     private func imageCarousel(_ work: NailWork) -> some View {
         ZStack(alignment: .bottom) {
-            let images = work.imageUrls ?? (work.coverUrl != nil ? [work.coverUrl!] : [])
+            // 后端 imageUrls 可能为空数组（非 nil），需显式 fallback 到 coverUrl
+            let images = {
+                if let urls = work.imageUrls, !urls.isEmpty { return urls }
+                if let cover = work.coverUrl { return [cover] }
+                return [String]()
+            }()
 
             if images.isEmpty {
                 Rectangle()
@@ -180,7 +223,7 @@ struct WorkDetailView: View {
             VStack {
                 HStack {
                     Button {
-                        // Go back
+                        dismiss()
                     } label: {
                         Image(systemName: "chevron.left")
                             .font(.system(size: 20, weight: .medium))
@@ -211,20 +254,22 @@ struct WorkDetailView: View {
             Spacer()
 
             // Book same button
-            Button {
-                // Book same
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "calendar")
-                        .font(.system(size: 12))
-                    Text("预约同款")
-                        .font(.system(size: 13, weight: .semibold))
+            if work.technician != nil {
+                Button {
+                    navigateToBooking = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "calendar")
+                            .font(.system(size: 12))
+                        Text("预约同款")
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(NBColors.action)
+                    .cornerRadius(6)
                 }
-                .foregroundColor(.white)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
-                .background(NBColors.action)
-                .cornerRadius(6)
             }
         }
     }
@@ -294,9 +339,16 @@ struct WorkDetailView: View {
 
             Spacer()
 
-            Text("查看主页 ›")
-                .font(.system(size: 12))
+            NavigationLink(destination: ArtistHomeView(artistId: tech.id)) {
+                HStack(spacing: 2) {
+                    Text("查看主页")
+                        .font(.system(size: 12))
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10))
+                }
                 .foregroundColor(NBColors.link)
+            }
+            .buttonStyle(.plain)
         }
         .padding(.vertical, 12)
     }
@@ -312,7 +364,7 @@ struct WorkDetailView: View {
                 HStack(spacing: 6) {
                     Image(systemName: isLiked ? "heart.fill" : "heart")
                         .font(.system(size: 16))
-                        .foregroundColor(isLiked ? NBColors.action : NBColors.secondary)
+                        .foregroundColor(isLiked ? NBColors.money : NBColors.secondary)
                     Text("\(work.likeCount ?? 0)")
                         .font(.system(size: 13))
                         .foregroundColor(NBColors.secondary)
@@ -464,52 +516,106 @@ struct WorkDetailView: View {
             }
         }
         .padding(.vertical, 4)
+        // 点击评论 = 回复（引用）该评论
+        .onTapGesture { replyTo = comment }
+        // 长按自己的评论：编辑 / 删除
+        .contextMenu {
+            if comment.client?.id == myClientUserId {
+                Button {
+                    editText = comment.content
+                    editingComment = comment
+                } label: {
+                    Label("编辑", systemImage: "pencil")
+                }
+                Button(role: .destructive) {
+                    deletingComment = comment
+                } label: {
+                    Label("删除", systemImage: "trash")
+                }
+            } else {
+                Button {
+                    replyTo = comment
+                } label: {
+                    Label("回复", systemImage: "arrowshape.turn.up.left")
+                }
+            }
+        }
     }
 
     // MARK: - Comment Input Bar
 
     private var commentInputBar: some View {
-        VStack(spacing: 0) {
-            Divider()
-
+        VStack(spacing: 8) {
+            // 回复提示胶囊
             if let reply = replyTo {
                 let replyName = reply.client?.nickname ?? reply.technician?.name ?? ""
-                HStack {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrowshape.turn.up.left.fill")
+                        .font(.system(size: 10))
+                        .foregroundColor(NBColors.muted)
                     Text("回复 @\(replyName)")
-                        .font(.system(size: 11))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundColor(NBColors.secondary)
-                    Spacer()
-                    Button("取消") { replyTo = nil }
-                        .font(.system(size: 11))
-                        .foregroundColor(NBColors.ink)
+                        .lineLimit(1)
+                    Button {
+                        replyTo = nil
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(NBColors.muted)
+                    }
                 }
                 .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                .padding(.vertical, 5)
+                .background(Color.black.opacity(0.06))
+                .clipShape(Capsule())
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            HStack(spacing: 12) {
-                TextField(replyTo != nil ? "写回复..." : "添加评论…", text: $commentText)
-                    .font(.system(size: 13))
-                    .padding(.horizontal, 13)
-                    .frame(height: 44)
-                    .background(NBColors.softSurface)
-                    .cornerRadius(8)
+            HStack(spacing: 10) {
+                // 输入框：玻璃上的白色半透明胶囊
+                HStack(spacing: 6) {
+                    Image(systemName: "text.bubble")
+                        .font(.system(size: 13))
+                        .foregroundColor(NBColors.muted)
+                    TextField(replyTo != nil ? "写回复…" : "说点什么…", text: $commentText)
+                        .font(.system(size: 14))
+                        .foregroundColor(NBColors.ink)
+                        .submitLabel(.send)
+                        .onSubmit { Task { await submitComment() } }
+                }
+                .padding(.horizontal, 14)
+                .frame(height: 40)
+                .background(Color.white.opacity(0.88))
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule().strokeBorder(Color.black.opacity(0.06), lineWidth: 0.5)
+                )
 
+                // 发送按钮：ink 实底胶囊
                 Button {
                     Task { await submitComment() }
                 } label: {
-                    Text("发送")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(commentText.isEmpty ? NBColors.muted : .white)
-                        .frame(width: 72, height: 44)
-                        .background(commentText.isEmpty ? NBColors.page : NBColors.action)
-                        .cornerRadius(8)
+                    Image(systemName: "paperplane.fill")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white)
+                        .frame(width: 40, height: 40)
+                        .background(
+                            Circle().fill(commentText.isEmpty
+                                ? NBColors.muted.opacity(0.3)
+                                : NBColors.ink)
+                        )
                 }
                 .disabled(commentText.isEmpty)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(Color.white)
+        }
+        .padding(.horizontal, 12)
+        .padding(.top, 8)
+        .padding(.bottom, 6)
+        // Apple glass：超薄毛玻璃，透出滚动内容
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .top) {
+            Divider().opacity(0.5)
         }
     }
 
@@ -536,6 +642,7 @@ struct WorkDetailView: View {
             isLoading = false
         } catch {
             isLoading = false
+            loadErrorMessage = "加载失败（\(String(describing: error))），请稍后重试。"
         }
     }
 
@@ -561,14 +668,52 @@ struct WorkDetailView: View {
             )
             commentText = ""
             replyTo = nil
-            showCommentInput = false
-            let response: [NailWorkComment] = try await APIClient.shared.request(.workComments(id: workId, page: 1))
+            await loadComments()
+        } catch {}
+    }
+
+    private func loadComments() async {
+        if let response: [NailWorkComment] = try? await APIClient.shared.request(.workComments(id: workId, page: 1)) {
             comments = response
+        }
+    }
+
+    private func saveEdit() async {
+        guard let comment = editingComment, !editText.trimmingCharacters(in: .whitespaces).isEmpty else {
+            editingComment = nil
+            return
+        }
+        let content = editText.trimmingCharacters(in: .whitespaces)
+        editingComment = nil
+        do {
+            _ = try await APIClient.shared.requestVoid(
+                .updateComment(workId: workId, commentId: comment.id, content: content)
+            )
+            await loadComments()
+        } catch {}
+    }
+
+    private func deleteComment() async {
+        guard let comment = deletingComment else { return }
+        deletingComment = nil
+        do {
+            _ = try await APIClient.shared.requestVoid(
+                .deleteComment(workId: workId, commentId: comment.id)
+            )
+            await loadComments()
         } catch {}
     }
 
     private func shareWork() {
-        // TODO: implement share
+        guard let work = work else { return }
+        let shareText = work.title ?? "美甲作品"
+        let shareURL = "https://lunails.cn/works/\(workId)"
+        let items: [Any] = [shareText, URL(string: shareURL) as Any].compactMap { $0 }
+        let av = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let root = scene.windows.first?.rootViewController {
+            root.present(av, animated: true)
+        }
     }
 }
 

@@ -31,6 +31,7 @@ struct AddressesListView: View {
                 }
             }
             .navigationTitle("地址管理")
+            .toolbar(.hidden, for: .tabBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button { showAdd = true } label: {

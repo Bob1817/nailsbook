@@ -26,7 +26,7 @@ struct ClientSettingsView: View {
                     Label("帮助与反馈", systemImage: "questionmark.circle.fill")
                 }
                 NavigationLink { AboutView() } label: {
-                    Label("关于 NailBook", systemImage: "info.circle.fill")
+                    Label("关于 OnlyNail", systemImage: "info.circle.fill")
                 }
             }
 
@@ -83,7 +83,7 @@ struct TechnicianSettingsView: View {
                     Label("帮助与反馈", systemImage: "questionmark.circle.fill")
                 }
                 NavigationLink { AboutView() } label: {
-                    Label("关于 NailBook", systemImage: "info.circle.fill")
+                    Label("关于 OnlyNail", systemImage: "info.circle.fill")
                 }
             }
 

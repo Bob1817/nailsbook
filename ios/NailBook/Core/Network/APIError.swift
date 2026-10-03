@@ -7,10 +7,12 @@ enum APIError: LocalizedError {
     case decodingError(Error)
     case networkError(Error)
     case unauthorized
+    case credentialStorageFailed
     case tokenRefreshFailed
 
     var errorDescription: String? {
         switch self {
+        case .credentialStorageFailed: return "登录状态保存失败，请重启应用后重试"
         case .invalidURL: return "无效的请求地址"
         case .invalidResponse: return "服务器响应异常"
         case .httpError(_, let msg): return msg ?? "请求失败"

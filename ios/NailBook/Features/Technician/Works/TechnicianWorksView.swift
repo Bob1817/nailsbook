@@ -7,6 +7,9 @@ struct TechnicianWorksView: View {
     @State private var works: [NailWork] = []
     @State private var isLoading = true
     @State private var showCreate = false
+    @State private var editingWork: NailWork?
+    @State private var deletingWork: NailWork?
+    @State private var deleteError: String?
 
     var body: some View {
         NavigationStack {
@@ -41,6 +44,19 @@ struct TechnicianWorksView: View {
             .sheet(isPresented: $showCreate) {
                 TechWorkEditView(work: nil) { await loadWorks() }
             }
+            .sheet(item: $editingWork) { work in
+                TechWorkEditView(work: work) { await loadWorks() }
+            }
+            .alert("删除后无法恢复，确认删除？", isPresented: Binding(get: { deletingWork != nil }, set: { if !$0 { deletingWork = nil } })) {
+                Button("取消", role: .cancel) { deletingWork = nil }
+                Button("删除", role: .destructive) {
+                    guard let work = deletingWork else { return }
+                    Task { await deleteWork(work) }
+                }
+            }
+            .alert("操作失败", isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
+                Button("确定") { deleteError = nil }
+            } message: { Text(deleteError ?? "") }
         }
     }
 
@@ -231,8 +247,8 @@ struct TechnicianWorksView: View {
                     HStack {
                         Spacer()
                         Menu {
-                            Button("编辑") { }
-                            Button("删除", role: .destructive) { }
+                            Button("编辑") { editingWork = work }
+                            Button("删除", role: .destructive) { deletingWork = work }
                         } label: {
                             Image(systemName: "ellipsis")
                                 .font(.system(size: 14, weight: .bold))
@@ -301,6 +317,17 @@ struct TechnicianWorksView: View {
             isLoading = false
         } catch {
             isLoading = false
+        }
+    }
+
+    private func deleteWork(_ work: NailWork) async {
+        do {
+            try await APIClient.shared.requestVoid(.deleteWork(id: work.id))
+            deletingWork = nil
+            await loadWorks()
+        } catch {
+            deleteError = error.localizedDescription
+            deletingWork = nil
         }
     }
 }
@@ -437,6 +464,7 @@ struct TechWorkDetailView: View {
             .padding(.vertical, Spacing.lg)
         }
         .navigationTitle("作品详情")
+        .toolbar(.hidden, for: .tabBar)
         .navigationBarTitleDisplayMode(.inline)
         .background(Color.nbBg)
         .disabled(isLoading)

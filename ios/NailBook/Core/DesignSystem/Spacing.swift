@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - NailBook Design Tokens (aligned with WeChat mini-program)
+// MARK: - OnlyNail Design Tokens (aligned with WeChat mini-program)
 
 // Token values from wxapp styles/tokens.wxss
 // rpx to pt conversion: 750rpx = 375pt, so 1pt = 2rpx

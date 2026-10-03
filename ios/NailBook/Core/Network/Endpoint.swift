@@ -16,6 +16,8 @@ enum Endpoint {
     case refreshToken(role: UserRole)
     case checkPhone(role: UserRole, phone: String)
     case findTechnicianByInviteCode(code: String)
+    case bindTechnician(inviteCode: String, note: String?, source: String?)
+    case activateTechnician(activationKey: String)
     case updateClientProfile(params: [String: Any])
     case updateTechnicianProfile(params: [String: Any])
     case changePassword(role: UserRole, oldPassword: String, newPassword: String)
@@ -30,6 +32,7 @@ enum Endpoint {
     case favoriteWork(id: Int)
     case workComments(id: Int, page: Int)
     case addComment(workId: Int, content: String, parentId: Int?)
+    case updateComment(workId: Int, commentId: Int, content: String)
     case deleteComment(workId: Int, commentId: Int)
     case favoritesList(page: Int)
     case likesList(page: Int)
@@ -49,7 +52,7 @@ enum Endpoint {
     case techOrderDetail(id: Int)
     case quoteOrder(id: Int, price: Double, remark: String?)
     case confirmOrder(id: Int, depositConfirmed: Bool?)
-    case completeOrder(id: Int)
+    case completeOrder(id: Int, params: [String: Any]?)
     case cancelOrder(id: Int, reason: String?)
     case createTechOrder(params: [String: Any])
 
@@ -125,8 +128,23 @@ enum Endpoint {
     // Insights
     case technicianInsights(month: String?)
 
+    // Artist Interactions
+    case artistInteractions
+
     // Beauty Archive
     case beautyArchive
+
+    // Public Artist / Brand
+    case publicArtistProfile(id: Int)
+    case publicShopGuidance(id: Int, shopName: String?, address: String?)
+    case publicBrandServices(id: Int)
+    case publicBrandReviews(id: Int)
+    case clientWorksPublic(techId: Int, page: Int)
+
+    // Client Follow
+    case clientFollowStatus(artistId: Int)
+    case clientFollowArtist(artistId: Int)
+    case clientUnfollowArtist(artistId: Int)
 
     // Uploads
     case uploadImage(role: UserRole)
@@ -138,7 +156,8 @@ enum Endpoint {
         switch self {
         case .resource(_, let path, _, _): return !path.hasPrefix("auth/forgot-password/")
         case .publicResource, .clientLogin, .clientRegister, .technicianLogin, .technicianRegister,
-             .refreshToken, .checkPhone, .findTechnicianByInviteCode:
+             .refreshToken, .checkPhone, .findTechnicianByInviteCode,
+             .publicArtistProfile, .publicShopGuidance, .publicBrandServices, .publicBrandReviews:
             return false
         default: return true
         }
@@ -150,6 +169,7 @@ enum Endpoint {
         case .publicResource(let path): return "/public/\(path)"
         // Auth
         case .clientLogin: return "/client/auth/login"
+        case .blockedSlots(let techId): return "/client/orders/blocked-slots/\(techId)"
         case .clientRegister: return "/client/auth/register-by-invite"
         case .clientMe: return "/client/auth/me"
         case .technicianLogin: return "/technician/auth/login"
@@ -158,6 +178,8 @@ enum Endpoint {
         case .refreshToken(let role): return "/\(role.rawValue)/auth/refresh"
         case .checkPhone(let role, _): return "/\(role.rawValue)/auth/check-phone"
         case .findTechnicianByInviteCode: return "/client/auth/find-by-invite-code"
+        case .bindTechnician: return "/client/auth/bind-technician"
+        case .activateTechnician: return "/client/auth/activate-technician"
         case .updateClientProfile: return "/client/auth/me"
         case .updateTechnicianProfile: return "/technician/auth/profile"
         case .changePassword(let role, _, _): return "/\(role.rawValue)/auth/password"
@@ -172,6 +194,7 @@ enum Endpoint {
         case .favoriteWork(let id): return "/client/works/\(id)/favorite"
         case .workComments(let id, _): return "/client/works/\(id)/comments"
         case .addComment(let id, _, _): return "/client/works/\(id)/comments"
+        case .updateComment(let wid, let cid, _): return "/client/works/\(wid)/comments/\(cid)"
         case .deleteComment(let wid, let cid): return "/client/works/\(wid)/comments/\(cid)"
         case .favoritesList: return "/client/favorites"
         case .likesList: return "/client/likes"
@@ -191,7 +214,7 @@ enum Endpoint {
         case .techOrderDetail(let id): return "/technician/orders/\(id)"
         case .quoteOrder(let id, _, _): return "/technician/orders/\(id)/review"
         case .confirmOrder(let id, _): return "/technician/orders/\(id)/confirm"
-        case .completeOrder(let id): return "/technician/orders/\(id)/complete"
+        case .completeOrder(let id, _): return "/technician/orders/\(id)/complete"
         case .cancelOrder(let id, _): return "/technician/orders/\(id)/cancel"
         case .createTechOrder: return "/technician/orders"
 
@@ -267,8 +290,23 @@ enum Endpoint {
         // Insights
         case .technicianInsights: return "/technician/insights/overview"
 
+        // Artist Interactions
+        case .artistInteractions: return "/technician/artist-interactions"
+
         // Beauty Archive
         case .beautyArchive: return "/client/beauty-archive"
+
+        // Public Artist / Brand
+        case .publicArtistProfile(let id): return "/public/artist/id/\(id)"
+        case .publicShopGuidance(let id, _, _): return "/public/artist/id/\(id)/shop-guidance"
+        case .publicBrandServices(let id): return "/public/brands/\(id)/services"
+        case .publicBrandReviews(let id): return "/public/brands/\(id)/reviews"
+        case .clientWorksPublic(let techId, _): return "/client/works"
+
+        // Client Follow
+        case .clientFollowStatus(let id): return "/client/artists/\(id)/follow"
+        case .clientFollowArtist(let id): return "/client/artists/\(id)/follow"
+        case .clientUnfollowArtist(let id): return "/client/artists/\(id)/follow"
 
         // Uploads
         case .uploadImage(let role): return "/\(role.rawValue)/uploads/image"
@@ -285,10 +323,11 @@ enum Endpoint {
              .sendMessage, .addComment, .likeWork, .favoriteWork,
              .agreeOrder, .markDepositPaid, .registerDeviceToken,
              .acceptDesignQuote, .rejectDesignQuote,
-             .uploadImage, .uploadAudio, .createCustomerFollowUp:
+             .uploadImage, .uploadAudio, .createCustomerFollowUp,
+             .bindTechnician, .activateTechnician:
             return "POST"
 
-        case .updateClientProfile: return "PUT"
+        case .updateClientProfile, .updateComment: return "PUT"
 
         case .updateTechnicianProfile, .changePassword,
              .updateOrderStatus, .quoteOrder, .confirmOrder, .completeOrder,
@@ -299,6 +338,12 @@ enum Endpoint {
             return "PATCH"
 
         case .deleteComment, .deleteDesign, .deleteAddress, .deleteWork, .deleteService:
+            return "DELETE"
+
+        case .clientFollowArtist:
+            return "POST"
+
+        case .clientUnfollowArtist:
             return "DELETE"
 
         case .toggleWorkVisible, .toggleWorkPinned, .toggleWorkFeatured,
@@ -347,6 +392,14 @@ enum Endpoint {
                 return [URLQueryItem(name: "month", value: m)]
             }
             return nil
+        case .clientWorksPublic(let techId, let page):
+            return [URLQueryItem(name: "techId", value: "\(techId)"),
+                    URLQueryItem(name: "page", value: "\(page)")]
+        case .publicShopGuidance(_, let shopName, let address):
+            var items = [URLQueryItem]()
+            if let n = shopName { items.append(URLQueryItem(name: "shopName", value: n)) }
+            if let a = address { items.append(URLQueryItem(name: "address", value: a)) }
+            return items.isEmpty ? nil : items
         default:
             return nil
         }
@@ -390,6 +443,8 @@ enum Endpoint {
             var d: [String: Any] = ["quotePrice": price]
             if let r = remark { d["quoteRemark"] = r }
             return d
+        case .completeOrder(_, let params):
+            return params
         case .confirmOrder(_, let deposit):
             var d: [String: Any] = [:]
             if let d2 = deposit { d["depositConfirmed"] = d2 }
@@ -408,6 +463,8 @@ enum Endpoint {
             var d: [String: Any] = ["content": content]
             if let p = parentId { d["parentId"] = p }
             return d
+        case .updateComment(_, _, let content):
+            return ["content": content]
         case .updateCustomerTags(_, let tags):
             return ["tags": tags]
         case .quoteDesign(_, let price, let remark):
@@ -424,6 +481,13 @@ enum Endpoint {
             return params
         case .brandProfileUpdate(let params):
             return params
+        case .bindTechnician(let inviteCode, let note, let source):
+            var d: [String: Any] = ["inviteCode": inviteCode]
+            if let n = note { d["note"] = n }
+            if let s = source { d["source"] = s }
+            return d
+        case .activateTechnician(let key):
+            return ["activationKey": key]
         default:
             return nil
         }

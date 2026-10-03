@@ -16,7 +16,7 @@ struct AboutView: View {
                         .cornerRadius(Radius.xl)
 
                     VStack(spacing: Spacing.xs) {
-                        Text("NailBook")
+                        Text("OnlyNail")
                             .font(NBFont.displaySmall)
                             .foregroundColor(.nbTextPrimary)
                         Text("美甲师预约管理平台")
@@ -30,7 +30,7 @@ struct AboutView: View {
                 NBCard {
                     VStack(spacing: Spacing.md) {
                         infoRow("版本", value: "1.0.0")
-                        infoRow("开发者", value: "NailBook Team")
+                        infoRow("开发者", value: "OnlyNail Team")
                     }
                 }
 
@@ -45,7 +45,7 @@ struct AboutView: View {
                     }
                 }
 
-                Text("© 2026 NailBook. All rights reserved.")
+                Text("© 2026 OnlyNail. All rights reserved.")
                     .font(NBFont.captionMedium)
                     .foregroundColor(.nbTextTertiary)
                     .padding(.top, Spacing.xxl)

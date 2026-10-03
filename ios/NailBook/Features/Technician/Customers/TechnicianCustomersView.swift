@@ -1,99 +1,403 @@
 import SwiftUI
 
-// MARK: - Customers List
+// MARK: - Technician Customers (aligned with wxapp design)
 
 struct TechnicianCustomersView: View {
     @State private var customers: [Customer] = []
     @State private var isLoading = true
     @State private var searchText = ""
+    @State private var selectedLifecycle = "all"
+    @State private var selectedTag: String?
+    @State private var profile: TechnicianProfile?
+    @State private var showInviteCopied = false
+
+    private let lifecycleTabs = [
+        ("all", "全部"),
+        ("new", "新客"),
+        ("active", "活跃"),
+        ("due", "待复购"),
+        ("dormant", "沉睡")
+    ]
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if isLoading {
-                    NBLoadingView()
-                } else if customers.isEmpty {
-                    NBEmptyState(icon: "person.2", title: "暂无客户", message: "客户将在产生订单后自动创建")
-                } else {
-                    List(filteredCustomers) { customer in
-                        NavigationLink(destination: TechCustomerDetailView(customerId: customer.id)) {
-                            CustomerRow(customer: customer)
+        VStack(spacing: 0) {
+            // Header
+            headerSection
+
+            // Customer list
+            if isLoading {
+                skeletonList
+            } else if filteredCustomers.isEmpty {
+                emptyView
+            } else {
+                customerList
+            }
+        }
+        .background(NBColors.page)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text("客户")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundColor(NBColors.ink)
+            }
+        }
+        .task { await loadCustomers(); await loadProfile() }
+        .refreshable { await loadCustomers() }
+    }
+
+    // MARK: - Header Section
+
+    private var headerSection: some View {
+        VStack(spacing: 8) {
+            // Search bar + Invite button
+            HStack(spacing: 6) {
+                HStack(spacing: 7) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 14))
+                        .foregroundColor(NBColors.muted)
+
+                    TextField("搜索姓名或联系方式", text: $searchText)
+                        .font(.system(size: 14))
+
+                    if !searchText.isEmpty {
+                        Button {
+                            searchText = ""
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 12))
+                                .foregroundColor(NBColors.muted)
+                                .frame(width: 32, height: 32)
                         }
                     }
-                    .listStyle(.plain)
+                }
+                .frame(height: 44)
+                .padding(.horizontal, 13)
+                .background(NBColors.softSurface)
+                .cornerRadius(Radius.input)
+
+                Button {
+                    if let code = profile?.invitationCode, !code.isEmpty {
+                        UIPasteboard.general.string = code
+                        showInviteCopied = true
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 14))
+                        Text("邀请")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .foregroundColor(NBColors.action)
+                    .frame(height: 44)
+                    .padding(.horizontal, 11)
+                    .background(NBColors.softSurface)
+                    .cornerRadius(Radius.lg)
+                }
+                .alert("邀请码已复制", isPresented: $showInviteCopied) {
+                    Button("确定", role: .cancel) {}
+                } message: {
+                    Text("邀请码：\(profile?.invitationCode ?? "")\n分享给客户即可绑定")
                 }
             }
-            .navigationTitle("客户管理")
-            .searchable(text: $searchText, prompt: "搜索客户姓名或手机号")
-            .background(Color.nbBg)
-            .task { await loadCustomers() }
-            .refreshable { await loadCustomers() }
+            .padding(.horizontal, 16)
+
+            // Lifecycle tabs
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 4) {
+                    ForEach(lifecycleTabs, id: \.0) { tab in
+                        Button {
+                            selectedLifecycle = tab.0
+                        } label: {
+                            Text(tab.1)
+                                .font(.system(size: 14, weight: selectedLifecycle == tab.0 ? .bold : .medium))
+                                .foregroundColor(selectedLifecycle == tab.0 ? NBColors.action : NBColors.muted)
+                                .frame(height: 38)
+                                .padding(.horizontal, 12)
+                                .background(selectedLifecycle == tab.0 ? NBColors.page : Color.clear)
+                                .cornerRadius(999)
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+        }
+        .padding(.vertical, 8)
+        .background(Color.white)
+    }
+
+    // MARK: - Customer List
+
+    private var customerList: some View {
+        ScrollView {
+            LazyVStack(spacing: 10) {
+                ForEach(filteredCustomers) { customer in
+                    NavigationLink(destination: TechCustomerDetailView(customerId: customer.id)) {
+                        customerCard(customer)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+            .padding(.bottom, 20)
         }
     }
 
-    private var filteredCustomers: [Customer] {
-        if searchText.isEmpty { return customers }
-        return customers.filter {
-            ($0.name ?? "").localizedCaseInsensitiveContains(searchText) ||
-            ($0.phone ?? "").contains(searchText)
+    private func customerCard(_ customer: Customer) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header: avatar + name + lifecycle + arrow
+            HStack(spacing: 10) {
+                // Avatar
+                ZStack {
+                    Circle()
+                        .fill(NBColors.page)
+                        .frame(width: 52, height: 52)
+                    Text(String(customer.name?.first ?? "?"))
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(NBColors.ink)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Text(customer.name ?? "未命名")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(NBColors.ink)
+                            .lineLimit(1)
+
+                        // Lifecycle badge
+                        Text(lifecycleLabel(customer))
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(lifecycleColor(customer))
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 2)
+                            .background(lifecycleColor(customer).opacity(0.1))
+                            .cornerRadius(999)
+                    }
+
+                    HStack(spacing: 4) {
+                        Image(systemName: "mappin")
+                            .font(.system(size: 10))
+                        Text("暂无地址")
+                            .font(.system(size: 12))
+                    }
+                    .foregroundColor(NBColors.muted)
+                    .lineLimit(1)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14))
+                    .foregroundColor(NBColors.control)
+            }
+
+            // Status
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(lifecycleColor(customer))
+                    .frame(width: 6, height: 6)
+                Text(lifecycleReason(customer))
+                    .font(.system(size: 12))
+                    .foregroundColor(NBColors.ink)
+                Spacer()
+            }
+            .padding(10)
+            .background(lifecycleColor(customer).opacity(0.08))
+            .cornerRadius(7)
+            .padding(.top, 10)
+
+            // Tags
+            if let tags = customer.tags, !tags.isEmpty {
+                HStack(spacing: 5) {
+                    ForEach(tags.prefix(3), id: \.self) { tag in
+                        Text(tag)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(NBColors.ink)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(NBColors.page)
+                            .cornerRadius(7)
+                    }
+                }
+                .padding(.top, 10)
+            }
+
+            // Stats
+            HStack(spacing: 0) {
+                VStack(spacing: 2) {
+                    Text("累计消费")
+                        .font(.system(size: 11))
+                        .foregroundColor(NBColors.muted)
+                    Text("¥\(String(format: "%.0f", customer.totalSpent ?? 0))")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(NBColors.action)
+                }
+                .frame(maxWidth: .infinity)
+
+                VStack(spacing: 2) {
+                    Text("服务次数")
+                        .font(.system(size: 11))
+                        .foregroundColor(NBColors.muted)
+                    Text("\(customer.orderCount ?? 0) 次")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(NBColors.ink)
+                }
+                .frame(maxWidth: .infinity)
+
+                VStack(spacing: 2) {
+                    Text("最近服务")
+                        .font(.system(size: 11))
+                        .foregroundColor(NBColors.muted)
+                    Text(formatLastOrder(customer.lastOrderAt))
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(NBColors.ink)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .padding(.vertical, 12)
+        }
+        .padding(12)
+        .background(Color.white)
+        .cornerRadius(Radius.lg)
+        .shadow(color: Color.black.opacity(0.05), radius: 10, y: 2)
+    }
+
+    // MARK: - Skeleton List
+
+    private var skeletonList: some View {
+        ScrollView {
+            VStack(spacing: 10) {
+                ForEach(0..<3, id: \.self) { _ in
+                    RoundedRectangle(cornerRadius: Radius.lg)
+                        .fill(NBColors.page)
+                        .frame(height: 140)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
         }
     }
+
+    // MARK: - Empty View
+
+    private var emptyView: some View {
+        VStack(spacing: 12) {
+            Spacer()
+
+            ZStack {
+                Circle()
+                    .fill(NBColors.page)
+                    .frame(width: 56, height: 56)
+                ZStack {
+                    Circle()
+                        .fill(NBColors.action)
+                        .frame(width: 21, height: 21)
+                    RoundedRectangle(cornerRadius: 7)
+                        .fill(NBColors.action)
+                        .frame(width: 28, height: 14)
+                        .offset(y: 18)
+                }
+            }
+
+            Text(searchText.isEmpty ? "还没有客户" : "没有找到匹配的客户")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(NBColors.ink)
+
+            Text(searchText.isEmpty ? "客户预约后会自动出现在这里" : "换个关键词、生命周期或标签试试")
+                .font(.system(size: 14))
+                .foregroundColor(NBColors.muted)
+
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+    }
+
+    // MARK: - Computed Properties
+
+    private var filteredCustomers: [Customer] {
+        customers.filter { customer in
+            // Search filter
+            if !searchText.isEmpty {
+                let nameMatch = (customer.name ?? "").localizedCaseInsensitiveContains(searchText)
+                let phoneMatch = (customer.phone ?? "").contains(searchText)
+                if !nameMatch && !phoneMatch { return false }
+            }
+
+            // Lifecycle filter
+            if selectedLifecycle != "all" {
+                let lifecycle = customerLifecycle(customer)
+                if lifecycle != selectedLifecycle { return false }
+            }
+
+            return true
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func customerLifecycle(_ customer: Customer) -> String {
+        // Simplified lifecycle logic
+        if customer.orderCount == 0 { return "new" }
+        if customer.orderCount ?? 0 >= 3 { return "active" }
+        return "new"
+    }
+
+    private func lifecycleLabel(_ customer: Customer) -> String {
+        switch customerLifecycle(customer) {
+        case "new": return "新客"
+        case "active": return "活跃"
+        case "due": return "待复购"
+        case "dormant": return "沉睡"
+        default: return "新客"
+        }
+    }
+
+    private func lifecycleColor(_ customer: Customer) -> Color {
+        switch customerLifecycle(customer) {
+        case "new": return NBColors.muted
+        case "active": return NBColors.success
+        case "due": return NBColors.warning
+        case "dormant": return NBColors.muted
+        default: return NBColors.muted
+        }
+    }
+
+    private func lifecycleReason(_ customer: Customer) -> String {
+        switch customerLifecycle(customer) {
+        case "new": return "新客户，等待首次服务"
+        case "active": return "活跃客户"
+        case "due": return "距离上次服务已有一段时间"
+        case "dormant": return "长时间未消费"
+        default: return "新客户"
+        }
+    }
+
+    private func formatLastOrder(_ isoString: String?) -> String {
+        guard let isoString = isoString else { return "暂无" }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        guard let date = formatter.date(from: isoString) else { return "暂无" }
+        let f = DateFormatter()
+        f.dateFormat = "MM/dd"
+        return f.string(from: date)
+    }
+
+    // MARK: - Data Loading
 
     private func loadCustomers() async {
         do {
             customers = try await APIClient.shared.request(.customers(search: nil, tags: nil))
             isLoading = false
-        } catch { isLoading = false }
-    }
-}
-
-struct CustomerRow: View {
-    let customer: Customer
-
-    var body: some View {
-        HStack(spacing: Spacing.md) {
-            Circle()
-                .fill(Color.nbPrimarySoft)
-                .frame(width: 44, height: 44)
-                .overlay(
-                    Text(String(customer.name?.first ?? "?"))
-                        .font(NBFont.titleMedium)
-                        .foregroundColor(.nbPrimary)
-                )
-
-            VStack(alignment: .leading, spacing: Spacing.xs) {
-                HStack {
-                    Text(customer.name ?? "未命名")
-                        .font(NBFont.bodyLarge)
-                        .foregroundColor(.nbTextPrimary)
-                    if let tags = customer.tags, !tags.isEmpty {
-                        ForEach(tags.prefix(2), id: \.self) { tag in
-                            NBChip(title: tag, color: .nbInfo)
-                        }
-                    }
-                }
-                if let phone = customer.phone {
-                    Text(phone)
-                        .font(NBFont.captionLarge)
-                        .foregroundColor(.nbTextSecondary)
-                }
-            }
-            Spacer()
-            VStack(alignment: .trailing, spacing: 2) {
-                if let count = customer.orderCount {
-                    Text("\(count)单")
-                        .font(NBFont.captionLarge)
-                        .foregroundColor(.nbTextSecondary)
-                }
-                if let spent = customer.totalSpent, spent > 0 {
-                    Text("¥\(String(format: "%.0f", spent))")
-                        .font(NBFont.captionMedium)
-                        .foregroundColor(.nbPrimary)
-                }
-            }
+        } catch {
+            isLoading = false
         }
-        .padding(.vertical, Spacing.xs)
-        .listRowBackground(Color.nbSurface)
+    }
+
+    private func loadProfile() async {
+        do {
+            profile = try await APIClient.shared.request(.technicianMe)
+        } catch {}
     }
 }
 
@@ -258,6 +562,7 @@ struct TechCustomerDetailView: View {
             }
         }
         .navigationTitle("客户详情")
+        .toolbar(.hidden, for: .tabBar)
         .navigationBarTitleDisplayMode(.inline)
         .background(Color.nbBg)
         .task { await loadCustomer() }
@@ -440,5 +745,21 @@ struct FollowUpRow: View {
         let displayFormatter = DateFormatter()
         displayFormatter.dateFormat = "yyyy年M月d日"
         return displayFormatter.string(from: date)
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    NavigationStack {
+        TechnicianCustomersView()
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    NavigationStack {
+        TechnicianCustomersView()
     }
 }

@@ -1,5 +1,15 @@
 import Foundation
 
+// MARK: - Failable Array Element Decoder
+// 解码数组时单个元素失败不影响其他元素
+
+struct FailableDecodable<T: Decodable>: Decodable {
+    let value: T?
+    init(from decoder: Decoder) throws {
+        value = try? T(from: decoder)
+    }
+}
+
 // MARK: - User Models
 
 struct ClientUser: Codable, Identifiable {
@@ -12,6 +22,42 @@ struct ClientUser: Codable, Identifiable {
     let status: String?
     var technicians: [BoundTechnician]?
     var pendingTechnicians: [BoundTechnician]?
+
+    enum CodingKeys: String, CodingKey {
+        case id, nickname, phone, avatarUrl, city, bio, status, technicians, pendingTechnicians
+    }
+
+    // 容错解码：嵌套数组（美甲师列表）逐元素容错，单个失败不影响其他
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(Int.self, forKey: .id)
+        nickname = try c.decodeIfPresent(String.self, forKey: .nickname)
+        phone = try c.decode(String.self, forKey: .phone)
+        avatarUrl = try c.decodeIfPresent(String.self, forKey: .avatarUrl)
+        city = try c.decodeIfPresent(String.self, forKey: .city)
+        bio = try c.decodeIfPresent(String.self, forKey: .bio)
+        status = try c.decodeIfPresent(String.self, forKey: .status)
+        technicians = Self.decodeLenientArray(from: c, forKey: .technicians)
+        pendingTechnicians = Self.decodeLenientArray(from: c, forKey: .pendingTechnicians)
+    }
+
+    // 逐元素容错解码：单个元素失败时跳过，不拖垮整个数组
+    private static func decodeLenientArray<T: Decodable>(from container: KeyedDecodingContainer<CodingKeys>, forKey key: CodingKeys) -> [T]? {
+        guard let raw = try? container.decodeIfPresent([FailableDecodable<T>].self, forKey: key) else { return nil }
+        return raw.compactMap { $0.value }
+    }
+
+    init(id: Int, nickname: String? = nil, phone: String, avatarUrl: String? = nil, city: String? = nil, bio: String? = nil, status: String? = nil, technicians: [BoundTechnician]? = nil, pendingTechnicians: [BoundTechnician]? = nil) {
+        self.id = id
+        self.nickname = nickname
+        self.phone = phone
+        self.avatarUrl = avatarUrl
+        self.city = city
+        self.bio = bio
+        self.status = status
+        self.technicians = technicians
+        self.pendingTechnicians = pendingTechnicians
+    }
 }
 
 struct TechnicianProfile: Codable, Identifiable {
@@ -28,6 +74,9 @@ struct TechnicianProfile: Codable, Identifiable {
     var customTags: [String]?
     var bookingReady: Bool?
     var shopAddresses: [ShopAddress]?
+    var showPhone: Bool?
+    var showLocation: Bool?
+    var allowSearch: Bool?
 }
 
 struct ClientAuthResponse: Codable {

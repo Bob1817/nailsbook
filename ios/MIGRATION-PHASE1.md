@@ -49,10 +49,12 @@
 ```sh
 xcodegen generate
 xcodebuild -project NailBook.xcodeproj -scheme NailBook \
-  -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build
+  -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- build
 xcodebuild -project NailBook.xcodeproj -scheme NailBook \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' CODE_SIGNING_ALLOWED=NO test
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- test
 ```
+
+模拟器也必须保留签名：禁止使用 `CODE_SIGNING_ALLOWED=NO` 安装运行，否则安装包可能丢失钥匙串权限，登录 token 无法保存（系统错误 `-34018`），后续 API 将返回 401。模拟器权限由 Xcode 嵌入可执行文件的 `__TEXT,__entitlements` 段，不能仅根据 `codesign` 输出判断；运行 `TokenStorageTests` 验证实际钥匙串读写和权限拒绝。
 
 联调时在 Scheme 的 Environment Variables 中设置 `NAILBOOK_API_URL`（带 `/api`）。默认仍为现有生产 API；自动化契约测试注入 URLProtocol，使用 `nailbook.invalid`，不对生产写入。需要 HTTP 测试服务时应使用专用 Debug ATS 配置或 HTTPS，不为正式构建全局关闭 ATS。
 

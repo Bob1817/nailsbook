@@ -440,6 +440,7 @@ struct TechnicianHomeView: View {
                         )
                 }
                 .aspectRatio(0.75, contentMode: .fit)
+                .frame(maxWidth: .infinity)
                 .clipped()
                 .cornerRadius(Radius.sm)
 

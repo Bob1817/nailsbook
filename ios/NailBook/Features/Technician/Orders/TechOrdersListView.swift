@@ -9,6 +9,7 @@ struct TechOrdersListView: View {
     @State private var selectedTab = "trips" // trips or all
     @State private var dayAccepting = true
     @State private var daySaving = false
+    @State private var dayVersion = 0
 
     private var todayOrders: [Order] {
         orders.filter { order in
@@ -45,8 +46,8 @@ struct TechOrdersListView: View {
                         .foregroundColor(NBColors.ink)
                 }
             }
-            .task { await loadOrders() }
-            .refreshable { await loadOrders() }
+            .task { await loadOrders(); await loadBookingDay() }
+            .refreshable { await loadOrders(); await loadBookingDay() }
         }
     }
 
@@ -438,9 +439,31 @@ struct TechOrdersListView: View {
     private func toggleBookingDay() async {
         guard !daySaving else { return }
         daySaving = true
-        // Simulate API call
-        try? await Task.sleep(nanoseconds: 500_000_000)
-        daySaving = false
+        defer { daySaving = false }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "Asia/Shanghai")
+        let dateStr = formatter.string(from: selectedDate)
+        do {
+            try await APIClient.shared.requestVoid(.bookingDayUpdate(date: dateStr, accepting: dayAccepting, version: dayVersion))
+        } catch {
+            // Revert on failure
+            dayAccepting.toggle()
+        }
+    }
+
+    private func loadBookingDay() async {
+        do {
+            let response: BookingDaysResponse = try await APIClient.shared.request(.bookingDaysList)
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            formatter.timeZone = TimeZone(identifier: "Asia/Shanghai")
+            let dateStr = formatter.string(from: selectedDate)
+            if let day = response.days?.first(where: { $0.serviceDate == dateStr }) {
+                dayAccepting = day.accepting ?? true
+                dayVersion = day.version ?? 0
+            }
+        } catch {}
     }
 }
 

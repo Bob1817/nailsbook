@@ -237,3 +237,26 @@ struct FlowLayout: Layout {
         return (CGSize(width: maxX - spacing, height: y + rowHeight), origins)
     }
 }
+
+// MARK: - Client Page Header
+
+struct NBClientPageHeader: View {
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.system(size: 18, weight: .bold))
+                .foregroundColor(NBColors.ink)
+                .accessibilityAddTraits(.isHeader)
+            Text(subtitle)
+                .font(.system(size: 14))
+                .foregroundColor(NBColors.muted)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+    }
+}

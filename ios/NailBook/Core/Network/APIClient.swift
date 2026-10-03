@@ -9,6 +9,8 @@ class APIClient: ObservableObject {
     private let decoder: JSONDecoder
     private var refreshTasks: [UserRole: Task<Void, Error>] = [:]
 
+    var baseURLString: String { baseURL }
+
     init(baseURL: String = ProcessInfo.processInfo.environment["NAILBOOK_API_URL"] ?? "https://api.lunails.cn/api", session: URLSession? = nil) {
         self.baseURL = baseURL
         let config = URLSessionConfiguration.default
@@ -139,7 +141,7 @@ class APIClient: ObservableObject {
             }
             try checkResponse(response, data: data)
             let tokens = try decoder.decode(TokenResponse.self, from: data)
-            await TokenManager.shared.saveTokens(accessToken: tokens.accessToken,
+            try await TokenManager.shared.saveTokens(accessToken: tokens.accessToken,
                                                 refreshToken: tokens.refreshToken, role: role)
         }
         refreshTasks[role] = task

@@ -29,6 +29,7 @@ struct TechnicianProfileView: View {
                             MenuItem(icon: "person.text.rectangle", title: "个人设置", iconBg: .nbPrimarySoft, destination: AnyView(TechProfileSettingsView())),
                             MenuItem(icon: "lock.fill", title: "账号安全", iconBg: .nbPurpleSoft, destination: AnyView(ChangePasswordView(role: .technician))),
                             MenuItem(icon: "gift.fill", title: "推荐活动", iconBg: .nbPrimarySoft, destination: AnyView(ReferralCampaignView())),
+                            MenuItem(icon: "person.2.fill", title: "绑定申请", iconBg: .nbInfoSoft, destination: AnyView(BindingApplicationsView())),
                             MenuItem(icon: "questionmark.circle.fill", title: "帮助反馈", iconBg: NBColors.page, destination: AnyView(HelpFeedbackView(role: .technician))),
                             MenuItem(icon: "info.circle.fill", title: "关于", iconBg: NBColors.page, destination: AnyView(AboutView()))
                         ])
@@ -211,14 +212,16 @@ struct TechnicianProfileView: View {
             ("list.bullet.rectangle", "服务项目", .nbPurpleSoft, AnyView(TechnicianServicesView())),
             ("building.2.fill", "门店管理", NBColors.page, AnyView(ShopManagementView())),
             ("house.fill", "主页设置", NBColors.page, AnyView(HomepageSettingsView())),
-            ("calendar.badge.clock", "服务时间", NBColors.page, AnyView(Text("服务时间"))),
-            ("tag.fill", "标签管理", NBColors.page, AnyView(Text("标签管理"))),
-            ("doc.text.fill", "全部订单", .nbSecondarySoft, AnyView(TechOrdersListView()))
+            ("calendar.badge.clock", "服务时间", NBColors.page, AnyView(ScheduleManagementView())),
+            ("tag.fill", "标签管理", NBColors.page, AnyView(TagManagementPlaceholderView())),
+            ("doc.text.fill", "全部订单", .nbSecondarySoft, AnyView(TechOrdersListView())),
+            ("chart.bar.fill", "经营数据", .nbInfoSoft, AnyView(BusinessDataView())),
+            ("heart.text.rectangle", "互动记录", .nbPrimarySoft, AnyView(ArtistInteractionsView()))
         ]
 
         return LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], spacing: Spacing.md) {
             ForEach(tools.indices, id: \.self) { i in
-                NavigationLink(destination: tools[i].3) {
+                NavigationLink(destination: tools[i].3.toolbar(.hidden, for: .tabBar)) {
                     VStack(spacing: Spacing.xs) {
                         Image(systemName: tools[i].0)
                             .font(.system(size: 20))
@@ -248,7 +251,7 @@ struct TechnicianProfileView: View {
         VStack(spacing: 0) {
             ForEach(items.indices, id: \.self) { index in
                 let item = items[index]
-                NavigationLink(destination: item.destination) {
+                NavigationLink(destination: item.destination.toolbar(.hidden, for: .tabBar)) {
                     HStack(spacing: Spacing.md) {
                         Image(systemName: item.icon)
                             .font(.system(size: 16))
@@ -306,5 +309,55 @@ struct TechnicianProfileView: View {
         } else {
             return String(format: "¥%.0f", amount)
         }
+    }
+}
+
+// MARK: - Service Time Placeholder
+
+struct ServiceTimePlaceholderView: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            Image(systemName: "calendar.badge.clock")
+                .font(.system(size: 48))
+                .foregroundColor(NBColors.muted)
+            Text("服务时间管理")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(NBColors.ink)
+            Text("管理你的工作时间方案、休息日和接单设置，即将上线")
+                .font(.system(size: 14))
+                .foregroundColor(NBColors.muted)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+            Spacer()
+        }
+        .background(NBColors.page)
+        .navigationTitle("服务时间")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - Tag Management Placeholder
+
+struct TagManagementPlaceholderView: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            Image(systemName: "tag.fill")
+                .font(.system(size: 48))
+                .foregroundColor(NBColors.muted)
+            Text("标签管理")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(NBColors.ink)
+            Text("创建和管理客户标签模板，方便快速分类，即将上线")
+                .font(.system(size: 14))
+                .foregroundColor(NBColors.muted)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+            Spacer()
+        }
+        .background(NBColors.page)
+        .navigationTitle("标签管理")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

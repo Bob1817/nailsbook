@@ -11,6 +11,10 @@ struct ConversationsView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                if role == .client {
+                    NBClientPageHeader(title: "消息", subtitle: "与美甲师沟通款式和预约细节")
+                }
+
                 // Content
                 if isLoading {
                     // Skeleton loading
@@ -21,7 +25,7 @@ struct ConversationsView: View {
                             }
                         }
                         .padding(.horizontal, 20)
-                        .padding(.top, 16)
+                        .padding(.top, role == .client ? 0 : 16)
                     }
                 } else if conversations.isEmpty {
                     // Empty state
@@ -42,7 +46,7 @@ struct ConversationsView: View {
                             }
                         }
                         .padding(.horizontal, 20)
-                        .padding(.top, 16)
+                        .padding(.top, role == .client ? 0 : 16)
                         .padding(.bottom, 100)
                     }
                 }
@@ -50,10 +54,12 @@ struct ConversationsView: View {
             .background(NBColors.page)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text("消息")
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundColor(NBColors.ink)
+                if role == .technician {
+                    ToolbarItem(placement: .principal) {
+                        Text("消息")
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundColor(NBColors.ink)
+                    }
                 }
             }
             .task {
@@ -207,7 +213,7 @@ struct ConversationsView: View {
         .cornerRadius(Radius.lg)
         .shadow(color: Color.black.opacity(0.08), radius: 20, y: 4)
         .padding(.horizontal, 20)
-        .padding(.top, 16)
+        .padding(.top, role == .client ? 0 : 16)
     }
 
     // MARK: - Socket Listener

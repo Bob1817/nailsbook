@@ -49,6 +49,7 @@ struct ChatView: View {
             inputBar
         }
         .navigationTitle(partnerName)
+        .toolbar(.hidden, for: .tabBar)
         .navigationBarTitleDisplayMode(.inline)
         .background(NBColors.page)
         .task {

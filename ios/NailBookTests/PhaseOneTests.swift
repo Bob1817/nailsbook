@@ -1,4 +1,5 @@
 import XCTest
+import KeychainAccess
 @testable import NailBook
 
 @MainActor
@@ -106,5 +107,39 @@ final class NetworkContractTests: XCTestCase {
         }
         let orders: [Order] = try await client().request(.technicianOrders(status: nil, customerId: nil))
         XCTAssertEqual(orders.first?.status, "pending_confirm")
+    }
+}
+
+@MainActor
+final class TokenStorageTests: XCTestCase {
+    func testSignedAppPersistsTokensAndKeepsRolesSeparate() async throws {
+        let keychain = Keychain(service: "cn.lunails.nailbook.tests.\(UUID().uuidString)")
+        defer { try? keychain.removeAll() }
+        let manager = TokenManager(keychain: keychain)
+        try await manager.saveTokens(accessToken: "client-access", refreshToken: "client-refresh", role: .client)
+        try await manager.saveTokens(accessToken: "tech-access", refreshToken: "tech-refresh", role: .technician)
+        try await manager.setCurrentRole(.client)
+        let restored = TokenManager(keychain: keychain)
+        let clientToken = await restored.getAccessToken(for: .client)
+        let clientRefresh = await restored.getRefreshToken(for: .client)
+        let techToken = await restored.getAccessToken(for: .technician)
+        let role = await restored.getCurrentRole()
+        XCTAssertEqual(clientToken, "client-access")
+        XCTAssertEqual(clientRefresh, "client-refresh")
+        XCTAssertEqual(techToken, "tech-access")
+        XCTAssertEqual(role, .client)
+    }
+
+    func testKeychainFailureDoesNotReportSuccessfulLogin() async {
+        let keychain = Keychain(service: "cn.lunails.nailbook.tests", accessGroup: "invalid.unentitled.group")
+        let manager = TokenManager(keychain: keychain)
+        do {
+            try await manager.saveTokens(accessToken: "test-access", refreshToken: "test-refresh", role: .client)
+            XCTFail("Saving credentials without an entitled access group must fail")
+        } catch {
+            guard case APIError.credentialStorageFailed = error else {
+                return XCTFail("Unexpected error: \(error)")
+            }
+        }
     }
 }

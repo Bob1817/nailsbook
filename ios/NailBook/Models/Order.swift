@@ -11,6 +11,7 @@ struct Order: Codable, Identifiable {
     var startTime: String?
     var endTime: String?
     var address: String?
+    var shopName: String?
     var remark: String?
     var customTitle: String?
     var customDescription: String?
@@ -28,6 +29,43 @@ struct Order: Codable, Identifiable {
     var customer: OrderCustomer?
     var clientUser: OrderClientUser?
     var addressDetail: OrderAddress?
+    // 对齐 wxapp order-detail 所需字段
+    var bookingPhase: String?
+    var expectedDate: String?
+    var expectedTimeSlot: String?
+    var totalDurationMinutes: Int?
+    var serviceLines: [OrderServiceLine]?
+    var sourceWork: OrderSourceWork?
+}
+
+/// 订单服务线明细（后端 mapOrder.serviceLines，金额为分）
+struct OrderServiceLine: Codable, Identifiable {
+    let id: Int?
+    let serviceId: Int?
+    let servicePublicId: String?
+    let name: String
+    let unitPriceFen: Int?
+    let durationMinutes: Int?
+    let quantity: Int?
+    let subtotalFen: Int?
+}
+
+/// 预约来源作品
+struct OrderSourceWork: Codable, Identifiable {
+    let id: Int
+    let title: String?
+    let coverUrl: String?
+    let standardPriceFen: Int?
+    let priceText: String?
+
+    var displayPriceText: String? {
+        if let priceText, !priceText.isEmpty { return priceText }
+        if let fen = standardPriceFen, fen > 0 {
+            let yuan = Double(fen) / 100
+            return yuan == yuan.rounded() ? "¥\(String(format: "%.0f", yuan))" : "¥\(String(format: "%.1f", yuan))"
+        }
+        return nil
+    }
 }
 
 struct OrderTechnician: Codable, Identifiable {
@@ -90,6 +128,7 @@ enum OrderStatus: String, Codable, CaseIterable {
 extension Order {
     enum CodingKeys: String, CodingKey {
         case id, orderNo, status, serviceType, quotePrice, startTime, endTime, address, remark, customTitle, customDescription, customImages, clientPhotos, isDepositPaid, depositAmount, quoteRemark, cancelReason, confirmedAt, completedAt, cancelledAt, createdAt, technician, customer, clientUser, addressDetail
+        case bookingPhase, expectedDate, expectedTimeSlot, totalDurationMinutes, serviceLines, sourceWork
     }
 
     init(from decoder: Decoder) throws {
@@ -127,5 +166,11 @@ extension Order {
         customer = try values.decodeIfPresent(OrderCustomer.self, forKey: .customer)
         clientUser = try values.decodeIfPresent(OrderClientUser.self, forKey: .clientUser)
         addressDetail = try values.decodeIfPresent(OrderAddress.self, forKey: .addressDetail)
+        bookingPhase = try values.decodeIfPresent(String.self, forKey: .bookingPhase)
+        expectedDate = try values.decodeIfPresent(String.self, forKey: .expectedDate)
+        expectedTimeSlot = try values.decodeIfPresent(String.self, forKey: .expectedTimeSlot)
+        totalDurationMinutes = try values.decodeIfPresent(Int.self, forKey: .totalDurationMinutes)
+        serviceLines = try values.decodeIfPresent([OrderServiceLine].self, forKey: .serviceLines)
+        sourceWork = try values.decodeIfPresent(OrderSourceWork.self, forKey: .sourceWork)
     }
 }

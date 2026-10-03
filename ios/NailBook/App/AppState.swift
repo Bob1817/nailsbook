@@ -63,19 +63,37 @@ class AppState: ObservableObject {
             .clientLogin(phone: phone, password: password)
         )
         await TokenManager.shared.clearAll()
-        await TokenManager.shared.saveTokens(
+        try await TokenManager.shared.saveTokens(
             accessToken: response.accessToken,
             refreshToken: response.refreshToken,
             role: .client
         )
         if response.roles?.contains("technician") == true,
            let technician: TechnicianAuthResponse = try? await apiClient.request(.technicianLogin(phone: phone, password: password)) {
-            await TokenManager.shared.saveTokens(accessToken: technician.accessToken, refreshToken: technician.refreshToken, role: .technician)
+            try await TokenManager.shared.saveTokens(accessToken: technician.accessToken, refreshToken: technician.refreshToken, role: .technician)
         }
-        await TokenManager.shared.setCurrentRole(.client)
+        try await TokenManager.shared.setCurrentRole(.client)
         currentRole = .client
-        if let client = response.client {
-            authStatus = .client(client)
+
+        // 先用登录响应设置认证状态，保证登录成功
+        // 登录响应的 technicians 在顶层，需合并进 ClientUser
+        var client: ClientUser
+        if let c = response.client {
+            client = c
+        } else {
+            client = ClientUser(id: 0, phone: phone, status: nil)
+        }
+        // 合并登录响应中的绑定美甲师列表
+        if client.technicians == nil || client.technicians?.isEmpty == true {
+            client.technicians = response.technicians?.map {
+                BoundTechnician(id: $0.id, name: $0.name, phone: $0.phone, isDefault: nil, bindingStatus: "active", invitationCode: $0.invitationCode, shopAddresses: nil)
+            }
+        }
+        authStatus = .client(client)
+
+        // 再拉取完整用户信息（含绑定的美甲师），失败时保留登录状态
+        if let fullUser: ClientUser = try? await apiClient.request(.clientMe) {
+            authStatus = .client(fullUser)
         }
         await connectSocket()
     }
@@ -85,13 +103,15 @@ class AppState: ObservableObject {
             .technicianLogin(phone: phone, password: password)
         )
         await TokenManager.shared.clearAll()
-        await TokenManager.shared.saveTokens(
+        try await TokenManager.shared.saveTokens(
             accessToken: response.accessToken,
             refreshToken: response.refreshToken,
             role: .technician
         )
-        await TokenManager.shared.setCurrentRole(.technician)
+        try await TokenManager.shared.setCurrentRole(.technician)
         currentRole = .technician
+
+        // 直接用登录响应设置认证状态，避免 restoreSession 二次验证失败导致误判
         authStatus = .technician(response.technician)
         await connectSocket()
     }
@@ -103,15 +123,19 @@ class AppState: ObservableObject {
             .clientRegister(phone: phone, password: password, inviteCode: inviteCode)
         )
         await TokenManager.shared.clearAll()
-        await TokenManager.shared.saveTokens(
+        try await TokenManager.shared.saveTokens(
             accessToken: response.accessToken,
             refreshToken: response.refreshToken,
             role: .client
         )
-        await TokenManager.shared.setCurrentRole(.client)
+        try await TokenManager.shared.setCurrentRole(.client)
         currentRole = .client
         if let client = response.client {
             authStatus = .client(client)
+        }
+        // 拉取完整用户信息（含绑定的美甲师）
+        if let fullUser: ClientUser = try? await apiClient.request(.clientMe) {
+            authStatus = .client(fullUser)
         }
     }
 
@@ -131,13 +155,18 @@ class AppState: ObservableObject {
         if role == .client, await TokenManager.shared.getAccessToken(for: .client) == nil {
             do {
                 let response: ClientAuthResponse = try await apiClient.request(.resource(role: .technician, path: "auth/switch-to-client", method: "POST", body: [:]))
-                await TokenManager.shared.saveTokens(accessToken: response.accessToken, refreshToken: response.refreshToken, role: .client)
+                try await TokenManager.shared.saveTokens(accessToken: response.accessToken, refreshToken: response.refreshToken, role: .client)
             } catch { sessionError = error.localizedDescription; return }
         }
         guard await TokenManager.shared.getAccessToken(for: role) != nil else {
             sessionError = "请通过切换账号，使用美甲师身份登录一次"; return
         }
-        await TokenManager.shared.setCurrentRole(role)
+        do {
+            try await TokenManager.shared.setCurrentRole(role)
+        } catch {
+            sessionError = error.localizedDescription
+            return
+        }
         authStatus = .unknown
         await restoreSession()
     }

@@ -45,6 +45,7 @@ struct ShopManagementView: View {
             }
         }
         .navigationTitle("门店管理")
+        .toolbar(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button { showAdd = true } label: {
@@ -197,6 +198,7 @@ struct EditShopView: View {
                 .padding(Spacing.lg)
             }
             .navigationTitle(shop == nil ? "新增门店" : "编辑门店")
+            .toolbar(.hidden, for: .tabBar)
             .navigationBarTitleDisplayMode(.inline)
             .background(Color.nbBg)
             .toolbar {

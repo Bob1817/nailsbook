@@ -11,6 +11,8 @@ struct TechOrderDetailView: View {
     @State private var showQuoteSheet = false
     @State private var showCancelSheet = false
     @State private var cancelReason = ""
+    @State private var quotePriceText = ""
+    @State private var quoteDepositText = ""
 
     var body: some View {
         ZStack {
@@ -26,6 +28,7 @@ struct TechOrderDetailView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle("预约详情")
+        .toolbar(.hidden, for: .tabBar)
         .task { await loadOrder() }
     }
 
@@ -196,7 +199,9 @@ struct TechOrderDetailView: View {
             // Actions
             if let phone = customer.phone, !phone.isEmpty {
                 Button {
-                    // Call
+                    if let url = URL(string: "tel://\(phone)") {
+                        UIApplication.shared.open(url)
+                    }
                 } label: {
                     Image(systemName: "phone")
                         .font(.system(size: 18))
@@ -266,7 +271,10 @@ struct TechOrderDetailView: View {
 
                         HStack(spacing: 4) {
                             Button("导航") {
-                                // Navigate
+                                if let encoded = address.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+                                   let url = URL(string: "https://maps.apple.com/?q=\(encoded)") {
+                                    UIApplication.shared.open(url)
+                                }
                             }
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(NBColors.link)
@@ -474,15 +482,15 @@ struct TechOrderDetailView: View {
                 .cornerRadius(Radius.button)
 
             case .inProgress:
-                Button("完成服务") {
-                    Task { await completeOrder() }
+                NavigationLink(destination: CompleteServiceView(orderId: orderId)) {
+                    Text("完成服务")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(NBColors.action)
+                        .cornerRadius(Radius.button)
                 }
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .background(NBColors.action)
-                .cornerRadius(Radius.button)
 
             case .completed:
                 Button("创建关联作品") {
@@ -515,22 +523,24 @@ struct TechOrderDetailView: View {
                     .font(.system(size: 14))
                     .foregroundColor(NBColors.ink)
 
-                TextField("请输入报价金额", text: .constant(""))
+                TextField("请输入报价金额", text: $quotePriceText)
                     .font(.system(size: 15))
                     .keyboardType(.decimalPad)
                     .padding(12)
                     .background(NBColors.page)
                     .cornerRadius(Radius.sm)
 
-                Text("服务合计 ¥\(String(format: "%.0f", order.quotePrice ?? 0))")
-                    .font(.system(size: 12))
-                    .foregroundColor(NBColors.muted)
+                if let currentPrice = order.quotePrice, currentPrice > 0 {
+                    Text("当前报价 ¥\(String(format: "%.0f", currentPrice))")
+                        .font(.system(size: 12))
+                        .foregroundColor(NBColors.muted)
+                }
 
                 Text("定金金额（元）")
                     .font(.system(size: 14))
                     .foregroundColor(NBColors.ink)
 
-                TextField("0", text: .constant(""))
+                TextField("0（选填）", text: $quoteDepositText)
                     .font(.system(size: 15))
                     .keyboardType(.decimalPad)
                     .padding(12)
@@ -552,7 +562,12 @@ struct TechOrderDetailView: View {
                         Task { await quoteOrder() }
                     }
                     .foregroundColor(NBColors.action)
+                    .disabled(quotePriceText.isEmpty)
                 }
+            }
+            .onAppear {
+                quotePriceText = order.quotePrice.map { String(format: "%.0f", $0) } ?? ""
+                quoteDepositText = order.depositAmount.map { String(format: "%.0f", $0) } ?? ""
             }
         }
     }
@@ -657,10 +672,14 @@ struct TechOrderDetailView: View {
 
     private func quoteOrder() async {
         guard !busy else { return }
+        guard let price = Double(quotePriceText), price > 0 else { return }
         busy = true
         defer { busy = false }
+        let deposit = Double(quoteDepositText)
         do {
-            try await APIClient.shared.requestVoid(.quoteOrder(id: orderId, price: order?.quotePrice ?? 0, remark: nil))
+            try await APIClient.shared.requestVoid(.quoteOrder(id: orderId, price: price, remark: deposit.map { "deposit:\($0)" }))
+            quotePriceText = ""
+            quoteDepositText = ""
             await loadOrder()
         } catch {
             self.error = error.localizedDescription
@@ -673,18 +692,6 @@ struct TechOrderDetailView: View {
         defer { busy = false }
         do {
             try await APIClient.shared.requestVoid(.cancelOrder(id: orderId, reason: cancelReason.isEmpty ? nil : cancelReason))
-            await loadOrder()
-        } catch {
-            self.error = error.localizedDescription
-        }
-    }
-
-    private func completeOrder() async {
-        guard !busy else { return }
-        busy = true
-        defer { busy = false }
-        do {
-            try await APIClient.shared.requestVoid(.completeOrder(id: orderId))
             await loadOrder()
         } catch {
             self.error = error.localizedDescription

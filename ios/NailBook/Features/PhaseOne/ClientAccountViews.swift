@@ -29,34 +29,121 @@ struct SavedWorksView: View {
 
 struct ClientProfileEditView: View {
     @State private var nickname = ""
-    @State private var city = ""
-    @State private var bio = ""
+    @State private var phone = ""
     @State private var loaded = false
     @State private var busy = false
     @State private var message: String?
+    @Environment(\.dismiss) var dismiss
+
     var body: some View {
-        Form {
-            TextField("昵称", text: $nickname)
-            TextField("城市", text: $city)
-            TextField("个人简介", text: $bio, axis: .vertical)
-            Button("保存资料") { Task { await save() } }.frame(minHeight: 44).disabled(!loaded || busy)
-            if let message { Text(message) }
-        }.navigationTitle("编辑资料")
+        VStack(spacing: 0) {
+            // Card
+            VStack(spacing: 0) {
+                // Name row
+                HStack(spacing: 12) {
+                    Text("名称")
+                        .font(.system(size: 15))
+                        .foregroundColor(NBColors.ink)
+
+                    Spacer()
+
+                    TextField("请输入名称", text: $nickname)
+                        .font(.system(size: 15))
+                        .foregroundColor(NBColors.ink)
+                        .multilineTextAlignment(.trailing)
+                        .frame(maxWidth: 200)
+                }
+                .frame(minHeight: 56)
+                .padding(.horizontal, 14)
+
+                Divider()
+                    .padding(.leading, 14)
+
+                // Phone row
+                HStack(spacing: 12) {
+                    Text("手机号码")
+                        .font(.system(size: 15))
+                        .foregroundColor(NBColors.ink)
+
+                    Spacer()
+
+                    Text(phone)
+                        .font(.system(size: 15))
+                        .foregroundColor(NBColors.secondary)
+                }
+                .frame(minHeight: 56)
+                .padding(.horizontal, 14)
+            }
+            .background(Color.white)
+            .cornerRadius(12)
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+
+            // Note
+            Text("手机号码用于账号登录，换绑功能暂未开放。")
+                .font(.system(size: 12))
+                .foregroundColor(NBColors.secondary)
+                .lineSpacing(1.4)
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+                .padding(.bottom, 20)
+
+            // Save button
+            Button {
+                Task { await save() }
+            } label: {
+                HStack {
+                    if busy {
+                        ProgressView()
+                            .tint(.white)
+                    }
+                    Text(busy ? "保存中" : "保存修改")
+                        .font(.system(size: 16, weight: .semibold))
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+                .foregroundColor(.white)
+                .background(NBColors.action)
+                .cornerRadius(10)
+            }
+            .disabled(!loaded || busy || nickname.isEmpty)
+            .padding(.horizontal, 16)
+
+            if let message {
+                Text(message)
+                    .font(.system(size: 14))
+                    .foregroundColor(NBColors.secondary)
+                    .padding(.top, 12)
+            }
+
+            Spacer()
+        }
+        .background(NBColors.page)
+        .navigationTitle("编辑资料")
+        .navigationBarTitleDisplayMode(.inline)
         .task {
             do {
                 let me: ClientUser = try await APIClient.shared.request(.clientMe)
-                nickname = me.nickname ?? ""; city = me.city ?? ""; bio = me.bio ?? ""; loaded = true
-            } catch { message = error.localizedDescription }
+                nickname = me.nickname ?? ""
+                phone = me.phone
+                loaded = true
+            } catch {
+                message = error.localizedDescription
+            }
         }
     }
+
     private func save() async {
         guard !busy else { return }
         busy = true
         defer { busy = false }
         do {
-            try await APIClient.shared.requestVoid(.updateClientProfile(params: ["nickname": nickname, "city": city, "bio": bio]))
+            try await APIClient.shared.requestVoid(.updateClientProfile(params: ["nickname": nickname]))
             message = "资料已保存"
-        } catch { message = error.localizedDescription }
+            dismiss()
+        } catch {
+            message = error.localizedDescription
+        }
     }
 }
 

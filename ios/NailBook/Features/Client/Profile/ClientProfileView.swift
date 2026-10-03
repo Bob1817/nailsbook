@@ -118,13 +118,6 @@ struct ClientProfileView: View {
             }
             .background(NBColors.page)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text("我的")
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundColor(NBColors.ink)
-                }
-            }
             .task { await loadProfile() }
         }
     }
@@ -132,60 +125,45 @@ struct ClientProfileView: View {
     // MARK: - Profile Header
 
     private var profileHeader: some View {
-        VStack(spacing: 0) {
-            // White background header
-            HStack(spacing: 12) {
-                // Avatar
-                ZStack {
-                    Circle()
-                        .fill(NBColors.softSurface)
-                        .frame(width: 48, height: 48)
-
-                    if let avatarUrl = user?.avatarUrl, let url = URL(string: avatarUrl) {
-                        AsyncImage(url: url) { image in
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                        } placeholder: {
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 20))
-                                .foregroundColor(NBColors.muted)
+        HStack(alignment: .center, spacing: 12) {
+                Circle()
+                    .fill(NBColors.softSurface)
+                    .frame(width: 64, height: 64)
+                    .overlay {
+                        if let avatarUrl = user?.avatarUrl, let url = URL(string: avatarUrl) {
+                            AsyncImage(url: url) { image in
+                                image.resizable().aspectRatio(contentMode: .fill)
+                            } placeholder: {
+                                Image(systemName: "person.fill").foregroundColor(NBColors.muted)
+                            }
+                            .clipShape(Circle())
+                        } else {
+                            Image(systemName: "person.fill").foregroundColor(NBColors.muted)
                         }
-                        .frame(width: 48, height: 48)
-                        .clipShape(Circle())
-                    } else {
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 20))
-                            .foregroundColor(NBColors.muted)
                     }
-                }
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(user?.nickname ?? "未设置昵称")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(NBColors.ink)
-
                     Text(user?.phone ?? "")
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundColor(NBColors.muted)
                 }
 
                 Spacer()
 
                 NavigationLink { ClientProfileEditView() } label: {
-                    HStack(spacing: 2) {
-                        Text("编辑资料")
-                            .font(.system(size: 14))
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 12))
-                    }
-                    .foregroundColor(NBColors.link)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(NBColors.muted)
+                        .frame(width: 44, height: 44)
                 }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(Color.white)
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white)
     }
 
     // MARK: - Section Card
@@ -227,7 +205,7 @@ struct ClientProfileView: View {
         valueText: String = "",
         @ViewBuilder destination: () -> Destination
     ) -> some View {
-        NavigationLink(destination: destination()) {
+        NavigationLink(destination: destination().toolbar(.hidden, for: .tabBar)) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
                     .font(.system(size: 16))
@@ -261,9 +239,18 @@ struct ClientProfileView: View {
     // MARK: - Data Loading
 
     private func loadProfile() async {
+        // 先从 authStatus 取缓存数据，保证页面立即有内容
+        if case .client(let u) = appState.authStatus {
+            user = u
+        }
+        // 再拉取最新数据
         do {
-            user = try await APIClient.shared.request(.clientMe)
-        } catch {}
+            let me: ClientUser = try await APIClient.shared.request(.clientMe)
+            user = me
+            appState.authStatus = .client(me)
+        } catch {
+            // 拉取失败时保留 authStatus 中的数据
+        }
     }
 }
 

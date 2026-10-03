@@ -12,6 +12,7 @@ struct ClientOrderDetailView: View {
     @State private var reviewing = false
     @State private var busy = false
     @State private var error: String?
+    @State private var navigateToChat = false
 
     var body: some View {
         ZStack {
@@ -27,7 +28,16 @@ struct ClientOrderDetailView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle("预约详情")
-        .task { await loadOrder() }
+        .toolbar(.hidden, for: .tabBar)
+        .task {
+            await loadOrder()
+            // 前台轮询：及时同步美甲师端的确认/报价等状态变化（15 秒一次，视图销毁自动停止）
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 15_000_000_000)
+                guard !Task.isCancelled else { break }
+                await loadOrder()
+            }
+        }
     }
 
     // MARK: - Loading View
@@ -94,6 +104,11 @@ struct ClientOrderDetailView: View {
                 }
 
                 VStack(spacing: 12) {
+                    // 来源作品（预约同款）
+                    if let work = order.sourceWork {
+                        sourceWorkCard(work)
+                    }
+
                     // Service info
                     serviceInfoCard(order)
 
@@ -137,23 +152,72 @@ struct ClientOrderDetailView: View {
         }
     }
 
-    // MARK: - Status Header
+    // MARK: - Status Header（对齐 wxapp status-hero：tone 染色 + 预约号 + 状态说明）
+
+    /// 状态 → 主色（对齐 wxapp statusTone）
+    private func statusTone(_ order: Order) -> Color {
+        switch order.status {
+        case "pending_quote", "quoted", "pending_agree", "pending_confirm", "pending_client_confirm":
+            return NBColors.link
+        case "pending_home", "pending_shop", "in_progress":
+            return NBColors.success
+        case "completed":
+            return NBColors.secondary
+        case "cancelled", "expired", "rejected":
+            return NBColors.danger
+        default:
+            return NBColors.ink
+        }
+    }
+
+    /// 状态文案（与预约列表同口径，不暴露底层状态码）
+    private func statusLabel(_ order: Order) -> String {
+        switch order.status {
+        case "pending_quote": return "待报价"
+        case "quoted": return "已报价"
+        case "pending_agree": return "待确认"
+        case "pending_confirm": return "待确认"
+        case "pending_client_confirm": return "待客户确认"
+        case "pending_home": return "待上门"
+        case "pending_shop": return "待到店"
+        case "in_progress": return "进行中"
+        case "completed": return "已完成"
+        case "cancelled": return "已取消"
+        case "expired": return "已过期"
+        case "rejected": return "已拒绝"
+        default: return "状态待确认"
+        }
+    }
+
+    private func statusDesc(_ order: Order) -> String? {
+        switch order.status {
+        case "pending_quote": return "等待美甲师确认并报价"
+        case "quoted": return "美甲师已报价，请确认是否接受"
+        case "pending_agree": return "美甲师已提交调整方案，请确认后进入排期"
+        case "pending_confirm", "pending_client_confirm": return "等待双方确认排期"
+        case "pending_home": return "美甲师将按预约时间上门服务"
+        case "pending_shop": return "请按预约时间到店"
+        case "in_progress": return "服务正在进行中"
+        case "completed": return "服务已完成"
+        case "cancelled": return "预约已取消"
+        case "expired": return "预约已过期"
+        case "rejected": return "预约被拒绝"
+        default: return nil
+        }
+    }
 
     private func statusHeader(_ order: Order) -> some View {
-        let status = OrderStatus(rawValue: order.status) ?? .pendingQuote
-        let statusInfo = getStatusInfo(status)
-
-        return VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(statusInfo.label)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(statusLabel(order))
                     .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(NBColors.ink)
+                    .foregroundColor(statusTone(order))
 
                 Spacer()
 
-                Text(order.serviceType == "shop" ? "到店服务" : "上门服务")
+                Text(order.serviceType == "shop" || order.serviceType == "到店美甲" ? "到店服务" : "上门服务")
                     .font(.system(size: 12))
-                    .foregroundColor(NBColors.ink)
+                    .foregroundColor(NBColors.secondary)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 4)
                     .background(Color.black.opacity(0.04))
@@ -164,16 +228,63 @@ struct ClientOrderDetailView: View {
                 .font(.system(size: 12))
                 .foregroundColor(NBColors.muted)
 
-            if let desc = statusInfo.description {
+            if let desc = statusDesc(order) {
                 Text(desc)
-                    .font(.system(size: 14))
-                    .foregroundColor(NBColors.ink)
+                    .font(.system(size: 13))
+                    .foregroundColor(NBColors.secondary)
                     .lineSpacing(1.4)
-                    .padding(.top, 4)
+                    .padding(.top, 2)
             }
         }
         .padding(20)
         .background(NBColors.page)
+    }
+
+    // MARK: - Source Work Card（对齐 wxapp source-work-card）
+
+    @State private var navigateToSourceWork = false
+
+    private func sourceWorkCard(_ work: OrderSourceWork) -> some View {
+        Button {
+            navigateToSourceWork = true
+        } label: {
+            HStack(spacing: 12) {
+                if let cover = work.coverUrl, let url = URL(string: cover) {
+                    AsyncImage(url: url) { image in
+                        image.resizable().aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        Rectangle().fill(NBColors.page)
+                    }
+                    .frame(width: 64, height: 64)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("预约同款来源")
+                        .font(.system(size: 11))
+                        .foregroundColor(NBColors.muted)
+                    Text(work.title ?? "美甲作品")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(NBColors.ink)
+                        .lineLimit(1)
+                    if let price = work.displayPriceText {
+                        Text(price)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(NBColors.money)
+                    }
+                }
+                Spacer()
+                Text("›")
+                    .font(.system(size: 16))
+                    .foregroundColor(NBColors.muted)
+            }
+        }
+        .buttonStyle(.plain)
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(Radius.md)
+        .background {
+            NavigationLink(destination: WorkDetailView(workId: work.id).toolbar(.hidden, for: .tabBar), isActive: $navigateToSourceWork) { EmptyView() }.hidden()
+        }
     }
 
     // MARK: - Technician Card
@@ -218,7 +329,9 @@ struct ClientOrderDetailView: View {
             HStack(spacing: 8) {
                 if let phone = tech.phone, !phone.isEmpty {
                     Button {
-                        // Call
+                        if let url = URL(string: "tel://\(phone)") {
+                            UIApplication.shared.open(url)
+                        }
                     } label: {
                         Image(systemName: "phone")
                             .font(.system(size: 18))
@@ -230,7 +343,7 @@ struct ClientOrderDetailView: View {
                 }
 
                 Button {
-                    // Chat
+                    navigateToChat = true
                 } label: {
                     Image(systemName: "bubble.left")
                         .font(.system(size: 18))
@@ -238,6 +351,9 @@ struct ClientOrderDetailView: View {
                         .frame(width: 44, height: 44)
                         .background(NBColors.page)
                         .clipShape(Circle())
+                }
+                .background {
+                    NavigationLink(destination: ConversationsView(role: .client).toolbar(.hidden, for: .tabBar), isActive: $navigateToChat) { EmptyView() }.hidden()
                 }
             }
         }
@@ -250,6 +366,32 @@ struct ClientOrderDetailView: View {
 
     // MARK: - Service Info Card
 
+    /// 服务项目名：服务线名称拼接 / 自定义标题 / 快捷预约默认
+    private var serviceNameText: String {
+        if let lines = order?.serviceLines, !lines.isEmpty {
+            return lines.map(\.name).joined(separator: "、")
+        }
+        if let title = order?.customTitle, !title.isEmpty { return title }
+        return "快捷预约"
+    }
+
+    /// 时间展示：申请阶段显示期望时间，确认后显示预约时间区间
+    private var timeLabelText: String? {
+        guard let order = order else { return nil }
+        if order.bookingPhase == "application" {
+            // 申请阶段：期望日期 + 时段
+            if let expected = order.expectedDate, !expected.isEmpty {
+                var text = formatDateOnly(expected)
+                if let slot = order.expectedTimeSlot, !slot.isEmpty { text += " \(slot)" }
+                return text
+            }
+        }
+        guard let start = order.startTime else { return nil }
+        var text = formatDateTime(start)
+        if let end = order.endTime { text += " ~ \(formatTimeOnly(end))" }
+        return text
+    }
+
     private func serviceInfoCard(_ order: Order) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("服务信息")
@@ -257,15 +399,15 @@ struct ClientOrderDetailView: View {
                 .foregroundColor(NBColors.ink)
                 .padding(.bottom, 12)
 
-            infoRow(label: "服务方式", value: order.serviceType == "shop" ? "到店服务" : "上门服务")
+            infoRow(label: "服务方式", value: order.serviceType == "shop" || order.serviceType == "到店美甲" ? "到店服务" : "上门服务")
 
-            if let start = order.startTime {
-                infoRow(label: "预约时间", value: formatDateTime(start))
+            if let time = timeLabelText {
+                infoRow(label: order.bookingPhase == "application" ? "期望时间" : "预约时间", value: time)
             }
 
             if let address = order.address, !address.isEmpty {
                 HStack(alignment: .top, spacing: 12) {
-                    Text(order.serviceType == "shop" ? "到店地址" : "上门地址")
+                    Text(order.serviceType == "shop" || order.serviceType == "到店美甲" ? "到店地址" : "上门地址")
                         .font(.system(size: 14))
                         .foregroundColor(NBColors.muted)
                         .frame(width: 70, alignment: .leading)
@@ -278,7 +420,10 @@ struct ClientOrderDetailView: View {
 
                         HStack(spacing: 4) {
                             Button("导航") {
-                                // Navigate
+                                if let encoded = address.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+                                   let url = URL(string: "https://maps.apple.com/?q=\(encoded)") {
+                                    UIApplication.shared.open(url)
+                                }
                             }
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(NBColors.link)
@@ -294,8 +439,13 @@ struct ClientOrderDetailView: View {
                 .padding(.vertical, 8)
             }
 
-            if let title = order.customTitle {
-                infoRow(label: "服务项目", value: title)
+            infoRow(label: "服务项目", value: serviceNameText)
+
+            // 预计时长（对齐 wxapp durationPending/durationMinutes）
+            if let minutes = order.totalDurationMinutes, minutes > 0 {
+                infoRow(label: "预计时长", value: "\(minutes)分钟")
+            } else if order.totalDurationMinutes == nil {
+                infoRow(label: "预计时长", value: "待美甲师确认")
             }
         }
         .padding(16)
@@ -329,43 +479,50 @@ struct ClientOrderDetailView: View {
                 .foregroundColor(NBColors.ink)
                 .padding(.bottom, 12)
 
-            HStack {
+            // 服务线明细（对齐 wxapp price-lines）
+            if let lines = order.serviceLines, !lines.isEmpty {
+                VStack(spacing: 8) {
+                    ForEach(lines) { line in
+                        let qty = line.quantity ?? 1
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(qty > 1 ? "\(line.name) × \(qty)" : line.name)
+                                .font(.system(size: 13))
+                                .foregroundColor(NBColors.secondary)
+                            Spacer()
+                            Text("¥\(fenToYuan(Double(line.subtotalFen ?? 0)))")
+                                .font(.system(size: 13))
+                                .foregroundColor(NBColors.money)
+                        }
+                    }
+                }
+                .padding(12)
+                .background(NBColors.page)
+                .cornerRadius(10)
+                .padding(.bottom, 8)
+            }
+
+            HStack(alignment: .firstTextBaseline) {
                 Text("报价金额")
                     .font(.system(size: 14))
                     .foregroundColor(NBColors.muted)
 
                 Spacer()
 
-                Text("¥\(String(format: "%.0f", order.quotePrice ?? 0))")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(NBColors.ink)
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("¥\(String(format: "%.0f", order.quotePrice ?? 0))")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(NBColors.ink)
+
+                    // 定金状态（对齐 wxapp：已支付定金 / 待收定金 / 无需定金）
+                    Text(depositNote(order))
+                        .font(.system(size: 11))
+                        .foregroundColor(NBColors.muted)
+                }
             }
             .padding(.vertical, 8)
 
-            if let deposit = order.depositAmount, deposit > 0 {
-                HStack {
-                    Text("定金")
-                        .font(.system(size: 14))
-                        .foregroundColor(NBColors.muted)
-
-                    Spacer()
-
-                    Text("¥\(String(format: "%.0f", deposit))")
-                        .font(.system(size: 14))
-                        .foregroundColor(NBColors.ink)
-
-                    if order.isDepositPaid == true {
-                        Text("已付")
-                            .font(.system(size: 12))
-                            .foregroundColor(NBColors.success)
-                            .padding(.leading, 4)
-                    }
-                }
-                .padding(.vertical, 8)
-            }
-
             Text("实际付款由客户与门店线下完成，小程序不提供代收款服务。")
-                .font(.system(size: 12))
+                .font(.system(size: 11))
                 .foregroundColor(NBColors.muted)
                 .lineSpacing(1.4)
                 .padding(.top, 8)
@@ -373,6 +530,23 @@ struct ClientOrderDetailView: View {
         .padding(16)
         .background(Color.white)
         .cornerRadius(Radius.md)
+    }
+
+    /// 定金说明（depositAmount 为分，对齐 wxapp deposit-note）
+    private func depositNote(_ order: Order) -> String {
+        let depositFen = order.depositAmount ?? 0
+        if order.isDepositPaid == true && depositFen > 0 {
+            return "已支付定金 ¥\(fenToYuan(depositFen))"
+        }
+        if depositFen > 0 {
+            return "待收定金 ¥\(fenToYuan(depositFen))"
+        }
+        return "无需定金"
+    }
+
+    private func fenToYuan(_ fen: Double) -> String {
+        let yuan = fen / 100
+        return yuan == yuan.rounded() ? String(format: "%.0f", yuan) : String(format: "%.1f", yuan)
     }
 
     // MARK: - Remark Card
@@ -523,23 +697,6 @@ struct ClientOrderDetailView: View {
 
     // MARK: - Helpers
 
-    private func getStatusInfo(_ status: OrderStatus) -> (label: String, description: String?) {
-        switch status {
-        case .pendingQuote:
-            return ("待报价", "等待美甲师确认并报价")
-        case .quoted:
-            return ("已报价", "美甲师已报价，请确认是否接受")
-        case .inProgress:
-            return ("进行中", "服务正在进行中")
-        case .completed:
-            return ("已完成", "服务已完成")
-        case .cancelled:
-            return ("已取消", "预约已取消")
-        default:
-            return ("待处理", nil)
-        }
-    }
-
     private func hasActions(_ order: Order) -> Bool {
         canCancel(order) || order.status == "quoted" || order.status == "pending_agree"
     }
@@ -549,12 +706,37 @@ struct ClientOrderDetailView: View {
     }
 
     private func formatDateTime(_ isoString: String) -> String {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        guard let date = formatter.date(from: isoString) else { return isoString }
+        guard let date = parseISO(isoString) else { return isoString }
         let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
         f.dateFormat = "yyyy-MM-dd HH:mm"
         return f.string(from: date)
+    }
+
+    private func formatTimeOnly(_ isoString: String) -> String {
+        guard let date = parseISO(isoString) else { return isoString }
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "HH:mm"
+        return f.string(from: date)
+    }
+
+    /// expectedDate 可能是 "yyyy-MM-dd" 纯日期，也可能是 ISO 时间
+    private func formatDateOnly(_ value: String) -> String {
+        if value.count == 10 { return value }
+        guard let date = parseISO(value) else { return value }
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: date)
+    }
+
+    private func parseISO(_ isoString: String) -> Date? {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: isoString) { return date }
+        let alt = ISO8601DateFormatter()
+        return alt.date(from: isoString)
     }
 
     // MARK: - API Actions

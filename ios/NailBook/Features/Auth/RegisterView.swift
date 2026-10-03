@@ -15,6 +15,9 @@ struct RegisterView: View {
     @State private var errorMessage: String?
     @State private var privacyAgreed = false
     @State private var showPassword = false
+    @State private var showAgreement = false
+    @State private var showPrivacy = false
+    @State private var showOnboarding = false
 
     // Credential validation
     @State private var credentialType: CredentialType = .none
@@ -162,7 +165,7 @@ struct RegisterView: View {
                                     .foregroundColor(NBColors.muted)
 
                                 Button("《用户协议》") {
-                                    // TODO
+                                    showAgreement = true
                                 }
                                 .font(.system(size: 11))
                                 .foregroundColor(NBColors.link)
@@ -172,7 +175,7 @@ struct RegisterView: View {
                                     .foregroundColor(NBColors.muted)
 
                                 Button("《隐私政策》") {
-                                    // TODO
+                                    showPrivacy = true
                                 }
                                 .font(.system(size: 11))
                                 .foregroundColor(NBColors.link)
@@ -219,6 +222,16 @@ struct RegisterView: View {
                     Button("取消") { dismiss() }
                         .foregroundColor(NBColors.ink)
                 }
+            }
+            .sheet(isPresented: $showAgreement) {
+                AgreementSheet(title: "用户协议")
+            }
+            .sheet(isPresented: $showPrivacy) {
+                AgreementSheet(title: "隐私政策")
+            }
+            .fullScreenCover(isPresented: $showOnboarding) {
+                OnboardingView()
+                    .environmentObject(appState)
             }
             .onTapGesture {
                 credentialFocused = false
@@ -381,11 +394,12 @@ struct RegisterView: View {
                 if credentialType == .activationKey {
                     // Register as technician
                     try await registerTechnician()
+                    dismiss()
                 } else {
-                    // Register as client
+                    // Register as client -> show onboarding
                     try await appState.registerClient(phone: phone, password: password, inviteCode: credential)
+                    showOnboarding = true
                 }
-                dismiss()
             } catch {
                 errorMessage = error.localizedDescription
             }
@@ -398,12 +412,12 @@ struct RegisterView: View {
             .technicianRegister(key: credential, phone: phone, password: password)
         )
         await TokenManager.shared.clearAll()
-        await TokenManager.shared.saveTokens(
+        try await TokenManager.shared.saveTokens(
             accessToken: response.accessToken,
             refreshToken: response.refreshToken,
             role: .technician
         )
-        await TokenManager.shared.setCurrentRole(.technician)
+        try await TokenManager.shared.setCurrentRole(.technician)
         appState.currentRole = .technician
         appState.authStatus = .technician(response.technician)
     }

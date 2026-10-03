@@ -174,6 +174,58 @@ struct TechnicianInsights: Codable {
     var works: InsightsWorks?
     var trends: InsightsTrends?
     var referrals: InsightsReferrals?
+    var performance: InsightsPerformance?
+    var conversion: InsightsConversion?
+    var reminders: [InsightsReminder]?
+}
+
+struct InsightsPerformance: Codable {
+    var topServices: [InsightsServiceRank]?
+    var topTimeSlots: [InsightsTimeSlotRank]?
+    var sufficientData: Bool?
+    var minimumSampleSize: Int?
+}
+
+struct InsightsServiceRank: Codable {
+    var name: String?
+    var orders: Int?
+    var revenue: Double?
+}
+
+struct InsightsTimeSlotRank: Codable {
+    var slot: String?
+    var orders: Int?
+    var revenue: Double?
+}
+
+struct InsightsConversion: Codable {
+    var workShare: InsightsWorkShare?
+}
+
+struct InsightsWorkShare: Codable {
+    var visitors: Int?
+    var bookingIntents: Int?
+    var postersSaved: Int?
+    var postersGenerated: Int?
+    var registeredCustomers: Int?
+    var boundCustomers: Int?
+    var ordersCreated: Int?
+    var views: Int?
+}
+
+struct InsightsReminder: Codable, Identifiable {
+    var id: String { "\(customerId)-\(type)" }
+    var type: String?
+    var customerId: Int?
+    var customerName: String?
+    var reason: String?
+}
+
+struct TrendItem: Codable {
+    var period: String?
+    var revenue: Double?
+    var bookings: Int?
+    var newCustomers: Int?
 }
 
 struct InsightsReferrals: Codable {
@@ -221,12 +273,6 @@ struct InsightsWorks: Codable {
 struct InsightsTrends: Codable {
     var daily: [TrendItem]?
     var weekly: [TrendItem]?
-}
-
-struct TrendItem: Codable {
-    var period: String?
-    var revenue: Double?
-    var bookings: Int?
 }
 
 // MARK: - Beauty Archive Models

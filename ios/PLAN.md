@@ -1,8 +1,8 @@
-# NailBook iOS 原生应用开发计划
+# OnlyNail iOS 原生应用开发计划
 
 ## 项目概述
 
-将 NailBook 美甲师预约管理系统的客户端和美甲师端功能整合为一个 iOS 原生应用（SwiftUI, iOS 16+），用户登录后根据角色自动切换界面。
+将 OnlyNail 美甲师预约管理系统的客户端和美甲师端功能整合为一个 iOS 原生应用（SwiftUI, iOS 16+），用户登录后根据角色自动切换界面。
 
 ---
 
@@ -24,11 +24,11 @@
 ## 二、项目结构
 
 ```
-NailBook/
-├── NailBook.xcodeproj
-├── NailBook/
+OnlyNail/
+├── OnlyNail.xcodeproj
+├── OnlyNail/
 │   ├── App/
-│   │   ├── NailBookApp.swift          # @main 入口
+│   │   ├── OnlyNailApp.swift          # @main 入口
 │   │   ├── AppState.swift             # 全局状态（角色、认证）
 │   │   └── RootView.swift             # 路由根视图
 │   ├── Core/

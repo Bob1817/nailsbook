@@ -8,6 +8,32 @@ struct BoundTechnician: Codable, Identifiable {
     var bindingStatus: String?
     var invitationCode: String?
     var shopAddresses: [BookingShop]?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, phone, isDefault, bindingStatus, invitationCode, shopAddresses
+    }
+
+    // 容错解码：shopAddresses 解码失败时置 nil
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(Int.self, forKey: .id)
+        name = try c.decodeIfPresent(String.self, forKey: .name)
+        phone = try c.decodeIfPresent(String.self, forKey: .phone)
+        isDefault = try c.decodeIfPresent(Bool.self, forKey: .isDefault)
+        bindingStatus = try c.decodeIfPresent(String.self, forKey: .bindingStatus)
+        invitationCode = try c.decodeIfPresent(String.self, forKey: .invitationCode)
+        shopAddresses = try? c.decode([BookingShop].self, forKey: .shopAddresses)
+    }
+
+    init(id: Int, name: String? = nil, phone: String? = nil, isDefault: Bool? = nil, bindingStatus: String? = nil, invitationCode: String? = nil, shopAddresses: [BookingShop]? = nil) {
+        self.id = id
+        self.name = name
+        self.phone = phone
+        self.isDefault = isDefault
+        self.bindingStatus = bindingStatus
+        self.invitationCode = invitationCode
+        self.shopAddresses = shopAddresses
+    }
 }
 
 struct BookingShop: Codable, Identifiable {
@@ -40,6 +66,7 @@ struct MyTechniciansView: View {
                 ForEach(active) { tech in
                     VStack(alignment: .leading, spacing: 12) {
                         Text((tech.name ?? "美甲师") + (tech.isDefault == true ? " · 默认" : ""))
+                        NavigationLink("查看主页") { ArtistHomeView(artistId: tech.id) }
                         NavigationLink("查看作品") { WorksListView(techId: tech.id) }
                         NavigationLink("预约到店") { CreateOrderView(techId: tech.id, techName: tech.name ?? "美甲师") }
                         if tech.isDefault != true {
@@ -120,53 +147,217 @@ struct MyTechniciansView: View {
 }
 
 struct BindingApplicationsView: View {
-    struct Application: Decodable, Identifiable { let id: Int; let name: String?; let phone: String?; let note: String? }
+    struct Application: Decodable, Identifiable {
+        let id: Int
+        var name: String?
+        var phone: String?
+        var note: String?
+        var avatarUrl: String?
+    }
     @State private var applications: [Application] = []
     @State private var selected: Application?
     @State private var approving = true
     @State private var reason = ""
     @State private var busy = false
+    @State private var processingId: Int?
     @State private var error: String?
+
     var body: some View {
-        List {
-            ForEach(applications) { item in
-                VStack(alignment: .leading) {
-                    Text(item.name ?? "客户")
-                    if let note = item.note { Text(note).font(.footnote) }
-                    HStack {
-                        Button("通过") { approving = true; selected = item }.frame(minHeight: 44)
-                        Spacer()
-                        Button("拒绝", role: .destructive) { approving = false; reason = ""; selected = item }.frame(minHeight: 44)
-                    }.buttonStyle(.borderless)
+        ZStack {
+            NBColors.page.ignoresSafeArea()
+
+            if busy && applications.isEmpty {
+                VStack(spacing: 16) {
+                    ProgressView().scaleEffect(1.2)
+                    Text("正在加载申请...")
+                        .font(.system(size: 14))
+                        .foregroundColor(NBColors.muted)
                 }
+            } else if applications.isEmpty && !busy {
+                emptyView
+            } else {
+                applicationsList
             }
-            if applications.isEmpty && !busy && error == nil { Text("暂无待审核申请") }
-            if let error { Text(error) }
-            if busy { ProgressView() }
         }
-        .disabled(busy)
         .navigationTitle("绑定申请")
+        .navigationBarTitleDisplayMode(.inline)
         .task { await load() }
         .refreshable { await load() }
-        .alert(approving ? "确认通过绑定申请？" : "拒绝绑定申请", isPresented: Binding(get: { selected != nil }, set: { if !$0 { selected = nil } })) {
-            if !approving { TextField("拒绝原因（选填）", text: $reason) }
+        .alert(approving ? "确认通过？" : "拒绝申请", isPresented: Binding(get: { selected != nil }, set: { if !$0 { selected = nil } })) {
+            if !approving {
+                TextField("拒绝原因（选填）", text: $reason)
+            }
             Button("返回", role: .cancel) {}
-            Button("确认") { if let selected { Task { await submit(selected.id) } } }
+            Button(approving ? "确认通过" : "确认拒绝") {
+                if let selected { Task { await submit(selected.id) } }
+            }
+            .foregroundColor(approving ? NBColors.action : NBColors.danger)
+        } message: {
+            if let app = selected {
+                Text(approving ? "确认将 \(app.name ?? "该客户") 添加为你的客户吗？" : "拒绝后对方需要重新申请")
+            }
         }
     }
+
+    // MARK: - Empty View
+
+    private var emptyView: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            ZStack {
+                Circle().fill(NBColors.page).frame(width: 60, height: 60)
+                Image(systemName: "person.2")
+                    .font(.system(size: 24))
+                    .foregroundColor(NBColors.muted)
+            }
+            Text("暂无待处理申请")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(NBColors.ink)
+            Text("客户通过邀请码或品牌主页发起绑定申请后，会出现在这里")
+                .font(.system(size: 14))
+                .foregroundColor(NBColors.muted)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+            Spacer()
+        }
+    }
+
+    // MARK: - Applications List
+
+    private var applicationsList: some View {
+        ScrollView {
+            LazyVStack(spacing: 10) {
+                ForEach(applications) { item in
+                    applicationCard(item)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 30)
+        }
+    }
+
+    private func applicationCard(_ app: Application) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header: avatar + info
+            HStack(spacing: 12) {
+                // Avatar
+                ZStack {
+                    Circle().fill(NBColors.page).frame(width: 48, height: 48)
+                    if let url = app.avatarUrl, !url.isEmpty {
+                        AsyncImage(url: URL(string: url)) { img in
+                            img.resizable().aspectRatio(contentMode: .fill)
+                        } placeholder: {
+                            Text(String(app.name?.first ?? "?"))
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(NBColors.action)
+                        }
+                        .frame(width: 48, height: 48).clipShape(Circle())
+                    } else {
+                        Text(String(app.name?.first ?? "?"))
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(NBColors.action)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(app.name ?? "新客户")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(NBColors.ink)
+                    if let phone = app.phone, !phone.isEmpty {
+                        Text(phone)
+                            .font(.system(size: 13))
+                            .foregroundColor(NBColors.muted)
+                    }
+                }
+
+                Spacer()
+            }
+
+            // Note
+            if let note = app.note, !note.isEmpty {
+                HStack(spacing: 4) {
+                    Text("留言：")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(NBColors.muted)
+                    Text(note)
+                        .font(.system(size: 13))
+                        .foregroundColor(NBColors.ink)
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(NBColors.page)
+                .cornerRadius(Radius.sm)
+            }
+
+            // Actions
+            HStack(spacing: 10) {
+                Button {
+                    approving = false
+                    reason = ""
+                    selected = app
+                } label: {
+                    Text("拒绝")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(NBColors.danger)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
+                        .background(NBColors.danger.opacity(0.08))
+                        .cornerRadius(Radius.md)
+                }
+                .disabled(processingId != nil)
+
+                Button {
+                    approving = true
+                    selected = app
+                } label: {
+                    HStack(spacing: 4) {
+                        if processingId == app.id {
+                            ProgressView().scaleEffect(0.7).tint(.white)
+                        }
+                        Text("通过")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 40)
+                    .background(NBColors.action)
+                    .cornerRadius(Radius.md)
+                }
+                .disabled(processingId != nil)
+            }
+        }
+        .padding(14)
+        .background(Color.white)
+        .cornerRadius(Radius.lg)
+        .shadow(color: Color.black.opacity(0.04), radius: 8, y: 2)
+    }
+
+    // MARK: - Actions
+
     private func load() async {
         busy = true
         defer { busy = false }
-        do { applications = try await APIClient.shared.request(.resource(role: .technician, path: "auth/binding-applications")); error = nil }
-        catch { self.error = error.localizedDescription }
-    }
-    private func submit(_ id: Int) async {
-        guard !busy else { return }
-        busy = true
-        defer { busy = false }
         do {
-            try await APIClient.shared.requestVoid(.resource(role: .technician, path: "auth/binding-applications/\(id)/\(approving ? "approve" : "reject")", method: "POST", body: ["reason": reason]))
-            applications.removeAll { $0.id == id }
-        } catch { self.error = error.localizedDescription }
+            applications = try await APIClient.shared.request(.resource(role: .technician, path: "auth/binding-applications"))
+            error = nil
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    private func submit(_ id: Int) async {
+        guard processingId == nil else { return }
+        processingId = id
+        defer { processingId = nil }
+
+        do {
+            let path = approving ? "auth/binding-applications/\(id)/approve" : "auth/binding-applications/\(id)/reject"
+            let body: [String: Any]? = approving ? nil : ["reason": reason]
+            try await APIClient.shared.requestVoid(.resource(role: .technician, path: path, method: "POST", body: body))
+            withAnimation { applications.removeAll { $0.id == id } }
+        } catch {
+            self.error = error.localizedDescription
+        }
     }
 }
