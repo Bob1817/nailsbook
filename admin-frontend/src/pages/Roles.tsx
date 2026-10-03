@@ -9,6 +9,28 @@ import type { AdminRole } from '../services/adminRole';
 import { adminPermissionService } from '../services/adminPermission';
 import type { GroupedPermissions } from '../services/adminPermission';
 
+const moduleNameMap: Record<string, string> = {
+  account: '账号管理',
+  'account-deletion': '账号注销',
+  application: '美甲师申请',
+  booking: '预约管理',
+  comment: '评论管理',
+  customer: '客户管理',
+  dashboard: '数据看板',
+  feature_flag: '功能开关',
+  feedback: '问题反馈',
+  log: '操作日志',
+  permission: '权限管理',
+  quote: '报价管理',
+  report: '举报管理',
+  revenue: '收入管理',
+  role: '角色管理',
+  subscription: '订阅管理',
+  system: '系统配置',
+  technician: '美甲师管理',
+  work: '作品管理',
+};
+
 const Roles: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [roles, setRoles] = useState<AdminRole[]>([]);
@@ -47,7 +69,7 @@ const Roles: React.FC = () => {
   const buildTreeData = (): DataNode[] => {
     return Object.entries(groupedPerms).map(([module, perms]) => ({
       key: `module:${module}`,
-      title: module,
+      title: moduleNameMap[module] || '其他功能',
       children: perms.map((p) => ({
         key: p.id,
         title: p.name,
