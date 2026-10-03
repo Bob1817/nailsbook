@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "NailBook",
+  "navigationBarTitleText": "OnlyNail",
   "navigationStyle": "custom",
   "usingComponents": {
     "nav-bar": "/components/nav-bar/index"

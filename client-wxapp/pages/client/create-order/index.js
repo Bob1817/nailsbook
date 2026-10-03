@@ -220,9 +220,12 @@ Page({
       }
 
 
-      // 无绑定美甲师 → 强制弹出绑定弹窗
+      // 无绑定美甲师：无法预约，引导前往「我的美甲师」绑定
       if (techs.length === 0) {
-        self.setData({ showBindTech: true });
+        wx.showToast({ title: '请先绑定美甲师后再预约', icon: 'none' });
+        setTimeout(function () {
+          wx.navigateTo({ url: '/pages/client/my-technicians/index' });
+        }, 600);
         return;
       }
 

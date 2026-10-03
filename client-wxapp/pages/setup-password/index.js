@@ -1,6 +1,6 @@
 const { consumePostAuthRedirect } = require('../../utils/artist-navigation');
 /**
- * NailBook 设置登录密码页
+ * OnlyNail 设置登录密码页
  * 微信授权注册后，用户必须设置登录密码才能继续
  */
 const api = require('../../services/api');

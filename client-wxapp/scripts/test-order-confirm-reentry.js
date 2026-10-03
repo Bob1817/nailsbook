@@ -20,6 +20,26 @@ const form = { ...definition.methods, data: { ...definition.data, order: { id: 7
 (async () => {
   form.resetForm({ price: 696, depositAmount: 0 });
   assert.equal(form.data.price, '696');
+  assert.equal(form.data.showDepositStatus, false, '0 元不显示收款选项');
+  form.onDeposit({ detail: { value: '50' } });
+  assert.equal(form.data.showDepositStatus, true);
+  assert.equal(form.data.depositPaid, false, '合法定金默认未支付');
+  form.onPaid({ detail: { value: ['paid'] } }); assert.equal(form.data.depositPaid, true);
+  form.onPaid({ detail: { value: [] } }); assert.equal(form.data.depositPaid, false);
+  for (const value of ['697', '-1', '0.001', '', 'abc']) {
+    form.onDeposit({ detail: { value } });
+    assert(form.data.depositError.includes('该金额不可用'));
+    assert.equal(form.data.showDepositStatus, false);
+  }
+  form.onDeposit({ detail: { value: '696' } });
+  assert.equal(form.data.showDepositStatus, true, '允许定金等于总价');
+  form.onPaid({ detail: { value: ['paid'] } });
+  form.onPrice({ detail: { value: '600' } });
+  assert.equal(form.data.showDepositStatus, false, '总价降低时重新校验定金');
+  assert.equal(form.data.depositPaid, false, '无效金额清除已支付选择');
+  form.onDeposit({ detail: { value: '0' } });
+  assert.equal(form.data.depositError, '');
+  assert.equal(form.data.showDepositStatus, false);
   form.close(); assert.deepEqual(events, ['close']); events.length = 0;
   for (const [price, deposit] of [['', '0'], ['0', '0'], ['-1', '0'], ['598.001', '0'], ['598', '-1'], ['598', '599'], ['598', '0.001']]) {
     form.setData({ price, deposit }); await form.submit(); assert(form.data.error);
@@ -36,6 +56,10 @@ const form = { ...definition.methods, data: { ...definition.data, order: { id: 7
   fail = false; const retry = form.submit(); await tick(); release(); await retry;
   assert.equal(calls.length, 3, '失败后保留输入并可重试');
   form.onDeposit({ detail: { value: '0' } }); assert.equal(form.data.depositPaid, false);
+  const confirmMarkup = fs.readFileSync(path.join(__dirname, '../components/booking-confirm/index.wxml'), 'utf8');
+  assert(confirmMarkup.includes('<checkbox-group'), '合法且大于 0 的定金应使用单项收款确认');
+  assert(!confirmMarkup.includes('<radio-group'), '定金收款不应继续使用并排单选项');
+  assert(confirmMarkup.includes('wx:if="{{showDepositStatus}}"'), '0 元或无效定金不得显示收款确认');
   for (const pageName of ['home', 'order-detail']) {
     const markup = fs.readFileSync(path.join(__dirname, `../pages/technician/${pageName}/index.wxml`), 'utf8');
     assert(markup.includes('<booking-confirm'), '两个入口复用同一确认表单');

@@ -148,19 +148,30 @@ function normalizeSourceWorkSummary(raw) {
 function normalizeWorkDetail(raw) {
   raw = raw || {};
   const serviceSubtotalFen = Number(raw.serviceSubtotalFen || 0);
-  const standardPriceFen = Number(raw.standardPriceFen || 0)
+  const standardPriceFen = Number(raw.standardPriceFen || 0);
+  const priceFen = standardPriceFen || serviceSubtotalFen || Number(raw.priceCents || 0)
     || Math.round(Number(raw.price || 0) * 100);
-  const differenceFen = standardPriceFen > 0 ? standardPriceFen - serviceSubtotalFen : 0;
+  const differenceFen = standardPriceFen > 0 && serviceSubtotalFen > 0
+    ? standardPriceFen - serviceSubtotalFen : 0;
+  let rawTags = raw.tags || [];
+  if (typeof rawTags === 'string') {
+    try { rawTags = JSON.parse(rawTags); } catch (error) { rawTags = [rawTags]; }
+  }
+  const tags = (Array.isArray(rawTags) ? rawTags : [])
+    .flatMap((tag) => String(tag || '').split(/[、，,]/))
+    .map((tag) => tag.trim())
+    .filter((tag, index, values) => tag && values.indexOf(tag) === index);
+  const promotionDiscountAmount = Math.max(0, Number(raw.promotion && raw.promotion.discountAmount || 0));
   return {
     ...raw,
+    tags,
     serviceSubtotalFen,
     standardPriceFen: standardPriceFen || null,
-    _priceFen: standardPriceFen || serviceSubtotalFen,
-    _priceText: standardPriceFen > 0
-      ? '¥' + formatFen(standardPriceFen)
-      : (serviceSubtotalFen > 0 ? '¥' + formatFen(serviceSubtotalFen) : ''),
+    _priceFen: priceFen,
+    _priceText: raw.priceText || (priceFen > 0 ? '¥' + formatFen(priceFen) : ''),
     _priceDiffType: differenceFen < 0 ? 'discount' : (differenceFen > 0 ? 'surcharge' : ''),
-    _priceDiffFen: Math.abs(differenceFen)
+    _priceDiffFen: Math.abs(differenceFen),
+    _promotionDiscountAmount: promotionDiscountAmount
   };
 }
 

@@ -18,7 +18,7 @@ luanails 是面向自由美甲师的个人商业经营系统，支持客户端�
 
 ## UI 设计规范
 
-项目 UI 设计与页面优化以 [NailBook 小程序 UI 设计规范与准则](docs/UI-DESIGN-GUIDELINES.md) 为准。
+项目 UI 设计与页面优化以 [OnlyNail 小程序 UI 设计规范与准则](docs/UI-DESIGN-GUIDELINES.md) 为准。
 
 后续新增或调整页面时，应优先遵循该规范中的移动端优先、标题层级、颜色系统、表单、按钮、卡片、一屏布局密度和禁用模式要求。
 

@@ -12,9 +12,8 @@ assert.match(
 );
 
 for (const [file, className] of [
-  ['pages/client/create-order/index.wxss', 'rules-box'],
-  ['pages/client/create-order/index.wxss', 'rules-check-icon'],
-  ['pages/client/create-order/index.wxss', 'work-check'],
+  ['pages/client/create-order/index.wxss', 'confirm-check-box'],
+  ['pages/client/create-order/index.wxss', 'work-cell-check'],
   ['pages/client/customize-design/index.wxss', 'style-check'],
   ['pages/technician/homepage-settings/index.wxss', 'work-check'],
 ]) {

@@ -1,7 +1,7 @@
 <nav-bar title="注册" showBack transparent/>
 <view class="container">
   <view class="header">
-    <view class="logo-circle">N</view>
+    <view class="logo-circle">OnlyNail</view>
     <text class="title">创建账号</text>
     <text class="subtitle">注册后即可预约美甲服务</text>
   </view>

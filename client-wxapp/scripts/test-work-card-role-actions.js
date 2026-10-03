@@ -87,7 +87,7 @@ expect(publicDetailJs, /api\.public\.works\.detail\(this\.workId\)/, '分享落�
 expect(publicDetailJs, /this\.shareToken[\s\S]*api\.public\.works\.shared\(this\.shareToken\)/, '限时分享令牌仍应使用公开分享接口');
 expect(publicDetailJs, /if \(!token\)[\s\S]*buildClientLoginUrl\(returnPath/, '未登录访问作品分享时应先登录并保留返回路径');
 expect(sharedDetailWxml, /class="title-row"[\s\S]*wx:if="\{\{isAuthor\}\}" class="manage-button"[^>]*aria-label="管理作品"[\s\S]*more-horizontal\.svg/, '共享详情组件应在标题右侧仅向作者展示三点管理入口');
-expect(sharedDetailWxml, /wx:if="\{\{work\._priceText\}\}" class="work-price-row"[\s\S]*服务原价[\s\S]*优惠[\s\S]*其他/, '共享详情组件必须统一展示综合报价及价格差额');
+expect(sharedDetailWxml, /class="work-pricing-card"[\s\S]*服务原价[\s\S]*class="work-price-row"[\s\S]*作品报价[\s\S]*已优惠[\s\S]*其他/, '共享详情组件必须按原价、作品报价和价格差额的层级展示综合报价');
 expect(technicianDetailWxml, /bind:commentmanage="manageComment"/, '美甲师详情页应接入作者评论管理权限');
 expect(sharedDetailWxml, /wx:if="\{\{isAuthor\}\}" class="comment-manage"[^>]*catchtap="manageComment"/, '评论管理入口只能向作品作者展示');
 expect(technicianDetailJs, /manageComment\(e\)[\s\S]*置顶评论[\s\S]*隐藏评论[\s\S]*删除评论/, '作者评论菜单应支持置顶、隐藏和删除');
@@ -102,9 +102,13 @@ if (!(introIndex < engagementIndex && engagementIndex < commentsIndex && comment
   throw new Error('作品介绍区顺序必须为标题描述、互动操作、评论、输入框');
 }
 expect(sharedDetailWxml, /class="title-row"[\s\S]*wx:if="\{\{!visitorInfo && showBookSame\}\}" class="booking-action"[^>]*bindtap="bookSame"/, '预约同款应在标题右侧，保留原预约事件和访客页面独立入口');
-expect(sharedDetailWxml, /class="visitor-booking-button booking-action"[^>]*bindtap="bookSame"/, '游客作品详情底部预约入口必须接入统一按钮标准');
+expect(sharedDetailWxss, /\.booking-action-face \{[^}]*height:\s*44px;[^}]*border-radius:\s*8px;[^}]*font-size:\s*var\(--font-sm\);/, '标题行预约同款可见按钮必须对齐 44px 统一按钮规格');
+expect(sharedDetailWxml, /class="send"(?![^>]*size="mini")/, '评论发送按钮不得使用 size="mini" 造成字号与居中偏差');
+expect(sharedDetailWxss, /button\.send,\s*\.send \{[^}]*display:\s*flex;[^}]*align-items:\s*center;[^}]*justify-content:\s*center;[^}]*font-size:\s*var\(--font-sm\);/, '评论发送按钮必须 flex 垂直水平居中并使用统一字号');
+expect(sharedDetailWxml, /class="visitor-bar-btn visitor-bar-btn-primary booking-action"[^>]*bindtap="bookSame"/, '游客作品详情底部预约入口必须接入统一按钮标准');
 expect(sharedDetailWxss, /@import ['"]\.\.\/\.\.\/styles\/booking-actions\.wxss['"];/, '共享作品详情组件必须引入统一按钮样式');
-expect(sharedDetailWxss, /\.visitor-booking-button\.booking-action \{[^}]*min-height:44px;[^}]*height:44px;[^}]*border-radius:8px;[^}]*font-size:var\(--font-sm\);[^}]*box-shadow:none;/, '游客作品详情底部预约入口必须使用紧凑按钮规格');
+expect(sharedDetailWxss, /\.visitor-bar-btn\.booking-action \{[^}]*min-height:44px;[^}]*height:44px;[^}]*border-radius:8px;[^}]*font-size:var\(--font-sm\);[^}]*box-shadow:none;/, '游客作品详情底部预约入口必须使用紧凑按钮规格');
+expect(sharedDetailWxml, /<button[^>]*open-type="share"[^>]*>分享给好友<\/button>/, '分享给好友必须使用支持 open-type 的原生 button');
 const bookingIndex = sharedDetailWxml.indexOf('class="booking-action"');
 if (!(introIndex < bookingIndex && bookingIndex < sharedDetailWxml.indexOf('class="work-price-row"'))) throw new Error('预约同款必须在标题行而非互动栏');
 if (/work-share-poster/.test(sharedDetailWxml)) throw new Error('作品详情页不应在互动栏下方展示海报、文案或二维码营销区块');

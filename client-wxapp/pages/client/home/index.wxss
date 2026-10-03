@@ -437,10 +437,21 @@ page {
   display: flex; align-items: center; justify-content: center;
 }
 .works-empty-text { font-size: var(--font-md); color: var(--text-muted); }
+.works-empty-sub { display: block; margin-top: 8rpx; font-size: var(--font-sm); color: var(--text-faint); }
+.works-empty-cta {
+  width: 240rpx; height: 72rpx; min-height: 72rpx;
+  margin: 28rpx auto 0;
+  border-radius: 8px;
+  background: var(--nb-action);
+  color: var(--nb-inverse);
+  font-size: var(--font-sm);
+  font-weight: var(--weight-semibold);
+}
 
 @import '../../../styles/booking-actions.wxss';
 .hero-cta-btn.booking-action,
 .order-action-btn.booking-action,
-.book-btn.booking-action { min-height: 44px; height: var(--control-hit-height); border-radius: 8px; font-size: var(--font-sm); box-shadow: none; }
+.book-btn.booking-action,
+.works-empty-cta.booking-action { min-height: 44px; height: var(--control-hit-height); border-radius: 8px; font-size: var(--font-sm); box-shadow: none; }
 
 .hero-empty-action { margin-top:20rpx; min-height:44px; color:var(--nb-text-link); }

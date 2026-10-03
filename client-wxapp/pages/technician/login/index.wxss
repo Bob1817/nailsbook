@@ -22,13 +22,16 @@
 }
 
 .logo-circle {
-  width: 120rpx;
-  height: 120rpx;
+  min-width: 120rpx;
+  height: 64rpx;
+  padding: 0 28rpx;
+  box-sizing: border-box;
   background: var(--nb-action);
-  border-radius: 60rpx;
+  border-radius: 32rpx;
   color: var(--text-inverse);
-  font-size: 56rpx;
-  font-weight: var(--weight-bold);
+  font-size: 28rpx;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 1rpx;
   display: flex;
   align-items: center;
   justify-content: center;

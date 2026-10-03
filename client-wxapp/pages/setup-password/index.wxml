@@ -1,5 +1,5 @@
 <!--
-  NailBook 设置登录密码页
+  OnlyNail 设置登录密码页
   微信授权注册后首次设置密码
 -->
 
@@ -7,10 +7,7 @@
   <view class="stub-status"></view>
 
   <view class="hero">
-    <view class="logo-ring">
-      <text class="logo-text">N</text>
-    </view>
-    <text class="app-name">NailBook</text>
+    <text class="logo-text">OnlyNail</text>
   </view>
 
   <view class="desc-area">

@@ -101,6 +101,25 @@ Page({
         inviteCode: this.inviteCode || undefined,
         source: this.registrationSource
       });
+      if (res.needsRegistration) {
+        wx.hideLoading();
+        this.setData({ loading: false });
+        const phone = res.phone || this.data.phone || '';
+        wx.showModal({
+          title: '尚未注册',
+          content: res.message || '该手机号尚未注册，请先完成注册',
+          confirmText: '去注册',
+          cancelText: '返回',
+          success: (modalRes) => {
+            if (!modalRes.confirm) return;
+            const invite = this.inviteCode ? '&invite=' + encodeURIComponent(this.inviteCode) : '';
+            wx.navigateTo({
+              url: '/pages/register/index?phone=' + encodeURIComponent(phone) + invite + '&source=' + this.registrationSource
+            });
+          }
+        });
+        return;
+      }
       await this._afterAuth(res);
     } catch (err) {
       wx.hideLoading();

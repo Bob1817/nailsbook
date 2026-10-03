@@ -1,4 +1,4 @@
-/* ===== NailBook 新用户引导页 ===== */
+/* ===== OnlyNail 新用户引导页 ===== */
 @import '../../styles/tokens.wxss';
 
 page {

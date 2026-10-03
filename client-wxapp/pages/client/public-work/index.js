@@ -26,8 +26,17 @@ Page({
       this.setData({ loading: false, error: true, errorMessage: '分享链接无效', errorDescription: '链接信息不完整，请返回浏览，或请分享者重新发送作品链接。', canRetry: false });
       return;
     }
-    // 检测登录状态，未登录也可浏览
+    // 分享作品需先登录，并保留令牌、作品 ID 与预约意图。
     const token = wx.getStorageSync('token') || wx.getStorageSync('client_token') || wx.getStorageSync('technician_token');
+    if (!token) {
+      const query = options.shareToken
+        ? 'shareToken=' + encodeURIComponent(options.shareToken)
+        : 'id=' + encodeURIComponent(options.id);
+      const returnPath = '/pages/client/public-work/index?' + query +
+        (options.book === '1' ? '&book=1' : '') + '&channel=' + this.shareChannel;
+      wx.redirectTo({ url: buildClientLoginUrl(returnPath, { source: 'work_share' }) });
+      return;
+    }
     this.setData({ isLoggedIn: !!token });
     this._techId = null; // 缓存美甲师 ID，登录绑定时使用
     this.resumeBooking = options.book === '1';

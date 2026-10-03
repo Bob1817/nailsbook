@@ -1,6 +1,6 @@
 const { consumePostAuthRedirect, rememberPostAuthRedirect, normalizeInternalPath } = require('../../utils/artist-navigation');
 /**
- * NailBook 统一登录页
+ * OnlyNail 统一登录页
  * 流程：微信授权（默认）→ 手机号 + 密码登录
  */
 const api = require('../../services/api');
@@ -91,6 +91,29 @@ Page({
         source: this.registrationSource,
         quickBookingTechId: this.quickBookingTechId
       });
+
+      // ★ 手机号未注册 → 提示后跳转注册页
+      if (res.needsRegistration) {
+        wx.hideLoading();
+        this.setData({ wechatLoading: false });
+        const phone = res.phone || '';
+        wx.showModal({
+          title: '尚未注册',
+          content: res.message || '该手机号尚未注册，请先完成注册',
+          confirmText: '去注册',
+          cancelText: '返回',
+          success: (modalRes) => {
+            if (!modalRes.confirm) return;
+            const invite = this.inviteCode ? '&invite=' + encodeURIComponent(this.inviteCode) : '';
+            const redirect = this.redirect ? '&redirect=' + encodeURIComponent(this.redirect) : '';
+            wx.navigateTo({
+              url: '/pages/register/index?phone=' + encodeURIComponent(phone) + invite + redirect +
+                   '&source=' + this.registrationSource
+            });
+          }
+        });
+        return;
+      }
 
       // ★ 需要选择角色 → 跳转角色选择页
       if (res.needsRoleSelection) {
@@ -234,9 +257,9 @@ Page({
       if (err.message && err.message.includes('未设置密码')) {
         wx.showModal({
           title: '账号未设置密码',
-          content: '该手机号通过微信注册，尚未设置登录密码。您可以使用微信登录，或通过短信验证设置密码。',
+          content: '该手机号通过微信注册，尚未设置登录密码。您可以使用微信登录，或通过微信手机号授权设置密码。',
           confirmText: '微信登录',
-          cancelText: '短信设置密码',
+          cancelText: '设置密码',
           success: (modalRes) => {
             if (modalRes.confirm) {
               this.goBackToWechat();
@@ -288,9 +311,18 @@ Page({
     }
 
     // 处理美甲师绑定信息（客户端角色时）
-    if (activeRole === 'client' && res.technician) {
-      wx.setStorageSync('client_bindings', res.technicians || [res.technician]);
-      wx.setStorageSync('defaultTechId', res.technician.id);
+    if (activeRole === 'client') {
+      const technicians = res.technicians || (res.technician ? [res.technician] : []);
+      if (technicians.length > 0) {
+        wx.setStorageSync('client_bindings', technicians);
+        if (res.technician && res.technician.id) {
+          wx.setStorageSync('defaultTechId', res.technician.id);
+        }
+      } else {
+        // 无绑定美甲师：允许登录，不拦截；清空本地绑定缓存
+        wx.removeStorageSync('client_bindings');
+        wx.removeStorageSync('defaultTechId');
+      }
     }
 
     // 处理推荐关系

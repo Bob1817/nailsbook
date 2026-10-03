@@ -28,7 +28,18 @@ assert(!createOrderJs.includes('上门美甲') && !createOrderWxml.includes('上
 assert(!createOrderJs.includes('getLocation') && !createOrderJs.includes('client.addresses'), '预约页不得读取定位或客户地址');
 assert(!read('pages/technician/shop-management/index.js').includes('chooseLocation'), '首发版店铺管理不得请求地图选址');
 assert(!read('pages/technician/help-feedback/index.js').includes('上门服务'), '帮助中心不得宣传上门服务');
-assert(!routes.includes('pages/client/discover/index'), '首发版不得提供游客作品发现页');
+assert(routes.includes('pages/client/discover/index'), '发现页必须注册');
+const discoverJs = read('pages/client/discover/index.js');
+const discoverWxml = read('pages/client/discover/index.wxml');
+assert(!discoverJs.includes('api.public.works'), '发现页不得调用公开作品接口（游客不可浏览作品）');
+assert(discoverJs.includes('needLogin'), '发现页必须内置未登录拦截状态');
+assert(discoverJs.includes('api.client.works.list'), '发现页只能通过登录客户作品接口读取');
+assert(
+  /isMyTechnician/.test(discoverJs) && /\.filter\(function \(w\) \{ return w\.isMyTechnician; \}\)/.test(discoverJs),
+  '发现页必须前端硬过滤：仅展示绑定美甲师作品'
+);
+assert(!discoverWxml.includes('发现好作品'), '发现页不得使用平台撮合式标题');
+assert(discoverWxml.includes('绑定美甲师') || discoverWxml.includes('绑定常用美甲师'), '空态需引导绑定而非公开逛作品');
 const publicWorkJs = read('pages/client/public-work/index.js');
 assert(publicWorkJs.includes('buildClientLoginUrl(returnPath'), '作品分享页必须先建立登录态并保留返回路径');
 const apiJs = read('services/api.js');
@@ -65,3 +76,37 @@ const config = require('../config');
   .forEach((key) => assert(Object.prototype.hasOwnProperty.call(config, key), `missing release config: ${key}`));
 
 console.log('Launch compliance checks passed.');
+
+for (const file of ['project.config.json', 'project.private.config.json']) {
+  const project = JSON.parse(read(file));
+  assert.strictEqual(project.setting.urlCheck, true, `${file} 必须开启合法域名校验`);
+  const [major, minor, patch] = project.libVersion.split('.').map(Number);
+  assert(major > 2 || (major === 2 && (minor > 32 || (minor === 32 && patch >= 3))), `${file} 基础库必须支持隐私授权接口`);
+}
+assert(!read('pages/login/index.js').includes('短信设置密码'), '无短信服务时不得引导短信设密');
+assert(!createOrderWxml.includes('确认后你会收到微信通知'), '未取得订阅授权不得承诺微信通知');
+
+// 执行分享入口，验证登录前不拉取作品，并完整保留回跳上下文。
+const vm = require('vm');
+const { createRequire } = require('module');
+const shareFile = path.join(root, 'pages/client/public-work/index.js');
+for (const options of [{ shareToken: 'review-token', book: '1' }, { id: '123' }, { scene: 'w123' }]) {
+  let page, destination = '', loads = 0;
+  const storage = {};
+  global.wx = { setStorageSync: (key, value) => { storage[key] = value; } };
+  vm.runInNewContext(read('pages/client/public-work/index.js'), {
+    Page: value => { page = value; }, require: createRequire(shareFile),
+    wx: { getStorageSync: () => '', redirectTo: ({ url }) => { destination = url; } }
+  });
+  page.setData = data => Object.assign(page.data, data);
+  page.loadWork = () => { loads++; };
+  page.onLoad(options);
+  assert.strictEqual(loads, 0, '游客不得先请求作品');
+  {
+    const returnPath = new URLSearchParams(destination.split('?')[1]).get('redirect');
+    assert(returnPath.startsWith('/pages/client/public-work/index?'));
+    assert(returnPath.includes(options.shareToken ? 'shareToken=review-token' : 'id=123'));
+    if (options.book) assert(returnPath.includes('book=1'));
+  }
+}
+delete global.wx;

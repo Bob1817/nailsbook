@@ -1,7 +1,7 @@
 <nav-bar title="设置密码" showBack/>
 <view class="container">
   <view class="header">
-    <view class="logo-circle">N</view>
+    <view class="logo-circle">OnlyNail</view>
     <text class="title">设置登录密码</text>
     <text class="subtitle">首次登录请设置登录密码，密码至少 8 位，需包含字母和数字</text>
   </view>

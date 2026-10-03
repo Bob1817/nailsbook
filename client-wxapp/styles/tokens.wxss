@@ -1,7 +1,7 @@
 @import './colors.generated.wxss';
 @import './semantics.generated.wxss';
 /**
- * NailBook 设计令牌体系
+ * OnlyNail 设计令牌体系
  * 
  * 本文件定义所有设计变量，所有页面 .wxss 必须引用这些令牌，
  * 禁止在页面级硬编码颜色、字号、圆角、间距等样式值。

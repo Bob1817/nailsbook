@@ -342,8 +342,8 @@
       </view>
     </view>
     <view class="confirm-modal-btns">
-      <view class="confirm-btn confirm-btn-cancel" bindtap="cancelQuickSubmit">返回修改</view>
-      <view class="confirm-btn confirm-btn-primary" bindtap="confirmQuickSubmit">提交申请</view>
+      <view class="confirm-btn booking-action confirm-btn-cancel" bindtap="cancelQuickSubmit">返回修改</view>
+      <view class="confirm-btn booking-action confirm-btn-primary" bindtap="confirmQuickSubmit">提交申请</view>
     </view>
   </view>
 </view>
@@ -397,8 +397,8 @@
       <text class="confirm-check-text">我已确认信息无误，最终以美甲师确认为准</text>
     </view>
     <view class="confirm-modal-btns">
-      <view class="confirm-btn confirm-btn-cancel" bindtap="cancelApplicationReview">返回修改</view>
-      <view class="confirm-btn confirm-btn-primary {{bookingRulesAgreed ? '' : 'confirm-btn-disabled'}}" bindtap="confirmApplicationReview">提交申请</view>
+      <view class="confirm-btn booking-action confirm-btn-cancel" bindtap="cancelApplicationReview">返回修改</view>
+      <view class="confirm-btn booking-action confirm-btn-primary {{bookingRulesAgreed ? '' : 'confirm-btn-disabled'}}" bindtap="confirmApplicationReview">提交申请</view>
     </view>
   </view>
 </view>
@@ -409,7 +409,7 @@
     <view class="success-icon">✓</view>
     <text class="success-title">预约申请已提交</text>
     <text class="success-sub">等待{{submitSuccessTech}}确认时间与报价</text>
-    <text class="success-hint">确认后你会收到微信通知</text>
+    <text class="success-hint">请在「预约」中查看处理进度</text>
     <view class="success-actions">
       <view class="success-btn" bindtap="goToOrders">查看我的预约</view>
     </view>

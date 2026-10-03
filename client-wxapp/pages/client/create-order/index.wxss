@@ -327,10 +327,10 @@
   position: absolute;
   top: 8rpx;
   right: 8rpx;
-  width: 40rpx;
-  height: 40rpx;
+  width: 28rpx;
+  height: 28rpx;
   border-radius: 50%;
-  background: #16a34a;
+  background: var(--nb-action);
   color: #fff;
   display: flex;
   align-items: center;
@@ -552,7 +552,7 @@
 }
 
 .work-preview-selected {
-  background: #16a34a;
+  background: var(--nb-action);
 }
 
 .work-preview-select-disabled {
@@ -662,12 +662,12 @@
 }
 
 .submit-tag-discount {
-  background: #16a34a;
+  background: var(--nb-action);
   color: #fff;
 }
 
 .submit-tag-increase {
-  background: #ea580c;
+  background: var(--nb-money);
   color: #fff;
 }
 
@@ -971,7 +971,7 @@
 }
 
 .confirm-tip-warn {
-  background: rgba(234, 179, 8, 0.08);
+  background: var(--nb-soft-surface);
   border-radius: 12rpx;
   padding: 16rpx 20rpx;
 }
@@ -980,19 +980,20 @@
   display: block;
   font-size: var(--font-sm);
   font-weight: var(--weight-semibold);
-  color: #b45309;
+  color: var(--nb-secondary);
   margin-bottom: 6rpx;
 }
 
 .confirm-warn-text {
   display: block;
   font-size: var(--font-xs);
-  color: #92400e;
+  color: var(--nb-secondary);
   line-height: 1.6;
 }
 
 /* Checkbox (Full mode) */
 .confirm-check {
+  min-height: 44px;
   display: flex;
   align-items: center;
   gap: 14rpx;
@@ -1001,8 +1002,8 @@
 }
 
 .confirm-check-box {
-  width: 36rpx;
-  height: 36rpx;
+  width: 28rpx;
+  height: 28rpx;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -1039,6 +1040,7 @@
 }
 
 .confirm-btn {
+  min-height: 44px;
   flex: 1;
   height: 88rpx;
   display: flex;
@@ -1249,3 +1251,5 @@
 .success-btn:active {
   opacity: 0.85;
 }
+
+.confirm-btn.booking-action { min-height: 44px; }

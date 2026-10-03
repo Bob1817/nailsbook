@@ -166,7 +166,7 @@
     </view>
   </view>
 
-  <text class="version">NailBook v1.0.0</text>
+  <text class="version">OnlyNail v1.0.0</text>
 </view>
 
 <!-- 低频信息按需展开，保留全部原有指标及邀请码操作。 -->

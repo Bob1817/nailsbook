@@ -106,7 +106,7 @@
 .top-back {
   left: 16px;
 }
-.top-back text {
+.top-back-glyph {
   color: var(--nb-surface);
   font-size: 34px;
   line-height: 1;
@@ -132,7 +132,7 @@
   overflow: hidden;
 }
 .intro-section {
-  padding: 38rpx 32rpx 28rpx;
+  padding: 38rpx 32rpx 24rpx;
 }
 .title-row {
   display: flex;
@@ -159,35 +159,36 @@
 .manage-button:active {
   background: var(--nb-page);
 }
-.manage-button image {
+.manage-icon {
   width: 36rpx;
   height: 36rpx;
 }
 .work-desc {
   display: block;
-  margin-top: 14rpx;
+  margin-top: 12rpx;
   color: var(--nb-secondary);
-  font-size: 27rpx;
-  line-height: 1.65;
+  font-size: var(--font-sm);
+  line-height: 1.7;
 }
 .tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 12rpx;
-  margin-top: 20rpx;
+  gap: 10rpx;
+  margin-top: 16rpx;
 }
 .tag {
-  padding: 8rpx 18rpx;
-  border-radius: 999rpx;
-  background: var(--nb-page);
-  color: var(--nb-ink);
+  padding: 7rpx 14rpx;
+  border-radius: var(--radius-sm);
+  background: var(--nb-soft-surface);
+  color: var(--nb-secondary);
   font-size: 22rpx;
+  line-height: 1.4;
 }
 .engagement-section {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8rpx;
-  padding: 20rpx 24rpx;
+  display: flex;
+  gap: 12rpx;
+  margin: 0 32rpx;
+  padding: 0 0 24rpx;
   border-top: 0;
   border-bottom: 0;
   background: var(--nb-surface);
@@ -216,7 +217,7 @@
 .engagement-action:active {
   background: var(--nb-page);
 }
-.engagement-action image {
+.engagement-icon {
   width: 32rpx;
   height: 32rpx;
 }
@@ -231,37 +232,39 @@
 .title-row .booking-action {
   flex: 0 0 auto;
   min-height: 44px;
-  margin: -6px 0;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .booking-action-face {
-  height: 32px;
-  padding: 0 10px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  border-radius: 6px;
+  gap: 6px;
+  border-radius: 8px;
   box-sizing: border-box;
-  font-size: 13px;
-  line-height: 1.2;
+  font-size: var(--font-sm);
+  line-height: 1.4;
   white-space: nowrap;
   color: var(--nb-surface);
   background: var(--nb-action);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 .booking-action:active .booking-action-face {
   opacity: 0.88;
 }
-.booking-action image {
+.booking-action-icon {
   width: 16px;
   height: 16px;
   filter: brightness(0) invert(1);
 }
 .comments-section {
-  padding: 30rpx 32rpx 34rpx;
+  padding: 28rpx 32rpx 34rpx;
+  background: var(--nb-page);
 }
 .comments-header {
   display: flex;
@@ -375,7 +378,7 @@
   color: var(--nb-secondary);
   font-size: 22rpx;
 }
-.replying text {
+.replying-cancel {
   float: right;
   color: var(--nb-ink);
 }
@@ -394,51 +397,64 @@
   box-sizing: border-box;
   font-size: 25rpx;
 }
+button.send,
 .send {
   flex: 0 0 72px;
   width: 72px;
   min-width: 72px;
   max-width: 72px;
   height: 44px;
+  min-height: 44px;
   margin: 0;
   padding: 0;
   flex-shrink: 0;
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   border-radius: 8px;
   background: var(--nb-action);
   color: var(--nb-inverse);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 44px;
+  font-size: var(--font-sm);
+  font-weight: var(--weight-semibold);
+  line-height: 1.4;
   box-sizing: border-box;
 }
+button.send::after,
 .send::after { border: 0; }
 .send-pressed { opacity: 0.85; }
+.work-pricing-card {
+  margin-top: 24rpx;
+  padding: 22rpx 24rpx;
+  border-radius: var(--radius-md);
+  background: var(--nb-page);
+}
+.work-original-price { display: block; margin-bottom: 8rpx; color: var(--nb-muted); font-size: var(--font-xs); line-height: 1.5; }
+.work-original-strike { text-decoration: line-through; }
+.work-quote { display: flex; align-items: baseline; gap: 12rpx; }
 .work-price-row {
-  margin-top: 12rpx;
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
   gap: 10rpx 16rpx;
 }
 .work-promotion {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 10rpx;
-  margin-top: 18rpx;
+  margin-top: 20rpx;
   padding: 16rpx 18rpx;
   border-radius: 12rpx;
-  background: var(--nb-page);
+  background: var(--nb-soft-surface);
 }
+.work-promotion-row { display: flex; align-items: baseline; justify-content: space-between; gap: 16rpx; }
 .work-promotion-title { color: var(--nb-ink); font-size: 26rpx; font-weight: 600; }
 .work-promotion-amount { color: var(--nb-money); font-size: 26rpx; font-weight: 600; }
-.work-promotion-note { width: 100%; color: var(--nb-secondary); font-size: 22rpx; }
+.work-promotion-note { display: block; margin-top: 6rpx; color: var(--nb-secondary); font-size: 22rpx; }
+.work-price-label { color: var(--nb-secondary); font-size: var(--font-sm); }
 .work-price { color: var(--nb-money); font-size: 38rpx; font-weight: 700; font-variant-numeric: tabular-nums; }
-.work-price-note { color: var(--nb-muted); font-size: 22rpx; }
+.work-price-note { color: var(--nb-muted); font-size: var(--font-xs); line-height: 1.5; }
 .work-price-note.discount { color: var(--nb-money); }
 .work-price-note.surcharge { color: var(--nb-secondary); }
+.work-story { margin-top: 28rpx; }
+.work-story-title { display: block; color: var(--nb-ink); font-size: var(--font-sm); font-weight: var(--weight-semibold); line-height: 1.4; }
 .comment-meta { display: flex; align-items: center; justify-content: space-between; gap: 12rpx; }
 .comment-meta-copy { min-width: 0; display: flex; align-items: center; flex-wrap: wrap; }
 .badge.pinned { color: var(--nb-ink); background: var(--nb-page); }
@@ -448,3 +464,5 @@
 
 @import '../../styles/semantic-actions.wxss';
 @import '../../styles/booking-actions.wxss';
+
+.visitor-bar-btn.booking-action { min-height:44px; height:44px; border-radius:8px; font-size:var(--font-sm); box-shadow:none; }
