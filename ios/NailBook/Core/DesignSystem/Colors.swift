@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - NailBook Design Tokens (synced with WeChat mini-program)
+// MARK: - OnlyNail Design Tokens (synced with WeChat mini-program)
 
 extension Color {
     // Legacy API adapted to COLOR-STANDARD.md.
@@ -195,7 +195,6 @@ extension Color {
 enum NBColors {
     static let page = Color(hex: "F5F5F7")
     static let surface = Color(hex: "FFFFFF")
-    static let softSurface = Color(hex: "EEF1F5")  // wxapp: --nb-soft-surface
     static let pressed = Color(hex: "ECECEF")
     static let ink = Color(hex: "1D1D1F")
     static let secondary = Color(hex: "48484D")
@@ -207,12 +206,18 @@ enum NBColors {
     static let action = Color(hex: "1D1D1F")
     static let actionPressed = Color(hex: "343438")
     static let inverse = Color(hex: "FFFFFF")
-
-    // Status colors
-    static let success = Color(hex: "34C759")
-    static let successSurface = Color(hex: "E8F5E9")
-    static let danger = Color(hex: "FF3B30")
-    static let dangerSurface = Color(hex: "FFEBEE")
-    static let warning = Color(hex: "FF9500")
-    static let warningSurface = Color(hex: "FFF3E0")
+    static let danger = Color(hex: "B42332")
+    static let money = Color(hex: "B42332")
+    static let like = Color(hex: "B42332")
+    static let favorite = Color(hex: "D4A017")
+    static let workPinned = Color(hex: "79B8FF")
+    static let workFeatured = Color(hex: "F4C95D")
+    static let textLink = Color(hex: "245EA8")
+    static let success = Color(hex: "287A4B")
+    static let successSurface = Color(hex: "EAF4EE")
+    static let softSurface = Color(hex: "EDF3FA")
+    static let dangerSurface = Color(hex: "FAECEE")
+    static let customerDue = Color(hex: "526B5B")
+    static let warning = Color(hex: "48484D")
+    static let warningSurface = Color(hex: "EEF1F5")
 }

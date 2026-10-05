@@ -5,6 +5,8 @@ ROOT=Path(__file__).resolve().parents[1]
 P=json.loads((ROOT/'design-system/nailbook/colors.json').read_text())
 SEM=json.loads((ROOT/'design-system/nailbook/miniprogram-semantics.json').read_text())
 scopes=['client-wxapp/pages','client-wxapp/components','client-wxapp/styles','client-wxapp/utils','technician-frontend/src','client-frontend/src','admin-frontend/src','website/src','landing-frontend/src','mobile-flutter/lib','ios/NailBook']
+wxapp_only='--wxapp-only' in sys.argv
+if wxapp_only: scopes=[scope for scope in scopes if scope.startswith('client-wxapp/')]
 # Content-only blocks: nail colors and photo filters are not UI decoration.
 content_blocks={
  'client-wxapp/pages/client/customize-design/index.js':['colorOptions'],
@@ -47,7 +49,7 @@ for scope in scopes:
    hits+=re.findall(r'\bColors\.(?:red|orange|yellow|green|blue|purple|pink|teal|amber|indigo)\b',line)
    if hits:issues.append({'file':rel,'line':n,'values':hits})
 # Referenced browser icons are UI assets too; unused scaffold artwork is excluded.
-for rel in ['client-frontend/public/favicon.svg','website/public/favicon.svg']:
+for rel in ([] if wxapp_only else ['client-frontend/public/favicon.svg','website/public/favicon.svg']):
  for h in re.findall(r'#[\da-fA-F]{6}',(ROOT/rel).read_text()):
   if not permitted(h):issues.append({'file':rel,'values':[h]})
 # App and component scope variables share the exact generated source.
