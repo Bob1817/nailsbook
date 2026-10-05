@@ -32,6 +32,7 @@ describe('客户端核心路径静态契约', () => {
     const publicWorkWxml = readWxapp('pages/client/public-work/index.wxml');
     const login = readWxapp('pages/client/login/index.js');
     const register = readWxapp('pages/client/register/index.js');
+    const onboarding = readWxapp('pages/onboarding/index.js');
     const navigation = readWxapp('utils/artist-navigation.js');
 
     expect(publicWorkWxml).toMatch(/bind(?:tap|:book)="bookSameStyle"/);
@@ -39,7 +40,9 @@ describe('客户端核心路径静态契约', () => {
     expect(publicWorkJs).toContain('encodeURIComponent(this.shareToken)');
     expect(navigation).toContain('post_auth_redirect');
     expect(login).toContain('consumePostAuthRedirect(this.redirect)');
-    expect(register).toContain('consumePostAuthRedirect(this.redirect)');
+    expect(register).toContain("'&redirect=' + encodeURIComponent(this.redirect)");
+    expect(register).toContain('/pages/onboarding/index?role=client');
+    expect(onboarding).toContain('consumePostAuthRedirect(this.redirect || this.plan.destination)');
   });
 
   it('聊天与设计预约入口兼容美甲师参数', () => {

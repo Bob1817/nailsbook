@@ -120,7 +120,7 @@ Page({
         name: step === 'register' ? name.trim() : undefined,
         password: step === 'register' ? password : undefined
       });
-      this._afterAuth(res);
+      this._afterAuth(res, step === 'register');
     } catch (err) {
       wx.hideLoading();
       this.setData({ loading: false, phoneError: err.message || '微信登录失败' });
@@ -229,7 +229,7 @@ Page({
     wx.showLoading({ title: '注册中...' });
     try {
       const res = await api.auth.registerTechnician(inviteKey.trim().toUpperCase(), name.trim(), phone, password);
-      this._afterAuth(res);
+      this._afterAuth(res, true);
     } catch (err) {
       wx.hideLoading();
       this.setData({ loading: false });
@@ -249,12 +249,17 @@ Page({
     privacy.openPrivacyContract();
   },
 
-  _afterAuth(res) {
+  _afterAuth(res, forceOnboarding = false) {
     const app = getApp();
     app.setLogin('technician', res.accessToken, res.technician);
     if (res.refreshToken) wx.setStorageSync('technician_refreshToken', res.refreshToken);
     wx.removeStorageSync('wechat_session_token');
     wx.hideLoading();
-    wx.reLaunch({ url: '/pages/technician/home/index' });
+    const needsOnboarding = forceOnboarding || res.isNewUser === true;
+    wx.reLaunch({
+      url: needsOnboarding
+        ? '/pages/onboarding/index?role=technician'
+        : '/pages/technician/home/index'
+    });
   }
 });

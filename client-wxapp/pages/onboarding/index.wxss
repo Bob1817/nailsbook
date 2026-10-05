@@ -1,404 +1,207 @@
-/* ===== OnlyNail 新用户引导页 ===== */
 @import '../../styles/tokens.wxss';
+@import '../../styles/booking-actions.wxss';
 
 page {
-  background: var(--nb-surface);
   min-height: 100vh;
+  background: var(--nb-page);
 }
 
-.wrap {
-  padding: 0 40rpx;
-  padding-bottom: calc(env(safe-area-inset-bottom) + 40rpx);
+.onboarding-screen {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: 20rpx var(--page-padding-h) calc(env(safe-area-inset-bottom) + 144rpx);
 }
 
-/* ===== Hero ===== */
-.hero {
+.onboarding-topbar {
+  min-height: var(--touch-min);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.progress-copy {
+  font-size: var(--font-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.skip-action.booking-action {
+  min-width: 96rpx;
+  padding: 0 20rpx;
+  color: var(--text-muted);
+  background: transparent;
+}
+
+.progress-track {
+  height: 6rpx;
+  overflow: hidden;
+  margin: 8rpx 0 36rpx;
+  border-radius: var(--radius-full);
+  background: var(--nb-line);
+}
+
+.progress-value {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--nb-action);
+  transition: width var(--transition-normal);
+}
+
+.progress-value.step-1 { width: 33.333%; }
+.progress-value.step-2 { width: 66.666%; }
+.progress-value.step-3 { width: 100%; }
+
+.onboarding-card {
+  flex: none;
+  min-height: 650rpx;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 60rpx 0 48rpx;
+  padding: 56rpx 36rpx 40rpx;
+  border: 1rpx solid var(--nb-line);
+  border-radius: var(--radius-lg);
+  background: var(--nb-surface);
 }
 
-.hero-icon-wrap {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 22rpx;
-  background: var(--nb-page);
+.step-icon-wrap {
+  width: 120rpx;
+  height: 120rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 24rpx;
+  margin-bottom: 36rpx;
+  border-radius: 36rpx;
+  background: var(--nb-active-surface);
 }
 
-.hero-icon {
-  width: 44rpx;
-  height: 44rpx;
-}
-
-.hero-title {
-  display: block;
-  font-size: var(--font-xl);
-  font-weight: var(--weight-bold);
-  color: var(--text-primary);
-  margin-bottom: 8rpx;
-}
-
-.hero-sub {
-  display: block;
-  font-size: var(--font-sm);
-  color: var(--text-faint);
-}
-
-/* ===== 选项卡片 ===== */
-.option-card {
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-  padding: 28rpx 24rpx;
-  border-radius: var(--radius-lg);
-  margin-bottom: 20rpx;
-  transition: transform 0.15s, opacity 0.15s;
-}
-
-.option-card-hover {
-  transform: scale(0.985);
-  opacity: 0.92;
-}
-
-.option-card-pink {
-  background: var(--nb-page);
-  border: 0;
-}
-
-.option-card-purple {
-  background: var(--nb-page);
-  border: 0;
-}
-
-.option-icon {
+.step-icon {
   width: 56rpx;
   height: 56rpx;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
 }
 
-.option-icon-pink {
-  background: rgba(0, 0, 0, 0.12);
-}
-
-.option-icon-purple {
-  background: rgba(0, 0, 0, 0.12);
-}
-
-.option-icon-img {
-  width: 28rpx;
-  height: 28rpx;
-}
-
-.option-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.option-title {
-  display: block;
-  font-size: var(--font-lg);
+.step-eyebrow {
+  font-size: var(--font-xs);
   font-weight: var(--weight-semibold);
-  color: var(--text-primary);
-  margin-bottom: 4rpx;
+  color: var(--nb-link);
+  letter-spacing: 2rpx;
 }
 
-.option-desc {
-  display: block;
-  font-size: var(--font-sm);
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
-.option-arrow {
-  font-size: var(--font-lg);
-  color: var(--text-faint);
-  flex-shrink: 0;
-}
-
-/* ===== 跳过 ===== */
-.skip-row {
-  display: flex;
-  justify-content: center;
-  padding: 32rpx 0;
-}
-
-.skip-text {
-  font-size: var(--font-sm);
-  color: var(--text-faint);
-  padding: 12rpx 32rpx;
-}
-
-/* ===== 子面板（底部弹出） ===== */
-.flow-mask {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  z-index: 1000;
-  display: flex;
-  align-items: flex-end;
-  animation: maskIn 0.25s ease;
-}
-
-@keyframes maskIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.flow-panel {
-  width: 100%;
-  background: var(--nb-surface);
-  border-radius: 32rpx 32rpx 0 0;
-  padding: 32rpx 40rpx calc(env(safe-area-inset-bottom) + 32rpx);
-  animation: panelUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-@keyframes panelUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-.flow-handle {
-  width: 48rpx;
-  height: 6rpx;
-  background: var(--nb-page);
-  border-radius: 3rpx;
-  margin: 0 auto 24rpx;
-}
-
-.flow-title {
-  display: block;
+.step-title {
+  margin-top: 12rpx;
   font-size: var(--font-xl);
   font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
   color: var(--text-primary);
-  text-align: center;
-  margin-bottom: 6rpx;
 }
 
-.flow-sub {
-  display: block;
+.step-description {
+  max-width: 560rpx;
+  margin-top: 20rpx;
   font-size: var(--font-sm);
-  color: var(--text-faint);
+  line-height: var(--leading-relaxed);
   text-align: center;
-  margin-bottom: 32rpx;
+  color: var(--text-muted);
 }
 
-/* 输入框 */
-.flow-input-wrap {
-  position: relative;
-  margin-bottom: 16rpx;
-}
-
-.flow-input {
+.point-list {
   width: 100%;
-  height: 96rpx;
-  background: var(--nb-soft-surface);
-  border: 0;
-  border-radius: var(--radius-sm);
-  padding: 0 40rpx 0 24rpx;
-  font-size: var(--font-md);
-  color: var(--text-primary);
   box-sizing: border-box;
-  transition: border-color 0.2s;
+  margin-top: 44rpx;
+  padding: 24rpx;
+  border-radius: var(--radius-md);
+  background: var(--nb-page);
 }
 
-.flow-input:focus {
-  border-color: var(--border-focus);
-  background: var(--nb-surface);
-}
-
-.flow-input-success {
-  border-color: var(--nb-link);
-}
-
-.flow-input-error {
-  border-color: var(--text-error);
-}
-
-.flow-placeholder {
-  color: var(--text-faint);
-  font-size: var(--font-md);
-}
-
-.flow-spinner {
-  position: absolute;
-  right: 20rpx;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 32rpx;
-  height: 32rpx;
-  border: 3rpx solid rgba(0, 0, 0, 0.2);
-  border-top-color: var(--brand-primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: translateY(-50%) rotate(360deg); }
-}
-
-.flow-check {
-  position: absolute;
-  right: 20rpx;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 32rpx;
-  height: 32rpx;
-  background: var(--nb-action);
-  border-radius: 50%;
-  color: var(--nb-surface);
-  font-size: 18rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-}
-
-.flow-eye {
-  position: absolute;
-  right: 20rpx;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: var(--font-sm);
-  color: var(--brand-primary);
-  padding: 8rpx;
-}
-
-/* 找到的美甲师 */
-.found-card {
+.point-row {
+  min-height: 52rpx;
   display: flex;
   align-items: center;
   gap: 16rpx;
-  padding: 20rpx;
-  background: var(--nb-page);
-  border-radius: var(--radius-sm);
-  margin-bottom: 16rpx;
 }
 
-.found-card-av {
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: 50%;
-  background: var(--nb-action);
+.point-row + .point-row {
+  margin-top: 12rpx;
+}
+
+.point-check {
+  width: 36rpx;
+  height: 36rpx;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
-.found-av-img {
-  width: 100%;
-  height: 100%;
-}
-
-.found-av-char {
-  font-size: var(--font-lg);
-  font-weight: var(--weight-bold);
-  color: var(--nb-surface);
-}
-
-.found-card-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.found-card-name {
-  display: block;
-  font-size: var(--font-md);
-  font-weight: var(--weight-semibold);
-  color: var(--nb-ink);
-}
-
-.found-card-city {
-  display: block;
-  font-size: var(--font-sm);
-  color: var(--nb-ink);
-  margin-top: 2rpx;
-}
-
-/* 留言 */
-.flow-textarea {
-  width: 100%;
-  min-height: 120rpx;
-  background: var(--nb-soft-surface);
-  border: 0;
-  border-radius: var(--radius-sm);
-  padding: 20rpx 24rpx;
-  font-size: var(--font-sm);
-  color: var(--text-primary);
-  box-sizing: border-box;
-  margin-bottom: 16rpx;
-}
-
-/* 错误提示 */
-.flow-error {
-  font-size: var(--font-sm);
-  color: var(--text-error);
-  margin-bottom: 16rpx;
-  padding: 0 4rpx;
-}
-
-/* 提示 */
-.flow-hint {
-  display: flex;
-  align-items: flex-start;
-  gap: 10rpx;
-  padding: 16rpx;
-  background: var(--nb-page);
-  border-radius: var(--radius-sm);
-  margin-bottom: 24rpx;
-}
-
-.flow-hint-icon {
-  font-size: var(--font-sm);
-  flex-shrink: 0;
-  margin-top: 2rpx;
-}
-
-.flow-hint text {
+  border-radius: var(--radius-full);
   font-size: var(--font-xs);
-  color: var(--nb-ink);
-  line-height: 1.5;
+  font-weight: var(--weight-bold);
+  color: var(--nb-inverse);
+  background: var(--nb-action);
 }
 
-/* 主按钮 */
-.flow-btn {
-  width: 100%;
-  height: 96rpx;
-  background: var(--nb-action);
-  border-radius: 48rpx;
+.point-text {
+  font-size: var(--font-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-primary);
+}
+
+.step-dots {
+  height: 64rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--font-md);
-  font-weight: var(--weight-semibold);
-  color: var(--nb-surface);
-  margin-bottom: 16rpx;
-  transition: opacity 0.15s;
+  gap: 12rpx;
 }
 
-.flow-btn-disabled {
-  opacity: 0.4;
+.step-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: var(--radius-full);
+  background: var(--nb-line);
+  transition: width var(--transition-fast), background var(--transition-fast);
 }
 
-/* 返回 */
-.flow-cancel {
-  text-align: center;
-  font-size: var(--font-md);
-  color: var(--text-muted);
-  padding: 16rpx 0;
+.step-dot-active {
+  width: 36rpx;
+  background: var(--nb-action);
 }
 
-@import '../../styles/booking-actions.wxss';
-.flow-input { height: var(--input-height); min-height: 44px; font-size: var(--font-sm); }
-.flow-placeholder { font-size: var(--font-sm); }
-.flow-btn.booking-action { height: var(--control-hit-height); min-height: 44px; border-radius: 8px; font-size: var(--font-sm); box-shadow: none; }
+.onboarding-actions {
+  position: fixed;
+  z-index: 20;
+  left: var(--page-padding-h);
+  right: var(--page-padding-h);
+  bottom: calc(env(safe-area-inset-bottom) + 24rpx);
+  display: flex;
+  gap: 16rpx;
+  padding-top: 12rpx;
+  background: var(--nb-page);
+}
+
+.action-secondary.booking-action,
+.action-primary.booking-action {
+  flex: 1;
+  padding: 0 28rpx;
+}
+
+.action-secondary.booking-action {
+  color: var(--text-primary);
+  border: 1rpx solid var(--nb-line);
+  background: var(--nb-surface);
+}
+
+.action-primary.booking-action {
+  color: var(--nb-inverse);
+  background: var(--nb-action);
+}
+
+.tap-pressed {
+  opacity: .72;
+}
+
+@media (max-height: 700px) {
+  .progress-track { margin-bottom: 20rpx; }
+  .onboarding-card { min-height: 560rpx; padding-top: 32rpx; }
+  .step-icon-wrap { width: 96rpx; height: 96rpx; margin-bottom: 24rpx; }
+  .point-list { margin-top: 28rpx; }
+}

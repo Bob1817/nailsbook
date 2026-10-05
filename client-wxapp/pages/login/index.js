@@ -339,6 +339,14 @@ Page({
     wx.hideLoading();
     this.setData({ phoneLoading: false });
 
+    if (res.isNewUser === true) {
+      const redirect = activeRole === 'client' && this.redirect
+        ? '&redirect=' + encodeURIComponent(this.redirect)
+        : '';
+      wx.reLaunch({ url: `/pages/onboarding/index?role=${activeRole}${redirect}` });
+      return;
+    }
+
     // 根据角色跳转到对应首页
     const homePage = activeRole === 'technician'
       ? '/pages/technician/home/index'

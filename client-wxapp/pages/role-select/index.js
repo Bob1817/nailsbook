@@ -1,4 +1,3 @@
-const { consumePostAuthRedirect } = require('../../utils/artist-navigation');
 /**
  * 注册后角色选择页
  * 兼容历史微信注册用户的身份补全页。
@@ -156,11 +155,11 @@ Page({
       app.setLogin('client', res.accessToken || res.token, res.client || res.userInfo, roles);
       if (res.refreshToken) wx.setStorageSync('client_refreshToken', res.refreshToken);
       wx.setStorageSync('client_bindings', res.technicians || []);
-      wx.reLaunch({ url: consumePostAuthRedirect('/pages/client/home/index') });
+      wx.reLaunch({ url: '/pages/onboarding/index?role=client' });
     } else if (role === 'technician') {
       app.setLogin('technician', res.accessToken || res.token, res.technician || res.userInfo, ['technician'], res.isTourist);
       if (res.refreshToken) wx.setStorageSync('technician_refreshToken', res.refreshToken);
-      wx.reLaunch({ url: '/pages/technician/home/index' });
+      wx.reLaunch({ url: '/pages/onboarding/index?role=technician' });
     }
   }
 });

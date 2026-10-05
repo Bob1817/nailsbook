@@ -63,7 +63,8 @@ const cases = [
     wxml: 'pages/onboarding/index.wxml',
     wxss: 'pages/onboarding/index.wxss',
     requiredControls: 2,
-    inputRule: '.flow-input {',
+    inputRule: '.onboarding-card {',
+    requiresInputHeight: false,
   },
   {
     name: '账号注销',

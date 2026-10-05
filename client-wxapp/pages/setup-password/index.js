@@ -82,7 +82,7 @@ Page({
       wx.showToast({ title: '密码设置成功', icon: 'success' });
       setTimeout(() => {
         if (res.needsOnboarding) {
-          wx.reLaunch({ url: '/pages/onboarding/index' });
+          wx.reLaunch({ url: '/pages/onboarding/index?role=client' });
         } else {
           wx.reLaunch({ url: consumePostAuthRedirect('/pages/client/home/index') });
         }

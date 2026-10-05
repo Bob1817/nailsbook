@@ -1,172 +1,81 @@
-const { consumePostAuthRedirect } = require('../../utils/artist-navigation');
-const uiColors = require('../../utils/colors');
-/**
- * OnlyNail 新用户引导页
- * 注册后：选择"绑定美甲师"或"我是美甲师"或"稍后再说"
- */
-const api = require('../../services/api');
+const { consumePostAuthRedirect, normalizeInternalPath } = require('../../utils/artist-navigation');
+const {
+  normalizeOnboardingRole,
+  getOnboardingPlan,
+  getOnboardingCompletionKey
+} = require('../../utils/onboarding-plan');
 
 Page({
   data: {
-    // 绑定美甲师
-    showBindFlow: false,
-    inviteCode: '',
-    checkingCode: false,
-    foundTech: null,
-    bindNote: '',
-    bindError: '',
-    binding: false,
-
-    // 我是美甲师
-    showTechFlow: false,
-    activateKey: '',
-    showActivateKey: false,
-    activateError: '',
-    activating: false,
-
-    _debounceTimer: null
+    role: 'client',
+    roleLabel: '客户',
+    navigationTitle: '客户使用引导',
+    currentIndex: 0,
+    stepCount: 0,
+    step: {},
+    isFirst: true,
+    isLast: false,
+    primaryLabel: '下一步',
+    navigating: false
   },
 
-  // ========== 绑定美甲师 ==========
-
-  showBindFlow() {
-    this.setData({ showBindFlow: true, showTechFlow: false });
+  onLoad(options = {}) {
+    const role = normalizeOnboardingRole(options.role);
+    this.plan = getOnboardingPlan(role);
+    this.redirect = normalizeInternalPath(options.redirect ? decodeURIComponent(options.redirect) : '');
+    this.setData({
+      role,
+      roleLabel: this.plan.roleLabel,
+      navigationTitle: this.plan.navigationTitle,
+      stepCount: this.plan.steps.length
+    });
+    this._showStep(0);
   },
 
-  onInviteInput(e) {
-    const raw = e.detail.value.trim();
-    this.setData({ inviteCode: raw, foundTech: null, bindError: '' });
-
-    // 如果是链接 → 尝试提取邀请码
-    let code = raw;
-    if (/^https?:\/\//i.test(raw)) {
-      const match = raw.match(/[?&/](?:invite|code|referral)[=/#]([A-Za-z0-9_-]+)/i);
-      if (match) code = match[1];
-      else {
-        // 尝试从路径最后一段取
-        const parts = raw.replace(/\/+$/, '').split('/');
-        code = parts[parts.length - 1];
-      }
-      // 更新显示为提取后的邀请码
-      this.setData({ inviteCode: code });
-    }
-
-    if (!code || code.length < 4) return;
-
-    // 防抖：500ms
-    if (this.data._debounceTimer) clearTimeout(this.data._debounceTimer);
-    this.data._debounceTimer = setTimeout(() => this._findTech(code), 500);
-  },
-
-  async _findTech(code) {
-    this.setData({ checkingCode: true });
-    try {
-      const tech = await api.client.profile.findTechByInviteCode(code);
-      this.setData({ foundTech: tech, bindError: '' });
-    } catch {
-      this.setData({ foundTech: null });
-    } finally {
-      this.setData({ checkingCode: false });
-    }
-  },
-
-  onBindNoteInput(e) {
-    this.setData({ bindNote: e.detail.value });
-  },
-
-  async submitBind() {
-    const { foundTech, inviteCode, bindNote, binding } = this.data;
-    if (!foundTech || binding) return;
-
-    this.setData({ binding: true });
-    wx.showLoading({ title: '绑定中...', mask: true });
-
-    try {
-      await api.client.profile.bindTechnician(foundTech.id, inviteCode, bindNote);
-      wx.hideLoading();
-      wx.showToast({ title: '绑定申请已提交', icon: 'success' });
-
-      // 回到首页
-      this._goHome();
-    } catch (err) {
-      wx.hideLoading();
-      this.setData({ binding: false, bindError: err.message || '绑定失败' });
-    }
-  },
-
-  // ========== 我是美甲师 ==========
-
-  showTechFlow() {
-    this.setData({ showTechFlow: true, showBindFlow: false });
-  },
-
-  onActivateKeyInput(e) {
-    this.setData({ activateKey: e.detail.value.trim(), activateError: '' });
-  },
-
-  toggleActivateKeyVisibility() {
-    this.setData({ showActivateKey: !this.data.showActivateKey });
-  },
-
-  async submitActivate() {
-    const key = this.data.activateKey.trim();
-    if (!key) {
-      this.setData({ activateError: '请输入激活密钥' });
-      return;
-    }
-
-    this.setData({ activating: true });
-    wx.showLoading({ title: '激活中...', mask: true });
-
-    try {
-      const res = await api.auth.activateTechnician(key);
-      wx.hideLoading();
-
-      // 保存美甲师 token
-      const app = getApp();
-      wx.setStorageSync('technician_token', res.accessToken || res.token);
-      wx.setStorageSync('technician_userInfo', res.technician || res.userInfo);
-
-      // 更新 roles
-      const currentRoles = wx.getStorageSync('roles') || ['client'];
-      if (!currentRoles.includes('technician')) {
-        currentRoles.push('technician');
-        wx.setStorageSync('roles', currentRoles);
-      }
-
-      wx.showToast({ title: '激活成功！', icon: 'success', duration: 1500 });
-
-      // 跳转美甲师首页
-      setTimeout(() => {
-        app.switchRole('technician');
-        wx.reLaunch({ url: '/pages/technician/home/index' });
-      }, 1500);
-    } catch (err) {
-      wx.hideLoading();
-      this.setData({ activating: false, activateError: err.message || '激活失败，请检查密钥' });
-    }
-  },
-
-  // ========== 通用 ==========
-
-  closeFlows() {
-    this.setData({ showBindFlow: false, showTechFlow: false });
-  },
-
-  skipOnboarding() {
-    wx.showModal({
-      title: '跳过引导',
-      content: '你可以在"我的"页面随时绑定美甲师或开通美甲师账户',
-      confirmText: '先去逛逛',
-      cancelText: '继续设置',
-      confirmColor: uiColors.action,
-      success: (res) => {
-        if (res.confirm) this._goHome();
-      }
+  _showStep(index) {
+    const safeIndex = Math.max(0, Math.min(index, this.plan.steps.length - 1));
+    const isLast = safeIndex === this.plan.steps.length - 1;
+    this.setData({
+      currentIndex: safeIndex,
+      step: this.plan.steps[safeIndex],
+      isFirst: safeIndex === 0,
+      isLast,
+      primaryLabel: isLast ? this.plan.finishLabel : '下一步'
     });
   },
 
-  _goHome() {
-    wx.reLaunch({ url: consumePostAuthRedirect('/pages/client/home/index') });
+  previousStep() {
+    if (this.data.navigating || this.data.isFirst) return;
+    this._showStep(this.data.currentIndex - 1);
+  },
+
+  nextStep() {
+    if (this.data.navigating) return;
+    if (this.data.isLast) {
+      this.finishOnboarding();
+      return;
+    }
+    this._showStep(this.data.currentIndex + 1);
+  },
+
+  skipOnboarding() {
+    this._completeOnboarding(true);
+  },
+
+  finishOnboarding() {
+    this._completeOnboarding(false);
+  },
+
+  _completeOnboarding(skipped) {
+    if (this.data.navigating) return;
+    this.setData({ navigating: true });
+    wx.setStorageSync(getOnboardingCompletionKey(this.data.role), {
+      completedAt: Date.now(),
+      skipped: !!skipped
+    });
+    const destination = this.data.role === 'client'
+      ? consumePostAuthRedirect(this.redirect || this.plan.destination)
+      : this.plan.destination;
+    wx.reLaunch({ url: destination });
   }
 });

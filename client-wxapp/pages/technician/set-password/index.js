@@ -49,7 +49,7 @@ Page({
     if (res.refreshToken) wx.setStorageSync('technician_refreshToken', res.refreshToken);
 
     wx.showToast({ title: '密码设置成功', icon: 'success' });
-    setTimeout(() => wx.reLaunch({ url: '/pages/technician/home/index' }), 1200);
+    setTimeout(() => wx.reLaunch({ url: '/pages/onboarding/index?role=technician' }), 1200);
   },
 
   // 首次设密（微信手机号授权）：项目未接入短信服务，以微信授权验证手机号归属

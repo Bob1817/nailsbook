@@ -249,6 +249,11 @@ Page({
       }
     }
     wx.hideLoading();
+    if (res.isNewUser === true) {
+      const redirect = this.redirect ? '&redirect=' + encodeURIComponent(this.redirect) : '';
+      wx.reLaunch({ url: '/pages/onboarding/index?role=client' + redirect });
+      return;
+    }
     wx.reLaunch({ url: consumePostAuthRedirect(this.redirect) });
   }
 });

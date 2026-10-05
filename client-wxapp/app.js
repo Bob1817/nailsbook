@@ -51,7 +51,7 @@ App({
         technician: '/pages/technician/home/index'
       };
       const homePage = homePages[role] || homePages.client;
-      const preserveSharePage = (options.path === 'pages/login/index' && options.query && options.query.invite) || options.path === 'pages/client/quick-booking/index' || options.path === 'pages/client/public-work/index' || options.path === 'pages/client/create-order/index';
+      const preserveSharePage = options.path === 'pages/onboarding/index' || (options.path === 'pages/login/index' && options.query && options.query.invite) || options.path === 'pages/client/quick-booking/index' || options.path === 'pages/client/public-work/index' || options.path === 'pages/client/create-order/index';
 
       // 先校验 token 是否有效，避免带失效 token 跳首页导致 401
       this.verifyToken(token, role)

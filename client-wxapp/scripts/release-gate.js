@@ -79,6 +79,7 @@ const checks = [
   'test-marketing-material-state.js',
   'test-settings-governance.js',
   'test-auth-entry-style.js',
+  'test-first-use-onboarding.js',
   'test-secondary-page-style.js',
   'test-work-comment-submit.js',
   'test-work-list-actions.js',
