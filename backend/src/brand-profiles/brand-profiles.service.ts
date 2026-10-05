@@ -38,6 +38,8 @@ export class BrandProfilesService {
           ...profile,
           specialties: this.parseArray(profile.specialties),
           featuredReviewIds: this.parseArray(profile.featuredReviewIds),
+          timeline: this.parseArray(profile.timeline),
+          serviceProcess: this.parseArray(profile.serviceProcess),
         }
       : {
           technicianId,
@@ -59,6 +61,10 @@ export class BrandProfilesService {
           latePolicy: null,
           cancellationPolicy: null,
           aftercarePolicy: null,
+          timeline: [],
+          exclusiveServiceNote: null,
+          privacyNote: null,
+          serviceProcess: [],
           shareTitle: null,
           shareDescription: null,
           shareCoverUrl: null,
@@ -123,6 +129,12 @@ export class BrandProfilesService {
         latePolicy: clean(dto.latePolicy),
         cancellationPolicy: clean(dto.cancellationPolicy),
         aftercarePolicy: clean(dto.aftercarePolicy),
+        timeline: dto.timeline?.length ? JSON.stringify(dto.timeline) : null,
+        exclusiveServiceNote: clean(dto.exclusiveServiceNote),
+        privacyNote: clean(dto.privacyNote),
+        serviceProcess: dto.serviceProcess?.length
+          ? JSON.stringify(dto.serviceProcess)
+          : null,
         shareTitle: clean(dto.shareTitle),
         shareDescription: clean(dto.shareDescription),
         shareCoverUrl: clean(dto.shareCoverUrl),
@@ -144,6 +156,7 @@ export class BrandProfilesService {
             brandProfileId: profile.id,
             imageUrl: item.imageUrl.trim(),
             caption: clean(item.caption),
+            sceneTag: clean(item.sceneTag),
             sortOrder: item.sortOrder ?? index,
           })),
         });
@@ -180,7 +193,7 @@ export class BrandProfilesService {
           },
         },
         environmentPhotos: {
-          select: { imageUrl: true, caption: true, sortOrder: true },
+          select: { imageUrl: true, caption: true, sceneTag: true, sortOrder: true },
           orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
         },
         faqs: {
@@ -214,6 +227,10 @@ export class BrandProfilesService {
       latePolicy: profile.latePolicy,
       cancellationPolicy: profile.cancellationPolicy,
       aftercarePolicy: profile.aftercarePolicy,
+      timeline: this.parseArray(profile.timeline),
+      exclusiveServiceNote: profile.exclusiveServiceNote,
+      privacyNote: profile.privacyNote,
+      serviceProcess: this.parseArray(profile.serviceProcess),
       shareTitle: profile.shareTitle,
       shareDescription: profile.shareDescription,
       shareCoverUrl: profile.shareCoverUrl,
@@ -224,6 +241,7 @@ export class BrandProfilesService {
       environmentPhotos: profile.environmentPhotos.map((item) => ({
         imageUrl: item.imageUrl,
         caption: item.caption,
+        sceneTag: item.sceneTag,
         sortOrder: item.sortOrder,
       })),
       faqs: profile.faqs.map((item) => ({

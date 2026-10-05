@@ -55,12 +55,16 @@ export class PublicBrandService {
                 latePolicy: true,
                 cancellationPolicy: true,
                 aftercarePolicy: true,
+                timeline: true,
+                exclusiveServiceNote: true,
+                privacyNote: true,
+                serviceProcess: true,
                 shareTitle: true,
                 shareDescription: true,
                 shareCoverUrl: true,
                 publicationStatus: true,
                 environmentPhotos: {
-                  select: { imageUrl: true, caption: true },
+                  select: { imageUrl: true, caption: true, sceneTag: true },
                   orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
                 },
                 faqs: {
@@ -117,6 +121,10 @@ export class PublicBrandService {
                   aftercare: brand.aftercarePolicy,
                 }
               : null,
+            timeline: this.objectList(brand?.timeline || null),
+            exclusiveServiceNote: brand?.exclusiveServiceNote || null,
+            privacyNote: brand?.privacyNote || null,
+            serviceProcess: this.objectList(brand?.serviceProcess || null),
             environmentPhotos: (brand?.environmentPhotos || []).map((item) => ({
               ...item,
               imageUrl: this.image(item.imageUrl, size),
@@ -455,6 +463,15 @@ export class PublicBrandService {
           .map((item) => item.trim())
           .filter(Boolean)
       : [];
+  }
+  private objectList(value: string | null) {
+    if (!value) return [];
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   }
   private listJson(value: string | null) {
     if (!value) return [];

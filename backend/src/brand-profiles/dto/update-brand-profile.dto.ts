@@ -25,6 +25,11 @@ export class BrandEnvironmentPhotoDto {
   caption?: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  sceneTag?: string;
+
+  @IsOptional()
   @IsInt()
   @Min(0)
   sortOrder?: number;
@@ -73,6 +78,12 @@ export class UpdateBrandProfileDto {
   @IsOptional() @IsString() @MaxLength(500) latePolicy?: string;
   @IsOptional() @IsString() @MaxLength(500) cancellationPolicy?: string;
   @IsOptional() @IsString() @MaxLength(1000) aftercarePolicy?: string;
+
+  @IsOptional() @IsArray() timeline?: Array<{ year?: string; description?: string; desc?: string }>;
+  @IsOptional() @IsString() @MaxLength(500) exclusiveServiceNote?: string;
+  @IsOptional() @IsString() @MaxLength(500) privacyNote?: string;
+  @IsOptional() @IsArray() serviceProcess?: Array<{ step?: number; title?: string; description?: string }>;
+
   @IsOptional() @IsString() @MaxLength(100) shareTitle?: string;
   @IsOptional() @IsString() @MaxLength(200) shareDescription?: string;
 

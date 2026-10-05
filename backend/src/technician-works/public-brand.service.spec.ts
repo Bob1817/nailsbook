@@ -72,6 +72,7 @@ describe('PublicBrandService public DTO snapshots', () => {
              "imageUrl": "http://localhost:3000/uploads/room-thumb.webp",
            },
          ],
+         "exclusiveServiceNote": null,
          "experienceYears": null,
          "faqs": [
            {
@@ -89,11 +90,13 @@ describe('PublicBrandService public DTO snapshots', () => {
            "cancellation": "24小时前取消",
            "late": "迟到请联系",
          },
+         "privacyNote": null,
          "serviceArea": "静安区及周边",
          "serviceModes": {
            "home": true,
            "studio": true,
          },
+         "serviceProcess": [],
          "share": {
            "coverUrl": "http://localhost:3000/uploads/share-thumb.webp",
            "description": "预约美甲",
@@ -106,6 +109,7 @@ describe('PublicBrandService public DTO snapshots', () => {
            "materials": "正规材料",
          },
          "tagline": "低饱和手绘美甲",
+         "timeline": [],
          "transportationNotes": "地铁步行可达",
        },
      }
