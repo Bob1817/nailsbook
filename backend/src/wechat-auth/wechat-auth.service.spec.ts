@@ -137,7 +137,7 @@ describe('WechatAuthService', () => {
         phoneCode: 'phone-code',
         shareWorkId: 9,
       }),
-    ).resolves.toMatchObject({ authenticated: true, role: 'client' });
+    ).resolves.toMatchObject({ authenticated: true, role: 'client', needsOnboarding: false, isNewUser: false });
     expect(prisma.conversionEvent.upsert).not.toHaveBeenCalled();
     expect(prisma.wechatIdentity.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -219,7 +219,7 @@ describe('WechatAuthService', () => {
     jest.spyOn(service as any, 'exchangePhoneCode').mockResolvedValue('13900139000');
     clientAuth.registerClientByWechatInvite = jest.fn().mockResolvedValue({ client: { id: 12 } });
     prisma.clientUser.findUnique.mockResolvedValueOnce(null).mockResolvedValue({ id: 12, phone: '13900139000', passwordHash: '' });
-    await expect(service.completeClient({ wechatSessionToken: 'session', phoneCode: 'phone-code', inviteCode: 'INVITE7', source: 'invite' })).resolves.toMatchObject({ authenticated: true, role: 'client', accessToken: 'client-jwt' });
+    await expect(service.completeClient({ wechatSessionToken: 'session', phoneCode: 'phone-code', inviteCode: 'INVITE7', source: 'invite' })).resolves.toMatchObject({ authenticated: true, role: 'client', accessToken: 'client-jwt', needsOnboarding: true, isNewUser: true });
     expect(clientAuth.registerClientByWechatInvite).toHaveBeenCalledWith({ phone: '13900139000', inviteCode: 'INVITE7', source: 'invite' }, expect.objectContaining({ openId: 'openid-1' }));
     expect(clientAuth.createPasswordSetupToken).not.toHaveBeenCalled();
   });
@@ -231,7 +231,7 @@ describe('WechatAuthService', () => {
     clientAuth.bindQuickBookingInvite = jest.fn().mockResolvedValue({ status: 'active' });
     clientAuth.registerClientByWechatInvite = jest.fn().mockResolvedValue({ client: { id: 12 } });
     prisma.clientUser.findUnique.mockResolvedValueOnce(null).mockResolvedValue({ id: 12, phone: '13900139000', passwordHash: '' });
-    await expect(service.completeClient({ wechatSessionToken: 'session', phoneCode: 'phone-code', inviteCode: 'INVITE7', quickBookingTechId: 7 })).resolves.toMatchObject({ authenticated: true, role: 'client', accessToken: 'client-jwt' });
+    await expect(service.completeClient({ wechatSessionToken: 'session', phoneCode: 'phone-code', inviteCode: 'INVITE7', quickBookingTechId: 7 })).resolves.toMatchObject({ authenticated: true, role: 'client', accessToken: 'client-jwt', needsOnboarding: true, isNewUser: true });
     expect(clientAuth.bindQuickBookingInvite).toHaveBeenCalledWith(12, 7, 'INVITE7');
     expect(clientAuth.createPasswordSetupToken).not.toHaveBeenCalled();
     expect(prisma.wechatIdentity.create).toHaveBeenCalledTimes(1);
@@ -244,6 +244,30 @@ describe('WechatAuthService', () => {
     await expect(service.completeClient({ wechatSessionToken: 'session', phoneCode: 'phone-code', inviteCode: 'WRONG', quickBookingTechId: 7 })).rejects.toThrow('预约邀请已失效');
     expect(exchange).not.toHaveBeenCalled();
     expect(prisma.clientUser.create).not.toHaveBeenCalled();
+  });
+
+  it('marks a newly registered technician for first-use onboarding', async () => {
+    jest.spyOn(service, 'verifySessionToken').mockResolvedValue({ appId: 'wx-test', openId: 'openid-1' });
+    jest.spyOn(service as any, 'exchangePhoneCode').mockResolvedValue('13900139000');
+    technicianAuth.register.mockResolvedValue({ technician: { id: 18 } });
+    technicianAuth.loginByWechat.mockResolvedValue({ accessToken: 'tech-jwt' });
+    prisma.technician.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValue({ id: 18, phone: '13900139000' });
+
+    await expect(service.completeTechnician({
+      wechatSessionToken: 'session',
+      phoneCode: 'phone-code',
+      inviteKey: 'TECHKEY123456789',
+      name: '新美甲师',
+      password: 'Testing123',
+    })).resolves.toMatchObject({
+      authenticated: true,
+      role: 'technician',
+      needsOnboarding: true,
+      isNewUser: true,
+      accessToken: 'tech-jwt',
+    });
   });
 
   it('resets client password when the authorized phone matches', async () => {

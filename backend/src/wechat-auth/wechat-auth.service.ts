@@ -167,6 +167,8 @@ export class WechatAuthService {
       authenticated: true,
       role: 'client' as const,
       ...(await this.clientAuth.loginByWechat(client.id)),
+      needsOnboarding: isNewClient,
+      isNewUser: isNewClient,
     };
   }
 
@@ -204,6 +206,8 @@ export class WechatAuthService {
       authenticated: true,
       role: 'technician' as const,
       ...(await this.technicianAuth.loginByWechat(technician.id)),
+      needsOnboarding: isNewTechnician,
+      isNewUser: isNewTechnician,
     };
   }
 
