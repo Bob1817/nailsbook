@@ -416,7 +416,7 @@ describe('Client booking and design HTTP contract', () => {
         })
         .expect(400);
 
-      expect(createRes.body.message).toContain('服务项目');
+      expect(createRes.body.message).toContain('暂未开放预约');
     });
 
     it('updates an order with new address, date, and time', async () => {
@@ -800,7 +800,9 @@ describe('Client booking and design HTTP contract', () => {
       data: {
         name: `Contract Tech ${label}`,
         phone,
-        avatarUrl: null,
+        avatarUrl: '/uploads/avatar.jpg',
+        brandProfile: { create: { brandName: 'Contract Studio', heroImageUrl: '/uploads/cover.jpg', artistIntroduction: 'Contract artist', publicationStatus: 'published' } },
+        nailWorks: { create: { title: 'Contract portfolio', coverUrl: '/uploads/work.jpg', publicationStatus: 'approved', isVisible: true, visibilityScope: 'public' } },
         city: overrides.city ?? 'Shanghai',
         serviceArea: overrides.serviceArea ?? 'Downtown',
         status: overrides.status ?? 'active',
@@ -1035,6 +1037,8 @@ describe('Client booking and design HTTP contract', () => {
     await testApp.prisma.technicianSubscription.deleteMany({
       where: { technicianId: { in: ownedTechnicianIds } },
     });
+    await testApp.prisma.nailWork.deleteMany({ where: { techId: { in: ownedTechnicianIds } } });
+    await testApp.prisma.brandProfile.deleteMany({ where: { technicianId: { in: ownedTechnicianIds } } });
     await testApp.prisma.technician.deleteMany({
       where: { id: { in: ownedTechnicianIds } },
     });

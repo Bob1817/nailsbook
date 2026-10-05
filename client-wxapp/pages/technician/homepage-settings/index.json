@@ -1,4 +1,8 @@
 {
   "navigationStyle": "custom",
-  "usingComponents": { "nav-bar": "/components/nav-bar/index", "secondary-page-header": "/components/secondary-page-header/index" }
+  "usingComponents": {
+    "nav-bar": "/components/nav-bar/index",
+    "secondary-page-header": "/components/secondary-page-header/index",
+    "context-guide": "/components/context-guide/index"
+  }
 }

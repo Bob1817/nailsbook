@@ -1,10 +1,12 @@
 <nav-bar title="编辑主页" showBack/>
+<context-guide kind="homepage" />
 <view class="hero-recommendation-entry" bindtap="goHeroRecommendations" role="button"><text>客户首页推荐 · 最多 3 个作品</text><text>管理 ›</text></view>
 <view class="page">
   <secondary-page-header title="主页内容" subtitle="完善客户在主页中看到的品牌信息">
     <view slot="action" class="preview-link semantic-link" bindtap="preview">预览主页 ›</view>
   </secondary-page-header>
   <view class="page-content">
+  <view wx:if="{{profileLoadFailed}}" class="section-card" aria-live="polite"><text class="row-desc">主页加载失败，请重试后再编辑，避免覆盖已有资料。</text><button class="booking-action" bindtap="retryProfile">重新加载</button></view>
 
   <view class="section-card status-card">
     <view class="row-copy"><text class="row-title">公开展示主页</text><text class="row-desc">{{publicationStatus === 'published' ? '已公开，客户可以查看主页' : '当前仅自己可以预览'}}</text></view>
@@ -51,15 +53,25 @@
   </view>
 
   <view class="section-card" data-section="environment">
-    <view class="section-heading"><view><text class="section-title">个人介绍</text><text class="section-sub">帮助客户了解你的经历与审美理念</text></view><text class="section-badge">选填</text></view>
+    <view class="section-heading"><view><text class="section-title">个人介绍</text><text class="section-sub">帮助客户了解你的经历与审美理念</text></view><text class="section-badge">接单前必填</text></view>
     <view class="field"><view class="label-row"><text class="label">自我介绍</text><text class="counter">{{artistIntroduction.length}}/1000</text></view><textarea placeholder-class="form-placeholder" class="form-textarea textarea" value="{{artistIntroduction}}" bindinput="onInput" data-field="artistIntroduction" maxlength="1000" placeholder="介绍你的经历、风格和服务理念" adjust-position cursor-spacing="120"/></view>
     <view class="field"><text class="label">审美宣言</text><textarea placeholder-class="form-placeholder" class="form-textarea textarea compact" value="{{aestheticPhilosophy}}" bindinput="onInput" data-field="aestheticPhilosophy" maxlength="300" placeholder="例如：让指尖成为安静但有力量的自我表达" adjust-position cursor-spacing="120"/></view>
+  </view>
+
+  <view class="section-card">
+    <view class="section-heading"><view><text class="section-title">服务环境与规则</text><text class="section-sub">公开主页前必填，帮助客户提前了解服务</text></view></view>
+    <view class="field"><text class="label">环境照片（至少 1 张，最多 6 张）</text>
+      <view class="environment-list"><view wx:for="{{environmentPhotos}}" wx:key="imageUrl" class="environment-item"><image class="environment-image" src="{{item.imageUrl}}" mode="aspectFill"/><button class="booking-action" data-index="{{index}}" bindtap="removeEnvironmentPhoto" disabled="{{saving || environmentUploading}}">移除照片</button></view></view>
+      <button wx:if="{{environmentPhotos.length < 6}}" class="booking-action" bindtap="addEnvironmentPhoto" disabled="{{saving || environmentUploading}}">{{environmentUploading ? '正在上传…' : '上传环境照片'}}</button>
+    </view>
+    <view class="field"><text class="label">卫生与消毒说明</text><textarea class="form-textarea textarea" placeholder-class="form-placeholder" value="{{hygieneStandards}}" bindinput="onInput" data-field="hygieneStandards" maxlength="1000" placeholder="如实说明工具清洁消毒方式和耗材使用方式" cursor-spacing="120"/></view>
+    <view class="field"><text class="label">取消规则</text><textarea class="form-textarea textarea" placeholder-class="form-placeholder" value="{{cancellationPolicy}}" bindinput="onInput" data-field="cancellationPolicy" maxlength="500" placeholder="说明提前多久取消或改期，以及如何联系你" cursor-spacing="120"/></view>
   </view>
 
   <view class="section-card" data-section="rules">
     <view class="section-heading"><view><text class="section-title">服务信息</text><text class="section-sub">主页将同步以下经营信息</text></view></view>
     <view class="entry-row" bindtap="openSection" data-url="/pages/technician/services/index"><view><text class="row-title">服务范围与价格</text><text class="row-desc">维护客户可预约的服务项目</text></view><text class="entry-arrow">›</text></view>
-    <view class="entry-row" bindtap="openSection" data-url="/pages/technician/service-time/index"><view><text class="row-title">工作时间安排</text><text class="row-desc">设置可预约日期与服务时段</text></view><text class="entry-arrow">›</text></view>
+    <view class="entry-row" bindtap="openSection" data-url="/pages/technician/profile/index?setup=schedule"><view><text class="row-title">工作时间安排</text><text class="row-desc">设置可预约日期与服务时段</text></view><text class="entry-arrow">›</text></view>
     <view class="entry-row" bindtap="openSection" data-url="/pages/technician/shop-management/index"><view><text class="row-title">签约店铺与地址</text><text class="row-desc">管理客户到店信息与指引</text></view><text class="entry-arrow">›</text></view>
   </view>
 
@@ -78,4 +90,4 @@
   </view>
   </view>
 </view>
-<view class="footer"><button class="booking-action save {{saving ? 'disabled' : ''}}" bindtap="save" disabled="{{saving || heroUploading}}">{{saving ? '保存中...' : '保存主页'}}</button></view>
+<view class="footer"><button class="booking-action save {{saving ? 'disabled' : ''}}" bindtap="save" disabled="{{saving || heroUploading || avatarUploading || environmentUploading || worksLoading || profileLoadFailed}}">{{saving ? '保存中...' : '保存主页'}}</button></view>

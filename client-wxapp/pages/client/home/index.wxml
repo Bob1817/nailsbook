@@ -1,6 +1,7 @@
 <view class="container">
   <!-- 顶部导航 -->
   <nav-bar title="首页"></nav-bar>
+<context-guide kind="client-home" />
 
   <!-- 轮播 - 最新作品 -->
   <view class="hero-section">

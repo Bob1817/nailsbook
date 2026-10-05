@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
-import { bookingReadiness } from '../technicians/booking-readiness';
+import { bookingReadiness, bookingSetupRelations } from '../technicians/booking-readiness';
 import {
   isLaunchTechnician,
   isMiniProgramLaunchMode,
@@ -35,6 +35,8 @@ export class PublicBrandService {
             shopService: true,
             serviceItems: true,
             serviceSchedule: true,
+            shopAddresses: true,
+            _count: bookingSetupRelations._count,
             brandProfile: {
               select: {
                 brandName: true,
@@ -374,6 +376,8 @@ export class PublicBrandService {
     const technician = await this.prisma.technician.findFirst({
       where: { id, status: 'active' },
       select: {
+        ...bookingSetupRelations,
+        avatarUrl: true,
         homeService: true,
         shopService: true,
         serviceItems: true,

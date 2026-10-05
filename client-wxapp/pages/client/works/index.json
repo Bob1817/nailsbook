@@ -5,6 +5,7 @@
   "usingComponents": {
     "nav-bar": "/components/nav-bar/index",
     "tab-bar": "/components/tab-bar/index",
-    "work-card": "/components/work-card/index"
+    "work-card": "/components/work-card/index",
+    "context-guide": "/components/context-guide/index"
   }
 }

@@ -58,8 +58,7 @@ function page(name, api) {
   storage.post_auth_redirect = redirect;
   const onboardingPage = page('onboarding');
   onboardingPage.onLoad({ role: 'client' });
-  onboardingPage.finishOnboarding();
-  assert.equal(destination, redirect, '使用引导结束回到原作品');
+  assert.equal(destination, redirect, '注册衔接直接回到原作品并在页面内引导');
   assert.equal(storage.post_auth_redirect, undefined, '回跳只消费一次');
   console.log('注册来源时效、字段白名单和多阶段回跳测试通过');
 })().catch(error => { console.error(error); process.exitCode = 1; });

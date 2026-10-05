@@ -7,7 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../common/prisma/prisma.service';
-import { bookingReadiness } from '../technicians/booking-readiness';
+import { bookingReadiness, bookingSetup, bookingSetupRelations } from '../technicians/booking-readiness';
 import { VerificationCodeService } from '../common/verification-code/verification-code.service';
 import { SmsService } from '../common/sms/sms.service';
 import type { Prisma } from '@prisma/client';
@@ -147,7 +147,7 @@ export class TechnicianAuthService {
           data: {
             passwordHash,
             name: dto.name.trim() || target.name,
-            status: 'active',
+            status: 'inactive',
             invitationCode:
               target.invitationCode || (await this.allocateInvitationCode(tx)),
           },
@@ -181,7 +181,7 @@ export class TechnicianAuthService {
           phone: dto.phone,
           passwordHash,
           invitationCode,
-          status: 'active',
+          status: 'inactive',
         },
       });
 
@@ -307,7 +307,7 @@ export class TechnicianAuthService {
     }
     const technician = await this.prisma.technician.findUnique({
       where: { id: technicianId },
-      include: { subscription: { include: { plan: true } } },
+      include: { ...bookingSetupRelations, subscription: { include: { plan: true } } },
     });
 
     if (!technician) {
@@ -339,7 +339,7 @@ export class TechnicianAuthService {
 
   private serializeTechnician(
     technician: Prisma.TechnicianGetPayload<{
-      include: { subscription: { include: { plan: true } } };
+      include: typeof bookingSetupRelations & { subscription: { include: { plan: true } } };
     }>,
   ) {
     return {
@@ -358,9 +358,10 @@ export class TechnicianAuthService {
       // 是否已通过激活密钥认证（游客模式为 false）
       isActivated: !!technician.passwordHash,
       isTourist: !technician.passwordHash,
-      // 接单就绪：至少开启一种服务类型；未就绪则锁定邀请码/邀请链接
+      // 接单就绪由资料、作品、服务、排期和接单状态共同决定
       bookingReady: bookingReadiness(technician).ready,
       bookingReadinessIssues: bookingReadiness(technician).issues,
+      bookingSetup: bookingSetup(technician),
       shopAddresses: this.parseShopAddresses(technician.shopAddresses),
       socialMedia: this.parseSocialMedia(technician.socialMedia),
       serviceItems: this.parseServiceItems(technician.serviceItems),
@@ -578,6 +579,7 @@ export class TechnicianAuthService {
     const technician = await this.prisma.technician.findUnique({
       where: { id: technicianId },
       include: {
+        ...bookingSetupRelations,
         subscription: {
           include: {
             plan: true,
@@ -595,6 +597,7 @@ export class TechnicianAuthService {
       name: technician.name,
       phone: technician.phone,
       avatarUrl: technician.avatarUrl,
+      bio: technician.bio,
       city: technician.city,
       province: technician.province,
       serviceArea: technician.serviceArea,
@@ -606,8 +609,10 @@ export class TechnicianAuthService {
       // 是否已通过激活密钥认证（游客模式为 false）
       isActivated: !!technician.passwordHash,
       isTourist: !technician.passwordHash,
-      // 接单就绪：至少开启一种服务类型；未就绪则锁定邀请码/邀请链接
-      bookingReady: technician.homeService || technician.shopService,
+      // 接单就绪由资料、作品、服务、排期和接单状态共同决定
+      bookingReady: bookingReadiness(technician).ready,
+      bookingReadinessIssues: bookingReadiness(technician).issues,
+      bookingSetup: bookingSetup(technician),
       shopAddresses: this.parseShopAddresses(technician.shopAddresses),
       socialMedia: this.parseSocialMedia(technician.socialMedia),
       serviceItems: this.parseServiceItems(technician.serviceItems),
@@ -638,6 +643,7 @@ export class TechnicianAuthService {
   ) {
     const technician = await this.prisma.technician.findUnique({
       where: { id: technicianId },
+      include: bookingSetupRelations,
     });
 
     if (!technician) {
@@ -769,6 +775,7 @@ export class TechnicianAuthService {
       where: { id: technicianId },
       data: updateData,
       select: {
+        ...bookingSetupRelations,
         id: true,
         name: true,
         phone: true,
@@ -802,6 +809,7 @@ export class TechnicianAuthService {
       styleTags: updated.styleTags ? JSON.parse(updated.styleTags) : [],
       bookingReady: bookingReadiness(updated).ready,
       bookingReadinessIssues: bookingReadiness(updated).issues,
+      bookingSetup: bookingSetup(updated),
     };
   }
 

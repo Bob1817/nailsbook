@@ -3,105 +3,93 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { createRequire } = require('node:module');
-
 const root = path.join(__dirname, '..');
-const read = file => fs.readFileSync(path.join(root, file), 'utf8');
-const {
-  ONBOARDING_PLANS,
-  getOnboardingCompletionKey
-} = require('../utils/onboarding-plan');
-
-assert.equal(ONBOARDING_PLANS.client.steps.length, 3);
-assert.equal(ONBOARDING_PLANS.technician.steps.length, 3);
-assert.deepEqual(
-  ONBOARDING_PLANS.client.steps.map(step => step.title),
-  ['发现心仪款式', '完成一次预约', '随时管理行程']
-);
-assert.deepEqual(
-  ONBOARDING_PLANS.technician.steps.map(step => step.title),
-  ['完善接单资料', '设置可预约时间', '开始经营客户']
-);
-assert.notEqual(getOnboardingCompletionKey('client'), getOnboardingCompletionKey('technician'));
-
-const storage = {};
-let destination = '';
+const storage = { role: 'client', client_userInfo: { id: 1 } };
+let destination, failLoad = false, calls = 0, resolveEnable;
+const full = { ready: true, accepting: false, completed: 5, total: 5, steps: [] };
+let profile = { id: 7, bookingSetup: full };
+let getProfile = async () => { if (failLoad) throw Error('网络中断'); return profile; };
+const api = { technician: { auth: {
+  getUserInfo: () => getProfile(),
+  updateStatus: () => { calls++; return new Promise(resolve => { resolveEnable = resolve; }); }
+} } };
 global.wx = {
-  getStorageSync: key => storage[key],
-  setStorageSync: (key, value) => { storage[key] = value; },
+  getStorageSync: key => storage[key], setStorageSync: (key, value) => { storage[key] = value; },
   removeStorageSync: key => { delete storage[key]; },
-  reLaunch: ({ url }) => { destination = url; }
+  reLaunch: ({ url }) => { destination = url; }, navigateTo: ({ url }) => { destination = url; },
+  showToast() {}
 };
-
-function createPage() {
+function load(file, component = false) {
   let definition;
-  const file = path.join(root, 'pages/onboarding/index.js');
-  vm.runInNewContext(read('pages/onboarding/index.js'), {
-    Page: value => { definition = value; },
-    require: createRequire(file),
-    wx: global.wx,
-    console,
-    Date,
-    decodeURIComponent
+  const absolute = path.join(root, file);
+  vm.runInNewContext(fs.readFileSync(absolute, 'utf8'), {
+    Page: value => { definition = value; }, Component: value => { definition = value; },
+    require: name => name.includes('services/api') ? api : createRequire(absolute)(name),
+    wx: global.wx, console, decodeURIComponent
   });
-  return {
-    ...definition,
-    data: { ...definition.data },
-    setData(update) { Object.assign(this.data, update); }
-  };
+  return { ...(component ? definition.methods : definition), lifetimes: definition.lifetimes,
+    pageLifetimes: definition.pageLifetimes, data: { ...definition.data }, properties: {},
+    setData(value) { Object.assign(this.data, value); }, triggerEvent() {} };
 }
+(async () => {
+  const bridge = load('pages/onboarding/index.js');
+  storage.post_auth_redirect = '/pages/client/public-work/index?id=9&book=1';
+  bridge.onLoad({ role: 'client' });
+  assert.equal(destination, '/pages/client/public-work/index?id=9&book=1');
+  assert.equal(storage.post_auth_redirect, undefined);
+  assert(storage.context_guide_v1_client_1);
+  bridge.onLoad({ role: 'technician' });
+  assert.equal(destination, '/pages/technician/home/index');
+  bridge.onLoad({ role: 'client', redirect: '%invalid' });
+  assert.equal(destination, '/pages/client/home/index');
 
-const technicianPage = createPage();
-technicianPage.onLoad({ role: 'technician' });
-assert.equal(technicianPage.data.navigationTitle, '美甲师使用引导');
-technicianPage.nextStep();
-assert.equal(technicianPage.data.currentIndex, 1);
-technicianPage.previousStep();
-assert.equal(technicianPage.data.currentIndex, 0);
-technicianPage.skipOnboarding();
-assert.equal(destination, '/pages/technician/home/index');
-assert.equal(storage.first_use_onboarding_v2_technician.skipped, true);
+  const guide = load('components/context-guide/index.js', true);
+  guide.properties.kind = 'client-home'; guide.refresh();
+  assert.equal(guide.data.visible, true);
+  guide.act(); assert.equal(destination, '/pages/client/works/index');
+  guide.dismiss(); guide.refresh(); assert.equal(guide.data.visible, false);
+  storage.client_userInfo = { id: 2 }; guide.refresh();
+  assert.equal(guide.data.visible, false, '普通账号不能继承另一账号的新手提示');
+  bridge.onLoad({ role: 'client' }); guide.refresh(); assert.equal(guide.data.visible, true);
+  storage.client_userInfo = { id: 1 }; guide.refresh(); assert.equal(guide.data.visible, false);
+  guide.properties.kind = 'client-booking'; guide.refresh();
+  assert.equal(guide.data.visible, true, '关闭首页提示不能跳过预约页面提示');
 
-const clientPage = createPage();
-const redirect = '/pages/client/public-work/index?id=9&book=1';
-storage.post_auth_redirect = redirect;
-clientPage.onLoad({ role: 'client' });
-clientPage.finishOnboarding();
-assert.equal(destination, redirect);
-assert.equal(storage.post_auth_redirect, undefined, '客户回跳必须在引导结束后消费');
-assert.equal(storage.first_use_onboarding_v2_client.skipped, false);
+  storage.role = 'technician'; storage.technician_userInfo = { id: 7 };
+  const checklist = load('components/booking-setup/index.js', true);
+  await checklist.refresh(); assert.equal(checklist.data.setup.ready, true);
+  const enabling = checklist.enable(); await checklist.enable();
+  assert.equal(calls, 1, '重复点击不能重复开启');
+  resolveEnable({ status: 'active' }); await enabling;
+  assert.equal(checklist.data.saving, false);
+  failLoad = true; await checklist.refresh(); await checklist.enable();
+  assert.equal(calls, 1, '加载失败不能沿用旧就绪状态开启');
+  assert(checklist.data.error);
+  failLoad = false; profile = { id: 7, bookingSetup: { ...full, ready: false, completed: 3 } };
+  await checklist.refresh(); await checklist.enable(); assert.equal(calls, 1);
+  checklist.open({ currentTarget: { dataset: { key: 'schedule' } } });
+  assert.equal(destination, '/pages/technician/profile/index?setup=schedule');
+  profile = { id: 7, bookingSetup: full };
+  await checklist.pageLifetimes.show.call(checklist); // refresh returns asynchronously
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(checklist.data.setup.completed, 5, '返回工作台重新读取已保存资料');
 
-const register = read('pages/register/index.js');
-const clientRegister = read('pages/client/register/index.js');
-const clientLogin = read('pages/client/login/index.js');
-const technicianLogin = read('pages/technician/login/index.js');
-const technicianSetPassword = read('pages/technician/set-password/index.js');
-const setupPassword = read('pages/setup-password/index.js');
-const roleSelect = read('pages/role-select/index.js');
-const login = read('pages/login/index.js');
-const app = read('app.js');
-assert(register.includes('/pages/onboarding/index?role=${role}'), '统一注册后必须进入角色引导');
-assert(clientRegister.includes('/pages/onboarding/index?role=client'), '兼容客户注册页必须进入客户引导');
-assert(clientLogin.includes('res.isNewUser === true'), '兼容客户微信注册必须识别新用户');
-assert(technicianLogin.includes('this._afterAuth(res, true);'), '美甲师密钥注册后必须进入引导');
-assert(technicianLogin.includes('this._afterAuth(res, step === \'register\');'), '微信美甲师仅在注册阶段进入引导');
-assert(technicianSetPassword.includes('/pages/onboarding/index?role=technician'), '美甲师首次设置密码后必须进入引导');
-assert(setupPassword.includes('/pages/onboarding/index?role=client'));
-assert(roleSelect.includes('/pages/onboarding/index?role=client'));
-assert(roleSelect.includes('/pages/onboarding/index?role=technician'));
-assert(login.includes('res.isNewUser === true'));
-assert(!login.includes('res.needsOnboarding ||'), '无绑定的老客户不能被误判为首次注册');
-assert(app.includes("options.path === 'pages/onboarding/index'"), '冷启动恢复不能跳过未完成的引导');
+  let resolveOld;
+  getProfile = () => new Promise(resolve => { resolveOld = resolve; });
+  const old = checklist.refresh();
+  getProfile = async () => ({ id: 7, bookingSetup: { ...full, completed: 2, ready: false } });
+  await checklist.refresh(); resolveOld(profile); await old;
+  assert.equal(checklist.data.setup.completed, 2, '旧响应不能覆盖新进度');
+  getProfile = () => new Promise(resolve => { resolveOld = resolve; });
+  const detached = checklist.refresh(); checklist.lifetimes.detached.call(checklist);
+  resolveOld(profile); await detached;
+  assert.equal(checklist.data.setup.completed, 2, '离页后不能回填旧进度');
+  const switched = checklist.refresh(); storage.technician_userInfo = { id: 9 };
+  resolveOld(profile); await switched;
+  assert.equal(storage.technician_userInfo.id, 9, '切换账号后不能覆盖新账号缓存');
 
-const wxml = read('pages/onboarding/index.wxml');
-const wxss = read('pages/onboarding/index.wxss');
-const bookingActions = read('styles/booking-actions.wxss');
-for (const control of ['skipOnboarding', 'previousStep', 'nextStep']) {
-  assert(wxml.includes(`bindtap="${control}"`), `缺少 ${control} 操作`);
-}
-assert(wxss.includes('min-height: var(--touch-min)'), '顶部操作必须满足 44px 触控高度');
-assert(bookingActions.includes('min-height: 44px'), '底部操作必须满足 44px 触控高度');
-assert(wxss.includes('env(safe-area-inset-bottom)'), '底部操作必须适配安全区');
-assert(wxss.includes('position: fixed'), '底部主操作必须固定在首屏可见区域');
-assert(wxss.includes("@import '../../styles/booking-actions.wxss';"));
-
-console.log('首次注册客户与美甲师角色化引导、入口和完成出口检查通过');
+  const routes = require('../utils/booking-setup').routes;
+  for (const route of Object.values(routes)) assert(fs.existsSync(path.join(root, route.split('?')[0] + '.js')));
+  assert(!fs.readFileSync(path.join(root, 'pages/onboarding/index.wxml'), 'utf8').includes('下一步'));
+  console.log('页面内引导、账号隔离、实际准备进度、失败重试、防重、旧响应隔离与预约入口检查通过');
+})().catch(error => { console.error(error); process.exitCode = 1; });

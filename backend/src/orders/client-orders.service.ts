@@ -20,7 +20,7 @@ import { BookingMutexService } from './booking-mutex.service';
 import { ReferralQualificationService } from '../referrals/referral-qualification.service';
 import { RewardFundService } from '../referrals/reward-fund.service';
 import { assertWithinServiceSchedule } from './order-work-schedule';
-import { bookingReadiness } from '../technicians/booking-readiness';
+import { bookingReadiness, bookingSetupRelations } from '../technicians/booking-readiness';
 import { parseBusinessDateTime } from './business-time';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { revenueSnapshot } from './order-accounting';
@@ -121,7 +121,7 @@ export class ClientOrdersService {
         status: 'active',
       },
       include: {
-        technician: true,
+        technician: { include: bookingSetupRelations },
       },
     });
 
@@ -140,7 +140,7 @@ export class ClientOrdersService {
       dto.serviceType as '上门美甲' | '到店美甲',
     );
     if (!readiness.ready) {
-      throw new BadRequestException(readiness.issues[0]);
+      throw new BadRequestException('该美甲师暂未开放预约，请稍后再试');
     }
     if (this.subscriptions) {
       await this.subscriptions.assertCanCreateBooking(dto.techId);

@@ -5,6 +5,7 @@ const vm = require('node:vm');
 const { createRequire } = require('node:module');
 const file = path.resolve(__dirname, '../pages/technician/profile/index.js');
 const localRequire = createRequire(file);
+let setupRefreshes = 0;
 let page, fail = false, calls = 0, navigatedTo = '';
 vm.runInNewContext(fs.readFileSync(file, 'utf8'), {
   require: name => name === '../../../services/api' ? { technician: { auth: { updateStatus: async status => {
@@ -13,7 +14,7 @@ vm.runInNewContext(fs.readFileSync(file, 'utf8'), {
   Page: value => { page = value; },
   wx: { setStorageSync() {}, showToast() {}, showModal() {}, navigateTo({ url }) { navigatedTo = url; } }, Date
 });
-const make = status => ({ ...page, data: { ...page.data, userInfo: { status }, canAcceptOrders: true, setupSteps: [] }, setData(value) { Object.assign(this.data, value); } });
+const make = status => ({ ...page, selectComponent() { return { refresh: async () => { setupRefreshes++; } }; }, data: { ...page.data, userInfo: { status }, canAcceptOrders: true, setupSteps: [] }, setData(value) { Object.assign(this.data, value); } });
 (async () => {
   const ctx = make('inactive');
   await ctx.onAcceptingChange({ detail: { value: true } });
@@ -21,6 +22,7 @@ const make = status => ({ ...page, data: { ...page.data, userInfo: { status }, c
   assert.equal(ctx.data.acceptingEnabled, true);
   await ctx.onAcceptingChange({ detail: { value: false } });
   assert.equal(ctx.data.acceptingEnabled, false);
+  assert.equal(setupRefreshes, 2, '切换接单后清单同步刷新，暂停后重新显示开启入口');
   fail = true;
   await ctx.onAcceptingChange({ detail: { value: true } });
   assert.equal(ctx.data.acceptingEnabled, false);

@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { PrismaService } from '../common/prisma/prisma.service';
-import { bookingReadiness } from '../technicians/booking-readiness';
+import { bookingReadiness, bookingSetupRelations } from '../technicians/booking-readiness';
 import { isLaunchTechnician } from '../common/miniprogram-launch-mode';
 
 const UPLOAD_BASE_URL = process.env.UPLOAD_BASE_URL || 'http://localhost:3000';
@@ -126,6 +126,7 @@ export class PublicArtistController {
   private async getPublicCard(where: { id?: number; invitationCode?: string }) {
     const technician = await this.prisma.technician.findFirst({
       where: { ...where, status: { in: ['active', 'inactive'] } },
+      include: bookingSetupRelations,
     });
 
     if (!technician) {
@@ -207,7 +208,7 @@ export class PublicArtistController {
 
     return {
       artist: {
-        acceptingBookings: technician.status === 'active',
+        acceptingBookings: readiness.ready,
         id: technician.id,
         name: technician.name,
         avatarUrl: toAbsoluteUrl(technician.avatarUrl),
@@ -251,7 +252,7 @@ export class PublicArtistController {
           reviewCount: reviews.length,
         },
         bookingReady: readiness.ready,
-        bookingReadinessIssues: readiness.issues,
+        bookingReadinessIssues: readiness.ready ? [] : ['美甲师暂未开放预约'],
       },
       works,
       qualifications: qualifications.map((q) => ({

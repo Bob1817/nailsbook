@@ -1,4 +1,5 @@
 <nav-bar title="{{quickMode ? '预约' + (selectedTech.name || '美甲师') : '创建预约'}}" showBack/>
+<context-guide kind="client-booking" />
 <view class="page" style="padding-bottom: {{submitBarHeight + 16}}px;">
 
   <!-- 选择美甲师 -->

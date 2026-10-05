@@ -3,6 +3,7 @@
   "navigationStyle": "custom",
   "usingComponents": {
     "nav-bar": "/components/nav-bar/index",
-    "booking-time-picker": "/components/booking-time-picker/index"
+    "booking-time-picker": "/components/booking-time-picker/index",
+    "context-guide": "/components/context-guide/index"
   }
 }

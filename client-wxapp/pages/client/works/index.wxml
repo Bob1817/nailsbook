@@ -1,4 +1,5 @@
 <nav-bar title="{{businessPage ? '美甲师主页' : '作品'}}" showBack="{{true}}"></nav-bar>
+<context-guide kind="client-works" />
 
 <view class="page">
   <!-- 内容区 -->

@@ -1,4 +1,5 @@
 <nav-bar title="{{isEdit ? '编辑作品' : '上传作品'}}" showBack/>
+<context-guide kind="works" />
 <view class="container">
 
   <view class="section cover-section">

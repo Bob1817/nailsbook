@@ -1,4 +1,5 @@
 <nav-bar title="我的"/>
+<context-guide kind="schedule" wx:if="{{showScheduleGuide}}" />
 <view class="page">
   <!-- ============ Header ============ -->
   <view class="header">
@@ -40,33 +41,7 @@
     </view>
   </view>
 
-  <!-- ============ 新手引导卡 ============ -->
-  <view wx:if="{{needsSetup}}" class="setup-guide-card">
-    <view class="setup-guide-head">
-      <view class="setup-guide-title-row">
-        <text class="setup-guide-title">完成设置，开始接单</text>
-        <view class="setup-guide-badge">待完善</view>
-      </view>
-      <text class="setup-guide-desc">以下信息全部完成后，才能开启接单并接受客户预约</text>
-    </view>
-    <view class="setup-steps">
-      <view wx:for="{{setupSteps}}" wx:key="key" class="setup-step" bindtap="goSetupStep" data-route="{{item.route}}">
-        <view class="setup-step-left">
-          <view class="setup-step-icon-wrap {{item.done ? 'setup-step-done' : ''}}">
-            <text>{{item.done ? '✓' : index + 1}}</text>
-          </view>
-          <view class="setup-step-text">
-            <text class="setup-step-label">{{item.label}}</text>
-            <text class="setup-step-hint">{{item.hint}}</text>
-          </view>
-        </view>
-        <view class="setup-step-action">
-          <text class="setup-step-btn">{{item.done ? '查看' : '去完善'}}</text>
-          <text class="setup-step-arrow">›</text>
-        </view>
-      </view>
-    </view>
-  </view>
+  <booking-setup id="bookingSetup" bind:refresh="onSetupRefresh" />
 
   <!-- ============ 我的预约 ============ -->
   <view class="card card-gap">

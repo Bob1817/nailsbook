@@ -59,14 +59,6 @@ const cases = [
     inputRule: '.input-row {',
   },
   {
-    name: '新用户引导',
-    wxml: 'pages/onboarding/index.wxml',
-    wxss: 'pages/onboarding/index.wxss',
-    requiredControls: 2,
-    inputRule: '.onboarding-card {',
-    requiresInputHeight: false,
-  },
-  {
     name: '账号注销',
     wxml: 'pages/account-deletion/index.wxml',
     wxss: 'pages/account-deletion/index.wxss',

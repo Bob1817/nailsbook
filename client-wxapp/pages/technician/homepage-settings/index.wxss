@@ -20,3 +20,8 @@ page { background:var(--nb-page); color:var(--nb-ink); }.page { min-height:100vh
 
 .hero-recommendation-entry { margin:24rpx 32rpx; padding:20rpx 24rpx; min-height:44px; box-sizing:border-box; display:flex; align-items:center; justify-content:space-between; gap:16rpx; background:var(--nb-surface); border-radius:16rpx; color:var(--nb-text-link); font-size:var(--font-sm); }
 .hero-recommendation-entry:active { background:var(--nb-pressed); }
+
+.environment-list { display:flex; flex-wrap:wrap; gap:16rpx; margin:16rpx 0; }
+.environment-item { width:calc(50% - 8rpx); }
+.environment-image { width:100%; height:180rpx; border-radius:var(--radius-md); }
+.environment-item .booking-action { width:100%; min-height:44px; }

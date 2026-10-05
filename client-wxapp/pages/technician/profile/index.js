@@ -1,3 +1,4 @@
+const { openSetupStep } = require('../../../utils/booking-setup');
 const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
 const { phoneMask } = require('../../../utils/util');
@@ -54,7 +55,6 @@ Page({
     scheduleSummary: '工作时间加载中',
 
     // 新手引导
-    needsSetup: false,       // shopService 未配置时显示引导卡
     shopServiceOn: false,
     setupSteps: [],
 
@@ -92,7 +92,8 @@ Page({
     endTimeIdx: 0
   },
 
-  onLoad() {
+  onLoad(options = {}) {
+    this.setData({ showScheduleGuide: options.setup === 'schedule' });
     this.applyUserInfo();
   },
 
@@ -110,6 +111,10 @@ Page({
       wx.setStorageSync('userInfo', userInfo);
       wx.setStorageSync('technician_userInfo', userInfo);
       this.applyUserInfo();
+      if (this.data.showScheduleGuide && !this._openedSetupSchedule) {
+        this._openedSetupSchedule = true;
+        this.openScheduleModal();
+      }
     } catch (err) {
       console.warn('refresh technician profile failed', err);
     }
@@ -124,29 +129,19 @@ Page({
     const userInfo = wx.getStorageSync('userInfo') || wx.getStorageSync('technician_userInfo') || {};
     if (userInfo.phone) userInfo.phoneDisplay = phoneMask(userInfo.phone);
     const shopServiceOn = !!userInfo.shopService;
-    const activeServices = (userInfo.serviceItems || []).filter((item) =>
-      item && item.isActive !== false && item.name && Number.isFinite(Number(item.price)) && Number(item.durationMinutes) > 0
-    );
-    const schedule = normalizeSchedule(userInfo.serviceSchedule);
-    const activeScheme = (schedule.schemes || []).find((item) => item.id === schedule.activeSchemeId);
-    const serviceReady = activeServices.length > 0;
-    const shopReady = shopServiceOn && (userInfo.shopAddresses || []).some((item) => item.enabled !== false && (item.detailAddress || item.address));
-    const scheduleReady = !!(userInfo.serviceSchedule && activeScheme && activeScheme.days && activeScheme.days.length && activeScheme.startTime < activeScheme.endTime);
-    const setupSteps = [
-      { key: 'services', label: '完善服务与定价', hint: serviceReady ? '已配置有效服务' : '添加服务名称、价格和预计时长', done: serviceReady, route: 'services' },
-      { key: 'shop', label: '完善到店门店', hint: shopReady ? '已配置可用门店' : '添加客户到店地址', done: shopReady, route: 'shops' },
-      { key: 'schedule', label: '设置可预约时间', hint: scheduleReady ? '已启用工作时间方案' : '设置工作日和营业时段', done: scheduleReady, route: 'schedule' }
-    ];
-    const canAcceptOrders = serviceReady && shopReady && scheduleReady;
-    this.setData({ userInfo, shopServiceOn, needsSetup: !canAcceptOrders, canAcceptOrders, setupSteps });
+    const setup = userInfo.bookingSetup;
+    const setupSteps = setup ? setup.steps.map(item => ({ ...item, label: item.title, route: item.key })) : [];
+    const canAcceptOrders = !!setup && setup.ready;
+    this.setData({ userInfo, shopServiceOn, canAcceptOrders, setupSteps });
     this.computeAccepting();
   },
+
+  onSetupRefresh() { this.applyUserInfo(); },
 
   goSetupStep(e) {
     const route = e.currentTarget.dataset.route;
     if (route === 'schedule') return this.openScheduleModal();
-    if (route === 'shops') return wx.navigateTo({ url: '/pages/technician/shop-management/index' });
-    wx.navigateTo({ url: '/pages/technician/services/index' });
+    openSetupStep(route);
   },
 
   async onAcceptingChange(e) {
@@ -159,6 +154,8 @@ Page({
     try {
       await this.toggleAccepting();
     } finally {
+      const checklist = this.selectComponent('#bookingSetup');
+      if (checklist) await checklist.refresh();
       this.setData({
         acceptingEnabled: this.data.userInfo.status === 'active',
         savingAccepting: false
@@ -186,7 +183,7 @@ Page({
       const firstIncomplete = this.data.setupSteps.find((item) => !item.done);
       wx.showModal({
         title: '请先完成接单设置',
-        content: '需要完善服务与定价、到店门店和可预约时间后才能开启接单。',
+        content: firstIncomplete ? firstIncomplete.hint : '请先重新加载接单准备进度。',
         confirmText: '去完善',
         success: (res) => {
           if (res.confirm && firstIncomplete) {
@@ -797,6 +794,8 @@ Page({
       wx.setStorageSync('technician_userInfo', userInfo);
       this.setData({ userInfo, savingSchedule: false, showScheduleModal: false, schedule: null });
       this.applyUserInfo();
+      const checklist = this.selectComponent('#bookingSetup');
+      if (checklist) await checklist.refresh();
       wx.showToast({ title: '工作时间已保存', icon: 'success' });
     } catch (err) {
       this.setData({ savingSchedule: false });

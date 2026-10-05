@@ -1,0 +1,15 @@
+<view wx:if="{{loading || error || !setup.accepting}}" class="setup-card">
+  <view class="setup-head"><text class="setup-title">开启接单之旅</text><text wx:if="{{setup && !loading && !error}}" class="setup-progress">{{setup.completed}} / {{setup.total}} 已完成</text></view>
+  <text wx:if="{{loading}}" class="setup-hint">正在核对接单准备…</text>
+  <view wx:elif="{{error}}"><text class="setup-error">{{error}}</text><button class="booking-action setup-secondary" bindtap="refresh">重试</button></view>
+  <block wx:else>
+    <text class="setup-hint">{{setup.ready ? '资料已准备好，确认后即可接受客户预约。' : '先完善以下信息，再开启预约。保存后返回这里，进度会自动更新。'}}</text>
+    <button wx:for="{{setup.steps}}" wx:key="key" class="setup-row" hover-class="setup-pressed" bindtap="open" data-key="{{item.key}}" disabled="{{saving}}" aria-label="{{item.title}}，{{item.done ? '已完成，查看' : '待完善，去设置'}}">
+      <text class="setup-number">{{item.done ? '✓' : index + 1}}</text>
+      <view class="setup-copy"><text class="setup-label">{{item.title}}</text><text class="setup-hint">{{item.hint}}</text></view>
+      <text class="setup-link">{{item.done ? '查看' : '去完善'}} ›</text>
+    </button>
+    <button class="booking-action setup-primary {{!setup.ready || saving ? 'setup-disabled' : ''}}" bindtap="enable" disabled="{{!setup.ready || saving}}" loading="{{saving}}">{{saving ? '正在开启…' : (setup.ready ? '开启接单' : '完成全部准备后开启接单')}}</button>
+    <text class="setup-hint setup-footnote">完成设置并开启接单后，客户才能预约你的服务。</text>
+  </block>
+</view>

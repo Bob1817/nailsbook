@@ -1,4 +1,5 @@
 <nav-bar title="{{tradeView ? '我的订单' : '预约'}}"/>
+<context-guide kind="client-orders" />
 
 <view class="filter-bar">
   <scroll-view scroll-x class="status-scroll" enhanced show-scrollbar="{{false}}">

@@ -1,0 +1,9 @@
+@import '../../styles/booking-actions.wxss';
+.context-guide { margin:24rpx; padding:24rpx; border-left:4rpx solid var(--nb-action); border-radius:var(--radius-md); background:var(--nb-active-surface); }
+.context-title { display:block; font-size:var(--font-sm); font-weight:var(--weight-semibold); color:var(--nb-ink); }
+.context-copy { display:block; margin-top:8rpx; font-size:var(--font-xs); line-height:1.7; color:var(--nb-secondary); }
+.context-actions { display:flex; gap:16rpx; margin-top:16rpx; flex-wrap:wrap; }
+.context-action.booking-action, .context-dismiss.booking-action { width:auto; margin:0; padding:0 24rpx; min-height:44px; }
+.context-action { color:var(--nb-inverse); background:var(--nb-action); }
+.context-dismiss { color:var(--nb-secondary); background:var(--nb-surface); }
+.context-pressed { opacity:.72; }

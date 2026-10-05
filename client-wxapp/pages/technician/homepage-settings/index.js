@@ -9,16 +9,17 @@ Page({
     artistIntroduction:'', aestheticPhilosophy:'', publicationStatus:'draft', environmentPhotos:[], faqs:[],
     shareTitle:'', shareDescription:'', shareCoverUrl:'', transportationNotes:'', hygieneStandards:'',
     materialStandards:'', allergyNotice:'', latePolicy:'', cancellationPolicy:'', aftercarePolicy:'',
-    featuredReviewIds:[], reviews:[], works:[], worksLoading:true, heroUploading:false
+    featuredReviewIds:[], reviews:[], works:[], worksLoading:true, heroUploading:false, environmentUploading:false, avatarUploading:false, profileLoadFailed:false
   },
   async onLoad(options) {
+    this.setData({ worksLoading: true, profileLoadFailed: false });
     this._targetSection=(options && options.section) || 'profile';
     const user = wx.getStorageSync('technician_userInfo') || wx.getStorageSync('userInfo') || {};
     this.setData({ technicianId:user.id || '', name:user.name || '', avatarUrl:user.avatarUrl || '', bio:user.bio || '', city:user.city || '', serviceArea:user.serviceArea || '' });
     try {
       const results = await Promise.all([
         api.technician.works.list(),
-        api.technician.brandProfile.get().catch(() => ({})),
+        api.technician.brandProfile.get(),
         user.id ? api.public.brands.reviews(user.id,{page:1,pageSize:20}).catch(() => ({items:[]})) : Promise.resolve({items:[]})
       ]);
       const res = results[0];
@@ -47,12 +48,29 @@ Page({
         reviews:(results[2].items || []).map((review) => ({ ...review, selected:featuredReviewIds.indexOf(String(review.id)) !== -1 }))
       });
     } catch (err) {
-      wx.showToast({ title: err.message || '作品加载失败', icon: 'none' });
+      this.setData({ profileLoadFailed: true });
+      wx.showToast({ title: err.message || '主页加载失败', icon: 'none' });
     } finally {
       this.setData({ worksLoading: false });
       const topMap={hero:0,profile:330,styles:650,introduction:900,service:1460,works:1850,reviews:2300};
       setTimeout(()=>wx.pageScrollTo({scrollTop:topMap[this._targetSection] || 0,duration:280}),180);
     }
+  },
+  retryProfile() { this.onLoad({ section: 'hero' }); },
+  async addEnvironmentPhoto() {
+    if (this.data.saving || this.data.environmentUploading || this.data.environmentPhotos.length >= 6) return;
+    this.setData({ environmentUploading: true });
+    try {
+      const media = await wx.chooseMedia({ count: 1, mediaType: ['image'] });
+      const uploaded = await api.upload.image(media.tempFiles[0].tempFilePath, 'technician');
+      this.setData({ environmentPhotos: this.data.environmentPhotos.concat([{ imageUrl: uploaded.url, caption: '', sortOrder: this.data.environmentPhotos.length }]) });
+    } catch (err) {
+      if (!/cancel/i.test(err.errMsg || '')) wx.showToast({ title: err.message || '照片上传失败，请重试', icon: 'none' });
+    } finally { this.setData({ environmentUploading: false }); }
+  },
+  removeEnvironmentPhoto(e) {
+    if (this.data.saving || this.data.environmentUploading) return;
+    this.setData({ environmentPhotos: this.data.environmentPhotos.filter((_, index) => index !== Number(e.currentTarget.dataset.index)) });
   },
   onInput(e) { this.setData({ [e.currentTarget.dataset.field]: e.detail.value }); },
   onCityChange(e) { const v=e.detail.value; this.setData({ city:v[0]===v[1]?v[1]:v[0]+' '+v[1] }); },
@@ -68,15 +86,17 @@ Page({
     this.setData({ specialties:selected, selectedSpecialtyMap:selected.reduce((map,item)=>{map[item]=true;return map;},{}) });
   },
   chooseAvatar() {
+    if (this.data.saving || this.data.avatarUploading) return;
     wx.chooseMedia({ count:1, mediaType:['image'], success:async(res) => {
+      this.setData({ avatarUploading:true });
       wx.showLoading({ title:'上传中' });
       try { const uploaded=await api.upload.image(res.tempFiles[0].tempFilePath,'technician'); this.setData({ avatarUrl:uploaded.url }); }
       catch (err) { wx.showToast({ title:err.message || '上传失败', icon:'none' }); }
-      finally { wx.hideLoading(); }
+      finally { this.setData({ avatarUploading:false }); wx.hideLoading(); }
     }});
   },
   chooseHero() {
-    if (this.data.heroUploading) return;
+    if (this.data.heroUploading || this.data.saving) return;
     const onSelected = async (res) => {
       const filePath = res && res.tempFiles && res.tempFiles[0] && (res.tempFiles[0].tempFilePath || res.tempFiles[0].path);
       if (!filePath) return wx.showToast({ title:'未能读取所选图片', icon:'none' });
@@ -127,13 +147,23 @@ Page({
   goHeroRecommendations() { wx.navigateTo({ url:'/pages/technician/hero-recommendations/index' }); },
   goWorks() { wx.navigateTo({ url:'/pages/technician/works/index' }); },
   async save() {
-    if (this.data.saving || this.data.heroUploading) return;
+    if (this.data.saving || this.data.heroUploading || this.data.avatarUploading || this.data.environmentUploading || this.data.worksLoading || this.data.profileLoadFailed) return;
     if (!this.data.name.trim()) return wx.showToast({ title:'请输入主页名称', icon:'none' });
+    if (this.data.publicationStatus === 'published') {
+      const missing = [
+        [this.data.avatarUrl, '头像'], [this.data.heroImageUrl, '背景图'],
+        [this.data.tagline, '主页 Slogan'], [this.data.city, '所在城市'],
+        [this.data.serviceArea, '服务区域'], [this.data.artistIntroduction || this.data.bio, '自我介绍'],
+        [this.data.hygieneStandards, '卫生与消毒说明'], [this.data.cancellationPolicy, '取消规则']
+      ].filter(([value]) => !String(value || '').trim()).map(([, label]) => label);
+      if (!this.data.environmentPhotos.length) missing.push('环境照片');
+      if (missing.length) return wx.showModal({ title: '公开主页前还需完善', content: missing.join('、'), showCancel: false });
+    }
     this.setData({ saving:true });
     try {
       const payload={ name:this.data.name.trim(), avatarUrl:this.data.avatarUrl, bio:(this.data.artistIntroduction || this.data.bio).trim(), city:this.data.city, serviceArea:this.data.serviceArea, styleTags:this.data.specialties.slice(0,5) };
       const brandPayload={
-        brandName:payload.name, tagline:this.data.tagline.trim(), heroImageUrl:this.data.heroImageUrl,
+        brandName:payload.name, tagline:this.data.tagline.trim(), heroImageUrl:this.data.heroImageUrl || undefined,
         experienceYears:Number(this.data.experienceYears) || 1,
         specialties:this.data.specialties.slice(0,5),
         certificationTitle:this.data.certificationTitle.trim(), featuredReviewIds:this.data.featuredReviewIds.map(Number).filter(Boolean),
@@ -142,10 +172,11 @@ Page({
         hygieneStandards:this.data.hygieneStandards, materialStandards:this.data.materialStandards, allergyNotice:this.data.allergyNotice,
         latePolicy:this.data.latePolicy, cancellationPolicy:this.data.cancellationPolicy, aftercarePolicy:this.data.aftercarePolicy,
         shareTitle:this.data.shareTitle || payload.name, shareDescription:this.data.shareDescription || this.data.tagline,
-        shareCoverUrl:this.data.shareCoverUrl || this.data.heroImageUrl, publicationStatus:this.data.publicationStatus,
+        shareCoverUrl:this.data.shareCoverUrl || this.data.heroImageUrl || undefined, publicationStatus:this.data.publicationStatus,
         environmentPhotos:this.data.environmentPhotos, faqs:this.data.faqs
       };
-      await Promise.all([api.technician.auth.updateProfile(payload),api.technician.brandProfile.update(brandPayload)]);
+      await api.technician.auth.updateProfile(payload);
+      await api.technician.brandProfile.update(brandPayload);
       const user=wx.getStorageSync('technician_userInfo') || wx.getStorageSync('userInfo') || {};
       Object.assign(user,payload); wx.setStorageSync('technician_userInfo',user); wx.setStorageSync('userInfo',user);
       syncSessionAvatar('technician', payload.avatarUrl);

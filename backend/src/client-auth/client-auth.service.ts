@@ -283,7 +283,7 @@ export class ClientAuthService {
             passwordHash,
             managedPasswordCiphertext: managedPassword,
             name: client.nickname || target.name || client.phone,
-            status: 'active',
+            status: 'inactive',
             invitationCode:
               target.invitationCode ||
               (await this.allocateInvitationCodeInTx(tx)),
@@ -305,7 +305,7 @@ export class ClientAuthService {
             passwordHash,
             managedPasswordCiphertext: managedPassword,
             name: client.nickname || existingTech.name || client.phone,
-            status: 'active',
+            status: 'inactive',
             invitationCode:
               existingTech.invitationCode ||
               (await this.allocateInvitationCodeInTx(tx)),
@@ -327,7 +327,7 @@ export class ClientAuthService {
           passwordHash,
           managedPasswordCiphertext: managedPassword,
           invitationCode,
-          status: 'active',
+          status: 'inactive',
         },
       });
       await tx.technicianInviteKey.update({

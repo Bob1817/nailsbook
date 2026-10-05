@@ -228,114 +228,6 @@ page { background: var(--bg-gradient-entry); }
 .dot-on { background: var(--nb-success); }
 .dot-off { background: var(--nb-muted); }
 
-/* ===== 新手引导卡 ===== */
-.setup-guide-card {
-  margin: 24rpx 32rpx 0;
-  background: var(--nb-page);
-  border-radius: var(--radius-lg);
-  padding: 32rpx;
-  box-shadow: none;
-  border: 0;
-}
-.setup-guide-head { margin-bottom: 28rpx; }
-.setup-guide-title-row {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-  margin-bottom: 8rpx;
-}
-.setup-guide-title {
-  font-size: var(--font-md);
-  font-weight: var(--weight-bold);
-  color: var(--text-primary);
-}
-.setup-guide-badge {
-  padding: 4rpx 16rpx;
-  border-radius: 999rpx;
-  background: var(--nb-action);
-  color: var(--text-inverse);
-  font-size: var(--font-xs);
-  font-weight: var(--weight-semibold);
-}
-.setup-guide-desc {
-  font-size: var(--font-sm);
-  color: var(--text-muted);
-  line-height: var(--leading-normal);
-}
-
-.setup-steps {
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-.setup-step {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-md) 28rpx;
-}
-.setup-step:active { background: rgba(0, 0, 0, 0.05) /* brand-primary-alpha */; }
-.setup-step-divider {
-  height: 1rpx;
-  margin: 0 28rpx;
-  background: rgba(0, 0, 0, 0.05);
-}
-.setup-step-left {
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-  flex: 1;
-  min-width: 0;
-}
-.setup-step-icon-wrap {
-  width: 72rpx; height: 72rpx;
-  border-radius: var(--radius-sm);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  background: var(--nb-page);
-  color: var(--brand-primary);
-  font-size: 26rpx;
-  font-weight: var(--weight-semibold);
-}
-.setup-step-done { background:var(--nb-page); color:var(--nb-ink); }
-.setup-step-icon-home { background: var(--nb-page); }
-.setup-step-icon-shop { background: var(--nb-page); }
-.setup-step-icon-svg {
-  width: 40rpx; height: 40rpx;
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-}
-.setup-step-text { flex: 1; min-width: 0; }
-.setup-step-label {
-  display: block;
-  font-size: var(--font-md);
-  font-weight: var(--weight-semibold);
-  color: var(--text-primary);
-  margin-bottom: 4rpx;
-}
-.setup-step-hint {
-  display: block;
-  font-size: var(--font-xs);
-  color: var(--text-muted);
-}
-.setup-step-action {
-  display: flex;
-  align-items: center;
-  gap: 4rpx;
-  flex-shrink: 0;
-}
-.setup-step-btn {
-  font-size: var(--font-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--brand-primary);
-}
-.setup-step-arrow {
-  font-size: var(--font-lg);
-  color: var(--brand-primary);
-  line-height: 1;
-}
-
 /* ===== 设置菜单 ===== */
 .menu-list { display: flex; flex-direction: column; }
 .menu-item {
@@ -1327,10 +1219,7 @@ page { background: var(--bg-gradient-entry); }
 .menu-value { flex-shrink:0; color:var(--nb-muted); font-size:var(--font-xs); }
 .account-logout .menu-label { color:var(--nb-danger); }
 .card-more { min-height:44px; }
-.setup-step-arrow { color:var(--nb-muted); }
 .menu-item, .logout-btn { min-height:44px; }
-.setup-guide-card { background:var(--nb-surface); }
-.setup-guide-badge { background:var(--nb-soft-surface); color:var(--nb-text-link); }
 
 .profile-detail-sheet .ws-close { min-width:44px; min-height:44px; font-size:var(--font-sm); }
 

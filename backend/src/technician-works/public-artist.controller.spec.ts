@@ -1,3 +1,4 @@
+import { bookingSetupRelations } from '../technicians/booking-readiness';
 import { NotFoundException } from '@nestjs/common';
 import { PublicArtistController } from './public-artist.controller';
 
@@ -22,6 +23,9 @@ describe('PublicArtistController', () => {
       id: 7,
       name: '阿琳',
       avatarUrl: '/avatar.png',
+    brandProfile: { brandName: '工作室', heroImageUrl: '/cover.jpg', artistIntroduction: '专注手绘美甲', publicationStatus: 'published' },
+    _count: { nailWorks: 1 },
+
       city: '上海',
       serviceArea: '静安区',
       homeService: true,
@@ -79,6 +83,7 @@ describe('PublicArtistController', () => {
     );
     expect(prisma.technician.findFirst).toHaveBeenCalledWith({
       where: { id: 7, status: { in: ['active', 'inactive'] } },
+      include: bookingSetupRelations,
     });
   });
 

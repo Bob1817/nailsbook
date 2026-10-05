@@ -25,6 +25,7 @@
     <swiper class="image-swiper" current="{{currentImageIndex}}" circular="{{imageUrls.length > 1}}" bindchange="onSwiperChange">
       <swiper-item wx:for="{{imageUrls}}" wx:key="*this" bindtap="previewImage" data-url="{{item}}"><image class="work-image" src="{{item}}" mode="aspectFill" aria-label="{{work.title || '美甲作品'}}第{{index + 1}}张图片" /></swiper-item>
     </swiper>
+    <context-guide wx:if="{{!visitorInfo && showBookSame}}" kind="client-work" bind:action="bookSame" />
     <view class="info-panel {{visitorInfo ? 'visitor-panel' : ''}}">
       <view class="intro-section">
         <view class="title-row">

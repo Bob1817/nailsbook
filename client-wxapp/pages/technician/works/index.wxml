@@ -1,5 +1,6 @@
 <nav-bar title="作品" showBack>
 </nav-bar>
+<context-guide kind="works" />
 <view class="container">
   <!-- 加载中 -->
   <view wx:if="{{loading}}" class="loading-wrap">

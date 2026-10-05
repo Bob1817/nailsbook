@@ -1,6 +1,8 @@
 {
   "version": 1,
   "components": {
+    "booking-setup": { "layer": "business", "status": "stable", "purpose": "接单准备清单与开启操作" },
+    "context-guide": { "layer": "business", "status": "stable", "purpose": "真实页面中的操作提示" },
     "action-button": { "layer": "foundation", "status": "stable", "purpose": "统一主次、文字和危险操作按钮" },
     "form-field": { "layer": "foundation", "status": "stable", "purpose": "统一单行输入框、标签、提示及尾部操作" },
     "filter-trigger": { "layer": "foundation", "status": "stable", "purpose": "统一列表筛选触发器" },

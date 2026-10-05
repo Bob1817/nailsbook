@@ -42,7 +42,7 @@ describe('客户端核心路径静态契约', () => {
     expect(login).toContain('consumePostAuthRedirect(this.redirect)');
     expect(register).toContain("'&redirect=' + encodeURIComponent(this.redirect)");
     expect(register).toContain('/pages/onboarding/index?role=client');
-    expect(onboarding).toContain('consumePostAuthRedirect(this.redirect || this.plan.destination)');
+    expect(onboarding).toContain("consumePostAuthRedirect(redirect || '/pages/client/home/index')");
   });
 
   it('聊天与设计预约入口兼容美甲师参数', () => {

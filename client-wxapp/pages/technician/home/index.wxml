@@ -1,5 +1,6 @@
 <nav-bar title="首页"/>
 <view class="page">
+  <booking-setup wx:if="{{!isTourist}}" />
 
   <!-- ===== 游客模式提示 ===== -->
   <view wx:if="{{isTourist}}" class="tourist-banner" bindtap="goActivate">

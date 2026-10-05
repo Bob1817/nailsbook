@@ -176,7 +176,7 @@ Component({
 
         self.setData({
           techInfo: tech,
-          paused: role !== 'technician' && (tech.acceptingBookings === false || (tech.status && tech.status !== 'active') || false),
+          paused: role !== 'technician' && (tech.bookingReady === false || tech.acceptingBookings === false || (tech.status && tech.status !== 'active') || false),
           blockedSlots: blocked,
           closedDates: role === 'technician' ? [] : ((bookingSettings && bookingSettings.days) || []).filter(function (day) { return !day.accepting; }).map(function (day) { return day.serviceDate; }),
           shopAddresses: shopAddrs,

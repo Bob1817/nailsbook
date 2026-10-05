@@ -1,0 +1,8 @@
+<view wx:if="{{visible}}" class="context-guide">
+  <text class="context-title">{{tip.title}}</text>
+  <text class="context-copy">{{tip.text}}</text>
+  <view class="context-actions">
+    <button wx:if="{{technician || tip.action}}" class="booking-action context-action" bindtap="act" hover-class="context-pressed">{{technician ? '查看接单准备进度' : tip.action}}</button>
+    <button wx:if="{{!technician}}" class="booking-action context-dismiss" bindtap="dismiss" hover-class="context-pressed">知道了</button>
+  </view>
+</view>

@@ -80,6 +80,7 @@ const checks = [
   'test-settings-governance.js',
   'test-auth-entry-style.js',
   'test-first-use-onboarding.js',
+  'test-onboarding-homepage.js',
   'test-secondary-page-style.js',
   'test-work-comment-submit.js',
   'test-work-list-actions.js',

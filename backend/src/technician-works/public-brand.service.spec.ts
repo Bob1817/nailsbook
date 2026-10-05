@@ -8,6 +8,7 @@ describe('PublicBrandService public DTO snapshots', () => {
         findFirst: jest.fn().mockResolvedValue({
           id: 7,
           name: 'Luna',
+          _count: { nailWorks: 1 },
           avatarUrl: '/uploads/luna-medium.webp',
           city: '上海',
           serviceArea: '静安区',
@@ -19,6 +20,7 @@ describe('PublicBrandService public DTO snapshots', () => {
             '{"activeSchemeId":"regular","schemes":[{"id":"regular","days":["mon"],"startTime":"09:00","endTime":"18:00"}]}',
           brandProfile: {
             brandName: 'Luna Nail',
+            heroImageUrl: '/uploads/share-medium.webp',
             tagline: '低饱和手绘美甲',
             city: '上海',
             publicServiceArea: '静安区及周边',

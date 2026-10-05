@@ -1,5 +1,6 @@
 <page-meta page-style="{{showAddModal ? 'overflow: hidden;' : ''}}"/>
 <nav-bar title="店铺管理" showBack/>
+<context-guide kind="shop" />
 <view class="container">
 
   <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>

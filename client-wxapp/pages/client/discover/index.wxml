@@ -1,5 +1,6 @@
 <nav-bar title="美甲师作品"/>
 <view class="page">
+  <context-guide kind="client-works" />
 
   <!-- ===== 未登录：登录后可见 ===== -->
   <view wx:if="{{needLogin}}" class="empty-wrap">

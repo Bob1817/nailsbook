@@ -2,6 +2,7 @@
   "navigationBarTitleText": "服务管理",
   "navigationStyle": "custom",
   "usingComponents": {
-    "nav-bar": "/components/nav-bar/index"
+    "nav-bar": "/components/nav-bar/index",
+    "context-guide": "/components/context-guide/index"
   }
 }

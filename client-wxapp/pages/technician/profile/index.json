@@ -3,7 +3,9 @@
   "usingComponents": {
     "nav-bar": "/components/nav-bar/index",
     "tab-bar": "/components/tab-bar/index",
-    "rest-day-calendar": "/components/rest-day-calendar/index"
+    "rest-day-calendar": "/components/rest-day-calendar/index",
+    "context-guide": "/components/context-guide/index",
+    "booking-setup": "/components/booking-setup/index"
   },
   "navigationBarTitleText": "我的"
 }

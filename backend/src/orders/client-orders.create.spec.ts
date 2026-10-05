@@ -9,6 +9,10 @@ describe('ClientOrdersService.create 下单校验', () => {
   const tech = (over: Record<string, unknown> = {}) => ({
     id: 7,
     status: 'active',
+    avatarUrl: '/avatar.jpg',
+    brandProfile: { brandName: '工作室', heroImageUrl: '/cover.jpg', artistIntroduction: '专注手绘美甲', publicationStatus: 'published' },
+    _count: { nailWorks: 1 },
+
     homeService: true,
     shopService: true,
     serviceItems: JSON.stringify([
@@ -49,6 +53,13 @@ describe('ClientOrdersService.create 下单校验', () => {
     chatMode: true, // 跳过内容必填，专注其它守卫
   };
 
+
+  it.each([{ _count: { nailWorks: 0 } }, { brandProfile: null }])('资料不完整时服务端阻止直接提交预约 %p', async missing => {
+    prisma.clientTechBinding.findFirst.mockResolvedValue({ technician: tech(missing) });
+    await expect(service.create(11, baseDto)).rejects.toThrow('暂未开放预约');
+    expect(prisma.clientUser.findUnique).not.toHaveBeenCalled();
+  });
+
   it('未绑定该美甲师 → NotFound', async () => {
     prisma.clientTechBinding.findFirst.mockResolvedValue(null);
     await expect(service.create(11, baseDto)).rejects.toBeInstanceOf(
@@ -61,7 +72,7 @@ describe('ClientOrdersService.create 下单校验', () => {
       technician: tech({ homeService: false, shopService: false }),
     });
     await expect(service.create(11, baseDto)).rejects.toThrow(
-      '请至少开启一种服务方式',
+      '该美甲师暂未开放预约，请稍后再试',
     );
   });
 
@@ -71,7 +82,7 @@ describe('ClientOrdersService.create 下单校验', () => {
     });
     await expect(
       service.create(11, { ...baseDto, serviceType: '上门美甲' }),
-    ).rejects.toThrow('尚未开启上门服务');
+    ).rejects.toThrow('该美甲师暂未开放预约，请稍后再试');
   });
 
   it('选到店但美甲师未开到店 → BadRequest', async () => {
@@ -80,7 +91,7 @@ describe('ClientOrdersService.create 下单校验', () => {
     });
     await expect(
       service.create(11, { ...baseDto, serviceType: '到店美甲' }),
-    ).rejects.toThrow('尚未开启到店服务');
+    ).rejects.toThrow('该美甲师暂未开放预约，请稍后再试');
   });
 
   it('非聊天/非自定义且未选服务内容 → BadRequest（内容必填）', async () => {

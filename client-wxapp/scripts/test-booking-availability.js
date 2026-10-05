@@ -75,6 +75,10 @@ const day = () => picker.data.calendarDays.find(d => d.dateStr === '2099-01-05')
   picker.contactArtist();
   assert.equal(picker.events.at(-1).name, 'contact');
   artist.acceptingBookings = true;
+  artist.bookingReady = false;
+  await picker._loadTech(7);
+  assert.equal(picker.data.paused, true, '资料未完成不允许客户选择时间');
+  delete artist.bookingReady;
   artist.serviceSchedule = null;
   fail = true;
   await picker._loadTech(7);
