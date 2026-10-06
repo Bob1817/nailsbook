@@ -166,11 +166,23 @@ export class ShopAddressDto {
   @ArrayUnique((item: ShopBusinessHourDto) => item.weekday)
   businessHours?: ShopBusinessHourDto[];
 
-  @ApiPropertyOptional({ description: '店铺地址指引（地铁/公交/开车）', type: ShopGuidanceDto })
+  @ApiPropertyOptional({
+    description: '店铺地址指引（地铁/公交/开车）',
+    type: ShopGuidanceDto,
+  })
   @IsOptional()
   @ValidateNested()
   @Type(() => ShopGuidanceDto)
   guidance?: ShopGuidanceDto;
+
+  @ApiPropertyOptional({
+    description: '店铺环境照片 URL 列表',
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  photos?: string[];
 }
 
 export class UpdateTechnicianServiceTypeDto {
