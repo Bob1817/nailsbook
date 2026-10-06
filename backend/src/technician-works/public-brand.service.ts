@@ -59,6 +59,7 @@ export class PublicBrandService {
                 exclusiveServiceNote: true,
                 privacyNote: true,
                 serviceProcess: true,
+                featuredShopKey: true,
                 shareTitle: true,
                 shareDescription: true,
                 shareCoverUrl: true,
@@ -125,6 +126,7 @@ export class PublicBrandService {
             exclusiveServiceNote: brand?.exclusiveServiceNote || null,
             privacyNote: brand?.privacyNote || null,
             serviceProcess: this.objectList(brand?.serviceProcess || null),
+            featuredShopKey: brand?.featuredShopKey || null,
             environmentPhotos: (brand?.environmentPhotos || []).map((item) => ({
               ...item,
               imageUrl: this.image(item.imageUrl, size),

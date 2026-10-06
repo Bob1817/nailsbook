@@ -40,6 +40,7 @@ export class BrandProfilesService {
           featuredReviewIds: this.parseArray(profile.featuredReviewIds),
           timeline: this.parseArray(profile.timeline),
           serviceProcess: this.parseArray(profile.serviceProcess),
+          featuredShopKey: profile.featuredShopKey,
         }
       : {
           technicianId,
@@ -65,6 +66,7 @@ export class BrandProfilesService {
           exclusiveServiceNote: null,
           privacyNote: null,
           serviceProcess: [],
+          featuredShopKey: null,
           shareTitle: null,
           shareDescription: null,
           shareCoverUrl: null,
@@ -90,6 +92,7 @@ export class BrandProfilesService {
         [dto.artistIntroduction, '美甲师介绍'],
         [dto.hygieneStandards, '卫生与消毒说明'],
         [dto.cancellationPolicy, '取消规则'],
+        [dto.exclusiveServiceNote, '一对一服务说明'],
         [dto.shareTitle, '分享标题'],
         [dto.shareCoverUrl, '分享封面'],
       ];
@@ -135,6 +138,7 @@ export class BrandProfilesService {
         serviceProcess: dto.serviceProcess?.length
           ? JSON.stringify(dto.serviceProcess)
           : null,
+        featuredShopKey: clean(dto.featuredShopKey),
         shareTitle: clean(dto.shareTitle),
         shareDescription: clean(dto.shareDescription),
         shareCoverUrl: clean(dto.shareCoverUrl),
@@ -231,6 +235,7 @@ export class BrandProfilesService {
       exclusiveServiceNote: profile.exclusiveServiceNote,
       privacyNote: profile.privacyNote,
       serviceProcess: this.parseArray(profile.serviceProcess),
+      featuredShopKey: profile.featuredShopKey,
       shareTitle: profile.shareTitle,
       shareDescription: profile.shareDescription,
       shareCoverUrl: profile.shareCoverUrl,

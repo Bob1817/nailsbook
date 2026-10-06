@@ -1403,6 +1403,7 @@ model BrandProfile {
   exclusiveServiceNote String?
   privacyNote         String?
   serviceProcess      String? // JSON: [{step, title, description}]
+  featuredShopKey     String? // name||detailAddress of shop shown on public homepage
   shareTitle          String?
   shareDescription    String?
   shareCoverUrl       String?

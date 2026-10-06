@@ -43,6 +43,7 @@ describe('BrandProfilesService', () => {
       artistIntroduction: '专业美甲师',
       hygieneStandards: '一客一消毒',
       cancellationPolicy: '24小时前取消',
+      exclusiveServiceNote: '同一时段只服务一位客人',
       shareTitle: 'Luna Nail',
       shareCoverUrl: '/uploads/share.png',
       environmentPhotos: [{ imageUrl: '/uploads/room.png' }],

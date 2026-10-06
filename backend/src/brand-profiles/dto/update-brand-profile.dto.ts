@@ -83,6 +83,7 @@ export class UpdateBrandProfileDto {
   @IsOptional() @IsString() @MaxLength(500) exclusiveServiceNote?: string;
   @IsOptional() @IsString() @MaxLength(500) privacyNote?: string;
   @IsOptional() @IsArray() serviceProcess?: Array<{ step?: number; title?: string; description?: string }>;
+  @IsOptional() @IsString() @MaxLength(300) featuredShopKey?: string;
 
   @IsOptional() @IsString() @MaxLength(100) shareTitle?: string;
   @IsOptional() @IsString() @MaxLength(200) shareDescription?: string;

@@ -81,6 +81,7 @@ describe('PublicBrandService public DTO snapshots', () => {
            },
          ],
          "featuredReviewIds": [],
+         "featuredShopKey": null,
          "heroImageUrl": "http://localhost:3000/uploads/share-thumb.webp",
          "id": 7,
          "introduction": "独立美甲师",
