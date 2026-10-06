@@ -6,7 +6,8 @@ const { createRequire } = require('node:module');
 const root = path.join(__dirname, '..');
 const storage = { role: 'client', client_userInfo: { id: 1 } };
 let destination, failLoad = false, calls = 0, resolveEnable;
-const full = { ready: true, accepting: false, completed: 5, total: 5, steps: [] };
+const full = { ready: true, accepting: false, completed: 5, total: 5, requiredCompleted: 3, requiredTotal: 3,
+  steps: ['shop', 'services', 'schedule', 'homepage', 'works'].map((key, i) => ({ key, required: i < 3, done: true })) };
 let profile = { id: 7, bookingSetup: full };
 let getProfile = async () => { if (failLoad) throw Error('网络中断'); return profile; };
 const api = { technician: { auth: {
@@ -73,6 +74,36 @@ function load(file, component = false) {
   await checklist.pageLifetimes.show.call(checklist); // refresh returns asynchronously
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(checklist.data.setup.completed, 5, '返回工作台重新读取已保存资料');
+
+  profile = { id: 7, bookingSetup: { ...full, completed: 3, accepting: true,
+    steps: full.steps.map(step => ({ ...step, done: step.required })) } };
+  checklist.properties.mode = 'profile';
+  await checklist.refresh();
+  assert.equal(checklist.data.percent, 100);
+  assert.equal(checklist.data.optionalSteps.length, 2);
+  assert.equal(checklist.data.nextStep, null);
+  checklist.dismiss(); await checklist.refresh();
+  assert.equal(checklist.data.dismissed, true, '关闭通知后刷新不重新弹出');
+  assert.equal(checklist.data.optionalSteps.length, 2, '关闭提醒不视为资料完成');
+  const myPage = load('pages/technician/profile/index.js');
+  myPage.applyUserInfo();
+  assert.equal(myPage.data.setupMissing.homepage, true, '关闭后主页红点保留');
+  assert.equal(myPage.data.setupMissing.works, true, '关闭后作品红点保留');
+  assert.equal(myPage.data.setupMissing.schedule, undefined);
+  profile = { id: 7, bookingSetup: { ...full, accepting: true } };
+  await checklist.refresh(); myPage.applyUserInfo();
+  assert.equal(Object.keys(myPage.data.setupMissing).length, 0, '保存完整资料后缺项红点消失');
+  assert.equal(checklist.data.optionalSteps.length, 0);
+  storage.technician_userInfo = { id: 8 };
+  profile = { ...profile, id: 8 }; await checklist.refresh();
+  assert.equal(checklist.data.dismissed, false, '关闭设置按账号隔离');
+  storage.technician_userInfo = { id: 7 }; profile = { ...profile, id: 7 };
+  const completeProfile = profile;
+  profile = { id: 7, bookingSetup: { ready: true, steps: [] } };
+  await checklist.refresh(); await checklist.enable();
+  assert(checklist.data.error.includes('服务待更新'), '旧后端不能误显示已完成');
+  assert.equal(calls, 1);
+  profile = completeProfile;
 
   let resolveOld;
   getProfile = () => new Promise(resolve => { resolveOld = resolve; });

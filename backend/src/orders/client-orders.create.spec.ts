@@ -54,10 +54,17 @@ describe('ClientOrdersService.create 下单校验', () => {
   };
 
 
-  it.each([{ _count: { nailWorks: 0 } }, { brandProfile: null }])('资料不完整时服务端阻止直接提交预约 %p', async missing => {
+  it.each([{ serviceItems: null }, { serviceSchedule: null }])('必要资料不完整时服务端阻止直接提交预约 %p', async missing => {
     prisma.clientTechBinding.findFirst.mockResolvedValue({ technician: tech(missing) });
     await expect(service.create(11, baseDto)).rejects.toThrow('暂未开放预约');
     expect(prisma.clientUser.findUnique).not.toHaveBeenCalled();
+  });
+
+  it.each([{ _count: { nailWorks: 0 } }, { brandProfile: null }])('缺少可选资料仍通过接单校验 %p', async missing => {
+    prisma.clientTechBinding.findFirst.mockResolvedValue({ technician: tech(missing) });
+    prisma.clientUser.findUnique.mockResolvedValue(null);
+    await expect(service.create(11, baseDto)).rejects.toBeInstanceOf(NotFoundException);
+    expect(prisma.clientUser.findUnique).toHaveBeenCalled();
   });
 
   it('未绑定该美甲师 → NotFound', async () => {

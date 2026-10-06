@@ -227,6 +227,8 @@ page { background: var(--bg-gradient-entry); }
 }
 .dot-on { background: var(--nb-success); }
 .dot-off { background: var(--nb-muted); }
+.setup-pending-dot { display:inline-block; width:12rpx; height:12rpx; margin-left:12rpx; border-radius:50%; background:var(--nb-danger); vertical-align:middle; }
+.setup-pending-label { margin-top:4rpx; color:var(--nb-muted); font-size:var(--font-xs); }
 
 /* ===== 设置菜单 ===== */
 .menu-list { display: flex; flex-direction: column; }

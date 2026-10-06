@@ -57,6 +57,7 @@ Page({
     // 新手引导
     shopServiceOn: false,
     setupSteps: [],
+    setupMissing: {},
 
     // 服务类型引导弹窗（仅工作时间设置时触发）
     showServiceTypeModal: false,
@@ -122,7 +123,9 @@ Page({
 
   onPullDownRefresh() {
     this.applyUserInfo();
-    this.loadStats().finally(() => wx.stopPullDownRefresh());
+    const checklist = this.selectComponent('#bookingSetup');
+    Promise.all([this.loadStats(), checklist ? checklist.refresh() : Promise.resolve()])
+      .finally(() => wx.stopPullDownRefresh());
   },
 
   applyUserInfo() {
@@ -132,7 +135,9 @@ Page({
     const setup = userInfo.bookingSetup;
     const setupSteps = setup ? setup.steps.map(item => ({ ...item, label: item.title, route: item.key })) : [];
     const canAcceptOrders = !!setup && setup.ready;
-    this.setData({ userInfo, shopServiceOn, canAcceptOrders, setupSteps });
+    const setupMissing = {};
+    setupSteps.forEach(step => { if (!step.done) setupMissing[step.key === 'shop' ? 'shops' : step.key] = true; });
+    this.setData({ userInfo, shopServiceOn, canAcceptOrders, setupSteps, setupMissing });
     this.computeAccepting();
   },
 
@@ -180,7 +185,7 @@ Page({
       return;
     }
     if (!this.data.canAcceptOrders) {
-      const firstIncomplete = this.data.setupSteps.find((item) => !item.done);
+      const firstIncomplete = this.data.setupSteps.find((item) => item.required && !item.done);
       wx.showModal({
         title: '请先完成接单设置',
         content: firstIncomplete ? firstIncomplete.hint : '请先重新加载接单准备进度。',

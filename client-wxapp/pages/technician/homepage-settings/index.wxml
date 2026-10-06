@@ -53,7 +53,7 @@
   </view>
 
   <view class="section-card" data-section="environment">
-    <view class="section-heading"><view><text class="section-title">个人介绍</text><text class="section-sub">帮助客户了解你的经历与审美理念</text></view><text class="section-badge">接单前必填</text></view>
+    <view class="section-heading"><view><text class="section-title">个人介绍</text><text class="section-sub">帮助客户了解你的经历与审美理念</text></view><text class="section-badge">公开前必填</text></view>
     <view class="field"><view class="label-row"><text class="label">自我介绍</text><text class="counter">{{artistIntroduction.length}}/1000</text></view><textarea placeholder-class="form-placeholder" class="form-textarea textarea" value="{{artistIntroduction}}" bindinput="onInput" data-field="artistIntroduction" maxlength="1000" placeholder="介绍你的经历、风格和服务理念" adjust-position cursor-spacing="120"/></view>
     <view class="field"><text class="label">审美宣言</text><textarea placeholder-class="form-placeholder" class="form-textarea textarea compact" value="{{aestheticPhilosophy}}" bindinput="onInput" data-field="aestheticPhilosophy" maxlength="300" placeholder="例如：让指尖成为安静但有力量的自我表达" adjust-position cursor-spacing="120"/></view>
   </view>

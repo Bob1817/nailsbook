@@ -28,6 +28,7 @@ Page({
     todoTotal: 0,
     todayFollowUps: [],
     businessOverview: null,
+    setupAccepting: false,
 
     featuredWorks: [],
     featuredLead: null,
@@ -52,8 +53,12 @@ Page({
   },
 
   onPullDownRefresh() {
+    const checklist = this.selectComponent('#bookingSetup');
+    if (checklist) checklist.refresh();
     this.loadDashboard().finally(() => wx.stopPullDownRefresh());
   },
+
+  onSetupRefresh(e) { this.setData({ setupAccepting: !!e.detail.bookingSetup.accepting }); },
 
   goActivate() {
     wx.navigateTo({ url: '/pages/technician/set-password/index' });

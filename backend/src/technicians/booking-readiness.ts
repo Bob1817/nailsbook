@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 
-// The same filtered count is used by the private checklist and booking gates.
+// Count only publishable portfolio items for the optional profile checklist.
 export const bookingSetupRelations = {
   brandProfile: true,
   _count: { select: { nailWorks: { where: {
@@ -109,16 +109,6 @@ export function bookingReadiness(
     }
   }
 
-  const brand = technician.brandProfile;
-  if (!technician.avatarUrl?.trim() || !brand?.brandName?.trim() ||
-      !brand.heroImageUrl?.trim() || !brand.artistIntroduction?.trim() ||
-      brand.publicationStatus !== 'published') {
-    issues.push('请完善主页头像、名称、背景图和自我介绍，并公开主页');
-  }
-  if (!technician._count?.nailWorks) {
-    issues.push('请上传至少一个有封面、审核通过且公开展示的作品');
-  }
-
   return { ready: issues.length === 0, issues };
 }
 
@@ -127,14 +117,24 @@ export function bookingSetup(technician: TechnicianBookingConfig) {
   const definitions = [
     { key: 'shop', title: '完善店铺信息', match: /服务方式|到店|门店/, hint: '开启到店服务，添加并启用客户可到达的门店地址' },
     { key: 'services', title: '制定服务与价格', match: /服务项目/, hint: '至少上架一项服务，填写名称、价格与预计时长' },
-    { key: 'homepage', title: '完善美甲师主页', match: /主页/, hint: '设置头像、背景图和介绍，补充环境照片、卫生说明及取消规则，再公开主页' },
-    { key: 'works', title: '上传代表作品', match: /作品/, hint: '至少一个有封面、审核通过且对所有客户公开的作品；待审核不算完成' },
     { key: 'schedule', title: '安排工作时间', match: /工作时间/, hint: '选择工作日和起止时间，启用并保存时间方案' },
   ];
   const steps = definitions.map(({ match, ...step }) => ({
-    ...step, done: !issues.some(issue => match.test(issue)),
+    ...step, required: true, done: !issues.some(issue => match.test(issue)),
   }));
-  return { steps, completed: steps.filter(step => step.done).length,
-    total: steps.length, ready: issues.length === 0,
+  const brand = technician.brandProfile;
+  const optionalSteps = [
+    { key: 'homepage', title: '完善美甲师主页', required: false,
+      hint: '补充头像、背景和介绍，公开主页，让客户更了解你',
+      done: !!(technician.avatarUrl?.trim() && brand?.brandName?.trim() && brand.heroImageUrl?.trim() && brand.artistIntroduction?.trim() && brand.publicationStatus === 'published') },
+    { key: 'works', title: '上传代表作品', required: false,
+      hint: '展示有封面、审核通过的公开作品，帮助客户选择款式',
+      done: !!technician._count?.nailWorks },
+  ];
+  const allSteps = [...steps, ...optionalSteps];
+  return { steps: allSteps, completed: allSteps.filter(step => step.done).length,
+    total: allSteps.length, requiredCompleted: steps.filter(step => step.done).length,
+    requiredTotal: steps.length, optionalCompleted: optionalSteps.filter(step => step.done).length,
+    optionalTotal: optionalSteps.length, ready: issues.length === 0,
     accepting: technician.status === 'active' && issues.length === 0 };
 }

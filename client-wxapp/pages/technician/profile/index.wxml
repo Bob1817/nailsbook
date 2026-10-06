@@ -34,14 +34,14 @@
     </view>
     <view class="profile-schedule-row availability-module" bindtap="openScheduleModal" role="button" aria-label="设置工作时间" hover-class="profile-pressed">
       <view class="status-copy">
-        <text class="status-label">工作时间</text>
+        <text class="status-label">工作时间<text wx:if="{{setupMissing.schedule}}" class="setup-pending-dot" aria-label="工作时间待完善"></text></text>
         <text class="profile-helper">{{scheduleSummary}}</text>
       </view>
       <text class="semantic-link profile-link">修改 ›</text>
     </view>
   </view>
 
-  <booking-setup id="bookingSetup" bind:refresh="onSetupRefresh" />
+  <booking-setup id="bookingSetup" mode="profile" bind:refresh="onSetupRefresh" />
 
   <!-- ============ 我的预约 ============ -->
   <view class="card card-gap">
@@ -100,10 +100,9 @@
       >
         <view class="tool-icon-bg tool-bg-{{item.key}}">
           <image class="tool-icon" src="{{item.icon}}" mode="aspectFit" />
-          <!-- 服务开启状态点 -->
-          <view wx:if="{{item.key === 'shops' && shopServiceOn}}" class="tool-status-dot dot-on"></view>
+          <view wx:if="{{setupMissing[item.key]}}" class="tool-status-dot setup-pending-dot" aria-label="{{item.label}}待完善"></view>
         </view>
-        <text class="tool-label">{{item.label}}</text>
+        <text class="tool-label">{{item.label}}</text><text wx:if="{{setupMissing[item.key]}}" class="setup-pending-label">待完善</text>
       </view>
     </view>
   </view>

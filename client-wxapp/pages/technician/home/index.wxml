@@ -1,6 +1,5 @@
 <nav-bar title="首页"/>
 <view class="page">
-  <booking-setup wx:if="{{!isTourist}}" />
 
   <!-- ===== 游客模式提示 ===== -->
   <view wx:if="{{isTourist}}" class="tourist-banner" bindtap="goActivate">
@@ -13,16 +12,18 @@
   </view>
 
   <!-- ===== 经营信息 ===== -->
-  <view class="business-hero" bindtap="openBusinessDetail" role="button" aria-label="查看经营数据详情">
+  <view class="business-hero">
     <view class="hero-orb hero-orb-left"></view>
     <view class="hero-orb hero-orb-right"></view>
     <view class="business-hero-head">
       <view>
         <text class="business-hero-kicker">本月经营信息</text>
-        <text class="business-hero-caption">数据更新至今日</text>
+        <text class="business-hero-caption">{{setupAccepting || isTourist ? '数据更新至今日' : '接单准备 · 必要设置'}}</text>
       </view>
-      <view class="business-hero-more semantic-link">详情 <text>›</text></view>
+      <view wx:if="{{setupAccepting || isTourist}}" class="business-hero-more semantic-link" bindtap="openBusinessDetail" role="button" aria-label="查看经营数据详情">详情 <text>›</text></view>
     </view>
+    <booking-setup wx:if="{{!isTourist}}" id="bookingSetup" bind:refresh="onSetupRefresh">
+    <view slot="overview">
     <view wx:if="{{businessOverview}}" class="business-hero-content">
       <view class="business-hero-primary"><text class="business-hero-value semantic-money">{{businessOverview.revenue}}</text><text class="business-hero-label">已完成确认收入</text></view>
       <view class="business-hero-grid">
@@ -33,6 +34,9 @@
       </view>
     </view>
     <view wx:else class="business-hero-empty">经营数据正在生成</view>
+    </view>
+    </booking-setup>
+    <view wx:else class="business-hero-empty">激活美甲师身份后，开始设置接单信息</view>
   </view>
 
   <!-- ===== 下一单 ===== -->
