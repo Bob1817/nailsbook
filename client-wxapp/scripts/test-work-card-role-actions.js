@@ -6,6 +6,9 @@ const wxml = fs.readFileSync(path.join(root, 'components/work-card/index.wxml'),
 const js = fs.readFileSync(path.join(root, 'components/work-card/index.js'), 'utf8');
 const wxss = fs.readFileSync(path.join(root, 'components/work-card/index.wxss'), 'utf8');
 const technicianHomeJs = fs.readFileSync(path.join(root, 'pages/technician/home/index.js'), 'utf8');
+const technicianHomeWxml = fs.readFileSync(path.join(root, 'pages/technician/home/index.wxml'), 'utf8');
+const technicianWorksJs = fs.readFileSync(path.join(root, 'pages/technician/works/index.js'), 'utf8');
+const technicianWorksWxml = fs.readFileSync(path.join(root, 'pages/technician/works/index.wxml'), 'utf8');
 
 function expect(source, pattern, message) {
   if (!pattern.test(source)) throw new Error(message);
@@ -27,6 +30,12 @@ if (/work\.isVisible === false \? '已隐藏' : '已发布'/.test(js)) {
   throw new Error('作品卡片不得仅按可见开关判断已发布状态');
 }
 expect(js, /standardPriceFen \|\| w\.serviceSubtotalFen \|\| w\.priceCents/, '作品卡片应兼容服务标准价格字段');
+expect(wxml, /class="wc-editorial-artist"[^>]*catchtap="onArtistTap"[^>]*aria-label="查看\{\{work\.technicianName \|\| '美甲师'\}\}的主页"/, '编辑式作品卡片的头像和名称应提供主页入口');
+expect(wxml, /class="wc-tech-pill"[^>]*catchtap="onArtistTap"[^>]*aria-label="查看\{\{work\.technicianName \|\| '美甲师'\}\}的主页"/, '网格式作品卡片的头像和名称应提供主页入口');
+expect(technicianHomeWxml, /bind:artisttap="openArtistHome"/, '美甲师首页作品应接入主页跳转事件');
+expect(technicianWorksWxml, /bind:artisttap="openArtistHome"/, '美甲师作品列表应接入主页跳转事件');
+expect(technicianHomeJs, /openArtistHome\(e\)[\s\S]*\/pages\/client\/artist-home\/index\?id=/, '美甲师首页头像和名称应进入对应主页');
+expect(technicianWorksJs, /openArtistHome\(e\)[\s\S]*\/pages\/client\/artist-home\/index\?id=/, '美甲师作品列表头像和名称应进入对应主页');
 expect(technicianHomeJs, /\.map\(\(w\) => \(\{\s*\.\.\.w,/, '美甲师首页应保留接口返回的完整作品价格字段');
 if (/priceText: w\.price \? '¥' \+ w\.price : ''/.test(technicianHomeJs)) {
   throw new Error('美甲师首页不应使用旧 price 字段覆盖统一价格口径');
@@ -60,7 +69,7 @@ expect(artistHomeJs, /api\.public\.artists\.detail[\s\S]*api\.client\.works\.lis
 if (/api\.client\.works\.list\([\s\S]{0,160}needAuth:\s*false/.test(artistHomeJs)) {
   throw new Error('美甲师主页不得匿名读取作品');
 }
-expect(artistHomeJs, /sourceWorks\.some\(\(item\) => item\.isFeatured\)[\s\S]*sourceWorks\.filter\(\(item\) => item\.isFeatured\)/, '美甲师主页应在标准化前保留并筛选精选标记');
+expect(artistHomeJs, /sourceWorks\.filter\(\(item\) => item\.isFeatured\)/, '美甲师主页应在标准化前筛选精选标记');
 
 const detailWxss = fs.readFileSync(path.join(root, 'pages/client/work-detail/index.wxss'), 'utf8');
 expect(detailWxss, /\.container \{[^}]*padding: 0;[^}]*background: var\(--bg-card\);/, '作品详情页应清除全局容器间距和黑色边框');
@@ -87,7 +96,7 @@ expect(publicDetailJs, /api\.public\.works\.detail\(this\.workId\)/, '分享落�
 expect(publicDetailJs, /this\.shareToken[\s\S]*api\.public\.works\.shared\(this\.shareToken\)/, '限时分享令牌仍应使用公开分享接口');
 expect(publicDetailJs, /if \(!token\)[\s\S]*buildClientLoginUrl\(returnPath/, '未登录访问作品分享时应先登录并保留返回路径');
 expect(sharedDetailWxml, /class="title-row"[\s\S]*wx:if="\{\{isAuthor\}\}" class="manage-button"[^>]*aria-label="管理作品"[\s\S]*more-horizontal\.svg/, '共享详情组件应在标题右侧仅向作者展示三点管理入口');
-expect(sharedDetailWxml, /wx:if="\{\{work\._priceText\}\}" class="work-price-row"[\s\S]*服务原价[\s\S]*优惠[\s\S]*其他/, '共享详情组件必须统一展示综合报价及价格差额');
+expect(sharedDetailWxml, /class="work-pricing-card"[\s\S]*服务原价[\s\S]*class="work-price-row"[\s\S]*作品报价[\s\S]*已优惠[\s\S]*其他/, '共享详情组件必须按原价、作品报价和价格差额的层级展示综合报价');
 expect(technicianDetailWxml, /bind:commentmanage="manageComment"/, '美甲师详情页应接入作者评论管理权限');
 expect(sharedDetailWxml, /wx:if="\{\{isAuthor\}\}" class="comment-manage"[^>]*catchtap="manageComment"/, '评论管理入口只能向作品作者展示');
 expect(technicianDetailJs, /manageComment\(e\)[\s\S]*置顶评论[\s\S]*隐藏评论[\s\S]*删除评论/, '作者评论菜单应支持置顶、隐藏和删除');
@@ -102,9 +111,13 @@ if (!(introIndex < engagementIndex && engagementIndex < commentsIndex && comment
   throw new Error('作品介绍区顺序必须为标题描述、互动操作、评论、输入框');
 }
 expect(sharedDetailWxml, /class="title-row"[\s\S]*wx:if="\{\{!visitorInfo && showBookSame\}\}" class="booking-action"[^>]*bindtap="bookSame"/, '预约同款应在标题右侧，保留原预约事件和访客页面独立入口');
-expect(sharedDetailWxml, /class="visitor-booking-button booking-action"[^>]*bindtap="bookSame"/, '游客作品详情底部预约入口必须接入统一按钮标准');
+expect(sharedDetailWxss, /\.booking-action-face \{[^}]*height:\s*44px;[^}]*border-radius:\s*8px;[^}]*font-size:\s*var\(--font-sm\);/, '标题行预约同款可见按钮必须对齐 44px 统一按钮规格');
+expect(sharedDetailWxml, /class="send"(?![^>]*size="mini")/, '评论发送按钮不得使用 size="mini" 造成字号与居中偏差');
+expect(sharedDetailWxss, /button\.send,\s*\.send \{[^}]*display:\s*flex;[^}]*align-items:\s*center;[^}]*justify-content:\s*center;[^}]*font-size:\s*var\(--font-sm\);/, '评论发送按钮必须 flex 垂直水平居中并使用统一字号');
+expect(sharedDetailWxml, /class="visitor-bar-btn visitor-bar-btn-primary booking-action"[^>]*bindtap="bookSame"/, '游客作品详情底部预约入口必须接入统一按钮标准');
 expect(sharedDetailWxss, /@import ['"]\.\.\/\.\.\/styles\/booking-actions\.wxss['"];/, '共享作品详情组件必须引入统一按钮样式');
-expect(sharedDetailWxss, /\.visitor-booking-button\.booking-action \{[^}]*min-height:44px;[^}]*height:44px;[^}]*border-radius:8px;[^}]*font-size:var\(--font-sm\);[^}]*box-shadow:none;/, '游客作品详情底部预约入口必须使用紧凑按钮规格');
+expect(sharedDetailWxss, /\.visitor-bar-btn\.booking-action \{[^}]*min-height:44px;[^}]*height:44px;[^}]*border-radius:8px;[^}]*font-size:var\(--font-sm\);[^}]*box-shadow:none;/, '游客作品详情底部预约入口必须使用紧凑按钮规格');
+expect(sharedDetailWxml, /<button[^>]*open-type="share"[^>]*>分享给好友<\/button>/, '分享给好友必须使用支持 open-type 的原生 button');
 const bookingIndex = sharedDetailWxml.indexOf('class="booking-action"');
 if (!(introIndex < bookingIndex && bookingIndex < sharedDetailWxml.indexOf('class="work-price-row"'))) throw new Error('预约同款必须在标题行而非互动栏');
 if (/work-share-poster/.test(sharedDetailWxml)) throw new Error('作品详情页不应在互动栏下方展示海报、文案或二维码营销区块');

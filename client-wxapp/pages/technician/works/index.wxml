@@ -29,14 +29,14 @@
     <!-- 左列 -->
     <view class="col">
       <view wx:for="{{leftCol}}" wx:key="id" class="work-item">
-        <work-card work="{{item}}" manageable bind:cardtap="goDetail" bind:actiontap="showActions" />
+        <work-card work="{{item}}" manageable bind:cardtap="goDetail" bind:artisttap="openArtistHome" bind:actiontap="showActions" />
       </view>
     </view>
 
     <!-- 右列 -->
     <view class="col">
       <view wx:for="{{rightCol}}" wx:key="id" class="work-item">
-        <work-card work="{{item}}" manageable bind:cardtap="goDetail" bind:actiontap="showActions" />
+        <work-card work="{{item}}" manageable bind:cardtap="goDetail" bind:artisttap="openArtistHome" bind:actiontap="showActions" />
       </view>
     </view>
   </view>

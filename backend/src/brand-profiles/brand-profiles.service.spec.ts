@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { BrandProfilesService } from './brand-profiles.service';
 
 describe('BrandProfilesService', () => {
@@ -11,7 +11,6 @@ describe('BrandProfilesService', () => {
     },
     brandEnvironmentPhoto: { deleteMany: jest.fn(), createMany: jest.fn() },
     brandFaq: { deleteMany: jest.fn(), createMany: jest.fn() },
-    service: { count: jest.fn() },
     $transaction: jest.fn(),
   } as any;
   const service = new BrandProfilesService(prisma);
@@ -25,8 +24,14 @@ describe('BrandProfilesService', () => {
     prisma.technician.findUnique.mockResolvedValue({
       id: 7,
       avatarUrl: '/uploads/avatar.png',
+      shopAddresses: JSON.stringify([
+        {
+          name: 'Luna 工作室',
+          detailAddress: '静安区示例路 1 号',
+          photos: ['/uploads/shop.png'],
+        },
+      ]),
     });
-    prisma.service.count.mockResolvedValue(1);
     prisma.brandProfile.upsert.mockResolvedValue({ id: 20 });
     prisma.brandProfile.findUnique.mockResolvedValue({
       technicianId: 7,
@@ -47,6 +52,8 @@ describe('BrandProfilesService', () => {
       shareTitle: 'Luna Nail',
       shareCoverUrl: '/uploads/share.png',
       environmentPhotos: [{ imageUrl: '/uploads/room.png' }],
+      featuredShopKey: 'Luna 工作室||静安区示例路 1 号',
+      featuredServiceIds: ['svc-care'],
       publicationStatus: 'published',
     });
 
@@ -54,17 +61,31 @@ describe('BrandProfilesService', () => {
       expect.objectContaining({
         where: { technicianId: 7 },
         create: expect.objectContaining({ technicianId: 7, brandName: 'Luna' }),
+        update: expect.objectContaining({
+          featuredServiceIds: JSON.stringify(['svc-care']),
+        }),
       }),
     );
   });
 
-  it('拒绝发布缺少必填资料或可预约服务的主页', async () => {
-    prisma.technician.findUnique.mockResolvedValue({ id: 7, avatarUrl: null });
-    prisma.service.count.mockResolvedValue(0);
-    await expect(
-      service.update(7, { brandName: 'Luna', publicationStatus: 'published' }),
-    ).rejects.toBeInstanceOf(BadRequestException);
-    expect(prisma.brandProfile.upsert).not.toHaveBeenCalled();
+  it('允许发布所有展示资料均为空的主页', async () => {
+    prisma.technician.findUnique.mockResolvedValue({ id: 7, name: 'Luna' });
+    prisma.brandProfile.upsert.mockResolvedValue({ id: 20 });
+    prisma.brandProfile.findUnique.mockResolvedValue({
+      technicianId: 7,
+      brandName: 'Luna',
+      environmentPhotos: [],
+      faqs: [],
+    });
+
+    await service.update(7, { publicationStatus: 'published' });
+
+    expect(prisma.brandProfile.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ brandName: 'Luna' }),
+        update: expect.objectContaining({ publicationStatus: 'published' }),
+      }),
+    );
   });
 
   it('rejects owner writes for a missing technician', async () => {

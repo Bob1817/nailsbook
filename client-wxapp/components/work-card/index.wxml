@@ -12,7 +12,7 @@
   </view>
   <view class="wc-editorial-copy">
     <text class="wc-editorial-title">{{work.title}}</text>
-    <view class="wc-editorial-artist" catchtap="onArtistTap">
+    <view class="wc-editorial-artist" catchtap="onArtistTap" role="button" aria-label="查看{{work.technicianName || '美甲师'}}的主页">
       <image wx:if="{{work.technicianAvatarUrl}}" src="{{work.technicianAvatarUrl}}" mode="aspectFill" class="wc-editorial-avatar" lazy-load aria-label="{{work.technicianName || '美甲师'}}的头像"/>
       <view wx:else class="wc-editorial-avatar wc-editorial-avatar-fallback"><image src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" /></view>
       <view class="wc-editorial-artist-copy">
@@ -44,7 +44,7 @@
 
   <!-- 顶部：美甲师 + 点赞 -->
   <view class="wc-top">
-    <view class="wc-tech-pill" catchtap="onArtistTap">
+    <view class="wc-tech-pill" catchtap="onArtistTap" role="button" aria-label="查看{{work.technicianName || '美甲师'}}的主页">
       <image wx:if="{{work.technicianAvatarUrl}}" src="{{work.technicianAvatarUrl}}" mode="aspectFill" class="wc-tech-av" lazy-load aria-label="{{work.technicianName || '美甲师'}}的头像"/>
       <view wx:else class="wc-tech-av-ph"><image src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" /></view>
       <view class="wc-tech-copy">

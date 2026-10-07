@@ -32,6 +32,25 @@
             </view>
           </view>
         </view>
+        <scroll-view wx:if="{{item.photos && item.photos.length}}" scroll-x class="shop-card-photos" enhanced show-scrollbar="{{false}}">
+          <view class="shop-card-photo-row">
+            <image
+              wx:for="{{item.photos}}"
+              wx:for-item="photoUrl"
+              wx:for-index="photoIdx"
+              wx:key="*this"
+              class="shop-card-photo"
+              src="{{photoUrl}}"
+              mode="aspectFill"
+              bindtap="previewShopPhoto"
+              data-name="{{item.name}}"
+              data-address="{{item.detailAddress}}"
+              data-idx="{{photoIdx}}"
+              role="button"
+              aria-label="预览第{{photoIdx + 1}}张环境照片"
+            />
+          </view>
+        </scroll-view>
         <view class="shop-meta">
           <view class="shop-location-row">
             <image class="shop-location-icon" src="/static/icons/pin.svg" mode="aspectFit" />
@@ -89,6 +108,23 @@
         <view class="form-item">
           <text class="label">详细地址</text>
           <input class="input" value="{{detailAddress}}" bindinput="onDetailAddressInput" placeholder="街道、楼栋、门牌号" placeholder-class="ph" confirm-type="done" />
+        </view>
+        <view class="form-item">
+          <view class="label-row">
+            <text class="label">环境照片</text>
+            <text class="form-section-note form-section-note-optional">{{shopPhotos.length}}/6</text>
+          </view>
+          <view class="photo-grid">
+            <view wx:for="{{shopPhotos}}" wx:key="*this" class="photo-cell">
+              <image class="photo-img" src="{{item}}" mode="aspectFill"/>
+              <view class="photo-remove" catchtap="removeShopPhoto" data-idx="{{index}}" role="button" aria-label="删除第{{index + 1}}张环境照片">✕</view>
+            </view>
+            <view wx:if="{{shopPhotos.length < 6}}" class="photo-add booking-action" bindtap="chooseShopPhotos" role="button" aria-label="上传环境照片">
+              <text class="photo-add-icon">＋</text>
+              <text class="photo-add-text">{{photoUploading ? '上传中' : '上传实景'}}</text>
+            </view>
+          </view>
+          <text class="label-sub">用于主页展示工作室环境，建议门厅、操作区、消毒角等</text>
         </view>
       </view>
 

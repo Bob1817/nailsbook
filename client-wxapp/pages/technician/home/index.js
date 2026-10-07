@@ -381,6 +381,11 @@ Page({
     if (id) wx.navigateTo({ url: `/pages/technician/work-detail/index?id=${id}` });
   },
 
+  openArtistHome(e) {
+    const id = e.detail && e.detail.id;
+    if (id) wx.navigateTo({ url: `/pages/client/artist-home/index?id=${id}` });
+  },
+
   showWorkActions(e) {
     if (isTouristTechnician()) {
       wx.showToast({ title: '请先激活美甲师账号', icon: 'none' });

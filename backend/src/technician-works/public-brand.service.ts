@@ -44,6 +44,7 @@ export class PublicBrandService {
                 specialties: true,
                 certificationTitle: true,
                 featuredReviewIds: true,
+                featuredServiceIds: true,
                 city: true,
                 publicServiceArea: true,
                 artistIntroduction: true,
@@ -98,13 +99,17 @@ export class PublicBrandService {
               size,
             ),
             experienceYears: brand?.experienceYears || null,
-            specialties: this.list(brand?.specialties || null),
+            specialties: this.listJson(brand?.specialties || null),
             certificationTitle: brand?.certificationTitle || null,
-            featuredReviewIds: this.list(brand?.featuredReviewIds || null)
+            featuredReviewIds: this.listJson(brand?.featuredReviewIds || null)
               .map(Number)
               .filter(Boolean),
-            city: brand?.city || technician.city,
-            serviceArea: brand?.publicServiceArea || technician.serviceArea,
+            featuredServiceIds:
+              brand?.featuredServiceIds == null
+                ? null
+                : this.listJson(brand.featuredServiceIds),
+            city: brand?.city || null,
+            serviceArea: brand?.publicServiceArea || null,
             introduction: brand?.artistIntroduction || null,
             aestheticPhilosophy: brand?.aestheticPhilosophy || null,
             transportationNotes: brand?.transportationNotes || null,
@@ -140,9 +145,7 @@ export class PublicBrandService {
                 }
               : null,
             serviceModes: {
-              home: isMiniProgramLaunchMode()
-                ? false
-                : technician.homeService,
+              home: isMiniProgramLaunchMode() ? false : technician.homeService,
               studio: technician.shopService,
             },
             bookingReady: bookingReadiness(technician).ready,
@@ -156,7 +159,19 @@ export class PublicBrandService {
   async services(id: number, query: Record<string, string | undefined>) {
     await this.assertActive(id);
     const { page, pageSize, skip } = this.page(query);
-    const where = { technicianId: id, archivedAt: null, isBookable: true };
+    const profile = await this.prisma.brandProfile.findUnique({
+      where: { technicianId: id },
+      select: { featuredServiceIds: true },
+    });
+    const featuredServiceIds = this.listJson(
+      profile?.featuredServiceIds || null,
+    );
+    const where = {
+      technicianId: id,
+      archivedAt: null,
+      isBookable: true,
+      publicId: { in: featuredServiceIds },
+    };
     const [items, total] = await Promise.all([
       this.prisma.service.findMany({
         where,

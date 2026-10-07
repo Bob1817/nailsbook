@@ -267,7 +267,7 @@
 }
 .form-section { margin: 24rpx 24rpx 0; padding: 32rpx; border: 0; border-radius:24rpx; background:var(--bg-card); box-shadow:0 4rpx 16rpx rgba(34,34,34,.035); }
 .form-section-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:32rpx; }
-.form-section-title { color:var(--text-primary); font-size:30rpx; line-height:1.3; font-weight:var(--weight-bold); }
+.form-section-title { color:var(--text-primary); font-size:28rpx; line-height:1.35; font-weight:var(--weight-bold); }
 .form-section-note { padding:6rpx 14rpx; border-radius:999rpx; background:rgba(0, 0, 0, .1); color:var(--brand-primary); font-size:20rpx; line-height:1.3; font-weight:var(--weight-semibold); }
 .form-section-note-optional { background:var(--nb-page); color:var(--text-muted); }
 .form-item {
@@ -283,10 +283,10 @@
 }
 .label {
   display: block;
-  font-size: var(--font-sm);
+  font-size: 26rpx;
   line-height: 1.4;
   color: var(--text-primary);
-  font-weight:var(--weight-medium);
+  font-weight: var(--weight-medium);
   margin-bottom: 12rpx;
 }
 .label-row {
@@ -296,7 +296,7 @@
   margin-bottom: 12rpx;
 }
 .label-link {
-  font-size: var(--font-sm);
+  font-size: 26rpx;
   color: var(--nb-text-link);
   font-weight: var(--weight-medium);
 }
@@ -308,7 +308,7 @@
   border: 2rpx solid transparent;
   border-radius: var(--input-radius);
   padding: 0 var(--input-padding-h);
-  font-size: var(--font-md);
+  font-size: 28rpx;
   color: var(--text-primary);
   box-sizing: border-box;
   line-height: var(--input-height);
@@ -320,11 +320,11 @@
 }
 .picker-input.placeholder {
   color: var(--text-muted);
-  font-size: var(--font-sm);
+  font-size: 26rpx;
 }
 .ph {
   color: var(--text-muted);
-  font-size: var(--font-sm);
+  font-size: 26rpx;
 }
 
 /* 地图选址 */
@@ -363,8 +363,8 @@
 }
 /* 地址指引 */
 .label-group { flex: 1; min-width: 0; }
-.switch-title { display:block; color:var(--text-primary); font-size:28rpx; line-height:1.35; font-weight:var(--weight-semibold); }
-.label-sub { display: block; margin-top: 6rpx; font-size:22rpx; color: var(--text-muted); line-height:1.45; }
+.switch-title { display:block; color:var(--text-primary); font-size:26rpx; line-height:1.35; font-weight:var(--weight-medium); }
+.label-sub { display: block; margin-top: 8rpx; font-size:22rpx; color: var(--text-muted); line-height:1.45; }
 .disclosure-item { padding-top:20rpx; border-top: 0; }
 .guidance-setting {
   display: block;
@@ -480,3 +480,70 @@
   opacity: 0.45;
 }
 .btn-save.booking-action { min-height:44px; height:44px; border-radius:8px; font-size:var(--font-sm); line-height:1.4; }
+
+.photo-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-top: 12rpx;
+}
+.photo-cell {
+  position: relative;
+  width: 200rpx;
+  height: 150rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
+  background: var(--nb-soft-surface, #EEF1F5);
+}
+.photo-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.photo-remove {
+  position: absolute;
+  top: 6rpx;
+  right: 6rpx;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.photo-add {
+  width: 200rpx;
+  height: 150rpx;
+  border-radius: 12rpx;
+  border: 1rpx dashed var(--nb-control, #8A8A8F);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6rpx;
+  background: var(--nb-surface, #fff);
+}
+.photo-add-icon { font-size: 36rpx; color: var(--nb-muted, #6E6E73); line-height: 1; }
+.photo-add-text { font-size: 20rpx; color: var(--nb-muted, #6E6E73); }
+
+/* 店铺卡片环境图（名称与地址之间） */
+.shop-card-photos {
+  width: 100%;
+  margin: 16rpx 0 4rpx;
+  white-space: nowrap;
+}
+.shop-card-photo-row {
+  display: inline-flex;
+  gap: 12rpx;
+  padding-bottom: 4rpx;
+}
+.shop-card-photo {
+  width: 220rpx;
+  height: 150rpx;
+  border-radius: 12rpx;
+  background: var(--nb-soft-surface, #EEF1F5);
+  flex-shrink: 0;
+}

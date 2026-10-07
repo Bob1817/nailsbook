@@ -1,18 +1,14 @@
 const api = require('../../../services/api');
 const { normalizeWork } = require('../../../utils/normalize-work');
 
-const DEFAULT_TIMELINE = [
-  { year: '2019', desc: '入行学习，师从日本JNA认证导师' },
-  { year: '2021', desc: '获得高级美甲师认证，作品登上行业杂志' },
-  { year: '2024', desc: '创立个人工作室「晴日美甲」，专注高端定制服务' }
-];
-const DEFAULT_SERVICES = [
-  { name: '基础护理与修形', price: 128, duration: '约45分钟', desc: '甲面修整、死皮处理、指缘护理、手部滋养', icon: '/static/icons/svc-handcare.svg' },
-  { name: '色彩与款式制作', price: 268, duration: '约75-120分钟', desc: '纯色/渐变/法式/晕染/贴片等多种款式可选', icon: '/static/icons/svc-palette.svg' },
-  { name: '指甲延长与加固', price: 358, duration: '约90-150分钟', desc: '水晶延长/光疗延长，加固修复薄软甲面', icon: '/static/icons/svc-extend.svg' },
-  { name: '卸甲服务', price: 68, duration: '约30分钟', desc: '专业安全卸甲，保护甲面不受损伤', icon: '/static/icons/svc-remove.svg' }
-];
 const DEFAULT_SERVICE_ICONS = ['/static/icons/svc-handcare.svg', '/static/icons/svc-palette.svg', '/static/icons/svc-extend.svg', '/static/icons/svc-remove.svg'];
+const QUALIFICATION_TYPE_LABEL = {
+  education: '教育经历',
+  training: '培训经历',
+  certificate: '证书资质',
+  certification: '行业认证',
+  award: '获奖记录'
+};
 
 Page({
   data: {
@@ -26,6 +22,20 @@ Page({
     qualifications: [],
     timeline: [],
     services: [],
+    heroImageUrl: '',
+    bannerImages: [],
+    environmentPhotos: [],
+    environmentHeroIndex: 0,
+    standards: null,
+    policies: null,
+    faqs: [],
+    exclusiveServiceNote: '',
+    privacyNote: '',
+    serviceProcess: [],
+    aestheticPhilosophy: '',
+    brandIntroduction: '',
+    brandTagline: '',
+    hasRealStats: false,
     isFollowed: false,
     isLiked: false,
     likeCount: 0,
@@ -33,6 +43,11 @@ Page({
     followerCount: 0,
     favoriteCount: 0,
     isBound: false,
+    isReturningClient: false,
+    isBindingPending: false,
+    entrySource: '',
+    entrySourceLabel: '',
+    entryGuide: '',
     loading: true,
     loadFailed: false,
     showBindModal: false,
@@ -40,19 +55,8 @@ Page({
     bindChecking: false,
     bindCandidate: null,
     bindError: '',
-    bannerImages: [
-      'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=300&h=200&fit=crop&auto=format&q=60',
-      'https://images.unsplash.com/photo-1607779097040-26e80aa78e66?w=300&h=200&fit=crop&auto=format&q=60',
-      'https://images.unsplash.com/photo-1519014816548-bf5fe059798b?w=300&h=200&fit=crop&auto=format&q=60',
-      'https://images.unsplash.com/photo-1632345031435-8727f6897d53?w=300&h=200&fit=crop&auto=format&q=60'
-    ],
-    styleBgs: [
-      'var(--nb-action)',
-      'var(--nb-page)',
-      'var(--nb-action)',
-      'var(--nb-action)',
-      'var(--nb-page)'
-    ]
+    stylePhotoCards: [],
+    styleTextTags: []
   },
 
   onLoad(options) {
@@ -60,14 +64,55 @@ Page({
     const role = wx.getStorageSync('role') || (getApp().globalData && getApp().globalData.role);
     const user = wx.getStorageSync('technician_userInfo') || {};
     const isOwner = options.owner === '1' || (role === 'technician' && user.id && String(user.id) === String(artistId));
-    this.setData({ artistId, previewMode: options.preview === '1' || isOwner, isOwner });
+    const entrySource = options.source || '';
+    this.setData({
+      artistId,
+      previewMode: options.preview === '1' || isOwner,
+      isOwner,
+      entrySource
+    });
     this.loadHome();
   },
 
   editHomepage() { wx.navigateTo({ url: '/pages/technician/homepage-settings/index' }); },
 
   onShow() {
-    if (this.data.artistId && !this.data.previewMode) this.loadRelationship();
+    if (this.data.artistId && !this.data.previewMode) {
+      this.loadRelationship().then(() => this.updateEntryGuide());
+    } else {
+      this.updateEntryGuide();
+    }
+  },
+
+  updateEntryGuide() {
+    const sourceLabels = {
+      friend: '来自朋友分享',
+      share: '来自分享名片',
+      share_card: '来自分享名片',
+      xhs: '来自小红书',
+      xiaohongshu: '来自小红书',
+      douyin: '来自抖音',
+      inquiry: '来自咨询询价',
+      artist_home: '美甲师主页',
+      booking: '预约引导',
+      card: '美甲师名片'
+    };
+    const entrySourceLabel = sourceLabels[this.data.entrySource] || '';
+    let entryGuide = '';
+    if (this.data.previewMode || this.data.isOwner) {
+      entryGuide = '';
+    } else if (!getApp().globalData.token) {
+      entryGuide = '浏览作品与环境无需登录；预约或咨询时登录即可。';
+    } else if (this.data.isBindingPending) {
+      entryGuide = '绑定申请已提交，美甲师通过后即可预约。可先收藏作品，通过后我们会保留入口。';
+    } else if (!this.data.isBound) {
+      entryGuide = '预约将绑定 TA 为你的专属美甲师（一对一工作室）。';
+    } else if (this.data.isReturningClient) {
+      entryGuide = '欢迎回来，可直接预约或预约上次同款。';
+    } else {
+      entryGuide = '已绑定，选好服务与时间即可提交预约。';
+    }
+    this.setData({ entryGuide, entrySourceLabel });
   },
 
   viewWork(e) {
@@ -88,65 +133,140 @@ Page({
         api.client.works.list(
           { techId: this.data.artistId },
           { silent: true }
-        ).catch(() => null)
+        ).catch(() => null),
+        api.public.brands.profile(this.data.artistId, (this.data.previewMode || this.data.isOwner)
+          ? { content: `owner_preview_${Date.now()}` }
+          : undefined).catch(() => null),
+        api.public.brands.services(this.data.artistId, { page: 1, pageSize: 20 }).catch(() => null)
       ]);
       const res = results[0];
       const worksRes = results[1];
+      const brandRes = results[2];
+      const servicesRes = results[3];
       const artist = res.artist || res.technician || res || {};
-      
+      const brand = (brandRes && (brandRes.brand || brandRes)) || {};
+
       // 基础信息
       artist.initial = (artist.name || '美').charAt(0);
-      artist.experienceYears = Math.max(1, Number(artist.experienceYears) || 6);
+      artist.name = brand.name || artist.name || '';
+      artist.experienceYears = Number(brand.experienceYears) || 0;
       artist.isVerified = artist.isVerified || false;
       artist.isOnline = artist.status === 'active';
-      artist.city = artist.city || '上海';
-      
-      // 统计数据
-      artist.serviceCount = artist.serviceCount || (res.stats && res.stats.serviceCount) || 1280;
-      artist.satisfactionRate = artist.satisfactionRate || (res.stats && res.stats.satisfactionRate) || 99.2;
-      const followerCount = Number(artist.followerCount || (res.stats && res.stats.followerCount) || 0);
-      const favoriteCount = Number(artist.favoriteCount || (res.stats && res.stats.favoriteCount) || 0);
-      const likeCount = Number(artist.likeCount || (res.stats && res.stats.likeCount) || 0);
-      
+      artist.city = brand.city || artist.city || '';
+
+      // 统计数据：仅使用真实来源，无则不展示
+      const stats = res.stats || {};
+      artist.workCount = Number(stats.workCount) || 0;
+      const ratingNum = Number(stats.rating);
+      artist.rating = (stats.rating === null || stats.rating === undefined || stats.rating === '' || Number.isNaN(ratingNum)) ? null : ratingNum;
+      artist.reviewCount = Number(stats.reviewCount) || 0;
+      const followerCount = Number(artist.followerCount || stats.followerCount || 0);
+      const favoriteCount = Number(artist.favoriteCount || stats.favoriteCount || 0);
+      const likeCount = Number(artist.likeCount || stats.likeCount || 0);
+
       // 专业标签
-      artist.styleTags = (artist.styleTags || artist.specialties || []).slice(0, 5);
-      artist.specialtiesText = artist.styleTags.slice(0, 2).join(' · ') || '日式专攻';
-      
-      // 个人简介
-      artist.bio = artist.bio || '';
-      
-      // 店铺信息
-      const shop = (artist.shopAddresses || [])[0] || {};
-      artist.shopName = shop.name || artist.shopName || '晴日美甲工作室';
-      artist.shopAddress = formatAddress(shop) || artist.shopAddress || '';
-      artist.businessHours = formatBusinessHours(shop.businessHours) || artist.businessHours || '';
-      artist.phone = shop.phone || artist.phone || '';
+      const styleTags = (artist.styleTags || brand.specialties || []).slice(0, 5);
+      artist.styleTags = styleTags;
+      artist.specialtiesText = styleTags.slice(0, 2).join(' · ') || '';
+      artist.certificationTitle = brand.certificationTitle || '';
+
+      // 个人简介 / 理念
+      artist.bio = brand.introduction || '';
+      artist.servicePhilosophy = artist.servicePhilosophy || '';
+      const aestheticPhilosophy = brand.aestheticPhilosophy || '';
+      const brandIntroduction = brand.introduction || '';
+      const brandTagline = brand.tagline || '';
+
+      // 店铺：优先主页选定店铺，否则取第一个已启用店铺
+      const shops = artist.shopAddresses || [];
+      const featuredShopKey = brand.featuredShopKey || '';
+      let shop = null;
+      if (featuredShopKey) {
+        shop = shops.find((s) => `${s.name || ''}||${s.detailAddress || s.address || ''}` === featuredShopKey) || null;
+      }
+      if (!shop) shop = {};
+      artist.shopName = shop.name || brand.name || '';
+      artist.shopAddress = formatAddress(shop) || '';
+      artist.businessHours = formatBusinessHours(shop.businessHours) || '';
+      artist.phone = shop.phone || '';
       artist._shopLatitude = parseFloat(shop.latitude) || 0;
       artist._shopLongitude = parseFloat(shop.longitude) || 0;
       artist._guidance = (shop.guidance && shop.guidance.enabled) ? shop.guidance : null;
-      
-      // 服务信息
-      artist.servicePhilosophy = artist.servicePhilosophy || '';
-      
-      // 成长时间线
-      const timeline = (artist.timeline || []).map(item => ({
+
+      // 资质（公开 artist 接口）
+      const qualifications = (res.qualifications || []).map((q) => ({
+        id: q.id,
+        type: q.type,
+        typeLabel: QUALIFICATION_TYPE_LABEL[q.type] || '专业资质',
+        title: q.title || '',
+        detail: q.detail || '',
+        organization: q.organization || '',
+        year: q.year || '',
+        isVerified: !!q.isVerified,
+        imageUrl: q.imageUrl || ''
+      }));
+
+      // 成长时间线：仅真实数据（优先品牌配置）
+      const timelineSource = (brand.timeline && brand.timeline.length) ? brand.timeline : (artist.timeline || []);
+      const timeline = (timelineSource || []).map(item => ({
         year: item.year || '',
         desc: item.description || item.desc || ''
-      }));
-      if (!timeline.length) timeline.push(...DEFAULT_TIMELINE);
-      
-      // 服务列表
-      const services = (artist.serviceItems || []).map((item, idx) => ({
+      })).filter((item) => item.year || item.desc);
+
+      // 服务列表：仅真实数据
+      const serviceSource = servicesRes
+        ? (servicesRes.items || servicesRes.data || [])
+        : (artist.serviceItems || []);
+      const services = serviceSource.map((item, idx) => ({
         name: item.name || '',
-        price: item.priceCents ? item.priceCents / 100 : (item.price || 0),
-        duration: item.duration || '',
+        price: item.price && typeof item.price === 'object'
+          ? (item.price.min || item.price.max || 0)
+          : (item.priceCents ? item.priceCents / 100 : (item.price || 0)),
+        duration: item.durationMinutes ? `${item.durationMinutes}分钟` : (item.duration || ''),
         desc: item.description || item.desc || '',
         icon: (item.icon && item.icon.indexOf && item.icon.indexOf('/') === 0)
           ? item.icon
           : DEFAULT_SERVICE_ICONS[idx % DEFAULT_SERVICE_ICONS.length]
       }));
-      if (!services.length) services.push(...DEFAULT_SERVICES);
-      
+
+      // 品牌：环境、保障、规则、FAQ、一对一与流程
+      // 工作室环境只展示所选店铺的实景照片
+      const shopPhotos = (Array.isArray(shop.photos) ? shop.photos : [])
+        .map((url) => ({
+          imageUrl: url || '',
+          caption: shop.name || '',
+          sceneTag: '工作室'
+        }))
+        .filter((item) => item.imageUrl);
+      const environmentPhotos = shopPhotos;
+      const standardValues = brand.standards
+        ? {
+            hygiene: brand.standards.hygiene || '',
+            materials: brand.standards.materials || '',
+            allergyNotice: brand.standards.allergyNotice || ''
+          }
+        : null;
+      const standards = standardValues && Object.values(standardValues).some(Boolean) ? standardValues : null;
+      const policyValues = brand.policies
+        ? {
+            late: brand.policies.late || '',
+            cancellation: brand.policies.cancellation || '',
+            aftercare: brand.policies.aftercare || ''
+          }
+        : null;
+      const policies = policyValues && Object.values(policyValues).some(Boolean) ? policyValues : null;
+      const exclusiveServiceNote = brand.exclusiveServiceNote || '';
+      const privacyNote = brand.privacyNote || '';
+      const serviceProcess = (brand.serviceProcess || []).map((item, index) => ({
+        step: item.step || index + 1,
+        title: item.title || '',
+        description: item.description || ''
+      })).filter((item) => item.title || item.description);
+      const faqs = (brand.faqs || []).map((item) => ({
+        question: item.question || '',
+        answer: item.answer || ''
+      })).filter((item) => item.question && item.answer);
+
       // 美甲师快照（统一注入到每个作品，确保作品卡/详情页/收藏列表口径与美甲师主页一致）
       const techSnapshot = {
         id: this.data.artistId,
@@ -165,15 +285,38 @@ Page({
       const sourceWorks = worksRes
         ? (worksRes.list || worksRes.data || (Array.isArray(worksRes) ? worksRes : []))
         : (res.works || []);
-      const featuredSource = sourceWorks.some((item) => item.isFeatured)
-        ? sourceWorks.filter((item) => item.isFeatured)
-        : sourceWorks;
+      const featuredSource = sourceWorks.filter((item) => item.isFeatured);
       const works = featuredSource.map((item, index) => normalizeWork(item, techSnapshot, {
         index: index,
         styleTags: techSnapshot.styleTags,
         isBound: isBound
       })).filter(item => item.coverUrl);
-      
+
+      // 擅长风格只使用带对应真实标签的作品图；没有匹配作品时展示文字标签
+      const styleShowcases = artist.styleTags.map((label) => {
+        const matchedWork = sourceWorks.find((item) => {
+          const tags = parseWorkTags(item.tags);
+          return tags.some((tag) => tag === label || tag.indexOf(label) >= 0 || label.indexOf(tag) >= 0);
+        });
+        return {
+          label,
+          workId: matchedWork ? matchedWork.id : '',
+          imageUrl: matchedWork
+            ? (matchedWork.coverUrl || (Array.isArray(matchedWork.imageUrls) ? matchedWork.imageUrls[0] : '') || '')
+            : ''
+        };
+      });
+      const stylePhotoCards = styleShowcases.filter((item) => item.imageUrl);
+      const styleTextTags = styleShowcases.filter((item) => !item.imageUrl);
+
+      // 未配置主页背景时，才以真实环境图 / 作品封面作为降级背景
+      const bannerImages = [
+        ...environmentPhotos.map((item) => item.imageUrl),
+        ...works.map((item) => item.coverUrl)
+      ].filter(Boolean).slice(0, 4);
+
+      if (!artist.workCount) artist.workCount = works.length;
+
       // 评价列表
       const reviews = (res.featuredReviews || []).slice(0, 3).map(review => ({
         id: review.id,
@@ -184,7 +327,7 @@ Page({
         initial: (review.client?.name || review.clientName || '匿').charAt(0),
         timeAgo: formatTimeAgo(review.createdAt)
       }));
-      
+
       this.setData({
         artist,
         works,
@@ -192,6 +335,28 @@ Page({
         reviews,
         timeline,
         services,
+        qualifications,
+        heroImageUrl: brand.heroImageUrl || '',
+        bannerImages,
+        environmentPhotos,
+        environmentHeroIndex: 0,
+        stylePhotoCards,
+        styleTextTags,
+        standards,
+        policies,
+        faqs,
+        exclusiveServiceNote,
+        privacyNote,
+        serviceProcess,
+        aestheticPhilosophy,
+        brandIntroduction,
+        brandTagline,
+        brandShare: brand.share || null,
+        hasRealStats: (
+          (artist.workCount > 0 ? 1 : 0) +
+          ((artist.rating != null && !Number.isNaN(artist.rating)) ? 1 : 0) +
+          (artist.reviewCount > 0 ? 1 : 0)
+        ) >= 2,
         likeCount,
         followerCount,
         favoriteCount,
@@ -218,7 +383,9 @@ Page({
       const isFollowed = follows.some(f => String(f.id || f.technicianId) === String(this.data.artistId));
       const favs = me.favorites || me.favoritedTechnicians || [];
       const isFavorited = this.data.isFavorited || favs.some(f => String(f.id || f.technicianId) === String(this.data.artistId));
-      this.setData({ isBound, isFollowed, isFavorited });
+      const pendingMap = wx.getStorageSync('client_binding_pending') || {};
+      const isBindingPending = !isBound && !!pendingMap[String(this.data.artistId)];
+      this.setData({ isBound, isFollowed, isFavorited, isBindingPending });
     } catch (err) {
       // ignore
     }
@@ -271,25 +438,38 @@ Page({
     if (api.public && api.public.bookingSettings) {
       try {
         const settings = await api.public.bookingSettings(this.data.artistId);
-        if (settings.quickBookingEnabled) { wx.navigateTo({ url: '/pages/client/create-order/index?techId=' + this.data.artistId + '&mode=quick&source=artist_home' }); return; }
+        if (settings.quickBookingEnabled) {
+          wx.navigateTo({
+            url: '/pages/client/create-order/index?techId=' + this.data.artistId + '&mode=quick&source=' + (this.data.entrySource || 'artist_home')
+          });
+          return;
+        }
       } catch (_) {}
     }
     const app = getApp();
     const token = app.globalData.token;
     const role = app.globalData.role || wx.getStorageSync('role');
-    // 1. 未登录 → 跳转登录
+    // 1. 未登录 → 跳转登录（回跳主页，保留来源）
     if (!token || role !== 'client') {
-      const target = '/pages/client/artist-home/index?id=' + this.data.artistId;
+      const target = '/pages/client/artist-home/index?id=' + this.data.artistId +
+        (this.data.entrySource ? '&source=' + this.data.entrySource : '');
       wx.navigateTo({ url: '/pages/login/index?redirect=' + encodeURIComponent(target) });
       return;
     }
-    // 2. 已登录但未绑定 → 打开绑定预约弹窗
+    // 2. 已登录但未绑定 → 绑定中给状态提示，否则打开绑定弹窗
     if (!this.data.isBound) {
+      if (this.data.isBindingPending) {
+        wx.showToast({ title: '绑定审核中，美甲师通过后即可预约', icon: 'none' });
+        return;
+      }
       this.setData({ showBindModal: true });
       return;
     }
-    // 3. 已绑定 → 直接进入预约下单页
-    wx.navigateTo({ url: '/pages/client/create-order/index?techId=' + this.data.artistId });
+    // 3. 已绑定（新客/老客同一预约链路；老客在预约页可少填字段）
+    wx.navigateTo({
+      url: '/pages/client/create-order/index?techId=' + this.data.artistId +
+        (this.data.entrySource ? '&source=' + this.data.entrySource : '')
+    });
   },
 
   openNavigation() {
@@ -314,6 +494,19 @@ Page({
     } else {
       wx.showToast({ title: '暂无联系电话', icon: 'none' });
     }
+  },
+
+  previewEnvPhoto(e) {
+    const urls = (this.data.environmentPhotos || []).map((p) => p.imageUrl).filter(Boolean);
+    if (!urls.length) return;
+    const idx = Number(e.currentTarget.dataset.idx) || 0;
+    const current = urls[Math.min(idx, urls.length - 1)];
+    // 全屏预览，支持左右滑动切换
+    wx.previewImage({ urls, current });
+  },
+
+  onEnvironmentHeroChange(e) {
+    this.setData({ environmentHeroIndex: Number(e.detail.current) || 0 });
   },
 
   openGuidance() {
@@ -360,8 +553,22 @@ Page({
     this.setData({ bindChecking: true });
     try {
       const result = await api.client.profile.bindTechnician(this.data.artistId, this.data.bindInviteCode.trim(), '从美甲师主页申请绑定', 'artist_home');
-      this.setData({ showBindModal: false, bindCandidate: null, bindInviteCode: '' });
-      wx.showModal({ title: '绑定申请已提交', content: '美甲师通过后，主页会开放可约日期和预约入口。', showCancel: false, confirmText: '知道了' });
+      const pendingMap = wx.getStorageSync('client_binding_pending') || {};
+      pendingMap[String(this.data.artistId)] = Date.now();
+      wx.setStorageSync('client_binding_pending', pendingMap);
+      this.setData({
+        showBindModal: false,
+        bindCandidate: null,
+        bindInviteCode: '',
+        isBindingPending: true
+      });
+      this.updateEntryGuide();
+      wx.showModal({
+        title: '绑定申请已提交',
+        content: '美甲师通过后，主页会开放可约日期和预约入口。你仍可先浏览作品，通过后再来预约。',
+        showCancel: false,
+        confirmText: '知道了'
+      });
     } catch (err) {
       this.setData({ bindError: err.message || '绑定申请失败，请重试' });
     } finally {
@@ -371,10 +578,12 @@ Page({
 
   onShareAppMessage() {
     const artist = this.data.artist || {};
+    const share = this.data.brandShare || {};
+    const title = share.title || [artist.name, artist.specialtiesText].filter(Boolean).join(' · ') || '美甲师主页';
     return {
-      title: artist.name || '美甲师主页',
-      path: '/pages/client/artist-home/index?id=' + this.data.artistId,
-      imageUrl: artist.avatarUrl || ''
+      title,
+      path: '/pages/client/artist-home/index?id=' + this.data.artistId + (this.data.entrySource ? '&source=' + this.data.entrySource : ''),
+      imageUrl: share.coverUrl || artist.avatarUrl || (this.data.bannerImages && this.data.bannerImages[0]) || ''
     };
   }
 });
@@ -392,6 +601,21 @@ function formatBusinessHours(hours) {
   const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
   const days = open.map(item => weekdays[Number(item.weekday)]).filter(Boolean);
   return open[0].start + ' - ' + open[0].end + '（' + days.join('、') + '）';
+}
+
+function parseWorkTags(value) {
+  let tags = value || [];
+  if (typeof tags === 'string') {
+    try {
+      tags = JSON.parse(tags);
+    } catch (error) {
+      tags = tags.split(/[、，,]/);
+    }
+  }
+  return (Array.isArray(tags) ? tags : [])
+    .flatMap((tag) => String(tag || '').split(/[、，,]/))
+    .map((tag) => tag.trim())
+    .filter(Boolean);
 }
 
 function formatTimeAgo(dateStr) {

@@ -55,9 +55,10 @@ export class BrandFaqDto {
 }
 
 export class UpdateBrandProfileDto {
+  @IsOptional()
   @IsString()
   @MaxLength(50)
-  brandName: string;
+  brandName?: string;
 
   @IsOptional() @IsString() @MaxLength(80) tagline?: string;
   @IsOptional()
@@ -67,6 +68,10 @@ export class UpdateBrandProfileDto {
   @IsOptional() @IsArray() @IsString({ each: true }) specialties?: string[];
   @IsOptional() @IsString() @MaxLength(80) certificationTitle?: string;
   @IsOptional() @IsArray() @IsInt({ each: true }) featuredReviewIds?: number[];
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  featuredServiceIds?: string[];
   @IsOptional() @IsString() @MaxLength(50) city?: string;
   @IsOptional() @IsString() @MaxLength(120) publicServiceArea?: string;
   @IsOptional() @IsString() @MaxLength(1000) artistIntroduction?: string;
@@ -79,10 +84,18 @@ export class UpdateBrandProfileDto {
   @IsOptional() @IsString() @MaxLength(500) cancellationPolicy?: string;
   @IsOptional() @IsString() @MaxLength(1000) aftercarePolicy?: string;
 
-  @IsOptional() @IsArray() timeline?: Array<{ year?: string; description?: string; desc?: string }>;
+  @IsOptional() @IsArray() timeline?: Array<{
+    year?: string;
+    description?: string;
+    desc?: string;
+  }>;
   @IsOptional() @IsString() @MaxLength(500) exclusiveServiceNote?: string;
   @IsOptional() @IsString() @MaxLength(500) privacyNote?: string;
-  @IsOptional() @IsArray() serviceProcess?: Array<{ step?: number; title?: string; description?: string }>;
+  @IsOptional() @IsArray() serviceProcess?: Array<{
+    step?: number;
+    title?: string;
+    description?: string;
+  }>;
   @IsOptional() @IsString() @MaxLength(300) featuredShopKey?: string;
 
   @IsOptional() @IsString() @MaxLength(100) shareTitle?: string;

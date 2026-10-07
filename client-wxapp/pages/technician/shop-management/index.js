@@ -38,6 +38,8 @@ Page({
     enabled: false,
     guidanceEnabled: false,
     businessHours: [],
+    shopPhotos: [],
+    photoUploading: false,
     // 营业时间编辑
     showBusinessHours: false,
     editingDayIndex: -1,
@@ -81,6 +83,7 @@ Page({
       phone: '',
       enabled: false,
       guidanceEnabled: false,
+      shopPhotos: [],
       businessHours: JSON.parse(JSON.stringify(DEFAULT_BUSINESS_HOURS))
     });
   },
@@ -104,6 +107,7 @@ Page({
       phone: shop.phone || '',
       enabled: shop.enabled !== false,
       guidanceEnabled: !!(shop.guidance && shop.guidance.enabled),
+      shopPhotos: Array.isArray(shop.photos) ? shop.photos.slice() : [],
       businessHours: shop.businessHours || JSON.parse(JSON.stringify(DEFAULT_BUSINESS_HOURS))
     });
   },
@@ -116,6 +120,53 @@ Page({
   onNameInput(e) { this.setData({ name: e.detail.value }); },
   onDetailAddressInput(e) { this.setData({ detailAddress: e.detail.value }); },
   onPhoneInput(e) { this.setData({ phone: e.detail.value }); },
+
+  chooseShopPhotos() {
+    if (this.data.photoUploading) return;
+    const remain = 6 - (this.data.shopPhotos || []).length;
+    if (remain <= 0) return wx.showToast({ title: '最多 6 张环境照片', icon: 'none' });
+    wx.chooseMedia({
+      count: remain,
+      mediaType: ['image'],
+      sizeType: ['compressed'],
+      success: async (res) => {
+        this.setData({ photoUploading: true });
+        wx.showLoading({ title: '上传中...' });
+        try {
+          const uploaded = [];
+          for (const file of res.tempFiles || []) {
+            const path = file.tempFilePath || file.path;
+            if (!path) continue;
+            const result = await api.upload.image(path, 'technician');
+            if (result && result.url) uploaded.push(result.url);
+          }
+          if (!uploaded.length) throw new Error('上传失败');
+          this.setData({ shopPhotos: [...(this.data.shopPhotos || []), ...uploaded].slice(0, 6) });
+        } catch (err) {
+          wx.showToast({ title: err.message || '环境照片上传失败', icon: 'none' });
+        } finally {
+          wx.hideLoading();
+          this.setData({ photoUploading: false });
+        }
+      }
+    });
+  },
+
+  removeShopPhoto(e) {
+    const idx = Number(e.currentTarget.dataset.idx);
+    const shopPhotos = (this.data.shopPhotos || []).filter((_, i) => i !== idx);
+    this.setData({ shopPhotos });
+  },
+
+  previewShopPhoto(e) {
+    const { name, address, idx } = e.currentTarget.dataset;
+    const shop = (this.data.shops || []).find((s) => s.name === name && s.detailAddress === address);
+    const urls = (shop && shop.photos || []).filter(Boolean);
+    if (!urls.length) return;
+    const current = urls[Math.min(Number(idx) || 0, urls.length - 1)];
+    // 全屏预览，支持左右滑动切换上一张/下一张
+    wx.previewImage({ urls, current });
+  },
 
   onRegionChange(e) {
     const region = e.detail.value;
@@ -230,7 +281,8 @@ Page({
         phone: phone.trim(),
         enabled,
         businessHours,
-        guidance
+        guidance,
+        photos: (this.data.shopPhotos || []).filter(Boolean).slice(0, 6)
       };
 
       let newShops = [...shops];

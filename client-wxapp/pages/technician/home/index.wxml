@@ -110,12 +110,12 @@
     <view wx:if="{{featuredWorks.length}}" class="hw-wall">
       <view class="hw-col">
         <view wx:for="{{worksLeft}}" wx:key="id" class="hw-card">
-          <work-card work="{{item}}" manageable bind:cardtap="navigateToWorkDetail" bind:actiontap="showWorkActions" />
+          <work-card work="{{item}}" manageable bind:cardtap="navigateToWorkDetail" bind:artisttap="openArtistHome" bind:actiontap="showWorkActions" />
         </view>
       </view>
       <view class="hw-col">
         <view wx:for="{{worksRight}}" wx:key="id" class="hw-card">
-          <work-card work="{{item}}" manageable bind:cardtap="navigateToWorkDetail" bind:actiontap="showWorkActions" />
+          <work-card work="{{item}}" manageable bind:cardtap="navigateToWorkDetail" bind:artisttap="openArtistHome" bind:actiontap="showWorkActions" />
         </view>
       </view>
     </view>

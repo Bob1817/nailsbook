@@ -1388,6 +1388,7 @@ model BrandProfile {
   specialties         String?
   certificationTitle  String?
   featuredReviewIds   String?
+  featuredServiceIds  String? // JSON: public service ids selected for homepage
   city                String?
   publicServiceArea   String?
   artistIntroduction  String?

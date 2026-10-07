@@ -85,6 +85,10 @@ Page({
     wx.navigateTo({ url: '/pages/technician/work-edit/index' });
   },
   goDetail(e) { wx.navigateTo({ url: '/pages/technician/work-detail/index?id=' + ((e.detail && e.detail.id) || e.currentTarget.dataset.id) }); },
+  openArtistHome(e) {
+    const id = e.detail && e.detail.id;
+    if (id) wx.navigateTo({ url: '/pages/client/artist-home/index?id=' + id });
+  },
   goEditById(id) { wx.navigateTo({ url: '/pages/technician/work-edit/index?id=' + id }); },
 
   async toggleVisible(id) {

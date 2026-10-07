@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -38,6 +37,10 @@ export class BrandProfilesService {
           ...profile,
           specialties: this.parseArray(profile.specialties),
           featuredReviewIds: this.parseArray(profile.featuredReviewIds),
+          featuredServiceIds:
+            profile.featuredServiceIds === null
+              ? null
+              : this.parseArray(profile.featuredServiceIds),
           timeline: this.parseArray(profile.timeline),
           serviceProcess: this.parseArray(profile.serviceProcess),
           featuredShopKey: profile.featuredShopKey,
@@ -51,6 +54,7 @@ export class BrandProfilesService {
           specialties: [],
           certificationTitle: null,
           featuredReviewIds: [],
+          featuredServiceIds: null,
           city: technician.city,
           publicServiceArea: technician.serviceArea,
           artistIntroduction: technician.bio,
@@ -79,38 +83,13 @@ export class BrandProfilesService {
   async update(technicianId: number, dto: UpdateBrandProfileDto) {
     const technician = await this.prisma.technician.findUnique({
       where: { id: technicianId },
-      select: { id: true, avatarUrl: true },
+      select: { id: true, name: true },
     });
     if (!technician) throw new NotFoundException('美甲师不存在');
-    if (dto.publicationStatus === 'published') {
-      const required = [
-        [dto.brandName, '品牌名称'],
-        [technician.avatarUrl, '品牌头像'],
-        [dto.tagline, '一句话定位'],
-        [dto.city, '城市'],
-        [dto.publicServiceArea, '公开服务区域'],
-        [dto.artistIntroduction, '美甲师介绍'],
-        [dto.hygieneStandards, '卫生与消毒说明'],
-        [dto.cancellationPolicy, '取消规则'],
-        [dto.exclusiveServiceNote, '一对一服务说明'],
-        [dto.shareTitle, '分享标题'],
-        [dto.shareCoverUrl, '分享封面'],
-      ];
-      const missing = required
-        .filter(([value]) => !String(value || '').trim())
-        .map(([, label]) => label);
-      if (!dto.environmentPhotos?.length) missing.push('环境照片');
-      const activeServices = await this.prisma.service.count({
-        where: { technicianId, archivedAt: null, isBookable: true },
-      });
-      if (!activeServices) missing.push('可预约服务与价格');
-      if (missing.length)
-        throw new BadRequestException(`发布前请完善：${missing.join('、')}`);
-    }
 
     await this.prisma.$transaction(async (tx) => {
       const data = {
-        brandName: dto.brandName.trim(),
+        brandName: clean(dto.brandName) || technician.name || '美甲师',
         tagline: clean(dto.tagline),
         heroImageUrl: clean(dto.heroImageUrl),
         experienceYears: dto.experienceYears ?? null,
@@ -121,6 +100,10 @@ export class BrandProfilesService {
         featuredReviewIds: dto.featuredReviewIds?.length
           ? JSON.stringify(dto.featuredReviewIds)
           : null,
+        featuredServiceIds:
+          dto.featuredServiceIds === undefined
+            ? undefined
+            : JSON.stringify(dto.featuredServiceIds),
         city: clean(dto.city),
         publicServiceArea: clean(dto.publicServiceArea),
         artistIntroduction: clean(dto.artistIntroduction),
@@ -197,7 +180,12 @@ export class BrandProfilesService {
           },
         },
         environmentPhotos: {
-          select: { imageUrl: true, caption: true, sceneTag: true, sortOrder: true },
+          select: {
+            imageUrl: true,
+            caption: true,
+            sceneTag: true,
+            sortOrder: true,
+          },
           orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
         },
         faqs: {
@@ -220,6 +208,10 @@ export class BrandProfilesService {
       specialties: this.parseArray(profile.specialties),
       certificationTitle: profile.certificationTitle,
       featuredReviewIds: this.parseArray(profile.featuredReviewIds),
+      featuredServiceIds:
+        profile.featuredServiceIds === null
+          ? null
+          : this.parseArray(profile.featuredServiceIds),
       city: profile.city,
       publicServiceArea: profile.publicServiceArea,
       artistIntroduction: profile.artistIntroduction,
@@ -265,4 +257,5 @@ export class BrandProfilesService {
       return [];
     }
   }
+
 }

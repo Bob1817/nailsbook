@@ -161,7 +161,7 @@ Component({
     },
     onArtistTap() {
       const work = this.data.work || {};
-      const technicianId = work.technicianId || (work.technician && work.technician.id);
+      const technicianId = work.technicianId || (work.technician && (work.technician.id || work.technician.technicianId));
       this.triggerEvent('artisttap', { id: technicianId });
     },
     async onLikeTap() {

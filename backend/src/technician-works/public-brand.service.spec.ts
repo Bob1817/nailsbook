@@ -81,6 +81,7 @@ describe('PublicBrandService public DTO snapshots', () => {
            },
          ],
          "featuredReviewIds": [],
+         "featuredServiceIds": null,
          "featuredShopKey": null,
          "heroImageUrl": "http://localhost:3000/uploads/share-thumb.webp",
          "id": 7,
@@ -125,6 +126,61 @@ describe('PublicBrandService public DTO snapshots', () => {
     } as never);
     await expect(service.profile(7, {})).rejects.toBeInstanceOf(
       NotFoundException,
+    );
+  });
+
+  it('公开服务只返回主页已选择的项目', async () => {
+    const prisma = {
+      technician: {
+        findFirst: jest.fn().mockResolvedValue({ id: 7 }),
+        count: jest.fn().mockResolvedValue(1),
+      },
+      brandProfile: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ featuredServiceIds: '["svc-care"]' }),
+      },
+      service: {
+        findMany: jest.fn().mockResolvedValue([]),
+        count: jest.fn().mockResolvedValue(0),
+      },
+    };
+    const service = new PublicBrandService(prisma as never);
+
+    await service.services(7, { page: '1', pageSize: '20' });
+
+    expect(prisma.service.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          technicianId: 7,
+          publicId: { in: ['svc-care'] },
+        }),
+      }),
+    );
+  });
+
+  it('未选择主页服务时返回空服务范围', async () => {
+    const prisma = {
+      technician: {
+        findFirst: jest.fn().mockResolvedValue({ id: 7 }),
+        count: jest.fn().mockResolvedValue(1),
+      },
+      brandProfile: {
+        findUnique: jest.fn().mockResolvedValue({ featuredServiceIds: null }),
+      },
+      service: {
+        findMany: jest.fn().mockResolvedValue([]),
+        count: jest.fn().mockResolvedValue(0),
+      },
+    };
+    const service = new PublicBrandService(prisma as never);
+
+    await service.services(7, { page: '1', pageSize: '20' });
+
+    expect(prisma.service.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ publicId: { in: [] } }),
+      }),
     );
   });
 });
