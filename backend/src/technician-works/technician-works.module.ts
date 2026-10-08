@@ -13,6 +13,7 @@ import { ReviewsController } from './reviews.controller';
 import { WorkShareCodeService } from './work-share-code.service';
 import { PublicBrandController } from './public-brand.controller';
 import { PublicBrandService } from './public-brand.service';
+import { ClientArtistHomepageInteractionsController } from './client-artist-homepage-interactions.controller';
 
 @Module({
   imports: [PrismaModule, SubscriptionsModule],
@@ -23,6 +24,7 @@ import { PublicBrandService } from './public-brand.service';
     PublicWorksController,
     PublicArtistController,
     ClientArtistFollowsController,
+    ClientArtistHomepageInteractionsController,
     QualificationsController,
     ReviewsController,
     PublicBrandController,

@@ -139,6 +139,9 @@ model Technician {
   uploadedAssets             UploadedAsset[]
   subscriptionMetricEvents   SubscriptionMetricEvent[]
   followers                  TechnicianFollow[]
+  homepageLikes              ArtistHomepageLike[]
+  homepageFavorites          ArtistHomepageFavorite[]
+  homepageComments           ArtistHomepageComment[]
   brandProfile               BrandProfile?
   services                   Service[]
   leads                      Lead[]
@@ -540,6 +543,9 @@ model ClientUser {
   bookingTradeOrders        BookingTradeOrder[]
   wechatIdentity            WechatIdentity?
   followedTechnicians       TechnicianFollow[]
+  artistHomepageLikes       ArtistHomepageLike[]
+  artistHomepageFavorites   ArtistHomepageFavorite[]
+  artistHomepageComments    ArtistHomepageComment[]
   conversionEvents          ConversionEvent[]
   leads                     Lead[]
   publicationConsents       PublicationConsent[]
@@ -555,6 +561,46 @@ model TechnicianFollow {
 
   @@unique([clientUserId, technicianId])
   @@index([technicianId])
+}
+
+model ArtistHomepageLike {
+  id           Int        @id @default(autoincrement())
+  clientUserId Int
+  technicianId Int
+  createdAt    DateTime   @default(now())
+  clientUser   ClientUser @relation(fields: [clientUserId], references: [id], onDelete: Cascade)
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@unique([clientUserId, technicianId])
+  @@index([technicianId, createdAt])
+}
+
+model ArtistHomepageFavorite {
+  id           Int        @id @default(autoincrement())
+  clientUserId Int
+  technicianId Int
+  createdAt    DateTime   @default(now())
+  clientUser   ClientUser @relation(fields: [clientUserId], references: [id], onDelete: Cascade)
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@unique([clientUserId, technicianId])
+  @@index([technicianId, createdAt])
+}
+
+model ArtistHomepageComment {
+  id           Int        @id @default(autoincrement())
+  clientUserId Int
+  technicianId Int
+  content      String
+  isPinned     Boolean    @default(false)
+  isHidden     Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @default(now()) @updatedAt
+  clientUser   ClientUser @relation(fields: [clientUserId], references: [id], onDelete: Cascade)
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([technicianId, isHidden, isPinned, createdAt])
+  @@index([clientUserId, createdAt])
 }
 
 model WechatIdentity {

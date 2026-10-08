@@ -8,6 +8,19 @@ import {
 
 const UPLOAD_BASE_URL = process.env.UPLOAD_BASE_URL || 'http://localhost:3000';
 type ImageSize = 'thumbnail' | 'medium' | 'original';
+const DEFAULT_RULES = {
+  hygiene:
+    '每位顾客服务前后都会清洁操作台面；可重复使用的工具按流程完成清洁与消毒，直接接触皮肤的一次性耗材原则上单客使用。',
+  materials:
+    '使用正规渠道采购的美甲产品与耗材。服务开始前会沟通所用产品和操作步骤，如有特殊需求可提前说明。',
+  allergyNotice:
+    '如有皮肤敏感、过敏史、甲面损伤或其他需要注意的情况，请在预约前主动告知；服务过程中如有不适，请立即提出并暂停操作。',
+  late: '如可能迟到，请尽早联系说明。迟到 15 分钟以内将根据当天排期尽量保留服务；超过 15 分钟可能需要缩短项目、调整款式或另行改期。',
+  cancellation:
+    '如需取消或改期，请尽量提前 24 小时联系。临时变更将根据当天排期协商处理，已产生的定制材料或其他实际费用另行沟通。',
+  aftercare:
+    '服务完成后请按护理建议使用双手并避免长时间接触刺激性物质。如在约定保障期内出现非人为开裂或脱落，请及时联系并提供照片，确认情况后安排补修。',
+};
 
 @Injectable()
 export class PublicBrandService {
@@ -76,6 +89,13 @@ export class PublicBrandService {
                 },
               },
             },
+            _count: {
+              select: {
+                homepageLikes: true,
+                homepageFavorites: true,
+                homepageComments: { where: { isHidden: false } },
+              },
+            },
           },
         });
         if (!technician)
@@ -87,6 +107,16 @@ export class PublicBrandService {
           technician.brandProfile?.publicationStatus === 'published'
             ? technician.brandProfile
             : null;
+        const hasSavedRules =
+          !!brand &&
+          [
+            brand.hygieneStandards,
+            brand.materialStandards,
+            brand.allergyNotice,
+            brand.latePolicy,
+            brand.cancellationPolicy,
+            brand.aftercarePolicy,
+          ].some((value) => !!value?.trim());
         const size = this.imageSize(query.imageSize);
         return {
           brand: {
@@ -115,16 +145,28 @@ export class PublicBrandService {
             transportationNotes: brand?.transportationNotes || null,
             standards: brand
               ? {
-                  hygiene: brand.hygieneStandards,
-                  materials: brand.materialStandards,
-                  allergyNotice: brand.allergyNotice,
+                  hygiene:
+                    brand.hygieneStandards ||
+                    (!hasSavedRules ? DEFAULT_RULES.hygiene : null),
+                  materials:
+                    brand.materialStandards ||
+                    (!hasSavedRules ? DEFAULT_RULES.materials : null),
+                  allergyNotice:
+                    brand.allergyNotice ||
+                    (!hasSavedRules ? DEFAULT_RULES.allergyNotice : null),
                 }
               : null,
             policies: brand
               ? {
-                  late: brand.latePolicy,
-                  cancellation: brand.cancellationPolicy,
-                  aftercare: brand.aftercarePolicy,
+                  late:
+                    brand.latePolicy ||
+                    (!hasSavedRules ? DEFAULT_RULES.late : null),
+                  cancellation:
+                    brand.cancellationPolicy ||
+                    (!hasSavedRules ? DEFAULT_RULES.cancellation : null),
+                  aftercare:
+                    brand.aftercarePolicy ||
+                    (!hasSavedRules ? DEFAULT_RULES.aftercare : null),
                 }
               : null,
             timeline: this.objectList(brand?.timeline || null),
@@ -149,6 +191,11 @@ export class PublicBrandService {
               studio: technician.shopService,
             },
             bookingReady: bookingReadiness(technician).ready,
+            interactionCounts: {
+              likes: technician._count.homepageLikes,
+              favorites: technician._count.homepageFavorites,
+              comments: technician._count.homepageComments,
+            },
           },
           attribution: this.attribution(query),
         };
@@ -163,13 +210,23 @@ export class PublicBrandService {
       where: { technicianId: id },
       select: { featuredServiceIds: true },
     });
-    const featuredServiceIds = this.listJson(
-      profile?.featuredServiceIds || null,
-    );
-    const where = {
+    let featuredServiceIds = this.listJson(profile?.featuredServiceIds || null);
+    const baseWhere = {
       technicianId: id,
       archivedAt: null,
       isBookable: true,
+    };
+    if (profile?.featuredServiceIds == null) {
+      const defaults = await this.prisma.service.findMany({
+        where: baseWhere,
+        orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+        take: 6,
+        select: { publicId: true },
+      });
+      featuredServiceIds = defaults.map((item) => item.publicId);
+    }
+    const where = {
+      ...baseWhere,
       publicId: { in: featuredServiceIds },
     };
     const [items, total] = await Promise.all([
@@ -196,6 +253,52 @@ export class PublicBrandService {
       })),
       pagination: this.pagination(page, pageSize, total),
       attribution: this.attribution(query),
+    };
+  }
+
+  async homepageComments(
+    id: number,
+    query: Record<string, string | undefined>,
+  ) {
+    await this.assertActive(id);
+    const { page, pageSize, skip } = this.page(query);
+    const where = { technicianId: id, isHidden: false };
+    const [items, total] = await Promise.all([
+      this.prisma.artistHomepageComment.findMany({
+        where,
+        orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
+        skip,
+        take: pageSize,
+        select: {
+          id: true,
+          content: true,
+          isPinned: true,
+          createdAt: true,
+          clientUser: {
+            select: { nickname: true, avatarUrl: true, status: true },
+          },
+        },
+      }),
+      this.prisma.artistHomepageComment.count({ where }),
+    ]);
+    return {
+      items: items.map((item) => ({
+        id: item.id,
+        content: item.content,
+        isPinned: item.isPinned,
+        createdAt: item.createdAt,
+        clientName:
+          item.clientUser.status === 'deleted'
+            ? '已注销用户'
+            : item.clientUser.nickname || '微信用户',
+        clientAvatarUrl:
+          item.clientUser.status === 'deleted'
+            ? null
+            : this.image(item.clientUser.avatarUrl, 'thumbnail'),
+      })),
+      total,
+      page,
+      pageSize,
     };
   }
 

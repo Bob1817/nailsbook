@@ -70,6 +70,13 @@ export class PublicBrandController {
     return this.service.reviews(id, query);
   }
 
+  @Get(':id/comments')
+  @Header('Cache-Control', 'public, max-age=30, stale-while-revalidate=60')
+  @ApiOperation({ summary: '获取公开主页评论' })
+  comments(@Param('id', ParseIntPipe) id: number, @Query() query: PublicQuery) {
+    return this.service.homepageComments(id, query);
+  }
+
   @Get(':id/availability')
   @Header('Cache-Control', 'public, max-age=30, stale-while-revalidate=60')
   @ApiOperation({ summary: '获取可预约情况摘要' })

@@ -40,6 +40,11 @@ describe('PublicBrandService public DTO snapshots', () => {
             ],
             faqs: [{ question: '需要预约吗？', answer: '需要' }],
           },
+          _count: {
+            homepageLikes: 3,
+            homepageFavorites: 2,
+            homepageComments: 1,
+          },
           phone: '13800000000',
           shopAddresses: '[{"detailAddress":"内部精确地址"}]',
         }),
@@ -85,6 +90,11 @@ describe('PublicBrandService public DTO snapshots', () => {
          "featuredShopKey": null,
          "heroImageUrl": "http://localhost:3000/uploads/share-thumb.webp",
          "id": 7,
+         "interactionCounts": {
+           "comments": 1,
+           "favorites": 2,
+           "likes": 3,
+         },
          "introduction": "独立美甲师",
          "name": "Luna Nail",
          "policies": {
@@ -118,6 +128,36 @@ describe('PublicBrandService public DTO snapshots', () => {
     `);
     expect(JSON.stringify(result)).not.toContain('13800000000');
     expect(JSON.stringify(result)).not.toContain('内部精确地址');
+  });
+
+  it('整组规则为空时为公开主页提供标准模板', async () => {
+    const service = new PublicBrandService({
+      technician: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 7,
+          name: 'Luna',
+          homeService: false,
+          shopService: true,
+          brandProfile: {
+            publicationStatus: 'published',
+            environmentPhotos: [],
+            faqs: [],
+          },
+          _count: {
+            homepageLikes: 0,
+            homepageFavorites: 0,
+            homepageComments: 0,
+          },
+        }),
+      },
+    } as never);
+
+    const result = await service.profile(7, {});
+
+    expect(result.brand.standards?.hygiene).toContain('清洁与消毒');
+    expect(result.brand.standards?.materials).toContain('正规渠道');
+    expect(result.brand.policies?.cancellation).toContain('提前 24 小时');
+    expect(result.brand.policies?.aftercare).toContain('保障期');
   });
 
   it('已下架品牌统一返回 404', async () => {
@@ -159,7 +199,7 @@ describe('PublicBrandService public DTO snapshots', () => {
     );
   });
 
-  it('未选择主页服务时返回空服务范围', async () => {
+  it('未配置主页服务时默认返回前六项可预约服务', async () => {
     const prisma = {
       technician: {
         findFirst: jest.fn().mockResolvedValue({ id: 7 }),
@@ -169,17 +209,28 @@ describe('PublicBrandService public DTO snapshots', () => {
         findUnique: jest.fn().mockResolvedValue({ featuredServiceIds: null }),
       },
       service: {
-        findMany: jest.fn().mockResolvedValue([]),
-        count: jest.fn().mockResolvedValue(0),
+        findMany: jest
+          .fn()
+          .mockResolvedValueOnce([{ publicId: 'svc-default' }])
+          .mockResolvedValueOnce([]),
+        count: jest.fn().mockResolvedValue(1),
       },
     };
     const service = new PublicBrandService(prisma as never);
 
     await service.services(7, { page: '1', pageSize: '20' });
 
-    expect(prisma.service.findMany).toHaveBeenCalledWith(
+    expect(prisma.service.findMany).toHaveBeenNthCalledWith(
+      1,
       expect.objectContaining({
-        where: expect.objectContaining({ publicId: { in: [] } }),
+        where: expect.objectContaining({ technicianId: 7, isBookable: true }),
+        take: 6,
+      }),
+    );
+    expect(prisma.service.findMany).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        where: expect.objectContaining({ publicId: { in: ['svc-default'] } }),
       }),
     );
   });
