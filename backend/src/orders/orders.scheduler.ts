@@ -5,6 +5,11 @@ import { ChatGateway } from '../chat/chat.gateway';
 import { PushService } from '../notifications/push.service';
 import { OrdersService } from './orders.service';
 import { WechatSubscribeMessagesService } from '../wechat-subscribe-messages/wechat-subscribe-messages.service';
+import {
+  BUSINESS_TIMEZONE,
+  getBusinessDateTimeParts,
+  parseBusinessDateTime,
+} from './business-time';
 
 @Injectable()
 export class OrdersScheduler {
@@ -38,21 +43,24 @@ export class OrdersScheduler {
   }
 
   // 每天 20:00 提醒次日的预约
-  @Cron('0 20 * * *')
+  @Cron('0 20 * * *', { timeZone: BUSINESS_TIMEZONE })
   async sendDayBeforeReminders(now: Date = new Date()) {
     this.logger.log(`[${now.toISOString()}] 开始检查次日预约提醒`);
 
-    // 明天 0:00 - 明天 23:59:59 之间的预约
-    const tomorrowStart = new Date(now);
-    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
-    tomorrowStart.setHours(0, 0, 0, 0);
-    const tomorrowEnd = new Date(tomorrowStart);
-    tomorrowEnd.setHours(23, 59, 59, 999);
+    // 按业务时区查询明天 0:00 至后天 0:00，避免容器 UTC 时区改变提醒日期。
+    const tomorrowStart = parseBusinessDateTime(
+      this.businessDateAtOffset(now, 1),
+      '00:00',
+    );
+    const dayAfterTomorrowStart = parseBusinessDateTime(
+      this.businessDateAtOffset(now, 2),
+      '00:00',
+    );
 
     const orders = await this.prisma.order.findMany({
       where: {
         status: { in: ['pending_home', 'pending_shop'] },
-        startTime: { gte: tomorrowStart, lte: tomorrowEnd },
+        startTime: { gte: tomorrowStart, lt: dayAfterTomorrowStart },
         reminderDaySent: false,
       },
       take: OrdersScheduler.BATCH_SIZE,
@@ -68,14 +76,27 @@ export class OrdersScheduler {
 
     for (const order of orders) {
       const time = new Date(order.startTime);
-      const hh = String(time.getHours()).padStart(2, '0');
-      const mm = String(time.getMinutes()).padStart(2, '0');
-      const preview = `温馨提醒：明天 ${hh}:${mm} 有一个预约，请提前做好准备～`;
-      const scheduledFor = new Date(order.startTime);
-      scheduledFor.setDate(scheduledFor.getDate() - 1);
-      scheduledFor.setHours(20, 0, 0, 0);
+      const parts = getBusinessDateTimeParts(time);
+      const preview = `温馨提醒：明天 ${parts.hour}:${parts.minute} 有一个预约，请提前做好准备～`;
+      const scheduledFor = parseBusinessDateTime(
+        this.businessDateAtOffset(time, -1),
+        '20:00',
+      );
       await this.processReminder(order, 'day_before', preview, scheduledFor);
     }
+  }
+
+  private businessDateAtOffset(date: Date, offsetDays: number): string {
+    const parts = getBusinessDateTimeParts(date);
+    return new Date(
+      Date.UTC(
+        Number(parts.year),
+        Number(parts.month) - 1,
+        Number(parts.day) + offsetDays,
+      ),
+    )
+      .toISOString()
+      .slice(0, 10);
   }
 
   private async sendHourBeforeReminders(now: Date) {
@@ -529,10 +550,16 @@ export class OrdersScheduler {
 
     for (const order of orders) {
       try {
-        await this.orders.complete(order.id, {
-          actualStartTime: (order.confirmedStartTime || order.startTime).toISOString(),
-          actualEndTime: now.toISOString(),
-        }, 'automatic');
+        await this.orders.complete(
+          order.id,
+          {
+            actualStartTime: (
+              order.confirmedStartTime || order.startTime
+            ).toISOString(),
+            actualEndTime: now.toISOString(),
+          },
+          'automatic',
+        );
 
         this.logger.log(
           `订单 #${order.id} 自动从 in_progress 转换为 completed`,

@@ -25,6 +25,45 @@ describe('OrdersScheduler reminders', () => {
     return { scheduler, prisma };
   }
 
+  it('按北京时间查询次日预约并生成提醒时间', async () => {
+    const startTime = new Date('2026-10-12T02:30:00.000Z');
+    const prisma = {
+      order: {
+        findMany: jest.fn().mockResolvedValue([{ ...order, startTime }]),
+      },
+    };
+    const scheduler = new OrdersScheduler(
+      prisma as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
+    const processReminder = jest
+      .spyOn(scheduler as any, 'processReminder')
+      .mockResolvedValue(undefined);
+
+    await scheduler.sendDayBeforeReminders(
+      new Date('2026-10-10T16:30:00.000Z'),
+    );
+
+    expect(prisma.order.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          startTime: {
+            gte: new Date('2026-10-11T16:00:00.000Z'),
+            lt: new Date('2026-10-12T16:00:00.000Z'),
+          },
+        }),
+      }),
+    );
+    expect(processReminder).toHaveBeenCalledWith(
+      expect.objectContaining({ startTime }),
+      'day_before',
+      '温馨提醒：明天 10:30 有一个预约，请提前做好准备～',
+      new Date('2026-10-11T12:00:00.000Z'),
+    );
+  });
+
   it('同一提醒已成功时不会重复发送', async () => {
     const { scheduler, prisma } = createScheduler({
       id: 91,
