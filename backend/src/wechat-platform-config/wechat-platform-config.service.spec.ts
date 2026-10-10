@@ -125,6 +125,8 @@ describe('WechatPlatformConfigService capabilities', () => {
       filingNumber: null,
       launchTechnicianId: 7,
       bookingReminderTemplateId: null,
+      bookingDayBeforeTemplateId: 'day-template',
+      bookingHourBeforeTemplateId: 'hour-template',
     };
     const configUpdate = jest.fn().mockResolvedValue(updated);
     const technicianUpdate = jest.fn().mockResolvedValue({});
@@ -172,6 +174,8 @@ describe('WechatPlatformConfigService capabilities', () => {
       storePhone: '13800138000',
       privacyContact: 'privacy@example.com',
       launchTechnicianId: 7,
+      bookingDayBeforeTemplateId: 'day-template',
+      bookingHourBeforeTemplateId: 'hour-template',
     });
 
     expect(technicianUpdate).toHaveBeenCalledWith({
@@ -182,6 +186,8 @@ describe('WechatPlatformConfigService capabilities', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           launchTechnicianId: 7,
+          bookingDayBeforeTemplateId: 'day-template',
+          bookingHourBeforeTemplateId: 'hour-template',
           paymentEnabled: false,
         }),
       }),

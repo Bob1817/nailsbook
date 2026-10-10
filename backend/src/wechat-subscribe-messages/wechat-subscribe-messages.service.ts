@@ -1,8 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { WechatPlatformConfigService } from '../wechat-platform-config/wechat-platform-config.service';
+import { getBusinessDateTimeParts } from '../orders/business-time';
 
 type Role = 'client' | 'technician';
+type ReminderType = 'day_before' | 'hour_before';
 
 @Injectable()
 export class WechatSubscribeMessagesService {
@@ -46,9 +48,12 @@ export class WechatSubscribeMessagesService {
     return { recorded: entries.length };
   }
 
-  async sendOrderReminder(order: any, preview: string) {
-    const templateId = await this.platform.getBookingReminderTemplateId();
+  async sendOrderReminder(order: any, type: ReminderType) {
+    const templateIds = await this.platform.getBookingReminderTemplateIds();
+    const templateId =
+      type === 'day_before' ? templateIds.dayBefore : templateIds.hourBefore;
     if (!templateId) return { sent: 0, skipped: 'template_not_configured' };
+    const launchConfig = await this.platform.getPublicLaunchConfig();
     const recipients: Array<{ role: Role; id: number; page: string }> = [];
     if (order.clientUserId) {
       recipients.push({
@@ -85,7 +90,8 @@ export class WechatSubscribeMessagesService {
           identity.openId,
           recipient.page,
           order,
-          preview,
+          type,
+          launchConfig.storeName,
         );
         sent += 1;
       } catch (error) {
@@ -102,11 +108,31 @@ export class WechatSubscribeMessagesService {
     openId: string,
     page: string,
     order: any,
-    preview: string,
+    type: ReminderType,
+    storeName: string,
   ) {
     const accessToken = await this.accessToken();
-    const start = new Date(order.startTime);
-    const time = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')} ${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`;
+    const start = getBusinessDateTimeParts(new Date(order.startTime));
+    const time = `${start.year}-${start.month}-${start.day} ${start.hour}:${start.minute}`;
+    const serviceName = String(order.customTitle || '预约美甲服务').slice(
+      0,
+      20,
+    );
+    const shopName = String(storeName || '听栖美甲工作室').slice(0, 20);
+    const data =
+      type === 'day_before'
+        ? {
+            thing7: { value: serviceName },
+            time2: { value: time },
+            thing8: { value: shopName },
+            thing9: { value: '明天有预约，请合理安排行程' },
+          }
+        : {
+            thing32: { value: serviceName },
+            time2: { value: time },
+            thing8: { value: shopName },
+            thing9: { value: '距离预约约1小时，请准备到店' },
+          };
     const response = await fetch(
       `https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=${accessToken}`,
       {
@@ -119,11 +145,7 @@ export class WechatSubscribeMessagesService {
           miniprogram_state:
             process.env.NODE_ENV === 'production' ? 'formal' : 'developer',
           lang: 'zh_CN',
-          data: {
-            thing1: { value: String(preview).slice(0, 20) },
-            time2: { value: time },
-            thing3: { value: '到店美甲' },
-          },
+          data,
         }),
       },
     );

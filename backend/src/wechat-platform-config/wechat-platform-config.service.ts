@@ -91,8 +91,13 @@ export class WechatPlatformConfigService implements OnModuleInit {
         technician.status === 'active' &&
         technician.shopService &&
         !technician.homeService,
-      bookingReminderTemplateId:
-        !!item.bookingReminderTemplateId?.trim(),
+      bookingDayBeforeTemplateId:
+        !!(
+          item.bookingDayBeforeTemplateId?.trim() ||
+          item.bookingReminderTemplateId?.trim()
+        ),
+      bookingHourBeforeTemplateId:
+        !!item.bookingHourBeforeTemplateId?.trim(),
       wechatLogin: this.loginEffective(item),
       paymentDisabled: !item.paymentEnabled,
     };
@@ -105,6 +110,11 @@ export class WechatPlatformConfigService implements OnModuleInit {
       filingNumber: item.filingNumber ?? '',
       launchTechnicianId: item.launchTechnicianId,
       bookingReminderTemplateId: item.bookingReminderTemplateId ?? '',
+      bookingDayBeforeTemplateId:
+        item.bookingDayBeforeTemplateId ??
+        item.bookingReminderTemplateId ??
+        '',
+      bookingHourBeforeTemplateId: item.bookingHourBeforeTemplateId ?? '',
       technician,
       launchModeLocked: isMiniProgramLaunchMode(),
       required,
@@ -151,6 +161,10 @@ export class WechatPlatformConfigService implements OnModuleInit {
           launchTechnicianId: dto.launchTechnicianId,
           bookingReminderTemplateId:
             dto.bookingReminderTemplateId?.trim() || null,
+          bookingDayBeforeTemplateId:
+            dto.bookingDayBeforeTemplateId?.trim() || null,
+          bookingHourBeforeTemplateId:
+            dto.bookingHourBeforeTemplateId?.trim() || null,
           paymentEnabled: false,
           paymentValidatedAt: null,
         },
@@ -171,6 +185,11 @@ export class WechatPlatformConfigService implements OnModuleInit {
       filingNumber: item.filingNumber ?? '',
       launchTechnicianId: item.launchTechnicianId,
       bookingReminderTemplateId: item.bookingReminderTemplateId ?? '',
+      bookingDayBeforeTemplateId:
+        item.bookingDayBeforeTemplateId ??
+        item.bookingReminderTemplateId ??
+        '',
+      bookingHourBeforeTemplateId: item.bookingHourBeforeTemplateId ?? '',
       paymentEnabled: false,
       homeServiceEnabled: false,
     };
@@ -378,6 +397,22 @@ export class WechatPlatformConfigService implements OnModuleInit {
       process.env.WECHAT_BOOKING_REMINDER_TEMPLATE_ID?.trim() ||
       ''
     );
+  }
+
+  async getBookingReminderTemplateIds() {
+    const item = await this.getRecord();
+    return {
+      dayBefore:
+        item.bookingDayBeforeTemplateId?.trim() ||
+        item.bookingReminderTemplateId?.trim() ||
+        process.env.WECHAT_BOOKING_DAY_BEFORE_TEMPLATE_ID?.trim() ||
+        process.env.WECHAT_BOOKING_REMINDER_TEMPLATE_ID?.trim() ||
+        '',
+      hourBefore:
+        item.bookingHourBeforeTemplateId?.trim() ||
+        process.env.WECHAT_BOOKING_HOUR_BEFORE_TEMPLATE_ID?.trim() ||
+        '',
+    };
   }
 
   async isPaymentAvailable() {

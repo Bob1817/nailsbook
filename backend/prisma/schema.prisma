@@ -667,6 +667,8 @@ model WechatPlatformConfig {
   filingNumber              String?
   launchTechnicianId        Int?
   bookingReminderTemplateId String?
+  bookingDayBeforeTemplateId String?
+  bookingHourBeforeTemplateId String?
   createdAt                 DateTime  @default(now())
   updatedAt                 DateTime  @default(now()) @updatedAt
 }

@@ -8,7 +8,8 @@ const { Title, Paragraph, Text } = Typography;
 const CHECK_LABELS: Record<string, string> = {
   operatorName: '运营主体', storeName: '门店主体', storeAddress: '门店地址',
   storePhone: '门店电话', privacyContact: '隐私联系方式', filingNumber: '备案编号',
-  launchTechnician: '唯一美甲师仅到店', bookingReminderTemplateId: '预约提醒模板',
+  launchTechnician: '唯一美甲师仅到店', bookingDayBeforeTemplateId: '预约日前提醒模板',
+  bookingHourBeforeTemplateId: '预约临近提醒模板',
   wechatLogin: '微信登录已校验', paymentDisabled: '微信支付已关闭',
 };
 
@@ -37,7 +38,8 @@ export default function LaunchConfig() {
         operatorName: next.operatorName, storeName: next.storeName, storeAddress: next.storeAddress,
         storePhone: next.storePhone, privacyContact: next.privacyContact, filingNumber: next.filingNumber,
         launchTechnicianId: next.launchTechnicianId || undefined,
-        bookingReminderTemplateId: next.bookingReminderTemplateId,
+        bookingDayBeforeTemplateId: next.bookingDayBeforeTemplateId,
+        bookingHourBeforeTemplateId: next.bookingHourBeforeTemplateId,
       });
     } catch {
       message.error('首期上线配置加载失败');
@@ -82,7 +84,8 @@ export default function LaunchConfig() {
               <Col xs={24} md={12}><Form.Item name="privacyContact" label="隐私事务联系方式" rules={[{ required: true }]}><Input placeholder="手机号或邮箱" /></Form.Item></Col>
               <Col xs={24} md={12}><Form.Item name="filingNumber" label="小程序备案编号" extra="开发版可留空，提审前必须填写"><Input /></Form.Item></Col>
               <Col xs={24} md={12}><Form.Item name="launchTechnicianId" label="首期唯一美甲师" rules={[{ required: true }]}><Select showSearch optionFilterProp="label" options={options} /></Form.Item></Col>
-              <Col xs={24}><Form.Item name="bookingReminderTemplateId" label="预约提醒订阅消息模板 ID" extra="未申请模板时可留空，预约主流程仍可真机测试"><Input /></Form.Item></Col>
+              <Col xs={24}><Form.Item name="bookingDayBeforeTemplateId" label="预约日前提醒模板 ID" extra="用于预约前一天提醒；微信模板字段为 thing7、time2、thing8、thing9"><Input /></Form.Item></Col>
+              <Col xs={24}><Form.Item name="bookingHourBeforeTemplateId" label="预约临近提醒模板 ID" extra="用于预约前约 1 小时提醒；微信模板字段为 thing32、time2、thing8、thing9"><Input /></Form.Item></Col>
             </Row>
             <Button type="primary" size="large" loading={saving} disabled={!config?.launchModeLocked} onClick={save}>保存配置</Button>
           </Form>

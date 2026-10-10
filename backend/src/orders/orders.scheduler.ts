@@ -246,7 +246,7 @@ export class OrdersScheduler {
 
     await Promise.all([
       this.wechatSubscribe
-        ? this.wechatSubscribe.sendOrderReminder(order, preview)
+        ? this.wechatSubscribe.sendOrderReminder(order, type)
         : Promise.resolve({ sent: 0 }),
       this.push.sendToClient(order.clientUserId, {
         title: '预约提醒',

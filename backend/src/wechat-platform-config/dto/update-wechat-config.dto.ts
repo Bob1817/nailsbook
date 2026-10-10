@@ -59,4 +59,6 @@ export class UpdateMiniProgramLaunchConfigDto {
   @IsOptional() @IsString() @MaxLength(120) filingNumber?: string;
   @IsInt() @Min(1) launchTechnicianId: number;
   @IsOptional() @IsString() @MaxLength(120) bookingReminderTemplateId?: string;
+  @IsOptional() @IsString() @MaxLength(120) bookingDayBeforeTemplateId?: string;
+  @IsOptional() @IsString() @MaxLength(120) bookingHourBeforeTemplateId?: string;
 }

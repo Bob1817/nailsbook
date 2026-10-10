@@ -26,6 +26,8 @@ export interface LaunchConfig {
   filingNumber: string;
   launchTechnicianId: number | null;
   bookingReminderTemplateId: string;
+  bookingDayBeforeTemplateId: string;
+  bookingHourBeforeTemplateId: string;
   technician: null | {
     id: number;
     name: string;
@@ -48,7 +50,8 @@ export type UpdateLaunchConfig = Pick<
   | 'storePhone'
   | 'privacyContact'
   | 'filingNumber'
-  | 'bookingReminderTemplateId'
+  | 'bookingDayBeforeTemplateId'
+  | 'bookingHourBeforeTemplateId'
 > & { launchTechnicianId: number };
 
 export const wechatConfigService = {

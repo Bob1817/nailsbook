@@ -18,7 +18,12 @@ async function main() {
     ['storePhone', wechatConfig?.storePhone],
     ['privacyContact', wechatConfig?.privacyContact],
     ['filingNumber', wechatConfig?.filingNumber],
-    ['bookingReminderTemplateId', wechatConfig?.bookingReminderTemplateId],
+    [
+      'bookingDayBeforeTemplateId',
+      wechatConfig?.bookingDayBeforeTemplateId ||
+        wechatConfig?.bookingReminderTemplateId,
+    ],
+    ['bookingHourBeforeTemplateId', wechatConfig?.bookingHourBeforeTemplateId],
   ] as const;
   const [activeTechnicians, publicWorks, demoOrders] =
     await Promise.all([
