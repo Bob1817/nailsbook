@@ -35,6 +35,7 @@ import {
   buildServiceSnapshotLines,
   summarizeSnapshotLines,
 } from './booking-pricing';
+import { WechatSubscribeMessagesService } from '../wechat-subscribe-messages/wechat-subscribe-messages.service';
 
 import * as crypto from 'crypto';
 
@@ -71,6 +72,7 @@ export class ClientOrdersService {
     @Optional() private readonly subscriptions?: SubscriptionsService,
     @Optional() private readonly bookingDays?: BookingDaysService,
     @Optional() private readonly orders?: OrdersService,
+    @Optional() private readonly wechatSubscribe?: WechatSubscribeMessagesService,
   ) {}
 
   async findTradeOrders(clientUserId: number, status?: string) {
@@ -506,6 +508,7 @@ export class ClientOrdersService {
       body: `${client.nickname || client.phone || '客户'} · ${dto.serviceType}`,
       data: { type: 'order', orderId: String(order.id) },
     });
+    void this.wechatSubscribe?.sendBookingEvent(order, 'technician_new');
 
     return this.mapOrder(order);
   }
@@ -785,6 +788,7 @@ export class ClientOrdersService {
       body: `${client.nickname || client.phone || '客户'} · ${dto.serviceType}`,
       data: { type: 'order', orderId: String(order.id) },
     });
+    void this.wechatSubscribe?.sendBookingEvent(order, 'technician_new');
 
     return this.mapOrder(order);
   }

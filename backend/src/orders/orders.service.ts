@@ -32,6 +32,7 @@ import {
   finalPriceFen,
   summarizeSnapshotLines,
 } from './booking-pricing';
+import { WechatSubscribeMessagesService } from '../wechat-subscribe-messages/wechat-subscribe-messages.service';
 
 export type OrderStatus =
   | 'pending_quote'
@@ -81,6 +82,7 @@ export class OrdersService {
     @Optional() private readonly rewardFunds?: RewardFundService,
     @Optional() private readonly subscriptions?: SubscriptionsService,
     @Optional() private readonly bookingDays?: BookingDaysService,
+    @Optional() private readonly wechatSubscribe?: WechatSubscribeMessagesService,
   ) {}
 
   async createForTechnician(
@@ -1068,6 +1070,8 @@ export class OrdersService {
         );
       }
     }
+
+    void this.wechatSubscribe?.sendBookingEvent(updated, 'client_success');
 
     return updated;
   }

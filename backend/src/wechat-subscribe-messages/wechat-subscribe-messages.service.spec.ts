@@ -6,6 +6,8 @@ describe('WechatSubscribeMessagesService', () => {
     clientUserId: 7,
     technicianId: 55,
     customTitle: '高级定制美甲',
+    address: '杭州市西湖区奥莱金街4号楼421室',
+    customer: { name: '心心' },
     startTime: new Date('2026-10-12T14:00:00+08:00'),
   };
 
@@ -23,9 +25,14 @@ describe('WechatSubscribeMessagesService', () => {
         dayBefore: 'day-template',
         hourBefore: 'hour-template',
       }),
-      getPublicLaunchConfig: jest
-        .fn()
-        .mockResolvedValue({ storeName: '杭州听栖美甲工作室' }),
+      getBookingEventTemplateIds: jest.fn().mockResolvedValue({
+        clientSuccess: 'client-success-template',
+        technicianNew: 'technician-new-template',
+      }),
+      getPublicLaunchConfig: jest.fn().mockResolvedValue({
+        storeName: '杭州听栖美甲工作室',
+        storeAddress: '杭州市西湖区奥莱金街4号楼421室',
+      }),
       getLoginCredentials: jest
         .fn()
         .mockResolvedValue({ appId: 'wx-app', appSecret: 'secret' }),
@@ -39,7 +46,8 @@ describe('WechatSubscribeMessagesService', () => {
   }
 
   beforeEach(() => {
-    jest.spyOn(global, 'fetch')
+    jest
+      .spyOn(global, 'fetch')
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({ access_token: 'token', expires_in: 7200 }),
@@ -80,7 +88,55 @@ describe('WechatSubscribeMessagesService', () => {
       thing32: { value: '高级定制美甲' },
       time2: { value: '2026-10-12 14:00' },
       thing8: { value: '杭州听栖美甲工作室' },
-      thing9: { value: '距离预约约1小时，请准备到店' },
+      thing9: { value: '距离预约约1小时，请准备按时到店' },
+    });
+  });
+
+  it('uses a technician-specific preparation message for the same reminder', async () => {
+    const { service } = createService();
+
+    await service.sendOrderReminder(order, 'hour_before');
+
+    const request = (global.fetch as jest.Mock).mock.calls[2][1];
+    const body = JSON.parse(request.body);
+    expect(body.page).toBe('pages/technician/order-detail/index?id=18');
+    expect(body.data.thing9).toEqual({
+      value: '距离预约约1小时，请准备接待客户',
+    });
+  });
+
+  it('sends the client booking-success template with the shop address', async () => {
+    const { service } = createService();
+
+    await service.sendBookingEvent(order, 'client_success');
+
+    const request = (global.fetch as jest.Mock).mock.calls[1][1];
+    const body = JSON.parse(request.body);
+    expect(body.template_id).toBe('client-success-template');
+    expect(body.page).toBe('pages/client/order-detail/index?id=18');
+    expect(body.data).toEqual({
+      thing7: { value: '高级定制美甲' },
+      time2: { value: '2026-10-12 14:00' },
+      thing8: { value: '杭州听栖美甲工作室' },
+      thing4: { value: '杭州市西湖区奥莱金街4号楼421室' },
+      thing9: { value: '预约已确认，请按时到店' },
+    });
+  });
+
+  it('sends the technician new-booking template with the client name', async () => {
+    const { service } = createService();
+
+    await service.sendBookingEvent(order, 'technician_new');
+
+    const request = (global.fetch as jest.Mock).mock.calls[1][1];
+    const body = JSON.parse(request.body);
+    expect(body.template_id).toBe('technician-new-template');
+    expect(body.page).toBe('pages/technician/order-detail/index?id=18');
+    expect(body.data).toEqual({
+      thing7: { value: '高级定制美甲' },
+      time2: { value: '2026-10-12 14:00' },
+      name6: { value: '心心' },
+      thing9: { value: '收到新的预约申请，请及时确认' },
     });
   });
 });

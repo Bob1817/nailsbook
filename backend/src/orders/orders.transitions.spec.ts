@@ -6,10 +6,12 @@ describe('OrdersService 流转成功路径', () => {
   let service: OrdersService;
   let prisma: any;
   let emit: jest.Mock;
+  let sendBookingEvent: jest.Mock;
 
   beforeEach(() => {
     emit = jest.fn();
     const chatGateway = { server: { to: jest.fn().mockReturnValue({ emit }) } };
+    sendBookingEvent = jest.fn().mockResolvedValue({ sent: 1 });
     prisma = {
       $transaction: jest.fn(async (cb: (tx: any) => Promise<unknown>) =>
         cb(prisma),
@@ -46,7 +48,16 @@ describe('OrdersService 流转成功路径', () => {
       customer: { update: jest.fn().mockResolvedValue({ id: 3 }) },
       service: { findUnique: jest.fn().mockResolvedValue(null) },
     };
-    service = new OrdersService(prisma, chatGateway as never);
+    service = new OrdersService(
+      prisma,
+      chatGateway as never,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { sendBookingEvent } as never,
+    );
     jest.spyOn(service as any, 'assertTechnicianWorkSchedule').mockResolvedValue(undefined);
     jest.spyOn(service as any, 'assertTechnicianShopSchedule').mockResolvedValue(undefined);
   });
@@ -76,6 +87,10 @@ describe('OrdersService 流转成功路径', () => {
     expect(msg.relatedType).toBe('order');
     expect(prisma.blockedTimeSlot.create).toHaveBeenCalledTimes(1);
     expect(emit).toHaveBeenCalledTimes(1);
+    expect(sendBookingEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 1 }),
+      'client_success',
+    );
   });
 
   it('confirm 到店：pending_confirm → pending_shop', async () => {

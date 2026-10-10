@@ -10,6 +10,8 @@ const CHECK_LABELS: Record<string, string> = {
   storePhone: '门店电话', privacyContact: '隐私联系方式', filingNumber: '备案编号',
   launchTechnician: '唯一美甲师仅到店', bookingDayBeforeTemplateId: '预约日前提醒模板',
   bookingHourBeforeTemplateId: '预约临近提醒模板',
+  bookingClientSuccessTemplateId: '客户预约成功模板',
+  bookingTechnicianNewTemplateId: '美甲师新预约模板',
   wechatLogin: '微信登录已校验', paymentDisabled: '微信支付已关闭',
 };
 
@@ -40,6 +42,8 @@ export default function LaunchConfig() {
         launchTechnicianId: next.launchTechnicianId || undefined,
         bookingDayBeforeTemplateId: next.bookingDayBeforeTemplateId,
         bookingHourBeforeTemplateId: next.bookingHourBeforeTemplateId,
+        bookingClientSuccessTemplateId: next.bookingClientSuccessTemplateId,
+        bookingTechnicianNewTemplateId: next.bookingTechnicianNewTemplateId,
       });
     } catch {
       message.error('首期上线配置加载失败');
@@ -86,6 +90,8 @@ export default function LaunchConfig() {
               <Col xs={24} md={12}><Form.Item name="launchTechnicianId" label="首期唯一美甲师" rules={[{ required: true }]}><Select showSearch optionFilterProp="label" options={options} /></Form.Item></Col>
               <Col xs={24}><Form.Item name="bookingDayBeforeTemplateId" label="预约日前提醒模板 ID" extra="用于预约前一天提醒；微信模板字段为 thing7、time2、thing8、thing9"><Input /></Form.Item></Col>
               <Col xs={24}><Form.Item name="bookingHourBeforeTemplateId" label="预约临近提醒模板 ID" extra="用于预约前约 1 小时提醒；微信模板字段为 thing32、time2、thing8、thing9"><Input /></Form.Item></Col>
+              <Col xs={24}><Form.Item name="bookingClientSuccessTemplateId" label="客户预约成功模板 ID" extra="美甲师确认预约后发送；字段为 thing7、time2、thing8、thing4、thing9"><Input /></Form.Item></Col>
+              <Col xs={24}><Form.Item name="bookingTechnicianNewTemplateId" label="美甲师新预约模板 ID" extra="客户提交预约后发送；字段为 thing7、time2、name6、thing9"><Input /></Form.Item></Col>
             </Row>
             <Button type="primary" size="large" loading={saving} disabled={!config?.launchModeLocked} onClick={save}>保存配置</Button>
           </Form>

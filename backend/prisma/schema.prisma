@@ -669,6 +669,8 @@ model WechatPlatformConfig {
   bookingReminderTemplateId String?
   bookingDayBeforeTemplateId String?
   bookingHourBeforeTemplateId String?
+  bookingClientSuccessTemplateId String?
+  bookingTechnicianNewTemplateId String?
   createdAt                 DateTime  @default(now())
   updatedAt                 DateTime  @default(now()) @updatedAt
 }

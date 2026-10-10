@@ -98,6 +98,10 @@ export class WechatPlatformConfigService implements OnModuleInit {
         ),
       bookingHourBeforeTemplateId:
         !!item.bookingHourBeforeTemplateId?.trim(),
+      bookingClientSuccessTemplateId:
+        !!item.bookingClientSuccessTemplateId?.trim(),
+      bookingTechnicianNewTemplateId:
+        !!item.bookingTechnicianNewTemplateId?.trim(),
       wechatLogin: this.loginEffective(item),
       paymentDisabled: !item.paymentEnabled,
     };
@@ -115,6 +119,8 @@ export class WechatPlatformConfigService implements OnModuleInit {
         item.bookingReminderTemplateId ??
         '',
       bookingHourBeforeTemplateId: item.bookingHourBeforeTemplateId ?? '',
+      bookingClientSuccessTemplateId: item.bookingClientSuccessTemplateId ?? '',
+      bookingTechnicianNewTemplateId: item.bookingTechnicianNewTemplateId ?? '',
       technician,
       launchModeLocked: isMiniProgramLaunchMode(),
       required,
@@ -165,6 +171,10 @@ export class WechatPlatformConfigService implements OnModuleInit {
             dto.bookingDayBeforeTemplateId?.trim() || null,
           bookingHourBeforeTemplateId:
             dto.bookingHourBeforeTemplateId?.trim() || null,
+          bookingClientSuccessTemplateId:
+            dto.bookingClientSuccessTemplateId?.trim() || null,
+          bookingTechnicianNewTemplateId:
+            dto.bookingTechnicianNewTemplateId?.trim() || null,
           paymentEnabled: false,
           paymentValidatedAt: null,
         },
@@ -190,6 +200,8 @@ export class WechatPlatformConfigService implements OnModuleInit {
         item.bookingReminderTemplateId ??
         '',
       bookingHourBeforeTemplateId: item.bookingHourBeforeTemplateId ?? '',
+      bookingClientSuccessTemplateId: item.bookingClientSuccessTemplateId ?? '',
+      bookingTechnicianNewTemplateId: item.bookingTechnicianNewTemplateId ?? '',
       paymentEnabled: false,
       homeServiceEnabled: false,
     };
@@ -411,6 +423,20 @@ export class WechatPlatformConfigService implements OnModuleInit {
       hourBefore:
         item.bookingHourBeforeTemplateId?.trim() ||
         process.env.WECHAT_BOOKING_HOUR_BEFORE_TEMPLATE_ID?.trim() ||
+        '',
+    };
+  }
+
+  async getBookingEventTemplateIds() {
+    const item = await this.getRecord();
+    return {
+      clientSuccess:
+        item.bookingClientSuccessTemplateId?.trim() ||
+        process.env.WECHAT_BOOKING_CLIENT_SUCCESS_TEMPLATE_ID?.trim() ||
+        '',
+      technicianNew:
+        item.bookingTechnicianNewTemplateId?.trim() ||
+        process.env.WECHAT_BOOKING_TECHNICIAN_NEW_TEMPLATE_ID?.trim() ||
         '',
     };
   }
