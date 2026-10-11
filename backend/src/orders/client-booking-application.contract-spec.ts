@@ -20,7 +20,7 @@ describe('P0-14 booking application contract', () => {
     expect(wxml).toContain('核对预约申请');
     expect(wxml).toContain('美甲师确认后生效');
   });
-  it('does not reserve a formal slot while creating the application', () => {
+  it('reserves the requested slot as soon as the application is created', () => {
     const service = fs.readFileSync(
       path.resolve(__dirname, 'client-orders.service.ts'),
       'utf8',
@@ -29,9 +29,10 @@ describe('P0-14 booking application contract', () => {
       service.indexOf('async create(clientUserId'),
       service.indexOf('async createFromDesign'),
     );
-    expect(createBlock).not.toContain('blockedTimeSlot.create');
-    expect(createBlock).toContain('await this.assertNoBlockedConflict(tx, dto.techId, startTime,');
-    expect(createBlock).toContain('const availabilityDuration = totalDurationMinutes || 1');
+    expect(createBlock).toContain('blockedTimeSlot.create');
+    expect(createBlock).toContain('await this.assertNoBlockedConflict(');
+    expect(createBlock).toContain('blockEndTime');
+    expect(createBlock).toContain('totalDurationMinutes || DEFAULT_BOOKING_DURATION_MINUTES');
     expect(createBlock).toContain("bookingPhase: 'application'");
   });
 });

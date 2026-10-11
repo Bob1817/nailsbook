@@ -11,47 +11,48 @@
   </view>
   <block wx:else>
 
-    <!-- ===== 1. Header Banner — 优先展示上传的主页背景 ===== -->
-    <view class="banner-section">
-      <image wx:if="{{heroImageUrl}}" src="{{heroImageUrl}}" mode="aspectFill" class="hero-background" />
-      <view class="banner-mosaic" wx:elif="{{bannerImages.length}}">
-        <image wx:for="{{bannerImages}}" wx:key="*this" src="{{item}}" mode="aspectFill" class="mosaic-img"/>
+    <!-- ===== 1. 固定主页头部：背景图 + 美甲师信息 ===== -->
+    <view class="artist-hero-sticky" style="top: {{navBarHeight}}px;">
+      <view class="banner-section">
+        <image wx:if="{{heroImageUrl}}" src="{{heroImageUrl}}" mode="aspectFill" class="hero-background" />
+        <view class="banner-mosaic" wx:elif="{{bannerImages.length}}">
+          <image wx:for="{{bannerImages}}" wx:key="*this" src="{{item}}" mode="aspectFill" class="mosaic-img"/>
+        </view>
+        <view class="banner-mosaic banner-mosaic-fallback" wx:else></view>
+        <view class="banner-overlay"></view>
+        <view class="banner-gradient"></view>
       </view>
-      <view class="banner-mosaic banner-mosaic-fallback" wx:else></view>
-      <view class="banner-overlay"></view>
-      <view class="banner-gradient"></view>
 
-      <view class="banner-content">
+      <view class="artist-sticky {{isOwner ? 'has-owner-menu' : ''}}">
+        <view wx:if="{{isOwner}}" class="owner-menu" bindtap="showOwnerMenu" role="button" aria-label="主页管理">
+          <image src="/static/icons/more-horizontal.svg" mode="aspectFit" />
+        </view>
         <view class="artist-info-row">
-          <!-- 头像 -->
-          <view class="avatar-wrap">
-            <image wx:if="{{artist.avatarUrl}}" src="{{artist.avatarUrl}}" class="avatar-img" mode="aspectFill"/>
-            <view wx:else class="avatar-fallback"><image src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" /></view>
-            <view wx:if="{{artist.isOnline}}" class="online-dot"></view>
-          </view>
+            <!-- 头像 -->
+            <view class="avatar-wrap">
+              <image wx:if="{{artist.avatarUrl}}" src="{{artist.avatarUrl}}" class="avatar-img" mode="aspectFill"/>
+              <view wx:else class="avatar-fallback"><image src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" /></view>
+              <view wx:if="{{artist.isOnline}}" class="online-dot"></view>
+            </view>
 
-          <!-- 信息区 -->
-          <view class="artist-detail">
-            <view class="name-row">
-              <text class="artist-name">{{artist.name}}</text>
-              <view wx:if="{{artist.isVerified}}" class="badge-gold">
-                <text class="badge-icon">✓</text>
-                <text>高级认证</text>
+            <!-- 信息区 -->
+            <view class="artist-detail">
+              <view class="name-row">
+                <text class="artist-name">{{artist.name}}</text>
+                <view wx:if="{{artist.isVerified}}" class="badge-gold">
+                  <text class="badge-icon">✓</text>
+                  <text>高级认证</text>
+                </view>
+              </view>
+              <text wx:if="{{artist.certificationTitle}}" class="certification-line">{{artist.certificationTitle}}</text>
+              <view class="meta-row">
+                <image class="meta-icon" src="/static/icons/pin-light.svg" mode="aspectFit"/>
+                <text wx:if="{{artist.city}}">{{artist.city}}</text>
+                <text wx:if="{{artist.experienceYears}}"> · 从业{{artist.experienceYears}}年</text>
+                <text wx:if="{{artist.specialtiesText}}" class="meta-divider">|</text>
+                <text wx:if="{{artist.specialtiesText}}">{{artist.specialtiesText}}</text>
               </view>
             </view>
-            <text wx:if="{{artist.certificationTitle}}" class="certification-line">{{artist.certificationTitle}}</text>
-            <view class="meta-row">
-              <image class="meta-icon" src="/static/icons/pin-light.svg" mode="aspectFit"/>
-              <text wx:if="{{artist.city}}">{{artist.city}}</text>
-              <text wx:if="{{artist.experienceYears}}"> · 从业{{artist.experienceYears}}年</text>
-              <text wx:if="{{artist.specialtiesText}}" class="meta-divider">|</text>
-              <text wx:if="{{artist.specialtiesText}}">{{artist.specialtiesText}}</text>
-            </view>
-            <button wx:if="{{!isOwner}}" class="btn-book-now booking-action" style="width:100%;max-width:184px;height:44px;min-height:44px;padding:0 16px;box-sizing:border-box;" bindtap="bookArtist">
-              <image class="btn-icon-svg" src="/static/icons/calendar.svg" mode="aspectFit"/>
-              <text class="btn-text">立即预约</text>
-            </button>
-          </view>
         </view>
       </view>
     </view>
@@ -97,15 +98,14 @@
       </view>
     </view>
 
-    <!-- ===== 荣誉与成长经历（常驻） ===== -->
+    <!-- ===== 成长与认证（常驻） ===== -->
     <view class="section-block" wx:if="{{timeline.length || qualifications.length}}">
       <view class="section-header">
         <view class="section-bar"></view>
-        <text class="section-title">荣誉与成长</text>
+        <text class="section-title">成长与认证</text>
       </view>
       <view class="about-card">
         <view class="timeline-section" wx:if="{{timeline.length}}">
-          <text class="timeline-label">成长经历</text>
           <view class="timeline-list">
             <view wx:for="{{timeline}}" wx:key="year" class="timeline-item">
               <view class="timeline-dot {{index < timeline.length - 1 ? 'has-line' : ''}}"></view>
@@ -136,8 +136,8 @@
       </view>
     </view>
 
-    <!-- ===== 工作室环境与专业工具（常驻） ===== -->
-    <view class="section-block" wx:if="{{privacyNote || exclusiveServiceNote || standards || environmentPhotos.length || artist.shopName || artist.shopAddress}}">
+    <!-- ===== 工作室环境与到店信息 ===== -->
+    <view class="section-block" wx:if="{{privacyNote || exclusiveServiceNote || environmentPhotos.length || artist.shopName || artist.shopAddress}}">
       <view class="section-header">
         <view class="section-bar"></view>
         <text class="section-title">工作室</text>
@@ -151,21 +151,6 @@
         <view class="kv-row" wx:if="{{privacyNote}}">
           <text class="kv-label">私密环境</text>
           <text class="kv-value">{{privacyNote}}</text>
-        </view>
-      </view>
-      <!-- 消毒与专业工具 -->
-      <view class="about-card" style="margin-top:16rpx;" wx:if="{{standards}}">
-        <view class="kv-row" wx:if="{{standards && standards.hygiene}}">
-          <text class="kv-label">卫生消毒</text>
-          <text class="kv-value">{{standards.hygiene}}</text>
-        </view>
-        <view class="kv-row" wx:if="{{standards && standards.materials}}">
-          <text class="kv-label">专业工具</text>
-          <text class="kv-value">{{standards.materials}}</text>
-        </view>
-        <view class="kv-row" wx:if="{{standards && standards.allergyNotice}}">
-          <text class="kv-label">过敏提示</text>
-          <text class="kv-value">{{standards.allergyNotice}}</text>
         </view>
       </view>
       <!-- 地址与到店 -->
@@ -214,6 +199,12 @@
             <image class="detail-icon-svg" src="/static/icons/clock.svg" mode="aspectFit"/>
             <text class="detail-text">营业时间：{{artist.businessHours}}</text>
           </view>
+          <view wx:if="{{studioPolicyItems.length}}" class="shop-policy-entry" bindtap="openStudioPolicies" role="button" aria-label="查看服务保障与预约政策">
+            <image class="detail-icon-svg" src="/static/icons/shield.svg" mode="aspectFit"/>
+            <text class="shop-policy-text">服务保障与预约政策</text>
+            <text class="shop-policy-summary">共 {{studioPolicyItems.length}} 项</text>
+            <text class="shop-policy-arrow">›</text>
+          </view>
           <view class="shop-actions">
             <button class="action-btn booking-action" style="flex:1 1 0%;width:0;min-width:0;height:44px;min-height:44px;padding:0 16px;box-sizing:border-box;" bindtap="openNavigation">
               <image class="action-icon-svg" src="/static/icons/navigation.svg" mode="aspectFit"/>
@@ -248,15 +239,14 @@
       </view>
     </view>
 
-    <!-- ===== 服务如何进行 ===== -->
-    <view class="section-block" wx:if="{{serviceProcess.length || policies}}">
+    <!-- ===== 服务流程 ===== -->
+    <view class="section-block" wx:if="{{serviceProcess.length}}">
       <view class="section-header">
         <view class="section-bar"></view>
-        <text class="section-title">服务如何进行</text>
+        <text class="section-title">服务流程</text>
       </view>
       <view class="about-card">
         <view wx:if="{{serviceProcess.length}}" class="process-list">
-          <text class="process-title">服务流程</text>
           <view wx:for="{{serviceProcess}}" wx:key="step" class="process-item">
             <view class="process-no">{{item.step}}</view>
             <view class="process-body">
@@ -264,18 +254,6 @@
               <text class="process-desc" wx:if="{{item.description}}">{{item.description}}</text>
             </view>
           </view>
-        </view>
-        <view class="kv-row" wx:if="{{policies && policies.late}}">
-          <text class="kv-label">迟到说明</text>
-          <text class="kv-value">{{policies.late}}</text>
-        </view>
-        <view class="kv-row" wx:if="{{policies && policies.cancellation}}">
-          <text class="kv-label">取消规则</text>
-          <text class="kv-value">{{policies.cancellation}}</text>
-        </view>
-        <view class="kv-row" wx:if="{{policies && policies.aftercare}}">
-          <text class="kv-label">售后补修</text>
-          <text class="kv-value">{{policies.aftercare}}</text>
         </view>
       </view>
     </view>
@@ -350,6 +328,24 @@
       </view>
     </view>
 
+    <view class="section-block" wx:if="{{homepageComments.length}}">
+      <view class="section-header">
+        <view class="section-bar"></view>
+        <text class="section-title">主页评论</text>
+        <text class="section-more" bindtap="openComments">{{commentCount}} 条</text>
+      </view>
+      <view class="homepage-comment-list">
+        <view wx:for="{{homepageComments}}" wx:key="id" class="homepage-comment">
+          <image wx:if="{{item.clientAvatarUrl}}" class="homepage-comment-avatar" src="{{item.clientAvatarUrl}}" mode="aspectFill"/>
+          <image wx:else class="homepage-comment-avatar" src="/static/icons/client.svg" mode="aspectFit"/>
+          <view class="homepage-comment-body">
+            <view class="homepage-comment-head"><text class="homepage-comment-name">{{item.clientName}}</text><text class="homepage-comment-time">{{item.timeAgo}}</text></view>
+            <text class="homepage-comment-content">{{item.content}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
     <!-- ===== 精选作品（最后：专业证明） ===== -->
     <view class="section-block" wx:if="{{works.length}}">
       <view class="section-header">
@@ -377,34 +373,64 @@
 <!-- ===== 9. 底部操作栏 ===== -->
 <view wx:if="{{!loading && !loadFailed}}" class="bottom-bar">
   <view class="bottom-bar-inner">
-    <button wx:if="{{isOwner}}" class="btn-edit-homepage booking-action" bindtap="editHomepage">
-      <image class="btn-icon-svg" src="/static/icons/profile-edit.svg" mode="aspectFit"/><text>编辑主页</text>
-    </button>
-    <block wx:else>
     <view class="bottom-actions">
-      <!-- 关注：需登录；下方显示美甲师粉丝总数（不受登录态影响） -->
-      <view class="action-icon-btn {{isFollowed ? 'followed' : ''}}" bindtap="toggleFollow">
-        <image class="social-icon-svg" src="{{isFollowed ? '/static/icons/social-follow-active.svg' : '/static/icons/social-follow.svg'}}" mode="aspectFit"/>
-        <text class="count-label">{{followerCount || 0}}</text>
-      </view>
-      <!-- 点赞：无需登录；下方显示总点赞数 -->
       <view class="action-icon-btn {{isLiked ? 'liked' : ''}}" bindtap="toggleLike">
         <image class="social-icon-svg" src="{{isLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}" mode="aspectFit"/>
         <text class="count-label">{{likeCount || 0}}</text>
       </view>
-      <!-- 收藏：需登录；下方显示总收藏数 -->
       <view class="action-icon-btn {{isFavorited ? 'favorited' : ''}}" bindtap="toggleFavorite">
         <image class="social-icon-svg" src="{{isFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}" mode="aspectFit"/>
         <text class="count-label">{{favoriteCount || 0}}</text>
       </view>
+      <view class="action-icon-btn" bindtap="openComments">
+        <image class="social-icon-svg" src="/static/icons/social-comment.svg" mode="aspectFit"/>
+        <text class="count-label">{{commentCount || 0}}</text>
+      </view>
     </view>
     <button class="btn-book-main booking-action" style="flex:1 1 0%;width:0;min-width:0;height:44px;min-height:44px;padding:0 16px;box-sizing:border-box;" bindtap="bookArtist">
       <image class="btn-icon-svg" src="/static/icons/calendar.svg" mode="aspectFit"/>
-      <text class="btn-text">{{isBound ? '立即预约' : '绑定预约'}}</text>
+      <text class="btn-text">发起预约</text>
     </button>
-    </block>
   </view>
   <view class="safe-area-bottom"></view>
+</view>
+
+<view wx:if="{{showOwnerMenuSheet}}" class="modal-mask" bindtap="closeOwnerMenu">
+  <view class="owner-action-panel" catchtap="">
+    <view class="owner-action-item" data-action="edit" catchtap="handleOwnerMenuAction" role="button">编辑主页</view>
+    <view class="owner-action-item" data-action="interactions" catchtap="handleOwnerMenuAction" role="button">互动记录</view>
+    <view class="owner-action-cancel" catchtap="closeOwnerMenu" role="button">取消</view>
+  </view>
+</view>
+
+<view wx:if="{{showStudioPolicyModal}}" class="modal-mask" bindtap="closeStudioPolicies">
+  <view class="policy-panel" catchtap="">
+    <view class="modal-handle"></view>
+    <view class="policy-panel-head">
+      <view class="policy-panel-title-wrap">
+        <text class="modal-title">服务保障与预约政策</text>
+        <text class="policy-panel-desc">预约前请确认以下服务说明</text>
+      </view>
+      <view class="policy-close" bindtap="closeStudioPolicies" role="button" aria-label="关闭政策详情">关闭</view>
+    </view>
+    <scroll-view scroll-y class="policy-list">
+      <view wx:for="{{studioPolicyItems}}" wx:key="key" class="policy-item">
+        <text class="policy-item-label">{{item.label}}</text>
+        <text class="policy-item-content">{{item.content}}</text>
+      </view>
+    </scroll-view>
+  </view>
+</view>
+
+<view wx:if="{{showCommentComposer}}" class="modal-mask" bindtap="closeComments">
+  <view class="comment-composer" catchtap="">
+    <text class="modal-title">评论美甲师主页</text>
+    <textarea class="comment-textarea" value="{{commentDraft}}" bindinput="onCommentInput" maxlength="500" placeholder="分享你对美甲师主页或服务的看法" placeholder-class="modal-placeholder" auto-focus/>
+    <view class="modal-actions">
+      <view class="modal-cancel booking-action" bindtap="closeComments" role="button">取消</view>
+      <view class="modal-confirm booking-action {{!commentDraft || commentSubmitting ? 'is-disabled' : ''}}" bindtap="submitHomepageComment" role="button">{{commentSubmitting ? '发布中' : '发布评论'}}</view>
+    </view>
+  </view>
 </view>
 
 <!-- 绑定弹窗 -->

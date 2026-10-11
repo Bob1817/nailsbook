@@ -1,0 +1,27 @@
+page { min-height: 100vh; background: var(--bg-card); }
+
+.profile-page { min-height: 100vh; box-sizing: border-box; }
+.profile-content { padding: 96rpx 48rpx calc(48rpx + env(safe-area-inset-bottom)); text-align: center; }
+.profile-title { display: block; font-size: var(--font-xl); line-height: var(--leading-tight); font-weight: var(--weight-semibold); color: var(--text-primary); }
+.profile-desc { display: block; margin: 16rpx auto 56rpx; max-width: 560rpx; font-size: var(--font-sm); line-height: var(--leading-normal); color: var(--text-muted); }
+
+.avatar-button { width: 220rpx; min-height: 220rpx; margin: 0 auto 48rpx; padding: 0; border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.avatar-button::after { border: 0; }
+.avatar-image,
+.avatar-placeholder { width: 144rpx; height: 144rpx; border-radius: var(--radius-full); }
+.avatar-placeholder { background: var(--bg-input); display: flex; align-items: center; justify-content: center; }
+.avatar-placeholder-icon { width: 72rpx; height: 72rpx; opacity: .55; }
+.avatar-action { min-height: 44px; display: flex; align-items: center; font-size: var(--font-sm); color: var(--nb-text-link); }
+
+.nickname-field { text-align: left; }
+.field-label { display: block; margin-bottom: 12rpx; font-size: var(--font-sm); font-weight: var(--weight-medium); color: var(--text-body); }
+.nickname-input { width: 100%; height: var(--input-height); min-height: 44px; box-sizing: border-box; padding: 0 var(--input-padding-h); border-radius: var(--input-radius); background: var(--bg-input); font-size: var(--font-sm); color: var(--text-primary); }
+.input-placeholder { color: var(--text-faint); }
+
+.save-button { width: 100%; min-height: 44px; margin: 48rpx 0 0; border: 0; border-radius: 8px; background: var(--nb-action); color: var(--text-inverse); font-size: var(--font-sm); font-weight: var(--weight-semibold); }
+.save-button::after,
+.skip-button::after { border: 0; }
+.save-button[disabled] { background: var(--bg-input); color: var(--text-muted); }
+.skip-button { min-height: 44px; margin: 16rpx auto 0; padding: 0 32rpx; border: 0; background: transparent; color: var(--text-muted); font-size: var(--font-sm); }
+
+@import '../../../styles/booking-actions.wxss';

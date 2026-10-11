@@ -3,7 +3,7 @@ const { join } = require('path');
 
 const root = join(__dirname, '..');
 for (const args of [['sync-colors.py', '--check'], ['check-colors.py']]) {
-  execFileSync('python3', [join(root, '..', 'scripts', args[0]), ...args.slice(1)], {
+  execFileSync('python3', [join(root, '..', 'scripts', args[0]), ...args.slice(1), '--wxapp-only'], {
     cwd: root,
     stdio: 'inherit'
   });
@@ -22,6 +22,9 @@ const checks = [
   'test-beauty-archive.js',
   'test-share-booking.js',
   'test-share-registration.js',
+  'test-wechat-login-binding-scope.js',
+  'test-client-auth-profile.js',
+  'test-customer-invite-share.js',
   'test-work-share-poster.js',
   'test-customer-card-status.js',
   'test-customer-action-style.js',
@@ -55,6 +58,7 @@ const checks = [
   'test-technician-booking-card.js',
   'test-chat-detail-consistency.js',
   'test-technician-chat-conversation.js',
+  'test-message-unread-badge.js',
   'test-artist-interactions.js',
   'test-business-data-month.js',
   'test-shop-management.js',

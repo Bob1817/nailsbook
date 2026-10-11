@@ -46,7 +46,17 @@
 <!-- 时间网格 -->
 <text wx:if="{{horizontal && _ready}}" class="btp-slot-title">选择时间段</text>
 <text wx:if="{{horizontal && _ready && !timeSlotStatuses.length}}" class="btp-empty-slots">当前日期暂无可预约时段，请选择其他日期或服务地址</text>
-<view class="btp-time-grid {{horizontal ? 'btp-time-grid-horizontal' : ''}}" wx:if="{{timeSlotStatuses.length > 0}}">
+<scroll-view wx:if="{{horizontal && timeSlotStatuses.length > 0}}" class="btp-time-strip" scroll-x enhanced show-scrollbar="{{false}}">
+  <view class="btp-time-row">
+    <view wx:for="{{timeSlotStatuses}}" wx:key="time"
+      class="btp-time-item btp-time-item-horizontal {{startTime === item.time ? 'btp-time-active' : ''}} {{item.occupied ? 'btp-time-occupied' : ''}}"
+      bindtap="selectTime" data-time="{{item.time}}">
+      <text class="btp-time-text">{{item.time}}</text>
+      <text wx:if="{{item.occupied}}" class="btp-occupied-label">{{item.reason === 'past' ? '已过时' : '已预约'}}</text>
+    </view>
+  </view>
+</scroll-view>
+<view class="btp-time-grid" wx:elif="{{timeSlotStatuses.length > 0}}">
   <view wx:for="{{timeSlotStatuses}}" wx:key="time"
     class="btp-time-item {{startTime === item.time ? 'btp-time-active' : ''}} {{item.occupied ? 'btp-time-occupied' : ''}}"
     bindtap="selectTime" data-time="{{item.time}}">

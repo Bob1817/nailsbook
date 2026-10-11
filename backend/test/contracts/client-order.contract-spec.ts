@@ -85,7 +85,9 @@ describe('Client booking and design HTTP contract', () => {
     const server = testApp.app.getHttpServer();
     const date = new Date(Date.now() + 4 * 86400000).toISOString().slice(0, 10);
     const otherDate = new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10);
-    const payload = { techId: technician.id, serviceDate: date, startTime: '14:00', serviceType: '到店美甲', shopAddress: { name: 'Contract Studio' }, quickBooking: true };
+    const competingDate = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+    const spareDate = new Date(Date.now() + 8 * 86400000).toISOString().slice(0, 10);
+    const payload = { techId: technician.id, serviceDate: date, startTime: '10:00', serviceType: '到店美甲', shopAddress: { name: 'Contract Studio' }, quickBooking: true };
     const create = (body: any) => request(server).post('/api/client/orders').set('Authorization', `Bearer ${accessToken}`).send(body);
     const quote = (id: number, body: any) => request(server).patch(`/api/technician/orders/${id}/review`).set('Authorization', `Bearer ${techToken}`).send(body);
     const day = (body: any) => request(server).patch(`/api/technician/booking-days/${date}`).set('Authorization', `Bearer ${techToken}`).send(body);
@@ -93,41 +95,39 @@ describe('Client booking and design HTTP contract', () => {
     try {
       const referenceWork = await testApp.prisma.nailWork.create({ data: { techId: technician.id, title: '参考作品', publicationStatus: 'approved' } });
       referenceWorkId = referenceWork.id;
-      await create({ ...payload, sourceWorkId: referenceWork.id }).expect(400);
-      const reference = await create({ ...payload, sourceWorkId: referenceWork.id, referenceOnly: true }).expect(201);
+      await create({ ...payload, serviceDate: otherDate, sourceWorkId: referenceWork.id }).expect(400);
+      const reference = await create({ ...payload, serviceDate: otherDate, sourceWorkId: referenceWork.id, referenceOnly: true }).expect(201);
       expect(reference.body).toMatchObject({ status: 'pending_quote', quotePrice: null, totalDurationMinutes: 0 });
       await testApp.prisma.nailWork.update({ where: { id: referenceWork.id }, data: { publicationStatus: 'pending' } });
-      await create({ ...payload, sourceWorkId: referenceWork.id, referenceOnly: true }).expect(404);
+      await create({ ...payload, serviceDate: otherDate, sourceWorkId: referenceWork.id, referenceOnly: true }).expect(404);
       const created = await create({ ...payload, applicationKey: `quick-${technician.id}` }).expect(201);
       const id = created.body.id;
       expect(created.body).toMatchObject({ status: 'pending_quote', quickBooking: true, totalDurationMinutes: 0, endTime: null, quotePrice: null });
-      expect(await testApp.prisma.blockedTimeSlot.count({ where: { orderId: id } })).toBe(0);
-      // A start point near closing is allowed when duration is unknown.
-      await create({ ...payload, startTime: '20:30' }).expect(201);
-      const pending = await create({ ...payload, startTime: '17:00' }).expect(201);
-      const terms = { quoteMode: 'manual', amountFen: 30000, durationMinutes: 90, serviceDate: date, startTime: '14:00' };
+      expect(await testApp.prisma.blockedTimeSlot.count({ where: { orderId: id } })).toBe(1);
+      // 未知时长按五小时占用，临近结束营业的时间不可再提交。
+      await create({ ...payload, startTime: '20:30' }).expect(400);
+      const pending = await create({ ...payload, startTime: '15:30' }).expect(201);
+      const terms = { quoteMode: 'manual', amountFen: 30000, durationMinutes: 90, serviceDate: date, startTime: '10:00' };
       await quote(id, terms).expect(200);
       await quote(id, { ...terms, amountFen: -1, continueAccepting: false, dayVersion: 0 }).expect(400);
       await quote(id, { ...terms, quoteVersion: 1, continueAccepting: true, dayVersion: 0 }).expect(200);
       const detail = await request(server).get(`/api/client/orders/${id}`).set('Authorization', `Bearer ${accessToken}`).expect(200);
       expect(detail.body).toMatchObject({ status: 'pending_agree', quotePrice: 300, finalPriceFen: 30000, totalDurationMinutes: 90 });
       expect(new Date(detail.body.endTime).getTime() - new Date(detail.body.startTime).getTime()).toBe(90 * 60000);
-      expect(await testApp.prisma.blockedTimeSlot.count({ where: { orderId: id } })).toBe(0);
+      expect(await testApp.prisma.blockedTimeSlot.count({ where: { orderId: id } })).toBe(1);
       await request(server).post(`/api/client/orders/${id}/agree`).set('Authorization', `Bearer ${accessToken}`).send({ quoteVersion: 2 }).expect(201);
       await create({ ...payload, startTime: '15:00' }).expect(400);
-      await create({ ...payload, startTime: '15:30' }).expect(201);
-      const conflict = await create({ ...payload, startTime: '13:30' }).expect(201);
-      await quote(conflict.body.id, { ...terms, startTime: '13:30', continueAccepting: false, dayVersion: 1 }).expect(400);
+      await create({ ...payload, startTime: '15:30' }).expect(400);
       let settings = await request(server).get(`/api/public/booking-settings/${technician.id}`).expect(200);
       expect(settings.body.days[0]).toMatchObject({ accepting: true, version: 1 });
-      await quote(pending.body.id, { ...terms, startTime: '17:00', continueAccepting: false, dayVersion: 0 }).expect(409);
-      expect(await testApp.prisma.blockedTimeSlot.count({ where: { orderId: pending.body.id } })).toBe(0);
-      await quote(pending.body.id, { ...terms, startTime: '17:00', continueAccepting: false, dayVersion: 1 }).expect(200);
+      await quote(pending.body.id, { ...terms, startTime: '15:30', continueAccepting: false, dayVersion: 0 }).expect(409);
+      expect(await testApp.prisma.blockedTimeSlot.count({ where: { orderId: pending.body.id } })).toBe(1);
+      await quote(pending.body.id, { ...terms, startTime: '15:30', continueAccepting: false, dayVersion: 1 }).expect(200);
       await create({ ...payload, startTime: '10:00' }).expect(409);
       await request(server).post('/api/client/custom-service-requests').set('Authorization', `Bearer ${accessToken}`).send({ techId: technician.id, serviceDate: date, startTime: '10:00', title: '参考款式' }).expect(409);
       // Old clients and other creation modes also obey the new date policy.
       await create({ ...payload, quickBooking: false, selectedServiceIds: ['contract-basic'], startTime: '10:00' }).expect(409);
-      await create({ ...payload, serviceDate: otherDate }).expect(201);
+      await create({ ...payload, serviceDate: spareDate, startTime: '10:00' }).expect(201);
       const retried = await create({ ...payload, applicationKey: `quick-${technician.id}` }).expect(201);
       expect(retried.body.id).toBe(id);
       await day({ accepting: true, version: 0 }).expect(409);
@@ -135,24 +135,23 @@ describe('Client booking and design HTTP contract', () => {
       // Accepted requests can finish confirmation even though intake is now closed.
       await request(server).post(`/api/client/orders/${id}/agree`).set('Authorization', `Bearer ${accessToken}`).send({ quoteVersion: 2 }).expect(201);
       expect((await testApp.prisma.order.findUnique({ where: { id } }))?.status).toBe('pending_shop');
-      // Rejecting the other quote releases only its service slot, not the day policy.
+      // Rejecting a quote keeps the appointment slot; only cancelling or rejecting the appointment releases it.
       await request(server).post(`/api/client/orders/${pending.body.id}/reject-quote`).set('Authorization', `Bearer ${accessToken}`).send({ reason: '调整款式', quoteVersion: 1 }).expect(201);
-      expect(await testApp.prisma.blockedTimeSlot.count({ where: { orderId: pending.body.id } })).toBe(0);
+      expect(await testApp.prisma.blockedTimeSlot.count({ where: { orderId: pending.body.id } })).toBe(1);
       settings = await request(server).get(`/api/public/booking-settings/${technician.id}`).expect(200);
       expect(settings.body.days[0]).toMatchObject({ accepting: false, version: 2 });
       await day({ accepting: true, version: 2 }).expect(200);
-      await create({ ...payload, startTime: '10:00' }).expect(201);
+      await create({ ...payload, startTime: '12:00' }).expect(400);
       await day({ accepting: false, version: 3 }).expect(200);
       // Existing pre-closure request can be quoted without reopening the day.
-      await quote(pending.body.id, { ...terms, quoteVersion: 1, startTime: '17:00', continueAccepting: false, dayVersion: 4 }).expect(200);
-      const duplicate = await Promise.all([quote(pending.body.id, { ...terms, quoteVersion: 2, startTime: '17:00', continueAccepting: true, dayVersion: 5 }), quote(pending.body.id, { ...terms, quoteVersion: 2, startTime: '17:00', continueAccepting: true, dayVersion: 5 })]);
+      await quote(pending.body.id, { ...terms, quoteVersion: 1, startTime: '15:30', continueAccepting: false, dayVersion: 4 }).expect(200);
+      const duplicate = await Promise.all([quote(pending.body.id, { ...terms, quoteVersion: 2, startTime: '15:30', continueAccepting: true, dayVersion: 5 }), quote(pending.body.id, { ...terms, quoteVersion: 2, startTime: '15:30', continueAccepting: true, dayVersion: 5 })]);
       expect(duplicate.map(r => r.status).sort()).toEqual([200, 400]);
-      expect(await testApp.prisma.blockedTimeSlot.count({ where: { orderId: pending.body.id } })).toBe(0);
-      const competing = await Promise.all([create({ ...payload, serviceDate: otherDate, startTime: '11:00' }), create({ ...payload, serviceDate: otherDate, startTime: '11:00' })]);
-      expect(competing.map(r => r.status)).toEqual([201, 201]);
-      const competingQuotes = await Promise.all(competing.map(r => quote(r.body.id, { ...terms, serviceDate: otherDate, startTime: '11:00', continueAccepting: true, dayVersion: 0 })));
-      expect(competingQuotes.map(r => r.status).sort()).toEqual([200, 409]);
-      expect(await testApp.prisma.blockedTimeSlot.count({ where: { orderId: { in: competing.map(r => r.body.id) } } })).toBe(0);
+      expect(await testApp.prisma.blockedTimeSlot.count({ where: { orderId: pending.body.id } })).toBe(1);
+      const competing = await Promise.all([create({ ...payload, serviceDate: competingDate, startTime: '11:00' }), create({ ...payload, serviceDate: competingDate, startTime: '11:00' })]);
+      expect(competing.map(r => r.status).sort()).toEqual([201, 400]);
+      const competingId = competing.find(r => r.status === 201)?.body.id;
+      expect(await testApp.prisma.blockedTimeSlot.count({ where: { orderId: competingId } })).toBe(1);
       const booking = await testApp.prisma.order.findUniqueOrThrow({ where: { id } });
       await (testApp.app.get(OrdersScheduler) as any).autoTransitionToInProgress(booking.startTime);
       await request(server).patch(`/api/technician/orders/${id}/complete`).set('Authorization', `Bearer ${techToken}`)
@@ -275,7 +274,7 @@ describe('Client booking and design HTTP contract', () => {
         const retry = await request(server).post('/api/client/orders')
           .set('Authorization', `Bearer ${accessToken}`).send(payload).expect(201);
         expect(retry.body.id).toBe(id);
-        expect(await testApp.prisma.blockedTimeSlot.count({ where: { orderId: id } })).toBe(0);
+        expect(await testApp.prisma.blockedTimeSlot.count({ where: { orderId: id } })).toBe(1);
 
         const expectBothStatus = async (status: string) => {
           for (const [role, token] of [['client', accessToken], ['technician', techToken]]) {

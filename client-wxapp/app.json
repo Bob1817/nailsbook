@@ -11,11 +11,11 @@
     {
       "root": "pages/client",
       "pages": [
-        "login/index", "register/index", "forgot-password/index", "welcome/index",
+        "discover/index", "login/index", "register/index", "forgot-password/index", "welcome/index",
         "home/index", "works/index", "artist-home/index", "work-detail/index", "beauty-archive/index",
         "ai-photo/index", "public-work/index", "quick-booking/index", "create-order/index", "orders/index", "order-detail/index",
         "designs/index", "create-design/index", "customize-design/index", "design-detail/index", "chat/index",
-        "chat-detail/index", "profile/index", "my-technicians/index", "settings/index", "my-favorites/index", "my-likes/index",
+        "chat-detail/index", "profile/index", "profile-completion/index", "my-technicians/index", "settings/index", "my-favorites/index", "my-likes/index",
         "feedback/index", "manual/index", "agreement/index", "help-feedback/index",
         "shop-guidance/index"
       ]
@@ -38,7 +38,7 @@
   "window": {
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#FFFFFF",
-    "navigationBarTitleText": "NailBook",
+    "navigationBarTitleText": "OnlyNail",
     "navigationBarTextStyle": "black",
     "backgroundColor": "#F5F5F7"
   },

@@ -5,6 +5,21 @@ const vm = require('node:vm');
 const { createRequire } = require('node:module');
 const { buildSlotStatuses } = require('../utils/booking-time-engine');
 
+const bookingWxml = fs.readFileSync(path.join(__dirname, '..', 'pages/client/create-order/index.wxml'), 'utf8');
+const bookingWxss = fs.readFileSync(path.join(__dirname, '..', 'pages/client/create-order/index.wxss'), 'utf8');
+const bookingJs = fs.readFileSync(path.join(__dirname, '..', 'pages/client/create-order/index.js'), 'utf8');
+const timePickerWxml = fs.readFileSync(path.join(__dirname, '..', 'components/booking-time-picker/index.wxml'), 'utf8');
+const timePickerWxss = fs.readFileSync(path.join(__dirname, '..', 'components/booking-time-picker/index.wxss'), 'utf8');
+
+assert.match(bookingWxml, /quick-time-head[\s\S]*?<booking-time-picker\s+horizontal/, '主页快捷预约应使用纵向标题和紧凑横向时间组件');
+assert.doesNotMatch(bookingWxml, /使用完整预约|bindtap="useFullBooking"/, '快捷预约不应展示重复的完整预约入口');
+assert.doesNotMatch(bookingJs, /useFullBooking\s*:/, '移除完整预约入口后不应遗留处理函数');
+assert.match(bookingWxml, /service-option-check-active/, '服务形式应使用明确的勾选状态');
+assert.doesNotMatch(bookingWxml, /service-option-radio/, '服务形式不再使用描边单选圆点');
+assert.match(bookingWxss, /\.service-option-check-active\s*\{[^}]*background:\s*var\(--nb-action\)/, '服务形式选中态应使用设计令牌的实心勾选标识');
+assert.match(timePickerWxml, /horizontal && timeSlotStatuses\.length > 0[\s\S]*?class="btp-time-strip"[^>]*scroll-x/, '紧凑时间组件应单行横向展示可预约时段');
+assert.match(timePickerWxss, /\.btp-time-item-horizontal\s*\{[^}]*min-height:\s*44px/, '紧凑时间按钮应保留 44px 触控高度');
+
 const storage = { role: 'client', client_token: 'test-token' };
 const toasts = [], requests = [], modals = [];
 let destination = '', enabled = true;
@@ -46,7 +61,14 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   booking.applicationKey = 'quick-unit'; booking._pageActive = true;
   booking.handleSubmit();
   await flush();
-  assert.equal(requests.length, 1, '仅时间即可提交，无服务名称和额外核对弹窗');
+  assert.equal(requests.length, 0, '确认前不得发送预约申请');
+  assert.equal(booking.data.showQuickConfirm, true);
+  booking.cancelQuickSubmit();
+  assert.equal(requests.length, 0, '取消核对不得创建预约');
+  booking.handleSubmit();
+  booking.confirmQuickSubmit();
+  await flush();
+  assert.equal(requests.length, 1, '确认后可仅预约时间，无需服务名称');
   assert.equal(requests[0].quickBooking, true);
   assert.equal(requests[0].shopAddress.name, '测试店');
   assert.equal(requests[0].selectedServiceIds, undefined);
@@ -69,7 +91,7 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
     blockedSlots: [{ startTime: '2099-01-05T14:00:00', endTime: '2099-01-05T15:30:00' }], now: new Date('2099-01-04T00:00:00') };
   const unknown = buildSlotStatuses({ ...base, durationPending: true });
   assert.equal(unknown.find(item => item.time === '14:00').occupied, true);
-  assert.equal(unknown.find(item => item.time === '20:30').occupied, false, '未知时长不按两小时屏蔽晚间意向');
+  assert.equal(unknown.some(item => item.time === '20:30'), false, '未知时长按五小时锁定，临近收工时段不可选');
   assert.equal(buildSlotStatuses(base).some(item => item.time === '20:30'), false, '已知时长仍校验完整服务');
 
   const tech = page('pages/technician/order-detail/index.js');

@@ -1,6 +1,7 @@
 const api = require('../../services/api');
 const privacy = require('../../utils/privacy');
 const { consumePostAuthRedirect } = require('../../utils/artist-navigation');
+const { needsClientProfile, completionUrl } = require('../../utils/client-profile-completion');
 
 function validatePassword(value) {
   if (!value || value.length < 8) return '密码至少 8 位';
@@ -128,7 +129,12 @@ Page({
     }
     wx.hideLoading(); this.setData({ loading: false });
     const home = role === 'technician' ? '/pages/technician/home/index' : '/pages/client/home/index';
-    wx.reLaunch({ url: role === 'client' ? consumePostAuthRedirect(this.redirect || home) : home });
+    const nextPage = role === 'client' ? consumePostAuthRedirect(this.redirect || home) : home;
+    wx.reLaunch({
+      url: role === 'client' && needsClientProfile(userInfo)
+        ? completionUrl(nextPage)
+        : nextPage
+    });
   },
 
   goBack() { wx.navigateBack({ fail: () => wx.reLaunch({ url: '/pages/login/index' }) }); }

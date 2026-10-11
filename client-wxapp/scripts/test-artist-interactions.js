@@ -15,7 +15,7 @@ const context = {
 vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../pages/client/artist-home/index.js'), 'utf8'), context);
 page.data.artistId = '55';
 page.setData = () => { throw new Error('Owner interaction must not mutate state'); };
-for (const [handler, type] of [['toggleFollow', 'follow'], ['toggleLike', 'like'], ['toggleFavorite', 'favorite']]) {
+for (const [handler, type] of [['toggleLike', 'like'], ['toggleFavorite', 'favorite'], ['openComments', 'comment']]) {
   page[handler]();
   assert.equal(navigations.pop(), '/pages/technician/artist-interactions/index?type=' + type);
 }

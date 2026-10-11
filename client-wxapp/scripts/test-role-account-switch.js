@@ -7,6 +7,7 @@ const root = path.join(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const clientWxml = read('pages/client/profile/index.wxml');
 const techWxml = read('pages/technician/profile/index.wxml');
+const techWxss = read('pages/technician/profile/index.wxss');
 
 assert(!clientWxml.includes('class="role-card"'));
 assert(!clientWxml.includes('role-tag">客户'));
@@ -14,8 +15,12 @@ assert(techWxml.includes('class="role-tag">美甲师</text>'));
 for (const markup of [clientWxml, techWxml]) {
   assert(markup.includes('bindtap="switchRole"'));
   assert(markup.includes('bindtap="switchAccount"'));
-  assert(markup.includes('class="menu-item account-logout"'));
 }
+assert(clientWxml.includes('class="logout-btn" bindtap="logout"'), '客户端退出登录应独立置于页面底部');
+assert(!techWxml.includes('class="menu-item account-logout"'), '美甲师端退出登录不应混在账号设置列表中');
+assert(techWxml.includes('class="logout-btn" bindtap="logout"'), '美甲师端退出登录应独立置于页面底部');
+assert(techWxml.indexOf('class="logout-btn"') > techWxml.indexOf('class="version"'), '美甲师端退出登录应位于版本信息之后');
+assert(/\.logout-btn\s*\{[^}]*margin:\s*32rpx 32rpx 0[^}]*min-height:\s*88rpx[^}]*background:\s*var\(--nb-surface\)/s.test(techWxss), '美甲师端退出按钮应复用客户端的独立卡片间距、触控高度和背景');
 
 let definition;
 let loginResult = null;

@@ -1,5 +1,5 @@
 /**
- * NailBook 设置登录密码页 — 复用登录页设计令牌
+ * OnlyNail 设置登录密码页 — 复用登录页设计令牌
  */
 
 /* ===== 页面根 ===== */
@@ -33,30 +33,12 @@ page {
   margin-top: 60rpx;
 }
 
-.logo-ring {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: var(--radius-xl);
-  background: var(--brand-gradient);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: var(--space-md);
-  box-shadow: 0 12rpx 36rpx rgba(0, 0, 0, 0.22);
-}
-
 .logo-text {
-  font-size: 64rpx;
-  font-weight: var(--weight-black);
-  color: var(--text-inverse);
-  line-height: 1;
-}
-
-.app-name {
-  font-size: var(--font-lg);
-  font-weight: var(--weight-black);
+  font-size: 48rpx;
+  font-weight: var(--weight-semibold);
   color: var(--text-primary);
-  letter-spacing: 2rpx;
+  line-height: 1.2;
+  letter-spacing: 1rpx;
 }
 
 /* ===== 描述区域 ===== */

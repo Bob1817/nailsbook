@@ -769,21 +769,25 @@ page {
 
 /* ===== 退出登录 ===== */
 .logout-btn {
-  background: rgba(255, 255, 255, 0.92);
+  margin-top: 32rpx;
+  min-height: 88rpx;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--nb-surface);
   border-radius: var(--radius-md);
-  color: var(--text-error);
+  color: var(--nb-danger);
   font-size: var(--font-md);
-  text-align: center;
-  padding: 28rpx;
+  padding: 0 28rpx;
   font-weight: var(--weight-medium);
-  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
+  box-shadow: none;
 }
 
 .logout-btn:active { opacity: 0.85; }
 
 .hero-name-row { display:flex; align-items:center; gap:12rpx; min-width:0; }
 .menu-value { flex-shrink:0; color:var(--nb-muted); font-size:var(--font-xs); }
-.account-logout .menu-label { color:var(--nb-danger); }
 
 /* ===== H5 同步：内容卡片与美甲师信息层级 ===== */
 .content-area {

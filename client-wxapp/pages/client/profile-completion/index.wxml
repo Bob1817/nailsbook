@@ -1,0 +1,23 @@
+<view class="profile-page">
+  <nav-bar title="完善客户资料" showBack="{{false}}" titleCenter/>
+  <view class="profile-content">
+    <text class="profile-title">使用微信资料</text>
+    <text class="profile-desc">头像和昵称将用于预约、消息与客户档案，可随时在“我的”中修改</text>
+
+    <button class="avatar-button" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" aria-label="选择微信头像">
+      <image wx:if="{{avatarUrl}}" class="avatar-image" src="{{avatarUrl}}" mode="aspectFill"/>
+      <view wx:else class="avatar-placeholder">
+        <image class="avatar-placeholder-icon" src="/static/icons/client.svg" mode="aspectFit"/>
+      </view>
+      <text class="avatar-action">选择微信头像</text>
+    </button>
+
+    <view class="nickname-field">
+      <text class="field-label">微信昵称</text>
+      <input class="nickname-input" type="nickname" maxlength="20" value="{{nickname}}" bindinput="onNicknameInput" placeholder="请输入或选择微信昵称" placeholder-class="input-placeholder" confirm-type="done" cursor-spacing="24"/>
+    </view>
+
+    <button class="save-button booking-action" disabled="{{!canSave || saving}}" loading="{{saving}}" bindtap="saveProfile">保存并继续</button>
+    <button class="skip-button" bindtap="skipProfile" disabled="{{saving}}">稍后设置</button>
+  </view>
+</view>

@@ -1,7 +1,7 @@
 const { consumePostAuthRedirect } = require('../../utils/artist-navigation');
 const uiColors = require('../../utils/colors');
 /**
- * NailBook 新用户引导页
+ * OnlyNail 新用户引导页
  * 注册后：选择"绑定美甲师"或"我是美甲师"或"稍后再说"
  */
 const api = require('../../services/api');

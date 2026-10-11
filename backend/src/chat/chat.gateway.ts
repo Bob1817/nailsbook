@@ -8,6 +8,7 @@ import {
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
+import { Conversation, Message } from '@prisma/client';
 import { Server, Socket } from 'socket.io';
 import * as jwt from 'jsonwebtoken';
 import { ChatService } from './chat.service';
@@ -39,6 +40,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private typingService: TypingService,
     private prisma: PrismaService,
   ) {}
+
+  broadcastMessage(message: Message, conversation: Conversation, excludeSocket?: string) {
+    const audience = this.server?.to([
+      `account:client:${conversation.clientId}`,
+      `account:technician:${conversation.techId}`,
+    ]);
+    (excludeSocket ? audience?.except(excludeSocket) : audience)?.emit('message:new', { message, conversation });
+  }
+
+  broadcastRead(conversation: Conversation, readerType: 'client' | 'technician', readerId: number) {
+    this.server?.to([
+      `account:client:${conversation.clientId}`,
+      `account:technician:${conversation.techId}`,
+    ]).emit('message:read', {
+      conversationId: conversation.id,
+      readerType,
+      readerId,
+      readAt: new Date().toISOString(),
+    });
+  }
 
   async handleConnection(client: Socket) {
     try {
@@ -184,17 +205,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userType = (client as any).userType as 'client' | 'technician';
 
     const { message, conversation } = await this.chatService.sendMessage({
+      ...dto,
       senderType: userType,
       senderId: userId,
-      ...dto,
     });
 
     client.join(`conversation:${conversation.id}`);
 
-    client.to(`conversation:${conversation.id}`).emit('message:new', {
-      message,
-      conversation,
-    });
+    this.broadcastMessage(message, conversation, client.id);
 
     return { event: 'message:sent', data: { message, conversation } };
   }
@@ -210,12 +228,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     await this.chatService.markAsRead(data.conversationId, userType, userId);
 
-    client.to(`conversation:${data.conversationId}`).emit('message:read', {
-      conversationId: data.conversationId,
-      readerType: userType,
-      readerId: userId,
-      readAt: new Date().toISOString(),
-    });
+    const conversation = await this.chatService.assertConversationMember(data.conversationId, userType, userId);
+    this.broadcastRead(conversation, userType, userId);
 
     return { event: 'message:read:ack', data: { success: true } };
   }
@@ -229,6 +243,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userId = (client as any).userId as number;
     const userType = (client as any).userType as 'client' | 'technician';
 
+    await this.chatService.assertConversationMember(data.conversationId, userType, userId);
     this.typingService.startTyping(data.conversationId, userId, () => {
       client.to(`conversation:${data.conversationId}`).emit('typing:stop', {
         conversationId: data.conversationId,
@@ -253,6 +268,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userId = (client as any).userId as number;
     const userType = (client as any).userType as 'client' | 'technician';
 
+    await this.chatService.assertConversationMember(data.conversationId, userType, userId);
     this.typingService.stopTyping(data.conversationId, userId);
 
     client.to(`conversation:${data.conversationId}`).emit('typing:stop', {

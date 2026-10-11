@@ -1,4 +1,7 @@
 .records-page { padding: 32rpx 32rpx calc(32rpx + env(safe-area-inset-bottom)); }
+.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8rpx; margin-bottom: 24rpx; padding: 8rpx; border-radius: 12rpx; background: var(--nb-soft-surface); }
+.tab { min-height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 8px; color: var(--nb-muted); font-size: var(--font-sm); }
+.tab.active { background: var(--nb-surface); color: var(--nb-ink); font-weight: var(--weight-semibold); }
 .summary { display: block; margin-bottom: 24rpx; font-size: 24rpx; line-height: 1.6; color: var(--nb-muted); }
 .record { padding: 28rpx; margin-bottom: 20rpx; border-radius: 20rpx; background: var(--nb-surface); }
 .person { display: flex; align-items: center; gap: 20rpx; }
@@ -8,8 +11,9 @@
 .time, .action { font-size: 22rpx; color: var(--nb-muted); line-height: 1.6; }
 .time { display: block; margin-top: 6rpx; }
 .action { flex-shrink: 0; }
-.work { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; min-height: 44px; padding: 12rpx 20rpx; margin-top: 24rpx; box-sizing: border-box; border-radius: 8px; background: var(--nb-page); color: var(--nb-secondary); font-size: 26rpx; }
-.work-title { min-width: 0; overflow-wrap: anywhere; }
+.comment-content { margin-top: 20rpx; padding: 20rpx; border-radius: 8px; background: var(--nb-page); color: var(--nb-secondary); font-size: var(--font-sm); line-height: 1.6; overflow-wrap: anywhere; }
+.comment-footer { min-height: 44px; margin-top: 12rpx; display: flex; align-items: center; justify-content: space-between; color: var(--nb-muted); font-size: var(--font-xs); }
+.manage { min-width: 88rpx; min-height: 44px; display: flex; align-items: center; justify-content: flex-end; color: var(--nb-text-link); font-size: var(--font-sm); }
 .state { padding: 48rpx 0; text-align: center; color: var(--nb-muted); font-size: 26rpx; }
 .records-page .retry { min-height: 44px; margin-top: 24rpx; padding: 0 24rpx; border-radius: 8px; background: var(--nb-action); color: var(--nb-inverse); font-size: 28rpx; }
 .retry::after { border: 0; }

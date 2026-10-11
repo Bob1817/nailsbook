@@ -93,6 +93,10 @@ const page = () => ({ ...definition, techId: 7, inviteCode: 'INVITE7', data: { .
   assert.equal(completed.quickBookingTechId, 7);
   assert.equal(completed.inviteCode, 'INVITE7');
   assert.equal(storage.client_token, 'new-client-token');
-  assert.equal(destination, '/pages/client/create-order/index?techId=7&mode=quick&source=quick_booking');
+  assert.equal(
+    destination,
+    '/pages/client/profile-completion/index?next=%2Fpages%2Fclient%2Fcreate-order%2Findex%3FtechId%3D7%26mode%3Dquick%26source%3Dquick_booking',
+    '缺少微信头像和昵称时应先补全资料，再返回快速预约'
+  );
   console.log('一键预约分享：游客预览、双渠道邀请码、登录返回、绑定、朋友圈单页及关闭开关检查通过。');
 })().catch(err => { console.error(err); process.exitCode = 1; });

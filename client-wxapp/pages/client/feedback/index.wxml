@@ -13,9 +13,8 @@
     </view>
   </view>
 </scroll-view>
-<view class="floating-add booking-action" bindtap="openCreate" aria-role="button" aria-label="新增反馈">
-  <text class="floating-add-icon">＋</text>
-  <text>新增反馈</text>
+<view class="floating-add booking-action" bindtap="openCreate" role="button" aria-label="新增反馈">
+  <text class="floating-add-icon" aria-hidden="true"></text>
 </view>
 <view wx:if="{{showCreate}}" class="overlay" bindtap="closeCreate">
   <view class="sheet" catchtap="stopBubble">

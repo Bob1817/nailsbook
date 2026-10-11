@@ -2,7 +2,7 @@
 <view class="container">
 
   <view class="header">
-    <view class="logo-circle">N</view>
+    <view class="logo-circle">OnlyNail</view>
     <text class="title">客户登录</text>
   </view>
 

@@ -1,6 +1,6 @@
 <nav-bar title="关于我们" showBack/>
 <view class="settings-page">
-  <view class="brand-hero"><view class="logo"><text class="logo-letter">N</text></view><text class="app-name">LunaNails</text><text class="brand-slogan">让创作、预约与客户关系更简单</text><text class="version">版本 {{version}}</text></view>
+  <view class="brand-hero"><view class="logo"><text class="logo-letter">OnlyNail</text></view><text class="brand-slogan">让创作、预约与客户关系更简单</text><text class="version">版本 {{version}}</text></view>
   <view class="mission-card">
     <view class="mission-heading"><text class="mission-kicker">产品定位</text><text class="mission-index">01</text></view>
     <text class="mission-title">美甲师的日常经营工作台</text>
@@ -19,5 +19,5 @@
   </view>
   <view class="section-heading"><text class="section-title">协议与政策</text></view>
   <view class="agreement-card"><view class="agreement-row" bindtap="openAgreement" data-type="user" role="button"><text>用户服务协议</text><text class="chevron">›</text></view><view class="agreement-row" bindtap="openAgreement" data-type="privacy" role="button"><text>隐私政策</text><text class="chevron">›</text></view></view>
-  <text class="copyright">© {{currentYear}} LunaNails · 保留所有权利</text>
+  <text class="copyright">© {{currentYear}} OnlyNail · 保留所有权利</text>
 </view>

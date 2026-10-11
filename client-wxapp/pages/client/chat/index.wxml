@@ -127,4 +127,4 @@
   </view>
 </view>
 
-<tab-bar selected="chat" />
+<tab-bar selected="chat" unread-count="{{unreadCount}}" />

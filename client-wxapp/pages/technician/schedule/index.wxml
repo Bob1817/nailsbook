@@ -34,22 +34,20 @@
   </view>
 
   <view wx:else class="order-list">
-    <view
-      class="order-card"
+    <technician-booking-card
       wx:for="{{dayOrders}}"
       wx:key="id"
-      bindtap="goOrderDetail"
-      data-id="{{item.id}}"
-    >
-      <view class="order-time-col">
-        <text class="order-time">{{item.timeStr}}</text>
-      </view>
-      <view class="order-body">
-        <text class="order-client">{{item.customerName || '客户'}}</text>
-        <text class="order-services">{{item.typeLabel}}</text>
-        <text class="order-status {{item.statusTone}}">{{item.statusLabel}}</text>
-      </view>
-    </view>
+      order="{{item}}"
+      variant="schedule"
+      bind:open="onBookingCardOpen"
+      bind:quote="onBookingCardQuote"
+      bind:withdrawquote="onBookingCardWithdrawQuote"
+      bind:editbooking="onBookingCardEditBooking"
+      bind:reject="onBookingCardReject"
+      bind:cancel="onBookingCardCancel"
+      bind:complete="onBookingCardComplete"
+      bind:rebook="onBookingCardRebook"
+    />
   </view>
 
 </view>

@@ -93,7 +93,7 @@
             <view class="footer-prompt">
               <image class="footer-clock" src="/static/icons/clock.svg" mode="aspectFit" aria-hidden="true" />
               <view class="footer-prompt-copy">
-                <text class="countdown-main">{{item._isTerminal ? item.statusText : item._countdownText}}</text>
+                <text wx:if="{{!item._isTerminal}}" class="countdown-main">{{item._countdownText}}</text>
                 <text class="countdown-next">{{item._nextStepText}}</text>
               </view>
             </view>

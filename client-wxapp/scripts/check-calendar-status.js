@@ -15,10 +15,13 @@ const orders = [
   { startTime: '2026-08-27T14:00:00', status: 'cancelled', quotePrice: 400, depositStatus: 'refunded' }
 ];
 vm.runInNewContext(fs.readFileSync(file, 'utf8'), {
-  require: name => name === '../../../services/api' ? { technician: { orders: {
-    list: async () => orders,
-    incomeCalendar: async () => { if (fallback) throw Error('offline'); return { orders }; }
-  } } } : localRequire(name),
+  require: name => name === '../../../services/api' ? { technician: {
+    auth: { getUserInfo: async () => ({ shopAddresses: [] }) },
+    orders: {
+      list: async () => orders,
+      incomeCalendar: async () => { if (fallback) throw Error('offline'); return { orders }; }
+    }
+  } } : localRequire(name),
   Page: value => { page = value; },
   wx: { getStorageSync: key => key === 'role' ? 'technician' : '', showToast: value => { throw Error(value.title); } },
   Date, console

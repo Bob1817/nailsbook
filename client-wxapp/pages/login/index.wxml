@@ -1,53 +1,44 @@
 <!--
-  NailBook 统一登录页
+  OnlyNail 统一登录页
   设计原则：微信优先 → 手机号+密码登录
   对标支付宝个人版设计 —— 单一主操作，无 Tab 切换
 -->
 
 <!-- Step 1: 微信授权登录（默认主屏） -->
 <view wx:if="{{step === 'wechat'}}" class="login-root">
-  <view class="stub-status"></view>
-
-  <view class="hero">
-    <view class="logo-ring">
-      <text class="logo-text">N</text>
-    </view>
-    <text class="app-name">NailBook</text>
-    <text class="tagline">{{invitationRegistration ? '微信授权注册，成为美甲师的专属客户' : '让美丽更简单'}}</text>
-  </view>
-
-  <view class="spacer"></view>
-
-  <view class="btn-area">
-    <text wx:if="{{invitationRegistration}}" class="invite-registration-note">通过此邀请首次注册后，将自动绑定邀请你的美甲师。已有账号将正常登录，不更改默认美甲师。</text>
-    <!-- 微信授权登录按钮 -->
-    <button
-      class="wechat-btn booking-action"
-      wx:if="{{wechatAvailable}}"
-      open-type="getPhoneNumber"
-      bindgetphonenumber="onWechatPhone"
-      loading="{{wechatLoading}}"
-      disabled="{{wechatLoading}}"
-    >
-      <image class="wechat-btn-icon" src="/static/icons/wechat.svg" mode="aspectFit" />
-      <text>微信授权登录</text>
-    </button>
-
-    <!-- 微信不可用时降级提示 -->
-    <view wx:else class="wechat-unavailable">
-      <text class="wechat-unavailable-hint">微信登录暂不可用</text>
+  <view class="login-stack">
+    <view class="hero">
+      <text class="logo-text">OnlyNail</text>
+      <text class="tagline">{{invitationRegistration ? '微信授权注册，成为美甲师的专属客户' : '让美丽更简单'}}</text>
     </view>
 
-    <!-- 其他登录方式 -->
-    <text class="alt-login" bindtap="goPhoneLogin">其他登录方式</text>
-  </view>
+    <view class="btn-area">
+      <text wx:if="{{invitationRegistration}}" class="invite-registration-note">通过此邀请首次注册后，将自动绑定邀请你的美甲师。已有账号将正常登录，不更改默认美甲师。</text>
+      <button
+        class="wechat-btn booking-action"
+        wx:if="{{wechatAvailable}}"
+        open-type="getPhoneNumber"
+        bindgetphonenumber="onWechatPhone"
+        loading="{{wechatLoading}}"
+        disabled="{{wechatLoading}}"
+      >
+        <image class="wechat-btn-icon" src="/static/icons/wechat.svg" mode="aspectFit" />
+        <text>微信授权登录</text>
+      </button>
 
-  <!-- 协议 -->
-  <checkbox-group class="privacy-consent" bindchange="onPrivacyAgreementChange">
-    <label><checkbox color="#287A4B" value="agree" checked="{{privacyAgreed}}"/><text>我已阅读并同意</text></label>
-    <text class="privacy-link" catchtap="openUserAgreement">《用户协议》</text>
-    <text>和</text><text class="privacy-link" catchtap="openPrivacyPolicy">《隐私政策》</text>
-  </checkbox-group>
+      <view wx:else class="wechat-unavailable">
+        <text class="wechat-unavailable-hint">微信登录暂不可用</text>
+      </view>
+
+      <text class="alt-login" bindtap="goPhoneLogin">其他登录方式</text>
+    </view>
+
+    <checkbox-group class="privacy-consent wechat-privacy-consent" bindchange="onPrivacyAgreementChange">
+      <label><checkbox color="#287A4B" value="agree" checked="{{privacyAgreed}}"/><text>我已阅读并同意</text></label>
+      <text class="privacy-link" catchtap="openUserAgreement">《用户协议》</text>
+      <text>和</text><text class="privacy-link" catchtap="openPrivacyPolicy">《隐私政策》</text>
+    </checkbox-group>
+  </view>
 </view>
 
 <!-- Step 2: 手机号 + 密码登录 -->

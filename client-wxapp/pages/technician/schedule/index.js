@@ -1,13 +1,16 @@
 const api = require('../../../services/api');
-const { formatClock } = require('../../../utils/format');
-const {
-  normalizeOrder,
-  resolveOrderPresentation,
-  getStatusLabel,
-  getStatusTone
-} = require('../../../utils/order');
+const { decorateTechnicianOrder } = require('../../../utils/order');
+const { technicianBookingCardHandlers = {} } = require('../../../utils/technician-booking-actions');
 
 Page({
+  onBookingCardOpen: technicianBookingCardHandlers.onBookingCardOpen,
+  onBookingCardQuote: technicianBookingCardHandlers.onBookingCardQuote,
+  onBookingCardWithdrawQuote: technicianBookingCardHandlers.onBookingCardWithdrawQuote,
+  onBookingCardEditBooking: technicianBookingCardHandlers.onBookingCardEditBooking,
+  onBookingCardReject: technicianBookingCardHandlers.onBookingCardReject,
+  onBookingCardCancel: technicianBookingCardHandlers.onBookingCardCancel,
+  onBookingCardComplete: technicianBookingCardHandlers.onBookingCardComplete,
+  onBookingCardRebook: technicianBookingCardHandlers.onBookingCardRebook,
   data: {
     selectedDate: '',
     days: [],
@@ -55,24 +58,18 @@ Page({
     const requestId = this._requestId = (this._requestId || 0) + 1;
     this.setData({ loading: true, loadFailed: false });
     try {
-      const res = await api.technician.orders.list({ date });
+      const [res, technicianProfile] = await Promise.all([
+        api.technician.orders.list({ date }),
+        api.technician.auth && api.technician.auth.getUserInfo ? api.technician.auth.getUserInfo().catch(() => ({})) : Promise.resolve({})
+      ]);
       if (requestId !== this._requestId) return;
       const all = Array.isArray(res) ? res : (res.list || res.data || []);
+      const shops = Array.isArray(technicianProfile.shopAddresses) ? technicianProfile.shopAddresses : [];
       const dayOrders = all
-        .map(normalizeOrder)
+        .map(order => decorateTechnicianOrder(order, shops))
         .filter(Boolean)
         .filter(o => o.status !== 'cancelled')
-        .map(o => {
-          const presentation = resolveOrderPresentation(o);
-          return {
-            ...o,
-            statusLabel: getStatusLabel(o.status),
-            statusTone: getStatusTone(o.status),
-            timeStr: formatClock(o.startTime),
-            typeLabel: presentation.typeLabel
-          };
-        })
-        .sort((a, b) => (a.timeStr > b.timeStr ? 1 : -1));
+        .sort((a, b) => (a._clock > b._clock ? 1 : -1));
       this.setData({ dayOrders });
     } catch (err) {
       if (requestId !== this._requestId) return;
@@ -88,10 +85,5 @@ Page({
 
   retryLoad() {
     this.loadOrders(this.data.selectedDate);
-  },
-
-  goOrderDetail(e) {
-    const id = e.currentTarget.dataset.id;
-    wx.navigateTo({ url: `/pages/technician/order-detail/index?id=${id}` });
   }
 });

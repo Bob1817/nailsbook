@@ -3,21 +3,29 @@
     <view class="confirm-title">确认排期与报价</view>
     <scroll-view scroll-y class="confirm-scroll">
       <view class="confirm-content">
-        <view class="summary">{{summary}}</view>
-        <view class="summary">{{order.customerName || '客户'}} · {{order.shopName || order._shopName || '店铺待确认'}}</view>
-        <view class="hint">{{proposalChanged ? '价格或定金已调整，提交后由客户确认最新方案。' : '请核对最终总价和定金收款情况后确认排期。'}}</view>
+        <view class="booking-summary">
+          <view class="summary-time">{{summary}}</view>
+        <view class="summary-detail">{{order.customerName || '客户'}} · {{order.shopName || order._shopName || '店铺待确认'}}</view>
+        </view>
+        <view class="proposal-hint">{{proposalChanged ? '价格或定金已调整，提交后由客户确认最新方案。' : '请核对最终总价和定金收款情况后确认排期。'}}</view>
         <view class="field-label">最终总价（元）</view>
-        <input class="form-input" placeholder-class="form-placeholder" type="digit" value="{{price}}" bindinput="onPrice" disabled="{{submitting}}" placeholder="请输入最终总价" adjust-position cursor-spacing="100" />
+        <input class="form-input" placeholder-class="form-placeholder" type="digit" value="{{price}}" bindinput="onPrice" disabled="{{submitting}}" aria-label="最终总价，元" placeholder="请输入最终总价" adjust-position cursor-spacing="100" />
         <view class="field-label">定金金额（元）</view>
-        <input class="form-input" placeholder-class="form-placeholder" type="digit" value="{{deposit}}" bindinput="onDeposit" disabled="{{submitting}}" placeholder="无需定金请填写 0" adjust-position cursor-spacing="100" />
-        <view class="paid-row"><text>定金已支付</text><nb-switch checked="{{depositPaid}}" disabled="{{submitting || !(deposit > 0)}}" bindchange="onPaid" label="定金已支付" /></view>
-        <view class="hint">{{deposit > 0 ? '仅在已实际收到定金时开启，确认后将记录收款状态。' : '定金为 0，无需收取定金。'}}</view>
-        <view wx:if="{{error}}" class="error" role="alert">{{error}}</view>
+        <input class="form-input" placeholder-class="form-placeholder" type="digit" value="{{deposit}}" bindinput="onDeposit" disabled="{{submitting}}" aria-label="定金金额，元" placeholder="无需定金请填写 0" adjust-position cursor-spacing="100" />
+        <view wx:if="{{depositError}}" class="error" role="alert">{{depositError}}</view>
+        <checkbox-group wx:if="{{showDepositStatus}}" class="deposit-confirm" bindchange="onPaid" aria-label="定金收款确认">
+          <label class="payment-confirm {{depositPaid ? 'is-checked' : ''}}">
+            <checkbox class="payment-checkbox" value="paid" checked="{{depositPaid}}" disabled="{{submitting}}" color="{{checkboxColor}}" />
+            <text class="payment-label">已收到定金</text>
+            <text class="payment-amount">¥{{deposit}}</text>
+          </label>
+        </checkbox-group>
+        <view wx:if="{{error && !depositError}}" class="error" role="alert">{{error}}</view>
       </view>
     </scroll-view>
     <view class="confirm-actions">
-      <button class="booking-action cancel {{submitting ? 'is-disabled' : ''}}" disabled="{{submitting}}" bindtap="close">取消</button>
-      <button class="booking-action submit {{submitting ? 'is-disabled' : ''}}" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submit">{{submitting ? '确认中' : (proposalChanged ? '提交客户确认' : '确认排期')}}</button>
+      <button class="booking-action cancel {{submitting ? 'is-disabled' : ''}}" disabled="{{submitting}}" hover-class="action-pressed" bindtap="close">取消</button>
+      <button class="booking-action submit {{submitting ? 'is-disabled' : ''}}" loading="{{submitting}}" disabled="{{submitting}}" hover-class="action-pressed" bindtap="submit">{{submitting ? '确认中' : (proposalChanged ? '提交客户确认' : '确认排期')}}</button>
     </view>
   </view>
 </view>

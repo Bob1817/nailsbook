@@ -10,6 +10,7 @@
   >
     <view class="tab-icon-wrap">
       <image class="tab-icon" src="/static/icons/tab-{{item.icon}}{{item.key === selected ? '-active' : ''}}.svg" mode="aspectFit" aria-hidden="true" />
+      <text wx:if="{{item.key === 'chat' && messageBadge}}" class="tab-unread-badge" aria-label="{{messageBadge}}条未读消息">{{messageBadge}}</text>
     </view>
     <text class="tab-label">{{item.label}}</text>
   </view>

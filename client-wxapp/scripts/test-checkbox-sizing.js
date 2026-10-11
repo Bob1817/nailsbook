@@ -11,17 +11,16 @@ assert.match(
   '原生勾选框图标应与正文文字保持同量级',
 );
 
-for (const [file, className] of [
-  ['pages/client/create-order/index.wxss', 'rules-box'],
-  ['pages/client/create-order/index.wxss', 'rules-check-icon'],
-  ['pages/client/create-order/index.wxss', 'work-check'],
-  ['pages/client/customize-design/index.wxss', 'style-check'],
-  ['pages/technician/homepage-settings/index.wxss', 'work-check'],
+for (const [file, className, size] of [
+  ['pages/client/create-order/index.wxss', 'confirm-check-box', 28],
+  ['pages/client/create-order/index.wxss', 'work-cell-check', 28],
+  ['pages/client/customize-design/index.wxss', 'style-check', 28],
+  ['pages/technician/homepage-settings/index.wxss', 'work-check', 40],
 ]) {
   assert.match(
     read(file),
-    new RegExp(`\\.${className}\\s*\\{[^}]*width:\\s*28rpx;[^}]*height:\\s*28rpx`, 's'),
-    `${file} 的 ${className} 应使用统一的小号勾选图标`,
+    new RegExp(`\\.${className}\\s*\\{[^}]*width:\\s*${size}rpx;[^}]*height:\\s*${size}rpx`, 's'),
+    `${file} 的 ${className} 应使用与场景匹配的紧凑勾选图标`,
   );
 }
 

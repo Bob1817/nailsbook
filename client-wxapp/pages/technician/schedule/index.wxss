@@ -64,57 +64,9 @@
   color: var(--nb-ink);
 }
 
-.order-list { padding: 0 16rpx; }
-
-.order-card {
+.order-list {
+  padding: 0 32rpx calc(24rpx + env(safe-area-inset-bottom));
   display: flex;
-  background: var(--bg-card);
-  border-radius: var(--radius-sm);
-  margin-bottom: var(--space-sm);
-  padding: 28rpx 24rpx;
-  align-items: center;
+  flex-direction: column;
+  gap: 16rpx;
 }
-
-.order-time-col {
-  width: 100rpx;
-  flex-shrink: 0;
-  text-align: center;
-}
-.order-time {
-  font-size: var(--font-lg);
-  font-weight: var(--weight-semibold);
-  color: var(--nb-ink);
-}
-
-.order-body {
-  flex: 1;
-  margin-left: 24rpx;
-}
-.order-client {
-  font-size: var(--font-md);
-  font-weight: var(--weight-semibold);
-  color: var(--text-primary);
-  display: block;
-  margin-bottom: 8rpx;
-}
-.order-services {
-  font-size: var(--font-sm);
-  color: var(--text-muted);
-  display: block;
-  margin-bottom: 8rpx;
-}
-.order-status {
-  font-size: var(--font-xs);
-  border-radius: 8rpx;
-  padding: 4rpx 12rpx;
-  background: var(--bg-page);
-  color: var(--text-faint);
-}
-.order-status.tone-orange,
-.order-status.tone-yellow,
-.order-status.tone-purple,
-.order-status.tone-sky { background: var(--nb-soft-surface); color: var(--nb-text-link); }
-.order-status.tone-emerald,
-.order-status.tone-teal { background: var(--nb-success-surface); color: var(--nb-success); }
-.order-status.tone-gray { background: var(--bg-page); color: var(--text-muted); }
-.order-status.tone-red { background: var(--nb-danger-surface); color: var(--nb-danger); }

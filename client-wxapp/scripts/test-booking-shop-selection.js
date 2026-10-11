@@ -6,7 +6,10 @@ const { createRequire } = require('node:module');
 const file = path.join(__dirname, '../pages/client/create-order/index.js');
 let definition;
 vm.runInNewContext(fs.readFileSync(file, 'utf8'), {
-  Page: value => { definition = value; }, require: name => name.includes('services/api') ? { public: {} } : createRequire(file)(name), console
+  Page: value => { definition = value; },
+  getApp: () => ({ globalData: {} }),
+  require: name => name.includes('services/api') ? { public: {} } : createRequire(file)(name),
+  console
 });
 const page = { ...definition, data: { ...definition.data },
   setData(value) { Object.assign(this.data, value); }, loadTechWorks() {} };
@@ -64,10 +67,10 @@ assert(!template.includes('<text class=\"type-duration\">约 {{item.durationMinu
 assert(/\.service-list\s*\{[^}]*grid-template-columns:\s*repeat\(2/.test(css), '服务选择使用双列卡片');
 assert(/\.service-card-active\s*\{[^}]*background:\s*var\(--nb-action\);[^}]*color:\s*var\(--nb-inverse\)/.test(css), '选中服务使用黑底白字');
 assert(template.includes('<radio-group') && template.includes('bindchange="selectServiceOption"') && template.includes('<radio class="service-option-native"'), '服务形式使用原生单选组');
-assert(template.includes('service-option-radio-dot'), '单选项使用圆点而不是勾选图标');
-assert.match(css, /\.service-option-radio\s*\{[^}]*width:\s*26rpx;[^}]*height:\s*26rpx;/s, '服务形式单选图标应与正文大小匹配');
-assert.match(css, /\.service-option-radio\s*\{[^}]*margin-top:\s*8rpx;/s, '服务形式单选图标应与首行标题垂直居中');
-assert.match(css, /\.service-option-radio-dot\s*\{[^}]*width:\s*10rpx;[^}]*height:\s*10rpx;/s, '服务形式选中圆点不应过大');
+assert(template.includes('service-option-check') && template.includes('service-option-check-active'), '服务形式使用清晰的勾选反馈');
+assert.match(css, /\.service-option-check\s*\{[^}]*width:\s*40rpx;[^}]*height:\s*40rpx;/s, '服务形式选择图标应保持紧凑尺寸');
+assert.match(css, /\.service-option-check\s*\{[^}]*margin-top:\s*2rpx;/s, '服务形式选择图标应与首行标题垂直对齐');
+assert.match(css, /\.service-option-check-active\s*\{[^}]*background:\s*var\(--nb-action\);[^}]*color:\s*var\(--nb-inverse\)/s, '服务形式选中图标应提供高对比反馈');
 assert.match(css, /\.addr-card-active\s*\{[^}]*background:\s*var\(--nb-active-surface\);/s, '服务形式选中状态应提供背景反馈');
 assert.doesNotMatch(css, /\.addr-card-active\s*\{[^}]*border(?:-color)?:/s, '服务形式选中状态不应显示卡片描边');
 assert(template.includes('{{item.title}}') && template.includes('{{item.detail}}'), '每个服务形式同时展示类型和对应地址');

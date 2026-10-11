@@ -26,6 +26,8 @@ import { ReviewOrderDto } from './dto/review-order.dto';
 import { UpdateTechnicianOrderDto } from './dto/update-technician-order.dto';
 import { CompleteServiceDto } from './dto/complete-service.dto';
 import { CancelOrderDto } from './dto/cancel-order.dto';
+import { CloseBookingDto } from './dto/close-booking.dto';
+import { RepeatBookingDto } from './dto/repeat-booking.dto';
 import { UpdateActualAmountDto } from './dto/update-actual-amount.dto';
 
 @ApiTags('美甲师-订单')
@@ -169,6 +171,20 @@ export class TechnicianOrdersController {
     );
   }
 
+  @Patch(':id/withdraw-quote')
+  @ApiOperation({ summary: '撤回待客户确认的报价' })
+  @ApiParam({ name: 'id', type: String, description: '订单ID' })
+  @ApiResponse({ status: 200, description: '报价已撤回' })
+  async withdrawQuote(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id') id: string,
+  ) {
+    return this.ordersService.withdrawQuote(
+      parseInt(id, 10),
+      request.user.technicianId,
+    );
+  }
+
   @Patch(':id/confirm')
   @ApiOperation({ summary: '确认订单' })
   @ApiParam({ name: 'id', type: String, description: '订单ID' })
@@ -259,6 +275,39 @@ export class TechnicianOrdersController {
       parseInt(id, 10),
       body?.reason,
       body?.refundDeposit,
+    );
+  }
+
+  @Patch(':id/reject')
+  @ApiOperation({ summary: '驳回待报价预约' })
+  async reject(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id') id: string,
+    @Body() body: CloseBookingDto,
+  ) {
+    await this.ordersService.findOneForTechnician(
+      parseInt(id, 10),
+      request.user.technicianId,
+    );
+    return this.ordersService.cancel(
+      parseInt(id, 10),
+      body.reason,
+      undefined,
+      'rejected',
+    );
+  }
+
+  @Post(':id/repeat')
+  @ApiOperation({ summary: '复制历史信息再次发起预约' })
+  repeat(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id') id: string,
+    @Body() body: RepeatBookingDto,
+  ) {
+    return this.ordersService.repeatBooking(
+      parseInt(id, 10),
+      request.user.technicianId,
+      body,
     );
   }
 

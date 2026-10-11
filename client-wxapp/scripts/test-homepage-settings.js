@@ -27,8 +27,27 @@ if (!js.includes('heroImageUrl:this.data.heroImageUrl || undefined')) throw new 
 if (!wxml.includes('选择主页展示内容') || !wxml.includes('此处只选择，不重复编辑')) throw new Error('referenced homepage content must be presented as selection-only');
 if (!js.includes('api.technician.services.list()') || !js.includes('featuredServiceIds:this.data.featuredServiceIds')) throw new Error('homepage service selection must load and persist managed services');
 if (!js.includes('const RULE_TEMPLATE = Object.freeze({')) throw new Error('service rules must provide an editable standard template');
-if (!js.includes("ruleValues[field] = brand[field] || (!brand.id ? RULE_TEMPLATE[field] : '')")) throw new Error('first homepage edit must preload the standard rules template');
+if (!js.includes("ruleValues[field] = brand[field] || (!hasSavedRules ? RULE_TEMPLATE[field] : '')")) throw new Error('an entirely blank rules group must preload the standard template');
 if (!js.includes("if (!String(this.data[field] || '').trim()) updates[field]=RULE_TEMPLATE[field]")) throw new Error('template refill must preserve existing rule content');
 if (!wxml.includes('首次编辑已带入推荐模板') || !wxml.includes('只会补全空白项目')) throw new Error('rule template behavior must be explained in the editor');
+if (!js.includes('const homepageDefaultsPending = brand.featuredServiceIds == null')) throw new Error('unconfigured homepages must be distinguishable from intentionally saved selections');
+if (!js.includes('serviceItems.slice(0, 6).map((item) => item.id)')) throw new Error('the first six managed services must be selected by default');
+if (!js.includes('const featuredShop = savedShop || defaultShop || null')) throw new Error('an available managed shop must be selected by default');
+if (!js.includes('homepageDefaultsPending && !hasFeaturedWorks && index < 6')) throw new Error('the first six public works must be selected by default');
+if (!js.includes('pendingDefaultWorks.map((work)=>api.technician.works.toggleFeatured(work.id))')) throw new Error('default work selections must be persisted when the homepage is saved');
+if (!wxml.includes('已为你生成默认展示') || !wxml.includes('保存主页后生效')) throw new Error('automatic defaults must be explained before saving');
+if (!/\.hero-editor\s*\{[^}]*display:\s*block;[^}]*width:\s*100%;[^}]*min-width:\s*100%;/.test(wxss)) throw new Error('hero picker must fill the card width');
+if (!wxml.includes('建议比例 2:1') || !wxml.includes('hero-image-footer')) throw new Error('hero picker must explain its landscape crop and replacement state');
+if (!wxml.includes('class="input form-input" type="number"') || !wxml.includes('bindinput="onExperienceInput"') || !wxml.includes('placeholder="填写 1–30 年，未填写则不展示"')) throw new Error('experience must reuse the standard optional numeric input');
+if (wxml.includes('experience-help') || wxml.includes('experience-suffix')) throw new Error('experience guidance must appear only in the input placeholder');
+if (wxml.includes('<slider') || wxml.includes('mode="selector" range="{{experienceOptions}}"') || wxml.includes('experience-sheet') || js.includes('openExperiencePicker')) throw new Error('experience must not use a slider, picker, or custom selection sheet');
+if (!js.includes("const value=digits ? Math.max(1,Math.min(30,Number(digits))) : ''")) throw new Error('experience input must accept only 1 to 30 years and support an empty hidden state');
+if (!js.includes('experienceYears:Number(this.data.experienceYears) > 0 ? Math.min(30, Math.round(Number(this.data.experienceYears))) : 0')) throw new Error('saving hidden experience must explicitly clear the previous value');
+if (wxml.includes('class="selected-styles"') || wxml.includes('selected-style-remove')) throw new Error('specialties must not duplicate selected items in a separate list');
+if (!wxml.includes('class="skill-chip-order">{{selectedSpecialtyMap[item]}}') || !js.includes('map[item]=index+1')) throw new Error('selected specialty chips must show their homepage display order');
+if (!/\.skill-list\s*\{[^}]*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/.test(wxss)) throw new Error('specialty choices must use a compact three-column grid');
+if (!/\.skill-chip\s*\{[^}]*min-height:\s*44px/.test(wxss)) throw new Error('compact specialty choices must retain 44px touch targets');
+if (js.includes("wx.showToast({ title:'主页已更新'")) throw new Error('successful homepage saves must navigate to the effective homepage instead of stopping at a toast');
+if (!js.includes("previousPage.route === 'pages/client/artist-home/index'") || !js.includes('previousPage._reloadOnShow=true') || !js.includes("wx.redirectTo({url:'/pages/client/artist-home/index?id='")) throw new Error('successful homepage saves must close the editor and open a refreshed owner homepage');
 
 console.log('Homepage settings mobile checks passed.');

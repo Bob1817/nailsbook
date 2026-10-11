@@ -1,7 +1,6 @@
 /**
- * NailBook 统一登录页 — 设计令牌体系
- * 设计原则：微信优先、克制、高级感
- * 输入框留白充足，视觉舒适
+ * OnlyNail 统一登录页
+ * 微信优先；品牌与操作收成居中一列，避免上下割裂的大留白
  */
 
 /* ===== 页面根 ===== */
@@ -17,13 +16,16 @@ page {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0 var(--space-xl);
+  justify-content: center;
+  box-sizing: border-box;
+  padding: calc(24px + env(safe-area-inset-top)) var(--space-xl) calc(var(--space-xl) + env(safe-area-inset-bottom));
 }
 
-.stub-status {
+.login-stack {
   width: 100%;
-  height: 44px;
-  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 /* ===== WeChat 登录屏 ===== */
@@ -32,45 +34,22 @@ page {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 80rpx;
-}
-
-.logo-ring {
-  width: 160rpx;
-  height: 160rpx;
-  border-radius: var(--radius-xl);
-  background: var(--brand-gradient);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: var(--space-md);
-  box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.28);
+  margin-bottom: var(--space-3xl);
 }
 
 .logo-text {
-  font-size: 88rpx;
-  font-weight: var(--weight-black);
-  color: var(--text-inverse);
-  line-height: 1;
-}
-
-.app-name {
-  font-size: var(--font-xl);
-  font-weight: var(--weight-black);
+  font-size: 48rpx;
+  font-weight: var(--weight-semibold);
   color: var(--text-primary);
-  margin-bottom: var(--space-xs);
-  letter-spacing: 2rpx;
+  line-height: 1.2;
+  letter-spacing: 1rpx;
+  margin-bottom: 12rpx;
 }
 
 .tagline {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: var(--weight-regular);
   color: var(--text-muted);
-}
-
-.spacer {
-  flex: 1;
-  min-height: 40rpx;
 }
 
 /* ===== 按钮区域 ===== */
@@ -81,37 +60,34 @@ page {
   flex-direction: column;
   align-items: center;
   gap: var(--space-md);
-  padding-bottom: var(--space-xl);
 }
 
-/* WeChat 登录按钮 */
+/* WeChat 登录按钮：主操作，石墨底白字 */
 .wechat-btn {
   width: 100%;
   height: var(--btn-height);
   border-radius: var(--btn-radius);
-  background: var(--nb-soft-surface);
+  background: var(--nb-action);
   border: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10rpx;
   font-size: var(--font-md);
-  font-weight: var(--weight-bold);
-  color: var(--nb-ink);
-  box-shadow: 0 6rpx 24rpx rgba(0, 0, 0, 0.18);
-  transition: all 0.16s;
+  font-weight: var(--weight-semibold);
+  color: var(--nb-inverse);
+  box-shadow: none;
 }
 
 .wechat-btn::after { border: none; }
 
 .wechat-btn:active {
   opacity: 0.88;
-  transform: scale(0.985);
 }
 
 .wechat-btn-icon {
-  width: 44rpx;
-  height: 44rpx;
+  width: 36rpx;
+  height: 36rpx;
   flex-shrink: 0;
 }
 
@@ -127,14 +103,24 @@ page {
 
 /* 其他登录方式 */
 .alt-login {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: var(--font-sm);
-  color: var(--text-faint);
-  padding: var(--space-sm);
+  color: var(--text-muted);
+  padding: 0 var(--space-sm);
 }
 
 .guest-entry { min-height:88rpx; display:flex; align-items:center; justify-content:center; color:var(--nb-secondary); font-size:28rpx; }
 
 .alt-login:active { opacity: 0.6; }
+
+.wechat-privacy-consent {
+  width: 100%;
+  margin-top: var(--space-xl);
+  justify-content: center;
+}
 
 /* ===== 手机号 + 密码登录屏 ===== */
 .phone-content {
@@ -334,5 +320,6 @@ page {
 @import '../../styles/booking-actions.wxss';
 .wechat-btn.booking-action,
 .submit-btn.booking-action { height: var(--control-hit-height); min-height: 44px; border-radius: 8px; font-size: var(--font-sm); box-shadow: none; }
+.wechat-btn.booking-action { background: var(--nb-action); color: var(--nb-inverse); }
 .submit-btn.booking-action { background: var(--nb-soft-surface); color: var(--nb-secondary); }
 .submit-btn.booking-action.submit-btn-active { background: var(--nb-action); color: var(--text-inverse); }

@@ -67,7 +67,7 @@ async function main() {
   assert.strictEqual(logouts, 0);
   requests = [];
   await page.loadOrders();
-  assert.strictEqual(requests.length, 3, '有效美甲师会话正常加载订单、日历和日期接单设置');
+  assert.strictEqual(requests.length, 4, '有效美甲师会话正常加载订单、日历、日期接单设置和门店资料');
   assert.strictEqual(page.data.loading, false);
 
   delete storage.technician_refreshToken;

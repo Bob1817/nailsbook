@@ -1,6 +1,7 @@
 const { consumePostAuthRedirect } = require('../../utils/artist-navigation');
+const { needsClientProfile, completionUrl } = require('../../utils/client-profile-completion');
 /**
- * NailBook 设置登录密码页
+ * OnlyNail 设置登录密码页
  * 微信授权注册后，用户必须设置登录密码才能继续
  */
 const api = require('../../services/api');
@@ -70,7 +71,8 @@ Page({
       // 自动登录
       const app = getApp();
       const roles = res.roles || ['client'];
-      app.setLogin('client', res.accessToken || res.token, res.client || res.userInfo, roles);
+      const userInfo = res.client || res.userInfo;
+      app.setLogin('client', res.accessToken || res.token, userInfo, roles);
       if (res.refreshToken) wx.setStorageSync('client_refreshToken', res.refreshToken);
 
       // 处理美甲师绑定信息
@@ -81,11 +83,10 @@ Page({
 
       wx.showToast({ title: '密码设置成功', icon: 'success' });
       setTimeout(() => {
-        if (res.needsOnboarding) {
-          wx.reLaunch({ url: '/pages/onboarding/index' });
-        } else {
-          wx.reLaunch({ url: consumePostAuthRedirect('/pages/client/home/index') });
-        }
+        const nextPage = res.needsOnboarding
+          ? '/pages/onboarding/index'
+          : consumePostAuthRedirect('/pages/client/home/index');
+        wx.reLaunch({ url: needsClientProfile(userInfo) ? completionUrl(nextPage) : nextPage });
       }, 1200);
     } catch (err) {
       wx.hideLoading();

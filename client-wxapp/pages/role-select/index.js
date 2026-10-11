@@ -1,4 +1,5 @@
 const { consumePostAuthRedirect } = require('../../utils/artist-navigation');
+const { needsClientProfile, completionUrl } = require('../../utils/client-profile-completion');
 /**
  * 注册后角色选择页
  * 兼容历史微信注册用户的身份补全页。
@@ -153,10 +154,12 @@ Page({
 
     if (role === 'client') {
       const roles = res.roles || ['client'];
-      app.setLogin('client', res.accessToken || res.token, res.client || res.userInfo, roles);
+      const userInfo = res.client || res.userInfo;
+      app.setLogin('client', res.accessToken || res.token, userInfo, roles);
       if (res.refreshToken) wx.setStorageSync('client_refreshToken', res.refreshToken);
       wx.setStorageSync('client_bindings', res.technicians || []);
-      wx.reLaunch({ url: consumePostAuthRedirect('/pages/client/home/index') });
+      const nextPage = consumePostAuthRedirect('/pages/client/home/index');
+      wx.reLaunch({ url: needsClientProfile(userInfo) ? completionUrl(nextPage) : nextPage });
     } else if (role === 'technician') {
       app.setLogin('technician', res.accessToken || res.token, res.technician || res.userInfo, ['technician'], res.isTourist);
       if (res.refreshToken) wx.setStorageSync('technician_refreshToken', res.refreshToken);

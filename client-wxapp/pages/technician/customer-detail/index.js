@@ -1,6 +1,7 @@
 const api = require('../../../services/api');
-const { formatMoney, formatBookingDate, formatClock, parseDate } = require('../../../utils/format');
-const { normalizeOrder, resolveOrderPresentation, getStatusLabel, getStatusTone } = require('../../../utils/order');
+const { formatMoney, formatBookingDate, parseDate } = require('../../../utils/format');
+const { decorateTechnicianOrder } = require('../../../utils/order');
+const { technicianBookingCardHandlers = {} } = require('../../../utils/technician-booking-actions');
 
 const LIFECYCLE_LABELS = {
   new: '新客',
@@ -75,6 +76,14 @@ function findConversationClient(response, clientUserId) {
 }
 
 Page({
+  onBookingCardOpen: technicianBookingCardHandlers.onBookingCardOpen,
+  onBookingCardQuote: technicianBookingCardHandlers.onBookingCardQuote,
+  onBookingCardWithdrawQuote: technicianBookingCardHandlers.onBookingCardWithdrawQuote,
+  onBookingCardEditBooking: technicianBookingCardHandlers.onBookingCardEditBooking,
+  onBookingCardReject: technicianBookingCardHandlers.onBookingCardReject,
+  onBookingCardCancel: technicianBookingCardHandlers.onBookingCardCancel,
+  onBookingCardComplete: technicianBookingCardHandlers.onBookingCardComplete,
+  onBookingCardRebook: technicianBookingCardHandlers.onBookingCardRebook,
   data: {
     customer: null,
     customerId: '',
@@ -130,9 +139,10 @@ Page({
     const requestId = this._detailRequestId = (this._detailRequestId || 0) + 1;
     this.setData({ loading: true, loadFailed: false, loadErrorText: '' });
     try {
-      const [detail, conversations] = await Promise.all([
+      const [detail, conversations, technicianProfile] = await Promise.all([
         api.technician.customers.detail(this.customerId),
-        api.chat.technician.conversations({ timeout: 10000, silent: true }).catch(() => [])
+        api.chat.technician.conversations({ timeout: 10000, silent: true }).catch(() => []),
+        api.technician.auth && api.technician.auth.getUserInfo ? api.technician.auth.getUserInfo().catch(() => ({})) : Promise.resolve({})
       ]);
       if (requestId !== this._detailRequestId) return;
       const conversationClient = findConversationClient(conversations, detail.clientUserId) || {};
@@ -142,19 +152,16 @@ Page({
         avatarUrl: detail.avatarUrl || conversationClient.avatarUrl || ''
       };
 
-      const orders = (raw.orders || []).map((item) => {
-        const order = normalizeOrder({ ...item, customer: { id: raw.id, name: buildCustomerIdentity(raw).displayName || raw.name, phone: raw.phone, clientUserId: raw.clientUserId } });
-        const presentation = resolveOrderPresentation(order);
-        return {
-          ...order,
-          _clock: formatClock(order.startTime),
-          _typeLabel: presentation.typeLabel,
-          _fullAddress: presentation.fullAddress,
-          _statusLabel: getStatusLabel(order.status),
-          _statusTone: getStatusTone(order.status),
-          _priceText: Number(order.price) > 0 ? formatMoney(order.price) : ''
-        };
-      });
+      const shops = Array.isArray(technicianProfile.shopAddresses) ? technicianProfile.shopAddresses : [];
+      const orders = (raw.orders || []).map(item => decorateTechnicianOrder({
+        ...item,
+        customer: {
+          id: raw.id,
+          name: buildCustomerIdentity(raw).displayName || raw.name,
+          phone: raw.phone,
+          clientUserId: raw.clientUserId
+        }
+      }, shops)).filter(Boolean);
 
       const revenues = raw.revenues || [];
       const summary = raw.businessSummary || {};
@@ -288,35 +295,6 @@ Page({
     } catch (err) {
       this.setData({ savingRemark: false });
       wx.showToast({ title: err.message || '备注更新失败', icon: 'none' });
-    }
-  },
-
-  onBookingCardOpen(e) {
-    const id = e.detail && e.detail.id;
-    if (id) wx.navigateTo({ url: `/pages/technician/order-detail/index?id=${id}` });
-  },
-
-  onBookingCardContact(e) {
-    const phone = e.detail && e.detail.phone;
-    if (!phone) return wx.showToast({ title: '客户暂无电话', icon: 'none' });
-    wx.makePhoneCall({ phoneNumber: String(phone) });
-  },
-
-  onBookingCardMessage(e) {
-    const clientId = e.detail && e.detail.clientId;
-    if (!clientId) return wx.showToast({ title: '客户尚未关联小程序账号，请拨打电话', icon: 'none' });
-    wx.navigateTo({ url: `/pages/technician/chat-detail/index?clientId=${clientId}` });
-  },
-
-  onBookingCardNavigate(e) {
-    const order = (this.data.customer.orders || []).find(item => item.id === e.detail.id);
-    if (!order) return;
-    if (order.latitude && order.longitude) {
-      wx.openLocation({ latitude: Number(order.latitude), longitude: Number(order.longitude), name: order.shopName || '预约地点', address: order.address || '', scale: 16 });
-    } else if (order.address) {
-      wx.setClipboardData({ data: order.address });
-    } else {
-      wx.showToast({ title: '暂无地址', icon: 'none' });
     }
   },
 

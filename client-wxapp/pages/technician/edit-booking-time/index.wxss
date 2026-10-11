@@ -23,9 +23,16 @@ page { background: var(--bg-page); }
   display: block;
   font-size: var(--font-lg);
   font-weight: var(--weight-semibold);
-  color: var(--brand-primary);
+  color: var(--nb-ink);
   line-height: var(--leading-normal);
 }
+.summary-line { display:block; margin-top:10rpx; color:var(--nb-secondary); font-size:var(--font-sm); line-height:1.5; }
+.field-group { margin-bottom:24rpx; }
+.field-group-last { margin-bottom:0; }
+.field-label { display:block; margin-bottom:12rpx; color:var(--nb-secondary); font-size:var(--font-sm); font-weight:var(--weight-medium); }
+.field-input,.field-textarea { width:100%; box-sizing:border-box; border-radius:var(--input-radius); background:var(--nb-soft-surface); color:var(--nb-ink); font-size:var(--font-sm); }
+.field-input { min-height:44px; padding:0 var(--input-padding-h); }
+.field-textarea { min-height:176rpx; padding:20rpx var(--input-padding-h); line-height:1.5; }
 
 /* ===== Submit Bar ===== */
 .submit-bar {
@@ -42,12 +49,12 @@ page { background: var(--bg-page); }
   flex: 1; text-align: center; padding: 12rpx 16rpx;
 }
 .submit-btn-save {
-  background: var(--brand-gradient); color: var(--text-inverse);
+  background: var(--nb-action); color: var(--nb-inverse);
   box-shadow: none;
 }
 .submit-btn-save:active { opacity: 0.85; }
 .submit-btn-cancel {
-  background: var(--bg-input); color: var(--text-muted);
+  background: var(--nb-soft-surface); color: var(--nb-secondary);
 }
 .submit-btn-cancel:active { opacity: 0.85; }
 .btn-disabled { opacity: 0.5; pointer-events: none; }

@@ -16,7 +16,8 @@ Page({
     imageIndex: 0,
     binding: false,
     visitorInfo: null,
-    isLoggedIn: false
+    isLoggedIn: false,
+    isOwnerView: false
   },
 
   onLoad(options) {
@@ -26,8 +27,17 @@ Page({
       this.setData({ loading: false, error: true, errorMessage: '分享链接无效', errorDescription: '链接信息不完整，请返回浏览，或请分享者重新发送作品链接。', canRetry: false });
       return;
     }
-    // 检测登录状态，未登录也可浏览
+    // 分享作品需先登录，并保留令牌、作品 ID 与预约意图。
     const token = wx.getStorageSync('token') || wx.getStorageSync('client_token') || wx.getStorageSync('technician_token');
+    if (!token) {
+      const query = options.shareToken
+        ? 'shareToken=' + encodeURIComponent(options.shareToken)
+        : 'id=' + encodeURIComponent(options.id);
+      const returnPath = '/pages/client/public-work/index?' + query +
+        (options.book === '1' ? '&book=1' : '') + '&channel=' + this.shareChannel;
+      wx.redirectTo({ url: buildClientLoginUrl(returnPath, { source: 'work_share' }) });
+      return;
+    }
     this.setData({ isLoggedIn: !!token });
     this._techId = null; // 缓存美甲师 ID，登录绑定时使用
     this.resumeBooking = options.book === '1';
@@ -56,6 +66,11 @@ Page({
       };
       const techId = rawWork.technicianId || (rawWork.technician && (rawWork.technician.id || rawWork.technician.technicianId));
       this._techId = techId || null;
+      const app = getApp();
+      const role = wx.getStorageSync('role') || (app.globalData && app.globalData.role);
+      const currentTechnician = wx.getStorageSync('technician_userInfo') || wx.getStorageSync('userInfo') || (app.globalData && app.globalData.userInfo) || {};
+      const currentTechnicianId = currentTechnician.id || currentTechnician.technicianId;
+      const isOwnerView = role === 'technician' && currentTechnicianId && String(currentTechnicianId) === String(techId);
       if (techId) {
         try {
           const artistRes = await api.public.artists.detail(String(techId));
@@ -123,6 +138,7 @@ Page({
       this.setData({
         work: work,
         visitorInfo,
+        isOwnerView: !!isOwnerView,
         sharePath: this.shareToken ? '/pages/client/public-work/index?shareToken=' + this.shareToken : '/pages/client/public-work/index?id=' + work.id,
         loading: false,
         error: false
@@ -191,6 +207,10 @@ Page({
   async bookSameStyle() {
     const work = this.data.work;
     if (!work || !work.id || this.data.binding || this._bookingOpening) return;
+    if (this.data.isOwnerView) {
+      this.editWork();
+      return;
+    }
     this._bookingOpening = true;
     try {
     trackConversion({ eventType: 'booking_intent', workId: work.id, technicianId: work.technicianId || (work.technician || {}).id, channel: this.shareChannel || 'wechat_share', touchpoint: 'work_share', shareToken: this.shareToken });
@@ -201,6 +221,12 @@ Page({
     } finally {
       this._bookingOpening = false;
     }
+  },
+
+  editWork() {
+    const work = this.data.work || {};
+    const workId = work.id || this.workId;
+    if (workId) wx.navigateTo({ url: `/pages/technician/work-edit/index?id=${workId}` });
   },
 
   goToArtist() {

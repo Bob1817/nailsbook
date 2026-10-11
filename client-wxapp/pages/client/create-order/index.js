@@ -36,6 +36,7 @@ Page({
     selectedServiceCount: 0,
     selectedServiceTotal: 0,
     selectedServiceDuration: 0,
+    lastServiceHint: '',
     isCustomService: false,
     customTitle: '',
     customDesc: '',
@@ -64,6 +65,8 @@ Page({
     minDate: '',
     showApplicationReview: false,
     bookingRulesAgreed: false,
+    showConflictTimePicker: false,
+    bookingConflictMessage: '',
     // 绑定美甲师弹窗
     showBindTech: false,
     bindInviteCode: '',
@@ -166,11 +169,6 @@ Page({
     wx.navigateTo({ url: buildClientLoginUrl(path, { source: this._attributionSource || 'quick_booking', inviteCode }) });
     return false;
   },
-  useFullBooking: function () {
-    this._fullMode = true;
-    this.setData({ quickMode: false, referenceOnly: false, presetLocked: !!this._presetTechId, isCustomService: !this.data.activeServiceItems.length });
-    this.updateDeposit();
-  },
   clearQuickWork: function () {
     this._workRequestId = (this._workRequestId || 0) + 1;
     this.sourceWorkId = null; this.sourceShareToken = ''; this._pendingWorkPrefill = null;
@@ -220,9 +218,12 @@ Page({
       }
 
 
-      // 无绑定美甲师 → 强制弹出绑定弹窗
+      // 无绑定美甲师：无法预约，引导前往「我的美甲师」绑定
       if (techs.length === 0) {
-        self.setData({ showBindTech: true });
+        wx.showToast({ title: '请先绑定美甲师后再预约', icon: 'none' });
+        setTimeout(function () {
+          wx.navigateTo({ url: '/pages/client/my-technicians/index' });
+        }, 600);
         return;
       }
 
@@ -387,6 +388,7 @@ Page({
     this.refreshServiceOptions(tech, false);
     this.setData({ quickMode: false, quickAvailable: false, settingsReady: false });
     this.refreshPriceContent();
+    this.applyReturningClientPrefill(id, serviceItems);
     if (api.public.bookingSettings) api.public.bookingSettings(id).then(settings => {
       if (this.data.selectedTechId !== id) return;
       const quick = settings.quickBookingEnabled && !this._fullMode;
@@ -557,10 +559,53 @@ Page({
       selectedServiceIds: ids, selectedServiceMap: selectionMap(ids),
       selectedServiceCount: summary.count,
       selectedServiceTotal: summary.totalPrice,
-      selectedServiceDuration: summary.totalDurationMinutes
+      selectedServiceDuration: summary.totalDurationMinutes,
+      lastServiceHint: ''
     });
     this.updateDeposit();
     this.refreshPriceContent();
+  },
+
+  // 老客加速：预填该美甲师最近一次订单中的同名服务
+  applyReturningClientPrefill: function (techId, serviceItems) {
+    var self = this;
+    var app = getApp();
+    if (!app.globalData || !app.globalData.token) return;
+    if (!api.client || !api.client.orders || typeof api.client.orders.list !== 'function') return;
+    if (this.data.sourceWork || this.data.selectedServiceIds.length) return;
+    api.client.orders.list({ pageSize: 20 }).then(function (res) {
+      if (self.data.selectedTechId != techId) return;
+      var list = Array.isArray(res) ? res : (res.list || res.data || []);
+      var mine = list.filter(function (o) {
+        if (!o || o.status === 'cancelled' || o.status === 'expired') return false;
+        var tid = o.technician && (o.technician.id || o.technician.technicianId);
+        return String(tid) === String(techId);
+      }).sort(function (a, b) {
+        return new Date(b.startTime || b.createdAt || 0) - new Date(a.startTime || a.createdAt || 0);
+      });
+      var last = mine[0];
+      if (!last) return;
+      var names = (Array.isArray(last.serviceLines) ? last.serviceLines : [])
+        .map(function (line) { return line.nameSnapshot || line.name; })
+        .filter(Boolean);
+      if (!names.length) return;
+      var matched = (serviceItems || []).filter(function (item) {
+        return names.indexOf(item.name) !== -1;
+      });
+      if (!matched.length) return;
+      var ids = matched.map(function (item) { return item.id; });
+      var summary = summarizeServices(serviceItems, ids);
+      self.setData({
+        selectedServiceIds: ids,
+        selectedServiceMap: selectionMap(ids),
+        selectedServiceCount: summary.count,
+        selectedServiceTotal: summary.totalPrice,
+        selectedServiceDuration: summary.totalDurationMinutes,
+        lastServiceHint: '已为你预填上次服务：' + matched.map(function (i) { return i.name; }).join('、')
+      });
+      self.updateDeposit();
+      self.refreshPriceContent();
+    }).catch(function () {});
   },
 
   updateDeposit: function () {
@@ -766,6 +811,21 @@ Page({
     this.setData({ showQuickConfirm: false });
   },
 
+  closeConflictTimePicker: function () {
+    this.setData({ showConflictTimePicker: false, bookingConflictMessage: '' });
+  },
+
+  confirmConflictTime: function () {
+    if (!this.data.startTime) {
+      wx.showToast({ title: '请选择新的预约时间', icon: 'none' });
+      return;
+    }
+    this.setData(
+      { showConflictTimePicker: false, bookingConflictMessage: '' },
+      () => this.doSubmit()
+    );
+  },
+
   previewWork: function (e) {
     var id = Number(e.currentTarget.dataset.id);
     var works = this.data.techWorks;
@@ -884,12 +944,24 @@ Page({
       self.applicationKey = '';
       if (!self._pageActive) { self._submittedWhileHidden = true; return; }
       self.setData({ submitSuccess: true, submitSuccessTech: (d.selectedTech || {}).name || '美甲师' });
-      requestBookingReminder('client');
       self._navTimer = setTimeout(function () { if (self._pageActive) wx.reLaunch({ url: '/pages/client/orders/index' }); }, 2500);
     }).catch(function (err) {
       wx.hideLoading();
       if (!self._pageActive) { self._submitFinishedWhileHidden = true; return; }
-      wx.showToast({ title: err.message || '提交失败', icon: 'none' });
+      var message = err.message || '提交失败';
+      var isBookingConflict = message.indexOf('重新选择预约时间') >= 0 ||
+        message.indexOf('时间段已被预约') >= 0 ||
+        message.indexOf('时间段已经被其他用户预约') >= 0;
+      if (isBookingConflict) {
+        self.setData({
+          startTime: '',
+          bookingConflictMessage: '该时间已被预约，请重新选择其他可用时间。',
+          showConflictTimePicker: true
+        });
+        self.saveDraft();
+        return;
+      }
+      wx.showToast({ title: message, icon: 'none' });
     }).finally(function () {
       if (self._pageActive) self.setData({ submitting: false });
       else if (!self._submittedWhileHidden) self._submitFinishedWhileHidden = true;

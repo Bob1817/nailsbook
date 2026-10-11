@@ -109,9 +109,8 @@
   border: 0; box-sizing: border-box;
 }
 .service-option-native { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-.service-option-radio { width: 26rpx; height: 26rpx; margin-top: 8rpx; box-sizing: border-box; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 2rpx solid var(--nb-control); border-radius: 50%; }
-.service-option-radio-active { border-color: var(--nb-link); background: var(--nb-surface); }
-.service-option-radio-dot { width: 10rpx; height: 10rpx; border-radius: 50%; background: var(--nb-link); }
+.service-option-check { width: 40rpx; height: 40rpx; margin-top: 2rpx; box-sizing: border-box; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-radius: 50%; background: var(--nb-surface); color: transparent; font-size: 24rpx; font-weight: var(--weight-bold); line-height: 1; }
+.service-option-check-active { background: var(--nb-action); color: var(--nb-inverse); }
 .add-service-address { min-height: 88rpx; margin: 20rpx 0 0; padding: 0 28rpx; border-radius: var(--radius-pill); background: var(--nb-action); color: var(--nb-inverse); font-size: var(--font-sm); }
 .add-service-address::after { border: 0; }
 
@@ -870,6 +869,29 @@
 
 .modal-btn:active { opacity: 0.85; }
 
+.conflict-time-modal {
+  max-height: 84vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 32rpx;
+}
+
+.conflict-time-message {
+  display: block;
+  margin: 4rpx 0 24rpx;
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  line-height: 1.5;
+}
+
+.conflict-time-actions {
+  position: sticky;
+  bottom: 0;
+  margin-top: 24rpx;
+  padding-top: 16rpx;
+  background: var(--bg-card);
+}
+
 /* 绑定美甲师弹窗 */
 /* ===== Confirm Modal (Quick + Full) ===== */
 .confirm-modal {
@@ -1091,9 +1113,6 @@
 .bind-status.checking { color: var(--text-muted); }
 .bind-status.valid { color: var(--nb-success); }
 .bind-status.error { color: var(--nb-danger); }
-.quick-choice { min-height: 44px; margin: 16rpx 0 0; padding: 12rpx 20rpx; display: flex; align-items: center; justify-content: center; font-size: var(--font-sm); line-height: 1.5; color: var(--text-secondary); background: var(--bg-page); }
-.quick-choice-pressed { opacity: .8; }
-
 /* 创建预约：服务、日期、地址保持清晰的纵向层级。 */
 .section { margin-bottom: 40rpx; }
 .tech-card, .addr-card { background: var(--nb-surface); min-height: 88rpx; }
@@ -1133,21 +1152,21 @@
 .addr-card, .tech-card { background: var(--nb-page); }
 @import '../../../styles/booking-form.wxss';
 
-.quick-choice.booking-action,
 .add-service-address.booking-action { min-height:44px; height:44px; border-radius:8px; font-size:var(--font-sm); line-height:1.4; box-shadow:none; }
-.quick-choice.booking-action { padding:0 20rpx; }
 .add-service-address.booking-action { padding:0 28rpx; }
 
 /* ===== Single shop readonly card ===== */
 .addr-card-readonly {
   padding: var(--space-md);
   border-radius: var(--radius-md);
-  border: 2rpx solid var(--brand-primary);
-  background: var(--nb-page);
+  border: 0;
+  background: var(--nb-active-surface);
 }
 
 /* ===== Section head action (Quick mode toggle) ===== */
 .section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12rpx; }
+.quick-time-head { flex-direction: column; justify-content: flex-start; gap: 6rpx; }
+.quick-time-head .section-sub { margin-top: 0; }
 .section-head-action {
   flex-shrink: 0;
   display: flex;
@@ -1253,3 +1272,13 @@
 }
 
 .confirm-btn.booking-action { min-height: 44px; }
+
+.last-service-hint {
+  margin: 12rpx 0 16rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 12rpx;
+  background: var(--nb-soft-surface, #EEF1F5);
+  color: var(--nb-secondary, #48484D);
+  font-size: var(--font-sm);
+  line-height: 1.5;
+}

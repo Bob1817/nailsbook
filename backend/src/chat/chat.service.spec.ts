@@ -16,6 +16,9 @@ const mockPrisma = {
     create: jest.fn(),
     updateMany: jest.fn(),
   },
+  clientTechBinding: {
+    findFirst: jest.fn(),
+  },
 };
 
 describe('ChatService', () => {
@@ -37,6 +40,12 @@ describe('ChatService', () => {
   describe('sendMessage', () => {
     it('should create a new conversation when conversationId is not provided (client sending to tech)', async () => {
       mockPrisma.conversation.findUnique.mockResolvedValue(null);
+      mockPrisma.clientTechBinding.findFirst.mockResolvedValue({
+        id: 1,
+        clientId: 10,
+        techId: 20,
+        status: 'active',
+      });
       mockPrisma.conversation.create.mockResolvedValue({
         id: 1,
         clientId: 10,
@@ -116,6 +125,22 @@ describe('ChatService', () => {
           content: 'hello',
         }),
       ).rejects.toThrow('Conversation not found');
+    });
+
+    it('should throw when creating conversation without an active binding', async () => {
+      mockPrisma.conversation.findUnique.mockResolvedValue(null);
+      mockPrisma.clientTechBinding.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.sendMessage({
+          senderType: 'client',
+          senderId: 10,
+          techId: 20,
+          messageType: 'text',
+          content: 'hello',
+        }),
+      ).rejects.toThrow('双方尚未绑定，无法创建会话');
+      expect(mockPrisma.conversation.create).not.toHaveBeenCalled();
     });
 
     it('should find existing conversation by clientId_techId unique constraint', async () => {

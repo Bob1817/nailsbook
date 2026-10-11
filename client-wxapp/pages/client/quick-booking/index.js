@@ -56,7 +56,7 @@ Page({
   },
 
   onShareAppMessage() {
-    if (!this.data.artist) return { title: 'NailBook', path: '/pages/client/home/index' };
+    if (!this.data.artist) return { title: 'OnlyNail', path: '/pages/client/home/index' };
     return {
       title: `预约${this.data.artist.name || '美甲师'} · 选个时间就好`,
       path: '/pages/client/quick-booking/index?' + this.shareQuery(),

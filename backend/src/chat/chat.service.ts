@@ -57,12 +57,20 @@ export class ChatService {
       });
 
       if (!conversation) {
+        const binding = await this.prisma.clientTechBinding.findFirst({
+          where: { clientId, techId, status: 'active' },
+        });
+        if (!binding) throw new BadRequestException('双方尚未绑定，无法创建会话');
         conversation = await this.prisma.conversation.create({
           data: { clientId, techId },
         });
       }
     }
 
+    if ((senderType === 'client' && conversation.clientId !== senderId) ||
+        (senderType === 'technician' && conversation.techId !== senderId)) {
+      throw new BadRequestException('无权访问该会话');
+    }
     const conversationId = conversation.id;
     const receiverType = senderType === 'client' ? 'technician' : 'client';
     const receiverId =
@@ -161,10 +169,20 @@ export class ChatService {
     receiverType: string,
     receiverId: number,
   ) {
+    await this.assertConversationMember(conversationId, receiverType, receiverId);
     await this.prisma.message.updateMany({
       where: { conversationId, receiverType, receiverId, isRead: false },
       data: { isRead: true },
     });
+  }
+
+  async assertConversationMember(conversationId: number, role: string, userId: number) {
+    const conversation = await this.getConversation(conversationId);
+    if (!conversation || !['client', 'technician'].includes(role) ||
+        (role === 'client' ? conversation.clientId !== userId : conversation.techId !== userId)) {
+      throw new BadRequestException('无权访问该会话');
+    }
+    return conversation;
   }
 
   async getConversation(conversationId: number) {

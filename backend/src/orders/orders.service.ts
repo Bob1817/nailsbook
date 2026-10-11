@@ -17,7 +17,11 @@ import { BookingMutexService } from './booking-mutex.service';
 import { ReferralQualificationService } from '../referrals/referral-qualification.service';
 import { RewardFundService } from '../referrals/reward-fund.service';
 import { assertWithinServiceSchedule } from './order-work-schedule';
-import { throwIfBookingSlotConflict } from './booking-conflict';
+import {
+  BOOKING_CONFLICT_MESSAGE,
+  DEFAULT_BOOKING_DURATION_MINUTES,
+  throwIfBookingSlotConflict,
+} from './booking-conflict';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import {
   getBusinessDateTimeParts,
@@ -44,10 +48,12 @@ export type OrderStatus =
   | 'in_progress'
   | 'completed'
   | 'cancelled'
+  | 'rejected'
+  | 'no_show'
   | 'expired';
 
 export const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  pending_quote: ['pending_agree', 'cancelled', 'expired'],
+  pending_quote: ['pending_agree', 'cancelled', 'rejected', 'expired'],
   pending_agree: ['pending_confirm', 'pending_quote', 'cancelled', 'expired'],
   pending_confirm: ['pending_agree', 'pending_home', 'pending_shop', 'cancelled', 'expired'],
   pending_client_confirm: ['pending_confirm', 'cancelled', 'expired'],
@@ -56,6 +62,8 @@ export const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   in_progress: ['completed', 'cancelled'],
   completed: [],
   cancelled: [],
+  rejected: [],
+  no_show: [],
   // 过期后可「重新发起」恢复到过期前的创建流程状态
   expired: [
     'pending_quote',
@@ -284,6 +292,121 @@ export class OrdersService {
       sourceServiceRecordId: record.id,
       isRepeatBooking: true,
     } as any);
+  }
+
+  async repeatBooking(
+    id: number,
+    technicianId: number,
+    dto: { startTime: string; serviceName?: string; note?: string },
+  ) {
+    const order = await this.findOneForTechnician(id, technicianId);
+    if (!['completed', 'cancelled', 'rejected', 'expired', 'no_show'].includes(order.status)) {
+      throw new BadRequestException('当前预约尚未结束，不能再次预约');
+    }
+
+    const startTime = new Date(dto.startTime);
+    if (Number.isNaN(startTime.getTime()) || startTime.getTime() <= Date.now()) {
+      throw new BadRequestException('请选择将来的预约时间');
+    }
+    const originalDuration =
+      new Date(order.endTime).getTime() - new Date(order.startTime).getTime();
+    const duration = originalDuration > 0
+      ? originalDuration
+      : Math.max(1, order.totalDurationMinutes || 120) * 60 * 1000;
+    const endTime = new Date(startTime.getTime() + duration);
+    await this.assertTechnicianWorkSchedule(technicianId, startTime, endTime);
+    if (this.subscriptions) {
+      await this.subscriptions.assertCanCreateBooking(technicianId);
+    }
+
+    const createRepeat = () => this.prisma.$transaction(async (tx) => {
+      await assertBookingAccountState(tx, technicianId, order.clientUserId);
+      await this.bookingDays?.assertOpen(tx, technicianId, businessDate(startTime));
+      const conflict = await tx.blockedTimeSlot.findFirst({
+        where: {
+          techId: technicianId,
+          startTime: { lt: endTime },
+          endTime: { gt: startTime },
+        },
+        select: { id: true },
+      });
+      if (conflict) {
+        throw new BadRequestException('该时间段已经被其他用户预约，请重新选择预约时间');
+      }
+
+      const repeated = await tx.order.create({
+        data: {
+          orderNo: this.generateOrderNo(),
+          technicianId,
+          customerId: order.customerId,
+          clientUserId: order.clientUserId,
+          addressId: order.addressId,
+          serviceId: order.serviceId,
+          sourceWorkId: order.sourceWorkId,
+          startTime,
+          endTime,
+          address: order.address,
+          serviceType: order.serviceType,
+          remark: dto.note?.trim() || null,
+          customTitle: dto.serviceName?.trim() || order.customTitle,
+          customDescription: order.customDescription,
+          customImages: order.customImages,
+          quotePrice: order.quotePrice,
+          status: Number(order.quotePrice || 0) > 0
+            ? 'pending_client_confirm'
+            : 'pending_quote',
+          source: 'technician',
+          expectedDate: startTime,
+          estimatedAmount: order.quotePrice,
+          isRepeatBooking: true,
+          sourceServiceRecordId: order.sourceServiceRecordId,
+          attributionChannel: 'repeat',
+          bookingType: order.bookingType,
+          serviceSubtotalFen: order.serviceSubtotalFen,
+          discountAmountFen: order.discountAmountFen,
+          finalPriceFen: order.finalPriceFen,
+          totalDurationMinutes: Math.round(duration / 60000),
+          depositModeSnapshot: order.depositModeSnapshot,
+          depositValueSnapshot: order.depositValueSnapshot,
+          pricingDetails: order.pricingDetails,
+          serviceLines: {
+            create: (order.serviceLines || []).map((line) => ({
+              serviceId: line.serviceId,
+              servicePublicIdSnapshot: line.servicePublicIdSnapshot,
+              nameSnapshot: line.nameSnapshot,
+              unitPriceFen: line.unitPriceFen,
+              durationMinutes: line.durationMinutes,
+              quantity: line.quantity,
+              subtotalFen: line.subtotalFen,
+              source: line.source,
+              sortOrder: line.sortOrder,
+            })),
+          },
+        },
+        include: {
+          customer: { select: { id: true, name: true, phone: true, avatarUrl: true } },
+          serviceLines: { orderBy: { sortOrder: 'asc' } },
+        },
+      });
+      await tx.blockedTimeSlot.create({
+        data: {
+          techId: technicianId,
+          orderId: repeated.id,
+          startTime,
+          endTime,
+          reason: 'booking',
+        },
+      });
+      return repeated;
+    });
+
+    try {
+      return this.bookingMutex
+        ? await this.bookingMutex.runExclusive(technicianId, createRepeat)
+        : await createRepeat();
+    } catch (error) {
+      throwIfBookingSlotConflict(error);
+    }
   }
 
   async findAll(
@@ -525,7 +648,9 @@ export class OrdersService {
     const blockEnd =
       endTime.getTime() > startTime.getTime()
         ? endTime
-        : new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
+        : new Date(
+            startTime.getTime() + DEFAULT_BOOKING_DURATION_MINUTES * 60000,
+          );
     await this.assertTechnicianWorkSchedule(technicianId, startTime, blockEnd);
     const effectiveServiceType = dto.serviceType ?? order.serviceType;
     if (['shop', '到店美甲'].includes(effectiveServiceType || '')) {
@@ -594,6 +719,86 @@ export class OrdersService {
     const work = () => this.reviewLocked(id, technicianId, dto);
     const updated = await (this.bookingMutex ? this.bookingMutex.runExclusive(technicianId, work) : work());
     return updated.status === 'pending_confirm' ? this.confirm(id) : updated;
+  }
+
+  async withdrawQuote(id: number, technicianId: number) {
+    const order = await this.findOneForTechnician(id, technicianId);
+    if (order.status !== 'pending_agree') {
+      throw new BadRequestException('仅待客户确认的报价可以撤回');
+    }
+
+    let systemMessage: any = null;
+    let conversationId: number | null = null;
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const claimed = await tx.order.updateMany({
+        where: { id, status: 'pending_agree', updatedAt: order.updatedAt },
+        data: {
+          status: 'pending_quote',
+          bookingPhase: 'application',
+          quoteVersion: { increment: 1 },
+        },
+      });
+      if (claimed.count !== 1) {
+        throw new BadRequestException('报价状态已变化，请刷新后重试');
+      }
+      if (order.clientUserId) {
+        const preview = '美甲师已撤回报价，将重新调整方案～';
+        const conversation = await tx.conversation.upsert({
+          where: {
+            clientId_techId: {
+              clientId: order.clientUserId,
+              techId: technicianId,
+            },
+          },
+          update: { lastMessage: preview, lastMessageAt: new Date() },
+          create: {
+            clientId: order.clientUserId,
+            techId: technicianId,
+            lastMessage: preview,
+            lastMessageAt: new Date(),
+          },
+        });
+        conversationId = conversation.id;
+        systemMessage = await tx.message.create({
+          data: {
+            conversationId: conversation.id,
+            senderType: 'system',
+            senderId: 0,
+            receiverType: 'client',
+            receiverId: order.clientUserId,
+            messageType: 'system',
+            content: preview,
+            relatedType: 'order',
+            relatedId: order.id,
+          },
+        });
+      }
+
+      return {
+        ...order,
+        status: 'pending_quote',
+        bookingPhase: 'application',
+        quoteVersion: (order.quoteVersion || 0) + 1,
+      };
+    });
+
+    if (systemMessage && conversationId) {
+      try {
+        const updatedConversation = await this.prisma.conversation.findUnique({
+          where: { id: conversationId },
+        });
+        this.chatGateway.server
+          .to(`conversation:${String(conversationId)}`)
+          .emit('message:new', {
+            message: systemMessage,
+            conversation: updatedConversation,
+          });
+      } catch (e) {
+        console.error('[OrdersService] Failed to push notification via WebSocket:', e);
+      }
+    }
+
+    return updated;
   }
 
   private async reviewLocked(id: number, technicianId: number, dto: ReviewOrderDto) {
@@ -679,7 +884,7 @@ export class OrdersService {
       select: { id: true },
     });
     if (blockedConflict) {
-      throw new BadRequestException('该时间段已被预约，请与客户协商新的时间');
+      throw new BadRequestException(BOOKING_CONFLICT_MESSAGE);
     }
 
     const proposed = proposalSnapshot({ ...order, pricingDetails: JSON.stringify(totals), startTime, endTime, finalPriceFen: quotedFinalPriceFen, depositAmount, ...depositRule }, [...serviceLines, ...extraLines]);
@@ -741,6 +946,15 @@ export class OrdersService {
         data: [...serviceLines.map((line) => ({ orderId: id, ...line, source: 'quote' })), ...extraLines.map(line => ({ orderId: id, ...line }))],
       });
       await tx.blockedTimeSlot.deleteMany({ where: { orderId: id } });
+      await tx.blockedTimeSlot.create({
+        data: {
+          techId: technicianId,
+          orderId: id,
+          startTime,
+          endTime,
+          reason: 'booking',
+        },
+      });
 
 
       if (order.clientUserId && !unchanged) {
@@ -927,9 +1141,7 @@ export class OrdersService {
           select: { id: true },
         });
         if (conflict) {
-          throw new BadRequestException(
-            '该时间段已被预约，请与客户协商新的时间',
-          );
+          throw new BadRequestException(BOOKING_CONFLICT_MESSAGE);
         }
         const updated = await tx.order.update({
           where: { id },
@@ -1323,20 +1535,30 @@ export class OrdersService {
     id: number,
     cancelReason?: string,
     refundDeposit?: boolean,
+    terminalStatus: 'cancelled' | 'rejected' = 'cancelled',
   ) {
     const order = await this.findOne(id);
 
-    const cancellableStatuses: OrderStatus[] = [
-      'pending_quote',
-      'pending_agree',
-      'pending_confirm',
-      'pending_client_confirm',
-      'pending_home',
-      'pending_shop',
-      'in_progress',
-    ];
+    const cancellableStatuses: OrderStatus[] = terminalStatus === 'rejected'
+      ? ['pending_quote']
+      : [
+          'pending_quote',
+          'pending_agree',
+          'pending_confirm',
+          'pending_client_confirm',
+          'pending_home',
+          'pending_shop',
+          'in_progress',
+        ];
     if (!cancellableStatuses.includes(order.status as OrderStatus)) {
-      throw new BadRequestException('当前订单状态不支持取消');
+      throw new BadRequestException(
+        terminalStatus === 'rejected'
+          ? '仅待报价预约可以驳回'
+          : '当前订单状态不支持取消',
+      );
+    }
+    if (terminalStatus === 'rejected' && !cancelReason?.trim()) {
+      throw new BadRequestException('请填写驳回原因');
     }
     if (order.isDepositPaid && refundDeposit == null) {
       throw new BadRequestException('请选择是否退还定金');
@@ -1348,10 +1570,14 @@ export class OrdersService {
     const updated = await this.prisma.$transaction(async (tx) => {
       const claimed = await tx.order.updateMany({
         where: { id, status: { in: cancellableStatuses } },
-        data: { status: 'cancelled', tradeStatus: 'cancelled' },
+        data: { status: terminalStatus, tradeStatus: 'cancelled' },
       });
       if (claimed.count !== 1) {
-        throw new BadRequestException('该订单已取消，无需重复处理');
+        throw new BadRequestException(
+          terminalStatus === 'rejected'
+            ? '该预约已处理，请刷新后查看'
+            : '该订单已取消，无需重复处理',
+        );
       }
       await tx.paymentOrder.updateMany({
         where: {
@@ -1383,6 +1609,9 @@ export class OrdersService {
         data: {
           cancelledAt: new Date(),
           cancelReason: cancelReason ?? order.cancelReason ?? null,
+          ...(terminalStatus === 'rejected'
+            ? { rejectionReason: cancelReason, bookingPhase: 'closed' }
+            : {}),
           ...(order.isDepositPaid
             ? {
                 depositStatus: refundDeposit ? 'refunded' : 'forfeited',
@@ -1416,7 +1645,9 @@ export class OrdersService {
         });
       }
       if (order.clientUserId) {
-        const preview = '订单已取消';
+        const preview = terminalStatus === 'rejected'
+          ? `预约已驳回：${cancelReason}`
+          : '订单已取消';
         const conversation = await tx.conversation.upsert({
           where: {
             clientId_techId: {
@@ -1533,7 +1764,9 @@ export class OrdersService {
     const blockEnd =
       prevDuration > 0
         ? endTime
-        : new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
+        : new Date(
+            startTime.getTime() + DEFAULT_BOOKING_DURATION_MINUTES * 60000,
+          );
     await this.assertTechnicianWorkSchedule(technicianId, startTime, blockEnd);
 
     const restoreStatus = order.expiredFromStatus ?? 'pending_quote';

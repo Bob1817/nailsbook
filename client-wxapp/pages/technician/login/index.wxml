@@ -1,7 +1,7 @@
 <nav-bar title="美甲师端" subtitle="" transparent/>
 <view class="container {{loginMethod === 'phone' && step === 'register' ? 'register-container' : ''}}">
   <view class="header {{loginMethod === 'phone' && step === 'register' ? 'header-compact' : ''}}">
-    <view wx:if="{{loginMethod !== 'phone' || step !== 'register'}}" class="logo-circle">N</view>
+    <view wx:if="{{loginMethod !== 'phone' || step !== 'register'}}" class="logo-circle">OnlyNail</view>
     <text class="title">{{loginMethod === 'phone' && step === 'register' ? '邀请注册' : '登录'}}</text>
     <text wx:if="{{loginMethod === 'phone' && step === 'register'}}" class="subtitle">该手机号尚未注册，需要有效邀请密钥</text>
   </view>

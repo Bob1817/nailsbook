@@ -45,11 +45,15 @@
           wx:for="{{filteredOrders}}"
           wx:key="id"
           order="{{item}}"
-          variant="compact"
+          variant="schedule"
           bind:open="onBookingCardOpen"
-          bind:navigate="onBookingCardNavigate"
-          bind:contact="onBookingCardContact"
-          bind:message="onBookingCardMessage"
+          bind:quote="onBookingCardQuote"
+          bind:withdrawquote="onBookingCardWithdrawQuote"
+          bind:editbooking="onBookingCardEditBooking"
+          bind:reject="onBookingCardReject"
+          bind:cancel="onBookingCardCancel"
+          bind:complete="onBookingCardComplete"
+          bind:rebook="onBookingCardRebook"
         />
       </view>
     </view>

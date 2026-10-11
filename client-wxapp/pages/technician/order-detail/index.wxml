@@ -147,7 +147,10 @@
           <text class="price-main semantic-money">{{order._priceText}}</text>
           <text wx:if="{{!quickBooking}}" class="price-edit-arrow">›</text>
         </view>
-        <text class="deposit-note">{{order._depositStatusText}}</text>
+        <view class="deposit-summary-line">
+          <text class="deposit-summary-amount">定金 ¥{{order.depositAmount || 0}}</text>
+          <text class="deposit-status {{order.depositPaid ? 'deposit-status-paid' : ''}}">{{order.depositPaid ? '已支付' : '未支付'}}</text>
+        </view>
       </view>
     </view>
 
@@ -246,6 +249,18 @@
       <text class="form-label">最终报价（元） *</text>
       <input placeholder-class="form-placeholder" class="form-input" type="digit" placeholder="请输入最终报价" value="{{quotePrice}}" bindinput="onQuoteFinalPriceInput" confirm-type="done" />
       <view class="quote-summary"><text>服务合计 ¥{{quoteSubtotalFen / 100}}</text><text>预计 {{quoteTotalDuration}} 分钟</text><text wx:if="{{quoteFinalFen > quoteSubtotalFen}}">其他 +¥{{(quoteFinalFen - quoteSubtotalFen) / 100}}</text><text wx:elif="{{quoteFinalFen < quoteSubtotalFen}}">优惠 -¥{{(quoteSubtotalFen - quoteFinalFen) / 100}}</text><text class="quote-final">最终报价 ¥{{quoteFinalFen / 100}}</text></view>
+      <view class="deposit-editor">
+        <text class="deposit-editor-title">定金</text>
+        <view class="deposit-editor-fields">
+          <picker class="deposit-status-picker" range="{{depositStatusOptions}}" value="{{quoteDepositStatusIndex}}" bindchange="onQuoteDepositStatusChange">
+            <view class="form-input picker-input deposit-picker-value">
+              <text>{{depositStatusOptions[quoteDepositStatusIndex]}}</text>
+              <text class="picker-arrow">⌄</text>
+            </view>
+          </picker>
+          <input placeholder-class="form-placeholder" class="form-input deposit-amount-input" type="digit" placeholder="金额（元）" value="{{quoteDepositAmount}}" bindinput="onQuoteDepositAmountInput" confirm-type="done" />
+        </view>
+      </view>
     </view>
 
     <view class="form-item">
@@ -258,14 +273,6 @@
         maxlength="200" confirm-type="done" />
     </view>
 
-    <view class="form-item">
-      <text class="form-label">定金金额（元）</text>
-      <input placeholder-class="form-placeholder" class="form-input" type="digit" placeholder="0" value="{{quoteDepositAmount}}" bindinput="onQuoteDepositAmountInput" confirm-type="done" />
-    </view>
-    <view class="form-item form-item-switch">
-      <text class="form-label">定金已支付</text>
-      <nb-switch checked="{{quoteDepositPaid}}" bindchange="onQuoteDepositPaidChange" label="定金已支付"/>
-    </view>
   </scroll-view>
 
   <view class="sheet-footer">
@@ -410,13 +417,16 @@
     </view>
 
     <view class="form-item">
-      <text class="form-label">定金金额（元）</text>
-      <input placeholder-class="form-placeholder" class="form-input" type="digit" placeholder="0" value="{{editDepositAmount}}" bindinput="onEditDepositAmountInput" confirm-type="done" />
-    </view>
-
-    <view class="form-item form-item-switch">
-      <text class="form-label">定金已支付</text>
-      <nb-switch checked="{{editDepositPaid}}" bindchange="onEditDepositPaidChange" label="编辑定金支付状态"/>
+      <text class="form-label">定金</text>
+      <view class="deposit-editor-fields">
+        <picker class="deposit-status-picker" range="{{depositStatusOptions}}" value="{{editDepositStatusIndex}}" bindchange="onEditDepositStatusChange">
+          <view class="form-input picker-input deposit-picker-value">
+            <text>{{depositStatusOptions[editDepositStatusIndex]}}</text>
+            <text class="picker-arrow">⌄</text>
+          </view>
+        </picker>
+        <input placeholder-class="form-placeholder" class="form-input deposit-amount-input" type="digit" placeholder="金额（元）" value="{{editDepositAmount}}" bindinput="onEditDepositAmountInput" confirm-type="done" />
+      </view>
     </view>
   </scroll-view>
 

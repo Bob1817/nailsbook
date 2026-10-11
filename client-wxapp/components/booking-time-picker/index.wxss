@@ -79,9 +79,6 @@
 .btp-date-pressed { opacity: .75; }
 .btp-slot-title { display: block; margin-top: 32rpx; font-size: var(--font-md); font-weight: 600; color: var(--nb-ink); }
 .btp-empty-slots { display: block; padding: 24rpx 0; font-size: var(--font-sm); color: var(--nb-muted); }
-.btp-time-grid-horizontal .btp-time-item { background: var(--nb-surface); border-radius: 999rpx; min-height: 44px; box-sizing: border-box; }
-.btp-time-grid-horizontal .btp-time-active { background: var(--nb-ink); color: var(--nb-inverse); box-shadow: none; }
-
  .btp-date-heading { display: block; margin-bottom: 24rpx; font-size: var(--font-md); font-weight: 600; color: var(--nb-ink); }
 .btp-strip-layout { display: flex; align-items: stretch; gap: 12rpx; height: 126rpx; }
 .btp-date-strip { flex: 1; min-width: 0; width: auto; height: 126rpx; white-space: nowrap; }
@@ -89,6 +86,7 @@
 .btp-date-card { width: 96rpx; height: 126rpx; min-height: 126rpx; flex: 0 0 96rpx; padding: 14rpx 0; gap: 4rpx; border-radius: var(--radius-lg); background: var(--nb-page); overflow: hidden; }
 .btp-date-active { background: var(--nb-action); }
 .btp-date-disabled { color: var(--nb-control); }
-.btp-time-grid-horizontal { gap: 12rpx; }
-.btp-time-grid-horizontal .btp-time-item { background: var(--nb-page); padding: 8rpx 0; }
-.btp-time-grid-horizontal .btp-time-active { background: var(--nb-action); }
+.btp-time-strip { width: 100%; margin-top: var(--space-md); white-space: nowrap; }
+.btp-time-row { display: inline-flex; gap: 12rpx; padding-right: 4rpx; }
+.btp-time-item-horizontal { width: 128rpx; min-height: 44px; box-sizing: border-box; flex: 0 0 128rpx; padding: 8rpx 0; border-radius: 999rpx; background: var(--nb-page); }
+.btp-time-item-horizontal.btp-time-active { background: var(--nb-action); color: var(--nb-inverse); box-shadow: none; }

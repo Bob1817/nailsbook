@@ -1,6 +1,6 @@
 // 技师预约数据加工：规范化 + 行程展示元数据
 
-const { parseDate, isSameDay, formatBookingDate } = require('./format');
+const { parseDate, isSameDay, formatBookingDate, formatClock } = require('./format');
 
 // ========== 状态映射 ==========
 const ORDER_STATUS_LABELS = {
@@ -96,10 +96,62 @@ function normalizeOrder(raw) {
     customerName: raw.customer?.name || '客户',
     customerPhone: raw.customer?.phone || '',
     customerAvatar: raw.customer?.avatarUrl || '',
-    serviceName: raw.sourceWork?.title || raw.customTitle || raw.customServiceRequest?.title || raw.designRequest?.title || serviceNames.join('、') || raw.service?.name || raw.serviceName || (raw.quickBooking ? '快捷预约 · 款式待沟通' : '预约服务'),
+    serviceName: (raw.isRepeatBooking && raw.customTitle) || raw.sourceWork?.title || raw.customTitle || raw.customServiceRequest?.title || raw.designRequest?.title || serviceNames.join('、') || raw.service?.name || raw.serviceName || (raw.quickBooking ? '快捷预约 · 款式待沟通' : '预约服务'),
     latitude: raw.clientAddress?.latitude,
     longitude: raw.clientAddress?.longitude,
     shopName: raw.shopName || ''
+  };
+}
+
+const REBOOKABLE_STATUSES = ['rejected', 'cancelled', 'completed', 'expired', 'no_show'];
+
+function normalizeAddress(value) {
+  return String(value || '').replace(/\s+/g, '');
+}
+
+function getBookingSourceLabel(raw) {
+  if (raw.isRepeatBooking || raw.attributionChannel === 'repeat') return '再次预约';
+  if (raw.quickBooking) return '快速预约';
+  if (raw.sourceWorkId || raw.sourceWork) return '预约同款';
+  if (raw.source === 'technician') return '美甲师代客预约';
+  return '美甲师主页';
+}
+
+function getActionStatus(status) {
+  if (status === 'quoted' || status === 'pending_client_confirm') return 'pending_agree';
+  if (status === 'confirmed') return 'pending_shop';
+  return status;
+}
+
+function decorateTechnicianOrder(raw, shops = []) {
+  const order = normalizeOrder(raw);
+  if (!order) return null;
+  const orderAddress = normalizeAddress(order.address);
+  const configuredShop = (Array.isArray(shops) ? shops : []).find((shop) => {
+    if (!shop || shop.enabled === false) return false;
+    const fullAddress = normalizeAddress([
+      shop.province, shop.city, shop.district, shop.detailAddress, shop.doorInfo
+    ].filter(Boolean).join(''));
+    const detailAddress = normalizeAddress(shop.detailAddress);
+    return orderAddress && (fullAddress === orderAddress || (detailAddress && orderAddress.includes(detailAddress)));
+  });
+  const status = getActionStatus(order.status);
+  const price = Number(order.price) || 0;
+  return {
+    ...order,
+    _clock: formatClock(order.startTime),
+    _statusLabel: order.status === 'rejected'
+      ? '已驳回'
+      : (order.status === 'no_show' ? '已爽约' : getStatusLabel(order.status)),
+    _statusTone: getStatusTone(order.status),
+    _priceText: price > 0 ? `¥${Number.isInteger(price) ? price : price.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')}` : '',
+    _sourceLabel: getBookingSourceLabel(raw),
+    _serviceLabel: order.serviceName || '预约项目待确认',
+    _shopName: order.shopName || (configuredShop && configuredShop.name) || '门店待确认',
+    _notes: raw.remark && raw.remark !== order.serviceName ? raw.remark : (raw.note || ''),
+    _canRebook: REBOOKABLE_STATUSES.includes(order.status),
+    _depositPaid: !!raw.isDepositPaid,
+    _actionStatus: status
   };
 }
 
@@ -204,6 +256,8 @@ function buildDashboardSummary(orders, now = new Date()) {
 
 module.exports = {
   normalizeOrder,
+  decorateTechnicianOrder,
+  getBookingSourceLabel,
   getOrderStateMeta,
   resolveOrderPresentation,
   estimateSingleTravelMinutes,

@@ -6,7 +6,7 @@
     <view class="hero-icon-wrap">
       <image class="hero-icon" src="/static/icons/role-client.svg" mode="aspectFit" />
     </view>
-    <text class="hero-title">欢迎加入 NailBook</text>
+    <text class="hero-title">欢迎加入 OnlyNail</text>
     <text class="hero-sub">选择你当前要使用的身份，随时可以在"我的"页面切换</text>
   </view>
 

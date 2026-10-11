@@ -6,17 +6,15 @@ const {
 } = require('../../../utils/format');
 const {
   normalizeOrder,
-  resolveOrderPresentation,
-  getStatusLabel,
-  getStatusTone
+  decorateTechnicianOrder
 } = require('../../../utils/order');
+const { technicianBookingCardHandlers = {} } = require('../../../utils/technician-booking-actions');
 
 // 行程状态：已确认排期 / 进行中（完成预约但未做完美甲）
 const TRIP_STATUSES = ['pending_shop', 'in_progress'];
 const WEEK = ['日', '一', '二', '三', '四', '五', '六'];
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
 const INVALID_INCOME_STATUSES = ['cancelled', 'expired', 'rejected'];
-
 function dateKey(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
@@ -40,6 +38,14 @@ function periodTotals(relation, totals) {
 }
 
 Page({
+  onBookingCardOpen: technicianBookingCardHandlers.onBookingCardOpen,
+  onBookingCardQuote: technicianBookingCardHandlers.onBookingCardQuote,
+  onBookingCardWithdrawQuote: technicianBookingCardHandlers.onBookingCardWithdrawQuote,
+  onBookingCardEditBooking: technicianBookingCardHandlers.onBookingCardEditBooking,
+  onBookingCardReject: technicianBookingCardHandlers.onBookingCardReject,
+  onBookingCardCancel: technicianBookingCardHandlers.onBookingCardCancel,
+  onBookingCardComplete: technicianBookingCardHandlers.onBookingCardComplete,
+  onBookingCardRebook: technicianBookingCardHandlers.onBookingCardRebook,
   data: {
     bookingDayReady: false,
     dayAccepting: true,
@@ -113,12 +119,16 @@ Page({
     this.setData({ loading: true });
     this.loadBookingDays();
     try {
-      const [res, calendarResult] = await Promise.all([
+      const [res, calendarResult, technicianProfile] = await Promise.all([
         api.technician.orders.list({}),
-        api.technician.orders.incomeCalendar().catch(() => null)
+        api.technician.orders.incomeCalendar().catch(() => null),
+        api.technician.auth && api.technician.auth.getUserInfo ? api.technician.auth.getUserInfo().catch(() => ({})) : Promise.resolve({})
       ]);
       const raw = Array.isArray(res) ? res : (res.list || res.data || []);
-      this._allOrders = raw.map(normalizeOrder).filter(Boolean).map(this._decorate);
+      this._configuredShops = Array.isArray(technicianProfile.shopAddresses)
+        ? technicianProfile.shopAddresses.filter(shop => shop && shop.enabled !== false)
+        : [];
+      this._allOrders = raw.map(item => decorateTechnicianOrder(item, this._configuredShops)).filter(Boolean);
 
       // 标记有效预约并按日期聚合预计 / 实际收入
       const marked = {};
@@ -168,20 +178,6 @@ Page({
       this.setData({ loading: false });
       wx.showToast({ title: err.message || '加载失败', icon: 'none' });
     }
-  },
-
-  _decorate(o) {
-    const pres = resolveOrderPresentation(o);
-    return {
-      ...o,
-      _clock: formatClock(o.startTime),
-      _typeLabel: pres.typeLabel,
-      _typeClass: pres.typeClass,
-      _statusLabel: getStatusLabel(o.status),
-      _statusTone: getStatusTone(o.status),
-      _priceText: Number(o.price) > 0 ? compactMoney(o.price) : '',
-      _avatarChar: (o.customerName && o.customerName[0]) || '客'
-    };
   },
 
   _buildDateStrip(today) {
@@ -470,24 +466,7 @@ Page({
     wx.makePhoneCall({ phoneNumber: String(phone) });
   },
 
-  onBookingCardOpen(e) {
-    const id = e.detail && e.detail.id;
-    if (id) wx.navigateTo({ url: `/pages/technician/order-detail/index?id=${id}` });
-  },
 
-  onBookingCardNavigate(e) {
-    this.navigateToAddress({ currentTarget: { dataset: { id: e.detail && e.detail.id } } });
-  },
-
-  onBookingCardMessage(e) {
-    const clientId = e.detail && e.detail.clientId;
-    if (!clientId) return wx.showToast({ title: '客户尚未关联小程序账号，请拨打电话', icon: 'none' });
-    wx.navigateTo({ url: `/pages/technician/chat-detail/index?clientId=${clientId}` });
-  },
-
-  onBookingCardContact(e) {
-    this.contactCustomer({ currentTarget: { dataset: { phone: e.detail && e.detail.phone } } });
-  }
 });
 
 function markScheduleConflicts(orders) {

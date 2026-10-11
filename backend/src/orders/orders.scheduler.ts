@@ -330,8 +330,6 @@ export class OrdersScheduler {
               expiredFromStatus: order.status,
             },
           });
-          // 释放冻结时段，避免过期预约长期占用美甲师档期
-          await tx.blockedTimeSlot.deleteMany({ where: { orderId: order.id } });
         });
 
         // 系统自动操作（无人工操作者），客户与美甲师双方均通知

@@ -30,18 +30,20 @@
 }
 
 .logo-circle {
-  width: 100rpx;
-  height: 100rpx;
-  border-radius: var(--radius-md);
+  min-width: 120rpx;
+  height: 64rpx;
+  padding: 0 28rpx;
+  box-sizing: border-box;
   background: var(--brand-gradient);
+  border-radius: 32rpx;
+  color: var(--text-inverse);
+  font-size: 28rpx;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 1rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 24rpx;
-  font-size: var(--font-2xl);
-  font-weight: var(--weight-bold);
-  color: var(--text-inverse);
-  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
+  margin-bottom: 32rpx;
 }
 
 .title {

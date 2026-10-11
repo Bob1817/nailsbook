@@ -95,6 +95,10 @@ expect(publicDetailWxml, /<work-detail-view[^>]*canComment="\{\{false\}\}"/, '�
 expect(publicDetailJs, /api\.public\.works\.detail\(this\.workId\)/, '分享落地普通 ID 应使用公开接口，不被登录用户已有绑定范围限制');
 expect(publicDetailJs, /this\.shareToken[\s\S]*api\.public\.works\.shared\(this\.shareToken\)/, '限时分享令牌仍应使用公开分享接口');
 expect(publicDetailJs, /if \(!token\)[\s\S]*buildClientLoginUrl\(returnPath/, '未登录访问作品分享时应先登录并保留返回路径');
+expect(publicDetailWxml, /isOwnerView="\{\{isOwnerView\}\}"/, '公开作品详情应把本人查看状态传给共享详情组件');
+expect(publicDetailJs, /role === 'technician'[\s\S]*String\(currentTechnicianId\) === String\(techId\)/, '美甲师只能在作品属于本人时进入本人查看状态');
+expect(publicDetailJs, /bookSameStyle\(\)[\s\S]*this\.data\.isOwnerView[\s\S]*this\.editWork\(\)/, '本人点击右下角主操作时应进入作品编辑流程');
+expect(publicDetailJs, /editWork\(\)[\s\S]*\/pages\/technician\/work-edit\/index\?id=\$\{workId\}/, '本人作品编辑入口应携带当前作品 ID');
 expect(sharedDetailWxml, /class="title-row"[\s\S]*wx:if="\{\{isAuthor\}\}" class="manage-button"[^>]*aria-label="管理作品"[\s\S]*more-horizontal\.svg/, '共享详情组件应在标题右侧仅向作者展示三点管理入口');
 expect(sharedDetailWxml, /class="work-pricing-card"[\s\S]*服务原价[\s\S]*class="work-price-row"[\s\S]*作品报价[\s\S]*已优惠[\s\S]*其他/, '共享详情组件必须按原价、作品报价和价格差额的层级展示综合报价');
 expect(technicianDetailWxml, /bind:commentmanage="manageComment"/, '美甲师详情页应接入作者评论管理权限');
@@ -115,6 +119,7 @@ expect(sharedDetailWxss, /\.booking-action-face \{[^}]*height:\s*44px;[^}]*borde
 expect(sharedDetailWxml, /class="send"(?![^>]*size="mini")/, '评论发送按钮不得使用 size="mini" 造成字号与居中偏差');
 expect(sharedDetailWxss, /button\.send,\s*\.send \{[^}]*display:\s*flex;[^}]*align-items:\s*center;[^}]*justify-content:\s*center;[^}]*font-size:\s*var\(--font-sm\);/, '评论发送按钮必须 flex 垂直水平居中并使用统一字号');
 expect(sharedDetailWxml, /class="visitor-bar-btn visitor-bar-btn-primary booking-action"[^>]*bindtap="bookSame"/, '游客作品详情底部预约入口必须接入统一按钮标准');
+expect(sharedDetailWxml, /disabled="\{\{!isOwnerView && visitorInfo\.acceptingBookings === false\}\}"[^>]*>\{\{isOwnerView \? '编辑作品'/, '本人作品主操作应显示编辑作品且不受接单状态影响');
 expect(sharedDetailWxss, /@import ['"]\.\.\/\.\.\/styles\/booking-actions\.wxss['"];/, '共享作品详情组件必须引入统一按钮样式');
 expect(sharedDetailWxss, /\.visitor-bar-btn\.booking-action \{[^}]*min-height:44px;[^}]*height:44px;[^}]*border-radius:8px;[^}]*font-size:var\(--font-sm\);[^}]*box-shadow:none;/, '游客作品详情底部预约入口必须使用紧凑按钮规格');
 expect(sharedDetailWxml, /<button[^>]*open-type="share"[^>]*>分享给好友<\/button>/, '分享给好友必须使用支持 open-type 的原生 button');

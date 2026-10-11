@@ -267,7 +267,11 @@ const client = {
   artists: {
     followStatus: (id) => api.get(`${C}/artists/${id}/follow`),
     follow: (id) => api.post(`${C}/artists/${id}/follow`, {}),
-    unfollow: (id) => api.del(`${C}/artists/${id}/follow`)
+    unfollow: (id) => api.del(`${C}/artists/${id}/follow`),
+    homepageInteractions: (id) => api.get(`${C}/artists/${id}/homepage-interactions`),
+    toggleHomepageLike: (id) => api.post(`${C}/artists/${id}/homepage-like`, {}),
+    toggleHomepageFavorite: (id) => api.post(`${C}/artists/${id}/homepage-favorite`, {}),
+    addHomepageComment: (id, content) => api.post(`${C}/artists/${id}/homepage-comments`, { content })
   },
 
   referrals: {
@@ -282,6 +286,8 @@ const client = {
 const technician = {
   invitationLink: () => api.post(`${T}/invitation/link`, {}),
   artistInteractions: (params) => api.get(`${T}/artist-interactions`, params),
+  manageArtistComment: (id, action) => api.patch(`${T}/artist-interactions/comments/${id}`, { action }),
+  deleteArtistComment: (id) => api.del(`${T}/artist-interactions/comments/${id}`),
   brandProfile: {
     get: () => api.get(`${T}/brand-profile`),
     update: (data) => api.put(`${T}/brand-profile`, data)
@@ -332,12 +338,15 @@ const technician = {
     create: (data) => api.post(`${T}/orders`, data),
     update: (id, data) => api.patch(`${T}/orders/${id}`, data),
     quote: (id, data) => api.patch(`${T}/orders/${id}/review`, data),
+    withdrawQuote: (id) => api.patch(`${T}/orders/${id}/withdraw-quote`, {}),
     confirm: (id, data) => api.patch(`${T}/orders/${id}/confirm`, data || {}),
     complete: (id, data) => api.patch(`${T}/orders/${id}/complete`, data || {}),
     cancel: (id, data) => api.patch(
       `${T}/orders/${id}/cancel`,
       typeof data === 'string' ? { reason: data } : (data || {})
     ),
+    reject: (id, reason) => api.patch(`${T}/orders/${id}/reject`, { status: 'rejected', reason }),
+    repeat: (id, data) => api.post(`${T}/orders/${id}/repeat`, data),
     updateActualAmount: (id, actualAmount) => api.patch(`${T}/orders/${id}/actual-amount`, { actualAmount }),
     tradeList: (params) => api.get(`${T}/orders/trade-orders/list`, params)
   },
@@ -615,6 +624,7 @@ const publicApi = {
     services: (id, params) => api.get(`${P}/brands/${id}/services`, params, { needAuth: false }),
     works: (id, params) => api.get(`${P}/brands/${id}/works`, params),
     reviews: (id, params) => api.get(`${P}/brands/${id}/reviews`, params, { needAuth: false }),
+    comments: (id, params) => api.get(`${P}/brands/${id}/comments`, params, { needAuth: false }),
     availability: (id, params) => api.get(`${P}/brands/${id}/availability`, params, { needAuth: false })
   },
   referrals: {

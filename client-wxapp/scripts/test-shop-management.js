@@ -20,13 +20,13 @@ assert(/\.switch-track\s*\{[^}]*background:var\(--nb-secondary\)/.test(switchWxs
 assert(wxml.includes('form-section-title">基本信息') && wxml.includes('form-section-title">经营设置'), '店铺编辑表单必须按基本信息和经营设置分组');
 assert(wxml.includes('class="form-item guidance-setting form-item-last"') && wxml.includes('按到店顺序添加文字和图片'), '到店指引入口必须与开关形成清晰的设置分组');
 assert(wxml.includes('class="bh-row"') && wxml.includes('class="bh-time-btn"'), '营业时间必须采用紧凑且可扫读的单行结构');
-assert(/\.sheet-title \{[^}]*font-size: 36rpx;/.test(wxss) && /\.form-section-title \{[^}]*font-size:30rpx;/.test(wxss), '弹窗标题与分组标题必须建立明确字号层级');
-assert(/\.label\s*\{[^}]*font-size:\s*var\(--font-sm\);[^}]*font-weight:var\(--weight-medium\);/.test(wxss), '字段标签必须使用标准表单文字层级');
+assert(/\.sheet-title \{[^}]*font-size: 36rpx;/.test(wxss) && /\.form-section-title \{[^}]*font-size:28rpx;/.test(wxss), '弹窗标题与分组标题必须建立明确字号层级');
+assert(/\.label\s*\{[^}]*font-size:\s*26rpx;[^}]*font-weight:\s*var\(--weight-medium\);/.test(wxss), '字段标签必须使用紧凑表单文字层级');
 assert(/\.input\s*\{[^}]*height:\s*var\(--input-height\);/.test(wxss)
   && /\.input\s*\{[^}]*background:\s*var\(--nb-soft-surface\);/.test(wxss)
   && /\.input\s*\{[^}]*border:\s*2rpx solid transparent;/.test(wxss), '输入框必须使用统一高度、边界和表面样式');
 assert(/\.input:focus\s*\{[^}]*border-color:var\(--border-focus\);/.test(wxss), '输入框必须提供清晰的聚焦反馈');
-assert(/\.picker-input\.placeholder\s*\{[^}]*font-size:\s*var\(--font-sm\);/.test(wxss), '地区选择提示文字必须与输入框提示文字字号一致');
+assert(/\.picker-input\.placeholder\s*\{[^}]*font-size:\s*26rpx;/.test(wxss), '地区选择提示文字必须与字段标签保持一致');
 assert(!wxml.includes('class="sheet-close"') && wxml.includes('<button class="btn-cancel" bindtap="closeModal"'), '弹窗关闭操作必须移出微信右上角系统控制区');
 assert(/\.btn-cancel,\s*\.btn-save\s*\{[^}]*height: 88rpx;/.test(wxss), '取消与保存按钮必须满足 44px 触控尺寸');
 assert(/\.sheet-footer \{[^}]*safe-area-inset-bottom/.test(wxss), '底部保存操作必须适配安全区');

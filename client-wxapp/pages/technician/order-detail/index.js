@@ -37,16 +37,18 @@ const STATUS_DESC = {
 // 按状态返回详情页底部应显示的动作
 function actionsForStatus(status) {
   const QUOTE  = { key: 'quote',   label: '发送报价', style: 'action-primary' };
-  const CONFIRM= { key: 'confirm', label: '确认排期', style: 'action-primary' };
+  const EDIT_QUOTE = { key: 'edit_quote', label: '编辑报价', style: 'action-primary' };
+  const WITHDRAW_QUOTE = { key: 'withdraw_quote', label: '取消报价', style: 'action-danger' };
+  const EDIT_BOOKING = { key: 'edit_booking', label: '编辑预约', style: 'action-secondary' };
   const COMPLETE={ key: 'complete',label: '确认完成', style: 'action-primary' };
   const CANCEL = { key: 'cancel',  label: '取消预约', style: 'action-danger' };
 
   switch (status) {
     case 'pending_quote':   return [QUOTE, CANCEL];
-    case 'pending_agree':   return [QUOTE, CANCEL];
+    case 'pending_agree':   return [EDIT_QUOTE, WITHDRAW_QUOTE];
     case 'pending_client_confirm': return [CANCEL];
-    case 'pending_confirm': return [QUOTE, CANCEL, CONFIRM];
-    case 'pending_shop':    return [CANCEL];
+    case 'pending_confirm': return [EDIT_BOOKING, CANCEL];
+    case 'pending_shop':    return [EDIT_BOOKING, CANCEL];
     case 'in_progress':     return [CANCEL, COMPLETE];
     default:                return [];
   }
@@ -102,6 +104,8 @@ Page({
     quoteTotalDuration: 0,
     quoteDepositAmount: '',
     quoteDepositPaid: false,
+    quoteDepositStatusIndex: 0,
+    depositStatusOptions: ['未支付', '已支付'],
 
     // 取消 sheet
     showCancel: false,
@@ -122,6 +126,7 @@ Page({
     editQuotePrice: '',
     editDepositAmount: '',
     editDepositPaid: false,
+    editDepositStatusIndex: 0,
     editPriceSubmitting: false,
 
     // 完成及实际支付金额
@@ -284,11 +289,12 @@ Page({
         quoteDiscount: raw.discountAmountFen ? String(raw.discountAmountFen / 100) : ''
         ,quoteDepositAmount: depositAmount ? String(depositAmount) : ''
         ,quoteDepositPaid: !!raw.isDepositPaid
+        ,quoteDepositStatusIndex: raw.isDepositPaid ? 1 : 0
       });
       this.recalculateQuote();
 
       // 从列表跳来时如果带 action=quote，直接打开报价 sheet
-      if (this.pendingAction === 'quote' && actionsForStatus(o.status).some((a) => a.key === 'quote')) {
+      if (this.pendingAction === 'quote' && actionsForStatus(o.status).some((a) => ['quote', 'edit_quote'].includes(a.key))) {
         this.pendingAction = '';
         setTimeout(() => this.openQuote(), 100);
       }
@@ -305,6 +311,9 @@ Page({
     this.setData({ showActionMenu: false });
     switch (key) {
       case 'quote':    return this.openQuote();
+      case 'edit_quote': return this.openQuote();
+      case 'withdraw_quote': return this.withdrawQuote();
+      case 'edit_booking': return this.editBookingTime();
       case 'confirm':  return this.confirmOrder();
       case 'complete': return this.completeOrder();
       case 'cancel':   return this.openCancel();
@@ -469,7 +478,10 @@ Page({
   },
   onQuoteRemarkInput(e)   { this.setData({ quoteRemark: e.detail.value }); },
   onQuoteDepositAmountInput(e) { this._quoteDepositTouched = true; this.setData({ quoteDepositAmount: e.detail.value }); },
-  onQuoteDepositPaidChange(e) { this.setData({ quoteDepositPaid: e.detail.value }); },
+  onQuoteDepositStatusChange(e) {
+    const index = Number(e.detail.value) === 1 ? 1 : 0;
+    this.setData({ quoteDepositStatusIndex: index, quoteDepositPaid: index === 1 });
+  },
 
   async submitQuote() {
     if (this.data.submitting) return;
@@ -501,6 +513,26 @@ Page({
     finally { this.setData({ submitting: false }); }
   },
 
+  async withdrawQuote() {
+    if (this.data.submitting) return;
+    const result = await wx.showModal({
+      title: '取消报价',
+      content: '撤回后客户将无法确认当前报价，你可以重新编辑并发送。',
+      confirmText: '确认撤回'
+    });
+    if (!result.confirm) return;
+    this.setData({ submitting: true });
+    try {
+      await api.technician.orders.withdrawQuote(this.orderId);
+      wx.showToast({ title: '报价已撤回', icon: 'success' });
+      await this.loadOrder();
+    } catch (err) {
+      wx.showToast({ title: err.message || '撤回失败', icon: 'none' });
+    } finally {
+      this.setData({ submitting: false });
+    }
+  },
+
   confirmOrder() {
     if (this.data.confirmationOrder || !this.data.order) return;
     this.openQuote();
@@ -510,7 +542,8 @@ Page({
 
   // ---------- 报价调整 ----------
   openEditPrice() {
-    if (this._rawOrder && ['pending_quote', 'pending_confirm', 'pending_agree'].includes(this._rawOrder.status)) return this.openQuote();
+    if (this._rawOrder && ['pending_quote', 'pending_agree'].includes(this._rawOrder.status)) return this.openQuote();
+    if (this._rawOrder && ['pending_confirm', 'pending_shop'].includes(this._rawOrder.status)) return wx.showToast({ title: '报价已确认，仅可编辑预约时间', icon: 'none' });
     if (this.data.quickBooking) return wx.showToast({ title: '调整报价需先由客户拒绝，再重新报价', icon: 'none' });
     var o = this.data.order;
     if (!o) return;
@@ -520,13 +553,17 @@ Page({
       editQuotePrice: defaultPrice ? String(defaultPrice) : '',
       editDepositAmount: o.depositAmount ? String(o.depositAmount) : '',
       editDepositPaid: !!o.depositPaid,
+      editDepositStatusIndex: o.depositPaid ? 1 : 0,
       editPriceSubmitting: false
     });
   },
   closeEditPrice() { this.setData({ showEditPrice: false }); },
   onEditQuotePriceInput(e) { this.setData({ editQuotePrice: e.detail.value }); },
   onEditDepositAmountInput(e) { this.setData({ editDepositAmount: e.detail.value }); },
-  onEditDepositPaidChange(e) { this.setData({ editDepositPaid: e.detail.value }); },
+  onEditDepositStatusChange(e) {
+    const index = Number(e.detail.value) === 1 ? 1 : 0;
+    this.setData({ editDepositStatusIndex: index, editDepositPaid: index === 1 });
+  },
 
   async submitEditPrice() {
     if (this.data.editPriceSubmitting) return;
@@ -601,7 +638,7 @@ Page({
 
   // ---------- 编辑预约时间（跳转日历页）----------
   editBookingTime() {
-    if (this._rawOrder && ['pending_quote', 'pending_confirm', 'pending_agree'].includes(this._rawOrder.status)) return this.openQuote();
+    if (this._rawOrder && ['pending_quote', 'pending_agree'].includes(this._rawOrder.status)) return this.openQuote();
     var o = this.data.order;
     if (!o) return;
     var start = parseDate(o.startTime);
@@ -623,7 +660,8 @@ Page({
 
   // ---------- 编辑服务项目 ----------
   openServiceEdit() {
-    if (this._rawOrder && ['pending_quote', 'pending_confirm', 'pending_agree'].includes(this._rawOrder.status)) return this.openQuote();
+    if (this._rawOrder && ['pending_quote', 'pending_agree'].includes(this._rawOrder.status)) return this.openQuote();
+    if (this._rawOrder && ['pending_confirm', 'pending_shop'].includes(this._rawOrder.status)) return wx.showToast({ title: '报价已确认，仅可编辑预约时间', icon: 'none' });
     if (this.data.quickBooking) return;
     var o = this.data.order;
     if (!o) return;

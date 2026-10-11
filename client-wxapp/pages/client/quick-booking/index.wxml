@@ -9,7 +9,7 @@
     <scroll-view class="page-scroll" scroll-y enhanced show-scrollbar="{{false}}">
       <view class="content">
         <view class="hero-copy">
-          <text class="eyebrow">NAILBOOK 专属预约</text>
+          <text class="eyebrow">ONLYNAIL 专属预约</text>
           <text class="title">{{owner ? '分享你的预约主页' : '把喜欢，约进日程里'}}</text>
           <text class="lead">{{owner ? '客户打开后可直接选择时间，减少来回沟通。' : '选好时间提交需求，价格与时长确认后预约正式成立。'}}</text>
         </view>

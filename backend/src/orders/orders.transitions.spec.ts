@@ -46,6 +46,8 @@ describe('OrdersService 流转成功路径', () => {
       contentPublicationTask: { upsert: jest.fn().mockResolvedValue({ id: 1 }) },
       actionTask: { upsert: jest.fn().mockResolvedValue({ id: 1 }) },
       customer: { update: jest.fn().mockResolvedValue({ id: 3 }) },
+      technician: { findUnique: jest.fn().mockResolvedValue({ status: 'active' }) },
+      clientUser: { findUnique: jest.fn().mockResolvedValue({ status: 'active' }) },
       service: { findUnique: jest.fn().mockResolvedValue(null) },
     };
     service = new OrdersService(
@@ -114,6 +116,60 @@ describe('OrdersService 流转成功路径', () => {
     );
   });
 
+  it('withdrawQuote：撤回待确认报价并使旧报价版本失效', async () => {
+    const updatedAt = new Date('2026-10-11T00:00:00Z');
+    jest.spyOn(service, 'findOneForTechnician').mockResolvedValue({
+      id: 1,
+      status: 'pending_agree',
+      technicianId: 7,
+      clientUserId: 11,
+      quoteVersion: 3,
+      updatedAt,
+    } as never);
+
+    const result = await service.withdrawQuote(1, 7);
+
+    expect(prisma.order.updateMany).toHaveBeenCalledWith({
+      where: { id: 1, status: 'pending_agree', updatedAt },
+      data: {
+        status: 'pending_quote',
+        bookingPhase: 'application',
+        quoteVersion: { increment: 1 },
+      },
+    });
+    expect(result).toMatchObject({ status: 'pending_quote', quoteVersion: 4 });
+    expect(prisma.blockedTimeSlot.deleteMany).not.toHaveBeenCalled();
+    expect(prisma.message.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ content: '美甲师已撤回报价，将重新调整方案～' }),
+    }));
+  });
+
+  it('withdrawQuote：拒绝撤回非待客户确认状态', async () => {
+    jest.spyOn(service, 'findOneForTechnician').mockResolvedValue({
+      id: 1,
+      status: 'pending_shop',
+      technicianId: 7,
+    } as never);
+
+    await expect(service.withdrawQuote(1, 7)).rejects.toThrow('仅待客户确认的报价可以撤回');
+    expect(prisma.order.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('withdrawQuote：并发状态变化时不发送撤回通知', async () => {
+    jest.spyOn(service, 'findOneForTechnician').mockResolvedValue({
+      id: 1,
+      status: 'pending_agree',
+      technicianId: 7,
+      clientUserId: 11,
+      quoteVersion: 3,
+      updatedAt: new Date('2026-10-11T00:00:00Z'),
+    } as never);
+    prisma.order.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(service.withdrawQuote(1, 7)).rejects.toThrow('报价状态已变化，请刷新后重试');
+    expect(prisma.message.create).not.toHaveBeenCalled();
+  });
+
   it('确认时改价转为客户确认，不直接排期', async () => {
     jest.spyOn(service, 'findOne').mockResolvedValue({ id: 1, technicianId: 7, status: 'pending_confirm', finalPriceFen: 28000, depositAmount: 0, startTime: new Date('2099-06-10T02:00:00Z') } as never);
     const review = jest.spyOn(service, 'review').mockResolvedValue({ status: 'pending_agree' } as never);
@@ -134,7 +190,7 @@ describe('OrdersService 流转成功路径', () => {
       endTime: new Date('2099-06-10T12:00:00Z'),
     } as never);
 
-    await expect(service.confirm(1)).rejects.toThrow('该时间段已被预约');
+    await expect(service.confirm(1)).rejects.toThrow('重新选择预约时间');
     expect(prisma.order.update).not.toHaveBeenCalled();
     expect(prisma.blockedTimeSlot.create).not.toHaveBeenCalled();
   });
@@ -360,6 +416,69 @@ describe('OrdersService 流转成功路径', () => {
         create: expect.objectContaining({ amount: 0, status: 'voided' }),
       }),
     );
+  });
+
+  it('reject：待报价预约写入驳回状态和原因', async () => {
+    jest.spyOn(service, 'findOne').mockResolvedValue({
+      id: 1,
+      status: 'pending_quote',
+      technicianId: 7,
+      customerId: 3,
+      clientUserId: null,
+      isDepositPaid: false,
+    } as never);
+
+    await service.cancel(1, '当日档期已满', undefined, 'rejected');
+
+    expect(prisma.order.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ status: 'rejected' }),
+    }));
+    expect(prisma.order.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        rejectionReason: '当日档期已满',
+        bookingPhase: 'closed',
+      }),
+    }));
+  });
+
+  it('repeatBooking：已结束预约复制原信息，仅替换时间和可编辑内容', async () => {
+    jest.spyOn(service, 'findOneForTechnician').mockResolvedValue({
+      id: 8,
+      status: 'completed',
+      technicianId: 7,
+      customerId: 3,
+      clientUserId: 11,
+      addressId: 4,
+      address: '杭州市西湖区测试路1号',
+      serviceType: '到店美甲',
+      startTime: new Date('2099-06-10T02:00:00Z'),
+      endTime: new Date('2099-06-10T04:00:00Z'),
+      quotePrice: 398,
+      customTitle: '原预约项目',
+      remark: '原备注',
+      serviceLines: [],
+    } as never);
+    prisma.order.create = jest.fn().mockResolvedValue({ id: 9 });
+
+    await service.repeatBooking(8, 7, {
+      startTime: '2099-06-12T02:00:00.000Z',
+      serviceName: '新预约项目',
+      note: '新备注',
+    });
+
+    expect(prisma.order.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        customerId: 3,
+        address: '杭州市西湖区测试路1号',
+        customTitle: '新预约项目',
+        remark: '新备注',
+        isRepeatBooking: true,
+        status: 'pending_client_confirm',
+      }),
+    }));
+    expect(prisma.blockedTimeSlot.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ orderId: 9 }),
+    }));
   });
 
   it('已完成预约可单独修改实际支付金额和收入快照', async () => {

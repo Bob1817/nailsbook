@@ -31,4 +31,6 @@ const css = fs.readFileSync(file.replace('.js', '.wxss'), 'utf8');
 assert(css.includes('.lifecycle-active { background: var(--nb-success-surface); color: var(--nb-success); }'));
 assert(css.includes('text-align: center;'));
 assert(!css.includes('.stat-item:first-child'));
+assert.match(css, /\.customer-card\s*\{[^}]*padding:\s*24rpx;/s, '客户卡片上下内边距必须一致');
+assert.match(css, /\.stats-grid\s*\{[^}]*padding:\s*22rpx\s+0\s+0;/s, '统计区域不得与卡片叠加底部留白');
 console.log('Customer lifecycle, account precedence and centered metrics checks passed.');

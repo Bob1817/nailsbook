@@ -46,6 +46,17 @@ const editing = buildSlotStatuses({
 });
 assert.strictEqual(editing.find(item => item.time === '15:00').occupied, false, '编辑时必须排除当前订单');
 
+const pendingDuration = buildSlotStatuses({
+  serviceDate: '2026-08-03', serviceSchedule: schedule, shopMode: true, shop,
+  durationMinutes: 0, durationPending: true, slots, blockedSlots: [],
+  now: new Date('2026-08-01T10:00:00')
+});
+assert.deepStrictEqual(
+  pendingDuration.map(item => item.time),
+  ['10:00'],
+  '无明确服务时长的预约必须按 5 小时检查并锁定档期'
+);
+
 assert.deepStrictEqual(buildSlotStatuses({
   serviceDate: '2026-08-10', serviceSchedule: schedule, shopMode: true, shop,
   durationMinutes: 60, slots, blockedSlots: [], now: new Date('2026-08-01T10:00:00')
@@ -65,5 +76,10 @@ entryFiles.forEach(file => {
   assert.match(source, /<booking-time-picker/, `${file} 必须使用统一预约时间组件`);
   assert.match(source, /duration-minutes=/, `${file} 必须传入服务时长`);
 });
+const createOrderSource = fs.readFileSync(path.join(root, 'pages/client/create-order/index.js'), 'utf8');
+const createOrderTemplate = fs.readFileSync(path.join(root, 'pages/client/create-order/index.wxml'), 'utf8');
+assert.match(createOrderSource, /showConflictTimePicker:\s*true/, '预约冲突后必须打开时间重选弹窗');
+assert.match(createOrderSource, /confirmConflictTime:[\s\S]*this\.doSubmit\(\)/, '选择新时间后必须重新提交并由服务端复检');
+assert.match(createOrderTemplate, /showConflictTimePicker[\s\S]*<booking-time-picker/, '冲突弹窗必须复用统一时间组件并加载占用信息');
 
 console.log('Booking time engine checks passed.');

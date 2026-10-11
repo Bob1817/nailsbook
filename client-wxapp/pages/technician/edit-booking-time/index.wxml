@@ -1,17 +1,30 @@
-<nav-bar title="修改预约时间" showBack/>
+<nav-bar title="{{repeatMode ? '再次预约' : '修改预约时间'}}" showBack/>
 <view class="page">
   <!-- 当前预约信息 -->
   <view class="section">
     <view class="section-head">
-      <text class="section-title">当前预约时间</text>
+      <text class="section-title">{{repeatMode ? '原预约' : '当前预约时间'}}</text>
     </view>
+    <text wx:if="{{repeatMode}}" class="summary-line">{{customerName}} · {{bookingSource}}</text>
     <text class="current-value">{{originalDate}} {{originalTime}}</text>
+    <text wx:if="{{repeatMode && selectedShopName}}" class="summary-line">预约门店：{{selectedShopName}}</text>
+  </view>
+
+  <view wx:if="{{repeatMode}}" class="section">
+    <view class="field-group">
+      <text class="field-label">预约项目</text>
+      <input class="field-input" value="{{serviceName}}" maxlength="100" placeholder="请填写预约项目" bindinput="onServiceNameInput" />
+    </view>
+    <view class="field-group field-group-last">
+      <text class="field-label">备注信息</text>
+      <textarea class="field-textarea" value="{{note}}" maxlength="500" placeholder="可选，填写本次预约需求" bindinput="onNoteInput" />
+    </view>
   </view>
 
   <!-- 预约时间选择组件 -->
   <view class="section">
     <view class="section-head">
-      <text class="section-title">选择新时间</text>
+      <text class="section-title">{{repeatMode ? '重新选择预约时间' : '选择新时间'}}</text>
     </view>
     <text wx:if="{{loading}}">正在加载可预约时间…</text>
     <view wx:elif="{{loadError}}">
@@ -34,8 +47,8 @@
   <view class="submit-bar">
     <view class="submit-btns">
       <view class="submit-btn submit-btn-cancel booking-action {{saving ? 'btn-disabled' : ''}}" role="button" aria-disabled="{{saving}}" bindtap="goBack">{{saved ? '返回预约' : '暂不修改'}}</view>
-      <view class="submit-btn submit-btn-save booking-action {{(!selectedDate || !selectedTime || !techId || loading || loadError || saving || saved) ? 'btn-disabled' : ''}}" role="button" aria-disabled="{{!selectedDate || !selectedTime || !techId || loading || !!loadError || saving || saved}}" bindtap="saveTime">
-        {{saved ? '已保存' : (saving ? '保存中...' : '保存修改')}}
+      <view class="submit-btn submit-btn-save booking-action {{(!selectedDate || !selectedTime || !techId || loading || loadError || saving || saved || (repeatMode && !serviceName)) ? 'btn-disabled' : ''}}" role="button" aria-disabled="{{!selectedDate || !selectedTime || !techId || loading || !!loadError || saving || saved || (repeatMode && !serviceName)}}" bindtap="saveTime">
+        {{saved ? (repeatMode ? '已发起' : '已保存') : (saving ? '提交中...' : (repeatMode ? '发起新预约' : '保存修改'))}}
       </view>
     </view>
   </view>

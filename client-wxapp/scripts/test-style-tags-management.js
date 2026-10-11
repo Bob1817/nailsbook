@@ -15,7 +15,7 @@ if (!profile.includes('&preview=1&owner=1')) throw new Error('homepage entry mus
 if (!editor.includes('styleTags:this.data.specialties.slice(0,5)')) throw new Error('homepage editor does not persist public styleTags');
 if (!editor.includes("最多展示 5 项擅长风格")) throw new Error('style selection limit feedback is missing');
 if (!editorView.includes('id="styles-editor"') || !editorView.includes('selected-styles')) throw new Error('ordered style selection UI is missing');
-if (!/\.selected-style \{[^}]*min-height:88rpx/.test(editorStyle)) throw new Error('selected style removal target must be at least 44px');
+if (!/\.selected-style \{[^}]*min-height:\s*88rpx/.test(editorStyle)) throw new Error('selected style removal target must be at least 44px');
 if (/DEFAULT_TAGS/.test(publicHome)) throw new Error('public artist page must not fabricate unmanaged default styles');
 
 console.log('Style tags management checks passed.');

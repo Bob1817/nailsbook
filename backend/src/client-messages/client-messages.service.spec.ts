@@ -4,20 +4,23 @@ import { ClientMessagesService } from './client-messages.service';
 describe('ClientMessagesService', () => {
   let service: ClientMessagesService;
   let prisma: {
+    $transaction: jest.Mock;
     clientTechBinding: { findFirst: jest.Mock };
-    conversation: { findFirst: jest.Mock; upsert: jest.Mock };
+    conversation: { findFirst: jest.Mock; upsert: jest.Mock; update: jest.Mock };
     message: { findMany: jest.Mock; create: jest.Mock };
     technician: { findUnique: jest.Mock };
   };
 
   beforeEach(() => {
     prisma = {
+      $transaction: jest.fn().mockImplementation((work) => work(prisma)),
       clientTechBinding: {
         findFirst: jest.fn(),
       },
       conversation: {
         findFirst: jest.fn(),
         upsert: jest.fn(),
+        update: jest.fn().mockResolvedValue({ id: 1, clientId: 11, techId: 7 }),
       },
       message: {
         findMany: jest.fn(),
@@ -27,7 +30,7 @@ describe('ClientMessagesService', () => {
         findUnique: jest.fn(),
       },
     };
-    service = new ClientMessagesService(prisma as never);
+    service = new ClientMessagesService(prisma as never, { broadcastMessage: jest.fn(), broadcastRead: jest.fn() } as never);
   });
 
   it('returns messages only when the conversation belongs to the current client', async () => {

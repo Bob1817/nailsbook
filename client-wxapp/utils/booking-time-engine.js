@@ -33,7 +33,7 @@ function intervalsOverlap(startA, endA, startB, endB) {
 }
 
 function buildSlotStatuses(options) {
-  var durationMinutes = options.durationPending ? 1 : Math.max(1, Number(options.durationMinutes) || 120);
+  var durationMinutes = options.durationPending ? 300 : Math.max(1, Number(options.durationMinutes) || 120);
   var schedule = activeScheduleForDate(options.serviceSchedule, options.serviceDate);
   if (!schedule) return [];
 

@@ -97,6 +97,62 @@
   </view>
 </view>
 
+<view wx:elif="{{variant === 'schedule'}}" class="schedule-card">
+  <view class="schedule-card-body" bindtap="open" role="button" aria-label="查看{{order.customerName || '客户'}}的预约详情">
+    <view class="schedule-date-box">
+      <text class="schedule-date-sub">{{order._cardDate}}</text>
+      <text class="schedule-time">{{order._clock}}</text>
+      <text class="schedule-weekday">{{order._cardWeekday}}</text>
+    </view>
+    <view class="schedule-details">
+      <view class="schedule-title-row">
+        <text class="schedule-customer">{{order.customerName || '客户'}}</text>
+        <text class="schedule-status {{order._statusTone}}">{{order._statusLabel}}</text>
+      </view>
+      <view class="schedule-info-row">
+        <text class="schedule-info-label">来源</text>
+        <text class="schedule-info-value">{{order._sourceLabel}}</text>
+      </view>
+      <view class="schedule-info-row">
+        <text class="schedule-info-label">项目</text>
+        <text class="schedule-info-value">{{order._serviceLabel}}</text>
+      </view>
+      <view class="schedule-info-row">
+        <text class="schedule-info-label">门店</text>
+        <text class="schedule-info-value">{{order._shopName}}</text>
+      </view>
+      <view wx:if="{{order._notes}}" class="schedule-info-row schedule-note-row">
+        <text class="schedule-info-label">备注</text>
+        <text class="schedule-info-value schedule-note">{{order._notes}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="schedule-actions">
+    <block wx:if="{{order._actionStatus === 'pending_quote'}}">
+      <view class="schedule-action schedule-action-danger" catchtap="reject" role="button" aria-label="驳回预约">驳回预约</view>
+      <view class="schedule-action schedule-action-primary" catchtap="quote" role="button" aria-label="立即报价">立即报价</view>
+    </block>
+    <block wx:elif="{{order._actionStatus === 'pending_agree'}}">
+      <view class="schedule-action schedule-action-secondary" catchtap="withdrawQuote" role="button" aria-label="取消报价">取消报价</view>
+      <view class="schedule-action schedule-action-primary" catchtap="quote" role="button" aria-label="编辑报价">编辑报价</view>
+    </block>
+    <block wx:elif="{{order._actionStatus === 'pending_confirm' || order._actionStatus === 'pending_shop'}}">
+      <view class="schedule-action schedule-action-secondary" catchtap="editBooking" role="button" aria-label="编辑预约">编辑预约</view>
+      <view class="schedule-action schedule-action-danger" catchtap="cancel" role="button" aria-label="取消预约">取消预约</view>
+    </block>
+    <block wx:elif="{{order._actionStatus === 'in_progress'}}">
+      <view class="schedule-action schedule-action-secondary" catchtap="open" role="button" aria-label="查看预约详情">预约详情</view>
+      <view class="schedule-action schedule-action-primary" catchtap="complete" role="button" aria-label="确认完成">确认完成</view>
+    </block>
+    <block wx:elif="{{order._canRebook}}">
+      <view class="schedule-action schedule-action-secondary" catchtap="open" role="button" aria-label="查看预约详情">预约详情</view>
+      <view class="schedule-action schedule-action-primary" catchtap="rebook" role="button" aria-label="再次预约">再次预约</view>
+    </block>
+    <view wx:else class="schedule-action schedule-action-primary schedule-action-single" catchtap="open" role="button" aria-label="查看预约详情">预约详情</view>
+  </view>
+</view>
+
 <view wx:else class="booking-card booking-card-compact" bindtap="open" role="button" aria-label="查看{{order.customerName}}的预约详情">
   <view class="booking-main">
     <view class="time-col">

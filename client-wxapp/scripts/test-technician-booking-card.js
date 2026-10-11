@@ -11,16 +11,19 @@ const orders = read('pages/technician/orders/index.wxml');
 const chatDetail = read('pages/technician/chat-detail/index.wxml');
 const allBookings = read('pages/technician/all-bookings/index.wxml');
 const allItineraries = read('pages/technician/all-itineraries/index.wxml');
+const legacySchedule = read('pages/technician/schedule/index.wxml');
 
 assert(home.includes('technician-booking-card') && home.includes('variant="hero"'), '首页下一单必须使用预约卡片 hero 模式');
 assert(!home.includes('今日行程') && !home.includes('variant="compact"'), '首页不应保留无用途的今日行程卡片');
-assert(orders.includes('technician-booking-card') && orders.includes('variant="compact"'), '行程页必须使用预约卡片 compact 模式');
+assert(orders.includes('technician-booking-card') && orders.includes('variant="schedule"'), '行程页必须使用预约卡片 schedule 模式');
 assert(chatDetail.includes('technician-booking-card') && chatDetail.includes('variant="message"'), '聊天预约通知必须使用预约卡片 message 模式');
 assert(!chatDetail.includes('order-card-msg'), '聊天页不应保留重复的预约卡片实现');
-assert(allBookings.includes('technician-booking-card') && allBookings.includes('variant="compact"'), '全部预约页必须使用预约卡片 compact 模式');
+assert(allBookings.includes('technician-booking-card') && allBookings.includes('variant="schedule"'), '全部预约页必须使用与行程一致的预约卡片');
 assert(!allBookings.includes('class="trip-card"'), '全部预约页不应保留重复的预约卡片实现');
-assert(allItineraries.includes('technician-booking-card') && allItineraries.includes('variant="compact"'), '全部行程页必须使用预约卡片 compact 模式');
+assert(allItineraries.includes('technician-booking-card') && allItineraries.includes('variant="schedule"'), '全部行程页必须使用与行程一致的预约卡片');
 assert(!allItineraries.includes('class="trip-card"'), '全部行程页不应保留重复的预约卡片实现');
+assert(legacySchedule.includes('technician-booking-card') && legacySchedule.includes('variant="schedule"'), '旧日程页也必须使用统一预约卡片');
+assert(!legacySchedule.includes('class="order-card"'), '旧日程页不得保留独立预约卡片实现');
 assert(component.includes('/static/icons/navigation.svg'), '预约卡片导航操作必须显示统一图标');
 assert(component.includes('/static/icons/phone-active.svg'), '预约卡片联系操作必须显示统一图标');
 for (const heroClass of ['hero-card-head', 'hero-status-stack', 'hero-time-section', 'hero-time-range-row', 'hero-customer-row', 'hero-shop-row', 'hero-price-row', 'hero-deposit-row']) {
@@ -63,10 +66,22 @@ assert.equal(normalizeOrder({ ...base, customTitle: '自定义设计' }).service
 assert.equal(normalizeOrder({ ...base, serviceLines: [{ nameSnapshot: '护理' }, { nameSnapshot: '纯色' }] }).serviceName, '护理、纯色');
 assert.equal(normalizeOrder({ ...base, service: { name: '基础服务' } }).serviceName, '基础服务');
 assert.equal(normalizeOrder({ ...base, quickBooking: true }).serviceName, '快捷预约 · 款式待沟通');
+assert.equal(normalizeOrder({ ...base, isRepeatBooking: true, customTitle: '重新编辑的项目', sourceWork: { title: '原作品名' } }).serviceName, '重新编辑的项目');
 assert(!component.includes('{{order._typeLabel}} · {{order.serviceName}}'));
 assert(component.includes("order.status === 'completed'") && component.includes('发送消息') && component.includes('拨打电话') && component.includes('查看详情'));
-for (const page of ['all-bookings', 'all-itineraries', 'orders']) {
-  assert(read(`pages/technician/${page}/index.wxml`).includes('bind:message="onBookingCardMessage"'));
+for (const page of ['all-bookings', 'all-itineraries', 'customer-detail', 'schedule']) {
+  const pageWxml = read(`pages/technician/${page}/index.wxml`);
+  assert(pageWxml.includes('variant="schedule"'), `${page} 必须使用统一的行程预约卡片`);
+  for (const event of ['quote', 'withdrawquote', 'editbooking', 'reject', 'cancel', 'complete', 'rebook']) {
+    assert(pageWxml.includes(`bind:${event}=`), `${page} 缺少预约卡片操作：${event}`);
+  }
+}
+for (const field of ['order._sourceLabel', 'order._serviceLabel', 'order._shopName', 'order._notes']) {
+  assert(component.includes(field), `行程卡片缺少字段：${field}`);
+}
+assert(!component.split("variant === 'schedule'")[1].split('<view wx:else')[0].includes('order.address'), '行程卡片不得展示门店详细地址');
+for (const action of ['立即报价', '驳回预约', '编辑报价', '取消报价', '取消预约', '确认完成', '再次预约']) {
+  assert(component.includes(action), `行程卡片缺少操作：${action}`);
 }
 console.log('预约日期、项目来源及已完成操作检查通过');
 
@@ -77,7 +92,7 @@ console.log('预约日期、项目来源及已完成操作检查通过');
   const navigation = [];
   let requestedId;
   const api = {
-    technician: { customers: { detail: async id => {
+    technician: { auth: { getUserInfo: async () => ({ shopAddresses: [{ name: '测试门店', detailAddress: '测试地址' }] }) }, customers: { detail: async id => {
       requestedId = id;
       return { id: 8, name: '测试客户', phone: '13800000000', clientUserId: 93, orders: [
         { id: 41, status: 'completed', startTime: '2026-08-30T14:00:00', address: '测试地址', quotePrice: 198, sourceWork: { title: '法式作品' } },
@@ -103,11 +118,12 @@ console.log('预约日期、项目来源及已完成操作检查通过');
   assert.equal(orders[0].clientUserId, 93);
   assert.equal(orders[0].serviceName, '法式作品');
   assert.equal(orders[0]._clock, '14:00');
+  assert.equal(orders[0]._shopName, '测试门店');
+  assert.equal(orders[0]._sourceLabel, '预约同款');
   assert.equal(orders[1].serviceName, '快捷预约 · 款式待沟通');
+  global.wx = { navigateTo: value => navigation.push(value.url) };
   detailPage.onBookingCardOpen({ detail: { id: 41 } });
-  detailPage.onBookingCardMessage({ detail: { clientId: 93 } });
   assert.equal(navigation[0], '/pages/technician/order-detail/index?id=41');
-  assert.equal(navigation[1], '/pages/technician/chat-detail/index?clientId=93');
   assert(read('pages/technician/customer-detail/index.wxml').includes('<technician-booking-card'));
   console.log('客户详情预约范围、卡片字段及身份跳转检查通过');
 })().catch(error => { console.error(error); process.exitCode = 1; });

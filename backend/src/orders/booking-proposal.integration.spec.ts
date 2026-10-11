@@ -39,12 +39,32 @@ describe('预约报价与排期数据库集成', () => {
   }
   const quote = (extra: any = {}) => ({ services: [{ servicePublicId: 'base' }], serviceDate: '2099-01-05', startTime: '10:00', ...extra });
 
-  it('未知方案加入基础组合和附加费后待客户确认，不占档；接受后只排期一次', async () => {
+  it('原生普通订单沿用服务报价，不能误走手工报价', async () => {
+    const order = await application(true);
+    await expect(orders.review(order.id, tech, quote({ quoteMode: 'manual', amountFen: 18000, durationMinutes: 60, services: [] }))).rejects.toThrow('手工报价仅用于极简预约');
+    const result = await orders.review(order.id, tech, quote({ quoteMode: 'services', useCurrentServices: true, services: [], finalPriceFen: 18000, depositAmount: 0, isDepositPaid: false }));
+    expect(result.status).toBe('pending_agree');
+    expect(result.finalPriceFen).toBe(18000);
+    expect(result.totalDurationMinutes).toBe(120);
+  });
+
+  it('原生快速预约手工报价补齐时长，客户接受后生成排期', async () => {
+    const order = await application();
+    await prisma.order.update({ where: { id: order.id }, data: { quickBooking: true } });
+    const result = await orders.review(order.id, tech, quote({ quoteMode: 'manual', amountFen: 18000, durationMinutes: 90, services: [], depositAmount: 0, isDepositPaid: false }));
+    expect(result.status).toBe('pending_agree');
+    expect(result.totalDurationMinutes).toBe(90);
+    expect(await prisma.blockedTimeSlot.count({ where: { orderId: order.id } })).toBe(1);
+    await clients.agree(client, order.id, 0, result.quoteVersion);
+    expect(await prisma.blockedTimeSlot.count({ where: { orderId: order.id } })).toBe(1);
+  });
+
+  it('未知方案加入基础组合和附加费后待客户确认时持续占档；接受后只排期一次', async () => {
     const order = await application();
     const result = await orders.review(order.id, tech, quote({ corePriceFen: 18000, surchargeIds: ['night'], finalPriceFen: 22000 }));
     expect(result.status).toBe('pending_agree');
     expect(result.depositAmount).toBe(44);
-    expect(await prisma.blockedTimeSlot.count({ where: { orderId: order.id } })).toBe(0);
+    expect(await prisma.blockedTimeSlot.count({ where: { orderId: order.id } })).toBe(1);
     expect(await prisma.orderServiceLine.count({ where: { orderId: order.id, source: 'surcharge' } })).toBe(1);
     await clients.agree(client, order.id, 0, 1);
     await clients.agree(client, order.id, 0, 1);
@@ -66,15 +86,23 @@ describe('预约报价与排期数据库集成', () => {
     await expect(clients.agree(client, order.id, 0, 1)).rejects.toThrow('报价已更新');
     await expect(clients.rejectQuote(client, order.id, '旧方案', 1)).rejects.toThrow('预约方案已更新');
     expect((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status).toBe('pending_agree');
-    expect(await prisma.blockedTimeSlot.count({ where: { orderId: order.id } })).toBe(0);
+    expect(await prisma.blockedTimeSlot.count({ where: { orderId: order.id } })).toBe(1);
     await clients.agree(client, order.id, 0, 2);
   });
 
   it('确认时被其他排期占用，事务不产生交易或确认状态', async () => {
     const order = await application();
     await orders.review(order.id, tech, quote());
-    await prisma.blockedTimeSlot.create({ data: { techId: tech, startTime: order.startTime, endTime: order.endTime, reason: 'manual' } });
-    await expect(clients.agree(client, order.id, 0, 1)).rejects.toThrow('该时间段已被预约');
+    await prisma.blockedTimeSlot.deleteMany({ where: { orderId: order.id } });
+    await prisma.blockedTimeSlot.create({
+      data: {
+        techId: tech,
+        startTime: new Date(order.startTime.getTime() + 30 * 60000),
+        endTime: new Date(order.endTime.getTime() + 30 * 60000),
+        reason: 'manual',
+      },
+    });
+    await expect(clients.agree(client, order.id, 0, 1)).rejects.toThrow('重新选择预约时间');
     expect((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status).toBe('pending_agree');
     expect(await prisma.bookingTradeOrder.count({ where: { bookingId: order.id } })).toBe(0);
   });

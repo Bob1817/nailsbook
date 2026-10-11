@@ -13,13 +13,14 @@ const RULE_TEMPLATE = Object.freeze({
 Page({
   data: {
     technicianId:'', name:'', avatarUrl:'', bio:'', city:'', serviceArea:'', saving:false,
-    heroImageUrl:'', tagline:'', experienceYears:1, specialties:[], selectedSpecialtyMap:{}, specialtyOptions:SPECIALTY_OPTIONS, certificationTitle:'',
+    heroImageUrl:'', tagline:'', experienceYears:0, specialties:[], selectedSpecialtyMap:{}, specialtyOptions:SPECIALTY_OPTIONS, certificationTitle:'',
     artistIntroduction:'', aestheticPhilosophy:'', publicationStatus:'draft', faqs:[],
     exclusiveServiceNote:'', privacyNote:'', serviceProcess:[], timeline:[],
     shops:[], featuredShopKey:'', featuredShopName:'',
     shareTitle:'', shareDescription:'', shareCoverUrl:'', transportationNotes:'', hygieneStandards:'',
     materialStandards:'', allergyNotice:'', latePolicy:'', cancellationPolicy:'', aftercarePolicy:'',
-    featuredReviewIds:[], reviews:[], services:[], featuredServiceIds:[], works:[], worksLoading:true, heroUploading:false
+    featuredReviewIds:[], reviews:[], services:[], featuredServiceIds:[], works:[], worksLoading:true, heroUploading:false,
+    defaultSelectionApplied:false
   },
   async onLoad(options) {
     this._targetSection=(options && options.section) || 'profile';
@@ -47,9 +48,10 @@ Page({
             metaText: [priceText, durationText].filter(Boolean).join(' · ')
           };
         });
+      const homepageDefaultsPending = brand.featuredServiceIds == null;
       const featuredServiceIds = Array.isArray(brand.featuredServiceIds)
         ? brand.featuredServiceIds.map(String)
-        : [];
+        : serviceItems.slice(0, 6).map((item) => item.id);
       const services = serviceItems.map((item) => ({
         ...item,
         selected: featuredServiceIds.indexOf(item.id) !== -1
@@ -61,26 +63,37 @@ Page({
         enabled: shop.enabled !== false,
         photoCount: Array.isArray(shop.photos) ? shop.photos.filter(Boolean).length : 0
       }));
-      const featuredShopKey = brand.featuredShopKey || '';
-      const featuredShopName = (shops.find((s) => s.key === featuredShopKey) || {}).name || '';
-      const works = (res.list || res.data || res || []).filter((item) => item.isVisible && (item.visibilityScope || 'public') === 'public').map((item) => ({
+      const savedShop = shops.find((shop) => shop.key === brand.featuredShopKey);
+      const defaultShop = shops.find((shop) => shop.enabled && shop.address) || shops.find((shop) => shop.enabled);
+      const featuredShop = savedShop || defaultShop || null;
+      const featuredShopKey = featuredShop ? featuredShop.key : '';
+      const featuredShopName = featuredShop ? featuredShop.name : '';
+      const publicWorks = (res.list || res.data || res || []).filter((item) => (
+        item.isVisible &&
+        (item.visibilityScope || 'public') === 'public' &&
+        (item.publicationStatus || 'approved') === 'approved'
+      ));
+      const hasFeaturedWorks = publicWorks.some((item) => item.isFeatured);
+      const works = publicWorks.map((item, index) => ({
         id: item.id,
         title: item.title || '未命名作品',
         coverUrl: item.coverUrl || (item.imageUrls && item.imageUrls[0]) || '',
-        selected: !!item.isFeatured,
+        selected: !!item.isFeatured || (homepageDefaultsPending && !hasFeaturedWorks && index < 6),
+        persistedSelected: !!item.isFeatured,
       }));
       const featuredReviewIds = Array.isArray(brand.featuredReviewIds) ? brand.featuredReviewIds.map(String) : [];
       const styleTags = (user.styleTags || brand.specialties || []).slice(0, 5);
       const ruleValues = {};
+      const hasSavedRules = Object.keys(RULE_TEMPLATE).some((field) => String(brand[field] || '').trim());
       Object.keys(RULE_TEMPLATE).forEach((field) => {
-        ruleValues[field] = brand[field] || (!brand.id ? RULE_TEMPLATE[field] : '');
+        ruleValues[field] = brand[field] || (!hasSavedRules ? RULE_TEMPLATE[field] : '');
       });
       this.setData({
         works,
         heroImageUrl:brand.heroImageUrl || brand.shareCoverUrl || '', tagline:brand.tagline || '',
-        experienceYears:Number(brand.experienceYears) > 0 ? Math.min(30, Number(brand.experienceYears)) : 0,
+        experienceYears:Number(brand.experienceYears) > 0 ? Math.min(30, Math.round(Number(brand.experienceYears))) : 0,
         specialties:styleTags,
-        selectedSpecialtyMap:styleTags.reduce((map,item)=>{map[item]=true;return map;},{}),
+        selectedSpecialtyMap:styleTags.reduce((map,item,index)=>{map[item]=index+1;return map;},{}),
         certificationTitle:brand.certificationTitle || '',
         artistIntroduction:brand.artistIntroduction || user.bio || '', aestheticPhilosophy:brand.aestheticPhilosophy || '',
         publicationStatus:brand.publicationStatus || 'draft', faqs:brand.faqs || [],
@@ -96,6 +109,7 @@ Page({
         featuredReviewIds,
         services,
         featuredServiceIds,
+        defaultSelectionApplied:homepageDefaultsPending && !!(featuredServiceIds.length || featuredShopKey || works.some((item) => item.selected)),
         reviews:(results[2].items || []).map((review) => ({ ...review, selected:featuredReviewIds.indexOf(String(review.id)) !== -1 }))
       });
     } catch (err) {
@@ -155,9 +169,12 @@ Page({
   },
   onCityChange(e) { const v=e.detail.value; this.setData({ city:v[0]===v[1]?v[1]:v[0]+' '+v[1] }); },
   onServiceAreaChange(e) { const v=e.detail.value; this.setData({ serviceArea:v[0]===v[1]?v[1]+' '+v[2]:v.join(' ') }); },
-  onExperienceChange(e) { this.setData({ experienceYears:Number(e.detail.value) || 1 }); },
-  enableExperience() { this.setData({ experienceYears:1 }); },
-  clearExperience() { this.setData({ experienceYears:0 }); },
+  onExperienceInput(e) {
+    const digits=String(e.detail.value || '').replace(/\D/g,'');
+    const value=digits ? Math.max(1,Math.min(30,Number(digits))) : '';
+    this.setData({ experienceYears:value });
+    return String(value);
+  },
   toggleSpecialty(e) {
     const value=e.currentTarget.dataset.value;
     const selected=this.data.specialties.slice();
@@ -165,7 +182,7 @@ Page({
     if(index >= 0) selected.splice(index,1);
     else if(selected.length < 5) selected.push(value);
     else return wx.showToast({title:'最多展示 5 项擅长风格',icon:'none'});
-    this.setData({ specialties:selected, selectedSpecialtyMap:selected.reduce((map,item)=>{map[item]=true;return map;},{}) });
+    this.setData({ specialties:selected, selectedSpecialtyMap:selected.reduce((map,item,index)=>{map[item]=index+1;return map;},{}) });
   },
   chooseAvatar() {
     wx.chooseMedia({ count:1, mediaType:['image'], success:async(res) => {
@@ -231,9 +248,14 @@ Page({
     if (!item) return;
     const selectedCount = this.data.works.filter((work) => work.selected).length;
     if (!item.selected && selectedCount >= 6) return wx.showToast({ title:'主页最多精选 6 个作品', icon:'none' });
+    const nextSelected = !item.selected;
+    if (nextSelected === item.persistedSelected) {
+      this.setData({ works: this.data.works.map((work) => String(work.id) === String(id) ? { ...work, selected:nextSelected } : work) });
+      return;
+    }
     try {
       await api.technician.works.toggleFeatured(id);
-      this.setData({ works: this.data.works.map((work) => String(work.id) === String(id) ? { ...work, selected: !work.selected } : work) });
+      this.setData({ works: this.data.works.map((work) => String(work.id) === String(id) ? { ...work, selected:nextSelected, persistedSelected:nextSelected } : work) });
     } catch (err) { wx.showToast({ title:err.message || '设置失败', icon:'none' }); }
   },
   goHeroRecommendations() { wx.navigateTo({ url:'/pages/technician/hero-recommendations/index' }); },
@@ -242,11 +264,16 @@ Page({
     if (this.data.saving || this.data.heroUploading) return;
     this.setData({ saving:true });
     try {
+      const pendingDefaultWorks=this.data.works.filter((work)=>work.selected && !work.persistedSelected);
+      if (pendingDefaultWorks.length) {
+        await Promise.all(pendingDefaultWorks.map((work)=>api.technician.works.toggleFeatured(work.id)));
+        this.setData({ works:this.data.works.map((work)=>work.selected ? { ...work, persistedSelected:true } : work) });
+      }
       const profilePayload={};
       if (this.data.avatarUrl) profilePayload.avatarUrl=this.data.avatarUrl;
       const brandPayload={
         brandName:this.data.name.trim() || undefined, tagline:this.data.tagline.trim(), heroImageUrl:this.data.heroImageUrl || undefined,
-        experienceYears:Number(this.data.experienceYears) || undefined,
+        experienceYears:Number(this.data.experienceYears) > 0 ? Math.min(30, Math.round(Number(this.data.experienceYears))) : 0,
         specialties:this.data.specialties.slice(0,5),
         certificationTitle:this.data.certificationTitle.trim(), featuredReviewIds:this.data.featuredReviewIds.map(Number).filter(Boolean),
         featuredServiceIds:this.data.featuredServiceIds,
@@ -271,7 +298,14 @@ Page({
         wx.setStorageSync('technician_userInfo',user); wx.setStorageSync('userInfo',user);
         syncSessionAvatar('technician', profilePayload.avatarUrl);
       }
-      wx.showToast({ title:'主页已更新', icon:'success' });
+      const pages=getCurrentPages();
+      const previousPage=pages.length > 1 ? pages[pages.length-2] : null;
+      if (previousPage && previousPage.route === 'pages/client/artist-home/index') {
+        previousPage._reloadOnShow=true;
+        wx.navigateBack({delta:1});
+      } else {
+        wx.redirectTo({url:'/pages/client/artist-home/index?id='+this.data.technicianId+'&preview=1&owner=1'});
+      }
     } catch (err) { wx.showToast({ title:err.message || '保存失败', icon:'none' }); }
     finally { this.setData({ saving:false }); }
   }

@@ -17,7 +17,11 @@
         />
         <view wx:if="{{keyword}}" class="search-clear" bindtap="clearKeyword" role="button" aria-label="清空搜索"><view class="clear-line"></view></view>
       </view>
-      <view class="btn-invite booking-action" bindtap="handleInvite" role="button" aria-label="复制客户邀请码">
+      <button wx:if="{{inviteCode}}" class="btn-invite booking-action" open-type="share" hover-class="btn-invite-pressed" aria-label="发送客户注册链接给微信好友">
+        <text class="invite-icon">+</text>
+        <text class="invite-text">邀请</text>
+      </button>
+      <view wx:else class="btn-invite booking-action" bindtap="handleInviteUnavailable" role="button" aria-label="邀请码加载中">
         <text class="invite-icon">+</text>
         <text class="invite-text">邀请</text>
       </view>

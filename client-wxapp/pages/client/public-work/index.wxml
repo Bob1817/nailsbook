@@ -2,6 +2,7 @@
   sharePath="{{sharePath}}"
   visitorInfo="{{visitorInfo}}"
   isLoggedIn="{{isLoggedIn}}"
+  isOwnerView="{{isOwnerView}}"
   work="{{work}}"
   imageUrls="{{work.imageUrls}}"
   comments="{{work.comments}}"

@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ChatGateway } from '../chat/chat.gateway';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CreateTechnicianMessageDto } from './dto/create-technician-message.dto';
 
@@ -18,7 +19,7 @@ const ALLOWED_MESSAGE_TYPES = new Set([
 
 @Injectable()
 export class TechnicianMessagesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly chat: ChatGateway) {}
 
   async findAll(technicianId: number, conversationId: number) {
     const conversation = await this.findOwnedConversation(
@@ -88,7 +89,7 @@ export class TechnicianMessagesService {
   }
 
   async markAsRead(technicianId: number, conversationId: number) {
-    await this.findOwnedConversation(technicianId, conversationId);
+    const conversation = await this.findOwnedConversation(technicianId, conversationId);
 
     const result = await this.prisma.message.updateMany({
       where: {
@@ -100,6 +101,7 @@ export class TechnicianMessagesService {
       data: { isRead: true },
     });
 
+    if (result.count > 0) this.chat.broadcastRead(conversation, 'technician', technicianId);
     return { updated: result.count };
   }
 
@@ -169,6 +171,7 @@ export class TechnicianMessagesService {
       },
     });
 
+    this.chat.broadcastMessage(message, conversation);
     return { message: this.mapMessage(message), conversationId: conversation.id };
   }
 
@@ -219,19 +222,29 @@ export class TechnicianMessagesService {
       throw new BadRequestException('需要提供 conversationId 或 clientId');
     }
 
-    const message = await this.prisma.message.create({
-      data: {
-        conversationId: conversation.id,
-        senderType: 'technician',
-        senderId: technicianId,
-        receiverType: 'client',
-        receiverId: conversation.clientId,
-        messageType: dto.messageType,
-        content: dto.content ?? null,
-        imageUrl: dto.imageUrl ?? null,
-        relatedType: dto.relatedType ?? null,
-        relatedId: dto.relatedId ?? null,
-      },
+    const message = await this.prisma.$transaction(async (tx) => {
+      const message = await tx.message.create({
+        data: {
+          conversationId: conversation.id,
+          senderType: 'technician',
+          senderId: technicianId,
+          receiverType: 'client',
+          receiverId: conversation.clientId,
+          messageType: dto.messageType,
+          content: dto.content ?? null,
+          imageUrl: dto.imageUrl ?? null,
+          relatedType: dto.relatedType ?? null,
+          relatedId: dto.relatedId ?? null,
+        },
+      });
+      conversation = await tx.conversation.update({
+        where: { id: conversation.id },
+        data: {
+          lastMessage: dto.messageType === 'image' ? '[图片]' : dto.content?.slice(0, 100) || '',
+          lastMessageAt: message.createdAt,
+        },
+      });
+      return message;
     });
 
     // Get client info
@@ -244,6 +257,7 @@ export class TechnicianMessagesService {
       },
     });
 
+    this.chat.broadcastMessage(message, conversation);
     return {
       client,
       message: this.mapMessage(message),

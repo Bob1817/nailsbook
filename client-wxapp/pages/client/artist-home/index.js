@@ -28,6 +28,8 @@ Page({
     environmentHeroIndex: 0,
     standards: null,
     policies: null,
+    studioPolicyItems: [],
+    showStudioPolicyModal: false,
     faqs: [],
     exclusiveServiceNote: '',
     privacyNote: '',
@@ -36,18 +38,22 @@ Page({
     brandIntroduction: '',
     brandTagline: '',
     hasRealStats: false,
-    isFollowed: false,
     isLiked: false,
     likeCount: 0,
     isFavorited: false,
-    followerCount: 0,
     favoriteCount: 0,
+    commentCount: 0,
+    homepageComments: [],
+    showCommentComposer: false,
+    commentDraft: '',
+    commentSubmitting: false,
     isBound: false,
     isReturningClient: false,
     isBindingPending: false,
     entrySource: '',
     entrySourceLabel: '',
     entryGuide: '',
+    navBarHeight: 88,
     loading: true,
     loadFailed: false,
     showBindModal: false,
@@ -56,10 +62,19 @@ Page({
     bindCandidate: null,
     bindError: '',
     stylePhotoCards: [],
-    styleTextTags: []
+    styleTextTags: [],
+    showOwnerMenuSheet: false
   },
 
   onLoad(options) {
+    try {
+      const systemInfo = wx.getSystemInfoSync();
+      const menuButton = wx.getMenuButtonBoundingClientRect();
+      const navBarHeight = menuButton.top + menuButton.height + (menuButton.top - systemInfo.statusBarHeight);
+      this.setData({ navBarHeight });
+    } catch (err) {
+      // 保留默认导航栏高度。
+    }
     const artistId = options.id || options.techId || '';
     const role = wx.getStorageSync('role') || (getApp().globalData && getApp().globalData.role);
     const user = wx.getStorageSync('technician_userInfo') || {};
@@ -74,9 +89,27 @@ Page({
     this.loadHome();
   },
 
-  editHomepage() { wx.navigateTo({ url: '/pages/technician/homepage-settings/index' }); },
+  showOwnerMenu() {
+    if (!this.data.isOwner) return;
+    this.setData({ showOwnerMenuSheet: true });
+  },
+
+  closeOwnerMenu() {
+    this.setData({ showOwnerMenuSheet: false });
+  },
+
+  handleOwnerMenuAction(event) {
+    const action = event.currentTarget.dataset.action;
+    this.closeOwnerMenu();
+    if (action === 'edit') wx.navigateTo({ url: '/pages/technician/homepage-settings/index' });
+    if (action === 'interactions') wx.navigateTo({ url: '/pages/technician/artist-interactions/index?type=like' });
+  },
 
   onShow() {
+    if (this._reloadOnShow) {
+      this._reloadOnShow = false;
+      this.loadHome();
+    }
     if (this.data.artistId && !this.data.previewMode) {
       this.loadRelationship().then(() => this.updateEntryGuide());
     } else {
@@ -130,19 +163,26 @@ Page({
     try {
       const results = await Promise.all([
         api.public.artists.detail(this.data.artistId),
-        api.client.works.list(
+        api.public.brands.works(this.data.artistId, {
+          page: 1,
+          pageSize: 50,
+          imageSize: 'medium',
+          content: (this.data.previewMode || this.data.isOwner) ? `owner_preview_${Date.now()}` : undefined
+        }).catch(() => api.client.works.list(
           { techId: this.data.artistId },
           { silent: true }
-        ).catch(() => null),
+        ).catch(() => null)),
         api.public.brands.profile(this.data.artistId, (this.data.previewMode || this.data.isOwner)
           ? { content: `owner_preview_${Date.now()}` }
           : undefined).catch(() => null),
-        api.public.brands.services(this.data.artistId, { page: 1, pageSize: 20 }).catch(() => null)
+        api.public.brands.services(this.data.artistId, { page: 1, pageSize: 20 }).catch(() => null),
+        api.public.brands.comments(this.data.artistId, { page: 1, pageSize: 20 }).catch(() => null)
       ]);
       const res = results[0];
       const worksRes = results[1];
       const brandRes = results[2];
       const servicesRes = results[3];
+      const commentsRes = results[4];
       const artist = res.artist || res.technician || res || {};
       const brand = (brandRes && (brandRes.brand || brandRes)) || {};
 
@@ -160,9 +200,14 @@ Page({
       const ratingNum = Number(stats.rating);
       artist.rating = (stats.rating === null || stats.rating === undefined || stats.rating === '' || Number.isNaN(ratingNum)) ? null : ratingNum;
       artist.reviewCount = Number(stats.reviewCount) || 0;
-      const followerCount = Number(artist.followerCount || stats.followerCount || 0);
-      const favoriteCount = Number(artist.favoriteCount || stats.favoriteCount || 0);
-      const likeCount = Number(artist.likeCount || stats.likeCount || 0);
+      const interactionCounts = brand.interactionCounts || {};
+      const favoriteCount = Number(interactionCounts.favorites || 0);
+      const likeCount = Number(interactionCounts.likes || 0);
+      const commentCount = Number(interactionCounts.comments || 0);
+      const homepageComments = ((commentsRes && (commentsRes.items || commentsRes.list)) || []).map((item) => ({
+        ...item,
+        timeAgo: formatTimeAgo(item.createdAt)
+      }));
 
       // 专业标签
       const styleTags = (artist.styleTags || brand.specialties || []).slice(0, 5);
@@ -177,12 +222,19 @@ Page({
       const brandIntroduction = brand.introduction || '';
       const brandTagline = brand.tagline || '';
 
-      // 店铺：优先主页选定店铺，否则取第一个已启用店铺
+      const useHomepageDefaults = brand.featuredServiceIds == null;
+
+      // 店铺：优先主页选定店铺；未配置时展示第一个已启用且地址完整的店铺
       const shops = artist.shopAddresses || [];
       const featuredShopKey = brand.featuredShopKey || '';
       let shop = null;
       if (featuredShopKey) {
         shop = shops.find((s) => `${s.name || ''}||${s.detailAddress || s.address || ''}` === featuredShopKey) || null;
+      }
+      if (!shop) {
+        shop = shops.find((item) => item.enabled !== false && (item.detailAddress || item.address))
+          || shops.find((item) => item.enabled !== false)
+          || null;
       }
       if (!shop) shop = {};
       artist.shopName = shop.name || brand.name || '';
@@ -255,6 +307,14 @@ Page({
           }
         : null;
       const policies = policyValues && Object.values(policyValues).some(Boolean) ? policyValues : null;
+      const studioPolicyItems = [
+        { key: 'hygiene', label: '卫生消毒', content: standards && standards.hygiene },
+        { key: 'materials', label: '专业工具', content: standards && standards.materials },
+        { key: 'allergyNotice', label: '过敏提示', content: standards && standards.allergyNotice },
+        { key: 'late', label: '迟到说明', content: policies && policies.late },
+        { key: 'cancellation', label: '取消规则', content: policies && policies.cancellation },
+        { key: 'aftercare', label: '售后补修', content: policies && policies.aftercare }
+      ].filter((item) => item.content);
       const exclusiveServiceNote = brand.exclusiveServiceNote || '';
       const privacyNote = brand.privacyNote || '';
       const serviceProcess = (brand.serviceProcess || []).map((item, index) => ({
@@ -283,9 +343,12 @@ Page({
       // 作品列表（统一口径：美甲师主页顶部信息 ↔ 作品卡 ↔ 作品详情页 完全一致）
       const isBound = !!this.data.isBound;
       const sourceWorks = worksRes
-        ? (worksRes.list || worksRes.data || (Array.isArray(worksRes) ? worksRes : []))
+        ? (worksRes.items || worksRes.works || worksRes.list || worksRes.data || (Array.isArray(worksRes) ? worksRes : []))
         : (res.works || []);
-      const featuredSource = sourceWorks.filter((item) => item.isFeatured);
+      const savedFeaturedWorks = sourceWorks.filter((item) => item.isFeatured);
+      const featuredSource = savedFeaturedWorks.length || !useHomepageDefaults
+        ? savedFeaturedWorks
+        : sourceWorks.slice(0, 6);
       const works = featuredSource.map((item, index) => normalizeWork(item, techSnapshot, {
         index: index,
         styleTags: techSnapshot.styleTags,
@@ -344,6 +407,7 @@ Page({
         styleTextTags,
         standards,
         policies,
+        studioPolicyItems,
         faqs,
         exclusiveServiceNote,
         privacyNote,
@@ -358,8 +422,9 @@ Page({
           (artist.reviewCount > 0 ? 1 : 0)
         ) >= 2,
         likeCount,
-        followerCount,
         favoriteCount,
+        commentCount,
+        homepageComments,
         loading: false
       });
     } catch (err) {
@@ -379,13 +444,18 @@ Page({
       const bindings = me.technicians || me.bindings || [];
       wx.setStorageSync('client_bindings', bindings);
       const isBound = bindings.some(b => String(b.id || b.technicianId) === String(this.data.artistId));
-      const follows = me.followedTechnicians || me.follows || [];
-      const isFollowed = follows.some(f => String(f.id || f.technicianId) === String(this.data.artistId));
-      const favs = me.favorites || me.favoritedTechnicians || [];
-      const isFavorited = this.data.isFavorited || favs.some(f => String(f.id || f.technicianId) === String(this.data.artistId));
+      const interaction = await api.client.artists.homepageInteractions(this.data.artistId);
       const pendingMap = wx.getStorageSync('client_binding_pending') || {};
       const isBindingPending = !isBound && !!pendingMap[String(this.data.artistId)];
-      this.setData({ isBound, isFollowed, isFavorited, isBindingPending });
+      this.setData({
+        isBound,
+        isLiked: !!interaction.isLiked,
+        isFavorited: !!interaction.isFavorited,
+        likeCount: Number(interaction.likeCount || 0),
+        favoriteCount: Number(interaction.favoriteCount || 0),
+        commentCount: Number(interaction.commentCount || 0),
+        isBindingPending
+      });
     } catch (err) {
       // ignore
     }
@@ -400,41 +470,65 @@ Page({
     return true;
   },
 
-  toggleFollow() {
-    if (this.openOwnInteractions('follow')) return;
-    const app = getApp();
-    if (!app.globalData.token) {
-      wx.showToast({ title: '登录后即可关注', icon: 'none' });
-      return;
-    }
-    const isFollowed = !this.data.isFollowed;
-    this.setData({ isFollowed });
-    wx.showToast({ title: isFollowed ? '关注成功' : '已取消关注', icon: 'none' });
-  },
-
-  toggleLike() {
+  async toggleLike() {
     if (this.openOwnInteractions('like')) return;
-    // 点赞无需登录，本地乐观更新；同时累计点赞计数
-    const isLiked = !this.data.isLiked;
-    const delta = isLiked ? 1 : -1;
-    const likeCount = Math.max(0, Number(this.data.likeCount || 0) + delta);
-    this.setData({ isLiked, likeCount });
-    wx.vibrateShort && wx.vibrateShort({ type: 'light' });
+    if (!this.requireClientLogin()) return;
+    try {
+      const result = await api.client.artists.toggleHomepageLike(this.data.artistId);
+      this.setData({ isLiked: result.liked, likeCount: Number(result.count || 0) });
+      wx.vibrateShort && wx.vibrateShort({ type: 'light' });
+    } catch (err) { wx.showToast({ title: err.message || '操作失败', icon: 'none' }); }
   },
 
-  toggleFavorite() {
+  async toggleFavorite() {
     if (this.openOwnInteractions('favorite')) return;
+    if (!this.requireClientLogin()) return;
+    try {
+      const result = await api.client.artists.toggleHomepageFavorite(this.data.artistId);
+      this.setData({ isFavorited: result.favorited, favoriteCount: Number(result.count || 0) });
+      wx.showToast({ title: result.favorited ? '已收藏' : '已取消收藏', icon: 'none' });
+    } catch (err) { wx.showToast({ title: err.message || '操作失败', icon: 'none' }); }
+  },
+
+  openComments() {
+    if (this.openOwnInteractions('comment')) return;
+    if (!this.requireClientLogin()) return;
+    this.setData({ showCommentComposer: true });
+  },
+  closeComments() { if (!this.data.commentSubmitting) this.setData({ showCommentComposer: false }); },
+  onCommentInput(e) { this.setData({ commentDraft: e.detail.value }); },
+  async submitHomepageComment() {
+    const content = this.data.commentDraft.trim();
+    if (!content || this.data.commentSubmitting) return;
+    this.setData({ commentSubmitting: true });
+    try {
+      await api.client.artists.addHomepageComment(this.data.artistId, content);
+      const result = await api.public.brands.comments(this.data.artistId, { page: 1, pageSize: 20 });
+      this.setData({
+        homepageComments: (result.items || []).map((item) => ({ ...item, timeAgo: formatTimeAgo(item.createdAt) })),
+        commentCount: Number(result.total || 0),
+        commentDraft: '',
+        showCommentComposer: false
+      });
+      wx.showToast({ title: '评论已发布', icon: 'success' });
+    } catch (err) { wx.showToast({ title: err.message || '评论失败', icon: 'none' }); }
+    finally { this.setData({ commentSubmitting: false }); }
+  },
+
+  requireClientLogin() {
     const app = getApp();
-    if (!app.globalData.token) {
-      wx.showToast({ title: '登录后即可收藏', icon: 'none' });
-      return;
-    }
-    const isFavorited = !this.data.isFavorited;
-    this.setData({ isFavorited });
-    wx.showToast({ title: isFavorited ? '已收藏' : '已取消收藏', icon: 'none' });
+    const role = app.globalData.role || wx.getStorageSync('role');
+    if (app.globalData.token && role === 'client') return true;
+    const target = '/pages/client/artist-home/index?id=' + this.data.artistId;
+    wx.navigateTo({ url: '/pages/login/index?redirect=' + encodeURIComponent(target) });
+    return false;
   },
 
   async bookArtist() {
+    if (this.data.isOwner) {
+      wx.showToast({ title: '客户访问主页后可从这里发起预约', icon: 'none' });
+      return;
+    }
     if (api.public && api.public.bookingSettings) {
       try {
         const settings = await api.public.bookingSettings(this.data.artistId);
@@ -516,6 +610,15 @@ Page({
     wx.navigateTo({
       url: '/pages/client/shop-guidance/index?techId=' + techId + '&shopName=' + encodeURIComponent(artist.shopName || '') + '&address=' + encodeURIComponent(artist.shopAddress || '')
     });
+  },
+
+  openStudioPolicies() {
+    if (!this.data.studioPolicyItems.length) return;
+    this.setData({ showStudioPolicyModal: true });
+  },
+
+  closeStudioPolicies() {
+    this.setData({ showStudioPolicyModal: false });
   },
 
   closeBindModal() {

@@ -24,7 +24,10 @@ import { bookingReadiness } from '../technicians/booking-readiness';
 import { parseBusinessDateTime } from './business-time';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { revenueSnapshot } from './order-accounting';
-import { throwIfBookingSlotConflict } from './booking-conflict';
+import {
+  DEFAULT_BOOKING_DURATION_MINUTES,
+  throwIfBookingSlotConflict,
+} from './booking-conflict';
 import { buildDefaultServiceItems } from '../common/default-service-items';
 import {
   assertLaunchShopService,
@@ -274,9 +277,9 @@ export class ClientOrdersService {
     }
     const summary = summarizeSnapshotLines(serviceLines);
     const totalDurationMinutes =
-      bookingType === 'custom' ? (dto.quickBooking ? 0 : 120) : summary.totalDurationMinutes;
-    // One minute checks only the requested start point; never a promised service duration.
-    const availabilityDuration = totalDurationMinutes || 1;
+      bookingType === 'custom' ? 0 : summary.totalDurationMinutes;
+    const availabilityDuration =
+      totalDurationMinutes || DEFAULT_BOOKING_DURATION_MINUTES;
     const serviceSubtotalFen = summary.serviceSubtotalFen;
     const finalPriceFen =
       bookingType === 'work'
@@ -342,7 +345,15 @@ export class ClientOrdersService {
       this.prisma.$transaction(async (tx) => {
         await assertBookingAccountState(tx, dto.techId, clientUserId);
         await this.bookingDays?.assertOpen(tx, dto.techId, dto.serviceDate);
-        await this.assertNoBlockedConflict(tx, dto.techId, startTime, new Date(startTime.getTime() + (totalDurationMinutes || 1) * 60000));
+        const blockEndTime = new Date(
+          startTime.getTime() + availabilityDuration * 60000,
+        );
+        await this.assertNoBlockedConflict(
+          tx,
+          dto.techId,
+          startTime,
+          blockEndTime,
+        );
         const customer = await tx.customer.upsert({
           where: {
             technicianId_clientUserId: {
@@ -423,6 +434,16 @@ export class ClientOrdersService {
             source: 'client_webapp',
           },
           include: this.orderInclude(),
+        });
+
+        await tx.blockedTimeSlot.create({
+          data: {
+            techId: dto.techId,
+            orderId: createdOrder.id,
+            startTime,
+            endTime: blockEndTime,
+            reason: 'booking',
+          },
         });
 
         await tx.conversionEvent.create({
@@ -661,6 +682,7 @@ export class ClientOrdersService {
         matchedShopAddress,
         dto.serviceDate,
         dto.startTime,
+        DEFAULT_BOOKING_DURATION_MINUTES,
       );
 
       orderAddress = [
@@ -700,16 +722,24 @@ export class ClientOrdersService {
       design.technician.serviceSchedule,
       dto.serviceDate,
       dto.startTime,
-      120,
+      DEFAULT_BOOKING_DURATION_MINUTES,
     );
     const startTime = this.buildStartTime(dto.serviceDate, dto.startTime);
     const endTime = new Date(startTime.getTime() + 120 * 60 * 1000);
+    const blockEndTime = new Date(
+      startTime.getTime() + DEFAULT_BOOKING_DURATION_MINUTES * 60000,
+    );
 
     const createOrder = () =>
       this.prisma.$transaction(async (tx) => {
         await assertBookingAccountState(tx, dto.techId, clientUserId);
         await this.bookingDays?.assertOpen(tx, dto.techId, dto.serviceDate);
-        await this.assertNoBlockedConflict(tx, dto.techId, startTime, endTime);
+        await this.assertNoBlockedConflict(
+          tx,
+          dto.techId,
+          startTime,
+          blockEndTime,
+        );
         const customer = await tx.customer.upsert({
           where: {
             technicianId_clientUserId: {
@@ -759,6 +789,16 @@ export class ClientOrdersService {
             source: 'client_webapp',
           },
           include: this.orderInclude(),
+        });
+
+        await tx.blockedTimeSlot.create({
+          data: {
+            techId: dto.techId,
+            orderId: createdOrder.id,
+            startTime,
+            endTime: blockEndTime,
+            reason: 'booking',
+          },
         });
 
         return createdOrder;
@@ -1031,7 +1071,9 @@ export class ClientOrdersService {
     const blockEnd =
       previousDuration > 0
         ? endTime
-        : new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
+        : new Date(
+            startTime.getTime() + DEFAULT_BOOKING_DURATION_MINUTES * 60000,
+          );
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
       if (businessDate(order.startTime) !== dto.serviceDate) await this.bookingDays?.assertOpen(tx, order.technicianId, dto.serviceDate);
       await this.assertNoBlockedConflict(
@@ -1066,7 +1108,7 @@ export class ClientOrdersService {
       });
 
       await tx.blockedTimeSlot.deleteMany({ where: { orderId: id } });
-      if (!['pending_quote', 'pending_confirm', 'pending_agree'].includes(order.status)) await tx.blockedTimeSlot.create({
+      await tx.blockedTimeSlot.create({
         data: {
           techId: order.technicianId,
           orderId: id,
@@ -1242,6 +1284,18 @@ export class ClientOrdersService {
         const changed = await tx.order.updateMany({ where: { id, clientUserId, status: 'pending_agree', updatedAt: order.updatedAt }, data: { status: 'pending_quote' } });
         if (!changed.count) throw new BadRequestException('预约已更新，请刷新后重试');
         await tx.blockedTimeSlot.deleteMany({ where: { orderId: id } });
+        await tx.blockedTimeSlot.create({
+          data: {
+            techId: order.technicianId,
+            orderId: id,
+            startTime: order.startTime,
+            endTime: new Date(
+              new Date(order.startTime).getTime() +
+                DEFAULT_BOOKING_DURATION_MINUTES * 60000,
+            ),
+            reason: 'booking',
+          },
+        });
         await tx.orderServiceLine.deleteMany({ where: { orderId: id } });
       }
       const updated = await tx.order.update({
@@ -1489,7 +1543,9 @@ export class ClientOrdersService {
     const blockEnd =
       prevDuration > 0
         ? endTime
-        : new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
+        : new Date(
+            startTime.getTime() + DEFAULT_BOOKING_DURATION_MINUTES * 60000,
+          );
 
     const restoreStatus = order.expiredFromStatus ?? 'pending_quote';
 
@@ -1528,7 +1584,7 @@ export class ClientOrdersService {
       });
 
       await tx.blockedTimeSlot.deleteMany({ where: { orderId: id } });
-      if (!['pending_quote', 'pending_confirm', 'pending_agree'].includes(order.status)) await tx.blockedTimeSlot.create({
+      await tx.blockedTimeSlot.create({
         data: {
           techId: order.technicianId,
           orderId: id,

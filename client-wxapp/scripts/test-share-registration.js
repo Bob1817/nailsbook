@@ -33,7 +33,13 @@ function page(name, api) {
   return { ...definition, data: { ...definition.data }, setData(d) { Object.assign(this.data, d); } };
 }
 (async () => {
-  const auth = { authenticated: true, role: 'client', accessToken: 'test', client: {}, roles: ['client'] };
+  const auth = {
+    authenticated: true,
+    role: 'client',
+    accessToken: 'test',
+    client: { phone: '13800138000', nickname: '小美', avatarUrl: '/uploads/client.webp' },
+    roles: ['client']
+  };
   storage.post_auth_redirect = redirect;
   await page('register')._afterAuth(auth, 'client');
   assert.equal(destination, redirect, '密码注册结束回到原作品');

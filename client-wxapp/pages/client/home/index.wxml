@@ -125,6 +125,8 @@
         <view class="icon icon-image-placeholder-lg"></view>
       </view>
       <text class="works-empty-text">暂无作品展示</text>
+      <text class="works-empty-sub">绑定美甲师后，即可查看TA发布的最新作品</text>
+      <view class="works-empty-cta booking-action" bindtap="goBindTech">绑定美甲师</view>
     </view>
   </view>
 </view>

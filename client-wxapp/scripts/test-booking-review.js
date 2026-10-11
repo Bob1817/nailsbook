@@ -9,7 +9,7 @@ const wxss = fs.readFileSync(path.join(root, 'pages/client/create-order/index.wx
 
 assert.match(
   wxml,
-  /class="modal-panel application-review" catchtap="preventModalClose"/,
+  /class="modal-panel confirm-modal" catchtap="preventModalClose"/,
   '预约核对弹窗必须拦截内部点击，避免冒泡关闭遮罩层',
 );
 assert.match(
@@ -19,7 +19,7 @@ assert.match(
 );
 assert.match(
   wxml,
-  /class="rules-check" bindtap="toggleBookingRules"/,
+  /class="confirm-check" bindtap="toggleBookingRules"/,
   '预约规则勾选必须保留独立交互事件',
 );
 assert.match(
@@ -29,12 +29,12 @@ assert.match(
 );
 assert.match(
   wxml,
-  /wx:if="\{\{bookingRulesAgreed\}\}" class="rules-check-icon" src="\/static\/icons\/check-circle\.svg"/,
-  '预约规则选中状态必须使用清晰可见的项目图标',
+  /wx:if="\{\{bookingRulesAgreed\}\}" class="confirm-check-dot"/,
+  '预约规则选中状态必须显示勾选标记',
 );
 assert.match(
   wxss,
-  /\.rules-box\s*\{[^}]*width:28rpx; height:28rpx;[^}]*border:\s*2rpx solid var\(--nb-control\)/s,
+  /\.confirm-check-box\s*\{[^}]*width:\s*28rpx;\s*height:\s*28rpx;[^}]*border:\s*2rpx solid var\(--nb-control\)/s,
   '预约规则未选中状态必须显示清晰边框',
 );
 console.log('Booking review modal checks passed.');

@@ -130,6 +130,9 @@ Page({
     keyword: '',
     customers: [],
     visibleCustomers: [],
+    inviteCode: '',
+    inviteName: '',
+    inviteAvatarUrl: '',
     loading: true,
     loadFailed: false
   },
@@ -139,6 +142,7 @@ Page({
     if (LIFECYCLE_TABS.some(item => item.key === lifecycle)) {
       this.setData({ activeLifecycle: lifecycle });
     }
+    this.prepareInviteShare();
     this.loadCustomers();
   },
 
@@ -266,18 +270,42 @@ Page({
     });
   },
 
-  async handleInvite() {
-    const userInfo = wx.getStorageSync('userInfo') || {};
-    const inviteCode = userInfo.invitationCode;
-    if (!inviteCode) {
-      wx.showToast({ title: '暂无邀请码', icon: 'none' });
-      return;
-    }
-    wx.setClipboardData({
-      data: inviteCode,
-      success() {
-        wx.showToast({ title: '邀请码已复制', icon: 'success' });
-      }
+  applyInviteProfile(profile) {
+    const userInfo = profile || {};
+    this.setData({
+      inviteCode: userInfo.invitationCode || '',
+      inviteName: userInfo.name || '',
+      inviteAvatarUrl: userInfo.avatarUrl || ''
     });
+  },
+
+  async prepareInviteShare() {
+    const cached = wx.getStorageSync('technician_userInfo') || wx.getStorageSync('userInfo') || {};
+    this.applyInviteProfile(cached);
+    try {
+      const fresh = await api.technician.auth.getUserInfo();
+      const userInfo = { ...cached, ...fresh };
+      wx.setStorageSync('userInfo', userInfo);
+      wx.setStorageSync('technician_userInfo', userInfo);
+      this.applyInviteProfile(userInfo);
+    } catch (err) {
+      console.warn('refresh invitation profile failed', err);
+    }
+  },
+
+  handleInviteUnavailable() {
+    wx.showToast({ title: '邀请码加载中，请稍后重试', icon: 'none' });
+    this.prepareInviteShare();
+  },
+
+  onShareAppMessage() {
+    const code = this.data.inviteCode;
+    if (!code) return { title: '邀请你加入 OnlyNail', path: '/pages/login/index' };
+    const share = {
+      title: `${this.data.inviteName || '美甲师'}邀请你成为专属客户`,
+      path: `/pages/login/index?invite=${encodeURIComponent(code)}&source=invite`
+    };
+    if (this.data.inviteAvatarUrl) share.imageUrl = this.data.inviteAvatarUrl;
+    return share;
   }
 });

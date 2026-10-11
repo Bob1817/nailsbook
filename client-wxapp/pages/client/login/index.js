@@ -2,6 +2,7 @@ const api = require('../../../services/api');
 const { validatePhone } = require('../../../utils/util');
 const { silentWechatLogin } = require('../../../utils/wechat-auth');
 const { consumePostAuthRedirect } = require('../../../utils/artist-navigation');
+const { needsClientProfile, completionUrl } = require('../../../utils/client-profile-completion');
 const privacy = require('../../../utils/privacy');
 
 Page({
@@ -101,6 +102,25 @@ Page({
         inviteCode: this.inviteCode || undefined,
         source: this.registrationSource
       });
+      if (res.needsRegistration) {
+        wx.hideLoading();
+        this.setData({ loading: false });
+        const phone = res.phone || this.data.phone || '';
+        wx.showModal({
+          title: '尚未注册',
+          content: res.message || '该手机号尚未注册，请先完成注册',
+          confirmText: '去注册',
+          cancelText: '返回',
+          success: (modalRes) => {
+            if (!modalRes.confirm) return;
+            const invite = this.inviteCode ? '&invite=' + encodeURIComponent(this.inviteCode) : '';
+            wx.navigateTo({
+              url: '/pages/register/index?phone=' + encodeURIComponent(phone) + invite + '&source=' + this.registrationSource
+            });
+          }
+        });
+        return;
+      }
       await this._afterAuth(res);
     } catch (err) {
       wx.hideLoading();
@@ -211,7 +231,8 @@ Page({
 
   async _afterAuth(res) {
     const app = getApp();
-    app.setLogin('client', res.accessToken, res.client);
+    const userInfo = res.client || res.userInfo;
+    app.setLogin('client', res.accessToken, userInfo, res.roles || ['client']);
     if (res.refreshToken) {
       wx.setStorageSync('client_refreshToken', res.refreshToken);
     }
@@ -230,6 +251,7 @@ Page({
       }
     }
     wx.hideLoading();
-    wx.reLaunch({ url: consumePostAuthRedirect(this.redirect) });
+    const nextPage = consumePostAuthRedirect(this.redirect);
+    wx.reLaunch({ url: needsClientProfile(userInfo) ? completionUrl(nextPage) : nextPage });
   }
 });

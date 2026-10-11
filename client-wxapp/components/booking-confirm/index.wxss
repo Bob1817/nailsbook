@@ -1,18 +1,26 @@
 @import '../../styles/booking-form.wxss';
 @import '../../styles/booking-actions.wxss';
-.confirm-mask { position: fixed; inset: 0; z-index: 1100; background: var(--bg-overlay); display: flex; align-items: center; justify-content: center; padding: 24rpx; box-sizing: border-box; }
-.confirm-panel { width: 100%; max-width: 480px; background: var(--nb-surface); border-radius: var(--radius-lg); overflow: hidden; color: var(--nb-ink); font-size: var(--font-sm); line-height: 1.5; }
-.confirm-title { padding: 32rpx 32rpx 16rpx; font-size: var(--font-md); font-weight: var(--weight-semibold); }
-.confirm-scroll { height: 42vh; max-height: 480px; }
-.confirm-content { padding: 0 32rpx 24rpx; }
-.summary { white-space: normal; overflow-wrap: anywhere; margin-bottom: 8rpx; }
-.hint { color: var(--nb-muted); font-size: var(--font-xs); line-height: 1.5; }
-.field-label { margin: 24rpx 0 12rpx; }
-.form-input { background: var(--nb-page); color: var(--nb-ink); border: 1px solid var(--nb-line); }
-.paid-row { display: flex; align-items: center; justify-content: space-between; min-height: 44px; margin-top: 16rpx; }
+.confirm-mask { position: fixed; inset: 0; z-index: 1100; background: var(--bg-overlay); display: flex; align-items: center; justify-content: center; padding: max(24rpx, env(safe-area-inset-top)) 24rpx max(24rpx, env(safe-area-inset-bottom)); box-sizing: border-box; }
+.confirm-panel { display: flex; flex-direction: column; width: 100%; max-width: 480px; max-height: 88vh; background: var(--nb-surface); border-radius: var(--radius-lg); overflow: hidden; color: var(--nb-ink); font-size: var(--font-sm); line-height: 1.5; }
+.confirm-title { flex-shrink: 0; padding: 32rpx; font-size: var(--font-md); font-weight: var(--weight-semibold); }
+.confirm-scroll { min-height: 0; max-height: calc(88vh - 180px); }
+.confirm-content { padding: 0 32rpx; }
+.booking-summary { padding: 20rpx 24rpx; background: var(--nb-page); border-radius: var(--radius-md); overflow-wrap: anywhere; }
+.summary-time { font-size: var(--font-md); font-weight: var(--weight-semibold); }
+.summary-detail { margin-top: 8rpx; color: var(--nb-secondary); }
+.proposal-hint { margin-top: 16rpx; color: var(--nb-muted); font-size: var(--font-xs); line-height: 1.5; }
+.field-label { margin: 24rpx 0 12rpx; font-weight: var(--weight-medium); }
+.form-input { background: var(--nb-soft-surface); color: var(--nb-ink); border: 0; }
+.deposit-confirm { margin-top: 12rpx; }
+.payment-confirm { display: flex; align-items: center; min-height: 44px; padding: 0 20rpx 0 8rpx; border-radius: var(--input-radius); background: var(--nb-page); color: var(--nb-secondary); box-sizing: border-box; }
+.payment-confirm.is-checked { background: var(--nb-active-surface); color: var(--nb-ink); }
+.payment-checkbox { flex-shrink: 0; transform: scale(.72); transform-origin: center; }
+.payment-label { flex: 1; min-width: 0; font-size: var(--font-sm); font-weight: var(--weight-medium); }
+.payment-amount { margin-left: 16rpx; color: var(--nb-money); font-size: var(--font-sm); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
 .error { color: var(--nb-danger); font-size: var(--font-sm); margin-top: 16rpx; }
-.confirm-actions { display: flex; gap: 16rpx; padding: 16rpx 32rpx max(24rpx, env(safe-area-inset-bottom)); border-top: 1px solid var(--nb-line); }
-.confirm-actions .booking-action { flex: 1; margin: 0; }
-.cancel { background: var(--nb-page); color: var(--nb-ink); }
+.confirm-actions { flex-shrink: 0; display: flex; gap: 16rpx; padding: 32rpx; }
+.confirm-actions .booking-action { flex: 1; min-width: 0; margin: 0; }
+.cancel { background: var(--nb-soft-surface); color: var(--nb-secondary); }
 .submit { background: var(--nb-action); color: var(--nb-inverse); }
-.confirm-actions .is-disabled { opacity: .5; }
+.action-pressed { opacity: .78; }
+.confirm-actions .is-disabled { background: var(--nb-pressed); color: var(--nb-control); }

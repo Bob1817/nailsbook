@@ -19,9 +19,13 @@ page { height: 100%; overflow: hidden; background: var(--nb-page); color: var(--
 .retry { margin-top: 24rpx; min-height: 88rpx; padding: 0 32rpx; border: 1rpx solid var(--nb-border); border-radius: 16rpx; background: var(--nb-surface); color: var(--nb-ink); font-size: var(--font-sm); }
 .retry::after { border: 0; }
 .empty-action { margin-top: 28rpx; }
-.floating-add { position: fixed; right: 32rpx; bottom: calc(32rpx + env(safe-area-inset-bottom)); z-index: 120; min-height: 88rpx; padding: 0 28rpx; border-radius: 999rpx; display: flex; align-items: center; justify-content: center; gap: 10rpx; background: var(--nb-action); color: var(--nb-surface); font-size: var(--font-sm); font-weight: var(--weight-semibold); box-shadow: 0 10rpx 28rpx rgba(0,0,0,.16); }
-.floating-add:active { opacity: .78; }
-.floating-add-icon { font-size: 34rpx; font-weight: var(--weight-regular); line-height: 1; }
+.floating-add { position: fixed; right: 40rpx; bottom: calc(32rpx + env(safe-area-inset-bottom)); z-index: 120; width: 108rpx; height: 108rpx; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(29, 29, 31, 0.72) /* brand-primary-alpha */; border: 1rpx solid rgba(255, 255, 255, 0.24); -webkit-backdrop-filter: blur(18rpx) saturate(125%); backdrop-filter: blur(18rpx) saturate(125%); box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.35) /* brand-primary-alpha */; }
+.floating-add:active { transform: scale(.92); }
+.floating-add::after { border: 0; }
+.floating-add-icon { position: relative; width: 36rpx; height: 36rpx; display: block; font-size: 0; }
+.floating-add-icon::before,
+.floating-add-icon::after { content: ''; position: absolute; left: 50%; top: 50%; width: 32rpx; height: 4rpx; border-radius: 2rpx; background: var(--text-inverse); transform: translate(-50%, -50%); }
+.floating-add-icon::after { transform: translate(-50%, -50%) rotate(90deg); }
 .overlay { position: fixed; inset: 0; z-index: 300; display: flex; align-items: flex-end; background: rgba(0,0,0,.42); }
 .sheet { width: 100%; max-height: 88vh; box-sizing: border-box; border-radius: 32rpx 32rpx 0 0; overflow: hidden; background: var(--nb-surface); }
 .sheet-handle { width: 72rpx; height: 8rpx; margin: 16rpx auto 6rpx; border-radius: 999rpx; background: var(--nb-border); }
@@ -55,4 +59,3 @@ textarea { height: 220rpx; padding: 22rpx; line-height: 1.55; }
 
 @import '../../../styles/booking-actions.wxss';
 .retry.booking-action { min-height: 44px; height: var(--control-hit-height); margin-top: 24rpx; padding: 0 24rpx; border-radius: 8px; font-size: var(--font-sm); }
-.floating-add.booking-action { min-height: 44px; height: var(--control-hit-height); border-radius: 8px; padding: 0 24rpx; font-size: var(--font-sm); box-shadow: none; }

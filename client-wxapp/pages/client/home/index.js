@@ -371,6 +371,10 @@ Page({
     if (phone) wx.makePhoneCall({ phoneNumber: phone });
   },
 
+  goBindTech() {
+    wx.navigateTo({ url: '/pages/client/my-technicians/index' });
+  },
+
   onPullDownRefresh() {
     var self = this;
     this.loadData().finally(function () { wx.stopPullDownRefresh(); });

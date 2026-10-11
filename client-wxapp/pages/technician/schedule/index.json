@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "日程"
+  "navigationBarTitleText": "日程",
+  "usingComponents": {
+    "technician-booking-card": "/components/technician-booking-card/index"
+  }
 }

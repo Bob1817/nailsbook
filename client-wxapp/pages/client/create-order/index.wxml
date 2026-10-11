@@ -40,18 +40,19 @@
   </view>
 
   <view class="section" wx:if="{{selectedTech && quickMode}}">
-    <view class="section-head">
-      <text class="section-title">先选择预约时间</text>
+    <view class="section-head quick-time-head">
+      <text class="section-title">预约时间</text>
       <text class="section-sub">先申请时间，美甲师确认后生效；款式、价格和时长可稍后沟通</text>
     </view>
     <booking-time-picker
+      horizontal
       tech-id="{{selectedTech.id}}"
       service-date="{{serviceDate}}"
       start-time="{{startTime}}"
       service-type="{{serviceType}}"
       shop-name="{{selectedShopName}}"
       duration-minutes="{{selectedServiceDuration || 120}}"
-      duration-pending="{{quickMode && (!sourceWork || referenceOnly)}}"
+      duration-pending="{{!selectedServiceDuration}}"
       bindchange="onBookingTimeChange"
       bindavailability="onBookingAvailability"
       bindcontact="contactSelectedTech"
@@ -67,6 +68,8 @@
         <text class="section-head-action-arrow">{{showQuickRef ? '‹' : '›'}}</text>
       </view>
     </view>
+
+    <view wx:if="{{lastServiceHint && !sourceWork}}" class="last-service-hint">{{lastServiceHint}}</view>
 
     <!-- 切换：选服务项目 / 自定义需求 -->
     <view wx:if="{{!sourceWork && !quickMode}}" class="segment-wrap content-segment">
@@ -188,16 +191,13 @@
       service-type="{{serviceType}}"
       shop-name="{{selectedShopName}}"
       duration-minutes="{{selectedServiceDuration || 120}}"
-      duration-pending="{{quickMode && (!sourceWork || referenceOnly)}}"
+      duration-pending="{{!selectedServiceDuration}}"
       bindchange="onBookingTimeChange"
       bindavailability="onBookingAvailability"
       bindcontact="contactSelectedTech"
     />
   </view>
 
-  <view wx:if="{{quickMode}}" class="section">
-    <button class="quick-choice booking-action" hover-class="quick-choice-pressed" bindtap="useFullBooking">使用完整预约</button>
-  </view>
   <!-- 到店：选择门店 -->
   <view class="section" wx:if="{{selectedTech}}">
     <view class="section-head">
@@ -206,6 +206,7 @@
     </view>
     <!-- 单店：展示信息卡片，无需选择 -->
     <view wx:if="{{serviceOptions.length === 1}}" class="addr-card addr-card-active addr-card-readonly">
+      <view class="service-option-check service-option-check-active" aria-hidden="true"><text>✓</text></view>
       <view class="addr-info">
         <view class="addr-name-row"><text class="addr-name">{{serviceOptions[0].title}}</text><text wx:if="{{serviceOptions[0].contact}}" class="addr-phone">{{serviceOptions[0].contact}}</text></view>
         <text class="addr-detail">{{serviceOptions[0].detail}}</text>
@@ -215,10 +216,11 @@
     <!-- 多店：radio 选择 -->
     <radio-group wx:elif="{{serviceOptions.length > 1}}" class="addr-list" bindchange="selectServiceOption">
       <label wx:for="{{serviceOptions}}" wx:key="key"
-        class="addr-card {{selectedServiceOptionKey === item.key ? 'addr-card-active' : ''}}">
+        class="addr-card {{selectedServiceOptionKey === item.key ? 'addr-card-active' : ''}}"
+        role="radio" aria-checked="{{selectedServiceOptionKey === item.key}}">
         <radio class="service-option-native" value="{{item.key}}" checked="{{selectedServiceOptionKey === item.key}}" />
-        <view class="service-option-radio {{selectedServiceOptionKey === item.key ? 'service-option-radio-active' : ''}}">
-          <view wx:if="{{selectedServiceOptionKey === item.key}}" class="service-option-radio-dot"></view>
+        <view class="service-option-check {{selectedServiceOptionKey === item.key ? 'service-option-check-active' : ''}}" aria-hidden="true">
+          <text wx:if="{{selectedServiceOptionKey === item.key}}">✓</text>
         </view>
         <view class="addr-info">
           <view class="addr-name-row"><text class="addr-name">{{item.title}}</text><text wx:if="{{item.contact}}" class="addr-phone">{{item.contact}}</text></view>
@@ -342,8 +344,8 @@
       </view>
     </view>
     <view class="confirm-modal-btns">
-      <view class="confirm-btn confirm-btn-cancel" bindtap="cancelQuickSubmit">返回修改</view>
-      <view class="confirm-btn confirm-btn-primary" bindtap="confirmQuickSubmit">提交申请</view>
+      <view class="confirm-btn booking-action confirm-btn-cancel" bindtap="cancelQuickSubmit">返回修改</view>
+      <view class="confirm-btn booking-action confirm-btn-primary" bindtap="confirmQuickSubmit">提交申请</view>
     </view>
   </view>
 </view>
@@ -383,7 +385,7 @@
         </view>
       </view>
       <view wx:if="{{sourceWork || (!isCustomService && selectedServiceCount > 0)}}" class="confirm-tip">
-        <text>美甲师确认后生效；确认前不会占用正式档期。</text>
+        <text>提交后将立即为你保留所选时段；如需调整，请取消预约后重新选择。</text>
       </view>
       <view wx:else class="confirm-tip confirm-tip-warn">
         <text class="confirm-warn-title">本次预约仅预约时间</text>
@@ -397,8 +399,8 @@
       <text class="confirm-check-text">我已确认信息无误，最终以美甲师确认为准</text>
     </view>
     <view class="confirm-modal-btns">
-      <view class="confirm-btn confirm-btn-cancel" bindtap="cancelApplicationReview">返回修改</view>
-      <view class="confirm-btn confirm-btn-primary {{bookingRulesAgreed ? '' : 'confirm-btn-disabled'}}" bindtap="confirmApplicationReview">提交申请</view>
+      <view class="confirm-btn booking-action confirm-btn-cancel" bindtap="cancelApplicationReview">返回修改</view>
+      <view class="confirm-btn booking-action confirm-btn-primary {{bookingRulesAgreed ? '' : 'confirm-btn-disabled'}}" bindtap="confirmApplicationReview">提交申请</view>
     </view>
   </view>
 </view>
@@ -409,7 +411,7 @@
     <view class="success-icon">✓</view>
     <text class="success-title">预约申请已提交</text>
     <text class="success-sub">等待{{submitSuccessTech}}确认时间与报价</text>
-    <text class="success-hint">确认后你会收到微信通知</text>
+    <text class="success-hint">请在「预约」中查看处理进度</text>
     <view class="success-actions">
       <view class="success-btn" bindtap="goToOrders">查看我的预约</view>
     </view>
@@ -445,6 +447,34 @@
         <text>{{selectedWorkMap[previewWorkData.id] ? '✓ 已选' : '选择此作品'}}</text>
       </view>
       <view class="work-nav-btn {{previewWorkIndex >= techWorks.length - 1 ? 'work-nav-disabled' : ''}}" catchtap="nextWork" role="button">下一款 ›</view>
+    </view>
+  </view>
+</view>
+
+<!-- 预约冲突后直接重选时间 -->
+<view wx:if="{{showConflictTimePicker}}" class="modal-overlay" catchtouchmove="preventModalClose">
+  <view class="modal-panel conflict-time-modal" catchtap="preventModalClose">
+    <view class="confirm-modal-header">
+      <text class="confirm-modal-title">重新选择预约时间</text>
+      <view class="confirm-modal-close" bindtap="closeConflictTimePicker" role="button" aria-label="关闭">×</view>
+    </view>
+    <text class="conflict-time-message">{{bookingConflictMessage}}</text>
+    <booking-time-picker
+      horizontal
+      tech-id="{{selectedTech.id}}"
+      service-date="{{serviceDate}}"
+      start-time="{{startTime}}"
+      service-type="{{serviceType}}"
+      shop-name="{{selectedShopName}}"
+      duration-minutes="{{selectedServiceDuration || 120}}"
+      duration-pending="{{!selectedServiceDuration}}"
+      bindchange="onBookingTimeChange"
+      bindavailability="onBookingAvailability"
+      bindcontact="contactSelectedTech"
+    />
+    <view class="confirm-modal-btns conflict-time-actions">
+      <view class="confirm-btn booking-action confirm-btn-cancel" bindtap="closeConflictTimePicker">暂不选择</view>
+      <view class="confirm-btn booking-action confirm-btn-primary {{startTime ? '' : 'confirm-btn-disabled'}}" bindtap="confirmConflictTime">确认并重新提交</view>
     </view>
   </view>
 </view>

@@ -49,6 +49,28 @@
   display: block;
 }
 
+.tab-unread-badge {
+  position: absolute;
+  top: -12rpx;
+  left: 30rpx;
+  z-index: 2;
+  min-width: 30rpx;
+  height: 30rpx;
+  padding: 0 8rpx;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2rpx solid var(--nb-surface);
+  border-radius: 999rpx;
+  background: var(--nb-danger);
+  color: var(--nb-inverse);
+  font-size: 18rpx;
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+  white-space: nowrap;
+}
+
 .tab-label {
   color: currentColor;
   font-size: var(--font-xs); font-weight: var(--weight-medium);

@@ -1,19 +1,26 @@
 const api = require('../../../services/api');
-const labels = { follow: '关注', like: '点赞', favorite: '收藏' };
+const labels = { like: '点赞', favorite: '收藏', comment: '评论' };
 Page({
-  data: { type: 'follow', label: '关注', list: [], loading: false, error: '', hasMore: false },
+  data: { type: 'like', label: '点赞', list: [], loading: false, error: '', hasMore: false },
   onLoad(options) {
     if (wx.getStorageSync('role') !== 'technician') {
       wx.reLaunch({ url: '/pages/login/index' });
       return;
     }
-    const type = labels[options.type] ? options.type : 'follow';
+    const type = labels[options.type] ? options.type : 'like';
     this.setData({ type, label: labels[type] });
     this.loadRecords(true);
   },
   onPullDownRefresh() { this.loadRecords(true).finally(() => wx.stopPullDownRefresh()); },
   onReachBottom() { if (this.data.hasMore) this.loadRecords(false); },
   retry() { this.loadRecords(!this.data.list.length); },
+  switchType(e) {
+    const type = e.currentTarget.dataset.type;
+    if (!labels[type] || type === this.data.type) return;
+    this.page = 0;
+    this.setData({ type, label: labels[type], list: [], hasMore: false });
+    this.loadRecords(true);
+  },
   async loadRecords(reset) {
     if (this.data.loading) return;
     const page = reset ? 1 : this.page + 1;
@@ -33,7 +40,33 @@ Page({
     const pad = n => String(n).padStart(2, '0');
     return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   },
-  viewWork(e) {
-    wx.navigateTo({ url: '/pages/technician/work-detail/index?id=' + e.currentTarget.dataset.id });
+  manageComment(e) {
+    const id = Number(e.currentTarget.dataset.id);
+    const item = this.data.list.find(record => Number(record.id) === id);
+    if (!item) return;
+    wx.showActionSheet({
+      itemList: [item.isPinned ? '取消置顶' : '置顶评论', item.isHidden ? '恢复展示' : '隐藏评论', '删除评论'],
+      success: ({ tapIndex }) => {
+        if (tapIndex === 2) return this.deleteComment(id);
+        const action = tapIndex === 0 ? 'pin' : 'hide';
+        api.technician.manageArtistComment(id, action).then(() => this.loadRecords(true)).catch(err => {
+          wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+        });
+      }
+    });
+  },
+  deleteComment(id) {
+    wx.showModal({
+      title: '删除评论',
+      content: '删除后无法恢复，确定继续吗？',
+      confirmText: '删除',
+      success: ({ confirm }) => {
+        if (!confirm) return;
+        api.technician.deleteArtistComment(id).then(() => {
+          this.setData({ list: this.data.list.filter(item => Number(item.id) !== id) });
+          wx.showToast({ title: '评论已删除', icon: 'success' });
+        }).catch(err => wx.showToast({ title: err.message || '删除失败', icon: 'none' }));
+      }
+    });
   },
 });

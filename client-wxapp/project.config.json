@@ -1,5 +1,5 @@
 {
-  "description": "NailBook 微信小程序",
+  "description": "OnlyNail 微信小程序",
   "packOptions": {
     "ignore": [
       {
@@ -88,9 +88,9 @@
     "disableSWC": true
   },
   "compileType": "miniprogram",
-  "libVersion": "2.25.0",
+  "libVersion": "2.32.3",
   "appid": "wx05644a205a1844a0",
-  "projectname": "nailbook-wxapp",
+  "projectname": "onlynail-wxapp",
   "condition": {},
   "editorSetting": {
     "tabIndent": "insertSpaces",

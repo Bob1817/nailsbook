@@ -42,7 +42,7 @@ function request(options) {
   if (roleMismatch) {
     return Promise.reject({ code: 403, message: '当前身份无权访问此内容' });
   }
-  const apiBase = baseUrl || appInstance?.globalData?.apiBaseUrl || 'http://localhost:3000';
+  const apiBase = baseUrl || appInstance?.globalData?.apiBaseUrl || 'https://api.lunails.cn';
   if (needAuth && token && appInstance?.getTokenExpiresAt) {
     const expiresAt = appInstance.getTokenExpiresAt(token);
     if (expiresAt > 0 && expiresAt <= Date.now()) {

@@ -8,6 +8,7 @@ const tech = id => ({ technician: { id, status: 'active', serviceItems: [], shop
 let bindings = [], definition, draft = {};
 vm.runInNewContext(fs.readFileSync(file, 'utf8'), {
   Page: value => definition = value, console,
+  getApp: () => ({ globalData: {} }),
   wx: { getStorageSync: () => draft },
   require: name => name.includes('services/api') ? { auth: { getUserInfo: async () => ({ bindings }) }, public: {} } : createRequire(file)(name)
 });

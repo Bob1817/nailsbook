@@ -1,4 +1,4 @@
-# NailBook 小程序通用组件规范
+# OnlyNail 小程序通用组件规范
 
 本目录是小程序 UI 的唯一通用组件入口。页面应优先组合这里的组件；相同交互不得在页面中重新定义另一套尺寸、颜色或状态。
 
@@ -7,7 +7,7 @@
 - foundation：输入框、按钮、筛选器、开关等基础控件，视觉和交互 API 必须稳定。
 - navigation：导航栏和底部导航，负责安全区及系统胶囊适配。
 - pattern：跨页面复用的内容结构，不包含具体业务请求。
-- business：包含 NailBook 业务语义的复合组件，可依赖基础组件。
+- business：包含 OnlyNail 业务语义的复合组件，可依赖基础组件。
 
 所有组件必须登记在 component-registry.json。组件目录使用 kebab-case，并完整包含 index.js、index.json、index.wxml、index.wxss。
 

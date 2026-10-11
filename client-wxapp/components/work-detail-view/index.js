@@ -12,6 +12,7 @@ Component({
     loadErrorDescription: { type: String, value: '' },
     canRetryLoad: { type: Boolean, value: false },
     isAuthor: { type: Boolean, value: false },
+    isOwnerView: { type: Boolean, value: false },
     showBookSame: { type: Boolean, value: true },
     canComment: { type: Boolean, value: true },
     canShare: { type: Boolean, value: true },

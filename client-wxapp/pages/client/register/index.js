@@ -1,6 +1,7 @@
 const api = require('../../../services/api');
 const { validatePhone } = require('../../../utils/util');
 const { consumePostAuthRedirect } = require('../../../utils/artist-navigation');
+const { needsClientProfile, completionUrl } = require('../../../utils/client-profile-completion');
 
 function validatePassword(pwd) {
   if (!pwd || pwd.length < 8) return '密码至少 8 位';
@@ -130,7 +131,8 @@ Page({
 
   async _afterAuth(res) {
     const app = getApp();
-    app.setLogin('client', res.accessToken, res.client);
+    const userInfo = res.client || res.userInfo;
+    app.setLogin('client', res.accessToken, userInfo, res.roles || ['client']);
     if (res.refreshToken) {
       wx.setStorageSync('client_refreshToken', res.refreshToken);
     }
@@ -148,7 +150,8 @@ Page({
       }
     }
     wx.hideLoading();
-    wx.reLaunch({ url: consumePostAuthRedirect(this.redirect) });
+    const nextPage = consumePostAuthRedirect(this.redirect);
+    wx.reLaunch({ url: needsClientProfile(userInfo) ? completionUrl(nextPage) : nextPage });
   },
 
   goBack() {

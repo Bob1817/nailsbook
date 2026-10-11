@@ -13,9 +13,10 @@
       <view class="section-heading"><view><text class="section-title">主页形象</text><text class="section-sub">对应公开主页顶部的背景图和头像，均为选填</text></view><text class="section-badge">选填</text></view>
       <button class="hero-editor {{heroUploading ? 'uploading' : ''}}" catchtap="chooseHero" disabled="{{heroUploading}}" aria-label="{{heroImageUrl ? '更换主页背景图' : '上传主页背景图'}}">
         <image wx:if="{{heroImageUrl}}" src="{{heroImageUrl}}" mode="aspectFill" class="hero-preview"/>
-        <view wx:else class="hero-empty"><view class="upload-symbol">＋</view><text class="upload-title">{{heroUploading ? '正在上传' : '上传主页背景图'}}</text><text class="upload-help">公开主页顶部展示，建议使用横向高清图片</text></view>
-        <view wx:if="{{heroImageUrl}}" class="hero-change">{{heroUploading ? '上传中' : '更换图片'}}</view>
+        <view wx:else class="hero-empty"><view class="upload-symbol">＋</view><view class="hero-empty-copy"><text class="upload-title">{{heroUploading ? '正在上传' : '添加主页背景图'}}</text><text class="upload-help">使用横向环境照或代表作品，完整展示主页形象</text></view><text class="hero-empty-action">选择图片</text></view>
+        <view wx:if="{{heroImageUrl}}" class="hero-image-footer"><view><text class="hero-image-title">主页背景图</text><text class="hero-image-help">点击图片可重新选择</text></view><text class="hero-change">{{heroUploading ? '上传中' : '更换'}}</text></view>
       </button>
+      <view class="hero-guidance"><text>建议比例 2:1</text><text>优先使用清晰、无遮挡的横向图片</text></view>
       <view class="avatar-row"><image wx:if="{{avatarUrl}}" class="avatar" src="{{avatarUrl}}" mode="aspectFill" aria-label="主页头像"/><view wx:else class="avatar avatar-fallback"><image src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar"/></view><view class="avatar-copy"><text class="row-title">主页头像</text><text class="row-desc">同步展示在主页头部和作品作者信息中</text></view><view class="small-action semantic-link" bindtap="chooseAvatar">更换</view></view>
     </view>
 
@@ -23,10 +24,10 @@
       <view class="section-heading"><view><text class="section-title">公开资料</text><text class="section-sub">对应主页头部信息和“自我介绍”，未填写的内容不会展示</text></view><text class="section-badge">选填</text></view>
       <view class="field"><text class="label">主页名称</text><input placeholder-class="form-placeholder" class="input form-input" value="{{name}}" bindinput="onInput" data-field="name" maxlength="20" placeholder="输入展示名称" confirm-type="done"/></view>
       <view class="field"><text class="label">主页 Slogan</text><input placeholder-class="form-placeholder" class="input form-input" value="{{tagline}}" bindinput="onInput" data-field="tagline" maxlength="80" placeholder="一句话表达你的审美与价值" confirm-type="done"/></view>
-      <view class="field experience-field"><view class="label-row"><text class="label">从业经验</text><text class="field-value">{{experienceYears ? experienceYears + ' 年' : '不展示'}}</text></view><block wx:if="{{experienceYears}}"><slider min="1" max="30" step="1" value="{{experienceYears}}" activeColor="#1D1D1F" backgroundColor="#E5E5EA" block-color="#1D1D1F" block-size="22" bindchange="onExperienceChange" bindchanging="onExperienceChange"/><view class="slider-scale"><text>1 年</text><text>30 年以上</text></view><view class="source-link semantic-link" bindtap="clearExperience">不在主页展示从业经验</view></block><view wx:else class="source-link semantic-link" bindtap="enableExperience">设置从业经验</view></view>
+      <view class="field"><text class="label">从业经验</text><input placeholder-class="form-placeholder" class="input form-input" type="number" value="{{experienceYears || ''}}" bindinput="onExperienceInput" maxlength="2" placeholder="填写 1–30 年，未填写则不展示" confirm-type="done"/></view>
       <view class="field"><text class="label">认证展示</text><input placeholder-class="form-placeholder" class="input form-input" value="{{certificationTitle}}" bindinput="onInput" data-field="certificationTitle" maxlength="80" placeholder="例如：平台认证美甲师" confirm-type="done"/></view>
       <view class="field-pair"><view class="field"><text class="label">所在城市</text><picker mode="region" bindchange="onCityChange"><view class="picker form-input"><text>{{city || '选择城市'}}</text><text class="picker-arrow">›</text></view></picker></view><view class="field"><text class="label">服务区域</text><picker mode="region" bindchange="onServiceAreaChange"><view class="picker form-input"><text>{{serviceArea || '选择区域'}}</text><text class="picker-arrow">›</text></view></picker></view></view>
-      <view class="field"><view class="label-row"><text class="label">擅长风格</text><text class="counter">{{specialties.length}}/5</text></view><text class="label-sub">对应主页头部风格标签，按选择顺序展示</text><view wx:if="{{specialties.length}}" class="selected-styles"><view wx:for="{{specialties}}" wx:key="*this" class="selected-style" bindtap="toggleSpecialty" data-value="{{item}}"><text class="selected-style-order">{{index + 1}}</text><text>{{item}}</text><text class="selected-style-remove">移除</text></view></view><view class="skill-list"><view wx:for="{{specialtyOptions}}" wx:key="*this" class="skill-chip {{selectedSpecialtyMap[item] ? 'selected' : ''}}" bindtap="toggleSpecialty" data-value="{{item}}">{{selectedSpecialtyMap[item] ? '✓ ' : ''}}{{item}}</view></view></view>
+      <view class="field"><view class="label-row"><text class="label">擅长风格</text><text class="counter">{{specialties.length}}/5</text></view><text class="label-sub">最多选择 5 项，编号为主页展示顺序</text><view class="skill-list"><view wx:for="{{specialtyOptions}}" wx:key="*this" class="skill-chip {{selectedSpecialtyMap[item] ? 'selected' : ''}}" bindtap="toggleSpecialty" data-value="{{item}}"><text wx:if="{{selectedSpecialtyMap[item]}}" class="skill-chip-order">{{selectedSpecialtyMap[item]}}</text><text class="skill-chip-label">{{item}}</text></view></view></view>
     </view>
 
     <view class="section-card" data-section="environment">
@@ -60,7 +61,7 @@
       <view class="field"><text class="label">售后补修</text><textarea placeholder-class="form-placeholder" class="form-textarea textarea compact" value="{{aftercarePolicy}}" bindinput="onInput" data-field="aftercarePolicy" maxlength="1000" placeholder="说明售后与补修范围"/></view>
     </view>
 
-    <view class="group-label"><text class="group-title">选择主页展示内容</text><text class="group-desc">以下内容来自已完成的经营资料，此处只选择，不重复编辑</text></view>
+    <view class="group-label"><text class="group-title">选择主页展示内容</text><text class="group-desc">以下内容来自已完成的经营资料，此处只选择，不重复编辑</text><view wx:if="{{defaultSelectionApplied}}" class="default-selection-note"><text class="default-selection-title">已为你生成默认展示</text><text class="default-selection-desc">已优先选择可用店铺、服务和公开作品，保存主页后生效，可按需要调整。</text></view></view>
 
     <view class="section-card selection-card">
       <view class="section-heading"><view><text class="section-title">服务项目与价格</text><text class="section-sub">从服务管理中选择，最多展示 6 项</text></view><text class="section-count">{{featuredServiceIds.length}}/6</text></view>

@@ -355,19 +355,21 @@ page { background: var(--bg-gradient-entry); }
 /* ===== 退出 ===== */
 .logout-btn {
   margin: 32rpx 32rpx 0;
-  height: 88rpx;
-  border-radius: var(--btn-radius);
-  background: transparent;
+  min-height: 88rpx;
+  box-sizing: border-box;
+  border-radius: var(--radius-lg);
+  background: var(--nb-surface);
   border: 0;
   color: var(--nb-danger);
   font-size: var(--font-md);
   font-weight: var(--weight-medium);
+  padding: 0 28rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: none;
+  box-shadow: 0 16rpx 42rpx rgba(0, 0, 0, 0.07);
 }
-.logout-btn:active { opacity: 0.8; }
+.logout-btn:active { opacity: 0.85; }
 .version {
   display: block;
   margin-top: var(--space-md);
@@ -1325,7 +1327,6 @@ page { background: var(--bg-gradient-entry); }
   color:var(--nb-secondary);
 }
 .menu-value { flex-shrink:0; color:var(--nb-muted); font-size:var(--font-xs); }
-.account-logout .menu-label { color:var(--nb-danger); }
 .card-more { min-height:44px; }
 .setup-step-arrow { color:var(--nb-muted); }
 .menu-item, .logout-btn { min-height:44px; }

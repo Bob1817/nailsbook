@@ -51,13 +51,21 @@ page {
   gap: 8rpx;
   min-height: 88rpx;
   padding: 0 22rpx;
+  margin: 0;
+  line-height: normal;
+  font: inherit;
   background: var(--nb-soft-surface);
   border: 0;
   border-radius: var(--radius-lg);
   flex-shrink: 0;
 }
 
-.btn-invite:active {
+.btn-invite::after {
+  border: 0;
+}
+
+.btn-invite:active,
+.btn-invite-pressed {
   background: var(--bg-tag);
 }
 
@@ -210,7 +218,7 @@ page {
 }
 
 .customer-card {
-  padding: 24rpx 24rpx 20rpx;
+  padding: 24rpx;
   overflow: hidden;
   background: var(--bg-card);
   border: 0;
@@ -335,7 +343,7 @@ page {
 .stats-grid {
   display: flex;
   margin-top: 20rpx;
-  padding: 22rpx 0;
+  padding: 22rpx 0 0;
   border-top: 0;
   border-bottom: 0;
 }

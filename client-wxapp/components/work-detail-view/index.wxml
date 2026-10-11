@@ -21,7 +21,7 @@
     </view>
   </view>
   <block wx:elif="{{work.id}}">
-    <view class="top-action top-back" style="{{topButtonStyle}}" data-event="back" bindtap="emit" role="button" aria-label="返回"><text>‹</text></view>
+    <view class="top-action top-back" style="{{topButtonStyle}}" data-event="back" bindtap="emit" role="button" aria-label="返回"><text class="top-back-glyph">‹</text></view>
     <swiper class="image-swiper" current="{{currentImageIndex}}" circular="{{imageUrls.length > 1}}" bindchange="onSwiperChange">
       <swiper-item wx:for="{{imageUrls}}" wx:key="*this" bindtap="previewImage" data-url="{{item}}"><image class="work-image" src="{{item}}" mode="aspectFill" aria-label="{{work.title || '美甲作品'}}第{{index + 1}}张图片" /></swiper-item>
     </swiper>
@@ -29,22 +29,30 @@
       <view class="intro-section">
         <view class="title-row">
           <text class="work-title">{{work.title || '未命名作品'}}</text>
-          <view wx:if="{{!visitorInfo && showBookSame}}" class="booking-action" bindtap="bookSame" role="button" aria-label="预约同款"><view class="booking-action-face"><image src="/static/icons/calendar.svg"/><text>预约同款</text></view></view>
-          <view wx:if="{{isAuthor}}" class="manage-button" bindtap="manageWork" role="button" aria-label="管理作品"><image src="/static/icons/more-horizontal.svg" /></view>
+          <view wx:if="{{!visitorInfo && showBookSame}}" class="booking-action" bindtap="bookSame" role="button" aria-label="预约同款"><view class="booking-action-face"><image class="booking-action-icon" src="/static/icons/calendar.svg"/><text>预约同款</text></view></view>
+          <view wx:if="{{isAuthor}}" class="manage-button" bindtap="manageWork" role="button" aria-label="管理作品"><image class="manage-icon" src="/static/icons/more-horizontal.svg" /></view>
         </view>
-        <view wx:if="{{work._priceText}}" class="work-price-row">
-          <text class="work-price semantic-money">{{work._priceText}}</text>
-          <text wx:if="{{work._priceDiffType === 'discount'}}" class="work-price-note discount">服务原价 ¥{{work.serviceSubtotalFen / 100}} · 优惠 ¥{{work._priceDiffFen / 100}}</text>
-          <text wx:elif="{{work._priceDiffType === 'surcharge'}}" class="work-price-note surcharge">服务原价 ¥{{work.serviceSubtotalFen / 100}} · 其他 ¥{{work._priceDiffFen / 100}}</text>
-          <text wx:elif="{{work.serviceSubtotalFen > 0}}" class="work-price-note">服务原价 ¥{{work.serviceSubtotalFen / 100}}</text>
+        <view class="work-pricing-card">
+          <text wx:if="{{work.serviceSubtotalFen > 0}}" class="work-original-price">服务原价 <text class="{{work._priceDiffType === 'discount' ? 'work-original-strike' : ''}}">¥{{work.serviceSubtotalFen / 100}}</text></text>
+          <view class="work-price-row">
+            <view class="work-quote">
+              <text class="work-price-label">作品报价</text>
+              <text wx:if="{{work._priceText}}" class="work-price semantic-money">{{work._priceText}}</text>
+              <text wx:else class="work-price-note">待报价</text>
+            </view>
+            <text wx:if="{{work._priceDiffType === 'discount'}}" class="work-price-note discount">已优惠 ¥{{work._priceDiffFen / 100}}</text>
+            <text wx:elif="{{work._priceDiffType === 'surcharge'}}" class="work-price-note surcharge">其他 ¥{{work._priceDiffFen / 100}}</text>
+          </view>
+          <view wx:if="{{work._promotionDiscountAmount > 0}}" class="work-promotion" aria-label="{{work.promotion.title}}，优惠{{work._promotionDiscountAmount}}元">
+            <view class="work-promotion-row"><text class="work-promotion-title">{{work.promotion.title}}</text><text class="work-promotion-amount">立减 ¥{{work._promotionDiscountAmount}}</text></view>
+            <text class="work-promotion-note">从此作品入口预约，报价时兑现</text>
+          </view>
         </view>
-        <view wx:if="{{work.promotion}}" class="work-promotion" aria-label="{{work.promotion.title}}，优惠{{work.promotion.discountAmount}}元">
-          <text class="work-promotion-title">{{work.promotion.title}}</text>
-          <text class="work-promotion-amount">立减 ¥{{work.promotion.discountAmount}}</text>
-          <text class="work-promotion-note">从此作品入口预约，报价时兑现</text>
+        <view wx:if="{{work.description || (work.tags && work.tags.length)}}" class="work-story">
+          <text class="work-story-title">作品介绍</text>
+          <text wx:if="{{work.description}}" class="work-desc">{{work.description}}</text>
+          <view wx:if="{{work.tags && work.tags.length}}" class="tags"><text wx:for="{{work.tags}}" wx:key="*this" class="tag">{{item}}</text></view>
         </view>
-        <text wx:if="{{work.description}}" class="work-desc">{{work.description}}</text>
-        <view wx:if="{{work.tags && work.tags.length}}" class="tags"><text wx:for="{{work.tags}}" wx:key="*this" class="tag">#{{item}}</text></view>
       </view>
 
       <view wx:if="{{visitorInfo && visitorInfo.id}}" class="visitor-section">
@@ -81,10 +89,10 @@
         <text wx:else class="visitor-hint">店铺信息待完善，预约前请确认服务地点</text>
       </view>
 
-      <view wx:if="{{!visitorInfo}}" class="engagement-section" style="display:flex;align-items:stretch;overflow:hidden;">
-        <view class="engagement-action {{work.isLiked ? 'is-active' : ''}}" style="flex:1 1 0;width:0;min-width:0;" data-event="like" bindtap="emit" role="button" aria-label="点赞，{{work.likeCount || 0}}次"><image src="{{work.isLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}"/><text class="action-count">{{work.likeCount || 0}}</text></view>
-        <view class="engagement-action {{work.isFavorited ? 'is-active' : ''}}" style="flex:1 1 0;width:0;min-width:0;" data-event="favorite" bindtap="emit" role="button" aria-label="收藏，{{work.favoriteCount || 0}}次"><image src="{{work.isFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}"/><text class="action-count">{{work.favoriteCount || 0}}</text></view>
-        <button class="engagement-action" style="flex:1 1 0;width:0;min-width:0;" disabled="{{!canShare && !canRetryShare}}" open-type="{{canShare ? 'share' : ''}}" bindtap="retryShare" aria-label="{{canShare ? '分享作品' : (canRetryShare ? '重新检查作品分享状态' : '此作品暂不可分享')}}"><image src="/static/icons/share.svg"/></button>
+      <view wx:if="{{!visitorInfo}}" class="engagement-section" style="display:flex;overflow:hidden;">
+        <view style="flex:1 1 0;width:0;min-width:0;" class="engagement-action {{work.isLiked ? 'is-active' : ''}}" data-event="like" bindtap="emit" role="button" aria-label="点赞，{{work.likeCount || 0}}次"><image class="engagement-icon" src="{{work.isLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}"/><text class="action-count">{{work.likeCount || 0}}</text></view>
+        <view style="flex:1 1 0;width:0;min-width:0;" class="engagement-action {{work.isFavorited ? 'is-active' : ''}}" data-event="favorite" bindtap="emit" role="button" aria-label="收藏，{{work.favoriteCount || 0}}次"><image class="engagement-icon" src="{{work.isFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}"/><text class="action-count">{{work.favoriteCount || 0}}</text></view>
+        <button style="flex:1 1 0;width:0;min-width:0;" class="engagement-action" disabled="{{!canShare && !canRetryShare}}" open-type="{{canShare ? 'share' : ''}}" bindtap="retryShare" aria-label="{{canShare ? '分享作品' : (canRetryShare ? '重新检查作品分享状态' : '此作品暂不可分享')}}"><image class="engagement-icon" src="/static/icons/share.svg"/></button>
       </view>
 
       <view wx:if="{{!visitorInfo}}" class="comments-section">
@@ -103,13 +111,13 @@
 
     </view>
     <view wx:if="{{!visitorInfo}}" class="composer-section" style="bottom:{{keyboardHeight}}px;{{keyboardHeight ? 'padding-bottom:20rpx;' : ''}}">
-        <view wx:if="{{replyingTo}}" class="replying">回复 @{{replyingTo.name}} <text data-event="commentcancel" bindtap="emit">取消</text></view>
-        <view class="input-row"><input class="comment-input" style="flex:1 1 0%;width:0;min-width:0;" placeholder="{{canComment ? '添加评论…' : '登录后参与评论'}}" value="{{commentText}}" focus="{{inputFocused}}" adjust-position="{{false}}" hold-keyboard="{{true}}" bindkeyboardheightchange="onKeyboardHeightChange" bindblur="onInputBlur" bindinput="onInput" bindconfirm="submitComment" confirm-type="send"/><button disabled="{{submittingComment}}" loading="{{submittingComment}}" class="send" size="mini" style="flex:0 0 72px;width:72px;min-width:72px;max-width:72px;height:44px;line-height:44px;display:block;text-align:center;font-size:14px;margin:0;padding:0;background:var(--nb-action);color:var(--nb-inverse);" hover-class="send-pressed" bindtap="submitComment" aria-label="{{submittingComment ? '正在发送评论' : '发送评论'}}">{{submittingComment ? '发送中' : '发送'}}</button></view>
+        <view wx:if="{{replyingTo}}" class="replying">回复 @{{replyingTo.name}} <text class="replying-cancel" data-event="commentcancel" bindtap="emit">取消</text></view>
+        <view class="input-row"><input class="comment-input" placeholder="{{canComment ? '添加评论…' : '登录后参与评论'}}" value="{{commentText}}" focus="{{inputFocused}}" adjust-position="{{false}}" hold-keyboard="{{true}}" bindkeyboardheightchange="onKeyboardHeightChange" bindblur="onInputBlur" bindinput="onInput" bindconfirm="submitComment" confirm-type="send"/><button disabled="{{submittingComment}}" loading="{{submittingComment}}" class="send" hover-class="send-pressed" bindtap="submitComment" aria-label="{{submittingComment ? '正在发送评论' : '发送评论'}}">{{submittingComment ? '发送中' : '发送'}}</button></view>
     </view>
-    <!-- 已登录：分享 + 预约同款 -->
+    <!-- 已登录：分享 + 预约同款 / 编辑作品 -->
     <view wx:if="{{visitorInfo && isLoggedIn}}" class="visitor-booking-bar">
-      <view class="visitor-bar-btn visitor-bar-btn-outline" open-type="share" hover-class="visitor-bar-pressed">分享给好友</view>
-      <view class="visitor-bar-btn visitor-bar-btn-primary" bindtap="bookSame" hover-class="visitor-bar-pressed">{{visitorInfo.acceptingBookings === false ? '暂未接单' : '预约同款'}}</view>
+      <button class="visitor-bar-btn visitor-bar-btn-outline booking-action" open-type="share" hover-class="visitor-bar-pressed">分享给好友</button>
+      <button class="visitor-bar-btn visitor-bar-btn-primary booking-action" bindtap="bookSame" disabled="{{!isOwnerView && visitorInfo.acceptingBookings === false}}" hover-class="visitor-bar-pressed" aria-label="{{isOwnerView ? '编辑作品' : (visitorInfo.acceptingBookings === false ? '暂未接单' : '预约同款')}}">{{isOwnerView ? '编辑作品' : (visitorInfo.acceptingBookings === false ? '暂未接单' : '预约同款')}}</button>
     </view>
     <!-- 未登录：联系美甲师 + 查看更多作品 -->
     <view wx:elif="{{visitorInfo && !isLoggedIn}}" class="visitor-booking-bar">
