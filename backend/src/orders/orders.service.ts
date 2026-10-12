@@ -667,7 +667,7 @@ export class OrdersService {
     updateData.reminderDaySent = false;
     updateData.reminderHourSent = false;
 
-    return this.prisma.$transaction(async (tx) => {
+    const updated = await this.prisma.$transaction(async (tx) => {
       if (businessDate(order.startTime) !== businessDate(startTime)) await this.bookingDays?.assertOpen(tx, technicianId, businessDate(startTime));
       const conflict = await tx.blockedTimeSlot.findFirst({
         where: {
@@ -713,12 +713,26 @@ export class OrdersService {
 
       return updated;
     });
+    void this.wechatSubscribe?.sendBookingStatusEvent(
+      { ...order, ...updated },
+      'client',
+      '已改期',
+      '美甲师修改了预约时间，请及时查看',
+    );
+    return updated;
   }
 
   async review(id: number, technicianId: number, dto: ReviewOrderDto) {
     const work = () => this.reviewLocked(id, technicianId, dto);
     const updated = await (this.bookingMutex ? this.bookingMutex.runExclusive(technicianId, work) : work());
-    return updated.status === 'pending_confirm' ? this.confirm(id) : updated;
+    if (updated.status === 'pending_confirm') return this.confirm(id);
+    void this.wechatSubscribe?.sendBookingStatusEvent(
+      updated,
+      'client',
+      '待确认',
+      '美甲师已发送报价，请及时确认',
+    );
+    return updated;
   }
 
   async withdrawQuote(id: number, technicianId: number) {
@@ -797,6 +811,13 @@ export class OrdersService {
         console.error('[OrdersService] Failed to push notification via WebSocket:', e);
       }
     }
+
+    void this.wechatSubscribe?.sendBookingStatusEvent(
+      updated,
+      'client',
+      '已撤回',
+      '美甲师撤回了报价，请等待新方案',
+    );
 
     return updated;
   }
@@ -1284,6 +1305,14 @@ export class OrdersService {
     }
 
     void this.wechatSubscribe?.sendBookingEvent(updated, 'client_success');
+    if (acceptance) {
+      void this.wechatSubscribe?.sendBookingStatusEvent(
+        updated,
+        'technician',
+        '已确认',
+        '客户已确认预约方案，请及时查看',
+      );
+    }
 
     return updated;
   }
@@ -1528,6 +1557,14 @@ export class OrdersService {
       }
     }
 
+    void this.wechatSubscribe?.sendBookingStatusEvent(
+      { ...order, status: 'completed', updatedAt: actualEnd },
+      'client',
+      '已完成',
+      '本次服务已完成，感谢您的到店',
+      actualEnd.toISOString(),
+    );
+
     return revenue;
   }
 
@@ -1707,6 +1744,15 @@ export class OrdersService {
         );
       }
     }
+
+    void this.wechatSubscribe?.sendBookingStatusEvent(
+      { ...order, ...updated },
+      'client',
+      terminalStatus === 'rejected' ? '已驳回' : '已取消',
+      terminalStatus === 'rejected'
+        ? '预约已被驳回，请查看具体原因'
+        : '美甲师已取消预约，请及时查看',
+    );
 
     return updated;
   }

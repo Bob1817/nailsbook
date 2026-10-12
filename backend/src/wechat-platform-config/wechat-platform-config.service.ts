@@ -102,6 +102,12 @@ export class WechatPlatformConfigService implements OnModuleInit {
         !!item.bookingClientSuccessTemplateId?.trim(),
       bookingTechnicianNewTemplateId:
         !!item.bookingTechnicianNewTemplateId?.trim(),
+      bookingClientStatusTemplateId:
+        !!item.bookingClientStatusTemplateId?.trim(),
+      bookingTechnicianStatusTemplateId:
+        !!item.bookingTechnicianStatusTemplateId?.trim(),
+      consultationReplyTemplateId:
+        !!item.consultationReplyTemplateId?.trim(),
       wechatLogin: this.loginEffective(item),
       paymentDisabled: !item.paymentEnabled,
     };
@@ -121,6 +127,9 @@ export class WechatPlatformConfigService implements OnModuleInit {
       bookingHourBeforeTemplateId: item.bookingHourBeforeTemplateId ?? '',
       bookingClientSuccessTemplateId: item.bookingClientSuccessTemplateId ?? '',
       bookingTechnicianNewTemplateId: item.bookingTechnicianNewTemplateId ?? '',
+      bookingClientStatusTemplateId: item.bookingClientStatusTemplateId ?? '',
+      bookingTechnicianStatusTemplateId: item.bookingTechnicianStatusTemplateId ?? '',
+      consultationReplyTemplateId: item.consultationReplyTemplateId ?? '',
       technician,
       launchModeLocked: isMiniProgramLaunchMode(),
       required,
@@ -175,6 +184,12 @@ export class WechatPlatformConfigService implements OnModuleInit {
             dto.bookingClientSuccessTemplateId?.trim() || null,
           bookingTechnicianNewTemplateId:
             dto.bookingTechnicianNewTemplateId?.trim() || null,
+          bookingClientStatusTemplateId:
+            dto.bookingClientStatusTemplateId?.trim() || null,
+          bookingTechnicianStatusTemplateId:
+            dto.bookingTechnicianStatusTemplateId?.trim() || null,
+          consultationReplyTemplateId:
+            dto.consultationReplyTemplateId?.trim() || null,
           paymentEnabled: false,
           paymentValidatedAt: null,
         },
@@ -202,6 +217,9 @@ export class WechatPlatformConfigService implements OnModuleInit {
       bookingHourBeforeTemplateId: item.bookingHourBeforeTemplateId ?? '',
       bookingClientSuccessTemplateId: item.bookingClientSuccessTemplateId ?? '',
       bookingTechnicianNewTemplateId: item.bookingTechnicianNewTemplateId ?? '',
+      bookingClientStatusTemplateId: item.bookingClientStatusTemplateId ?? '',
+      bookingTechnicianStatusTemplateId: item.bookingTechnicianStatusTemplateId ?? '',
+      consultationReplyTemplateId: item.consultationReplyTemplateId ?? '',
       paymentEnabled: false,
       homeServiceEnabled: false,
     };
@@ -437,6 +455,24 @@ export class WechatPlatformConfigService implements OnModuleInit {
       technicianNew:
         item.bookingTechnicianNewTemplateId?.trim() ||
         process.env.WECHAT_BOOKING_TECHNICIAN_NEW_TEMPLATE_ID?.trim() ||
+        '',
+    };
+  }
+
+  async getNotificationTemplateIds() {
+    const item = await this.getRecord();
+    return {
+      clientStatus:
+        item.bookingClientStatusTemplateId?.trim() ||
+        process.env.WECHAT_BOOKING_CLIENT_STATUS_TEMPLATE_ID?.trim() ||
+        '',
+      technicianStatus:
+        item.bookingTechnicianStatusTemplateId?.trim() ||
+        process.env.WECHAT_BOOKING_TECHNICIAN_STATUS_TEMPLATE_ID?.trim() ||
+        '',
+      consultationReply:
+        item.consultationReplyTemplateId?.trim() ||
+        process.env.WECHAT_CONSULTATION_REPLY_TEMPLATE_ID?.trim() ||
         '',
     };
   }

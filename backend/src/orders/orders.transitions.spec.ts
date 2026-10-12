@@ -7,11 +7,13 @@ describe('OrdersService 流转成功路径', () => {
   let prisma: any;
   let emit: jest.Mock;
   let sendBookingEvent: jest.Mock;
+  let sendBookingStatusEvent: jest.Mock;
 
   beforeEach(() => {
     emit = jest.fn();
     const chatGateway = { server: { to: jest.fn().mockReturnValue({ emit }) } };
     sendBookingEvent = jest.fn().mockResolvedValue({ sent: 1 });
+    sendBookingStatusEvent = jest.fn().mockResolvedValue({ sent: 1 });
     prisma = {
       $transaction: jest.fn(async (cb: (tx: any) => Promise<unknown>) =>
         cb(prisma),
@@ -58,7 +60,7 @@ describe('OrdersService 流转成功路径', () => {
       undefined,
       undefined,
       undefined,
-      { sendBookingEvent } as never,
+      { sendBookingEvent, sendBookingStatusEvent } as never,
     );
     jest.spyOn(service as any, 'assertTechnicianWorkSchedule').mockResolvedValue(undefined);
     jest.spyOn(service as any, 'assertTechnicianShopSchedule').mockResolvedValue(undefined);

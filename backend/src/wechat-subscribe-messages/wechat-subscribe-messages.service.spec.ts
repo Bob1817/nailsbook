@@ -13,11 +13,34 @@ describe('WechatSubscribeMessagesService', () => {
 
   function createService() {
     const prisma = {
+      $transaction: jest.fn(async (operations) => Promise.all(operations)),
       wechatSubscriptionAuthorization: {
-        findUnique: jest.fn().mockResolvedValue({ status: 'accept' }),
+        findUnique: jest.fn().mockResolvedValue({
+          id: 1,
+          status: 'accept',
+          availableCount: 1,
+        }),
+        findMany: jest.fn().mockResolvedValue([]),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        update: jest.fn().mockResolvedValue({}),
+        upsert: jest.fn().mockResolvedValue({}),
       },
       wechatIdentity: {
         findFirst: jest.fn().mockResolvedValue({ openId: 'openid-1' }),
+      },
+      notificationEvent: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        upsert: jest.fn().mockResolvedValue({ id: 9 }),
+        update: jest.fn().mockResolvedValue({}),
+      },
+      notificationDelivery: {
+        upsert: jest.fn().mockResolvedValue({ id: 10, status: 'pending' }),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        update: jest.fn().mockResolvedValue({}),
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+      message: {
+        findMany: jest.fn().mockResolvedValue([]),
       },
     };
     const platform = {
@@ -28,6 +51,11 @@ describe('WechatSubscribeMessagesService', () => {
       getBookingEventTemplateIds: jest.fn().mockResolvedValue({
         clientSuccess: 'client-success-template',
         technicianNew: 'technician-new-template',
+      }),
+      getNotificationTemplateIds: jest.fn().mockResolvedValue({
+        clientStatus: 'client-status-template',
+        technicianStatus: 'technician-status-template',
+        consultationReply: 'consultation-template',
       }),
       getPublicLaunchConfig: jest.fn().mockResolvedValue({
         storeName: '杭州听栖美甲工作室',
@@ -42,6 +70,7 @@ describe('WechatSubscribeMessagesService', () => {
         prisma as never,
         platform as never,
       ),
+      prisma,
     };
   }
 
@@ -138,5 +167,160 @@ describe('WechatSubscribeMessagesService', () => {
       name6: { value: '心心' },
       thing9: { value: '收到新的预约申请，请及时确认' },
     });
+  });
+
+  it('adds one available delivery when the user accepts a template', async () => {
+    const { service, prisma } = createService();
+
+    await service.recordAuthorization('technician', 55, {
+      'technician-new-template': 'accept',
+    });
+
+    expect(prisma.wechatSubscriptionAuthorization.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          availableCount: 1,
+          acceptedCount: 1,
+        }),
+        update: expect.objectContaining({
+          availableCount: { increment: 1 },
+          acceptedCount: { increment: 1 },
+        }),
+      }),
+    );
+  });
+
+  it('reserves and consumes one authorization only after a successful send', async () => {
+    const { service, prisma } = createService();
+
+    await service.sendBookingEvent(order, 'technician_new');
+
+    expect(
+      prisma.wechatSubscriptionAuthorization.updateMany,
+    ).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { availableCount: { decrement: 1 } } }),
+    );
+    expect(prisma.wechatSubscriptionAuthorization.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ consumedCount: { increment: 1 } }),
+      }),
+    );
+  });
+
+  it('does not send the same notification event twice', async () => {
+    const { service, prisma } = createService();
+    prisma.notificationEvent.findUnique.mockResolvedValue({
+      status: 'delivered',
+      deliveries: [{ status: 'sent' }],
+    });
+
+    await service.sendBookingEvent(order, 'technician_new');
+
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(prisma.wechatSubscriptionAuthorization.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('lets only one concurrent task claim the same delivery', async () => {
+    const { service, prisma } = createService();
+    prisma.notificationDelivery.updateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 });
+
+    const results = await Promise.all([
+      service.sendBookingEvent(order, 'technician_new'),
+      service.sendBookingEvent(order, 'technician_new'),
+    ]);
+
+    expect(results.reduce((sum, item) => sum + item.sent, 0)).toBe(1);
+    expect(prisma.wechatSubscriptionAuthorization.updateMany).toHaveBeenCalledTimes(1);
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('clears stale local quota when WeChat reports no subscription', async () => {
+    const { service, prisma } = createService();
+    (global.fetch as jest.Mock)
+      .mockReset()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ access_token: 'token', expires_in: 7200 }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ errcode: 43101, errmsg: 'user refuse' }),
+      } as Response);
+
+    await service.sendBookingEvent(order, 'technician_new');
+
+    expect(prisma.wechatSubscriptionAuthorization.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: 'reject',
+          availableCount: 0,
+          lastErrorCode: '43101',
+        }),
+      }),
+    );
+  });
+
+  it('maps the technician appointment-status template fields', async () => {
+    const { service } = createService();
+
+    await service.sendBookingStatusEvent(
+      order,
+      'technician',
+      '已确认',
+      '客户已确认预约方案，请及时查看',
+      'version-1',
+    );
+
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body);
+    expect(body.template_id).toBe('technician-status-template');
+    expect(body.data).toEqual({
+      thing7: { value: '高级定制美甲' },
+      time2: { value: '2026-10-12 14:00' },
+      phrase11: { value: '已确认' },
+      name6: { value: '心心' },
+      thing9: { value: '客户已确认预约方案，请及时查看' },
+    });
+  });
+
+  it('aggregates unread conversation messages without sending their content', async () => {
+    const { service, prisma } = createService();
+    prisma.message.findMany.mockResolvedValue([
+      {
+        id: 31,
+        conversationId: 6,
+        receiverType: 'technician',
+        receiverId: 55,
+        messageType: 'text',
+        content: '敏感聊天内容',
+        createdAt: new Date('2026-10-12T13:00:00+08:00'),
+        conversation: {
+          client: { nickname: '心心', phone: '15500000000' },
+          technician: { name: '贝贝' },
+        },
+      },
+      {
+        id: 32,
+        conversationId: 6,
+        receiverType: 'technician',
+        receiverId: 55,
+        messageType: 'image',
+        content: null,
+        createdAt: new Date('2026-10-12T13:01:00+08:00'),
+        conversation: {
+          client: { nickname: '心心', phone: '15500000000' },
+          technician: { name: '贝贝' },
+        },
+      },
+    ]);
+
+    await service.sendUnreadConversationNotifications();
+
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body);
+    expect(body.template_id).toBe('consultation-template');
+    expect(body.data.thing2.value).toBe('心心');
+    expect(body.data.thing1.value).toBe('2条新消息，含图片');
+    expect(JSON.stringify(body)).not.toContain('敏感聊天内容');
   });
 });

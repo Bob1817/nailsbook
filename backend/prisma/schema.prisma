@@ -671,6 +671,9 @@ model WechatPlatformConfig {
   bookingHourBeforeTemplateId String?
   bookingClientSuccessTemplateId String?
   bookingTechnicianNewTemplateId String?
+  bookingClientStatusTemplateId String?
+  bookingTechnicianStatusTemplateId String?
+  consultationReplyTemplateId String?
   createdAt                 DateTime  @default(now())
   updatedAt                 DateTime  @default(now()) @updatedAt
 }
@@ -1795,16 +1798,64 @@ model ContentPublicationTask {
 }
 
 model WechatSubscriptionAuthorization {
-  id         Int       @id @default(autoincrement())
-  ownerKey   String
-  role       String
-  templateId String
-  status     String
-  grantedAt  DateTime?
-  updatedAt  DateTime  @default(now()) @updatedAt
+  id               Int       @id @default(autoincrement())
+  ownerKey         String
+  role             String
+  templateId       String
+  status           String
+  availableCount   Int       @default(0)
+  acceptedCount    Int       @default(0)
+  consumedCount    Int       @default(0)
+  grantedAt        DateTime?
+  lastAcceptedAt   DateTime?
+  lastConsumedAt   DateTime?
+  lastErrorCode    String?
+  lastErrorMessage String?
+  updatedAt        DateTime  @default(now()) @updatedAt
 
   @@unique([ownerKey, templateId])
   @@index([role, status, updatedAt])
+}
+
+model NotificationEvent {
+  id              Int                    @id @default(autoincrement())
+  eventKey        String                 @unique
+  eventType       String
+  recipientRole   String
+  recipientId     Int
+  orderId         Int?
+  conversationId  Int?
+  messageId       Int?
+  priority        String                 @default("normal")
+  status          String                 @default("pending")
+  availableAt     DateTime               @default(now())
+  resolvedAt      DateTime?
+  payloadSnapshot String                 @default("{}")
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @default(now()) @updatedAt
+  deliveries      NotificationDelivery[]
+
+  @@index([recipientRole, recipientId, status, availableAt])
+  @@index([orderId, eventType])
+  @@index([conversationId, status])
+}
+
+model NotificationDelivery {
+  id                  Int               @id @default(autoincrement())
+  notificationEventId Int
+  channel             String
+  status              String            @default("pending")
+  attemptCount        Int               @default(0)
+  sentAt              DateTime?
+  providerCode        String?
+  providerMessage     String?
+  dedupeKey           String            @unique
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @default(now()) @updatedAt
+  notificationEvent   NotificationEvent @relation(fields: [notificationEventId], references: [id], onDelete: Cascade)
+
+  @@index([status, updatedAt])
+  @@index([notificationEventId, channel])
 }
 
 // Date-level intake policy, independent of occupied service time and weekly hours.

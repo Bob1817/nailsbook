@@ -1121,6 +1121,13 @@ export class ClientOrdersService {
       return updated;
     });
 
+    void this.wechatSubscribe?.sendBookingStatusEvent(
+      updatedOrder,
+      'technician',
+      '已改期',
+      '客户修改了预约时间，请及时查看',
+    );
+
     return this.mapOrder(updatedOrder);
   }
 
@@ -1250,6 +1257,13 @@ export class ClientOrdersService {
       }
     }
 
+    void this.wechatSubscribe?.sendBookingStatusEvent(
+      updatedOrder,
+      'technician',
+      '已确认',
+      '客户已确认预约方案，请及时查看',
+    );
+
     return this.mapOrder(updatedOrder);
   }
 
@@ -1364,6 +1378,13 @@ export class ClientOrdersService {
         );
       }
     }
+
+    void this.wechatSubscribe?.sendBookingStatusEvent(
+      updatedOrder,
+      'technician',
+      '已拒绝',
+      '客户拒绝了报价，请重新处理',
+    );
 
     return this.mapOrder(updatedOrder);
   }
@@ -1496,6 +1517,13 @@ export class ClientOrdersService {
         include: this.orderInclude(),
       });
     });
+
+    void this.wechatSubscribe?.sendBookingStatusEvent(
+      updatedOrder,
+      'technician',
+      '已取消',
+      '客户取消了预约，请及时查看',
+    );
 
     return this.mapOrder(updatedOrder);
   }

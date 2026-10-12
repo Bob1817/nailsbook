@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { WechatPlatformConfigService } from '../wechat-platform-config/wechat-platform-config.service';
 import { getBusinessDateTimeParts } from '../orders/business-time';
@@ -6,6 +7,14 @@ import { getBusinessDateTimeParts } from '../orders/business-time';
 type Role = 'client' | 'technician';
 type ReminderType = 'day_before' | 'hour_before';
 type BookingEventType = 'client_success' | 'technician_new';
+type SendOutcome =
+  | { sent: true }
+  | {
+      sent: false;
+      reason: string;
+      providerCode?: string;
+      providerMessage?: string;
+    };
 
 @Injectable()
 export class WechatSubscribeMessagesService {
@@ -28,25 +37,114 @@ export class WechatSubscribeMessagesService {
         templateId.trim().length > 0 &&
         ['accept', 'reject', 'ban'].includes(status),
     );
+    const now = new Date();
     await this.prisma.$transaction(
-      entries.map(([templateId, status]) =>
-        this.prisma.wechatSubscriptionAuthorization.upsert({
+      entries.map(([templateId, status]) => {
+        const accepted = status === 'accept';
+        const banned = status === 'ban';
+        return this.prisma.wechatSubscriptionAuthorization.upsert({
           where: { ownerKey_templateId: { ownerKey, templateId } },
           create: {
             ownerKey,
             role,
             templateId,
             status,
-            grantedAt: status === 'accept' ? new Date() : null,
+            availableCount: accepted ? 1 : 0,
+            acceptedCount: accepted ? 1 : 0,
+            grantedAt: accepted ? now : null,
+            lastAcceptedAt: accepted ? now : null,
           },
           update: {
             status,
-            grantedAt: status === 'accept' ? new Date() : null,
+            ...(accepted
+              ? {
+                  availableCount: { increment: 1 },
+                  acceptedCount: { increment: 1 },
+                  grantedAt: now,
+                  lastAcceptedAt: now,
+                  lastErrorCode: null,
+                  lastErrorMessage: null,
+                }
+              : banned
+                ? { availableCount: 0 }
+                : {}),
           },
-        }),
-      ),
+        });
+      }),
     );
     return { recorded: entries.length };
+  }
+
+  async getAuthorizationStatus(role: Role, ownerId: number) {
+    const reminderTemplates =
+      await this.platform.getBookingReminderTemplateIds();
+    const eventTemplates = await this.platform.getBookingEventTemplateIds();
+    const notificationTemplates =
+      await this.platform.getNotificationTemplateIds();
+    const templateIds = [
+      role === 'technician'
+        ? eventTemplates.technicianNew
+        : eventTemplates.clientSuccess,
+      role === 'technician'
+        ? notificationTemplates.technicianStatus
+        : notificationTemplates.clientStatus,
+      notificationTemplates.consultationReply,
+    ].filter(
+      (templateId, index, values) =>
+        Boolean(templateId) && values.indexOf(templateId) === index,
+    );
+    const authorizations = templateIds.length
+      ? await this.prisma.wechatSubscriptionAuthorization.findMany({
+          where: {
+            ownerKey: `${role}:${ownerId}`,
+            templateId: { in: templateIds },
+          },
+          select: { templateId: true, availableCount: true, status: true },
+        })
+      : [];
+    const byTemplate = new Map(
+      authorizations.map((item) => [item.templateId, item]),
+    );
+    const availableTemplates = templateIds.filter(
+      (templateId) => (byTemplate.get(templateId)?.availableCount ?? 0) > 0,
+    ).length;
+    const recentDeliveries = await this.prisma.notificationDelivery.findMany({
+      where: {
+        notificationEvent: {
+          recipientRole: role,
+          recipientId: ownerId,
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 5,
+      select: {
+        status: true,
+        sentAt: true,
+        providerCode: true,
+        providerMessage: true,
+        updatedAt: true,
+        notificationEvent: { select: { eventType: true } },
+      },
+    });
+    return {
+      status:
+        templateIds.length > 0 && availableTemplates === templateIds.length
+          ? 'normal'
+          : availableTemplates > 0
+            ? 'needs_top_up'
+            : 'needs_enable',
+      configuredTemplates: templateIds.length,
+      availableTemplates,
+      banned: authorizations.some((item) => item.status === 'ban'),
+      recentDeliveries: recentDeliveries.map((delivery) => ({
+        eventType: delivery.notificationEvent.eventType,
+        status: delivery.status,
+        sentAt: delivery.sentAt,
+        errorCode: delivery.providerCode,
+        errorMessage: delivery.providerMessage,
+        updatedAt: delivery.updatedAt,
+      })),
+    };
   }
 
   async sendOrderReminder(order: any, type: ReminderType) {
@@ -71,25 +169,22 @@ export class WechatSubscribeMessagesService {
 
     let sent = 0;
     for (const recipient of recipients) {
-      try {
-        const delivered = await this.sendAuthorized(
-          templateId,
+      const delivered = await this.dispatchAuthorized({
+        eventKey: `booking.${type}:${order.id}:${new Date(order.startTime).toISOString()}:${recipient.role}`,
+        eventType: `booking.${type}`,
+        templateId,
+        role: recipient.role,
+        ownerId: recipient.id,
+        orderId: order.id,
+        page: recipient.page,
+        data: this.reminderData(
+          order,
+          type,
           recipient.role,
-          recipient.id,
-          recipient.page,
-          this.reminderData(
-            order,
-            type,
-            recipient.role,
-            launchConfig.storeName,
-          ),
-        );
-        if (delivered) sent += 1;
-      } catch (error) {
-        this.logger.warn(
-          `微信订阅消息发送失败 (${recipient.role}:${recipient.id}): ${(error as Error).message}`,
-        );
-      }
+          launchConfig.storeName,
+        ),
+      });
+      if (delivered) sent += 1;
     }
     return { sent };
   }
@@ -143,21 +238,140 @@ export class WechatSubscribeMessagesService {
           },
           thing9: { value: '收到新的预约申请，请及时确认' },
         };
-    try {
-      const delivered = await this.sendAuthorized(
-        templateId,
-        recipient.role,
-        recipient.id,
-        recipient.page,
-        data,
-      );
-      return { sent: delivered ? 1 : 0 };
-    } catch (error) {
-      this.logger.warn(
-        `微信订阅消息发送失败 (${recipient.role}:${recipient.id}): ${(error as Error).message}`,
-      );
-      return { sent: 0, failed: true };
+    const version = order.quoteVersion ?? order.updatedAt ?? order.createdAt ?? 1;
+    const delivered = await this.dispatchAuthorized({
+      eventKey: `booking.${type}:${order.id}:${String(version)}`,
+      eventType: `booking.${type}`,
+      templateId,
+      role: recipient.role,
+      ownerId: recipient.id,
+      orderId: order.id,
+      page: recipient.page,
+      data,
+    });
+    return { sent: delivered ? 1 : 0 };
+  }
+
+  async sendBookingStatusEvent(
+    order: any,
+    role: Role,
+    statusLabel: string,
+    tip: string,
+    eventVersion?: string,
+  ) {
+    const templates = await this.platform.getNotificationTemplateIds();
+    const templateId =
+      role === 'client' ? templates.clientStatus : templates.technicianStatus;
+    if (!templateId) return { sent: 0, skipped: 'template_not_configured' };
+    const ownerId = role === 'client' ? order.clientUserId : order.technicianId;
+    if (!ownerId) return { sent: 0, skipped: 'recipient_missing' };
+    const start = getBusinessDateTimeParts(new Date(order.startTime));
+    const time = `${start.year}-${start.month}-${start.day} ${start.hour}:${start.minute}`;
+    const serviceName = String(order.customTitle || '预约美甲服务').slice(0, 20);
+    const common = {
+      thing7: { value: serviceName },
+      time2: { value: time },
+      phrase11: { value: String(statusLabel).slice(0, 5) },
+    };
+    const data = role === 'client'
+      ? {
+          ...common,
+          thing38: {
+            value: String(order.technician?.name || order.technicianName || '美甲师').slice(0, 20),
+          },
+          thing9: { value: String(tip).slice(0, 20) },
+        }
+      : {
+          ...common,
+          name6: {
+            value: String(order.customer?.name || order.customerName || '客户').slice(0, 10),
+          },
+          thing9: { value: String(tip).slice(0, 20) },
+        };
+    const version = eventVersion || String(order.updatedAt || Date.now());
+    const delivered = await this.dispatchAuthorized({
+      eventKey: `booking.status.${statusLabel}:${order.id}:${role}:${version}`,
+      eventType: `booking.status.${statusLabel}`,
+      templateId,
+      role,
+      ownerId,
+      orderId: order.id,
+      page: role === 'client'
+        ? `pages/client/order-detail/index?id=${order.id}`
+        : `pages/technician/order-detail/index?id=${order.id}`,
+      data,
+    });
+    return { sent: delivered ? 1 : 0 };
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async sendUnreadConversationNotifications() {
+    const cutoff = new Date(Date.now() - 5 * 60 * 1000);
+    const messages = await this.prisma.message.findMany({
+      where: {
+        isRead: false,
+        createdAt: { lte: cutoff },
+        senderType: { in: ['client', 'technician'] },
+        receiverType: { in: ['client', 'technician'] },
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 200,
+      include: {
+        conversation: {
+          include: {
+            client: { select: { nickname: true, phone: true } },
+            technician: { select: { name: true } },
+          },
+        },
+      },
+    });
+    const groups = new Map<string, any[]>();
+    for (const message of messages) {
+      const key = `${message.conversationId}:${message.receiverType}:${message.receiverId}`;
+      const current = groups.get(key) || [];
+      current.push(message);
+      groups.set(key, current);
     }
+    let sent = 0;
+    for (const group of groups.values()) {
+      if (await this.sendConversationReplyNotification(group)) sent += 1;
+    }
+    return { sent, groups: groups.size };
+  }
+
+  private async sendConversationReplyNotification(messages: any[]) {
+    const first = messages[0];
+    const last = messages[messages.length - 1];
+    const role = first.receiverType as Role;
+    const ownerId = Number(first.receiverId);
+    if (!ownerId || !['client', 'technician'].includes(role)) return false;
+    const templates = await this.platform.getNotificationTemplateIds();
+    if (!templates.consultationReply) return false;
+    const senderName = role === 'technician'
+      ? first.conversation.client?.nickname || first.conversation.client?.phone || '客户'
+      : first.conversation.technician?.name || '美甲师';
+    const timeParts = getBusinessDateTimeParts(new Date(last.createdAt));
+    const time = `${timeParts.year}-${timeParts.month}-${timeParts.day} ${timeParts.hour}:${timeParts.minute}`;
+    const hasImage = messages.some((message) => message.messageType === 'image');
+    const summary = `${messages.length}条新消息${hasImage ? '，含图片' : ''}`;
+    return this.dispatchAuthorized({
+      eventKey: `chat.unread:${first.conversationId}:${role}:${first.id}`,
+      eventType: 'chat.unread',
+      templateId: templates.consultationReply,
+      role,
+      ownerId,
+      conversationId: first.conversationId,
+      messageId: first.id,
+      page: role === 'client'
+        ? `pages/client/chat-detail/index?conversationId=${first.conversationId}`
+        : `pages/technician/chat-detail/index?conversationId=${first.conversationId}`,
+      data: {
+        thing2: { value: String(senderName).slice(0, 20) },
+        time3: { value: time },
+        thing1: { value: summary.slice(0, 20) },
+        thing4: { value: '请进入小程序及时查看并回复'.slice(0, 20) },
+      },
+    });
   }
 
   private reminderData(
@@ -196,19 +410,130 @@ export class WechatSubscribeMessagesService {
         };
   }
 
+  private async dispatchAuthorized(input: {
+    eventKey: string;
+    eventType: string;
+    templateId: string;
+    role: Role;
+    ownerId: number;
+    orderId?: number;
+    conversationId?: number;
+    messageId?: number;
+    page: string;
+    data: Record<string, { value: string }>;
+  }) {
+    const previous = await this.prisma.notificationEvent.findUnique({
+      where: { eventKey: input.eventKey },
+      include: { deliveries: true },
+    });
+    if (
+      previous?.status === 'delivered' ||
+      previous?.deliveries.some((delivery) => delivery.status === 'sent')
+    ) {
+      return false;
+    }
+    const event = await this.prisma.notificationEvent.upsert({
+      where: { eventKey: input.eventKey },
+      create: {
+        eventKey: input.eventKey,
+        eventType: input.eventType,
+        recipientRole: input.role,
+        recipientId: input.ownerId,
+        orderId: input.orderId,
+        conversationId: input.conversationId,
+        messageId: input.messageId,
+        payloadSnapshot: JSON.stringify({ page: input.page, data: input.data }),
+      },
+      update: { status: 'sending' },
+    });
+    const dedupeKey = `${input.eventKey}:wechat_subscribe`;
+    const delivery = await this.prisma.notificationDelivery.upsert({
+      where: { dedupeKey },
+      create: {
+        notificationEventId: event.id,
+        channel: 'wechat_subscribe',
+        status: 'pending',
+        attemptCount: 0,
+        dedupeKey,
+      },
+      update: {},
+      select: { status: true },
+    });
+    if (delivery.status === 'sent') return false;
+    const claimed = await this.prisma.notificationDelivery.updateMany({
+      where: {
+        dedupeKey,
+        status: { in: ['pending', 'failed', 'skipped'] },
+      },
+      data: { status: 'sending', attemptCount: { increment: 1 } },
+    });
+    if (claimed.count !== 1) return false;
+    let outcome: SendOutcome;
+    try {
+      outcome = await this.sendAuthorized(
+        input.templateId,
+        input.role,
+        input.ownerId,
+        input.page,
+        input.data,
+      );
+    } catch (error) {
+      outcome = {
+        sent: false,
+        reason: 'provider_error',
+        providerCode: 'unexpected_error',
+        providerMessage: (error as Error).message,
+      };
+    }
+    await this.prisma.notificationDelivery.update({
+      where: { dedupeKey },
+      data: outcome.sent
+        ? {
+            status: 'sent',
+            sentAt: new Date(),
+            providerCode: null,
+            providerMessage: null,
+          }
+        : {
+            status: outcome.reason === 'provider_error' ? 'failed' : 'skipped',
+            providerCode: outcome.providerCode ?? null,
+            providerMessage: outcome.providerMessage ?? outcome.reason,
+          },
+    });
+    await this.prisma.notificationEvent.update({
+      where: { id: event.id },
+      data: {
+        status: outcome.sent ? 'delivered' : 'failed',
+        resolvedAt: outcome.sent ? new Date() : null,
+      },
+    });
+    if (!outcome.sent && outcome.reason === 'provider_error') {
+      this.logger.warn(
+        `微信订阅消息发送失败 (${input.role}:${input.ownerId}): ${outcome.providerMessage || outcome.providerCode}`,
+      );
+    }
+    return outcome.sent;
+  }
+
   private async sendAuthorized(
     templateId: string,
     role: Role,
     ownerId: number,
     page: string,
     data: Record<string, { value: string }>,
-  ) {
+  ): Promise<SendOutcome> {
     const ownerKey = `${role}:${ownerId}`;
     const authorization =
       await this.prisma.wechatSubscriptionAuthorization.findUnique({
         where: { ownerKey_templateId: { ownerKey, templateId } },
       });
-    if (authorization?.status !== 'accept') return false;
+    if (
+      !authorization ||
+      authorization.status === 'ban' ||
+      authorization.availableCount < 1
+    ) {
+      return { sent: false, reason: 'authorization_unavailable' };
+    }
     const identity = await this.prisma.wechatIdentity.findFirst({
       where:
         role === 'client'
@@ -216,32 +541,108 @@ export class WechatSubscribeMessagesService {
           : { technicianId: ownerId },
       select: { openId: true },
     });
-    if (!identity) return false;
+    if (!identity) return { sent: false, reason: 'wechat_identity_missing' };
     const accessToken = await this.accessToken();
-    const response = await fetch(
-      `https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=${accessToken}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          touser: identity.openId,
-          template_id: templateId,
-          page,
-          miniprogram_state:
-            process.env.NODE_ENV === 'production' ? 'formal' : 'developer',
-          lang: 'zh_CN',
-          data,
-        }),
-      },
-    );
-    const result = (await response.json()) as {
-      errcode?: number;
-      errmsg?: string;
-    };
-    if (!response.ok || result.errcode) {
-      throw new Error(result.errmsg || `微信返回 HTTP ${response.status}`);
+    const reserved =
+      await this.prisma.wechatSubscriptionAuthorization.updateMany({
+        where: {
+          id: authorization.id,
+          status: { not: 'ban' },
+          availableCount: { gt: 0 },
+        },
+        data: { availableCount: { decrement: 1 } },
+      });
+    if (reserved.count !== 1) {
+      return { sent: false, reason: 'authorization_unavailable' };
     }
-    return true;
+
+    let result: { errcode?: number; errmsg?: string } = {};
+    let response: Response;
+    try {
+      response = await fetch(
+        `https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=${accessToken}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            touser: identity.openId,
+            template_id: templateId,
+            page,
+            miniprogram_state: this.miniProgramState(),
+            lang: 'zh_CN',
+            data,
+          }),
+        },
+      );
+      result = (await response.json()) as {
+        errcode?: number;
+        errmsg?: string;
+      };
+    } catch (error) {
+      await this.restoreAuthorization(
+        authorization.id,
+        'network_error',
+        (error as Error).message,
+      );
+      return {
+        sent: false,
+        reason: 'provider_error',
+        providerCode: 'network_error',
+        providerMessage: (error as Error).message,
+      };
+    }
+    if (!response.ok || result.errcode) {
+      const code = String(result.errcode ?? response.status);
+      const message = result.errmsg || `微信返回 HTTP ${response.status}`;
+      if (Number(result.errcode) === 43101) {
+        await this.prisma.wechatSubscriptionAuthorization.update({
+          where: { id: authorization.id },
+          data: {
+            status: 'reject',
+            availableCount: 0,
+            lastErrorCode: code,
+            lastErrorMessage: message,
+          },
+        });
+      } else {
+        await this.restoreAuthorization(authorization.id, code, message);
+      }
+      return {
+        sent: false,
+        reason: 'provider_error',
+        providerCode: code,
+        providerMessage: message,
+      };
+    }
+    await this.prisma.wechatSubscriptionAuthorization.update({
+      where: { id: authorization.id },
+      data: {
+        consumedCount: { increment: 1 },
+        lastConsumedAt: new Date(),
+        lastErrorCode: null,
+        lastErrorMessage: null,
+      },
+    });
+    return { sent: true };
+  }
+
+  private restoreAuthorization(id: number, code: string, message: string) {
+    return this.prisma.wechatSubscriptionAuthorization.update({
+      where: { id },
+      data: {
+        availableCount: { increment: 1 },
+        lastErrorCode: code,
+        lastErrorMessage: message,
+      },
+    });
+  }
+
+  private miniProgramState() {
+    const configured = process.env.WECHAT_MINIPROGRAM_STATE?.trim();
+    if (configured && ['developer', 'trial', 'formal'].includes(configured)) {
+      return configured;
+    }
+    return process.env.NODE_ENV === 'production' ? 'formal' : 'developer';
   }
 
   private async accessToken() {

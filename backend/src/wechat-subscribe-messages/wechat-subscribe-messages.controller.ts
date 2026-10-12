@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { ClientJwtAuthGuard } from '../client-auth/client-jwt-auth.guard';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
 import { TouristGuard } from '../technician-auth/tourist.guard';
@@ -22,6 +22,14 @@ export class ClientWechatSubscribeController {
       body.decisions,
     );
   }
+
+  @Get('status')
+  status(@Req() request: { user: { clientUserId: number } }) {
+    return this.service.getAuthorizationStatus(
+      'client',
+      request.user.clientUserId,
+    );
+  }
 }
 
 @Controller('technician/wechat-subscriptions')
@@ -38,6 +46,14 @@ export class TechnicianWechatSubscribeController {
       'technician',
       request.user.technicianId,
       body.decisions,
+    );
+  }
+
+  @Get('status')
+  status(@Req() request: { user: { technicianId: number } }) {
+    return this.service.getAuthorizationStatus(
+      'technician',
+      request.user.technicianId,
     );
   }
 }

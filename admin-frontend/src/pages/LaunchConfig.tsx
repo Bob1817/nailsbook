@@ -12,6 +12,9 @@ const CHECK_LABELS: Record<string, string> = {
   bookingHourBeforeTemplateId: '预约临近提醒模板',
   bookingClientSuccessTemplateId: '客户预约成功模板',
   bookingTechnicianNewTemplateId: '美甲师新预约模板',
+  bookingClientStatusTemplateId: '客户端预约状态模板',
+  bookingTechnicianStatusTemplateId: '美甲师预约状态模板',
+  consultationReplyTemplateId: '咨询回复模板',
   wechatLogin: '微信登录已校验', paymentDisabled: '微信支付已关闭',
 };
 
@@ -44,6 +47,9 @@ export default function LaunchConfig() {
         bookingHourBeforeTemplateId: next.bookingHourBeforeTemplateId,
         bookingClientSuccessTemplateId: next.bookingClientSuccessTemplateId,
         bookingTechnicianNewTemplateId: next.bookingTechnicianNewTemplateId,
+        bookingClientStatusTemplateId: next.bookingClientStatusTemplateId,
+        bookingTechnicianStatusTemplateId: next.bookingTechnicianStatusTemplateId,
+        consultationReplyTemplateId: next.consultationReplyTemplateId,
       });
     } catch {
       message.error('首期上线配置加载失败');
@@ -92,6 +98,9 @@ export default function LaunchConfig() {
               <Col xs={24}><Form.Item name="bookingHourBeforeTemplateId" label="预约临近提醒模板 ID" extra="用于预约前约 1 小时提醒；微信模板字段为 thing32、time2、thing8、thing9"><Input /></Form.Item></Col>
               <Col xs={24}><Form.Item name="bookingClientSuccessTemplateId" label="客户预约成功模板 ID" extra="美甲师确认预约后发送；字段为 thing7、time2、thing8、thing4、thing9"><Input /></Form.Item></Col>
               <Col xs={24}><Form.Item name="bookingTechnicianNewTemplateId" label="美甲师新预约模板 ID" extra="客户提交预约后发送；字段为 thing7、time2、name6、thing9"><Input /></Form.Item></Col>
+              <Col xs={24}><Form.Item name="bookingClientStatusTemplateId" label="客户端预约状态变更模板 ID" extra="预约状态变化后通知客户；字段为 thing7、time2、phrase11、thing38、thing9"><Input /></Form.Item></Col>
+              <Col xs={24}><Form.Item name="bookingTechnicianStatusTemplateId" label="美甲师预约状态变更模板 ID" extra="预约状态变化后通知美甲师；字段为 thing7、time2、phrase11、name6、thing9"><Input /></Form.Item></Col>
+              <Col xs={24}><Form.Item name="consultationReplyTemplateId" label="咨询回复通知模板 ID" extra="客户或美甲师回复后发送；字段为 thing2、time3、thing1、thing4"><Input /></Form.Item></Col>
             </Row>
             <Button type="primary" size="large" loading={saving} disabled={!config?.launchModeLocked} onClick={save}>保存配置</Button>
           </Form>
