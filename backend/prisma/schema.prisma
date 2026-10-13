@@ -680,6 +680,23 @@ model WechatPlatformConfig {
   updatedAt                 DateTime  @default(now()) @updatedAt
 }
 
+/// 服务号（公众号）接入配置，单例记录（id = 1）。
+model WechatOfficialAccountConfig {
+  id                Int       @id @default(1)
+  enabled           Boolean   @default(false)
+  appId             String?
+  appSecretEnc      String?
+  token             String?
+  encodingAesKeyEnc String?
+  encryptMode       String    @default("plaintext")
+  welcomeReply      String?
+  fallbackReply     String?
+  validatedAt       DateTime?
+  validationError   String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @default(now()) @updatedAt
+}
+
 model ClientTechBinding {
   id         Int        @id @default(autoincrement())
   clientId   Int

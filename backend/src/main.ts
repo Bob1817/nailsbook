@@ -75,6 +75,11 @@ async function bootstrap() {
     prefix: '/uploads/',
   });
 
+  // 微信公众号消息推送使用 text/xml，需显式注册解析器，否则收不到消息体。
+  app.useBodyParser('text', {
+    type: ['text/xml', 'application/xml'],
+  });
+
   app.setGlobalPrefix('api');
 
   app.useGlobalPipes(
