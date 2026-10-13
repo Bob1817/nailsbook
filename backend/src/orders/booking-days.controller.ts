@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Patch, Req, UseGuards } from '@nestjs/common';
-import { IsBoolean, IsIn, IsInt, Min } from 'class-validator';
+import { IsBoolean, IsInt, Max, Min } from 'class-validator';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
 import { TouristGuard } from '../technician-auth/tourist.guard';
 import { BookingDaysService } from './booking-days.service';
@@ -14,8 +14,8 @@ class UpdateBookingSettingsDto {
 }
 
 class UpdateBookingCapacityDto {
-  @IsInt() @IsIn([1, 2, 3]) dailyBookingLimit: number;
-  @IsInt() @IsIn([30, 45, 60, 90]) appointmentBufferMinutes: number;
+  @IsInt() @Min(1) @Max(10) dailyBookingLimit: number;
+  @IsInt() @Min(15) @Max(180) appointmentBufferMinutes: number;
 }
 
 @Controller('public/booking-settings')

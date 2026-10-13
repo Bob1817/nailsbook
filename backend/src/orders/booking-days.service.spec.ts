@@ -43,9 +43,19 @@ describe('BookingDaysService capacity policy', () => {
     expect(tx.technicianBookingDay.findUnique).not.toHaveBeenCalled();
   });
 
-  it('only accepts supported capacity presets', async () => {
+  it('accepts capacity values within the supported stepper ranges', async () => {
+    const update = jest.fn().mockResolvedValue({ dailyBookingLimit: 8, appointmentBufferMinutes: 150 });
+    const service = new BookingDaysService({ technician: { update } } as never, mutex as never);
+
+    await expect(service.updateCapacity(7, 8, 150)).resolves.toEqual({ dailyBookingLimit: 8, appointmentBufferMinutes: 150 });
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ data: { dailyBookingLimit: 8, appointmentBufferMinutes: 150 } }));
+  });
+
+  it('rejects values outside the supported stepper ranges', async () => {
     const service = new BookingDaysService({ technician: { update: jest.fn() } } as never, mutex as never);
-    await expect(service.updateCapacity(7, 4, 60)).rejects.toBeInstanceOf(BadRequestException);
-    await expect(service.updateCapacity(7, 2, 15)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.updateCapacity(7, 0, 60)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.updateCapacity(7, 11, 60)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.updateCapacity(7, 2, 22)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.updateCapacity(7, 2, 195)).rejects.toBeInstanceOf(BadRequestException);
   });
 });

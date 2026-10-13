@@ -5,8 +5,11 @@ import { BookingMutexService } from './booking-mutex.service';
 import { getBusinessDateTimeParts, parseBusinessDateTime } from './business-time';
 import { isLaunchTechnician } from '../common/miniprogram-launch-mode';
 
-export const DAILY_BOOKING_LIMIT_OPTIONS = [1, 2, 3] as const;
-export const APPOINTMENT_BUFFER_OPTIONS = [30, 45, 60, 90] as const;
+export const MIN_DAILY_BOOKING_LIMIT = 1;
+export const MAX_DAILY_BOOKING_LIMIT = 10;
+export const MIN_APPOINTMENT_BUFFER_MINUTES = 15;
+export const MAX_APPOINTMENT_BUFFER_MINUTES = 180;
+export const APPOINTMENT_BUFFER_STEP_MINUTES = 15;
 export const DEFAULT_DAILY_BOOKING_LIMIT = 2;
 export const DEFAULT_APPOINTMENT_BUFFER_MINUTES = 60;
 
@@ -111,11 +114,14 @@ export class BookingDaysService {
     dailyBookingLimit: number,
     appointmentBufferMinutes: number,
   ) {
-    if (!DAILY_BOOKING_LIMIT_OPTIONS.includes(dailyBookingLimit as 1 | 2 | 3)) {
-      throw new BadRequestException('每日接待上限仅支持 1、2 或 3 人');
+    if (!Number.isInteger(dailyBookingLimit) || dailyBookingLimit < MIN_DAILY_BOOKING_LIMIT || dailyBookingLimit > MAX_DAILY_BOOKING_LIMIT) {
+      throw new BadRequestException('每日接待上限需设置为 1 至 10 人');
     }
-    if (!APPOINTMENT_BUFFER_OPTIONS.includes(appointmentBufferMinutes as 30 | 45 | 60 | 90)) {
-      throw new BadRequestException('预约间隔仅支持 30、45、60 或 90 分钟');
+    if (!Number.isInteger(appointmentBufferMinutes)
+      || appointmentBufferMinutes < MIN_APPOINTMENT_BUFFER_MINUTES
+      || appointmentBufferMinutes > MAX_APPOINTMENT_BUFFER_MINUTES
+      || appointmentBufferMinutes % APPOINTMENT_BUFFER_STEP_MINUTES !== 0) {
+      throw new BadRequestException('预约间隔需设置为 15 至 180 分钟，且以 15 分钟递增');
     }
     return this.prisma.technician.update({
       where: { id: technicianId },
