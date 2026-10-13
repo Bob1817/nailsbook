@@ -94,6 +94,8 @@ model Technician {
   socialMedia                String? // JSON object of social media accounts
   // Service schedule (JSON: weekly availability + time ranges)
   serviceSchedule            String?
+  dailyBookingLimit          Int                         @default(2)
+  appointmentBufferMinutes   Int                         @default(60)
   // Custom tags (JSON array of {id, name, color})
   customTags                 String?
   // Homepage settings

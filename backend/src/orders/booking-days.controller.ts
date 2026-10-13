@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Patch, Req, UseGuards } from '@nestjs/common';
-import { IsBoolean, IsInt, Min } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, Min } from 'class-validator';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
 import { TouristGuard } from '../technician-auth/tourist.guard';
 import { BookingDaysService } from './booking-days.service';
@@ -11,6 +11,11 @@ class UpdateBookingDayDto {
 
 class UpdateBookingSettingsDto {
   @IsBoolean() quickBookingEnabled: boolean;
+}
+
+class UpdateBookingCapacityDto {
+  @IsInt() @IsIn([1, 2, 3]) dailyBookingLimit: number;
+  @IsInt() @IsIn([30, 45, 60, 90]) appointmentBufferMinutes: number;
 }
 
 @Controller('public/booking-settings')
@@ -29,6 +34,14 @@ export class TechnicianBookingDaysController {
   @Patch('settings')
   updateSettings(@Req() req: { user: { technicianId: number } }, @Body() dto: UpdateBookingSettingsDto) {
     return this.days.updateSettings(req.user.technicianId, dto.quickBookingEnabled);
+  }
+  @Patch('capacity')
+  updateCapacity(@Req() req: { user: { technicianId: number } }, @Body() dto: UpdateBookingCapacityDto) {
+    return this.days.updateCapacity(
+      req.user.technicianId,
+      dto.dailyBookingLimit,
+      dto.appointmentBufferMinutes,
+    );
   }
   @Patch(':serviceDate')
   update(@Req() req: { user: { technicianId: number } }, @Param('serviceDate') date: string, @Body() dto: UpdateBookingDayDto) {

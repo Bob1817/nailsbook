@@ -344,10 +344,17 @@ export class ClientOrdersService {
     const createOrder = () =>
       this.prisma.$transaction(async (tx) => {
         await assertBookingAccountState(tx, dto.techId, clientUserId);
-        await this.bookingDays?.assertOpen(tx, dto.techId, dto.serviceDate);
-        const blockEndTime = new Date(
+        const serviceBlockEndTime = new Date(
           startTime.getTime() + availabilityDuration * 60000,
         );
+        const blockEndTime = this.bookingDays
+          ? (await this.bookingDays.prepareSlot(
+              tx,
+              dto.techId,
+              dto.serviceDate,
+              serviceBlockEndTime,
+            )).blockEndTime
+          : serviceBlockEndTime;
         await this.assertNoBlockedConflict(
           tx,
           dto.techId,
@@ -726,14 +733,21 @@ export class ClientOrdersService {
     );
     const startTime = this.buildStartTime(dto.serviceDate, dto.startTime);
     const endTime = new Date(startTime.getTime() + 120 * 60 * 1000);
-    const blockEndTime = new Date(
+    const serviceBlockEndTime = new Date(
       startTime.getTime() + DEFAULT_BOOKING_DURATION_MINUTES * 60000,
     );
 
     const createOrder = () =>
       this.prisma.$transaction(async (tx) => {
         await assertBookingAccountState(tx, dto.techId, clientUserId);
-        await this.bookingDays?.assertOpen(tx, dto.techId, dto.serviceDate);
+        const blockEndTime = this.bookingDays
+          ? (await this.bookingDays.prepareSlot(
+              tx,
+              dto.techId,
+              dto.serviceDate,
+              serviceBlockEndTime,
+            )).blockEndTime
+          : serviceBlockEndTime;
         await this.assertNoBlockedConflict(
           tx,
           dto.techId,
@@ -1068,14 +1082,23 @@ export class ClientOrdersService {
       previousDuration > 0
         ? new Date(startTime.getTime() + previousDuration)
         : new Date(startTime);
-    const blockEnd =
+    const serviceBlockEnd =
       previousDuration > 0
         ? endTime
         : new Date(
             startTime.getTime() + DEFAULT_BOOKING_DURATION_MINUTES * 60000,
           );
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
-      if (businessDate(order.startTime) !== dto.serviceDate) await this.bookingDays?.assertOpen(tx, order.technicianId, dto.serviceDate);
+      const blockEnd = this.bookingDays
+        ? (await this.bookingDays.prepareSlot(
+            tx,
+            order.technicianId,
+            dto.serviceDate,
+            serviceBlockEnd,
+            id,
+            businessDate(order.startTime) === dto.serviceDate,
+          )).blockEndTime
+        : serviceBlockEnd;
       await this.assertNoBlockedConflict(
         tx,
         order.technicianId,
@@ -1297,16 +1320,27 @@ export class ClientOrdersService {
       if (order.quickBooking && !order.quoteVersion) {
         const changed = await tx.order.updateMany({ where: { id, clientUserId, status: 'pending_agree', updatedAt: order.updatedAt }, data: { status: 'pending_quote' } });
         if (!changed.count) throw new BadRequestException('预约已更新，请刷新后重试');
+        const fallbackEnd = new Date(
+          new Date(order.startTime).getTime() +
+            DEFAULT_BOOKING_DURATION_MINUTES * 60000,
+        );
+        const blockEndTime = this.bookingDays
+          ? (await this.bookingDays.prepareSlot(
+              tx,
+              order.technicianId,
+              businessDate(order.startTime),
+              fallbackEnd,
+              id,
+              true,
+            )).blockEndTime
+          : fallbackEnd;
         await tx.blockedTimeSlot.deleteMany({ where: { orderId: id } });
         await tx.blockedTimeSlot.create({
           data: {
             techId: order.technicianId,
             orderId: id,
             startTime: order.startTime,
-            endTime: new Date(
-              new Date(order.startTime).getTime() +
-                DEFAULT_BOOKING_DURATION_MINUTES * 60000,
-            ),
+            endTime: blockEndTime,
             reason: 'booking',
           },
         });
@@ -1568,7 +1602,7 @@ export class ClientOrdersService {
       prevDuration > 0
         ? new Date(startTime.getTime() + prevDuration)
         : startTime;
-    const blockEnd =
+    const serviceBlockEnd =
       prevDuration > 0
         ? endTime
         : new Date(
@@ -1578,7 +1612,15 @@ export class ClientOrdersService {
     const restoreStatus = order.expiredFromStatus ?? 'pending_quote';
 
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
-      await this.bookingDays?.assertOpen(tx, order.technicianId, dto.serviceDate);
+      const blockEnd = this.bookingDays
+        ? (await this.bookingDays.prepareSlot(
+            tx,
+            order.technicianId,
+            dto.serviceDate,
+            serviceBlockEnd,
+            id,
+          )).blockEndTime
+        : serviceBlockEnd;
       await this.assertNoBlockedConflict(
         tx,
         order.technicianId,

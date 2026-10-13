@@ -1,0 +1,2 @@
+ALTER TABLE "Technician" ADD COLUMN "dailyBookingLimit" INTEGER NOT NULL DEFAULT 2;
+ALTER TABLE "Technician" ADD COLUMN "appointmentBufferMinutes" INTEGER NOT NULL DEFAULT 60;

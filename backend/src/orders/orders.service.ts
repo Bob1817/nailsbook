@@ -166,7 +166,14 @@ export class OrdersService {
     const createOrder = () =>
       this.prisma.$transaction(async (tx) => {
         await assertBookingAccountState(tx, technicianId, dto.clientUserId ?? resolvedClientUserId);
-        await this.bookingDays?.assertOpen(tx, technicianId, businessDate(initialStart));
+        const blockEndTime = this.bookingDays
+          ? (await this.bookingDays.prepareSlot(
+              tx,
+              technicianId,
+              businessDate(initialStart),
+              initialEnd,
+            )).blockEndTime
+          : initialEnd;
         const referralAttribution = dto.sourceLeadId
           ? await tx.lead.findUnique({
               where: { id: dto.sourceLeadId },
@@ -226,7 +233,6 @@ export class OrdersService {
         });
 
         const startTime = new Date(dto.startTime);
-        const blockEndTime = new Date(dto.endTime);
         const conflict = await tx.blockedTimeSlot.findFirst({
           where: {
             techId: technicianId,
@@ -321,11 +327,18 @@ export class OrdersService {
 
     const createRepeat = () => this.prisma.$transaction(async (tx) => {
       await assertBookingAccountState(tx, technicianId, order.clientUserId);
-      await this.bookingDays?.assertOpen(tx, technicianId, businessDate(startTime));
+      const blockEndTime = this.bookingDays
+        ? (await this.bookingDays.prepareSlot(
+            tx,
+            technicianId,
+            businessDate(startTime),
+            endTime,
+          )).blockEndTime
+        : endTime;
       const conflict = await tx.blockedTimeSlot.findFirst({
         where: {
           techId: technicianId,
-          startTime: { lt: endTime },
+          startTime: { lt: blockEndTime },
           endTime: { gt: startTime },
         },
         select: { id: true },
@@ -393,7 +406,7 @@ export class OrdersService {
           techId: technicianId,
           orderId: repeated.id,
           startTime,
-          endTime,
+          endTime: blockEndTime,
           reason: 'booking',
         },
       });
@@ -645,20 +658,20 @@ export class OrdersService {
       throw new BadRequestException('预约时间无效');
     }
 
-    const blockEnd =
+    const serviceBlockEnd =
       endTime.getTime() > startTime.getTime()
         ? endTime
         : new Date(
             startTime.getTime() + DEFAULT_BOOKING_DURATION_MINUTES * 60000,
           );
-    await this.assertTechnicianWorkSchedule(technicianId, startTime, blockEnd);
+    await this.assertTechnicianWorkSchedule(technicianId, startTime, serviceBlockEnd);
     const effectiveServiceType = dto.serviceType ?? order.serviceType;
     if (['shop', '到店美甲'].includes(effectiveServiceType || '')) {
       await this.assertTechnicianShopSchedule(
         technicianId,
         order.address || '',
         startTime,
-        blockEnd,
+        serviceBlockEnd,
       );
     }
 
@@ -668,7 +681,16 @@ export class OrdersService {
     updateData.reminderHourSent = false;
 
     const updated = await this.prisma.$transaction(async (tx) => {
-      if (businessDate(order.startTime) !== businessDate(startTime)) await this.bookingDays?.assertOpen(tx, technicianId, businessDate(startTime));
+      const blockEnd = this.bookingDays
+        ? (await this.bookingDays.prepareSlot(
+            tx,
+            technicianId,
+            businessDate(startTime),
+            serviceBlockEnd,
+            id,
+            businessDate(order.startTime) === businessDate(startTime),
+          )).blockEndTime
+        : serviceBlockEnd;
       const conflict = await tx.blockedTimeSlot.findFirst({
         where: {
           techId: technicianId,
@@ -914,6 +936,26 @@ export class OrdersService {
     let conversationId: number | null = null;
 
     const updated = await this.prisma.$transaction(async (tx) => {
+      const blockEndTime = this.bookingDays
+        ? (await this.bookingDays.prepareSlot(
+            tx,
+            technicianId,
+            dto.serviceDate,
+            endTime,
+            id,
+            businessDate(order.startTime) === dto.serviceDate,
+          )).blockEndTime
+        : endTime;
+      const transactionConflict = await tx.blockedTimeSlot.findFirst({
+        where: {
+          techId: technicianId,
+          OR: [{ orderId: null }, { orderId: { not: id } }],
+          startTime: { lt: blockEndTime },
+          endTime: { gt: startTime },
+        },
+        select: { id: true },
+      });
+      if (transactionConflict) throw new BadRequestException(BOOKING_CONFLICT_MESSAGE);
       const claimed = await tx.order.updateMany({ where: { id, status: order.status, updatedAt: order.updatedAt }, data: { quoteVersion: { increment: 1 } } });
       if (claimed.count !== 1) throw new BadRequestException('预约方案已更新，请刷新');
       if (dto.continueAccepting !== undefined) {
@@ -972,7 +1014,7 @@ export class OrdersService {
           techId: technicianId,
           orderId: id,
           startTime,
-          endTime,
+          endTime: blockEndTime,
           reason: 'booking',
         },
       });
@@ -1108,6 +1150,16 @@ export class OrdersService {
 
     const confirmBooking = () =>
       this.prisma.$transaction(async (tx) => {
+        const confirmedBlockEnd = this.bookingDays
+          ? (await this.bookingDays.prepareSlot(
+              tx,
+              order.technicianId,
+              businessDate(order.startTime),
+              order.endTime,
+              id,
+              true,
+            )).blockEndTime
+          : order.endTime;
         const claimed = await tx.order.updateMany({
           where: { id, status: order.status, updatedAt: order.updatedAt },
           data: { status: targetStatus },
@@ -1156,7 +1208,7 @@ export class OrdersService {
           where: {
             techId: order.technicianId,
             OR: [{ orderId: null }, { orderId: { not: id } }],
-            startTime: { lt: order.endTime },
+            startTime: { lt: confirmedBlockEnd },
             endTime: { gt: order.startTime },
           },
           select: { id: true },
@@ -1235,7 +1287,7 @@ export class OrdersService {
             techId: order.technicianId,
             orderId: id,
             startTime: order.startTime,
-            endTime: order.endTime,
+            endTime: confirmedBlockEnd,
             reason: 'booking',
           },
         });
@@ -1807,18 +1859,26 @@ export class OrdersService {
       prevDuration > 0
         ? new Date(startTime.getTime() + prevDuration)
         : startTime;
-    const blockEnd =
+    const serviceBlockEnd =
       prevDuration > 0
         ? endTime
         : new Date(
             startTime.getTime() + DEFAULT_BOOKING_DURATION_MINUTES * 60000,
           );
-    await this.assertTechnicianWorkSchedule(technicianId, startTime, blockEnd);
+    await this.assertTechnicianWorkSchedule(technicianId, startTime, serviceBlockEnd);
 
     const restoreStatus = order.expiredFromStatus ?? 'pending_quote';
 
     const updated = await this.prisma.$transaction(async (tx) => {
-      await this.bookingDays?.assertOpen(tx, technicianId, businessDate(startTime));
+      const blockEnd = this.bookingDays
+        ? (await this.bookingDays.prepareSlot(
+            tx,
+            technicianId,
+            businessDate(startTime),
+            serviceBlockEnd,
+            id,
+          )).blockEndTime
+        : serviceBlockEnd;
       const conflict = await tx.blockedTimeSlot.findFirst({
         where: {
           techId: technicianId,
