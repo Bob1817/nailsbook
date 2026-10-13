@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Logger,
+  Param,
   Patch,
   Post,
   Query,
@@ -16,8 +17,13 @@ import type { Request, Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OperationLog } from '../auth/operation-log.decorator';
 import { Permissions } from '../auth/permission.decorator';
+import {
+  ListOfficialMessagesQueryDto,
+  ReplyOfficialMessageDto,
+} from './dto/official-message.dto';
 import { UpdateOfficialConfigDto } from './dto/update-official-config.dto';
 import { OfficialAccessTokenService } from './official-access-token.service';
+import { OfficialInboxService } from './official-inbox.service';
 import { OfficialMenuService } from './official-menu.service';
 import {
   buildSignature,
@@ -183,6 +189,7 @@ export class AdminWechatOfficialController {
     private readonly officialConfig: WechatOfficialConfigService,
     private readonly accessToken: OfficialAccessTokenService,
     private readonly menuService: OfficialMenuService,
+    private readonly inbox: OfficialInboxService,
   ) {}
 
   @Get('config')
@@ -234,5 +241,45 @@ export class AdminWechatOfficialController {
   @OperationLog({ module: 'wechat_official', action: 'delete_menu' })
   deleteMenu() {
     return this.menuService.deleteMenu();
+  }
+
+  /** 用户消息列表（客服承接）。默认按时间倒序，可只看待人工处理。 */
+  @Get('messages')
+  @Permissions('feature_flag:view')
+  listMessages(@Query() query: ListOfficialMessagesQueryDto) {
+    return this.inbox.listMessages(query);
+  }
+
+  /** 单个用户的会话线程。 */
+  @Get('messages/thread')
+  @Permissions('feature_flag:view')
+  getMessageThread(
+    @Query('openId') openId: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.inbox.getThread(openId, limit ? Number(limit) : undefined);
+  }
+
+  /** 人工回复（客服消息接口，受微信 48 小时窗口限制）。 */
+  @Post('messages/reply')
+  @Permissions('feature_flag:update')
+  @OperationLog({ module: 'wechat_official', action: 'reply_message' })
+  replyMessage(
+    @Body() dto: ReplyOfficialMessageDto,
+    @Req() req: Request,
+  ) {
+    const operator = (req as Request & { user?: { username?: string } }).user
+      ?.username;
+    return this.inbox.replyToUser({ ...dto, operator });
+  }
+
+  /** 标记单条消息为已处理。 */
+  @Post('messages/:id/handle')
+  @Permissions('feature_flag:update')
+  @OperationLog({ module: 'wechat_official', action: 'handle_message' })
+  handleMessage(@Param('id') id: string, @Req() req: Request) {
+    const operator = (req as Request & { user?: { username?: string } }).user
+      ?.username;
+    return this.inbox.markHandled(Number(id), operator);
   }
 }

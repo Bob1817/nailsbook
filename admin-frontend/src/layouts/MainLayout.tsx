@@ -136,6 +136,12 @@ const MainLayout: React.FC = () => {
       permission: 'feature_flag:view',
     },
     {
+      key: '/wechat-messages',
+      icon: <MessageOutlined />,
+      label: '公众号消息',
+      permission: 'feature_flag:view',
+    },
+    {
       key: '/roles',
       icon: <SafetyOutlined />,
       label: '角色管理',

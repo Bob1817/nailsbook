@@ -5,6 +5,7 @@ import {
   WechatOfficialConfigService,
 } from './wechat-official-config.service';
 import { OfficialAccessTokenService } from './official-access-token.service';
+import { OfficialInboxService } from './official-inbox.service';
 import {
   DEFAULT_FALLBACK_REPLY,
   DEFAULT_WELCOME_REPLY,
@@ -42,6 +43,7 @@ export class WechatOfficialMessageService {
     private readonly prisma: PrismaService,
     private readonly officialConfig: WechatOfficialConfigService,
     private readonly accessToken: OfficialAccessTokenService,
+    private readonly inbox: OfficialInboxService,
   ) {}
 
   /** 处理入站消息，返回明文回复 XML；返回空串表示不回复。 */
@@ -74,6 +76,11 @@ export class WechatOfficialMessageService {
 
     if (message.MsgType === 'text') {
       const rule = matchKeywordRule(message.Content ?? '');
+      // 命中关键词=已自动回复；未命中只拿到兜底文案，标为待人工跟进。
+      await this.inbox.recordIncoming(
+        message,
+        rule ? 'auto_replied' : 'pending',
+      );
       return buildTextReply({
         toUserName: fromUserName,
         fromUserName: toUserName,
@@ -81,7 +88,8 @@ export class WechatOfficialMessageService {
       });
     }
 
-    // 图片、语音、位置等暂不单独处理，统一给出兜底指引。
+    // 图片、语音、位置等暂不单独处理：统一给出兜底指引，并标记为待人工处理。
+    await this.inbox.recordIncoming(message, 'pending');
     return buildTextReply({
       toUserName: fromUserName,
       fromUserName: toUserName,
@@ -101,23 +109,27 @@ export class WechatOfficialMessageService {
 
     if (event === 'subscribe') {
       await this.recordIdentity(fromUserName, message.EventKey);
+      await this.inbox.recordIncoming(message, 'note');
       return this.text(fromUserName, toUserName, input.welcomeReply);
     }
 
     if (event === 'unsubscribe') {
       this.logger.log(`用户取消关注：${fromUserName}`);
+      await this.inbox.recordIncoming(message, 'note');
       return '';
     }
 
     if (event === 'scan') {
       // 已关注用户扫描带参二维码：记录来源，不重复发欢迎语。
       await this.recordIdentity(fromUserName, message.EventKey);
+      await this.inbox.recordIncoming(message, 'note');
       return '';
     }
 
     if (event === 'click') {
       const key = message.EventKey ?? '';
       const reply = MENU_REPLIES[key] ?? input.fallbackReply;
+      await this.inbox.recordIncoming(message, 'auto_replied');
       return this.text(fromUserName, toUserName, reply);
     }
 

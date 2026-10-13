@@ -26,6 +26,7 @@ import AccountDeletions from './pages/AccountDeletions';
 import ArtistApplications from './pages/ArtistApplications';
 import WechatConfig from './pages/WechatConfig';
 import WechatOfficial from './pages/WechatOfficial';
+import WechatMessages from './pages/WechatMessages';
 import LaunchConfig from './pages/LaunchConfig';
 import Orders from './pages/Orders';
 
@@ -73,6 +74,7 @@ const App: React.FC = () => {
               <Route path="feature-flags" element={<ProtectedRoute permission="feature_flag:view"><FeatureFlags /></ProtectedRoute>} />
               <Route path="wechat-config" element={<ProtectedRoute permission="feature_flag:view"><WechatConfig /></ProtectedRoute>} />
               <Route path="wechat-official" element={<ProtectedRoute permission="feature_flag:view"><WechatOfficial /></ProtectedRoute>} />
+              <Route path="wechat-messages" element={<ProtectedRoute permission="feature_flag:view"><WechatMessages /></ProtectedRoute>} />
               <Route path="launch-config" element={<ProtectedRoute permission="feature_flag:view"><LaunchConfig /></ProtectedRoute>} />
               <Route path="admin-users" element={<ProtectedRoute superAdmin><AdminUsers /></ProtectedRoute>} />
               <Route path="roles" element={<ProtectedRoute superAdmin><Roles /></ProtectedRoute>} />

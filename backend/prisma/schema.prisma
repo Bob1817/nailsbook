@@ -1915,3 +1915,31 @@ model ClientTechnicianNote {
   updatedAt DateTime @updatedAt
   @@id([clientId, techId])
 }
+
+/// 公众号消息流水：用户发来的消息与在管理后台人工回复的内容，用于客服承接与留痕。
+model WechatOfficialMessage {
+  id          Int       @id @default(autoincrement())
+  appId       String
+  /// 用户在公众号下的 openId（与小程序 openId 不是一个体系）
+  openId      String
+  /// in=用户发来；out=我方（人工）发出
+  direction   String    @default("in")
+  msgType     String    @default("text")
+  content     String    @default("")
+  mediaId     String?
+  eventType   String?
+  eventKey    String?
+  /// 微信侧 MsgId，用于重试去重；事件与人工回复为空
+  wechatMsgId String?   @unique
+  /// pending=待人工处理；auto_replied=已自动回复；handled=已人工处理；note=仅记录（关注等事件）
+  status      String    @default("pending")
+  /// auto=自动回复；manual=人工回复
+  replyMode   String?
+  repliedBy   String?
+  handledAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([openId, createdAt])
+  @@index([status, createdAt])
+  @@index([createdAt])
+}

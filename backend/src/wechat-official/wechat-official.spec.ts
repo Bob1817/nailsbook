@@ -191,16 +191,24 @@ describe('WechatOfficialMessageService', () => {
       getAccessTokenFor: jest.fn().mockRejectedValue(new Error('offline')),
       getAccessToken: jest.fn().mockRejectedValue(new Error('offline')),
     };
+    const inbox = {
+      recordIncoming: jest.fn().mockResolvedValue(undefined),
+      listMessages: jest.fn(),
+      getThread: jest.fn(),
+      markHandled: jest.fn(),
+      replyToUser: jest.fn(),
+    };
     const service = new WechatOfficialMessageService(
       prisma as never,
       officialConfig as never,
       accessToken as never,
+      inbox as never,
     );
-    return { service, prisma, officialConfig };
+    return { service, prisma, officialConfig, inbox };
   }
 
   it('文本命中关键词时返回规则文案', async () => {
-    const { service } = createService();
+    const { service, inbox } = createService();
     const reply = await service.handleMessage(
       buildXml({
         ToUserName: 'gh_123',
@@ -212,10 +220,14 @@ describe('WechatOfficialMessageService', () => {
     );
     expect(reply).toContain('88 元起');
     expect(reply).toContain('<MsgType><![CDATA[text]]></MsgType>');
+    expect(inbox.recordIncoming).toHaveBeenCalledWith(
+      expect.objectContaining({ Content: '多少钱' }),
+      'auto_replied',
+    );
   });
 
-  it('文本未命中时返回兜底文案', async () => {
-    const { service } = createService();
+  it('文本未命中时返回兜底文案并标记待人工', async () => {
+    const { service, inbox } = createService();
     const reply = await service.handleMessage(
       buildXml({
         FromUserName: 'openid-2',
@@ -226,10 +238,14 @@ describe('WechatOfficialMessageService', () => {
       }),
     );
     expect(reply).toContain('暂时没能自动回答');
+    expect(inbox.recordIncoming).toHaveBeenCalledWith(
+      expect.objectContaining({ Content: '今天天气不错' }),
+      'pending',
+    );
   });
 
   it('关注事件返回欢迎语并登记身份', async () => {
-    const { service, prisma } = createService();
+    const { service, prisma, inbox } = createService();
     const reply = await service.handleMessage(
       buildXml({
         FromUserName: 'openid-3',
@@ -244,6 +260,10 @@ describe('WechatOfficialMessageService', () => {
       expect.objectContaining({
         create: expect.objectContaining({ appId: APP_ID, openId: 'openid-3' }),
       }),
+    );
+    expect(inbox.recordIncoming).toHaveBeenCalledWith(
+      expect.objectContaining({ Event: 'subscribe' }),
+      'note',
     );
   });
 
@@ -294,5 +314,23 @@ describe('WechatOfficialMessageService', () => {
   it('缺少必要字段的消息被忽略', async () => {
     const { service } = createService();
     expect(await service.handleMessage('<xml></xml>')).toBe('');
+  });
+
+  it('图片消息给出兜底指引并标记待人工', async () => {
+    const { service, inbox } = createService();
+    const reply = await service.handleMessage(
+      buildXml({
+        FromUserName: 'openid-7',
+        ToUserName: 'gh_123',
+        MsgType: 'image',
+        PicUrl: 'https://example.com/a.png',
+        MsgId: 'image-1',
+      }),
+    );
+    expect(reply).toContain('暂时没能自动回答');
+    expect(inbox.recordIncoming).toHaveBeenCalledWith(
+      expect.objectContaining({ MsgType: 'image' }),
+      'pending',
+    );
   });
 });
