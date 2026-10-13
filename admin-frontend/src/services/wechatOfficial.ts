@@ -2,13 +2,17 @@ import api from './api';
 
 export type OfficialEncryptMode = 'plaintext' | 'compatible' | 'safe';
 
-/** 后端 GET /api/admin/wechat-official/config 的返回结构（密钥只回传是否已配置）。 */
+/**
+ * 后端 GET /api/admin/wechat-official/config 的返回结构。
+ * AppSecret 只回传是否已配置；Token 与 EncodingAESKey 需原样填进微信后台，回传明文。
+ */
 export interface WechatOfficialConfig {
   enabled: boolean;
   appId: string;
   hasAppSecret: boolean;
   token: string;
   hasEncodingAesKey: boolean;
+  encodingAesKey: string;
   encryptMode: OfficialEncryptMode;
   welcomeReply: string;
   fallbackReply: string;

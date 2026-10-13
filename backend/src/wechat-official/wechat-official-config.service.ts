@@ -36,7 +36,10 @@ export class WechatOfficialConfigService {
     return this.prisma.wechatOfficialAccountConfig.create({ data: { id: 1 } });
   }
 
-  /** 管理端视图：只暴露是否已配置，不回显密钥明文。 */
+  /**
+   * 管理端视图：AppSecret 只暴露是否已配置（微信平台可随时重新获取）。
+   * Token 与 EncodingAESKey 需原样填进微信后台、微信侧没有副本，因此回显明文。
+   */
   async getAdminConfig() {
     const item = await this.getRecord();
     return {
@@ -45,6 +48,9 @@ export class WechatOfficialConfigService {
       hasAppSecret: !!item.appSecretEnc,
       token: item.token ?? '',
       hasEncodingAesKey: !!item.encodingAesKeyEnc,
+      encodingAesKey: item.encodingAesKeyEnc
+        ? this.crypto.decrypt(item.encodingAesKeyEnc)
+        : '',
       encryptMode: item.encryptMode,
       welcomeReply: item.welcomeReply ?? DEFAULT_WELCOME_REPLY,
       fallbackReply: item.fallbackReply ?? DEFAULT_FALLBACK_REPLY,

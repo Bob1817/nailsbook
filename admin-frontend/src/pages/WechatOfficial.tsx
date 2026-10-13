@@ -174,15 +174,18 @@ export default function WechatOfficial() {
     }
   };
 
-  const copyCallback = async () => {
-    const url = fullCallbackUrl(data?.callbackUrl ?? '');
+  const copyText = async (text: string, label: string) => {
+    if (!text) return;
     try {
-      await navigator.clipboard.writeText(url);
-      message.success('回调地址已复制');
+      await navigator.clipboard.writeText(text);
+      message.success(`${label}已复制`);
     } catch {
       message.warning('复制失败，请手动选中复制');
     }
   };
+
+  const copyCallback = () =>
+    copyText(fullCallbackUrl(data?.callbackUrl ?? ''), '回调地址');
 
   const secretHint = (exists: boolean, label: string) =>
     exists ? `已保存${label}，留空表示不修改` : `请输入${label}`;
@@ -278,8 +281,8 @@ export default function WechatOfficial() {
                     label="消息加解密 EncodingAESKey"
                     extra={
                       data?.hasEncodingAesKey
-                        ? '已保存 EncodingAESKey，留空表示不修改'
-                        : '43 位字母数字，需与微信后台一致'
+                        ? '已保存。保存后可在下方「要填到微信后台的地址」复制同一值；留空表示不修改'
+                        : '43 位字母数字，需与微信后台一致；选「明文模式」可留空'
                     }
                   >
                     <Space.Compact style={{ width: '100%' }}>
@@ -314,7 +317,7 @@ export default function WechatOfficial() {
                     </Button>
                     <Button
                       onClick={validate}
-                      disabled={!data?.hasAppSecret || !data?.hasEncodingAesKey}
+                      disabled={!data?.hasAppSecret}
                     >
                       在线校验并生效
                     </Button>
@@ -347,16 +350,41 @@ export default function WechatOfficial() {
                     </Space>
                   </Descriptions.Item>
                   <Descriptions.Item label="Token">
-                    <Text code>{data?.token || '（先用上方「生成」按钮生成）'}</Text>
+                    <Space>
+                      <Text code>{data?.token || '（先用上方「生成」按钮生成）'}</Text>
+                      {data?.token ? (
+                        <Button
+                          size="small"
+                          icon={<CopyOutlined />}
+                          onClick={() => copyText(data.token, 'Token')}
+                        >
+                          复制
+                        </Button>
+                      ) : null}
+                    </Space>
                   </Descriptions.Item>
                   <Descriptions.Item label="EncodingAESKey">
-                    <Text type="secondary">
-                      {data?.hasEncodingAesKey
-                        ? '已保存（出于安全不回显，如需一致请在后台点击随机生成后保存）'
-                        : '（先用上方「生成」按钮生成）'}
-                    </Text>
+                    <Space>
+                      <Text code>
+                        {data?.encodingAesKey || '（先用上方「生成」按钮生成）'}
+                      </Text>
+                      {data?.encodingAesKey ? (
+                        <Button
+                          size="small"
+                          icon={<CopyOutlined />}
+                          onClick={() =>
+                            copyText(data.encodingAesKey, 'EncodingAESKey')
+                          }
+                        >
+                          复制
+                        </Button>
+                      ) : null}
+                    </Space>
                   </Descriptions.Item>
                 </Descriptions>
+                <Paragraph type="secondary" style={{ marginTop: 8 }}>
+                  三个值必须与微信后台填写的内容完全一致（区分大小写）。加解密方式选「明文模式」时 EncodingAESKey 可留空。
+                </Paragraph>
                 <Paragraph type="secondary" style={{ marginTop: 8 }}>
                   填写路径：微信开发者平台 → 我的业务与服务 → 服务号 → 域名与消息推送配置。
                 </Paragraph>

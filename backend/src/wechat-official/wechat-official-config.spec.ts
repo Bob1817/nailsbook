@@ -61,7 +61,7 @@ describe('OfficialCryptoService', () => {
 });
 
 describe('WechatOfficialConfigService', () => {
-  it('保存配置时加密密钥且不回显明文', async () => {
+  it('保存配置时加密存储：AppSecret 不回显，Token 与 AESKey 回显供后台填写', async () => {
     const { service, store } = createHarness();
     await service.update({
       enabled: true,
@@ -77,8 +77,11 @@ describe('WechatOfficialConfigService', () => {
     const admin = await service.getAdminConfig();
     expect(admin.hasAppSecret).toBe(true);
     expect(admin.hasEncodingAesKey).toBe(true);
+    // AppSecret 是真正的凭据，微信平台可重新获取，故不回显
     expect(JSON.stringify(admin)).not.toContain(APP_SECRET);
-    expect(JSON.stringify(admin)).not.toContain(AES_KEY);
+    // Token 与 EncodingAESKey 必须原样填进微信后台、微信侧无副本，故回显明文
+    expect(admin.token).toBe('token-value');
+    expect(admin.encodingAesKey).toBe(AES_KEY);
   });
 
   it('留空密钥时沿用已保存的值', async () => {
