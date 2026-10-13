@@ -81,18 +81,23 @@ export class WechatSubscribeMessagesService {
     const eventTemplates = await this.platform.getBookingEventTemplateIds();
     const notificationTemplates =
       await this.platform.getNotificationTemplateIds();
-    const templateIds = [
-      role === 'technician'
-        ? eventTemplates.technicianNew
-        : eventTemplates.clientSuccess,
-      role === 'technician'
-        ? notificationTemplates.technicianStatus
-        : notificationTemplates.clientStatus,
-      notificationTemplates.consultationReply,
-    ].filter(
+    const templates = {
+      bookingEvent:
+        role === 'technician'
+          ? eventTemplates.technicianNew
+          : eventTemplates.clientSuccess,
+      bookingStatus:
+        role === 'technician'
+          ? notificationTemplates.technicianStatus
+          : notificationTemplates.clientStatus,
+      dayBefore: reminderTemplates.dayBefore,
+      hourBefore: reminderTemplates.hourBefore,
+      consultationReply: notificationTemplates.consultationReply,
+    };
+    const templateIds = Object.values(templates).filter(
       (templateId, index, values) =>
         Boolean(templateId) && values.indexOf(templateId) === index,
-    );
+    ) as string[];
     const authorizations = templateIds.length
       ? await this.prisma.wechatSubscriptionAuthorization.findMany({
           where: {
@@ -136,6 +141,7 @@ export class WechatSubscribeMessagesService {
       configuredTemplates: templateIds.length,
       availableTemplates,
       banned: authorizations.some((item) => item.status === 'ban'),
+      templates,
       recentDeliveries: recentDeliveries.map((delivery) => ({
         eventType: delivery.notificationEvent.eventType,
         status: delivery.status,

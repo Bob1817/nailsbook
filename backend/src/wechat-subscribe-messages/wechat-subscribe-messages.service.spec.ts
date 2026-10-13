@@ -190,6 +190,30 @@ describe('WechatSubscribeMessagesService', () => {
     );
   });
 
+  it('returns every configured reminder template for the authorization button', async () => {
+    const { service, prisma } = createService();
+    prisma.wechatSubscriptionAuthorization.findMany.mockResolvedValue([
+      {
+        templateId: 'technician-new-template',
+        availableCount: 1,
+        status: 'accept',
+      },
+    ]);
+
+    const result = await service.getAuthorizationStatus('technician', 55);
+
+    expect(result.configuredTemplates).toBe(5);
+    expect(result.availableTemplates).toBe(1);
+    expect(result.status).toBe('needs_top_up');
+    expect(result.templates).toEqual({
+      bookingEvent: 'technician-new-template',
+      bookingStatus: 'technician-status-template',
+      dayBefore: 'day-template',
+      hourBefore: 'hour-template',
+      consultationReply: 'consultation-template',
+    });
+  });
+
   it('reserves and consumes one authorization only after a successful send', async () => {
     const { service, prisma } = createService();
 
