@@ -19,6 +19,7 @@ import {
   FormOutlined,
   NotificationOutlined,
   SettingOutlined,
+  WechatOutlined,
   RocketOutlined,
   CalendarOutlined,
 } from '@ant-design/icons';
@@ -126,6 +127,12 @@ const MainLayout: React.FC = () => {
       key: '/wechat-config',
       icon: <SettingOutlined />,
       label: '微信能力配置',
+      permission: 'feature_flag:view',
+    },
+    {
+      key: '/wechat-official',
+      icon: <WechatOutlined />,
+      label: '公众号配置',
       permission: 'feature_flag:view',
     },
     {

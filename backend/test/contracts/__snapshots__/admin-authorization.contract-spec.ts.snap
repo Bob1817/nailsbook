@@ -529,6 +529,48 @@ exports[`Admin authorization HTTP contract covers every admin business route wit
   },
   {
     "method": "GET",
+    "path": "/api/admin/wechat-official/config",
+    "permissions": [
+      "feature_flag:view",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/wechat-official/config",
+    "permissions": [
+      "feature_flag:update",
+    ],
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/wechat-official/config/validate",
+    "permissions": [
+      "feature_flag:update",
+    ],
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/admin/wechat-official/menu",
+    "permissions": [
+      "feature_flag:update",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/wechat-official/menu",
+    "permissions": [
+      "feature_flag:view",
+    ],
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/wechat-official/menu/sync",
+    "permissions": [
+      "feature_flag:update",
+    ],
+  },
+  {
+    "method": "GET",
     "path": "/api/admin/works",
     "permissions": [
       "work:view",
