@@ -128,6 +128,15 @@ export class WechatOfficialConfigService {
     return item.token;
   }
 
+  /**
+   * 消息推送开关。关闭时收到消息直接丢弃，避免微信重试堆积。
+   * 注意：开关只影响是否接管，不影响微信后台保存「服务器配置」时的 GET 校验。
+   */
+  async isEnabled(): Promise<boolean> {
+    const item = await this.getRecord();
+    return item.enabled;
+  }
+
   async requireEnabledConfig(): Promise<ResolvedOfficialConfig> {
     const item = await this.getRecord();
     if (!item.enabled) {

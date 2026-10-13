@@ -62,6 +62,12 @@ export class WechatOfficialCallbackController {
   /** 接收消息与事件推送。 */
   @Post('callback')
   async receive(@Req() req: Request, @Res() res: Response) {
+    if (!(await this.officialConfig.isEnabled())) {
+      this.logger.warn('公众号消息推送未启用，已忽略本次消息');
+      res.type('text/plain').send('success');
+      return;
+    }
+
     const config = await this.officialConfig.requireResolvedConfig();
     const rawXml = this.readRawBody(req);
     if (!rawXml) {

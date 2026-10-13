@@ -4,6 +4,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { WechatOfficialConfigService } from './wechat-official-config.service';
+import { describeWechatError } from './official-error-hint';
 
 interface CachedToken {
   token: string;
@@ -93,11 +94,11 @@ export class OfficialAccessTokenService {
       throw new ServiceUnavailableException('获取微信 access_token 失败');
     }
     if (!payload.access_token) {
-      const code = payload.errcode ?? 'unknown';
-      const message = payload.errmsg ?? '未知错误';
+      const code = payload.errcode;
+      const message = payload.errmsg ?? '';
       this.logger.error(`获取 access_token 被拒绝：${code} ${message}`);
       throw new ServiceUnavailableException(
-        `获取微信 access_token 失败（${code}: ${message}）`,
+        `获取微信 access_token 失败：${describeWechatError(code, message)}`,
       );
     }
     return payload.access_token;

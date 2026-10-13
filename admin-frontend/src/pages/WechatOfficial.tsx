@@ -120,7 +120,10 @@ export default function WechatOfficial() {
       message.success('接口配置已保存，请点击「在线校验」使其生效');
       await load();
     } catch (error: unknown) {
-      if ((error as { errorFields?: unknown }).errorFields) return;
+      if ((error as { errorFields?: unknown }).errorFields) {
+        message.warning('请先填写标记为必填的配置项（如公众号 AppID）');
+        return;
+      }
       message.error(apiErrorMessage(error) || '保存失败');
     }
   };
@@ -239,6 +242,7 @@ export default function WechatOfficial() {
                     name="enabled"
                     label="启用消息推送（接收用户消息与事件）"
                     valuePropName="checked"
+                    extra="关闭后，用户发给公众号的消息不会被自动回复（不被接管）。微信后台的「服务器配置」校验不受此开关影响。"
                   >
                     <Switch />
                   </Form.Item>

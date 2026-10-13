@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { OfficialAccessTokenService } from './official-access-token.service';
 import { DEFAULT_OFFICIAL_MENU } from './official-menu-definition';
+import { describeWechatError } from './official-error-hint';
 
 const WECHAT_API_BASE = 'https://api.weixin.qq.com';
 
@@ -57,10 +58,11 @@ export class OfficialMenuService {
       throw new BadRequestException('调用微信菜单接口失败，请检查网络');
     }
     if (payload.errcode) {
-      const message = `${payload.errcode}: ${payload.errmsg ?? ''}`;
-      this.logger.error(`菜单接口返回错误 ${message}`);
+      this.logger.error(
+        `菜单接口返回错误 ${payload.errcode}: ${payload.errmsg ?? ''}`,
+      );
       throw new BadRequestException(
-        `微信菜单接口返回错误（${message}）。常见原因：小程序未关联、IP 不在白名单、access_token 失效。`,
+        describeWechatError(payload.errcode, payload.errmsg),
       );
     }
     return payload;
