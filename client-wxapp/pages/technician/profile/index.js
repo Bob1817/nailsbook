@@ -34,6 +34,15 @@ const TOOL_ROUTES = {
   tags:         '/pages/technician/tag-management/index',
   marketingMaterials: '/pages/technician/marketing-materials/index'
 };
+const DAILY_CAPACITY_MIN = 1;
+const DAILY_CAPACITY_MAX = 10;
+const BUFFER_MIN = 15;
+const BUFFER_MAX = 180;
+const BUFFER_STEP = 15;
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
 
 Page({
   data: {
@@ -52,6 +61,15 @@ Page({
     inviteLinkExpires: '',
     acceptingHint: '接单设置加载中',
     scheduleSummary: '工作时间加载中',
+    capacitySummary: '每日最多 2 位 · 每单预留 60 分钟',
+    showCapacityModal: false,
+    savingCapacity: false,
+    dailyBookingLimit: 2,
+    appointmentBufferMinutes: 60,
+    dailyCapacityMin: DAILY_CAPACITY_MIN,
+    dailyCapacityMax: DAILY_CAPACITY_MAX,
+    bufferMin: BUFFER_MIN,
+    bufferMax: BUFFER_MAX,
 
     // 新手引导
     needsSetup: false,       // shopService 未配置时显示引导卡
@@ -101,6 +119,58 @@ Page({
     this.applyUserInfo();
     this.refreshUserInfo();
     this.loadStats();
+    this.loadCapacitySettings();
+  },
+
+  async loadCapacitySettings() {
+    try {
+      const settings = await api.technician.bookingDays.list();
+      const dailyBookingLimit = clamp(Number(settings.dailyBookingLimit) || 2, DAILY_CAPACITY_MIN, DAILY_CAPACITY_MAX);
+      const appointmentBufferMinutes = clamp(Number(settings.appointmentBufferMinutes) || 60, BUFFER_MIN, BUFFER_MAX);
+      this.setData({
+        dailyBookingLimit,
+        appointmentBufferMinutes,
+        capacitySummary: '每日最多 ' + dailyBookingLimit + ' 位 · 每单预留 ' + appointmentBufferMinutes + ' 分钟'
+      });
+    } catch (err) {
+      console.warn('load booking capacity failed', err);
+    }
+  },
+
+  openCapacityModal() { this.setData({ showCapacityModal: true }); },
+  closeCapacityModal() {
+    if (!this.data.savingCapacity) this.setData({ showCapacityModal: false });
+  },
+  changeDailyCapacity(e) {
+    if (this.data.savingCapacity) return;
+    const delta = Number(e.currentTarget.dataset.delta) || 0;
+    const dailyBookingLimit = clamp(this.data.dailyBookingLimit + delta, DAILY_CAPACITY_MIN, DAILY_CAPACITY_MAX);
+    this.setData({ dailyBookingLimit });
+  },
+  changeAppointmentBuffer(e) {
+    if (this.data.savingCapacity) return;
+    const delta = Number(e.currentTarget.dataset.delta) || 0;
+    const appointmentBufferMinutes = clamp(this.data.appointmentBufferMinutes + delta, BUFFER_MIN, BUFFER_MAX);
+    this.setData({ appointmentBufferMinutes });
+  },
+  async saveCapacity() {
+    if (this.data.savingCapacity) return;
+    this.setData({ savingCapacity: true });
+    try {
+      const result = await api.technician.bookingDays.updateCapacity({
+        dailyBookingLimit: this.data.dailyBookingLimit,
+        appointmentBufferMinutes: this.data.appointmentBufferMinutes
+      });
+      this.setData({
+        savingCapacity: false,
+        showCapacityModal: false,
+        capacitySummary: '每日最多 ' + result.dailyBookingLimit + ' 位 · 每单预留 ' + result.appointmentBufferMinutes + ' 分钟'
+      });
+      wx.showToast({ title: '接待能力已保存', icon: 'success' });
+    } catch (err) {
+      this.setData({ savingCapacity: false });
+      wx.showToast({ title: err.message || '保存失败，请重试', icon: 'none' });
+    }
   },
 
   async refreshUserInfo() {

@@ -55,6 +55,7 @@ const checks = [
   'test-avatar-consistency.js',
   'test-technician-home-todos.js',
   'test-technician-booking-day-control.js',
+  'test-booking-capacity-stepper.js',
   'test-technician-booking-card.js',
   'test-chat-detail-consistency.js',
   'test-technician-chat-conversation.js',

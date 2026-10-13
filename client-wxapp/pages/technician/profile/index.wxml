@@ -38,6 +38,13 @@
       </view>
       <text class="semantic-link profile-link">修改 ›</text>
     </view>
+    <view class="profile-schedule-row availability-module" bindtap="openCapacityModal" role="button" aria-label="设置每日接待人数和预约间隔" hover-class="profile-pressed">
+      <view class="status-copy">
+        <text class="status-label">接待能力</text>
+        <text class="profile-helper">{{capacitySummary}}</text>
+      </view>
+      <text class="semantic-link profile-link">修改 ›</text>
+    </view>
   </view>
 
   <!-- ============ 新手引导卡 ============ -->
@@ -165,6 +172,39 @@
 
   <text class="version">OnlyNail v1.0.0</text>
   <view class="logout-btn" bindtap="logout" role="button" aria-label="退出登录">退出登录</view>
+</view>
+
+<view wx:if="{{showCapacityModal}}" class="ws-overlay" bindtap="closeCapacityModal">
+  <view class="ws-sheet capacity-sheet" catchtap="preventBubble">
+    <view class="ws-header">
+      <text class="ws-title">接待能力</text>
+      <view class="ws-close" bindtap="closeCapacityModal" role="button" aria-label="关闭"><text class="ws-close-icon">✕</text></view>
+    </view>
+    <view class="capacity-body">
+      <text class="capacity-intro">为一对一服务保留充足时间，系统会在客户提交预约时立即锁定名额。</text>
+      <view class="capacity-field">
+        <view class="capacity-field-copy"><text class="capacity-label">每日接待上限</text><text class="capacity-helper">达到上限后，当日将显示已约满</text></view>
+        <view class="capacity-stepper" aria-label="每日接待上限 {{dailyBookingLimit}} 位">
+          <view class="capacity-stepper-btn {{dailyBookingLimit <= dailyCapacityMin || savingCapacity ? 'is-disabled' : ''}}" data-delta="-1" bindtap="changeDailyCapacity" role="button" aria-label="减少每日接待人数"><text>−</text></view>
+          <text class="capacity-stepper-value">{{dailyBookingLimit}} 位</text>
+          <view class="capacity-stepper-btn {{dailyBookingLimit >= dailyCapacityMax || savingCapacity ? 'is-disabled' : ''}}" data-delta="1" bindtap="changeDailyCapacity" role="button" aria-label="增加每日接待人数"><text>+</text></view>
+        </view>
+      </view>
+      <view class="capacity-field">
+        <view class="capacity-field-copy"><text class="capacity-label">预约间隔</text><text class="capacity-helper">用于清理桌面和准备接待环境</text></view>
+        <view class="capacity-stepper" aria-label="预约间隔 {{appointmentBufferMinutes}} 分钟">
+          <view class="capacity-stepper-btn {{appointmentBufferMinutes <= bufferMin || savingCapacity ? 'is-disabled' : ''}}" data-delta="-15" bindtap="changeAppointmentBuffer" role="button" aria-label="减少预约间隔"><text>−</text></view>
+          <text class="capacity-stepper-value capacity-buffer-value">{{appointmentBufferMinutes}} 分钟</text>
+          <view class="capacity-stepper-btn {{appointmentBufferMinutes >= bufferMax || savingCapacity ? 'is-disabled' : ''}}" data-delta="15" bindtap="changeAppointmentBuffer" role="button" aria-label="增加预约间隔"><text>+</text></view>
+        </view>
+      </view>
+    </view>
+    <view class="ws-footer">
+      <view class="ws-save-btn {{savingCapacity ? 'ws-save-disabled' : ''}}" bindtap="saveCapacity" role="button">
+        <text class="ws-save-text">{{savingCapacity ? '保存中...' : '保存接待能力'}}</text>
+      </view>
+    </view>
+  </view>
 </view>
 
 <!-- 低频信息按需展开，保留全部原有指标及邀请码操作。 -->
