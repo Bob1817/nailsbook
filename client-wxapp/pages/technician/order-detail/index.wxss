@@ -135,6 +135,12 @@ page { background: var(--bg-gradient-entry); }
   gap: 24rpx;
 }
 .info-row:last-child { border-bottom: none; }
+.info-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
 .address-row { align-items: flex-start; }
 .address-content { position: relative; flex: 1; min-width: 0; }
 .guidance-row-main {

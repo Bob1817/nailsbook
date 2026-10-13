@@ -5,9 +5,17 @@
     <view class="loading-spinner"></view>
   </view>
 
+  <view wx:if="{{!loading && showReplyReminder}}" class="reply-reminder">
+    <view class="reply-reminder-copy">
+      <text class="reply-reminder-title">及时接收客户回复</text>
+      <text class="reply-reminder-desc">离开小程序后也能收到客户的新消息提醒</text>
+    </view>
+    <view class="reply-reminder-action" bindtap="enableReplyReminder" role="button">开启提醒</view>
+  </view>
+
   <!-- 消息列表 -->
   <scroll-view
-    wx:else
+    wx:if="{{!loading}}"
     scroll-y
     class="msg-list"
     scroll-into-view="{{scrollToId}}"

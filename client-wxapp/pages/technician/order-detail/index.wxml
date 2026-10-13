@@ -64,8 +64,13 @@
     <view class="info-row">
       <text class="info-label">{{order.bookingPhase === 'application' ? '客户期望时间' : '预约时间'}}</text>
       <text class="info-value">{{order._dateLabel}} {{order._timeRange}}</text>
-      <view class="edit-link" bindtap="editBookingTime" role="button" aria-label="编辑预约时间">
-        <view class="edit-link-label">编辑</view>
+      <view class="info-actions">
+        <view wx:if="{{order.status === 'pending_shop' || order.status === 'in_progress'}}" class="edit-link" bindtap="addBookingToCalendar" role="button" aria-label="加入手机日历">
+          <view class="edit-link-label">加入日历</view>
+        </view>
+        <view class="edit-link" bindtap="editBookingTime" role="button" aria-label="编辑预约时间">
+          <view class="edit-link-label">编辑</view>
+        </view>
       </view>
     </view>
 

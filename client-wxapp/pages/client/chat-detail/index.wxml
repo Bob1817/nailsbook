@@ -5,8 +5,16 @@
     <view class="loading-spinner"></view>
   </view>
 
+  <view wx:if="{{!loading && showReplyReminder}}" class="reply-reminder">
+    <view class="reply-reminder-copy">
+      <text class="reply-reminder-title">及时接收回复</text>
+      <text class="reply-reminder-desc">离开小程序后也能收到美甲师的新消息提醒</text>
+    </view>
+    <view class="reply-reminder-action" bindtap="enableReplyReminder" role="button">开启提醒</view>
+  </view>
+
   <!-- 消息列表 -->
-  <scroll-view wx:else scroll-y class="msg-list" scroll-into-view="{{scrollToId}}" scroll-with-animation enhanced show-scrollbar="{{false}}" bindscroll="onScroll">
+  <scroll-view wx:if="{{!loading}}" scroll-y class="msg-list" scroll-into-view="{{scrollToId}}" scroll-with-animation enhanced show-scrollbar="{{false}}" bindscroll="onScroll">
     <view wx:if="{{groupedMessages.length === 0}}" class="empty-chat">
       <view class="empty-chat-card">
         <view class="empty-avatar" bindtap="viewArtist" role="button" aria-label="查看{{techName || '美甲师'}}主页">

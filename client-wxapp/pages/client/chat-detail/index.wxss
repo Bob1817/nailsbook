@@ -40,6 +40,34 @@ page {
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+.reply-reminder {
+  margin: 16rpx 24rpx 0;
+  padding: 20rpx 20rpx 20rpx 24rpx;
+  background: var(--bg-card);
+  border: 1rpx solid var(--border-light);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.reply-reminder-copy { flex: 1; min-width: 0; }
+.reply-reminder-title { display: block; font-size: var(--font-sm); font-weight: 600; color: var(--text-primary); }
+.reply-reminder-desc { display: block; margin-top: 4rpx; font-size: var(--font-xs); color: var(--text-secondary); line-height: 1.45; }
+.reply-reminder-action {
+  min-width: 144rpx;
+  min-height: 88rpx;
+  padding: 0 20rpx;
+  border-radius: var(--radius-md);
+  background: var(--brand-primary);
+  color: var(--text-inverse);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* ===== 日期分隔符 ===== */
 .date-separator {
   display: flex;

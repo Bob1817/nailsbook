@@ -21,6 +21,22 @@
   <!-- ===== 列表区（原生页面滚动）===== -->
   <view class="list-area">
 
+    <view
+      wx:if="{{reminderStatus && reminderStatus.configuredTemplates > 0 && reminderStatus.status !== 'normal'}}"
+      class="booking-reminder-card"
+    >
+      <view class="booking-reminder-copy">
+        <text class="booking-reminder-title">{{reminderStatus.status === 'needs_top_up' ? '补充预约提醒' : '开启预约提醒'}}</text>
+        <text class="booking-reminder-desc">美甲师报价、改期或预约状态变化时，通过微信提醒你</text>
+      </view>
+      <button
+        class="booking-reminder-action"
+        loading="{{reminderRequesting}}"
+        disabled="{{reminderRequesting}}"
+        bindtap="enableBookingReminders"
+      >{{reminderStatus.status === 'needs_top_up' ? '补充提醒' : '立即开启'}}</button>
+    </view>
+
     <!-- 骨架屏 -->
     <view wx:if="{{loading && orders.length === 0}}" class="skel-list">
       <view wx:for="{{[1,2,3]}}" wx:key="*this" class="skel-card"></view>

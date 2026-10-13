@@ -1,4 +1,9 @@
 const api = require('../../../services/api');
+const {
+  getBookingReminderResultState,
+  prepareBookingReminderStatus,
+  requestBookingReminder
+} = require('../../../utils/wechat-subscription');
 
 const TABS = [
   { label: '全部', value: 'all' },
@@ -201,7 +206,9 @@ Page({
     loading: false,
     emptyTitle: '还没有预约',
     emptyCopy: '选择喜欢的作品或服务，发起你的下一次美甲预约',
-    tradeView: false
+    tradeView: false,
+    reminderStatus: null,
+    reminderRequesting: false
   },
 
   onLoad(options) {
@@ -216,10 +223,56 @@ Page({
 
   onShow() {
     this.loadOrders();
+    this.loadReminderStatus();
   },
 
   onPullDownRefresh() {
-    this.loadOrders().finally(() => wx.stopPullDownRefresh());
+    Promise.all([this.loadOrders(), this.loadReminderStatus()])
+      .finally(() => wx.stopPullDownRefresh());
+  },
+
+  async loadReminderStatus() {
+    try {
+      const result = await api.client.wechatSubscriptions.status();
+      const reminderStatus = await prepareBookingReminderStatus(
+        'client',
+        result.data || result
+      );
+      this.setData({ reminderStatus });
+    } catch (_) {
+      this.setData({ reminderStatus: null });
+    }
+  },
+
+  async enableBookingReminders() {
+    if (this.data.reminderRequesting) return;
+    this.setData({ reminderRequesting: true });
+    try {
+      const result = await requestBookingReminder(
+        'client',
+        this.data.reminderStatus && this.data.reminderStatus.templates
+      );
+      const resultState = getBookingReminderResultState(result);
+      if (resultState === 'accepted') {
+        await this.loadReminderStatus();
+        wx.showToast({ title: '预约提醒已开启', icon: 'success' });
+      } else if (resultState === 'banned') {
+        wx.showModal({
+          title: '提醒权限已关闭',
+          content: '请在小程序右上角“···”的设置中开启订阅消息后，再回来补充提醒。',
+          showCancel: false,
+          confirmText: '我知道了'
+        });
+      } else if (resultState === 'rejected') {
+        wx.showToast({ title: '你暂未允许提醒', icon: 'none' });
+      } else if (resultState === 'missing') {
+        wx.showToast({ title: '提醒配置未就绪，请重新进入页面', icon: 'none' });
+      } else {
+        wx.showToast({ title: '未能开启，请稍后重试', icon: 'none' });
+      }
+    } finally {
+      this.setData({ reminderRequesting: false });
+    }
   },
 
   async loadOrders() {

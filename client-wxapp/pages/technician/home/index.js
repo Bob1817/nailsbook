@@ -1,5 +1,10 @@
 const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
+const {
+  getBookingReminderResultState,
+  prepareBookingReminderStatus,
+  requestBookingReminder
+} = require('../../../utils/wechat-subscription');
 const { isTouristTechnician } = require('../../../utils/permission');
 const {
   parseDate,
@@ -33,7 +38,9 @@ Page({
     featuredLead: null,
     worksLeft: [],
     worksRight: [],
-    unreadMessageCount: 0
+    unreadMessageCount: 0,
+    reminderStatus: null,
+    reminderRequesting: false
   },
 
   // ---------- 生命周期 ----------
@@ -66,14 +73,17 @@ Page({
     this.setData({ loading: true });
 
     try {
-      const [tripsResult, ordersResult, convResult, worksResult, followUpsResult, insights, incomeCalendar] = await Promise.all([
+      const [tripsResult, ordersResult, convResult, worksResult, followUpsResult, insights, incomeCalendar, reminderResult] = await Promise.all([
         api.technician.orders.trips().catch(() => []),
         api.technician.orders.list().catch(() => []),
         api.chat.technician.conversations().catch(() => []),
         api.technician.works.list().catch(() => []),
         api.technician.customers.todayFollowUps().catch(() => []),
         api.technician.insights.overview().catch(() => null),
-        api.technician.orders.incomeCalendar().catch(() => null)
+        api.technician.orders.incomeCalendar().catch(() => null),
+        isTouristTechnician()
+          ? Promise.resolve(null)
+          : api.technician.wechatSubscriptions.status().catch(() => null)
       ]);
 
       const tripsRaw = Array.isArray(tripsResult) ? tripsResult : (tripsResult.data || []);
@@ -92,6 +102,12 @@ Page({
       const orders = tripsRaw.map(normalizeOrder).filter(Boolean);
       const allOrders = allOrdersRaw.map(normalizeOrder).filter(Boolean);
       const summary = buildDashboardSummary(orders, new Date());
+      const reminderStatus = reminderResult
+        ? await prepareBookingReminderStatus(
+            'technician',
+            reminderResult.data || reminderResult
+          )
+        : null;
 
       const unread = convs.reduce((s, c) => s + (c.unreadCount || 0), 0);
       const technicianProfile = wx.getStorageSync('userInfo') || wx.getStorageSync('technician_userInfo') || {};
@@ -247,12 +263,80 @@ Page({
         featuredLead: null,
         worksLeft,
         worksRight,
-        unreadMessageCount: unread
+        unreadMessageCount: unread,
+        reminderStatus
+      });
+      this.maybeShowDailySummary({
+        todoTotal,
+        pendingActionCount: pendingActionCount + confirmationTodos.length,
+        unread,
+        nextOrder
       });
     } catch (e) {
       this.setData({ loading: false });
     } finally {
       this._dashboardLoading = false;
+    }
+  },
+
+  maybeShowDailySummary({ todoTotal, pendingActionCount, unread, nextOrder }) {
+    if (todoTotal < 1) return;
+    const now = new Date();
+    const dayKey = [now.getFullYear(), now.getMonth() + 1, now.getDate()].join('-');
+    const storageKey = 'technician_daily_summary_seen';
+    if (wx.getStorageSync(storageKey) === dayKey) return;
+    wx.setStorageSync(storageKey, dayKey);
+    const parts = [];
+    if (pendingActionCount > 0) parts.push(`${pendingActionCount} 个预约待处理`);
+    if (unread > 0) parts.push(`${unread} 条客户消息未读`);
+    if (nextOrder && nextOrder._dateMain) {
+      parts.push(`下一单：${nextOrder._dateMain} ${nextOrder._clock}`);
+    }
+    wx.showModal({
+      title: '今日提醒',
+      content: parts.join('\n'),
+      confirmText: '去处理',
+      cancelText: '稍后',
+      success: (result) => {
+        if (!result.confirm) return;
+        if (pendingActionCount > 0) {
+          wx.navigateTo({ url: '/pages/technician/all-bookings/index' });
+        } else {
+          wx.reLaunch({ url: '/pages/technician/chat/index' });
+        }
+      }
+    });
+  },
+
+  async enableBookingReminders() {
+    if (this.data.reminderRequesting) return;
+    this.setData({ reminderRequesting: true });
+    try {
+      const result = await requestBookingReminder(
+        'technician',
+        this.data.reminderStatus && this.data.reminderStatus.templates
+      );
+      const resultState = getBookingReminderResultState(result);
+      if (resultState === 'accepted') {
+        const statusResult = await api.technician.wechatSubscriptions.status();
+        this.setData({ reminderStatus: statusResult.data || statusResult });
+        wx.showToast({ title: '提醒设置已更新', icon: 'success' });
+      } else if (resultState === 'banned') {
+        wx.showModal({
+          title: '提醒权限已关闭',
+          content: '请在小程序右上角“···”的设置中开启订阅消息后，再回来补充提醒。',
+          showCancel: false,
+          confirmText: '我知道了'
+        });
+      } else if (resultState === 'rejected') {
+        wx.showToast({ title: '你暂未允许提醒', icon: 'none' });
+      } else if (resultState === 'missing') {
+        wx.showToast({ title: '提醒配置未就绪，请重新进入页面', icon: 'none' });
+      } else {
+        wx.showToast({ title: '未能开启，请稍后重试', icon: 'none' });
+      }
+    } finally {
+      this.setData({ reminderRequesting: false });
     }
   },
 

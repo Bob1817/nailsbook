@@ -87,6 +87,7 @@ const checks = [
   'test-work-comment-submit.js',
   'test-work-list-actions.js',
   'test-service-review-notification.js',
+  'test-notification-reliability.js',
   'test-account-deletion.js',
   'test-work-error-state.js',
   'test-work-promotion.js',

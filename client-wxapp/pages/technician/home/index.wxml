@@ -11,6 +11,22 @@
     <view class="tourist-banner-action">去激活 ›</view>
   </view>
 
+  <view
+    wx:if="{{!isTourist && reminderStatus && reminderStatus.configuredTemplates > 0 && reminderStatus.status !== 'normal'}}"
+    class="reminder-card"
+  >
+    <view class="reminder-copy">
+      <text class="reminder-title">{{reminderStatus.status === 'needs_top_up' ? '补充接单提醒' : '开启接单提醒'}}</text>
+      <text class="reminder-desc">允许微信在有新预约和临近预约时提醒你</text>
+    </view>
+    <button
+      class="reminder-action"
+      loading="{{reminderRequesting}}"
+      disabled="{{reminderRequesting}}"
+      bindtap="enableBookingReminders"
+    >{{reminderStatus.status === 'needs_top_up' ? '补充提醒' : '立即开启'}}</button>
+  </view>
+
   <!-- ===== 经营信息 ===== -->
   <view class="business-hero" bindtap="openBusinessDetail" role="button" aria-label="查看经营数据详情">
     <view class="hero-orb hero-orb-left"></view>

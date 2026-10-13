@@ -1,4 +1,8 @@
 const api = require('../../../services/api');
+const {
+  requestConsultationReply,
+  shouldShowConsultationReminder
+} = require('../../../utils/wechat-subscription');
 
 Page({
   data: {
@@ -17,7 +21,8 @@ Page({
     /* 滚动策略 */
     isAtBottom: true,
     /* 键盘 */
-    keyboardHeight: 0
+    keyboardHeight: 0,
+    showReplyReminder: false
   },
 
   pollingTimer: null,
@@ -40,6 +45,7 @@ Page({
       this.setData({ clientName: name });
     }
     this.prepareConversation();
+    this.setData({ showReplyReminder: shouldShowConsultationReminder('technician') });
 
     /* 横竖屏 / 分屏适配 */
     this._resizeHandler = () => {
@@ -80,6 +86,17 @@ Page({
       clearInterval(this.pollingTimer);
       this.pollingTimer = null;
     }
+  },
+
+  async enableReplyReminder() {
+    const result = await requestConsultationReply('technician');
+    if (result.error) {
+      wx.showToast({ title: '开启失败，请稍后重试', icon: 'none' });
+      return;
+    }
+    this.setData({ showReplyReminder: false });
+    const accepted = Object.values(result).includes('accept');
+    wx.showToast({ title: accepted ? '回复提醒已开启' : '可稍后再次开启', icon: 'none' });
   },
 
   /* ===== 消息加载 ===== */

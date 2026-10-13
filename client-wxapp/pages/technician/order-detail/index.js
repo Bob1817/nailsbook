@@ -154,6 +154,66 @@ Page({
     this.loadOrder().finally(() => wx.stopPullDownRefresh());
   },
 
+  async addBookingToCalendar() {
+    const order = this.data.order;
+    if (!order || typeof wx.addPhoneCalendar !== 'function') {
+      wx.showToast({ title: '当前微信版本暂不支持加入日历', icon: 'none' });
+      return;
+    }
+    const start = parseDate(order.startTime);
+    const end = parseDate(order.endTime);
+    if (!start || !end || end <= start) {
+      wx.showToast({ title: '预约时间无效，请刷新后重试', icon: 'none' });
+      return;
+    }
+    const syncs = wx.getStorageSync('technician_calendar_syncs') || {};
+    const fingerprint = `${start.toISOString()}|${end.toISOString()}`;
+    const previous = syncs[String(order.id)];
+    if (previous) {
+      const result = await wx.showModal({
+        title: previous === fingerprint ? '预约已加入过日历' : '预约时间已变化',
+        content: previous === fingerprint
+          ? '系统无法检查原日程是否仍存在。继续会再添加一条日程。'
+          : '请先在系统日历中删除旧日程，再同步新的预约时间。',
+        confirmText: '继续添加',
+        cancelText: '暂不添加'
+      });
+      if (!result.confirm) return;
+    }
+    try {
+      await new Promise((resolve, reject) => {
+        wx.addPhoneCalendar({
+          title: `OnlyNail｜${order.customerName || '客户'}｜${order.serviceName || '美甲服务'}`,
+          startTime: Math.floor(start.getTime() / 1000),
+          endTime: Math.floor(end.getTime() / 1000),
+          location: order.shopName || order.address || '听栖美甲工作室',
+          description: `预约号：${order.orderNo || order.id}\n客户：${order.customerName || '客户'}\n项目：${order.serviceName || '美甲服务'}`,
+          alarm: true,
+          alarmOffset: 2 * 60 * 60,
+          success: resolve,
+          fail: reject
+        });
+      });
+      syncs[String(order.id)] = fingerprint;
+      wx.setStorageSync('technician_calendar_syncs', syncs);
+      wx.showToast({ title: '已加入手机日历', icon: 'success' });
+    } catch (error) {
+      const message = String(error && error.errMsg ? error.errMsg : '');
+      if (/auth|deny|denied|permission/i.test(message)) {
+        wx.showModal({
+          title: '需要日历权限',
+          content: '请在小程序设置中允许写入系统日历后重试。',
+          confirmText: '打开设置',
+          success: (result) => {
+            if (result.confirm) wx.openSetting({});
+          }
+        });
+      } else {
+        wx.showToast({ title: '加入日历失败，请稍后重试', icon: 'none' });
+      }
+    }
+  },
+
   // ---------- 数据加载 ----------
   async loadOrder() {
     if (this._loadingOrder || !this.orderId) return;

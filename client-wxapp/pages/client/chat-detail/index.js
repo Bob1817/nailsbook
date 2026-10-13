@@ -1,4 +1,8 @@
 const api = require('../../../services/api');
+const {
+  requestConsultationReply,
+  shouldShowConsultationReminder
+} = require('../../../utils/wechat-subscription');
 
 // 图片上传约束：类型 / 单张大小 / 数量
 var IMAGE_MAX_COUNT = 9;
@@ -23,7 +27,8 @@ Page({
     chatNavHeight: 64,
     /* 滚动策略 */
     isAtBottom: true,
-    keyboardHeight: 0
+    keyboardHeight: 0,
+    showReplyReminder: false
   },
 
   pollingTimer: null,
@@ -42,6 +47,7 @@ Page({
       this.setData({ techName: decodeURIComponent(techName) });
     }
     this.loadMessages();
+    this.setData({ showReplyReminder: shouldShowConsultationReminder('client') });
 
     /* 横竖屏 / 分屏适配 */
     this._resizeHandler = () => {
@@ -180,6 +186,17 @@ Page({
   },
 
   onInputChange(e) { this.setData({ inputText: e.detail.value }); },
+
+  async enableReplyReminder() {
+    const result = await requestConsultationReply('client');
+    if (result.error) {
+      wx.showToast({ title: '开启失败，请稍后重试', icon: 'none' });
+      return;
+    }
+    this.setData({ showReplyReminder: false });
+    const accepted = Object.values(result).includes('accept');
+    wx.showToast({ title: accepted ? '回复提醒已开启' : '可稍后再次开启', icon: 'none' });
+  },
 
   /* ===== 发送文字 ===== */
   async sendText() {

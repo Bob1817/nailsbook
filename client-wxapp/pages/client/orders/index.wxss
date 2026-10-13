@@ -65,6 +65,51 @@ page { background: var(--bg-page); }
 
 .list-area { padding: var(--space-md) 40rpx 0; }
 
+.booking-reminder-card {
+  min-height: 112rpx;
+  margin-bottom: var(--space-md);
+  padding: 24rpx;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  border-radius: 24rpx;
+  background: var(--bg-card);
+}
+.booking-reminder-copy { flex: 1; min-width: 0; }
+.booking-reminder-title {
+  display: block;
+  color: var(--text-primary);
+  font-size: var(--font-md);
+  font-weight: var(--weight-bold);
+}
+.booking-reminder-desc {
+  display: block;
+  margin-top: 6rpx;
+  color: var(--text-muted);
+  font-size: var(--font-xs);
+  line-height: 1.5;
+}
+.booking-reminder-action {
+  flex-shrink: 0;
+  min-width: 152rpx;
+  min-height: var(--touch-min);
+  margin: 0;
+  padding: 0 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--nb-ink);
+  color: var(--text-inverse);
+  font-size: var(--font-sm);
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+}
+.booking-reminder-action::after { border: 0; }
+.booking-reminder-action:active { opacity: .82; }
+
 /* 骨架屏 */
 .skel-list { display: flex; flex-direction: column; gap: 24rpx; }
 .skel-card {
