@@ -4,7 +4,8 @@ import { DEFAULT_OFFICIAL_MENU } from './official-menu-definition';
 
 const WECHAT_API_BASE = 'https://api.weixin.qq.com';
 
-interface WechatApiResult {
+/** 微信开放接口通用返回结构。导出以便控制器公开方法能被声明文件正确引用。 */
+export interface WechatApiResult {
   errcode?: number;
   errmsg?: string;
   [key: string]: unknown;
