@@ -111,12 +111,6 @@ export class WechatAuthService {
 
   async completeClient(dto: WechatClientCompleteDto) {
     const session = await this.verifySessionToken(dto.wechatSessionToken);
-    if (dto.quickBookingTechId) {
-      await this.clientAuth.validateQuickBookingInvite(
-        dto.quickBookingTechId,
-        dto.inviteCode,
-      );
-    }
     const phone = await this.exchangePhoneCode(dto.phoneCode);
     const account = await resolvePhoneRole(this.prisma, phone);
     if (account.technician) {
@@ -136,6 +130,12 @@ export class WechatAuthService {
           phone,
           message: '该手机号尚未注册，请先完成注册',
         };
+      }
+      if (dto.quickBookingTechId) {
+        await this.clientAuth.validateQuickBookingInvite(
+          dto.quickBookingTechId,
+          dto.inviteCode,
+        );
       }
       const registered = await this.clientAuth.registerClientByWechatInvite(
         {
@@ -164,8 +164,12 @@ export class WechatAuthService {
     // 已有账号但未绑定微信 → 关联身份
     if (!isNewClient) await this.linkIdentity(session, 'client', client.id);
 
-    if (dto.quickBookingTechId) {
-      await this.clientAuth.bindQuickBookingInvite(client.id, dto.quickBookingTechId, dto.inviteCode!);
+    if (!isNewClient && dto.quickBookingTechId) {
+      try {
+        await this.clientAuth.bindQuickBookingInvite(client.id, dto.quickBookingTechId, dto.inviteCode!);
+      } catch {
+        // 邀请上下文失效不能阻断已有账号登录。
+      }
     }
 
     return {

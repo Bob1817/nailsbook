@@ -106,6 +106,17 @@ describe('WechatAuthService', () => {
       expect(clientAuth.loginAsClientForTechnician).not.toHaveBeenCalled();
     });
 
+    it('ignores client invitation context when the phone belongs to a technician', async () => {
+      clientAuth.validateQuickBookingInvite = jest.fn().mockRejectedValue(new Error('预约邀请已失效'));
+      await expect(service.completeClient({
+        wechatSessionToken: 'session',
+        phoneCode: 'phone-code',
+        inviteCode: 'EXPIRED1',
+        quickBookingTechId: 7,
+      })).resolves.toMatchObject({ role: 'technician', accessToken: 'technician-jwt' });
+      expect(clientAuth.validateQuickBookingInvite).not.toHaveBeenCalled();
+    });
+
     it('propagates disabled-account rejection without linking a WeChat identity', async () => {
       technicianAuth.loginByWechat.mockRejectedValue(
         new Error('美甲师账号不存在或已被禁用'),
@@ -289,17 +300,20 @@ describe('WechatAuthService', () => {
     clientAuth.registerClientByWechatInvite = jest.fn().mockResolvedValue({ client: { id: 12 } });
     prisma.clientUser.findUnique.mockResolvedValueOnce(null).mockResolvedValue({ id: 12, phone: '13900139000', passwordHash: '' });
     await expect(service.completeClient({ wechatSessionToken: 'session', phoneCode: 'phone-code', inviteCode: 'INVITE7', quickBookingTechId: 7 })).resolves.toMatchObject({ authenticated: true, role: 'client', accessToken: 'client-jwt' });
-    expect(clientAuth.bindQuickBookingInvite).toHaveBeenCalledWith(12, 7, 'INVITE7');
+    expect(clientAuth.validateQuickBookingInvite).toHaveBeenCalledWith(7, 'INVITE7');
+    expect(clientAuth.bindQuickBookingInvite).not.toHaveBeenCalled();
     expect(clientAuth.createPasswordSetupToken).not.toHaveBeenCalled();
     expect(prisma.wechatIdentity.create).toHaveBeenCalledTimes(1);
   });
 
   it('rejects disabled or mismatched quick booking invites before creating an account', async () => {
     jest.spyOn(service, 'verifySessionToken').mockResolvedValue({ appId: 'wx-test', openId: 'openid-1' });
-    const exchange = jest.spyOn(service as any, 'exchangePhoneCode');
+    const exchange = jest.spyOn(service as any, 'exchangePhoneCode').mockResolvedValue('13900139000');
+    prisma.clientUser.findFirst.mockResolvedValue(null);
+    prisma.technician.findFirst.mockResolvedValue(null);
     clientAuth.validateQuickBookingInvite = jest.fn().mockRejectedValue(new Error('预约邀请已失效'));
     await expect(service.completeClient({ wechatSessionToken: 'session', phoneCode: 'phone-code', inviteCode: 'WRONG', quickBookingTechId: 7 })).rejects.toThrow('预约邀请已失效');
-    expect(exchange).not.toHaveBeenCalled();
+    expect(exchange).toHaveBeenCalled();
     expect(prisma.clientUser.create).not.toHaveBeenCalled();
   });
 
