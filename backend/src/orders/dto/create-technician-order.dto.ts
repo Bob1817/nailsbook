@@ -1,9 +1,13 @@
 import {
-  IsInt, IsString, IsOptional, IsDateString, IsBoolean, IsNumber,
+  IsInt, IsString, IsOptional, IsDateString, IsBoolean, IsNumber, Min, Max,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateTechnicianOrderDto {
+  @IsOptional()
+  @IsBoolean()
+  submitQuote?: boolean;
+
   @ApiPropertyOptional({ description: '客户ID（Customer表）', example: 1 })
   @IsOptional()
   @IsInt()
@@ -52,6 +56,8 @@ export class CreateTechnicianOrderDto {
   @ApiPropertyOptional({ description: '约定价格（元）。shareToClient 时必填', example: 180 })
   @IsOptional()
   @IsNumber()
+  @Min(0.01)
+  @Max(1000000)
   price?: number;
 
   @ApiPropertyOptional({ description: '是否生成微信确认链接', example: true })

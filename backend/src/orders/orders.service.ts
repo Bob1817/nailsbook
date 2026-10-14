@@ -127,6 +127,16 @@ export class OrdersService {
       throw new BadRequestException('customerId 或 clientUserId 必须提供一个');
     }
 
+    if (dto.submitQuote) {
+      if (!resolvedClientUserId || !Number.isFinite(dto.price) || Number(dto.price) <= 0) {
+        throw new BadRequestException('请选择已注册客户并填写有效报价');
+      }
+      const binding = await this.prisma.clientTechBinding.findFirst({ where: {
+        techId: technicianId, clientId: resolvedClientUserId, status: 'active', client: { status: 'active' },
+      } });
+      if (!binding) throw new BadRequestException('客户未有效绑定，无法发起预约');
+    }
+
     if (dto.shareToClient && dto.price == null) {
       throw new BadRequestException('生成微信确认链接时，价格为必填项');
     }
@@ -157,6 +167,13 @@ export class OrdersService {
       initialStart,
       initialEnd,
     );
+
+    if (dto.submitQuote) {
+      if (initialStart <= new Date()) throw new BadRequestException('预约时间已过期，请重新选择');
+      if (['shop', '到店美甲'].includes(dto.serviceType || '')) {
+        await this.assertTechnicianShopSchedule(technicianId, dto.address, initialStart, initialEnd, true);
+      }
+    }
 
     const confirmToken = dto.shareToClient ? crypto.randomUUID() : null;
     const confirmTokenExpiresAt = confirmToken
@@ -196,7 +213,7 @@ export class OrdersService {
             referrerClientId: referralAttribution?.referrerClientId ?? null,
             // 美甲师直接发起且已填写价格的预约无需再报价，直接进入待客户确认。
             status:
-              dto.shareToClient || (dto.price != null && dto.price > 0)
+              dto.submitQuote ? 'pending_agree' : dto.shareToClient || (dto.price != null && dto.price > 0)
                 ? 'pending_client_confirm'
                 : 'pending_quote',
             remark:
@@ -205,6 +222,20 @@ export class OrdersService {
             customImages: dto.customImages?.length
               ? JSON.stringify(dto.customImages)
               : null,
+            ...(dto.submitQuote ? {
+              bookingPhase: 'application',
+              quoteVersion: 1,
+              quotedAt: new Date(),
+              finalPriceFen: Math.round(dto.price! * 100),
+              serviceSubtotalFen: Math.round(dto.price! * 100),
+              totalDurationMinutes: Math.round((initialEnd.getTime() - initialStart.getTime()) / 60000),
+              serviceLines: { create: [{
+                nameSnapshot: dto.serviceName,
+                unitPriceFen: Math.round(dto.price! * 100), subtotalFen: Math.round(dto.price! * 100),
+                durationMinutes: Math.round((initialEnd.getTime() - initialStart.getTime()) / 60000),
+                quantity: 1, sortOrder: 0, source: 'manual',
+              }] },
+            } : {}),
             quotePrice: dto.price ?? 0,
             estimatedAmount: dto.estimatedAmount ?? dto.price ?? 0,
             expectedDate: dto.expectedDate
@@ -266,6 +297,8 @@ export class OrdersService {
     } catch (error) {
       throwIfBookingSlotConflict(error);
     }
+
+    if (dto.submitQuote) void this.wechatSubscribe?.sendBookingStatusEvent(order, 'client', '待确认报价', '美甲师已为您发起预约，请确认报价');
 
     const result: Record<string, unknown> = { ...order };
     if (confirmToken) {

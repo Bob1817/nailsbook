@@ -1,3 +1,4 @@
+import { assertPhoneAvailable } from '../common/account-role-policy';
 import {
   BadRequestException,
   ConflictException,
@@ -113,6 +114,7 @@ export class TechniciansService {
   }
 
   async create(dto: CreateTechnicianDto) {
+    await assertPhoneAvailable(this.prisma, dto.phone);
     const existing = await this.prisma.technician.findUnique({
       where: { phone: dto.phone },
     });
@@ -178,6 +180,7 @@ export class TechniciansService {
     if (existing.status === 'deleted') throw new BadRequestException('已注销账号不能修改');
 
     if (dto.phone && dto.phone !== existing.phone) {
+      await assertPhoneAvailable(this.prisma, dto.phone);
       const phoneInUse = await this.prisma.technician.findUnique({
         where: { phone: dto.phone },
       });

@@ -41,20 +41,31 @@ describe('WechatAuthService', () => {
       },
       clientUser: {
         findUnique: jest.fn(),
+        findFirst: jest.fn(),
         create: jest.fn(),
       },
-      technician: { findUnique: jest.fn() },
+      technician: { findUnique: jest.fn(), findFirst: jest.fn() },
       nailWork: { findFirst: jest.fn().mockResolvedValue({ id: 9, techId: 7 }) },
       conversionEvent: { upsert: jest.fn() },
     };
+    prisma.clientUser.findFirst.mockImplementation((args: any) =>
+      prisma.clientUser.findUnique(args),
+    );
+    prisma.technician.findFirst.mockImplementation((args: any) =>
+      prisma.technician.findUnique(args),
+    );
     clientAuth = {
+      loginAsClientForTechnician: jest.fn(),
       loginByWechat: jest.fn().mockResolvedValue({ accessToken: 'client-jwt' }),
       registerByInvite: jest.fn(),
       createPasswordSetupToken: jest.fn().mockReturnValue('setup-token'),
       resetPasswordByPhoneOwnership: jest.fn().mockResolvedValue({ success: true }),
     };
     technicianAuth = {
-      loginByWechat: jest.fn(),
+      loginByWechat: jest.fn().mockResolvedValue({
+        accessToken: 'technician-jwt',
+        technician: { id: 55 },
+      }),
       register: jest.fn(),
       resetPasswordByPhoneOwnership: jest.fn().mockResolvedValue({ success: true }),
       setInitialPasswordByPhoneOwnership: jest
@@ -72,6 +83,52 @@ describe('WechatAuthService', () => {
   });
 
   afterEach(() => { jest.restoreAllMocks(); resetLaunchTechnicianIdConfiguration(); });
+
+  describe('unified WeChat login role resolution', () => {
+    beforeEach(() => {
+      jest.spyOn(service as any, 'exchangePhoneCode').mockResolvedValue('15267003169');
+      prisma.clientUser.findUnique.mockResolvedValue(null);
+      prisma.technician.findUnique.mockResolvedValue({ id: 55 });
+    });
+
+    it('logs an existing technician directly into the technician account', async () => {
+      await expect(service.completeClient({ wechatSessionToken: 'session', phoneCode: 'phone-code' }))
+        .resolves.toMatchObject({
+          authenticated: true,
+          role: 'technician',
+          accessToken: 'technician-jwt',
+          roles: ['technician'],
+        });
+      expect(technicianAuth.loginByWechat).toHaveBeenCalledWith(55);
+      expect(prisma.wechatIdentity.upsert).toHaveBeenCalledWith(expect.objectContaining({
+        create: expect.objectContaining({ technicianId: 55 }),
+      }));
+      expect(clientAuth.loginAsClientForTechnician).not.toHaveBeenCalled();
+    });
+
+    it('propagates disabled-account rejection without linking a WeChat identity', async () => {
+      technicianAuth.loginByWechat.mockRejectedValue(
+        new Error('美甲师账号不存在或已被禁用'),
+      );
+      await expect(service.completeClient({ wechatSessionToken: 'session', phoneCode: 'phone-code' }))
+        .rejects.toThrow('美甲师账号不存在或已被禁用');
+      expect(prisma.wechatIdentity.upsert).not.toHaveBeenCalled();
+    });
+
+    it('does not issue a session when phone authorization fails', async () => {
+      jest.spyOn(service as any, 'exchangePhoneCode').mockRejectedValue(new Error('手机号授权失败'));
+      await expect(service.completeClient({ wechatSessionToken: 'session', phoneCode: 'invalid' }))
+        .rejects.toThrow('手机号授权失败');
+      expect(technicianAuth.loginByWechat).not.toHaveBeenCalled();
+    });
+
+    it('preserves the existing WeChat identity conflict check', async () => {
+      prisma.wechatIdentity.findUnique.mockResolvedValue({ clientUserId: 92 });
+      await expect(service.completeClient({ wechatSessionToken: 'session', phoneCode: 'phone-code' }))
+        .rejects.toThrow('该微信已绑定其他账号');
+      expect(prisma.wechatIdentity.upsert).not.toHaveBeenCalled();
+    });
+  });
 
   it('returns a short-lived binding token for an unknown OpenID', async () => {
     global.fetch = jest.fn().mockResolvedValue({
@@ -146,7 +203,7 @@ describe('WechatAuthService', () => {
     );
   });
 
-  it('returns needsSetupPassword for existing client without password', async () => {
+  it('logs an existing WeChat client in even when no backup password is set', async () => {
     global.fetch = jest
       .fn()
       .mockResolvedValueOnce({
@@ -177,11 +234,11 @@ describe('WechatAuthService', () => {
         phoneCode: 'phone-code',
       }),
     ).resolves.toMatchObject({
-      authenticated: false,
-      needsSetupPassword: true,
-      passwordSetupToken: 'setup-token',
-      phone: '13800138000',
+      authenticated: true,
+      role: 'client',
+      accessToken: 'client-jwt',
     });
+    expect(clientAuth.createPasswordSetupToken).not.toHaveBeenCalled();
   });
 
   it('rejects a new client without a technician invitation', async () => {

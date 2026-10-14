@@ -15,8 +15,8 @@ export class SelectRoleDto {
   @IsString()
   inviteCode?: string;
 
-  @ApiPropertyOptional({ description: '选择美甲师时必填的系统激活密钥' })
-  @ValidateIf((dto: SelectRoleDto) => dto.role === 'technician')
+  @ApiPropertyOptional({ description: '新开通美甲师时必填的系统激活密钥，已有美甲师切换身份无需填写' })
+  @ValidateIf((dto: SelectRoleDto) => dto.activationKey !== undefined)
   @IsNotEmpty({ message: '美甲师注册必须填写系统激活密钥' })
   @IsString()
   activationKey?: string;

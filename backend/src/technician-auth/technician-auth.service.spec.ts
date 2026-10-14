@@ -4,8 +4,12 @@ import { TechnicianAuthService } from './technician-auth.service';
 describe('TechnicianAuthService.setInitialPassword', () => {
   let service: TechnicianAuthService;
   let prisma: {
+    clientUser: {
+      findFirst: jest.Mock;
+    };
     technician: {
       findUnique: jest.Mock;
+      findFirst: jest.Mock;
       update: jest.Mock;
     };
   };
@@ -33,8 +37,12 @@ describe('TechnicianAuthService.setInitialPassword', () => {
 
   beforeEach(() => {
     prisma = {
+      clientUser: {
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
       technician: {
         findUnique: jest.fn(),
+        findFirst: jest.fn().mockResolvedValue({ ...baseTechnician }),
         update: jest.fn().mockResolvedValue({}),
       },
     };

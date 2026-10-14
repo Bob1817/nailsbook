@@ -1,3 +1,4 @@
+import { CheckPhoneDto } from '../technician-auth/dto/check-phone.dto';
 import { Body, Controller, Post } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -13,6 +14,12 @@ import { WechatAuthService } from './wechat-auth.service';
 @Controller('wechat/auth')
 export class WechatAuthController {
   constructor(private readonly service: WechatAuthService) {}
+
+  @Post('account-status')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  accountStatus(@Body() dto: CheckPhoneDto) {
+    return this.service.accountStatus(dto.phone);
+  }
 
   @Post('login')
   @Throttle({ default: { ttl: 60000, limit: 10 } })

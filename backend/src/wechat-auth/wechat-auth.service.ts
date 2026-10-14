@@ -1,3 +1,4 @@
+import { resolvePhoneRole } from '../common/account-role-policy';
 import { recordWorkShareRegistration } from '../common/work-share-registration';
 import {
   BadRequestException,
@@ -54,14 +55,15 @@ export class WechatAuthService {
       identity?.technicianId ? 'technician' : null,
     ].filter(Boolean) as Array<'client' | 'technician'>;
 
-    if (requestedRole === 'client' && identity?.clientUserId) {
+    if (identity?.clientUserId && identity?.technicianId) throw new ConflictException('该微信存在历史账号角色冲突，请联系管理员处理');
+    if (requestedRole && identity?.clientUserId) {
       return {
         authenticated: true,
         role: 'client' as const,
         ...(await this.clientAuth.loginByWechat(identity.clientUserId)),
       };
     }
-    if (requestedRole === 'technician' && identity?.technicianId) {
+    if (requestedRole && identity?.technicianId) {
       return {
         authenticated: true,
         role: 'technician' as const,
@@ -86,6 +88,11 @@ export class WechatAuthService {
     };
   }
 
+  async accountStatus(phone: string) {
+    const account = await resolvePhoneRole(this.prisma, phone);
+    return { exists: !!account.role, role: account.role };
+  }
+
   async verifySessionToken(token: string) {
     try {
       const payload = this.jwt.verify(token);
@@ -105,10 +112,19 @@ export class WechatAuthService {
   async completeClient(dto: WechatClientCompleteDto) {
     const session = await this.verifySessionToken(dto.wechatSessionToken);
     if (dto.quickBookingTechId) {
-      await this.clientAuth.validateQuickBookingInvite(dto.quickBookingTechId, dto.inviteCode);
+      await this.clientAuth.validateQuickBookingInvite(
+        dto.quickBookingTechId,
+        dto.inviteCode,
+      );
     }
     const phone = await this.exchangePhoneCode(dto.phoneCode);
-    let client = await this.prisma.clientUser.findUnique({ where: { phone } });
+    const account = await resolvePhoneRole(this.prisma, phone);
+    if (account.technician) {
+      const result = await this.technicianAuth.loginByWechat(account.technician.id);
+      await this.linkIdentity(session, 'technician', account.technician.id);
+      return { authenticated: true, role: 'technician' as const, roles: ['technician'], ...result };
+    }
+    let client = account.client;
     const isNewClient = !client;
 
     if (!client) {
@@ -152,17 +168,6 @@ export class WechatAuthService {
       await this.clientAuth.bindQuickBookingInvite(client.id, dto.quickBookingTechId, dto.inviteCode!);
     }
 
-    // 一键预约和邀请码新客注册已完成微信身份与手机号验证，不强制设置备用密码。
-    if (!client.passwordHash && !dto.quickBookingTechId && !(isNewClient && dto.inviteCode)) {
-      return {
-        authenticated: false,
-        needsSetupPassword: true,
-        passwordSetupToken: this.clientAuth.createPasswordSetupToken(client.id),
-        phone: client.phone,
-        message: '请设置登录密码',
-      };
-    }
-
     return {
       authenticated: true,
       role: 'client' as const,
@@ -173,9 +178,13 @@ export class WechatAuthService {
   async completeTechnician(dto: WechatTechnicianCompleteDto) {
     const session = await this.verifySessionToken(dto.wechatSessionToken);
     const phone = await this.exchangePhoneCode(dto.phoneCode);
-    let technician = await this.prisma.technician.findUnique({
-      where: { phone },
-    });
+    const account = await resolvePhoneRole(this.prisma, phone);
+    if (account.client) {
+      const result = await this.clientAuth.loginByWechat(account.client.id);
+      await this.linkIdentity(session, 'client', account.client.id);
+      return { authenticated: true, role: 'client' as const, ...result, roles: ['client'] };
+    }
+    let technician = account.technician;
     const isNewTechnician = !technician;
 
     if (!technician) {
@@ -246,7 +255,9 @@ export class WechatAuthService {
     });
     const linkedId =
       role === 'client' ? identity?.clientUserId : identity?.technicianId;
-    if (linkedId && linkedId !== accountId) {
+    const oppositeRoleId =
+      role === 'client' ? identity?.technicianId : identity?.clientUserId;
+    if (oppositeRoleId || (linkedId && linkedId !== accountId)) {
       throw new ConflictException('该微信已绑定其他账号');
     }
 

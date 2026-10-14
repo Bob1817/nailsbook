@@ -72,78 +72,11 @@ describe('ClientAuthService — 绑定审批工作流', () => {
 
   const activeTech = { id: 1, status: 'active', invitationCode: 'ABC12345' };
 
-  describe('美甲师切换为客户身份', () => {
-    it('复用同手机号客户并签发客户会话', async () => {
-      prisma.technician.findUnique.mockResolvedValue({
-        id: 1,
-        phone: '13800138001',
-        status: 'active',
-      });
-      prisma.clientUser.findUnique
-        .mockResolvedValueOnce({ id: 11, phone: '13800138001' })
-        .mockResolvedValueOnce({
-          id: 11,
-          phone: '13800138001',
-          status: 'active',
-          tokenVersion: 0,
-          bindings: [],
-        });
-
-      const result = await service.loginAsClientForTechnician(1);
-
-      expect(result).toEqual(expect.objectContaining({
-        accessToken: 'client-access',
-        refreshToken: 'client-refresh',
-        roles: ['client', 'technician'],
-      }));
-      expect(prisma.clientUser.create).not.toHaveBeenCalled();
-    });
-
-    it('历史美甲师没有客户记录时自动补齐同手机号客户', async () => {
-      const technician = {
-        id: 1,
-        phone: '13800138001',
-        name: '贝贝',
-        avatarUrl: null,
-        city: '杭州',
-        status: 'active',
-        passwordHash: 'shared-hash',
-        managedPasswordCiphertext: null,
-      };
-      prisma.technician.findUnique.mockResolvedValue(technician);
-      prisma.clientUser.findUnique
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce({
-          id: 12,
-          phone: technician.phone,
-          status: 'active',
-          tokenVersion: 0,
-          bindings: [],
-        });
-      prisma.clientUser.create.mockResolvedValue({ id: 12 });
-
-      await service.loginAsClientForTechnician(1);
-
-      expect(prisma.clientUser.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          phone: technician.phone,
-          nickname: technician.name,
-          passwordHash: technician.passwordHash,
-          status: 'active',
-        }),
-      });
-    });
-
-    it('禁用的美甲师不能切换', async () => {
-      prisma.technician.findUnique.mockResolvedValue({
-        id: 1,
-        phone: '13800138001',
-        status: 'suspended',
-      });
-      await expect(service.loginAsClientForTechnician(1)).rejects.toThrow(
-        UnauthorizedException,
-      );
-    });
+  it('旧版美甲师切换客户接口被明确阻断', async () => {
+    await expect(service.loginAsClientForTechnician(1)).rejects.toThrow(
+      '不支持切换账号角色，请注销后再注册',
+    );
+    expect(prisma.clientUser.create).not.toHaveBeenCalled();
   });
 
   it('更新客户头像时同步所有美甲师侧客户快照', async () => {
@@ -444,9 +377,13 @@ describe('登录绑定与首期开放范围', () => {
     const prisma = {
       clientUser: {
         findUnique: jest.fn(),
+        findFirst: jest.fn(),
         update: jest.fn(),
       },
-      technician: { findUnique: jest.fn() },
+      technician: { findUnique: jest.fn(), findFirst: jest.fn() },
+      clientTechBinding: {
+        findFirst: jest.fn().mockResolvedValue({ id: 1 }),
+      },
     };
     const jwt = {
       sign: jest.fn().mockReturnValue('token'),
@@ -513,7 +450,9 @@ describe('登录绑定与首期开放范围', () => {
   it('密码登录：绑定不在首期范围时报明确原因，而不是“没有绑定美甲师”', async () => {
     const { service, prisma } = makeService();
     prisma.clientUser.findUnique.mockResolvedValue(outOfScopeClient);
+    prisma.clientUser.findFirst.mockResolvedValue(outOfScopeClient);
     prisma.technician.findUnique.mockResolvedValue(null);
+    prisma.technician.findFirst.mockResolvedValue(null);
     (service as any).bcryptCompare = undefined;
 
     const bcrypt = require('bcryptjs');

@@ -33,7 +33,7 @@ function miniProgram(name: string, pagepath: string): MenuButton {
 
 export const DEFAULT_OFFICIAL_MENU = {
   button: [
-    miniProgram('立即预约', 'pages/client/create-order/index'),
+    miniProgram('立即预约', 'pages/booking/index'),
     {
       name: '我的服务',
       sub_button: [

@@ -1,3 +1,4 @@
+import { assertPhoneAvailable, resolvePhoneRole } from '../common/account-role-policy';
 import {
   BadRequestException,
   ConflictException,
@@ -125,6 +126,8 @@ export class TechnicianAuthService {
       );
     }
 
+    await assertPhoneAvailable(this.prisma, dto.phone, keyRecord.usedByTechnicianId ?? undefined);
+
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
     // 情况 A：密钥已预绑定到某个美甲师账号 → 激活该账号
@@ -142,6 +145,7 @@ export class TechnicianAuthService {
       }
 
       const activated = await this.prisma.$transaction(async (tx) => {
+        await assertPhoneAvailable(tx, dto.phone, keyRecord.usedByTechnicianId ?? undefined);
         const t = await tx.technician.update({
           where: { id: target.id },
           data: {
@@ -174,6 +178,11 @@ export class TechnicianAuthService {
     }
 
     const technician = await this.prisma.$transaction(async (tx) => {
+      await assertPhoneAvailable(
+        tx,
+        dto.phone,
+        keyRecord.usedByTechnicianId ?? undefined,
+      );
       const invitationCode = await this.allocateInvitationCode(tx);
       const created = await tx.technician.create({
         data: {
@@ -314,6 +323,7 @@ export class TechnicianAuthService {
       throw new UnauthorizedException('美甲师不存在');
     }
 
+    await resolvePhoneRole(this.prisma, technician.phone);
     await this.prisma.technician.update({
       where: { id: technicianId },
       data: { lastLoginAt: new Date() },
@@ -398,25 +408,6 @@ export class TechnicianAuthService {
     const valid = await bcrypt.compare(password, technician.passwordHash);
     if (!valid) {
       throw new UnauthorizedException('手机号或密码错误');
-    }
-
-    // 密码同步：如果客户端密码与美甲师密码不同，用美甲师密码覆盖客户端密码
-    const clientUser = await this.prisma.clientUser.findUnique({
-      where: { phone },
-      select: { id: true, passwordHash: true },
-    });
-    if (
-      clientUser &&
-      clientUser.passwordHash &&
-      clientUser.passwordHash !== technician.passwordHash
-    ) {
-      await this.prisma.clientUser.update({
-        where: { id: clientUser.id },
-        data: {
-          passwordHash: technician.passwordHash,
-          managedPasswordCiphertext: null,
-        },
-      });
     }
 
     const result = await this.issueTokens(technician.id, technician.phone);

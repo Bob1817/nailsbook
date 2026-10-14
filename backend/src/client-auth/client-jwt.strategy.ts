@@ -1,3 +1,4 @@
+import { assertClientBinding, resolvePhoneRole } from '../common/account-role-policy';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
@@ -24,7 +25,7 @@ export class ClientJwtStrategy extends PassportStrategy(Strategy, 'client-jwt') 
     }
     const client = await this.prisma.clientUser.findUnique({
       where: { id: payload.sub },
-      select: { tokenVersion: true, status: true },
+      select: { tokenVersion: true, status: true, phone: true },
     });
     if (!client || client.status !== 'active') {
       throw new UnauthorizedException('用户不存在');
@@ -33,6 +34,8 @@ export class ClientJwtStrategy extends PassportStrategy(Strategy, 'client-jwt') 
     if ((payload.tv ?? 0) !== client.tokenVersion) {
       throw new UnauthorizedException('登录状态已失效，请重新登录');
     }
+    await resolvePhoneRole(this.prisma, client.phone);
+    await assertClientBinding(this.prisma, payload.sub);
     return {
       clientUserId: payload.sub,
       phone: payload.phone,
