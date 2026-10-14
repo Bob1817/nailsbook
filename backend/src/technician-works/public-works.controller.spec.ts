@@ -1,8 +1,17 @@
 import { PublicWorksController } from './public-works.controller';
 import { configureLaunchTechnicianId, resetLaunchTechnicianIdConfiguration } from '../common/miniprogram-launch-mode';
+import { GUARDS_METADATA } from '@nestjs/common/constants';
+import { AuthenticatedAccountGuard } from '../common/authenticated-account.guard';
 
 describe('PublicWorksController publication filter', () => {
   afterEach(() => resetLaunchTechnicianIdConfiguration());
+
+  it('公开浏览不要求登录，仅生成分享码需要账户身份', () => {
+    expect(Reflect.getMetadata(GUARDS_METADATA, PublicWorksController)).toBeUndefined();
+    expect(Reflect.getMetadata(GUARDS_METADATA, PublicWorksController.prototype.getShareCode)).toContain(AuthenticatedAccountGuard);
+    expect(Reflect.getMetadata(GUARDS_METADATA, PublicWorksController.prototype.getDetail)).toBeUndefined();
+    expect(Reflect.getMetadata(GUARDS_METADATA, PublicWorksController.prototype.getSharedDetail)).toBeUndefined();
+  });
 
   it.each(['active', 'inactive'])('分享页为%s账号返回公开店铺及正确接单状态', async status => {
     configureLaunchTechnicianId(7);
@@ -31,7 +40,7 @@ describe('PublicWorksController publication filter', () => {
     prisma.nailWorkShareGrant.findFirst.mockResolvedValue({ id: 1, workId: 88 });
     await expect(controller.getSharedDetail('valid')).rejects.toThrow('作品不存在');
     expect(prisma.nailWork.findFirst).toHaveBeenCalledWith(expect.objectContaining({
-      where: { id: 88, technician: { status: { in: ['active', 'inactive'] } }, isVisible: true, archivedAt: null, publicationStatus: 'approved' },
+      where: expect.objectContaining({ id: 88, technician: { status: { in: ['active', 'inactive'] } }, isVisible: true, archivedAt: null, publicationStatus: 'approved', assetStatus: 'public', publicAuthorizationStatus: 'authorized' }),
     }));
     expect(prisma.nailWorkShareEvent.create).not.toHaveBeenCalled();
   });
@@ -49,6 +58,8 @@ describe('PublicWorksController publication filter', () => {
           isVisible: true,
           visibilityScope: 'public',
           publicationStatus: 'approved',
+          assetStatus: 'public',
+          publicAuthorizationStatus: 'authorized',
           technician: { status: 'active' },
         }),
       }),

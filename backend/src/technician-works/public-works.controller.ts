@@ -46,12 +46,12 @@ function parseImageUrls(
 
 @ApiTags('公开-作品')
 @Controller('public/works')
-@UseGuards(AuthenticatedAccountGuard)
-@ApiBearerAuth()
 export class PublicWorksController {
   constructor(private readonly prisma: PrismaService, @Optional() private readonly shareCodes?: WorkShareCodeService) {}
 
   @Get(':id/share-code')
+  @UseGuards(AuthenticatedAccountGuard)
+  @ApiBearerAuth()
   async getShareCode(@Param('id', ParseIntPipe) id: number, @Query('shareToken') shareToken?: string) {
     if (shareToken && !/^[a-f0-9]{48}$/.test(shareToken)) throw new BadRequestException('分享参数无效');
     const detail = shareToken ? await this.getSharedDetail(shareToken, false) : await this.getDetail(id);
@@ -61,7 +61,7 @@ export class PublicWorksController {
   }
 
   @Get()
-  @ApiOperation({ summary: '获取登录客户可浏览的作品流' })
+  @ApiOperation({ summary: '获取游客可浏览的公开作品流' })
   async getPublicFeed(
     @Query('limit') limit?: string,
     @Query('techId') techId?: string,
@@ -74,6 +74,8 @@ export class PublicWorksController {
         isVisible: true,
         visibilityScope: 'public',
         publicationStatus: 'approved',
+        assetStatus: 'public',
+        publicAuthorizationStatus: 'authorized',
         technician: { status: 'active' },
         ...(Number.isInteger(technicianId) && technicianId > 0
           ? { techId: technicianId }
@@ -135,6 +137,8 @@ export class PublicWorksController {
         isVisible: true,
         visibilityScope: 'public',
         publicationStatus: 'approved',
+        assetStatus: 'public',
+        publicAuthorizationStatus: 'authorized',
         technician: { status: 'active' },
         ...(technicianId ? { techId: technicianId } : {}),
       },
@@ -181,6 +185,8 @@ export class PublicWorksController {
         isVisible: true,
         visibilityScope: 'public',
         publicationStatus: 'approved',
+        assetStatus: 'public',
+        publicAuthorizationStatus: 'authorized',
         technician: { status: 'active' },
         ...(technicianId ? { techId: technicianId } : {}),
       },
@@ -227,6 +233,8 @@ export class PublicWorksController {
       visibilityScope: 'public',
       archivedAt: null,
       publicationStatus: 'approved',
+      assetStatus: 'public',
+      publicAuthorizationStatus: 'authorized',
       technician: { status: { in: ['active', 'inactive'] } },
     });
   }
@@ -250,6 +258,8 @@ export class PublicWorksController {
       isVisible: true,
       archivedAt: null,
       publicationStatus: 'approved',
+      assetStatus: 'public',
+      publicAuthorizationStatus: 'authorized',
     });
     if (recordOpen) await this.prisma.nailWorkShareEvent.create({
       data: {

@@ -5,12 +5,10 @@ import {
   Param,
   ParseIntPipe,
   Query,
-  UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { PublicBrandService } from './public-brand.service';
-import { AuthenticatedAccountGuard } from '../common/authenticated-account.guard';
 
 type PublicQuery = {
   page?: string;
@@ -42,8 +40,6 @@ export class PublicBrandController {
   }
 
   @Get(':id/works')
-  @UseGuards(AuthenticatedAccountGuard)
-  @ApiBearerAuth()
   @Header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
   @ApiOperation({ summary: '获取公开作品列表' })
   works(@Param('id', ParseIntPipe) id: number, @Query() query: PublicQuery) {
@@ -51,8 +47,6 @@ export class PublicBrandController {
   }
 
   @Get(':id/works/:workId')
-  @UseGuards(AuthenticatedAccountGuard)
-  @ApiBearerAuth()
   @Header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
   @ApiOperation({ summary: '获取公开作品详情' })
   workDetail(
